@@ -484,6 +484,11 @@ config STACKPROTECTOR_STRONG
 
 config LTO
 	def_bool n
+	help
+	 Enable Link Time Optimisation support.
+
+config ARCH_SUPPORTS_LTO_GCC
+	bool
 
 config ARCH_SUPPORTS_LTO_CLANG
 	bool
@@ -531,7 +536,61 @@ config LTO_CLANG
           If you select this option, you must compile the kernel with clang and
 	  LLD.
 
+config LTO_GCC
+	bool "Enable gcc link time optimization (LTO)"
+	depends on ARCH_SUPPORTS_LTO_GCC
+	depends on CC_IS_GCC
+	# lto does not support excluding flags for specific files
+	# right now. Can be removed if that is fixed.
+	#depends on !FUNCTION_TRACER
+	help
+	  With this option gcc will do whole program optimizations for
+	  the whole kernel and module. This increases compile time, but can
+	  lead to better code. It allows gcc to inline functions between
+	  different files and do other optimization.  It might also trigger
+	  bugs due to more aggressive optimization. It allows gcc to drop unused
+	  code. On smaller monolithic kernel configurations
+	  it usually leads to smaller kernels, especially when modules
+	  are disabled.
+
+	  With this option gcc will also do some global checking over
+	  different source files. It also disables a number of kernel
+	  features.
+
+	  This option is recommended for release builds. With LTO
+	  the kernel always has to be re-optimized (but not re-parsed)
+	  on each build.
+
+	  This requires a gcc 6.0 or later compiler.
+
+	  On larger configurations this may need more than 4GB of RAM.
+	  It will likely not work on those with a 32bit compiler.
+
+	  When the toolchain support is not available this will (hopefully)
+	  be automatically disabled.
+
+	  For more information see Documentation/lto-build
+
 endchoice
+
+config LTO_DEBUG
+       bool "Enable LTO compile time debugging"
+       depends on LTO_GCC
+       help
+         Enable LTO debugging in the compiler. The compiler dumps
+         some log files that make it easier to figure out LTO
+         behavior. The log files also allow to reconstruct
+         the global inlining and a global callgraph.
+         They however add some (single threaded) cost to the
+         compilation.  When in doubt do not enable.
+
+config LTO_CP_CLONE
+       bool "Allow aggressive cloning for function specialization"
+       depends on LTO_GCC
+       help
+         Allow the compiler to clone and specialize functions for specific
+         arguments when it determines these arguments are very commonly
+         called.  Experimential. Will increase text size
 
 config CFI
 	bool

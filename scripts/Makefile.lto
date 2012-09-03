@@ -1,0 +1,115 @@
+#
+# Support for gcc link time optimization
+#
+
+DISABLE_LTO :=
+LTO_CFLAGS :=
+KBUILD_MOD_LDFLAGS :=
+KBUILD_MODPOST_LDFLAGS :=
+
+export DISABLE_LTO
+export LTO_CFLAGS
+export KBUILD_MOD_LDFLAGS
+export KBUILD_MODPOST_LDFLAGS
+
+ifdef CONFIG_LTO_GCC
+
+# Some ar versions leak file descriptors when using the LTO
+# plugin and cause strange errors when ulimit -n is too low.
+# Pick an arbitrary number, which should be enough for most
+# kernel configs. This was regression that is only
+# in some transient binutils version, so either older or
+# new enough is ok.
+#
+# XXX narrow down binutils versions
+ifeq ($(shell if ar --version | grep -q 2\.31 ; then echo bad ; fi),bad)
+ifeq ($(shell if test `ulimit -n` -lt 4000 ; then echo yes ; fi),yes)
+        $(warning Disabling LTO. File descriptor limit too low. Increase with ulimit -n 4000 or upgrade binutils)
+        undefine CONFIG_LTO_GCC
+endif
+endif
+
+# 4.7 works mostly, but it sometimes loses symbols on large builds
+# This can be worked around by marking those symbols visible,
+# but that is fairly ugly and the problem is gone with 4.8
+# 4.8 was very slow
+# 4.9 was missing __attribute__((noreorder)) for ordering initcalls,
+# and needed -fno-toplevel-reorder, which can lead to missing symbols
+# 5.0 ICEs with newer kernels
+# so only support 6.0+
+ifeq ($(call cc-ifversion, -lt, 0600,y),y)
+        $(warning Disabling LTO. Need gcc 5+)
+	undefine CONFIG_LTO_GCC
+endif
+
+# binutils before 2.27 has various problems with plugins
+ifeq ($(call ld-ifversion,-lt,227000000,y),y)
+        $(warning Disabling LTO. Too old binutils (< 2.27))
+	undefine CONFIG_LTO_GCC
+endif
+
+endif # CONFIG_LTO_GCC
+
+
+ifdef CONFIG_LTO_GCC
+	# print only once
+ifeq ($(LTO_MESSAGE),)
+        $(info Enabling full GCC LTO)
+        LTO_MESSAGE := 1
+endif
+
+	LTO_CFLAGS := -flto
+	LTO_FINAL_CFLAGS := -fuse-linker-plugin
+
+	# gcc 8.x doesn't generate debuginfo if we don't
+	# specify -g on the final linking command line.
+	LTO_FINAL_CFLAGS += $(filter -g%, $(KBUILD_CFLAGS))
+
+# would be needed to support < 5.0
+#	LTO_FINAL_CFLAGS += -fno-toplevel-reorder
+
+	LTO_FINAL_CFLAGS += -flto=jobserver
+
+	KBUILD_MOD_LDFLAGS += -flinker-output=nolto-rel
+
+	# do full LTO before main kernel modpost
+	# XXX should switch to running modpost on the final executable
+	# to avoid the time overhead
+	KBUILD_MODPOST_LDFLAGS += -flinker-output=nolto-rel
+
+	# don't compile everything twice
+	# requires plugin ar
+	LTO_CFLAGS += -fno-fat-lto-objects
+
+	# Used to disable LTO for specific files (e.g. vdso)
+	DISABLE_LTO := -fno-lto
+
+	LTO_FINAL_CFLAGS += ${LTO_CFLAGS} -fwhole-program
+
+ifdef CONFIG_LTO_DEBUG
+	LTO_FINAL_CFLAGS += -fdump-ipa-cgraph -fdump-ipa-inline-details
+endif
+
+ifdef CONFIG_LTO_CP_CLONE
+	LTO_FINAL_CFLAGS += -fipa-cp-clone
+	LTO_CFLAGS += -fipa-cp-clone
+endif
+
+	KBUILD_CFLAGS += ${LTO_CFLAGS}
+
+	# For LTO we need to use gcc to do the linking, not ld
+	# directly. Use a wrapper to convert the ld command line
+	# to gcc
+	LDFINAL := ${CONFIG_SHELL} ${srctree}/scripts/gcc-ld \
+                  ${LTO_FINAL_CFLAGS}
+
+	# LTO gcc creates a lot of files in TMPDIR, and with /tmp as tmpfs
+	# it's easy to drive the machine OOM. Use the object directory
+	# instead for temporaries.
+	TMPDIR ?= $(objtree)
+	export TMPDIR
+
+	# use plugin aware tools
+	AR = $(CROSS_COMPILE)gcc-ar
+	NM = $(CROSS_COMPILE)gcc-nm
+endif # CONFIG_LTO_GCC

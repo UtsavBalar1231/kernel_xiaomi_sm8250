@@ -149,7 +149,7 @@ ifdef CONFIG_LTO_CLANG
   endif
 else
       cmd_ld_ko_o =                                                     \
-	$(LD) -r $(KBUILD_LDFLAGS)                                      \
+	$(LDFINAL) -r $(KBUILD_MOD_LDFLAGS) $(KBUILD_LDFLAGS)		\
                  $(KBUILD_LDFLAGS_MODULE) $(LDFLAGS_MODULE)             \
                  -o $@ $(filter-out FORCE,$^) ;                         \
 	$(if $(ARCH_POSTLINK), $(MAKE) -f $(ARCH_POSTLINK) $@, true)
