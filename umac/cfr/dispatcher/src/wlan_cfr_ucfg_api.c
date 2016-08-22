@@ -937,6 +937,9 @@ QDF_STATUS ucfg_cfr_committed_rcc_config(struct wlan_objmgr_vdev *vdev)
 		cfr_err("psoc is null!");
 		return QDF_STATUS_E_NULL_VALUE;
 	}
+
+	pcfr->rcc_param.vdev_id = wlan_vdev_get_id(vdev);
+
 	/*
 	 * If capture mode is valid, then Host:
 	 * Subscribes for PPDU status TLVs in monitor status ring.

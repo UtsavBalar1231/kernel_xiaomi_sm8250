@@ -597,6 +597,7 @@ void target_if_cfr_rx_tlv_process(struct wlan_objmgr_pdev *pdev, void *nbuf)
 	QDF_STATUS retval = 0;
 	struct wlan_lmac_if_cfr_rx_ops *cfr_rx_ops = NULL;
 	struct cfr_metadata_version_3 *meta = NULL;
+	uint8_t srng_id = 0;
 
 	if (qdf_unlikely(!pdev)) {
 		cfr_err("pdev is null\n");
@@ -636,8 +637,9 @@ void target_if_cfr_rx_tlv_process(struct wlan_objmgr_pdev *pdev, void *nbuf)
 		    ((uint64_t)buf_addr_extn << 32));
 
 
+	srng_id = target_if_cfr_get_mac_id(pdev);
 	if (target_if_dbr_cookie_lookup(pdev, DBR_MODULE_CFR, buf_addr,
-					&cookie, 0)) {
+					&cookie, srng_id)) {
 		cfr_debug("Cookie lookup failure for addr: 0x%pK",
 			  (void *)((uintptr_t)buf_addr));
 		goto done;
@@ -740,7 +742,7 @@ void target_if_cfr_rx_tlv_process(struct wlan_objmgr_pdev *pdev, void *nbuf)
 		dump_metadata(header, cookie);
 		release_lut_entry_enh(pdev, lut);
 		target_if_dbr_buf_release(pdev, DBR_MODULE_CFR, buf_addr,
-					  cookie, 0);
+					  cookie, srng_id);
 		cfr_debug("Data sent to upper layers, release look up table");
 	} else if (status == STATUS_HOLD) {
 		cfr_debug("HOLD for buffer address: 0x%pK cookie: %u",
@@ -1346,6 +1348,7 @@ static os_timer_func(lut_ageout_timer_task)
 	struct wlan_objmgr_pdev *pdev = NULL;
 	struct look_up_table *lut = NULL;
 	uint64_t diff, cur_tstamp;
+	uint8_t srng_id = 0;
 
 	OS_GET_TIMER_ARG(pcfr, struct pdev_cfr*);
 
@@ -1360,6 +1363,7 @@ static os_timer_func(lut_ageout_timer_task)
 		return;
 	}
 
+	srng_id = target_if_cfr_get_mac_id(pdev);
 	if (wlan_objmgr_pdev_try_get_ref(pdev, WLAN_CFR_ID)
 	    != QDF_STATUS_SUCCESS) {
 		cfr_err("failed to get pdev reference");
@@ -1382,7 +1386,7 @@ static os_timer_func(lut_ageout_timer_task)
 					  (void *)((uintptr_t)lut->dbr_address));
 				target_if_dbr_buf_release(pdev, DBR_MODULE_CFR,
 							  lut->dbr_address,
-							  i, 0);
+							  i, srng_id);
 				pcfr->flush_timeout_dbr_cnt++;
 				release_lut_entry_enh(pdev, lut);
 			}
@@ -1538,6 +1542,7 @@ QDF_STATUS cfr_6018_init_pdev(struct wlan_objmgr_psoc *psoc,
 	pcfr->rcc_param.pdev_id = wlan_objmgr_pdev_get_pdev_id(pdev);
 	pcfr->rcc_param.modified_in_curr_session = MAX_RESET_CFG_ENTRY;
 	pcfr->rcc_param.num_grp_tlvs = MAX_TA_RA_ENTRIES;
+	pcfr->rcc_param.vdev_id = CFR_INVALID_VDEV_ID;
 
 	target_if_cfr_default_ta_ra_config(&pcfr->rcc_param,
 					   true, MAX_RESET_CFG_ENTRY);
