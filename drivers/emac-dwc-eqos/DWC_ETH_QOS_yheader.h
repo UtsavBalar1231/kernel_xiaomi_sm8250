@@ -110,6 +110,10 @@
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
 #include <linux/timecompare.h>
 #endif
+#include <linux/gpio.h>
+#include <linux/of_gpio.h>
+#include <linux/regulator/consumer.h>
+#include <linux/err.h>
 
 /* QOS Version Control Macros */
 /* #define DWC_ETH_QOS_VER_4_0 */
@@ -574,6 +578,14 @@
 
 #define IPA_DMA_TX_CH 0
 #define IPA_DMA_RX_CH 0
+
+
+#define EMAC_GDSC_EMAC_NAME "gdsc_emac"
+#define EMAC_VREG_RGMII_NAME "vreg_rgmii"
+#define EMAC_VREG_EMAC_PHY_NAME "vreg_emac_phy"
+#define EMAC_VREG_RGMII_IO_PADS_NAME "vreg_rgmii_io_pads"
+#define EMAC_GPIO_PHY_INTR_REDIRECT_NAME "qcom,phy-intr-redirect"
+#define EMAC_GPIO_PHY_RESET_NAME "qcom,phy-reset"
 
 /* C data types typedefs */
 typedef unsigned short BOOL;
@@ -1595,6 +1607,16 @@ struct DWC_ETH_QOS_prv_data {
 	unsigned int io_macro_tx_mode_non_id;
 	unsigned int io_macro_phy_intf;
 	int wol_irq;
+
+	/* GPIOs */
+	int gpio_phy_intr_redirect;
+	int gpio_phy_reset;
+
+	/* Regulators */
+	struct regulator *gdsc_emac;
+	struct regulator *reg_rgmii;
+	struct regulator *reg_emac_phy;
+	struct regulator *reg_rgmii_io_pads;
 };
 
 typedef enum {

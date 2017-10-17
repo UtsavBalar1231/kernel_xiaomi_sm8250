@@ -341,6 +341,218 @@ static struct notifier_block DWC_ETH_QOS_panic_blk = {
 	.notifier_call  = DWC_ETH_QOS_panic_notifier,
 };
 
+static void DWC_ETH_QOS_disable_regulators
+	(struct DWC_ETH_QOS_prv_data *pdata)
+{
+	if (pdata->reg_rgmii)
+		regulator_disable(pdata->reg_rgmii);
+
+	if (pdata->reg_emac_phy)
+		regulator_disable(pdata->reg_emac_phy);
+
+	if (pdata->reg_rgmii_io_pads)
+		regulator_disable(pdata->reg_rgmii_io_pads);
+
+	if (pdata->gdsc_emac)
+		regulator_disable(pdata->gdsc_emac);
+}
+
+static int DWC_ETH_QOS_init_regulators
+	(struct device *dev, struct DWC_ETH_QOS_prv_data *pdata)
+{
+	int ret = 0;
+
+	pdata->gdsc_emac = NULL;
+	pdata->reg_rgmii = NULL;
+	pdata->reg_emac_phy = NULL;
+	pdata->reg_rgmii_io_pads = NULL;
+
+	pdata->gdsc_emac =
+		devm_regulator_get(dev, EMAC_GDSC_EMAC_NAME);
+	if (IS_ERR(pdata->gdsc_emac)) {
+		EMACERR("Can not get <%s>\n", EMAC_GDSC_EMAC_NAME);
+		return PTR_ERR(pdata->gdsc_emac);
+	}
+
+	pdata->reg_rgmii =
+		devm_regulator_get(dev, EMAC_VREG_RGMII_NAME);
+	if (IS_ERR(pdata->reg_rgmii)) {
+		EMACERR("Can not get <%s>\n", EMAC_VREG_RGMII_NAME);
+		return PTR_ERR(pdata->reg_rgmii);
+	}
+
+	pdata->reg_emac_phy =
+		devm_regulator_get(dev, EMAC_VREG_EMAC_PHY_NAME);
+	if (IS_ERR(pdata->reg_emac_phy)) {
+		EMACERR("Can not get <%s>\n", EMAC_VREG_EMAC_PHY_NAME);
+		return PTR_ERR(pdata->reg_emac_phy);
+	}
+
+	pdata->reg_rgmii_io_pads =
+		devm_regulator_get(dev, EMAC_VREG_RGMII_IO_PADS_NAME);
+	if (IS_ERR(pdata->reg_rgmii_io_pads)) {
+		EMACERR("Can not get <%s>\n", EMAC_VREG_RGMII_IO_PADS_NAME);
+		return PTR_ERR(pdata->reg_rgmii_io_pads);
+	}
+
+	ret = regulator_enable(pdata->gdsc_emac);
+	if (ret) {
+		EMACERR("Can not enable <%s>\n", EMAC_GDSC_EMAC_NAME);
+		goto reg_error;
+	}
+
+	ret = regulator_enable(pdata->reg_rgmii);
+	if (ret) {
+		EMACERR("Can not enable <%s>\n", EMAC_VREG_RGMII_NAME);
+		goto reg_error;
+	}
+
+	ret = regulator_enable(pdata->reg_emac_phy);
+	if (ret) {
+		EMACERR("Can not enable <%s>\n", EMAC_VREG_EMAC_PHY_NAME);
+		goto reg_error;
+	}
+
+	ret = regulator_enable(pdata->reg_rgmii_io_pads);
+	if (ret) {
+		EMACERR("Can not enable <%s>\n", EMAC_VREG_RGMII_IO_PADS_NAME);
+		goto reg_error;
+	}
+
+	return ret;
+
+reg_error:
+	DWC_ETH_QOS_disable_regulators(pdata);
+	return ret;
+}
+
+static int setup_gpio_input_common
+	(struct device *dev, const char *name, int *gpio)
+{
+	int ret = 0;
+
+	if (of_find_property(dev->of_node, name, NULL)) {
+		*gpio = ret = of_get_named_gpio(dev->of_node, name, 0);
+		if (ret >= 0) {
+			ret = gpio_request(*gpio, name);
+			if (ret) {
+				EMACERR("%s: Can't get GPIO %s, ret = %d\n",
+						 __func__, name, *gpio);
+				*gpio = -1;
+				return ret;
+			}
+
+			ret = gpio_direction_input(*gpio);
+			if (ret) {
+				EMACERR(
+				   "%s: Can't set GPIO %s direction, ret = %d\n",
+				   __func__, name, ret);
+				return ret;
+			}
+		} else {
+			if (ret == -EPROBE_DEFER)
+				EMACERR("get EMAC_GPIO probe defer\n");
+			else
+				EMACERR("can't get gpio %s ret %d", name, ret);
+			return ret;
+		}
+	} else {
+		EMACERR("can't find gpio %s", name);
+		ret = -EINVAL;
+	}
+
+	return ret;
+}
+
+static int setup_gpio_output_common
+	(struct device *dev, const char *name, int *gpio, int value)
+{
+	int ret = 0;
+
+	if (of_find_property(dev->of_node, name, NULL)) {
+		*gpio = ret = of_get_named_gpio(dev->of_node, name, 0);
+		if (ret >= 0) {
+			ret = gpio_request(*gpio, name);
+			if (ret) {
+				EMACERR(
+				   "%s: Can't get GPIO %s, ret = %d\n",
+				   __func__, name, *gpio);
+				*gpio = -1;
+				return ret;
+			}
+
+			ret = gpio_direction_output(*gpio, value);
+			if (ret) {
+				EMACERR(
+				   "%s: Can't set GPIO %s direction, ret = %d\n",
+				   __func__, name, ret);
+				return ret;
+			}
+		} else {
+			if (ret == -EPROBE_DEFER)
+				EMACERR("get EMAC_GPIO probe defer\n");
+			else
+				EMACERR("can't get gpio %s ret %d", name, ret);
+			return ret;
+		}
+	} else {
+		EMACERR("can't find gpio %s", name);
+		ret = -EINVAL;
+	}
+
+	return ret;
+}
+
+static void DWC_ETH_QOS_free_gpios(struct DWC_ETH_QOS_prv_data *pdata)
+{
+	if (gpio_is_valid(pdata->gpio_phy_intr_redirect))
+		gpio_free(pdata->gpio_phy_intr_redirect);
+	pdata->gpio_phy_intr_redirect = -1;
+
+	if (gpio_is_valid(pdata->gpio_phy_reset))
+		gpio_free(pdata->gpio_phy_reset);
+	pdata->gpio_phy_reset = -1;
+}
+
+static int DWC_ETH_QOS_init_gpios
+	(struct device *dev, struct DWC_ETH_QOS_prv_data *pdata)
+{
+	int ret = 0;
+
+	pdata->gpio_phy_intr_redirect = -1;
+	pdata->gpio_phy_reset = -1;
+
+	ret = setup_gpio_input_common(
+		dev, EMAC_GPIO_PHY_INTR_REDIRECT_NAME,
+		&pdata->gpio_phy_intr_redirect);
+
+	if (ret) {
+		EMACERR("Failed to setup <%s> gpio\n",
+				EMAC_GPIO_PHY_INTR_REDIRECT_NAME);
+		goto gpio_error;
+	}
+
+	ret = setup_gpio_output_common(
+		dev, EMAC_GPIO_PHY_RESET_NAME,
+		&pdata->gpio_phy_reset, 0x0);
+
+	if (ret) {
+		EMACERR("Failed to setup <%s> gpio\n",
+				EMAC_GPIO_PHY_RESET_NAME);
+		goto gpio_error;
+	}
+
+	mdelay(1);
+
+	gpio_set_value(pdata->gpio_phy_reset, 0x1);
+
+	return ret;
+
+gpio_error:
+	DWC_ETH_QOS_free_gpios(pdata);
+	return ret;
+}
+
 /*!
  * \brief API to initialize the device.
  *
@@ -426,6 +638,14 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	DWC_ETH_QOS_get_pdata(pdata);
 #endif
 
+	ret = DWC_ETH_QOS_init_regulators(&pdev->dev, pdata);
+	if (ret)
+		goto err_out_power_failed;
+
+	ret = DWC_ETH_QOS_init_gpios(&pdev->dev, pdata);
+	if (ret)
+		goto err_out_gpio_failed;
+
 	/* issue software reset to device */
 	hw_if->exit();
 	/* IEMAC: Find and Read the IRQ from DTS */
@@ -477,7 +697,7 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 		struct DWC_ETH_QOS_rx_queue *rx_queue = GET_RX_QUEUE_PTR(i);
 
 		netif_napi_add(dev, &rx_queue->napi, DWC_ETH_QOS_poll_mq,
-			       (64 * DWC_ETH_QOS_RX_QUEUE_CNT));
+			  (64 * DWC_ETH_QOS_RX_QUEUE_CNT));
 	}
 
 	dev->ethtool_ops = DWC_ETH_QOS_get_ethtool_ops();
@@ -522,7 +742,7 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 
 #ifdef DWC_ETH_QOS_CONFIG_PTP
 	DWC_ETH_QOS_ptp_init(pdata);
-#endif	/* end of DWC_ETH_QOS_CONFIG_PTP */
+#endif /* end of DWC_ETH_QOS_CONFIG_PTP */
 
 #endif /* end of DWC_ETH_QOS_CONFIG_PGTEST */
 
@@ -548,7 +768,7 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	ret = register_netdev(dev);
 	if (ret) {
 		printk(KERN_ALERT "%s: Net device registration failed\n",
-		    DEV_NAME);
+			DEV_NAME);
 		goto err_out_netdev_failed;
 	}
 
@@ -575,7 +795,7 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
  err_out_netdev_failed:
 #ifdef DWC_ETH_QOS_CONFIG_PTP
 	DWC_ETH_QOS_ptp_remove(pdata);
-#endif	/* end of DWC_ETH_QOS_CONFIG_PTP */
+#endif /* end of DWC_ETH_QOS_CONFIG_PTP */
 
 #ifdef DWC_ETH_QOS_CONFIG_PGTEST
 	DWC_ETH_QOS_free_pg(pdata);
@@ -593,6 +813,12 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
  err_out_q_alloc_failed:
 	free_netdev(dev);
 	platform_set_drvdata(pdev, NULL);
+
+ err_out_gpio_failed:
+	 DWC_ETH_QOS_free_gpios(pdata);
+
+ err_out_power_failed:
+	 DWC_ETH_QOS_disable_regulators(pdata);
 
  err_out_dev_failed:
 	iounmap((void __iomem *)dwc_eth_qos_base_addr);
@@ -654,6 +880,10 @@ int DWC_ETH_QOS_remove(struct platform_device *pdev)
 	free_netdev(dev);
 
 	platform_set_drvdata(pdev, NULL);
+
+	DWC_ETH_QOS_disable_regulators(pdata);
+	DWC_ETH_QOS_free_gpios(pdata);
+
 	DBGPR("<-- DWC_ETH_QOS_remove\n");
 
 	return 0;
@@ -743,7 +973,7 @@ static INT DWC_ETH_QOS_suspend(struct platform_device *pdev, pm_message_t state)
 	}
 
 	if (!dev || !netif_running(dev) || (!pdata->hw_feat.mgk_sel &&
-					    !pdata->hw_feat.rwk_sel)) {
+					!pdata->hw_feat.rwk_sel)) {
 		DBGPR("<--DWC_ETH_QOS_dev_suspend\n");
 		return -EINVAL;
 	}
@@ -788,7 +1018,6 @@ static INT DWC_ETH_QOS_resume(struct platform_device *pdev)
 {
 	struct net_device *dev = platform_get_drvdata(pdev);
 	struct DWC_ETH_QOS_prv_data *pdata = netdev_priv(dev);
-	
 	INT ret;
 
 	DBGPR("-->DWC_ETH_QOS_resume\n");
@@ -799,7 +1028,6 @@ static INT DWC_ETH_QOS_resume(struct platform_device *pdev)
 	}
 
 	ret = DWC_ETH_QOS_powerup(dev, DWC_ETH_QOS_DRIVER_CONTEXT);
-	
 	if (pdata->prv_ipa.ipa_offload_susp)
 		DWC_ETH_QOS_ipa_offload_resume(pdata);
 
@@ -808,7 +1036,7 @@ static INT DWC_ETH_QOS_resume(struct platform_device *pdev)
 	return ret;
 }
 
-#endif	/* CONFIG_PM */
+#endif /* CONFIG_PM */
 
 static struct of_device_id DWC_ETH_QOS_plat_drv_match[] = {
 	{ .compatible = "qcom,emac_dwc_eqos", },
