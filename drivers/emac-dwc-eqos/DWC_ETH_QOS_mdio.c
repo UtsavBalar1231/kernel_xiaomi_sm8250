@@ -341,6 +341,17 @@ void dump_phy_registers(struct DWC_ETH_QOS_prv_data *pdata)
 	pr_alert(
 		"PHY Sts Reg (%#x) = %#x\n", DWC_ETH_QOS_PHY_STS, phydata);
 
+	DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr,
+				     DWC_ETH_QOS_PHY_INTR_STATUS, &phydata);
+	pr_alert(
+		"PHY Intr Status Reg (%#x) = %#x\n", DWC_ETH_QOS_PHY_INTR_STATUS, phydata);
+
+	DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr,
+					 DWC_ETH_QOS_PHY_INTR_EN, &phydata);
+	pr_alert(
+		"PHY Intr EN Reg (%#x) = %#x\n", DWC_ETH_QOS_PHY_INTR_EN, phydata);
+
+
 	pr_alert("\n****************************************************\n");
 }
 
@@ -356,7 +367,7 @@ void dump_phy_registers(struct DWC_ETH_QOS_prv_data *pdata)
  * \return void
  */
 
-static void DWC_ETH_QOS_adjust_link(struct net_device *dev)
+void DWC_ETH_QOS_adjust_link(struct net_device *dev)
 {
 	struct DWC_ETH_QOS_prv_data *pdata = netdev_priv(dev);
 	struct hw_if_struct *hw_if = &pdata->hw_if;
@@ -488,6 +499,7 @@ static int DWC_ETH_QOS_init_phy(struct net_device *dev)
 	struct phy_device *phydev = NULL;
 	char phy_id_fmt[MII_BUS_ID_SIZE + 3];
 	char bus_id[MII_BUS_ID_SIZE];
+	int ret = Y_SUCCESS;
 
 	DBGPR_MDIO("-->DWC_ETH_QOS_init_phy\n");
 
@@ -513,6 +525,32 @@ static int DWC_ETH_QOS_init_phy(struct net_device *dev)
 	if (phydev->phy_id == 0) {
 		phy_disconnect(phydev);
 		return -ENODEV;
+	}
+
+	if ((phydev->phy_id == ATH8031_PHY_ID) || (phydev->phy_id == ATH8035_PHY_ID)) {
+		if (pdata->irq_number == 0) {
+		ret = request_irq(pdata->dev->irq, DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS,
+					IRQF_SHARED, DEV_NAME, pdata);
+		pdata->irq_number = pdata->dev->irq;
+		}
+
+		if (ret != 0) {
+			pr_alert("Unable to register IRQ %d after PHY connect is done\n", pdata->irq_number);
+			return -EBUSY;
+		}
+		else
+			EMACDBG("Request for IRQ %d successful\n", pdata->irq_number);
+
+		/* Enable PHY interrupt */
+		if (phydev->drv->config_intr) {
+			phydev->interrupts = PHY_INTERRUPT_ENABLED;
+			phydev->drv->config_intr(phydev);
+			if (ret != 0 )
+				pr_alert("Failed to enable PHY interrupt\n");
+			else
+				EMACDBG("PHY interrupt enabled\n");
+		}
+		phydev->irq = PHY_IGNORE_INTERRUPT;
 	}
 
 	if (pdata->interface == PHY_INTERFACE_MODE_GMII) {

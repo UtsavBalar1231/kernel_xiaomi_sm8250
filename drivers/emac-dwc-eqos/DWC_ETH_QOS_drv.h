@@ -90,8 +90,6 @@ static int DWC_ETH_QOS_handle_prv_ioctl(struct DWC_ETH_QOS_prv_data *pdata,
 
 static int DWC_ETH_QOS_ioctl(struct net_device *, struct ifreq *, int);
 
-irqreturn_t DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS(int irq, void *dev_id);
-
 static INT DWC_ETH_QOS_change_mtu(struct net_device *dev, INT new_mtu);
 
 static int DWC_ETH_QOS_clean_split_hdr_rx_irq(

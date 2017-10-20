@@ -276,6 +276,14 @@
 #define DWC_ETH_QOS_AUTO_NEGO_NP    0x0007
 #define DWC_ETH_QOS_PHY_CTL     0x0010
 #define DWC_ETH_QOS_PHY_STS     0x0011
+#define DWC_ETH_QOS_PHY_INTR_EN     0x0012
+#define DWC_ETH_QOS_PHY_INTR_STATUS     0x0013
+
+#define LINK_DOWN_STATE 0x800
+#define LINK_UP_STATE 0x400
+#define AUTO_NEG_ERROR 0x8000
+#define LINK_UP 1
+#define LINK_DOWN 0
 
 /* Default MTL queue operation mode values */
 #define DWC_ETH_QOS_Q_DISABLED	0x0
@@ -919,6 +927,9 @@ struct hw_if_struct {
     /* for PTP offloading */
 	VOID(*config_ptpoffload_engine)(UINT, UINT);
 
+	/* For enabling PHY interrupt handling */
+	int (*enable_mac_phy_interrupt)(void);
+
 };
 
 /* wrapper buffer structure to hold transmit pkt details */
@@ -1552,6 +1563,9 @@ typedef enum {
 	ERESTORE
 } e_int_state;
 
+#define ATH8031_PHY_ID 0x004dd074
+#define ATH8035_PHY_ID 0x004dd072
+
 /* Function prototypes*/
 
 void DWC_ETH_QOS_init_function_ptrs_dev(struct hw_if_struct *);
@@ -1616,6 +1630,8 @@ int DWC_ETH_QOS_alloc_tx_buf_pg(struct DWC_ETH_QOS_prv_data *pdata,
 				struct DWC_ETH_QOS_tx_buffer *buffer,
 				gfp_t gfp);
 #endif /* end of DWC_ETH_QOS_CONFIG_PGTEST */
+irqreturn_t DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS(int irq, void *dev_id);
+void DWC_ETH_QOS_handle_phy_interrupt(struct DWC_ETH_QOS_prv_data *pdata);
 int DWC_ETH_QOS_rgmii_io_macro_sdcdc_init(void);
 int DWC_ETH_QOS_rgmii_io_macro_sdcdc_enable_lp_mode(void);
 int DWC_ETH_QOS_rgmii_io_macro_sdcdc_config(void);
