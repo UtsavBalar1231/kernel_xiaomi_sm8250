@@ -109,6 +109,7 @@ void DWC_ETH_QOS_disable_eee_mode(struct DWC_ETH_QOS_prv_data *pdata)
 	hw_if->reset_eee_mode();
 	del_timer_sync(&pdata->eee_ctrl_timer);
 	pdata->tx_path_in_lpi_mode = false;
+	pdata->eee_active = 0;
 
 	DBGPR_EEE("-->DWC_ETH_QOS_disable_eee_mode\n");
 }
