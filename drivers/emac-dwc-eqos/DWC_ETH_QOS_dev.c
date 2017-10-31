@@ -1960,8 +1960,8 @@ static VOID configure_desc_vlan_control(struct DWC_ETH_QOS_prv_data *pdata)
 
 static INT configure_mac_for_vlan_pkt(void)
 {
-	/* Enable VLAN Tag stripping always */
-	MAC_VLANTR_EVLS_UDFWR(0x3);
+	/* Do not strip VLAN Tag*/
+	MAC_VLANTR_EVLS_UDFWR(0x0);
 	/* Enable operation on the outer VLAN Tag, if present */
 	MAC_VLANTR_ERIVLT_UDFWR(0);
 	/* Disable double VLAN Tag processing on TX and RX */

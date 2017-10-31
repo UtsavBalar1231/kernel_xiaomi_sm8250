@@ -49,6 +49,8 @@ void DWC_ETH_QOS_ipa_uc_ready_cb(void *user_data);
 
 int DWC_ETH_QOS_enable_ipa_offload(struct DWC_ETH_QOS_prv_data *pdata);
 int DWC_ETH_QOS_disable_ipa_offload(struct DWC_ETH_QOS_prv_data *pdata);
+int DWC_ETH_QOS_disable_enable_ipa_offload(struct DWC_ETH_QOS_prv_data *pdata,int chInx_tx_ipa,
+		int chInx_rx_ipa);
 
 /* Initialize Offload data path and add partial headers */
 int DWC_ETH_QOS_ipa_offload_init(struct DWC_ETH_QOS_prv_data *pdata);
@@ -93,6 +95,12 @@ static inline int DWC_ETH_QOS_enable_ipa_offload(struct DWC_ETH_QOS_prv_data *pd
 }
 
 static inline int DWC_ETH_QOS_disable_ipa_offload(struct DWC_ETH_QOS_prv_data *pdata)
+{
+	return -EPERM;
+}
+
+static inline int DWC_ETH_QOS_disable_enable_ipa_offload(struct DWC_ETH_QOS_prv_data *pdata,
+					int chInx_tx_ipa, int chInx_rx_ipa)
 {
 	return -EPERM;
 }

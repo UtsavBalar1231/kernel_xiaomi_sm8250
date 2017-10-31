@@ -19103,7 +19103,7 @@
 
 /*#define MAC_HFR0_SAVLANINS_Mask (ULONG)(~(~0<<(1)))*/
 
-#define MAC_HFR0_SAVLANINS_MASK (ULONG)(0x1)
+#define MAC_HFR0_SAVLANINS_MASK (ULONG)(0x0)
 
 #define MAC_HFR0_SAVLANINS_UDFRD(data) do {\
 		MAC_HFR0_RGRD(data);\
