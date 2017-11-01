@@ -1014,6 +1014,21 @@ static int gsb_bind_if_to_ipa_bridge(struct gsb_if_info *if_info)
 		return -ENOMEM;
 	}
 
+	/* If IPA bridge is already initizliaed, clean up. */
+	if (if_info->is_ipa_bridge_initialized)
+	{
+		if (ipa_bridge_cleanup(if_info->handle) != 0)
+		{
+			DEBUG_ERROR("issue in cleaning up IPA bridge for if %s\n",
+					if_info->if_name);
+			return -EFAULT;
+		}
+		else
+		{
+			/* Reset the flag. */
+			if_info->is_ipa_bridge_initialized = false;
+		}
+	}
 
 	/* Initialize the IPA bridge driver */
 	params_ptr->info.netdev_name = if_info->user_config.if_name;
@@ -1043,6 +1058,7 @@ static int gsb_bind_if_to_ipa_bridge(struct gsb_if_info *if_info)
 
 	default:
 		DEBUG_TRACE("Invalid assign type\n");
+		return -EFAULT;
 		break;
 	}
 
@@ -1607,7 +1623,7 @@ static int gsb_device_event(struct notifier_block *this, unsigned long event, vo
 		//if not we need to bind it before it comes up.
 		//to do we should not be in atomic context to bind to IPA .IPA needs
 		//preemption to do what it need to do.
-		if (!in_atomic() && if_info != NULL && !if_info->is_ipa_bridge_initialized)
+		if (!in_atomic() && if_info != NULL)
 		{
 			if_info->pdev = dev;
 			if (gsb_bind_if_to_ipa_bridge(if_info) != 0)

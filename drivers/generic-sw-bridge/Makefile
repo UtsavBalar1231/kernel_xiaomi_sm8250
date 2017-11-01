@@ -16,11 +16,17 @@
 #
 KERNEL_SRC ?= /lib/modules/$(shell uname -r)/build
 obj-m += gsb.o
+MY_CFLAGS += -g
+ccflags-y += ${MY_CFLAGS}
+CC += ${MY_CFLAGS}
 
 gsb-objs := \
 	generic_sw_bridge_main.o
 all:
 	$(MAKE) -C $(KERNEL_SRC) M=$(shell pwd) modules $(KBUILD_OPTIONS)
+
+debug:
+        $(MAKE) -C $(KERNEL_SRC) M=$(shell pwd) modules $(KBUILD_OPTIONS) EXTRA_CFLAGS="$(MY_CFLAGS)"
 
 modules_install:
 	$(MAKE) -C $(KERNEL_SRC) M=$(shell pwd) modules_install
