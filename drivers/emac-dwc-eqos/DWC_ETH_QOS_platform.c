@@ -378,7 +378,6 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	pdata->dev = dev;
 	pdata->tx_queue_cnt = tx_q_count;
 	pdata->rx_queue_cnt = rx_q_count;
-	pdata->irq_number = dwc_eth_qos_res_data.sbd_intr;
 	pdata->lpi_irq = dwc_eth_qos_res_data.lpi_intr;
 	pdata->io_macro_tx_mode_non_id =
 		dwc_eth_qos_res_data.io_macro_tx_mode_non_id;
@@ -414,6 +413,8 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	dev->netdev_ops = DWC_ETH_QOS_get_netdev_ops();
 
 	pdata->interface = DWC_ETH_QOS_get_phy_interface(pdata);
+	hw_if->enable_mac_phy_interrupt();
+
 	/* Bypass PHYLIB for TBI, RTBI and SGMII interface */
 	if (pdata->hw_feat.sma_sel == 1) {
 		ret = DWC_ETH_QOS_mdio_register(dev);

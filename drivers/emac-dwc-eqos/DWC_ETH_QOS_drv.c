@@ -683,6 +683,38 @@ void DWC_ETH_QOS_handle_DMA_Int(struct DWC_ETH_QOS_prv_data *pdata, int chinx, b
 #endif
 
 /*!
+ * \brief Handle PHY interrupt
+ * \details
+ * \param[in] pdata - pointer to driver private structure
+ * \return none
+ */
+
+void DWC_ETH_QOS_handle_phy_interrupt(struct DWC_ETH_QOS_prv_data *pdata)
+{
+	unsigned int phy_intr_status = 0;
+	EMACDBG("Enter\n");
+
+	DWC_ETH_QOS_mdio_read_direct(
+		pdata, pdata->phyaddr, DWC_ETH_QOS_PHY_INTR_STATUS, &phy_intr_status);
+	EMACDBG("Phy Interrupt status Reg at offset 0x13 = %#x\n", phy_intr_status);
+
+	/* Interrupt received for link state change */
+	if (phy_intr_status & LINK_UP_STATE) {
+		EMACDBG("Interrupt received for link UP state\n");
+		phy_mac_interrupt(pdata->phydev, LINK_UP);
+	} else if (phy_intr_status & LINK_DOWN_STATE) {
+		EMACDBG("Interrupt received for link DOWN state\n");
+		phy_mac_interrupt(pdata->phydev, LINK_DOWN);
+	} else if (phy_intr_status & AUTO_NEG_ERROR) {
+		EMACDBG("Interrupt received for link down with"
+				" auto-negotiation error\n");
+	}
+
+	EMACDBG("Exit\n");
+	return;
+}
+
+/*!
  * \brief Interrupt Service Routine
  * \details Interrupt Service Routine
  *
@@ -711,6 +743,7 @@ irqreturn_t DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS(int irq, void *device_id)
 #endif
 	ULONG VARMAC_ANS = 0;
 	ULONG VARMAC_PCS = 0;
+	ULONG VARMAC_PHYIS = 0;
 
 	DBGPR("-->DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS\n");
 
@@ -881,6 +914,14 @@ irqreturn_t DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS(int irq, void *device_id)
 		/* EEE interrupts */
 		if (GET_VALUE(VARMAC_ISR, MAC_ISR_LPI_LPOS, MAC_ISR_LPI_HPOS) & 1)
 			DWC_ETH_QOS_handle_eee_interrupt(pdata);
+
+		/* PHY interrupt */
+		if (GET_VALUE(VARMAC_ISR, MAC_ISR_PHYIS_LPOS, MAC_ISR_PHYIS_HPOS) & 1) {
+			MAC_ISR_PHYIS_UDFRD(VARMAC_PHYIS);
+			if ((pdata->phydev->phy_id == ATH8031_PHY_ID) ||
+				(pdata->phydev->phy_id == ATH8035_PHY_ID))
+				DWC_ETH_QOS_handle_phy_interrupt(pdata);
+		}
 	}
 
 	DBGPR("<--DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS\n");
@@ -1679,13 +1720,14 @@ static int DWC_ETH_QOS_open(struct net_device *dev)
 
 	DBGPR("-->DWC_ETH_QOS_open\n");
 
-	pdata->irq_number = dev->irq;
 #ifdef DWC_ETH_QOS_CONFIG_PGTEST
-	ret = request_irq(pdata->irq_number, DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS_pg,
+	ret = request_irq(dev->irq, DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS_pg,
 			  IRQF_SHARED, DEV_NAME, pdata);
 #else
-	ret = request_irq(pdata->irq_number, DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS,
-			  IRQF_SHARED, DEV_NAME, pdata);
+	if (pdata->irq_number == 0) {
+		ret = request_irq(dev->irq, DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS,
+				IRQF_SHARED, DEV_NAME, pdata);
+	}
 #endif /* end of DWC_ETH_QOS_CONFIG_PGTEST */
 	if (ret != 0) {
 		dev_alert(&pdata->pdev->dev, "Unable to register IRQ %d\n",
@@ -1693,6 +1735,7 @@ static int DWC_ETH_QOS_open(struct net_device *dev)
 		ret = -EBUSY;
 		goto err_irq_0;
 	}
+	pdata->irq_number = dev->irq;
 #ifdef PER_CH_INT
 	ret = DWC_ETH_QOS_register_per_ch_intr(pdata, 0x1);
 	if (ret != 0) {

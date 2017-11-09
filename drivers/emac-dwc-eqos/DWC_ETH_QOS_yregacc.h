@@ -37402,6 +37402,9 @@
 #define MAC_ISR_LPI_LPOS 5
 #define MAC_ISR_LPI_HPOS 5
 
+#define MAC_ISR_PHYIS_LPOS 3
+#define MAC_ISR_PHYIS_HPOS 3
+
 #define GET_VALUE(data, lbit, hbit) ((data >> lbit) & (~(~0 << (hbit - lbit + 1))))
 
 #define GET_INDEXED_VALUE(data, lbit, hbit, index)\
