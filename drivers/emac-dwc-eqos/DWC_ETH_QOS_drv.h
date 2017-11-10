@@ -88,6 +88,9 @@ static void DWC_ETH_QOS_config_rx_pbl(struct DWC_ETH_QOS_prv_data *pdata,
 static int DWC_ETH_QOS_handle_prv_ioctl(struct DWC_ETH_QOS_prv_data *pdata,
 					struct ifr_data_struct *req);
 
+static int DWC_ETH_QOS_handle_prv_ioctl_ipa(struct DWC_ETH_QOS_prv_data *pdata,
+					struct ifreq *ifr);
+
 static int DWC_ETH_QOS_ioctl(struct net_device *, struct ifreq *, int);
 
 static INT DWC_ETH_QOS_change_mtu(struct net_device *dev, INT new_mtu);

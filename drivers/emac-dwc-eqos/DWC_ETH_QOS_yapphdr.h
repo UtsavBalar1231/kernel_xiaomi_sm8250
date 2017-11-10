@@ -52,6 +52,12 @@
 
 /* Private IOCTL for handling device specific task */
 #define DWC_ETH_QOS_PRV_IOCTL	SIOCDEVPRIVATE
+#define DWC_ETH_QOS_PRV_IOCTL_IPA	SIOCDEVPRIVATE+1
+/* IOCTL cmd to eMAC to register the RX/TX properties with VLAN hdr*/
+enum{
+ DWC_ETH_QOS_IPA_VLAN_DISABLE_CMD= 0,
+ DWC_ETH_QOS_IPA_VLAN_ENABLE_CMD=1,
+};
 
 #define DWC_ETH_QOS_POWERUP_MAGIC_CMD	1
 #define DWC_ETH_QOS_POWERDOWN_MAGIC_CMD	2
@@ -295,6 +301,13 @@ struct ifr_data_struct {
 	int command_error;
 	int test_done;
 	void *ptr;
+};
+
+struct ifr_data_struct_ipa {
+	unsigned int chInx_tx_ipa;
+	unsigned int chInx_rx_ipa;
+	unsigned int cmd;
+	unsigned short vlan_id;
 };
 
 struct DWC_ETH_QOS_dcb_algorithm {

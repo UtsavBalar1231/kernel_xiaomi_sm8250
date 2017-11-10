@@ -47,6 +47,10 @@
 
 #define __DWC_ETH_QOS__YHEADER__
 
+/* VLAN ids range for IPA offload */
+#define MIN_VLAN_ID 1
+#define MAX_VLAN_ID 4094
+
 /* OS Specific declarations and definitions */
 
 #include <linux/slab.h>
@@ -1374,6 +1378,8 @@ struct DWC_ETH_QOS_prv_ipa_data {
 	struct work_struct ntn_ipa_rdy_work;
 	struct wakeup_source wlock;
 	UINT ipa_ver;
+	bool vlan_enable;
+	unsigned short vlan_id;
 };
 
 struct DWC_ETH_QOS_prv_data {
@@ -1647,6 +1653,35 @@ void DWC_ETH_QOS_dis_en_ch_intr(struct DWC_ETH_QOS_prv_data *pdata,
 
 /* For debug prints*/
 #define DRV_NAME "emac_dwc_eqos"
+#define dev_name_ipa_rx "IPA_RX"
+#define dev_name_emac_rx "EMAC_RX"
+#define dev_name_ipa_tx "IPA_TX"
+#define dev_name_emac_tx "EMAC_TX"
+
+#define PRINT_MAC(eth_ptr,count) \
+do {\
+   int i;\
+   unsigned char* ptr = eth_ptr;\
+   for ( i = 0;i <= (count);i++,(ptr)++)\
+   {\
+     printk("%02x%c",*ptr,i == (count)?' ':':');\
+   }\
+   printk("\n");\
+}while(0)
+
+#define PRINT_MAC_INFO( skb, _hw, _dir )\
+do {\
+	struct ethhdr* eth;\
+	skb_reset_mac_header(skb);\
+	eth = eth_hdr(skb);\
+	printk("eth type of pkt from %s: 0x%04x \n ",dev_name_##_hw##_##_dir,ntohs(eth->h_proto) );\
+	printk("Dst Mac address of pkt from %s:  ",dev_name_##_hw##_##_dir );\
+	PRINT_MAC(eth->h_dest,5);\
+	printk("Src Mac address of the pkt from %s:  ",dev_name_##_hw##_##_dir );\
+	PRINT_MAC(eth->h_source,5);\
+	printk("Dump of next 4B of skb->data from %s:  ",dev_name_##_hw##_##_dir );\
+	PRINT_MAC((unsigned char*)(skb->data)+ETH_HLEN,3 );\
+}while(0)
 
 #define EMACDBG(fmt, args...) \
 	pr_debug(DRV_NAME " %s:%d " fmt, __func__, __LINE__, ## args)

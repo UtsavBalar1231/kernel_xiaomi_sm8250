@@ -2942,6 +2942,7 @@ static inline void DWC_ETH_QOS_get_rx_vlan(struct DWC_ETH_QOS_prv_data *pdata,
 			struct s_RX_NORMAL_DESC *rx_normal_desc)
 {
 	USHORT vlan_tag = 0;
+	ULONG vlan_tag_strip = 0;
 
 	/* Receive Status RDES0 Valid ? */
 	if ((pdata->dev_state & NETIF_F_HW_VLAN_CTAG_RX) == NETIF_F_HW_VLAN_CTAG_RX) {
@@ -2951,11 +2952,14 @@ static inline void DWC_ETH_QOS_get_rx_vlan(struct DWC_ETH_QOS_prv_data *pdata,
 			 */
 			if (((rx_normal_desc->RDES3 & DWC_ETH_QOS_RDESC3_LT) == 0x40000)
 				|| ((rx_normal_desc->RDES3 & DWC_ETH_QOS_RDESC3_LT) == 0x50000)) {
-				vlan_tag = rx_normal_desc->RDES0 & 0xffff;
-				/* insert VLAN tag into skb */
+				/* read the VLAN tag stripping register */
+				MAC_VLANTR_EVLS_UDFRD(vlan_tag_strip);
+				 if ( vlan_tag_strip ) {
+					 vlan_tag = rx_normal_desc->RDES0 & 0xffff;
+					 /* insert VLAN tag into skb */
 #ifdef DWC_ETH_QOS_ENABLE_VLAN_TAG
-				__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), vlan_tag);
-#endif
+					 __vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), vlan_tag);
+#endif			}
 				pdata->xstats.rx_vlan_pkt_n++;
 			}
 		}
@@ -5486,6 +5490,68 @@ static int DWC_ETH_QOS_handle_hwtstamp_ioctl(struct DWC_ETH_QOS_prv_data *pdata,
 			     sizeof(struct hwtstamp_config))) ? -EFAULT : 0;
 }
 
+static int DWC_ETH_QOS_handle_prv_ioctl_ipa(struct DWC_ETH_QOS_prv_data *pdata,
+					struct ifreq *ifr)
+{
+		struct ifr_data_struct_ipa *ipa_ioctl_data;
+		int ret = 0;
+		int chInx_tx_ipa, chInx_rx_ipa;
+		unsigned long missing;
+
+		DBGPR("-->DWC_ETH_QOS_handle_prv_ioctl_ipa\n");
+
+		if ( !ifr || !ifr->ifr_ifru.ifru_data  )
+			   return -EINVAL;
+
+		ipa_ioctl_data = kzalloc(sizeof(struct ifr_data_struct_ipa), GFP_KERNEL);
+		if (!ipa_ioctl_data)
+			   return -ENOMEM;
+
+		missing = copy_from_user(ipa_ioctl_data, ifr->ifr_ifru.ifru_data, sizeof(struct ifr_data_struct_ipa));
+		if (missing)
+		   return -EFAULT;
+
+		chInx_tx_ipa = ipa_ioctl_data->chInx_tx_ipa;
+		chInx_rx_ipa = ipa_ioctl_data->chInx_rx_ipa;
+
+		if ( (chInx_tx_ipa != IPA_DMA_TX_CH) ||
+			(chInx_rx_ipa != IPA_DMA_RX_CH) )
+		{
+			EMACERR("the RX/TX channels passed are not owned by IPA,correct channels to \
+				pass TX: %d RX: %d \n",IPA_DMA_TX_CH, IPA_DMA_RX_CH);
+			return DWC_ETH_QOS_CONFIG_FAIL;
+		}
+
+		switch ( ipa_ioctl_data->cmd ){
+
+		case DWC_ETH_QOS_IPA_VLAN_ENABLE_CMD:
+		   if (!pdata->prv_ipa.vlan_enable) {
+			   if (ipa_ioctl_data->vlan_id > MIN_VLAN_ID && ipa_ioctl_data->vlan_id <= MAX_VLAN_ID){
+				   pdata->prv_ipa.vlan_id = ipa_ioctl_data->vlan_id;
+				   ret = DWC_ETH_QOS_disable_enable_ipa_offload(pdata,chInx_tx_ipa,chInx_rx_ipa);
+				   if (!ret)
+					pdata->prv_ipa.vlan_enable = true;
+		   }
+		   else
+			EMACERR("INVALID VLAN-ID: %d passed in the IOCTL cmd \n",ipa_ioctl_data->vlan_id);
+		   }
+		   break;
+		case DWC_ETH_QOS_IPA_VLAN_DISABLE_CMD:
+			if (pdata->prv_ipa.vlan_enable) {
+				pdata->prv_ipa.vlan_id = 0;
+				ret = DWC_ETH_QOS_disable_enable_ipa_offload(pdata,chInx_tx_ipa,chInx_rx_ipa);
+				if (!ret)
+					pdata->prv_ipa.vlan_enable = false;
+			}
+		   break;
+
+		default:
+		   ret = -EOPNOTSUPP;
+		   EMACERR( "Unsupported IPA IOCTL call\n");
+		}
+		return ret;
+}
+
 /*!
  * \brief Driver IOCTL routine
  *
@@ -5559,6 +5625,15 @@ static int DWC_ETH_QOS_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 		ret = (copy_to_user(ifr->ifr_ifru.ifru_data, &req,
 		     sizeof(struct ifr_data_struct))) ? -EFAULT : 0;
 		break;
+
+	case DWC_ETH_QOS_PRV_IOCTL_IPA:
+		if ( !pdata->prv_ipa.ipa_ready || !pdata->prv_ipa.ipa_uc_ready ) {
+			ret = -EAGAIN;
+			EMACINFO("IPA or IPA uc is not ready \n");
+			break;
+		}
+		ret = DWC_ETH_QOS_handle_prv_ioctl_ipa(pdata, ifr);
+        break;
 
 	case SIOCSHWTSTAMP:
 		ret = DWC_ETH_QOS_handle_hwtstamp_ioctl(pdata, ifr);
