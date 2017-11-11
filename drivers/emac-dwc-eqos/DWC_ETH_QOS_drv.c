@@ -2959,7 +2959,8 @@ static inline void DWC_ETH_QOS_get_rx_vlan(struct DWC_ETH_QOS_prv_data *pdata,
 					 /* insert VLAN tag into skb */
 #ifdef DWC_ETH_QOS_ENABLE_VLAN_TAG
 					 __vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), vlan_tag);
-#endif			}
+#endif
+				}
 				pdata->xstats.rx_vlan_pkt_n++;
 			}
 		}
