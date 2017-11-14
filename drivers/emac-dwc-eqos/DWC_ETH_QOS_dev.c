@@ -562,7 +562,6 @@ static UINT get_vlan_tag_comparison(void)
 	return etv;
 }
 
-#ifdef DWC_ETH_QOS_ENABLE_VLAN_TAG
 /*!
  * \brief This sequence is used to update the
  * EMAC_MAC_VLAN_TAG_DATA VLAN register with
@@ -576,8 +575,8 @@ static UINT get_vlan_tag_comparison(void)
  */
 
 static INT config_vlan_tag_data(UINT vlan_tag,
-								INT vlan_reg_offset,
-								INT enable_12_bit_vlan_tag_comparison)
+		INT vlan_reg_offset,
+		bool enable_12_bit_vlan_tag_comparison)
 {
 	ULONG RETRYCOUNT = 1000;
 	ULONG current_cnt = 0;
@@ -638,7 +637,6 @@ static INT config_vlan_tag_data(UINT vlan_tag,
 	EMACDBG("Exit\n");
 	return Y_SUCCESS;
 }
-#endif
 
 /*!
  * \brief This sequence is used to enable/disable VLAN filtering and
@@ -5074,6 +5072,7 @@ void DWC_ETH_QOS_init_function_ptrs_dev(struct hw_if_struct *hw_if)
 	hw_if->config_vlan_filtering = config_vlan_filtering;
 	hw_if->config_mac_for_vlan_pkt = configure_mac_for_vlan_pkt;
 	hw_if->get_vlan_tag_comparison = get_vlan_tag_comparison;
+	hw_if->config_vlan_tag_data = config_vlan_tag_data;
 
 	/* for differnet PHY interconnect */
 	hw_if->control_an = control_an;

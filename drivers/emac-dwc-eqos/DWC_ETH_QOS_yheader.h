@@ -893,6 +893,9 @@ struct hw_if_struct {
 				INT perfect_inverse_match);
     INT(*config_mac_for_vlan_pkt)(void);
 	UINT (*get_vlan_tag_comparison)(void);
+	INT(*config_vlan_tag_data)(UINT vlan_tag,
+			INT vlan_reg_offset,
+			bool enable_12_bit_vlan_tag_comparison);
 
 	/* for differnet PHY interconnect */
 	INT(*control_an)(bool enable, bool restart);

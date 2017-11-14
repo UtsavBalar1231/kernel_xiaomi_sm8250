@@ -224,7 +224,7 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 
 	/* Select RGMII interface */
 	RGMII_INTF_SEL_UDFWR(0x0);
-	/* Rest of the common default settings for all mode cfgs */
+	/* Common default settings for all mode cfgs */
 	RGMII_PROG_SWAP_UDFWR(0x0);
 	RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x0);
 	RGMII_DDR_MODE_UDFWR(0x0);
@@ -260,7 +260,7 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 				 */
 				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x1);
 				/* Program PRG_RCLK_DLY to 52 for a required delay of 2 ns */
-				SDCC_HC_PRG_RCLK_DLY_UDFWR(0x35);
+				SDCC_HC_PRG_RCLK_DLY_UDFWR(0x34);
 			}
 			break;
 
@@ -275,7 +275,6 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 				EMACDBG("Set registers for Bypass mode = %d\n",
 					pdata->io_macro_tx_mode_non_id);
 				RGMII_CONFIG_2_RERVED_CONFIG_16_EN_UDFWR(0x1);
-				/* TODO - Write default values ?? to these registers */
 				SDCC_HC_EXT_PRG_RCLK_DLY_CODE_UDFWR(0x0);
 				SDCC_HC_EXT_PRG_RCLK_DLY_UDFWR(0x0);
 				SDCC_HC_EXT_PRG_RCLK_DLY_EN_UDFWR(0x0);
@@ -297,7 +296,6 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 				EMACDBG("Set registers for Bypass mode = %d\n",
 					pdata->io_macro_tx_mode_non_id);
 				RGMII_CONFIG_2_RERVED_CONFIG_16_EN_UDFWR(0x1);
-				/* TODO - Write default values ?? to these registers */
 				SDCC_HC_EXT_PRG_RCLK_DLY_CODE_UDFWR(0x0);
 				SDCC_HC_EXT_PRG_RCLK_DLY_UDFWR(0x0);
 				SDCC_HC_EXT_PRG_RCLK_DLY_EN_UDFWR(0x0);
@@ -321,24 +319,20 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 
 	case RMII_MODE:
 		EMACDBG("Set registers for RMII mode and speed = %d\n", pdata->speed);
-		RGMII_INTF_SEL_UDFWR(0x0);
-		RGMII_DDR_MODE_UDFWR(0x1);
-		RGMII_POS_NEG_DATA_SEL_UDFWR(0x1);
-		RGMII_PROG_SWAP_UDFWR(0x1);
-		RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x1);
+		RGMII_INTF_SEL_UDFWR(0x01);
+		RGMII_MAX_SPD_PRG_2_UDFWR(0x1);
 		RGMII_CONFIG_2_CLK_DIVIDE_SEL_UDFWR(0x1);
+		RGMII_MAX_SPD_PRG_9_UDFWR(0x13);
 
 		switch (pdata->speed) {
 		case SPEED_100:
-			RGMII_MAX_SPD_PRG_2_UDFWR(0x1);
-			//TODO - Default value?
-			RGMII_MAX_SPD_PRG_9_UDFWR(0x0);
+			RGMII_DDR_MODE_UDFWR(0x1);
+			RGMII_POS_NEG_DATA_SEL_UDFWR(0x1);
+			RGMII_PROG_SWAP_UDFWR(0x1);
+			RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x1);
 			break;
 
 		case SPEED_10:
-			RGMII_MAX_SPD_PRG_9_UDFWR(0x13);
-			//TODO - Default value?
-			RGMII_MAX_SPD_PRG_2_UDFWR(0x0);
 			break;
 		}
 		break;
@@ -350,7 +344,6 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 		case SPEED_100:
 		case SPEED_10:
 			RGMII_INTF_SEL_UDFWR(0x2);
-			RGMII_DDR_MODE_UDFWR(0x0);
 			RGMII_CONFIG_2_RERVED_CONFIG_16_EN_UDFWR(0x1);
 			break;
 		}
