@@ -360,6 +360,9 @@
 #define DWC_ETH_QOS_RX_QUEUE_CNT (pdata->rx_queue_cnt)
 #define DWC_ETH_QOS_QUEUE_CNT min(DWC_ETH_QOS_TX_QUEUE_CNT, DWC_ETH_QOS_RX_QUEUE_CNT)
 
+#define DWC_ETH_QOS_TXQ_CNT 5
+#define DWC_ETH_QOS_RXQ_CNT 4
+
 /* Helper macros for TX descriptor handling */
 
 #define GET_TX_QUEUE_PTR(QINX) (&pdata->tx_queue[(QINX)])
@@ -1260,21 +1263,21 @@ struct DWC_ETH_QOS_mmc_counters {
 };
 
 struct DWC_ETH_QOS_extra_stats {
-	unsigned long q_re_alloc_rx_buf_failed[8];
+	unsigned long q_re_alloc_rx_buf_failed[DWC_ETH_QOS_RXQ_CNT];
 
 	/* Tx/Rx IRQ error info */
-	unsigned long tx_process_stopped_irq_n[8];
-	unsigned long rx_process_stopped_irq_n[8];
-	unsigned long tx_buf_unavailable_irq_n[8];
-	unsigned long rx_buf_unavailable_irq_n[8];
+	unsigned long tx_process_stopped_irq_n[DWC_ETH_QOS_TXQ_CNT];
+	unsigned long rx_process_stopped_irq_n[DWC_ETH_QOS_RXQ_CNT];
+	unsigned long tx_buf_unavailable_irq_n[DWC_ETH_QOS_TXQ_CNT];
+	unsigned long rx_buf_unavailable_irq_n[DWC_ETH_QOS_RXQ_CNT];
 	unsigned long rx_watchdog_irq_n;
 	unsigned long fatal_bus_error_irq_n;
 	unsigned long pmt_irq_n;
 	/* Tx/Rx IRQ Events */
-	unsigned long tx_normal_irq_n[8];
-	unsigned long rx_normal_irq_n[8];
+	unsigned long tx_normal_irq_n[DWC_ETH_QOS_TXQ_CNT];
+	unsigned long rx_normal_irq_n[DWC_ETH_QOS_RXQ_CNT];
 	unsigned long napi_poll_n;
-	unsigned long tx_clean_n[8];
+	unsigned long tx_clean_n[DWC_ETH_QOS_TXQ_CNT];
 	/* EEE */
 	unsigned long tx_path_in_lpi_mode_irq_n;
 	unsigned long tx_path_exit_lpi_mode_irq_n;
@@ -1291,8 +1294,32 @@ struct DWC_ETH_QOS_extra_stats {
 	unsigned long rx_split_hdr_pkt_n;
 
 	/* Tx/Rx frames per channels/queues */
-	unsigned long q_tx_pkt_n[8];
-	unsigned long q_rx_pkt_n[8];
+	unsigned long q_tx_pkt_n[DWC_ETH_QOS_TXQ_CNT];
+	unsigned long q_rx_pkt_n[DWC_ETH_QOS_RXQ_CNT];
+
+	/* DMA status registers for all channels [0-4] */
+	unsigned long dma_ch_status[DWC_ETH_QOS_TXQ_CNT];
+	unsigned long dma_ch_intr_enable[DWC_ETH_QOS_TXQ_CNT];
+	unsigned long dma_ch_intr_status;
+	unsigned long dma_debug_status0;
+	unsigned long dma_debug_status1;
+
+	/* RX DMA descriptor status registers for all channels [0-4] */
+	unsigned long dma_ch_rx_control[DWC_ETH_QOS_RXQ_CNT];
+	unsigned long dma_ch_rxdesc_list_addr[DWC_ETH_QOS_RXQ_CNT];
+	unsigned long dma_ch_rxdesc_ring_len[DWC_ETH_QOS_RXQ_CNT];
+	unsigned long dma_ch_curr_app_rxdesc[DWC_ETH_QOS_RXQ_CNT];
+	unsigned long dma_ch_rxdesc_tail_ptr[DWC_ETH_QOS_RXQ_CNT];
+	unsigned long dma_ch_curr_app_rxbuf[DWC_ETH_QOS_RXQ_CNT];
+	unsigned long dma_ch_miss_frame_count[DWC_ETH_QOS_RXQ_CNT];
+
+	/* TX DMA descriptors status for all channels [0-5] */
+	unsigned long dma_ch_tx_control[DWC_ETH_QOS_TXQ_CNT];
+	unsigned long dma_ch_txdesc_list_addr[DWC_ETH_QOS_TXQ_CNT];
+	unsigned long dma_ch_txdesc_ring_len[DWC_ETH_QOS_TXQ_CNT];
+	unsigned long dma_ch_curr_app_txdesc[DWC_ETH_QOS_TXQ_CNT];
+	unsigned long dma_ch_txdesc_tail_ptr[DWC_ETH_QOS_TXQ_CNT];
+	unsigned long dma_ch_curr_app_txbuf[DWC_ETH_QOS_TXQ_CNT];
 };
 
 struct DWC_ETH_QOS_ipa_stats {
@@ -1340,7 +1367,6 @@ struct DWC_ETH_QOS_ipa_stats {
 
 	unsigned long long ipa_ul_exception;
 };
-
 
 typedef enum {
 		RGMII_MODE,
@@ -1653,6 +1679,9 @@ void DWC_ETH_QOS_deregister_per_ch_intr(struct DWC_ETH_QOS_prv_data *pdata);
 void DWC_ETH_QOS_dis_en_ch_intr(struct DWC_ETH_QOS_prv_data *pdata,
 								bool enable);
 #endif
+
+void DWC_ETH_QOS_dma_desc_stats_read(struct DWC_ETH_QOS_prv_data *pdata);
+void DWC_ETH_QOS_dma_desc_stats_init(struct DWC_ETH_QOS_prv_data *pdata);
 
 /* For debug prints*/
 #define DRV_NAME "emac_dwc_eqos"

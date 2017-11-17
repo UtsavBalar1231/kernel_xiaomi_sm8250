@@ -54,6 +54,7 @@ struct DWC_ETH_QOS_res_data dwc_eth_qos_res_data = {0, };
 
 ULONG dwc_eth_qos_base_addr;
 ULONG dwc_rgmii_io_csr_base_addr;
+struct DWC_ETH_QOS_prv_data *gDWC_ETH_QOS_prv_data;
 
 void DWC_ETH_QOS_init_all_fptrs(struct DWC_ETH_QOS_prv_data *pdata)
 {
@@ -305,6 +306,21 @@ err_out_map_failed:
 	return ret;
 }
 
+static int DWC_ETH_QOS_panic_notifier(struct notifier_block *this,
+		unsigned long event, void *ptr)
+{
+	if (gDWC_ETH_QOS_prv_data) {
+		DBGPR("DWC_ETH_QOS: 0x%pK\n", gDWC_ETH_QOS_prv_data);
+		DWC_ETH_QOS_ipa_stats_read(gDWC_ETH_QOS_prv_data);
+		DWC_ETH_QOS_dma_desc_stats_read(gDWC_ETH_QOS_prv_data);
+	}
+	return NOTIFY_DONE;
+}
+
+static struct notifier_block DWC_ETH_QOS_panic_blk = {
+	.notifier_call  = DWC_ETH_QOS_panic_notifier,
+};
+
 /*!
  * \brief API to initialize the device.
  *
@@ -367,6 +383,8 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	 */
 	SET_NETDEV_DEV(dev, &pdev->dev);
 	pdata = netdev_priv(dev);
+	gDWC_ETH_QOS_prv_data = pdata;
+	EMACDBG("gDWC_ETH_QOS_prv_data 0x%pK \n", gDWC_ETH_QOS_prv_data);
 	DWC_ETH_QOS_init_all_fptrs(pdata);
 	hw_if = &pdata->hw_if;
 	desc_if = &pdata->desc_if;
@@ -443,6 +461,8 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	}
 
 	dev->ethtool_ops = DWC_ETH_QOS_get_ethtool_ops();
+	DWC_ETH_QOS_dma_desc_stats_init(pdata);
+
 	if (pdata->hw_feat.tso_en) {
 		dev->hw_features = NETIF_F_TSO;
 #ifdef DWC_ETH_QOS_CONFIG_UFO
@@ -532,6 +552,9 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 #endif
 	if (pdata->hw_feat.sma_sel == 1)
 		DWC_ETH_QOS_mdio_unregister(dev);
+
+	atomic_notifier_chain_unregister(&panic_notifier_list,
+			&DWC_ETH_QOS_panic_blk);
 
  err_out_mdio_reg:
 	desc_if->free_queue_struct(pdata);
@@ -781,6 +804,9 @@ static int DWC_ETH_QOS_init_module(void)
 	create_debug_files();
 #endif
 
+	atomic_notifier_chain_unregister(&panic_notifier_list,
+			&DWC_ETH_QOS_panic_blk);
+
 	DBGPR("<--DWC_ETH_QOS_init_module\n");
 
 	return ret;
@@ -804,6 +830,8 @@ static void __exit DWC_ETH_QOS_exit_module(void)
 #endif
 
 	platform_driver_unregister(&DWC_ETH_QOS_plat_drv);
+	atomic_notifier_chain_unregister(&panic_notifier_list,
+			&DWC_ETH_QOS_panic_blk);
 
 	DBGPR("<--DWC_ETH_QOS_exit_module\n");
 }

@@ -36389,6 +36389,14 @@
 		data = ((data >> 0) & DMA_SR_TI_MASK);\
 } while (0)
 
+#define DMA_CH_MISS_FRAME_CNT_RGOFFADDR (BASE_ADDRESS + 0x1164)
+
+#define DMA_CH_MISS_FRAME_CNT_RGOFFADDRESS(i) ((volatile ULONG *)(DMA_CH_MISS_FRAME_CNT_RGOFFADDR + ((i - 0) * 128)))
+
+#define DMA_CH_MISS_FRAME_CNT_RGRD(i, data) do {\
+		(data) = ioread32((void *)DMA_CH_MISS_FRAME_CNT_RGOFFADDRESS(i));\
+} while (0)
+
 #define DMA_CHRBAR_RGOFFADDR (BASE_ADDRESS + 0x115c)
 
 #define DMA_CHRBAR_RGOFFADDRESS(i) ((volatile ULONG *)(DMA_CHRBAR_RGOFFADDR + ((i - 0) * 128)))

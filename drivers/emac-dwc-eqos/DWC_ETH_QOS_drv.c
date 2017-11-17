@@ -7454,3 +7454,86 @@ phy_interface_t DWC_ETH_QOS_get_phy_interface(
 	return ret;
 }
 
+/*!
+ * \details This function is invoked by ethtool function when user wants to
+ * read the DMA descriptor stats.
+ *
+ * \param[in] pdata - pointer to private data structure.
+ *
+ * \return void
+ */
+void DWC_ETH_QOS_dma_desc_stats_read(struct DWC_ETH_QOS_prv_data *pdata)
+{
+	int qinx;
+	EMACDBG("Enter\n");
+
+	pdata->xstats.dma_ch_intr_status = DWC_ETH_QOS_reg_read(DMA_ISR_RGOFFADDR);
+	pdata->xstats.dma_debug_status0 = DWC_ETH_QOS_reg_read(DMA_DSR0_RGOFFADDR);
+	pdata->xstats.dma_debug_status1 = DWC_ETH_QOS_reg_read(DMA_DSR1_RGOFFADDR);
+
+	for (qinx = 0; qinx < DWC_ETH_QOS_TX_QUEUE_CNT; qinx++) {
+		if (qinx == IPA_DMA_TX_CH)
+			continue;
+		pdata->xstats.dma_ch_status[qinx] = DWC_ETH_QOS_reg_read(DMA_SR_RGOFFADDRESS(qinx));
+		pdata->xstats.dma_ch_intr_enable[qinx] = DWC_ETH_QOS_reg_read(DMA_IER_RGOFFADDRESS(qinx));
+		pdata->xstats.dma_ch_tx_control[qinx] = DWC_ETH_QOS_reg_read(DMA_TCR_RGOFFADDRESS(qinx));
+		pdata->xstats.dma_ch_txdesc_list_addr[qinx] = DWC_ETH_QOS_reg_read(DMA_TDLAR_RGOFFADDRESS(qinx));
+		pdata->xstats.dma_ch_txdesc_ring_len[qinx] = DWC_ETH_QOS_reg_read(DMA_TDRLR_RGOFFADDRESS(qinx));
+		pdata->xstats.dma_ch_curr_app_txdesc[qinx] = DWC_ETH_QOS_reg_read(DMA_CHTDR_RGOFFADDRESS(qinx));
+		pdata->xstats.dma_ch_txdesc_tail_ptr[qinx] = DWC_ETH_QOS_reg_read(DMA_TDTP_TPDR_RGOFFADDRESS(qinx));
+		pdata->xstats.dma_ch_curr_app_txbuf[qinx] = DWC_ETH_QOS_reg_read(DMA_CHTBAR_RGOFFADDRESS(qinx));
+	}
+
+	for (qinx = 0; qinx < DWC_ETH_QOS_RX_QUEUE_CNT; qinx++) {
+		if (qinx == IPA_DMA_RX_CH)
+			continue;
+		pdata->xstats.dma_ch_rx_control[qinx] = DWC_ETH_QOS_reg_read(DMA_RCR_RGOFFADDRESS(qinx));
+		pdata->xstats.dma_ch_rxdesc_list_addr[qinx] = DWC_ETH_QOS_reg_read(DMA_RDLAR_RGOFFADDRESS(qinx));
+		pdata->xstats.dma_ch_rxdesc_ring_len[qinx] = DWC_ETH_QOS_reg_read(DMA_RDRLR_RGOFFADDRESS(qinx));
+		pdata->xstats.dma_ch_curr_app_rxdesc[qinx] = DWC_ETH_QOS_reg_read(DMA_CHRDR_RGOFFADDRESS(qinx));
+		pdata->xstats.dma_ch_rxdesc_tail_ptr[qinx] = DWC_ETH_QOS_reg_read(DMA_RDTP_RPDR_RGOFFADDRESS(qinx));
+		pdata->xstats.dma_ch_curr_app_rxbuf[qinx] = DWC_ETH_QOS_reg_read(DMA_CHRBAR_RGOFFADDRESS(qinx));
+		pdata->xstats.dma_ch_miss_frame_count[qinx] = DWC_ETH_QOS_reg_read(DMA_CH_MISS_FRAME_CNT_RGOFFADDRESS(qinx));
+	}
+	EMACDBG("Exit\n");
+}
+
+/*!
+ * \details This function is invoked by probe function to
+ * initialize the ethtool descriptor stats
+ *
+ * \param[in] pdata - pointer to private data structure.
+ *
+ * \return void
+ */
+void DWC_ETH_QOS_dma_desc_stats_init(struct DWC_ETH_QOS_prv_data *pdata)
+{
+	int qinx;
+	EMACDBG("Enter\n");
+
+	pdata->xstats.dma_ch_intr_status = 0;
+	pdata->xstats.dma_debug_status0 = 0;
+	pdata->xstats.dma_debug_status1 = 0;
+
+	for (qinx = 0; qinx < DWC_ETH_QOS_TX_QUEUE_CNT; qinx++) {
+		pdata->xstats.dma_ch_status[qinx] = 0;
+		pdata->xstats.dma_ch_intr_enable[qinx] = 0;
+		pdata->xstats.dma_ch_tx_control[qinx] = 0;
+		pdata->xstats.dma_ch_txdesc_list_addr[qinx] = 0;
+		pdata->xstats.dma_ch_txdesc_ring_len[qinx] = 0;
+		pdata->xstats.dma_ch_curr_app_txdesc[qinx] = 0;
+		pdata->xstats.dma_ch_txdesc_tail_ptr[qinx] = 0;
+		pdata->xstats.dma_ch_curr_app_txbuf[qinx] = 0;
+	}
+
+	for (qinx = 0; qinx < DWC_ETH_QOS_RX_QUEUE_CNT; qinx++) {
+		pdata->xstats.dma_ch_rx_control[qinx] = 0;
+		pdata->xstats.dma_ch_rxdesc_list_addr[qinx] = 0;
+		pdata->xstats.dma_ch_rxdesc_ring_len[qinx] = 0;
+		pdata->xstats.dma_ch_curr_app_rxdesc[qinx] = 0;
+		pdata->xstats.dma_ch_rxdesc_tail_ptr[qinx] = 0;
+		pdata->xstats.dma_ch_curr_app_rxbuf[qinx] = 0;
+		pdata->xstats.dma_ch_miss_frame_count[qinx] = 0;
+	}
+	EMACDBG("Exit\n");
+}
