@@ -1383,6 +1383,7 @@ struct DWC_ETH_QOS_res_data {
 	u32 lpi_intr;
 	u32 io_macro_tx_mode_non_id;
 	IO_MACRO_PHY_MODE io_macro_phy_intf;
+	u32 wol_intr;
 #ifdef PER_CH_INT
 	u32 tx_ch_intr[5];
 	u32 rx_ch_intr[4];
@@ -1591,6 +1592,7 @@ struct DWC_ETH_QOS_prv_data {
 	int tcp_pkt;
 	unsigned int io_macro_tx_mode_non_id;
 	unsigned int io_macro_phy_intf;
+	int wol_irq;
 };
 
 typedef enum {
@@ -1679,6 +1681,7 @@ void DWC_ETH_QOS_deregister_per_ch_intr(struct DWC_ETH_QOS_prv_data *pdata);
 void DWC_ETH_QOS_dis_en_ch_intr(struct DWC_ETH_QOS_prv_data *pdata,
 								bool enable);
 #endif
+irqreturn_t DWC_ETH_QOS_ISR_WOL(int irq, void *dev_id);
 
 void DWC_ETH_QOS_dma_desc_stats_read(struct DWC_ETH_QOS_prv_data *pdata);
 void DWC_ETH_QOS_dma_desc_stats_init(struct DWC_ETH_QOS_prv_data *pdata);

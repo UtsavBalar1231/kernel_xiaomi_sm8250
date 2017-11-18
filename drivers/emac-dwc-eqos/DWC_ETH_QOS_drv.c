@@ -264,14 +264,14 @@ static void DWC_ETH_QOS_all_ch_napi_disable(struct DWC_ETH_QOS_prv_data *pdata)
 	struct DWC_ETH_QOS_rx_queue *rx_queue = NULL;
 	int qinx;
 
-	DBGPR("-->DWC_ETH_QOS_napi_enable\n");
+	DBGPR("-->DWC_ETH_QOS_all_ch_napi_disable\n");
 
 	for (qinx = 0; qinx < DWC_ETH_QOS_RX_QUEUE_CNT; qinx++) {
 		rx_queue = GET_RX_QUEUE_PTR(qinx);
 		napi_disable(&rx_queue->napi);
 	}
 
-	DBGPR("<--DWC_ETH_QOS_napi_enable\n");
+	DBGPR("<--DWC_ETH_QOS_all_ch_napi_disable\n");
 }
 
 /*!
@@ -681,6 +681,34 @@ void DWC_ETH_QOS_handle_DMA_Int(struct DWC_ETH_QOS_prv_data *pdata, int chinx, b
 	}
 }
 #endif
+
+/*!
+ * \brief Interrupt Service Routine
+ * \details Interrupt Service Routine for WOL interrupt
+ * \param[in] irq         - WOL interrupt number for particular
+ * device
+ * \param[in] device_id   - pointer to device structure
+ * \return returns positive integer
+ * \retval IRQ_HANDLED
+ */
+
+irqreturn_t DWC_ETH_QOS_ISR_WOL(int irq, void *device_id)
+{
+	struct DWC_ETH_QOS_prv_data *pdata =
+		(struct DWC_ETH_QOS_prv_data *)device_id;
+	EMACDBG("Enter\n");
+
+	/* Wake-on-LAN Interrupt */
+	EMACDBG("WOL Interrupt %d received\n", irq);
+	disable_irq_wake(irq);
+	/* Clear the PHY interrupt status register */
+	if (pdata->phydev->drv->ack_interrupt) {
+		pdata->phydev->drv->ack_interrupt(pdata->phydev);
+	}
+
+	EMACDBG("Exit\n");
+	return IRQ_HANDLED;
+}
 
 /*!
  * \brief Handle PHY interrupt
@@ -1599,7 +1627,6 @@ static void DWC_ETH_QOS_default_common_confs(struct DWC_ETH_QOS_prv_data *pdata)
 	pdata->l2_filtering_mode = !!pdata->hw_feat.hash_tbl_sz;
 	pdata->tx_path_in_lpi_mode = 0;
 	pdata->use_lpi_tx_automate = true;
-	pdata->eee_active = 0;
 	pdata->one_nsec_accuracy = 1;
 
 	DBGPR("<--DWC_ETH_QOS_default_common_confs\n");
@@ -1862,8 +1889,10 @@ static int DWC_ETH_QOS_close(struct net_device *dev)
 
 	DBGPR("-->DWC_ETH_QOS_close\n");
 
-	if (pdata->eee_enabled)
+	if (pdata->eee_enabled) {
 		del_timer_sync(&pdata->eee_ctrl_timer);
+		pdata->eee_active = 0;
+	}
 
 	if (pdata->phydev)
 		phy_stop(pdata->phydev);

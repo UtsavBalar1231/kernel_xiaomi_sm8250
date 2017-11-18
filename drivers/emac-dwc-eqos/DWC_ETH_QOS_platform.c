@@ -209,6 +209,25 @@ err_out:
 	return ret;
 }
 
+static int DWC_ETH_QOS_get_wol_config(struct platform_device *pdev)
+{
+	int ret = 0;
+	struct resource *resource = NULL;
+	EMACDBG("Enter\n");
+
+	resource = platform_get_resource_byname(
+		pdev, IORESOURCE_IRQ, "wol-intr");
+	if (!resource) {
+		EMACERR("get wol-intr resource failed\n");
+		return -ENODEV;
+	}
+	dwc_eth_qos_res_data.wol_intr= resource->start;
+	EMACDBG("wol-intr = %d\n", dwc_eth_qos_res_data.wol_intr);
+
+	EMACDBG("Exit\n");
+	return ret;
+}
+
 static int DWC_ETH_QOS_get_dts_config(struct platform_device *pdev)
 {
 	struct resource *resource = NULL;
@@ -261,6 +280,7 @@ static int DWC_ETH_QOS_get_dts_config(struct platform_device *pdev)
 	EMACDBG("lpi-intr = %d\n", dwc_eth_qos_res_data.lpi_intr);
 
 	ret = DWC_ETH_QOS_get_io_macro_config(pdev);
+	ret = DWC_ETH_QOS_get_wol_config(pdev);
 	if (ret)
 		goto err_out;
 
@@ -410,7 +430,7 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	hw_if->exit();
 	/* IEMAC: Find and Read the IRQ from DTS */
 	dev->irq = dwc_eth_qos_res_data.sbd_intr;
-	
+	pdata->wol_irq = dwc_eth_qos_res_data.wol_intr;
 	/* Check if IPA is supported */
 	pdata->ipa_enabled = EMAC_IPA_CAPABLE;
 	EMACINFO("EMAC IPA enabled: %d\n", pdata->ipa_enabled);
@@ -539,6 +559,17 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 		dev_alert(&pdev->dev, "carrier off till LINK is up\n");
 	}
 
+	/* Request for WOL interrupt */
+	if (pdata->wol_irq) {
+		ret = request_irq(pdata->wol_irq, DWC_ETH_QOS_ISR_WOL,
+							0, DEV_NAME, pdata);
+		if (ret != 0){
+			EMACERR("Failed to request for WOL IRQ %d\n", pdata->wol_irq);
+			free_irq(pdata->wol_irq, pdata);
+		} else
+			EMACDBG("Request for WOL IRQ %d successful\n", pdata->wol_irq);
+	}
+
 	return 0;
 
  err_out_netdev_failed:
@@ -598,6 +629,11 @@ int DWC_ETH_QOS_remove(struct platform_device *pdev)
 	if (pdata->irq_number != 0) {
 		free_irq(pdata->irq_number, pdata);
 		pdata->irq_number = 0;
+	}
+
+	if (pdata->wol_irq != 0) {
+		free_irq(pdata->wol_irq, pdata);
+		pdata->wol_irq = 0;
 	}
 
 	if (pdata->hw_feat.sma_sel == 1)
@@ -691,6 +727,21 @@ static INT DWC_ETH_QOS_suspend(struct platform_device *pdev, pm_message_t state)
 
 	DBGPR("-->DWC_ETH_QOS_suspend\n");
 
+	if (pdata->wol_irq > 0 && pdata->phydev->drv->set_wol) {
+		struct ethtool_wolinfo wol = {.cmd = ETHTOOL_SWOL,
+			.wolopts = WAKE_MAGIC};
+		ret = pdata->phydev->drv->set_wol(pdata->phydev, &wol);
+		if (ret == 0) {
+			enable_irq_wake(pdata->wol_irq);
+			EMACDBG("Set WOL in PHY and enable as wakeable interrupt\n");
+		}
+		else {
+			EMACERR("Failed to enable WOL interrupt in PHY\n");
+			return -EAGAIN;
+		}
+		goto powerdown;
+	}
+
 	if (!dev || !netif_running(dev) || (!pdata->hw_feat.mgk_sel &&
 					    !pdata->hw_feat.rwk_sel)) {
 		DBGPR("<--DWC_ETH_QOS_dev_suspend\n");
@@ -704,7 +755,7 @@ static INT DWC_ETH_QOS_suspend(struct platform_device *pdev, pm_message_t state)
 
 	if (pdata->hw_feat.mgk_sel && (pdata->wolopts & WAKE_MAGIC))
 		pmt_flags |= DWC_ETH_QOS_MAGIC_WAKEUP;
-
+powerdown:
 	ret = DWC_ETH_QOS_powerdown(dev, pmt_flags, DWC_ETH_QOS_DRIVER_CONTEXT);
 	DBGPR("<--DWC_ETH_QOS_suspend\n");
 
