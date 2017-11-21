@@ -375,6 +375,7 @@
 #define GET_TX_BUFF_DMA_ADDR(chInx, dInx) (pdata->tx_queue[(chInx)].tx_desc_data.tx_ipa_dma_buff_addrs[(dInx)])
 #define GET_TX_BUFF_LOGICAL_ADDR(chInx, dInx) (pdata->tx_queue[(chInx)].tx_desc_data.tx_ipa_buff_addrs[(dInx)])
 #define GET_TX_BUFF_DMA_POOL_BASE_ADRR(chInx) (pdata->tx_queue[(chInx)].tx_desc_data.tx_ipa_dma_buff_addrs)
+#define GET_TX_BUFF_DMA_POOL_BASE_ADRR_SIZE(chInx) (sizeof(dma_addr_t) * pdata->tx_dma_ch[chInx].desc_cnt)
 
 #define GET_TX_WRAPPER_DESC(QINX) (&pdata->tx_queue[(QINX)].tx_desc_data)
 
@@ -422,6 +423,7 @@
 /* Add IPA specific Macros to access the DMA address to be provided to IPA uC*/
 #define GET_RX_BUFF_DMA_ADDR(QINX, DINX) (pdata->rx_queue[(QINX)].rx_desc_data.ipa_rx_buff_addrs[(DINX)])
 #define GET_RX_BUFF_POOL_BASE_ADRR(QINX) (pdata->rx_queue[(QINX)].rx_desc_data.ipa_rx_buff_addrs)
+#define GET_RX_BUFF_POOL_BASE_ADRR_SIZE(chInx) (sizeof(dma_addr_t) * pdata->rx_dma_ch[chInx].desc_cnt)
 
 #define GET_RX_WRAPPER_DESC(QINX) (&pdata->rx_queue[(QINX)].rx_desc_data)
 

@@ -628,7 +628,10 @@ int DWC_ETH_QOS_ipa_offload_connect(struct DWC_ETH_QOS_prv_data *pdata)
 	ul.client = IPA_CLIENT_ETHERNET_PROD;
 	ul.ring_base_pa = (phys_addr_t)GET_RX_DESC_DMA_ADDR(IPA_DMA_RX_CH, 0);
 	ul.ntn_ring_size = pdata->rx_queue[IPA_DMA_RX_CH].desc_cnt;
-	ul.buff_pool_base_pa = virt_to_phys(GET_RX_BUFF_POOL_BASE_ADRR(IPA_DMA_RX_CH));
+	ul.buff_pool_base_pa = dma_map_single(&pdata->pdev->dev,
+			GET_RX_BUFF_POOL_BASE_ADRR(IPA_DMA_RX_CH),
+			GET_RX_BUFF_POOL_BASE_ADRR_SIZE(NTN_RX_DMA_CH_0),
+			DMA_TO_DEVICE);
 	ul.num_buffers = pdata->rx_queue[IPA_DMA_RX_CH].desc_cnt - 1;
 	ul.data_buff_size = DWC_ETH_QOS_ETH_FRAME_LEN_IPA;
 	/* Base address here is the address of EMAC_DMA_CH0_CONTROL in EMAC resgister space */
@@ -639,7 +642,10 @@ int DWC_ETH_QOS_ipa_offload_connect(struct DWC_ETH_QOS_prv_data *pdata)
 	dl.client = IPA_CLIENT_ETHERNET_CONS;
 	dl.ring_base_pa = (phys_addr_t)GET_TX_DESC_DMA_ADDR(IPA_DMA_TX_CH, 0);
 	dl.ntn_ring_size = pdata->tx_queue[IPA_DMA_TX_CH].desc_cnt;
-	dl.buff_pool_base_pa = virt_to_phys(GET_TX_BUFF_DMA_POOL_BASE_ADRR(IPA_DMA_TX_CH));
+	dl.buff_pool_base_pa = dma_map_single(&pdata->pdev->dev,
+				GET_TX_BUFF_DMA_POOL_BASE_ADRR(IPA_DMA_TX_CH),
+				GET_TX_BUFF_DMA_POOL_BASE_ADRR_SIZE(IPA_DMA_TX_CH),
+				DMA_TO_DEVICE);
 	dl.num_buffers = pdata->tx_queue[IPA_DMA_TX_CH].desc_cnt - 1;
 	dl.data_buff_size = DWC_ETH_QOS_ETH_FRAME_LEN_IPA;
 	/* Base address here is the address of EMAC_DMA_CH0_CONTROL in EMAC resgister space */
@@ -766,7 +772,10 @@ void DWC_ETH_QOS_ipa_stats_read(struct DWC_ETH_QOS_prv_data *pdata)
 	dma_stats->ipa_rx_Desc_Ring_Base = GET_RX_DESC_DMA_ADDR(IPA_DMA_RX_CH, 0);
 	dma_stats->ipa_rx_Desc_Ring_Size = pdata->rx_queue[IPA_DMA_RX_CH].desc_cnt;
 	dma_stats->ipa_rx_Buff_Ring_Base =
-		virt_to_phys(GET_RX_BUFF_POOL_BASE_ADRR(IPA_DMA_RX_CH));
+		dma_map_single(&pdata->pdev->dev,
+			GET_RX_BUFF_POOL_BASE_ADRR(IPA_DMA_RX_CH),
+			GET_RX_BUFF_POOL_BASE_ADRR_SIZE(NTN_RX_DMA_CH_0),
+			DMA_TO_DEVICE);
 	dma_stats->ipa_rx_Buff_Ring_Size = pdata->rx_queue[IPA_DMA_RX_CH].desc_cnt - 1;
 	
 	//@RK: IPA_INTEG Need Rx db received cnt from IPA uC  
@@ -804,7 +813,10 @@ void DWC_ETH_QOS_ipa_stats_read(struct DWC_ETH_QOS_prv_data *pdata)
 	dma_stats->ipa_tx_Desc_Ring_Base = GET_TX_DESC_DMA_ADDR(IPA_DMA_TX_CH, 0);
 	dma_stats->ipa_tx_Desc_Ring_Size = pdata->tx_queue[IPA_DMA_TX_CH].desc_cnt;
 	dma_stats->ipa_tx_Buff_Ring_Base =
-		virt_to_phys(GET_TX_BUFF_DMA_POOL_BASE_ADRR(IPA_DMA_TX_CH));
+		dma_map_single(&pdata->pdev->dev,
+			GET_TX_BUFF_DMA_POOL_BASE_ADRR(IPA_DMA_TX_CH),
+			GET_TX_BUFF_DMA_POOL_BASE_ADRR_SIZE(IPA_DMA_TX_CH),
+			DMA_TO_DEVICE);
 	dma_stats->ipa_tx_Buff_Ring_Size = pdata->tx_queue[IPA_DMA_TX_CH].desc_cnt - 1;
 	
 	//@RK: IPA_INTEG Need Tx db received cnt from IPA uC
