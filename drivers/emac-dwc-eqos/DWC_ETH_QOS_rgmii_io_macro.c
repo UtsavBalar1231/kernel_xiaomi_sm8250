@@ -213,40 +213,40 @@ static int DWC_ETH_QOS_set_rgmii_loopback_mode(UINT lb_mode)
  *\return 0 on success
  */
 int DWC_ETH_QOS_rgmii_io_macro_init(
-    struct DWC_ETH_QOS_prv_data *pdata)
+	struct DWC_ETH_QOS_prv_data *pdata)
 {
-	int loopback_mode = 0x0;
+	uint loopback_mode = 0x0;
 
 	EMACDBG("Enter\n");
 
 	/* Loopback is disabled */
 	DWC_ETH_QOS_set_rgmii_loopback_mode(loopback_mode);
 
-	/* Select RGMII interface */
-	RGMII_INTF_SEL_UDFWR(0x0);
 	/* Common default settings for all mode cfgs */
 	RGMII_PROG_SWAP_UDFWR(0x0);
-	RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x0);
 	RGMII_DDR_MODE_UDFWR(0x0);
 	RGMII_POS_NEG_DATA_SEL_UDFWR(0x0);
-	RGMII_CONFIG_2_DATA_DIVIDE_CLK_SEL_UDFWR(0x1);
+	RGMII_CONFIG_2_DATA_DIVIDE_CLK_SEL_UDFWR(0x0);
 	RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x0);
 	RGMII_CONFIG_2_RERVED_CONFIG_16_EN_UDFWR(0x0);
 	RGMII_BYPASS_TX_ID_EN_UDFWR(0x1);
 
 	switch (pdata->io_macro_phy_intf) {
 	case RGMII_MODE:
+		/* Select RGMII interface */
+		RGMII_INTF_SEL_UDFWR(0x0);
 		switch (pdata->speed) {
 		case SPEED_1000:
 			EMACDBG("Set RGMII registers for speed = %d\n", pdata->speed);
 			/* Enable DDR mode*/
 			RGMII_DDR_MODE_UDFWR(0x1);
 
-			if (pdata->io_macro_tx_mode_non_id)
+			if (pdata->io_macro_tx_mode_non_id){
 				EMACDBG(
 					"Set registers for Bypass mode = %d\n",
 					pdata->io_macro_tx_mode_non_id);
-			else {
+				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x0);
+			} else {
 				RGMII_BYPASS_TX_ID_EN_UDFWR(0x0);
 				RGMII_POS_NEG_DATA_SEL_UDFWR(0x1);
 				/* RGMII_TX_POS and RGMII_TX_NEG input pins are swapped
@@ -278,11 +278,12 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 				SDCC_HC_EXT_PRG_RCLK_DLY_CODE_UDFWR(0x0);
 				SDCC_HC_EXT_PRG_RCLK_DLY_UDFWR(0x0);
 				SDCC_HC_EXT_PRG_RCLK_DLY_EN_UDFWR(0x0);
+				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x0);
 			} else{
 				RGMII_DDR_MODE_UDFWR(0x1);
 				RGMII_PROG_SWAP_UDFWR(0x1);
 				RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x1);
-				SDCC_HC_EXT_PRG_RCLK_DLY_CODE_UDFWR(0x7);
+				SDCC_HC_EXT_PRG_RCLK_DLY_CODE_UDFWR(0x5);
 				SDCC_HC_EXT_PRG_RCLK_DLY_UDFWR(0x3f);
 				SDCC_HC_EXT_PRG_RCLK_DLY_EN_UDFWR(0x1);
 			}
@@ -299,11 +300,12 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 				SDCC_HC_EXT_PRG_RCLK_DLY_CODE_UDFWR(0x0);
 				SDCC_HC_EXT_PRG_RCLK_DLY_UDFWR(0x0);
 				SDCC_HC_EXT_PRG_RCLK_DLY_EN_UDFWR(0x0);
+				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x0);
 			} else{
 				RGMII_DDR_MODE_UDFWR(0x1);
 				RGMII_PROG_SWAP_UDFWR(0x1);
 				RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x1);
-				SDCC_HC_EXT_PRG_RCLK_DLY_CODE_UDFWR(0x7);
+				SDCC_HC_EXT_PRG_RCLK_DLY_CODE_UDFWR(0x5);
 				SDCC_HC_EXT_PRG_RCLK_DLY_UDFWR(0x3f);
 				SDCC_HC_EXT_PRG_RCLK_DLY_EN_UDFWR(0x1);
 			}
@@ -323,13 +325,15 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 		RGMII_MAX_SPD_PRG_2_UDFWR(0x1);
 		RGMII_CONFIG_2_CLK_DIVIDE_SEL_UDFWR(0x1);
 		RGMII_MAX_SPD_PRG_9_UDFWR(0x13);
+		RGMII_PROG_SWAP_UDFWR(0x1);
+		RGMII_CONFIG_2_DATA_DIVIDE_CLK_SEL_UDFWR(0x1);
+		SDCC_HC_EXT_PRG_RCLK_DLY_CODE_UDFWR(0x0);
+		SDCC_HC_EXT_PRG_RCLK_DLY_UDFWR(0x0);
+		SDCC_HC_EXT_PRG_RCLK_DLY_EN_UDFWR(0x0);
+		RGMII_LOOPBACK_EN_UDFWR(0x1);
 
 		switch (pdata->speed) {
 		case SPEED_100:
-			RGMII_DDR_MODE_UDFWR(0x1);
-			RGMII_POS_NEG_DATA_SEL_UDFWR(0x1);
-			RGMII_PROG_SWAP_UDFWR(0x1);
-			RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x1);
 			break;
 
 		case SPEED_10:
@@ -345,6 +349,7 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 		case SPEED_10:
 			RGMII_INTF_SEL_UDFWR(0x2);
 			RGMII_CONFIG_2_RERVED_CONFIG_16_EN_UDFWR(0x1);
+			RGMII_CONFIG_2_DATA_DIVIDE_CLK_SEL_UDFWR(0x1);
 			break;
 		}
 		break;
