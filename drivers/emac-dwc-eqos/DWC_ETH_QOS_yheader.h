@@ -58,6 +58,8 @@
 #include <linux/uaccess.h>
 #include <linux/string.h>
 #include <linux/cdev.h>
+#include <linux/msm-bus.h>
+#include <linux/clk.h>
 
 #include <linux/platform_device.h>
 #include <linux/timer.h>
@@ -597,6 +599,25 @@
 #define EMAC_VREG_RGMII_IO_PADS_NAME "vreg_rgmii_io_pads"
 #define EMAC_GPIO_PHY_INTR_REDIRECT_NAME "qcom,phy-intr-redirect"
 #define EMAC_GPIO_PHY_RESET_NAME "qcom,phy-reset"
+
+#define VOTE_IDX_10MBPS 1
+#define VOTE_IDX_100MBPS 2
+#define VOTE_IDX_1000MBPS 3
+
+/* Clock rates for various modes */
+#define RGMII_1000_NOM_CLK_FREQ      (250 * 1000 * 1000UL)
+
+#define RGMII_ID_MODE_100_LOW_SVS_CLK_FREQ    (50 * 1000 * 1000UL)
+#define RGMII_NON_ID_MODE_100_LOW_SVS_CLK_FREQ   (25 * 1000 * 1000UL)
+
+#define RGMII_ID_MODE_10_LOW_SVS_CLK_FREQ     (5 * 1000 * 1000UL)
+#define RGMII_NON_ID_MODE_10_LOW_SVS_CLK_FREQ    (2.5 * 1000 * 1000UL)
+
+#define RMII_100_LOW_SVS_CLK_FREQ  (50 * 1000 * 1000UL)
+#define RMII_10_LOW_SVS_CLK_FREQ  (50 * 1000 * 1000UL)
+
+#define MII_100_LOW_SVS_CLK_FREQ  (25 * 1000 * 1000UL)
+#define MII_10_LOW_SVS_CLK_FREQ  (2.5 * 1000 * 1000UL)
 
 /* C data types typedefs */
 typedef unsigned short BOOL;
@@ -1423,6 +1444,12 @@ struct DWC_ETH_QOS_res_data {
 	struct regulator *reg_rgmii;
 	struct regulator *reg_emac_phy;
 	struct regulator *reg_rgmii_io_pads;
+
+	/* Clocks */
+	struct clk *axi_clk;
+	struct clk *ahb_clk;
+	struct clk *rgmii_clk;
+	struct clk *ptp_clk;
 };
 
 struct DWC_ETH_QOS_prv_ipa_data {
@@ -1453,6 +1480,12 @@ struct DWC_ETH_QOS_prv_data {
 	struct DWC_ETH_QOS_prv_ipa_data prv_ipa;
 	bool ipa_enabled;
 	struct DWC_ETH_QOS_res_data *res_data;
+
+	struct msm_bus_scale_pdata *bus_scale_vec;
+	uint32_t bus_hdl;
+	u32 rgmii_clk_rate;
+	unsigned int vote_idx;
+
 #ifdef PER_CH_INT
 	bool per_ch_intr_en;
 #endif

@@ -524,12 +524,15 @@ void DWC_ETH_QOS_adjust_link(struct net_device *dev)
 			switch (phydev->speed) {
 			case SPEED_1000:
 				hw_if->set_gmii_speed();
+				pdata->vote_idx = VOTE_IDX_1000MBPS;
 				break;
 			case SPEED_100:
 				hw_if->set_mii_speed_100();
+				pdata->vote_idx = VOTE_IDX_100MBPS;
 				break;
 			case SPEED_10:
 				hw_if->set_mii_speed_10();
+				pdata->vote_idx = VOTE_IDX_10MBPS;
 				break;
 			}
 			pdata->speed = phydev->speed;

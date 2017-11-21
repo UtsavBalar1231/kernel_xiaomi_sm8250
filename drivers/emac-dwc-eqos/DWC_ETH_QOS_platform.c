@@ -51,6 +51,7 @@
 
 static UCHAR dev_addr[6] = {0, 0x55, 0x7b, 0xb5, 0x7d, 0xf7};
 struct DWC_ETH_QOS_res_data dwc_eth_qos_res_data = {0, };
+static struct msm_bus_scale_pdata *emac_bus_scale_vec;
 
 ULONG dwc_eth_qos_base_addr;
 ULONG dwc_rgmii_io_csr_base_addr;
@@ -164,6 +165,32 @@ err_out:
 	return ret;
 }
 #endif
+
+static int DWC_ETH_QOS_get_bus_config(struct platform_device *pdev)
+{
+	int out_cnt, in_cnt;
+	emac_bus_scale_vec = msm_bus_cl_get_pdata(pdev);
+	if (!emac_bus_scale_vec) {
+		EMACERR("unable to get bus scaling vector\n");
+		return -1;
+	}
+
+	EMACDBG("bus name: %s\n", emac_bus_scale_vec->name);
+	EMACDBG("num of paths: %d\n", emac_bus_scale_vec->usecase->num_paths);
+	EMACDBG("num of use cases: %d\n", emac_bus_scale_vec->num_usecases);
+
+	for (out_cnt=0; out_cnt<emac_bus_scale_vec->num_usecases; out_cnt++) {
+		EMACDBG("use case[%d] parameters:\n", out_cnt);
+		for (in_cnt=0; in_cnt<emac_bus_scale_vec->usecase->num_paths; in_cnt++)
+			EMACDBG("src_port:%d dst_port:%d ab:%llu ib:%llu \n",
+				emac_bus_scale_vec->usecase[out_cnt].vectors[in_cnt].src,
+				emac_bus_scale_vec->usecase[out_cnt].vectors[in_cnt].dst,
+				emac_bus_scale_vec->usecase[out_cnt].vectors[in_cnt].ab,
+				emac_bus_scale_vec->usecase[out_cnt].vectors[in_cnt].ib);
+	}
+
+	return 0;
+}
 
 static int DWC_ETH_QOS_get_io_macro_config(struct platform_device *pdev)
 {
@@ -280,6 +307,14 @@ static int DWC_ETH_QOS_get_dts_config(struct platform_device *pdev)
 	EMACDBG("lpi-intr = %d\n", dwc_eth_qos_res_data.lpi_intr);
 
 	ret = DWC_ETH_QOS_get_io_macro_config(pdev);
+	if (ret)
+		goto err_out;
+#if 0
+	ret = DWC_ETH_QOS_get_bus_config(pdev);
+	if (ret)
+		goto err_out;
+#endif
+
 	ret = DWC_ETH_QOS_get_wol_config(pdev);
 	if (ret)
 		goto err_out;
@@ -288,7 +323,11 @@ static int DWC_ETH_QOS_get_dts_config(struct platform_device *pdev)
 	ret = DWC_ETH_QOS_get_per_ch_config(pdev);
 #endif
 
+	return ret;
+
 err_out:
+	if (emac_bus_scale_vec)
+		msm_bus_cl_clear_pdata(emac_bus_scale_vec);
 	return ret;
 }
 
@@ -323,6 +362,106 @@ err_out_rgmii_map_failed:
 		iounmap((void __iomem *)dwc_eth_qos_base_addr);
 
 err_out_map_failed:
+	return ret;
+}
+
+void DWC_ETH_QOS_disable_clks(void)
+{
+	if (dwc_eth_qos_res_data.axi_clk)
+		clk_disable_unprepare(dwc_eth_qos_res_data.axi_clk);
+
+	dwc_eth_qos_res_data.axi_clk = NULL;
+
+	if (dwc_eth_qos_res_data.ahb_clk)
+		clk_disable_unprepare(dwc_eth_qos_res_data.ahb_clk);
+
+	dwc_eth_qos_res_data.ahb_clk = NULL;
+
+	if (dwc_eth_qos_res_data.ptp_clk)
+		clk_disable_unprepare(dwc_eth_qos_res_data.ptp_clk);
+
+	dwc_eth_qos_res_data.ptp_clk = NULL;
+
+	if (dwc_eth_qos_res_data.rgmii_clk)
+		clk_disable_unprepare(dwc_eth_qos_res_data.rgmii_clk);
+
+	dwc_eth_qos_res_data.rgmii_clk = NULL;
+
+}
+
+static int DWC_ETH_QOS_get_clks(struct device *dev)
+{
+	int ret = 0;
+
+	dwc_eth_qos_res_data.axi_clk = NULL;
+	dwc_eth_qos_res_data.ahb_clk = NULL;
+	dwc_eth_qos_res_data.rgmii_clk = NULL;
+	dwc_eth_qos_res_data.ptp_clk = NULL;
+
+	dwc_eth_qos_res_data.axi_clk = devm_clk_get(dev, "eth_axi_clk");
+	if (IS_ERR(dwc_eth_qos_res_data.axi_clk)) {
+		if (dwc_eth_qos_res_data.axi_clk != ERR_PTR(-EPROBE_DEFER)) {
+			EMACERR("unable to get axi clk\n");
+			return -EIO;
+		}
+	}
+
+	dwc_eth_qos_res_data.ahb_clk = devm_clk_get(dev, "eth_slave_ahb_clk");
+	if (IS_ERR(dwc_eth_qos_res_data.ahb_clk)) {
+		if (dwc_eth_qos_res_data.ahb_clk != ERR_PTR(-EPROBE_DEFER)) {
+			EMACERR("unable to get ahb clk\n");
+			return -EIO;
+		}
+	}
+
+	dwc_eth_qos_res_data.rgmii_clk = devm_clk_get(dev, "eth_rgmii_clk");
+	if (IS_ERR(dwc_eth_qos_res_data.rgmii_clk)) {
+		if (dwc_eth_qos_res_data.rgmii_clk != ERR_PTR(-EPROBE_DEFER)) {
+			EMACERR("unable to get rgmii clk\n");
+			return -EIO;
+		}
+	}
+
+	dwc_eth_qos_res_data.ptp_clk = devm_clk_get(dev, "eth_ptp_clk");
+	if (IS_ERR(dwc_eth_qos_res_data.ptp_clk)) {
+		if (dwc_eth_qos_res_data.ptp_clk != ERR_PTR(-EPROBE_DEFER)) {
+			EMACERR("unable to get ptp_clk\n");
+			return -EIO;
+		}
+	}
+
+	ret = clk_prepare_enable(dwc_eth_qos_res_data.axi_clk);
+
+	if (ret) {
+		EMACERR("Failed to enable axi_clk\n");
+		goto fail_clk;
+	}
+
+	ret = clk_prepare_enable(dwc_eth_qos_res_data.ahb_clk);
+
+	if (ret) {
+		EMACERR("Failed to enable ahb_clk\n");
+		goto fail_clk;
+	}
+
+	ret = clk_prepare_enable(dwc_eth_qos_res_data.rgmii_clk);
+
+	if (ret) {
+		EMACERR("Failed to enable rgmii_clk\n");
+		goto fail_clk;
+	}
+
+	ret = clk_prepare_enable(dwc_eth_qos_res_data.ptp_clk);
+
+	if (ret) {
+		EMACERR("Failed to enable ptp_clk\n");
+		goto fail_clk;
+	}
+
+	return ret;
+
+fail_clk:
+	DWC_ETH_QOS_disable_clks();
 	return ret;
 }
 
@@ -597,6 +736,9 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	if (ret)
 		goto err_out_gpio_failed;
 
+	ret = DWC_ETH_QOS_get_clks(&pdev->dev);
+	if (ret)
+		goto err_get_clk_failed;
 	/* queue count */
 	tx_q_count = get_tx_queue_count();
 	rx_q_count = get_rx_queue_count();
@@ -626,6 +768,18 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	hw_if = &pdata->hw_if;
 	desc_if = &pdata->desc_if;
 	pdata->res_data = &dwc_eth_qos_res_data;
+#if 0
+	if (emac_bus_scale_vec)
+		pdata->bus_scale_vec = emac_bus_scale_vec;
+
+	pdata->bus_hdl = msm_bus_scale_register_client(pdata->bus_scale_vec);
+	if (!pdata->bus_hdl) {
+		EMACERR("unable to register bus\n");
+		ret = -EIO;
+		goto err_bus_reg_failed;
+	}
+#endif
+
 
 	platform_set_drvdata(pdev, dev);
 	pdata->pdev = pdev;
@@ -817,6 +971,19 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	free_netdev(dev);
 	platform_set_drvdata(pdev, NULL);
 
+#if 0
+ err_bus_reg_failed:
+	 if (pdata->bus_hdl)
+		 msm_bus_scale_unregister_client(pdata->bus_hdl);
+	 if (emac_bus_scale_vec)
+		 msm_bus_cl_clear_pdata(emac_bus_scale_vec);
+	 emac_bus_scale_vec = NULL;
+	 pdata->bus_scale_vec = NULL;
+#endif
+
+ err_get_clk_failed:
+	   DWC_ETH_QOS_disable_clks();
+
  err_out_gpio_failed:
 	 DWC_ETH_QOS_free_gpios();
 
@@ -883,6 +1050,7 @@ int DWC_ETH_QOS_remove(struct platform_device *pdev)
 	free_netdev(dev);
 
 	platform_set_drvdata(pdev, NULL);
+	DWC_ETH_QOS_disable_clks();
 
 	DWC_ETH_QOS_disable_regulators();
 	DWC_ETH_QOS_free_gpios();

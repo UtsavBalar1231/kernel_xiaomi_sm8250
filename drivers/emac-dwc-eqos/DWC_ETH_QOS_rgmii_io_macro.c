@@ -289,6 +289,7 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 				SDCC_HC_EXT_PRG_RCLK_DLY_EN_UDFWR(0x1);
 
 			}
+			pdata->rgmii_clk_rate = RGMII_1000_NOM_CLK_FREQ;
 			break;
 
 		case SPEED_100:
@@ -306,6 +307,8 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 				SDCC_HC_EXT_PRG_RCLK_DLY_UDFWR(0x0);
 				SDCC_HC_EXT_PRG_RCLK_DLY_EN_UDFWR(0x0);
 				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x0);
+				pdata->rgmii_clk_rate =
+					RGMII_NON_ID_MODE_100_LOW_SVS_CLK_FREQ;
 			} else{
 				RGMII_DDR_MODE_UDFWR(0x1);
 				RGMII_PROG_SWAP_UDFWR(0x1);
@@ -315,6 +318,7 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 				SDCC_HC_EXT_PRG_RCLK_DLY_CODE_UDFWR(0x5);
 				SDCC_HC_EXT_PRG_RCLK_DLY_UDFWR(0x3f);
 				SDCC_HC_EXT_PRG_RCLK_DLY_EN_UDFWR(0x1);
+				pdata->rgmii_clk_rate = RGMII_ID_MODE_100_LOW_SVS_CLK_FREQ;
 			}
 			break;
 
@@ -330,6 +334,8 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 				SDCC_HC_EXT_PRG_RCLK_DLY_UDFWR(0x0);
 				SDCC_HC_EXT_PRG_RCLK_DLY_EN_UDFWR(0x0);
 				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x0);
+				pdata->rgmii_clk_rate =
+					RGMII_NON_ID_MODE_10_LOW_SVS_CLK_FREQ;
 			} else{
 				RGMII_DDR_MODE_UDFWR(0x1);
 				RGMII_PROG_SWAP_UDFWR(0x1);
@@ -340,6 +346,8 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 				SDCC_HC_EXT_PRG_RCLK_DLY_CODE_UDFWR(0x5);
 				SDCC_HC_EXT_PRG_RCLK_DLY_UDFWR(0x3f);
 				SDCC_HC_EXT_PRG_RCLK_DLY_EN_UDFWR(0x1);
+				pdata->rgmii_clk_rate =
+					RGMII_ID_MODE_10_LOW_SVS_CLK_FREQ;
 			}
 			break;
 
@@ -366,9 +374,11 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 
 		switch (pdata->speed) {
 		case SPEED_100:
+			pdata->rgmii_clk_rate = RMII_100_LOW_SVS_CLK_FREQ;
 			break;
 
 		case SPEED_10:
+			pdata->rgmii_clk_rate = RMII_10_LOW_SVS_CLK_FREQ;
 			break;
 		}
 		break;
@@ -378,14 +388,26 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 
 		switch (pdata->speed) {
 		case SPEED_100:
+			pdata->rgmii_clk_rate = MII_100_LOW_SVS_CLK_FREQ;
 		case SPEED_10:
 			RGMII_INTF_SEL_UDFWR(0x2);
 			RGMII_CONFIG_2_RERVED_CONFIG_16_EN_UDFWR(0x1);
 			RGMII_CONFIG_2_DATA_DIVIDE_CLK_SEL_UDFWR(0x1);
+			pdata->rgmii_clk_rate = MII_10_LOW_SVS_CLK_FREQ;
 			break;
 		}
 		break;
 	}
+
+	if (pdata->bus_hdl) {
+		if (msm_bus_scale_client_update_request(
+			  pdata->bus_hdl, pdata->vote_idx))
+			WARN_ON(1);
+	}
+
+	if (pdata->res_data->rgmii_clk)
+		clk_set_rate(pdata->res_data->rgmii_clk, pdata->rgmii_clk_rate);
+
 	EMACDBG("Exit\n");
 	return Y_SUCCESS;
 }
