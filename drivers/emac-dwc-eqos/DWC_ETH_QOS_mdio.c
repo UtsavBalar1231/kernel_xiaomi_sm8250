@@ -381,7 +381,7 @@ void DWC_ETH_QOS_adjust_link(struct net_device *dev)
 
 	DBGPR_MDIO(
 		"-->DWC_ETH_QOS_adjust_link. address %d link %d\n",
-		phydev->mdio_bus.addr, phydev->link);
+		phydev->mdio.addr, phydev->link);
 
 	spin_lock_irqsave(&pdata->lock, flags);
 

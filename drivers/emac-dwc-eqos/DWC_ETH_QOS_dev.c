@@ -4871,6 +4871,23 @@ static void rx_descriptor_init_pg(struct DWC_ETH_QOS_prv_data *pdata, UINT QINX)
 #endif /* end of DWC_ETH_QOS_CONFIG_PGTEST */
 
 /*!
+ * \brief This sequence is used to enable PHY interrupt to EMAC
+ * \retval  0 Success
+ */
+static int enable_mac_phy_interrupt(void)
+{
+	unsigned long varmac_imr = 0;
+	/* PHYIE - PHY Interrupt Enable */
+	MAC_IMR_RGRD(varmac_imr);
+	varmac_imr = varmac_imr & (unsigned long)(0x1008);
+	varmac_imr = varmac_imr | ((0x1) << 3);
+	MAC_IMR_RGWR(varmac_imr);
+	EMACDBG("Enabled MAC-PHY interrupt\n");
+
+	return Y_SUCCESS;
+}
+
+/*!
  * \brief API to initialize the function pointers.
  *
  * \details This function is called in probe to initialize all the
@@ -5109,6 +5126,9 @@ void DWC_ETH_QOS_init_function_ptrs_dev(struct hw_if_struct *hw_if)
 
 	/* for PTP Offloading */
 	hw_if->config_ptpoffload_engine = config_ptpoffload_engine;
+
+	/* For enabling PHY interrupt to EMAC */
+	hw_if->enable_mac_phy_interrupt = enable_mac_phy_interrupt;
 
 	DBGPR("<--DWC_ETH_QOS_init_function_ptrs_dev\n");
 }

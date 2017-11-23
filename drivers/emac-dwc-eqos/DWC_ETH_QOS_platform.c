@@ -671,7 +671,6 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	dev->netdev_ops = DWC_ETH_QOS_get_netdev_ops();
 
 	pdata->interface = DWC_ETH_QOS_get_phy_interface(pdata);
-	hw_if->enable_mac_phy_interrupt();
 
 	/* Bypass PHYLIB for TBI, RTBI and SGMII interface */
 	if (pdata->hw_feat.sma_sel == 1) {
@@ -684,6 +683,10 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	} else {
 		dev_alert(&pdev->dev, "%s: MDIO is not present\n\n", DEV_NAME);
 	}
+
+	if ((pdata->phydev->phy_id == ATH8031_PHY_ID) ||
+		(pdata->phydev->phy_id == ATH8035_PHY_ID))
+		hw_if->enable_mac_phy_interrupt();
 
 #ifndef DWC_ETH_QOS_CONFIG_PGTEST
 	/* enabling and registration of irq with magic wakeup */
@@ -1039,7 +1042,7 @@ static INT DWC_ETH_QOS_resume(struct platform_device *pdev)
 #endif /* CONFIG_PM */
 
 static struct of_device_id DWC_ETH_QOS_plat_drv_match[] = {
-	{ .compatible = "qcom,emac_dwc_eqos", },
+	{ .compatible = "qcom,emac-dwc-eqos", },
 	{}
 };
 
@@ -1083,7 +1086,7 @@ static int DWC_ETH_QOS_init_module(void)
 	create_debug_files();
 #endif
 
-	atomic_notifier_chain_unregister(&panic_notifier_list,
+	atomic_notifier_chain_register(&panic_notifier_list,
 			&DWC_ETH_QOS_panic_blk);
 
 	DBGPR("<--DWC_ETH_QOS_init_module\n");
