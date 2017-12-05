@@ -39,6 +39,7 @@
 
 #include <linux/of_address.h>
 #include <linux/kthread.h>
+#include <linux/workqueue.h>
 #include <uapi/linux/sched/types.h>
 #include <drm/drm_of.h>
 
@@ -62,7 +63,11 @@
 #define MSM_VERSION_MINOR	3
 #define MSM_VERSION_PATCHLEVEL	0
 
+#define IDLE_ENCODER_MASK_DEFAULT	1
+#define IDLE_TIMEOUT_MS_DEFAULT		100
+
 static DEFINE_MUTEX(msm_release_lock);
+
 atomic_t resume_pending;
 wait_queue_head_t resume_wait_q;
 
@@ -700,6 +705,160 @@ static struct msm_kms *_msm_drm_init_helper(struct msm_drm_private *priv,
 	return kms;
 }
 
+static ssize_t idle_encoder_mask_store(struct device *device,
+			       struct device_attribute *attr,
+			       const char *buf, size_t count)
+{
+	struct drm_device *ddev = dev_get_drvdata(device);
+	struct msm_drm_private *priv = ddev->dev_private;
+	struct msm_idle *idle = &priv->idle;
+	u32 encoder_mask = 0;
+	int rc;
+	unsigned long flags;
+
+	rc = kstrtouint(buf, 0, &encoder_mask);
+	if (rc)
+		return rc;
+
+	spin_lock_irqsave(&idle->lock, flags);
+	idle->encoder_mask = encoder_mask;
+	idle->active_mask &= encoder_mask;
+	spin_unlock_irqrestore(&idle->lock, flags);
+
+	return count;
+}
+
+static ssize_t idle_encoder_mask_show(struct device *device,
+			      struct device_attribute *attr,
+			      char *buf)
+{
+	struct drm_device *ddev = dev_get_drvdata(device);
+	struct msm_drm_private *priv = ddev->dev_private;
+	struct msm_idle *idle = &priv->idle;
+
+	return snprintf(buf, PAGE_SIZE, "0x%x\n", idle->encoder_mask);
+}
+
+static ssize_t idle_timeout_ms_store(struct device *device,
+			       struct device_attribute *attr,
+			       const char *buf, size_t count)
+{
+	struct drm_device *ddev = dev_get_drvdata(device);
+	struct msm_drm_private *priv = ddev->dev_private;
+	struct msm_idle *idle = &priv->idle;
+	u32 timeout_ms = 0;
+	int rc;
+	unsigned long flags;
+
+	rc = kstrtouint(buf, 10, &timeout_ms);
+	if (rc)
+		return rc;
+
+	spin_lock_irqsave(&idle->lock, flags);
+	idle->timeout_ms = timeout_ms;
+	spin_unlock_irqrestore(&idle->lock, flags);
+
+	return count;
+}
+
+static ssize_t idle_timeout_ms_show(struct device *device,
+			      struct device_attribute *attr,
+			      char *buf)
+{
+	struct drm_device *ddev = dev_get_drvdata(device);
+	struct msm_drm_private *priv = ddev->dev_private;
+	struct msm_idle *idle = &priv->idle;
+
+	return scnprintf(buf, PAGE_SIZE, "%d\n", idle->timeout_ms);
+}
+
+static ssize_t idle_state_show(struct device *device,
+			      struct device_attribute *attr,
+			      char *buf)
+{
+	struct drm_device *ddev = dev_get_drvdata(device);
+	struct msm_drm_private *priv = ddev->dev_private;
+	struct msm_idle *idle = &priv->idle;
+	const char *state;
+	unsigned long flags;
+
+	spin_lock_irqsave(&idle->lock, flags);
+	if (idle->active_mask) {
+		state = "active";
+		spin_unlock_irqrestore(&idle->lock, flags);
+		return scnprintf(buf, PAGE_SIZE, "%s (0x%x)\n",
+				 state, idle->active_mask);
+	} else if (delayed_work_pending(&idle->work))
+		state = "pending";
+	else
+		state = "idle";
+	spin_unlock_irqrestore(&idle->lock, flags);
+
+	return scnprintf(buf, PAGE_SIZE, "%s\n", state);
+}
+
+static DEVICE_ATTR_RW(idle_encoder_mask);
+static DEVICE_ATTR_RW(idle_timeout_ms);
+static DEVICE_ATTR_RO(idle_state);
+
+static const struct attribute *msm_idle_attrs[] = {
+	&dev_attr_idle_encoder_mask.attr,
+	&dev_attr_idle_timeout_ms.attr,
+	&dev_attr_idle_state.attr,
+	NULL
+};
+
+static void msm_idle_work(struct work_struct *work)
+{
+	struct delayed_work *dw = to_delayed_work(work);
+	struct msm_idle *idle = container_of(dw, struct msm_idle, work);
+	struct msm_drm_private *priv = container_of(idle,
+					struct msm_drm_private, idle);
+
+	if (!idle->active_mask)
+		sysfs_notify(&priv->dev->dev->kobj, NULL, "idle_state");
+}
+
+void msm_idle_set_state(struct drm_encoder *encoder, bool active)
+{
+	struct drm_device *ddev = encoder->dev;
+	struct msm_drm_private *priv = ddev->dev_private;
+	struct msm_idle *idle = &priv->idle;
+	unsigned int mask = 1 << drm_encoder_index(encoder);
+	unsigned long flags;
+
+	spin_lock_irqsave(&idle->lock, flags);
+	if (mask & idle->encoder_mask) {
+		if (active)
+			idle->active_mask |= mask;
+		else
+			idle->active_mask &= ~mask;
+
+		if (idle->timeout_ms && !idle->active_mask)
+			mod_delayed_work(system_wq, &idle->work,
+					 msecs_to_jiffies(idle->timeout_ms));
+		else
+			cancel_delayed_work(&idle->work);
+	}
+	spin_unlock_irqrestore(&idle->lock, flags);
+}
+
+static void msm_idle_init(struct drm_device *ddev)
+{
+	struct msm_drm_private *priv = ddev->dev_private;
+	struct msm_idle *idle = &priv->idle;
+
+	if (sysfs_create_files(&ddev->dev->kobj, msm_idle_attrs) < 0)
+		pr_warn("failed to create idle state file");
+
+	idle->active_mask = 0;
+	idle->encoder_mask = IDLE_ENCODER_MASK_DEFAULT;
+	idle->timeout_ms = IDLE_TIMEOUT_MS_DEFAULT;
+
+	INIT_DELAYED_WORK(&idle->work, msm_idle_work);
+	spin_lock_init(&idle->lock);
+}
+
 static int msm_drm_init(struct device *dev, struct drm_driver *drv)
 {
 	struct platform_device *pdev = to_platform_device(dev);
@@ -749,6 +908,8 @@ static int msm_drm_init(struct device *dev, struct drm_driver *drv)
 		dev_err(dev, "failed to init sde dbg: %d\n", ret);
 		goto dbg_init_fail;
 	}
+
+	msm_idle_init(ddev);
 
 	/* Bind all our sub-components: */
 	ret = msm_component_bind_all(dev, ddev);
