@@ -3086,7 +3086,7 @@ static INT write_phy_regs(INT phy_id, INT phy_reg, INT phy_reg_data)
 	MAC_GMIIAR_RGRD(VARMAC_GMIIAR);
 	VARMAC_GMIIAR = VARMAC_GMIIAR & (ULONG)(0x12);
 	VARMAC_GMIIAR =
-	    VARMAC_GMIIAR | ((phy_id) << 21) | ((phy_reg) << 16) | ((0x2) << 8)
+	    VARMAC_GMIIAR | ((phy_id) << 21) | ((phy_reg) << 16) | ((0x1) << 8)
 	    | ((0x1) << 2) | ((0x1) << 0);
 	MAC_GMIIAR_RGWR(VARMAC_GMIIAR);
 
@@ -3156,7 +3156,7 @@ static INT read_phy_regs(INT phy_id, INT phy_reg, INT *phy_reg_data)
 	MAC_GMIIAR_RGRD(VARMAC_GMIIAR);
 	VARMAC_GMIIAR = VARMAC_GMIIAR & (ULONG)(0x12);
 	VARMAC_GMIIAR =
-	    VARMAC_GMIIAR | ((phy_id) << 21) | ((phy_reg) << 16) | ((0x2) << 8)
+	    VARMAC_GMIIAR | ((phy_id) << 21) | ((phy_reg) << 16) | ((0x1) << 8)
 	    | ((0x3) << 2) | ((0x1) << 0);
 	MAC_GMIIAR_RGWR(VARMAC_GMIIAR);
 

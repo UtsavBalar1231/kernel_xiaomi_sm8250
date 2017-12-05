@@ -286,6 +286,17 @@
 #define DWC_ETH_QOS_PHY_STS     0x0011
 #define DWC_ETH_QOS_PHY_INTR_EN     0x0012
 #define DWC_ETH_QOS_PHY_INTR_STATUS     0x0013
+#define DWC_ETH_QOS_PHY_RX_DELAY     0x00
+#define DWC_ETH_QOS_PHY_TX_DELAY     0x05
+#define DWC_ETH_QOS_PHY_SMART_SPEED  0x14
+
+#define DWC_ETH_QOS_PHY_RX_DELAY_WR_MASK (ULONG)(0x7fff)
+#define DWC_ETH_QOS_PHY_RX_DELAY_MASK 0x1
+#define DWC_ETH_QOS_PHY_TX_DELAY_WR_MASK (ULONG)(0xfeff)
+#define DWC_ETH_QOS_PHY_TX_DELAY_MASK 0x1
+#define ENABLE_DELAY 0x1
+#define DISABLE_DELAY 0x0
+
 
 #define LINK_DOWN_STATE 0x800
 #define LINK_UP_STATE 0x400
@@ -1402,6 +1413,16 @@ struct DWC_ETH_QOS_res_data {
 	u32 tx_ch_intr[5];
 	u32 rx_ch_intr[4];
 #endif
+
+	/* GPIOs */
+	int gpio_phy_intr_redirect;
+	int gpio_phy_reset;
+
+	/* Regulators */
+	struct regulator *gdsc_emac;
+	struct regulator *reg_rgmii;
+	struct regulator *reg_emac_phy;
+	struct regulator *reg_rgmii_io_pads;
 };
 
 struct DWC_ETH_QOS_prv_ipa_data {
@@ -1436,6 +1457,8 @@ struct DWC_ETH_QOS_prv_data {
 	bool per_ch_intr_en;
 #endif
 
+
+	struct mutex mlock;
 	spinlock_t lock;
 	spinlock_t tx_lock;
 	spinlock_t pmt_lock;
@@ -1607,16 +1630,6 @@ struct DWC_ETH_QOS_prv_data {
 	unsigned int io_macro_tx_mode_non_id;
 	unsigned int io_macro_phy_intf;
 	int wol_irq;
-
-	/* GPIOs */
-	int gpio_phy_intr_redirect;
-	int gpio_phy_reset;
-
-	/* Regulators */
-	struct regulator *gdsc_emac;
-	struct regulator *reg_rgmii;
-	struct regulator *reg_emac_phy;
-	struct regulator *reg_rgmii_io_pads;
 };
 
 typedef enum {

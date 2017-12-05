@@ -52,6 +52,9 @@ int DWC_ETH_QOS_rgmii_io_macro_sdcdc_init(void)
 	/* Write 1 to CK_OUT_EN */
 	SDCC_HC_CK_OUT_EN_UDFWR(0x1);
 
+	SDCC_USR_CTL_RGWR(0x4UL << 24);
+
+#if 0
 	/* Wait until DLL_LOCK bit of SDC4_STATUS register is 1 */
 	while (1) {
 		if (current_cnt > RETRYCOUNT)
@@ -64,6 +67,7 @@ int DWC_ETH_QOS_rgmii_io_macro_sdcdc_init(void)
 		current_cnt++;
 		mdelay(1);
 	}
+#endif
 	EMACDBG("Exit\n");
 	return Y_SUCCESS;
 }
@@ -103,7 +107,7 @@ int DWC_ETH_QOS_rgmii_io_macro_sdcdc_config(void)
 	volatile ULONG VARCK_OUT_EN;
 
 	EMACDBG("Enter\n");
-
+#if 0
 	/* Set CDR_EN bit to 0 */
 	SDCC_HC_CDR_EN_UDFWR(0x0);
 
@@ -149,10 +153,11 @@ int DWC_ETH_QOS_rgmii_io_macro_sdcdc_config(void)
 		current_cnt++;
 		mdelay(1);
 	}
-
+#endif
 	/* Write 1 to DDR_CAL_EN bit of SDCC_HC_REG_DLL_CONFIG_2
 	 *  register
 	 */
+	SDCC_HC_CFG_2_DDR_TRAFFIC_INIT_SW_UDFWR(0x1);
 	SDCC_HC_CFG_2_DDR_CAL_EN_UDFWR(0x1);
 
 	EMACDBG("Exit\n");
@@ -216,6 +221,7 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 	struct DWC_ETH_QOS_prv_data *pdata)
 {
 	uint loopback_mode = 0x0;
+	ULONG data;
 
 	EMACDBG("Enter\n");
 
@@ -223,6 +229,9 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 	DWC_ETH_QOS_set_rgmii_loopback_mode(loopback_mode);
 
 	/* Common default settings for all mode cfgs */
+	//RGMII_BYPASS_TX_ID_EN_UDFWR(0x0);
+	//RGMII_PROG_SWAP_UDFWR(0x1);
+	//RGMII_DDR_MODE_UDFWR(0x1);
 	RGMII_PROG_SWAP_UDFWR(0x0);
 	RGMII_DDR_MODE_UDFWR(0x0);
 	RGMII_POS_NEG_DATA_SEL_UDFWR(0x0);
@@ -230,11 +239,15 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 	RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x0);
 	RGMII_CONFIG_2_RERVED_CONFIG_16_EN_UDFWR(0x0);
 	RGMII_BYPASS_TX_ID_EN_UDFWR(0x1);
+	//RGMII_CONFIG_2_DATA_DIVIDE_CLK_SEL_UDFWR(0x1);
+	//RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x1);
+	//RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x1);
 
 	switch (pdata->io_macro_phy_intf) {
 	case RGMII_MODE:
 		/* Select RGMII interface */
 		RGMII_INTF_SEL_UDFWR(0x0);
+
 		switch (pdata->speed) {
 		case SPEED_1000:
 			EMACDBG("Set RGMII registers for speed = %d\n", pdata->speed);
@@ -253,6 +266,7 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 				 * based on the programmable swap control bit
 				 */
 				RGMII_PROG_SWAP_UDFWR(0x1);
+				RGMII_CONFIG_2_DATA_DIVIDE_CLK_SEL_UDFWR(0x1);
 				RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x1);
 				/* If data arrives at positive edge or if data is
 				 * delayed by 1.5ns/ 2ns then write 1 to RX_PROG_SWAP
@@ -260,7 +274,20 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 				 */
 				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x1);
 				/* Program PRG_RCLK_DLY to 52 for a required delay of 2 ns */
-				SDCC_HC_PRG_RCLK_DLY_UDFWR(0x34);
+				//SDCC_HC_PRG_RCLK_DLY_UDFWR(0x34);
+				SDCC_HC_PRG_RCLK_DLY_UDFWR(208);
+				SDCC_HC_REG_DDR_CONFIG_RGRD(data);
+				data |= (4 << 9);
+				data |= (0x34 << 12);
+				SDCC_HC_REG_DDR_CONFIG_RGWR(data);
+				SDCC_HC_REG_DDR_CONFIG_RGRD(data);
+				data |= (1 << 31);
+				SDCC_HC_REG_DDR_CONFIG_RGWR(data);
+
+				SDCC_HC_EXT_PRG_RCLK_DLY_CODE_UDFWR(0x5);
+				SDCC_HC_EXT_PRG_RCLK_DLY_UDFWR(0x3f);
+				SDCC_HC_EXT_PRG_RCLK_DLY_EN_UDFWR(0x1);
+
 			}
 			break;
 
@@ -282,7 +309,9 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 			} else{
 				RGMII_DDR_MODE_UDFWR(0x1);
 				RGMII_PROG_SWAP_UDFWR(0x1);
+				RGMII_CONFIG_2_DATA_DIVIDE_CLK_SEL_UDFWR(0x1);
 				RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x1);
+				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x1);
 				SDCC_HC_EXT_PRG_RCLK_DLY_CODE_UDFWR(0x5);
 				SDCC_HC_EXT_PRG_RCLK_DLY_UDFWR(0x3f);
 				SDCC_HC_EXT_PRG_RCLK_DLY_EN_UDFWR(0x1);
@@ -304,7 +333,10 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 			} else{
 				RGMII_DDR_MODE_UDFWR(0x1);
 				RGMII_PROG_SWAP_UDFWR(0x1);
+				RGMII_CONFIG_2_DATA_DIVIDE_CLK_SEL_UDFWR(0x1);
 				RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x1);
+				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x1);
+
 				SDCC_HC_EXT_PRG_RCLK_DLY_CODE_UDFWR(0x5);
 				SDCC_HC_EXT_PRG_RCLK_DLY_UDFWR(0x3f);
 				SDCC_HC_EXT_PRG_RCLK_DLY_EN_UDFWR(0x1);
@@ -395,6 +427,20 @@ void dump_rgmii_io_macro_registers(void)
 			"RGMII_IO_MACRO_DEBUG_1 (0x%p) = %#x\n",
 			RGMII_IO_MACRO_DEBUG_1_RGOFFADDR, reg_val);
 
+	SDC4_STATUS_RGRD(reg_val);
+	pr_alert(
+			"SDC4_STATUS_RGRD (0x%p) = %#x\n",
+			SDC4_STATUS_RGOFFADDR, reg_val);
+
+	SDCC_USR_CTL_RGRD(reg_val);
+	pr_alert(
+			"SDCC_USR_CTL_RGRD (0x%p) = %#x\n",
+			SDCC_USR_CTL_RGOFFADDR, reg_val);
+
+	EMAC_SYSTEM_LOW_POWER_DEBUG_RGRD(reg_val);
+	pr_alert(
+			"EMAC_SYSTEM_LOW_POWER_DEBUG_RGRD (0x%p) = %#x\n",
+			EMAC_SYSTEM_LOW_POWER_DEBUG_RGOFFADDR, reg_val);
+
 	pr_alert("\n****************************************************\n");
 }
-

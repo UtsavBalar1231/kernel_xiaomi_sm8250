@@ -351,8 +351,106 @@ void dump_phy_registers(struct DWC_ETH_QOS_prv_data *pdata)
 	pr_alert(
 		"PHY Intr EN Reg (%#x) = %#x\n", DWC_ETH_QOS_PHY_INTR_EN, phydata);
 
+	DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr, DWC_ETH_QOS_PHY_SMART_SPEED, &phydata);
+	pr_alert( "Smart Speed Reg (%#x) = %#x\n", DWC_ETH_QOS_PHY_SMART_SPEED, phydata);
+
 
 	pr_alert("\n****************************************************\n");
+}
+
+/*!
+ * \brief API to enable or disable RX/TX delay in PHY.
+ *
+ * \details Write to PHY debug registers at 0x0 and 0x5
+ * offsets to enable and disable Rx/Tx delay
+ *
+ * \param[in] pdata - pointer to platform data
+ *
+ * \return void
+ *
+ * \retval none
+ */
+
+static void configure_phy_rx_tx_delay(struct DWC_ETH_QOS_prv_data *pdata)
+{
+	int phydata = 0;
+	EMACDBG("Enter\n");
+
+	switch (pdata->speed) {
+	case SPEED_1000:
+		DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr, 0x1D,
+									DWC_ETH_QOS_PHY_TX_DELAY);
+		DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr, 0x1E,
+									&phydata);
+		phydata = ((phydata & DWC_ETH_QOS_PHY_TX_DELAY_WR_MASK) |
+				((DISABLE_DELAY & DWC_ETH_QOS_PHY_TX_DELAY_MASK) << 8));
+		DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr, 0x1E,
+									phydata);
+		EMACDBG("Setting TX delay %#x in PHY for speed %d\n",
+				phydata, pdata->speed);
+
+		DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr, 0x1D,
+									DWC_ETH_QOS_PHY_RX_DELAY);
+		DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr, 0x1E,
+									&phydata);
+		phydata = ((phydata & DWC_ETH_QOS_PHY_RX_DELAY_WR_MASK) |
+				((DISABLE_DELAY & DWC_ETH_QOS_PHY_RX_DELAY_MASK) << 15));
+		DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr, 0x1E,
+									phydata);
+		EMACDBG("Setting RX delay %#x in PHY for speed %d\n",
+				phydata, pdata->speed);
+		break;
+
+	case SPEED_100:
+		DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr, 0x1D,
+									DWC_ETH_QOS_PHY_TX_DELAY);
+		DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr, 0x1E,
+									&phydata);
+		phydata = ((phydata & DWC_ETH_QOS_PHY_TX_DELAY_WR_MASK) |
+				((DISABLE_DELAY & DWC_ETH_QOS_PHY_TX_DELAY_MASK) << 8));
+		DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr, 0x1E,
+									phydata);
+		EMACDBG("Setting TX delay %#x in PHY for speed %d\n",
+				phydata, pdata->speed);
+
+		DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr, 0x1D,
+									DWC_ETH_QOS_PHY_RX_DELAY);
+		DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr, 0x1E,
+									&phydata);
+		phydata = ((phydata & DWC_ETH_QOS_PHY_RX_DELAY_WR_MASK) |
+				((DISABLE_DELAY & DWC_ETH_QOS_PHY_RX_DELAY_MASK) << 15));
+		DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr, 0x1E,
+									phydata);
+		EMACDBG("Setting RX delay %#x in PHY for speed %d\n",
+				phydata, pdata->speed);
+		break;
+
+	case SPEED_10:
+		DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr, 0x1D,
+									DWC_ETH_QOS_PHY_TX_DELAY);
+		DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr, 0x1E,
+									&phydata);
+		phydata = ((phydata & DWC_ETH_QOS_PHY_TX_DELAY_WR_MASK) |
+				((DISABLE_DELAY & DWC_ETH_QOS_PHY_TX_DELAY_MASK) << 8));
+		DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr, 0x1E,
+									phydata);
+		EMACDBG("Setting TX delay %#x in PHY for speed %d\n",
+				phydata, pdata->speed);
+
+		DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr, 0x1D,
+									DWC_ETH_QOS_PHY_RX_DELAY);
+		DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr, 0x1E,
+									&phydata);
+		phydata = ((phydata & DWC_ETH_QOS_PHY_RX_DELAY_WR_MASK) |
+				((DISABLE_DELAY & DWC_ETH_QOS_PHY_RX_DELAY_MASK) << 15));
+		DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr, 0x1E,
+									phydata);
+		EMACDBG("Setting RX delay %#x in PHY for speed %d\n",
+				phydata, pdata->speed);
+
+		break;
+	}
+	EMACDBG("Exit\n");
 }
 
 /*!
@@ -383,7 +481,7 @@ void DWC_ETH_QOS_adjust_link(struct net_device *dev)
 		"-->DWC_ETH_QOS_adjust_link. address %d link %d\n",
 		phydev->mdio.addr, phydev->link);
 
-	spin_lock_irqsave(&pdata->lock, flags);
+	//spin_lock_irqsave(&pdata->lock, flags);
 
 	if (phydev->link) {
 		/* Now we make sure that we can be in full duplex mode.
@@ -439,11 +537,8 @@ void DWC_ETH_QOS_adjust_link(struct net_device *dev)
 			EMACDBG("Bypass mode read from device tree = %d\n",
 					pdata->io_macro_tx_mode_non_id);
 
-			ret = DWC_ETH_QOS_rgmii_io_macro_init(pdata);
-			if (ret < 0)
-			   EMACERR("RGMII IO macro initialization failed\n");
-			if (pdata->io_macro_tx_mode_non_id)
-			   DWC_ETH_QOS_sdcc_set_bypass_mode(pdata->io_macro_tx_mode_non_id);
+			/* Set PHY delays here */
+			configure_phy_rx_tx_delay(pdata);
 
 #ifndef DWC_ETH_QOS_EMULATION_PLATFORM
 			EMACDBG("Initialize and configure SDCC DLL\n");
@@ -454,6 +549,12 @@ void DWC_ETH_QOS_adjust_link(struct net_device *dev)
 			if (ret < 0)
 			   EMACERR("SDCC DLL config failed \n");
 #endif
+
+			ret = DWC_ETH_QOS_rgmii_io_macro_init(pdata);
+			if (ret < 0)
+			   EMACERR("RGMII IO macro initialization failed\n");
+			if (pdata->io_macro_tx_mode_non_id)
+			   DWC_ETH_QOS_sdcc_set_bypass_mode(pdata->io_macro_tx_mode_non_id);
 		}
 
 		if (!pdata->oldlink) {
@@ -475,7 +576,7 @@ void DWC_ETH_QOS_adjust_link(struct net_device *dev)
 	 */
 	pdata->eee_enabled = DWC_ETH_QOS_eee_init(pdata);
 
-	spin_unlock_irqrestore(&pdata->lock, flags);
+	//spin_unlock_irqrestore(&pdata->lock, flags);
 
 	DBGPR_MDIO("<--DWC_ETH_QOS_adjust_link\n");
 }
@@ -500,6 +601,7 @@ static int DWC_ETH_QOS_init_phy(struct net_device *dev)
 	char phy_id_fmt[MII_BUS_ID_SIZE + 3];
 	char bus_id[MII_BUS_ID_SIZE];
 	int ret = Y_SUCCESS;
+	u32 phydata = 0;
 
 	DBGPR_MDIO("-->DWC_ETH_QOS_init_phy\n");
 
@@ -527,6 +629,7 @@ static int DWC_ETH_QOS_init_phy(struct net_device *dev)
 		return -ENODEV;
 	}
 
+#if 0
 	if ((phydev->phy_id == ATH8031_PHY_ID) || (phydev->phy_id == ATH8035_PHY_ID)) {
 		if (pdata->irq_number == 0) {
 		ret = request_irq(pdata->dev->irq, DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS,
@@ -552,9 +655,12 @@ static int DWC_ETH_QOS_init_phy(struct net_device *dev)
 		}
 		phydev->irq = PHY_IGNORE_INTERRUPT;
 	}
+#endif
 
 	if (pdata->interface == PHY_INTERFACE_MODE_GMII) {
-		phydev->supported = PHY_GBIT_FEATURES;
+		phydev->supported = PHY_DEFAULT_FEATURES;
+		phydev->supported |= SUPPORTED_10baseT_Full | SUPPORTED_100baseT_Full | SUPPORTED_1000baseT_Full;
+
 #ifdef DWC_ETH_QOS_CERTIFICATION_PKTBURSTCNT_HALFDUPLEX
 		phydev->supported &= ~SUPPORTED_1000baseT_Full;
 #endif
@@ -574,10 +680,29 @@ static int DWC_ETH_QOS_init_phy(struct net_device *dev)
 
 	phydev->advertising = phydev->supported;
 
-	DBGPR_MDIO("%s: attached to PHY (UID 0x%x) Link = %d\n", dev->name,
-		   phydev->phy_id, phydev->link);
-
 	pdata->phydev = phydev;
+
+	/* Disable smart speed function for AR8035*/
+	if (phydev->phy_id == ATH8035_PHY_ID) {
+		DBGPR_MDIO("%s: attached to PHY (UID 0x%x) Link = %d\n", dev->name,
+			   phydev->phy_id, phydev->link);
+
+		DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr, DWC_ETH_QOS_PHY_SMART_SPEED, &phydata);
+		phydata &= ~(1<<5);
+
+		DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr, DWC_ETH_QOS_PHY_SMART_SPEED, phydata);
+
+		DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr, MII_BMCR, &phydata);
+
+		phydata |= (1 << 15);
+
+		DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr, MII_BMCR, phydata);
+
+		DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr, DWC_ETH_QOS_PHY_SMART_SPEED, &phydata);
+		DBGPR_MDIO( "Smart Speed Reg (%#x) = %#x\n", DWC_ETH_QOS_PHY_SMART_SPEED, phydata);
+	}
+
+
 	phy_start(pdata->phydev);
 
 	DBGPR_MDIO("<--DWC_ETH_QOS_init_phy\n");

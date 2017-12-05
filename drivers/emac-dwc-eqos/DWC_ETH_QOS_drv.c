@@ -943,6 +943,7 @@ irqreturn_t DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS(int irq, void *device_id)
 		if (GET_VALUE(VARMAC_ISR, MAC_ISR_LPI_LPOS, MAC_ISR_LPI_HPOS) & 1)
 			DWC_ETH_QOS_handle_eee_interrupt(pdata);
 
+#if 0
 		/* PHY interrupt */
 		if (GET_VALUE(VARMAC_ISR, MAC_ISR_PHYIS_LPOS, MAC_ISR_PHYIS_HPOS) & 1) {
 			MAC_ISR_PHYIS_UDFRD(VARMAC_PHYIS);
@@ -950,6 +951,7 @@ irqreturn_t DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS(int irq, void *device_id)
 				(pdata->phydev->phy_id == ATH8035_PHY_ID))
 				DWC_ETH_QOS_handle_phy_interrupt(pdata);
 		}
+#endif
 	}
 
 	DBGPR("<--DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS\n");
@@ -2874,22 +2876,22 @@ static void DWC_ETH_QOS_check_rx_filter_status(struct s_RX_NORMAL_DESC *RX_NORMA
 	/* Receive Status RDES2 Valid ? */
 	if ((rdes3 & 0x8000000) == 0x8000000) {
 		if ((rdes2 & 0x400) == 0x400)
-			dev_alert(&pdata->pdev->dev, "ARP pkt received\n");
+			EMACDBG("ARP pkt received\n");
 		if ((rdes2 & 0x800) == 0x800)
-			dev_alert(&pdata->pdev->dev, "ARP reply not generated\n");
+			EMACDBG("ARP reply not generated\n");
 		if ((rdes2 & 0x8000) == 0x8000)
-			dev_alert(&pdata->pdev->dev, "VLAN pkt passed VLAN filter\n");
+			EMACDBG("VLAN pkt passed VLAN filter\n");
 		if ((rdes2 & 0x10000) == 0x10000)
-			dev_alert(&pdata->pdev->dev, "SA Address filter fail\n");
+			EMACDBG("SA Address filter fail\n");
 		if ((rdes2 & 0x20000) == 0x20000)
-			dev_alert(&pdata->pdev->dev, "DA Addess filter fail\n");
+			EMACDBG("DA Addess filter fail\n");
 		if ((rdes2 & 0x40000) == 0x40000)
-			dev_alert(&pdata->pdev->dev, "pkt passed the HASH filter in MAC and HASH value = %#x\n",
+			EMACDBG("pkt passed the HASH filter in MAC and HASH value = %#x\n",
 				  (rdes2 >> 19) & 0xff);
 		if ((rdes2 & 0x8000000) == 0x8000000)
-			dev_alert(&pdata->pdev->dev, "L3 filter(%d) Match\n", ((rdes2 >> 29) & 0x7));
+			EMACDBG("L3 filter(%d) Match\n", ((rdes2 >> 29) & 0x7));
 		if ((rdes2 & 0x10000000) == 0x10000000)
-			dev_alert(&pdata->pdev->dev, "L4 filter(%d) Match\n", ((rdes2 >> 29) & 0x7));
+			EMACDBG("L4 filter(%d) Match\n", ((rdes2 >> 29) & 0x7));
 	}
 }
 #endif /* YDEBUG_FILTER */

@@ -341,79 +341,77 @@ static struct notifier_block DWC_ETH_QOS_panic_blk = {
 	.notifier_call  = DWC_ETH_QOS_panic_notifier,
 };
 
-static void DWC_ETH_QOS_disable_regulators
-	(struct DWC_ETH_QOS_prv_data *pdata)
+static void DWC_ETH_QOS_disable_regulators(void)
 {
-	if (pdata->reg_rgmii)
-		regulator_disable(pdata->reg_rgmii);
+	if (dwc_eth_qos_res_data.reg_rgmii)
+		regulator_disable(dwc_eth_qos_res_data.reg_rgmii);
 
-	if (pdata->reg_emac_phy)
-		regulator_disable(pdata->reg_emac_phy);
+	if (dwc_eth_qos_res_data.reg_emac_phy)
+		regulator_disable(dwc_eth_qos_res_data.reg_emac_phy);
 
-	if (pdata->reg_rgmii_io_pads)
-		regulator_disable(pdata->reg_rgmii_io_pads);
+	if (dwc_eth_qos_res_data.reg_rgmii_io_pads)
+		regulator_disable(dwc_eth_qos_res_data.reg_rgmii_io_pads);
 
-	if (pdata->gdsc_emac)
-		regulator_disable(pdata->gdsc_emac);
+	if (dwc_eth_qos_res_data.gdsc_emac)
+		regulator_disable(dwc_eth_qos_res_data.gdsc_emac);
 }
 
-static int DWC_ETH_QOS_init_regulators
-	(struct device *dev, struct DWC_ETH_QOS_prv_data *pdata)
+static int DWC_ETH_QOS_init_regulators(struct device *dev)
 {
 	int ret = 0;
 
-	pdata->gdsc_emac = NULL;
-	pdata->reg_rgmii = NULL;
-	pdata->reg_emac_phy = NULL;
-	pdata->reg_rgmii_io_pads = NULL;
+	dwc_eth_qos_res_data.gdsc_emac = NULL;
+	dwc_eth_qos_res_data.reg_rgmii = NULL;
+	dwc_eth_qos_res_data.reg_emac_phy = NULL;
+	dwc_eth_qos_res_data.reg_rgmii_io_pads = NULL;
 
-	pdata->gdsc_emac =
+	dwc_eth_qos_res_data.gdsc_emac =
 		devm_regulator_get(dev, EMAC_GDSC_EMAC_NAME);
-	if (IS_ERR(pdata->gdsc_emac)) {
+	if (IS_ERR(dwc_eth_qos_res_data.gdsc_emac)) {
 		EMACERR("Can not get <%s>\n", EMAC_GDSC_EMAC_NAME);
-		return PTR_ERR(pdata->gdsc_emac);
+		return PTR_ERR(dwc_eth_qos_res_data.gdsc_emac);
 	}
 
-	pdata->reg_rgmii =
+	dwc_eth_qos_res_data.reg_rgmii =
 		devm_regulator_get(dev, EMAC_VREG_RGMII_NAME);
-	if (IS_ERR(pdata->reg_rgmii)) {
+	if (IS_ERR(dwc_eth_qos_res_data.reg_rgmii)) {
 		EMACERR("Can not get <%s>\n", EMAC_VREG_RGMII_NAME);
-		return PTR_ERR(pdata->reg_rgmii);
+		return PTR_ERR(dwc_eth_qos_res_data.reg_rgmii);
 	}
 
-	pdata->reg_emac_phy =
+	dwc_eth_qos_res_data.reg_emac_phy =
 		devm_regulator_get(dev, EMAC_VREG_EMAC_PHY_NAME);
-	if (IS_ERR(pdata->reg_emac_phy)) {
+	if (IS_ERR(dwc_eth_qos_res_data.reg_emac_phy)) {
 		EMACERR("Can not get <%s>\n", EMAC_VREG_EMAC_PHY_NAME);
-		return PTR_ERR(pdata->reg_emac_phy);
+		return PTR_ERR(dwc_eth_qos_res_data.reg_emac_phy);
 	}
 
-	pdata->reg_rgmii_io_pads =
+	dwc_eth_qos_res_data.reg_rgmii_io_pads =
 		devm_regulator_get(dev, EMAC_VREG_RGMII_IO_PADS_NAME);
-	if (IS_ERR(pdata->reg_rgmii_io_pads)) {
+	if (IS_ERR(dwc_eth_qos_res_data.reg_rgmii_io_pads)) {
 		EMACERR("Can not get <%s>\n", EMAC_VREG_RGMII_IO_PADS_NAME);
-		return PTR_ERR(pdata->reg_rgmii_io_pads);
+		return PTR_ERR(dwc_eth_qos_res_data.reg_rgmii_io_pads);
 	}
 
-	ret = regulator_enable(pdata->gdsc_emac);
+	ret = regulator_enable(dwc_eth_qos_res_data.gdsc_emac);
 	if (ret) {
 		EMACERR("Can not enable <%s>\n", EMAC_GDSC_EMAC_NAME);
 		goto reg_error;
 	}
 
-	ret = regulator_enable(pdata->reg_rgmii);
+	ret = regulator_enable(dwc_eth_qos_res_data.reg_rgmii);
 	if (ret) {
 		EMACERR("Can not enable <%s>\n", EMAC_VREG_RGMII_NAME);
 		goto reg_error;
 	}
 
-	ret = regulator_enable(pdata->reg_emac_phy);
+	ret = regulator_enable(dwc_eth_qos_res_data.reg_emac_phy);
 	if (ret) {
 		EMACERR("Can not enable <%s>\n", EMAC_VREG_EMAC_PHY_NAME);
 		goto reg_error;
 	}
 
-	ret = regulator_enable(pdata->reg_rgmii_io_pads);
+	ret = regulator_enable(dwc_eth_qos_res_data.reg_rgmii_io_pads);
 	if (ret) {
 		EMACERR("Can not enable <%s>\n", EMAC_VREG_RGMII_IO_PADS_NAME);
 		goto reg_error;
@@ -422,7 +420,7 @@ static int DWC_ETH_QOS_init_regulators
 	return ret;
 
 reg_error:
-	DWC_ETH_QOS_disable_regulators(pdata);
+	DWC_ETH_QOS_disable_regulators();
 	return ret;
 }
 
@@ -503,28 +501,27 @@ static int setup_gpio_output_common
 	return ret;
 }
 
-static void DWC_ETH_QOS_free_gpios(struct DWC_ETH_QOS_prv_data *pdata)
+static void DWC_ETH_QOS_free_gpios(void)
 {
-	if (gpio_is_valid(pdata->gpio_phy_intr_redirect))
-		gpio_free(pdata->gpio_phy_intr_redirect);
-	pdata->gpio_phy_intr_redirect = -1;
+	if (gpio_is_valid(dwc_eth_qos_res_data.gpio_phy_intr_redirect))
+		gpio_free(dwc_eth_qos_res_data.gpio_phy_intr_redirect);
+	dwc_eth_qos_res_data.gpio_phy_intr_redirect = -1;
 
-	if (gpio_is_valid(pdata->gpio_phy_reset))
-		gpio_free(pdata->gpio_phy_reset);
-	pdata->gpio_phy_reset = -1;
+	if (gpio_is_valid(dwc_eth_qos_res_data.gpio_phy_reset))
+		gpio_free(dwc_eth_qos_res_data.gpio_phy_reset);
+	dwc_eth_qos_res_data.gpio_phy_reset = -1;
 }
 
-static int DWC_ETH_QOS_init_gpios
-	(struct device *dev, struct DWC_ETH_QOS_prv_data *pdata)
+static int DWC_ETH_QOS_init_gpios(struct device *dev)
 {
 	int ret = 0;
 
-	pdata->gpio_phy_intr_redirect = -1;
-	pdata->gpio_phy_reset = -1;
+	dwc_eth_qos_res_data.gpio_phy_intr_redirect = -1;
+	dwc_eth_qos_res_data.gpio_phy_reset = -1;
 
 	ret = setup_gpio_input_common(
 		dev, EMAC_GPIO_PHY_INTR_REDIRECT_NAME,
-		&pdata->gpio_phy_intr_redirect);
+		&dwc_eth_qos_res_data.gpio_phy_intr_redirect);
 
 	if (ret) {
 		EMACERR("Failed to setup <%s> gpio\n",
@@ -534,7 +531,7 @@ static int DWC_ETH_QOS_init_gpios
 
 	ret = setup_gpio_output_common(
 		dev, EMAC_GPIO_PHY_RESET_NAME,
-		&pdata->gpio_phy_reset, 0x0);
+		&dwc_eth_qos_res_data.gpio_phy_reset, 0x0);
 
 	if (ret) {
 		EMACERR("Failed to setup <%s> gpio\n",
@@ -544,12 +541,12 @@ static int DWC_ETH_QOS_init_gpios
 
 	mdelay(1);
 
-	gpio_set_value(pdata->gpio_phy_reset, 0x1);
+	gpio_set_value(dwc_eth_qos_res_data.gpio_phy_reset, 0x1);
 
 	return ret;
 
 gpio_error:
-	DWC_ETH_QOS_free_gpios(pdata);
+	DWC_ETH_QOS_free_gpios();
 	return ret;
 }
 
@@ -591,6 +588,14 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	ret = DWC_ETH_QOS_ioremap();
 	if (ret)
 		goto err_out_map_failed;
+
+	ret = DWC_ETH_QOS_init_regulators(&pdev->dev);
+	if (ret)
+		goto err_out_power_failed;
+
+	ret = DWC_ETH_QOS_init_gpios(&pdev->dev);
+	if (ret)
+		goto err_out_gpio_failed;
 
 	/* queue count */
 	tx_q_count = get_tx_queue_count();
@@ -638,14 +643,6 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	DWC_ETH_QOS_get_pdata(pdata);
 #endif
 
-	ret = DWC_ETH_QOS_init_regulators(&pdev->dev, pdata);
-	if (ret)
-		goto err_out_power_failed;
-
-	ret = DWC_ETH_QOS_init_gpios(&pdev->dev, pdata);
-	if (ret)
-		goto err_out_gpio_failed;
-
 	/* issue software reset to device */
 	hw_if->exit();
 	/* IEMAC: Find and Read the IRQ from DTS */
@@ -684,9 +681,11 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 		dev_alert(&pdev->dev, "%s: MDIO is not present\n\n", DEV_NAME);
 	}
 
+#if 0
 	if ((pdata->phydev->phy_id == ATH8031_PHY_ID) ||
 		(pdata->phydev->phy_id == ATH8035_PHY_ID))
 		hw_if->enable_mac_phy_interrupt();
+#endif
 
 #ifndef DWC_ETH_QOS_CONFIG_PGTEST
 	/* enabling and registration of irq with magic wakeup */
@@ -750,6 +749,7 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 #endif /* end of DWC_ETH_QOS_CONFIG_PGTEST */
 
 	spin_lock_init(&pdata->lock);
+	mutex_init(&pdata->mlock);
 	spin_lock_init(&pdata->tx_lock);
 	spin_lock_init(&pdata->pmt_lock);
 
@@ -818,10 +818,10 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, NULL);
 
  err_out_gpio_failed:
-	 DWC_ETH_QOS_free_gpios(pdata);
+	 DWC_ETH_QOS_free_gpios();
 
  err_out_power_failed:
-	 DWC_ETH_QOS_disable_regulators(pdata);
+	 DWC_ETH_QOS_disable_regulators();
 
  err_out_dev_failed:
 	iounmap((void __iomem *)dwc_eth_qos_base_addr);
@@ -884,8 +884,8 @@ int DWC_ETH_QOS_remove(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, NULL);
 
-	DWC_ETH_QOS_disable_regulators(pdata);
-	DWC_ETH_QOS_free_gpios(pdata);
+	DWC_ETH_QOS_disable_regulators();
+	DWC_ETH_QOS_free_gpios();
 
 	DBGPR("<-- DWC_ETH_QOS_remove\n");
 

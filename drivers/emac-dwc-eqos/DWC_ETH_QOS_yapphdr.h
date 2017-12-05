@@ -371,7 +371,7 @@ struct DWC_ETH_QOS_arp_offload {
 
 /* for MAC Double VLAN Processing config */
 #define DWC_ETH_QOS_DVLAN_OUTER	(1)
-#define DWC_ETH_QOS_DVLAN_INNER	BIT(1)
+#define DWC_ETH_QOS_DVLAN_INNER	(1 << 1)
 #define DWC_ETH_QOS_DVLAN_BOTH	(DWC_ETH_QOS_DVLAN_OUTER | DWC_ETH_QOS_DVLAN_INNER)
 
 #define DWC_ETH_QOS_DVLAN_NONE	0

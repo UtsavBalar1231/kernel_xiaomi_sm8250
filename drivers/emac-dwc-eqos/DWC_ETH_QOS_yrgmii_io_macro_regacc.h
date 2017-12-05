@@ -449,6 +449,22 @@ extern ULONG dwc_rgmii_io_csr_base_addr;
 		data = ((data >> 0) & SDCC_HC_CFG_2_DDR_CAL_EN_MASK);\
 } while (0)
 
+#define SDCC_HC_CFG_2_DDR_TRAFFIC_INIT_SW_MASK (ULONG)(0x1)
+
+#define SDCC_HC_CFG_2_DDR_TRAFFIC_INIT_SW_WR_MASK (ULONG)(0xfffffffd)
+
+#define SDCC_HC_CFG_2_DDR_TRAFFIC_INIT_SW_UDFWR(data) do {\
+		ULONG v;\
+		SDCC_HC_REG_DLL_CONFIG_2_RGRD(v);\
+		v = ((v & SDCC_HC_CFG_2_DDR_TRAFFIC_INIT_SW_WR_MASK) | ((data & SDCC_HC_CFG_2_DDR_TRAFFIC_INIT_SW_MASK) << 1));\
+		SDCC_HC_REG_DLL_CONFIG_2_RGWR(v);\
+} while (0)
+
+#define SDCC_HC_CFG_2_DDR_TRAFFIC_INIT_SW_UDFRD(data) do {\
+		SDCC_HC_REG_DLL_CONFIG_2_RGRD(data);\
+		data = ((data >> 0) & SDCC_HC_CFG_2_DDR_TRAFFIC_INIT_SW_MASK);\
+} while (0)
+
 /* Read register operations for EMAC_SDC4_STATUS */
 
 #define SDC4_STATUS_RGOFFADDR ((volatile ULONG *)(RGMII_IO_BASE_ADDRESS + 0x00000014))
@@ -608,6 +624,13 @@ extern ULONG dwc_rgmii_io_csr_base_addr;
 
 #define RGMII_IO_MACRO_DEBUG_1_RGRD(data) do {\
 		(data) = ioread32((void *)RGMII_IO_MACRO_DEBUG_1_RGOFFADDR);\
+} while (0)
+
+/* EMAC_SYSTEM_LOW_POWER_DEBUG */
+#define EMAC_SYSTEM_LOW_POWER_DEBUG_RGOFFADDR ((volatile ULONG *)(RGMII_IO_BASE_ADDRESS + 0x00000028))
+
+#define EMAC_SYSTEM_LOW_POWER_DEBUG_RGRD(data) do {\
+		(data) = ioread32((void *)EMAC_SYSTEM_LOW_POWER_DEBUG_RGOFFADDR);\
 } while (0)
 
 void dump_rgmii_io_macro_registers(void);
