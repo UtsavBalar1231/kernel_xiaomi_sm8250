@@ -2360,6 +2360,11 @@ static int DWC_ETH_QOS_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	DBGPR("-->DWC_ETH_QOS_start_xmit: skb->len = %d, qinx = %u\n",
 	      skb->len, qinx);
 
+	if (pdata->ipa_enabled && qinx == IPA_DMA_TX_CH) {
+		EMACERR("TX Channel [%d] is not a valid for SW path \n", qinx);
+		BUG();
+	}
+
 	spin_lock_irqsave(&pdata->tx_lock, flags);
 
 #ifdef DWC_ETH_QOS_CONFIG_PGTEST
@@ -2621,7 +2626,7 @@ static unsigned char DWC_ETH_QOS_get_rx_hwtstamp(
 			  "Device has not yet updated the context desc to hold Rx time stamp(retry = %d)\n",
 			retry);
 		desc_data->dirty_rx--;
-		DECR_RX_DESC_INDEX(desc_data->cur_rx);
+		DECR_RX_DESC_INDEX(desc_data->cur_rx, pdata->rx_queue[qinx].desc_cnt);
 		return 0;
 	}
 

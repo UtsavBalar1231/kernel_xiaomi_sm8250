@@ -219,7 +219,7 @@ int DWC_ETH_QOS_ipa_offload_suspend(struct DWC_ETH_QOS_prv_data *pdata)
 {
 	int ret = Y_SUCCESS;
 	struct hw_if_struct *hw_if = &(pdata->hw_if);
-	struct ipa_rm_perf_profile profile;
+	struct ipa_perf_profile profile;
 
 	EMACDBG("Suspend/disable IPA offload\n");
 	ret = hw_if->stop_dma_rx(IPA_DMA_RX_CH);
@@ -246,9 +246,9 @@ int DWC_ETH_QOS_ipa_offload_suspend(struct DWC_ETH_QOS_prv_data *pdata)
 		return ret;
 	}
 
-	profile.max_supported_bandwidth_mbps = IPA_PIPE_MIN_BW;
-	ret = ipa_rm_set_perf_profile(IPA_RM_RESOURCE_ETHERNET_CONS,
-					&profile);
+	profile.max_supported_bw_mbps = IPA_PIPE_MIN_BW;
+	profile.client = IPA_CLIENT_ETHERNET_CONS;
+	ret = ipa_set_perf_profile(&profile);
 	if (ret)
 		EMACERR("Err to set BW: IPA_RM_RESOURCE_ETHERNET_CONS err:%d\n",
 				ret);
@@ -268,7 +268,7 @@ int DWC_ETH_QOS_ipa_offload_resume(struct DWC_ETH_QOS_prv_data *pdata)
 {
 	struct hw_if_struct *hw_if = &(pdata->hw_if);
 	int ret = Y_SUCCESS;
-	struct ipa_rm_perf_profile profile;
+	struct ipa_perf_profile profile;
 
 	EMACDBG("Resume/enable IPA offload\n");
 	hw_if->tx_desc_init(pdata, IPA_DMA_TX_CH);
@@ -281,9 +281,9 @@ int DWC_ETH_QOS_ipa_offload_resume(struct DWC_ETH_QOS_prv_data *pdata)
 	else
 		pdata->prv_ipa.ipa_offload_conn = true;
 
-	profile.max_supported_bandwidth_mbps = pdata->speed;
-	ret = ipa_rm_set_perf_profile(IPA_RM_RESOURCE_ETHERNET_CONS,
-					&profile);
+	profile.max_supported_bw_mbps = pdata->speed;
+	profile.client = IPA_CLIENT_ETHERNET_CONS;
+	ret = ipa_set_perf_profile(&profile);
 	if (ret)
 		EMACERR("Err to set BW: IPA_RM_RESOURCE_ETHERNET_CONS err:%d\n",
 				ret);
@@ -605,7 +605,7 @@ int DWC_ETH_QOS_ipa_offload_connect(struct DWC_ETH_QOS_prv_data *pdata)
 	struct ipa_uc_offload_conn_out_params out;
 	struct ipa_ntn_setup_info ul;
 	struct ipa_ntn_setup_info dl;
-	struct ipa_rm_perf_profile profile;
+	struct ipa_perf_profile profile;
 	int ret = 0;
 
 	if(!pdata) {
@@ -630,7 +630,7 @@ int DWC_ETH_QOS_ipa_offload_connect(struct DWC_ETH_QOS_prv_data *pdata)
 	ul.ntn_ring_size = pdata->rx_queue[IPA_DMA_RX_CH].desc_cnt;
 	ul.buff_pool_base_pa = dma_map_single(&pdata->pdev->dev,
 			GET_RX_BUFF_POOL_BASE_ADRR(IPA_DMA_RX_CH),
-			GET_RX_BUFF_POOL_BASE_ADRR_SIZE(NTN_RX_DMA_CH_0),
+			GET_RX_BUFF_POOL_BASE_ADRR_SIZE(IPA_DMA_RX_CH),
 			DMA_TO_DEVICE);
 	ul.num_buffers = pdata->rx_queue[IPA_DMA_RX_CH].desc_cnt - 1;
 	ul.data_buff_size = DWC_ETH_QOS_ETH_FRAME_LEN_IPA;
@@ -671,16 +671,17 @@ int DWC_ETH_QOS_ipa_offload_connect(struct DWC_ETH_QOS_prv_data *pdata)
         ntn_ipa->uc_db_tx_addr = out.u.ntn.dl_uc_db_pa;
 
 	/* Set Perf Profile For PROD/CONS Pipes */
-	profile.max_supported_bandwidth_mbps = pdata->speed;
-	ret = ipa_rm_set_perf_profile (IPA_RM_RESOURCE_ETHERNET_PROD,
-					&profile);
+	profile.max_supported_bw_mbps = pdata->speed;
+	profile.client = IPA_CLIENT_ETHERNET_PROD;
+	ret = ipa_set_perf_profile (&profile);
 	if (ret) {
 		EMACERR("Err to set BW: IPA_RM_RESOURCE_ETHERNET_PROD err:%d\n",
 				ret);
 		return -1;
 	}
-	ret = ipa_rm_set_perf_profile (IPA_RM_RESOURCE_ETHERNET_CONS,
-					&profile);
+
+	profile.client = IPA_CLIENT_ETHERNET_CONS;
+	ret = ipa_set_perf_profile (&profile);
 	if (ret) {
 		EMACERR("Err to set BW: IPA_RM_RESOURCE_ETHERNET_CONS err:%d\n",
 				ret);
@@ -774,7 +775,7 @@ void DWC_ETH_QOS_ipa_stats_read(struct DWC_ETH_QOS_prv_data *pdata)
 	dma_stats->ipa_rx_Buff_Ring_Base =
 		dma_map_single(&pdata->pdev->dev,
 			GET_RX_BUFF_POOL_BASE_ADRR(IPA_DMA_RX_CH),
-			GET_RX_BUFF_POOL_BASE_ADRR_SIZE(NTN_RX_DMA_CH_0),
+			GET_RX_BUFF_POOL_BASE_ADRR_SIZE(IPA_DMA_RX_CH),
 			DMA_TO_DEVICE);
 	dma_stats->ipa_rx_Buff_Ring_Size = pdata->rx_queue[IPA_DMA_RX_CH].desc_cnt - 1;
 	

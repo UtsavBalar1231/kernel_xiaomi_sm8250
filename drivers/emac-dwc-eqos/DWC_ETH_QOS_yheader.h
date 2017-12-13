@@ -392,7 +392,7 @@
 #define GET_TX_BUFF_DMA_ADDR(chInx, dInx) (pdata->tx_queue[(chInx)].tx_desc_data.tx_ipa_dma_buff_addrs[(dInx)])
 #define GET_TX_BUFF_LOGICAL_ADDR(chInx, dInx) (pdata->tx_queue[(chInx)].tx_desc_data.tx_ipa_buff_addrs[(dInx)])
 #define GET_TX_BUFF_DMA_POOL_BASE_ADRR(chInx) (pdata->tx_queue[(chInx)].tx_desc_data.tx_ipa_dma_buff_addrs)
-#define GET_TX_BUFF_DMA_POOL_BASE_ADRR_SIZE(chInx) (sizeof(dma_addr_t) * pdata->tx_dma_ch[chInx].desc_cnt)
+#define GET_TX_BUFF_DMA_POOL_BASE_ADRR_SIZE(chInx) (sizeof(dma_addr_t) * pdata->tx_queue[chInx].desc_cnt)
 
 #define GET_TX_WRAPPER_DESC(QINX) (&pdata->tx_queue[(QINX)].tx_desc_data)
 
@@ -416,7 +416,7 @@
 
 #define GET_CURRENT_XFER_DESC_CNT(QINX) (pdata->tx_queue[(QINX)].tx_desc_data.packet_count)
 
-#define GET_CURRENT_XFER_LAST_DESC_INDEX(QINX, start_index, offset, desc_cnt)\
+#define GET_TX_CURRENT_XFER_LAST_DESC_INDEX(QINX, start_index, offset, desc_cnt)\
 	(GET_CURRENT_XFER_DESC_CNT((QINX)) == 0) ? (desc_cnt - 1) :\
 	((GET_CURRENT_XFER_DESC_CNT((QINX)) == 1) ? (INCR_TX_LOCAL_INDEX((start_index), (offset), (desc_cnt))) :\
 	INCR_TX_LOCAL_INDEX((start_index), (GET_CURRENT_XFER_DESC_CNT((QINX)) + (offset) - 1), (desc_cnt))) \
@@ -440,7 +440,7 @@
 /* Add IPA specific Macros to access the DMA address to be provided to IPA uC*/
 #define GET_RX_BUFF_DMA_ADDR(QINX, DINX) (pdata->rx_queue[(QINX)].rx_desc_data.ipa_rx_buff_addrs[(DINX)])
 #define GET_RX_BUFF_POOL_BASE_ADRR(QINX) (pdata->rx_queue[(QINX)].rx_desc_data.ipa_rx_buff_addrs)
-#define GET_RX_BUFF_POOL_BASE_ADRR_SIZE(chInx) (sizeof(dma_addr_t) * pdata->rx_dma_ch[chInx].desc_cnt)
+#define GET_RX_BUFF_POOL_BASE_ADRR_SIZE(chInx) (sizeof(dma_addr_t) * pdata->rx_queue[chInx].desc_cnt)
 
 #define GET_RX_WRAPPER_DESC(QINX) (&pdata->rx_queue[(QINX)].rx_desc_data)
 
@@ -452,19 +452,19 @@
     (inx) = ((inx) - desc_cnt);\
 } while (0)
 
-#define DECR_RX_DESC_INDEX(inx) do {\
+#define DECR_RX_DESC_INDEX(inx, desc_cnt) do {\
 	(inx)--;\
 	if ((inx) < 0)\
-		(inx) = (RX_DESC_CNT + (inx));\
+		(inx) = (desc_cnt + (inx));\
 } while (0)
 
-#define INCR_RX_LOCAL_INDEX(inx, offset)\
-	(((inx) + (offset)) >= RX_DESC_CNT ?\
-	((inx) + (offset) - RX_DESC_CNT) : ((inx) + (offset)))
+#define INCR_RX_LOCAL_INDEX(inx, offset, desc_cnt)\
+	(((inx) + (offset)) >= desc_cnt ?\
+	((inx) + (offset) - desc_cnt) : ((inx) + (offset)))
 
 #define GET_CURRENT_RCVD_DESC_CNT(QINX) (pdata->rx_queue[(QINX)].rx_desc_data.pkt_received)
 
-#define GET_CURRENT_RCVD_LAST_DESC_INDEX(start_index, offset) (RX_DESC_CNT - 1)
+#define GET_RX_CURRENT_RCVD_LAST_DESC_INDEX(start_index, offset, desc_cnt) (desc_cnt - 1)
 
 #define GET_TX_DESC_IDX(QINX, desc) (((desc) - GET_TX_DESC_DMA_ADDR((QINX), 0)) / (sizeof(struct s_TX_NORMAL_DESC)))
 

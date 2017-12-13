@@ -3481,7 +3481,7 @@ static void rx_descriptor_init(struct DWC_ETH_QOS_prv_data *pdata, UINT QINX)
 	/* update the total no of Rx descriptors count */
 	DMA_RDRLR_RGWR(QINX, (pdata->rx_queue[QINX].desc_cnt - 1));
 	/* update the Rx Descriptor Tail Pointer */
-	last_index = GET_CURRENT_RCVD_LAST_DESC_INDEX(start_index, 0);
+	last_index = GET_RX_CURRENT_RCVD_LAST_DESC_INDEX(start_index, 0, pdata->rx_queue[QINX].desc_cnt);
 	DMA_RDTP_RPDR_RGWR(QINX, GET_RX_DESC_DMA_ADDR(QINX, last_index));
 	/* update the starting address of desc chain/ring */
 	DMA_RDLAR_RGWR(QINX, GET_RX_DESC_DMA_ADDR(QINX, start_index));
@@ -3789,7 +3789,7 @@ static void pre_transmit(struct DWC_ETH_QOS_prv_data *pdata,
 	}
 	/* Mark it as LAST descriptor */
 	last_index =
-		GET_CURRENT_XFER_LAST_DESC_INDEX(QINX, start_index, 0, pdata->tx_queue[QINX].desc_cnt);
+		GET_TX_CURRENT_XFER_LAST_DESC_INDEX(QINX, start_index, 0, pdata->tx_queue[QINX].desc_cnt);
 	TX_NORMAL_DESC = GET_TX_DESC_PTR(QINX, last_index);
 	TX_NORMAL_DESC_TDES3_LD_MLF_WR(TX_NORMAL_DESC->TDES3, 0x1);
 	/* set Interrupt on Completion for last descriptor */
@@ -3825,8 +3825,8 @@ static void pre_transmit(struct DWC_ETH_QOS_prv_data *pdata,
 		/* issue a poll command to Tx DMA by writing address
 		 * of next immediate free descriptor
 		 */
-		last_index = GET_CURRENT_XFER_LAST_DESC_INDEX(
-			QINX, start_index, 1);
+		last_index = GET_TX_CURRENT_XFER_LAST_DESC_INDEX(
+			QINX, start_index, 1, pdata->tx_queue[QINX].desc_cnt);
 		DMA_TDTP_TPDR_RGWR(QINX,
 				   GET_TX_DESC_DMA_ADDR(QINX, last_index));
 	}
@@ -3834,7 +3834,7 @@ static void pre_transmit(struct DWC_ETH_QOS_prv_data *pdata,
 	/* issue a poll command to Tx DMA by writing address
 	 * of next immediate free descriptor
 	 */
-	last_index = GET_CURRENT_XFER_LAST_DESC_INDEX(QINX, start_index, 1, pdata->tx_queue[QINX].desc_cnt);
+	last_index = GET_TX_CURRENT_XFER_LAST_DESC_INDEX(QINX, start_index, 1, pdata->tx_queue[QINX].desc_cnt);
 	DMA_TDTP_TPDR_RGWR(QINX,
 			   GET_TX_DESC_DMA_ADDR(QINX, last_index));
 #endif
@@ -4860,7 +4860,8 @@ static void rx_descriptor_init_pg(struct DWC_ETH_QOS_prv_data *pdata, UINT QINX)
 	/* update the total no of Rx descriptors count */
 	DMA_RDRLR_RGWR(QINX, (pdata->rx_queue[QINX].desc_cnt - 1));
 	/* update the Rx Descriptor Tail Pointer */
-	last_index = GET_CURRENT_RCVD_LAST_DESC_INDEX(start_index, 0);
+	last_index = GET_RX_CURRENT_RCVD_LAST_DESC_INDEX(start_index,
+			0, pdata->rx_queue[QINX].desc_cnt);
 	DMA_RDTP_RPDR_RGWR(QINX, GET_RX_DESC_DMA_ADDR(QINX, last_index));
 	/* update the starting address of desc chain/ring */
 	DMA_RDLAR_RGWR(QINX, GET_RX_DESC_DMA_ADDR(QINX, start_index));
