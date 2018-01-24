@@ -1,4 +1,5 @@
-/* Copyright (c) 2017, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2017-2018, The Linux Foundation. All rights
+ * reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -298,7 +299,8 @@
 #define DWC_ETH_QOS_PHY_TX_DELAY_MASK 0x1
 #define ENABLE_DELAY 0x1
 #define DISABLE_DELAY 0x0
-
+#define DWC_ETH_QOS_PHY_DEBUG_PORT_ADDR_OFFSET 0x1d
+#define DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT 0x1e
 
 #define LINK_DOWN_STATE 0x800
 #define LINK_UP_STATE 0x400

@@ -1,4 +1,4 @@
-/* Copyright (c) 2017, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -258,7 +258,8 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 				EMACDBG(
 					"Set registers for Bypass mode = %d\n",
 					pdata->io_macro_tx_mode_non_id);
-				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x0);
+				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x1);
+				RGMII_CONFIG_2_DATA_DIVIDE_CLK_SEL_UDFWR(0x1);
 			} else {
 				RGMII_BYPASS_TX_ID_EN_UDFWR(0x0);
 				RGMII_POS_NEG_DATA_SEL_UDFWR(0x1);
@@ -385,14 +386,15 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 
 	case MII_MODE:
 		EMACDBG("Set registers for MII mode and speed = %d\n", pdata->speed);
+		RGMII_INTF_SEL_UDFWR(0x2);
+		RGMII_CONFIG_2_RERVED_CONFIG_16_EN_UDFWR(0x1);
+		RGMII_CONFIG_2_DATA_DIVIDE_CLK_SEL_UDFWR(0x1);
 
 		switch (pdata->speed) {
 		case SPEED_100:
 			pdata->rgmii_clk_rate = MII_100_LOW_SVS_CLK_FREQ;
+			break;
 		case SPEED_10:
-			RGMII_INTF_SEL_UDFWR(0x2);
-			RGMII_CONFIG_2_RERVED_CONFIG_16_EN_UDFWR(0x1);
-			RGMII_CONFIG_2_DATA_DIVIDE_CLK_SEL_UDFWR(0x1);
 			pdata->rgmii_clk_rate = MII_10_LOW_SVS_CLK_FREQ;
 			break;
 		}
