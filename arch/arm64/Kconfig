@@ -1143,6 +1143,7 @@ config COMPAT_VDSO
 	bool "Enable vDSO for 32-bit applications"
 	depends on !CPU_BIG_ENDIAN && "$(CROSS_COMPILE_COMPAT)" != ""
 	select GENERIC_COMPAT_VDSO
+	select ARM_ARCH_TIMER_VCT_ACCESS
 	default y
 	help
 	  Place in the process address space of 32-bit applications an
