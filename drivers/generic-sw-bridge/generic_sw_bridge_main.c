@@ -26,10 +26,17 @@
 #include <linux/etherdevice.h>
 #include <linux/ip.h>
 #include <net/ip.h>
+#include <linux/proc_fs.h>
 
 static char gsb_drv_name[] = "gsb";
 static struct gsb_ctx *__gc = NULL;
 static DECLARE_WAIT_QUEUE_HEAD(wq);
+
+static struct proc_dir_entry* proc_file = NULL;
+static struct file_operations proc_file_ops;
+int gsb_enable_ipc_low;
+#define MAX_PROC_SIZE 10
+char tmp_buff[MAX_PROC_SIZE];
 
 static const char gsb_drv_description[] =
 	"The Linux Foundation"
@@ -52,14 +59,14 @@ static void release_wake_source(void)
 	struct gsb_ctx *pgsb_ctx = __gc;
 	if (IS_ERR_OR_NULL(pgsb_ctx))
 	{
-		DEBUG_ERROR("NULL GSB Context passed\n");
+		IPC_ERROR_LOW("NULL GSB Context passed\n");
 		return;
 	}
 	spin_lock_bh(&pgsb_ctx->gsb_wake_lock);
 	if (pgsb_ctx->wake_source_ref_count>0) pgsb_ctx->wake_source_ref_count--;
 	if (pgsb_ctx->do_we_need_wake_source && !pgsb_ctx->wake_source_ref_count)
 	{
-		DEBUG_TRACE("Scheduling Inactivity timer\n");
+		IPC_TRACE_LOW("Scheduling Inactivity timer\n");
 		if (!pgsb_ctx->inactivity_timer_scheduled)
 		{
 			schedule_inactivity_timer(INACTIVITY_TIME);
@@ -68,7 +75,7 @@ static void release_wake_source(void)
 	}
 	else
 	{
-		DEBUG_TRACE("Wake source count %d\n",
+		IPC_TRACE_LOW("Wake source count %d\n",
 				pgsb_ctx->wake_source_ref_count);
 	}
 
@@ -80,21 +87,21 @@ static void acquire_wake_source(void)
 	struct gsb_ctx *pgsb_ctx = __gc;
 	if (IS_ERR_OR_NULL(pgsb_ctx))
 	{
-		DEBUG_ERROR("NULL GSB Context passed\n");
+		IPC_ERROR_LOW("NULL GSB Context passed\n");
 		return;
 	}
 
 	spin_lock_bh(&pgsb_ctx->gsb_wake_lock);
 	if (!pgsb_ctx->do_we_need_wake_source)
 	{
-		DEBUG_TRACE("Acquiring wake src\n");
+		IPC_TRACE_LOW("Acquiring wake src\n");
 		pgsb_ctx->do_we_need_wake_source = true;
 		pgsb_ctx->wake_source_ref_count++;
 	}
 	else
 	{
 		pgsb_ctx->wake_source_ref_count++;
-		DEBUG_TRACE("Wake source count %d\n",
+		IPC_TRACE_LOW("Wake source count %d\n",
 				pgsb_ctx->wake_source_ref_count);
 	}
 	spin_unlock_bh(&pgsb_ctx->gsb_wake_lock);
@@ -173,11 +180,11 @@ static void schedule_inactivity_timer(const unsigned int time_in_ms)
 	struct gsb_ctx *pgsb_ctx = __gc;
 	if (NULL == pgsb_ctx)
 	{
-		DEBUG_ERROR("Context is NULL\n");
+		IPC_ERROR_LOW("Context is NULL\n");
 		return;
 	}
 
-	DEBUG_TRACE("fire in 200ms (%ld)\n", jiffies);
+	IPC_TRACE_LOW("fire in 200ms (%ld)\n", jiffies);
 	mod_timer(&INACTIVITY_TIMER, jiffies + msecs_to_jiffies(time_in_ms));
 	spin_lock_bh(&pgsb_ctx->gsb_lock);
 	pgsb_ctx->inactivity_timer_scheduled = true;
@@ -604,25 +611,25 @@ struct gsb_if_info* get_node_info_from_ht(char *iface)
 
 	if (NULL == pgsb_ctx)
 	{
-		DEBUG_ERROR("Context is NULL\n");
+		IPC_ERROR_LOW("Context is NULL\n");
 		return NULL;
 	}
 	key = get_ht_Key(iface);
-	DEBUG_TRACE("key %d\n", key);
+	IPC_TRACE_LOW("key %d\n", key);
 	hash_for_each_possible(pgsb_ctx->cache_htable_list, curr, cache_ht_node, key)
 	{
-		DEBUG_TRACE("ht iface %s , passed iface %s\n", curr->user_config.if_name,
+		IPC_TRACE_LOW("ht iface %s , passed iface %s\n", curr->user_config.if_name,
 				iface);
 		if (strncmp(curr->user_config.if_name,
 				iface,
 				IFNAMSIZ) == 0)
 		{
-			DEBUG_TRACE("config found\n");
+			IPC_TRACE_LOW("config found\n");
 			return curr;
 		}
 	}
 
-	DEBUG_TRACE("config not found\n");
+	IPC_TRACE_LOW("config not found\n");
 	return curr;
 }
 
@@ -788,26 +795,26 @@ static void gsb_recv_ipa_notification_cb(void *priv, enum ipa_dp_evt_type evt,
 
 	if (NULL == pgsb_ctx)
 	{
-		DEBUG_ERROR("Context is NULL\n");
+		IPC_ERROR_LOW("Context is NULL\n");
 		dev_kfree_skb(skb);
 		return;
 	}
 
 	if (if_info == NULL)
 	{
-		DEBUG_ERROR("config not available \n");
+		IPC_ERROR_LOW("config not available \n");
 		dev_kfree_skb(skb);
 		return;
 	}
 
 	if (!if_info->is_connected_to_ipa_bridge)
 	{
-		DEBUG_ERROR("called before IPA_CONNECT was called with evt %d \n", evt);
+		IPC_ERROR_LOW("called before IPA_CONNECT was called with evt %d \n", evt);
 		dev_kfree_skb(skb);
 		return;
 	}
 
-	DEBUG_TRACE("EVT Rcvd %d for if %s \n", evt, if_info->if_name);
+	IPC_TRACE_LOW("EVT Rcvd %d for if %s \n", evt, if_info->if_name);
 	switch (evt)
 	{
 	case IPA_RECEIVE:
@@ -819,11 +826,11 @@ static void gsb_recv_ipa_notification_cb(void *priv, enum ipa_dp_evt_type evt,
 		if (skb->cb[0] == '\0')
 		{
 			strlcpy(skb->cb, "isthisloop", ((sizeof(skb->cb)) / (sizeof(skb->cb[0]))));
-			DEBUG_TRACE("tagging skb with string %s, skbp= %pK\n", skb->cb, skb);
+			IPC_TRACE_LOW("tagging skb with string %s, skbp= %pK\n", skb->cb, skb);
 		}
 		else
 		{
-			DEBUG_TRACE("skb is already tagged %s skbp= %pK\n", skb->cb, skb);
+			IPC_TRACE_LOW("skb is already tagged %s skbp= %pK\n", skb->cb, skb);
 		}
 
 
@@ -834,7 +841,7 @@ static void gsb_recv_ipa_notification_cb(void *priv, enum ipa_dp_evt_type evt,
 		retval = netif_rx_ni(skb);
 		if (retval != NET_RX_SUCCESS)
 		{
-			DEBUG_ERROR("ERROR sending to nw stack %d\n", retval);
+			IPC_ERROR_LOW("ERROR sending to nw stack %d\n", retval);
 			pipa_ctx->stats.exp_packet_from_ipa_fail++;
 		}
 		else
@@ -862,7 +869,7 @@ static void gsb_recv_ipa_notification_cb(void *priv, enum ipa_dp_evt_type evt,
 		if (!pipa_ctx->ipa_rx_completion && !qlen)
 		{
 			//seems like this interface is free of activity
-			DEBUG_TRACE("idle if %s\n", if_info->if_name);
+			IPC_TRACE_LOW("idle if %s\n", if_info->if_name);
 			if_info->idle_cnt++;
 			release_wake_source();
 		}
@@ -880,7 +887,7 @@ static void gsb_recv_ipa_notification_cb(void *priv, enum ipa_dp_evt_type evt,
 		break;
 
 	default:
-		DEBUG_ERROR("Invalid %d event from IPA\n", evt);
+		IPC_ERROR_LOW("Invalid %d event from IPA\n", evt);
 		break;
 	}
 }
@@ -901,7 +908,7 @@ static void gsb_recv_dl_dp(void *priv, struct sk_buff *skb)
 
 	if (NULL == if_info)
 	{
-		DEBUG_ERROR("if info is NULL, freed?\n");
+		IPC_ERROR_LOW("if info is NULL, freed?\n");
 		dev_kfree_skb(skb);
 		BUG();
 		return;
@@ -909,7 +916,7 @@ static void gsb_recv_dl_dp(void *priv, struct sk_buff *skb)
 
 	if (!if_info->net_dev_state)
 	{
-		DEBUG_ERROR("%s interface does not exist\n",
+		IPC_ERROR_LOW("%s interface does not exist\n",
 				if_info->user_config.if_name);
 		dev_kfree_skb(skb);
 		return;
@@ -917,14 +924,14 @@ static void gsb_recv_dl_dp(void *priv, struct sk_buff *skb)
 
 	if (NULL == pgsb_ctx)
 	{
-		DEBUG_ERROR("Context is NULL\n");
+		IPC_ERROR_LOW("Context is NULL\n");
 		dev_kfree_skb(skb);
 		return;
 	}
 
 	if (skb == NULL)
 	{
-		DEBUG_ERROR("skb is NULL\n");
+		IPC_ERROR_LOW("skb is NULL\n");
 		dev_kfree_skb(skb);
 		return;
 	}
@@ -948,7 +955,7 @@ static void gsb_recv_dl_dp(void *priv, struct sk_buff *skb)
 
 	if (dev_queue_xmit(skb) != 0)
 	{
-		DEBUG_ERROR("could not forward the packet\n");
+		IPC_ERROR_LOW("could not forward the packet\n");
 		if_info->if_ipa->stats.tx_send_err++;
 		if (is_inactivity_timer_cancelled)
 		{
@@ -958,7 +965,7 @@ static void gsb_recv_dl_dp(void *priv, struct sk_buff *skb)
 	}
 	else
 	{
-		DEBUG_TRACE("Downlink data was forwarded successfully\n");
+		IPC_TRACE_LOW("Downlink data was forwarded successfully\n");
 	}
 
 	if_info->if_ipa->stats.tx_send_to_if++;
@@ -1729,7 +1736,7 @@ static int gsb_intercept_packet_in_nw_stack(struct sk_buff *skb)
 
 	if (NULL == pgsb_ctx)
 	{
-		DEBUG_ERROR("Context is NULL\n");
+		IPC_ERROR_LOW("Context is NULL\n");
 		return -EFAULT;
 	}
 
@@ -1741,25 +1748,25 @@ static int gsb_intercept_packet_in_nw_stack(struct sk_buff *skb)
 	}
 	else
 	{
-		DEBUG_ERROR("NULL skb passed\n");
+		IPC_ERROR_LOW("NULL skb passed\n");
 		BUG();
 	}
 	spin_unlock_bh(&pgsb_ctx->gsb_lock);
 
 	if (if_info == NULL)
 	{
-		DEBUG_TRACE("device %s not registered to GSB\n", skb->dev->name);
+		IPC_TRACE_LOW("device %s not registered to GSB\n", skb->dev->name);
 		return 0;
 	}
 	else
 	{
-		DEBUG_TRACE("recvd packet from %s if\n", if_info->if_name);
+		IPC_TRACE_LOW("recvd packet from %s if\n", if_info->if_name);
 		if_info->if_ipa->stats.total_recv_from_if++;
 	}
 
 	if (strncmp(skb->cb, "isthisloop", TAG_LENGTH) == 0)
 	{
-		DEBUG_TRACE("tagged skb with string %s found, skbp= %pK\n", skb->cb, skb);
+		IPC_TRACE_LOW("tagged skb with string %s found, skbp= %pK\n", skb->cb, skb);
 		return 0;
 	}
 
@@ -1770,7 +1777,7 @@ static int gsb_intercept_packet_in_nw_stack(struct sk_buff *skb)
 	/* if if not connected to IPA, ther eis nothing we could do here*/
 	if (unlikely(!if_info->is_connected_to_ipa_bridge))
 	{
-		DEBUG_TRACE("if %s not connected to IPA bridge yet\n",
+		IPC_TRACE_LOW("if %s not connected to IPA bridge yet\n",
 				if_info->if_name);
 		if_info->if_ipa->stats.exception_ipa_not_connected++;
 		return 0;
@@ -1802,7 +1809,7 @@ static int gsb_intercept_packet_in_nw_stack(struct sk_buff *skb)
 		//if IPA bridge to resume here itself.
 		//at present let this packet go to nw stack
 		queue_work(gsb_wq, &if_info->ipa_resume_task);
-		DEBUG_TRACE("waiting for if %s to resume\n",
+		IPC_TRACE_LOW("waiting for if %s to resume\n",
 				if_info->if_name);
 		if_info->if_ipa->stats.exp_ipa_suspended++;
 		spin_unlock_bh(&pgsb_ctx->gsb_lock);
@@ -1850,13 +1857,13 @@ static int gsb_intercept_packet_in_nw_stack(struct sk_buff *skb)
 	//to do only do for eth, dont do it for wlan
 	if (skb->len == ETH_ZLEN && if_info->user_config.if_type == ETH_TYPE)
 	{
-		DEBUG_TRACE("remove_padding\n");
+		IPC_TRACE_LOW("remove_padding\n");
 		remove_padding(skb, is_pkt_ipv4, is_pkt_ipv6);
 	}
 
 	/* Packet ready for processing now */
 	__skb_queue_tail(&if_info->pend_queue, skb);
-	DEBUG_TRACE("Packet skbp= %pK enqueued,qlen %d,  free desc %d\n",
+	IPC_TRACE_LOW("Packet skbp= %pK enqueued,qlen %d,  free desc %d\n",
 			skb, if_info->pend_queue.qlen, if_info->ipa_free_desc_cnt);
 	/*claim packet by setting ret = non zero*/
 	ret = GSB_ACCEPT;
@@ -1871,14 +1878,14 @@ static int gsb_intercept_packet_in_nw_stack(struct sk_buff *skb)
 			pend_skb = __skb_dequeue(&if_info->pend_queue);
 			if (unlikely(IS_ERR_OR_NULL(pend_skb)))
 			{
-				DEBUG_ERROR("null skb\n");
+				IPC_ERROR_LOW("null skb\n");
 				BUG();
 			}
 			/* Send Packet to IPA bridge Driver */
 			ret = ipa_bridge_tx_dp(if_info->handle, pend_skb, NULL);
 			if (ret)
 			{
-				DEBUG_ERROR("ret %d, free pkt %pK\n", ret, pend_skb);
+				IPC_ERROR_LOW("ret %d, free pkt %pK\n", ret, pend_skb);
 				dev_kfree_skb(pend_skb);
 				pgsb_ctx->mem_alloc_skb_free++;
 				if_info->if_ipa->stats.drop_send_to_ipa_fail++;
@@ -1906,6 +1913,47 @@ unlock_and_schedule:
 	return ret;
 }
 
+static ssize_t gsb_proc_read_cb(struct file *filp,char *buf,size_t count,loff_t *offp )
+{
+	if (*offp != 0)
+		return 0;
+
+	return snprintf(buf, PAGE_SIZE, "%d\n", gsb_enable_ipc_low);
+}
+
+static ssize_t gsb_proc_write_cb(struct file *file,const char *buf,size_t count,loff_t *data )
+
+{
+	int tmp = 0;
+
+	if(count > MAX_PROC_SIZE)
+		count = MAX_PROC_SIZE;
+	if(copy_from_user(tmp_buff, buf, count))
+		return -EFAULT;
+
+	if (sscanf(tmp_buff, "%du", &tmp) < 0)
+		pr_err("sscanf failed\n");
+	else {
+		if (tmp) {
+			if (!ipc_gsb_log_ctxt_low) {
+					ipc_gsb_log_ctxt_low = ipc_log_context_create(
+						IPCLOG_STATE_PAGES, "gsb_low", 0);
+			}
+			if (!ipc_gsb_log_ctxt_low) {
+				pr_err("failed to create ipc gsb low context\n");
+				return -EFAULT;
+			}
+		} else {
+			if (ipc_gsb_log_ctxt_low)
+				ipc_log_context_destroy(ipc_gsb_log_ctxt_low);
+				ipc_gsb_log_ctxt_low = NULL;
+		}
+	}
+	gsb_enable_ipc_low = tmp;
+	return count;
+}
+
+
 static int __init gsb_init_module(void)
 {
 	int retval = -1;
@@ -1917,6 +1965,24 @@ static int __init gsb_init_module(void)
 	{
 		DEBUG_ERROR("GSB context already initialized\n");
 		return -EEXIST;
+	}
+
+	ipc_gsb_log_ctxt = ipc_log_context_create(IPCLOG_STATE_PAGES,
+							"gsb", 0);
+	if (!ipc_gsb_log_ctxt)
+		pr_err("error creating logging context for GSB\n");
+	else
+		pr_info("IPC logging has been enabled for GSB\n");
+
+	//define proc file and operations
+	memset(&proc_file_ops, 0, sizeof(struct file_operations));
+	proc_file_ops.owner = THIS_MODULE;
+	proc_file_ops.read =  gsb_proc_read_cb;
+	proc_file_ops.write = gsb_proc_write_cb;
+	if((proc_file = proc_create("gsb_enable_ipc_low", 0, NULL,
+		&proc_file_ops)) == NULL) {
+		pr_err(" error creating proc entry!\n");
+		return -EINVAL;
 	}
 
 	pgsb_ctx = kzalloc(sizeof(struct gsb_ctx), GFP_KERNEL);
@@ -2085,7 +2151,16 @@ static void __exit gsb_exit_module(void)
 	gsb_ioctl_deinit();
 
 	kfree(pgsb_ctx);
-	DEBUG_INFO("exiting GSB %s\n", DRV_VERSION);
+
+	proc_remove(proc_file);
+
+	if (ipc_gsb_log_ctxt != NULL)
+		ipc_log_context_destroy(ipc_gsb_log_ctxt);
+
+	if (ipc_gsb_log_ctxt_low != NULL)
+		ipc_log_context_destroy(ipc_gsb_log_ctxt_low);
+
+	pr_info("exiting GSB %s\n", DRV_VERSION);
 }
 
 module_init(gsb_init_module);
