@@ -655,33 +655,28 @@ static int DWC_ETH_QOS_init_phy(struct net_device *dev)
 		return -ENODEV;
 	}
 
-#if 0
 	if ((phydev->phy_id == ATH8031_PHY_ID) || (phydev->phy_id == ATH8035_PHY_ID)) {
 		if (pdata->irq_number == 0) {
-		ret = request_irq(pdata->dev->irq, DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS,
+			ret = request_irq(pdata->dev->irq, DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS,
 					IRQF_SHARED, DEV_NAME, pdata);
-		pdata->irq_number = pdata->dev->irq;
-		}
-
-		if (ret != 0) {
-			pr_alert("Unable to register IRQ %d after PHY connect is done\n", pdata->irq_number);
-			return -EBUSY;
-		}
-		else
-			EMACDBG("Request for IRQ %d successful\n", pdata->irq_number);
-
-		/* Enable PHY interrupt */
-		if (phydev->drv->config_intr) {
-			phydev->interrupts = PHY_INTERRUPT_ENABLED;
-			phydev->drv->config_intr(phydev);
-			if (ret != 0 )
-				pr_alert("Failed to enable PHY interrupt\n");
-			else
+			if (ret != 0) {
+				pr_alert("Unable to register IRQ %d after PHY connect is done\n",
+						pdata->irq_number);
+				return -EBUSY;
+			}
+			else {
+				pdata->irq_number = pdata->dev->irq;
+				EMACDBG("Request for IRQ %d successful\n", pdata->irq_number);
+				/* Enable PHY interrupt */
+				phydev->interrupts = PHY_INTERRUPT_ENABLED;
+				DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
+							DWC_ETH_QOS_PHY_INTR_EN,
+							ENABLE_PHY_INTERRUPTS);
 				EMACDBG("PHY interrupt enabled\n");
+				phydev->irq = PHY_IGNORE_INTERRUPT;
+			}
 		}
-		phydev->irq = PHY_IGNORE_INTERRUPT;
 	}
-#endif
 
 	if (pdata->interface == PHY_INTERFACE_MODE_GMII) {
 		phydev->supported = PHY_DEFAULT_FEATURES;

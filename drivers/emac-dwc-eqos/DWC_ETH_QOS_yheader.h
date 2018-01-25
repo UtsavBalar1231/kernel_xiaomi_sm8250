@@ -307,6 +307,7 @@
 #define AUTO_NEG_ERROR 0x8000
 #define LINK_UP 1
 #define LINK_DOWN 0
+#define ENABLE_PHY_INTERRUPTS 0xcc00
 
 /* Default MTL queue operation mode values */
 #define DWC_ETH_QOS_Q_DISABLED	0x0
@@ -987,7 +988,6 @@ struct hw_if_struct {
 
 	/* For enabling PHY interrupt handling */
 	int (*enable_mac_phy_interrupt)(void);
-
 };
 
 /* wrapper buffer structure to hold transmit pkt details */
@@ -1427,6 +1427,8 @@ struct DWC_ETH_QOS_res_data {
 	u32 emac_mem_size;
 	u32 rgmii_mem_base;
 	u32 rgmii_mem_size;
+	u32 tlmm_central_mem_base;
+	u32 tlmm_central_mem_size;
 	u32 sbd_intr;
 	u32 lpi_intr;
 	u32 io_macro_tx_mode_non_id;

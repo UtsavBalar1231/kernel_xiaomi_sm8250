@@ -56,6 +56,7 @@ static struct msm_bus_scale_pdata *emac_bus_scale_vec;
 ULONG dwc_eth_qos_base_addr;
 ULONG dwc_rgmii_io_csr_base_addr;
 struct DWC_ETH_QOS_prv_data *gDWC_ETH_QOS_prv_data;
+ULONG dwc_tlmm_central_base_addr;
 
 void DWC_ETH_QOS_init_all_fptrs(struct DWC_ETH_QOS_prv_data *pdata)
 {
@@ -286,6 +287,19 @@ static int DWC_ETH_QOS_get_dts_config(struct platform_device *pdev)
 			dwc_eth_qos_res_data.rgmii_mem_base,
 			dwc_eth_qos_res_data.rgmii_mem_size);
 
+	resource = platform_get_resource_byname(pdev, IORESOURCE_MEM,
+			"tlmm-central-base");
+	if (!resource) {
+		EMACERR("get tlmm-central-base resource failed\n");
+		ret = -ENODEV;
+		goto err_out;
+	}
+	dwc_eth_qos_res_data.tlmm_central_mem_base = resource->start;
+	dwc_eth_qos_res_data.tlmm_central_mem_size = resource_size(resource);
+	EMACDBG("tlmm-central-base = 0x%x, size = 0x%x\n",
+			dwc_eth_qos_res_data.tlmm_central_mem_base,
+			dwc_eth_qos_res_data.tlmm_central_mem_size);
+
 	resource = platform_get_resource_byname(pdev, IORESOURCE_IRQ,
 			"sbd-intr");
 	if (!resource) {
@@ -356,7 +370,23 @@ static int DWC_ETH_QOS_ioremap(void)
 	}
 	EMACDBG("ETH_QOS_RGMII_IO_BASE_ADDR = %#lx\n",
 			dwc_rgmii_io_csr_base_addr);
+
+	dwc_tlmm_central_base_addr = (ULONG)ioremap(
+		dwc_eth_qos_res_data.tlmm_central_mem_base,
+		dwc_eth_qos_res_data.tlmm_central_mem_size);
+	if ((void __iomem *)dwc_tlmm_central_base_addr == NULL) {
+		EMACERR("cannot map tlmm central reg memory, aborting\n");
+		ret = -EIO;
+		goto err_out_tlmm_central_map_failed;
+	}
+	EMACDBG("ETH_QOS_RGMII_IO_BASE_ADDR = %#lx\n",
+			dwc_rgmii_io_csr_base_addr);
+
 	return ret;
+
+err_out_tlmm_central_map_failed:
+		iounmap((void __iomem *)dwc_eth_qos_base_addr);
+		iounmap((void __iomem *)dwc_rgmii_io_csr_base_addr);
 
 err_out_rgmii_map_failed:
 		iounmap((void __iomem *)dwc_eth_qos_base_addr);
@@ -690,6 +720,27 @@ gpio_error:
 }
 
 /*!
+ * \brief Update TLMM direct connect gpio settings
+ * \retval  none
+ */
+static void set_tlmm_direct_connect_gpio(void)
+{
+	unsigned long var_gpio = 0x54;
+	unsigned int reg_index = 7;
+	unsigned int polarity = 0x0;
+	unsigned long var_gpio_cfg = 0x100;
+	EMACDBG("Enter\n");
+
+	TLMM_DIR_CONN_INTRn_CFG_GPIO_SEL_UDFWR(reg_index, var_gpio);
+	TLMM_DIR_CONN_INTRn_CFG_POLARITY_UDFWR(reg_index, polarity);
+	TLMM_GPIO_INTR_CFG84_RGWR(var_gpio_cfg);
+	EMACDBG("Set GPIO details in TLMM direct connect reg\n");
+
+	EMACDBG("Exit\n");
+	return;
+}
+
+/*!
  * \brief API to initialize the device.
  *
  * \details This probing function gets called (during execution of
@@ -838,11 +889,11 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 		dev_alert(&pdev->dev, "%s: MDIO is not present\n\n", DEV_NAME);
 	}
 
-#if 0
 	if ((pdata->phydev->phy_id == ATH8031_PHY_ID) ||
-		(pdata->phydev->phy_id == ATH8035_PHY_ID))
+		(pdata->phydev->phy_id == ATH8035_PHY_ID)) {
+		set_tlmm_direct_connect_gpio();
 		hw_if->enable_mac_phy_interrupt();
-#endif
+	}
 
 #ifndef DWC_ETH_QOS_CONFIG_PGTEST
 	/* enabling and registration of irq with magic wakeup */
@@ -996,6 +1047,7 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
  err_out_power_failed:
 	 iounmap((void __iomem *)dwc_eth_qos_base_addr);
 	 iounmap((void __iomem *)dwc_rgmii_io_csr_base_addr);
+	iounmap((void __iomem *)dwc_tlmm_central_base_addr);
 
  err_out_map_failed:
 	 return ret;

@@ -1,4 +1,4 @@
-/* Copyright (c) 2017, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -943,15 +943,14 @@ irqreturn_t DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS(int irq, void *device_id)
 		if (GET_VALUE(VARMAC_ISR, MAC_ISR_LPI_LPOS, MAC_ISR_LPI_HPOS) & 1)
 			DWC_ETH_QOS_handle_eee_interrupt(pdata);
 
-#if 0
 		/* PHY interrupt */
-		if (GET_VALUE(VARMAC_ISR, MAC_ISR_PHYIS_LPOS, MAC_ISR_PHYIS_HPOS) & 1) {
-			MAC_ISR_PHYIS_UDFRD(VARMAC_PHYIS);
-			if ((pdata->phydev->phy_id == ATH8031_PHY_ID) ||
-				(pdata->phydev->phy_id == ATH8035_PHY_ID))
+		if ((pdata->phydev->phy_id == ATH8031_PHY_ID) ||
+			(pdata->phydev->phy_id == ATH8035_PHY_ID)) {
+			if (GET_VALUE(VARMAC_ISR, MAC_ISR_PHYIS_LPOS, MAC_ISR_PHYIS_HPOS) & 1) {
+				MAC_ISR_PHYIS_UDFRD(VARMAC_PHYIS);
 				DWC_ETH_QOS_handle_phy_interrupt(pdata);
+			}
 		}
-#endif
 	}
 
 	DBGPR("<--DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS\n");
