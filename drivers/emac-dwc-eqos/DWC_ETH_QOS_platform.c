@@ -1,4 +1,4 @@
-/* Copyright (c) 2017, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -763,6 +763,9 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	SET_NETDEV_DEV(dev, &pdev->dev);
 	pdata = netdev_priv(dev);
 	gDWC_ETH_QOS_prv_data = pdata;
+	atomic_notifier_chain_register(&panic_notifier_list,
+			&DWC_ETH_QOS_panic_blk);
+
 	EMACDBG("gDWC_ETH_QOS_prv_data 0x%pK \n", gDWC_ETH_QOS_prv_data);
 	DWC_ETH_QOS_init_all_fptrs(pdata);
 	hw_if = &pdata->hw_if;
@@ -961,9 +964,6 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	if (pdata->hw_feat.sma_sel == 1)
 		DWC_ETH_QOS_mdio_unregister(dev);
 
-	atomic_notifier_chain_unregister(&panic_notifier_list,
-			&DWC_ETH_QOS_panic_blk);
-
  err_out_mdio_reg:
 	desc_if->free_queue_struct(pdata);
 
@@ -980,22 +980,25 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	 emac_bus_scale_vec = NULL;
 	 pdata->bus_scale_vec = NULL;
 #endif
-
- err_get_clk_failed:
-	   DWC_ETH_QOS_disable_clks();
-
- err_out_gpio_failed:
-	 DWC_ETH_QOS_free_gpios();
-
- err_out_power_failed:
-	 DWC_ETH_QOS_disable_regulators();
+	gDWC_ETH_QOS_prv_data = NULL;
+	atomic_notifier_chain_unregister(&panic_notifier_list,
+			&DWC_ETH_QOS_panic_blk);
 
  err_out_dev_failed:
-	iounmap((void __iomem *)dwc_eth_qos_base_addr);
-	iounmap((void __iomem *)dwc_rgmii_io_csr_base_addr);
+	 DWC_ETH_QOS_disable_clks();
+
+ err_get_clk_failed:
+	 DWC_ETH_QOS_free_gpios();
+
+ err_out_gpio_failed:
+	 DWC_ETH_QOS_disable_regulators();
+
+ err_out_power_failed:
+	 iounmap((void __iomem *)dwc_eth_qos_base_addr);
+	 iounmap((void __iomem *)dwc_rgmii_io_csr_base_addr);
 
  err_out_map_failed:
-	return ret;
+	 return ret;
 }
 
 /*!
@@ -1046,6 +1049,10 @@ int DWC_ETH_QOS_remove(struct platform_device *pdev)
 #endif /* end of DWC_ETH_QOS_CONFIG_PGTEST */
 
 	desc_if->free_queue_struct(pdata);
+
+	gDWC_ETH_QOS_prv_data = NULL;
+	atomic_notifier_chain_unregister(&panic_notifier_list,
+			&DWC_ETH_QOS_panic_blk);
 
 	free_netdev(dev);
 
@@ -1254,9 +1261,6 @@ static int DWC_ETH_QOS_init_module(void)
 	create_debug_files();
 #endif
 
-	atomic_notifier_chain_register(&panic_notifier_list,
-			&DWC_ETH_QOS_panic_blk);
-
 	DBGPR("<--DWC_ETH_QOS_init_module\n");
 
 	return ret;
@@ -1280,8 +1284,6 @@ static void __exit DWC_ETH_QOS_exit_module(void)
 #endif
 
 	platform_driver_unregister(&DWC_ETH_QOS_plat_drv);
-	atomic_notifier_chain_unregister(&panic_notifier_list,
-			&DWC_ETH_QOS_panic_blk);
 
 	DBGPR("<--DWC_ETH_QOS_exit_module\n");
 }
