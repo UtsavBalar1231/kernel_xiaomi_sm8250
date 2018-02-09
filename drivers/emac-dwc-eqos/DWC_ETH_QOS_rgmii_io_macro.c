@@ -27,10 +27,12 @@
  */
 int DWC_ETH_QOS_rgmii_io_macro_sdcdc_init(void)
 {
+#if 0
 	ULONG RETRYCOUNT = 1000;
 	ULONG current_cnt = 0;
 
 	volatile ULONG VARDLL_LOCK;
+#endif
 
 	EMACDBG("Enter\n");
 
@@ -102,12 +104,11 @@ int DWC_ETH_QOS_rgmii_io_macro_sdcdc_enable_lp_mode(void)
  */
 int DWC_ETH_QOS_rgmii_io_macro_sdcdc_config(void)
 {
+#if 0
 	ULONG RETRYCOUNT = 1000;
 	ULONG current_cnt = 0;
 	volatile ULONG VARCK_OUT_EN;
 
-	EMACDBG("Enter\n");
-#if 0
 	/* Set CDR_EN bit to 0 */
 	SDCC_HC_CDR_EN_UDFWR(0x0);
 
@@ -154,6 +155,7 @@ int DWC_ETH_QOS_rgmii_io_macro_sdcdc_config(void)
 		mdelay(1);
 	}
 #endif
+	EMACDBG("Enter\n");
 	/* Write 1 to DDR_CAL_EN bit of SDCC_HC_REG_DLL_CONFIG_2
 	 *  register
 	 */

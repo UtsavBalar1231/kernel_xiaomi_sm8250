@@ -1,4 +1,4 @@
-/* Copyright (c) 2017, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
 * modification, are permitted provided that the following conditions are
@@ -492,8 +492,10 @@ int DWC_ETH_QOS_ipa_offload_init(struct DWC_ETH_QOS_prv_data *pdata)
 	struct DWC_ETH_QOS_prv_ipa_data *ntn_ipa = &pdata->prv_ipa;
 	struct ethhdr eth_l2_hdr_v4;
 	struct ethhdr eth_l2_hdr_v6;
+#ifdef DWC_ETH_QOS_ENABLE_VLAN_TAG
 	struct vlan_ethhdr eth_vlan_hdr_v4;
 	struct vlan_ethhdr eth_vlan_hdr_v6;
+#endif
 	int ret;
 
 	if(!pdata) {
@@ -518,6 +520,7 @@ int DWC_ETH_QOS_ipa_offload_init(struct DWC_ETH_QOS_prv_data *pdata)
 		in.hdr_info[1].hdr_len = ETH_HLEN;
 	}
 
+#ifdef DWC_ETH_QOS_ENABLE_VLAN_TAG
 	if ( pdata->prv_ipa.vlan_id > MIN_VLAN_ID && pdata->prv_ipa.vlan_id <= MAX_VLAN_ID ) {
 		memset(&eth_vlan_hdr_v4, 0, sizeof(eth_vlan_hdr_v4));
 		memset(&eth_vlan_hdr_v6, 0, sizeof(eth_vlan_hdr_v6));
@@ -534,6 +537,7 @@ int DWC_ETH_QOS_ipa_offload_init(struct DWC_ETH_QOS_prv_data *pdata)
 		in.hdr_info[1].hdr = (u8 *)&eth_vlan_hdr_v6;
 		in.hdr_info[1].hdr_len = VLAN_ETH_HLEN;
 	}
+#endif
 
 	/* Building IN params */
 	in.netdev_name = pdata->dev->name;

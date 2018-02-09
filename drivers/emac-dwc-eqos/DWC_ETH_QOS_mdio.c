@@ -493,7 +493,7 @@ void DWC_ETH_QOS_adjust_link(struct net_device *dev)
 	struct DWC_ETH_QOS_prv_data *pdata = netdev_priv(dev);
 	struct hw_if_struct *hw_if = &pdata->hw_if;
 	struct phy_device *phydev = pdata->phydev;
-	unsigned long flags;
+	//unsigned long flags;
 	int new_state = 0;
 	int ret = 0;
 
