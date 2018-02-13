@@ -603,9 +603,9 @@
 #define EMAC_GPIO_PHY_INTR_REDIRECT_NAME "qcom,phy-intr-redirect"
 #define EMAC_GPIO_PHY_RESET_NAME "qcom,phy-reset"
 
-#define VOTE_IDX_10MBPS 1
-#define VOTE_IDX_100MBPS 2
-#define VOTE_IDX_1000MBPS 3
+#define VOTE_IDX_10MBPS 0
+#define VOTE_IDX_100MBPS 1
+#define VOTE_IDX_1000MBPS 2
 
 /* Clock rates for various modes */
 #define RGMII_1000_NOM_CLK_FREQ      (250 * 1000 * 1000UL)

@@ -323,11 +323,9 @@ static int DWC_ETH_QOS_get_dts_config(struct platform_device *pdev)
 	ret = DWC_ETH_QOS_get_io_macro_config(pdev);
 	if (ret)
 		goto err_out;
-#if 0
 	ret = DWC_ETH_QOS_get_bus_config(pdev);
 	if (ret)
 		goto err_out;
-#endif
 
 	ret = DWC_ETH_QOS_get_wol_config(pdev);
 	if (ret)
@@ -822,7 +820,7 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	hw_if = &pdata->hw_if;
 	desc_if = &pdata->desc_if;
 	pdata->res_data = &dwc_eth_qos_res_data;
-#if 0
+
 	if (emac_bus_scale_vec)
 		pdata->bus_scale_vec = emac_bus_scale_vec;
 
@@ -832,8 +830,6 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 		ret = -EIO;
 		goto err_bus_reg_failed;
 	}
-#endif
-
 
 	platform_set_drvdata(pdev, dev);
 	pdata->pdev = pdev;
@@ -1022,7 +1018,6 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	free_netdev(dev);
 	platform_set_drvdata(pdev, NULL);
 
-#if 0
  err_bus_reg_failed:
 	 if (pdata->bus_hdl)
 		 msm_bus_scale_unregister_client(pdata->bus_hdl);
@@ -1030,7 +1025,7 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 		 msm_bus_cl_clear_pdata(emac_bus_scale_vec);
 	 emac_bus_scale_vec = NULL;
 	 pdata->bus_scale_vec = NULL;
-#endif
+
 	gDWC_ETH_QOS_prv_data = NULL;
 	atomic_notifier_chain_unregister(&panic_notifier_list,
 			&DWC_ETH_QOS_panic_blk);
