@@ -1065,45 +1065,45 @@ void DWC_ETH_QOS_print_all_hw_features(struct DWC_ETH_QOS_prv_data *pdata)
 
 	DBGPR("-->DWC_ETH_QOS_print_all_hw_features\n");
 
-	dev_alert(&pdata->pdev->dev, "\n");
-	dev_alert(&pdata->pdev->dev, "=====================================================/\n");
-	dev_alert(&pdata->pdev->dev, "\n");
-	dev_alert(&pdata->pdev->dev, "10/100 Mbps Support                         : %s\n",
+	EMACDBG("\n");
+	EMACDBG("=====================================================/\n");
+	EMACDBG("\n");
+	EMACDBG("10/100 Mbps Support                         : %s\n",
 		  pdata->hw_feat.mii_sel ? "YES" : "NO");
-	dev_alert(&pdata->pdev->dev, "1000 Mbps Support                           : %s\n",
+	EMACDBG("1000 Mbps Support                           : %s\n",
 		  pdata->hw_feat.gmii_sel ? "YES" : "NO");
-	dev_alert(&pdata->pdev->dev, "Half-duplex Support                         : %s\n",
+	EMACDBG("Half-duplex Support                         : %s\n",
 		  pdata->hw_feat.hd_sel ? "YES" : "NO");
-	dev_alert(&pdata->pdev->dev, "PCS Registers(TBI/SGMII/RTBI PHY interface) : %s\n",
+	EMACDBG("PCS Registers(TBI/SGMII/RTBI PHY interface) : %s\n",
 		  pdata->hw_feat.pcs_sel ? "YES" : "NO");
-	dev_alert(&pdata->pdev->dev, "VLAN Hash Filter Selected                   : %s\n",
+	EMACDBG("VLAN Hash Filter Selected                   : %s\n",
 		  pdata->hw_feat.vlan_hash_en ? "YES" : "NO");
 	pdata->vlan_hash_filtering = pdata->hw_feat.vlan_hash_en;
-	dev_alert(&pdata->pdev->dev, "SMA (MDIO) Interface                        : %s\n",
+	EMACDBG("SMA (MDIO) Interface                        : %s\n",
 		  pdata->hw_feat.sma_sel ? "YES" : "NO");
-	dev_alert(&pdata->pdev->dev, "PMT Remote Wake-up Packet Enable            : %s\n",
+	EMACDBG("PMT Remote Wake-up Packet Enable            : %s\n",
 		  pdata->hw_feat.rwk_sel ? "YES" : "NO");
-	dev_alert(&pdata->pdev->dev, "PMT Magic Packet Enable                     : %s\n",
+	EMACDBG("PMT Magic Packet Enable                     : %s\n",
 		  pdata->hw_feat.mgk_sel ? "YES" : "NO");
-	dev_alert(&pdata->pdev->dev, "RMON/MMC Module Enable                      : %s\n",
+	EMACDBG("RMON/MMC Module Enable                      : %s\n",
 		  pdata->hw_feat.mmc_sel ? "YES" : "NO");
-	dev_alert(&pdata->pdev->dev, "ARP Offload Enabled                         : %s\n",
+	EMACDBG("ARP Offload Enabled                         : %s\n",
 		  pdata->hw_feat.arp_offld_en ? "YES" : "NO");
-	dev_alert(&pdata->pdev->dev, "IEEE 1588-2008 Timestamp Enabled            : %s\n",
+	EMACDBG("IEEE 1588-2008 Timestamp Enabled            : %s\n",
 		  pdata->hw_feat.ts_sel ? "YES" : "NO");
-	dev_alert(&pdata->pdev->dev, "Energy Efficient Ethernet Enabled           : %s\n",
+	EMACDBG("Energy Efficient Ethernet Enabled           : %s\n",
 		  pdata->hw_feat.eee_sel ? "YES" : "NO");
-	dev_alert(&pdata->pdev->dev, "Transmit Checksum Offload Enabled           : %s\n",
+	EMACDBG("Transmit Checksum Offload Enabled           : %s\n",
 		  pdata->hw_feat.tx_coe_sel ? "YES" : "NO");
-	dev_alert(&pdata->pdev->dev, "Receive Checksum Offload Enabled            : %s\n",
+	EMACDBG("Receive Checksum Offload Enabled            : %s\n",
 		  pdata->hw_feat.rx_coe_sel ? "YES" : "NO");
-	dev_alert(&pdata->pdev->dev, "MAC Addresses 16–31 Selected                : %s\n",
+	EMACDBG("MAC Addresses 16–31 Selected                : %s\n",
 		  pdata->hw_feat.mac_addr16_sel ? "YES" : "NO");
-	dev_alert(&pdata->pdev->dev, "MAC Addresses 32–63 Selected                : %s\n",
+	EMACDBG("MAC Addresses 32–63 Selected                : %s\n",
 		  pdata->hw_feat.mac_addr32_sel ? "YES" : "NO");
-	dev_alert(&pdata->pdev->dev, "MAC Addresses 64–127 Selected               : %s\n",
+	EMACDBG("MAC Addresses 64–127 Selected               : %s\n",
 		  pdata->hw_feat.mac_addr64_sel ? "YES" : "NO");
-	dev_alert(&pdata->pdev->dev, "IPA Feature Enabled                          : %s\n",
+	EMACDBG("IPA Feature Enabled                          : %s\n",
 		pdata->ipa_enabled ? "YES" : "NO");
 
 	if (pdata->hw_feat.mac_addr64_sel)
@@ -1129,9 +1129,9 @@ void DWC_ETH_QOS_print_all_hw_features(struct DWC_ETH_QOS_prv_data *pdata)
 		str = "BOTH";
 		break;
 	}
-	dev_alert(&pdata->pdev->dev, "Timestamp System Time Source                : %s\n",
+	EMACDBG("Timestamp System Time Source                : %s\n",
 		  str);
-	dev_alert(&pdata->pdev->dev, "Source Address or VLAN Insertion Enable     : %s\n",
+	EMACDBG("Source Address or VLAN Insertion Enable     : %s\n",
 		  pdata->hw_feat.sa_vlan_ins ? "YES" : "NO");
 
 	switch (pdata->hw_feat.act_phy_sel) {
@@ -1162,7 +1162,7 @@ void DWC_ETH_QOS_print_all_hw_features(struct DWC_ETH_QOS_prv_data *pdata)
 	default:
 		str = "RESERVED";
 	}
-	dev_alert(&pdata->pdev->dev, "Active PHY Selected                         : %s\n",
+	EMACDBG("Active PHY Selected                         : %s\n",
 		  str);
 
 	switch (pdata->hw_feat.rx_fifo_size) {
@@ -1205,7 +1205,7 @@ void DWC_ETH_QOS_print_all_hw_features(struct DWC_ETH_QOS_prv_data *pdata)
 	default:
 		str = "RESERVED";
 	}
-	dev_alert(&pdata->pdev->dev, "MTL Receive FIFO Size                       : %s\n",
+	EMACDBG("MTL Receive FIFO Size                       : %s\n",
 		  str);
 
 	switch (pdata->hw_feat.tx_fifo_size) {
@@ -1248,21 +1248,21 @@ void DWC_ETH_QOS_print_all_hw_features(struct DWC_ETH_QOS_prv_data *pdata)
 	default:
 		str = "RESERVED";
 	}
-	dev_alert(&pdata->pdev->dev, "MTL Transmit FIFO Size                       : %s\n",
+	EMACDBG("MTL Transmit FIFO Size                       : %s\n",
 		  str);
-	dev_alert(&pdata->pdev->dev, "IEEE 1588 High Word Register Enable          : %s\n",
+	EMACDBG("IEEE 1588 High Word Register Enable          : %s\n",
 		  pdata->hw_feat.adv_ts_hword ? "YES" : "NO");
-	dev_alert(&pdata->pdev->dev, "DCB Feature Enable                           : %s\n",
+	EMACDBG("DCB Feature Enable                           : %s\n",
 		  pdata->hw_feat.dcb_en ? "YES" : "NO");
-	dev_alert(&pdata->pdev->dev, "Split Header Feature Enable                  : %s\n",
+	EMACDBG("Split Header Feature Enable                  : %s\n",
 		  pdata->hw_feat.sph_en ? "YES" : "NO");
-	dev_alert(&pdata->pdev->dev, "TCP Segmentation Offload Enable              : %s\n",
+	EMACDBG("TCP Segmentation Offload Enable              : %s\n",
 		  pdata->hw_feat.tso_en ? "YES" : "NO");
-	dev_alert(&pdata->pdev->dev, "DMA Debug Registers Enabled                  : %s\n",
+	EMACDBG("DMA Debug Registers Enabled                  : %s\n",
 		  pdata->hw_feat.dma_debug_gen ? "YES" : "NO");
-	dev_alert(&pdata->pdev->dev, "AV Feature Enabled                           : %s\n",
+	EMACDBG("AV Feature Enabled                           : %s\n",
 		  pdata->hw_feat.av_sel ? "YES" : "NO");
-	dev_alert(&pdata->pdev->dev, "Low Power Mode Enabled                       : %s\n",
+	EMACDBG("Low Power Mode Enabled                       : %s\n",
 		  pdata->hw_feat.lp_mode_en ? "YES" : "NO");
 
 	switch (pdata->hw_feat.hash_tbl_sz) {
@@ -1283,17 +1283,17 @@ void DWC_ETH_QOS_print_all_hw_features(struct DWC_ETH_QOS_prv_data *pdata)
 		pdata->max_hash_table_size = 256;
 		break;
 	}
-	dev_alert(&pdata->pdev->dev, "Hash Table Size                              : %s\n",
+	EMACDBG("Hash Table Size                              : %s\n",
 		  str);
-	dev_alert(&pdata->pdev->dev, "Total number of L3 or L4 Filters             : %d L3/L4 Filter\n",
+	EMACDBG("Total number of L3 or L4 Filters             : %d L3/L4 Filter\n",
 		  pdata->hw_feat.l3l4_filter_num);
-	dev_alert(&pdata->pdev->dev, "Number of MTL Receive Queues                 : %d\n",
+	EMACDBG("Number of MTL Receive Queues                 : %d\n",
 		  (pdata->hw_feat.rx_q_cnt + 1));
-	dev_alert(&pdata->pdev->dev, "Number of MTL Transmit Queues                : %d\n",
+	EMACDBG("Number of MTL Transmit Queues                : %d\n",
 		  (pdata->hw_feat.tx_q_cnt + 1));
-	dev_alert(&pdata->pdev->dev, "Number of DMA Receive Channels               : %d\n",
+	EMACDBG("Number of DMA Receive Channels               : %d\n",
 		  (pdata->hw_feat.rx_ch_cnt + 1));
-	dev_alert(&pdata->pdev->dev, "Number of DMA Transmit Channels              : %d\n",
+	EMACDBG("Number of DMA Transmit Channels              : %d\n",
 		  (pdata->hw_feat.tx_ch_cnt + 1));
 
 	switch (pdata->hw_feat.pps_out_num) {
@@ -1315,7 +1315,7 @@ void DWC_ETH_QOS_print_all_hw_features(struct DWC_ETH_QOS_prv_data *pdata)
 	default:
 		str = "RESERVED";
 	}
-	dev_alert(&pdata->pdev->dev, "Number of PPS Outputs                        : %s\n",
+	EMACDBG("Number of PPS Outputs                        : %s\n",
 		  str);
 
 	switch (pdata->hw_feat.aux_snap_num) {
@@ -1337,11 +1337,11 @@ void DWC_ETH_QOS_print_all_hw_features(struct DWC_ETH_QOS_prv_data *pdata)
 	default:
 		str = "RESERVED";
 	}
-	dev_alert(&pdata->pdev->dev, "Number of Auxiliary Snapshot Inputs          : %s",
+	EMACDBG("Number of Auxiliary Snapshot Inputs          : %s",
 		  str);
 
-	dev_alert(&pdata->pdev->dev, "\n");
-	dev_alert(&pdata->pdev->dev, "=====================================================/\n");
+	EMACDBG("\n");
+	EMACDBG("=====================================================/\n");
 
 	DBGPR("<--DWC_ETH_QOS_print_all_hw_features\n");
 }
