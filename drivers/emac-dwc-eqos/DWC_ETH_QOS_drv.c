@@ -665,7 +665,7 @@ void DWC_ETH_QOS_handle_DMA_Int(struct DWC_ETH_QOS_prv_data *pdata, int chinx, b
 				DWC_ETH_QOS_disable_all_ch_rx_interrpt(pdata);
 				__napi_schedule(&rx_queue->napi);
 			} else {
-				printk(KERN_ALERT "driver bug! Rx interrupt while in poll\n");
+				dev_alert(&pdata->pdev->dev, "driver bug! Rx interrupt while in poll\n");
 				DWC_ETH_QOS_disable_all_ch_rx_interrpt(pdata);
 			}
 
@@ -1775,8 +1775,10 @@ static int DWC_ETH_QOS_open(struct net_device *dev)
 	DBGPR("-->DWC_ETH_QOS_open\n");
 
 #ifdef DWC_ETH_QOS_CONFIG_PGTEST
-	ret = request_irq(dev->irq, DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS_pg,
+	if (pdata->irq_number == 0) {
+		ret = request_irq(dev->irq, DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS_pg,
 			  IRQF_SHARED, DEV_NAME, pdata);
+	}
 #else
 	if (pdata->irq_number == 0) {
 		ret = request_irq(dev->irq, DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS,
@@ -2699,6 +2701,7 @@ static unsigned int DWC_ETH_QOS_get_tx_hwtstamp(
 	DBGPR_PTP("-->DWC_ETH_QOS_get_tx_hwtstamp\n");
 
 	if (hw_if->drop_tx_status_enabled() == 0) {
+		DBGPR_PTP("drop_tx_status_enabled 0\n");
 		/* check tx tstamp status */
 		if (!hw_if->get_tx_tstamp_status(txdesc)) {
 			dev_alert(&pdata->pdev->dev, "tx timestamp is not captured for this packet\n");
@@ -2708,6 +2711,7 @@ static unsigned int DWC_ETH_QOS_get_tx_hwtstamp(
 		/* get the valid tstamp */
 		ns = hw_if->get_tx_tstamp(txdesc);
 	} else {
+		DBGPR_PTP("drop_tx_status_enabled 1 - read from reg\n");
 		/* drop tx status mode is enabled, hence read time
 		 * stamp from register instead of descriptor
 		 */

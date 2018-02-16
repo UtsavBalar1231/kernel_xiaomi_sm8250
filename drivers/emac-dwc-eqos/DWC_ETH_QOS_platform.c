@@ -491,6 +491,13 @@ static int DWC_ETH_QOS_get_clks(struct device *dev)
 		goto fail_clk;
 	}
 
+	ret = clk_set_rate(dwc_eth_qos_res_data.ptp_clk, DWC_ETH_QOS_SYSCLOCK);
+
+	if (ret) {
+		EMACERR("Failed to set rate for ptp_clk\n");
+		goto fail_clk;
+	}
+
 	return ret;
 
 fail_clk:
@@ -857,9 +864,15 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	/* IEMAC: Find and Read the IRQ from DTS */
 	dev->irq = dwc_eth_qos_res_data.sbd_intr;
 	pdata->wol_irq = dwc_eth_qos_res_data.wol_intr;
+
 	/* Check if IPA is supported */
 	if (ipa_offload_en == 1)
 		pdata->ipa_enabled = EMAC_IPA_CAPABLE;
+
+#ifdef DWC_ETH_QOS_CONFIG_PGTEST
+	pdata->ipa_enabled = 0;
+#endif
+
 	EMACINFO("EMAC IPA enabled: %d\n", pdata->ipa_enabled);
 	if (pdata->ipa_enabled) {
 		pdata->prv_ipa.ipa_ver = ipa_get_hw_type();
@@ -867,7 +880,7 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	}
 
 	DWC_ETH_QOS_get_all_hw_features(pdata);
-	DWC_ETH_QOS_print_all_hw_features(pdata);
+	//DWC_ETH_QOS_print_all_hw_features(pdata);
 
 	ret = desc_if->alloc_queue_struct(pdata);
 	if (ret < 0) {
@@ -926,28 +939,28 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 		dev->hw_features |= NETIF_F_SG;
 		dev->hw_features |= NETIF_F_IP_CSUM;
 		dev->hw_features |= NETIF_F_IPV6_CSUM;
-		dev_alert(&pdev->dev, "Supports TSO, SG and TX COE\n");
+		EMACDBG("Supports TSO, SG and TX COE\n");
 	} else if (pdata->hw_feat.tx_coe_sel) {
 		dev->hw_features = NETIF_F_IP_CSUM;
 		dev->hw_features |= NETIF_F_IPV6_CSUM;
-		dev_alert(&pdev->dev, "Supports TX COE\n");
+		EMACDBG("Supports TX COE\n");
 	}
 
 	if (pdata->hw_feat.rx_coe_sel) {
 		dev->hw_features |= NETIF_F_RXCSUM;
 		dev->hw_features |= NETIF_F_LRO;
-		dev_alert(&pdev->dev, "Supports RX COE and LRO\n");
+		EMACDBG("Supports RX COE and LRO\n");
 	}
 #ifdef DWC_ETH_QOS_ENABLE_VLAN_TAG
 	dev->vlan_features |= dev->hw_features;
 	dev->hw_features |= NETIF_F_HW_VLAN_CTAG_RX;
 	if (pdata->hw_feat.sa_vlan_ins) {
 		dev->hw_features |= NETIF_F_HW_VLAN_CTAG_TX;
-		dev_alert(&pdev->dev, "VLAN Feature enabled\n");
+		EMACDBG("VLAN Feature enabled\n");
 	}
 	if (pdata->hw_feat.vlan_hash_en) {
 		dev->hw_features |= NETIF_F_HW_VLAN_CTAG_FILTER;
-		dev_alert(&pdev->dev, "VLAN HASH Filtering enabled\n");
+		EMACDBG("VLAN HASH Filtering enabled\n");
 	}
 #endif /* end of DWC_ETH_QOS_ENABLE_VLAN_TAG */
 	dev->features |= dev->hw_features;
@@ -967,6 +980,8 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	spin_lock_init(&pdata->pmt_lock);
 
 #ifdef DWC_ETH_QOS_CONFIG_PGTEST
+	init_pg_tx_wq(pdata);
+
 	ret = DWC_ETH_QOS_alloc_pg(pdata);
 	if (ret < 0) {
 		dev_alert(&pdev->dev, "ERROR:Unable to allocate PG memory\n");

@@ -376,8 +376,8 @@
 
 /* Maximum size of pkt that is copied to a new buffer on receive */
 #define DWC_ETH_QOS_COPYBREAK_DEFAULT 256
-#define DWC_ETH_QOS_SYSCLOCK	125000000 /* System clock is 125MHz */
-#define DWC_ETH_QOS_SYSTIMEPERIOD	8 /* System time period is 8ns */
+#define DWC_ETH_QOS_SYSCLOCK	250000000 /* System clock is 250MHz */
+#define DWC_ETH_QOS_SYSTIMEPERIOD	4 /* System time period is 4ns */
 
 #define DWC_ETH_QOS_TX_QUEUE_CNT (pdata->tx_queue_cnt)
 #define DWC_ETH_QOS_RX_QUEUE_CNT (pdata->rx_queue_cnt)
@@ -1587,6 +1587,24 @@ struct DWC_ETH_QOS_prv_data {
 	INT prepare_pg_packet;
 	INT run_test;
 	INT max_counter;
+	struct workqueue_struct *wq0;
+	struct workqueue_struct *wq1;
+	struct workqueue_struct *wq2;
+	struct workqueue_struct *wq3;
+	struct workqueue_struct *wq4;
+	struct workqueue_struct *rx_wq_pg_0;
+	struct workqueue_struct *rx_wq_pg_1;
+	struct workqueue_struct *rx_wq_pg_2;
+	struct workqueue_struct *rx_wq_pg_3;
+	struct work_struct tx_work_0;
+	struct work_struct tx_work_1;
+	struct work_struct tx_work_2;
+	struct work_struct tx_work_3;
+	struct work_struct tx_work_4;
+	struct work_struct rx_work_pg_0;
+	struct work_struct rx_work_pg_1;
+	struct work_struct rx_work_pg_2;
+	struct work_struct rx_work_pg_3;
 #endif /* end of DWC_ETH_QOS_CONFIG_PGTEST */
 
 	/* rx split header mode */
@@ -1743,6 +1761,7 @@ int DWC_ETH_QOS_alloc_rx_buf_pg(struct DWC_ETH_QOS_prv_data *pdata,
 int DWC_ETH_QOS_alloc_tx_buf_pg(struct DWC_ETH_QOS_prv_data *pdata,
 				struct DWC_ETH_QOS_tx_buffer *buffer,
 				gfp_t gfp);
+void init_pg_tx_wq(struct DWC_ETH_QOS_prv_data *pdata);
 #endif /* end of DWC_ETH_QOS_CONFIG_PGTEST */
 irqreturn_t DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS(int irq, void *dev_id);
 void DWC_ETH_QOS_handle_phy_interrupt(struct DWC_ETH_QOS_prv_data *pdata);

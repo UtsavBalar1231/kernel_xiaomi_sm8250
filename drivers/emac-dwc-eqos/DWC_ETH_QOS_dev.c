@@ -264,7 +264,7 @@ static void config_pfc(int enb_dis)
 
 static INT config_tx_outer_vlan(UINT op_type, UINT outer_vlt)
 {
-	pr_alert("--> config_tx_outer_vlan()\n");
+	EMACDBG("--> config_tx_outer_vlan()\n");
 
 	MAC_VLANTIRR_VLTI_UDFWR(0x0);
 	MAC_VLANTIRR_VLT_UDFWR(outer_vlt);
@@ -276,14 +276,14 @@ static INT config_tx_outer_vlan(UINT op_type, UINT outer_vlt)
 		MAC_VLANTIRR_VLT_UDFWR(0x0);
 	}
 
-	pr_alert("<-- config_tx_outer_vlan()\n");
+	EMACDBG("<-- config_tx_outer_vlan()\n");
 
 	return Y_SUCCESS;
 }
 
 static INT config_tx_inner_vlan(UINT op_type, UINT inner_vlt)
 {
-	pr_alert("--> config_tx_inner_vlan()\n");
+	EMACDBG("--> config_tx_inner_vlan()\n");
 
 	MAC_IVLANTIRR_VLTI_UDFWR(0x0);
 	MAC_IVLANTIRR_VLT_UDFWR(inner_vlt);
@@ -295,7 +295,7 @@ static INT config_tx_inner_vlan(UINT op_type, UINT inner_vlt)
 		MAC_IVLANTIRR_VLT_UDFWR(0x0);
 	}
 
-	pr_alert("<-- config_tx_inner_vlan()\n");
+	EMACDBG("<-- config_tx_inner_vlan()\n");
 
 	return Y_SUCCESS;
 }
@@ -304,7 +304,7 @@ static INT config_svlan(UINT flags)
 {
 	INT ret = Y_SUCCESS;
 
-	pr_alert("--> config_svlan()\n");
+	EMACDBG("--> config_svlan()\n");
 
 	MAC_VLANTR_ESVL_UDFWR(1);
 	if (flags == DWC_ETH_QOS_DVLAN_NONE) {
@@ -319,11 +319,11 @@ static INT config_svlan(UINT flags)
 		MAC_IVLANTIRR_CSVL_UDFWR(1);
 		MAC_VLANTIRR_CSVL_UDFWR(1);
 	} else {
-		pr_alert("ERROR : double VLAN enable SVLAN configuration - Invalid argument");
+		EMACERR("ERROR : double VLAN enable SVLAN configuration - Invalid argument");
 		ret = Y_FAILURE;
 	}
 
-	pr_alert("<-- config_svlan()\n");
+	EMACDBG("<-- config_svlan()\n");
 
 	return ret;
 }
@@ -2344,7 +2344,7 @@ static INT stop_dma_rx(UINT QINX)
 		vy_count = 0;
 		while (1) {
 			if (vy_count > RETRYCOUNT) {
-				pr_alert(
+				EMACERR(
 					"ERROR: Rx Channel 0 stop failed, DSR0 = %#lx\n",
 					VARDMA_DSR0);
 				return -Y_FAILURE;
@@ -2370,7 +2370,7 @@ static INT stop_dma_rx(UINT QINX)
 		vy_count = 0;
 		while (1) {
 			if (vy_count > RETRYCOUNT) {
-				pr_alert(
+				EMACERR(
 					"ERROR: Rx Channel 1 stop failed, DSR0 = %#lx\n",
 					VARDMA_DSR0);
 				return -Y_FAILURE;
@@ -2396,7 +2396,7 @@ static INT stop_dma_rx(UINT QINX)
 		vy_count = 0;
 		while (1) {
 			if (vy_count > RETRYCOUNT) {
-				pr_alert(
+				EMACERR(
 					"ERROR: Rx Channel 2 stop failed, DSR0 = %#lx\n",
 					VARDMA_DSR0);
 				return -Y_FAILURE;
@@ -2421,7 +2421,7 @@ static INT stop_dma_rx(UINT QINX)
 		vy_count = 0;
 		while (1) {
 			if (vy_count > RETRYCOUNT) {
-				pr_alert(
+				EMACERR(
 					"ERROR: Rx Channel 3 stop failed, DSR0 = %#lx\n",
 					VARDMA_DSR1);
 				return -Y_FAILURE;
@@ -2447,7 +2447,7 @@ static INT stop_dma_rx(UINT QINX)
 		vy_count = 0;
 		while (1) {
 			if (vy_count > RETRYCOUNT) {
-				pr_alert(
+				EMACERR(
 					"ERROR: Rx Channel 4 stop failed, DSR0 = %#lx\n",
 					VARDMA_DSR1);
 				return -Y_FAILURE;
@@ -2473,7 +2473,7 @@ static INT stop_dma_rx(UINT QINX)
 		vy_count = 0;
 		while (1) {
 			if (vy_count > RETRYCOUNT) {
-				pr_alert(
+				EMACERR(
 					"ERROR: Rx Channel 5 stop failed, DSR0 = %#lx\n",
 					VARDMA_DSR1);
 				return -Y_FAILURE;
@@ -2499,7 +2499,7 @@ static INT stop_dma_rx(UINT QINX)
 		vy_count = 0;
 		while (1) {
 			if (vy_count > RETRYCOUNT) {
-				pr_alert(
+				EMACERR(
 					"ERROR: Rx Channel 6 stop failed, DSR0 = %#lx\n",
 					VARDMA_DSR1);
 				return -Y_FAILURE;
@@ -2525,7 +2525,7 @@ static INT stop_dma_rx(UINT QINX)
 		vy_count = 0;
 		while (1) {
 			if (vy_count > RETRYCOUNT) {
-				pr_alert(
+				EMACERR(
 					"ERROR: Rx Channel 7 stop failed, DSR0 = %#lx\n",
 					VARDMA_DSR2);
 				return -Y_FAILURE;
@@ -2591,7 +2591,7 @@ static INT stop_dma_tx(UINT QINX)
 		vy_count = 0;
 		while (1) {
 			if (vy_count > RETRYCOUNT) {
-				pr_alert(
+				EMACERR(
 					"ERROR: Tx Channel 0 stop failed, DSR0 = %lx\n",
 					VARDMA_DSR0);
 				return -Y_FAILURE;
@@ -2614,7 +2614,7 @@ static INT stop_dma_tx(UINT QINX)
 		vy_count = 0;
 		while (1) {
 			if (vy_count > RETRYCOUNT) {
-				pr_alert(
+				EMACERR(
 					"ERROR: Channel 1 stop failed, DSR0 = %lx\n",
 					VARDMA_DSR0);
 				return -Y_FAILURE;
@@ -2637,7 +2637,7 @@ static INT stop_dma_tx(UINT QINX)
 		vy_count = 0;
 		while (1) {
 			if (vy_count > RETRYCOUNT) {
-				pr_alert(
+				EMACERR(
 					"ERROR: Channel 2 stop failed, DSR0 = %lx\n",
 					VARDMA_DSR0);
 				return -Y_FAILURE;
@@ -2660,7 +2660,7 @@ static INT stop_dma_tx(UINT QINX)
 		vy_count = 0;
 		while (1) {
 			if (vy_count > RETRYCOUNT) {
-				pr_alert(
+				EMACERR(
 					"ERROR: Channel 3 stop failed, DSR0 = %lx\n",
 					VARDMA_DSR1);
 				return -Y_FAILURE;
@@ -2683,7 +2683,7 @@ static INT stop_dma_tx(UINT QINX)
 		vy_count = 0;
 		while (1) {
 			if (vy_count > RETRYCOUNT) {
-				pr_alert(
+				EMACERR(
 					"ERROR: Channel 4 stop failed, DSR0 = %lx\n",
 					VARDMA_DSR1);
 				return -Y_FAILURE;
@@ -2706,7 +2706,7 @@ static INT stop_dma_tx(UINT QINX)
 		vy_count = 0;
 		while (1) {
 			if (vy_count > RETRYCOUNT) {
-				pr_alert(
+				EMACERR(
 					"ERROR: Channel 5 stop failed, DSR0 = %lx\n",
 					VARDMA_DSR1);
 				return -Y_FAILURE;
@@ -2729,7 +2729,7 @@ static INT stop_dma_tx(UINT QINX)
 		vy_count = 0;
 		while (1) {
 			if (vy_count > RETRYCOUNT) {
-				pr_alert(
+				EMACERR(
 					"ERROR: Channel 6 stop failed, DSR0 = %lx\n",
 					VARDMA_DSR1);
 				return -Y_FAILURE;
@@ -2752,7 +2752,7 @@ static INT stop_dma_tx(UINT QINX)
 		vy_count = 0;
 		while (1) {
 			if (vy_count > RETRYCOUNT) {
-				pr_alert(
+				EMACERR(
 					"ERROR: Channel 7 stop failed, DSR0 = %lx\n",
 					VARDMA_DSR2);
 				return -Y_FAILURE;
@@ -4367,7 +4367,7 @@ static INT configure_mtl_queue(UINT QINX, struct DWC_ETH_QOS_prv_data *pdata)
 	/* Transmit/Receive queue fifo size programmed */
 	MTL_QROMR_RQS_UDFWR(QINX, p_rx_fifo);
 	MTL_QTOMR_TQS_UDFWR(QINX, p_tx_fifo);
-	pr_alert(
+	EMACDBG(
 		"Queue%d Tx fifo size %d, Rx fifo size %d\n",
 		QINX, ((p_tx_fifo + 1) * 256), ((p_rx_fifo + 1) * 256));
 
@@ -4468,7 +4468,7 @@ static void configure_tx_dma_channel(UINT QINX,
 	/* enable TSO if HW supports */
 	if (pdata->hw_feat.tso_en)
 		DMA_TCR_TSE_UDFWR(QINX, 0x1);
-	pr_alert(
+	EMACDBG(
 		"%s TSO\n",
 		(pdata->hw_feat.tso_en ? "Enabled" : "Disabled"));
 
@@ -4510,7 +4510,7 @@ static void configure_rx_dma_channel(UINT QINX,
 	else
 		DMA_RIWTR_RWT_UDFWR(QINX, 0);
 
-	pr_alert(
+	EMACDBG(
 		"%s Rx watchdog timer\n",
 		(rx_desc_data->use_riwt ? "Enabled" : "Disabled"));
 
@@ -4522,7 +4522,7 @@ static void configure_rx_dma_channel(UINT QINX,
 
 	/* program split header mode */
 	DMA_CR_SPH_UDFWR(QINX, pdata->rx_split_hdr);
-	pr_alert(
+	EMACDBG(
 		"%s Rx Split header mode\n",
 		(pdata->rx_split_hdr ? "Enabled" : "Disabled"));
 
@@ -4633,17 +4633,17 @@ static INT configure_mac(struct DWC_ETH_QOS_prv_data *pdata)
 			MAC_MCR_GPSLCE_UDFWR(0x1);
 			MAC_MECR_GPSL_UDFWR(DWC_ETH_QOS_MAX_SUPPORTED_MTU);
 			MAC_MCR_JD_UDFWR(0x1);
-			pr_alert(
+			EMACDBG(
 				"Configured Gaint Packet Size Limit to %d\n",
 				DWC_ETH_QOS_MAX_SUPPORTED_MTU);
 		}
-		pr_alert("Enabled JUMBO pkt\n");
+		EMACDBG("Enabled JUMBO pkt\n");
 	} else {
 		MAC_MCR_JE_UDFWR(0x0);
 		MAC_MCR_WD_UDFWR(0x0);
 		MAC_MCR_GPSLCE_UDFWR(0x0);
 		MAC_MCR_JD_UDFWR(0x0);
-		pr_alert("Disabled JUMBO pkt\n");
+		EMACDBG("Disabled JUMBO pkt\n");
 	}
 
 	/* update the MAC address */
@@ -4780,14 +4780,14 @@ static INT DWC_ETH_QOS_yinit(struct DWC_ETH_QOS_prv_data *pdata)
  */
 
 static void tx_descriptor_init_pg(struct DWC_ETH_QOS_prv_data *pdata,
-				  UINT QINX)
+				  UINT qinx)
 {
 	struct DWC_ETH_QOS_tx_wrapper_descriptor *tx_desc_data =
-		GET_TX_WRAPPER_DESC(QINX);
+		GET_TX_WRAPPER_DESC(qinx);
 	struct s_TX_NORMAL_DESC *TX_NORMAL_DESC =
-		GET_TX_DESC_PTR(QINX, tx_desc_data->cur_tx);
+		GET_TX_DESC_PTR(qinx, tx_desc_data->cur_tx);
 	struct DWC_ETH_QOS_tx_buffer *buffer =
-		GET_TX_BUF_PTR(QINX, tx_desc_data->cur_tx);
+		GET_TX_BUF_PTR(qinx, tx_desc_data->cur_tx);
 	INT i;
 	INT start_index = tx_desc_data->cur_tx;
 
@@ -4808,13 +4808,13 @@ static void tx_descriptor_init_pg(struct DWC_ETH_QOS_prv_data *pdata,
 		TX_NORMAL_DESC_TDES3_ML_WR(TX_NORMAL_DESC->TDES3, 0);
 
 		INCR_TX_DESC_INDEX(tx_desc_data->cur_tx, 1, pdata->tx_queue[qinx].desc_cnt);
-		TX_NORMAL_DESC = GET_TX_DESC_PTR(QINX, tx_desc_data->cur_tx);
-		buffer = GET_TX_BUF_PTR(QINX, tx_desc_data->cur_tx);
+		TX_NORMAL_DESC = GET_TX_DESC_PTR(qinx, tx_desc_data->cur_tx);
+		buffer = GET_TX_BUF_PTR(qinx, tx_desc_data->cur_tx);
 	}
 	/* update the total no of Tx descriptors count */
-	DMA_TDRLR_RGWR(QINX, (pdata->tx_queue[qinx].desc_cnt - 1));
+	DMA_TDRLR_RGWR(qinx, (pdata->tx_queue[qinx].desc_cnt - 1));
 	/* update the starting address of desc chain/ring */
-	DMA_TDLAR_RGWR(QINX, GET_TX_DESC_DMA_ADDR(QINX, start_index));
+	DMA_TDLAR_RGWR(qinx, GET_TX_DESC_DMA_ADDR(qinx, start_index));
 
 	DBGPR("<--tx_descriptor_init_pg\n");
 }
@@ -4852,7 +4852,7 @@ static void rx_descriptor_init_pg(struct DWC_ETH_QOS_prv_data *pdata, UINT QINX)
 		/* set control bits - OWN, INTE and BUF1V */
 		RX_NORMAL_DESC_RDES3_ML_WR(RX_NORMAL_DESC->RDES3, (0xc1000000));
 
-		INCR_RX_DESC_INDEX(rx_desc_data->cur_rx, 1);
+		INCR_RX_DESC_INDEX(rx_desc_data->cur_rx, 1, pdata->rx_queue[QINX].desc_cnt);
 		RX_NORMAL_DESC =
 			GET_RX_DESC_PTR(QINX, rx_desc_data->cur_rx);
 		buffer = GET_RX_BUF_PTR(QINX, rx_desc_data->cur_rx);

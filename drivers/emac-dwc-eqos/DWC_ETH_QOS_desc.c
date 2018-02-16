@@ -619,10 +619,9 @@ static void DWC_ETH_QOS_wrapper_tx_descriptor_init_single_q(
 			GET_TX_BUFF_DMA_POOL_BASE_ADRR(qinx) =
 				kzalloc(sizeof(dma_addr_t) * pdata->tx_queue[qinx].desc_cnt, GFP_KERNEL);
 			if (GET_TX_BUFF_DMA_POOL_BASE_ADRR(qinx) == NULL)
-				dev_alert(&pdata->pdev->dev, "ERROR: Unable to allocate IPA \
-							  TX Buff structure for TXCH\n");
+				EMACERR("Unable to allocate IPA TX Buff structure for TXCH: %d\n", qinx);
 			else
-				EMACINFO("IPA tx_dma_buff_addrs %p \n",
+				EMACDBG("IPA tx_dma_buff_addrs %p \n",
 						GET_TX_BUFF_DMA_POOL_BASE_ADRR(qinx));
 		}
 	}
@@ -639,7 +638,7 @@ static void DWC_ETH_QOS_wrapper_tx_descriptor_init_single_q(
 			if (qinx == IPA_DMA_TX_CH) {
 				skb = __netdev_alloc_skb_ip_align(pdata->dev, DWC_ETH_QOS_ETH_FRAME_LEN_IPA, GFP_KERNEL);
 				if (skb == NULL) {
-					dev_alert(&pdata->pdev->dev, "Failed to allocate skb for IPA\n");
+					EMACERR("Failed to allocate skb for IPA\n");
 					return;
 				}
 				GET_TX_BUFF_LOGICAL_ADDR(qinx, i) = skb;
@@ -655,9 +654,9 @@ static void DWC_ETH_QOS_wrapper_tx_descriptor_init_single_q(
 	}
 	
 	if (pdata->ipa_enabled && qinx == IPA_DMA_TX_CH){
-		EMACINFO("Created the virtual memory pool address for TX CH for %d desc \n",
+		EMACDBG("Created the virtual memory pool address for TX CH for %d desc \n",
 			    pdata->tx_queue[IPA_DMA_TX_CH].desc_cnt);
-		EMACINFO("DMA MAPed the virtual memory pool address for TX CH for %d descs \n",
+		EMACDBG("DMA MAPed the virtual memory pool address for TX CH for %d descs \n",
 			    pdata->tx_queue[IPA_DMA_TX_CH].desc_cnt);
 	}
 
@@ -717,7 +716,7 @@ static void DWC_ETH_QOS_wrapper_rx_descriptor_init_single_q(
 				dev_alert(&pdata->pdev->dev, "ERROR: Unable to allocate IPA \
 						 RX Buff structure for RXCH0\n");
 			else
-				EMACINFO("IPA rx_buff_addrs %p \n",
+				EMACDBG("IPA rx_buff_addrs %p \n",
 						GET_RX_BUFF_POOL_BASE_ADRR(qinx));
 		}
 	}
@@ -748,9 +747,9 @@ static void DWC_ETH_QOS_wrapper_rx_descriptor_init_single_q(
 		wmb();
 	}
 	
-	EMACINFO("Allocated %d buffers for RX Channel: %d \n", pdata->rx_queue[qinx].desc_cnt,qinx);
+	EMACDBG("Allocated %d buffers for RX Channel: %d \n", pdata->rx_queue[qinx].desc_cnt,qinx);
 	if (pdata->ipa_enabled && qinx == IPA_DMA_RX_CH)
-		EMACINFO("Assign virtual memory pool address for RX CH0 for %d desc\n",
+		EMACDBG("Assign virtual memory pool address for RX CH0 for %d desc\n",
 					pdata->rx_queue[IPA_DMA_RX_CH].desc_cnt);
 
 

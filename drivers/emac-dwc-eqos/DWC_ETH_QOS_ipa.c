@@ -564,7 +564,7 @@ int DWC_ETH_QOS_ipa_offload_init(struct DWC_ETH_QOS_prv_data *pdata)
 		return -1;
 	}
 	ntn_ipa->ipa_client_hndl = out.clnt_hndl;
-	EMACINFO("Recevied IPA Offload Client Handle %d",ntn_ipa->ipa_client_hndl);
+	EMACDBG("Recevied IPA Offload Client Handle %d",ntn_ipa->ipa_client_hndl);
 	return 0;
 }
 
