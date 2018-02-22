@@ -2356,6 +2356,9 @@ static int DWC_ETH_QOS_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	struct netdev_queue *devq = netdev_get_tx_queue(dev, qinx);
 	UINT int_mod = 1;
 
+	if (ip_hdr(skb)->protocol == IPPROTO_TCP)
+		skb_orphan(skb);
+
 	DBGPR("-->DWC_ETH_QOS_start_xmit: skb->len = %d, qinx = %u\n",
 	      skb->len, qinx);
 
@@ -3642,7 +3645,7 @@ static int DWC_ETH_QOS_clean_rx_irq(struct DWC_ETH_QOS_prv_data *pdata,
 			if (!(RX_NORMAL_DESC->RDES3 & DWC_ETH_QOS_RDESC3_ES) &&
 			    (RX_NORMAL_DESC->RDES3 & DWC_ETH_QOS_RDESC3_LD)) {
 				/* pkt_len = pkt_len - 4; */ /* CRC stripping */
-
+#ifdef DWC_ETH_QOS_COPYBREAK_ENABLED
 				/* code added for copybreak, this should improve
 				 * performance for small pkts with large amount
 				 * of reassembly being done in the stack
@@ -3663,6 +3666,7 @@ static int DWC_ETH_QOS_clean_rx_irq(struct DWC_ETH_QOS_prv_data *pdata,
 						/* just continue with the old skb */
 					}
 				}
+#endif
 				skb_put(skb, pkt_len);
 
 				DWC_ETH_QOS_config_rx_csum(pdata, skb,
