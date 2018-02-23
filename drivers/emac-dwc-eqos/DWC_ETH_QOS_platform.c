@@ -58,6 +58,11 @@ ULONG dwc_rgmii_io_csr_base_addr;
 struct DWC_ETH_QOS_prv_data *gDWC_ETH_QOS_prv_data;
 ULONG dwc_tlmm_central_base_addr;
 
+int ipa_offload_en = 1;
+module_param(ipa_offload_en, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+MODULE_PARM_DESC(ipa_offload_en,
+		 "Enable IPA offload [0-DISABLE, 1-ENABLE]");
+
 void DWC_ETH_QOS_init_all_fptrs(struct DWC_ETH_QOS_prv_data *pdata)
 {
 	DWC_ETH_QOS_init_function_ptrs_dev(&pdata->hw_if);
@@ -853,7 +858,8 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	dev->irq = dwc_eth_qos_res_data.sbd_intr;
 	pdata->wol_irq = dwc_eth_qos_res_data.wol_intr;
 	/* Check if IPA is supported */
-	pdata->ipa_enabled = EMAC_IPA_CAPABLE;
+	if (ipa_offload_en == 1)
+		pdata->ipa_enabled = EMAC_IPA_CAPABLE;
 	EMACINFO("EMAC IPA enabled: %d\n", pdata->ipa_enabled);
 	if (pdata->ipa_enabled) {
 		pdata->prv_ipa.ipa_ver = ipa_get_hw_type();
