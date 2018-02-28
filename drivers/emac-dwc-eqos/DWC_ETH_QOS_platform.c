@@ -1027,8 +1027,6 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
  err_bus_reg_failed:
 	 if (pdata->bus_hdl)
 		 msm_bus_scale_unregister_client(pdata->bus_hdl);
-	 if (emac_bus_scale_vec)
-		 msm_bus_cl_clear_pdata(emac_bus_scale_vec);
 	 emac_bus_scale_vec = NULL;
 	 pdata->bus_scale_vec = NULL;
 
