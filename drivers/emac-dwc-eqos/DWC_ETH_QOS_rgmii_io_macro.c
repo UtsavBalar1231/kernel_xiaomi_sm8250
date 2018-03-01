@@ -276,9 +276,8 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 				 * bit of register EMAC_RGMII_IO_MACRO_CONFIG_2
 				 */
 				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x1);
-				/* Program PRG_RCLK_DLY to 52 for a required delay of 2 ns */
-				//SDCC_HC_PRG_RCLK_DLY_UDFWR(0x34);
-				SDCC_HC_PRG_RCLK_DLY_UDFWR(208);
+				/* Program PRG_RCLK_DLY to 52 for a required delay of 1.8 ns */
+				SDCC_HC_PRG_RCLK_DLY_UDFWR(57);
 				SDCC_HC_REG_DDR_CONFIG_RGRD(data);
 				data |= (4 << 9);
 				data |= (0x34 << 12);
@@ -341,7 +340,7 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 					RGMII_NON_ID_MODE_10_LOW_SVS_CLK_FREQ;
 			} else{
 				RGMII_DDR_MODE_UDFWR(0x1);
-				RGMII_PROG_SWAP_UDFWR(0x1);
+				RGMII_PROG_SWAP_UDFWR(0x0);
 				RGMII_CONFIG_2_DATA_DIVIDE_CLK_SEL_UDFWR(0x1);
 				RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x1);
 				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x1);

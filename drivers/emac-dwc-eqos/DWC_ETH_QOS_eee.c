@@ -1,4 +1,4 @@
-/* Copyright (c) 2017, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -334,12 +334,16 @@ static int DWC_ETH_QOS_phy_init_eee(struct phy_device *phydev,
 			CL45_AN_EEE_LPABLE_REG, MDIO_MMD_AN,phydev->mdio.addr);
 		if (eee_lp < 0)
 			return eee_lp;
+		if (eee_lp == 0)
+			return -1;
 
 		eee_adv = DWC_ETH_QOS_phy_read_mmd_indirect(
 			phydev->mdio.bus,
 			CL45_ADV_EEE_REG, MDIO_MMD_AN,phydev->mdio.addr);
 		if (eee_adv < 0)
 			return eee_adv;
+		if (eee_adv == 0)
+			return -1;
 
 		/* TODO:check this
 		 * adv = DWC_ETH_QOS_mmd_eee_adv_to_ethtool_adv_t(eee_adv);

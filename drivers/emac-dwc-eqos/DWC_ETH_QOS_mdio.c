@@ -364,6 +364,56 @@ void dump_phy_registers(struct DWC_ETH_QOS_prv_data *pdata)
  * \details Write to PHY debug registers at 0x0 and 0x5
  * offsets to enable and disable Rx/Tx delay
  *
+ * \param[in] pdata - pointer to platform data, rx/tx delay
+ * enable or disable values.
+ *
+ * \return void
+ *
+ * \retval none
+ */
+
+static void set_phy_rx_tx_delay(struct DWC_ETH_QOS_prv_data *pdata,
+								uint rx_delay, uint tx_delay)
+{
+	int phydata = 0;
+	EMACDBG("Enter\n");
+
+	DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
+				DWC_ETH_QOS_PHY_DEBUG_PORT_ADDR_OFFSET,
+				DWC_ETH_QOS_PHY_TX_DELAY);
+	DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr,
+				DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT,
+				&phydata);
+	phydata = ((phydata & DWC_ETH_QOS_PHY_TX_DELAY_WR_MASK) |
+				((tx_delay & DWC_ETH_QOS_PHY_TX_DELAY_MASK) << 8));
+	DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
+				DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT,
+				phydata);
+	EMACDBG("Setting TX delay %#x in PHY\n", phydata);
+	DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
+				DWC_ETH_QOS_PHY_DEBUG_PORT_ADDR_OFFSET,
+				DWC_ETH_QOS_PHY_RX_DELAY);
+	DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr,
+				DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT,
+				&phydata);
+	phydata = ((phydata & DWC_ETH_QOS_PHY_RX_DELAY_WR_MASK) |
+			((rx_delay & DWC_ETH_QOS_PHY_RX_DELAY_MASK) << 15));
+	DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
+				DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT,
+				phydata);
+	EMACDBG("Setting RX delay %#x in PHY\n", phydata);
+
+	EMACDBG("Exit\n");
+}
+
+/*!
+ * \brief Determine whether or not to enable or disable
+ * RX/TX delay in PHY.
+ *
+ * \details Determine whether or not to enable or disable
+ * the RX/TX delay using the phy interface mode info and
+ * speed.
+ *
  * \param[in] pdata - pointer to platform data
  *
  * \return void
@@ -373,104 +423,29 @@ void dump_phy_registers(struct DWC_ETH_QOS_prv_data *pdata)
 
 static void configure_phy_rx_tx_delay(struct DWC_ETH_QOS_prv_data *pdata)
 {
-	int phydata = 0;
 	EMACDBG("Enter\n");
 
 	switch (pdata->speed) {
 	case SPEED_1000:
 		if (pdata->io_macro_tx_mode_non_id) {
 			/* Settings for Non-ID mode */
-			DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
-							DWC_ETH_QOS_PHY_DEBUG_PORT_ADDR_OFFSET,
-							DWC_ETH_QOS_PHY_TX_DELAY);
-			DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr,
-							DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT,
-							&phydata);
-			phydata = ((phydata & DWC_ETH_QOS_PHY_TX_DELAY_WR_MASK) |
-					((ENABLE_DELAY & DWC_ETH_QOS_PHY_TX_DELAY_MASK) << 8));
-			DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
-							DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT,
-							phydata);
-			EMACDBG("Setting TX delay %#x in PHY for speed %d\n",
-				phydata, pdata->speed);
-
-			DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
-							DWC_ETH_QOS_PHY_DEBUG_PORT_ADDR_OFFSET,
-							DWC_ETH_QOS_PHY_RX_DELAY);
-			DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr,
-							DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT,
-							&phydata);
-			phydata = ((phydata & DWC_ETH_QOS_PHY_RX_DELAY_WR_MASK) |
-					((ENABLE_DELAY & DWC_ETH_QOS_PHY_RX_DELAY_MASK) << 15));
-			DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
-							DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT,
-							phydata);
-			EMACDBG("Setting RX delay %#x in PHY for speed %d\n",
-				phydata, pdata->speed);
-		}
-		else
-		{
+			set_phy_rx_tx_delay(pdata, ENABLE_RX_DELAY, ENABLE_TX_DELAY);
+		} else {
 			/* Settings for RGMII ID mode */
-			DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
-							DWC_ETH_QOS_PHY_DEBUG_PORT_ADDR_OFFSET,
-							DWC_ETH_QOS_PHY_TX_DELAY);
-			DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr,
-							DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT,
-							&phydata);
-			phydata = ((phydata & DWC_ETH_QOS_PHY_TX_DELAY_WR_MASK) |
-					((DISABLE_DELAY & DWC_ETH_QOS_PHY_TX_DELAY_MASK) << 8));
-			DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
-							DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT,
-							phydata);
-			EMACDBG("Setting TX delay %#x in PHY for speed %d\n",
-				phydata, pdata->speed);
-
-			DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
-							DWC_ETH_QOS_PHY_DEBUG_PORT_ADDR_OFFSET,
-							DWC_ETH_QOS_PHY_RX_DELAY);
-			DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr,
-							DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT,
-							&phydata);
-			phydata = ((phydata & DWC_ETH_QOS_PHY_RX_DELAY_WR_MASK) |
-					((DISABLE_DELAY & DWC_ETH_QOS_PHY_RX_DELAY_MASK) << 15));
-			DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
-							DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT,
-							phydata);
-			EMACDBG("Setting RX delay %#x in PHY for speed %d\n",
-				phydata, pdata->speed);
+			set_phy_rx_tx_delay(pdata, DISABLE_RX_DELAY, DISABLE_TX_DELAY);
 		}
-
 		break;
 
 	case SPEED_100:
 	case SPEED_10:
-		DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
-						DWC_ETH_QOS_PHY_DEBUG_PORT_ADDR_OFFSET,
-						DWC_ETH_QOS_PHY_TX_DELAY);
-		DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr,
-						DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT,
-						&phydata);
-		phydata = ((phydata & DWC_ETH_QOS_PHY_TX_DELAY_WR_MASK) |
-				((DISABLE_DELAY & DWC_ETH_QOS_PHY_TX_DELAY_MASK) << 8));
-		DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
-						DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT,
-						phydata);
-		EMACDBG("Setting TX delay %#x in PHY for speed %d\n",
-				phydata, pdata->speed);
-
-		DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
-						DWC_ETH_QOS_PHY_DEBUG_PORT_ADDR_OFFSET,
-						DWC_ETH_QOS_PHY_RX_DELAY);
-		DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr,
-						DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT,
-						&phydata);
-		phydata = ((phydata & DWC_ETH_QOS_PHY_RX_DELAY_WR_MASK) |
-				((DISABLE_DELAY & DWC_ETH_QOS_PHY_RX_DELAY_MASK) << 15));
-		DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
-						DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT,
-						phydata);
-		EMACDBG("Setting RX delay %#x in PHY for speed %d\n",
-			phydata, pdata->speed);
+		if (pdata->io_macro_tx_mode_non_id ||
+			pdata->io_macro_phy_intf == MII_MODE) {
+			/* Settings for Non-ID mode or MII mode */
+			set_phy_rx_tx_delay(pdata, DISABLE_RX_DELAY, ENABLE_TX_DELAY);
+		} else {
+			/* Settings for RGMII ID mode */
+			set_phy_rx_tx_delay(pdata, DISABLE_RX_DELAY, DISABLE_TX_DELAY);
+		}
 		break;
 	}
 	EMACDBG("Exit\n");
