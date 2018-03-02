@@ -496,6 +496,7 @@ int DWC_ETH_QOS_ipa_offload_init(struct DWC_ETH_QOS_prv_data *pdata)
 	struct vlan_ethhdr eth_vlan_hdr_v4;
 	struct vlan_ethhdr eth_vlan_hdr_v6;
 #endif
+	bool ipa_vlan_mode;
 	int ret;
 
 	if(!pdata) {
@@ -503,11 +504,20 @@ int DWC_ETH_QOS_ipa_offload_init(struct DWC_ETH_QOS_prv_data *pdata)
 		return -1;
 	}
 
+	ret = ipa_is_vlan_mode(IPA_VLAN_IF_EMAC, &ipa_vlan_mode);
+	if (ret) {
+		EMACERR("Could not read ipa_vlan_mode\n");
+		/* In case of failure, fallback to non vlan mode */
+		ipa_vlan_mode = 0;
+	}
+
+	EMACINFO("IPA VLAN mode %d\n", ipa_vlan_mode);
+
 	memset(&in, 0, sizeof(in));
 	memset(&out, 0, sizeof(out));
 
 	/* Building ETH Header */
-	if ( !pdata->prv_ipa.vlan_id ) {
+	if ( !pdata->prv_ipa.vlan_id || !ipa_vlan_mode) {
 		memset(&eth_l2_hdr_v4, 0, sizeof(eth_l2_hdr_v4));
 		memset(&eth_l2_hdr_v6, 0, sizeof(eth_l2_hdr_v6));
 		memcpy(&eth_l2_hdr_v4.h_source, pdata->dev->dev_addr, ETH_ALEN);
@@ -521,19 +531,18 @@ int DWC_ETH_QOS_ipa_offload_init(struct DWC_ETH_QOS_prv_data *pdata)
 	}
 
 #ifdef DWC_ETH_QOS_ENABLE_VLAN_TAG
-	if ( pdata->prv_ipa.vlan_id > MIN_VLAN_ID && pdata->prv_ipa.vlan_id <= MAX_VLAN_ID ) {
+	if ( (pdata->prv_ipa.vlan_id > MIN_VLAN_ID && pdata->prv_ipa.vlan_id <= MAX_VLAN_ID)
+		 || ipa_vlan_mode) {
 		memset(&eth_vlan_hdr_v4, 0, sizeof(eth_vlan_hdr_v4));
 		memset(&eth_vlan_hdr_v6, 0, sizeof(eth_vlan_hdr_v6));
 		memcpy(&eth_vlan_hdr_v4.h_source, pdata->dev->dev_addr, ETH_ALEN);
 		eth_vlan_hdr_v4.h_vlan_proto = htons(ETH_P_8021Q);
 		eth_vlan_hdr_v4.h_vlan_encapsulated_proto = htons(ETH_P_IP);
-		eth_vlan_hdr_v4.h_vlan_TCI = htons(pdata->prv_ipa.vlan_id);
 		in.hdr_info[0].hdr = (u8 *)&eth_vlan_hdr_v4;
 		in.hdr_info[0].hdr_len = VLAN_ETH_HLEN;
 		memcpy(&eth_vlan_hdr_v6.h_source, pdata->dev->dev_addr, ETH_ALEN);
 		eth_vlan_hdr_v6.h_vlan_proto = htons(ETH_P_8021Q);
 		eth_vlan_hdr_v6.h_vlan_encapsulated_proto = htons(ETH_P_IPV6);
-		eth_vlan_hdr_v6.h_vlan_TCI = htons(pdata->prv_ipa.vlan_id);
 		in.hdr_info[1].hdr = (u8 *)&eth_vlan_hdr_v6;
 		in.hdr_info[1].hdr_len = VLAN_ETH_HLEN;
 	}
