@@ -908,6 +908,9 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	for (i = 0; i < DWC_ETH_QOS_RX_QUEUE_CNT; i++) {
 		struct DWC_ETH_QOS_rx_queue *rx_queue = GET_RX_QUEUE_PTR(i);
 
+		if (pdata->ipa_enabled && i == IPA_DMA_RX_CH)
+			 continue;
+
 		netif_napi_add(dev, &rx_queue->napi, DWC_ETH_QOS_poll_mq,
 			  (64 * DWC_ETH_QOS_RX_QUEUE_CNT));
 	}
@@ -1071,6 +1074,7 @@ int DWC_ETH_QOS_remove(struct platform_device *pdev)
 	struct net_device *dev = platform_get_drvdata(pdev);
 	struct DWC_ETH_QOS_prv_data *pdata = netdev_priv(dev);
 	struct desc_if_struct *desc_if = &pdata->desc_if;
+	int qinx;
 
 	DBGPR("--> DWC_ETH_QOS_remove\n");
 #ifdef PER_CH_INT
@@ -1094,6 +1098,13 @@ int DWC_ETH_QOS_remove(struct platform_device *pdev)
 #endif /* end of DWC_ETH_QOS_CONFIG_PTP */
 
 	unregister_netdev(dev);
+
+	/* If NAPI is enabled, delete any references to NAPI struct. */
+	for (qinx = 0; qinx < DWC_ETH_QOS_RX_QUEUE_CNT; qinx++) {
+		if (pdata->ipa_enabled && (qinx == IPA_DMA_RX_CH))
+			continue;
+		netif_napi_del(&pdata->rx_queue[qinx].napi);
+	}
 
 #ifdef DWC_ETH_QOS_CONFIG_PGTEST
 	DWC_ETH_QOS_free_pg(pdata);

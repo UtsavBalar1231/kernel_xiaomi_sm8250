@@ -252,6 +252,8 @@ static void DWC_ETH_QOS_napi_enable_mq(struct DWC_ETH_QOS_prv_data *pdata)
 	DBGPR("-->DWC_ETH_QOS_napi_enable_mq\n");
 
 	for (qinx = 0; qinx < DWC_ETH_QOS_RX_QUEUE_CNT; qinx++) {
+		if (pdata->ipa_enabled && (qinx == IPA_DMA_RX_CH))
+			continue;
 		rx_queue = GET_RX_QUEUE_PTR(qinx);
 		napi_enable(&rx_queue->napi);
 	}
@@ -267,6 +269,8 @@ static void DWC_ETH_QOS_all_ch_napi_disable(struct DWC_ETH_QOS_prv_data *pdata)
 	DBGPR("-->DWC_ETH_QOS_all_ch_napi_disable\n");
 
 	for (qinx = 0; qinx < DWC_ETH_QOS_RX_QUEUE_CNT; qinx++) {
+		if (pdata->ipa_enabled && (qinx == IPA_DMA_RX_CH))
+			continue;
 		rx_queue = GET_RX_QUEUE_PTR(qinx);
 		napi_disable(&rx_queue->napi);
 	}
@@ -530,7 +534,10 @@ static void DWC_ETH_QOS_restart_dev(struct DWC_ETH_QOS_prv_data *pdata,
 
 	if (qinx < DWC_ETH_QOS_RX_QUEUE_CNT) {
 		rx_queue = GET_RX_QUEUE_PTR(qinx);
-		napi_disable(&rx_queue->napi);
+
+		if (!(pdata->ipa_enabled && (qinx == IPA_DMA_RX_CH)))
+			napi_disable(&rx_queue->napi);
+
 		/* stop DMA RX */
 		hw_if->stop_dma_rx(qinx);
 		/* free rx skb's */
@@ -556,7 +563,9 @@ static void DWC_ETH_QOS_restart_dev(struct DWC_ETH_QOS_prv_data *pdata,
 		DWC_ETH_QOS_default_rx_confs_single_q(pdata, qinx);
 		/* reinit Rx descriptor */
 		desc_if->wrapper_rx_desc_init_single_q(pdata, qinx);
-		napi_enable(&rx_queue->napi);
+
+		if (!(pdata->ipa_enabled && (qinx == IPA_DMA_RX_CH)))
+			napi_enable(&rx_queue->napi);
 	}
 
 	/* initializes MAC and DMA
