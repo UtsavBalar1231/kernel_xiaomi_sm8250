@@ -516,21 +516,26 @@ static void DWC_ETH_QOS_restart_dev(struct DWC_ETH_QOS_prv_data *pdata,
 {
 	struct desc_if_struct *desc_if = &pdata->desc_if;
 	struct hw_if_struct *hw_if = &pdata->hw_if;
-	struct DWC_ETH_QOS_rx_queue *rx_queue = GET_RX_QUEUE_PTR(qinx);
+	struct DWC_ETH_QOS_rx_queue *rx_queue = NULL;
 
 	DBGPR("-->DWC_ETH_QOS_restart_dev\n");
 
 	netif_stop_subqueue(pdata->dev, qinx);
-	napi_disable(&rx_queue->napi);
 
-	/* stop DMA TX/RX */
+	/* stop DMA TX */
 	hw_if->stop_dma_tx(qinx);
-	hw_if->stop_dma_rx(qinx);
 
 	/* free tx skb's */
 	desc_if->tx_skb_free_mem_single_q(pdata, qinx);
-	/* free rx skb's */
-	desc_if->rx_skb_free_mem_single_q(pdata, qinx);
+
+	if (qinx < DWC_ETH_QOS_RX_QUEUE_CNT) {
+		rx_queue = GET_RX_QUEUE_PTR(qinx);
+		napi_disable(&rx_queue->napi);
+		/* stop DMA RX */
+		hw_if->stop_dma_rx(qinx);
+		/* free rx skb's */
+		desc_if->rx_skb_free_mem_single_q(pdata, qinx);
+	}
 
 	if ((DWC_ETH_QOS_TX_QUEUE_CNT == 0) &&
 	    (DWC_ETH_QOS_RX_QUEUE_CNT == 0)) {
@@ -540,15 +545,19 @@ static void DWC_ETH_QOS_restart_dev(struct DWC_ETH_QOS_prv_data *pdata,
 		DWC_ETH_QOS_configure_rx_fun_ptr(pdata);
 		DWC_ETH_QOS_default_common_confs(pdata);
 	}
-	/* reset all variables */
+	/* reset all Tx variables */
 	DWC_ETH_QOS_default_tx_confs_single_q(pdata, qinx);
-	DWC_ETH_QOS_default_rx_confs_single_q(pdata, qinx);
 
-	/* reinit descriptor */
+	/* reinit Tx descriptor */
 	desc_if->wrapper_tx_desc_init_single_q(pdata, qinx);
-	desc_if->wrapper_rx_desc_init_single_q(pdata, qinx);
 
-	napi_enable(&rx_queue->napi);
+	if (qinx < DWC_ETH_QOS_RX_QUEUE_CNT) {
+		/* reset all Rx variables */
+		DWC_ETH_QOS_default_rx_confs_single_q(pdata, qinx);
+		/* reinit Rx descriptor */
+		desc_if->wrapper_rx_desc_init_single_q(pdata, qinx);
+		napi_enable(&rx_queue->napi);
+	}
 
 	/* initializes MAC and DMA
 	 * NOTE : Do we need to init only one channel
@@ -616,7 +625,8 @@ void DWC_ETH_QOS_handle_DMA_Int(struct DWC_ETH_QOS_prv_data *pdata, int chinx, b
 	struct DWC_ETH_QOS_rx_queue *rx_queue = NULL;
 	struct net_device *dev = pdata->dev;
 
-	rx_queue = GET_RX_QUEUE_PTR(qinx);
+	if (qinx < DWC_ETH_QOS_RX_QUEUE_CNT)
+		rx_queue = GET_RX_QUEUE_PTR(qinx);
 
 	DMA_SR_RGRD(qinx, VARDMA_SR);
 
@@ -637,7 +647,8 @@ void DWC_ETH_QOS_handle_DMA_Int(struct DWC_ETH_QOS_prv_data *pdata, int chinx, b
 
 	if (VARDMA_SR == 0) return;
 
-	if ((GET_VALUE(VARDMA_SR, DMA_SR_RI_LPOS, DMA_SR_RI_HPOS) & 1) ||
+	if (qinx < DWC_ETH_QOS_RX_QUEUE_CNT &&
+		(GET_VALUE(VARDMA_SR, DMA_SR_RI_LPOS, DMA_SR_RI_HPOS) & 1) ||
 		(GET_VALUE(VARDMA_SR, DMA_SR_RBU_LPOS, DMA_SR_RBU_HPOS) & 1)) {
 		if (!napi_sched) {
 			napi_sched = 1;
@@ -665,13 +676,15 @@ void DWC_ETH_QOS_handle_DMA_Int(struct DWC_ETH_QOS_prv_data *pdata, int chinx, b
 		pdata->xstats.tx_buf_unavailable_irq_n[qinx]++;
 		DWC_ETH_QOS_GSTATUS = -E_DMA_SR_TBU;
 	}
-	if (GET_VALUE(VARDMA_SR, DMA_SR_RPS_LPOS, DMA_SR_RPS_HPOS) & 1) {
-		pdata->xstats.rx_process_stopped_irq_n[qinx]++;
-		DWC_ETH_QOS_GSTATUS = -E_DMA_SR_RPS;
-	}
-	if (GET_VALUE(VARDMA_SR, DMA_SR_RWT_LPOS, DMA_SR_RWT_HPOS) & 1) {
-		pdata->xstats.rx_watchdog_irq_n++;
-		DWC_ETH_QOS_GSTATUS = S_DMA_SR_RWT;
+	if (qinx < DWC_ETH_QOS_RX_QUEUE_CNT) {
+		if (GET_VALUE(VARDMA_SR, DMA_SR_RPS_LPOS, DMA_SR_RPS_HPOS) & 1) {
+			pdata->xstats.rx_process_stopped_irq_n[qinx]++;
+			DWC_ETH_QOS_GSTATUS = -E_DMA_SR_RPS;
+		}
+		if (GET_VALUE(VARDMA_SR, DMA_SR_RWT_LPOS, DMA_SR_RWT_HPOS) & 1) {
+			pdata->xstats.rx_watchdog_irq_n++;
+			DWC_ETH_QOS_GSTATUS = S_DMA_SR_RWT;
+		}
 	}
 	if (GET_VALUE(VARDMA_SR, DMA_SR_FBE_LPOS, DMA_SR_FBE_HPOS) & 1) {
 		pdata->xstats.fatal_bus_error_irq_n++;
@@ -800,7 +813,8 @@ irqreturn_t DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS(int irq, void *device_id)
 #else
 	/* Handle DMA interrupts */
 	for (qinx = 0; qinx < DWC_ETH_QOS_TX_QUEUE_CNT; qinx++) {
-		rx_queue = GET_RX_QUEUE_PTR(qinx);
+		if (qinx < DWC_ETH_QOS_RX_QUEUE_CNT)
+			rx_queue = GET_RX_QUEUE_PTR(qinx);
 
 		DMA_SR_RGRD(qinx, VARDMA_SR);
 		/* clear interrupts */
@@ -820,7 +834,8 @@ irqreturn_t DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS(int irq, void *device_id)
 		if (VARDMA_SR == 0)
 			continue;
 
-		if ((GET_VALUE(VARDMA_SR, DMA_SR_RI_LPOS, DMA_SR_RI_HPOS) & 1) ||
+		if ((qinx < DWC_ETH_QOS_RX_QUEUE_CNT) &&
+			(GET_VALUE(VARDMA_SR, DMA_SR_RI_LPOS, DMA_SR_RI_HPOS) & 1) ||
 		    (GET_VALUE(VARDMA_SR, DMA_SR_RBU_LPOS, DMA_SR_RBU_HPOS) & 1)) {
 			if (!napi_sched) {
 				napi_sched = 1;
@@ -854,13 +869,15 @@ irqreturn_t DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS(int irq, void *device_id)
 			pdata->xstats.tx_buf_unavailable_irq_n[qinx]++;
 			DWC_ETH_QOS_GSTATUS = -E_DMA_SR_TBU;
 		}
-		if (GET_VALUE(VARDMA_SR, DMA_SR_RPS_LPOS, DMA_SR_RPS_HPOS) & 1) {
-			pdata->xstats.rx_process_stopped_irq_n[qinx]++;
-			DWC_ETH_QOS_GSTATUS = -E_DMA_SR_RPS;
-		}
-		if (GET_VALUE(VARDMA_SR, DMA_SR_RWT_LPOS, DMA_SR_RWT_HPOS) & 1) {
-			pdata->xstats.rx_watchdog_irq_n++;
-			DWC_ETH_QOS_GSTATUS = S_DMA_SR_RWT;
+		if (qinx < DWC_ETH_QOS_RX_QUEUE_CNT) {
+			if (GET_VALUE(VARDMA_SR, DMA_SR_RPS_LPOS, DMA_SR_RPS_HPOS) & 1) {
+				pdata->xstats.rx_process_stopped_irq_n[qinx]++;
+				DWC_ETH_QOS_GSTATUS = -E_DMA_SR_RPS;
+			}
+			if (GET_VALUE(VARDMA_SR, DMA_SR_RWT_LPOS, DMA_SR_RWT_HPOS) & 1) {
+				pdata->xstats.rx_watchdog_irq_n++;
+				DWC_ETH_QOS_GSTATUS = S_DMA_SR_RWT;
+			}
 		}
 		if (GET_VALUE(VARDMA_SR, DMA_SR_FBE_LPOS, DMA_SR_FBE_HPOS) & 1) {
 			pdata->xstats.fatal_bus_error_irq_n++;
@@ -3824,6 +3841,7 @@ int DWC_ETH_QOS_poll_mq(struct napi_struct *napi, int budget)
 	int per_q_budget = budget / DWC_ETH_QOS_RX_QUEUE_CNT;
 	int qinx = 0;
 	int received = 0, per_q_received = 0;
+	unsigned long flags;
 
 	DBGPR("-->DWC_ETH_QOS_poll_mq: budget = %d\n", budget);
 
@@ -3864,10 +3882,11 @@ int DWC_ETH_QOS_poll_mq(struct napi_struct *napi, int budget)
 		if (pdata->dev->features & NETIF_F_GRO) {
 			/* to turn off polling */
 			napi_complete(napi);
+			spin_lock_irqsave(&pdata->lock, flags);
 			/* Enable all ch RX interrupt */
 			DWC_ETH_QOS_enable_all_ch_rx_interrpt(pdata);
+			spin_unlock_irqrestore(&pdata->lock, flags);
 		} else {
-			unsigned long flags;
 
 			spin_lock_irqsave(&pdata->lock, flags);
 			__napi_complete(napi);
