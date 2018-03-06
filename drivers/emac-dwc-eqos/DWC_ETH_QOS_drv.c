@@ -1556,32 +1556,47 @@ static int DWC_ETH_QOS_alloc_rx_buf(struct DWC_ETH_QOS_prv_data *pdata,
 {
 	struct sk_buff *skb = buffer->skb;
 	unsigned int rx_buffer_len = pdata->rx_buffer_len;
+	dma_addr_t ipa_rx_buf_dma_addr;
 
 	DBGPR("-->DWC_ETH_QOS_alloc_rx_buf\n");
 
-	if (skb) {
-		skb_trim(skb, 0);
-		goto map_skb;
-	}
-
-	if (pdata->ipa_enabled && qinx == IPA_DMA_RX_CH)
+	if (pdata->ipa_enabled && qinx == IPA_DMA_RX_CH) {
 		rx_buffer_len = DWC_ETH_QOS_ETH_FRAME_LEN_IPA;
+		buffer->ipa_buff_va = dma_alloc_coherent(
+		   &pdata->pdev->dev, rx_buffer_len,
+		   &ipa_rx_buf_dma_addr, GFP_KERNEL);
 
-	skb = __netdev_alloc_skb_ip_align(pdata->dev, rx_buffer_len, gfp);
-	if (!skb) {
-		dev_alert(&pdata->pdev->dev, "Failed to allocate skb\n");
-		return -ENOMEM;
-	}
-	buffer->skb = skb;
-	buffer->len = rx_buffer_len;
+		if (!buffer->ipa_buff_va) {
+			dev_alert(&pdata->pdev->dev, "Failed to allocate RX dma buf for IPA\n");
+			return -ENOMEM;
+		}
+
+		buffer->len = rx_buffer_len;
+		buffer->dma = ipa_rx_buf_dma_addr;
+		return 0;
+	} else {
+
+		if (skb) {
+			skb_trim(skb, 0);
+			goto map_skb;
+		}
+
+		skb = __netdev_alloc_skb_ip_align(pdata->dev, rx_buffer_len, gfp);
+		if (!skb) {
+			dev_alert(&pdata->pdev->dev, "Failed to allocate skb\n");
+			return -ENOMEM;
+		}
+		buffer->skb = skb;
+		buffer->len = rx_buffer_len;
 
  map_skb:
-	buffer->dma = dma_map_single(&pdata->pdev->dev, skb->data,
-						rx_buffer_len, DMA_FROM_DEVICE);
-	if (dma_mapping_error(&pdata->pdev->dev, buffer->dma))
-		dev_alert(&pdata->pdev->dev, "failed to do the RX dma map\n");
+		buffer->dma = dma_map_single(&pdata->pdev->dev, skb->data,
+							rx_buffer_len, DMA_FROM_DEVICE);
+		if (dma_mapping_error(&pdata->pdev->dev, buffer->dma))
+			dev_alert(&pdata->pdev->dev, "failed to do the RX dma map\n");
 
-	buffer->mapped_as_page = Y_FALSE;
+		buffer->mapped_as_page = Y_FALSE;
+	}
 
 	DBGPR("<--DWC_ETH_QOS_alloc_rx_buf\n");
 

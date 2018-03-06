@@ -616,10 +616,11 @@ int DWC_ETH_QOS_ipa_offload_connect(struct DWC_ETH_QOS_prv_data *pdata)
 	struct DWC_ETH_QOS_prv_ipa_data *ntn_ipa = &pdata->prv_ipa;
 	struct ipa_uc_offload_conn_in_params in;
 	struct ipa_uc_offload_conn_out_params out;
-	struct ipa_ntn_setup_info ul;
-	struct ipa_ntn_setup_info dl;
+	struct ipa_ntn_setup_info rx_setup_info;
+	struct ipa_ntn_setup_info tx_setup_info;
 	struct ipa_perf_profile profile;
 	int ret = 0;
+	int i = 0;
 
 	if(!pdata) {
 		EMACERR( "Null Param %s \n", __func__);
@@ -638,41 +639,63 @@ int DWC_ETH_QOS_ipa_offload_connect(struct DWC_ETH_QOS_prv_data *pdata)
 
 	in.clnt_hndl = ntn_ipa->ipa_client_hndl;
 	/* Uplink Setup */
-	ul.client = IPA_CLIENT_ETHERNET_PROD;
-	ul.ring_base_pa = (phys_addr_t)GET_RX_DESC_DMA_ADDR(IPA_DMA_RX_CH, 0);
-	ul.ntn_ring_size = pdata->rx_queue[IPA_DMA_RX_CH].desc_cnt;
-	ul.buff_pool_base_pa = dma_map_single(&pdata->pdev->dev,
-			GET_RX_BUFF_POOL_BASE_ADRR(IPA_DMA_RX_CH),
-			GET_RX_BUFF_POOL_BASE_ADRR_SIZE(IPA_DMA_RX_CH),
-			DMA_TO_DEVICE);
-	ul.num_buffers = pdata->rx_queue[IPA_DMA_RX_CH].desc_cnt - 1;
-	ul.data_buff_size = DWC_ETH_QOS_ETH_FRAME_LEN_IPA;
+	rx_setup_info.smmu_enabled = false;
+	rx_setup_info.client = IPA_CLIENT_ETHERNET_PROD;
+	rx_setup_info.ring_base_pa = (phys_addr_t)GET_RX_DESC_DMA_ADDR(IPA_DMA_RX_CH, 0);
+	rx_setup_info.ntn_ring_size = pdata->rx_queue[IPA_DMA_RX_CH].desc_cnt;
+	rx_setup_info.buff_pool_base_pa = GET_RX_BUFF_POOL_BASE_PADRR(IPA_DMA_RX_CH);
+	rx_setup_info.num_buffers = pdata->rx_queue[IPA_DMA_RX_CH].desc_cnt - 1;
+	rx_setup_info.data_buff_size = DWC_ETH_QOS_ETH_FRAME_LEN_IPA;
 	/* Base address here is the address of EMAC_DMA_CH0_CONTROL in EMAC resgister space */
-	ul.ntn_reg_base_ptr_pa = (phys_addr_t)(((ULONG)((ULONG)DMA_CR0_RGOFFADDR - BASE_ADDRESS))
+	rx_setup_info.ntn_reg_base_ptr_pa = (phys_addr_t)(((ULONG)((ULONG)DMA_CR0_RGOFFADDR - BASE_ADDRESS))
 	  + (ULONG)dwc_eth_qos_res_data.emac_mem_base);
 
+	rx_setup_info.data_buff_list = kcalloc(rx_setup_info.num_buffers,
+								sizeof(struct ntn_buff_smmu_map),
+								GFP_KERNEL);
+
+	if (rx_setup_info.data_buff_list == NULL) {
+		EMACERR("Failed to allocate mem for RX data_buff_list");
+		return -ENOMEM;
+	}
+
+	for (i =0; i < rx_setup_info.num_buffers; i++) {
+		rx_setup_info.data_buff_list[i].iova = GET_RX_BUFF_DMA_ADDR(IPA_DMA_RX_CH, i);
+		rx_setup_info.data_buff_list[i].pa = GET_RX_BUFF_DMA_ADDR(IPA_DMA_RX_CH, i);
+	}
 	/* Downlink Setup */
-	dl.client = IPA_CLIENT_ETHERNET_CONS;
-	dl.ring_base_pa = (phys_addr_t)GET_TX_DESC_DMA_ADDR(IPA_DMA_TX_CH, 0);
-	dl.ntn_ring_size = pdata->tx_queue[IPA_DMA_TX_CH].desc_cnt;
-	dl.buff_pool_base_pa = dma_map_single(&pdata->pdev->dev,
-				GET_TX_BUFF_DMA_POOL_BASE_ADRR(IPA_DMA_TX_CH),
-				GET_TX_BUFF_DMA_POOL_BASE_ADRR_SIZE(IPA_DMA_TX_CH),
-				DMA_TO_DEVICE);
-	dl.num_buffers = pdata->tx_queue[IPA_DMA_TX_CH].desc_cnt - 1;
-	dl.data_buff_size = DWC_ETH_QOS_ETH_FRAME_LEN_IPA;
+	tx_setup_info.smmu_enabled = false;
+	tx_setup_info.client = IPA_CLIENT_ETHERNET_CONS;
+	tx_setup_info.ring_base_pa = (phys_addr_t)GET_TX_DESC_DMA_ADDR(IPA_DMA_TX_CH, 0);
+	tx_setup_info.ntn_ring_size = pdata->tx_queue[IPA_DMA_TX_CH].desc_cnt;
+	tx_setup_info.buff_pool_base_pa = GET_TX_BUFF_POOL_BASE_PADRR(IPA_DMA_TX_CH);
+	tx_setup_info.num_buffers = pdata->tx_queue[IPA_DMA_TX_CH].desc_cnt - 1;
+	tx_setup_info.data_buff_size = DWC_ETH_QOS_ETH_FRAME_LEN_IPA;
 	/* Base address here is the address of EMAC_DMA_CH0_CONTROL in EMAC resgister space */
-	dl.ntn_reg_base_ptr_pa = (phys_addr_t)  (((ULONG)((ULONG)DMA_CR0_RGOFFADDR - BASE_ADDRESS))
+	tx_setup_info.ntn_reg_base_ptr_pa = (phys_addr_t)  (((ULONG)((ULONG)DMA_CR0_RGOFFADDR - BASE_ADDRESS))
 	  + (ULONG)dwc_eth_qos_res_data.emac_mem_base);
+
+	tx_setup_info.data_buff_list = kcalloc(tx_setup_info.num_buffers,
+								sizeof(struct ntn_buff_smmu_map),
+								GFP_KERNEL);
+	if (tx_setup_info.data_buff_list == NULL) {
+		EMACERR("Failed to allocate mem for DL data_buff_list");
+		return -ENOMEM;
+	}
+
+	for (i =0; i < tx_setup_info.num_buffers; i++) {
+		tx_setup_info.data_buff_list[i].iova = GET_TX_BUFF_DMA_ADDR(IPA_DMA_TX_CH, i);
+		tx_setup_info.data_buff_list[i].pa = GET_TX_BUFF_DMA_ADDR(IPA_DMA_TX_CH, i);
+	}
 
 	/* Dump UL and DL Setups */
 	EMACINFO("IPA Offload UL client %d ring_base_pa 0x%x ntn_ring_size %d buff_pool_base_pa 0x%x num_buffers %d data_buff_size %d ntn_reg_base_ptr_pa 0x%x\n",
-		ul.client, ul.ring_base_pa, ul.ntn_ring_size, ul.buff_pool_base_pa, ul.num_buffers, ul.data_buff_size, ul.ntn_reg_base_ptr_pa);
+		rx_setup_info.client, rx_setup_info.ring_base_pa, rx_setup_info.ntn_ring_size, rx_setup_info.buff_pool_base_pa, rx_setup_info.num_buffers, rx_setup_info.data_buff_size, rx_setup_info.ntn_reg_base_ptr_pa);
 	EMACINFO("IPA Offload DL client %d ring_base_pa 0x%x ntn_ring_size %d buff_pool_base_pa 0x%x num_buffers %d data_buff_size %d ntn_reg_base_ptr_pa 0x%x\n",
-		dl.client, dl.ring_base_pa, dl.ntn_ring_size, dl.buff_pool_base_pa, dl.num_buffers, dl.data_buff_size, dl.ntn_reg_base_ptr_pa);
+		tx_setup_info.client, tx_setup_info.ring_base_pa, tx_setup_info.ntn_ring_size, tx_setup_info.buff_pool_base_pa, tx_setup_info.num_buffers, tx_setup_info.data_buff_size, tx_setup_info.ntn_reg_base_ptr_pa);
 
-	in.u.ntn.ul = ul;
-	in.u.ntn.dl = dl;
+	in.u.ntn.ul = rx_setup_info;
+	in.u.ntn.dl = tx_setup_info;
 
 	ret = ipa_uc_offload_conn_pipes(&in, &out);
 	if (ret) {
@@ -783,11 +806,7 @@ void DWC_ETH_QOS_ipa_stats_read(struct DWC_ETH_QOS_prv_data *pdata)
 
 	dma_stats->ipa_rx_Desc_Ring_Base = GET_RX_DESC_DMA_ADDR(IPA_DMA_RX_CH, 0);
 	dma_stats->ipa_rx_Desc_Ring_Size = pdata->rx_queue[IPA_DMA_RX_CH].desc_cnt;
-	dma_stats->ipa_rx_Buff_Ring_Base =
-		dma_map_single(&pdata->pdev->dev,
-			GET_RX_BUFF_POOL_BASE_ADRR(IPA_DMA_RX_CH),
-			GET_RX_BUFF_POOL_BASE_ADRR_SIZE(IPA_DMA_RX_CH),
-			DMA_TO_DEVICE);
+	dma_stats->ipa_rx_Buff_Ring_Base = GET_RX_BUFF_POOL_BASE_PADRR(IPA_DMA_RX_CH);
 	dma_stats->ipa_rx_Buff_Ring_Size = pdata->rx_queue[IPA_DMA_RX_CH].desc_cnt - 1;
 	
 	//@RK: IPA_INTEG Need Rx db received cnt from IPA uC  
@@ -824,11 +843,7 @@ void DWC_ETH_QOS_ipa_stats_read(struct DWC_ETH_QOS_prv_data *pdata)
 
 	dma_stats->ipa_tx_Desc_Ring_Base = GET_TX_DESC_DMA_ADDR(IPA_DMA_TX_CH, 0);
 	dma_stats->ipa_tx_Desc_Ring_Size = pdata->tx_queue[IPA_DMA_TX_CH].desc_cnt;
-	dma_stats->ipa_tx_Buff_Ring_Base =
-		dma_map_single(&pdata->pdev->dev,
-			GET_TX_BUFF_DMA_POOL_BASE_ADRR(IPA_DMA_TX_CH),
-			GET_TX_BUFF_DMA_POOL_BASE_ADRR_SIZE(IPA_DMA_TX_CH),
-			DMA_TO_DEVICE);
+	dma_stats->ipa_tx_Buff_Ring_Base = GET_TX_BUFF_POOL_BASE_PADRR(IPA_DMA_TX_CH);
 	dma_stats->ipa_tx_Buff_Ring_Size = pdata->tx_queue[IPA_DMA_TX_CH].desc_cnt - 1;
 	
 	//@RK: IPA_INTEG Need Tx db received cnt from IPA uC

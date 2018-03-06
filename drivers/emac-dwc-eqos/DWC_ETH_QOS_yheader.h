@@ -394,18 +394,16 @@
 #define DWC_ETH_QOS_RXQ_CNT 4
 
 /* Helper macros for TX descriptor handling */
-
 #define GET_TX_QUEUE_PTR(QINX) (&pdata->tx_queue[(QINX)])
-
 #define GET_TX_DESC_PTR(QINX, DINX) (pdata->tx_queue[(QINX)].tx_desc_data.tx_desc_ptrs[(DINX)])
-
 #define GET_TX_DESC_DMA_ADDR(QINX, DINX) (pdata->tx_queue[(QINX)].tx_desc_data.tx_desc_dma_addrs[(DINX)])
 
 /* Add IPA specific Macros to access the DMA and virtual address to be provided to IPA uC*/
-#define GET_TX_BUFF_DMA_ADDR(chInx, dInx) (pdata->tx_queue[(chInx)].tx_desc_data.tx_ipa_dma_buff_addrs[(dInx)])
-#define GET_TX_BUFF_LOGICAL_ADDR(chInx, dInx) (pdata->tx_queue[(chInx)].tx_desc_data.tx_ipa_buff_addrs[(dInx)])
-#define GET_TX_BUFF_DMA_POOL_BASE_ADRR(chInx) (pdata->tx_queue[(chInx)].tx_desc_data.tx_ipa_dma_buff_addrs)
-#define GET_TX_BUFF_DMA_POOL_BASE_ADRR_SIZE(chInx) (sizeof(dma_addr_t) * pdata->tx_queue[chInx].desc_cnt)
+#define GET_TX_BUFF_DMA_ADDR(chInx, dInx) (pdata->tx_queue[(chInx)].tx_desc_data.ipa_tx_buff_pool_pa_addrs_base[(dInx)])
+#define GET_TX_BUFF_LOGICAL_ADDR(chInx, dInx) (pdata->tx_queue[(chInx)].tx_desc_data.ipa_tx_buff_pool_va_addrs_base[(dInx)])
+#define GET_TX_BUFF_POOL_BASE_ADRR(chInx) (pdata->tx_queue[(chInx)].tx_desc_data.ipa_tx_buff_pool_pa_addrs_base)
+#define GET_TX_BUFF_POOL_BASE_PADRR(chInx) (pdata->tx_queue[(chInx)].tx_desc_data.ipa_tx_buff_pool_pa_addrs_base_dma_handle)
+#define GET_TX_BUFF_POOL_BASE_ADRR_SIZE(chInx) (sizeof(dma_addr_t) * pdata->tx_queue[chInx].desc_cnt)
 
 #define GET_TX_WRAPPER_DESC(QINX) (&pdata->tx_queue[(QINX)].tx_desc_data)
 
@@ -443,16 +441,15 @@
 } while (0)
 
 /* Helper macros for RX descriptor handling */
-
 #define GET_RX_QUEUE_PTR(QINX) (&pdata->rx_queue[(QINX)])
-
 #define GET_RX_DESC_PTR(QINX, DINX) (pdata->rx_queue[(QINX)].rx_desc_data.rx_desc_ptrs[(DINX)])
-
 #define GET_RX_DESC_DMA_ADDR(QINX, DINX) (pdata->rx_queue[(QINX)].rx_desc_data.rx_desc_dma_addrs[(DINX)])
 
 /* Add IPA specific Macros to access the DMA address to be provided to IPA uC*/
-#define GET_RX_BUFF_DMA_ADDR(QINX, DINX) (pdata->rx_queue[(QINX)].rx_desc_data.ipa_rx_buff_addrs[(DINX)])
-#define GET_RX_BUFF_POOL_BASE_ADRR(QINX) (pdata->rx_queue[(QINX)].rx_desc_data.ipa_rx_buff_addrs)
+#define GET_RX_BUFF_DMA_ADDR(QINX, DINX) (pdata->rx_queue[(QINX)].rx_desc_data.ipa_rx_buff_pool_pa_addrs_base[(DINX)])
+#define GET_RX_BUFF_LOGICAL_ADDR(QINX, DINX) (pdata->rx_queue[(QINX)].rx_desc_data.ipa_rx_buff_pool_va_addrs_base[(DINX)])
+#define GET_RX_BUFF_POOL_BASE_ADRR(QINX) (pdata->rx_queue[(QINX)].rx_desc_data.ipa_rx_buff_pool_pa_addrs_base)
+#define GET_RX_BUFF_POOL_BASE_PADRR(chInx) (pdata->rx_queue[(chInx)].rx_desc_data.ipa_rx_buff_pool_pa_addrs_base_dma_handle)
 #define GET_RX_BUFF_POOL_BASE_ADRR_SIZE(chInx) (sizeof(dma_addr_t) * pdata->rx_queue[chInx].desc_cnt)
 
 #define GET_RX_WRAPPER_DESC(QINX) (&pdata->rx_queue[(QINX)].rx_desc_data)
@@ -1026,8 +1023,10 @@ struct DWC_ETH_QOS_tx_wrapper_descriptor {
 
 	struct DWC_ETH_QOS_tx_buffer **tx_buf_ptrs;
 
-	dma_addr_t *tx_ipa_dma_buff_addrs;
-	struct sk_buff **tx_ipa_buff_addrs;
+	void **ipa_tx_buff_pool_va_addrs_base;
+
+	dma_addr_t *ipa_tx_buff_pool_pa_addrs_base;
+	dma_addr_t ipa_tx_buff_pool_pa_addrs_base_dma_handle;
 
 	unsigned char contigous_mem;
 
@@ -1072,6 +1071,7 @@ struct DWC_ETH_QOS_tx_queue {
 struct DWC_ETH_QOS_rx_buffer {
 	dma_addr_t dma;		/* dma address of skb */
 	struct sk_buff *skb;	/* virtual address of skb */
+	void *ipa_buff_va;	/* virtual address of ipa_buff */
 	unsigned short len;	/* length of received packet */
 	struct page *page;	/* page address */
 	unsigned char mapped_as_page;
@@ -1092,9 +1092,13 @@ struct DWC_ETH_QOS_rx_wrapper_descriptor {
 
 	struct s_RX_NORMAL_DESC **rx_desc_ptrs;
 	dma_addr_t *rx_desc_dma_addrs;
-	dma_addr_t *ipa_rx_buff_addrs;
 
 	struct DWC_ETH_QOS_rx_buffer **rx_buf_ptrs;
+
+	void **ipa_rx_buff_pool_va_addrs_base;
+
+	dma_addr_t *ipa_rx_buff_pool_pa_addrs_base;
+	dma_addr_t ipa_rx_buff_pool_pa_addrs_base_dma_handle;
 
 	unsigned char contigous_mem;
 
