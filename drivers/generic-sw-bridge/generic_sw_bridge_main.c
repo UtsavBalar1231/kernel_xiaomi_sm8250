@@ -2050,6 +2050,15 @@ static void __exit gsb_exit_module(void)
 	int ret = 0;
 	struct gsb_ctx *pgsb_ctx = __gc;
 
+	if (NULL == pgsb_ctx)
+	{
+		DEBUG_ERROR("Context is NULL\n");
+		return -EFAULT;
+	}
+
+	unregister_netdevice_notifier(&pgsb_ctx->gsb_dev_notifier);
+	unregister_pm_notifier(&pgsb_ctx->gsb_pm_notifier);
+
 	/*lets delete the if  from cache so no more packets are
 		processed from stack*/
 	cancel_delayed_work_sync(&if_suspend_wq);
@@ -2065,8 +2074,7 @@ static void __exit gsb_exit_module(void)
 	ret = del_timer(&INACTIVITY_TIMER);
 	if (ret) DEBUG_TRACE("timer still in use\n");
 
-	unregister_netdevice_notifier(&pgsb_ctx->gsb_dev_notifier);
-	unregister_pm_notifier(&pgsb_ctx->gsb_pm_notifier);
+
 	if (pgsb_ctx->is_wake_src_acquired)
 	{
 		__pm_relax(&pgsb_ctx->gsb_wake_src);
