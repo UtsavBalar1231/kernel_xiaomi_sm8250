@@ -26,7 +26,7 @@ all:
 	$(MAKE) -C $(KERNEL_SRC) M=$(shell pwd) modules $(KBUILD_OPTIONS)
 
 debug:
-        $(MAKE) -C $(KERNEL_SRC) M=$(shell pwd) modules $(KBUILD_OPTIONS) EXTRA_CFLAGS="$(MY_CFLAGS)"
+	$(MAKE) -C $(KERNEL_SRC) M=$(shell pwd) modules $(KBUILD_OPTIONS) EXTRA_CFLAGS="$(MY_CFLAGS)"
 
 modules_install:
 	$(MAKE) -C $(KERNEL_SRC) M=$(shell pwd) modules_install
