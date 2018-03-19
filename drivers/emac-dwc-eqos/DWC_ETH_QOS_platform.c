@@ -1039,6 +1039,8 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	desc_if->free_queue_struct(pdata);
 
  err_out_q_alloc_failed:
+	if (pdata->ipa_enabled)
+		 wakeup_source_trash(&pdata->prv_ipa.wlock);
 	free_netdev(dev);
 	platform_set_drvdata(pdev, NULL);
 
@@ -1131,6 +1133,8 @@ int DWC_ETH_QOS_remove(struct platform_device *pdev)
 	atomic_notifier_chain_unregister(&panic_notifier_list,
 			&DWC_ETH_QOS_panic_blk);
 
+	if (pdata->ipa_enabled)
+		 wakeup_source_trash(&pdata->prv_ipa.wlock);
 	free_netdev(dev);
 
 	platform_set_drvdata(pdev, NULL);
