@@ -1784,11 +1784,25 @@ void init_pg_tx_wq(struct DWC_ETH_QOS_prv_data *pdata);
 #endif /* end of DWC_ETH_QOS_CONFIG_PGTEST */
 irqreturn_t DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS(int irq, void *dev_id);
 void DWC_ETH_QOS_handle_phy_interrupt(struct DWC_ETH_QOS_prv_data *pdata);
-int DWC_ETH_QOS_rgmii_io_macro_sdcdc_init(void);
+int DWC_ETH_QOS_rgmii_io_macro_sdcdc_init(struct DWC_ETH_QOS_prv_data *);
 int DWC_ETH_QOS_rgmii_io_macro_sdcdc_enable_lp_mode(void);
 int DWC_ETH_QOS_rgmii_io_macro_sdcdc_config(void);
 int DWC_ETH_QOS_rgmii_io_macro_init(struct DWC_ETH_QOS_prv_data *);
-int DWC_ETH_QOS_sdcc_set_bypass_mode(int bypass_mode);
+int DWC_ETH_QOS_sdcc_set_bypass_mode(void);
+int DWC_ETH_QOS_rgmii_io_macro_dll_reset(void);
+void dump_rgmii_io_macro_registers(void);
+static int DWC_ETH_QOS_config_link(struct DWC_ETH_QOS_prv_data* pdata);
+static inline int DWC_ETH_QOS_configure_io_macro_dll_settings(
+			struct DWC_ETH_QOS_prv_data *pdata);
+
+/* POR values for IO macro and DLL registers */
+#define EMAC_RGMII_IO_MACRO_CONFIG_POR 0x40C01343
+#define EMAC_RGMII_IO_MACRO_CONFIG_2_POR 0x00002060
+#define EMAC_SDCC_HC_REG_DLL_CONFIG_POR 0x2004642C
+#define EMAC_SDCC_HC_REG_DDR_CONFIG_POR 0x00000000
+#define EMAC_SDCC_HC_REG_DLL_CONFIG_2_POR 0x00200000
+#define EMAC_SDCC_USR_CTL_POR 0x00000000
+
 #ifdef PER_CH_INT
 void DWC_ETH_QOS_handle_DMA_Int(struct DWC_ETH_QOS_prv_data *pdata, int chinx, bool);
 int DWC_ETH_QOS_register_per_ch_intr(struct DWC_ETH_QOS_prv_data *pdata, int);

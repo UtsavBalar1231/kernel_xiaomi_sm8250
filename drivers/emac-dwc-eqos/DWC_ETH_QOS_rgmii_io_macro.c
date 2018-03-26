@@ -23,17 +23,16 @@
  * \details This function will write to the various fields in
  * SDCC_HC_REG_DLL_CONFIG register for the DLL
  * initialization
- *\return 0 on success and -1 on failure.
+ *\return Y_SUCCESS
  */
-int DWC_ETH_QOS_rgmii_io_macro_sdcdc_init(void)
+int DWC_ETH_QOS_rgmii_io_macro_sdcdc_init(struct DWC_ETH_QOS_prv_data *pdata)
 {
+	int reg_val = 0;
 #if 0
 	ULONG RETRYCOUNT = 1000;
 	ULONG current_cnt = 0;
-
 	volatile ULONG VARDLL_LOCK;
 #endif
-
 	EMACDBG("Enter\n");
 
 	/* Write 1 to DLL_RST bit of SDCC_HC_REG_DLL_CONFIG register */
@@ -48,13 +47,21 @@ int DWC_ETH_QOS_rgmii_io_macro_sdcdc_init(void)
 	/* Write 0 to PDN bit of SDCC_HC_REG_DLL_CONFIG register */
 	SDCC_HC_PDN_UDFWR(0x0);
 
+	/* DLL RST=0 and PDN=0 are sufficient for RGMII_ID 10/100 Mbps mode */
+	if (pdata->speed == SPEED_100 || pdata->speed == SPEED_10) {
+		EMACDBG("Bail out\n");
+		return Y_SUCCESS;
+	}
 	/* Write 1 to DLL_EN */
 	SDCC_HC_DLL_EN_UDFWR(0x1);
 
 	/* Write 1 to CK_OUT_EN */
 	SDCC_HC_CK_OUT_EN_UDFWR(0x1);
 
-	SDCC_USR_CTL_RGWR(0x4UL << 24);
+	SDCC_USR_CTL_RGRD(reg_val);
+	reg_val &= ~(0x7UL<<24);
+	reg_val |= (0x4UL<<24);
+	SDCC_USR_CTL_RGWR(reg_val);
 
 #if 0
 	/* Wait until DLL_LOCK bit of SDC4_STATUS register is 1 */
@@ -104,10 +111,11 @@ int DWC_ETH_QOS_rgmii_io_macro_sdcdc_enable_lp_mode(void)
  */
 int DWC_ETH_QOS_rgmii_io_macro_sdcdc_config(void)
 {
-#if 0
+
 	ULONG RETRYCOUNT = 1000;
 	ULONG current_cnt = 0;
 	volatile ULONG VARCK_OUT_EN;
+	EMACDBG("Enter\n");
 
 	/* Set CDR_EN bit to 0 */
 	SDCC_HC_CDR_EN_UDFWR(0x0);
@@ -154,12 +162,10 @@ int DWC_ETH_QOS_rgmii_io_macro_sdcdc_config(void)
 		current_cnt++;
 		mdelay(1);
 	}
-#endif
-	EMACDBG("Enter\n");
+
 	/* Write 1 to DDR_CAL_EN bit of SDCC_HC_REG_DLL_CONFIG_2
 	 *  register
 	 */
-	SDCC_HC_CFG_2_DDR_TRAFFIC_INIT_SW_UDFWR(0x1);
 	SDCC_HC_CFG_2_DDR_CAL_EN_UDFWR(0x1);
 
 	EMACDBG("Exit\n");
@@ -176,14 +182,14 @@ int DWC_ETH_QOS_rgmii_io_macro_sdcdc_config(void)
  *
  *\return 0 on success
  */
-int DWC_ETH_QOS_sdcc_set_bypass_mode(int bypass_mode)
+int DWC_ETH_QOS_sdcc_set_bypass_mode(void)
 {
 	EMACDBG("Enter\n");
 	/* Write 1 to PDN bit of SDCC_HC_REG_DLL_CONFIG register */
-	SDCC_HC_PDN_UDFWR(bypass_mode);
+	SDCC_HC_PDN_UDFWR(0x1);
 
 	/* Write 1 to bypass bit of SDCC_USR_CTL register */
-	SDCC_USR_CTL_BYPASS_MODE_UDFWR(bypass_mode);
+	SDCC_USR_CTL_BYPASS_MODE_UDFWR(0x1);
 
 	EMACDBG("Exit\n");
 	return Y_SUCCESS;
@@ -202,7 +208,6 @@ int DWC_ETH_QOS_sdcc_set_bypass_mode(int bypass_mode)
 static int DWC_ETH_QOS_set_rgmii_loopback_mode(UINT lb_mode)
 {
 	EMACDBG("Enter\n");
-	RGMII_LOOPBACK_EN_UDFWR(lb_mode);
 	RGMII_CONFIG_2_TX_TO_RX_LOOPBACK_EN_UDFWR(lb_mode);
 	EMACDBG("RGMII loopback mode set to = %d\n", lb_mode);
 
@@ -219,8 +224,7 @@ static int DWC_ETH_QOS_set_rgmii_loopback_mode(UINT lb_mode)
  *
  *\return 0 on success
  */
-int DWC_ETH_QOS_rgmii_io_macro_init(
-	struct DWC_ETH_QOS_prv_data *pdata)
+int DWC_ETH_QOS_rgmii_io_macro_init(struct DWC_ETH_QOS_prv_data *pdata)
 {
 	uint loopback_mode = 0x0;
 	ULONG data;
@@ -230,21 +234,6 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 	/* Loopback is disabled */
 	DWC_ETH_QOS_set_rgmii_loopback_mode(loopback_mode);
 
-	/* Common default settings for all mode cfgs */
-	//RGMII_BYPASS_TX_ID_EN_UDFWR(0x0);
-	//RGMII_PROG_SWAP_UDFWR(0x1);
-	//RGMII_DDR_MODE_UDFWR(0x1);
-	RGMII_PROG_SWAP_UDFWR(0x0);
-	RGMII_DDR_MODE_UDFWR(0x0);
-	RGMII_POS_NEG_DATA_SEL_UDFWR(0x0);
-	RGMII_CONFIG_2_DATA_DIVIDE_CLK_SEL_UDFWR(0x0);
-	RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x0);
-	RGMII_CONFIG_2_RERVED_CONFIG_16_EN_UDFWR(0x0);
-	RGMII_BYPASS_TX_ID_EN_UDFWR(0x1);
-	//RGMII_CONFIG_2_DATA_DIVIDE_CLK_SEL_UDFWR(0x1);
-	//RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x1);
-	//RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x1);
-
 	switch (pdata->io_macro_phy_intf) {
 	case RGMII_MODE:
 		/* Select RGMII interface */
@@ -253,16 +242,24 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 		switch (pdata->speed) {
 		case SPEED_1000:
 			EMACDBG("Set RGMII registers for speed = %d\n", pdata->speed);
-			/* Enable DDR mode*/
-			RGMII_DDR_MODE_UDFWR(0x1);
-
 			if (pdata->io_macro_tx_mode_non_id){
 				EMACDBG(
 					"Set registers for Bypass mode = %d\n",
 					pdata->io_macro_tx_mode_non_id);
-				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x1);
+				/* Enable DDR mode*/
+				RGMII_DDR_MODE_UDFWR(0x1);
+				RGMII_BYPASS_TX_ID_EN_UDFWR(0x1);
+				RGMII_POS_NEG_DATA_SEL_UDFWR(0x0);
+				RGMII_PROG_SWAP_UDFWR(0x0);
 				RGMII_CONFIG_2_DATA_DIVIDE_CLK_SEL_UDFWR(0x1);
+				RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x0);
+				RGMII_CONFIG_2_RERVED_CONFIG_16_EN_UDFWR(0x0);
+				/* Rx Path */
+				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x1);
+				RGMII_LOOPBACK_EN_UDFWR(0x0);
 			} else {
+				/* Enable DDR mode*/
+				RGMII_DDR_MODE_UDFWR(0x1);
 				RGMII_BYPASS_TX_ID_EN_UDFWR(0x0);
 				RGMII_POS_NEG_DATA_SEL_UDFWR(0x1);
 				/* RGMII_TX_POS and RGMII_TX_NEG input pins are swapped
@@ -271,17 +268,14 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 				RGMII_PROG_SWAP_UDFWR(0x1);
 				RGMII_CONFIG_2_DATA_DIVIDE_CLK_SEL_UDFWR(0x1);
 				RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x1);
+				RGMII_CONFIG_2_RERVED_CONFIG_16_EN_UDFWR(0x0);
 				/* If data arrives at positive edge or if data is
 				 * delayed by 1.5ns/ 2ns then write 1 to RX_PROG_SWAP
 				 * bit of register EMAC_RGMII_IO_MACRO_CONFIG_2
 				 */
 				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x1);
-				/* Program PRG_RCLK_DLY to 52 for a required delay of 1.8 ns */
+				/* Program PRG_RCLK_DLY to 57 for a required delay of 1.8 ns */
 				SDCC_HC_PRG_RCLK_DLY_UDFWR(57);
-				SDCC_HC_REG_DDR_CONFIG_RGRD(data);
-				data |= (4 << 9);
-				data |= (0x34 << 12);
-				SDCC_HC_REG_DDR_CONFIG_RGWR(data);
 				SDCC_HC_REG_DDR_CONFIG_RGRD(data);
 				data |= (1 << 31);
 				SDCC_HC_REG_DDR_CONFIG_RGWR(data);
@@ -289,65 +283,85 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 				SDCC_HC_EXT_PRG_RCLK_DLY_CODE_UDFWR(0x5);
 				SDCC_HC_EXT_PRG_RCLK_DLY_UDFWR(0x3f);
 				SDCC_HC_EXT_PRG_RCLK_DLY_EN_UDFWR(0x1);
-
+				RGMII_LOOPBACK_EN_UDFWR(0x0);
 			}
 			pdata->rgmii_clk_rate = RGMII_1000_NOM_CLK_FREQ;
 			break;
 
 		case SPEED_100:
 			EMACDBG("Set RGMII registers for speed = %d\n", pdata->speed);
-			/* This field is used for 100Mbps mode operation in RMII and
-			 * set value of 2'b01 for ID and bypass modes
-			 */
-			RGMII_MAX_SPD_PRG_2_UDFWR(0x1);
 
 			if (pdata->io_macro_tx_mode_non_id) {
 				EMACDBG("Set registers for Bypass mode = %d\n",
 					pdata->io_macro_tx_mode_non_id);
+				RGMII_DDR_MODE_UDFWR(0x0);
+				RGMII_BYPASS_TX_ID_EN_UDFWR(0x1);
+				RGMII_POS_NEG_DATA_SEL_UDFWR(0x0);
+				RGMII_PROG_SWAP_UDFWR(0x0);
+				RGMII_CONFIG_2_DATA_DIVIDE_CLK_SEL_UDFWR(0x1);
+				RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x0);
+
+				RGMII_MAX_SPD_PRG_2_UDFWR(0x1);
 				RGMII_CONFIG_2_RERVED_CONFIG_16_EN_UDFWR(0x1);
-				SDCC_HC_EXT_PRG_RCLK_DLY_CODE_UDFWR(0x0);
-				SDCC_HC_EXT_PRG_RCLK_DLY_UDFWR(0x0);
-				SDCC_HC_EXT_PRG_RCLK_DLY_EN_UDFWR(0x0);
+				/* Rx Path */
 				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x0);
+				RGMII_LOOPBACK_EN_UDFWR(0x0);
 				pdata->rgmii_clk_rate =
 					RGMII_NON_ID_MODE_100_LOW_SVS_CLK_FREQ;
 			} else{
 				RGMII_DDR_MODE_UDFWR(0x1);
+				RGMII_BYPASS_TX_ID_EN_UDFWR(0x1);
+				RGMII_POS_NEG_DATA_SEL_UDFWR(0x0);
 				RGMII_PROG_SWAP_UDFWR(0x0);
 				RGMII_CONFIG_2_DATA_DIVIDE_CLK_SEL_UDFWR(0x1);
 				RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x1);
+				RGMII_MAX_SPD_PRG_2_UDFWR(0x1);
+				RGMII_CONFIG_2_RERVED_CONFIG_16_EN_UDFWR(0x0);
+				/* Rx Path */
 				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x1);
 				SDCC_HC_EXT_PRG_RCLK_DLY_CODE_UDFWR(0x5);
 				SDCC_HC_EXT_PRG_RCLK_DLY_UDFWR(0x3f);
 				SDCC_HC_EXT_PRG_RCLK_DLY_EN_UDFWR(0x1);
+				RGMII_LOOPBACK_EN_UDFWR(0x0);
 				pdata->rgmii_clk_rate = RGMII_ID_MODE_100_LOW_SVS_CLK_FREQ;
 			}
 			break;
 
 		case SPEED_10:
 			EMACDBG("Set RGMII registers for speed = %d\n", pdata->speed);
-			RGMII_MAX_SPD_PRG_9_UDFWR(0x13);
 
 			if (pdata->io_macro_tx_mode_non_id) {
 				EMACDBG("Set registers for Bypass mode = %d\n",
 					pdata->io_macro_tx_mode_non_id);
+				RGMII_DDR_MODE_UDFWR(0x0);
+				RGMII_BYPASS_TX_ID_EN_UDFWR(0x1);
+				RGMII_POS_NEG_DATA_SEL_UDFWR(0x0);
+				RGMII_PROG_SWAP_UDFWR(0x0);
+				RGMII_CONFIG_2_DATA_DIVIDE_CLK_SEL_UDFWR(0x1);
+				RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x0);
+				RGMII_MAX_SPD_PRG_9_UDFWR(0x13);
 				RGMII_CONFIG_2_RERVED_CONFIG_16_EN_UDFWR(0x1);
-				SDCC_HC_EXT_PRG_RCLK_DLY_CODE_UDFWR(0x0);
-				SDCC_HC_EXT_PRG_RCLK_DLY_UDFWR(0x0);
-				SDCC_HC_EXT_PRG_RCLK_DLY_EN_UDFWR(0x0);
+				/* Rx Path */
 				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x0);
+				RGMII_LOOPBACK_EN_UDFWR(0x0);
 				pdata->rgmii_clk_rate =
 					RGMII_NON_ID_MODE_10_LOW_SVS_CLK_FREQ;
 			} else{
 				RGMII_DDR_MODE_UDFWR(0x1);
+				RGMII_BYPASS_TX_ID_EN_UDFWR(0x1);
+				RGMII_POS_NEG_DATA_SEL_UDFWR(0x0);
 				RGMII_PROG_SWAP_UDFWR(0x0);
 				RGMII_CONFIG_2_DATA_DIVIDE_CLK_SEL_UDFWR(0x1);
 				RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x1);
-				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x1);
+				RGMII_MAX_SPD_PRG_9_UDFWR(0x13);
+				RGMII_CONFIG_2_RERVED_CONFIG_16_EN_UDFWR(0x0);
 
+				/* Rx Path */
+				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x1);
 				SDCC_HC_EXT_PRG_RCLK_DLY_CODE_UDFWR(0x5);
 				SDCC_HC_EXT_PRG_RCLK_DLY_UDFWR(0x3f);
 				SDCC_HC_EXT_PRG_RCLK_DLY_EN_UDFWR(0x1);
+				RGMII_LOOPBACK_EN_UDFWR(0x0);
 				pdata->rgmii_clk_rate =
 					RGMII_ID_MODE_10_LOW_SVS_CLK_FREQ;
 			}
@@ -364,14 +378,16 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 	case RMII_MODE:
 		EMACDBG("Set registers for RMII mode and speed = %d\n", pdata->speed);
 		RGMII_INTF_SEL_UDFWR(0x01);
-		RGMII_MAX_SPD_PRG_2_UDFWR(0x1);
-		RGMII_CONFIG_2_CLK_DIVIDE_SEL_UDFWR(0x1);
-		RGMII_MAX_SPD_PRG_9_UDFWR(0x13);
+		RGMII_DDR_MODE_UDFWR(0x0);
+		RGMII_BYPASS_TX_ID_EN_UDFWR(0x1);
+		RGMII_POS_NEG_DATA_SEL_UDFWR(0x0);
 		RGMII_PROG_SWAP_UDFWR(0x1);
 		RGMII_CONFIG_2_DATA_DIVIDE_CLK_SEL_UDFWR(0x1);
-		SDCC_HC_EXT_PRG_RCLK_DLY_CODE_UDFWR(0x0);
-		SDCC_HC_EXT_PRG_RCLK_DLY_UDFWR(0x0);
-		SDCC_HC_EXT_PRG_RCLK_DLY_EN_UDFWR(0x0);
+		RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x0);
+		RGMII_CONFIG_2_CLK_DIVIDE_SEL_UDFWR(0x1);
+		RGMII_MAX_SPD_PRG_2_UDFWR(0x1);
+		RGMII_MAX_SPD_PRG_9_UDFWR(0x13);
+		RGMII_CONFIG_2_RERVED_CONFIG_16_EN_UDFWR(0x0);
 		RGMII_LOOPBACK_EN_UDFWR(0x1);
 
 		switch (pdata->speed) {
@@ -388,8 +404,13 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 	case MII_MODE:
 		EMACDBG("Set registers for MII mode and speed = %d\n", pdata->speed);
 		RGMII_INTF_SEL_UDFWR(0x2);
-		RGMII_CONFIG_2_RERVED_CONFIG_16_EN_UDFWR(0x1);
+		RGMII_DDR_MODE_UDFWR(0x0);
+		RGMII_BYPASS_TX_ID_EN_UDFWR(0x1);
+		RGMII_POS_NEG_DATA_SEL_UDFWR(0x0);
+		RGMII_PROG_SWAP_UDFWR(0x0);
 		RGMII_CONFIG_2_DATA_DIVIDE_CLK_SEL_UDFWR(0x1);
+		RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x0);
+		RGMII_CONFIG_2_RERVED_CONFIG_16_EN_UDFWR(0x1);
 
 		switch (pdata->speed) {
 		case SPEED_100:
@@ -410,6 +431,29 @@ int DWC_ETH_QOS_rgmii_io_macro_init(
 
 	if (pdata->res_data->rgmii_clk)
 		clk_set_rate(pdata->res_data->rgmii_clk, pdata->rgmii_clk_rate);
+
+	EMACDBG("Exit\n");
+	return Y_SUCCESS;
+}
+
+/* Programming IO macro and DLL registers with POR values */
+/*!
+ * \brief Reset the IO MACRO and DLL blocks
+ *
+ * \details This function will write POR values to RGMII and
+ * DLL registers.
+ *
+ *\return Y_SUCCESS
+ */
+int DWC_ETH_QOS_rgmii_io_macro_dll_reset(void)
+{
+	EMACDBG("Enter\n");
+	RGMII_IO_MACRO_CONFIG_RGWR(EMAC_RGMII_IO_MACRO_CONFIG_POR);
+	RGMII_IO_MACRO_CONFIG_2_RGWR(EMAC_RGMII_IO_MACRO_CONFIG_2_POR);
+	SDCC_HC_REG_DLL_CONFIG_RGWR(EMAC_SDCC_HC_REG_DLL_CONFIG_POR);
+	SDCC_HC_REG_DDR_CONFIG_RGWR(EMAC_SDCC_HC_REG_DDR_CONFIG_POR);
+	SDCC_HC_REG_DLL_CONFIG_2_RGWR(EMAC_SDCC_HC_REG_DLL_CONFIG_2_POR);
+	SDCC_USR_CTL_RGWR(EMAC_SDCC_USR_CTL_POR);
 
 	EMACDBG("Exit\n");
 	return Y_SUCCESS;

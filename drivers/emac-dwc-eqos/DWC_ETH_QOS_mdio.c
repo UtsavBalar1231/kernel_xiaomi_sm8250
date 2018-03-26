@@ -452,6 +452,55 @@ static void configure_phy_rx_tx_delay(struct DWC_ETH_QOS_prv_data *pdata)
 }
 
 /*!
+ * \brief Function to configure IO macro and DLL settings.
+ *
+ * \details Function to configure IO macro and DLL settings based
+ * on speed and phy interface.
+ *
+ * \param[in] pdata - pointer to platform data
+ *
+ * \return void
+ *
+ * \retval Y_SUCCESS on success and Y_FAILURE on failure.
+ */
+
+static inline int DWC_ETH_QOS_configure_io_macro_dll_settings(
+			struct DWC_ETH_QOS_prv_data *pdata)
+{
+	int ret = Y_SUCCESS;
+
+	EMACDBG("Enter\n");
+
+	DWC_ETH_QOS_rgmii_io_macro_dll_reset();
+#ifndef DWC_ETH_QOS_EMULATION_PLATFORM
+	/* For RGMII ID mode with internal delay*/
+	if (pdata->io_macro_phy_intf == RGMII_MODE && !pdata->io_macro_tx_mode_non_id) {
+		EMACDBG("Initialize and configure SDCC DLL\n");
+		ret = DWC_ETH_QOS_rgmii_io_macro_sdcdc_init(pdata);
+		if (ret < 0) {
+			EMACERR("DLL init failed \n");
+			return ret;
+		}
+		if (pdata->speed == SPEED_1000) {
+			ret = DWC_ETH_QOS_rgmii_io_macro_sdcdc_config();
+			if (ret < 0) {
+				EMACERR("DLL config failed \n");
+				return ret;
+			}
+		}
+	} else {
+		/* For RGMII Non ID (i.e external delay), RMII and MII modes set DLL bypass */
+		DWC_ETH_QOS_sdcc_set_bypass_mode();
+	}
+#endif
+	DWC_ETH_QOS_rgmii_io_macro_init(pdata);
+
+	EMACDBG("Exit\n");
+	return ret;
+}
+
+
+/*!
  * \brief Set link parameters for QCA8337.
  *
  * \details This function configures the MAC in 1000
@@ -468,10 +517,19 @@ static int DWC_ETH_QOS_config_link(struct DWC_ETH_QOS_prv_data* pdata)
 
 	EMACDBG("Enter\n");
 
-	hw_if->set_gmii_speed();
-	hw_if->set_full_duplex();
-	pdata->vote_idx = VOTE_IDX_1000MBPS;
-	pdata->speed = SPEED_1000;
+	if (pdata->io_macro_phy_intf == RMII_MODE ||
+			pdata->io_macro_phy_intf == MII_MODE) {
+		hw_if->set_mii_speed_100();
+		hw_if->set_full_duplex();
+		pdata->vote_idx = VOTE_IDX_100MBPS;
+		pdata->speed = SPEED_100;
+	} else {
+		/* Default setting is for RGMII 1000 Mbps full duplex mode*/
+		hw_if->set_gmii_speed();
+		hw_if->set_full_duplex();
+		pdata->vote_idx = VOTE_IDX_1000MBPS;
+		pdata->speed = SPEED_1000;
+	}
 	pdata->duplex = 1;
 	EMACDBG("EMAC configured to speed = %d and full duplex = %d\n",
 			pdata->speed,
@@ -480,23 +538,7 @@ static int DWC_ETH_QOS_config_link(struct DWC_ETH_QOS_prv_data* pdata)
 	pdata->oldlink = 1;
 	pdata->oldduplex = 1;
 
-	EMACDBG("Initialize and configure SDCC DLL\n");
-	ret = DWC_ETH_QOS_rgmii_io_macro_sdcdc_init();
-	if (ret < 0) {
-		EMACERR("SDCC DLL init failed \n");
-		return ret;
-	}
-	ret = DWC_ETH_QOS_rgmii_io_macro_sdcdc_config();
-	if (ret < 0) {
-		EMACERR("SDCC DLL config failed \n");
-		return ret;
-	}
-
-	ret = DWC_ETH_QOS_rgmii_io_macro_init(pdata);
-	if (ret < 0) {
-		EMACERR("RGMII IO macro initialization failed\n");
-		return ret;
-	}
+	ret = DWC_ETH_QOS_configure_io_macro_dll_settings(pdata);
 
 	EMACDBG("Exit\n");
 	return ret;
@@ -592,21 +634,11 @@ void DWC_ETH_QOS_adjust_link(struct net_device *dev)
 			/* Set PHY delays here */
 			configure_phy_rx_tx_delay(pdata);
 
-#ifndef DWC_ETH_QOS_EMULATION_PLATFORM
-			EMACDBG("Initialize and configure SDCC DLL\n");
-			ret = DWC_ETH_QOS_rgmii_io_macro_sdcdc_init();
-			if (ret < 0)
-			   EMACERR("SDCC DLL init failed \n");
-			ret = DWC_ETH_QOS_rgmii_io_macro_sdcdc_config();
-			if (ret < 0)
-			   EMACERR("SDCC DLL config failed \n");
-#endif
-
-			ret = DWC_ETH_QOS_rgmii_io_macro_init(pdata);
-			if (ret < 0)
-			   EMACERR("RGMII IO macro initialization failed\n");
-			if (pdata->io_macro_tx_mode_non_id)
-			   DWC_ETH_QOS_sdcc_set_bypass_mode(pdata->io_macro_tx_mode_non_id);
+			ret = DWC_ETH_QOS_configure_io_macro_dll_settings(pdata);
+			if (ret < 0) {
+				EMACERR("Failed to configure IO macro and DLL settings\n");
+				return ret;
+			}
 		}
 
 		if (!pdata->oldlink) {
