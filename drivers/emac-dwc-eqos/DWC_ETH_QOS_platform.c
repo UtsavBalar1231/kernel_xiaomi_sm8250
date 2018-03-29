@@ -242,14 +242,13 @@ err_out:
 	return ret;
 }
 
-static int DWC_ETH_QOS_get_wol_config(struct platform_device *pdev)
+static int DWC_ETH_QOS_get_phy_intr_config(struct platform_device *pdev)
 {
 	int ret = 0;
 	struct resource *resource = NULL;
 	EMACDBG("Enter\n");
 
-	dwc_eth_qos_res_data.wol_intr= platform_get_irq_byname(pdev, "wol-intr");
-	EMACDBG("wol-intr = %d\n", dwc_eth_qos_res_data.wol_intr);
+	dwc_eth_qos_res_data.phy_intr = platform_get_irq_byname(pdev, "phy-intr");
 
 	EMACDBG("Exit\n");
 	return ret;
@@ -326,7 +325,7 @@ static int DWC_ETH_QOS_get_dts_config(struct platform_device *pdev)
 	if (ret)
 		goto err_out;
 
-	ret = DWC_ETH_QOS_get_wol_config(pdev);
+	ret = DWC_ETH_QOS_get_phy_intr_config(pdev);
 	if (ret)
 		goto err_out;
 
@@ -857,7 +856,7 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	hw_if->exit();
 	/* IEMAC: Find and Read the IRQ from DTS */
 	dev->irq = dwc_eth_qos_res_data.sbd_intr;
-	pdata->wol_irq = dwc_eth_qos_res_data.wol_intr;
+	pdata->phy_irq = dwc_eth_qos_res_data.phy_intr;
 
 	/* Check if IPA is supported */
 	if (ipa_offload_en == 1)
@@ -894,11 +893,6 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 		}
 	} else {
 		dev_alert(&pdev->dev, "%s: MDIO is not present\n\n", DEV_NAME);
-	}
-
-	if (pdata->phy_intr_en) {
-		set_tlmm_direct_connect_gpio();
-		hw_if->enable_mac_phy_interrupt();
 	}
 
 #ifndef DWC_ETH_QOS_CONFIG_PGTEST
@@ -968,7 +962,7 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	spin_lock_init(&pdata->lock);
 	mutex_init(&pdata->mlock);
 	spin_lock_init(&pdata->tx_lock);
-	spin_lock_init(&pdata->pmt_lock);
+	mutex_init(&pdata->pmt_lock);
 
 #ifdef DWC_ETH_QOS_CONFIG_PGTEST
 	init_pg_tx_wq(pdata);
@@ -999,17 +993,6 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	if (pdata->hw_feat.pcs_sel) {
 		netif_carrier_off(dev);
 		dev_alert(&pdev->dev, "carrier off till LINK is up\n");
-	}
-
-	/* Request for WOL interrupt */
-	if (pdata->wol_irq) {
-		ret = request_irq(pdata->wol_irq, DWC_ETH_QOS_ISR_WOL,
-							0, DEV_NAME, pdata);
-		if (ret != 0){
-			EMACERR("Failed to request for WOL IRQ %d\n", pdata->wol_irq);
-			free_irq(pdata->wol_irq, pdata);
-		} else
-			EMACDBG("Request for WOL IRQ %d successful\n", pdata->wol_irq);
 	}
 
 	return 0;
@@ -1091,9 +1074,9 @@ int DWC_ETH_QOS_remove(struct platform_device *pdev)
 		pdata->irq_number = 0;
 	}
 
-	if (pdata->wol_irq != 0) {
-		free_irq(pdata->wol_irq, pdata);
-		pdata->wol_irq = 0;
+	if (pdata->phy_irq != 0) {
+		free_irq(pdata->phy_irq, pdata);
+		pdata->phy_irq = 0;
 	}
 
 	if (pdata->hw_feat.sma_sel == 1)
@@ -1203,24 +1186,7 @@ static INT DWC_ETH_QOS_suspend(struct platform_device *pdev, pm_message_t state)
 
 	DBGPR("-->DWC_ETH_QOS_suspend\n");
 
-	if (pdata->wol_irq > 0 && pdata->phydev->drv->set_wol) {
-		struct ethtool_wolinfo wol = {.cmd = ETHTOOL_SWOL,
-			.wolopts = WAKE_MAGIC};
-		ret = pdata->phydev->drv->set_wol(pdata->phydev, &wol);
-		if (ret == 0) {
-			enable_irq_wake(pdata->wol_irq);
-			EMACDBG("Set WOL in PHY and enable as wakeable interrupt\n");
-		}
-		else {
-			EMACERR("Failed to enable WOL interrupt in PHY\n");
-			return -EAGAIN;
-		}
-		goto powerdown;
-	}
-
-	if (!dev || !netif_running(dev) || (!pdata->hw_feat.mgk_sel &&
-					!pdata->hw_feat.rwk_sel)) {
-		DBGPR("<--DWC_ETH_QOS_dev_suspend\n");
+	if (!dev || !netif_running(dev)) {
 		return -EINVAL;
 	}
 
@@ -1231,7 +1197,10 @@ static INT DWC_ETH_QOS_suspend(struct platform_device *pdev, pm_message_t state)
 
 	if (pdata->hw_feat.mgk_sel && (pdata->wolopts & WAKE_MAGIC))
 		pmt_flags |= DWC_ETH_QOS_MAGIC_WAKEUP;
-powerdown:
+
+	if (pdata->phy_intr_en && pdata->phy_irq && pdata->phy_wol_wolopts)
+		pmt_flags |= DWC_ETH_QOS_PHY_INTR_WAKEUP;
+
 	ret = DWC_ETH_QOS_powerdown(dev, pmt_flags, DWC_ETH_QOS_DRIVER_CONTEXT);
 	DBGPR("<--DWC_ETH_QOS_suspend\n");
 

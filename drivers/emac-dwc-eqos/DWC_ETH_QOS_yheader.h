@@ -307,6 +307,7 @@
 
 #define LINK_DOWN_STATE 0x800
 #define LINK_UP_STATE 0x400
+#define PHY_WOL 0x1
 #define AUTO_NEG_ERROR 0x8000
 #define LINK_UP 1
 #define LINK_DOWN 0
@@ -323,12 +324,15 @@
 #define DWC_ETH_QOS_IOCTL_CONTEXT 2
 #define DWC_ETH_QOS_MAGIC_WAKEUP	BIT(0)
 #define DWC_ETH_QOS_REMOTE_WAKEUP	BIT(1)
+#define DWC_ETH_QOS_PHY_INTR_WAKEUP	BIT(2)
 #define DWC_ETH_QOS_POWER_DOWN_TYPE(x)	\
 		((x->power_down_type & DWC_ETH_QOS_MAGIC_WAKEUP) ? \
 		"Magic packet" : \
 		((x->power_down_type & DWC_ETH_QOS_REMOTE_WAKEUP) ? \
 		"Remote wakeup packet" : \
-		"<error>"))
+		((x->power_down_type & DWC_ETH_QOS_PHY_INTR_WAKEUP) ? \
+		"WoL or Link Status interrupt from PHY" : \
+		"<error>")))
 
 #define DWC_ETH_QOS_MAC_ADDR_LEN 6
 #ifndef DWC_ETH_QOS_ENABLE_VLAN_TAG
@@ -1438,7 +1442,7 @@ struct DWC_ETH_QOS_res_data {
 	u32 lpi_intr;
 	u32 io_macro_tx_mode_non_id;
 	IO_MACRO_PHY_MODE io_macro_phy_intf;
-	u32 wol_intr;
+	u32 phy_intr;
 #ifdef PER_CH_INT
 	u32 tx_ch_intr[5];
 	u32 rx_ch_intr[4];
@@ -1503,7 +1507,7 @@ struct DWC_ETH_QOS_prv_data {
 	struct mutex mlock;
 	spinlock_t lock;
 	spinlock_t tx_lock;
-	spinlock_t pmt_lock;
+	struct mutex pmt_lock;
 	UINT mem_start_addr;
 	UINT mem_size;
 	INT irq_number;
@@ -1538,6 +1542,10 @@ struct DWC_ETH_QOS_prv_data {
 
 	/* saving state for Wake-on-LAN */
 	int wolopts;
+	/* state of enabled wol options in PHY*/
+	u32 phy_wol_wolopts;
+	/* state of supported wol options in PHY*/
+	u32 phy_wol_supported;
 
 /* Helper macros for handling FLOW control in HW */
 #define DWC_ETH_QOS_FLOW_CTRL_OFF 0
@@ -1689,7 +1697,7 @@ struct DWC_ETH_QOS_prv_data {
 	int tcp_pkt;
 	unsigned int io_macro_tx_mode_non_id;
 	unsigned int io_macro_phy_intf;
-	int wol_irq;
+	int phy_irq;
 };
 
 typedef enum {
@@ -1758,7 +1766,7 @@ void DWC_ETH_QOS_disable_eee_mode(struct DWC_ETH_QOS_prv_data *pdata);
 void DWC_ETH_QOS_enable_eee_mode(struct DWC_ETH_QOS_prv_data *pdata);
 
 #ifdef DWC_ETH_QOS_CONFIG_PGTEST
-irqreturn_t DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS_pg(int irq, void *device_id);
+irqreturn_t DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS_pg(int irq, void *dev_data);
 void DWC_ETH_QOS_default_confs(struct DWC_ETH_QOS_prv_data *pdata);
 int DWC_ETH_QOS_handle_pg_ioctl(struct DWC_ETH_QOS_prv_data *pdata, void *ptr);
 int DWC_ETH_QOS_alloc_pg(struct DWC_ETH_QOS_prv_data *pdata);
@@ -1785,7 +1793,7 @@ void DWC_ETH_QOS_deregister_per_ch_intr(struct DWC_ETH_QOS_prv_data *pdata);
 void DWC_ETH_QOS_dis_en_ch_intr(struct DWC_ETH_QOS_prv_data *pdata,
 								bool enable);
 #endif
-irqreturn_t DWC_ETH_QOS_ISR_WOL(int irq, void *dev_id);
+irqreturn_t DWC_ETH_QOS_PHY_ISR(int irq, void *dev_id);
 
 void DWC_ETH_QOS_dma_desc_stats_read(struct DWC_ETH_QOS_prv_data *pdata);
 void DWC_ETH_QOS_dma_desc_stats_init(struct DWC_ETH_QOS_prv_data *pdata);

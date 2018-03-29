@@ -123,10 +123,10 @@ void DWC_ETH_QOS_deregister_per_ch_intr(struct DWC_ETH_QOS_prv_data *pdata)
 	DMA_BMR_INTMWR(0x0);
 }
 
-irqreturn_t DWC_ETH_QOS_PER_CH_ISR(int irq, void *device_id)
+irqreturn_t DWC_ETH_QOS_PER_CH_ISR(int irq, void *dev_data)
 {
 	struct DWC_ETH_QOS_prv_data *pdata =
-	    (struct DWC_ETH_QOS_prv_data *)device_id;
+	    (struct DWC_ETH_QOS_prv_data *)dev_data;
 	int chinx;
 
 	for (chinx = 0; chinx <= pdata->hw_feat.tx_ch_cnt; chinx++) {
@@ -193,8 +193,11 @@ void DWC_ETH_QOS_stop_all_ch_tx_dma(struct DWC_ETH_QOS_prv_data *pdata)
 
 	DBGPR("-->DWC_ETH_QOS_stop_all_ch_tx_dma\n");
 
-	for (qinx = 0; qinx < DWC_ETH_QOS_TX_QUEUE_CNT; qinx++)
+	for (qinx = 0; qinx < DWC_ETH_QOS_TX_QUEUE_CNT; qinx++) {
+		if (pdata->ipa_enabled && (qinx == IPA_DMA_TX_CH))
+			continue;
 		hw_if->stop_dma_tx(qinx);
+	}
 
 	DBGPR("<--DWC_ETH_QOS_stop_all_ch_tx_dma\n");
 }
@@ -206,8 +209,11 @@ static void DWC_ETH_QOS_stop_all_ch_rx_dma(struct DWC_ETH_QOS_prv_data *pdata)
 
 	DBGPR("-->DWC_ETH_QOS_stop_all_ch_rx_dma\n");
 
-	for (qinx = 0; qinx < DWC_ETH_QOS_RX_QUEUE_CNT; qinx++)
+	for (qinx = 0; qinx < DWC_ETH_QOS_RX_QUEUE_CNT; qinx++) {
+		if (pdata->ipa_enabled && (qinx == IPA_DMA_RX_CH))
+			continue;
 		hw_if->stop_dma_rx(qinx);
+	}
 
 	DBGPR("<--DWC_ETH_QOS_stop_all_ch_rx_dma\n");
 }
@@ -220,7 +226,7 @@ static void DWC_ETH_QOS_start_all_ch_tx_dma(struct DWC_ETH_QOS_prv_data *pdata)
 	DBGPR("-->DWC_ETH_QOS_start_all_ch_tx_dma\n");
 
 	for (i = 0; i < DWC_ETH_QOS_TX_QUEUE_CNT; i++) {
-		if (pdata->ipa_enabled && i == IPA_DMA_TX_CH)
+		if (pdata->ipa_enabled && (i == IPA_DMA_TX_CH))
 			continue;
 		hw_if->start_dma_tx(i);
 	}
@@ -236,7 +242,7 @@ static void DWC_ETH_QOS_start_all_ch_rx_dma(struct DWC_ETH_QOS_prv_data *pdata)
 	DBGPR("-->DWC_ETH_QOS_start_all_ch_rx_dma\n");
 
 	for (i = 0; i < DWC_ETH_QOS_RX_QUEUE_CNT; i++) {
-		if (pdata->ipa_enabled && i == IPA_DMA_RX_CH)
+		if (pdata->ipa_enabled && (i == IPA_DMA_RX_CH))
 			continue;
 		hw_if->start_dma_rx(i);
 	}
@@ -706,29 +712,18 @@ void DWC_ETH_QOS_handle_DMA_Int(struct DWC_ETH_QOS_prv_data *pdata, int chinx, b
 
 /*!
  * \brief Interrupt Service Routine
- * \details Interrupt Service Routine for WOL interrupt
- * \param[in] irq         - WOL interrupt number for particular
+ * \details Interrupt Service Routine for PHY interrupt
+ * \param[in] irq         - PHY interrupt number for particular
  * device
- * \param[in] device_id   - pointer to device structure
+ * \param[in] dev_data   - pointer to device structure
  * \return returns positive integer
  * \retval IRQ_HANDLED
  */
 
-irqreturn_t DWC_ETH_QOS_ISR_WOL(int irq, void *device_id)
+irqreturn_t DWC_ETH_QOS_PHY_ISR(int irq, void *dev_data)
 {
-	struct DWC_ETH_QOS_prv_data *pdata =
-		(struct DWC_ETH_QOS_prv_data *)device_id;
-	EMACDBG("Enter\n");
-
-	/* Wake-on-LAN Interrupt */
-	EMACDBG("WOL Interrupt %d received\n", irq);
-	disable_irq_wake(irq);
-	/* Clear the PHY interrupt status register */
-	if (pdata->phydev->drv->ack_interrupt) {
-		pdata->phydev->drv->ack_interrupt(pdata->phydev);
-	}
-
-	EMACDBG("Exit\n");
+	/* PHY Interrupt */
+	DWC_ETH_QOS_handle_phy_interrupt((struct DWC_ETH_QOS_prv_data *)dev_data);
 	return IRQ_HANDLED;
 }
 
@@ -758,6 +753,8 @@ void DWC_ETH_QOS_handle_phy_interrupt(struct DWC_ETH_QOS_prv_data *pdata)
 	} else if (phy_intr_status & AUTO_NEG_ERROR) {
 		EMACDBG("Interrupt received for link down with"
 				" auto-negotiation error\n");
+	} else if (phy_intr_status & PHY_WOL) {
+		EMACDBG("Interrupt received for WoL packet\n");
 	}
 
 	EMACDBG("Exit\n");
@@ -769,19 +766,19 @@ void DWC_ETH_QOS_handle_phy_interrupt(struct DWC_ETH_QOS_prv_data *pdata)
  * \details Interrupt Service Routine
  *
  * \param[in] irq         - interrupt number for particular device
- * \param[in] device_id   - pointer to device structure
+ * \param[in] dev_data   - pointer to device structure
  * \return returns positive integer
  * \retval IRQ_HANDLED
  */
 
-irqreturn_t DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS(int irq, void *device_id)
+irqreturn_t DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS(int irq, void *dev_data)
 {
 	ULONG VARDMA_ISR;
 	ULONG VARMAC_ISR;
 	ULONG VARMAC_IMR;
 	ULONG VARMAC_PMTCSR;
 	struct DWC_ETH_QOS_prv_data *pdata =
-	    (struct DWC_ETH_QOS_prv_data *)device_id;
+	    (struct DWC_ETH_QOS_prv_data *)dev_data;
 	struct net_device *dev = pdata->dev;
 	struct hw_if_struct *hw_if = &pdata->hw_if;
 #ifndef PER_CH_INT
@@ -6018,7 +6015,7 @@ INT DWC_ETH_QOS_powerdown(struct net_device *dev, UINT wakeup_type,
 	if (pdata->phydev)
 		phy_stop(pdata->phydev);
 
-	spin_lock_irqsave(&pdata->pmt_lock, flags);
+	mutex_lock(&pdata->pmt_lock);
 
 	if (caller == DWC_ETH_QOS_DRIVER_CONTEXT)
 		netif_device_detach(dev);
@@ -6035,12 +6032,15 @@ INT DWC_ETH_QOS_powerdown(struct net_device *dev, UINT wakeup_type,
 		hw_if->enable_remote_pmt();
 	if (wakeup_type & DWC_ETH_QOS_MAGIC_WAKEUP)
 		hw_if->enable_magic_pmt();
+	if (wakeup_type & DWC_ETH_QOS_PHY_INTR_WAKEUP)
+		enable_irq_wake(pdata->phy_irq);
+
 	pdata->power_down_type = wakeup_type;
 
 	if (caller == DWC_ETH_QOS_IOCTL_CONTEXT)
 		pdata->power_down = 1;
 
-	spin_unlock_irqrestore(&pdata->pmt_lock, flags);
+	mutex_unlock(&pdata->pmt_lock);
 
 	DBGPR("<--DWC_ETH_QOS_powerdown\n");
 
@@ -6072,7 +6072,6 @@ INT DWC_ETH_QOS_powerup(struct net_device *dev, UINT caller)
 {
 	struct DWC_ETH_QOS_prv_data *pdata = netdev_priv(dev);
 	struct hw_if_struct *hw_if = &pdata->hw_if;
-	ULONG flags;
 
 	DBGPR("-->DWC_ETH_QOS_powerup\n");
 
@@ -6083,7 +6082,7 @@ INT DWC_ETH_QOS_powerup(struct net_device *dev, UINT caller)
 		return -EINVAL;
 	}
 
-	spin_lock_irqsave(&pdata->pmt_lock, flags);
+	mutex_lock(&pdata->pmt_lock);
 
 	if (pdata->power_down_type & DWC_ETH_QOS_MAGIC_WAKEUP) {
 		hw_if->disable_magic_pmt();
@@ -6094,6 +6093,9 @@ INT DWC_ETH_QOS_powerup(struct net_device *dev, UINT caller)
 		hw_if->disable_remote_pmt();
 		pdata->power_down_type &= ~DWC_ETH_QOS_REMOTE_WAKEUP;
 	}
+
+	if (pdata->power_down_type & DWC_ETH_QOS_PHY_INTR_WAKEUP)
+		disable_irq_wake(pdata->phy_irq);
 
 	pdata->power_down = 0;
 
@@ -6114,7 +6116,7 @@ INT DWC_ETH_QOS_powerup(struct net_device *dev, UINT caller)
 
 	netif_tx_start_all_queues(dev);
 
-	spin_unlock_irqrestore(&pdata->pmt_lock, flags);
+	mutex_unlock(&pdata->pmt_lock);
 
 	DBGPR("<--DWC_ETH_QOS_powerup\n");
 

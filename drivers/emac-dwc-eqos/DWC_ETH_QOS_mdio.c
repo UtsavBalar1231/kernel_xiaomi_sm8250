@@ -633,6 +633,39 @@ void DWC_ETH_QOS_adjust_link(struct net_device *dev)
 	DBGPR_MDIO("<--DWC_ETH_QOS_adjust_link\n");
 }
 
+static void DWC_ETH_QOS_request_phy_wol(struct DWC_ETH_QOS_prv_data *pdata)
+{
+	pdata->phy_wol_supported = 0;
+	pdata->phy_wol_wolopts = 0;
+
+	/* Check if phydev is valid*/
+	/* Check and enable Wake-on-LAN functionality in PHY*/
+	if (pdata->phydev) {
+		struct ethtool_wolinfo wol = {.cmd = ETHTOOL_GWOL};
+		wol.supported = 0;
+		wol.wolopts= 0;
+
+		phy_ethtool_get_wol(pdata->phydev, &wol);
+		pdata->phy_wol_supported = wol.supported;
+
+		/* Try to enable supported Wake-on-LAN features in PHY*/
+		if (wol.supported) {
+
+			device_set_wakeup_capable(&pdata->pdev->dev, 1);
+
+			wol.cmd = ETHTOOL_SWOL;
+			wol.wolopts = wol.supported;
+
+			if (!phy_ethtool_set_wol(pdata->phydev, &wol)){
+				pdata->phy_wol_wolopts = wol.wolopts;
+				device_set_wakeup_enable(&pdata->pdev->dev, 1);
+				EMACINFO("Enabled WoL[0x%x] in %s\n", wol.wolopts,
+						 pdata->phydev->drv->name);
+			}
+		}
+	}
+}
+
 /*!
  * \brief API to initialize PHY.
  *
@@ -683,26 +716,6 @@ static int DWC_ETH_QOS_init_phy(struct net_device *dev)
 	if ((phydev->phy_id == ATH8031_PHY_ID) || (phydev->phy_id == ATH8035_PHY_ID))
 		pdata->phy_intr_en = true;
 
-	if (pdata->phy_intr_en && pdata->irq_number == 0) {
-		ret = request_irq(pdata->dev->irq, DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS,
-					IRQF_SHARED, DEV_NAME, pdata);
-		if (ret != 0) {
-			pr_alert("Unable to register IRQ %d after PHY connect is done\n",
-					pdata->irq_number);
-			return -EBUSY;
-		} else {
-			pdata->irq_number = pdata->dev->irq;
-			EMACDBG("Request for IRQ %d successful\n", pdata->irq_number);
-			/* Enable PHY interrupt */
-			phydev->interrupts = PHY_INTERRUPT_ENABLED;
-			DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
-						DWC_ETH_QOS_PHY_INTR_EN,
-						ENABLE_PHY_INTERRUPTS);
-			EMACDBG("PHY interrupt enabled\n");
-			phydev->irq = PHY_IGNORE_INTERRUPT;
-		}
-	}
-
 	if (pdata->interface == PHY_INTERFACE_MODE_GMII) {
 		phydev->supported = PHY_DEFAULT_FEATURES;
 		phydev->supported |= SUPPORTED_10baseT_Full | SUPPORTED_100baseT_Full | SUPPORTED_1000baseT_Full;
@@ -748,6 +761,20 @@ static int DWC_ETH_QOS_init_phy(struct net_device *dev)
 		DBGPR_MDIO( "Smart Speed Reg (%#x) = %#x\n", DWC_ETH_QOS_PHY_SMART_SPEED, phydata);
 	}
 
+	if (pdata->phy_intr_en && pdata->phy_irq) {
+	   if (request_irq(pdata->phy_irq, DWC_ETH_QOS_PHY_ISR,
+				IRQF_SHARED, DEV_NAME, pdata)) {
+		   pr_alert("Unable to register PHY IRQ %d\n", pdata->phy_irq);
+		   return;
+	   } else {
+		   phydev->irq = PHY_IGNORE_INTERRUPT;
+		   phydev->interrupts =  PHY_INTERRUPT_ENABLED;
+
+		   if (phydev->drv->config_intr &&
+			   !phydev->drv->config_intr(phydev))
+					DWC_ETH_QOS_request_phy_wol(pdata);
+	   }
+	}
 
 	phy_start(pdata->phydev);
 
