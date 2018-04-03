@@ -880,7 +880,7 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	}
 
 	DWC_ETH_QOS_get_all_hw_features(pdata);
-	//DWC_ETH_QOS_print_all_hw_features(pdata);
+	DWC_ETH_QOS_print_all_hw_features(pdata);
 
 	ret = desc_if->alloc_queue_struct(pdata);
 	if (ret < 0) {
