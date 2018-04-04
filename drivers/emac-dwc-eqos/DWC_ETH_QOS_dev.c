@@ -4672,8 +4672,13 @@ static INT configure_mac(struct DWC_ETH_QOS_prv_data *pdata)
 
 #ifdef DWC_ETH_QOS_ENABLE_VLAN_TAG
 	configure_mac_for_vlan_pkt();
-	if (pdata->hw_feat.vlan_hash_en)
-		config_vlan_filtering(1, 1, 0);
+	if (pdata->hw_feat.vlan_hash_en) {
+		/* Configure vlan tag based filtering options*/
+		config_vlan_filtering(
+		   DWC_ETH_QOS_VLAN_FILTERING_EN_DIS,
+		   DWC_ETH_QOS_VLAN_HASH_FILTERING,
+		   DWC_ETH_QOS_VLAN_INVERSE_MATCHING);
+	}
 #endif
 
 	if (pdata->hw_feat.mmc_sel) {

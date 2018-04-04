@@ -523,8 +523,10 @@
 #define DWC_ETH_QOS_HTR_CNT (pdata->max_hash_table_size / 32)
 
 /* For handling VLAN filtering */
+#define DWC_ETH_QOS_VLAN_FILTERING_EN_DIS 0
 #define DWC_ETH_QOS_VLAN_PERFECT_FILTERING 0
 #define DWC_ETH_QOS_VLAN_HASH_FILTERING 1
+#define DWC_ETH_QOS_VLAN_INVERSE_MATCHING 0
 
 /* For handling differnet PHY interfaces */
 #define DWC_ETH_QOS_GMII_MII	0x0
