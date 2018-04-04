@@ -452,6 +452,57 @@ static void configure_phy_rx_tx_delay(struct DWC_ETH_QOS_prv_data *pdata)
 }
 
 /*!
+ * \brief Set link parameters for QCA8337.
+ *
+ * \details This function configures the MAC in 1000
+ * Mbps full duplex mode.
+ * \param[in] dev - pointer to net_device structure
+ *
+ * \return 0 on success
+ */
+
+static int DWC_ETH_QOS_config_link(struct DWC_ETH_QOS_prv_data* pdata)
+{
+	struct hw_if_struct *hw_if = &pdata->hw_if;
+	int ret = Y_SUCCESS;
+
+	EMACDBG("Enter\n");
+
+	hw_if->set_gmii_speed();
+	hw_if->set_full_duplex();
+	pdata->vote_idx = VOTE_IDX_1000MBPS;
+	pdata->speed = SPEED_1000;
+	pdata->duplex = 1;
+	EMACDBG("EMAC configured to speed = %d and full duplex = %d\n",
+			pdata->speed,
+			pdata->duplex);
+	EMACDBG("pdata->interface = %d\n", pdata->interface);
+	pdata->oldlink = 1;
+	pdata->oldduplex = 1;
+
+	EMACDBG("Initialize and configure SDCC DLL\n");
+	ret = DWC_ETH_QOS_rgmii_io_macro_sdcdc_init();
+	if (ret < 0) {
+		EMACERR("SDCC DLL init failed \n");
+		return ret;
+	}
+	ret = DWC_ETH_QOS_rgmii_io_macro_sdcdc_config();
+	if (ret < 0) {
+		EMACERR("SDCC DLL config failed \n");
+		return ret;
+	}
+
+	ret = DWC_ETH_QOS_rgmii_io_macro_init(pdata);
+	if (ret < 0) {
+		EMACERR("RGMII IO macro initialization failed\n");
+		return ret;
+	}
+
+	EMACDBG("Exit\n");
+	return ret;
+}
+
+/*!
  * \brief API to adjust link parameters.
  *
  * \details This function will be called by PAL to inform the driver
@@ -629,27 +680,26 @@ static int DWC_ETH_QOS_init_phy(struct net_device *dev)
 		phy_disconnect(phydev);
 		return -ENODEV;
 	}
+	if ((phydev->phy_id == ATH8031_PHY_ID) || (phydev->phy_id == ATH8035_PHY_ID))
+		pdata->phy_intr_en = true;
 
-	if ((phydev->phy_id == ATH8031_PHY_ID) || (phydev->phy_id == ATH8035_PHY_ID)) {
-		if (pdata->irq_number == 0) {
-			ret = request_irq(pdata->dev->irq, DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS,
+	if (pdata->phy_intr_en && pdata->irq_number == 0) {
+		ret = request_irq(pdata->dev->irq, DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS,
 					IRQF_SHARED, DEV_NAME, pdata);
-			if (ret != 0) {
-				pr_alert("Unable to register IRQ %d after PHY connect is done\n",
-						pdata->irq_number);
-				return -EBUSY;
-			}
-			else {
-				pdata->irq_number = pdata->dev->irq;
-				EMACDBG("Request for IRQ %d successful\n", pdata->irq_number);
-				/* Enable PHY interrupt */
-				phydev->interrupts = PHY_INTERRUPT_ENABLED;
-				DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
-							DWC_ETH_QOS_PHY_INTR_EN,
-							ENABLE_PHY_INTERRUPTS);
-				EMACDBG("PHY interrupt enabled\n");
-				phydev->irq = PHY_IGNORE_INTERRUPT;
-			}
+		if (ret != 0) {
+			pr_alert("Unable to register IRQ %d after PHY connect is done\n",
+					pdata->irq_number);
+			return -EBUSY;
+		} else {
+			pdata->irq_number = pdata->dev->irq;
+			EMACDBG("Request for IRQ %d successful\n", pdata->irq_number);
+			/* Enable PHY interrupt */
+			phydev->interrupts = PHY_INTERRUPT_ENABLED;
+			DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
+						DWC_ETH_QOS_PHY_INTR_EN,
+						ENABLE_PHY_INTERRUPTS);
+			EMACDBG("PHY interrupt enabled\n");
+			phydev->irq = PHY_IGNORE_INTERRUPT;
 		}
 	}
 
@@ -706,6 +756,22 @@ static int DWC_ETH_QOS_init_phy(struct net_device *dev)
 	return 0;
 }
 
+static bool DWC_ETH_QOS_phy_id_match(u32 phy_id)
+{
+	int i;
+	EMACDBG("Enter\n");
+
+	for (i = 0; i < ARRAY_SIZE(qca8337_phy_ids); i++) {
+		if (phy_id == qca8337_phy_ids[i]) {
+			pr_alert("qca8337: PHY_ID at %s: id:%08x\n", DEV_NAME, phy_id);
+			return true;
+		}
+	}
+
+	EMACDBG("Exit\n");
+	return false;
+}
+
 /*!
  * \brief API to register mdio.
  *
@@ -724,12 +790,13 @@ int DWC_ETH_QOS_mdio_register(struct net_device *dev)
 	int phyaddr = 0;
 	unsigned short phy_detected = 0;
 	int ret = Y_SUCCESS;
+	int phy_reg_read_status, mii_status;
+	u32 phy_id, phy_id1, phy_id2;
 
 	DBGPR_MDIO("-->DWC_ETH_QOS_mdio_register\n");
 
 	/* find the phy ID or phy address which is connected to our MAC */
 	for (phyaddr = 0; phyaddr < 32; phyaddr++) {
-		int phy_reg_read_status, mii_status;
 
 		phy_reg_read_status =
 		    DWC_ETH_QOS_mdio_read_direct(pdata, phyaddr, MII_BMSR,
@@ -748,12 +815,15 @@ int DWC_ETH_QOS_mdio_register(struct net_device *dev)
 			    DEV_NAME, phyaddr);
 		}
 	}
+
 	if (!phy_detected) {
 		pr_alert("%s: No phy could be detected\n", DEV_NAME);
 		return -ENOLINK;
 	}
+
 	pdata->phyaddr = phyaddr;
 	pdata->bus_id = 0x1;
+	pdata->phy_intr_en = false;
 
 	DBGPHY_REGS(pdata);
 
@@ -780,12 +850,35 @@ int DWC_ETH_QOS_mdio_register(struct net_device *dev)
 	}
 	pdata->mii = new_bus;
 
+	/* Check for QCA8337 phy chip id */
+	phy_reg_read_status = DWC_ETH_QOS_mdio_read_direct(
+	   pdata, phyaddr, MII_PHYSID1, &phy_id1);
+	phy_reg_read_status = DWC_ETH_QOS_mdio_read_direct(
+	   pdata, phyaddr, MII_PHYSID2, &phy_id2);
+	if (phy_reg_read_status != 0) {
+		EMACERR("unable to read phy id's: %d\n", phy_reg_read_status);
+		goto err_out_phy_connect;
+	}
+	phy_id = phy_id1 << 16;
+	phy_id |= phy_id2;
+	if (DWC_ETH_QOS_phy_id_match(phy_id) == true) {
+		EMACDBG("QCA8337 detected\n");
+		ret = DWC_ETH_QOS_config_link(pdata);
+		if (unlikely(ret)) {
+			EMACERR("Failed to configure link in 1 Gbps/full duplex mode"
+				" (error: %d)\n", ret);
+			goto err_out_phy_connect;
+		} else
+			goto mdio_alloc_done;
+	}
+
 	ret = DWC_ETH_QOS_init_phy(dev);
 	if (unlikely(ret)) {
 		pr_alert("Cannot attach to PHY (error: %d)\n", ret);
 		goto err_out_phy_connect;
 	}
 
+ mdio_alloc_done:
 	DBGPR_MDIO("<--DWC_ETH_QOS_mdio_register\n");
 
 	return ret;

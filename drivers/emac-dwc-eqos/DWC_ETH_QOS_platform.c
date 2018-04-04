@@ -904,8 +904,7 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 		dev_alert(&pdev->dev, "%s: MDIO is not present\n\n", DEV_NAME);
 	}
 
-	if ((pdata->phydev->phy_id == ATH8031_PHY_ID) ||
-		(pdata->phydev->phy_id == ATH8035_PHY_ID)) {
+	if (pdata->phy_intr_en) {
 		set_tlmm_direct_connect_gpio();
 		hw_if->enable_mac_phy_interrupt();
 	}

@@ -657,8 +657,8 @@ void DWC_ETH_QOS_handle_DMA_Int(struct DWC_ETH_QOS_prv_data *pdata, int chinx, b
 	if (VARDMA_SR == 0) return;
 
 	if (qinx < DWC_ETH_QOS_RX_QUEUE_CNT &&
-		(GET_VALUE(VARDMA_SR, DMA_SR_RI_LPOS, DMA_SR_RI_HPOS) & 1) ||
-		(GET_VALUE(VARDMA_SR, DMA_SR_RBU_LPOS, DMA_SR_RBU_HPOS) & 1)) {
+		((GET_VALUE(VARDMA_SR, DMA_SR_RI_LPOS, DMA_SR_RI_HPOS) & 1) ||
+		(GET_VALUE(VARDMA_SR, DMA_SR_RBU_LPOS, DMA_SR_RBU_HPOS) & 1))) {
 		if (!napi_sched) {
 			napi_sched = 1;
 			if (likely(napi_schedule_prep(&rx_queue->napi))) {
@@ -844,8 +844,8 @@ irqreturn_t DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS(int irq, void *device_id)
 			continue;
 
 		if ((qinx < DWC_ETH_QOS_RX_QUEUE_CNT) &&
-			(GET_VALUE(VARDMA_SR, DMA_SR_RI_LPOS, DMA_SR_RI_HPOS) & 1) ||
-		    (GET_VALUE(VARDMA_SR, DMA_SR_RBU_LPOS, DMA_SR_RBU_HPOS) & 1)) {
+			((GET_VALUE(VARDMA_SR, DMA_SR_RI_LPOS, DMA_SR_RI_HPOS) & 1) ||
+		    (GET_VALUE(VARDMA_SR, DMA_SR_RBU_LPOS, DMA_SR_RBU_HPOS) & 1))) {
 			if (!napi_sched) {
 				napi_sched = 1;
 				if (likely(napi_schedule_prep(&rx_queue->napi))) {
@@ -970,12 +970,9 @@ irqreturn_t DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS(int irq, void *device_id)
 			DWC_ETH_QOS_handle_eee_interrupt(pdata);
 
 		/* PHY interrupt */
-		if ((pdata->phydev->phy_id == ATH8031_PHY_ID) ||
-			(pdata->phydev->phy_id == ATH8035_PHY_ID)) {
-			if (GET_VALUE(VARMAC_ISR, MAC_ISR_PHYIS_LPOS, MAC_ISR_PHYIS_HPOS) & 1) {
-				MAC_ISR_PHYIS_UDFRD(VARMAC_PHYIS);
-				DWC_ETH_QOS_handle_phy_interrupt(pdata);
-			}
+		if (GET_VALUE(VARMAC_ISR, MAC_ISR_PHYIS_LPOS, MAC_ISR_PHYIS_HPOS) & 1) {
+			MAC_ISR_PHYIS_UDFRD(VARMAC_PHYIS);
+			DWC_ETH_QOS_handle_phy_interrupt(pdata);
 		}
 	}
 
@@ -1845,8 +1842,7 @@ static int DWC_ETH_QOS_open(struct net_device *dev)
 	pdata->eee_enabled = DWC_ETH_QOS_eee_init(pdata);
 
 #ifndef DWC_ETH_QOS_CONFIG_PGTEST
-	if (pdata->phydev)
-		netif_tx_start_all_queues(dev);
+	netif_tx_start_all_queues(dev);
 
 	if (pdata->ipa_enabled) {
 		/* Configure IPA Related Stuff */

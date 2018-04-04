@@ -1487,6 +1487,7 @@ struct DWC_ETH_QOS_prv_data {
 	struct DWC_ETH_QOS_prv_ipa_data prv_ipa;
 	bool ipa_enabled;
 	struct DWC_ETH_QOS_res_data *res_data;
+	bool phy_intr_en;
 
 	struct msm_bus_scale_pdata *bus_scale_vec;
 	uint32_t bus_hdl;
@@ -1697,6 +1698,12 @@ typedef enum {
 
 #define ATH8031_PHY_ID 0x004dd074
 #define ATH8035_PHY_ID 0x004dd072
+#define QCA8337_PHY_ID 0x004dd036
+
+static const u32 qca8337_phy_ids[] = {
+	0x004dd035, /* qca8337 PHY*/
+	0x004dd036, /* qca8337 PHY*/
+};
 
 /* Function prototypes*/
 
