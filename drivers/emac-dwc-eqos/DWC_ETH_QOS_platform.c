@@ -868,10 +868,8 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 #endif
 
 	EMACINFO("EMAC IPA enabled: %d\n", pdata->ipa_enabled);
-	if (pdata->ipa_enabled) {
+	if (pdata->ipa_enabled)
 		pdata->prv_ipa.ipa_ver = ipa_get_hw_type();
-		wakeup_source_init(&pdata->prv_ipa.wlock, "EMAC_IPA_WS");
-	}
 
 	DWC_ETH_QOS_get_all_hw_features(pdata);
 	DWC_ETH_QOS_print_all_hw_features(pdata);
@@ -1032,8 +1030,6 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	desc_if->free_queue_struct(pdata);
 
  err_out_q_alloc_failed:
-	if (pdata->ipa_enabled)
-		 wakeup_source_trash(&pdata->prv_ipa.wlock);
 	free_netdev(dev);
 	platform_set_drvdata(pdev, NULL);
 
@@ -1126,8 +1122,6 @@ int DWC_ETH_QOS_remove(struct platform_device *pdev)
 	atomic_notifier_chain_unregister(&panic_notifier_list,
 			&DWC_ETH_QOS_panic_blk);
 
-	if (pdata->ipa_enabled)
-		 wakeup_source_trash(&pdata->prv_ipa.wlock);
 	free_netdev(dev);
 
 	platform_set_drvdata(pdev, NULL);

@@ -700,7 +700,6 @@ int DWC_ETH_QOS_ipa_offload_connect(struct DWC_ETH_QOS_prv_data *pdata)
 				ret);
 		return -1;
 	}
-	__pm_stay_awake(&pdata->prv_ipa.wlock);
 
 	return 0;
 }
@@ -732,7 +731,6 @@ int DWC_ETH_QOS_ipa_offload_disconnect(struct DWC_ETH_QOS_prv_data *pdata)
 		EMACERR("Could not cleanup IPA Offload ret %d\n",ret);
 		return ret;
 	}
-	__pm_relax(&pdata->prv_ipa.wlock);
 
 	EMACINFO("%s - end \n",__func__);
 	return 0;
