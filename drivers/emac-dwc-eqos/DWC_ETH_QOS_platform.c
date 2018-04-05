@@ -248,13 +248,7 @@ static int DWC_ETH_QOS_get_wol_config(struct platform_device *pdev)
 	struct resource *resource = NULL;
 	EMACDBG("Enter\n");
 
-	resource = platform_get_resource_byname(
-		pdev, IORESOURCE_IRQ, "wol-intr");
-	if (!resource) {
-		EMACERR("get wol-intr resource failed\n");
-		return -ENODEV;
-	}
-	dwc_eth_qos_res_data.wol_intr= resource->start;
+	dwc_eth_qos_res_data.wol_intr= platform_get_irq_byname(pdev, "wol-intr");
 	EMACDBG("wol-intr = %d\n", dwc_eth_qos_res_data.wol_intr);
 
 	EMACDBG("Exit\n");
