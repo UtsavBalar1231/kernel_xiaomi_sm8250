@@ -1436,7 +1436,7 @@ static int DWC_ETH_QOS_alloc_split_hdr_rx_buf(
 	      buffer->rx_hdr_size);
  check_page:
 	if (!buffer->dma)
-		buffer->dma = dma_map_single(&pdata->pdev->dev,
+		buffer->dma = dma_map_single(GET_MEM_PDEV_DEV,
 					buffer->skb->data,
 					(2 * buffer->rx_hdr_size),
 					DMA_FROM_DEVICE);
@@ -1452,7 +1452,7 @@ static int DWC_ETH_QOS_alloc_split_hdr_rx_buf(
 		}
 	}
 	if (!buffer->dma2)
-		buffer->dma2 = dma_map_page(&pdata->pdev->dev,
+		buffer->dma2 = dma_map_page(GET_MEM_PDEV_DEV,
 				    buffer->page2, 0,
 				    PAGE_SIZE, DMA_FROM_DEVICE);
 	buffer->len2 = PAGE_SIZE;
@@ -1508,7 +1508,7 @@ static int DWC_ETH_QOS_alloc_jumbo_rx_buf(struct DWC_ETH_QOS_prv_data *pdata,
 		}
 	}
 	if (!buffer->dma)
-		buffer->dma = dma_map_page(&pdata->pdev->dev,
+		buffer->dma = dma_map_page(GET_MEM_PDEV_DEV,
 					   buffer->page, 0,
 					   PAGE_SIZE, DMA_FROM_DEVICE);
 	buffer->len = PAGE_SIZE;
@@ -1522,7 +1522,7 @@ static int DWC_ETH_QOS_alloc_jumbo_rx_buf(struct DWC_ETH_QOS_prv_data *pdata,
 		}
 	}
 	if (!buffer->dma2)
-		buffer->dma2 = dma_map_page(&pdata->pdev->dev,
+		buffer->dma2 = dma_map_page(GET_MEM_PDEV_DEV,
 					    buffer->page2, 0,
 					    PAGE_SIZE, DMA_FROM_DEVICE);
 	buffer->len2 = PAGE_SIZE;
@@ -1563,7 +1563,7 @@ static int DWC_ETH_QOS_alloc_rx_buf(struct DWC_ETH_QOS_prv_data *pdata,
 	if (pdata->ipa_enabled && qinx == IPA_DMA_RX_CH) {
 		rx_buffer_len = DWC_ETH_QOS_ETH_FRAME_LEN_IPA;
 		buffer->ipa_buff_va = dma_alloc_coherent(
-		   &pdata->pdev->dev, rx_buffer_len,
+		   GET_MEM_PDEV_DEV, rx_buffer_len,
 		   &ipa_rx_buf_dma_addr, GFP_KERNEL);
 
 		if (!buffer->ipa_buff_va) {
@@ -1590,7 +1590,7 @@ static int DWC_ETH_QOS_alloc_rx_buf(struct DWC_ETH_QOS_prv_data *pdata,
 		buffer->len = rx_buffer_len;
 
  map_skb:
-		buffer->dma = dma_map_single(&pdata->pdev->dev, skb->data,
+		buffer->dma = dma_map_single(GET_MEM_PDEV_DEV, skb->data,
 							rx_buffer_len, DMA_FROM_DEVICE);
 		if (dma_mapping_error(&pdata->pdev->dev, buffer->dma))
 			dev_alert(&pdata->pdev->dev, "failed to do the RX dma map\n");
@@ -3119,12 +3119,12 @@ static int DWC_ETH_QOS_clean_split_hdr_rx_irq(
 			buffer->skb = NULL;
 
 			/* first buffer pointer */
-			dma_unmap_single(&pdata->pdev->dev, buffer->dma,
+			dma_unmap_single(GET_MEM_PDEV_DEV, buffer->dma,
 					 (2 * buffer->rx_hdr_size), DMA_FROM_DEVICE);
 			buffer->dma = 0;
 
 			/* second buffer pointer */
-			dma_unmap_page(&pdata->pdev->dev, buffer->dma2,
+			dma_unmap_page(GET_MEM_PDEV_DEV, buffer->dma2,
 				       PAGE_SIZE, DMA_FROM_DEVICE);
 			buffer->dma2 = 0;
 
@@ -3298,9 +3298,9 @@ static int DWC_ETH_QOS_clean_split_hdr_rx_irq(
 						 * time stamp, hence delay the packet reception
 						 */
 						buffer->skb = skb;
-						buffer->dma = dma_map_single(&pdata->pdev->dev, skb->data,
+						buffer->dma = dma_map_single(GET_MEM_PDEV_DEV, skb->data,
 								pdata->rx_buffer_len, DMA_FROM_DEVICE);
-						if (dma_mapping_error(&pdata->pdev->dev, buffer->dma))
+						if (dma_mapping_error(GET_MEM_PDEV_DEV, buffer->dma))
 							dev_alert(&pdata->pdev->dev, "failed to do the RX dma map\n");
 
 						goto rx_tstmp_failed;
@@ -3398,12 +3398,12 @@ static int DWC_ETH_QOS_clean_jumbo_rx_irq(struct DWC_ETH_QOS_prv_data *pdata,
 			buffer->skb = NULL;
 
 			/* first buffer pointer */
-			dma_unmap_page(&pdata->pdev->dev, buffer->dma,
+			dma_unmap_page(GET_MEM_PDEV_DEV, buffer->dma,
 				       PAGE_SIZE, DMA_FROM_DEVICE);
 			buffer->dma = 0;
 
 			/* second buffer pointer */
-			dma_unmap_page(&pdata->pdev->dev, buffer->dma2,
+			dma_unmap_page(GET_MEM_PDEV_DEV, buffer->dma2,
 				       PAGE_SIZE, DMA_FROM_DEVICE);
 			buffer->dma2 = 0;
 
@@ -3566,9 +3566,9 @@ static int DWC_ETH_QOS_clean_jumbo_rx_irq(struct DWC_ETH_QOS_prv_data *pdata,
 						 * time stamp, hence delay the packet reception
 						 */
 						buffer->skb = skb;
-						buffer->dma = dma_map_single(&pdata->pdev->dev, skb->data,
+						buffer->dma = dma_map_single(GET_MEM_PDEV_DEV, skb->data,
 								pdata->rx_buffer_len, DMA_FROM_DEVICE);
-						if (dma_mapping_error(&pdata->pdev->dev, buffer->dma))
+						if (dma_mapping_error(GET_MEM_PDEV_DEV, buffer->dma))
 							dev_alert(&pdata->pdev->dev, "failed to do the RX dma map\n");
 
 						goto rx_tstmp_failed;
@@ -3668,7 +3668,7 @@ static int DWC_ETH_QOS_clean_rx_irq(struct DWC_ETH_QOS_prv_data *pdata,
 			/* assign it to new skb */
 			skb = buffer->skb;
 			buffer->skb = NULL;
-			dma_unmap_single(&pdata->pdev->dev, buffer->dma,
+			dma_unmap_single(GET_MEM_PDEV_DEV, buffer->dma,
 					 pdata->rx_buffer_len, DMA_FROM_DEVICE);
 			buffer->dma = 0;
 
@@ -3736,9 +3736,9 @@ static int DWC_ETH_QOS_clean_rx_irq(struct DWC_ETH_QOS_prv_data *pdata,
 							 */
 							buffer->skb = skb;
 							buffer->dma =
-								dma_map_single(&pdata->pdev->dev, skb->data,
+								dma_map_single(GET_MEM_PDEV_DEV, skb->data,
 									       pdata->rx_buffer_len, DMA_FROM_DEVICE);
-							if (dma_mapping_error(&pdata->pdev->dev, buffer->dma))
+							if (dma_mapping_error(GET_MEM_PDEV_DEV, buffer->dma))
 								dev_alert(&pdata->pdev->dev,
 									  "failed to do the RX dma map\n");
 

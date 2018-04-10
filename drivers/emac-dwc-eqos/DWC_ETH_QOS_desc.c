@@ -74,7 +74,7 @@ static void DWC_ETH_QOS_tx_desc_free_mem(struct DWC_ETH_QOS_prv_data *pdata,
 
 		if (GET_TX_DESC_PTR(qinx, 0)) {
 			dma_free_coherent(
-			   &pdata->pdev->dev,
+			   GET_MEM_PDEV_DEV,
 			   (sizeof(struct s_TX_NORMAL_DESC) * pdata->tx_queue[qinx].desc_cnt),
 			   GET_TX_DESC_PTR(qinx, 0),
 			   GET_TX_DESC_DMA_ADDR(qinx, 0));
@@ -108,7 +108,7 @@ static void DWC_ETH_QOS_rx_desc_free_mem(struct DWC_ETH_QOS_prv_data *pdata,
 
 		if (GET_RX_DESC_PTR(qinx, 0)) {
 			dma_free_coherent(
-			   &pdata->pdev->dev,
+			   GET_MEM_PDEV_DEV,
 			   (sizeof(struct s_RX_NORMAL_DESC) * pdata->rx_queue[qinx].desc_cnt),
 			   GET_RX_DESC_PTR(qinx, 0),
 			   GET_RX_DESC_DMA_ADDR(qinx, 0));
@@ -545,7 +545,7 @@ static INT allocate_buffer_and_desc(struct DWC_ETH_QOS_prv_data *pdata)
 	for (qinx = 0; qinx < DWC_ETH_QOS_TX_QUEUE_CNT; qinx++) {
 		/* TX descriptors */
 		GET_TX_DESC_PTR(qinx, 0) = dma_alloc_coherent(
-		   &pdata->pdev->dev,
+		   GET_MEM_PDEV_DEV,
 		   (sizeof(struct s_TX_NORMAL_DESC) * pdata->tx_queue[qinx].desc_cnt),
 			&(GET_TX_DESC_DMA_ADDR(qinx, 0)),
 			GFP_KERNEL);
@@ -553,6 +553,8 @@ static INT allocate_buffer_and_desc(struct DWC_ETH_QOS_prv_data *pdata)
 			ret = -ENOMEM;
 			goto err_out_tx_desc;
 		}
+		EMACDBG("Tx Queue(%d) desc base dma address: %p\n",
+			qinx, GET_TX_DESC_DMA_ADDR(qinx, 0));
 	}
 
 	for (qinx = 0; qinx < DWC_ETH_QOS_TX_QUEUE_CNT; qinx++) {
@@ -570,13 +572,15 @@ static INT allocate_buffer_and_desc(struct DWC_ETH_QOS_prv_data *pdata)
 	for (qinx = 0; qinx < DWC_ETH_QOS_RX_QUEUE_CNT; qinx++) {
 		/* RX descriptors */
 		GET_RX_DESC_PTR(qinx, 0) = dma_alloc_coherent(
-		   &pdata->pdev->dev,
+		   GET_MEM_PDEV_DEV,
 		   (sizeof(struct s_RX_NORMAL_DESC) * pdata->rx_queue[qinx].desc_cnt),
 		   &(GET_RX_DESC_DMA_ADDR(qinx, 0)), GFP_KERNEL);
 		if (!GET_RX_DESC_PTR(qinx, 0)) {
 			ret = -ENOMEM;
 			goto rx_alloc_failure;
 		}
+		EMACDBG("Rx Queue(%d) desc base dma address: %p\n",
+			qinx, GET_RX_DESC_DMA_ADDR(qinx, 0));
 	}
 
 	for (qinx = 0; qinx < DWC_ETH_QOS_RX_QUEUE_CNT; qinx++) {
@@ -641,13 +645,13 @@ static void DWC_ETH_QOS_wrapper_tx_descriptor_init_single_q(
 	dma_addr_t ipa_tx_buf_dma_addr;
 
 	DBGPR("%s: qinx = %u\n", __func__, qinx);
-	
+
 	if (pdata->ipa_enabled) {
 		/* Allocate TX Buffer Pool Structure */
 		if (qinx == IPA_DMA_TX_CH) {
 			GET_TX_BUFF_POOL_BASE_ADRR(qinx) =
 				dma_zalloc_coherent(
-				   &pdata->pdev->dev,
+				   GET_MEM_PDEV_DEV,
 				   sizeof(dma_addr_t) * pdata->tx_queue[qinx].desc_cnt,
 				   &GET_TX_BUFF_POOL_BASE_PADRR(qinx), GFP_KERNEL);
 			if (GET_TX_BUFF_POOL_BASE_ADRR(qinx) == NULL)
@@ -670,7 +674,7 @@ static void DWC_ETH_QOS_wrapper_tx_descriptor_init_single_q(
 			/* Currently only IPA_DMA_TX_CH is supported */
 			if (qinx == IPA_DMA_TX_CH) {
 				ipa_tx_buf_vaddr = dma_alloc_coherent(
-				   &pdata->pdev->dev, DWC_ETH_QOS_ETH_FRAME_LEN_IPA, &ipa_tx_buf_dma_addr, GFP_KERNEL);
+				   GET_MEM_PDEV_DEV, DWC_ETH_QOS_ETH_FRAME_LEN_IPA, &ipa_tx_buf_dma_addr, GFP_KERNEL);
 				if (ipa_tx_buf_vaddr == NULL) {
 					EMACERR("Failed to allocate TX buf for IPA\n");
 					return;
@@ -745,7 +749,7 @@ static void DWC_ETH_QOS_wrapper_rx_descriptor_init_single_q(
 		if (!GET_RX_BUFF_POOL_BASE_ADRR(qinx)) {
 			GET_RX_BUFF_POOL_BASE_ADRR(qinx) =
 				dma_zalloc_coherent(
-				   &pdata->pdev->dev,
+				   GET_MEM_PDEV_DEV,
 				   sizeof(dma_addr_t) * pdata->rx_queue[qinx].desc_cnt,
 				   &GET_RX_BUFF_POOL_BASE_PADRR(qinx), GFP_KERNEL);
 			if (GET_RX_BUFF_POOL_BASE_ADRR(qinx) == NULL)
@@ -968,11 +972,11 @@ static void DWC_ETH_QOS_tx_skb_free_mem(struct DWC_ETH_QOS_prv_data *pdata,
 static void DWC_ETH_QOS_unmap_rx_skb_pg(struct DWC_ETH_QOS_prv_data *pdata,
 					struct DWC_ETH_QOS_rx_buffer *buffer)
 {
-	/* DBGPR("-->DWC_ETH_QOS_unmap_rx_skb_pg\n"); */
+	DBGPR("-->DWC_ETH_QOS_unmap_rx_skb_pg\n");
 
 	/* unmap the first buffer */
 	if (buffer->dma) {
-		dma_unmap_single(&pdata->pdev->dev, buffer->dma,
+		dma_unmap_single(GET_MEM_PDEV_DEV, buffer->dma,
 				 DWC_ETH_QOS_PG_FRAME_SIZE, DMA_FROM_DEVICE);
 		buffer->dma = 0;
 	}
@@ -1007,7 +1011,7 @@ static void DWC_ETH_QOS_rx_skb_free_mem_single_q(
 	if (pdata->ipa_enabled && qinx == IPA_DMA_RX_CH) {
 		for (i = 0; i < pdata->rx_queue[qinx].desc_cnt; i++) {
 			dma_free_coherent(
-			   &pdata->pdev->dev,DWC_ETH_QOS_ETH_FRAME_LEN_IPA,
+			   GET_MEM_PDEV_DEV, DWC_ETH_QOS_ETH_FRAME_LEN_IPA,
 			   GET_RX_BUFF_LOGICAL_ADDR(qinx, i), GET_RX_BUFF_DMA_ADDR(qinx, i));
 		}
 	} else {
@@ -1083,7 +1087,7 @@ static void DWC_ETH_QOS_tx_buf_free_mem(struct DWC_ETH_QOS_prv_data *pdata,
 			/* Currently only IPA_DMA_TX_CH is supported */
 			if (qinx == IPA_DMA_TX_CH) {
 				for (i = 0; i < pdata->tx_queue[qinx].desc_cnt; i++) {
-					dma_free_coherent(&pdata->pdev->dev,
+					dma_free_coherent(GET_MEM_PDEV_DEV,
 									  DWC_ETH_QOS_ETH_FRAME_LEN_IPA,
 									  GET_TX_BUFF_LOGICAL_ADDR(qinx, i),
 									  GET_TX_BUFF_DMA_ADDR(qinx, i));
@@ -1091,7 +1095,7 @@ static void DWC_ETH_QOS_tx_buf_free_mem(struct DWC_ETH_QOS_prv_data *pdata,
 				EMACINFO("Freed the memory allocated for IPA_DMA_TX_CH for IPA \n");
 				/* De-Allocate TX DMA Buffer Pool Structure */
 				if (GET_TX_BUFF_POOL_BASE_ADRR(qinx)) {
-					dma_free_coherent(&pdata->pdev->dev,
+					dma_free_coherent(GET_MEM_PDEV_DEV,
 									  GET_TX_BUFF_POOL_BASE_ADRR_SIZE(qinx),
 									  GET_TX_BUFF_POOL_BASE_ADRR(qinx),
 									  GET_TX_BUFF_POOL_BASE_PADRR(qinx));
@@ -1135,7 +1139,7 @@ static void DWC_ETH_QOS_rx_buf_free_mem(struct DWC_ETH_QOS_prv_data *pdata,
 			/* Free memory pool for RX offload path */
 			/* Currently only IPA_DMA_RX_CH is supported */
 			if (GET_RX_BUFF_POOL_BASE_ADRR(qinx)) {
-				dma_free_coherent(&pdata->pdev->dev,
+				dma_free_coherent(GET_MEM_PDEV_DEV,
 								  GET_RX_BUFF_POOL_BASE_ADRR_SIZE(qinx),
 								  GET_RX_BUFF_POOL_BASE_ADRR(qinx),
 								  GET_RX_BUFF_POOL_BASE_PADRR(qinx));
@@ -1293,11 +1297,11 @@ static int DWC_ETH_QOS_map_non_page_buffs(struct DWC_ETH_QOS_prv_data *pdata,
 		if (prev_buffer && !prev_buffer->dma2) {
 			/* fill the first buffer pointer in prev_buffer->dma2 */
 			prev_buffer->dma2 = dma_map_single(
-			   (&pdata->pdev->dev),
+			   GET_MEM_PDEV_DEV,
 			   (skb->data + offset),
 			   DWC_ETH_QOS_MAX_DATA_PER_TX_BUF, DMA_TO_DEVICE);
 			if (dma_mapping_error(
-			   (&pdata->pdev->dev), prev_buffer->dma2)) {
+			   GET_MEM_PDEV_DEV, prev_buffer->dma2)) {
 				EMACERR("failed to do the dma map\n");
 				return -ENOMEM;
 			}
@@ -1308,11 +1312,11 @@ static int DWC_ETH_QOS_map_non_page_buffs(struct DWC_ETH_QOS_prv_data *pdata,
 			l_offset = (void *)(skb->data +
 				offset + DWC_ETH_QOS_MAX_DATA_PER_TX_BUF);
 			buffer->dma = dma_map_single(
-			   (&pdata->pdev->dev), l_offset,
+			   GET_MEM_PDEV_DEV, l_offset,
 				(size - DWC_ETH_QOS_MAX_DATA_PER_TX_BUF),
 				DMA_TO_DEVICE);
 			if (dma_mapping_error(
-			   (&pdata->pdev->dev), buffer->dma)) {
+			   GET_MEM_PDEV_DEV, buffer->dma)) {
 				EMACERR("failed to do the dma map\n");
 				return -ENOMEM;
 			}
@@ -1322,12 +1326,12 @@ static int DWC_ETH_QOS_map_non_page_buffs(struct DWC_ETH_QOS_prv_data *pdata,
 			buffer->len2 = 0;
 		} else {
 			/* fill the first buffer pointer in buffer->dma */
-			buffer->dma = dma_map_single((&pdata->pdev->dev),
+			buffer->dma = dma_map_single(GET_MEM_PDEV_DEV,
 					(skb->data + offset),
 					DWC_ETH_QOS_MAX_DATA_PER_TX_BUF,
 					DMA_TO_DEVICE);
 			if (dma_mapping_error(
-			   (&pdata->pdev->dev), buffer->dma)) {
+			   GET_MEM_PDEV_DEV, buffer->dma)) {
 				EMACERR("failed to do the dma map\n");
 				return -ENOMEM;
 			}
@@ -1338,11 +1342,11 @@ static int DWC_ETH_QOS_map_non_page_buffs(struct DWC_ETH_QOS_prv_data *pdata,
 			l_offset = (void *)(skb->data +
 				offset + DWC_ETH_QOS_MAX_DATA_PER_TX_BUF);
 			buffer->dma2 = dma_map_single(
-			  (&pdata->pdev->dev), l_offset,
+			  GET_MEM_PDEV_DEV, l_offset,
 			  (size - DWC_ETH_QOS_MAX_DATA_PER_TX_BUF),
 			  DMA_TO_DEVICE);
 			if (dma_mapping_error(
-			   (&pdata->pdev->dev), buffer->dma2)) {
+			   GET_MEM_PDEV_DEV, buffer->dma2)) {
 				EMACERR("failed to do the dma map\n");
 				return -ENOMEM;
 			}
@@ -1352,11 +1356,11 @@ static int DWC_ETH_QOS_map_non_page_buffs(struct DWC_ETH_QOS_prv_data *pdata,
 	} else {
 		if (prev_buffer && !prev_buffer->dma2) {
 			/* fill the first buffer pointer in prev_buffer->dma2 */
-			prev_buffer->dma2 = dma_map_single((&pdata->pdev->dev),
+			prev_buffer->dma2 = dma_map_single(GET_MEM_PDEV_DEV,
 						(skb->data + offset),
 						size, DMA_TO_DEVICE);
 			if (dma_mapping_error(
-			   (&pdata->pdev->dev), prev_buffer->dma2)) {
+			   GET_MEM_PDEV_DEV, prev_buffer->dma2)) {
 				EMACERR("failed to do the dma map\n");
 				return -ENOMEM;
 			}
@@ -1370,11 +1374,11 @@ static int DWC_ETH_QOS_map_non_page_buffs(struct DWC_ETH_QOS_prv_data *pdata,
 			buffer->len2 = 0;
 		} else {
 			/* fill the first buffer pointer in buffer->dma */
-			buffer->dma = dma_map_single((&pdata->pdev->dev),
+			buffer->dma = dma_map_single(GET_MEM_PDEV_DEV,
 						(skb->data + offset),
 						size, DMA_TO_DEVICE);
 			if (dma_mapping_error(
-			   (&pdata->pdev->dev), buffer->dma)) {
+			   GET_MEM_PDEV_DEV, buffer->dma)) {
 				EMACERR("failed to do the dma map\n");
 				return -ENOMEM;
 			}
@@ -1408,12 +1412,12 @@ static int DWC_ETH_QOS_map_page_buffs(struct DWC_ETH_QOS_prv_data *pdata,
 			/* fill the first buffer pointer in pre_buffer->dma2 */
 			prev_buffer->dma2 =
 				dma_map_page(
-				   (&pdata->pdev->dev),
+				   GET_MEM_PDEV_DEV,
 					frag->page.p,
 					(frag->page_offset + offset),
 					DWC_ETH_QOS_MAX_DATA_PER_TX_BUF,
 					DMA_TO_DEVICE);
-			if (dma_mapping_error((&pdata->pdev->dev),
+			if (dma_mapping_error(GET_MEM_PDEV_DEV,
 					      prev_buffer->dma2)) {
 				EMACERR("failed to do the dma map\n");
 				return -ENOMEM;
@@ -1425,10 +1429,10 @@ static int DWC_ETH_QOS_map_page_buffs(struct DWC_ETH_QOS_prv_data *pdata,
 				offset + DWC_ETH_QOS_MAX_DATA_PER_TX_BUF);
 			/* fill the second buffer pointer in buffer->dma */
 			buffer->dma = dma_map_page(
-			 (&pdata->pdev->dev), frag->page.p, l_offset,
+			 GET_MEM_PDEV_DEV, frag->page.p, l_offset,
 			 (size - DWC_ETH_QOS_MAX_DATA_PER_TX_BUF),
 			 DMA_TO_DEVICE);
-			if (dma_mapping_error((&pdata->pdev->dev),
+			if (dma_mapping_error(GET_MEM_PDEV_DEV,
 					      buffer->dma)) {
 				EMACERR("failed to do the dma map\n");
 				return -ENOMEM;
@@ -1439,12 +1443,12 @@ static int DWC_ETH_QOS_map_page_buffs(struct DWC_ETH_QOS_prv_data *pdata,
 			buffer->len2 = 0;
 		} else {
 			/* fill the first buffer pointer in buffer->dma */
-			buffer->dma = dma_map_page((&pdata->pdev->dev),
+			buffer->dma = dma_map_page(GET_MEM_PDEV_DEV,
 						frag->page.p,
 						(frag->page_offset + offset),
 						DWC_ETH_QOS_MAX_DATA_PER_TX_BUF,
 						DMA_TO_DEVICE);
-			if (dma_mapping_error((&pdata->pdev->dev),
+			if (dma_mapping_error(GET_MEM_PDEV_DEV,
 					      buffer->dma)) {
 				EMACERR("failed to do the dma map\n");
 				return -ENOMEM;
@@ -1456,10 +1460,10 @@ static int DWC_ETH_QOS_map_page_buffs(struct DWC_ETH_QOS_prv_data *pdata,
 			l_offset = (frag->page_offset +
 				offset + DWC_ETH_QOS_MAX_DATA_PER_TX_BUF);
 			buffer->dma2 = dma_map_page(
-			   (&pdata->pdev->dev), frag->page.p, l_offset,
+			   GET_MEM_PDEV_DEV, frag->page.p, l_offset,
 			   (size - DWC_ETH_QOS_MAX_DATA_PER_TX_BUF),
 			   DMA_TO_DEVICE);
-			if (dma_mapping_error((&pdata->pdev->dev),
+			if (dma_mapping_error(GET_MEM_PDEV_DEV,
 					      buffer->dma2)) {
 				EMACERR("failed to do the dma map\n");
 				return -ENOMEM;
@@ -1471,11 +1475,11 @@ static int DWC_ETH_QOS_map_page_buffs(struct DWC_ETH_QOS_prv_data *pdata,
 		if (!prev_buffer->dma2) {
 			DBGPR("prev_buffer->dma2 is empty\n");
 			/* fill the first buffer pointer in pre_buffer->dma2 */
-			prev_buffer->dma2 = dma_map_page((&pdata->pdev->dev),
+			prev_buffer->dma2 = dma_map_page(GET_MEM_PDEV_DEV,
 						frag->page.p,
 						frag->page_offset + offset,
 						size, DMA_TO_DEVICE);
-			if (dma_mapping_error((&pdata->pdev->dev),
+			if (dma_mapping_error(GET_MEM_PDEV_DEV,
 					      prev_buffer->dma2)) {
 				EMACERR("failed to do the dma map\n");
 				return -ENOMEM;
@@ -1490,11 +1494,11 @@ static int DWC_ETH_QOS_map_page_buffs(struct DWC_ETH_QOS_prv_data *pdata,
 			buffer->len2 = 0;
 		} else {
 			/* fill the first buffer pointer in buffer->dma */
-			buffer->dma = dma_map_page((&pdata->pdev->dev),
+			buffer->dma = dma_map_page(GET_MEM_PDEV_DEV,
 						frag->page.p,
 						frag->page_offset + offset,
 						size, DMA_TO_DEVICE);
-			if (dma_mapping_error((&pdata->pdev->dev),
+			if (dma_mapping_error(GET_MEM_PDEV_DEV,
 					      buffer->dma)) {
 				EMACERR("failed to do the dma map\n");
 				return -ENOMEM;
@@ -1696,10 +1700,10 @@ static void DWC_ETH_QOS_unmap_tx_skb(struct DWC_ETH_QOS_prv_data *pdata,
 
 	if (buffer->dma) {
 		if (buffer->buf1_mapped_as_page == Y_TRUE)
-			dma_unmap_page((&pdata->pdev->dev), buffer->dma,
+			dma_unmap_page(GET_MEM_PDEV_DEV, buffer->dma,
 				       buffer->len, DMA_TO_DEVICE);
 		else
-			dma_unmap_single((&pdata->pdev->dev), buffer->dma,
+			dma_unmap_single(GET_MEM_PDEV_DEV, buffer->dma,
 					 buffer->len, DMA_TO_DEVICE);
 
 		buffer->dma = 0;
@@ -1708,10 +1712,10 @@ static void DWC_ETH_QOS_unmap_tx_skb(struct DWC_ETH_QOS_prv_data *pdata,
 
 	if (buffer->dma2) {
 		if (buffer->buf2_mapped_as_page == Y_TRUE)
-			dma_unmap_page((&pdata->pdev->dev), buffer->dma2,
+			dma_unmap_page(GET_MEM_PDEV_DEV, buffer->dma2,
 				       buffer->len2, DMA_TO_DEVICE);
 		else
-			dma_unmap_single((&pdata->pdev->dev), buffer->dma2,
+			dma_unmap_single(GET_MEM_PDEV_DEV, buffer->dma2,
 					 buffer->len2, DMA_TO_DEVICE);
 
 		buffer->dma2 = 0;
@@ -1744,14 +1748,14 @@ static void DWC_ETH_QOS_unmap_rx_skb(struct DWC_ETH_QOS_prv_data *pdata,
 	/* unmap the first buffer */
 	if (buffer->dma) {
 		if (pdata->rx_split_hdr) {
-			dma_unmap_single(&pdata->pdev->dev, buffer->dma,
+			dma_unmap_single(GET_MEM_PDEV_DEV, buffer->dma,
 					 (2 * buffer->rx_hdr_size),
 					 DMA_FROM_DEVICE);
 		} else if (pdata->dev->mtu > DWC_ETH_QOS_ETH_FRAME_LEN) {
-			dma_unmap_page(&pdata->pdev->dev, buffer->dma,
+			dma_unmap_page(GET_MEM_PDEV_DEV, buffer->dma,
 				       PAGE_SIZE, DMA_FROM_DEVICE);
 		} else {
-			dma_unmap_single(&pdata->pdev->dev, buffer->dma,
+			dma_unmap_single(GET_MEM_PDEV_DEV, buffer->dma,
 					 pdata->rx_buffer_len, DMA_FROM_DEVICE);
 		}
 		buffer->dma = 0;
@@ -1759,7 +1763,7 @@ static void DWC_ETH_QOS_unmap_rx_skb(struct DWC_ETH_QOS_prv_data *pdata,
 
 	/* unmap the second buffer */
 	if (buffer->dma2) {
-		dma_unmap_page(&pdata->pdev->dev, buffer->dma2,
+		dma_unmap_page(GET_MEM_PDEV_DEV, buffer->dma2,
 			       PAGE_SIZE, DMA_FROM_DEVICE);
 		buffer->dma2 = 0;
 	}

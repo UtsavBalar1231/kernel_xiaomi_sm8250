@@ -57,6 +57,7 @@ ULONG dwc_eth_qos_base_addr;
 ULONG dwc_rgmii_io_csr_base_addr;
 struct DWC_ETH_QOS_prv_data *gDWC_ETH_QOS_prv_data;
 ULONG dwc_tlmm_central_base_addr;
+struct emac_emb_smmu_cb_ctx emac_emb_smmu_ctx = {0};
 
 int ipa_offload_en = 1;
 module_param(ipa_offload_en, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
@@ -743,27 +744,13 @@ static void set_tlmm_direct_connect_gpio(void)
 	return;
 }
 
-/*!
- * \brief API to initialize the device.
- *
- * \details This probing function gets called (during execution of
- * platform_register_driver() for already existing devices or later if a
- * new device gets inserted) for all PCI devices which match the ID table
- * and are not "owned" by the other drivers yet. This function gets passed
- * a "struct platform_devic *" for each device whose entry in the ID table
- * matches the device. The probe function returns zero when the driver
- * chooses to take "ownership" of the device or an error code
- * (negative number) otherwise.
- * The probe function always gets called from process context, so it can sleep.
- *
- * \param[in] pdev - pointer to platform_dev structure.
- * \param[in] id   - pointer to table of device ID/ID's the driver is inerested.
- *
- * \return integer
- *
- * \retval 0 on success & -ve number on failure.
- */
-static int DWC_ETH_QOS_probe(struct platform_device *pdev)
+static struct of_device_id DWC_ETH_QOS_plat_drv_match[] = {
+	{ .compatible = "qcom,emac-dwc-eqos", },
+	{ .compatible = "qcom,emac-smmu-embedded", },
+	{}
+};
+
+static int DWC_ETH_QOS_configure_netdevice(struct platform_device *pdev)
 {
 	struct DWC_ETH_QOS_prv_data *pdata = NULL;
 	struct net_device *dev = NULL;
@@ -772,27 +759,8 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	struct desc_if_struct *desc_if = NULL;
 	UCHAR tx_q_count = 0, rx_q_count = 0;
 
-	DBGPR("--> DWC_ETH_QOS_probe\n");
+	EMACDBG("--> DWC_ETH_QOS_configure_netdevice\n");
 
-	ret = DWC_ETH_QOS_get_dts_config(pdev);
-	if (ret)
-		goto err_out_map_failed;
-
-	ret = DWC_ETH_QOS_ioremap();
-	if (ret)
-		goto err_out_map_failed;
-
-	ret = DWC_ETH_QOS_init_regulators(&pdev->dev);
-	if (ret)
-		goto err_out_power_failed;
-
-	ret = DWC_ETH_QOS_init_gpios(&pdev->dev);
-	if (ret)
-		goto err_out_gpio_failed;
-
-	ret = DWC_ETH_QOS_get_clks(&pdev->dev);
-	if (ret)
-		goto err_get_clk_failed;
 	/* queue count */
 	tx_q_count = get_tx_queue_count();
 	rx_q_count = get_rx_queue_count();
@@ -838,7 +806,6 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, dev);
 	pdata->pdev = pdev;
-
 	pdata->dev = dev;
 	pdata->tx_queue_cnt = tx_q_count;
 	pdata->rx_queue_cnt = rx_q_count;
@@ -997,6 +964,8 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 		dev_alert(&pdev->dev, "carrier off till LINK is up\n");
 	}
 
+	EMACDBG("<-- DWC_ETH_QOS_configure_netdevice\n");
+
 	return 0;
 
  err_out_netdev_failed:
@@ -1029,21 +998,178 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	free_netdev(dev);
 
  err_out_dev_failed:
-	 DWC_ETH_QOS_disable_clks();
+	DWC_ETH_QOS_disable_clks();
+	EMACERR("<-- DWC_ETH_QOS_configure_netdevice\n");
+	return ret;
+}
+
+static int emac_emb_smmu_cb_probe(struct platform_device *pdev)
+{
+	int result;
+	u32 iova_ap_mapping[2];
+	struct device *dev = &pdev->dev;
+	int atomic_ctx = 1;
+	int fast = 1;
+	int bypass = 1;
+
+	EMACDBG("EMAC EMB SMMU CB probe: smmu pdev=%p\n", pdev);
+
+	result = of_property_read_u32_array(dev->of_node, "qcom,iova-mapping",
+		iova_ap_mapping, 2);
+	if (result) {
+		EMACERR("Failed to read EMB start/size iova addresses\n");
+		return result;
+	}
+	emac_emb_smmu_ctx.va_start = iova_ap_mapping[0];
+	emac_emb_smmu_ctx.va_size = iova_ap_mapping[1];
+	emac_emb_smmu_ctx.va_end =
+		emac_emb_smmu_ctx.va_start + emac_emb_smmu_ctx.va_size;
+	EMACDBG("EMB va_start=0x%x va_size=0x%x\n",
+			emac_emb_smmu_ctx.va_start, emac_emb_smmu_ctx.va_size);
+
+	emac_emb_smmu_ctx.smmu_pdev = pdev;
+
+	if (dma_set_mask(dev, DMA_BIT_MASK(32)) ||
+		dma_set_coherent_mask(dev, DMA_BIT_MASK(32))) {
+		EMACERR("DMA set 32bit mask failed\n");
+		return -EOPNOTSUPP;
+	}
+
+	emac_emb_smmu_ctx.mapping = arm_iommu_create_mapping(dev->bus,
+			emac_emb_smmu_ctx.va_start,emac_emb_smmu_ctx.va_size);
+	if (IS_ERR_OR_NULL(emac_emb_smmu_ctx.mapping)) {
+		EMACDBG("Fail to create mapping\n");
+		/* assume this failure is because iommu driver is not ready */
+		return -EPROBE_DEFER;
+	}
+	EMACDBG("Successfully Created SMMU mapping\n");
+	emac_emb_smmu_ctx.valid = true;
+
+	if (of_property_read_bool(dev->of_node, "qcom,smmu-s1-bypass")) {
+		if (iommu_domain_set_attr(emac_emb_smmu_ctx.mapping->domain,
+					DOMAIN_ATTR_S1_BYPASS,
+					&bypass)) {
+			EMACERR("Couldn't set SMMU S1 bypass\n");
+			arm_iommu_release_mapping(emac_emb_smmu_ctx.mapping);
+			emac_emb_smmu_ctx.valid = false;
+			return -EIO;
+		}
+		EMACDBG("SMMU S1 BYPASS set\n");
+	} else {
+		if (iommu_domain_set_attr(emac_emb_smmu_ctx.mapping->domain,
+					DOMAIN_ATTR_ATOMIC,
+					&atomic_ctx)) {
+			EMACERR("Couldn't set SMMU domain as atomic\n");
+			arm_iommu_release_mapping(emac_emb_smmu_ctx.mapping);
+			emac_emb_smmu_ctx.valid = false;
+			return -EIO;
+		}
+		EMACDBG("SMMU atomic set\n");
+		if (iommu_domain_set_attr(emac_emb_smmu_ctx.mapping->domain,
+					DOMAIN_ATTR_FAST,
+					&fast)) {
+			EMACERR("Couldn't set FAST SMMU\n");
+			arm_iommu_release_mapping(emac_emb_smmu_ctx.mapping);
+			emac_emb_smmu_ctx.valid = false;
+			return -EIO;
+		}
+		EMACDBG("SMMU fast map set\n");
+	}
+
+	result = arm_iommu_attach_device(&emac_emb_smmu_ctx.smmu_pdev->dev,
+						emac_emb_smmu_ctx.mapping);
+	if (result) {
+		EMACERR("couldn't attach to IOMMU ret=%d\n", result);
+		emac_emb_smmu_ctx.valid = false;
+		return result;
+	}
+
+	EMACDBG("Successfully attached to IOMMU\n");
+	result = DWC_ETH_QOS_configure_netdevice(emac_emb_smmu_ctx.pdev_master);
+
+	return result;
+}
+
+/*!
+ * \brief API to initialize the device.
+ *
+ * \details This probing function gets called (during execution of
+ * platform_register_driver() for already existing devices or later if a
+ * new device gets inserted) for all PCI devices which match the ID table
+ * and are not "owned" by the other drivers yet. This function gets passed
+ * a "struct platform_devic *" for each device whose entry in the ID table
+ * matches the device. The probe function returns zero when the driver
+ * chooses to take "ownership" of the device or an error code
+ * (negative number) otherwise.
+ * The probe function always gets called from process context, so it can sleep.
+ *
+ * \param[in] pdev - pointer to platform_dev structure.
+ * \param[in] id   - pointer to table of device ID/ID's the driver is inerested.
+ *
+ * \return integer
+ *
+ * \retval 0 on success & -ve number on failure.
+ */
+static int DWC_ETH_QOS_probe(struct platform_device *pdev)
+{
+	int ret = 0;
+
+	DBGPR("--> DWC_ETH_QOS_probe\n");
+
+	if (of_device_is_compatible(pdev->dev.of_node, "qcom,emac-smmu-embedded"))
+		return emac_emb_smmu_cb_probe(pdev);
+
+	ret = DWC_ETH_QOS_get_dts_config(pdev);
+	if (ret)
+		goto err_out_map_failed;
+
+	ret = DWC_ETH_QOS_ioremap();
+	if (ret)
+		goto err_out_map_failed;
+
+	ret = DWC_ETH_QOS_init_regulators(&pdev->dev);
+	if (ret)
+		goto err_out_power_failed;
+
+	ret = DWC_ETH_QOS_init_gpios(&pdev->dev);
+	if (ret)
+		goto err_out_gpio_failed;
+
+	ret = DWC_ETH_QOS_get_clks(&pdev->dev);
+	if (ret)
+		goto err_get_clk_failed;
+
+	if (of_property_read_bool(pdev->dev.of_node, "qcom,arm-smmu")) {
+		emac_emb_smmu_ctx.pdev_master = pdev;
+		EMACDBG("<-- DWC_ETH_QOS_probe SMMU enabled\n");
+		ret = of_platform_populate(pdev->dev.of_node,
+					DWC_ETH_QOS_plat_drv_match, NULL, &pdev->dev);
+		if (ret) {
+			EMACERR("Failed to populate EMAC platform\n");
+			goto err_out_dev_failed;
+		}
+	} else {
+		ret = DWC_ETH_QOS_configure_netdevice(pdev);
+	}
+	EMACDBG("<-- DWC_ETH_QOS_probe\n");
+	return ret;
+
+ err_out_dev_failed:
+	DWC_ETH_QOS_disable_clks();
 
  err_get_clk_failed:
-	 DWC_ETH_QOS_free_gpios();
+	DWC_ETH_QOS_free_gpios();
 
  err_out_gpio_failed:
-	 DWC_ETH_QOS_disable_regulators();
+	DWC_ETH_QOS_disable_regulators();
 
  err_out_power_failed:
-	 iounmap((void __iomem *)dwc_eth_qos_base_addr);
-	 iounmap((void __iomem *)dwc_rgmii_io_csr_base_addr);
+	iounmap((void __iomem *)dwc_eth_qos_base_addr);
+	iounmap((void __iomem *)dwc_rgmii_io_csr_base_addr);
 	iounmap((void __iomem *)dwc_tlmm_central_base_addr);
 
  err_out_map_failed:
-	 return ret;
+	return ret;
 }
 
 /*!
@@ -1062,12 +1188,38 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 
 int DWC_ETH_QOS_remove(struct platform_device *pdev)
 {
-	struct net_device *dev = platform_get_drvdata(pdev);
-	struct DWC_ETH_QOS_prv_data *pdata = netdev_priv(dev);
-	struct desc_if_struct *desc_if = &pdata->desc_if;
+	struct net_device *dev;
+	struct DWC_ETH_QOS_prv_data *pdata;
+	struct desc_if_struct *desc_if;
 	int qinx;
 
-	DBGPR("--> DWC_ETH_QOS_remove\n");
+	EMACDBG("--> DWC_ETH_QOS_remove\n");
+
+	if (!pdev) {
+		EMACERR("<-- DWC_ETH_QOS_remove\n");
+		return -ENODEV;
+	}
+
+	if (emac_emb_smmu_ctx.smmu_pdev && (pdev == emac_emb_smmu_ctx.smmu_pdev)) {
+		EMACDBG("<-- DWC_ETH_QOS_remove\n");
+		return 0;
+	}
+
+	dev = platform_get_drvdata(pdev);
+	if (!dev) {
+		EMACERR("<-- DWC_ETH_QOS_remove\n");
+		return -ENODEV;
+	}
+	pdata = netdev_priv(dev);
+	if (!pdata) {
+		EMACERR("<-- DWC_ETH_QOS_remove\n");
+		return -1;
+	}
+	desc_if = &pdata->desc_if;
+	if (!desc_if) {
+		EMACERR("<-- DWC_ETH_QOS_remove\n");
+		return -1;
+	}
 #ifdef PER_CH_INT
 	DWC_ETH_QOS_deregister_per_ch_intr(pdata);
 #endif
@@ -1107,6 +1259,16 @@ int DWC_ETH_QOS_remove(struct platform_device *pdev)
 	atomic_notifier_chain_unregister(&panic_notifier_list,
 			&DWC_ETH_QOS_panic_blk);
 
+	if (emac_emb_smmu_ctx.valid) {
+		arm_iommu_detach_device(&emac_emb_smmu_ctx.smmu_pdev->dev);
+		arm_iommu_release_mapping(emac_emb_smmu_ctx.mapping);
+		emac_emb_smmu_ctx.valid = false;
+		emac_emb_smmu_ctx.mapping = NULL;
+		emac_emb_smmu_ctx.pdev_master = NULL;
+		emac_emb_smmu_ctx.smmu_pdev = NULL;
+		EMACDBG("Detach and release iommu mapping\n");
+	}
+
 	free_netdev(dev);
 
 	platform_set_drvdata(pdev, NULL);
@@ -1115,7 +1277,7 @@ int DWC_ETH_QOS_remove(struct platform_device *pdev)
 	DWC_ETH_QOS_disable_regulators();
 	DWC_ETH_QOS_free_gpios();
 
-	DBGPR("<-- DWC_ETH_QOS_remove\n");
+	EMACDBG("<-- DWC_ETH_QOS_remove\n");
 
 	return 0;
 }
@@ -1258,11 +1420,6 @@ static INT DWC_ETH_QOS_resume(struct platform_device *pdev)
 
 #endif /* CONFIG_PM */
 
-static struct of_device_id DWC_ETH_QOS_plat_drv_match[] = {
-	{ .compatible = "qcom,emac-dwc-eqos", },
-	{}
-};
-
 static struct platform_driver DWC_ETH_QOS_plat_drv = {
 	.probe = DWC_ETH_QOS_probe,
 	.remove = DWC_ETH_QOS_remove,
@@ -1272,7 +1429,7 @@ static struct platform_driver DWC_ETH_QOS_plat_drv = {
 	.resume = DWC_ETH_QOS_resume,
 #endif
 	.driver = {
-		.name = "qcom-emac-dwc-eqos",
+		.name = DRV_NAME,
 		.owner = THIS_MODULE,
 		.of_match_table = DWC_ETH_QOS_plat_drv_match,
 	},

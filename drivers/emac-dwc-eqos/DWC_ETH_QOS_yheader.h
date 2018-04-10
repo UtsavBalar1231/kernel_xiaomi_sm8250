@@ -63,6 +63,7 @@
 #include <linux/clk.h>
 
 #include <linux/platform_device.h>
+#include <linux/of_platform.h>
 #include <linux/timer.h>
 #include <linux/sched.h>
 #include <linux/highmem.h>
@@ -72,6 +73,8 @@
 #include <linux/version.h>
 #include <linux/ptrace.h>
 #include <linux/dma-mapping.h>
+#include <asm/dma-iommu.h>
+#include <linux/iommu.h>
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <linux/ethtool.h>
@@ -1728,6 +1731,23 @@ static const u32 qca8337_phy_ids[] = {
 	0x004dd036, /* qca8337 PHY*/
 };
 
+/* SMMU related */
+struct emac_emb_smmu_cb_ctx {
+	bool valid;
+	struct platform_device *pdev_master;
+	struct platform_device *smmu_pdev;
+	struct dma_iommu_mapping *mapping;
+	struct iommu_domain *iommu;
+	u32 va_start;
+	u32 va_size;
+	u32 va_end;
+};
+
+extern struct emac_emb_smmu_cb_ctx emac_emb_smmu_ctx;
+
+#define GET_MEM_PDEV_DEV (emac_emb_smmu_ctx.valid ? \
+			&emac_emb_smmu_ctx.smmu_pdev->dev : &pdata->pdev->dev)
+
 /* Function prototypes*/
 
 void DWC_ETH_QOS_init_function_ptrs_dev(struct hw_if_struct *);
@@ -1824,7 +1844,7 @@ void DWC_ETH_QOS_dma_desc_stats_read(struct DWC_ETH_QOS_prv_data *pdata);
 void DWC_ETH_QOS_dma_desc_stats_init(struct DWC_ETH_QOS_prv_data *pdata);
 
 /* For debug prints*/
-#define DRV_NAME "emac_dwc_eqos"
+#define DRV_NAME "qcom-emac-dwc-eqos"
 #define dev_name_ipa_rx "IPA_RX"
 #define dev_name_emac_rx "EMAC_RX"
 #define dev_name_ipa_tx "IPA_TX"

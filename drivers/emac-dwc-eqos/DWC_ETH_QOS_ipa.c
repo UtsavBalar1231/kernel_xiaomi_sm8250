@@ -650,19 +650,6 @@ int DWC_ETH_QOS_ipa_offload_connect(struct DWC_ETH_QOS_prv_data *pdata)
 	rx_setup_info.ntn_reg_base_ptr_pa = (phys_addr_t)(((ULONG)((ULONG)DMA_CR0_RGOFFADDR - BASE_ADDRESS))
 	  + (ULONG)dwc_eth_qos_res_data.emac_mem_base);
 
-	rx_setup_info.data_buff_list = kcalloc(rx_setup_info.num_buffers,
-								sizeof(struct ntn_buff_smmu_map),
-								GFP_KERNEL);
-
-	if (rx_setup_info.data_buff_list == NULL) {
-		EMACERR("Failed to allocate mem for RX data_buff_list");
-		return -ENOMEM;
-	}
-
-	for (i =0; i < rx_setup_info.num_buffers; i++) {
-		rx_setup_info.data_buff_list[i].iova = GET_RX_BUFF_DMA_ADDR(IPA_DMA_RX_CH, i);
-		rx_setup_info.data_buff_list[i].pa = GET_RX_BUFF_DMA_ADDR(IPA_DMA_RX_CH, i);
-	}
 	/* Downlink Setup */
 	tx_setup_info.smmu_enabled = false;
 	tx_setup_info.client = IPA_CLIENT_ETHERNET_CONS;
@@ -675,15 +662,21 @@ int DWC_ETH_QOS_ipa_offload_connect(struct DWC_ETH_QOS_prv_data *pdata)
 	tx_setup_info.ntn_reg_base_ptr_pa = (phys_addr_t)  (((ULONG)((ULONG)DMA_CR0_RGOFFADDR - BASE_ADDRESS))
 	  + (ULONG)dwc_eth_qos_res_data.emac_mem_base);
 
+	rx_setup_info.data_buff_list = kcalloc(rx_setup_info.num_buffers,
+				sizeof(struct ntn_buff_smmu_map), GFP_KERNEL);
 	tx_setup_info.data_buff_list = kcalloc(tx_setup_info.num_buffers,
-								sizeof(struct ntn_buff_smmu_map),
-								GFP_KERNEL);
-	if (tx_setup_info.data_buff_list == NULL) {
-		EMACERR("Failed to allocate mem for DL data_buff_list");
-		return -ENOMEM;
+				sizeof(struct ntn_buff_smmu_map), GFP_KERNEL);
+	if ((tx_setup_info.data_buff_list == NULL) || (rx_setup_info.data_buff_list == NULL)) {
+		EMACERR("Failed to allocate mem for data_buff_list");
+		ret = -ENOMEM;
+		goto mem_free;
 	}
 
-	for (i =0; i < tx_setup_info.num_buffers; i++) {
+	for (i = 0; i < rx_setup_info.num_buffers; i++) {
+		rx_setup_info.data_buff_list[i].iova = GET_RX_BUFF_DMA_ADDR(IPA_DMA_RX_CH, i);
+		rx_setup_info.data_buff_list[i].pa = GET_RX_BUFF_DMA_ADDR(IPA_DMA_RX_CH, i);
+	}
+	for (i = 0; i < tx_setup_info.num_buffers; i++) {
 		tx_setup_info.data_buff_list[i].iova = GET_TX_BUFF_DMA_ADDR(IPA_DMA_TX_CH, i);
 		tx_setup_info.data_buff_list[i].pa = GET_TX_BUFF_DMA_ADDR(IPA_DMA_TX_CH, i);
 	}
@@ -700,7 +693,8 @@ int DWC_ETH_QOS_ipa_offload_connect(struct DWC_ETH_QOS_prv_data *pdata)
 	ret = ipa_uc_offload_conn_pipes(&in, &out);
 	if (ret) {
 		EMACERR("Could not connect IPA Offload Pipes %d\n", ret);
-		return -1;
+		ret = -1;
+		goto mem_free;
 	}
 
         ntn_ipa->uc_db_rx_addr = out.u.ntn.ul_uc_db_pa;
@@ -713,7 +707,8 @@ int DWC_ETH_QOS_ipa_offload_connect(struct DWC_ETH_QOS_prv_data *pdata)
 	if (ret) {
 		EMACERR("Err to set BW: IPA_RM_RESOURCE_ETHERNET_PROD err:%d\n",
 				ret);
-		return -1;
+		ret = -1;
+		goto mem_free;
 	}
 
 	profile.client = IPA_CLIENT_ETHERNET_CONS;
@@ -721,10 +716,18 @@ int DWC_ETH_QOS_ipa_offload_connect(struct DWC_ETH_QOS_prv_data *pdata)
 	if (ret) {
 		EMACERR("Err to set BW: IPA_RM_RESOURCE_ETHERNET_CONS err:%d\n",
 				ret);
-		return -1;
+		ret = -1;
+		goto mem_free;
 	}
 
-	return 0;
+ mem_free:
+	if (rx_setup_info.data_buff_list) {
+		kfree(rx_setup_info.data_buff_list);
+	}
+	if (tx_setup_info.data_buff_list) {
+		kfree(tx_setup_info.data_buff_list);
+	}
+	return ret;
 }
 
 /**
