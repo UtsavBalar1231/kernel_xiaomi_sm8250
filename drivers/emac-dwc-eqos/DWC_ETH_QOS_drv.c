@@ -1557,6 +1557,8 @@ static int DWC_ETH_QOS_alloc_rx_buf(struct DWC_ETH_QOS_prv_data *pdata,
 	struct sk_buff *skb = buffer->skb;
 	unsigned int rx_buffer_len = pdata->rx_buffer_len;
 	dma_addr_t ipa_rx_buf_dma_addr;
+	struct sg_table *buff_sgt;
+	int ret = 0;
 
 	DBGPR("-->DWC_ETH_QOS_alloc_rx_buf\n");
 
@@ -1573,6 +1575,23 @@ static int DWC_ETH_QOS_alloc_rx_buf(struct DWC_ETH_QOS_prv_data *pdata,
 
 		buffer->len = rx_buffer_len;
 		buffer->dma = ipa_rx_buf_dma_addr;
+
+		buff_sgt = kzalloc(sizeof (*buff_sgt), GFP_KERNEL);
+		if (buff_sgt) {
+			ret = dma_get_sgtable(GET_MEM_PDEV_DEV, buff_sgt,
+						buffer->ipa_buff_va, ipa_rx_buf_dma_addr,
+						rx_buffer_len);
+			if (ret == Y_SUCCESS) {
+				buffer->ipa_rx_buff_phy_addr = sg_phys(buff_sgt->sgl);
+				sg_free_table(buff_sgt);
+			} else {
+				EMACERR("Failed to get sgtable for allocated RX buffer.\n");
+			}
+			kfree(buff_sgt);
+			buff_sgt = NULL;
+		} else {
+			EMACERR("Failed to allocate memory for RX buff sgtable.\n");
+		}
 		return 0;
 	} else {
 

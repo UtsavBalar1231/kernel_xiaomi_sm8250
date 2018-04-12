@@ -1022,6 +1022,7 @@ struct DWC_ETH_QOS_tx_buffer {
 #ifdef DWC_ETH_QOS_CONFIG_PGTEST
 	unsigned char slot_number;
 #endif
+	phys_addr_t ipa_tx_buff_phy_addr; /* physical address of ipa TX buff */
 };
 
 struct DWC_ETH_QOS_tx_wrapper_descriptor {
@@ -1094,6 +1095,7 @@ struct DWC_ETH_QOS_rx_buffer {
 	unsigned short len2;	/* length of received packet-second buffer */
 
 	unsigned short rx_hdr_size; /* header buff size in case of split header */
+	phys_addr_t ipa_rx_buff_phy_addr; /* physical address of ipa RX buff */
 };
 
 struct DWC_ETH_QOS_rx_wrapper_descriptor {

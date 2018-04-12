@@ -643,6 +643,8 @@ static void DWC_ETH_QOS_wrapper_tx_descriptor_init_single_q(
 	struct hw_if_struct *hw_if = &pdata->hw_if;
 	void *ipa_tx_buf_vaddr;
 	dma_addr_t ipa_tx_buf_dma_addr;
+	struct sg_table *buff_sgt;
+	int ret  = 0;
 
 	DBGPR("%s: qinx = %u\n", __func__, qinx);
 
@@ -681,6 +683,22 @@ static void DWC_ETH_QOS_wrapper_tx_descriptor_init_single_q(
 				}
 				GET_TX_BUFF_LOGICAL_ADDR(qinx, i) = ipa_tx_buf_vaddr;
 				GET_TX_BUFF_DMA_ADDR(qinx, i) = ipa_tx_buf_dma_addr;
+				buff_sgt = kzalloc(sizeof (*buff_sgt), GFP_KERNEL);
+				if (buff_sgt) {
+					ret = dma_get_sgtable(GET_MEM_PDEV_DEV, buff_sgt,
+						ipa_tx_buf_vaddr, ipa_tx_buf_dma_addr, DWC_ETH_QOS_ETH_FRAME_LEN_IPA);
+					if (ret == Y_SUCCESS) {
+						GET_TX_BUF_PTR(IPA_DMA_TX_CH, i)->ipa_tx_buff_phy_addr =
+							sg_phys(buff_sgt->sgl);
+						sg_free_table(buff_sgt);
+						} else {
+							EMACERR("Failed to get sgtable for allocated RX buffer.\n");
+						}
+						kfree(buff_sgt);
+						buff_sgt = NULL;
+				} else {
+					EMACERR("Failed to allocate memory for RX buff sgtable.\n");
+				}
 			}
 		}
 #ifdef DWC_ETH_QOS_CONFIG_PGTEST

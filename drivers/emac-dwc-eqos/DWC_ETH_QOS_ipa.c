@@ -601,6 +601,111 @@ int DWC_ETH_QOS_ipa_offload_cleanup(struct DWC_ETH_QOS_prv_data *pdata)
 }
 
 /**
+ * DWC_ETH_QOS_set_ul_dl_smmu_ipa_params() - This will set the
+ * UL params in ipa_ntn_setup_info structure to be used in the
+ * IPA connect
+ * IN: @pdata: NTN private structure handle that will be passed
+ * by IPA.
+ * IN: @ul: pointer to ipa_ntn_setup_info uplink param.
+ * OUT: 0 on success and -1 on failure
+ */
+int DWC_ETH_QOS_set_ul_dl_smmu_ipa_params(struct DWC_ETH_QOS_prv_data *pdata,
+	struct ipa_ntn_setup_info *ul, struct ipa_ntn_setup_info *dl)
+{
+	int ret = 0;
+
+	if(!pdata) {
+		EMACERR( "Null Param %s \n", __func__);
+		return -1;
+	}
+
+	if(!ul || !dl) {
+		EMACERR( "Null UL DL params %s \n", __func__);
+		return -1;
+	}
+
+	ul->ring_base_sgt = kzalloc(sizeof(ul->ring_base_sgt), GFP_KERNEL);
+	if (!ul->ring_base_sgt) {
+	EMACERR("Failed to allocate memory for IPA UL ring sgt\n");
+	return -ENOMEM;
+	}
+
+	ret = dma_get_sgtable(GET_MEM_PDEV_DEV, ul->ring_base_sgt,
+				GET_RX_DESC_PTR(IPA_DMA_RX_CH, 0),
+				GET_RX_DESC_DMA_ADDR(IPA_DMA_RX_CH, 0),
+				(sizeof(struct s_RX_NORMAL_DESC) *
+				pdata->rx_queue[IPA_DMA_RX_CH].desc_cnt));
+	if (ret) {
+		EMACERR("Failed to get IPA UL ring sgtable.\n");
+		kfree(ul->ring_base_sgt);
+		ul->ring_base_sgt = NULL;
+		return -1;
+	} else {
+		ul->ring_base_pa = sg_phys(ul->ring_base_sgt->sgl);
+	}
+
+	ul->buff_pool_base_sgt = kzalloc(sizeof(ul->buff_pool_base_sgt), GFP_KERNEL);
+	if (!ul->buff_pool_base_sgt) {
+		EMACERR("Failed to allocate memory for IPA UL buff pool sgt\n");
+		return -ENOMEM;
+	}
+
+	ret = dma_get_sgtable(GET_MEM_PDEV_DEV, ul->buff_pool_base_sgt,
+				GET_RX_BUFF_POOL_BASE_ADRR(IPA_DMA_RX_CH),
+				GET_RX_BUFF_POOL_BASE_PADRR(IPA_DMA_RX_CH),
+				(sizeof(struct s_RX_NORMAL_DESC) *
+				pdata->rx_queue[IPA_DMA_RX_CH].desc_cnt));
+	if (ret) {
+		EMACERR("Failed to get IPA UL buff pool sgtable.\n");
+		kfree(ul->buff_pool_base_sgt);
+		ul->buff_pool_base_sgt = NULL;
+		return -1;
+	} else {
+		ul->buff_pool_base_pa = sg_phys(ul->buff_pool_base_sgt->sgl);
+	}
+
+	dl->ring_base_sgt = kzalloc(sizeof (dl->ring_base_sgt), GFP_KERNEL);
+	if (!dl->ring_base_sgt) {
+		EMACERR("Failed to allocate memory for IPA DL ring sgt\n");
+		return -ENOMEM;
+	}
+
+	ret = dma_get_sgtable(GET_MEM_PDEV_DEV, dl->ring_base_sgt,
+				GET_TX_DESC_PTR(IPA_DMA_TX_CH, 0),
+				GET_TX_DESC_DMA_ADDR(IPA_DMA_TX_CH, 0),
+				(sizeof(struct s_TX_NORMAL_DESC) *
+				pdata->tx_queue[IPA_DMA_TX_CH].desc_cnt));
+	if (ret) {
+		EMACERR("Failed to get IPA DL ring sgtable.\n");
+		kfree(dl->ring_base_sgt);
+		dl->ring_base_sgt = NULL;
+		return -1;
+	} else {
+		dl->ring_base_pa = sg_phys(dl->ring_base_sgt->sgl);
+	}
+
+	dl->buff_pool_base_sgt = kzalloc(sizeof (dl->buff_pool_base_sgt), GFP_KERNEL);
+	if (!dl->buff_pool_base_sgt) {
+		EMACERR("Failed to allocate memory for IPA DL buff pool sgt\n");
+		return -ENOMEM;
+	}
+	ret = dma_get_sgtable(GET_MEM_PDEV_DEV, dl->buff_pool_base_sgt,
+				GET_TX_BUFF_POOL_BASE_ADRR(IPA_DMA_TX_CH),
+				GET_TX_BUFF_POOL_BASE_PADRR(IPA_DMA_TX_CH),
+				(sizeof(struct s_TX_NORMAL_DESC) *
+				pdata->tx_queue[IPA_DMA_TX_CH].desc_cnt));
+	if (ret) {
+		EMACERR("Failed to get IPA DL buff pool sgtable.\n");
+		kfree(dl->buff_pool_base_sgt);
+		dl->buff_pool_base_sgt = NULL;
+		return -1;
+	} else {
+		dl->buff_pool_base_pa = sg_phys(dl->buff_pool_base_sgt->sgl);
+	}
+	return ret;
+}
+
+/**
  * DWC_ETH_QOS_ipa_offload_connect() - Called from NTN driver to connect IPA
  * offload data path. This function should be called from NTN driver after
  * allocation of rings and resources required for offload data path.
@@ -639,46 +744,85 @@ int DWC_ETH_QOS_ipa_offload_connect(struct DWC_ETH_QOS_prv_data *pdata)
 
 	in.clnt_hndl = ntn_ipa->ipa_client_hndl;
 	/* Uplink Setup */
-	rx_setup_info.smmu_enabled = false;
+	if (emac_emb_smmu_ctx.valid) {
+		rx_setup_info.smmu_enabled = true;
+	} else {
+		rx_setup_info.smmu_enabled = false;
+	}
 	rx_setup_info.client = IPA_CLIENT_ETHERNET_PROD;
-	rx_setup_info.ring_base_pa = (phys_addr_t)GET_RX_DESC_DMA_ADDR(IPA_DMA_RX_CH, 0);
+	if (!rx_setup_info.smmu_enabled)
+		rx_setup_info.ring_base_pa = (phys_addr_t)GET_RX_DESC_DMA_ADDR(IPA_DMA_RX_CH, 0);
+	rx_setup_info.ring_base_iova = GET_RX_DESC_DMA_ADDR(IPA_DMA_RX_CH, 0);
 	rx_setup_info.ntn_ring_size = pdata->rx_queue[IPA_DMA_RX_CH].desc_cnt;
-	rx_setup_info.buff_pool_base_pa = GET_RX_BUFF_POOL_BASE_PADRR(IPA_DMA_RX_CH);
+	if (!rx_setup_info.smmu_enabled)
+		rx_setup_info.buff_pool_base_pa = GET_RX_BUFF_POOL_BASE_PADRR(IPA_DMA_RX_CH);
+	rx_setup_info.buff_pool_base_iova = GET_RX_BUFF_POOL_BASE_PADRR(IPA_DMA_RX_CH);
 	rx_setup_info.num_buffers = pdata->rx_queue[IPA_DMA_RX_CH].desc_cnt - 1;
 	rx_setup_info.data_buff_size = DWC_ETH_QOS_ETH_FRAME_LEN_IPA;
+
 	/* Base address here is the address of EMAC_DMA_CH0_CONTROL in EMAC resgister space */
 	rx_setup_info.ntn_reg_base_ptr_pa = (phys_addr_t)(((ULONG)((ULONG)DMA_CR0_RGOFFADDR - BASE_ADDRESS))
 	  + (ULONG)dwc_eth_qos_res_data.emac_mem_base);
 
 	/* Downlink Setup */
-	tx_setup_info.smmu_enabled = false;
+	if (emac_emb_smmu_ctx.valid) {
+		tx_setup_info.smmu_enabled = true;
+	} else {
+		tx_setup_info.smmu_enabled = false;
+	}
 	tx_setup_info.client = IPA_CLIENT_ETHERNET_CONS;
-	tx_setup_info.ring_base_pa = (phys_addr_t)GET_TX_DESC_DMA_ADDR(IPA_DMA_TX_CH, 0);
+	if (!tx_setup_info.smmu_enabled) {
+		tx_setup_info.ring_base_pa = (phys_addr_t)GET_TX_DESC_DMA_ADDR(IPA_DMA_TX_CH, 0);
+	}
+	tx_setup_info.ring_base_iova = GET_TX_DESC_DMA_ADDR(IPA_DMA_TX_CH, 0);
 	tx_setup_info.ntn_ring_size = pdata->tx_queue[IPA_DMA_TX_CH].desc_cnt;
-	tx_setup_info.buff_pool_base_pa = GET_TX_BUFF_POOL_BASE_PADRR(IPA_DMA_TX_CH);
+	if (!tx_setup_info.smmu_enabled)
+		tx_setup_info.buff_pool_base_pa = GET_TX_BUFF_POOL_BASE_PADRR(IPA_DMA_TX_CH);
+	tx_setup_info.buff_pool_base_iova = GET_TX_BUFF_POOL_BASE_PADRR(IPA_DMA_TX_CH);
 	tx_setup_info.num_buffers = pdata->tx_queue[IPA_DMA_TX_CH].desc_cnt - 1;
 	tx_setup_info.data_buff_size = DWC_ETH_QOS_ETH_FRAME_LEN_IPA;
+
 	/* Base address here is the address of EMAC_DMA_CH0_CONTROL in EMAC resgister space */
 	tx_setup_info.ntn_reg_base_ptr_pa = (phys_addr_t)  (((ULONG)((ULONG)DMA_CR0_RGOFFADDR - BASE_ADDRESS))
 	  + (ULONG)dwc_eth_qos_res_data.emac_mem_base);
 
 	rx_setup_info.data_buff_list = kcalloc(rx_setup_info.num_buffers,
 				sizeof(struct ntn_buff_smmu_map), GFP_KERNEL);
+	if (rx_setup_info.data_buff_list == NULL) {
+		EMACERR("Failed to allocate mem for Rx data_buff_list");
+		ret = -ENOMEM;
+		goto mem_free;
+	}
 	tx_setup_info.data_buff_list = kcalloc(tx_setup_info.num_buffers,
 				sizeof(struct ntn_buff_smmu_map), GFP_KERNEL);
-	if ((tx_setup_info.data_buff_list == NULL) || (rx_setup_info.data_buff_list == NULL)) {
-		EMACERR("Failed to allocate mem for data_buff_list");
+	if (tx_setup_info.data_buff_list == NULL) {
+		EMACERR("Failed to allocate mem for Tx data_buff_list");
 		ret = -ENOMEM;
 		goto mem_free;
 	}
 
 	for (i = 0; i < rx_setup_info.num_buffers; i++) {
 		rx_setup_info.data_buff_list[i].iova = GET_RX_BUFF_DMA_ADDR(IPA_DMA_RX_CH, i);
-		rx_setup_info.data_buff_list[i].pa = GET_RX_BUFF_DMA_ADDR(IPA_DMA_RX_CH, i);
+		if (!rx_setup_info.smmu_enabled)
+			rx_setup_info.data_buff_list[i].pa = rx_setup_info.data_buff_list[i].iova;
+		else
+			rx_setup_info.data_buff_list[i].pa = GET_RX_BUF_PTR(IPA_DMA_RX_CH, i)->ipa_rx_buff_phy_addr;
 	}
 	for (i = 0; i < tx_setup_info.num_buffers; i++) {
 		tx_setup_info.data_buff_list[i].iova = GET_TX_BUFF_DMA_ADDR(IPA_DMA_TX_CH, i);
-		tx_setup_info.data_buff_list[i].pa = GET_TX_BUFF_DMA_ADDR(IPA_DMA_TX_CH, i);
+		if (!tx_setup_info.smmu_enabled)
+			tx_setup_info.data_buff_list[i].pa = tx_setup_info.data_buff_list[i].iova;
+		else
+			tx_setup_info.data_buff_list[i].pa = GET_TX_BUF_PTR(IPA_DMA_TX_CH, i)->ipa_tx_buff_phy_addr;
+	}
+
+	if (emac_emb_smmu_ctx.valid) {
+		ret = DWC_ETH_QOS_set_ul_dl_smmu_ipa_params(pdata, &rx_setup_info, &tx_setup_info);
+		if (ret) {
+			EMACERR("Failed to build UL DL ipa_ntn_setup_info err:%d\n", ret);
+			ret = -1;
+			goto mem_free;
+		}
 	}
 
 	/* Dump UL and DL Setups */
@@ -723,11 +867,35 @@ int DWC_ETH_QOS_ipa_offload_connect(struct DWC_ETH_QOS_prv_data *pdata)
  mem_free:
 	if (rx_setup_info.data_buff_list) {
 		kfree(rx_setup_info.data_buff_list);
+		rx_setup_info.data_buff_list = NULL;
 	}
 	if (tx_setup_info.data_buff_list) {
 		kfree(tx_setup_info.data_buff_list);
+		tx_setup_info.data_buff_list = NULL;
 	}
-	return ret;
+	if (emac_emb_smmu_ctx.valid) {
+		if (rx_setup_info.ring_base_sgt) {
+			sg_free_table(rx_setup_info.ring_base_sgt);
+			kfree(rx_setup_info.ring_base_sgt);
+			rx_setup_info.ring_base_sgt = NULL;
+		}
+		if (tx_setup_info.ring_base_sgt) {
+			sg_free_table(tx_setup_info.ring_base_sgt);
+			kfree(tx_setup_info.ring_base_sgt);
+			tx_setup_info.ring_base_sgt = NULL;
+		}
+		if (rx_setup_info.buff_pool_base_sgt) {
+			sg_free_table(rx_setup_info.buff_pool_base_sgt);
+			kfree(rx_setup_info.buff_pool_base_sgt);
+			rx_setup_info.buff_pool_base_sgt = NULL;
+		}
+		if (tx_setup_info.buff_pool_base_sgt) {
+			sg_free_table(tx_setup_info.buff_pool_base_sgt);
+			kfree(tx_setup_info.buff_pool_base_sgt);
+			tx_setup_info.buff_pool_base_sgt = NULL;
+		}
+	}
+    return ret;
 }
 
 /**

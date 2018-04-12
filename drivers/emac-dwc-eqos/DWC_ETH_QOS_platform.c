@@ -957,8 +957,6 @@ static int DWC_ETH_QOS_configure_netdevice(struct platform_device *pdev)
 		goto err_out_netdev_failed;
 	}
 
-	DBGPR("<-- DWC_ETH_QOS_probe\n");
-
 	if (pdata->hw_feat.pcs_sel) {
 		netif_carrier_off(dev);
 		dev_alert(&pdev->dev, "carrier off till LINK is up\n");
@@ -1114,7 +1112,7 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 {
 	int ret = 0;
 
-	DBGPR("--> DWC_ETH_QOS_probe\n");
+	EMACDBG("--> DWC_ETH_QOS_probe\n");
 
 	if (of_device_is_compatible(pdev->dev.of_node, "qcom,emac-smmu-embedded"))
 		return emac_emb_smmu_cb_probe(pdev);
@@ -1169,6 +1167,7 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	iounmap((void __iomem *)dwc_tlmm_central_base_addr);
 
  err_out_map_failed:
+	EMACERR("<-- DWC_ETH_QOS_probe\n");
 	return ret;
 }
 
