@@ -380,6 +380,7 @@ static const struct ethtool_ops DWC_ETH_QOS_ethtool_ops = {
 	.get_ethtool_stats = DWC_ETH_QOS_get_ethtool_stats,
 	.get_strings = DWC_ETH_QOS_get_strings,
 	.get_sset_count = DWC_ETH_QOS_get_sset_count,
+	.get_ts_info = DWC_ETH_QOS_get_ts_info,
 };
 
 struct ethtool_ops *DWC_ETH_QOS_get_ethtool_ops(void)
@@ -1110,4 +1111,25 @@ static int DWC_ETH_QOS_get_sset_count(struct net_device *dev, int sset)
 
 	return len;
 }
+/*!
+ * \details This function gets the PHC index
+ *
+ * \param[in] dev ? pointer to net device structure.
+ * \param[in] ethtool_ts_info ? pointer to ts info structure.
+ *
+ * \return int
+ *
+ * \retval +ve(>0) on success, 0 if that string is not
+ * defined and -ve on failure.
+ */
 
+static int DWC_ETH_QOS_get_ts_info(struct net_device *dev,
+                           struct ethtool_ts_info *info)
+{
+	struct DWC_ETH_QOS_prv_data *pdata = netdev_priv(dev);
+	DBGPR("-->DWC_ETH_QOS_get_ts_info\n");
+	info->phc_index = DWC_ETH_QOS_phc_index(pdata);
+	EMACINFO("PHC index = %d\n", info->phc_index);
+	DBGPR("<--DWC_ETH_QOS_get_ts_info\n");
+	return 0;
+}

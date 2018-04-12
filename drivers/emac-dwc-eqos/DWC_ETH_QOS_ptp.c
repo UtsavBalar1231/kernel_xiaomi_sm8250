@@ -332,4 +332,21 @@ void DWC_ETH_QOS_ptp_remove(struct DWC_ETH_QOS_prv_data *pdata)
 
 	DBGPR_PTP("<--DWC_ETH_QOS_ptp_remove\n");
 }
+/*!
+ * \brief API to find the PHC index.
+ *
+ * \details This function is used to find the PHC index from Linux subsystem
+ *
+ * \param[in] pdata ??? pointer to private data structure.
+ *
+ * \return void
+ */
 
+int DWC_ETH_QOS_phc_index(struct DWC_ETH_QOS_prv_data *pdata)
+{
+	DBGPR_PTP("Fetching PHC index \n");
+	if (pdata->ptp_clock)
+		return ptp_clock_index(pdata->ptp_clock);
+	else
+		return -1;
+}

@@ -1812,6 +1812,8 @@ UINT DWC_ETH_QOS_get_total_desc_cnt(struct DWC_ETH_QOS_prv_data *pdata,
 int DWC_ETH_QOS_ptp_init(struct DWC_ETH_QOS_prv_data *pdata);
 void DWC_ETH_QOS_ptp_remove(struct DWC_ETH_QOS_prv_data *pdata);
 phy_interface_t DWC_ETH_QOS_get_phy_interface(struct DWC_ETH_QOS_prv_data *pdata);
+/* PTP function to find PHC Index*/
+int DWC_ETH_QOS_phc_index(struct DWC_ETH_QOS_prv_data *pdata);
 bool DWC_ETH_QOS_eee_init(struct DWC_ETH_QOS_prv_data *pdata);
 void DWC_ETH_QOS_handle_eee_interrupt(struct DWC_ETH_QOS_prv_data *pdata);
 void DWC_ETH_QOS_disable_eee_mode(struct DWC_ETH_QOS_prv_data *pdata);

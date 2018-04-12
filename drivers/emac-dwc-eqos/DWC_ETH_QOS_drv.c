@@ -4789,7 +4789,7 @@ static VOID DWC_ETH_QOS_config_timer_registers(
 		 * 2^32 * 50000000 ==> (50000000 << 32)
 		 */
 		temp = (u64)(50000000ULL << 32);
-		pdata->default_addend = div_u64(temp, 62500000);
+		pdata->default_addend = div_u64(temp, DWC_ETH_QOS_SYSCLOCK);
 
 		hw_if->config_addend(pdata->default_addend);
 
@@ -5545,7 +5545,7 @@ static int DWC_ETH_QOS_handle_hwtstamp_ioctl(struct DWC_ETH_QOS_prv_data *pdata,
 		 *
 		 */
 		temp = (u64)(50000000ULL << 32);
-		pdata->default_addend = div_u64(temp, 62500000);
+		pdata->default_addend = div_u64(temp, DWC_ETH_QOS_SYSCLOCK);
 
 		hw_if->config_addend(pdata->default_addend);
 
@@ -6345,6 +6345,7 @@ static void DWC_ETH_QOS_program_avb_algorithm(
 	struct DWC_ETH_QOS_avb_algorithm l_avb_struct, *u_avb_struct =
 		(struct DWC_ETH_QOS_avb_algorithm *)req->ptr;
 	struct hw_if_struct *hw_if = &pdata->hw_if;
+	struct DWC_ETH_QOS_avb_algorithm_params *avb_params;
 
 	DBGPR("-->DWC_ETH_QOS_program_avb_algorithm\n");
 
@@ -6352,14 +6353,26 @@ static void DWC_ETH_QOS_program_avb_algorithm(
 			   sizeof(struct DWC_ETH_QOS_avb_algorithm)))
 		dev_alert(&pdata->pdev->dev, "Failed to fetch AVB Struct info from user\n");
 
+	if (pdata->speed == SPEED_1000)
+		avb_params = &l_avb_struct.speed1000params;
+	else
+		avb_params = &l_avb_struct.speed100params;
+
+	/*Application uses 1 for CLASS A traffic and 2 for CLASS B traffic
+	  Configure right channel accordingly*/
+	if (l_avb_struct.qinx == 1)
+		l_avb_struct.qinx = CLASS_A_TRAFFIC_TX_CHANNEL;
+	else if (l_avb_struct.qinx == 2)
+		l_avb_struct.qinx = CLASS_B_TRAFFIC_TX_CHANNEL;
+
 	hw_if->set_tx_queue_operating_mode(l_avb_struct.qinx,
 		(UINT)l_avb_struct.op_mode);
 	hw_if->set_avb_algorithm(l_avb_struct.qinx, l_avb_struct.algorithm);
 	hw_if->config_credit_control(l_avb_struct.qinx, l_avb_struct.cc);
-	hw_if->config_send_slope(l_avb_struct.qinx, l_avb_struct.send_slope);
-	hw_if->config_idle_slope(l_avb_struct.qinx, l_avb_struct.idle_slope);
-	hw_if->config_high_credit(l_avb_struct.qinx, l_avb_struct.hi_credit);
-	hw_if->config_low_credit(l_avb_struct.qinx, l_avb_struct.low_credit);
+	hw_if->config_send_slope(l_avb_struct.qinx, avb_params->send_slope);
+	hw_if->config_idle_slope(l_avb_struct.qinx, avb_params->idle_slope);
+	hw_if->config_high_credit(l_avb_struct.qinx, avb_params->hi_credit);
+	hw_if->config_low_credit(l_avb_struct.qinx, avb_params->low_credit);
 
 	DBGPR("<--DWC_ETH_QOS_program_avb_algorithm\n");
 }
