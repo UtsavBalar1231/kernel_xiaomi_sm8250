@@ -544,7 +544,8 @@
 
 /* for EEE */
 #define DWC_ETH_QOS_DEFAULT_LPI_LS_TIMER 0x3E8 /* 1000 in decimal */
-#define DWC_ETH_QOS_DEFAULT_LPI_TWT_TIMER 0x0
+#define DWC_ETH_QOS_DEFAULT_LPI_TWT_TIMER 0x11 /* Typical 17uS */
+#define DWC_ETH_QOS_DEFAULT_LPI_LPIET_TIMER 125 /* 8*125uS=1000uS=1mS*/
 
 #define DWC_ETH_QOS_DEFAULT_LPI_TIMER 1000 /* LPI Tx local expiration time in msec */
 #define DWC_ETH_QOS_LPI_TIMER(x) (jiffies + msecs_to_jiffies(x))
@@ -615,6 +616,9 @@
 #define VOTE_IDX_10MBPS 0
 #define VOTE_IDX_100MBPS 1
 #define VOTE_IDX_1000MBPS 2
+
+/* AHB clock vote is same for 1000/100Mbps and set to 133MHz */
+ #define CLOCK_AHB_MHZ 133
 
 /* Clock rates for various modes */
 #define RGMII_1000_NOM_CLK_FREQ      (250 * 1000 * 1000UL)
@@ -971,8 +975,10 @@ struct hw_if_struct {
 	INT(*set_eee_pls)(int phy_link);
 	INT(*set_eee_timer)(int lpi_lst, int lpi_twt);
 	u32 (*get_lpi_status)(void);
-
 	INT(*set_lpi_tx_automate)(void);
+	INT(*set_lpi_tx_auto_entry_timer_en)(void);
+	INT(*set_lpi_tx_auto_entry_timer)(u32);
+	INT(*set_lpi_us_tic_counter)(u32);
 
 	/* for ARP */
 	INT(*config_arp_offload)(int enb_dis);
@@ -1666,6 +1672,7 @@ struct DWC_ETH_QOS_prv_data {
 	int eee_enabled;
 	int eee_active;
 	int tx_lpi_timer;
+	bool use_lpi_auto_entry_timer;
 
 	/* arp offload enable/disable. */
 	u32 arp_offload;

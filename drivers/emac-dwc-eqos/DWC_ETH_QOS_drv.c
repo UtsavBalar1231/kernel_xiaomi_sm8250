@@ -1663,6 +1663,8 @@ static void DWC_ETH_QOS_default_common_confs(struct DWC_ETH_QOS_prv_data *pdata)
 	pdata->l2_filtering_mode = !!pdata->hw_feat.hash_tbl_sz;
 	pdata->tx_path_in_lpi_mode = 0;
 	pdata->use_lpi_tx_automate = true;
+	pdata->use_lpi_auto_entry_timer = true;
+
 	pdata->one_nsec_accuracy = 1;
 
 	DBGPR("<--DWC_ETH_QOS_default_common_confs\n");
@@ -2427,7 +2429,7 @@ static int DWC_ETH_QOS_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	}
 
 	if ((pdata->eee_enabled) && (pdata->tx_path_in_lpi_mode) &&
-	    (!pdata->use_lpi_tx_automate))
+	    (!pdata->use_lpi_tx_automate) && (!pdata->use_lpi_auto_entry_timer))
 		DWC_ETH_QOS_disable_eee_mode(pdata);
 
 	memset(&pdata->tx_pkt_features, 0, sizeof(pdata->tx_pkt_features));
@@ -2900,7 +2902,7 @@ static void DWC_ETH_QOS_tx_interrupt(struct net_device *dev,
 #endif
 
 	if ((pdata->eee_enabled) && (!pdata->tx_path_in_lpi_mode) &&
-	    (!pdata->use_lpi_tx_automate)) {
+	    (!pdata->use_lpi_tx_automate) && (!pdata->use_lpi_auto_entry_timer)) {
 		DWC_ETH_QOS_enable_eee_mode(pdata);
 		mod_timer(&pdata->eee_ctrl_timer,
 			  DWC_ETH_QOS_LPI_TIMER(DWC_ETH_QOS_DEFAULT_LPI_TIMER));

@@ -463,6 +463,28 @@ static int set_lpi_tx_automate(void)
 	return Y_SUCCESS;
 }
 
+static int set_lpi_tx_auto_entry_timer_en(void)
+{
+	MAC_LPS_LPIATE_UDFWR(0x1);
+
+	return Y_SUCCESS;
+}
+
+static int set_lpi_tx_auto_entry_timer(u32 data)
+{
+	MAC_LPET_LPIET_UDFWR(data);
+
+	return Y_SUCCESS;
+}
+
+static int set_lpi_us_tic_counter(u32 data)
+{
+	MAC_1USTICK_CNTR_UDFWR(data);
+
+	return Y_SUCCESS;
+}
+
+
 /*!
  * \brief This sequence is used to enable/disable Auto-Negotiation
  * and restart the autonegotiation
@@ -3839,7 +3861,7 @@ static void pre_transmit(struct DWC_ETH_QOS_prv_data *pdata,
 			   GET_TX_DESC_DMA_ADDR(QINX, last_index));
 #endif
 
-	if (pdata->eee_enabled) {
+	if (pdata->eee_enabled && (!pdata->use_lpi_auto_entry_timer)) {
 		/* restart EEE timer */
 		mod_timer(&pdata->eee_ctrl_timer,
 			  DWC_ETH_QOS_LPI_TIMER(DWC_ETH_QOS_DEFAULT_LPI_TIMER));
@@ -5111,6 +5133,9 @@ void DWC_ETH_QOS_init_function_ptrs_dev(struct hw_if_struct *hw_if)
 	hw_if->set_eee_timer = set_eee_timer;
 	hw_if->get_lpi_status = get_lpi_status;
 	hw_if->set_lpi_tx_automate = set_lpi_tx_automate;
+	hw_if->set_lpi_tx_auto_entry_timer_en = set_lpi_tx_auto_entry_timer_en;
+	hw_if->set_lpi_tx_auto_entry_timer = set_lpi_tx_auto_entry_timer;
+	hw_if->set_lpi_us_tic_counter = set_lpi_us_tic_counter;
 
 	/* for ARP */
 	hw_if->config_arp_offload = config_arp_offload;

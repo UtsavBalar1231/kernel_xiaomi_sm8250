@@ -418,25 +418,37 @@ bool DWC_ETH_QOS_eee_init(struct DWC_ETH_QOS_prv_data *pdata)
 	if (pdata->hw_feat.eee_sel) {
 #ifndef DWC_ETH_QOS_CUSTOMIZED_EEE_TEST
 		/* check if the PHY supports EEE */
-		if (pdata->phydev && DWC_ETH_QOS_phy_init_eee(pdata->phydev, 1))
+		if (!pdata->phydev || DWC_ETH_QOS_phy_init_eee(pdata->phydev, 1))
 			goto phy_eee_failed;
 #endif /* DWC_ETH_QOS_CUSTOMIZED_EEE_TEST */
 
 		if (!pdata->eee_active) {
 			pdata->eee_active = 1;
-			init_timer(&pdata->eee_ctrl_timer);
-			pdata->eee_ctrl_timer.function =
-				DWC_ETH_QOS_eee_ctrl_timer;
-			pdata->eee_ctrl_timer.data = (unsigned long)pdata;
-			pdata->eee_ctrl_timer.expires =
-				DWC_ETH_QOS_LPI_TIMER(
-					DWC_ETH_QOS_DEFAULT_LPI_TIMER);
-			add_timer(&pdata->eee_ctrl_timer);
-
-			hw_if->set_eee_timer(DWC_ETH_QOS_DEFAULT_LPI_LS_TIMER,
+			if (pdata->use_lpi_auto_entry_timer) {
+				pdata->hw_if.set_lpi_us_tic_counter(CLOCK_AHB_MHZ);
+				hw_if->set_lpi_tx_auto_entry_timer(DWC_ETH_QOS_DEFAULT_LPI_LPIET_TIMER);
+				hw_if->set_eee_timer(DWC_ETH_QOS_DEFAULT_LPI_LS_TIMER,
 				DWC_ETH_QOS_DEFAULT_LPI_TWT_TIMER);
-			if (pdata->use_lpi_tx_automate)
 				hw_if->set_lpi_tx_automate();
+				hw_if->set_lpi_tx_auto_entry_timer_en();
+				hw_if->set_eee_mode();
+				hw_if->set_eee_pls(pdata->phydev->link);
+			} else {
+				init_timer(&pdata->eee_ctrl_timer);
+				pdata->eee_ctrl_timer.function =
+					DWC_ETH_QOS_eee_ctrl_timer;
+				pdata->eee_ctrl_timer.data = (unsigned long)pdata;
+				pdata->eee_ctrl_timer.expires =
+					DWC_ETH_QOS_LPI_TIMER(
+						DWC_ETH_QOS_DEFAULT_LPI_TIMER);
+				add_timer(&pdata->eee_ctrl_timer);
+
+				hw_if->set_eee_timer(DWC_ETH_QOS_DEFAULT_LPI_LS_TIMER,
+				DWC_ETH_QOS_DEFAULT_LPI_TWT_TIMER);
+
+				if (pdata->use_lpi_tx_automate)
+					hw_if->set_lpi_tx_automate();
+			}
 		} else {
 			/* When EEE has been already initialized we have to
 			 * modify the PLS bit in MAC_LPI_Control_Status reg

@@ -5665,6 +5665,57 @@
 		data = ((data >> 9) & MAC_ANC_RAN_MASK);\
 } while (0)
 
+#define MAC_1USTICK_RGOFFADDR ((volatile ULONG *)(BASE_ADDRESS + 0xdc))
+
+#define MAC_1USTICK_RGWR(data) do {\
+		iowrite32(data, (void *)MAC_1USTICK_RGOFFADDR);\
+} while (0)
+
+#define MAC_1USTICK_RGRD(data) do {\
+		(data) = ioread32((void *)MAC_1USTICK_RGOFFADDR);\
+} while (0)
+
+#define MAC_1USTICK_CNTR_MASK 0xFFF
+#define MAC_1USTICK_CNTR_WR_MASK 0xFFFFF000
+
+#define MAC_1USTICK_CNTR_UDFWR(data) do {\
+		ULONG v;\
+		MAC_1USTICK_RGRD(v);\
+		v = ((v & MAC_1USTICK_CNTR_WR_MASK) | ((data & MAC_1USTICK_CNTR_MASK) << 0));\
+		MAC_1USTICK_RGWR(v);\
+} while (0)
+
+#define MAC_1USTICK_CNTR_UDFRD(data) do {\
+		MAC_1USTICK_RGRD(data);\
+		data = ((data >> 0) & MAC_1USTICK_CNTR_MASK);\
+} while (0)
+
+
+#define MAC_LPET_RGOFFADDR ((volatile ULONG *)(BASE_ADDRESS + 0xd8))
+
+#define MAC_LPET_RGWR(data) do {\
+		iowrite32(data, (void *)MAC_LPET_RGOFFADDR);\
+} while (0)
+
+#define MAC_LPET_RGRD(data) do {\
+		(data) = ioread32((void *)MAC_LPET_RGOFFADDR);\
+} while (0)
+
+#define MAC_LPET_LPIET_MASK 0xFFFF
+#define MAC_LPET_LPIET_WR_MASK 0xFFF80007
+
+#define MAC_LPET_LPIET_UDFWR(data) do {\
+		ULONG v;\
+		MAC_LPET_RGRD(v);\
+		v = ((v & MAC_LPET_LPIET_WR_MASK) | ((data & MAC_LPET_LPIET_MASK) << 3));\
+		MAC_LPET_RGWR(v);\
+} while (0)
+
+#define MAC_LPET_LPIET_UDFRD(data) do {\
+		MAC_LPET_RGRD(data);\
+		data = ((data >> 3) & MAC_LPET_LPIET_MASK);\
+} while (0)
+
 #define MAC_LPC_RGOFFADDR ((volatile ULONG *)(BASE_ADDRESS + 0xd4))
 
 #define MAC_LPC_RGWR(data) do {\
@@ -5737,11 +5788,11 @@
 
 /*#define  MAC_LPS_Mask_20 (ULONG)(~(~0<<(12)))*/
 
-#define  MAC_LPS_MASK_20 (ULONG)(0xfff)
+#define  MAC_LPS_MASK_22 (ULONG)(0xffc)
 
 /*#define MAC_LPS_RES_Wr_Mask_20 (ULONG)(~((~(~0<<(12)))<<(20)))*/
 
-#define MAC_LPS_RES_WR_MASK_20 (ULONG)(0xfffff)
+#define MAC_LPS_RES_WR_MASK_22 (ULONG)(0x3fffff)
 
 /*#define  MAC_LPS_Mask_10 (ULONG)(~(~0<<(6)))*/
 
@@ -5767,10 +5818,48 @@
 
 #define MAC_LPS_LPITXA_WR_MASK (ULONG)(0xfff7ffff)
 
+#define MAC_LPS_LPIATE_MASK (ULONG)(0x1)
+
+#define MAC_LPS_LPIATE_WR_MASK (ULONG)(0xffefffff)
+
+#define MAC_LPS_LPITCSE_MASK (ULONG)(0x1)
+
+#define MAC_LPS_LPITCSE_WR_MASK (ULONG)(0xffdfffff)
+
+#define MAC_LPS_LPITCSE_UDFWR(data) do {\
+		ULONG v;\
+		MAC_LPS_RGRD(v);\
+		v = (v & (MAC_LPS_RES_WR_MASK_22)) | (((0) & (MAC_LPS_MASK_22)) << 22);\
+		v = (v & (MAC_LPS_RES_WR_MASK_10)) | (((0) & (MAC_LPS_MASK_10)) << 10);\
+		v = (v & (MAC_LPS_RES_WR_MASK_4)) | (((0) & (MAC_LPS_MASK_4)) << 4);\
+		v = ((v & MAC_LPS_LPITCSE_WR_MASK) | ((data & MAC_LPS_LPITCSE_MASK) << 21));\
+		MAC_LPS_RGWR(v);\
+} while (0)
+
+#define MAC_LPS_LPITCSE_UDFRD(data) do {\
+		MAC_LPS_RGRD(data);\
+		data = ((data >> 21) & MAC_LPS_LPITCSE_MASK);\
+} while (0)
+
+#define MAC_LPS_LPIATE_UDFWR(data) do {\
+		ULONG v;\
+		MAC_LPS_RGRD(v);\
+		v = (v & (MAC_LPS_RES_WR_MASK_22)) | (((0) & (MAC_LPS_MASK_22)) << 22);\
+		v = (v & (MAC_LPS_RES_WR_MASK_10)) | (((0) & (MAC_LPS_MASK_10)) << 10);\
+		v = (v & (MAC_LPS_RES_WR_MASK_4)) | (((0) & (MAC_LPS_MASK_4)) << 4);\
+		v = ((v & MAC_LPS_LPIATE_WR_MASK) | ((data & MAC_LPS_LPIATE_MASK) << 20));\
+		MAC_LPS_RGWR(v);\
+} while (0)
+
+#define MAC_LPS_LPIATE_UDFRD(data) do {\
+		MAC_LPS_RGRD(data);\
+		data = ((data >> 20) & MAC_LPS_LPIATE_MASK);\
+} while (0)
+
 #define MAC_LPS_LPITXA_UDFWR(data) do {\
 		ULONG v;\
 		MAC_LPS_RGRD(v);\
-		v = (v & (MAC_LPS_RES_WR_MASK_20)) | (((0) & (MAC_LPS_MASK_20)) << 20);\
+		v = (v & (MAC_LPS_RES_WR_MASK_22)) | (((0) & (MAC_LPS_MASK_22)) << 22);\
 		v = (v & (MAC_LPS_RES_WR_MASK_10)) | (((0) & (MAC_LPS_MASK_10)) << 10);\
 		v = (v & (MAC_LPS_RES_WR_MASK_4)) | (((0) & (MAC_LPS_MASK_4)) << 4);\
 		v = ((v & MAC_LPS_LPITXA_WR_MASK) | ((data & MAC_LPS_LPITXA_MASK) << 19));\
@@ -5793,7 +5882,7 @@
 #define MAC_LPS_PLSEN_UDFWR(data) do {\
 		ULONG v;\
 		MAC_LPS_RGRD(v);\
-		v = (v & (MAC_LPS_RES_WR_MASK_20)) | (((0) & (MAC_LPS_MASK_20)) << 20);\
+		v = (v & (MAC_LPS_RES_WR_MASK_22)) | (((0) & (MAC_LPS_MASK_22)) << 22);\
 		v = (v & (MAC_LPS_RES_WR_MASK_10)) | (((0) & (MAC_LPS_MASK_10)) << 10);\
 		v = (v & (MAC_LPS_RES_WR_MASK_4)) | (((0) & (MAC_LPS_MASK_4)) << 4);\
 		v = ((v & MAC_LPS_PLSEN_WR_MASK) | ((data & MAC_LPS_PLSEN_MASK) << 18));\
@@ -5816,7 +5905,7 @@
 #define MAC_LPS_PLS_UDFWR(data) do {\
 		ULONG v;\
 		MAC_LPS_RGRD(v);\
-		v = (v & (MAC_LPS_RES_WR_MASK_20)) | (((0) & (MAC_LPS_MASK_20)) << 20);\
+		v = (v & (MAC_LPS_RES_WR_MASK_22)) | (((0) & (MAC_LPS_MASK_22)) << 22);\
 		v = (v & (MAC_LPS_RES_WR_MASK_10)) | (((0) & (MAC_LPS_MASK_10)) << 10);\
 		v = (v & (MAC_LPS_RES_WR_MASK_4)) | (((0) & (MAC_LPS_MASK_4)) << 4);\
 		v = ((v & MAC_LPS_PLS_WR_MASK) | ((data & MAC_LPS_PLS_MASK) << 17));\
@@ -5839,7 +5928,7 @@
 #define MAC_LPS_LPIEN_UDFWR(data) do {\
 		ULONG v;\
 		MAC_LPS_RGRD(v);\
-		v = (v & (MAC_LPS_RES_WR_MASK_20)) | (((0) & (MAC_LPS_MASK_20)) << 20);\
+		v = (v & (MAC_LPS_RES_WR_MASK_22)) | (((0) & (MAC_LPS_MASK_22)) << 22);\
 		v = (v & (MAC_LPS_RES_WR_MASK_10)) | (((0) & (MAC_LPS_MASK_10)) << 10);\
 		v = (v & (MAC_LPS_RES_WR_MASK_4)) | (((0) & (MAC_LPS_MASK_4)) << 4);\
 		v = ((v & MAC_LPS_LPIEN_WR_MASK) | ((data & MAC_LPS_LPIEN_MASK) << 16));\
@@ -5880,7 +5969,7 @@
 #define MAC_LPS_RLPIEX_UDFWR(data) do {\
 		ULONG v;\
 		MAC_LPS_RGRD(v);\
-		v = (v & (MAC_LPS_RES_WR_MASK_20)) | (((0) & (MAC_LPS_MASK_20)) << 20);\
+		v = (v & (MAC_LPS_RES_WR_MASK_22)) | (((0) & (MAC_LPS_MASK_22)) << 22);\
 		v = (v & (MAC_LPS_RES_WR_MASK_10)) | (((0) & (MAC_LPS_MASK_10)) << 10);\
 		v = (v & (MAC_LPS_RES_WR_MASK_4)) | (((0) & (MAC_LPS_MASK_4)) << 4);\
 		v = ((v & MAC_LPS_RLPIEX_WR_MASK) | ((data & MAC_LPS_RLPIEX_MASK) << 3));\
@@ -5903,7 +5992,7 @@
 #define MAC_LPS_RLPIEN_UDFWR(data) do {\
 		ULONG v;\
 		MAC_LPS_RGRD(v);\
-		v = (v & (MAC_LPS_RES_WR_MASK_20)) | (((0) & (MAC_LPS_MASK_20)) << 20);\
+		v = (v & (MAC_LPS_RES_WR_MASK_22)) | (((0) & (MAC_LPS_MASK_22)) << 22);\
 		v = (v & (MAC_LPS_RES_WR_MASK_10)) | (((0) & (MAC_LPS_MASK_10)) << 10);\
 		v = (v & (MAC_LPS_RES_WR_MASK_4)) | (((0) & (MAC_LPS_MASK_4)) << 4);\
 		v = ((v & MAC_LPS_RLPIEN_WR_MASK) | ((data & MAC_LPS_RLPIEN_MASK) << 2));\
@@ -5926,7 +6015,7 @@
 #define MAC_LPS_TLPIEX_UDFWR(data) do {\
 		ULONG v;\
 		MAC_LPS_RGRD(v);\
-		v = (v & (MAC_LPS_RES_WR_MASK_20)) | (((0) & (MAC_LPS_MASK_20)) << 20);\
+		v = (v & (MAC_LPS_RES_WR_MASK_22)) | (((0) & (MAC_LPS_MASK_22)) << 22);\
 		v = (v & (MAC_LPS_RES_WR_MASK_10)) | (((0) & (MAC_LPS_MASK_10)) << 10);\
 		v = (v & (MAC_LPS_RES_WR_MASK_4)) | (((0) & (MAC_LPS_MASK_4)) << 4);\
 		v = ((v & MAC_LPS_TLPIEX_WR_MASK) | ((data & MAC_LPS_TLPIEX_MASK) << 1));\
@@ -5949,7 +6038,7 @@
 #define MAC_LPS_TLPIEN_UDFWR(data) do {\
 		ULONG v;\
 		MAC_LPS_RGRD(v);\
-		v = (v & (MAC_LPS_RES_WR_MASK_20)) | (((0) & (MAC_LPS_MASK_20)) << 20);\
+		v = (v & (MAC_LPS_RES_WR_MASK_22)) | (((0) & (MAC_LPS_MASK_22)) << 22);\
 		v = (v & (MAC_LPS_RES_WR_MASK_10)) | (((0) & (MAC_LPS_MASK_10)) << 10);\
 		v = (v & (MAC_LPS_RES_WR_MASK_4)) | (((0) & (MAC_LPS_MASK_4)) << 4);\
 		v = ((v & MAC_LPS_TLPIEN_WR_MASK) | ((data & MAC_LPS_TLPIEN_MASK) << 0));\
