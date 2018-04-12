@@ -844,8 +844,11 @@ static int DWC_ETH_QOS_init_phy(struct net_device *dev)
 		phy_disconnect(phydev);
 		return -ENODEV;
 	}
+
+#ifndef DWC_ETH_QOS_EMULATION_PLATFORM
 	if ((phydev->phy_id == ATH8031_PHY_ID) || (phydev->phy_id == ATH8035_PHY_ID))
 		pdata->phy_intr_en = true;
+#endif
 
 	if (pdata->interface == PHY_INTERFACE_MODE_GMII) {
 		phydev->supported = PHY_DEFAULT_FEATURES;

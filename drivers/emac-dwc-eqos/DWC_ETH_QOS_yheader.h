@@ -1455,8 +1455,6 @@ struct DWC_ETH_QOS_res_data {
 	u32 emac_mem_size;
 	u32 rgmii_mem_base;
 	u32 rgmii_mem_size;
-	u32 tlmm_central_mem_base;
-	u32 tlmm_central_mem_size;
 	u32 sbd_intr;
 	u32 lpi_intr;
 	u32 io_macro_tx_mode_non_id;

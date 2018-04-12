@@ -51,12 +51,11 @@
 
 static UCHAR dev_addr[6] = {0, 0x55, 0x7b, 0xb5, 0x7d, 0xf7};
 struct DWC_ETH_QOS_res_data dwc_eth_qos_res_data = {0, };
-static struct msm_bus_scale_pdata *emac_bus_scale_vec;
+static struct msm_bus_scale_pdata *emac_bus_scale_vec = NULL;
 
 ULONG dwc_eth_qos_base_addr;
 ULONG dwc_rgmii_io_csr_base_addr;
 struct DWC_ETH_QOS_prv_data *gDWC_ETH_QOS_prv_data;
-ULONG dwc_tlmm_central_base_addr;
 struct emac_emb_smmu_cb_ctx emac_emb_smmu_ctx = {0};
 
 int ipa_offload_en = 1;
@@ -173,6 +172,7 @@ err_out:
 }
 #endif
 
+#ifndef DWC_ETH_QOS_EMULATION_PLATFORM
 static int DWC_ETH_QOS_get_bus_config(struct platform_device *pdev)
 {
 	int out_cnt, in_cnt;
@@ -198,6 +198,7 @@ static int DWC_ETH_QOS_get_bus_config(struct platform_device *pdev)
 
 	return 0;
 }
+#endif
 
 static int DWC_ETH_QOS_get_io_macro_config(struct platform_device *pdev)
 {
@@ -285,19 +286,6 @@ static int DWC_ETH_QOS_get_dts_config(struct platform_device *pdev)
 			dwc_eth_qos_res_data.rgmii_mem_base,
 			dwc_eth_qos_res_data.rgmii_mem_size);
 
-	resource = platform_get_resource_byname(pdev, IORESOURCE_MEM,
-			"tlmm-central-base");
-	if (!resource) {
-		EMACERR("get tlmm-central-base resource failed\n");
-		ret = -ENODEV;
-		goto err_out;
-	}
-	dwc_eth_qos_res_data.tlmm_central_mem_base = resource->start;
-	dwc_eth_qos_res_data.tlmm_central_mem_size = resource_size(resource);
-	EMACDBG("tlmm-central-base = 0x%x, size = 0x%x\n",
-			dwc_eth_qos_res_data.tlmm_central_mem_base,
-			dwc_eth_qos_res_data.tlmm_central_mem_size);
-
 	resource = platform_get_resource_byname(pdev, IORESOURCE_IRQ,
 			"sbd-intr");
 	if (!resource) {
@@ -321,9 +309,12 @@ static int DWC_ETH_QOS_get_dts_config(struct platform_device *pdev)
 	ret = DWC_ETH_QOS_get_io_macro_config(pdev);
 	if (ret)
 		goto err_out;
+
+#ifndef DWC_ETH_QOS_EMULATION_PLATFORM
 	ret = DWC_ETH_QOS_get_bus_config(pdev);
 	if (ret)
 		goto err_out;
+#endif
 
 	ret = DWC_ETH_QOS_get_phy_intr_config(pdev);
 	if (ret)
@@ -367,22 +358,7 @@ static int DWC_ETH_QOS_ioremap(void)
 	EMACDBG("ETH_QOS_RGMII_IO_BASE_ADDR = %#lx\n",
 			dwc_rgmii_io_csr_base_addr);
 
-	dwc_tlmm_central_base_addr = (ULONG)ioremap(
-		dwc_eth_qos_res_data.tlmm_central_mem_base,
-		dwc_eth_qos_res_data.tlmm_central_mem_size);
-	if ((void __iomem *)dwc_tlmm_central_base_addr == NULL) {
-		EMACERR("cannot map tlmm central reg memory, aborting\n");
-		ret = -EIO;
-		goto err_out_tlmm_central_map_failed;
-	}
-	EMACDBG("ETH_QOS_RGMII_IO_BASE_ADDR = %#lx\n",
-			dwc_rgmii_io_csr_base_addr);
-
 	return ret;
-
-err_out_tlmm_central_map_failed:
-		iounmap((void __iomem *)dwc_eth_qos_base_addr);
-		iounmap((void __iomem *)dwc_rgmii_io_csr_base_addr);
 
 err_out_rgmii_map_failed:
 		iounmap((void __iomem *)dwc_eth_qos_base_addr);
@@ -562,61 +538,62 @@ static int DWC_ETH_QOS_init_regulators(struct device *dev)
 {
 	int ret = 0;
 
-	dwc_eth_qos_res_data.gdsc_emac = NULL;
-	dwc_eth_qos_res_data.reg_rgmii = NULL;
-	dwc_eth_qos_res_data.reg_emac_phy = NULL;
-	dwc_eth_qos_res_data.reg_rgmii_io_pads = NULL;
+	if (of_property_read_bool(dev->of_node, "gdsc_emac-supply")) {
+		dwc_eth_qos_res_data.gdsc_emac =
+			devm_regulator_get(dev, EMAC_GDSC_EMAC_NAME);
+		if (IS_ERR(dwc_eth_qos_res_data.gdsc_emac)) {
+			EMACERR("Can not get <%s>\n", EMAC_GDSC_EMAC_NAME);
+			return PTR_ERR(dwc_eth_qos_res_data.gdsc_emac);
+		}
 
-	dwc_eth_qos_res_data.gdsc_emac =
-		devm_regulator_get(dev, EMAC_GDSC_EMAC_NAME);
-	if (IS_ERR(dwc_eth_qos_res_data.gdsc_emac)) {
-		EMACERR("Can not get <%s>\n", EMAC_GDSC_EMAC_NAME);
-		return PTR_ERR(dwc_eth_qos_res_data.gdsc_emac);
+		ret = regulator_enable(dwc_eth_qos_res_data.gdsc_emac);
+		if (ret) {
+			EMACERR("Can not enable <%s>\n", EMAC_GDSC_EMAC_NAME);
+			goto reg_error;
+		}
+		EMACDBG("Enabled <%s>\n", EMAC_GDSC_EMAC_NAME);
 	}
 
-	dwc_eth_qos_res_data.reg_rgmii =
-		devm_regulator_get(dev, EMAC_VREG_RGMII_NAME);
-	if (IS_ERR(dwc_eth_qos_res_data.reg_rgmii)) {
-		EMACERR("Can not get <%s>\n", EMAC_VREG_RGMII_NAME);
-		return PTR_ERR(dwc_eth_qos_res_data.reg_rgmii);
+	if (of_property_read_bool(dev->of_node, "vreg_rgmii-supply")) {
+		dwc_eth_qos_res_data.reg_rgmii =
+			devm_regulator_get(dev, EMAC_VREG_RGMII_NAME);
+		if (IS_ERR(dwc_eth_qos_res_data.reg_rgmii)) {
+			EMACERR("Can not get <%s>\n", EMAC_VREG_RGMII_NAME);
+			return PTR_ERR(dwc_eth_qos_res_data.reg_rgmii);
+		}
+		ret = regulator_enable(dwc_eth_qos_res_data.reg_rgmii);
+		if (ret) {
+			EMACERR("Cannot enable <%s>\n", EMAC_VREG_RGMII_NAME);
+			goto reg_error;
+		}
 	}
 
-	dwc_eth_qos_res_data.reg_emac_phy =
-		devm_regulator_get(dev, EMAC_VREG_EMAC_PHY_NAME);
-	if (IS_ERR(dwc_eth_qos_res_data.reg_emac_phy)) {
-		EMACERR("Can not get <%s>\n", EMAC_VREG_EMAC_PHY_NAME);
-		return PTR_ERR(dwc_eth_qos_res_data.reg_emac_phy);
+	if (of_property_read_bool(dev->of_node, "vreg_emac_phy-supply")) {
+		dwc_eth_qos_res_data.reg_emac_phy =
+			devm_regulator_get(dev, EMAC_VREG_EMAC_PHY_NAME);
+		if (IS_ERR(dwc_eth_qos_res_data.reg_emac_phy)) {
+			EMACERR("Cannot get <%s>\n", EMAC_VREG_EMAC_PHY_NAME);
+			return PTR_ERR(dwc_eth_qos_res_data.reg_emac_phy);
+		}
+		ret = regulator_enable(dwc_eth_qos_res_data.reg_emac_phy);
+		if (ret) {
+			EMACERR("Can not enable <%s>\n", EMAC_VREG_EMAC_PHY_NAME);
+			goto reg_error;
+		}
 	}
 
-	dwc_eth_qos_res_data.reg_rgmii_io_pads =
-		devm_regulator_get(dev, EMAC_VREG_RGMII_IO_PADS_NAME);
-	if (IS_ERR(dwc_eth_qos_res_data.reg_rgmii_io_pads)) {
-		EMACERR("Can not get <%s>\n", EMAC_VREG_RGMII_IO_PADS_NAME);
-		return PTR_ERR(dwc_eth_qos_res_data.reg_rgmii_io_pads);
-	}
-
-	ret = regulator_enable(dwc_eth_qos_res_data.gdsc_emac);
-	if (ret) {
-		EMACERR("Can not enable <%s>\n", EMAC_GDSC_EMAC_NAME);
-		goto reg_error;
-	}
-
-	ret = regulator_enable(dwc_eth_qos_res_data.reg_rgmii);
-	if (ret) {
-		EMACERR("Can not enable <%s>\n", EMAC_VREG_RGMII_NAME);
-		goto reg_error;
-	}
-
-	ret = regulator_enable(dwc_eth_qos_res_data.reg_emac_phy);
-	if (ret) {
-		EMACERR("Can not enable <%s>\n", EMAC_VREG_EMAC_PHY_NAME);
-		goto reg_error;
-	}
-
-	ret = regulator_enable(dwc_eth_qos_res_data.reg_rgmii_io_pads);
-	if (ret) {
-		EMACERR("Can not enable <%s>\n", EMAC_VREG_RGMII_IO_PADS_NAME);
-		goto reg_error;
+	if (of_property_read_bool(dev->of_node, "vreg_rgmii_io_pads-supply")) {
+		dwc_eth_qos_res_data.reg_rgmii_io_pads =
+			devm_regulator_get(dev, EMAC_VREG_RGMII_IO_PADS_NAME);
+		if (IS_ERR(dwc_eth_qos_res_data.reg_rgmii_io_pads)) {
+			EMACERR("Cannot get <%s>\n", EMAC_VREG_RGMII_IO_PADS_NAME);
+			return PTR_ERR(dwc_eth_qos_res_data.reg_rgmii_io_pads);
+		}
+		ret = regulator_enable(dwc_eth_qos_res_data.reg_rgmii_io_pads);
+		if (ret) {
+			EMACERR("Can not enable <%s>\n", EMAC_VREG_RGMII_IO_PADS_NAME);
+			goto reg_error;
+		}
 	}
 
 	return ret;
@@ -752,27 +729,6 @@ gpio_error:
 	return ret;
 }
 
-/*!
- * \brief Update TLMM direct connect gpio settings
- * \retval  none
- */
-static void set_tlmm_direct_connect_gpio(void)
-{
-	unsigned long var_gpio = 0x54;
-	unsigned int reg_index = 7;
-	unsigned int polarity = 0x0;
-	unsigned long var_gpio_cfg = 0x100;
-	EMACDBG("Enter\n");
-
-	TLMM_DIR_CONN_INTRn_CFG_GPIO_SEL_UDFWR(reg_index, var_gpio);
-	TLMM_DIR_CONN_INTRn_CFG_POLARITY_UDFWR(reg_index, polarity);
-	TLMM_GPIO_INTR_CFG84_RGWR(var_gpio_cfg);
-	EMACDBG("Set GPIO details in TLMM direct connect reg\n");
-
-	EMACDBG("Exit\n");
-	return;
-}
-
 static struct of_device_id DWC_ETH_QOS_plat_drv_match[] = {
 	{ .compatible = "qcom,emac-dwc-eqos", },
 	{ .compatible = "qcom,emac-smmu-embedded", },
@@ -823,14 +779,14 @@ static int DWC_ETH_QOS_configure_netdevice(struct platform_device *pdev)
 	desc_if = &pdata->desc_if;
 	pdata->res_data = &dwc_eth_qos_res_data;
 
-	if (emac_bus_scale_vec)
+	if (emac_bus_scale_vec) {
 		pdata->bus_scale_vec = emac_bus_scale_vec;
-
-	pdata->bus_hdl = msm_bus_scale_register_client(pdata->bus_scale_vec);
-	if (!pdata->bus_hdl) {
-		EMACERR("unable to register bus\n");
-		ret = -EIO;
-		goto err_bus_reg_failed;
+		pdata->bus_hdl = msm_bus_scale_register_client(pdata->bus_scale_vec);
+		if (!pdata->bus_hdl) {
+			EMACERR("unable to register bus\n");
+			ret = -EIO;
+			goto err_bus_reg_failed;
+		}
 	}
 
 	platform_set_drvdata(pdev, dev);
@@ -1015,10 +971,11 @@ static int DWC_ETH_QOS_configure_netdevice(struct platform_device *pdev)
 	platform_set_drvdata(pdev, NULL);
 
  err_bus_reg_failed:
-	if (pdata->bus_hdl)
-		 msm_bus_scale_unregister_client(pdata->bus_hdl);
-	emac_bus_scale_vec = NULL;
-	pdata->bus_scale_vec = NULL;
+	if (pdata->bus_hdl) {
+		msm_bus_scale_unregister_client(pdata->bus_hdl);
+		emac_bus_scale_vec = NULL;
+		pdata->bus_scale_vec = NULL;
+	}
 
 	gDWC_ETH_QOS_prv_data = NULL;
 	atomic_notifier_chain_unregister(&panic_notifier_list,
@@ -1225,7 +1182,6 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
  err_out_power_failed:
 	iounmap((void __iomem *)dwc_eth_qos_base_addr);
 	iounmap((void __iomem *)dwc_rgmii_io_csr_base_addr);
-	iounmap((void __iomem *)dwc_tlmm_central_base_addr);
 
  err_out_map_failed:
 	EMACERR("<-- DWC_ETH_QOS_probe\n");
