@@ -246,7 +246,6 @@ err_out:
 static int DWC_ETH_QOS_get_phy_intr_config(struct platform_device *pdev)
 {
 	int ret = 0;
-	struct resource *resource = NULL;
 	EMACDBG("Enter\n");
 
 	dwc_eth_qos_res_data.phy_intr = platform_get_irq_byname(pdev, "phy-intr");

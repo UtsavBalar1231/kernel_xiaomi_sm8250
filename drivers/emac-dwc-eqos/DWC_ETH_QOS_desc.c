@@ -554,7 +554,7 @@ static INT allocate_buffer_and_desc(struct DWC_ETH_QOS_prv_data *pdata)
 			goto err_out_tx_desc;
 		}
 		EMACDBG("Tx Queue(%d) desc base dma address: %p\n",
-			qinx, GET_TX_DESC_DMA_ADDR(qinx, 0));
+			qinx, (void*)GET_TX_DESC_DMA_ADDR(qinx, 0));
 	}
 
 	for (qinx = 0; qinx < DWC_ETH_QOS_TX_QUEUE_CNT; qinx++) {
@@ -580,7 +580,7 @@ static INT allocate_buffer_and_desc(struct DWC_ETH_QOS_prv_data *pdata)
 			goto rx_alloc_failure;
 		}
 		EMACDBG("Rx Queue(%d) desc base dma address: %p\n",
-			qinx, GET_RX_DESC_DMA_ADDR(qinx, 0));
+			qinx, (void*)GET_RX_DESC_DMA_ADDR(qinx, 0));
 	}
 
 	for (qinx = 0; qinx < DWC_ETH_QOS_RX_QUEUE_CNT; qinx++) {
@@ -1230,7 +1230,14 @@ static int DWC_ETH_QOS_get_skb_hdr(struct sk_buff *skb, void **iph,
  */
 static unsigned int tcp_udp_hdrlen(struct sk_buff *skb)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
+	struct iphdr *network_header;
+	network_header = (struct iphdr *)skb_network_header(skb);
+
+	if (network_header->protocol == IPPROTO_UDP)
+#else
 	if (skb_shinfo(skb)->gso_type & (SKB_GSO_UDP))
+#endif
 		return sizeof(struct udphdr);
 	else
 		return tcp_hdrlen(skb);
@@ -1259,6 +1266,9 @@ static int DWC_ETH_QOS_handle_tso(struct net_device *dev,
 	struct DWC_ETH_QOS_prv_data *pdata = netdev_priv(dev);
 	struct s_tx_pkt_features *tx_pkt_features = GET_TX_PKT_FEATURES_PTR;
 	int ret = 1;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
+	struct iphdr *network_header;
+#endif
 
 	DBGPR("-->DWC_ETH_QOS_handle_tso\n");
 
@@ -1280,7 +1290,12 @@ static int DWC_ETH_QOS_handle_tso(struct net_device *dev,
 		skb_transport_offset(skb) + tcp_udp_hdrlen(skb);
 	tx_pkt_features->tcp_udp_hdr_len = tcp_udp_hdrlen(skb);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
+	network_header = (struct iphdr *)skb_network_header(skb);
+	if (network_header->protocol == IPPROTO_UDP) {
+#else
 	if (skb_shinfo(skb)->gso_type & (SKB_GSO_UDP)) {
+#endif
 		tx_pkt_features->mss =
 			skb_shinfo(skb)->gso_size - sizeof(struct udphdr);
 	} else {

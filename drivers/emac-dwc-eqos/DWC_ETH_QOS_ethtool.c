@@ -531,6 +531,33 @@ void DWC_ETH_QOS_configure_flow_ctrl(struct DWC_ETH_QOS_prv_data *pdata)
 	DBGPR("<--DWC_ETH_QOS_configure_flow_ctrl\n");
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
+void convert_kset_to_legacy_cmd(const struct ethtool_link_ksettings *new_cmd,
+			struct ethtool_cmd *legacy)
+{
+	bool link_mode = false;
+	//const unsigned long supported = new_cmd->link_modes.supported;
+
+	legacy->autoneg = new_cmd->base.autoneg;
+	legacy->duplex = new_cmd->base.duplex;
+	legacy->port = new_cmd->base.port;
+	legacy->phy_address = new_cmd->base.phy_address;
+	legacy->transceiver = new_cmd->base.transceiver;
+	legacy->eth_tp_mdix_ctrl = new_cmd->base.eth_tp_mdix_ctrl;
+
+	legacy->advertising = (__u64)new_cmd->link_modes.advertising;
+	legacy->lp_advertising = (__u64)new_cmd->link_modes.lp_advertising;
+
+	ethtool_cmd_speed_set(legacy, new_cmd->base.speed);
+	link_mode = ethtool_convert_link_mode_to_legacy_u32(&legacy->supported,
+				     new_cmd->link_modes.supported);
+	if (!link_mode)
+		DBGPR("unable to convert link mode to legacy \n");
+
+	return;
+}
+#endif
+
 /*!
  * \details This function is invoked by kernel when user request to get the
  * various device settings through standard ethtool command. This function
@@ -549,6 +576,10 @@ void DWC_ETH_QOS_configure_flow_ctrl(struct DWC_ETH_QOS_prv_data *pdata)
 static int DWC_ETH_QOS_getsettings(struct net_device *dev,
 				   struct ethtool_cmd *cmd)
 {
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
+	struct ethtool_link_ksettings new_cmd;
+#endif
 	struct DWC_ETH_QOS_prv_data *pdata = netdev_priv(dev);
 	struct hw_if_struct *hw_if = &pdata->hw_if;
 	unsigned int pause, duplex;
@@ -631,7 +662,12 @@ static int DWC_ETH_QOS_getsettings(struct net_device *dev,
 		cmd->transceiver = XCVR_EXTERNAL;
 
 		mutex_lock(&pdata->mlock);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
+		phy_ethtool_ksettings_get(pdata->phydev, &new_cmd);
+		convert_kset_to_legacy_cmd(&new_cmd, cmd);
+#else
 		ret = phy_ethtool_gset(pdata->phydev, cmd);
+#endif
 		mutex_unlock(&pdata->mlock);
 	}
 
