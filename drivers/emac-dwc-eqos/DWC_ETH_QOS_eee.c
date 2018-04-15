@@ -74,6 +74,9 @@
 
 #define CL45_CLK_STOP_EN	0x400 /* Enable xMII Clock Stop */
 
+#define AR8035_SMART_EEE_CTRL_3 0x805D
+#define AR8035_SMART_EEE_EN (1<<8)
+
 void DWC_ETH_QOS_enable_eee_mode(struct DWC_ETH_QOS_prv_data *pdata)
 {
 	struct DWC_ETH_QOS_tx_wrapper_descriptor *tx_desc_data = NULL;
@@ -366,6 +369,19 @@ static int DWC_ETH_QOS_phy_init_eee(struct phy_device *phydev,
 			DWC_ETH_QOS_phy_write_mmd_indirect(
 				phydev->mdio.bus, CL45_CLK_STOP_EN_REG, MDIO_MMD_PCS,
 				phydev->mdio.addr, val);
+		}
+
+		/* Disable smart EEE feature in AR8035*/
+		if (phydev->phy_id == ATH8035_PHY_ID) {
+			u32 smart_eee = DWC_ETH_QOS_phy_read_mmd_indirect(
+			   phydev->mdio.bus, AR8035_SMART_EEE_CTRL_3,
+			   MDIO_MMD_PCS, phydev->mdio.addr);
+
+			smart_eee &= ~AR8035_SMART_EEE_EN;
+
+			DWC_ETH_QOS_phy_write_mmd_indirect(
+			   phydev->mdio.bus, AR8035_SMART_EEE_CTRL_3,
+			   MDIO_MMD_PCS,phydev->mdio.addr, smart_eee);
 		}
 
 		ret = 0; /* EEE supported */
