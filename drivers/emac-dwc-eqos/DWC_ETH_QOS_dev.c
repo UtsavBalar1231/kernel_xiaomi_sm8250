@@ -4238,9 +4238,9 @@ static void configure_avb_ip_rx_filtering(void)
 	MAC_RQC2R_PSRQ3_UDFWR(0x0C);
 
 	/* Set prority zero to route all vlan tagged
-	 * BE/IP traffic to queue one
+	 * BE/IP traffic to queue 0
 	 */
-	MAC_RQC2R_PSRQ1_UDFWR(0x1);
+	MAC_RQC2R_PSRQ0_UDFWR(0x1);
 
 	/* Strict priority arbitration algorithm set on Rx side */
 	MTL_OMR_RAA_UDFWR(0x0);
