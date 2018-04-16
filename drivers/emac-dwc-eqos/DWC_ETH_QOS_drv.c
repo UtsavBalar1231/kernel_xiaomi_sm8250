@@ -1877,33 +1877,8 @@ static int DWC_ETH_QOS_open(struct net_device *dev)
 #ifndef DWC_ETH_QOS_CONFIG_PGTEST
 	netif_tx_start_all_queues(dev);
 
-	if (pdata->ipa_enabled) {
-		/* Configure IPA Related Stuff */
-		ret = DWC_ETH_QOS_ipa_ready(pdata);
-		if (pdata->prv_ipa.ipa_ready) {
-			EMACDBG("%s:%d ipa ready\n", __func__, __LINE__);
-			ret = DWC_ETH_QOS_ipa_offload_init(pdata);
-			if (!ret) {
-				EMACDBG("IPA Offload Initialized Successfully \n");
-				pdata->prv_ipa.ipa_offload_init = true;
-			}
-		}
-		else {
-			EMACINFO("%s:%d ipa not ready\n", __func__, __LINE__);
-		}
-
-		/* Configure IPA Related Stuff */
-		if (pdata->prv_ipa.ipa_uc_ready) {
-			EMACINFO("%s:%d ipa uC ready\n", __func__, __LINE__);
-			ret = DWC_ETH_QOS_enable_ipa_offload(pdata);
-			if (ret) {
-				EMACERR("%s:%d unable to enable ipa offload\n",
-					   __func__, __LINE__);
-				goto err_out_desc_buf_alloc_failed;
-			}
-		}
-		else
-			EMACINFO("%s:%d ipa uC not ready\n", __func__, __LINE__);
+	if (pdata->ipa_enabled && DWC_ETH_QOS_is_phy_link_up(pdata)) {
+		DWC_ETH_QOS_ipa_offload_event_handler(pdata, EV_DEV_OPEN);
 	}
 #else
 	netif_tx_disable(dev);
@@ -1960,10 +1935,7 @@ static int DWC_ETH_QOS_close(struct net_device *dev)
 	DWC_ETH_QOS_all_ch_napi_disable(pdata);
 
 	if (pdata->ipa_enabled) {
-		ipa_uc_offload_dereg_rdyCB(IPA_UC_NTN);
-		ret = DWC_ETH_QOS_disable_ipa_offload(pdata);
-		if (ret)
-			return ret;
+		DWC_ETH_QOS_ipa_offload_event_handler(pdata, EV_DEV_CLOSE);
 	}
 #endif /* end of DWC_ETH_QOS_CONFIG_PGTEST */
 
@@ -5728,7 +5700,7 @@ static int DWC_ETH_QOS_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 		break;
 
 	case DWC_ETH_QOS_PRV_IOCTL_IPA:
-		if ( !pdata->prv_ipa.ipa_ready || !pdata->prv_ipa.ipa_uc_ready ) {
+		if (!pdata->prv_ipa.ipa_uc_ready ) {
 			ret = -EAGAIN;
 			EMACINFO("IPA or IPA uc is not ready \n");
 			break;

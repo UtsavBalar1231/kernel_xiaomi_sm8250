@@ -392,6 +392,36 @@ err_out_map_failed:
 	return ret;
 }
 
+
+void DWC_ETH_QOS_scale_clks(struct DWC_ETH_QOS_prv_data *pdata, int speed)
+{
+	u32 vote_idx = VOTE_IDX_0MBPS;
+
+	EMACDBG("Enter\n");
+
+	if (pdata->bus_hdl) {
+		switch (speed) {
+		case SPEED_1000:
+			vote_idx = VOTE_IDX_1000MBPS;
+			break;
+		case SPEED_100:
+			vote_idx = VOTE_IDX_100MBPS;
+			break;
+		case SPEED_10:
+			vote_idx = VOTE_IDX_10MBPS;
+			break;
+		default:
+			vote_idx = VOTE_IDX_0MBPS;
+			break;
+		}
+
+		if (msm_bus_scale_client_update_request(
+			  pdata->bus_hdl, vote_idx)) WARN_ON(1);
+	}
+
+	EMACDBG("Exit\n");
+}
+
 void DWC_ETH_QOS_disable_clks(void)
 {
 	if (dwc_eth_qos_res_data.axi_clk)
@@ -837,6 +867,7 @@ static int DWC_ETH_QOS_configure_netdevice(struct platform_device *pdev)
 	if (pdata->ipa_enabled) {
 		pdata->prv_ipa.ipa_ver = ipa_get_hw_type();
 		device_init_wakeup(&pdev->dev, 1);
+		mutex_init(&pdata->prv_ipa.ipa_lock);
 	}
 
 	DWC_ETH_QOS_get_all_hw_features(pdata);
@@ -1368,7 +1399,11 @@ static INT DWC_ETH_QOS_suspend(struct platform_device *pdev, pm_message_t state)
 		pmt_flags |= DWC_ETH_QOS_EMAC_INTR_WAKEUP;
 
 	ret = DWC_ETH_QOS_powerdown(dev, pmt_flags, DWC_ETH_QOS_DRIVER_CONTEXT);
+
 	DBGPR("<--DWC_ETH_QOS_suspend\n");
+
+	if (pdata->ipa_enabled)
+		DWC_ETH_QOS_ipa_offload_event_handler(pdata, EV_DPM_SUSPEND);
 
 	return ret;
 }
@@ -1408,9 +1443,12 @@ static INT DWC_ETH_QOS_resume(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
+	DWC_ETH_QOS_scale_clks(pdata, pdata->speed);
+
+	if (pdata->ipa_enabled)
+		DWC_ETH_QOS_ipa_offload_event_handler(pdata, EV_DPM_RESUME);
+
 	ret = DWC_ETH_QOS_powerup(dev, DWC_ETH_QOS_DRIVER_CONTEXT);
-	if (pdata->prv_ipa.ipa_offload_susp)
-		DWC_ETH_QOS_ipa_offload_resume(pdata);
 
 	DBGPR("<--DWC_ETH_QOS_resume\n");
 

@@ -616,9 +616,10 @@
 #define EMAC_GPIO_PHY_INTR_REDIRECT_NAME "qcom,phy-intr-redirect"
 #define EMAC_GPIO_PHY_RESET_NAME "qcom,phy-reset"
 
-#define VOTE_IDX_10MBPS 0
-#define VOTE_IDX_100MBPS 1
-#define VOTE_IDX_1000MBPS 2
+#define VOTE_IDX_0MBPS 0
+#define VOTE_IDX_10MBPS 1
+#define VOTE_IDX_100MBPS 2
+#define VOTE_IDX_1000MBPS 3
 
 /* AHB clock vote is same for 1000/100Mbps and set to 133MHz */
  #define CLOCK_AHB_MHZ 133
@@ -1490,18 +1491,28 @@ struct DWC_ETH_QOS_prv_ipa_data {
 	struct dentry *debugfs_dir;
 
 	/* IPA state variables */
-	bool ipa_ready;
+	/* State of EMAC HW initilization */
+	bool emac_dev_ready;
+	/* State of IPA and IPA UC readiness */
 	bool ipa_uc_ready;
+	/* State of IPA Offload intf registration with IPA driver */
 	bool ipa_offload_init;
+	/* State of IPA pipes connection */
 	bool ipa_offload_conn;
+	/* State of debugfs creation */
 	bool ipa_debugfs_exists;
+	/* State of IPA offload suspended by user */
 	bool ipa_offload_susp;
+	/* State of IPA offload enablement from PHY link event*/
+	bool ipa_offload_link_down;
 
 	/* Dev state */
 	struct work_struct ntn_ipa_rdy_work;
 	UINT ipa_ver;
 	bool vlan_enable;
 	unsigned short vlan_id;
+
+	struct mutex ipa_lock;
 };
 
 struct DWC_ETH_QOS_prv_data {
@@ -1511,6 +1522,7 @@ struct DWC_ETH_QOS_prv_data {
 	bool ipa_enabled;
 	struct DWC_ETH_QOS_res_data *res_data;
 	bool phy_intr_en;
+	bool always_on_phy;
 
 	struct msm_bus_scale_pdata *bus_scale_vec;
 	uint32_t bus_hdl;
@@ -1764,6 +1776,8 @@ void DWC_ETH_QOS_get_pdata(struct DWC_ETH_QOS_prv_data *pdata);
 int create_debug_files(void);
 void remove_debug_files(void);
 
+void DWC_ETH_QOS_scale_clks(struct DWC_ETH_QOS_prv_data *pdata, int speed);
+bool DWC_ETH_QOS_is_phy_link_up(struct DWC_ETH_QOS_prv_data *pdata);
 int DWC_ETH_QOS_mdio_register(struct net_device *dev);
 void DWC_ETH_QOS_mdio_unregister(struct net_device *dev);
 INT DWC_ETH_QOS_mdio_read_direct(struct DWC_ETH_QOS_prv_data *pdata,
