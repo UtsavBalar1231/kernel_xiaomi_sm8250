@@ -322,9 +322,10 @@
 /* Driver PMT macros */
 #define DWC_ETH_QOS_DRIVER_CONTEXT 1
 #define DWC_ETH_QOS_IOCTL_CONTEXT 2
-#define DWC_ETH_QOS_MAGIC_WAKEUP	BIT(0)
-#define DWC_ETH_QOS_REMOTE_WAKEUP	BIT(1)
-#define DWC_ETH_QOS_PHY_INTR_WAKEUP	BIT(2)
+#define DWC_ETH_QOS_MAGIC_WAKEUP		BIT(0)
+#define DWC_ETH_QOS_REMOTE_WAKEUP		BIT(1)
+#define DWC_ETH_QOS_PHY_INTR_WAKEUP		BIT(2)
+#define DWC_ETH_QOS_EMAC_INTR_WAKEUP	BIT(3)
 #define DWC_ETH_QOS_POWER_DOWN_TYPE(x)	\
 		((x->power_down_type & DWC_ETH_QOS_MAGIC_WAKEUP) ? \
 		"Magic packet" : \
@@ -332,7 +333,9 @@
 		"Remote wakeup packet" : \
 		((x->power_down_type & DWC_ETH_QOS_PHY_INTR_WAKEUP) ? \
 		"WoL or Link Status interrupt from PHY" : \
-		"<error>")))
+		((x->power_down_type & DWC_ETH_QOS_EMAC_INTR_WAKEUP) ? \
+		"EMAC interrupt" : \
+		"<error>"))))
 
 #define DWC_ETH_QOS_MAC_ADDR_LEN 6
 #ifndef DWC_ETH_QOS_ENABLE_VLAN_TAG

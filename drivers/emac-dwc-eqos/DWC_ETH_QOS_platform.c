@@ -867,8 +867,10 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 #endif
 
 	EMACINFO("EMAC IPA enabled: %d\n", pdata->ipa_enabled);
-	if (pdata->ipa_enabled)
+	if (pdata->ipa_enabled) {
 		pdata->prv_ipa.ipa_ver = ipa_get_hw_type();
+		device_init_wakeup(&pdev->dev, 1);
+	}
 
 	DWC_ETH_QOS_get_all_hw_features(pdata);
 	DWC_ETH_QOS_print_all_hw_features(pdata);
@@ -1200,6 +1202,9 @@ static INT DWC_ETH_QOS_suspend(struct platform_device *pdev, pm_message_t state)
 
 	if (pdata->phy_intr_en && pdata->phy_irq && pdata->phy_wol_wolopts)
 		pmt_flags |= DWC_ETH_QOS_PHY_INTR_WAKEUP;
+
+	if (pdata->ipa_enabled && !pdata->prv_ipa.ipa_offload_susp)
+		pmt_flags |= DWC_ETH_QOS_EMAC_INTR_WAKEUP;
 
 	ret = DWC_ETH_QOS_powerdown(dev, pmt_flags, DWC_ETH_QOS_DRIVER_CONTEXT);
 	DBGPR("<--DWC_ETH_QOS_suspend\n");

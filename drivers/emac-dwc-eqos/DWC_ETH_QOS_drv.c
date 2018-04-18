@@ -6034,6 +6034,8 @@ INT DWC_ETH_QOS_powerdown(struct net_device *dev, UINT wakeup_type,
 		hw_if->enable_magic_pmt();
 	if (wakeup_type & DWC_ETH_QOS_PHY_INTR_WAKEUP)
 		enable_irq_wake(pdata->phy_irq);
+	if (wakeup_type & DWC_ETH_QOS_EMAC_INTR_WAKEUP)
+		enable_irq_wake(pdata->irq_number);
 
 	pdata->power_down_type = wakeup_type;
 
@@ -6094,8 +6096,15 @@ INT DWC_ETH_QOS_powerup(struct net_device *dev, UINT caller)
 		pdata->power_down_type &= ~DWC_ETH_QOS_REMOTE_WAKEUP;
 	}
 
-	if (pdata->power_down_type & DWC_ETH_QOS_PHY_INTR_WAKEUP)
+	if (pdata->power_down_type & DWC_ETH_QOS_PHY_INTR_WAKEUP) {
 		disable_irq_wake(pdata->phy_irq);
+		pdata->power_down_type &= ~DWC_ETH_QOS_PHY_INTR_WAKEUP;
+	}
+
+	if (pdata->power_down_type & DWC_ETH_QOS_EMAC_INTR_WAKEUP) {
+		disable_irq_wake(pdata->irq_number);
+		pdata->power_down_type &= ~DWC_ETH_QOS_EMAC_INTR_WAKEUP;
+	}
 
 	pdata->power_down = 0;
 
