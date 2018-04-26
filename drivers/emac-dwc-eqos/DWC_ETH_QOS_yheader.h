@@ -1933,6 +1933,8 @@ void DWC_ETH_QOS_set_clk_and_bus_config(struct DWC_ETH_QOS_prv_data *pdata, int 
 #define EMAC_RGMII_RXD3 "dev-emac-rgmii_rxd3_state"
 #define EMAC_RGMII_RXC "dev-emac-rgmii_rxc_state"
 #define EMAC_RGMII_RX_CTL "dev-emac-rgmii_rx_ctl_state"
+#define EMAC_PHY_RESET "dev-emac-phy_reset_state"
+#define EMAC_PHY_INTR "dev-emac-phy_intr"
 
 #ifdef PER_CH_INT
 void DWC_ETH_QOS_handle_DMA_Int(struct DWC_ETH_QOS_prv_data *pdata, int chinx, bool);
