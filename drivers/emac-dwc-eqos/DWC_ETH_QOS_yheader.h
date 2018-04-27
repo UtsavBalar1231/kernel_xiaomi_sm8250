@@ -562,21 +562,21 @@
 #define E_DMA_SR_FBE       10
 #define S_MAC_ISR_PMTIS     11
 
-#define QTAG_PROTO_OR_ETH_TYPE_OFST 12
+#define QTAG_VLAN_ETH_TYPE_OFFSET 16
 #define QTAG_UCP_FIELD_OFFSET 14
-#define QTAG_ETH_TYPE_OFFSET 16
+#define QTAG_ETH_TYPE_OFFSET 12
 
 #define GET_ETH_TYPE(buf) \
-		htons(((buf[QTAG_ETH_TYPE_OFFSET+1]<<8) | \
-			   buf[QTAG_ETH_TYPE_OFFSET]));
-
-#define GET_QTAG_TYPE(buf) \
-		htons(((buf[QTAG_PROTO_OR_ETH_TYPE_OFST + 1]<<8) \
-			   | buf[QTAG_PROTO_OR_ETH_TYPE_OFST]));
+               ((((u16)buf[QTAG_ETH_TYPE_OFFSET]<<8) | \
+			   buf[QTAG_ETH_TYPE_OFFSET+1]) == ETH_P_8021Q)?\
+		(((u16)buf[QTAG_VLAN_ETH_TYPE_OFFSET]<<8) | \
+			   buf[QTAG_VLAN_ETH_TYPE_OFFSET+1]): \
+		(((u16)buf[QTAG_ETH_TYPE_OFFSET]<<8) | \
+			   buf[QTAG_ETH_TYPE_OFFSET+1]);
 
 #define GET_VLAN_UCP(buf) \
-		htons(((buf[QTAG_UCP_FIELD_OFFSET + 1]<<8) \
-			   | buf[QTAG_UCP_FIELD_OFFSET]));
+		(((u16)buf[QTAG_UCP_FIELD_OFFSET]<<8) \
+			   | buf[QTAG_UCP_FIELD_OFFSET+1]);
 
 #define VLAN_TAG_UCP_SHIFT 13
 #define CLASS_A_TRAFFIC_UCP 3

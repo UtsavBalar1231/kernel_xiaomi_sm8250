@@ -5798,30 +5798,25 @@ u16	DWC_ETH_QOS_select_queue(struct net_device *dev,
 
    EMACDBG("\n");
 
-	/* Retrieve Q-Tag tag protocol type */
-	qtag_type = GET_QTAG_TYPE(skb->data);
+	/* Retrieve ETH type */
+	eth_type = GET_ETH_TYPE(skb->data);
 
-	/* check for vlan tag protocol id*/
-	if(qtag_type == ETH_P_8021Q)
+	if(eth_type == ETH_P_TSN)
 	{
-		eth_type = GET_ETH_TYPE(skb->data);
-		if(eth_type == ETH_P_TSN)
-		{
-			/* Read VLAN priority field from skb->data */
-			priority = GET_VLAN_UCP(skb->data);
+		/* Read VLAN priority field from skb->data */
+		priority = GET_VLAN_UCP(skb->data);
 
-			priority >>= VLAN_TAG_UCP_SHIFT;
-			if(priority == CLASS_A_TRAFFIC_UCP)
-				txqueue_select = CLASS_A_TRAFFIC_TX_CHANNEL;
-			else if(priority == CLASS_B_TRAFFIC_UCP)
-				txqueue_select = CLASS_B_TRAFFIC_TX_CHANNEL;
-			else
-				txqueue_select = ALL_OTHER_TRAFFIC_TX_CHANNEL;
-		} else /* VLAN tagged IP packet */
+		priority >>= VLAN_TAG_UCP_SHIFT;
+		if(priority == CLASS_A_TRAFFIC_UCP)
+			txqueue_select = CLASS_A_TRAFFIC_TX_CHANNEL;
+		else if(priority == CLASS_B_TRAFFIC_UCP)
+			txqueue_select = CLASS_B_TRAFFIC_TX_CHANNEL;
+		else
 			txqueue_select = ALL_OTHER_TRAFFIC_TX_CHANNEL;
 	}
-	else if (qtag_type == ETH_P_1588) /* check for PTP etherent type */
+	else /* VLAN tagged IP packet or any other non vlan packets (PTP)*/
 		txqueue_select = ALL_OTHER_TRAFFIC_TX_CHANNEL;
+
 
 	EMACDBG("txqueue-select:%d\n", txqueue_select);
 
