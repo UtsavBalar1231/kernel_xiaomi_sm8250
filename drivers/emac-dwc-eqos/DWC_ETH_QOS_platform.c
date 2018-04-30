@@ -1015,18 +1015,18 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	desc_if->free_queue_struct(pdata);
 
  err_out_q_alloc_failed:
-	free_netdev(dev);
 	platform_set_drvdata(pdev, NULL);
 
  err_bus_reg_failed:
-	 if (pdata->bus_hdl)
+	if (pdata->bus_hdl)
 		 msm_bus_scale_unregister_client(pdata->bus_hdl);
-	 emac_bus_scale_vec = NULL;
-	 pdata->bus_scale_vec = NULL;
+	emac_bus_scale_vec = NULL;
+	pdata->bus_scale_vec = NULL;
 
 	gDWC_ETH_QOS_prv_data = NULL;
 	atomic_notifier_chain_unregister(&panic_notifier_list,
 			&DWC_ETH_QOS_panic_blk);
+	free_netdev(dev);
 
  err_out_dev_failed:
 	 DWC_ETH_QOS_disable_clks();
