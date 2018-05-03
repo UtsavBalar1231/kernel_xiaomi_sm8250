@@ -28,11 +28,9 @@
 int DWC_ETH_QOS_rgmii_io_macro_sdcdc_init(struct DWC_ETH_QOS_prv_data *pdata)
 {
 	int reg_val = 0;
-#if 0
 	ULONG RETRYCOUNT = 1000;
 	ULONG current_cnt = 0;
 	volatile ULONG VARDLL_LOCK;
-#endif
 	EMACDBG("Enter\n");
 
 	/* Write 1 to DLL_RST bit of SDCC_HC_REG_DLL_CONFIG register */
@@ -63,20 +61,21 @@ int DWC_ETH_QOS_rgmii_io_macro_sdcdc_init(struct DWC_ETH_QOS_prv_data *pdata)
 	reg_val |= (0x4UL<<24);
 	SDCC_USR_CTL_RGWR(reg_val);
 
-#if 0
 	/* Wait until DLL_LOCK bit of SDC4_STATUS register is 1 */
 	while (1) {
 		if (current_cnt > RETRYCOUNT)
 			return -Y_FAILURE;
 
 		SDC4_STATUS_DLL_LOCK_STS_UDFRD(VARDLL_LOCK);
-		if (VARDLL_LOCK == 1)
+		if (VARDLL_LOCK == 1) {
+			EMACDBG("DLL lock status bit set. DLL init successful\n");
 			break;
+		}
 
 		current_cnt++;
 		mdelay(1);
 	}
-#endif
+
 	EMACDBG("Exit\n");
 	return Y_SUCCESS;
 }
@@ -279,13 +278,8 @@ int DWC_ETH_QOS_rgmii_io_macro_init(struct DWC_ETH_QOS_prv_data *pdata)
 				SDCC_HC_REG_DDR_CONFIG_RGRD(data);
 				data |= (1 << 31);
 				SDCC_HC_REG_DDR_CONFIG_RGWR(data);
-
-				SDCC_HC_EXT_PRG_RCLK_DLY_CODE_UDFWR(0x5);
-				SDCC_HC_EXT_PRG_RCLK_DLY_UDFWR(0x3f);
-				SDCC_HC_EXT_PRG_RCLK_DLY_EN_UDFWR(0x1);
 				RGMII_LOOPBACK_EN_UDFWR(0x0);
 			}
-			pdata->rgmii_clk_rate = RGMII_1000_NOM_CLK_FREQ;
 			break;
 
 		case SPEED_100:
@@ -306,8 +300,6 @@ int DWC_ETH_QOS_rgmii_io_macro_init(struct DWC_ETH_QOS_prv_data *pdata)
 				/* Rx Path */
 				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x0);
 				RGMII_LOOPBACK_EN_UDFWR(0x0);
-				pdata->rgmii_clk_rate =
-					RGMII_NON_ID_MODE_100_LOW_SVS_CLK_FREQ;
 			} else{
 				RGMII_DDR_MODE_UDFWR(0x1);
 				RGMII_BYPASS_TX_ID_EN_UDFWR(0x1);
@@ -323,7 +315,6 @@ int DWC_ETH_QOS_rgmii_io_macro_init(struct DWC_ETH_QOS_prv_data *pdata)
 				SDCC_HC_EXT_PRG_RCLK_DLY_UDFWR(0x3f);
 				SDCC_HC_EXT_PRG_RCLK_DLY_EN_UDFWR(0x1);
 				RGMII_LOOPBACK_EN_UDFWR(0x0);
-				pdata->rgmii_clk_rate = RGMII_ID_MODE_100_LOW_SVS_CLK_FREQ;
 			}
 			break;
 
@@ -344,8 +335,6 @@ int DWC_ETH_QOS_rgmii_io_macro_init(struct DWC_ETH_QOS_prv_data *pdata)
 				/* Rx Path */
 				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x0);
 				RGMII_LOOPBACK_EN_UDFWR(0x0);
-				pdata->rgmii_clk_rate =
-					RGMII_NON_ID_MODE_10_LOW_SVS_CLK_FREQ;
 			} else{
 				RGMII_DDR_MODE_UDFWR(0x1);
 				RGMII_BYPASS_TX_ID_EN_UDFWR(0x1);
@@ -362,8 +351,6 @@ int DWC_ETH_QOS_rgmii_io_macro_init(struct DWC_ETH_QOS_prv_data *pdata)
 				SDCC_HC_EXT_PRG_RCLK_DLY_UDFWR(0x3f);
 				SDCC_HC_EXT_PRG_RCLK_DLY_EN_UDFWR(0x1);
 				RGMII_LOOPBACK_EN_UDFWR(0x0);
-				pdata->rgmii_clk_rate =
-					RGMII_ID_MODE_10_LOW_SVS_CLK_FREQ;
 			}
 			break;
 
@@ -390,15 +377,6 @@ int DWC_ETH_QOS_rgmii_io_macro_init(struct DWC_ETH_QOS_prv_data *pdata)
 		RGMII_CONFIG_2_RERVED_CONFIG_16_EN_UDFWR(0x0);
 		RGMII_LOOPBACK_EN_UDFWR(0x1);
 
-		switch (pdata->speed) {
-		case SPEED_100:
-			pdata->rgmii_clk_rate = RMII_100_LOW_SVS_CLK_FREQ;
-			break;
-
-		case SPEED_10:
-			pdata->rgmii_clk_rate = RMII_10_LOW_SVS_CLK_FREQ;
-			break;
-		}
 		break;
 
 	case MII_MODE:
@@ -412,25 +390,8 @@ int DWC_ETH_QOS_rgmii_io_macro_init(struct DWC_ETH_QOS_prv_data *pdata)
 		RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x0);
 		RGMII_CONFIG_2_RERVED_CONFIG_16_EN_UDFWR(0x1);
 
-		switch (pdata->speed) {
-		case SPEED_100:
-			pdata->rgmii_clk_rate = MII_100_LOW_SVS_CLK_FREQ;
-			break;
-		case SPEED_10:
-			pdata->rgmii_clk_rate = MII_10_LOW_SVS_CLK_FREQ;
-			break;
-		}
 		break;
 	}
-
-	if (pdata->bus_hdl) {
-		if (msm_bus_scale_client_update_request(
-			  pdata->bus_hdl, pdata->vote_idx))
-			WARN_ON(1);
-	}
-
-	if (pdata->res_data->rgmii_clk)
-		clk_set_rate(pdata->res_data->rgmii_clk, pdata->rgmii_clk_rate);
 
 	EMACDBG("Exit\n");
 	return Y_SUCCESS;

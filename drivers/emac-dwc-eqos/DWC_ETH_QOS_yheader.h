@@ -1802,9 +1802,6 @@ int DWC_ETH_QOS_rgmii_io_macro_init(struct DWC_ETH_QOS_prv_data *);
 int DWC_ETH_QOS_sdcc_set_bypass_mode(void);
 int DWC_ETH_QOS_rgmii_io_macro_dll_reset(void);
 void dump_rgmii_io_macro_registers(void);
-static int DWC_ETH_QOS_config_link(struct DWC_ETH_QOS_prv_data* pdata);
-static inline int DWC_ETH_QOS_configure_io_macro_dll_settings(
-			struct DWC_ETH_QOS_prv_data *pdata);
 
 /* POR values for IO macro and DLL registers */
 #define EMAC_RGMII_IO_MACRO_CONFIG_POR 0x40C01343
