@@ -59,6 +59,8 @@ struct DWC_ETH_QOS_prv_data *gDWC_ETH_QOS_prv_data;
 struct emac_emb_smmu_cb_ctx emac_emb_smmu_ctx = {0};
 
 #define INVALID_MODULE_PARAM_VAL 0xFFFFFFFF
+static struct qmp_pkt pkt;
+static char qmp_buf[MAX_QMP_MSG_SIZE + 1] = {0};
 
 int ipa_offload_en = 1;
 module_param(ipa_offload_en, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
@@ -778,6 +780,74 @@ err_out_map_failed:
 	return ret;
 }
 
+int DWC_ETH_QOS_qmp_mailbox_init(struct DWC_ETH_QOS_prv_data *pdata)
+{
+	pdata->qmp_mbox_client = devm_kzalloc(
+	   &pdata->pdev->dev, sizeof(*pdata->qmp_mbox_client), GFP_KERNEL);
+
+	if (IS_ERR(pdata->qmp_mbox_client)){
+		EMACERR("qmp alloc client failed\n");
+		return -1;
+	}
+
+	pdata->qmp_mbox_client->dev = &pdata->pdev->dev;
+	pdata->qmp_mbox_client->tx_block = true;
+	pdata->qmp_mbox_client->tx_tout = 1000;
+	pdata->qmp_mbox_client->knows_txdone = false;
+
+	pdata->qmp_mbox_chan = mbox_request_channel(pdata->qmp_mbox_client, 0);
+
+	if (IS_ERR(pdata->qmp_mbox_chan)) {
+		EMACERR("qmp reuest channel failed\n");
+		return -1;
+	}
+
+	return 0;
+}
+
+int DWC_ETH_QOS_qmp_mailbox_send_message(struct DWC_ETH_QOS_prv_data *pdata)
+{
+	int ret = 0;
+
+	memset(&qmp_buf[0], 0, MAX_QMP_MSG_SIZE + 1);
+
+	snprintf(qmp_buf, MAX_QMP_MSG_SIZE, "{class:ctile, pc:0}");
+
+	pkt.size = ((size_t)strlen(qmp_buf) + 0x3) & ~0x3;
+	pkt.data = qmp_buf;
+
+	ret = mbox_send_message(pdata->qmp_mbox_chan, (void*)&pkt);
+
+	EMACDBG("qmp mbox_send_message ret = %d \n", ret);
+
+	if (ret < 0) {
+		EMACERR("Disabling c-tile power collapse failed\n");
+		return ret;
+	}
+
+	EMACINFO("Disabling c-tile power collapse succeded");
+
+	return 0;
+}
+
+/**
+ *  DWC_ETH_QOS_qmp_mailbox_work - Scheduled from probe
+ *  @work: work_struct
+ */
+void DWC_ETH_QOS_qmp_mailbox_work(struct work_struct *work)
+{
+	struct DWC_ETH_QOS_prv_data *pdata =
+		container_of(work, struct DWC_ETH_QOS_prv_data, qmp_mailbox_work);
+
+	EMACDBG("Enter\n");
+
+	/* Send QMP message to disable c-tile power collapse */
+	DWC_ETH_QOS_qmp_mailbox_send_message(pdata);
+
+	EMACDBG("Exit\n");
+}
+
+
 int DWC_ETH_QOS_enable_ptp_clk(struct device *dev)
 {
 	int ret;
@@ -1464,6 +1534,14 @@ static int DWC_ETH_QOS_configure_netdevice(struct platform_device *pdev)
 		DWC_ETH_QOS_set_clk_and_bus_config(pdata, SPEED_10);
 
 	DWC_ETH_QOS_create_debugfs(pdata);
+
+	if (EMAC_HW_v2_0_0 == pdata->emac_hw_version_type)
+		pdata->disable_ctile_pc = 1;
+
+	if (pdata->disable_ctile_pc && !DWC_ETH_QOS_qmp_mailbox_init(pdata)){
+		INIT_WORK(&pdata->qmp_mailbox_work, DWC_ETH_QOS_qmp_mailbox_work);
+		queue_work(system_wq, &pdata->qmp_mailbox_work);
+	}
 
 	EMACDBG("<-- DWC_ETH_QOS_configure_netdevice\n");
 

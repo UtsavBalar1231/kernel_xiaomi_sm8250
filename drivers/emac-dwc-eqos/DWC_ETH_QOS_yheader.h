@@ -121,6 +121,9 @@
 #include <linux/of_gpio.h>
 #include <linux/regulator/consumer.h>
 #include <linux/err.h>
+#include <linux/mailbox_client.h>
+#include <linux/mailbox/qmp.h>
+#include <linux/mailbox_controller.h>
 
 /* QOS Version Control Macros */
 /* #define DWC_ETH_QOS_VER_4_0 */
@@ -666,6 +669,7 @@
 #define MII_100_LOW_SVS_CLK_FREQ  (25 * 1000 * 1000UL)
 #define MII_10_LOW_SVS_CLK_FREQ  (2.5 * 1000 * 1000UL)
 
+#define MAX_QMP_MSG_SIZE 96
 #define NAPI_PER_QUEUE_POLL_BUDGET 64
 
 /**
@@ -691,7 +695,6 @@
 #define EMAC_HW_v2_3_1 7
 #define EMAC_HW_v2_3_2 8
 #define EMAC_HW_vMAX 9
-
 
 /* C data types typedefs */
 typedef unsigned short BOOL;
@@ -1800,7 +1803,14 @@ struct DWC_ETH_QOS_prv_data {
 	unsigned int io_macro_tx_mode_non_id;
 	unsigned int io_macro_phy_intf;
 	int phy_irq;
+
 	unsigned int emac_hw_version_type;
+
+	/* QMP message for disabling ctile power collapse while XO shutdown */
+	struct mbox_chan *qmp_mbox_chan;
+	struct mbox_client *qmp_mbox_client;
+	struct work_struct qmp_mailbox_work;
+	int disable_ctile_pc;
 
 	/* Work struct for handling phy interrupt */
 	struct work_struct emac_phy_work;
@@ -1812,7 +1822,6 @@ struct DWC_ETH_QOS_prv_data {
 
 	/* Debugfs base dir */
 	struct dentry *debugfs_dir;
-
 	/* ptp clock frequency set by PTPCLK_Config ioctl default value is 250MHz */
 	unsigned int ptpclk_freq;
 };
