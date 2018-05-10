@@ -48,6 +48,7 @@
  * @brief: Driver functions.
  */
 #include "DWC_ETH_QOS_yheader.h"
+#include "DWC_ETH_QOS_ipa.h"
 
 /*!
  * \brief read MII PHY register, function called by the driver alone
@@ -734,8 +735,19 @@ void DWC_ETH_QOS_adjust_link(struct net_device *dev)
 		pdata->oldduplex = -1;
 	}
 
-	if (new_state)
+	if (new_state) {
 		phy_print_status(phydev);
+
+		if (pdata->ipa_enabled && netif_running(dev)) {
+			if (phydev->link == 1)
+				 DWC_ETH_QOS_ipa_offload_event_handler(pdata, EV_PHY_LINK_UP);
+			else if (phydev->link == 0)
+				DWC_ETH_QOS_ipa_offload_event_handler(pdata, EV_PHY_LINK_DOWN);
+		}
+
+		if (phydev->link == 0)
+			DWC_ETH_QOS_scale_clks(pdata,SPEED_10);
+	}
 
 	/* At this stage, it could be need to setup the EEE or adjust some
 	 * MAC related HW registers.
@@ -778,6 +790,11 @@ static void DWC_ETH_QOS_request_phy_wol(struct DWC_ETH_QOS_prv_data *pdata)
 			}
 		}
 	}
+}
+
+bool DWC_ETH_QOS_is_phy_link_up(struct DWC_ETH_QOS_prv_data *pdata)
+{
+	return pdata->always_on_phy ? 1 : (pdata->phydev && pdata->phydev->link);
 }
 
 /*!
@@ -965,6 +982,7 @@ int DWC_ETH_QOS_mdio_register(struct net_device *dev)
 	pdata->phyaddr = phyaddr;
 	pdata->bus_id = 0x1;
 	pdata->phy_intr_en = false;
+	pdata->always_on_phy = false;
 
 	DBGPHY_REGS(pdata);
 
@@ -1009,8 +1027,10 @@ int DWC_ETH_QOS_mdio_register(struct net_device *dev)
 			EMACERR("Failed to configure link in 1 Gbps/full duplex mode"
 				" (error: %d)\n", ret);
 			goto err_out_phy_connect;
-		} else
+		} else{
+			pdata->always_on_phy = true;
 			goto mdio_alloc_done;
+		}
 	}
 
 	ret = DWC_ETH_QOS_init_phy(dev);
