@@ -296,7 +296,7 @@ int DWC_ETH_QOS_disable_ipa_offload(struct DWC_ETH_QOS_prv_data *pdata)
 
 	/* De-configure IPA Related Stuff */
 	/* Not user requested suspend, do not set ipa_offload_susp*/
-	if (!pdata->prv_ipa.ipa_offload_susp) {
+	if (!pdata->prv_ipa.ipa_offload_susp && pdata->prv_ipa.ipa_offload_conn) {
 		ret = DWC_ETH_QOS_ipa_offload_suspend(pdata);
 		if (ret) {
 			EMACERR("IPA Suspend Failed, err:%d\n", ret);
