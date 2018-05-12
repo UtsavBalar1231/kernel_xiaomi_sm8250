@@ -36838,6 +36838,17 @@
 		(data) = ioread32((void *)DMA_RCR_RGOFFADDRESS(i));\
 } while (0)
 
+#define DMA_RCR_RPF_MASK (ULONG)(0x1)
+
+#define DMA_RCR_RPF_WR_MASK (ULONG) (0x7fffffff)
+
+#define DMA_RCR_RPF_UDFWR(i, data) do {\
+		ULONG v;\
+		DMA_RCR_RGRD(i, v);\
+		v = ((v & DMA_RCR_RPF_WR_MASK) | ((data & DMA_RCR_RPF_MASK) << 31));\
+		DMA_RCR_RGWR(i, v);\
+} while (0)
+
 /*#define  DMA_RCR_Mask_28 (ULONG)(~(~0<<(4)))*/
 
 #define  DMA_RCR_MASK_28 (ULONG)(0xf)

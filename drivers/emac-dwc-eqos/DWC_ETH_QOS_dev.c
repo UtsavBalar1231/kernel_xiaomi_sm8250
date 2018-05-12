@@ -4716,6 +4716,9 @@ static INT configure_mac(struct DWC_ETH_QOS_prv_data *pdata)
 #else
 		MAC_RQC0R_RXQEN_UDFWR(QINX, 0x2);
 #endif
+		/* Fix for unintended stopping of Rx DMA channels
+		when any one Rx DMA channel is stopped */
+		DMA_RCR_RPF_UDFWR(QINX, 0x1);
 	}
 	configure_avb_ip_rx_filtering();
 	configure_ptp_rx_filtering();
