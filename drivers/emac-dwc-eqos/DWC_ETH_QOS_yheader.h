@@ -1493,6 +1493,8 @@ struct DWC_ETH_QOS_prv_ipa_data {
 	/* IPA state variables */
 	/* State of EMAC HW initilization */
 	bool emac_dev_ready;
+	/* State of IPA readiness */
+	bool ipa_ready;
 	/* State of IPA and IPA UC readiness */
 	bool ipa_uc_ready;
 	/* State of IPA Offload intf registration with IPA driver */

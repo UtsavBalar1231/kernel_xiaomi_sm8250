@@ -1802,7 +1802,7 @@ static int DWC_ETH_QOS_open(struct net_device *dev)
 	struct hw_if_struct *hw_if = &pdata->hw_if;
 	struct desc_if_struct *desc_if = &pdata->desc_if;
 
-	DBGPR("-->DWC_ETH_QOS_open\n");
+	EMACDBG("-->DWC_ETH_QOS_open\n");
 
 #ifdef DWC_ETH_QOS_CONFIG_PGTEST
 	if (pdata->irq_number == 0) {
@@ -1877,14 +1877,14 @@ static int DWC_ETH_QOS_open(struct net_device *dev)
 #ifndef DWC_ETH_QOS_CONFIG_PGTEST
 	netif_tx_start_all_queues(dev);
 
-	if (pdata->ipa_enabled && DWC_ETH_QOS_is_phy_link_up(pdata)) {
+	if (pdata->ipa_enabled) {
 		DWC_ETH_QOS_ipa_offload_event_handler(pdata, EV_DEV_OPEN);
 	}
 #else
 	netif_tx_disable(dev);
 #endif /* end of DWC_ETH_QOS_CONFIG_PGTEST */
 
-	DBGPR("<--DWC_ETH_QOS_open\n");
+	EMACDBG("<--DWC_ETH_QOS_open\n");
 
 	return ret;
 
