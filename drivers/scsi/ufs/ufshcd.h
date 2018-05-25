@@ -1072,6 +1072,8 @@ struct ufs_hba {
 	/* Number of requests aborts */
 	int req_abort_count;
 
+	u32 security_in;
+
 	/* Number of lanes available (1 or 2) for Rx/Tx */
 	u32 lanes_per_direction;
 
