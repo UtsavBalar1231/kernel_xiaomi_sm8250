@@ -69,10 +69,10 @@ void DWC_ETH_QOS_ipa_stats_read(struct DWC_ETH_QOS_prv_data *pdata);
 
 #define EMAC_IPA_CAPABLE	0
 
-void DWC_ETH_QOS_ipa_offload_event_handler(
+static inline void DWC_ETH_QOS_ipa_offload_event_handler(
    struct DWC_ETH_QOS_prv_data *pdata, IPA_OFFLOAD_EVENT ev)
 {
-	return -EPERM;
+	return;
 }
 
 static inline int DWC_ETH_QOS_disable_enable_ipa_offload(struct DWC_ETH_QOS_prv_data *pdata,
