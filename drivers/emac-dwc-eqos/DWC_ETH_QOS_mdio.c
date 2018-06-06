@@ -872,8 +872,10 @@ void DWC_ETH_QOS_adjust_link(struct net_device *dev)
 		if (!pdata->oldlink) {
 			new_state = 1;
 			pdata->oldlink = 1;
+			netif_carrier_on(dev);
 		}
 	} else if (pdata->oldlink) {
+		netif_carrier_off(dev);
 		new_state = 1;
 		pdata->oldlink = 0;
 		pdata->speed = 0;
