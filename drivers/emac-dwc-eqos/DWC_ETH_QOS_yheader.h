@@ -1757,6 +1757,7 @@ struct emac_emb_smmu_cb_ctx {
 	u32 va_start;
 	u32 va_size;
 	u32 va_end;
+	int ret;
 };
 
 extern struct emac_emb_smmu_cb_ctx emac_emb_smmu_ctx;

@@ -1027,9 +1027,23 @@ static int DWC_ETH_QOS_configure_netdevice(struct platform_device *pdev)
 	free_netdev(dev);
 
  err_out_dev_failed:
-	DWC_ETH_QOS_disable_clks();
 	EMACERR("<-- DWC_ETH_QOS_configure_netdevice\n");
 	return ret;
+}
+
+static void emac_emb_smmu_exit(void)
+{
+	if (emac_emb_smmu_ctx.valid) {
+		if (emac_emb_smmu_ctx.smmu_pdev)
+			arm_iommu_detach_device(&emac_emb_smmu_ctx.smmu_pdev->dev);
+		if (emac_emb_smmu_ctx.mapping)
+			arm_iommu_release_mapping(emac_emb_smmu_ctx.mapping);
+		emac_emb_smmu_ctx.valid = false;
+		emac_emb_smmu_ctx.mapping = NULL;
+		emac_emb_smmu_ctx.pdev_master = NULL;
+		emac_emb_smmu_ctx.smmu_pdev = NULL;
+		EMACDBG("Detach and release iommu mapping\n");
+	}
 }
 
 static int emac_emb_smmu_cb_probe(struct platform_device *pdev)
@@ -1079,9 +1093,8 @@ static int emac_emb_smmu_cb_probe(struct platform_device *pdev)
 					DOMAIN_ATTR_S1_BYPASS,
 					&bypass)) {
 			EMACERR("Couldn't set SMMU S1 bypass\n");
-			arm_iommu_release_mapping(emac_emb_smmu_ctx.mapping);
-			emac_emb_smmu_ctx.valid = false;
-			return -EIO;
+			result = -EIO;
+			goto err_smmu_probe;
 		}
 		EMACDBG("SMMU S1 BYPASS set\n");
 	} else {
@@ -1089,18 +1102,16 @@ static int emac_emb_smmu_cb_probe(struct platform_device *pdev)
 					DOMAIN_ATTR_ATOMIC,
 					&atomic_ctx)) {
 			EMACERR("Couldn't set SMMU domain as atomic\n");
-			arm_iommu_release_mapping(emac_emb_smmu_ctx.mapping);
-			emac_emb_smmu_ctx.valid = false;
-			return -EIO;
+			result = -EIO;
+			goto err_smmu_probe;
 		}
 		EMACDBG("SMMU atomic set\n");
 		if (iommu_domain_set_attr(emac_emb_smmu_ctx.mapping->domain,
 					DOMAIN_ATTR_FAST,
 					&fast)) {
 			EMACERR("Couldn't set FAST SMMU\n");
-			arm_iommu_release_mapping(emac_emb_smmu_ctx.mapping);
-			emac_emb_smmu_ctx.valid = false;
-			return -EIO;
+			result = -EIO;
+			goto err_smmu_probe;
 		}
 		EMACDBG("SMMU fast map set\n");
 	}
@@ -1109,13 +1120,24 @@ static int emac_emb_smmu_cb_probe(struct platform_device *pdev)
 						emac_emb_smmu_ctx.mapping);
 	if (result) {
 		EMACERR("couldn't attach to IOMMU ret=%d\n", result);
-		emac_emb_smmu_ctx.valid = false;
-		return result;
+		goto err_smmu_probe;
 	}
 
 	EMACDBG("Successfully attached to IOMMU\n");
-	result = DWC_ETH_QOS_configure_netdevice(emac_emb_smmu_ctx.pdev_master);
+	if (emac_emb_smmu_ctx.pdev_master) {
+		result = DWC_ETH_QOS_configure_netdevice(emac_emb_smmu_ctx.pdev_master);
+		if (result)
+			emac_emb_smmu_exit();
+		goto smmu_probe_done;
+	}
 
+err_smmu_probe:
+	if (emac_emb_smmu_ctx.mapping)
+		arm_iommu_release_mapping(emac_emb_smmu_ctx.mapping);
+	emac_emb_smmu_ctx.valid = false;
+
+smmu_probe_done:
+	emac_emb_smmu_ctx.ret = result;
 	return result;
 }
 
@@ -1177,8 +1199,17 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 			EMACERR("Failed to populate EMAC platform\n");
 			goto err_out_dev_failed;
 		}
+		if (emac_emb_smmu_ctx.ret) {
+			EMACERR("smmu probe failed: %d\n", emac_emb_smmu_ctx.ret);
+			of_platform_depopulate(&pdev->dev);
+			ret = emac_emb_smmu_ctx.ret;
+			emac_emb_smmu_ctx.ret = 0;
+			goto err_out_dev_failed;
+		}
 	} else {
 		ret = DWC_ETH_QOS_configure_netdevice(pdev);
+		if (ret)
+			goto err_out_dev_failed;
 	}
 	EMACDBG("<-- DWC_ETH_QOS_probe\n");
 	return ret;
@@ -1230,7 +1261,7 @@ int DWC_ETH_QOS_remove(struct platform_device *pdev)
 		return -ENODEV;
 	}
 
-	if (emac_emb_smmu_ctx.smmu_pdev && (pdev == emac_emb_smmu_ctx.smmu_pdev)) {
+	if (of_device_is_compatible(pdev->dev.of_node, "qcom,emac-smmu-embedded")) {
 		EMACDBG("<-- DWC_ETH_QOS_remove\n");
 		return 0;
 	}
@@ -1289,15 +1320,7 @@ int DWC_ETH_QOS_remove(struct platform_device *pdev)
 	atomic_notifier_chain_unregister(&panic_notifier_list,
 			&DWC_ETH_QOS_panic_blk);
 
-	if (emac_emb_smmu_ctx.valid) {
-		arm_iommu_detach_device(&emac_emb_smmu_ctx.smmu_pdev->dev);
-		arm_iommu_release_mapping(emac_emb_smmu_ctx.mapping);
-		emac_emb_smmu_ctx.valid = false;
-		emac_emb_smmu_ctx.mapping = NULL;
-		emac_emb_smmu_ctx.pdev_master = NULL;
-		emac_emb_smmu_ctx.smmu_pdev = NULL;
-		EMACDBG("Detach and release iommu mapping\n");
-	}
+	emac_emb_smmu_exit();
 
 	free_netdev(dev);
 
@@ -1378,7 +1401,12 @@ static INT DWC_ETH_QOS_suspend(struct platform_device *pdev, pm_message_t state)
 		0x9b8a5506,
 	};
 
-	DBGPR("-->DWC_ETH_QOS_suspend\n");
+	EMACDBG("-->DWC_ETH_QOS_suspend\n");
+
+	if (of_device_is_compatible(pdev->dev.of_node, "qcom,emac-smmu-embedded")) {
+		EMACDBG("<--DWC_ETH_QOS_suspend smmu return\n");
+		return 0;
+	}
 
 	if (!dev || !netif_running(dev)) {
 		return -EINVAL;
@@ -1400,7 +1428,7 @@ static INT DWC_ETH_QOS_suspend(struct platform_device *pdev, pm_message_t state)
 
 	ret = DWC_ETH_QOS_powerdown(dev, pmt_flags, DWC_ETH_QOS_DRIVER_CONTEXT);
 
-	DBGPR("<--DWC_ETH_QOS_suspend\n");
+	EMACDBG("<--DWC_ETH_QOS_suspend ret = %d\n", ret);
 
 	if (pdata->ipa_enabled)
 		DWC_ETH_QOS_ipa_offload_event_handler(pdata, EV_DPM_SUSPEND);
@@ -1437,6 +1465,8 @@ static INT DWC_ETH_QOS_resume(struct platform_device *pdev)
 	INT ret;
 
 	DBGPR("-->DWC_ETH_QOS_resume\n");
+	if (of_device_is_compatible(pdev->dev.of_node, "qcom,emac-smmu-embedded"))
+		return 0;
 
 	if (!dev || !netif_running(dev)) {
 		DBGPR("<--DWC_ETH_QOS_dev_resume\n");
