@@ -643,6 +643,31 @@
 #define MII_100_LOW_SVS_CLK_FREQ  (25 * 1000 * 1000UL)
 #define MII_10_LOW_SVS_CLK_FREQ  (2.5 * 1000 * 1000UL)
 
+/**
+ * enum emac_hw_core_version - EMAC hardware core version type
+* @EMAC_HW_None: EMAC hardware version not defined
+* @EMAC_HW_v2_0_0: EMAC core version 2.0.0. & chips is SDX24(Chiron)
+* @EMAC_HW_v2_1_0: EMAC core version 2.1.0. & chips is SM8150(Hana)
+* @EMAC_HW_v2_1_1: EMAC core version 2.1.1. & chips is SC8180X(Poipu)
+* @EMAC_HW_v2_1_2: EMAC core version 2.1.2. & chips is SC810X(Poipu)v2,SM8150(Hana)v2
+* @EMAC_HW_v2_2_0: EMAC core version 2.2.0. & chips is SDX24(Chiron)v2
+* @EMAC_HW_v2_3_0: EMAC core version 2.3.0. & chips is QCS405(Vipertooth)
+* @EMAC_HW_v2_3_1: EMAC core version 2.3.1. & chips is SM6150(Talos)
+* @EMAC_HW_v2_3_2: EMAC core version 2.3.2. & chips is SDX55(Huracan)
+*/
+enum emac_core_version {
+	EMAC_HW_None = 0,
+	EMAC_HW_v2_0_0 = 1,
+	EMAC_HW_v2_1_0 = 2,
+	EMAC_HW_v2_1_1 = 3,
+	EMAC_HW_v2_1_2 = 4,
+	EMAC_HW_v2_2_0 = 5,
+	EMAC_HW_v2_3_0 = 6,
+	EMAC_HW_v2_3_1 = 7,
+	EMAC_HW_v2_3_2 = 8
+};
+
+
 /* C data types typedefs */
 typedef unsigned short BOOL;
 typedef char CHAR;
@@ -1487,6 +1512,7 @@ struct DWC_ETH_QOS_res_data {
 	struct clk *ahb_clk;
 	struct clk *rgmii_clk;
 	struct clk *ptp_clk;
+	enum emac_core_version emac_hw_version_type;
 };
 
 struct DWC_ETH_QOS_prv_ipa_data {
@@ -1736,6 +1762,7 @@ struct DWC_ETH_QOS_prv_data {
 	unsigned int io_macro_tx_mode_non_id;
 	unsigned int io_macro_phy_intf;
 	int phy_irq;
+	enum emac_core_version emac_hw_version_type;
 };
 
 typedef enum {

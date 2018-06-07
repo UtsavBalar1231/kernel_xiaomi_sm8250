@@ -530,6 +530,15 @@ static int DWC_ETH_QOS_get_dts_config(struct platform_device *pdev)
 	dwc_eth_qos_res_data.lpi_intr = resource->start;
 	EMACDBG("lpi-intr = %d\n", dwc_eth_qos_res_data.lpi_intr);
 
+	/* Read emac core version value from dtsi */
+	ret = of_property_read_u32(pdev->dev.of_node, "emac-core-version",
+				&dwc_eth_qos_res_data.emac_hw_version_type);
+	if (ret) {
+		EMACDBG(":resource emac-hw-ver! not present in dtsi\n");
+		dwc_eth_qos_res_data.emac_hw_version_type = EMAC_HW_None;
+	}
+	EMACDBG(": emac_core_version = %d\n", dwc_eth_qos_res_data.emac_hw_version_type);
+
 	ret = DWC_ETH_QOS_get_io_macro_config(pdev);
 	if (ret)
 		goto err_out;
@@ -1066,6 +1075,8 @@ static int DWC_ETH_QOS_configure_netdevice(struct platform_device *pdev)
 	DWC_ETH_QOS_get_pdata(pdata);
 #endif
 
+	/* store emac hw version to pdata*/
+	pdata->emac_hw_version_type = dwc_eth_qos_res_data.emac_hw_version_type;
 	/* issue software reset to device */
 	hw_if->exit();
 	/* IEMAC: Find and Read the IRQ from DTS */
