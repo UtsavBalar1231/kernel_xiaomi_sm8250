@@ -616,6 +616,10 @@
 #define EMAC_GPIO_PHY_INTR_REDIRECT_NAME "qcom,phy-intr-redirect"
 #define EMAC_GPIO_PHY_RESET_NAME "qcom,phy-reset"
 
+/* The values used in gpio_set_value() are boolean, zero for low, nonzero for high.*/
+#define PHY_RESET_GPIO_LOW  0
+#define PHY_RESET_GPIO_HIGH  1
+
 #define VOTE_IDX_0MBPS 0
 #define VOTE_IDX_10MBPS 1
 #define VOTE_IDX_100MBPS 2
@@ -1466,6 +1470,9 @@ struct DWC_ETH_QOS_res_data {
 #endif
 
 	/* GPIOs */
+	bool is_gpio_phy_intr_redirect;
+	bool is_gpio_phy_reset;
+	bool is_pinctrl_names;
 	int gpio_phy_intr_redirect;
 	int gpio_phy_reset;
 
@@ -1849,6 +1856,23 @@ void dump_rgmii_io_macro_registers(void);
 #define EMAC_SDCC_HC_REG_DDR_CONFIG_POR 0x00000000
 #define EMAC_SDCC_HC_REG_DLL_CONFIG_2_POR 0x00200000
 #define EMAC_SDCC_USR_CTL_POR 0x00000000
+
+#define EMAC_MDC "dev-emac-mdc"
+#define EMAC_MDIO "dev-emac-mdio"
+
+#define EMAC_RGMII_TXD0 "dev-emac-rgmii_txd0_state"
+#define EMAC_RGMII_TXD1 "dev-emac-rgmii_txd1_state"
+#define EMAC_RGMII_TXD2 "dev-emac-rgmii_txd2_state"
+#define EMAC_RGMII_TXD3 "dev-emac-rgmii_txd3_state"
+#define EMAC_RGMII_TXC "dev-emac-rgmii_txc_state"
+#define EMAC_RGMII_TX_CTL "dev-emac-rgmii_tx_ctl_state"
+
+#define EMAC_RGMII_RXD0 "dev-emac-rgmii_rxd0_state"
+#define EMAC_RGMII_RXD1 "dev-emac-rgmii_rxd1_state"
+#define EMAC_RGMII_RXD2 "dev-emac-rgmii_rxd2_state"
+#define EMAC_RGMII_RXD3 "dev-emac-rgmii_rxd3_state"
+#define EMAC_RGMII_RXC "dev-emac-rgmii_rxc_state"
+#define EMAC_RGMII_RX_CTL "dev-emac-rgmii_rx_ctl_state"
 
 #ifdef PER_CH_INT
 void DWC_ETH_QOS_handle_DMA_Int(struct DWC_ETH_QOS_prv_data *pdata, int chinx, bool);
