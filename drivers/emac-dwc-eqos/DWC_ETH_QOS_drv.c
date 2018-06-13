@@ -710,6 +710,25 @@ void DWC_ETH_QOS_handle_DMA_Int(struct DWC_ETH_QOS_prv_data *pdata, int chinx, b
 }
 #endif
 
+/**
+ * DWC_ETH_QOS_defer_phy_isr_work - Scheduled by the phy isr
+ *  @work: work_struct
+ */
+void DWC_ETH_QOS_defer_phy_isr_work(struct work_struct *work)
+{
+	struct DWC_ETH_QOS_prv_data *pdata =
+		container_of(work, struct DWC_ETH_QOS_prv_data, emac_phy_work);
+
+	EMACDBG("Enter\n");
+
+	if (pdata->clks_suspended)
+		wait_for_completion(&pdata->clk_enable_done);
+
+	DWC_ETH_QOS_handle_phy_interrupt(pdata);
+
+	EMACDBG("Exit\n");
+}
+
 /*!
  * \brief Interrupt Service Routine
  * \details Interrupt Service Routine for PHY interrupt
@@ -722,8 +741,12 @@ void DWC_ETH_QOS_handle_DMA_Int(struct DWC_ETH_QOS_prv_data *pdata, int chinx, b
 
 irqreturn_t DWC_ETH_QOS_PHY_ISR(int irq, void *dev_data)
 {
-	/* PHY Interrupt */
-	DWC_ETH_QOS_handle_phy_interrupt((struct DWC_ETH_QOS_prv_data *)dev_data);
+	struct DWC_ETH_QOS_prv_data *pdata =
+		(struct DWC_ETH_QOS_prv_data *)dev_data;
+
+	/* Queue the work in system_wq */
+	queue_work(system_wq, &pdata->emac_phy_work);
+
 	return IRQ_HANDLED;
 }
 
@@ -5830,8 +5853,6 @@ u16	DWC_ETH_QOS_select_queue(struct net_device *dev,
 	UINT eth_type, priority;
 	struct DWC_ETH_QOS_prv_data *pdata = netdev_priv(dev);
 
-   EMACDBG("\n");
-
 	/* Retrieve ETH type */
 	eth_type = GET_ETH_TYPE(skb->data);
 
@@ -5850,9 +5871,6 @@ u16	DWC_ETH_QOS_select_queue(struct net_device *dev,
 	}
 	else /* VLAN tagged IP packet or any other non vlan packets (PTP)*/
 		txqueue_select = ALL_OTHER_TRAFFIC_TX_CHANNEL;
-
-
-	EMACDBG("txqueue-select:%d\n", txqueue_select);
 
 	if (pdata->ipa_enabled && txqueue_select == IPA_DMA_TX_CH) {
 	   EMACERR("TX Channel [%d] is not a valid for SW path \n", txqueue_select);
@@ -6052,6 +6070,9 @@ INT DWC_ETH_QOS_powerdown(struct net_device *dev, UINT wakeup_type,
 	netif_tx_disable(dev);
 	DWC_ETH_QOS_stop_all_ch_tx_dma(pdata);
 
+	/* Disable MAC TX/RX */
+	hw_if->stop_mac_tx_rx();
+
 	/* Stop SW RX after DMA RX in HW */
 	DWC_ETH_QOS_stop_all_ch_rx_dma(pdata);
 	DWC_ETH_QOS_all_ch_napi_disable(pdata);
@@ -6133,19 +6154,19 @@ INT DWC_ETH_QOS_powerup(struct net_device *dev, UINT caller)
 	if (pdata->phydev)
 		phy_start(pdata->phydev);
 
-	/* enable MAC TX/RX */
-	hw_if->start_mac_tx_rx();
-
 	if (caller == DWC_ETH_QOS_DRIVER_CONTEXT)
 		netif_device_attach(dev);
-
-	/* Start TX DMA in HW before SW TX */
-	DWC_ETH_QOS_start_all_ch_tx_dma(pdata);
-	netif_tx_start_all_queues(dev);
 
 	/* Start RX DMA in HW after SW RX (NAPI) */
 	DWC_ETH_QOS_napi_enable_mq(pdata);
 	DWC_ETH_QOS_start_all_ch_rx_dma(pdata);
+
+	/* enable MAC TX/RX */
+	hw_if->start_mac_tx_rx();
+
+	/* Start TX DMA in HW before SW TX */
+	DWC_ETH_QOS_start_all_ch_tx_dma(pdata);
+	netif_tx_start_all_queues(dev);
 
 	mutex_unlock(&pdata->pmt_lock);
 

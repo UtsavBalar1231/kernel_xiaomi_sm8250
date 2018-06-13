@@ -977,8 +977,8 @@ static int DWC_ETH_QOS_init_phy(struct net_device *dev)
 	struct phy_device *phydev = NULL;
 	char phy_id_fmt[MII_BUS_ID_SIZE + 3];
 	char bus_id[MII_BUS_ID_SIZE];
-
 	u32 phydata = 0;
+	int ret = 0;
 
 	DBGPR_MDIO("-->DWC_ETH_QOS_init_phy\n");
 
@@ -1058,27 +1058,32 @@ static int DWC_ETH_QOS_init_phy(struct net_device *dev)
 	}
 
 	if (pdata->phy_intr_en && pdata->phy_irq) {
-	   if (request_irq(pdata->phy_irq, DWC_ETH_QOS_PHY_ISR,
-				IRQF_SHARED, DEV_NAME, pdata)) {
-		   pr_alert("Unable to register PHY IRQ %d\n", pdata->phy_irq);
-		   return -EIO;
-	   } else {
-		   phydev->irq = PHY_IGNORE_INTERRUPT;
-		   phydev->interrupts =  PHY_INTERRUPT_ENABLED;
 
-		   if ((phydev->phy_id & phydev->drv->phy_id_mask) == MICREL_PHY_ID) {
-				DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
-					DWC_ETH_QOS_MICREL_PHY_CTL, DWC_ETH_QOS_MICREL_INTR_LEVEL);
-				DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr,
-					DWC_ETH_QOS_MICREL_PHY_CTL, &phydata);
-				EMACDBG( "Micrel PHY Control Reg (%#x) = %#x\n",
-					DWC_ETH_QOS_MICREL_PHY_CTL, phydata);
-			}
+		INIT_WORK(&pdata->emac_phy_work, DWC_ETH_QOS_defer_phy_isr_work);
+		init_completion(&pdata->clk_enable_done);
 
-		   if (phydev->drv->config_intr &&
-			   !phydev->drv->config_intr(phydev))
-					DWC_ETH_QOS_request_phy_wol(pdata);
+		ret = request_irq(pdata->phy_irq, DWC_ETH_QOS_PHY_ISR,
+						IRQF_SHARED, DEV_NAME, pdata);
+		if (ret) {
+			pr_alert("Unable to register PHY IRQ %d\n", pdata->phy_irq);
+			return ret;
 		}
+
+		phydev->irq = PHY_IGNORE_INTERRUPT;
+		phydev->interrupts =  PHY_INTERRUPT_ENABLED;
+
+        if ((phydev->phy_id & phydev->drv->phy_id_mask) == MICREL_PHY_ID) {
+            DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
+                 DWC_ETH_QOS_MICREL_PHY_CTL, DWC_ETH_QOS_MICREL_INTR_LEVEL);
+            DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr,
+                 DWC_ETH_QOS_MICREL_PHY_CTL, &phydata);
+            EMACDBG("Micrel PHY Control Reg (%#x) = %#x\n",
+                    DWC_ETH_QOS_MICREL_PHY_CTL, phydata);
+        }
+
+		if (phydev->drv->config_intr &&
+			!phydev->drv->config_intr(phydev))
+			DWC_ETH_QOS_request_phy_wol(pdata);
 	}
 
 	phy_start(pdata->phydev);

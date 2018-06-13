@@ -225,10 +225,6 @@ void DWC_ETH_QOS_ipa_offload_event_handler(
 		}
 		break;
 	case EV_DPM_SUSPEND:
-		{
-			if (pdata->prv_ipa.ipa_offload_susp || pdata->prv_ipa.ipa_offload_link_down)
-				DWC_ETH_QOS_scale_clks(pdata, 0);
-		}
 		break;
 	case EV_USR_SUSPEND:
 		{
@@ -239,13 +235,18 @@ void DWC_ETH_QOS_ipa_offload_event_handler(
 		break;
 	case EV_DPM_RESUME:
 		{
-			if(pdata->prv_ipa.ipa_offload_susp && DWC_ETH_QOS_is_phy_link_up(pdata)) {
-				if(!DWC_ETH_QOS_ipa_offload_resume(pdata))
+			if(pdata->prv_ipa.ipa_offload_susp) {
+				if (DWC_ETH_QOS_is_phy_link_up(pdata)) {
+					if(!DWC_ETH_QOS_ipa_offload_resume(pdata))
+						pdata->prv_ipa.ipa_offload_susp = false;
+				} else {
+					/* Reset flag here to allow connection of pipes on next PHY link up */
 					pdata->prv_ipa.ipa_offload_susp = false;
+					/* PHY link is down at resume */
+					/* Reset flag here to allow connection of pipes on next PHY link up */
+					pdata->prv_ipa.ipa_offload_link_down = true;
+				}
 			}
-
-			/* Reset flag here to allow connection of pipes on next PHY link up */
-			pdata->prv_ipa.ipa_offload_susp = false;
 		}
 		break;
 	case EV_USR_RESUME:
@@ -669,8 +670,6 @@ static void ntn_ipa_notify_cb(void *priv, enum ipa_dp_evt_type evt,
 		EMACERR( "Null Param %s ntn_ipa %p \n", __func__, ntn_ipa);
 		return;
 	}
-
-	EMACDBG("%s %d EVT Rcvd %d \n", __func__, __LINE__, evt);
 
 	if (!ntn_ipa->ipa_offload_conn) {
 		EMACERR("ipa_cb before offload is ready %s ipa_offload_conn %d  \n", __func__, ntn_ipa->ipa_offload_conn);

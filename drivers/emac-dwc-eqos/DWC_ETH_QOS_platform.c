@@ -682,31 +682,45 @@ void DWC_ETH_QOS_disable_ptp_clk(struct device* dev)
 	dwc_eth_qos_res_data.ptp_clk = NULL;
 }
 
-void DWC_ETH_QOS_scale_clks(struct DWC_ETH_QOS_prv_data *pdata, int speed)
+void DWC_ETH_QOS_resume_clks(struct DWC_ETH_QOS_prv_data *pdata)
 {
-	u32 vote_idx = VOTE_IDX_0MBPS;
-
 	EMACDBG("Enter\n");
 
-	if (pdata->bus_hdl) {
-		switch (speed) {
-		case SPEED_1000:
-			vote_idx = VOTE_IDX_1000MBPS;
-			break;
-		case SPEED_100:
-			vote_idx = VOTE_IDX_100MBPS;
-			break;
-		case SPEED_10:
-			vote_idx = VOTE_IDX_10MBPS;
-			break;
-		default:
-			vote_idx = VOTE_IDX_0MBPS;
-			break;
-		}
+	if (dwc_eth_qos_res_data.axi_clk)
+		clk_prepare_enable(dwc_eth_qos_res_data.axi_clk);
 
-		if (msm_bus_scale_client_update_request(
-			  pdata->bus_hdl, vote_idx)) WARN_ON(1);
-	}
+	if (dwc_eth_qos_res_data.ahb_clk)
+		clk_prepare_enable(dwc_eth_qos_res_data.ahb_clk);
+
+	if (dwc_eth_qos_res_data.rgmii_clk)
+		clk_prepare_enable(dwc_eth_qos_res_data.rgmii_clk);
+
+	if (DWC_ETH_QOS_is_phy_link_up(pdata))
+		DWC_ETH_QOS_set_clk_and_bus_config(pdata, pdata->speed);
+	else
+		DWC_ETH_QOS_set_clk_and_bus_config(pdata, SPEED_10);
+
+	pdata->clks_suspended = 0;
+	complete_all(&pdata->clk_enable_done);
+
+	EMACDBG("Exit\n");
+}
+
+void DWC_ETH_QOS_suspend_clks(struct DWC_ETH_QOS_prv_data *pdata)
+{
+	EMACDBG("Enter\n");
+
+	reinit_completion(&pdata->clk_enable_done);
+	pdata->clks_suspended = 1;
+
+	if (dwc_eth_qos_res_data.axi_clk)
+		clk_disable_unprepare(dwc_eth_qos_res_data.axi_clk);
+
+	if (dwc_eth_qos_res_data.ahb_clk)
+		clk_disable_unprepare(dwc_eth_qos_res_data.ahb_clk);
+
+	if (dwc_eth_qos_res_data.rgmii_clk)
+		clk_disable_unprepare(dwc_eth_qos_res_data.rgmii_clk);
 
 	EMACDBG("Exit\n");
 }
@@ -1574,6 +1588,9 @@ int DWC_ETH_QOS_remove(struct platform_device *pdev)
 		pdata->phy_irq = 0;
 	}
 
+	if (pdata->phy_intr_en && pdata->phy_irq)
+		cancel_work_sync(&pdata->emac_phy_work);
+
 	if (pdata->hw_feat.sma_sel == 1)
 		DWC_ETH_QOS_mdio_unregister(dev);
 
@@ -1715,10 +1732,9 @@ static INT DWC_ETH_QOS_suspend(struct platform_device *pdev, pm_message_t state)
 
 	ret = DWC_ETH_QOS_powerdown(dev, pmt_flags, DWC_ETH_QOS_DRIVER_CONTEXT);
 
-	EMACDBG("<--DWC_ETH_QOS_suspend ret = %d\n", ret);
+	DWC_ETH_QOS_suspend_clks(pdata);
 
-	if (pdata->ipa_enabled)
-		DWC_ETH_QOS_ipa_offload_event_handler(pdata, EV_DPM_SUSPEND);
+	EMACDBG("<--DWC_ETH_QOS_suspend ret = %d\n", ret);
 
 	return ret;
 }
@@ -1766,7 +1782,7 @@ static INT DWC_ETH_QOS_resume(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
-	DWC_ETH_QOS_scale_clks(pdata, pdata->speed);
+	DWC_ETH_QOS_resume_clks(pdata);
 
 	ret = DWC_ETH_QOS_powerup(dev, DWC_ETH_QOS_DRIVER_CONTEXT);
 
