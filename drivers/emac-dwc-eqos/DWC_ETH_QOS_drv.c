@@ -736,25 +736,31 @@ irqreturn_t DWC_ETH_QOS_PHY_ISR(int irq, void *dev_data)
 
 void DWC_ETH_QOS_handle_phy_interrupt(struct DWC_ETH_QOS_prv_data *pdata)
 {
-	unsigned int phy_intr_status = 0;
+
+	int phy_intr_status = 0;
+	int micrel_intr_status = 0;
 	EMACDBG("Enter\n");
 
 	DWC_ETH_QOS_mdio_read_direct(
-		pdata, pdata->phyaddr, DWC_ETH_QOS_PHY_INTR_STATUS, &phy_intr_status);
-	EMACDBG("Phy Interrupt status Reg at offset 0x13 = %#x\n", phy_intr_status);
+		pdata, pdata->phyaddr, DWC_ETH_QOS_BASIC_STATUS, &phy_intr_status);
+	EMACDBG(
+		"Basic Status Reg (%#x) = %#x\n", DWC_ETH_QOS_BASIC_STATUS, phy_intr_status);
+
+	DWC_ETH_QOS_mdio_read_direct(
+		pdata, pdata->phyaddr, DWC_ETH_QOS_MICREL_PHY_INTCS, &micrel_intr_status);
+	EMACDBG(
+		"MICREL PHY Intr EN Reg (%#x) = %#x\n", DWC_ETH_QOS_MICREL_PHY_INTCS, micrel_intr_status);
 
 	/* Interrupt received for link state change */
-	if (phy_intr_status & LINK_UP_STATE) {
+	if (phy_intr_status & LINK_STATE_MASK) {
 		EMACDBG("Interrupt received for link UP state\n");
 		phy_mac_interrupt(pdata->phydev, LINK_UP);
-	} else if (phy_intr_status & LINK_DOWN_STATE) {
+	} else if (!(phy_intr_status & LINK_STATE_MASK)) {
 		EMACDBG("Interrupt received for link DOWN state\n");
 		phy_mac_interrupt(pdata->phydev, LINK_DOWN);
-	} else if (phy_intr_status & AUTO_NEG_ERROR) {
+	} else if (!(phy_intr_status & AUTONEG_STATE_MASK)) {
 		EMACDBG("Interrupt received for link down with"
 				" auto-negotiation error\n");
-	} else if (phy_intr_status & PHY_WOL) {
-		EMACDBG("Interrupt received for WoL packet\n");
 	}
 
 	EMACDBG("Exit\n");

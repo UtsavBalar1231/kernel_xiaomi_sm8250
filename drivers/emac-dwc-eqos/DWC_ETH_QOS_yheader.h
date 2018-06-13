@@ -105,6 +105,7 @@
 #include <linux/ioport.h>
 #include <linux/phy.h>
 #include <linux/mdio.h>
+#include <linux/micrel_phy.h>
 #if defined(CONFIG_VLAN_8021Q) || defined(CONFIG_VLAN_8021Q_MODULE)
 #define DWC_ETH_QOS_ENABLE_VLAN_TAG
 #include <linux/if_vlan.h>
@@ -307,6 +308,16 @@
 #define DISABLE_TX_DELAY 0x0
 #define DWC_ETH_QOS_PHY_DEBUG_PORT_ADDR_OFFSET 0x1d
 #define DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT 0x1e
+
+#define DWC_ETH_QOS_MICREL_PHY_DEBUG_PORT_ADDR_OFFSET 0x0d
+#define DWC_ETH_QOS_MICREL_PHY_DEBUG_PORT_DATAPORT 0x0e
+#define DWC_ETH_QOS_MICREL_PHY_DEBUG_MMD_DEV_ADDR 0x2
+#define DWC_ETH_QOS_MICREL_PHY_INTCS 0x1b
+#define DWC_ETH_QOS_MICREL_PHY_CTL 0x1f
+#define DWC_ETH_QOS_MICREL_INTR_LEVEL 0x4000
+#define DWC_ETH_QOS_BASIC_STATUS     0x0001
+#define LINK_STATE_MASK 0x4
+#define AUTONEG_STATE_MASK 0x20
 
 #define LINK_DOWN_STATE 0x800
 #define LINK_UP_STATE 0x400
@@ -1773,6 +1784,9 @@ typedef enum {
 #define ATH8031_PHY_ID 0x004dd074
 #define ATH8035_PHY_ID 0x004dd072
 #define QCA8337_PHY_ID 0x004dd036
+#define ATH8030_PHY_ID 0x004dd076
+#define MICREL_PHY_ID PHY_ID_KSZ9031
+
 
 static const u32 qca8337_phy_ids[] = {
 	0x004dd035, /* qca8337 PHY*/
@@ -1819,6 +1833,11 @@ INT DWC_ETH_QOS_mdio_read_direct(struct DWC_ETH_QOS_prv_data *pdata,
 				 int phyaddr, int phyreg, int *phydata);
 INT DWC_ETH_QOS_mdio_write_direct(struct DWC_ETH_QOS_prv_data *pdata,
 				  int phyaddr, int phyreg, int phydata);
+void DWC_ETH_QOS_mdio_mmd_register_write_direct(struct DWC_ETH_QOS_prv_data *pdata,
+				 int phyaddr, int devaddr, int offset, u16 phydata);
+void DWC_ETH_QOS_mdio_mmd_register_read_direct(struct DWC_ETH_QOS_prv_data *pdata,
+				 int phyaddr, int devaddr, int offset, u16 *phydata);
+
 void dbgpr_regs(void);
 void dump_phy_registers(struct DWC_ETH_QOS_prv_data *);
 void dump_tx_desc(struct DWC_ETH_QOS_prv_data *pdata, int first_desc_idx,

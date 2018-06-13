@@ -130,6 +130,80 @@ INT DWC_ETH_QOS_mdio_write_direct(struct DWC_ETH_QOS_prv_data *pdata,
 }
 
 /*!
+ * \brief write MII MMD register, function called by the driver alone
+ *
+ * \details Writes MII MMD registers through the API write_phy_reg where the
+ * related MAC registers can be configured.
+ *
+ * \param[in] pdata - pointer to driver private data structure.
+ * \param[in] phyaddr - the phy address to write
+ * \param[in] phyreg - the phy regiester id to write
+ * \param[out] phydata - actual data to be written into the phy registers
+ *
+ */
+void DWC_ETH_QOS_mdio_mmd_register_write_direct(struct DWC_ETH_QOS_prv_data *pdata,
+				 int phyaddr, int devaddr, int offset, u16 phydata)
+{
+	int write_data = 0;
+	DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
+				DWC_ETH_QOS_MICREL_PHY_DEBUG_PORT_ADDR_OFFSET,
+				devaddr);
+
+	DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
+				DWC_ETH_QOS_MICREL_PHY_DEBUG_PORT_DATAPORT,
+				offset);
+
+	DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
+				DWC_ETH_QOS_MICREL_PHY_DEBUG_PORT_ADDR_OFFSET,
+				(devaddr | 1 << 14));
+
+	write_data = phydata;
+	EMACDBG("Writing 0x%x to Dev address 0x%x ,  MMD register offset 0x%x",phydata,devaddr, offset);
+	DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
+				DWC_ETH_QOS_MICREL_PHY_DEBUG_PORT_DATAPORT,
+				write_data);
+
+	return;
+}
+/*!
+ * \brief Read MII MMD register, function called by the driver alone
+ *
+ * \details Reads MII MMD registers through the API write_phy_reg where the
+ * related MAC registers can be configured.
+ *
+ * \param[in] pdata - pointer to driver private data structure.
+ * \param[in] phyaddr - the phy address to write
+ * \param[in] phyreg - the phy regiester id to write
+ * \param[out] phydata - actual data to be written into the phy registers
+ *
+ */
+void DWC_ETH_QOS_mdio_mmd_register_read_direct(struct DWC_ETH_QOS_prv_data *pdata,
+				 int phyaddr, int devaddr, int offset, u16 *phydata)
+{
+	int read_data = 0;
+	DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
+				DWC_ETH_QOS_MICREL_PHY_DEBUG_PORT_ADDR_OFFSET,
+				devaddr);
+
+	DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
+				DWC_ETH_QOS_MICREL_PHY_DEBUG_PORT_DATAPORT,
+				offset);
+
+	DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
+				DWC_ETH_QOS_MICREL_PHY_DEBUG_PORT_ADDR_OFFSET,
+				(devaddr | 1 << 14));
+
+	DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr,
+				DWC_ETH_QOS_MICREL_PHY_DEBUG_PORT_DATAPORT,
+				&read_data);
+	memcpy((void *)phydata,(void *)&read_data, sizeof(u16));
+
+	//EMACDBG("Read 0x%x from Dev address 0x%x ,  MMD register offset 0x%x",*phydata,devaddr, offset);
+
+	return;
+}
+
+/*!
  * \brief read MII PHY register.
  *
  * \details Read MII registers through the API read_phy_reg where the
@@ -355,6 +429,15 @@ void dump_phy_registers(struct DWC_ETH_QOS_prv_data *pdata)
 	DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr, DWC_ETH_QOS_PHY_SMART_SPEED, &phydata);
 	pr_alert( "Smart Speed Reg (%#x) = %#x\n", DWC_ETH_QOS_PHY_SMART_SPEED, phydata);
 
+	if ((pdata->phydev->phy_id & pdata->phydev->drv->phy_id_mask) == MICREL_PHY_ID) {
+		int i = 0;
+		u16 mmd_phydata = 0;
+		for(i=0;i<=8;i++){
+			DWC_ETH_QOS_mdio_mmd_register_read_direct(pdata, pdata->phyaddr,
+				DWC_ETH_QOS_MICREL_PHY_DEBUG_MMD_DEV_ADDR, i, &mmd_phydata);
+			EMACDBG("Read %#x from offset %#x", mmd_phydata, i);
+		}
+	}
 
 	pr_alert("\n****************************************************\n");
 }
@@ -376,33 +459,82 @@ void dump_phy_registers(struct DWC_ETH_QOS_prv_data *pdata)
 static void set_phy_rx_tx_delay(struct DWC_ETH_QOS_prv_data *pdata,
 								uint rx_delay, uint tx_delay)
 {
-	int phydata = 0;
 	EMACDBG("Enter\n");
 
-	DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
-				DWC_ETH_QOS_PHY_DEBUG_PORT_ADDR_OFFSET,
-				DWC_ETH_QOS_PHY_TX_DELAY);
-	DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr,
-				DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT,
-				&phydata);
-	phydata = ((phydata & DWC_ETH_QOS_PHY_TX_DELAY_WR_MASK) |
-				((tx_delay & DWC_ETH_QOS_PHY_TX_DELAY_MASK) << 8));
-	DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
-				DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT,
-				phydata);
-	EMACDBG("Setting TX delay %#x in PHY\n", phydata);
-	DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
-				DWC_ETH_QOS_PHY_DEBUG_PORT_ADDR_OFFSET,
-				DWC_ETH_QOS_PHY_RX_DELAY);
-	DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr,
-				DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT,
-				&phydata);
-	phydata = ((phydata & DWC_ETH_QOS_PHY_RX_DELAY_WR_MASK) |
-			((rx_delay & DWC_ETH_QOS_PHY_RX_DELAY_MASK) << 15));
-	DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
-				DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT,
-				phydata);
-	EMACDBG("Setting RX delay %#x in PHY\n", phydata);
+	if ((pdata->phydev->phy_id & pdata->phydev->drv->phy_id_mask) == MICREL_PHY_ID) {
+		u16 phydata = 0;
+		u16 rx_clk = 0;
+
+		if(!pdata->io_macro_tx_mode_non_id){
+			EMACDBG("No PHY delay settings required for ID mode in HANA AU\n");
+			return;
+		}
+		rx_clk = 0x1F;
+		/* RX_CLK to 0*/
+		DWC_ETH_QOS_mdio_mmd_register_read_direct(pdata, pdata->phyaddr,
+					DWC_ETH_QOS_MICREL_PHY_DEBUG_MMD_DEV_ADDR,0x8,&phydata);
+		phydata &= ~(0x1F);
+		phydata |= rx_clk;
+		DWC_ETH_QOS_mdio_mmd_register_write_direct(pdata, pdata->phyaddr,
+					DWC_ETH_QOS_MICREL_PHY_DEBUG_MMD_DEV_ADDR,0x8,phydata);
+
+		DWC_ETH_QOS_mdio_mmd_register_read_direct(pdata, pdata->phyaddr,
+					DWC_ETH_QOS_MICREL_PHY_DEBUG_MMD_DEV_ADDR,0x8,&phydata);
+		EMACDBG("Read 0x%x from offset 0x8\n",phydata);
+		phydata = 0;
+
+		/*RXD0 = 15,RXD1 = 15,RXD2 = 0,RXD3 = 2*/
+		DWC_ETH_QOS_mdio_mmd_register_read_direct(pdata, pdata->phyaddr,
+					DWC_ETH_QOS_MICREL_PHY_DEBUG_MMD_DEV_ADDR,0x5,&phydata);
+		phydata &= ~(0xFF);
+		phydata |= ((0x0 << 12) | (0x0 << 8) | (0x0 << 4) | 0x0);
+
+		DWC_ETH_QOS_mdio_mmd_register_write_direct(pdata, pdata->phyaddr,
+					DWC_ETH_QOS_MICREL_PHY_DEBUG_MMD_DEV_ADDR,0x5,phydata);
+		DWC_ETH_QOS_mdio_mmd_register_read_direct(pdata, pdata->phyaddr,
+					DWC_ETH_QOS_MICREL_PHY_DEBUG_MMD_DEV_ADDR,0x5,&phydata);
+		EMACDBG("Read 0x%x from offset 0x5\n",phydata);
+		phydata = 0;
+
+		/*RX_CTL to 9*/
+		DWC_ETH_QOS_mdio_mmd_register_read_direct(pdata, pdata->phyaddr,
+					DWC_ETH_QOS_MICREL_PHY_DEBUG_MMD_DEV_ADDR,0x4,&phydata);
+		phydata &= ~(0xF << 4);
+		phydata |= (0x0 << 4);
+		DWC_ETH_QOS_mdio_mmd_register_write_direct(pdata, pdata->phyaddr,
+					DWC_ETH_QOS_MICREL_PHY_DEBUG_MMD_DEV_ADDR,0x4,phydata);
+		DWC_ETH_QOS_mdio_mmd_register_read_direct(pdata, pdata->phyaddr,
+					DWC_ETH_QOS_MICREL_PHY_DEBUG_MMD_DEV_ADDR,0x4,&phydata);
+		EMACDBG("Read 0x%x from offset 0x4\n",phydata);
+		phydata = 0;
+	} else {
+		/* Default values are for PHY AR8035 */
+		int phydata = 0;
+		DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
+					DWC_ETH_QOS_PHY_DEBUG_PORT_ADDR_OFFSET,
+					DWC_ETH_QOS_PHY_TX_DELAY);
+		DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr,
+					DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT,
+					&phydata);
+		phydata = ((phydata & DWC_ETH_QOS_PHY_TX_DELAY_WR_MASK) |
+					((tx_delay & DWC_ETH_QOS_PHY_TX_DELAY_MASK) << 8));
+		DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
+					DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT,
+					phydata);
+		EMACDBG("Setting TX delay %#x in PHY\n", phydata);
+		DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
+					DWC_ETH_QOS_PHY_DEBUG_PORT_ADDR_OFFSET,
+					DWC_ETH_QOS_PHY_RX_DELAY);
+		DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr,
+					DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT,
+					&phydata);
+		phydata = ((phydata & DWC_ETH_QOS_PHY_RX_DELAY_WR_MASK) |
+				((rx_delay & DWC_ETH_QOS_PHY_RX_DELAY_MASK) << 15));
+		DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
+					DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT,
+					phydata);
+		EMACDBG("Setting RX delay %#x in PHY\n", phydata);
+	}
 
 	EMACDBG("Exit\n");
 }
@@ -432,20 +564,27 @@ static void configure_phy_rx_tx_delay(struct DWC_ETH_QOS_prv_data *pdata)
 			/* Settings for Non-ID mode */
 			set_phy_rx_tx_delay(pdata, ENABLE_RX_DELAY, ENABLE_TX_DELAY);
 		} else {
-			/* Settings for RGMII ID mode */
-			set_phy_rx_tx_delay(pdata, DISABLE_RX_DELAY, DISABLE_TX_DELAY);
+			/* Settings for RGMII ID mode. Not applicable to HANA AU */
+			if (pdata->emac_hw_version_type != EMAC_HW_v2_1_0)
+				set_phy_rx_tx_delay(pdata, DISABLE_RX_DELAY, DISABLE_TX_DELAY);
 		}
 		break;
 
 	case SPEED_100:
 	case SPEED_10:
-		if (pdata->io_macro_tx_mode_non_id ||
-			pdata->io_macro_phy_intf == MII_MODE) {
-			/* Settings for Non-ID mode or MII mode */
-			set_phy_rx_tx_delay(pdata, DISABLE_RX_DELAY, ENABLE_TX_DELAY);
+		if (pdata->emac_hw_version_type == EMAC_HW_v2_1_0) {
+			if (pdata->io_macro_tx_mode_non_id)
+				set_phy_rx_tx_delay(pdata, DISABLE_RX_DELAY, ENABLE_TX_DELAY);
 		} else {
-			/* Settings for RGMII ID mode */
-			set_phy_rx_tx_delay(pdata, DISABLE_RX_DELAY, DISABLE_TX_DELAY);
+
+			if (pdata->io_macro_tx_mode_non_id ||
+				pdata->io_macro_phy_intf == MII_MODE) {
+				/* Settings for Non-ID mode or MII mode */
+				set_phy_rx_tx_delay(pdata, DISABLE_RX_DELAY, ENABLE_TX_DELAY);
+			} else {
+				/* Settings for RGMII ID mode */
+				set_phy_rx_tx_delay(pdata, DISABLE_RX_DELAY, DISABLE_TX_DELAY);
+			}
 		}
 		break;
 	}
@@ -548,7 +687,9 @@ static inline int DWC_ETH_QOS_configure_io_macro_dll_settings(
 
 	EMACDBG("Enter\n");
 
-	DWC_ETH_QOS_rgmii_io_macro_dll_reset();
+	if (pdata->emac_hw_version_type == EMAC_HW_v2_0_0)
+		DWC_ETH_QOS_rgmii_io_macro_dll_reset();
+
 #ifndef DWC_ETH_QOS_EMULATION_PLATFORM
 	/* For RGMII ID mode with internal delay*/
 	if (pdata->io_macro_phy_intf == RGMII_MODE && !pdata->io_macro_tx_mode_non_id) {
@@ -715,12 +856,14 @@ void DWC_ETH_QOS_adjust_link(struct net_device *dev)
 			configure_phy_rx_tx_delay(pdata);
 
 			/* Set RGMII clock and bus scale request based on link speed and phy mode */
-			DWC_ETH_QOS_set_clk_and_bus_config(pdata);
+			if (pdata->io_macro_phy_intf != RMII_MODE) {
+				DWC_ETH_QOS_set_clk_and_bus_config(pdata);
 
-			ret = DWC_ETH_QOS_configure_io_macro_dll_settings(pdata);
-			if (ret < 0) {
-				EMACERR("Failed to configure IO macro and DLL settings\n");
-				return;
+				ret = DWC_ETH_QOS_configure_io_macro_dll_settings(pdata);
+				if (ret < 0) {
+					EMACERR("Failed to configure IO macro and DLL settings\n");
+					return;
+				}
 			}
 		}
 
@@ -745,7 +888,7 @@ void DWC_ETH_QOS_adjust_link(struct net_device *dev)
 				DWC_ETH_QOS_ipa_offload_event_handler(pdata, EV_PHY_LINK_DOWN);
 		}
 
-		if (phydev->link == 0)
+		if (phydev->link == 0 && pdata->io_macro_phy_intf != RMII_MODE)
 			DWC_ETH_QOS_scale_clks(pdata,SPEED_10);
 	}
 
@@ -846,7 +989,8 @@ static int DWC_ETH_QOS_init_phy(struct net_device *dev)
 	}
 
 #ifndef DWC_ETH_QOS_EMULATION_PLATFORM
-	if ((phydev->phy_id == ATH8031_PHY_ID) || (phydev->phy_id == ATH8035_PHY_ID))
+	if ((phydev->phy_id == ATH8031_PHY_ID) || (phydev->phy_id == ATH8035_PHY_ID)
+		|| (phydev->phy_id & phydev->drv->phy_id_mask) == MICREL_PHY_ID)
 		pdata->phy_intr_en = true;
 #endif
 
@@ -904,10 +1048,19 @@ static int DWC_ETH_QOS_init_phy(struct net_device *dev)
 		   phydev->irq = PHY_IGNORE_INTERRUPT;
 		   phydev->interrupts =  PHY_INTERRUPT_ENABLED;
 
+		   if ((phydev->phy_id & phydev->drv->phy_id_mask) == MICREL_PHY_ID) {
+				DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
+					DWC_ETH_QOS_MICREL_PHY_CTL, DWC_ETH_QOS_MICREL_INTR_LEVEL);
+				DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr,
+					DWC_ETH_QOS_MICREL_PHY_CTL, &phydata);
+				EMACDBG( "Micrel PHY Control Reg (%#x) = %#x\n",
+					DWC_ETH_QOS_MICREL_PHY_CTL, phydata);
+			}
+
 		   if (phydev->drv->config_intr &&
 			   !phydev->drv->config_intr(phydev))
 					DWC_ETH_QOS_request_phy_wol(pdata);
-	   }
+		}
 	}
 
 	phy_start(pdata->phydev);
@@ -1020,6 +1173,15 @@ int DWC_ETH_QOS_mdio_register(struct net_device *dev)
 	if (phy_reg_read_status != 0) {
 		EMACERR("unable to read phy id's: %d\n", phy_reg_read_status);
 		goto err_out_phy_connect;
+	}
+	if (pdata->io_macro_phy_intf == RMII_MODE) {
+		pdata->speed = SPEED_100; //Default speed
+		DWC_ETH_QOS_set_clk_and_bus_config(pdata);
+		ret = DWC_ETH_QOS_configure_io_macro_dll_settings(pdata);
+		if (ret < 0) {
+			EMACERR("Failed to configure IO macro and DLL settings\n");
+			goto err_out_phy_connect;
+		}
 	}
 	phy_id = phy_id1 << 16;
 	phy_id |= phy_id2;
