@@ -384,6 +384,7 @@ alternative_else_nop_endif
 	add	sp, sp, #S_FRAME_SIZE		// restore sp
 	eret
 	.endif
+	sb
 	.endm
 
 	.macro	irq_stack_entry
@@ -1086,6 +1087,7 @@ alternative_endif
 	.endif
 	add	sp, sp, #S_FRAME_SIZE		// restore sp
 	eret
+	sb
 	.endm
 
 	.macro	generate_tramp_vector,	kpti, bhb
