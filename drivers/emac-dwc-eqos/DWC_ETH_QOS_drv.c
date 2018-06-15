@@ -5531,7 +5531,13 @@ static int DWC_ETH_QOS_handle_hwtstamp_ioctl(struct DWC_ETH_QOS_prv_data *pdata,
 	if (!pdata->hwts_tx_en && !pdata->hwts_rx_en) {
 		/* disable hw time stamping */
 		hw_if->config_hw_time_stamping(VARMAC_TCR);
+
+		DWC_ETH_QOS_disable_ptp_clk(&pdata->pdev->dev);
 	} else {
+
+		if(DWC_ETH_QOS_enable_ptp_clk(&pdata->pdev->dev))
+			return -EFAULT;
+
 		VARMAC_TCR = (MAC_TCR_TSENA | MAC_TCR_TSCFUPDT |
 				MAC_TCR_TSCTRLSSR |
 				tstamp_all | ptp_v2 | ptp_over_ethernet |

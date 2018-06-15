@@ -615,6 +615,55 @@ err_out_map_failed:
 	return ret;
 }
 
+int DWC_ETH_QOS_enable_ptp_clk(struct device *dev)
+{
+	int ret;
+
+	/* valid value of dwc_eth_qos_res_data.ptp_clk indicates that clock is enabled */
+	if (!dwc_eth_qos_res_data.ptp_clk) {
+
+		dwc_eth_qos_res_data.ptp_clk = devm_clk_get(dev, "eth_ptp_clk");
+
+		if (IS_ERR(dwc_eth_qos_res_data.ptp_clk)) {
+			dwc_eth_qos_res_data.ptp_clk = NULL;
+			if (dwc_eth_qos_res_data.ptp_clk != ERR_PTR(-EPROBE_DEFER)) {
+				EMACERR("unable to get ptp_clk\n");
+				return -EIO;
+			}
+		}
+
+		ret = clk_prepare_enable(dwc_eth_qos_res_data.ptp_clk);
+
+		if (ret) {
+			EMACERR("Failed to enable ptp_clk\n");
+			goto ptp_clk_fail;
+		}
+
+		ret = clk_set_rate(dwc_eth_qos_res_data.ptp_clk, DWC_ETH_QOS_SYSCLOCK);
+
+		if (ret) {
+			EMACERR("Failed to set rate for ptp_clk\n");
+			goto ptp_clk_fail;
+		}
+	}
+
+	return 0;
+
+ptp_clk_fail:
+
+	DWC_ETH_QOS_disable_ptp_clk(dev);
+	return ret;
+}
+
+void DWC_ETH_QOS_disable_ptp_clk(struct device* dev)
+{
+	if (dwc_eth_qos_res_data.ptp_clk){
+		clk_disable_unprepare(dwc_eth_qos_res_data.ptp_clk);
+		devm_clk_put(dev, dwc_eth_qos_res_data.ptp_clk);
+	}
+
+	dwc_eth_qos_res_data.ptp_clk = NULL;
+}
 
 void DWC_ETH_QOS_scale_clks(struct DWC_ETH_QOS_prv_data *pdata, int speed)
 {
@@ -645,25 +694,26 @@ void DWC_ETH_QOS_scale_clks(struct DWC_ETH_QOS_prv_data *pdata, int speed)
 	EMACDBG("Exit\n");
 }
 
-void DWC_ETH_QOS_disable_clks(void)
+void DWC_ETH_QOS_disable_clks(struct device* dev)
 {
-	if (dwc_eth_qos_res_data.axi_clk)
+	if (dwc_eth_qos_res_data.axi_clk){
 		clk_disable_unprepare(dwc_eth_qos_res_data.axi_clk);
+		devm_clk_put(dev, dwc_eth_qos_res_data.axi_clk);
+	}
 
 	dwc_eth_qos_res_data.axi_clk = NULL;
 
-	if (dwc_eth_qos_res_data.ahb_clk)
+	if (dwc_eth_qos_res_data.ahb_clk){
 		clk_disable_unprepare(dwc_eth_qos_res_data.ahb_clk);
+		devm_clk_put(dev, dwc_eth_qos_res_data.ahb_clk);
+	}
 
 	dwc_eth_qos_res_data.ahb_clk = NULL;
 
-	if (dwc_eth_qos_res_data.ptp_clk)
-		clk_disable_unprepare(dwc_eth_qos_res_data.ptp_clk);
-
-	dwc_eth_qos_res_data.ptp_clk = NULL;
-
-	if (dwc_eth_qos_res_data.rgmii_clk)
+	if (dwc_eth_qos_res_data.rgmii_clk){
 		clk_disable_unprepare(dwc_eth_qos_res_data.rgmii_clk);
+		devm_clk_put(dev, dwc_eth_qos_res_data.rgmii_clk);
+	}
 
 	dwc_eth_qos_res_data.rgmii_clk = NULL;
 
@@ -720,13 +770,6 @@ static int DWC_ETH_QOS_get_clks(struct device *dev)
 		}
 	}
 
-	dwc_eth_qos_res_data.ptp_clk = devm_clk_get(dev, ptp_clock_name);
-	if (IS_ERR(dwc_eth_qos_res_data.ptp_clk)) {
-		if (dwc_eth_qos_res_data.ptp_clk != ERR_PTR(-EPROBE_DEFER)) {
-			EMACERR("unable to get ptp_clk\n");
-			return -EIO;
-		}
-	}
 
 	ret = clk_prepare_enable(dwc_eth_qos_res_data.axi_clk);
 
@@ -749,24 +792,10 @@ static int DWC_ETH_QOS_get_clks(struct device *dev)
 		goto fail_clk;
 	}
 
-	ret = clk_prepare_enable(dwc_eth_qos_res_data.ptp_clk);
-
-	if (ret) {
-		EMACERR("Failed to enable ptp_clk\n");
-		goto fail_clk;
-	}
-
-	ret = clk_set_rate(dwc_eth_qos_res_data.ptp_clk, DWC_ETH_QOS_SYSCLOCK);
-
-	if (ret) {
-		EMACERR("Failed to set rate for ptp_clk\n");
-		goto fail_clk;
-	}
-
 	return ret;
 
 fail_clk:
-	DWC_ETH_QOS_disable_clks();
+	DWC_ETH_QOS_disable_clks(dev);
 	return ret;
 }
 
@@ -1447,7 +1476,7 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	return ret;
 
  err_out_dev_failed:
-	DWC_ETH_QOS_disable_clks();
+	DWC_ETH_QOS_disable_clks(&pdev->dev);
 
  err_get_clk_failed:
 	DWC_ETH_QOS_free_gpios();
@@ -1556,8 +1585,9 @@ int DWC_ETH_QOS_remove(struct platform_device *pdev)
 	free_netdev(dev);
 
 	platform_set_drvdata(pdev, NULL);
-	DWC_ETH_QOS_disable_clks();
 
+	DWC_ETH_QOS_disable_clks(&pdev->dev);
+	DWC_ETH_QOS_disable_ptp_clk(&pdev->dev);
 	DWC_ETH_QOS_disable_regulators();
 	DWC_ETH_QOS_free_gpios();
 

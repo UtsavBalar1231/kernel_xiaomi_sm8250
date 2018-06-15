@@ -380,7 +380,9 @@ static const struct ethtool_ops DWC_ETH_QOS_ethtool_ops = {
 	.get_ethtool_stats = DWC_ETH_QOS_get_ethtool_stats,
 	.get_strings = DWC_ETH_QOS_get_strings,
 	.get_sset_count = DWC_ETH_QOS_get_sset_count,
+#ifdef DWC_ETH_QOS_CONFIG_PTP
 	.get_ts_info = DWC_ETH_QOS_get_ts_info,
+#endif /* end of DWC_ETH_QOS_CONFIG_PTP */
 };
 
 struct ethtool_ops *DWC_ETH_QOS_get_ethtool_ops(void)
@@ -1147,6 +1149,9 @@ static int DWC_ETH_QOS_get_sset_count(struct net_device *dev, int sset)
 
 	return len;
 }
+
+#ifdef DWC_ETH_QOS_CONFIG_PTP
+
 /*!
  * \details This function gets the PHC index
  *
@@ -1169,3 +1174,5 @@ static int DWC_ETH_QOS_get_ts_info(struct net_device *dev,
 	DBGPR("<--DWC_ETH_QOS_get_ts_info\n");
 	return 0;
 }
+
+#endif /* end of DWC_ETH_QOS_CONFIG_PTP */

@@ -76,6 +76,11 @@ static void DWC_ETH_QOS_get_ethtool_stats(
 	struct net_device *dev,
 	struct ethtool_stats *dummy, u64 *data);
 
+#ifdef DWC_ETH_QOS_CONFIG_PTP
+
 static int DWC_ETH_QOS_get_ts_info(struct net_device *dev,
 	struct ethtool_ts_info *info);
+
+#endif /* end of DWC_ETH_QOS_CONFIG_PTP */
+
 #endif
