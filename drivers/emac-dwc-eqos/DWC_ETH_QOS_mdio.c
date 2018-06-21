@@ -606,7 +606,7 @@ static void configure_phy_rx_tx_delay(struct DWC_ETH_QOS_prv_data *pdata)
  *
  * \retval Y_SUCCESS on success and Y_FAILURE on failure.
  */
-static void DWC_ETH_QOS_set_clk_and_bus_config(struct DWC_ETH_QOS_prv_data *pdata, int speed)
+void DWC_ETH_QOS_set_clk_and_bus_config(struct DWC_ETH_QOS_prv_data *pdata, int speed)
 {
 	EMACDBG("Enter\n");
 
@@ -656,6 +656,18 @@ static void DWC_ETH_QOS_set_clk_and_bus_config(struct DWC_ETH_QOS_prv_data *pdat
 			break;
 		}
 		break;
+	}
+
+	switch (speed) {
+		case SPEED_1000:
+			pdata->vote_idx = VOTE_IDX_1000MBPS;
+			break;
+		case SPEED_100:
+			pdata->vote_idx = VOTE_IDX_100MBPS;
+			break;
+		case SPEED_10:
+			pdata->vote_idx = VOTE_IDX_10MBPS;
+			break;
 	}
 
 	if (pdata->bus_hdl) {
@@ -838,15 +850,12 @@ void DWC_ETH_QOS_adjust_link(struct net_device *dev)
 			switch (phydev->speed) {
 			case SPEED_1000:
 				hw_if->set_gmii_speed();
-				pdata->vote_idx = VOTE_IDX_1000MBPS;
 				break;
 			case SPEED_100:
 				hw_if->set_mii_speed_100();
-				pdata->vote_idx = VOTE_IDX_100MBPS;
 				break;
 			case SPEED_10:
 				hw_if->set_mii_speed_10();
-				pdata->vote_idx = VOTE_IDX_10MBPS;
 				break;
 			}
 			pdata->speed = phydev->speed;
@@ -941,7 +950,12 @@ static void DWC_ETH_QOS_request_phy_wol(struct DWC_ETH_QOS_prv_data *pdata)
 
 bool DWC_ETH_QOS_is_phy_link_up(struct DWC_ETH_QOS_prv_data *pdata)
 {
-	return pdata->always_on_phy ? 1 : (pdata->phydev && pdata->phydev->link);
+	/* PHY driver initializes phydev->link=1.
+	 * So, phydev->link is 1 even on booup with no PHY connected.
+	 * phydev->link is valid only after adjust_link is called once.
+	 * Use (pdata->oldlink != -1) to indicate phy link is not up */
+	return pdata->always_on_phy ? 1 :
+		((pdata->oldlink != -1) && pdata->phydev && pdata->phydev->link);
 }
 
 /*!

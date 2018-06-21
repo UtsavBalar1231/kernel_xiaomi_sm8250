@@ -1250,6 +1250,9 @@ static int DWC_ETH_QOS_configure_netdevice(struct platform_device *pdev)
 		dev_alert(&pdev->dev, "carrier off till LINK is up\n");
 	}
 
+	/* Set clocks to 10 Mbps config */
+	DWC_ETH_QOS_set_clk_and_bus_config(pdata, SPEED_10);
+
 	EMACDBG("<-- DWC_ETH_QOS_configure_netdevice\n");
 
 	return 0;

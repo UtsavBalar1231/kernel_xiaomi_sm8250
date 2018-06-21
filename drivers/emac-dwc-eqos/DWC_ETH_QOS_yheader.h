@@ -1827,6 +1827,7 @@ void remove_debug_files(void);
 
 void DWC_ETH_QOS_scale_clks(struct DWC_ETH_QOS_prv_data *pdata, int speed);
 bool DWC_ETH_QOS_is_phy_link_up(struct DWC_ETH_QOS_prv_data *pdata);
+void DWC_ETH_QOS_set_clk_and_bus_config(struct DWC_ETH_QOS_prv_data *pdata, int speed);
 int DWC_ETH_QOS_mdio_register(struct net_device *dev);
 void DWC_ETH_QOS_mdio_unregister(struct net_device *dev);
 INT DWC_ETH_QOS_mdio_read_direct(struct DWC_ETH_QOS_prv_data *pdata,
