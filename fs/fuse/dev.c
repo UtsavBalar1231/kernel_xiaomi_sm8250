@@ -178,7 +178,7 @@ static void fuse_put_request(struct fuse_conn *fc, struct fuse_req *req)
 }
 EXPORT_SYMBOL_GPL(fuse_put_request);
 
-static unsigned len_args(unsigned numargs, struct fuse_arg *args)
+unsigned int fuse_len_args(unsigned int numargs, struct fuse_arg *args)
 {
 	unsigned nbytes = 0;
 	unsigned i;
@@ -188,6 +188,7 @@ static unsigned len_args(unsigned numargs, struct fuse_arg *args)
 
 	return nbytes;
 }
+EXPORT_SYMBOL_GPL(fuse_len_args);
 
 static u64 fuse_get_unique(struct fuse_iqueue *fiq)
 {
@@ -204,8 +205,8 @@ static void queue_request(struct fuse_iqueue *fiq, struct fuse_req *req,
 				bool sync)
 {
 	req->in.h.len = sizeof(struct fuse_in_header) +
-		len_args(req->args->in_numargs,
-			 (struct fuse_arg *) req->args->in_args);
+		fuse_len_args(req->args->in_numargs,
+			      (struct fuse_arg *) req->args->in_args);
 	list_add_tail(&req->list, &fiq->pending);
 	if (sync)
 		wake_up_sync(&fiq->waitq);
@@ -1808,7 +1809,7 @@ static int copy_out_args(struct fuse_copy_state *cs, struct fuse_args *args,
 {
 	unsigned reqsize = sizeof(struct fuse_out_header);
 
-	reqsize += len_args(args->out_numargs, args->out_args);
+	reqsize += fuse_len_args(args->out_numargs, args->out_args);
 
 	if (reqsize < nbytes || (reqsize > nbytes && !args->out_argvar))
 		return -EINVAL;
