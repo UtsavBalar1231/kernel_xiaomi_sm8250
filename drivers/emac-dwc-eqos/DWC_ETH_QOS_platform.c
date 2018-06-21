@@ -74,6 +74,98 @@ module_param(phy_intf_bypass_mode, uint, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 MODULE_PARM_DESC(phy_intf_bypass_mode,
 		 "Phy interface bypass mode [1-Non-ID, 0-ID]");
 
+static ssize_t read_phy_reg_dump(struct file *file,
+	char __user *user_buf, size_t count, loff_t *ppos)
+{
+	struct DWC_ETH_QOS_prv_data *pdata = file->private_data;
+	unsigned int len = 0, buf_len = 2000;
+	char* buf;
+	ssize_t ret_cnt;
+	int phydata = 0;
+	int i = 0;
+
+	if (!pdata || !pdata->phydev) {
+		EMACERR(" %s NULL Pointer \n",__func__);
+		return -EINVAL;
+	}
+
+	buf = kzalloc(buf_len, GFP_KERNEL);
+	if (!buf)
+		return -ENOMEM;
+
+	len += scnprintf(buf + len, buf_len - len,
+					 "\n************* PHY Reg dump *************\n");
+
+	for (i = 0; i < 32; i++) {
+		DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr, i, &phydata);
+		len += scnprintf(buf + len, buf_len - len,
+					 "MII Register (%#x) = %#x\n",
+					 i, phydata);
+	}
+
+	if (len > buf_len) {
+		EMACERR(" %s (len > buf_len) buffer not sufficient\n",__func__);
+		len = buf_len;
+	}
+
+	ret_cnt = simple_read_from_buffer(user_buf, count, ppos, buf, len);
+	kfree(buf);
+	return ret_cnt;
+}
+
+static const struct file_operations fops_phy_reg_dump = {
+	.read = read_phy_reg_dump,
+	.open = simple_open,
+	.owner = THIS_MODULE,
+	.llseek = default_llseek,
+};
+
+int DWC_ETH_QOS_create_debugfs(struct DWC_ETH_QOS_prv_data *pdata)
+{
+	static struct dentry *phy_reg_dump = NULL;
+
+	if(!pdata) {
+		EMACERR( "Null Param %s \n", __func__);
+		return -1;
+	}
+
+	pdata->debugfs_dir = debugfs_create_dir("eth", NULL);
+
+	if (!pdata->debugfs_dir) {
+		EMACERR( "Cannot create debugfs dir %d \n", (int)pdata->debugfs_dir);
+		return -ENOMEM;
+	}
+
+	phy_reg_dump = debugfs_create_file("phy_reg_dump", S_IRUSR, pdata->debugfs_dir,
+				pdata, &fops_phy_reg_dump);
+	if (!phy_reg_dump || IS_ERR(phy_reg_dump)) {
+		EMACERR( "Cannot create debugfs phy_reg_dump %d \n", (int)phy_reg_dump);
+		goto fail;
+	}
+
+	return 0;
+
+fail:
+	debugfs_remove_recursive(pdata->debugfs_dir);
+	return -ENOMEM;
+}
+
+int DWC_ETH_QOS_cleanup_debugfs(struct DWC_ETH_QOS_prv_data *pdata)
+{
+	if(!pdata) {
+		EMACERR("Null Param %s \n", __func__);
+		return -1;
+	}
+
+	if (pdata->debugfs_dir) {
+		debugfs_remove_recursive(pdata->debugfs_dir);
+		pdata->debugfs_dir = NULL;
+	}
+
+	EMACDBG("EMAC debugfs Deleted Successfully \n");
+	return 0;
+}
+
 void DWC_ETH_QOS_init_all_fptrs(struct DWC_ETH_QOS_prv_data *pdata)
 {
 	DWC_ETH_QOS_init_function_ptrs_dev(&pdata->hw_if);
@@ -1342,6 +1434,8 @@ static int DWC_ETH_QOS_configure_netdevice(struct platform_device *pdev)
 	if (!pdata->always_on_phy)
 		DWC_ETH_QOS_set_clk_and_bus_config(pdata, SPEED_10);
 
+	DWC_ETH_QOS_create_debugfs(pdata);
+
 	EMACDBG("<-- DWC_ETH_QOS_configure_netdevice\n");
 
 	return 0;
@@ -1636,6 +1730,9 @@ int DWC_ETH_QOS_remove(struct platform_device *pdev)
 		EMACERR("<-- DWC_ETH_QOS_remove\n");
 		return -1;
 	}
+
+	DWC_ETH_QOS_cleanup_debugfs(pdata);
+
 #ifdef PER_CH_INT
 	DWC_ETH_QOS_deregister_per_ch_intr(pdata);
 #endif

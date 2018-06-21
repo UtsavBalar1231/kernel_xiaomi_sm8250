@@ -1543,7 +1543,6 @@ struct DWC_ETH_QOS_prv_ipa_data {
 	phys_addr_t uc_db_rx_addr;
 	phys_addr_t uc_db_tx_addr;
 	u32 ipa_client_hndl;
-	struct dentry *debugfs_dir;
 
 	/* IPA state variables */
 	/* State of EMAC HW initilization */
@@ -1570,6 +1569,10 @@ struct DWC_ETH_QOS_prv_ipa_data {
 	unsigned short vlan_id;
 
 	struct mutex ipa_lock;
+
+	struct dentry *debugfs_ipa_stats;
+	struct dentry *debugfs_dma_stats;
+	struct dentry *debugfs_suspend_ipa_offload;
 };
 
 struct DWC_ETH_QOS_prv_data {
@@ -1797,6 +1800,9 @@ struct DWC_ETH_QOS_prv_data {
 	struct iommu_domain *iommu_domain;
 	unsigned int *emac_reg_base_address;
 	unsigned int *rgmii_reg_base_address;
+
+	/* Debugfs base dir */
+	struct dentry *debugfs_dir;
 };
 
 typedef enum {
