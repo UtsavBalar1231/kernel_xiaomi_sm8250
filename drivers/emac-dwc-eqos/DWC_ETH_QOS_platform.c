@@ -58,10 +58,21 @@ ULONG dwc_rgmii_io_csr_base_addr;
 struct DWC_ETH_QOS_prv_data *gDWC_ETH_QOS_prv_data;
 struct emac_emb_smmu_cb_ctx emac_emb_smmu_ctx = {0};
 
+#define INVALID_MODULE_PARAM_VAL 0xFFFFFFFF
+
 int ipa_offload_en = 1;
 module_param(ipa_offload_en, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 MODULE_PARM_DESC(ipa_offload_en,
 		 "Enable IPA offload [0-DISABLE, 1-ENABLE]");
+
+static char *phy_intf = "";
+module_param(phy_intf, charp, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+MODULE_PARM_DESC(phy_intf, "phy interface [rgmii, rmii, mii]");
+
+static uint phy_intf_bypass_mode = INVALID_MODULE_PARAM_VAL;
+module_param(phy_intf_bypass_mode, uint, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+MODULE_PARM_DESC(phy_intf_bypass_mode,
+		 "Phy interface bypass mode [0-Non-ID, 1-ID]");
 
 void DWC_ETH_QOS_init_all_fptrs(struct DWC_ETH_QOS_prv_data *pdata)
 {
@@ -203,28 +214,34 @@ static int DWC_ETH_QOS_get_bus_config(struct platform_device *pdev)
 static int DWC_ETH_QOS_get_io_macro_config(struct platform_device *pdev)
 {
 	int ret = 0;
-	const char *io_macro_phy_intf = NULL;
+	const char *io_macro_phy_intf = phy_intf;
 	struct device_node *dev_node = NULL;
+	dwc_eth_qos_res_data.io_macro_tx_mode_non_id = phy_intf_bypass_mode;
 
 	dev_node = of_find_node_by_name(pdev->dev.of_node, "io-macro-info");
 	if (dev_node == NULL) {
 		EMACERR("Failed to find io-macro-info node from device tree\n");
+		ret = -EIO;
 		goto err_out;
 	}
 
-	ret = of_property_read_u32(
-		dev_node, "io-macro-bypass-mode",
-		&dwc_eth_qos_res_data.io_macro_tx_mode_non_id);
-	if (ret < 0) {
-		EMACERR("Unable to read bypass mode value from device tree\n");
-		goto err_out;
+	if (phy_intf_bypass_mode != 0 && phy_intf_bypass_mode != 1) {
+		ret = of_property_read_u32(
+			dev_node, "io-macro-bypass-mode",
+			&dwc_eth_qos_res_data.io_macro_tx_mode_non_id);
+		if (ret < 0) {
+			EMACERR("Unable to read bypass mode value from device tree\n");
+			goto err_out;
+		}
 	}
 	EMACDBG("io-macro-bypass-mode = %d\n", dwc_eth_qos_res_data.io_macro_tx_mode_non_id);
 
-	ret = of_property_read_string(dev_node, "io-interface", &io_macro_phy_intf);
-	if (ret < 0) {
-		EMACERR("Failed to read io mode cfg from device tree\n");
-		goto err_out;
+	if (strlen(io_macro_phy_intf) == 0) {
+		ret = of_property_read_string(dev_node, "io-interface", &io_macro_phy_intf);
+		if (ret < 0) {
+			EMACERR("Failed to read io mode cfg from device tree\n");
+			goto err_out;
+		}
 	}
 	if (strcasecmp(io_macro_phy_intf, "rgmii") == 0) {
 		dwc_eth_qos_res_data.io_macro_phy_intf = RGMII_MODE;
