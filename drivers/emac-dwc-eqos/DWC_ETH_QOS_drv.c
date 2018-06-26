@@ -2504,7 +2504,10 @@ static int DWC_ETH_QOS_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	if ((pdata->hw_feat.tsstssel == 0) || (pdata->hwts_tx_en == 0))
 		skb_tx_timestamp(skb);
 
-	int_mod = DWC_ETH_QOS_cal_int_mod(skb, pdata);
+	/*For TSO packets, IOC bit is to be set to 1 in order to avoid data stall*/
+	if (!tso)
+		int_mod = DWC_ETH_QOS_cal_int_mod(skb, pdata);
+
 	/* configure required descriptor fields for transmission */
 	hw_if->pre_xmit(pdata, qinx, int_mod);
 
@@ -5714,10 +5717,10 @@ static int DWC_ETH_QOS_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 	   if (copy_from_user(&req, ifr->ifr_ifru.ifru_data,
 			   sizeof(struct ifr_data_struct)))
 			return -EFAULT;
-		
+
 		ret = DWC_ETH_QOS_handle_prv_ioctl(pdata, &req);
 		req.command_error = ret;
-		
+
 		ret = (copy_to_user(ifr->ifr_ifru.ifru_data, &req,
 		     sizeof(struct ifr_data_struct))) ? -EFAULT : 0;
 		break;
