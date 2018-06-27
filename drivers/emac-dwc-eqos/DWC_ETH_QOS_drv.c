@@ -6048,12 +6048,13 @@ INT DWC_ETH_QOS_powerdown(struct net_device *dev, UINT wakeup_type,
 	if (caller == DWC_ETH_QOS_DRIVER_CONTEXT)
 		netif_device_detach(dev);
 
+	/* Stop SW TX before DMA TX in HW */
 	netif_tx_disable(dev);
-	DWC_ETH_QOS_all_ch_napi_disable(pdata);
-
-	/* stop DMA TX/RX */
 	DWC_ETH_QOS_stop_all_ch_tx_dma(pdata);
+
+	/* Stop SW RX after DMA RX in HW */
 	DWC_ETH_QOS_stop_all_ch_rx_dma(pdata);
+	DWC_ETH_QOS_all_ch_napi_disable(pdata);
 
 	/* enable power down mode by programming the PMT regs */
 	if (wakeup_type & DWC_ETH_QOS_REMOTE_WAKEUP)
@@ -6062,8 +6063,6 @@ INT DWC_ETH_QOS_powerdown(struct net_device *dev, UINT wakeup_type,
 		hw_if->enable_magic_pmt();
 	if (wakeup_type & DWC_ETH_QOS_PHY_INTR_WAKEUP)
 		enable_irq_wake(pdata->phy_irq);
-	if (wakeup_type & DWC_ETH_QOS_EMAC_INTR_WAKEUP)
-		enable_irq_wake(pdata->irq_number);
 
 	pdata->power_down_type = wakeup_type;
 
@@ -6129,11 +6128,6 @@ INT DWC_ETH_QOS_powerup(struct net_device *dev, UINT caller)
 		pdata->power_down_type &= ~DWC_ETH_QOS_PHY_INTR_WAKEUP;
 	}
 
-	if (pdata->power_down_type & DWC_ETH_QOS_EMAC_INTR_WAKEUP) {
-		disable_irq_wake(pdata->irq_number);
-		pdata->power_down_type &= ~DWC_ETH_QOS_EMAC_INTR_WAKEUP;
-	}
-
 	pdata->power_down = 0;
 
 	if (pdata->phydev)
@@ -6142,16 +6136,16 @@ INT DWC_ETH_QOS_powerup(struct net_device *dev, UINT caller)
 	/* enable MAC TX/RX */
 	hw_if->start_mac_tx_rx();
 
-	/* enable DMA TX/RX */
-	DWC_ETH_QOS_start_all_ch_tx_dma(pdata);
-	DWC_ETH_QOS_start_all_ch_rx_dma(pdata);
-
 	if (caller == DWC_ETH_QOS_DRIVER_CONTEXT)
 		netif_device_attach(dev);
 
-	DWC_ETH_QOS_napi_enable_mq(pdata);
-
+	/* Start TX DMA in HW before SW TX */
+	DWC_ETH_QOS_start_all_ch_tx_dma(pdata);
 	netif_tx_start_all_queues(dev);
+
+	/* Start RX DMA in HW after SW RX (NAPI) */
+	DWC_ETH_QOS_napi_enable_mq(pdata);
+	DWC_ETH_QOS_start_all_ch_rx_dma(pdata);
 
 	mutex_unlock(&pdata->pmt_lock);
 
