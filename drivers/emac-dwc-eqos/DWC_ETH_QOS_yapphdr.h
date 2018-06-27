@@ -335,7 +335,7 @@ struct DWC_ETH_QOS_avb_algorithm {
 
 struct DWC_ETH_QOS_l3_l4_filter {
 	/* 0, 1,2,3,4,5,6 or 7*/
-	int filter_no;
+	unsigned int filter_no;
 	/* 0 - disable and 1 - enable */
 	int filter_enb_dis;
 	/* 0 - src addr/port and 1- dst addr/port match */
