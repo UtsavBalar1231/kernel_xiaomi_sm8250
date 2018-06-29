@@ -1751,10 +1751,10 @@ static INT DWC_ETH_QOS_resume(struct platform_device *pdev)
 
 	DWC_ETH_QOS_scale_clks(pdata, pdata->speed);
 
+	ret = DWC_ETH_QOS_powerup(dev, DWC_ETH_QOS_DRIVER_CONTEXT);
+
 	if (pdata->ipa_enabled)
 		DWC_ETH_QOS_ipa_offload_event_handler(pdata, EV_DPM_RESUME);
-
-	ret = DWC_ETH_QOS_powerup(dev, DWC_ETH_QOS_DRIVER_CONTEXT);
 
 	DBGPR("<--DWC_ETH_QOS_resume\n");
 

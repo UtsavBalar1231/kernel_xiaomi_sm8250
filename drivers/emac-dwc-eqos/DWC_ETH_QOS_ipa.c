@@ -238,7 +238,13 @@ void DWC_ETH_QOS_ipa_offload_event_handler(
 		break;
 	case EV_DPM_RESUME:
 		{
+			if(pdata->prv_ipa.ipa_offload_susp && DWC_ETH_QOS_is_phy_link_up(pdata)) {
+				if(!DWC_ETH_QOS_ipa_offload_resume(pdata))
+					pdata->prv_ipa.ipa_offload_susp = false;
+			}
 
+			/* Reset flag here to allow connection of pipes on next PHY link up */
+			pdata->prv_ipa.ipa_offload_susp = false;
 		}
 		break;
 	case EV_USR_RESUME:
