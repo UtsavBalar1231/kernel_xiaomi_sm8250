@@ -130,7 +130,8 @@ void DWC_ETH_QOS_ipa_offload_event_handler(
 			if (!pdata->prv_ipa.emac_dev_ready
 					|| !pdata->prv_ipa.ipa_uc_ready
 					|| pdata->prv_ipa.ipa_offload_link_down
-					|| pdata->prv_ipa.ipa_offload_susp)
+					|| pdata->prv_ipa.ipa_offload_susp
+					|| !pdata->prv_ipa.ipa_offload_conn)
 				break;
 
 			if (!DWC_ETH_QOS_ipa_offload_suspend(pdata))
@@ -263,8 +264,8 @@ void DWC_ETH_QOS_ipa_offload_event_handler(
 		break;
 	}
 
-	IPA_UNLOCK();
 	EMACINFO("Exit: event=%s\n", IPA_OFFLOAD_EVENT_string[ev]);
+	IPA_UNLOCK();
 }
 
 int DWC_ETH_QOS_enable_ipa_offload(struct DWC_ETH_QOS_prv_data *pdata)
