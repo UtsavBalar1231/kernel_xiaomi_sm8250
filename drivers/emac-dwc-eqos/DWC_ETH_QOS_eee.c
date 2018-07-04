@@ -326,6 +326,8 @@ static int DWC_ETH_QOS_phy_init_eee(struct phy_device *phydev,
 			CL45_PCS_EEE_ABLE, MDIO_MMD_PCS,phydev->mdio.addr);
 		if (eee_cap < 0)
 			return eee_cap;
+		if (eee_cap == 0)
+			return -1;
 
 /*		cap = DWC_ETH_QOS_mmd_eee_cap_to_ethtool_sup_t(eee_cap);
  *		if (!cap)
@@ -423,7 +425,8 @@ bool DWC_ETH_QOS_eee_init(struct DWC_ETH_QOS_prv_data *pdata)
 	if (pdata->hw_feat.eee_sel) {
 #ifndef DWC_ETH_QOS_CUSTOMIZED_EEE_TEST
 		/* check if the PHY supports EEE */
-		if (!pdata->phydev || DWC_ETH_QOS_phy_init_eee(pdata->phydev, 1))
+		if (!pdata->phydev || !pdata->phydev->link
+			|| DWC_ETH_QOS_phy_init_eee(pdata->phydev, 1))
 			goto phy_eee_failed;
 #endif /* DWC_ETH_QOS_CUSTOMIZED_EEE_TEST */
 
@@ -467,8 +470,18 @@ bool DWC_ETH_QOS_eee_init(struct DWC_ETH_QOS_prv_data *pdata)
 		ret = true;
 	}
 
+	return ret;
+
 #ifndef DWC_ETH_QOS_CUSTOMIZED_EEE_TEST
  phy_eee_failed:
+	 /* In case of failure, reset the PHY link status in MAC_LPI_Control_Status reg */
+	 hw_if->set_eee_pls(0);
+
+	 /* Disable EEE mode */
+	 if (pdata->eee_active) {
+		 hw_if->reset_eee_mode();
+		 pdata->eee_active = 0;
+	 }
 #endif
 
 	EMACDBG("Exit\n");
