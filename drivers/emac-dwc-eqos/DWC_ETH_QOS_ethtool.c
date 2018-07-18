@@ -731,7 +731,17 @@ static int DWC_ETH_QOS_setsettings(struct net_device *dev,
 		spin_unlock_irq(&pdata->lock);
 	} else {
 		mutex_lock(&pdata->mlock);
-		ret = phy_ethtool_sset(pdata->phydev, cmd);
+
+		/* Half duplex is not supported */
+		if (cmd->duplex != DUPLEX_FULL) {
+			ret = -EINVAL;
+		} else {
+			/* Advertise all supported speeds when autoneg is enabled */
+			if (cmd->autoneg == AUTONEG_ENABLE)
+				cmd->advertising = pdata->phydev->supported;
+
+			ret = phy_ethtool_sset(pdata->phydev, cmd);
+		}
 		mutex_unlock(&pdata->mlock);
 	}
 
