@@ -1781,6 +1781,11 @@ struct DWC_ETH_QOS_prv_data {
 
 	/* Work struct for handling phy interrupt */
 	struct work_struct emac_phy_work;
+
+	/* Context variabled used for debugger */
+	struct iommu_domain *iommu_domain;
+	unsigned int *emac_reg_base_address;
+	unsigned int *rgmii_reg_base_address;
 };
 
 typedef enum {
@@ -1806,7 +1811,7 @@ struct emac_emb_smmu_cb_ctx {
 	struct platform_device *pdev_master;
 	struct platform_device *smmu_pdev;
 	struct dma_iommu_mapping *mapping;
-	struct iommu_domain *iommu;
+	struct iommu_domain *iommu_domain;
 	u32 va_start;
 	u32 va_size;
 	u32 va_end;

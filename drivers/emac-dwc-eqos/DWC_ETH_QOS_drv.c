@@ -527,8 +527,19 @@ static void DWC_ETH_QOS_restart_dev(struct DWC_ETH_QOS_prv_data *pdata,
 	struct desc_if_struct *desc_if = &pdata->desc_if;
 	struct hw_if_struct *hw_if = &pdata->hw_if;
 	struct DWC_ETH_QOS_rx_queue *rx_queue = NULL;
+	int reg_val;
 
 	DBGPR("-->DWC_ETH_QOS_restart_dev\n");
+
+	EMACERR("FBE received for queue = %d\n", qinx);
+	DMA_CHTDR_CURTDESAPTR_UDFRD(qinx, reg_val);
+	EMACERR("EMAC_DMA_CHi_CURRENT_APP_TXDESC = %#x\n", reg_val);
+	DMA_CHRDR_CURRDESAPTR_UDFRD(qinx, reg_val);
+	EMACERR("EMAC_DMA_CHi_CURRENT_APP_RXDESC = %#x\n", reg_val);
+	DMA_CHTBAR_CURTBUFAPTR_UDFRD(qinx, reg_val);
+	EMACERR("EMAC_DMA_CHi_CURRENT_APP_TXBUFFER = %#x\n", reg_val);
+	DMA_CHRBAR_CURRBUFAPTR_UDFRD(qinx, reg_val);
+	EMACERR("EMAC_DMA_CHi_CURRENT_APP_RXBUFFER = %#x\n", reg_val);
 
 	netif_stop_subqueue(pdata->dev, qinx);
 

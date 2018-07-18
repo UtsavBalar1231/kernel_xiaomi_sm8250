@@ -836,9 +836,26 @@ static int DWC_ETH_QOS_panic_notifier(struct notifier_block *this,
 		unsigned long event, void *ptr)
 {
 	if (gDWC_ETH_QOS_prv_data) {
-		DBGPR("DWC_ETH_QOS: 0x%pK\n", gDWC_ETH_QOS_prv_data);
+		EMACINFO("gDWC_ETH_QOS_prv_data 0x%p\n", gDWC_ETH_QOS_prv_data);
 		DWC_ETH_QOS_ipa_stats_read(gDWC_ETH_QOS_prv_data);
 		DWC_ETH_QOS_dma_desc_stats_read(gDWC_ETH_QOS_prv_data);
+
+		gDWC_ETH_QOS_prv_data->iommu_domain = emac_emb_smmu_ctx.iommu_domain;
+		EMACINFO("emac iommu domain 0x%p\n", gDWC_ETH_QOS_prv_data->iommu_domain);
+
+		gDWC_ETH_QOS_prv_data->emac_reg_base_address =
+			(unsigned int *)kzalloc(dwc_eth_qos_res_data.emac_mem_size, GFP_KERNEL);
+		EMACINFO("emac register mem 0x%p\n", gDWC_ETH_QOS_prv_data->emac_reg_base_address);
+		if (gDWC_ETH_QOS_prv_data->emac_reg_base_address != NULL)
+			memcpy(gDWC_ETH_QOS_prv_data->emac_reg_base_address, (void*)dwc_eth_qos_base_addr,
+				   dwc_eth_qos_res_data.emac_mem_size);
+
+		gDWC_ETH_QOS_prv_data->rgmii_reg_base_address =
+			(unsigned int *)kzalloc(dwc_eth_qos_res_data.rgmii_mem_size, GFP_KERNEL);
+		EMACINFO("rgmii register mem 0x%p\n", gDWC_ETH_QOS_prv_data->rgmii_reg_base_address);
+		if (gDWC_ETH_QOS_prv_data->rgmii_reg_base_address != NULL)
+			memcpy(gDWC_ETH_QOS_prv_data->rgmii_reg_base_address, (void*)dwc_rgmii_io_csr_base_addr,
+				   dwc_eth_qos_res_data.rgmii_mem_size);
 	}
 	return NOTIFY_DONE;
 }
@@ -1131,7 +1148,6 @@ static int DWC_ETH_QOS_configure_netdevice(struct platform_device *pdev)
 	pdata->io_macro_tx_mode_non_id =
 		dwc_eth_qos_res_data.io_macro_tx_mode_non_id;
 	pdata->io_macro_phy_intf = dwc_eth_qos_res_data.io_macro_phy_intf;
-
 #ifdef DWC_ETH_QOS_CONFIG_DEBUGFS
 	/* to give prv data to debugfs */
 	DWC_ETH_QOS_get_pdata(pdata);
@@ -1423,6 +1439,9 @@ static int emac_emb_smmu_cb_probe(struct platform_device *pdev)
 		EMACERR("couldn't attach to IOMMU ret=%d\n", result);
 		goto err_smmu_probe;
 	}
+
+	emac_emb_smmu_ctx.iommu_domain =
+		iommu_get_domain_for_dev(&emac_emb_smmu_ctx.smmu_pdev->dev);
 
 	EMACDBG("Successfully attached to IOMMU\n");
 	if (emac_emb_smmu_ctx.pdev_master) {
