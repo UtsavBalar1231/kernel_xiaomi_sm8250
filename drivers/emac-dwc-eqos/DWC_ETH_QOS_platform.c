@@ -713,6 +713,8 @@ void DWC_ETH_QOS_suspend_clks(struct DWC_ETH_QOS_prv_data *pdata)
 	reinit_completion(&pdata->clk_enable_done);
 	pdata->clks_suspended = 1;
 
+	DWC_ETH_QOS_set_clk_and_bus_config(pdata, 0);
+
 	if (dwc_eth_qos_res_data.axi_clk)
 		clk_disable_unprepare(dwc_eth_qos_res_data.axi_clk);
 
@@ -1618,6 +1620,8 @@ int DWC_ETH_QOS_remove(struct platform_device *pdev)
 			&DWC_ETH_QOS_panic_blk);
 
 	emac_emb_smmu_exit();
+
+	DWC_ETH_QOS_set_clk_and_bus_config(pdata, 0);
 
 	free_netdev(dev);
 

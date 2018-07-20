@@ -668,6 +668,10 @@ void DWC_ETH_QOS_set_clk_and_bus_config(struct DWC_ETH_QOS_prv_data *pdata, int 
 		case SPEED_10:
 			pdata->vote_idx = VOTE_IDX_10MBPS;
 			break;
+		case 0:
+			pdata->vote_idx = VOTE_IDX_0MBPS;
+			pdata->rgmii_clk_rate = 0;
+			break;
 	}
 
 	if (pdata->bus_hdl) {
