@@ -559,7 +559,7 @@
 /* for EEE */
 #define DWC_ETH_QOS_DEFAULT_LPI_LS_TIMER 0x3E8 /* 1000 in decimal */
 #define DWC_ETH_QOS_DEFAULT_LPI_TWT_TIMER 0x11 /* Typical 17uS */
-#define DWC_ETH_QOS_DEFAULT_LPI_LPIET_TIMER 125 /* 8*125uS=1000uS=1mS*/
+#define DWC_ETH_QOS_DEFAULT_LPI_LPIET_TIMER 0x1FFFF /* 131071uS=131.071mS */
 
 #define DWC_ETH_QOS_DEFAULT_LPI_TIMER 1000 /* LPI Tx local expiration time in msec */
 #define DWC_ETH_QOS_LPI_TIMER(x) (jiffies + msecs_to_jiffies(x))
