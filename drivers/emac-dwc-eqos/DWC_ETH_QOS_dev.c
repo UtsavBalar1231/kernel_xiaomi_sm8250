@@ -4566,11 +4566,10 @@ static int enable_mac_interrupts(void)
 	unsigned long varmac_imr;
 
 	/* Enable following interrupts */
-	/* PHYIE - PHY Interrupt Enable */
 	/* LPIIM - LPI Interrupt Enable */
 	MAC_IMR_RGRD(varmac_imr);
-	varmac_imr = varmac_imr & (unsigned long)(0x1008);
-	varmac_imr = varmac_imr | ((0x1) << 3) | ((0x1) << 5);
+	varmac_imr = varmac_imr & (unsigned long)(0x1000);
+	varmac_imr = varmac_imr | ((0x1) << 5);
 	MAC_IMR_RGWR(varmac_imr);
 
 	return Y_SUCCESS;
