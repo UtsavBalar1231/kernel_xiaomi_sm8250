@@ -4075,8 +4075,10 @@ static INT DWC_ETH_QOS_yexit(void)
 	/*Poll Until Poll Condition */
 	vy_count = 0;
 	while (1) {
-		if (vy_count > RETRYCOUNT)
+		if (vy_count > RETRYCOUNT) {
+			EMACERR("Unable to reset MAC 0x%x\n", VARDMA_BMR);
 			return -Y_FAILURE;
+		}
 
 		vy_count++;
 		mdelay(1);
@@ -4690,6 +4692,18 @@ static INT configure_mac(struct DWC_ETH_QOS_prv_data *pdata)
 	VARMAC_MCR |= ((0x1) << 1);
 #endif
 	MAC_MCR_RGWR(VARMAC_MCR);
+
+	switch (pdata->speed) {
+	case SPEED_1000:
+		set_gmii_speed();
+		break;
+	case SPEED_100:
+		set_mii_speed_100();
+		break;
+	case SPEED_10:
+		set_mii_speed_10();
+		break;
+	}
 
 	if (pdata->hw_feat.rx_coe_sel &&
 	    ((pdata->dev_state & NETIF_F_RXCSUM) == NETIF_F_RXCSUM))

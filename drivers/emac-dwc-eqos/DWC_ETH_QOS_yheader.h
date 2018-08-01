@@ -654,6 +654,8 @@
 #define MII_100_LOW_SVS_CLK_FREQ  (25 * 1000 * 1000UL)
 #define MII_10_LOW_SVS_CLK_FREQ  (2.5 * 1000 * 1000UL)
 
+#define NAPI_PER_QUEUE_POLL_BUDGET 64
+
 /**
  * enum emac_hw_core_version - EMAC hardware core version type
 * @EMAC_HW_None: EMAC hardware version not defined

@@ -1947,6 +1947,7 @@ static int DWC_ETH_QOS_close(struct net_device *dev)
 	struct DWC_ETH_QOS_prv_data *pdata = netdev_priv(dev);
 	struct hw_if_struct *hw_if = &pdata->hw_if;
 	struct desc_if_struct *desc_if = &pdata->desc_if;
+	int qinx = 0;
 
 	DBGPR("-->DWC_ETH_QOS_close\n");
 
@@ -1959,7 +1960,15 @@ static int DWC_ETH_QOS_close(struct net_device *dev)
 		phy_stop(pdata->phydev);
 
 #ifndef DWC_ETH_QOS_CONFIG_PGTEST
+	/* Stop SW TX before DMA TX in HW */
 	netif_tx_disable(dev);
+	DWC_ETH_QOS_stop_all_ch_tx_dma(pdata);
+
+	/* Disable MAC TX/RX */
+	hw_if->stop_mac_tx_rx();
+
+	/* Stop SW RX after DMA RX in HW */
+	DWC_ETH_QOS_stop_all_ch_rx_dma(pdata);
 	DWC_ETH_QOS_all_ch_napi_disable(pdata);
 
 	if (pdata->ipa_enabled) {
@@ -1967,8 +1976,21 @@ static int DWC_ETH_QOS_close(struct net_device *dev)
 	}
 #endif /* end of DWC_ETH_QOS_CONFIG_PGTEST */
 
+#ifdef DWC_ETH_QOS_TXPOLLING_MODE_ENABLE
+    for (qinx = 0; qinx < DWC_ETH_QOS_TX_QUEUE_CNT; qinx++) {
+		/* check for tx descriptor status */
+		DWC_ETH_QOS_tx_interrupt(pdata->dev, pdata, qinx);
+    }
+#endif
+
+    for (qinx = 0; qinx < DWC_ETH_QOS_RX_QUEUE_CNT; qinx++)
+        (void)pdata->clean_rx(pdata, NAPI_PER_QUEUE_POLL_BUDGET, qinx);
+
 	/* issue software reset to device */
 	hw_if->exit();
+
+    DWC_ETH_QOS_restart_phy(pdata);
+
 	desc_if->tx_free_mem(pdata);
 	desc_if->rx_free_mem(pdata);
 #ifdef PER_CH_INT

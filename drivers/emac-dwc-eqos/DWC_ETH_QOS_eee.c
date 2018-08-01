@@ -77,6 +77,9 @@
 #define AR8035_SMART_EEE_CTRL_3 0x805D
 #define AR8035_SMART_EEE_EN (1<<8)
 
+#define PHY_RX_CLOCK_STOPPABLE_EN 1
+#define PHY_RX_CLOCK_STOPPABLE_DIS 0
+
 void DWC_ETH_QOS_enable_eee_mode(struct DWC_ETH_QOS_prv_data *pdata)
 {
 	struct DWC_ETH_QOS_tx_wrapper_descriptor *tx_desc_data = NULL;
@@ -426,7 +429,7 @@ bool DWC_ETH_QOS_eee_init(struct DWC_ETH_QOS_prv_data *pdata)
 #ifndef DWC_ETH_QOS_CUSTOMIZED_EEE_TEST
 		/* check if the PHY supports EEE */
 		if (!pdata->phydev || !pdata->phydev->link
-			|| DWC_ETH_QOS_phy_init_eee(pdata->phydev, 1))
+			|| DWC_ETH_QOS_phy_init_eee(pdata->phydev, PHY_RX_CLOCK_STOPPABLE_DIS))
 			goto phy_eee_failed;
 #endif /* DWC_ETH_QOS_CUSTOMIZED_EEE_TEST */
 
