@@ -443,6 +443,49 @@ void dump_phy_registers(struct DWC_ETH_QOS_prv_data *pdata)
 }
 
 /*!
+ * \brief API to enable or disable PHY hibernation mode
+ *
+ * \details Write to PHY debug registers at 0x0B bit[15]
+ *
+ * \param[in] pdata - pointer to platform data, mode
+ * enable or disable values.
+ *
+ * \return void
+ *
+ * \retval none
+ */
+static void DWC_ETH_QOS_set_phy_hibernation_mode(struct DWC_ETH_QOS_prv_data *pdata,
+								uint mode)
+{
+	u32 phydata = 0;
+	EMACINFO("Enter\n");
+
+	DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
+				DWC_ETH_QOS_PHY_DEBUG_PORT_ADDR_OFFSET,
+				DWC_ETH_QOS_PHY_HIB_CTRL);
+	DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr,
+				DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT,
+				&phydata);
+
+	EMACINFO("value read 0x%x\n", phydata);
+
+	phydata = ((phydata & DWC_ETH_QOS_PHY_HIB_CTRL_PS_HIB_EN_WR_MASK)
+			   | ((DWC_ETH_QOS_PHY_HIB_CTRL_PS_HIB_EN_MASK & mode) << 15));
+	DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
+				DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT,
+				phydata);
+
+	DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
+				DWC_ETH_QOS_PHY_DEBUG_PORT_ADDR_OFFSET,
+				DWC_ETH_QOS_PHY_HIB_CTRL);
+	DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr,
+				DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT,
+				&phydata);
+
+	EMACINFO("Exit value written 0x%x\n", phydata);
+}
+
+/*!
  * \brief API to enable or disable RX/TX delay in PHY.
  *
  * \details Write to PHY debug registers at 0x0 and 0x5
@@ -1059,6 +1102,8 @@ static int DWC_ETH_QOS_init_phy(struct net_device *dev)
 
 		DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr, DWC_ETH_QOS_PHY_SMART_SPEED, &phydata);
 		DBGPR_MDIO( "Smart Speed Reg (%#x) = %#x\n", DWC_ETH_QOS_PHY_SMART_SPEED, phydata);
+
+		DWC_ETH_QOS_set_phy_hibernation_mode(pdata, 0);
 	}
 
 	if (pdata->phy_intr_en && pdata->phy_irq) {
