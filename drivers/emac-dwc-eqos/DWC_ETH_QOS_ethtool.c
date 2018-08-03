@@ -741,12 +741,17 @@ static int DWC_ETH_QOS_setsettings(struct net_device *dev,
 		if (cmd->duplex != DUPLEX_FULL) {
 			ret = -EINVAL;
 		} else {
+			if (cmd->autoneg == AUTONEG_ENABLE &&
+				pdata->phydev->autoneg == AUTONEG_ENABLE)
+				goto no_change;
+
 			/* Advertise all supported speeds when autoneg is enabled */
 			if (cmd->autoneg == AUTONEG_ENABLE)
 				cmd->advertising = pdata->phydev->supported;
 
 			ret = phy_ethtool_sset(pdata->phydev, cmd);
 		}
+ no_change:
 		mutex_unlock(&pdata->mlock);
 	}
 
