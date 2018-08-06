@@ -7,6 +7,8 @@
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/mm_event.h>
+/* msec */
+static unsigned long period_ms = 500;
 
 void mm_event_task_init(struct task_struct *tsk)
 {
@@ -27,7 +29,7 @@ static void record_stat(void)
 			memset(&current->mm_event[i], 0,
 					sizeof(struct mm_event_task));
 		}
-		current->next_period = jiffies + (HZ >> 1);
+		current->next_period = jiffies + msecs_to_jiffies(period_ms);
 	}
 }
 
@@ -55,12 +57,41 @@ void mm_event_count(enum mm_event_type event, int count)
 
 static struct dentry *mm_event_root;
 
+static int period_ms_set(void *data, u64 val)
+{
+	if (val < 1 || val > ULONG_MAX)
+		return -EINVAL;
+
+	period_ms = (unsigned long)val;
+	return 0;
+}
+
+static int period_ms_get(void *data, u64 *val)
+{
+	*val = period_ms;
+	return 0;
+}
+
+DEFINE_SIMPLE_ATTRIBUTE(period_ms_operations, period_ms_get,
+			period_ms_set, "%llu\n");
+
 static int __init mm_event_init(void)
 {
+	struct dentry *entry;
+
 	mm_event_root = debugfs_create_dir("mm_event", NULL);
 	if (!mm_event_root) {
 		pr_warn("debugfs dir <mm_event> creation failed\n");
 		return PTR_ERR(mm_event_root);
+	}
+
+	entry = debugfs_create_file("period_ms", 0644,
+			mm_event_root, NULL, &period_ms_operations);
+
+	if (IS_ERR(entry)) {
+		pr_warn("debugfs file mm_event_task creation failed\n");
+		debugfs_remove_recursive(mm_event_root);
+		return PTR_ERR(entry);
 	}
 
 	return 0;
