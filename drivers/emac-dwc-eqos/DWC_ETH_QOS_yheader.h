@@ -666,17 +666,17 @@
 * @EMAC_HW_v2_3_1: EMAC core version 2.3.1.
 * @EMAC_HW_v2_3_2: EMAC core version 2.3.2.
 */
-enum emac_core_version {
-	EMAC_HW_None = 0,
-	EMAC_HW_v2_0_0 = 1,
-	EMAC_HW_v2_1_0 = 2,
-	EMAC_HW_v2_1_1 = 3,
-	EMAC_HW_v2_1_2 = 4,
-	EMAC_HW_v2_2_0 = 5,
-	EMAC_HW_v2_3_0 = 6,
-	EMAC_HW_v2_3_1 = 7,
-	EMAC_HW_v2_3_2 = 8
-};
+
+#define EMAC_HW_None 0
+#define EMAC_HW_v2_0_0 1
+#define EMAC_HW_v2_1_0 2
+#define EMAC_HW_v2_1_1 3
+#define EMAC_HW_v2_1_2 4
+#define EMAC_HW_v2_2_0 5
+#define EMAC_HW_v2_3_0 6
+#define EMAC_HW_v2_3_1 7
+#define EMAC_HW_v2_3_2 8
+#define EMAC_HW_vMAX 9
 
 
 /* C data types typedefs */
@@ -1523,7 +1523,7 @@ struct DWC_ETH_QOS_res_data {
 	struct clk *ahb_clk;
 	struct clk *rgmii_clk;
 	struct clk *ptp_clk;
-	enum emac_core_version emac_hw_version_type;
+	unsigned int emac_hw_version_type;
 };
 
 struct DWC_ETH_QOS_prv_ipa_data {
@@ -1775,7 +1775,7 @@ struct DWC_ETH_QOS_prv_data {
 	unsigned int io_macro_tx_mode_non_id;
 	unsigned int io_macro_phy_intf;
 	int phy_irq;
-	enum emac_core_version emac_hw_version_type;
+	unsigned int emac_hw_version_type;
 
 	/* Work struct for handling phy interrupt */
 	struct work_struct emac_phy_work;
@@ -1905,16 +1905,10 @@ int DWC_ETH_QOS_rgmii_io_macro_sdcdc_enable_lp_mode(void);
 int DWC_ETH_QOS_rgmii_io_macro_sdcdc_config(void);
 int DWC_ETH_QOS_rgmii_io_macro_init(struct DWC_ETH_QOS_prv_data *);
 int DWC_ETH_QOS_sdcc_set_bypass_mode(void);
-int DWC_ETH_QOS_rgmii_io_macro_dll_reset(void);
+int DWC_ETH_QOS_rgmii_io_macro_dll_reset(struct DWC_ETH_QOS_prv_data *pdata);
 void dump_rgmii_io_macro_registers(void);
-
-/* POR values for IO macro and DLL registers */
-#define EMAC_RGMII_IO_MACRO_CONFIG_POR 0x40C01343
-#define EMAC_RGMII_IO_MACRO_CONFIG_2_POR 0x00002060
-#define EMAC_SDCC_HC_REG_DLL_CONFIG_POR 0x2004642C
-#define EMAC_SDCC_HC_REG_DDR_CONFIG_POR 0x00000000
-#define EMAC_SDCC_HC_REG_DLL_CONFIG_2_POR 0x00200000
-#define EMAC_SDCC_USR_CTL_POR 0x00000000
+int DWC_ETH_QOS_set_rgmii_func_clk_en(void);
+void DWC_ETH_QOS_set_clk_and_bus_config(struct DWC_ETH_QOS_prv_data *pdata, int speed);
 
 #define EMAC_MDC "dev-emac-mdc"
 #define EMAC_MDIO "dev-emac-mdio"

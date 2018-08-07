@@ -19,7 +19,8 @@
 extern ULONG dwc_rgmii_io_csr_base_addr;
 #define RGMII_IO_BASE_ADDRESS dwc_rgmii_io_csr_base_addr
 
-#define RGMII_IO_MACRO_CONFIG_RGOFFADDR ((volatile ULONG *)(RGMII_IO_BASE_ADDRESS + 0x00000000))
+#define RGMII_IO_MACRO_CONFIG_RGOFFADDR_OFFSET (0x00000000)
+#define RGMII_IO_MACRO_CONFIG_RGOFFADDR ((volatile ULONG *) (RGMII_IO_BASE_ADDRESS + RGMII_IO_MACRO_CONFIG_RGOFFADDR_OFFSET))
 
 #define RGMII_IO_MACRO_CONFIG_RGWR(data) do {\
 		iowrite32(data, (void *)RGMII_IO_MACRO_CONFIG_RGOFFADDR);\
@@ -27,6 +28,22 @@ extern ULONG dwc_rgmii_io_csr_base_addr;
 
 #define RGMII_IO_MACRO_CONFIG_RGRD(data) do {\
 		(data) = ioread32((void *)RGMII_IO_MACRO_CONFIG_RGOFFADDR);\
+} while (0)
+
+#define RGMII_FUNC_CLK_EN_MASK (ULONG)(0x1)
+
+#define RGMII_FUNC_CLK_EN_WR_MASK (ULONG)(0xbfffffff)
+
+#define RGMII_FUNC_CLK_EN_UDFWR(data) do {\
+		ULONG v;\
+		RGMII_IO_MACRO_CONFIG_RGRD(v);\
+		v = ((v & RGMII_FUNC_CLK_EN_WR_MASK) | ((data & RGMII_FUNC_CLK_EN_MASK) << 30));\
+		RGMII_IO_MACRO_CONFIG_RGWR(v);\
+} while (0)
+
+#define RGMII_FUNC_CLK_EN_UDFRD(data) do {\
+		RGMII_IO_MACRO_CONFIG_RGRD(data);\
+		data = ((data >> 30) & RGMII_FUNC_CLK_EN_MASK);\
 } while (0)
 
 #define RGMII_GPIO_CFG_RX_INT_MASK (ULONG)(0x3)
@@ -191,7 +208,8 @@ extern ULONG dwc_rgmii_io_csr_base_addr;
 
 /* Read Write register operations for EMAC_SDCC_HC_REG_DLL_CONFIG */
 
-#define SDCC_HC_REG_DLL_CONFIG_RGOFFADDR ((volatile ULONG *)(RGMII_IO_BASE_ADDRESS + 0x00000004))
+#define SDCC_HC_REG_DLL_CONFIG_RGOFFADDR_OFFSET (0x00000004)
+#define SDCC_HC_REG_DLL_CONFIG_RGOFFADDR ((volatile ULONG *)(RGMII_IO_BASE_ADDRESS + SDCC_HC_REG_DLL_CONFIG_RGOFFADDR_OFFSET))
 
 #define SDCC_HC_REG_DLL_CONFIG_RGWR(data) do {\
 		iowrite32(data, (void *)SDCC_HC_REG_DLL_CONFIG_RGOFFADDR);\
@@ -330,8 +348,8 @@ extern ULONG dwc_rgmii_io_csr_base_addr;
 } while (0)
 
 /* Read Write register operations for EMAC_SDCC_HC_REG_DDR_CONFIG */
-
-#define SDCC_HC_REG_DDR_CONFIG_RGOFFADDR ((volatile ULONG *)(RGMII_IO_BASE_ADDRESS + 0x0000000C))
+#define SDCC_HC_REG_DDR_CONFIG_RGOFFADDR_OFFSET (0x0000000C)
+#define SDCC_HC_REG_DDR_CONFIG_RGOFFADDR ((volatile ULONG *)(RGMII_IO_BASE_ADDRESS + SDCC_HC_REG_DDR_CONFIG_RGOFFADDR_OFFSET))
 
 #define SDCC_HC_REG_DDR_CONFIG_RGWR(data) do {\
 		iowrite32(data, (void *)SDCC_HC_REG_DDR_CONFIG_RGOFFADDR);\
@@ -407,7 +425,8 @@ extern ULONG dwc_rgmii_io_csr_base_addr;
 
 /* Read Write register operations for EMAC_SDCC_HC_REG_DLL_CONFIG_2 */
 
-#define SDCC_HC_REG_DLL_CONFIG_2_RGOFFADDR ((volatile ULONG *)(RGMII_IO_BASE_ADDRESS + 0x00000010))
+#define SDCC_HC_REG_DLL_CONFIG_2_RGOFFADDR_OFFSET (0x00000010)
+#define SDCC_HC_REG_DLL_CONFIG_2_RGOFFADDR ((volatile ULONG *)(RGMII_IO_BASE_ADDRESS + SDCC_HC_REG_DLL_CONFIG_2_RGOFFADDR_OFFSET))
 
 #define SDCC_HC_REG_DLL_CONFIG_2_RGWR(data) do {\
 		iowrite32(data, (void *)SDCC_HC_REG_DLL_CONFIG_2_RGOFFADDR);\
@@ -482,7 +501,8 @@ extern ULONG dwc_rgmii_io_csr_base_addr;
 
 /* Read register operations for EMAC_SDCC_USR_CTL */
 
-#define SDCC_USR_CTL_RGOFFADDR ((volatile ULONG *)(RGMII_IO_BASE_ADDRESS + 0x00000018))
+#define SDCC_USR_CTL_RGOFFADDR_OFFSET (0x00000018)
+#define SDCC_USR_CTL_RGOFFADDR ((volatile ULONG *)(RGMII_IO_BASE_ADDRESS + SDCC_USR_CTL_RGOFFADDR_OFFSET))
 
 #define SDCC_USR_CTL_BYPASS_MODE_MASK (ULONG)(0x1)
 
@@ -512,7 +532,8 @@ extern ULONG dwc_rgmii_io_csr_base_addr;
  * EMAC_RGMII_IO_MACRO_CONFIG_2
  */
 
-#define RGMII_IO_MACRO_CONFIG_2_RGOFFADDR ((volatile ULONG *)(RGMII_IO_BASE_ADDRESS + 0x0000001C))
+#define RGMII_IO_MACRO_CONFIG_2_RGOFFADDR_OFFSET (0x0000001C)
+#define RGMII_IO_MACRO_CONFIG_2_RGOFFADDR ((volatile ULONG *)(RGMII_IO_BASE_ADDRESS + RGMII_IO_MACRO_CONFIG_2_RGOFFADDR_OFFSET))
 
 #define RGMII_IO_MACRO_CONFIG_2_RGWR(data) do {\
 		iowrite32(data, (void *)RGMII_IO_MACRO_CONFIG_2_RGOFFADDR);\

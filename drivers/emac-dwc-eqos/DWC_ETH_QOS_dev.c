@@ -4187,8 +4187,10 @@ static INT configure_tx_queue(UINT queue_index)
 
 	/*Poll Until Poll Condition */
 	while (1) {
-		if (vy_count > RETRYCOUNT)
+		if (vy_count > RETRYCOUNT) {
+			EMACERR("unable to flush tx queue %d", queue_index);
 			return -Y_FAILURE;
+		}
 		vy_count++;
 		usleep_range(1000, 1500);
 		MTL_QTOMR_RGRD(queue_index, VARMTL_QTOMR);
@@ -4352,8 +4354,10 @@ static INT configure_mtl_queue(UINT QINX, struct DWC_ETH_QOS_prv_data *pdata)
 	/*Poll Until Poll Condition */
 	vy_count = 0;
 	while (1) {
-		if (vy_count > RETRYCOUNT)
+		if (vy_count > RETRYCOUNT){
+			EMACERR("unable to flush tx queue %d", QINX);
 			return -Y_FAILURE;
+		}
 		vy_count++;
 		mdelay(1);
 

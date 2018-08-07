@@ -1139,6 +1139,13 @@ static int DWC_ETH_QOS_configure_netdevice(struct platform_device *pdev)
 
 	/* store emac hw version in pdata*/
 	pdata->emac_hw_version_type = dwc_eth_qos_res_data.emac_hw_version_type;
+
+	/* Scale the clocks to 10Mbps speed */
+	pdata->speed = SPEED_10;
+	DWC_ETH_QOS_set_clk_and_bus_config(pdata, SPEED_10);
+
+	DWC_ETH_QOS_set_rgmii_func_clk_en();
+
 	/* issue software reset to device */
 	hw_if->exit();
 	/* IEMAC: Find and Read the IRQ from DTS */

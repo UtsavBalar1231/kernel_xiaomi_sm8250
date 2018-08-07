@@ -706,9 +706,9 @@ static inline int DWC_ETH_QOS_configure_io_macro_dll_settings(
 	EMACDBG("Enter\n");
 
 	if (pdata->emac_hw_version_type == EMAC_HW_v2_0_0)
-		DWC_ETH_QOS_rgmii_io_macro_dll_reset();
-
 #ifndef DWC_ETH_QOS_EMULATION_PLATFORM
+	DWC_ETH_QOS_rgmii_io_macro_dll_reset(pdata);
+
 	/* For RGMII ID mode with internal delay*/
 	if (pdata->io_macro_phy_intf == RGMII_MODE && !pdata->io_macro_tx_mode_non_id) {
 		EMACDBG("Initialize and configure SDCC DLL\n");
@@ -1203,7 +1203,7 @@ int DWC_ETH_QOS_mdio_register(struct net_device *dev)
 	}
 	if (pdata->io_macro_phy_intf == RMII_MODE) {
 		pdata->speed = SPEED_100; //Default speed
-		DWC_ETH_QOS_set_clk_and_bus_config(pdata);
+		DWC_ETH_QOS_set_clk_and_bus_config(pdata, pdata->speed);
 		ret = DWC_ETH_QOS_configure_io_macro_dll_settings(pdata);
 		if (ret < 0) {
 			EMACERR("Failed to configure IO macro and DLL settings\n");
