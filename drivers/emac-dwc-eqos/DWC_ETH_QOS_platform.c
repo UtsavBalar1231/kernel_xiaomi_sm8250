@@ -827,6 +827,7 @@ ptp_clk_fail:
 void DWC_ETH_QOS_disable_ptp_clk(struct device* dev)
 {
 	if (dwc_eth_qos_res_data.ptp_clk){
+		clk_set_rate(dwc_eth_qos_res_data.ptp_clk, 0);
 		clk_disable_unprepare(dwc_eth_qos_res_data.ptp_clk);
 		devm_clk_put(dev, dwc_eth_qos_res_data.ptp_clk);
 	}

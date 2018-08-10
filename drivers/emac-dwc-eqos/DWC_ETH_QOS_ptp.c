@@ -288,6 +288,8 @@ int DWC_ETH_QOS_ptp_init(struct DWC_ETH_QOS_prv_data *pdata)
 		goto no_hw_ptp;
 	}
 
+	DWC_ETH_QOS_enable_ptp_clk(&pdata->pdev->dev);
+
 	spin_lock_init(&pdata->ptp_lock);
 
 	pdata->ptp_clock_ops = DWC_ETH_QOS_ptp_clock_ops;
@@ -329,6 +331,8 @@ void DWC_ETH_QOS_ptp_remove(struct DWC_ETH_QOS_prv_data *pdata)
 		ptp_clock_unregister(pdata->ptp_clock);
 		pr_alert("Removed PTP HW clock successfully\n");
 	}
+
+	DWC_ETH_QOS_disable_ptp_clk(&pdata->pdev->dev);
 
 	DBGPR_PTP("<--DWC_ETH_QOS_ptp_remove\n");
 }
