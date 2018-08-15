@@ -466,7 +466,8 @@ static void set_phy_rx_tx_delay(struct DWC_ETH_QOS_prv_data *pdata,
 		u16 rx_clk = 0;
 
 		if(!pdata->io_macro_tx_mode_non_id){
-			EMACDBG("No PHY delay settings required for ID mode in HANA AU\n");
+			EMACDBG("No PHY delay settings required for ID mode for "
+					"EMAC core version 2.1.0\n");
 			return;
 		}
 		rx_clk = 0x1F;
@@ -564,7 +565,8 @@ static void configure_phy_rx_tx_delay(struct DWC_ETH_QOS_prv_data *pdata)
 			/* Settings for Non-ID mode */
 			set_phy_rx_tx_delay(pdata, ENABLE_RX_DELAY, ENABLE_TX_DELAY);
 		} else {
-			/* Settings for RGMII ID mode. Not applicable to HANA AU */
+			/* Settings for RGMII ID mode.
+			Not applicable for EMAC core version 2.1.0 */
 			if (pdata->emac_hw_version_type != EMAC_HW_v2_1_0)
 				set_phy_rx_tx_delay(pdata, DISABLE_RX_DELAY, DISABLE_TX_DELAY);
 		}

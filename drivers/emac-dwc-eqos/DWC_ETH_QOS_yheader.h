@@ -657,14 +657,14 @@
 /**
  * enum emac_hw_core_version - EMAC hardware core version type
 * @EMAC_HW_None: EMAC hardware version not defined
-* @EMAC_HW_v2_0_0: EMAC core version 2.0.0. & chips is SDX24(Chiron)
-* @EMAC_HW_v2_1_0: EMAC core version 2.1.0. & chips is SM8150(Hana)
-* @EMAC_HW_v2_1_1: EMAC core version 2.1.1. & chips is SC8180X(Poipu)
-* @EMAC_HW_v2_1_2: EMAC core version 2.1.2. & chips is SC810X(Poipu)v2,SM8150(Hana)v2
-* @EMAC_HW_v2_2_0: EMAC core version 2.2.0. & chips is SDX24(Chiron)v2
-* @EMAC_HW_v2_3_0: EMAC core version 2.3.0. & chips is QCS405(Vipertooth)
-* @EMAC_HW_v2_3_1: EMAC core version 2.3.1. & chips is SM6150(Talos)
-* @EMAC_HW_v2_3_2: EMAC core version 2.3.2. & chips is SDX55(Huracan)
+* @EMAC_HW_v2_0_0: EMAC core version 2.0.0.
+* @EMAC_HW_v2_1_0: EMAC core version 2.1.0.
+* @EMAC_HW_v2_1_1: EMAC core version 2.1.1.
+* @EMAC_HW_v2_1_2: EMAC core version 2.1.2.
+* @EMAC_HW_v2_2_0: EMAC core version 2.2.0.
+* @EMAC_HW_v2_3_0: EMAC core version 2.3.0.
+* @EMAC_HW_v2_3_1: EMAC core version 2.3.1.
+* @EMAC_HW_v2_3_2: EMAC core version 2.3.2.
 */
 enum emac_core_version {
 	EMAC_HW_None = 0,

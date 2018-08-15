@@ -683,13 +683,13 @@ static int DWC_ETH_QOS_get_clks(struct device *dev)
 	dwc_eth_qos_res_data.ptp_clk = NULL;
 
 	if (dwc_eth_qos_res_data.emac_hw_version_type == EMAC_HW_v2_1_0) {
-		/* HANA clocks */
+		/* EMAC core version 2.1.0 clocks */
 		axi_clock_name = "emac_axi_clk";
 		ahb_clock_name = "emac_slv_ahb_clk";
 		rgmii_clock_name = "emac_rgmii_clk";
 		ptp_clock_name = "emac_ptp_clk";
 	} else {
-		/* Default values are for Chiron clocks */
+		/* Default values are for EMAC core version 2.0.0 clocks */
 		axi_clock_name = "eth_axi_clk";
 		ahb_clock_name = "eth_slave_ahb_clk";
 		rgmii_clock_name = "eth_rgmii_clk";
