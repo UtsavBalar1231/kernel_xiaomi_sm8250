@@ -363,6 +363,11 @@ static const struct DWC_ETH_QOS_stats DWC_ETH_QOS_mmc[] = {
 	DWC_ETH_QOS_MMC_STAT(mmc_rx_tcp_err_octets),
 	DWC_ETH_QOS_MMC_STAT(mmc_rx_icmp_gd_octets),
 	DWC_ETH_QOS_MMC_STAT(mmc_rx_icmp_err_octets),
+
+	/* LPI Rx and Tx Transition counters */
+	DWC_ETH_QOS_MMC_STAT(mmc_emac_rx_lpi_tran_cntr),
+	DWC_ETH_QOS_MMC_STAT(mmc_emac_tx_lpi_tran_cntr),
+
 };
 
 #define DWC_ETH_QOS_MMC_STATS_LEN ARRAY_SIZE(DWC_ETH_QOS_mmc)

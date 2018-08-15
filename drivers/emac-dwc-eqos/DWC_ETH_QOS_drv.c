@@ -7600,6 +7600,12 @@ void DWC_ETH_QOS_mmc_read(struct DWC_ETH_QOS_mmc_counters *mmc)
 	mmc->mmc_rx_icmp_err_octets +=
 		DWC_ETH_QOS_reg_read(MMC_RXICMP_ERR_OCTETS_RGOFFADDR);
 
+	/* LPI Rx and Tx Transition counters */
+	mmc->mmc_emac_rx_lpi_tran_cntr +=
+		DWC_ETH_QOS_reg_read(MMC_EMAC_RX_LPI_TRAN_CNTR_RGOFFADDR);
+	mmc->mmc_emac_tx_lpi_tran_cntr +=
+		DWC_ETH_QOS_reg_read(MMC_EMAC_TX_LPI_TRAN_CNTR_RGOFFADDR);
+
 	DBGPR("<--DWC_ETH_QOS_mmc_read\n");
 }
 

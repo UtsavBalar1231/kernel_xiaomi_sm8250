@@ -1378,6 +1378,10 @@ struct DWC_ETH_QOS_mmc_counters {
 	unsigned long mmc_rx_tcp_err_octets;
 	unsigned long mmc_rx_icmp_gd_octets;
 	unsigned long mmc_rx_icmp_err_octets;
+
+	/* LPI Rx and Tx Transition counters */
+	unsigned long mmc_emac_rx_lpi_tran_cntr;
+	unsigned long mmc_emac_tx_lpi_tran_cntr;
 };
 
 struct DWC_ETH_QOS_extra_stats {
