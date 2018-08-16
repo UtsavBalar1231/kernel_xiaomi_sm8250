@@ -4302,6 +4302,7 @@ static INT configure_rx_queue(UINT queue_index)
 	UINT rsf_config = 0x1;
 	UINT fup_config = 0x1;
 	UINT fep_config = 0x1;
+	UINT disable_csum_err_pkt_drop = 0x1;
 
 	EMACDBG("Enter\n");
 
@@ -4332,6 +4333,8 @@ static INT configure_rx_queue(UINT queue_index)
 	config_rsf_mode(queue_index, rsf_config);
 	MTL_QROMR_FUP_UDFWR(queue_index, fup_config);
 	MTL_QROMR_FEP_UDFWR(queue_index, fep_config);
+	/* Disable Dropping of TCP/IP Checksum Error Packets */
+	MTL_QROMR_DIS_TCP_EF_UDFWR(queue_index, disable_csum_err_pkt_drop);
 
 	/* Receive Queue Packet Arbitration reset for all RX queues */
 	MTL_QRCR_RXQ_PKT_ARBIT_UDFWR(queue_index, 0x0);

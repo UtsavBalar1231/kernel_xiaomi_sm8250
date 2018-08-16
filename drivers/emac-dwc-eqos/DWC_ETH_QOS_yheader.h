@@ -1351,7 +1351,7 @@ struct DWC_ETH_QOS_mmc_counters {
 	unsigned long mmc_rx_ipv4_hderr;
 	unsigned long mmc_rx_ipv4_nopay;
 	unsigned long mmc_rx_ipv4_frag;
-	unsigned long mmc_rx_ipv4_udsbl;
+	unsigned long mmc_rx_ipv4_udp_csum_disable;
 
 	/* IPV6 */
 	unsigned long mmc_rx_ipv6_gd_octets;
@@ -1360,18 +1360,18 @@ struct DWC_ETH_QOS_mmc_counters {
 
 	/* Protocols */
 	unsigned long mmc_rx_udp_gd;
-	unsigned long mmc_rx_udp_err;
+	unsigned long mmc_rx_udp_csum_err;
 	unsigned long mmc_rx_tcp_gd;
-	unsigned long mmc_rx_tcp_err;
+	unsigned long mmc_rx_tcp_csum_err;
 	unsigned long mmc_rx_icmp_gd;
-	unsigned long mmc_rx_icmp_err;
+	unsigned long mmc_rx_icmp_csum_err;
 
 	/* IPv4 */
 	unsigned long mmc_rx_ipv4_gd_octets;
 	unsigned long mmc_rx_ipv4_hderr_octets;
 	unsigned long mmc_rx_ipv4_nopay_octets;
 	unsigned long mmc_rx_ipv4_frag_octets;
-	unsigned long mmc_rx_ipv4_udsbl_octets;
+	unsigned long mmc_rx_ipv4_udp_csum_dis_octets;
 
 	/* IPV6 */
 	unsigned long mmc_rx_ipv6_gd;
@@ -1380,15 +1380,16 @@ struct DWC_ETH_QOS_mmc_counters {
 
 	/* Protocols */
 	unsigned long mmc_rx_udp_gd_octets;
-	unsigned long mmc_rx_udp_err_octets;
+	unsigned long mmc_rx_udp_csum_err_octets;
 	unsigned long mmc_rx_tcp_gd_octets;
-	unsigned long mmc_rx_tcp_err_octets;
+	unsigned long mmc_rx_tcp_csum_err_octets;
 	unsigned long mmc_rx_icmp_gd_octets;
-	unsigned long mmc_rx_icmp_err_octets;
+	unsigned long mmc_rx_icmp_csum_err_octets;
 
 	/* LPI Rx and Tx Transition counters */
 	unsigned long mmc_emac_rx_lpi_tran_cntr;
 	unsigned long mmc_emac_tx_lpi_tran_cntr;
+
 };
 
 struct DWC_ETH_QOS_extra_stats {
