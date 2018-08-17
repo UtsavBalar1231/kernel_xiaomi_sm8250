@@ -74,6 +74,11 @@ module_param(phy_intf_bypass_mode, uint, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 MODULE_PARM_DESC(phy_intf_bypass_mode,
 		 "Phy interface bypass mode [1-Non-ID, 0-ID]");
 
+int phy_interrupt_en = 1;
+module_param(phy_interrupt_en, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+MODULE_PARM_DESC(phy_interrupt_en,
+		"Enable PHY interrupt [0-DISABLE, 1-ENABLE]");
+
 static ssize_t read_phy_reg_dump(struct file *file,
 	char __user *user_buf, size_t count, loff_t *ppos)
 {
@@ -894,7 +899,8 @@ static int DWC_ETH_QOS_get_clks(struct device *dev)
 	dwc_eth_qos_res_data.rgmii_clk = NULL;
 	dwc_eth_qos_res_data.ptp_clk = NULL;
 
-	if (dwc_eth_qos_res_data.emac_hw_version_type == EMAC_HW_v2_1_0) {
+	if (dwc_eth_qos_res_data.emac_hw_version_type == EMAC_HW_v2_1_0
+		|| dwc_eth_qos_res_data.emac_hw_version_type == EMAC_HW_v2_1_2) {
 		/* EMAC core version 2.1.0 clocks */
 		axi_clock_name = "emac_axi_clk";
 		ahb_clock_name = "emac_slv_ahb_clk";
@@ -1319,7 +1325,9 @@ static int DWC_ETH_QOS_configure_netdevice(struct platform_device *pdev)
 
 	dev->netdev_ops = DWC_ETH_QOS_get_netdev_ops();
 
-	pdata->interface = DWC_ETH_QOS_get_phy_interface(pdata);
+	pdata->interface = DWC_ETH_QOS_get_io_macro_phy_interface(pdata);
+
+	pdata->enable_phy_intr = phy_interrupt_en;
 
 	/* Bypass PHYLIB for TBI, RTBI and SGMII interface */
 	if (pdata->hw_feat.sma_sel == 1) {

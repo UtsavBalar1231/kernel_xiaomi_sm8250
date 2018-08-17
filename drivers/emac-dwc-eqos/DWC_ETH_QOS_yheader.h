@@ -1584,6 +1584,9 @@ struct DWC_ETH_QOS_prv_data {
 	struct DWC_ETH_QOS_res_data *res_data;
 	bool phy_intr_en;
 	bool always_on_phy;
+	/* Module parameter to check if PHY interrupt should be
+	enabled. Default value is true. */
+	bool enable_phy_intr;
 
 	struct msm_bus_scale_pdata *bus_scale_vec;
 	uint32_t bus_hdl;
@@ -1894,6 +1897,7 @@ UINT DWC_ETH_QOS_get_total_desc_cnt(struct DWC_ETH_QOS_prv_data *pdata,
 int DWC_ETH_QOS_ptp_init(struct DWC_ETH_QOS_prv_data *pdata);
 void DWC_ETH_QOS_ptp_remove(struct DWC_ETH_QOS_prv_data *pdata);
 phy_interface_t DWC_ETH_QOS_get_phy_interface(struct DWC_ETH_QOS_prv_data *pdata);
+phy_interface_t DWC_ETH_QOS_get_io_macro_phy_interface(struct DWC_ETH_QOS_prv_data *pdata);
 int DWC_ETH_QOS_enable_ptp_clk(struct device *dev);
 void DWC_ETH_QOS_disable_ptp_clk(struct device *dev);
 

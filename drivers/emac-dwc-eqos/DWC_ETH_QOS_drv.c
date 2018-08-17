@@ -7613,6 +7613,25 @@ void DWC_ETH_QOS_mmc_read(struct DWC_ETH_QOS_mmc_counters *mmc)
 	DBGPR("<--DWC_ETH_QOS_mmc_read\n");
 }
 
+phy_interface_t DWC_ETH_QOS_get_io_macro_phy_interface(
+	struct DWC_ETH_QOS_prv_data *pdata)
+{
+	phy_interface_t ret = PHY_INTERFACE_MODE_MII;
+
+	EMACDBG("-->DWC_ETH_QOS_get_io_macro_phy_interface\n");
+
+	if (pdata->io_macro_phy_intf == RGMII_MODE)
+		ret = PHY_INTERFACE_MODE_RGMII;
+	else if (pdata->io_macro_phy_intf == RMII_MODE)
+		ret = PHY_INTERFACE_MODE_RMII;
+	else if (pdata->io_macro_phy_intf == MII_MODE)
+		ret = PHY_INTERFACE_MODE_MII;
+
+	EMACDBG("<--DWC_ETH_QOS_get_io_macro_phy_interface\n");
+
+	return ret;
+}
+
 phy_interface_t DWC_ETH_QOS_get_phy_interface(
 	struct DWC_ETH_QOS_prv_data *pdata)
 {

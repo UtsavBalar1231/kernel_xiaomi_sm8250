@@ -1054,12 +1054,17 @@ static int DWC_ETH_QOS_init_phy(struct net_device *dev)
 	}
 
 #ifndef DWC_ETH_QOS_EMULATION_PLATFORM
-	if ((phydev->phy_id == ATH8031_PHY_ID) || (phydev->phy_id == ATH8035_PHY_ID)
-		|| (phydev->phy_id & phydev->drv->phy_id_mask) == MICREL_PHY_ID)
+	if ((pdata->enable_phy_intr && ((phydev->phy_id == ATH8031_PHY_ID)
+		|| (phydev->phy_id == ATH8035_PHY_ID)
+		|| ((phydev->phy_id & phydev->drv->phy_id_mask) == MICREL_PHY_ID)))) {
 		pdata->phy_intr_en = true;
+		EMACDBG("Phy interrupt enabled\n");
+	} else
+		EMACDBG("Phy polling enabled\n");
 #endif
 
-	if (pdata->interface == PHY_INTERFACE_MODE_GMII) {
+	if (pdata->interface == PHY_INTERFACE_MODE_GMII ||
+		pdata->interface == PHY_INTERFACE_MODE_RGMII) {
 		phydev->supported = PHY_DEFAULT_FEATURES;
 		phydev->supported |= SUPPORTED_10baseT_Full | SUPPORTED_100baseT_Full | SUPPORTED_1000baseT_Full;
 
@@ -1068,7 +1073,8 @@ static int DWC_ETH_QOS_init_phy(struct net_device *dev)
 #endif
 	} else if ((pdata->interface == PHY_INTERFACE_MODE_MII) ||
 		(pdata->interface == PHY_INTERFACE_MODE_RMII)) {
-		phydev->supported = PHY_BASIC_FEATURES;
+		phydev->supported = PHY_DEFAULT_FEATURES;
+		phydev->supported |= SUPPORTED_10baseT_Full | SUPPORTED_100baseT_Full;
 	}
 
 #ifndef DWC_ETH_QOS_CONFIG_PGTEST
