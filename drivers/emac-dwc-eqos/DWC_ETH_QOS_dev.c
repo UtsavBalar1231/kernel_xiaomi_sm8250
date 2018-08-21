@@ -1145,13 +1145,23 @@ static INT config_sub_second_increment(ULONG ptp_clock)
 	/*  formula is : ((1/ptp_clock) * 1000000000) */
 	/*  where, ptp_clock = 50MHz if FINE correction */
 	/*  and ptp_clock = DWC_ETH_QOS_SYSCLOCK if COARSE correction */
-	if (GET_VALUE(
-			VARMAC_TCR, MAC_TCR_TSCFUPDT_LPOS,
-			MAC_TCR_TSCFUPDT_HPOS) == 1)
-		val = ((1 * 1000000000ull) / 50000000);
-	else
+#ifdef CONFIG_PPS_OUTPUT
+	if (GET_VALUE(VARMAC_TCR, MAC_TCR_TSCFUPDT_LPOS, MAC_TCR_TSCFUPDT_HPOS) == 1) {
+		EMACDBG("Using PTP clock %ld MHz\n", ptp_clock);
 		val = ((1 * 1000000000ull) / ptp_clock);
-
+	}
+	else {
+		EMACDBG("Using SYSCLOCK for coarse correction\n");
+		val = ((1 * 1000000000ull) / DWC_ETH_QOS_SYSCLOCK );
+	}
+#else
+	if (GET_VALUE(VARMAC_TCR, MAC_TCR_TSCFUPDT_LPOS, MAC_TCR_TSCFUPDT_HPOS) == 1) {
+      val = ((1 * 1000000000ull) / 50000000);
+    }
+    else {
+      val = ((1 * 1000000000ull) / ptp_clock);
+    }
+#endif
 	/* 0.465ns accurecy */
 	if (GET_VALUE(
 			VARMAC_TCR, MAC_TCR_TSCTRLSSR_LPOS,

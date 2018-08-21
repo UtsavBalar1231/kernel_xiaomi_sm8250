@@ -407,6 +407,8 @@
 #define DWC_ETH_QOS_SYSCLOCK	250000000 /* System clock is 250MHz */
 #define DWC_ETH_QOS_SYSTIMEPERIOD	4 /* System time period is 4ns */
 
+#define DWC_ETH_QOS_DEFAULT_PTP_CLOCK 250000000
+
 #define DWC_ETH_QOS_TX_QUEUE_CNT (pdata->tx_queue_cnt)
 #define DWC_ETH_QOS_RX_QUEUE_CNT (pdata->rx_queue_cnt)
 #define DWC_ETH_QOS_QUEUE_CNT min(DWC_ETH_QOS_TX_QUEUE_CNT, DWC_ETH_QOS_RX_QUEUE_CNT)
@@ -1807,6 +1809,9 @@ struct DWC_ETH_QOS_prv_data {
 
 	/* Debugfs base dir */
 	struct dentry *debugfs_dir;
+
+	/* ptp clock frequency set by PTPCLK_Config ioctl default value is 250MHz */
+	unsigned int ptpclk_freq;
 };
 
 typedef enum {
@@ -1957,6 +1962,7 @@ void DWC_ETH_QOS_set_clk_and_bus_config(struct DWC_ETH_QOS_prv_data *pdata, int 
 #define EMAC_RGMII_RX_CTL "dev-emac-rgmii_rx_ctl_state"
 #define EMAC_PHY_RESET "dev-emac-phy_reset_state"
 #define EMAC_PHY_INTR "dev-emac-phy_intr"
+#define EMAC_PIN_PPS0 "dev-emac_pin_pps_0"
 
 #ifdef PER_CH_INT
 void DWC_ETH_QOS_handle_DMA_Int(struct DWC_ETH_QOS_prv_data *pdata, int chinx, bool);

@@ -4872,8 +4872,22 @@ static VOID DWC_ETH_QOS_config_timer_registers(
 		DBGPR("-->DWC_ETH_QOS_config_timer_registers\n");
 
 		/* program Sub Second Increment Reg */
+#ifdef CONFIG_PPS_OUTPUT
+		/* If default_addend is already programmed, then we expect that
+      * sub_second_increment is also programmed already */
+    if(pdata->default_addend == 0){
+			hw_if->config_sub_second_increment(DWC_ETH_QOS_SYSCLOCK); // Using default 250MHz
+		}
+		else {
+			u64 pclk;
+			pclk = (u64) (pdata->default_addend) *  DWC_ETH_QOS_SYSCLOCK;
+			pclk += 0x8000000;
+			pclk >>= 32;
+			hw_if->config_sub_second_increment((u32)pclk);
+		}
+#else
 		hw_if->config_sub_second_increment(DWC_ETH_QOS_SYSCLOCK);
-
+#endif
 		/* formula is :
 		 * addend = 2^32/freq_div_ratio;
 		 *
@@ -4887,9 +4901,16 @@ static VOID DWC_ETH_QOS_config_timer_registers(
 		 * 2^x * y == (y << x), hence
 		 * 2^32 * 50000000 ==> (50000000 << 32)
 		 */
+#ifdef CONFIG_PPS_OUTPUT
+		if(pdata->default_addend == 0){
+			temp = (u64)(50000000ULL << 32);
+			pdata->default_addend = div_u64(temp, DWC_ETH_QOS_SYSCLOCK);
+			EMACDBG("Using default PTP clock = 250MHz\n");
+		}
+#else
 		temp = (u64)(50000000ULL << 32);
 		pdata->default_addend = div_u64(temp, DWC_ETH_QOS_SYSCLOCK);
-
+#endif
 		hw_if->config_addend(pdata->default_addend);
 
 		/* initialize system time */
@@ -5015,6 +5036,116 @@ static int DWC_ETH_QOS_config_pfc(struct net_device *dev,
 
 	return ret;
 }
+
+#ifdef CONFIG_PPS_OUTPUT
+/*!
+ * \brief This function confiures the PTP clock frequency.
+ * \param[in] pdata : pointer to private data structure.
+ * \param[in] req : pointer to ioctl structure.
+ *
+ * \retval 0: Success, -1 : Failure
+ * */
+static int ETH_PTPCLK_Config(struct DWC_ETH_QOS_prv_data *pdata, struct ifr_data_struct *req)
+{
+	struct ETH_PPS_Config *eth_pps_cfg = (struct ETH_PPS_Config *)req->ptr;
+	struct hw_if_struct *hw_if = &pdata->hw_if;
+	int ret = 0;
+	u64 val;
+
+	if ((eth_pps_cfg->ppsout_ch < 0) ||
+		(eth_pps_cfg->ppsout_ch >= pdata->hw_feat.pps_out_num))
+	{
+		EMACERR("PPS: PPS output channel %u is invalid \n", eth_pps_cfg->ppsout_ch);
+		return  -EOPNOTSUPP;
+	}
+
+	if (eth_pps_cfg->ptpclk_freq > DWC_ETH_QOS_SYSCLOCK){
+		EMACINFO("PPS: PTPCLK_Config: freq=%dHz is too high. Cannot config it\n",
+			eth_pps_cfg->ptpclk_freq );
+		return -1;
+	}
+	pdata->ptpclk_freq = eth_pps_cfg->ptpclk_freq;
+	val = (u64)(1ULL << 32);
+	val = val * (eth_pps_cfg->ptpclk_freq);
+	val += (DWC_ETH_QOS_SYSCLOCK/2);
+	val = div_u64(val, DWC_ETH_QOS_SYSCLOCK);
+	if ( val > 0xFFFFFFFF) val = 0xFFFFFFFF;
+	EMACINFO("PPS: PTPCLK_Config: freq=%dHz, addend_reg=0x%x\n",
+				eth_pps_cfg->ptpclk_freq, (unsigned int)val);
+
+	pdata->default_addend = val;
+	ret = hw_if->config_addend((unsigned int)val);
+	ret |= hw_if->config_sub_second_increment( (ULONG)eth_pps_cfg->ptpclk_freq);
+
+	return ret;
+}
+
+/*!
+ * \brief This function confiures the PPS output.
+ * \param[in] pdata : pointer to private data structure.
+ * \param[in] req : pointer to ioctl structure.
+ *
+ * \retval 0: Success, -1 : Failure
+ * */
+static int ETH_PPSOUT_Config(struct DWC_ETH_QOS_prv_data *pdata, struct ifr_data_struct *req)
+{
+	struct ETH_PPS_Config *eth_pps_cfg = (struct ETH_PPS_Config *)req->ptr;
+	unsigned int val;
+	int interval, width;
+
+	if ((eth_pps_cfg->ppsout_ch < 0) ||
+		(eth_pps_cfg->ppsout_ch >= pdata->hw_feat.pps_out_num))
+	{
+		EMACERR("PPS: PPS output channel %u is invalid \n", eth_pps_cfg->ppsout_ch);
+		return  -EOPNOTSUPP;
+	}
+
+	if(eth_pps_cfg->ppsout_duty <= 0) {
+		printk("PPS: PPSOut_Config: duty cycle is invalid. Using duty=1\n");
+		eth_pps_cfg->ppsout_duty = 1;
+	}
+	else if(eth_pps_cfg->ppsout_duty >= 100) {
+		printk("PPS: PPSOut_Config: duty cycle is invalid. Using duty=99\n");
+		eth_pps_cfg->ppsout_duty = 99;
+	}
+
+	if(0 < eth_pps_cfg->ptpclk_freq) {
+		pdata->ptpclk_freq = eth_pps_cfg->ptpclk_freq;
+		interval = (eth_pps_cfg->ptpclk_freq + eth_pps_cfg->ppsout_freq/2)
+											/ eth_pps_cfg->ppsout_freq;
+	} else {
+		interval = (pdata->ptpclk_freq + eth_pps_cfg->ppsout_freq/2)
+											/ eth_pps_cfg->ppsout_freq;
+	}
+	width = ((interval * eth_pps_cfg->ppsout_duty) + 50)/100 - 1;
+	if (width >= interval) width = interval - 1;
+	if (width < 0) width = 0;
+
+	EMACINFO("PPS: PPSOut_Config: freq=%dHz, ch=%d, duty=%d\n",
+				eth_pps_cfg->ppsout_freq,
+				eth_pps_cfg->ppsout_ch,
+				eth_pps_cfg->ppsout_duty);
+	EMACINFO(" PPS: with PTP Clock freq=%dHz\n", pdata->ptpclk_freq);
+
+	EMACINFO("PPS: PPSOut_Config: interval=%d, width=%d\n", interval, width);
+
+	switch (eth_pps_cfg->ppsout_ch) {
+	case 0:
+		MAC_PPS_INTVAL0_PPSINT0_UDFWR(interval);  // interval
+		MAC_PPS_WIDTH0_PPSWIDTH0_UDFWR(width);
+		MAC_STSR_TSS_UDFRD(val);     //PTP seconds
+		MAC_PPS_TTS_TSTRH0_UDFWR(0, val+1);
+		MAC_PPSC_PPSCTRL0_UDFWR(0x2);
+		MAC_PPSC_PPSEN0_UDFWR(0x1);
+		break;
+	default:
+		EMACINFO("PPS: PPS output channel is invalid (only CH0 is supported).\n");
+		return -1;
+	}
+
+	return 0;
+}
+#endif
 
 /*!
  * \brief Driver IOCTL routine
@@ -5415,6 +5546,23 @@ static int DWC_ETH_QOS_handle_prv_ioctl(struct DWC_ETH_QOS_prv_data *pdata,
 		ret = DWC_ETH_QOS_handle_pg_ioctl(pdata, (void *)req);
 		break;
 #endif /* end of DWC_ETH_QOS_CONFIG_PGTEST */
+
+#ifdef CONFIG_PPS_OUTPUT
+	case DWC_ETH_QOS_CONFIG_PTPCLK_CMD:
+		if(pdata->hw_feat.pps_out_num == 0)
+			ret = -EOPNOTSUPP;
+		else
+			ret = ETH_PTPCLK_Config(pdata, req);
+		break;
+
+	case DWC_ETH_QOS_CONFIG_PPSOUT_CMD:
+		if(pdata->hw_feat.pps_out_num == 0)
+			ret = -EOPNOTSUPP;
+		else
+			ret = ETH_PPSOUT_Config(pdata, req);
+		break;
+#endif
+
 	default:
 		ret = -EOPNOTSUPP;
 		dev_alert(&pdata->pdev->dev, "Unsupported command call\n");
@@ -5633,8 +5781,21 @@ static int DWC_ETH_QOS_handle_hwtstamp_ioctl(struct DWC_ETH_QOS_prv_data *pdata,
 		hw_if->config_hw_time_stamping(VARMAC_TCR);
 
 		/* program Sub Second Increment Reg */
+#ifdef CONFIG_PPS_OUTPUT
+		/* If default_addend is already programmed, then we expect that
+		* sub_second_increment is also programmed already */
+		if (pdata->default_addend == 0) {
+			hw_if->config_sub_second_increment(DWC_ETH_QOS_SYSCLOCK); // Using default 250MHz
+		} else {
+			u64 pclk;
+			pclk = (u64) (pdata->default_addend) *  DWC_ETH_QOS_SYSCLOCK;
+			pclk += 0x8000000;
+			pclk >>= 32;
+			hw_if->config_sub_second_increment((u32)pclk);
+		}
+#else
 		hw_if->config_sub_second_increment(DWC_ETH_QOS_SYSCLOCK);
-
+#endif
 		/* formula is :
 		 * addend = 2^32/freq_div_ratio;
 		 *
@@ -5649,9 +5810,16 @@ static int DWC_ETH_QOS_handle_hwtstamp_ioctl(struct DWC_ETH_QOS_prv_data *pdata,
 		 * 2^32 * 50000000 ==> (50000000 << 32)
 		 *
 		 */
+#ifdef CONFIG_PPS_OUTPUT
+		if(pdata->default_addend == 0){
+			temp = (u64)(50000000ULL << 32);
+			pdata->default_addend = div_u64(temp, DWC_ETH_QOS_SYSCLOCK);
+			EMACINFO("Using default PTP clock = 250MHz\n");
+		}
+#else
 		temp = (u64)(50000000ULL << 32);
 		pdata->default_addend = div_u64(temp, DWC_ETH_QOS_SYSCLOCK);
-
+#endif
 		hw_if->config_addend(pdata->default_addend);
 
 		/* initialize system time */

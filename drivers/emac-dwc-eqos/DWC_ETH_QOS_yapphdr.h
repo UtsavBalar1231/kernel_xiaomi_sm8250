@@ -50,6 +50,8 @@
 #define DWC_ETH_QOS_MAX_TX_QUEUE_CNT 8
 #define DWC_ETH_QOS_MAX_RX_QUEUE_CNT 8
 
+#define CONFIG_PPS_OUTPUT   // for PPS Output
+
 /* Private IOCTL for handling device specific task */
 #define DWC_ETH_QOS_PRV_IOCTL	SIOCDEVPRIVATE
 #define DWC_ETH_QOS_PRV_IOCTL_IPA	SIOCDEVPRIVATE+1
@@ -145,6 +147,12 @@ enum{
 #define DWC_ETH_QOS_PFC_CMD			41
 /* for PTP OFFLOADING configuration */
 #define DWC_ETH_QOS_PTPOFFLOADING_CMD			42
+
+/* To configure PPS output */
+#ifdef CONFIG_PPS_OUTPUT
+#define DWC_ETH_QOS_CONFIG_PTPCLK_CMD 43
+#define DWC_ETH_QOS_CONFIG_PPSOUT_CMD 44
+#endif
 
 #define DWC_ETH_QOS_RWK_FILTER_LENGTH	8
 
@@ -418,6 +426,16 @@ struct DWC_ETH_QOS_config_ptpoffloading {
 	int domain_num;
     int mc_uc;
 };
+
+#ifdef CONFIG_PPS_OUTPUT
+struct ETH_PPS_Config
+{
+	unsigned int ptpclk_freq;
+	unsigned int ppsout_freq;
+	unsigned int ppsout_ch;
+	unsigned int ppsout_duty;
+};
+#endif
 
 #ifdef DWC_ETH_QOS_CONFIG_PGTEST
 
