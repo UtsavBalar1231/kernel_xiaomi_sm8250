@@ -667,16 +667,22 @@ err_out_map_failed:
 int DWC_ETH_QOS_enable_ptp_clk(struct device *dev)
 {
 	int ret;
+	const char* ptp_clock_name;
+
+	if (dwc_eth_qos_res_data.emac_hw_version_type == EMAC_HW_v2_1_0)
+		ptp_clock_name = "emac_ptp_clk";
+	else
+		ptp_clock_name = "eth_ptp_clk";
 
 	/* valid value of dwc_eth_qos_res_data.ptp_clk indicates that clock is enabled */
 	if (!dwc_eth_qos_res_data.ptp_clk) {
 
-		dwc_eth_qos_res_data.ptp_clk = devm_clk_get(dev, "eth_ptp_clk");
+		dwc_eth_qos_res_data.ptp_clk = devm_clk_get(dev, ptp_clock_name);
 
 		if (IS_ERR(dwc_eth_qos_res_data.ptp_clk)) {
 			dwc_eth_qos_res_data.ptp_clk = NULL;
 			if (dwc_eth_qos_res_data.ptp_clk != ERR_PTR(-EPROBE_DEFER)) {
-				EMACERR("unable to get ptp_clk\n");
+				EMACERR("unable to get %s\n", ptp_clock_name);
 				return -EIO;
 			}
 		}
@@ -684,14 +690,14 @@ int DWC_ETH_QOS_enable_ptp_clk(struct device *dev)
 		ret = clk_prepare_enable(dwc_eth_qos_res_data.ptp_clk);
 
 		if (ret) {
-			EMACERR("Failed to enable ptp_clk\n");
+			EMACERR("Failed to enable %s\n", ptp_clock_name);
 			goto ptp_clk_fail;
 		}
 
 		ret = clk_set_rate(dwc_eth_qos_res_data.ptp_clk, DWC_ETH_QOS_SYSCLOCK);
 
 		if (ret) {
-			EMACERR("Failed to set rate for ptp_clk\n");
+			EMACERR("Failed to set rate for %s\n", ptp_clock_name);
 			goto ptp_clk_fail;
 		}
 	}
@@ -790,7 +796,6 @@ static int DWC_ETH_QOS_get_clks(struct device *dev)
 	const char* axi_clock_name;
 	const char* ahb_clock_name;
 	const char* rgmii_clock_name;
-	const char* ptp_clock_name;
 
 	dwc_eth_qos_res_data.axi_clk = NULL;
 	dwc_eth_qos_res_data.ahb_clk = NULL;
@@ -802,13 +807,11 @@ static int DWC_ETH_QOS_get_clks(struct device *dev)
 		axi_clock_name = "emac_axi_clk";
 		ahb_clock_name = "emac_slv_ahb_clk";
 		rgmii_clock_name = "emac_rgmii_clk";
-		ptp_clock_name = "emac_ptp_clk";
 	} else {
 		/* Default values are for EMAC core version 2.0.0 clocks */
 		axi_clock_name = "eth_axi_clk";
 		ahb_clock_name = "eth_slave_ahb_clk";
 		rgmii_clock_name = "eth_rgmii_clk";
-		ptp_clock_name = "eth_ptp_clk";
 	}
 
 	dwc_eth_qos_res_data.axi_clk = devm_clk_get(dev, axi_clock_name);
@@ -834,7 +837,6 @@ static int DWC_ETH_QOS_get_clks(struct device *dev)
 			return -EIO;
 		}
 	}
-
 
 	ret = clk_prepare_enable(dwc_eth_qos_res_data.axi_clk);
 
