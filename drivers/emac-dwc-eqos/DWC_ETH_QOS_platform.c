@@ -1779,6 +1779,11 @@ int DWC_ETH_QOS_remove(struct platform_device *pdev)
 
 	DWC_ETH_QOS_set_clk_and_bus_config(pdata, 0);
 
+	if (pdata->bus_hdl){
+		msm_bus_scale_unregister_client(pdata->bus_hdl);
+		pdata->bus_hdl = 0;
+	}
+
 	free_netdev(dev);
 
 	platform_set_drvdata(pdev, NULL);
