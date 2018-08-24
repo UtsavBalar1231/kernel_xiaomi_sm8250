@@ -128,6 +128,13 @@ ifdef CONFIG_SND_SOC_MSM_QDSP6V2_INTF
 	Q6_OBJS += msm_audio_ion.o
 	Q6_OBJS += avtimer.o
 	Q6_OBJS += q6_init.o
+	Q6_OBJS += apr_elliptic.o
+	Q6_OBJS += elliptic/elliptic.o
+	Q6_OBJS += elliptic/elliptic_sysfs.o
+	Q6_OBJS += elliptic/elliptic_mixer_controls.o
+	Q6_OBJS += elliptic/io_modules/msm/elliptic_data_msm_io.o
+	Q6_OBJS += elliptic/io_modules/userspace/elliptic_data_userspace_io.o
+	Q6_OBJS += elliptic/io_modules/userspace/elliptic_data_userspace_ctrl.o
 endif
 
 ifdef CONFIG_SND_SOC_MSM_QDSP6V2_VM
@@ -148,7 +155,6 @@ ifdef CONFIG_SND_SOC_MSM_QDSP6V2_VM
 	Q6_OBJS += avtimer.o
 	Q6_OBJS += q6_init.o
 endif
-
 ifdef CONFIG_XT_LOGGING
 	Q6_OBJS += sp_params.o
 endif
