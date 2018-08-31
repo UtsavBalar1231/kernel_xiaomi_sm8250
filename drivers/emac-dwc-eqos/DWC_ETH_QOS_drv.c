@@ -2338,7 +2338,7 @@ UINT DWC_ETH_QOS_get_total_desc_cnt(struct DWC_ETH_QOS_prv_data *pdata,
 				    struct sk_buff *skb, UINT qinx)
 {
 	UINT count = 0, size = 0;
-	INT length = 0;
+	INT length = 0, i = 0;
 #ifdef DWC_ETH_QOS_ENABLE_VLAN_TAG
 	struct hw_if_struct *hw_if = &pdata->hw_if;
 	struct s_tx_pkt_features *tx_pkt_features = GET_TX_PKT_FEATURES_PTR;
@@ -2347,8 +2347,19 @@ UINT DWC_ETH_QOS_get_total_desc_cnt(struct DWC_ETH_QOS_prv_data *pdata,
 #endif
 
 	/* SG fragment count */
-	count += skb_shinfo(skb)->nr_frags;
+	DBGPR("No of frags : %d \n",skb_shinfo(skb)->nr_frags);
+	for ( i = 0; i < skb_shinfo(skb)->nr_frags; i++) {
+		struct skb_frag_struct *frag = &skb_shinfo(skb)->frags[i];
+		length = frag->size;
+		while (length) {
+			size =
+				min_t(unsigned int, length, DWC_ETH_QOS_MAX_DATA_PER_TXD);
+			length -= size;
+			count ++;
+		}
+	}
 
+	length = 0;
 	/* descriptors required based on data limit per descriptor */
 	length = (skb->len - skb->data_len);
 	while (length) {
@@ -2547,6 +2558,14 @@ static int DWC_ETH_QOS_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		count++;
 #endif /* End of DWC_ETH_QOS_ENABLE_DVLAN */
 
+	/*Check if count is greater than free_desc_count to avoid integer overflow
+	  count cannot be greater than free_desc-count as it is already checked in
+	  the starting of this function*/
+	if (count > desc_data->free_desc_cnt) {
+		EMACERR("count : %u cannot be greater than free_desc_count: %u",count,
+				desc_data->free_desc_cnt);
+		BUG();
+	}
 	desc_data->free_desc_cnt -= count;
 	desc_data->tx_pkt_queued += count;
 
