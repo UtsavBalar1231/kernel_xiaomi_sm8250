@@ -366,6 +366,9 @@ config HAVE_RCU_TABLE_FREE
 config HAVE_RCU_TABLE_INVALIDATE
 	bool
 
+config HAVE_MMU_GATHER_PAGE_SIZE
+	bool
+
 config ARCH_WANT_IRQS_OFF_ACTIVATE_MM
 	bool
 	help
