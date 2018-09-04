@@ -124,6 +124,7 @@
 #include <linux/mailbox_client.h>
 #include <linux/mailbox/qmp.h>
 #include <linux/mailbox_controller.h>
+#include <linux/ipc_logging.h>
 
 /* QOS Version Control Macros */
 /* #define DWC_ETH_QOS_VER_4_0 */
@@ -132,6 +133,13 @@
 /* Macro definitions*/
 
 #include <asm-generic/errno.h>
+
+extern void *ipc_emac_log_ctxt;
+
+#define IPCLOG_STATE_PAGES 50
+#define __FILENAME__ (strrchr(__FILE__, '/') ? \
+	strrchr(__FILE__, '/') + 1 : __FILE__)
+
 
 #ifdef CONFIG_PGTEST_OBJ
 #define DWC_ETH_QOS_CONFIG_PGTEST
@@ -2054,7 +2062,14 @@ do {\
 #define EMACINFO(fmt, args...) \
 	pr_info(DRV_NAME " %s:%d " fmt, __func__, __LINE__, ## args)
 #define EMACERR(fmt, args...) \
-	pr_err(DRV_NAME " %s:%d " fmt, __func__, __LINE__, ## args)
+do {\
+	pr_err(DRV_NAME " %s:%d " fmt, __func__, __LINE__, ## args);\
+	if (ipc_emac_log_ctxt) { \
+		ipc_log_string(ipc_emac_log_ctxt, \
+		"%s: %s[%u]:[emac] ERROR:" fmt, __FILENAME__ , \
+		__func__, __LINE__, ## args); \
+	} \
+}while(0)
 
 #ifdef YDEBUG
 #define DBGPR(x...) printk(KERN_ALERT x)
