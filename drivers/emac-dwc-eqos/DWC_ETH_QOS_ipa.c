@@ -1217,6 +1217,9 @@ void DWC_ETH_QOS_ipa_stats_read(struct DWC_ETH_QOS_prv_data *pdata)
 	struct DWC_ETH_QOS_ipa_stats *dma_stats = &pdata->ipa_stats;
 	UINT data;
 
+	if (!pdata->rx_queue || !pdata->tx_queue)
+		return;
+
 	dma_stats->ipa_rx_Desc_Ring_Base = GET_RX_DESC_DMA_ADDR(IPA_DMA_RX_CH, 0);
 	dma_stats->ipa_rx_Desc_Ring_Size = pdata->rx_queue[IPA_DMA_RX_CH].desc_cnt;
 	dma_stats->ipa_rx_Buff_Ring_Base = GET_RX_BUFF_POOL_BASE_PADRR(IPA_DMA_RX_CH);
