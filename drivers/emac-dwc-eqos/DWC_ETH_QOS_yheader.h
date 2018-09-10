@@ -1936,7 +1936,7 @@ irqreturn_t DWC_ETH_QOS_ISR_SW_DWC_ETH_QOS(int irq, void *dev_id);
 void DWC_ETH_QOS_handle_phy_interrupt(struct DWC_ETH_QOS_prv_data *pdata);
 int DWC_ETH_QOS_rgmii_io_macro_sdcdc_init(struct DWC_ETH_QOS_prv_data *);
 int DWC_ETH_QOS_rgmii_io_macro_sdcdc_enable_lp_mode(void);
-int DWC_ETH_QOS_rgmii_io_macro_sdcdc_config(void);
+int DWC_ETH_QOS_rgmii_io_macro_sdcdc_config(struct DWC_ETH_QOS_prv_data *pdata);
 int DWC_ETH_QOS_rgmii_io_macro_init(struct DWC_ETH_QOS_prv_data *);
 int DWC_ETH_QOS_sdcc_set_bypass_mode(void);
 int DWC_ETH_QOS_rgmii_io_macro_dll_reset(struct DWC_ETH_QOS_prv_data *pdata);

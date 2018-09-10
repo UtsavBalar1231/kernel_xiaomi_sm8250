@@ -761,7 +761,7 @@ static inline int DWC_ETH_QOS_configure_io_macro_dll_settings(
 			return ret;
 		}
 		if (pdata->speed == SPEED_1000) {
-			ret = DWC_ETH_QOS_rgmii_io_macro_sdcdc_config();
+			ret = DWC_ETH_QOS_rgmii_io_macro_sdcdc_config(pdata);
 			if (ret < 0) {
 				EMACERR("DLL config failed \n");
 				return ret;

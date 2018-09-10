@@ -331,6 +331,38 @@ extern ULONG dwc_rgmii_io_csr_base_addr;
 		data = ((data >> 17) & SDCC_HC_CDR_EN_MASK);\
 } while (0)
 
+#define SDCC_HC_MCLK_GATING_ENABLE_MASK (ULONG)(0x1)
+
+#define SDCC_HC_MCLK_GATING_ENABLE_WR_MASK (ULONG)(0xffffffdf)
+
+#define SDCC_HC_MCLK_GATING_ENABLE_UDFWR(data) do {\
+		ULONG v;\
+		SDCC_HC_REG_DLL_CONFIG_RGRD(v);\
+		v = ((v & SDCC_HC_MCLK_GATING_ENABLE_WR_MASK) | ((data & SDCC_HC_MCLK_GATING_ENABLE_MASK) << 5));\
+		SDCC_HC_REG_DLL_CONFIG_RGWR(v);\
+} while (0)
+
+#define SDCC_HC_MCLK_GATING_ENABLE_UDFRD(data) do {\
+		SDCC_HC_REG_DLL_CONFIG_RGRD(data);\
+		data = ((data >> 5) & SDCC_HC_MCLK_GATING_ENABLE_MASK);\
+} while (0)
+
+#define SDCC_HC_CDR_FINE_PHASE_MASK (ULONG)(0x1)
+
+#define SDCC_HC_CDR_FINE_PHASE_WR_MASK (ULONG)(0xfffffff3)
+
+#define SDCC_HC_CDR_FINE_PHASE_UDFWR(data) do {\
+		ULONG v;\
+		SDCC_HC_REG_DLL_CONFIG_RGRD(v);\
+		v = ((v & SDCC_HC_CDR_FINE_PHASE_WR_MASK) | ((data & SDCC_HC_CDR_FINE_PHASE_MASK) << 2));\
+		SDCC_HC_REG_DLL_CONFIG_RGWR(v);\
+} while (0)
+
+#define SDCC_HC_CDR_FINE_PHASE_UDFRD(data) do {\
+		SDCC_HC_REG_DLL_CONFIG_RGRD(data);\
+		data = ((data >> 2) & SDCC_HC_CDR_FINE_PHASE_MASK);\
+} while (0)
+
 #define SDCC_HC_DLL_EN_MASK (ULONG)(0x1)
 
 #define SDCC_HC_DLL_EN_WR_MASK (ULONG)(0xfffeffff)
@@ -451,6 +483,39 @@ extern ULONG dwc_rgmii_io_csr_base_addr;
 		SDCC_HC_REG_DLL_CONFIG_2_RGRD(data);\
 		data = ((data >> 10) & SDCC_HC_CFG_2_MCLK_FREQ_CALC_MASK);\
 } while (0)
+
+#define SDCC_HC_CFG_2_DLL_CLOCK_DISABLE_MASK (ULONG)(0x1)
+
+#define SDCC_HC_CFG_2_DLL_CLOCK_DISABLE_WR_MASK (ULONG)(0xffdfffff)
+
+#define SDCC_HC_CFG_2_DLL_CLOCK_DISABLE_UDFWR(data) do {\
+		ULONG v;\
+		SDCC_HC_REG_DLL_CONFIG_2_RGRD(v);\
+		v = ((v & SDCC_HC_CFG_2_DLL_CLOCK_DISABLE_WR_MASK) | ((data & SDCC_HC_CFG_2_DLL_CLOCK_DISABLE_MASK) << 21));\
+		SDCC_HC_REG_DLL_CONFIG_2_RGWR(v);\
+} while (0)
+
+#define SDCC_HC_CFG_2_DLL_CLOCK_DISABLE_UDFRD(data) do {\
+		SDCC_HC_REG_DLL_CONFIG_2_RGRD(data);\
+		data = ((data >> 21) & SDCC_HC_CFG_2_DLL_CLOCK_DISABLE_MASK);\
+} while (0)
+
+#define SDCC_HC_CFG_2_DDR_TRAFFIC_INIT_SEL_MASK (ULONG)(0x1)
+
+#define SDCC_HC_CFG_2_DDR_TRAFFIC_INIT_SEL_WR_MASK (ULONG)(0xfffffff3)
+
+#define SDCC_HC_CFG_2_DDR_TRAFFIC_INIT_SEL_UDFWR(data) do {\
+		ULONG v;\
+		SDCC_HC_REG_DLL_CONFIG_2_RGRD(v);\
+		v = ((v & SDCC_HC_CFG_2_DDR_TRAFFIC_INIT_SEL_WR_MASK) | ((data & SDCC_HC_CFG_2_DDR_TRAFFIC_INIT_SEL_MASK) << 2));\
+		SDCC_HC_REG_DLL_CONFIG_2_RGWR(v);\
+} while (0)
+
+#define SDCC_HC_CFG_2_DDR_TRAFFIC_INIT_SEL_UDFRD(data) do {\
+		SDCC_HC_REG_DLL_CONFIG_2_RGRD(data);\
+		data = ((data >> 2) & SDCC_HC_CFG_2_DDR_TRAFFIC_INIT_SEL_MASK);\
+} while (0)
+
 
 #define SDCC_HC_CFG_2_DDR_CAL_EN_MASK (ULONG)(0x1)
 

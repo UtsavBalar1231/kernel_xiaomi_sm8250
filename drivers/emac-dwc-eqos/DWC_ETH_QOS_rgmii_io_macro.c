@@ -197,7 +197,7 @@ int DWC_ETH_QOS_rgmii_io_macro_sdcdc_enable_lp_mode(void)
  *
  *\return 0 on success and -1 on failure.
  */
-int DWC_ETH_QOS_rgmii_io_macro_sdcdc_config(void)
+int DWC_ETH_QOS_rgmii_io_macro_sdcdc_config(struct DWC_ETH_QOS_prv_data *pdata)
 {
 
 	ULONG RETRYCOUNT = 1000;
@@ -205,8 +205,13 @@ int DWC_ETH_QOS_rgmii_io_macro_sdcdc_config(void)
 	volatile ULONG VARCK_OUT_EN;
 	EMACDBG("Enter\n");
 
-	/* Set CDR_EN bit to 0 */
-	SDCC_HC_CDR_EN_UDFWR(0x0);
+	if (pdata->emac_hw_version_type == EMAC_HW_v2_3_0) {
+		/* Set CDR_EN bit to 1 */
+		SDCC_HC_CDR_EN_UDFWR(0x1);
+	} else {
+		/* Set CDR_EN bit to 0 */
+		SDCC_HC_CDR_EN_UDFWR(0x0);
+	}
 
 	/* Set CDR_EXT_EN bit to 1 */
 	SDCC_HC_CDR_EXT_EN_UDFWR(0x1);
@@ -216,6 +221,14 @@ int DWC_ETH_QOS_rgmii_io_macro_sdcdc_config(void)
 
 	/* Set DLL_EN bit to 1 */
 	SDCC_HC_DLL_EN_UDFWR(0x1);
+
+	if (pdata->emac_hw_version_type == EMAC_HW_v2_3_0) {
+		/* Set MCLK_GATING_ENABLE bit to 0 */
+		SDCC_HC_MCLK_GATING_ENABLE_UDFWR(0x0);
+
+		/* Set CDR_FINE_PHASE bit to 0 */
+		SDCC_HC_CDR_FINE_PHASE_UDFWR(0x0);
+	}
 
 	/* Wait until CK_OUT_EN bit of SDCC_HC_REG_DLL_CONFIG register
 	 * is 0
@@ -255,6 +268,21 @@ int DWC_ETH_QOS_rgmii_io_macro_sdcdc_config(void)
 	 *  register
 	 */
 	SDCC_HC_CFG_2_DDR_CAL_EN_UDFWR(0x1);
+
+	if (pdata->emac_hw_version_type == EMAC_HW_v2_3_0) {
+		/* Set DLL_CLOCK_DISABLE bit to 0 */
+		SDCC_HC_CFG_2_DLL_CLOCK_DISABLE_UDFWR(0x0);
+
+		/* Set MCLK_FREQ_CALC bit to 26 */
+		SDCC_HC_CFG_2_MCLK_FREQ_CALC_UDFWR(0x1A);
+
+		/* Set DDR_TRAFFIC_INIT_SEL bit to 0 */
+		SDCC_HC_CFG_2_DDR_TRAFFIC_INIT_SEL_UDFWR(0x1);
+
+		/* Set DDR_TRAFFIC_INIT_SW bit to 0 */
+		SDCC_HC_CFG_2_DDR_TRAFFIC_INIT_SW_UDFWR(0x1);
+	}
+
 
 	EMACDBG("Exit\n");
 	return Y_SUCCESS;
