@@ -2412,11 +2412,10 @@ UINT DWC_ETH_QOS_get_total_desc_cnt(struct DWC_ETH_QOS_prv_data *pdata,
 	return count;
 }
 
-UINT DWC_ETH_QOS_cal_int_mod(struct sk_buff *skb,
+inline UINT DWC_ETH_QOS_cal_int_mod(struct sk_buff *skb, UINT eth_type,
 	struct DWC_ETH_QOS_prv_data *pdata)
 {
 	UINT ret = DEFAULT_INT_MOD;
-	UINT eth_type = GET_ETH_TYPE(skb->data);
 
 #ifdef DWC_ETH_QOS_CONFIG_PTP
 	if (eth_type == ETH_P_1588)
@@ -2472,9 +2471,8 @@ static int DWC_ETH_QOS_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	int tso;
 	struct netdev_queue *devq = netdev_get_tx_queue(dev, qinx);
 	UINT int_mod = 1;
+	UINT eth_type = 0;
 
-	if (ip_hdr(skb)->protocol == IPPROTO_TCP)
-		skb_orphan(skb);
 
 	DBGPR("-->DWC_ETH_QOS_start_xmit: skb->len = %d, qinx = %u\n",
 	      skb->len, qinx);
@@ -2595,10 +2593,13 @@ static int DWC_ETH_QOS_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	if ((pdata->hw_feat.tsstssel == 0) || (pdata->hwts_tx_en == 0))
 		skb_tx_timestamp(skb);
 
+	eth_type = GET_ETH_TYPE(skb->data);
 	/*For TSO packets, IOC bit is to be set to 1 in order to avoid data stall*/
 	if (!tso)
-		int_mod = DWC_ETH_QOS_cal_int_mod(skb, pdata);
+		int_mod = DWC_ETH_QOS_cal_int_mod(skb, eth_type, pdata);
 
+	if (eth_type == ETH_P_IP || eth_type == ETH_P_IPV6)
+		skb_orphan(skb);
 	/* configure required descriptor fields for transmission */
 	hw_if->pre_xmit(pdata, qinx, int_mod);
 

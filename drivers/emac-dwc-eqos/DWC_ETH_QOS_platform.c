@@ -1382,6 +1382,7 @@ static int DWC_ETH_QOS_configure_netdevice(struct platform_device *pdev)
 
 	if (pdata->hw_feat.tso_en) {
 		dev->hw_features = NETIF_F_TSO;
+		dev->hw_features |= NETIF_F_TSO6;
 #ifdef DWC_ETH_QOS_CONFIG_UFO
 		dev->hw_features |= NETIF_F_UFO;
 #endif
