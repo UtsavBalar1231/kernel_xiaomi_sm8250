@@ -1975,6 +1975,9 @@ static int DWC_ETH_QOS_close(struct net_device *dev)
 	netif_tx_disable(dev);
 	DWC_ETH_QOS_stop_all_ch_tx_dma(pdata);
 
+	if (pdata->ipa_enabled)
+		DWC_ETH_QOS_ipa_offload_event_handler(pdata, EV_DEV_CLOSE);
+
 	/* Disable MAC TX/RX */
 	hw_if->stop_mac_tx_rx();
 
@@ -1982,9 +1985,6 @@ static int DWC_ETH_QOS_close(struct net_device *dev)
 	DWC_ETH_QOS_stop_all_ch_rx_dma(pdata);
 	DWC_ETH_QOS_all_ch_napi_disable(pdata);
 
-	if (pdata->ipa_enabled) {
-		DWC_ETH_QOS_ipa_offload_event_handler(pdata, EV_DEV_CLOSE);
-	}
 #endif /* end of DWC_ETH_QOS_CONFIG_PGTEST */
 
 #ifdef DWC_ETH_QOS_TXPOLLING_MODE_ENABLE
