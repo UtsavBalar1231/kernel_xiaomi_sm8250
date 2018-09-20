@@ -11,8 +11,6 @@
 #include <asm/pgalloc.h>
 #include <asm/tlb.h>
 
-#ifdef HAVE_GENERIC_MMU_GATHER
-
 #ifndef CONFIG_HAVE_MMU_GATHER_NO_GATHER
 
 static bool tlb_next_batch(struct mmu_gather *tlb)
@@ -121,8 +119,6 @@ void tlb_flush_pmd_range(struct mmu_gather *tlb, unsigned long address,
 	tlb->end = max(tlb->end, address + size);
 }
 #endif /* CONFIG_HAVE_MMU_GATHER_PAGE_SIZE */
-
-#endif /* HAVE_GENERIC_MMU_GATHER */
 
 #ifdef CONFIG_HAVE_RCU_TABLE_FREE
 
