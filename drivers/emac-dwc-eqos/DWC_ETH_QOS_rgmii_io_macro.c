@@ -403,7 +403,8 @@ int DWC_ETH_QOS_rgmii_io_macro_init(struct DWC_ETH_QOS_prv_data *pdata)
 				/* Rx Path */
 				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x1);
 				RGMII_LOOPBACK_EN_UDFWR(loopback_mode_en);
-				if (pdata->emac_hw_version_type == EMAC_HW_v2_1_0)
+				if (pdata->emac_hw_version_type == EMAC_HW_v2_1_0 ||
+					pdata->emac_hw_version_type == EMAC_HW_v2_1_2)
 					RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x1);
 			} else {
 				/* Enable DDR mode*/
@@ -455,8 +456,11 @@ int DWC_ETH_QOS_rgmii_io_macro_init(struct DWC_ETH_QOS_prv_data *pdata)
 				/* Rx Path */
 				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x0);
 				RGMII_LOOPBACK_EN_UDFWR(loopback_mode_en);
-				if (pdata->emac_hw_version_type == EMAC_HW_v2_1_0)
+				if (pdata->emac_hw_version_type == EMAC_HW_v2_1_0 ||
+					pdata->emac_hw_version_type == EMAC_HW_v2_1_2)
 					RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x1);
+				if (pdata->emac_hw_version_type == EMAC_HW_v2_1_2)
+					RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x1);
 			} else{
 				RGMII_DDR_MODE_UDFWR(0x1);
 				RGMII_BYPASS_TX_ID_EN_UDFWR(0x1);
@@ -495,8 +499,12 @@ int DWC_ETH_QOS_rgmii_io_macro_init(struct DWC_ETH_QOS_prv_data *pdata)
 				RGMII_CONFIG_2_RERVED_CONFIG_16_EN_UDFWR(0x1);
 				/* Rx Path */
 				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x0);
-				if (pdata->emac_hw_version_type == EMAC_HW_v2_1_0)
+				RGMII_LOOPBACK_EN_UDFWR(loopback_mode_en);
+				if (pdata->emac_hw_version_type == EMAC_HW_v2_1_0 ||
+					pdata->emac_hw_version_type == EMAC_HW_v2_1_2)
 					RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x1);
+				if (pdata->emac_hw_version_type == EMAC_HW_v2_1_2)
+					RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x1);
 			} else{
 				RGMII_DDR_MODE_UDFWR(0x1);
 				RGMII_BYPASS_TX_ID_EN_UDFWR(0x1);
@@ -508,10 +516,10 @@ int DWC_ETH_QOS_rgmii_io_macro_init(struct DWC_ETH_QOS_prv_data *pdata)
 				RGMII_CONFIG_2_RERVED_CONFIG_16_EN_UDFWR(0x0);
 
 				/* Rx Path */
-                        if (pdata->emac_hw_version_type == EMAC_HW_v2_3_0)
-				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x0);
-                        else
-				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x1);
+				if (pdata->emac_hw_version_type == EMAC_HW_v2_3_0)
+					RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x0);
+				else
+					RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x1);
 				SDCC_HC_EXT_PRG_RCLK_DLY_CODE_UDFWR(0x5);
 				SDCC_HC_EXT_PRG_RCLK_DLY_UDFWR(0x3f);
 				SDCC_HC_EXT_PRG_RCLK_DLY_EN_UDFWR(0x1);
@@ -557,6 +565,8 @@ int DWC_ETH_QOS_rgmii_io_macro_init(struct DWC_ETH_QOS_prv_data *pdata)
 		RGMII_CONFIG_2_DATA_DIVIDE_CLK_SEL_UDFWR(0x1);
 		RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x0);
 		RGMII_CONFIG_2_RERVED_CONFIG_16_EN_UDFWR(0x1);
+		if (pdata->emac_hw_version_type == EMAC_HW_v2_1_2)
+			RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x1);
 
 		break;
 	}

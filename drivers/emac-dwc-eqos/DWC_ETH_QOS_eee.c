@@ -419,11 +419,11 @@ bool DWC_ETH_QOS_eee_init(struct DWC_ETH_QOS_prv_data *pdata)
 
 	EMACDBG("Enter\n");
 
+	hw_if = &pdata->hw_if;
 	/* For RMII mode EEE is not supported */
 	if (pdata->io_macro_phy_intf == RMII_MODE)
 		goto phy_eee_failed;
 
-	hw_if = &pdata->hw_if;
 	/* HW supports the EEE feature */
 	if (pdata->hw_feat.eee_sel) {
 #ifndef DWC_ETH_QOS_CUSTOMIZED_EEE_TEST
