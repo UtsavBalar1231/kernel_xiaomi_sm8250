@@ -98,6 +98,16 @@ enum rmnet_perf_core_pkt_size_e {
 	RMNET_PERF_CORE_DEBUG_BUCKETS_MAX
 };
 
+enum rmnet_perf_trace_func {
+	RMNET_PERF_MODULE,
+};
+
+enum rmnet_perf_trace_evt {
+	RMNET_PERF_START_DL_MRK,
+	RMNET_PERF_END_DL_MRK,
+	RMNET_PERF_DEAG_PKT,
+};
+
 void rmnet_perf_core_reset_recycled_skb(struct sk_buff *skb);
 struct sk_buff *rmnet_perf_core_elligible_for_cache_skb(struct rmnet_perf *perf,
 							u32 len);

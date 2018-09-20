@@ -15,6 +15,7 @@
 
 #include <linux/skbuff.h>
 #include <../drivers/net/ethernet/qualcomm/rmnet/rmnet_config.h>
+#include <../drivers/net/ethernet/qualcomm/rmnet/rmnet_trace.h>
 #include "rmnet_perf_core.h"
 
 #ifndef _RMNET_PERF_CONFIG_H_

@@ -435,6 +435,9 @@ rmnet_perf_core_handle_map_control_start(struct rmnet_map_dl_ind_hdr *dlhdr)
 
 	bm_state->curr_seq = dlhdr->le.seq;
 	bm_state->expect_packets = dlhdr->le.pkts;
+	trace_rmnet_perf_low(RMNET_PERF_MODULE, RMNET_PERF_START_DL_MRK,
+						bm_state->expect_packets, 0xDEF, 0xDEF, 0xDEF, NULL,
+						NULL);
 }
 
 void rmnet_perf_core_handle_map_control_end(struct rmnet_map_dl_ind_trl *dltrl)
@@ -448,6 +451,8 @@ void rmnet_perf_core_handle_map_control_end(struct rmnet_map_dl_ind_trl *dltrl)
 	bm_state->wait_for_start = true;
 	bm_state->curr_seq = 0;
 	bm_state->expect_packets = 0;
+	trace_rmnet_perf_low(RMNET_PERF_MODULE, RMNET_PERF_END_DL_MRK, 0xDEF, 0xDEF,
+						0xDEF, 0xDEF, NULL, NULL);
 }
 
 /* rmnet_perf_core_deaggregate() - Deaggregated ip packets from map frame
@@ -495,6 +500,9 @@ skip_frame:
 				if (!rmnet_map_flow_command(skb, port, true))
 					goto skip_frame;
 			}
+
+			trace_rmnet_perf_low(RMNET_PERF_MODULE, RMNET_PERF_DEAG_PKT, 0xDEF,
+								0xDEF, 0xDEF, 0xDEF, NULL, NULL);
 
 			/* Some hardware can send us empty frames. Catch them */
 			/* This includes IPA sending end of rx indications */
