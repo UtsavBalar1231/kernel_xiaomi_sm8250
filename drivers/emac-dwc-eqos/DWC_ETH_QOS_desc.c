@@ -1691,7 +1691,11 @@ static unsigned int DWC_ETH_QOS_map_skb(struct net_device *dev,
 			}
 		}
 	}
-	buffer->skb = skb;
+
+	if (buffer->dma == 0 && buffer->dma2 == 0)
+		prev_buffer->skb = skb;
+	else
+		buffer->skb = skb;
 
 	DBGPR("<--DWC_ETH_QOS_map_skb: buffer->dma = %#x\n",
 	      (UINT)buffer->dma);
