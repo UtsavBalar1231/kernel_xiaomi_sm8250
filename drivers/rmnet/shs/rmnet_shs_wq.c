@@ -962,19 +962,21 @@ void rmnet_shs_wq_refresh_new_flow_list_per_ep(struct rmnet_shs_wq_ep_s *ep)
 	rps_msk = ep->rps_config_msk;
 	lo_msk = ep->default_core_msk;
 	hi_msk = ep->pri_core_msk;
-
+	memset(ep->new_lo_core, -1, sizeof(*ep->new_lo_core) * MAX_CPUS);
+	memset(ep->new_hi_core, -1, sizeof(*ep->new_hi_core) * MAX_CPUS);
 	do {
 		lo_core = rmnet_shs_wq_get_least_utilized_core(lo_msk);
 		if (lo_core >= 0) {
 			ep->new_lo_core[lo_core_idx] = lo_core;
 			lo_msk = lo_msk & ~(1 << lo_core);
 			lo_core_idx++;
-		} else
+		} else {
 			break;
+		}
 
 	} while (lo_msk != 0);
 
-	trace_rmnet_shs_wq_low(RMNET_SHS_WQ_CPU_STATS,
+		trace_rmnet_shs_wq_low(RMNET_SHS_WQ_CPU_STATS,
 			    RMNET_SHS_WQ_CPU_STATS_NEW_FLOW_LIST_LO,
 			    ep->new_lo_core[0], ep->new_lo_core[1],
 			    ep->new_lo_core[2], ep->new_lo_max,
@@ -1061,9 +1063,10 @@ int rmnet_shs_wq_get_lpwr_cpu_new_flow(struct net_device *dev)
 		}
 		lo_idx++;
 	}
+
 	/* Increment CPU assignment idx to be ready for next flow assignment*/
-	if (cpu_assigned >= 0)
-		ep->new_lo_idx = ((lo_idx + 1) % lo_max);
+	if ((cpu_assigned >= 0)|| ((ep->new_lo_idx + 1) >= ep->new_lo_max))
+		ep->new_lo_idx = ((ep->new_lo_idx + 1) % ep->new_lo_max);
 
 	return cpu_assigned;
 }
@@ -1166,7 +1169,7 @@ void rmnet_shs_wq_update_ep_rps_msk(struct rmnet_shs_wq_ep_s *ep)
 	}
 
 	map = rcu_dereference(ep->ep->egress_dev->_rx->rps_map);
-
+	ep->rps_config_msk = 0;
 	if (map != NULL) {
 		for (len = 0; len < map->len; len++)
 			ep->rps_config_msk |= (1 << map->cpus[len]);
