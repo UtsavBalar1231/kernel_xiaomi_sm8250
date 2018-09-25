@@ -272,6 +272,33 @@ rmnet_perf_tcp_opt_make_new_skb_for_flow(struct rmnet_perf *perf,
 	return skbn;
 }
 
+/* rmnet_perf_tcp_opt_update_flow() - Update stored IP flow information
+ * @flow_node: tcp_opt structure containing flow information
+ * @pkt_info: characteristics of the current packet
+ *
+ * Update IP-specific flags stored about the flow (i.e. ttl, tos/traffic class,
+ * fragment information, flags).
+ *
+ * Return:
+ *		- void
+ **/
+static void
+rmnet_perf_tcp_opt_update_flow(struct rmnet_perf_tcp_opt_flow_node *flow_node,
+			       struct rmnet_perf_pkt_info *pkt_info)
+{
+	if (pkt_info->ip_proto == 0x04) {
+		struct iphdr *iph = pkt_info->iphdr.v4hdr;
+
+		flow_node->ip_flags.ip4_flags.ip_ttl = iph->ttl;
+		flow_node->ip_flags.ip4_flags.ip_tos = iph->tos;
+		flow_node->ip_flags.ip4_flags.ip_frag_off = iph->frag_off;
+	} else if (pkt_info->ip_proto == 0x06) {
+		__be32 *word = (__be32 *)pkt_info->iphdr.v6hdr;
+
+		flow_node->ip_flags.first_word = *word;
+	}
+}
+
 /* rmnet_perf_tcp_opt_flush_single_flow_node() - Send a given flow node up
  *		NW stack.
  * @perf: allows access to our required global structures
@@ -571,6 +598,8 @@ handle_pkt:
 			rc = rmnet_perf_tcp_opt_pkt_can_be_merged(skb,
 							flow_node, pkt_info);
 			if (flush_pkt_now) {
+				rmnet_perf_tcp_opt_update_flow(flow_node,
+							       pkt_info);
 				rmnet_perf_tcp_opt_flush_single_flow_node(perf,
 								flow_node);
 				rmnet_perf_core_flush_curr_pkt(perf, skb,
@@ -609,6 +638,7 @@ handle_pkt:
 							flow_node, pkt_info);
 			}
 		} else if (flush_pkt_now) {
+			rmnet_perf_tcp_opt_update_flow(flow_node, pkt_info);
 			rmnet_perf_core_flush_curr_pkt(perf, skb, pkt_info,
 				pkt_info->header_len + pkt_info->payload_len);
 			rmnet_perf_tcp_opt_flush_reason_cnt[
@@ -622,17 +652,7 @@ handle_pkt:
 		flow_node_recycled =
 			rmnet_perf_tcp_opt_get_new_flow_node_index(perf);
 		flow_node_recycled->hash_value = pkt_info->hash_key;
-		if (pkt_info->ip_proto == 0x04) {
-			flow_node_recycled->ip_flags.ip4_flags.ip_ttl =
-				pkt_info->iphdr.v4hdr->ttl;
-			flow_node_recycled->ip_flags.ip4_flags.ip_tos =
-				pkt_info->iphdr.v4hdr->tos;
-			flow_node_recycled->ip_flags.ip4_flags.ip_frag_off =
-				pkt_info->iphdr.v4hdr->frag_off;
-		} else if (pkt_info->ip_proto == 0x06) {
-			flow_node_recycled->ip_flags.first_word =
-				*(__be32 *) pkt_info->iphdr.v6hdr;
-		}
+		rmnet_perf_tcp_opt_update_flow(flow_node_recycled, pkt_info);
 		hash_add(rmnet_perf_tcp_opt_fht, &flow_node_recycled->list,
 			 pkt_info->hash_key);
 		goto handle_pkt;
