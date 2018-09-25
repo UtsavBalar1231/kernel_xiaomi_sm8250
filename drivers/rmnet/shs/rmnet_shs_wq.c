@@ -1091,8 +1091,10 @@ int rmnet_shs_wq_get_perf_cpu_new_flow(struct net_device *dev)
 		if (!ep->is_ep_active)
 			continue;
 
-		if (ep->ep->egress_dev == dev)
+		if (ep->ep->egress_dev == dev) {
 			is_match_found = 1;
+			break;
+		}
 	}
 
 	if (!is_match_found) {
@@ -1352,6 +1354,18 @@ void rmnet_shs_wq_init_cpu_rx_flow_tbl(void)
 		INIT_LIST_HEAD(&rx_flow_tbl_p->hstat_id);
 	}
 
+}
+
+void rmnet_shs_wq_pause(void)
+{
+	if (rmnet_shs_wq && rmnet_shs_delayed_wq)
+		cancel_delayed_work_sync(&rmnet_shs_delayed_wq->wq);
+}
+
+void rmnet_shs_wq_restart(void)
+{
+	if (rmnet_shs_wq && rmnet_shs_delayed_wq)
+		queue_delayed_work(rmnet_shs_wq, &rmnet_shs_delayed_wq->wq, 0);
 }
 
 void rmnet_shs_wq_init(struct net_device *dev)

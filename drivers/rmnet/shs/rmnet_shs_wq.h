@@ -195,6 +195,9 @@ enum rmnet_shs_wq_trace_evt {
 };
 void rmnet_shs_wq_init(struct net_device *dev);
 void rmnet_shs_wq_exit(void);
+void rmnet_shs_wq_restart(void);
+void rmnet_shs_wq_pause(void);
+
 u64 rmnet_shs_wq_get_max_pps_among_cores(u32 core_msk);
 void rmnet_shs_wq_create_new_flow(struct rmnet_shs_skbn_s *node_p);
 int rmnet_shs_wq_get_least_utilized_core(u16 core_msk);

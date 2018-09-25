@@ -109,7 +109,8 @@ static int rmnet_shs_dev_notify_cb(struct notifier_block *nb,
 			/* Need separate if check to avoid
 			 * NULL dereferencing
 			 */
-			if (rmnet_shs_skb_entry != NULL && phy_dev) {
+
+			if (phy_dev) {
 				rmnet_shs_init(phy_dev);
 				rmnet_shs_wq_init(phy_dev);
 				rmnet_shs_aggregate_init();
@@ -122,8 +123,17 @@ static int rmnet_shs_dev_notify_cb(struct notifier_block *nb,
 						     RMNET_SHS_MODULE_INIT_WQ,
 						     0xDEF, 0xDEF, 0xDEF,
 						     0xDEF, NULL, NULL);
+				rmnet_shs_cfg.rmnet_idl_ind_cb.ps_on_handler =
+						&rmnet_shs_ps_on_hdlr;
+				rmnet_shs_cfg.rmnet_idl_ind_cb.ps_off_handler =
+						&rmnet_shs_ps_off_hdlr;
+				RCU_INIT_POINTER(rmnet_shs_skb_entry,
+						 rmnet_shs_assign);
+
+
 			}
 			rmnet_shs_wq_set_ep_active(dev);
+
 		}
 
 		break;
