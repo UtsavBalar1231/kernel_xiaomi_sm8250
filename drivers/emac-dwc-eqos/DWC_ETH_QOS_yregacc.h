@@ -36863,11 +36863,11 @@
 
 /*#define  DMA_RCR_Mask_28 (ULONG)(~(~0<<(4)))*/
 
-#define  DMA_RCR_MASK_28 (ULONG)(0xf)
+#define  DMA_RCR_MASK_28 (ULONG)(0x7)
 
 /*#define DMA_RCR_RES_Wr_Mask_28 (ULONG)(~((~(~0<<(4)))<<(28)))*/
 
-#define DMA_RCR_RES_WR_MASK_28 (ULONG)(0xfffffff)
+#define DMA_RCR_RES_WR_MASK_28 (ULONG)(0x8fffffff)
 
 /*#define  DMA_RCR_Mask_22 (ULONG)(~(~0<<(3)))*/
 
