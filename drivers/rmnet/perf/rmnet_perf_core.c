@@ -424,6 +424,8 @@ void rmnet_perf_core_flush_curr_pkt(struct rmnet_perf *perf,
 	}
 
 	skbn->dev = skb->dev;
+	skbn->hash = pkt_info->hash_key;
+	skbn->sw_hash = 1;
 	rmnet_perf_core_send_skb(skbn, ep, perf, pkt_info);
 }
 

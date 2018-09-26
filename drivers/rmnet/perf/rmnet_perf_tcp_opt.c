@@ -332,6 +332,7 @@ static void rmnet_perf_tcp_opt_flush_single_flow_node(struct rmnet_perf *perf,
 					       __func__);
 				} else {
 					skbn->hash = flow_node->hash_value;
+					skbn->sw_hash = 1;
 					rmnet_perf_core_send_skb(skbn, ep,
 								 perf, NULL);
 				}
