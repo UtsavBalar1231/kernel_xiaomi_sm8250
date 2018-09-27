@@ -334,6 +334,7 @@ int DWC_ETH_QOS_rgmii_io_macro_init(struct DWC_ETH_QOS_prv_data *pdata)
 	uint loopback_mode = 0;
 	uint loopback_mode_en = 0;
 	uint rgmii_data_divide_clk;
+	ULONG data;
 	if (pdata->emac_hw_version_type == EMAC_HW_v2_3_0) {
 		if(pdata->io_macro_phy_intf == RGMII_MODE)
 			loopback_mode_en = 0x1;
@@ -342,7 +343,6 @@ int DWC_ETH_QOS_rgmii_io_macro_init(struct DWC_ETH_QOS_prv_data *pdata)
 		loopback_mode_en = 0x0;
 		rgmii_data_divide_clk = 0x1;
 	}
-	ULONG data;
 
 	EMACDBG("Enter\n");
 
