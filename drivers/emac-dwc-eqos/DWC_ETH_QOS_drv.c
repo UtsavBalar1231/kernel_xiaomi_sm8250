@@ -1994,8 +1994,12 @@ static int DWC_ETH_QOS_close(struct net_device *dev)
     }
 #endif
 
-    for (qinx = 0; qinx < DWC_ETH_QOS_RX_QUEUE_CNT; qinx++)
-        (void)pdata->clean_rx(pdata, NAPI_PER_QUEUE_POLL_BUDGET, qinx);
+	for (qinx = 0; qinx < DWC_ETH_QOS_RX_QUEUE_CNT; qinx++) {
+		if (pdata->ipa_enabled && (qinx == IPA_DMA_RX_CH))
+			continue;
+
+		(void)pdata->clean_rx(pdata, NAPI_PER_QUEUE_POLL_BUDGET, qinx);
+	}
 
 	/* issue software reset to device */
 	hw_if->exit();
