@@ -696,7 +696,9 @@ static void ntn_ipa_notify_cb(void *priv, enum ipa_dp_evt_type evt,
 
 		/* Update Statistics */
 		pdata->ipa_stats.ipa_ul_exception++;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
 		pdata->dev->last_rx = jiffies;
+#endif
 		pdata->dev->stats.rx_packets++;
 		pdata->dev->stats.rx_bytes += skb->len;
 	} else {
