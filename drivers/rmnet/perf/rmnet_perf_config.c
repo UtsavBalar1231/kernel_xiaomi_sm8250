@@ -289,6 +289,7 @@ static int rmnet_perf_config_notify_cb(struct notifier_block *nb,
 				dev_net_set(dev, &init_net);
 				perf->core_meta->dev = dev;
 				
+				dl_ind->priority = RMNET_PERF;
 				dl_ind->dl_hdr_handler =
 					&rmnet_perf_core_handle_map_control_start;
 				dl_ind->dl_trl_handler =
