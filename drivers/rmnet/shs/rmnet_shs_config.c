@@ -15,6 +15,7 @@
 #include <linux/kernel.h>
 #include <linux/netdevice.h>
 #include <linux/module.h>
+#include <../drivers/net/ethernet/qualcomm/rmnet/rmnet_map.h>
 #include "rmnet_shs_config.h"
 #include "rmnet_shs.h"
 #include "rmnet_shs_wq.h"
@@ -115,6 +116,8 @@ static int rmnet_shs_dev_notify_cb(struct notifier_block *nb,
 				rmnet_shs_wq_init(phy_dev);
 				rmnet_shs_aggregate_init();
 				rmnet_shs_cfg.is_timer_init = 1;
+				rmnet_shs_cfg.dl_mrk_ind_cb.priority =
+				   RMNET_SHS;
 				rmnet_shs_cfg.dl_mrk_ind_cb.dl_hdr_handler =
 				   &rmnet_shs_dl_hdr_handler;
 				rmnet_shs_cfg.dl_mrk_ind_cb.dl_trl_handler =
