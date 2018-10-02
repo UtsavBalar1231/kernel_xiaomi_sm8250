@@ -612,7 +612,13 @@
 #define CLASS_B_TRAFFIC_TX_CHANNEL 2
 
 #define NON_TAGGED_IP_TRAFFIC_TX_CHANNEL 1
+#ifdef DWC_ETH_QOS_ENABLE_IPA
+/* TX channel assigned to IPA is 0 hence all other traffic is
+   assigned to 1 */
 #define ALL_OTHER_TRAFFIC_TX_CHANNEL 1
+#else
+#define ALL_OTHER_TRAFFIC_TX_CHANNEL 0
+#endif
 #define TX_IOC_MODEATION_IP_TRAFFIC 16
 
 #define DEFAULT_INT_MOD 1
