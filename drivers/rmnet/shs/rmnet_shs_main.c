@@ -452,6 +452,8 @@ void rmnet_shs_flush_node(struct rmnet_shs_skbn_s *node)
 	if (!node->skb_list.head)
 		return;
 
+	hash2stamp = rmnet_shs_form_hash(node->map_index,
+					 map->len, node->skb_list.head->hash);
 	trace_rmnet_shs_high(RMNET_SHS_FLUSH,
 			     RMNET_SHS_FLUSH_NODE_START,
 			     node->hash, hash2stamp,
@@ -459,8 +461,6 @@ void rmnet_shs_flush_node(struct rmnet_shs_skbn_s *node)
 			     node->skb_list.num_parked_bytes,
 			     node, node->skb_list.head);
 
-	hash2stamp = rmnet_shs_form_hash(node->map_index,
-					 map->len, node->skb_list.head->hash);
 	for ((skb = node->skb_list.head); skb != NULL; skb = nxt_skb) {
 
 		nxt_skb = skb->next;
