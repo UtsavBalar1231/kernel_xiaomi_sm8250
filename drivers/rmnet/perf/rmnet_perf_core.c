@@ -402,15 +402,28 @@ void rmnet_perf_core_flush_curr_pkt(struct rmnet_perf *perf,
 		return;
 	}
 
-	/* allocate the sk_buff of proper size for this packet */
-	skbn = alloc_skb(packet_len + RMNET_MAP_DEAGGR_SPACING, GFP_ATOMIC);
-	if (!skbn)
-		return;
+	if (pkt_info->trans_proto != IPPROTO_UDP || packet_len < 64) {
+		/* allocate the sk_buff of proper size for this packet */
+		skbn = alloc_skb(packet_len + RMNET_MAP_DEAGGR_SPACING,
+				 GFP_ATOMIC);
+		if (!skbn)
+			return;
+
+		skb_reserve(skbn, RMNET_MAP_DEAGGR_HEADROOM);
+		skb_put(skbn, packet_len);
+		memcpy(skbn->data, pkt_info->iphdr.v4hdr, packet_len);
+	} else {
+		skbn = skb_clone(skb, GFP_ATOMIC);
+		if (!skbn)
+			return;
+
+		skb_pull(skbn, sizeof(struct rmnet_map_header));
+		skb_trim(skbn, packet_len);
+		skbn->truesize = SKB_TRUESIZE(packet_len);
+		__skb_set_hash(skbn, 0, 0, 0);
+	}
 
 	skbn->dev = skb->dev;
-	skb_reserve(skbn, RMNET_MAP_DEAGGR_HEADROOM);
-	skb_put(skbn, packet_len);
-	memcpy(skbn->data, pkt_info->iphdr.v4hdr, packet_len);
 	rmnet_perf_core_send_skb(skbn, ep, perf, pkt_info);
 }
 
