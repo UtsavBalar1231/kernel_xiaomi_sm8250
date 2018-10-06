@@ -6097,11 +6097,20 @@ u16	DWC_ETH_QOS_select_queue(struct net_device *dev,
 			txqueue_select = CLASS_A_TRAFFIC_TX_CHANNEL;
 		else if(priority == CLASS_B_TRAFFIC_UCP)
 			txqueue_select = CLASS_B_TRAFFIC_TX_CHANNEL;
-		else
-			txqueue_select = ALL_OTHER_TRAFFIC_TX_CHANNEL;
+		else {
+			if (pdata->ipa_enabled)
+				txqueue_select = ALL_OTHER_TRAFFIC_TX_CHANNEL;
+			else
+				txqueue_select = ALL_OTHER_TX_TRAFFIC_IPA_DISABLED;
+		}
 	}
-	else /* VLAN tagged IP packet or any other non vlan packets (PTP)*/
-		txqueue_select = ALL_OTHER_TRAFFIC_TX_CHANNEL;
+	else {
+		/* VLAN tagged IP packet or any other non vlan packets (PTP)*/
+		if (pdata->ipa_enabled)
+			txqueue_select = ALL_OTHER_TRAFFIC_TX_CHANNEL;
+		else
+			txqueue_select = ALL_OTHER_TX_TRAFFIC_IPA_DISABLED;
+	}
 
 	if (pdata->ipa_enabled && txqueue_select == IPA_DMA_TX_CH) {
 	   EMACERR("TX Channel [%d] is not a valid for SW path \n", txqueue_select);
