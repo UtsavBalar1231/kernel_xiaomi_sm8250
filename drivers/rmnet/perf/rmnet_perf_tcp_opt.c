@@ -20,6 +20,7 @@
 #include <net/ip6_checksum.h>
 #include <net/tcp.h>
 #include <linux/module.h>
+#include <asm/unaligned.h>
 #include <../drivers/net/ethernet/qualcomm/rmnet/rmnet_config.h>
 #include <../drivers/net/ethernet/qualcomm/rmnet/rmnet_map.h>
 #include <../drivers/net/ethernet/qualcomm/rmnet/rmnet_private.h>
@@ -443,16 +444,37 @@ static u32 rmnet_perf_tcp_opt_check_timestamp(struct sk_buff *skb,
 					      struct tcphdr *tp,
 					      struct net_device *dev)
 {
-	struct tcp_options_received tcp_opt;
+	int length = tp->doff * 4 - sizeof(*tp);
+	unsigned char *ptr = (unsigned char *)(tp + 1);
 
-	if (tp->doff <= 5)
-		/* no timesteamp here, still check in case it just got
-		 * turned off server side in the middle of transfer
-		 */
-		return 0;
-	tcp_opt.rcv_tsval = 0;
-	tcp_parse_options(dev_net(dev), skb, &tcp_opt, 0, NULL);
-	return tcp_opt.rcv_tsval;
+	while (length > 0) {
+		int code = *ptr++;
+		int size = *ptr++;
+
+		/* Partial or malformed options */
+		if (size < 2 || size > length)
+			return 0;
+
+		switch (code) {
+		case TCPOPT_EOL:
+			/* No more options */
+			return 0;
+		case TCPOPT_NOP:
+			/* Empty option */
+			length--;
+			continue;
+		case TCPOPT_TIMESTAMP:
+			if (size == TCPOLEN_TIMESTAMP &&
+			    dev_net(dev)->ipv4.sysctl_tcp_timestamps)
+				return get_unaligned_be32(ptr);
+		}
+
+		ptr += size - 2;
+		length -= size;
+	}
+
+	/* No timestamp in the options */
+	return 0;
 }
 
 /* rmnet_perf_tcp_opt_identify_flow() - Tell whether packet corresponds to
