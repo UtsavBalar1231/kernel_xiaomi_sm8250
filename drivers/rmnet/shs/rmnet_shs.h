@@ -22,6 +22,9 @@
 #include <../drivers/net/ethernet/qualcomm/rmnet/rmnet_handlers.h>
 #include <../drivers/net/ethernet/qualcomm/rmnet/rmnet_trace.h>
 
+#include <../include/soc/qcom/qmi_rmnet.h>
+
+
 #ifndef _RMNET_SHS_H_
 #define _RMNET_SHS_H_
 
@@ -54,6 +57,7 @@ struct rmnet_shs_cfg_s {
 	struct	hrtimer hrtimer_shs;
 	struct rps_map *map;
 	struct rmnet_map_dl_ind dl_mrk_ind_cb;
+	struct qmi_rmnet_ps_ind rmnet_idl_ind_cb;
 	struct rmnet_port *port;
 	long int num_bytes_parked;
 	long int num_pkts_parked;
@@ -230,4 +234,7 @@ void rmnet_shs_flush_table(u8 is_force_flush);
 void rmnet_shs_cpu_node_remove(struct rmnet_shs_skbn_s *node);
 void rmnet_shs_init(struct net_device *dev);
 void rmnet_shs_exit(void);
+void rmnet_shs_ps_on_hdlr(void *port);
+void rmnet_shs_ps_off_hdlr(void *port);
+
 #endif /* _RMNET_SHS_H_ */
