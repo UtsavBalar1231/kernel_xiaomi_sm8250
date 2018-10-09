@@ -35,6 +35,11 @@ MODULE_LICENSE("GPL v2");
  */
 
 /* Local Definitions and Declarations */
+unsigned int rmnet_shs_cpu_prio_dur __read_mostly = RMNET_SHS_WQ_DELAY_TICKS;
+module_param(rmnet_shs_cpu_prio_dur, uint, 0644);
+MODULE_PARM_DESC(rmnet_shs_cpu_prio_dur, "Priority ignore duration(ticks)");
+
+#define PRIO_BACKOFF ((!rmnet_shs_cpu_prio_dur) ? 2 : rmnet_shs_cpu_prio_dur)
 
 unsigned int rmnet_shs_wq_frequency __read_mostly = RMNET_SHS_WQ_DELAY_TICKS;
 module_param(rmnet_shs_wq_frequency, uint, 0644);
@@ -144,7 +149,6 @@ static time_t rmnet_shs_wq_tnsec;
 static struct workqueue_struct *rmnet_shs_wq;
 static struct rmnet_shs_delay_wq_s *rmnet_shs_delayed_wq;
 static struct rmnet_shs_wq_rx_flow_s rmnet_shs_rx_flow_tbl;
-
 
 static struct list_head rmnet_shs_wq_hstat_tbl =
 				LIST_HEAD_INIT(rmnet_shs_wq_hstat_tbl);
@@ -351,7 +355,6 @@ struct rmnet_shs_wq_hstat_s *rmnet_shs_wq_get_new_hstat_node(void)
 		return NULL;
 	}
 
-
 	rmnet_shs_wq_hstat_reset_node(ret_node);
 	ret_node->is_perm = 0;
 	ret_node->in_use = 1;
@@ -494,7 +497,6 @@ void rmnet_shs_wq_update_hash_stats(struct rmnet_shs_wq_hstat_s *hstats_p)
 				hstats_p->hash, 0xDEF, hstats_p->rx_pps,
 				hstats_p->rx_bps, hstats_p, NULL);
 
-
 	rmnet_shs_wq_update_hstat_rps_msk(hstats_p);
 	hstats_p->inactive_duration = 0;
 	hstats_p->l_epoch = node_p->hstats->c_epoch;
@@ -598,6 +600,9 @@ static void rmnet_shs_wq_refresh_cpu_stats(u16 cpu)
 	cpu_p = &rmnet_shs_rx_flow_tbl.cpu_list[cpu];
 	new_skbs = cpu_p->rx_skbs - cpu_p->last_rx_skbs;
 
+	if (rmnet_shs_cpu_node_tbl[cpu].wqprio)
+		rmnet_shs_cpu_node_tbl[cpu].wqprio = (rmnet_shs_cpu_node_tbl[cpu].wqprio + 1)
+						     % (PRIO_BACKOFF);
 	if (new_skbs == 0) {
 		cpu_p->l_epoch =  rmnet_shs_wq_tnsec;
 		cpu_p->rx_bps = 0;
@@ -663,7 +668,6 @@ void rmnet_shs_wq_update_cpu_rx_tbl(struct rmnet_shs_wq_hstat_s *hstat_p)
 
 	map_idx = node_p->map_index;
 	cpu_num = map->cpus[map_idx];
-
 
 	skb_diff = hstat_p->rx_skb - hstat_p->last_rx_skb;
 	byte_diff = hstat_p->rx_bytes - hstat_p->last_rx_bytes;
@@ -839,6 +843,13 @@ u16 rmnet_shs_wq_find_cpu_to_move_flows(u16 current_cpu,
 	    (cur_cpu_rx_pps > pps_uthresh)) {
 		return cpu_to_move;
 	}
+	/* If a core (should only be lpwr was marked prio we don't touch it
+	 * for a few ticks and reset it afterwards
+	 */
+
+	if (rmnet_shs_cpu_node_tbl[current_cpu].wqprio) {
+		return current_cpu;
+	}
 
 	for (cpu_num = 0; cpu_num < MAX_CPUS; cpu_num++) {
 
@@ -847,7 +858,8 @@ u16 rmnet_shs_wq_find_cpu_to_move_flows(u16 current_cpu,
 		/* We are looking for a core that is configured and that
 		 * can handle traffic better than the current core
 		 */
-		if ((cpu_num == current_cpu) || (!is_core_in_msk))
+		if ((cpu_num == current_cpu) || (!is_core_in_msk) ||
+		    !cpu_online(current_cpu))
 			continue;
 
 		pps_uthresh = rmnet_shs_cpu_rx_max_pps_thresh[cpu_num];
@@ -858,9 +870,9 @@ u16 rmnet_shs_wq_find_cpu_to_move_flows(u16 current_cpu,
 		reqd_pps = cpu_rx_pps + cur_cpu_rx_pps;
 
 		trace_rmnet_shs_wq_low(RMNET_SHS_WQ_CPU_STATS,
-				      RMNET_SHS_WQ_CPU_STATS_CORE2SWITCH_FIND,
-				      current_cpu, cpu_num, reqd_pps,
-				      cpu_rx_pps, NULL, NULL);
+				       RMNET_SHS_WQ_CPU_STATS_CORE2SWITCH_FIND,
+				       current_cpu, cpu_num, reqd_pps,
+				       cpu_rx_pps, NULL, NULL);
 
 		/* Return the first available CPU */
 		if ((reqd_pps > pps_lthresh) && (reqd_pps < pps_uthresh)) {
@@ -1313,7 +1325,6 @@ void rmnet_shs_wq_clean_ep_tbl(void)
 
 void rmnet_shs_wq_exit(void)
 {
-
 
 	/*If Wq is not initialized, nothing to cleanup */
 	if (!rmnet_shs_wq || !rmnet_shs_delayed_wq)
