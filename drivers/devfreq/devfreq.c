@@ -909,8 +909,10 @@ int devfreq_suspend_device(struct devfreq *devfreq)
 		return 0;
 
 	if (devfreq->governor) {
+		event_mutex_lock(devfreq);
 		ret = devfreq->governor->event_handler(devfreq,
 					DEVFREQ_GOV_SUSPEND, NULL);
+		event_mutex_unlock(devfreq);
 		if (ret)
 			return ret;
 	}
@@ -954,8 +956,10 @@ int devfreq_resume_device(struct devfreq *devfreq)
 	}
 
 	if (devfreq->governor) {
+		event_mutex_lock(devfreq);
 		ret = devfreq->governor->event_handler(devfreq,
 					DEVFREQ_GOV_RESUME, NULL);
+		event_mutex_unlock(devfreq);
 		if (ret)
 			return ret;
 	}
