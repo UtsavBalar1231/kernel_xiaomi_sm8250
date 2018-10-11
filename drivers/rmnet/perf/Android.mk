@@ -11,12 +11,11 @@ LOCAL_SRC_FILES += rmnet_perf_core.c
 LOCAL_SRC_FILES += rmnet_perf_tcp_opt.c
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/../../../../../../../kernel/msm-4.14/include/
 
-RMNET_PERF_BLD_DIR := $(ANDROID_BUILD_TOP)/vendor/qcom/opensource/data-kernel/drivers/rmnet/perf
+RMNET_PERF_BLD_DIR := ../../vendor/qcom/opensource/data-kernel/drivers/rmnet/perf
+DLKM_DIR := ./device/qcom/common/dlkm
+
 KBUILD_OPTIONS := $(RMNET_PERF_BLD_DIR)
 LOCAL_MODULE_TAGS := debug
-
-DLKM_DIR := $(ANDROID_BUILD_TOP)/device/qcom/common/dlkm
-
 
 $(warning $(DLKM_DIR))
 include $(DLKM_DIR)/AndroidKernelModule.mk

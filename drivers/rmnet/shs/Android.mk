@@ -11,13 +11,11 @@ LOCAL_MODULE := rmnet_shs.ko
 
 LOCAL_SRC_FILES := rmnet_shs_main.c rmnet_shs_config.c rmnet_shs_wq.c
 
-RMNET_SHS_BLD_DIR := $(ANDROID_BUILD_TOP)/vendor/qcom/opensource/data-kernel/drivers/rmnet/shs
+RMNET_SHS_BLD_DIR := ../../vendor/qcom/opensource/data-kernel/drivers/rmnet/shs
+DLKM_DIR := ./device/qcom/common/dlkm
 
 KBUILD_OPTIONS := $(RMNET_SHS_BLD_DIR)
 LOCAL_MODULE_TAGS := debug
-
-DLKM_DIR := $(ANDROID_BUILD_TOP)/device/qcom/common/dlkm
-
 
 $(warning $(DLKM_DIR))
 include $(DLKM_DIR)/AndroidKernelModule.mk
