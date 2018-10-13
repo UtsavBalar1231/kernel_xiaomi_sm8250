@@ -900,21 +900,20 @@ EXPORT_SYMBOL(devm_devfreq_remove_device);
  */
 int devfreq_suspend_device(struct devfreq *devfreq)
 {
-	int ret;
+	int ret = 0;
 
 	if (!devfreq)
 		return -EINVAL;
 
+	event_mutex_lock(devfreq);
 	if (atomic_inc_return(&devfreq->suspend_count) > 1)
-		return 0;
+		goto unlock_out;
 
 	if (devfreq->governor) {
-		event_mutex_lock(devfreq);
 		ret = devfreq->governor->event_handler(devfreq,
 					DEVFREQ_GOV_SUSPEND, NULL);
-		event_mutex_unlock(devfreq);
 		if (ret)
-			return ret;
+			goto unlock_out;
 	}
 
 	if (devfreq->suspend_freq >= devfreq->scaling_min_freq) {
@@ -922,10 +921,12 @@ int devfreq_suspend_device(struct devfreq *devfreq)
 		ret = devfreq_set_target(devfreq, devfreq->suspend_freq, 0);
 		mutex_unlock(&devfreq->lock);
 		if (ret)
-			return ret;
+			goto unlock_out;
 	}
 
-	return 0;
+unlock_out:
+	event_mutex_unlock(devfreq);
+	return ret;
 }
 EXPORT_SYMBOL(devfreq_suspend_device);
 
@@ -939,32 +940,33 @@ EXPORT_SYMBOL(devfreq_suspend_device);
  */
 int devfreq_resume_device(struct devfreq *devfreq)
 {
-	int ret;
+	int ret = 0;
 
 	if (!devfreq)
 		return -EINVAL;
 
+	event_mutex_lock(devfreq);
 	if (atomic_dec_return(&devfreq->suspend_count) >= 1)
-		return 0;
+		goto unlock_out;
 
 	if (devfreq->resume_freq) {
 		mutex_lock(&devfreq->lock);
 		ret = devfreq_set_target(devfreq, devfreq->resume_freq, 0);
 		mutex_unlock(&devfreq->lock);
 		if (ret)
-			return ret;
+			goto unlock_out;
 	}
 
 	if (devfreq->governor) {
-		event_mutex_lock(devfreq);
 		ret = devfreq->governor->event_handler(devfreq,
 					DEVFREQ_GOV_RESUME, NULL);
-		event_mutex_unlock(devfreq);
 		if (ret)
-			return ret;
+			goto unlock_out;
 	}
 
-	return 0;
+unlock_out:
+	event_mutex_unlock(devfreq);
+	return ret;
 }
 EXPORT_SYMBOL(devfreq_resume_device);
 
@@ -1177,6 +1179,10 @@ static ssize_t governor_store(struct device *dev, struct device_attribute *attr,
 	}
 
 	event_mutex_lock(df);
+	if (atomic_read(&df->suspend_count) > 0) {
+		ret = -EINVAL;
+		goto gov_stop_out;
+	}
 	if (df->governor) {
 		ret = df->governor->event_handler(df, DEVFREQ_GOV_STOP, NULL);
 		if (ret) {
