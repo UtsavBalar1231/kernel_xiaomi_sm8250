@@ -2,6 +2,7 @@
 
 ifeq ($(TARGET_BOARD_AUTO),true)
 LOCAL_PATH := $(call my-dir)
+include $(CLEAR_VARS)
 
 # This makefile is only for DLKM
 ifneq ($(findstring vendor,$(LOCAL_PATH)),)
@@ -18,7 +19,6 @@ KBUILD_OPTIONS += DCONFIG_PTPSUPPORT_OBJ=1
 KBUILD_OPTIONS += DCONFIG_DEBUGFS_OBJ=1
 #KBUILD_OPTIONS += DDWC_ETH_QOS_TEST=1
 
-include $(CLEAR_VARS)
 LOCAL_MODULE      := emac_dwc_eqos.ko
 LOCAL_MODULE_TAGS := debug
 include $(DLKM_DIR)/AndroidKernelModule.mk
