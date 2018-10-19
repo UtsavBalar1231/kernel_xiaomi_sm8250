@@ -35,7 +35,7 @@
 #define GET_QHEAD(SD, CPU) (per_cpu(SD, CPU).input_queue_head)
 
 /* Local Definitions and Declarations */
-spinlock_t rmnet_shs_ht_splock;
+DEFINE_SPINLOCK(rmnet_shs_ht_splock);
 DEFINE_HASHTABLE(RMNET_SHS_HT, RMNET_SHS_HT_SIZE);
 
 static struct rmnet_shs_cpu_node_s rmnet_shs_cpu_node_tbl[MAX_CPUS];
@@ -732,7 +732,6 @@ void rmnet_shs_init(struct net_device *dev)
 		return;
 
 	rmnet_shs_cfg.port = rmnet_get_port(dev);
-	spin_lock_init(&rmnet_shs_ht_splock);
 
 	for (num_cpu = 0; num_cpu < MAX_CPUS; num_cpu++)
 		INIT_LIST_HEAD(&rmnet_shs_cpu_node_tbl[num_cpu].node_list_id);
@@ -815,11 +814,12 @@ void rmnet_shs_assign(struct sk_buff *skb, struct rmnet_port *port)
 
 	/*deliver non TCP/UDP packets right away*/
 
-	if (unlikely(!map)) {
+	if ((unlikely(!map))|| !rmnet_shs_init_complete) {
+		rmnet_shs_deliver_skb(skb);
 		trace_rmnet_shs_err(RMNET_SHS_ASSIGN,
-				    RMNET_SHS_ASSIGN_CRIT_ERROR_NO_MSK_SET,
+				    RMNET_SHS_ASSIGN_CRIT_ERROR_NO_SHS_REQD,
 				    0xDEF, 0xDEF, 0xDEF, 0xDEF, NULL, NULL);
-		rmnet_shs_crit_err[RMNET_SHS_MAIN_MAP_LEN_INVALID]++;
+		rmnet_shs_crit_err[RMNET_SHS_MAIN_SHS_NOT_REQD]++;
 		return;
 	}
 
