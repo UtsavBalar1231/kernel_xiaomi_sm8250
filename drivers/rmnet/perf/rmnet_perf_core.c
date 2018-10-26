@@ -669,7 +669,7 @@ next_chain:
 	 * then we can flush everything
 	 */
 	if (!rmnet_perf_core_bm_flush_on ||
-	    perf->core_meta->bm_state->expect_packets <= 0) {
+	    (int) perf->core_meta->bm_state->expect_packets <= 0) {
 		rmnet_perf_tcp_opt_flush_all_flow_nodes(perf);
 		rmnet_perf_core_free_held_skbs(perf);
 		rmnet_perf_core_flush_reason_cnt[
