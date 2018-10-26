@@ -813,6 +813,10 @@ void rmnet_shs_assign(struct sk_buff *skb, struct rmnet_port *port)
 	struct rmnet_shs_cpu_node_s *cpu_node_tbl_p;
 
 	/*deliver non TCP/UDP packets right away*/
+	if (!rmnet_shs_is_skb_stamping_reqd(skb)) {
+		rmnet_shs_deliver_skb(skb);
+		return;
+	}
 
 	if ((unlikely(!map))|| !rmnet_shs_init_complete) {
 		rmnet_shs_deliver_skb(skb);
