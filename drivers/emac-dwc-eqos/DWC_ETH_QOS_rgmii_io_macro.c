@@ -375,9 +375,6 @@ int DWC_ETH_QOS_rgmii_io_macro_init(struct DWC_ETH_QOS_prv_data *pdata)
 
 	EMACDBG("Enter\n");
 
-	if (pdata->emac_hw_version_type == EMAC_HW_v2_3_0 || (pdata->emac_hw_version_type == EMAC_HW_v2_3_1))
-		loopback_mode = 0x1;
-
 	/* Loopback is disabled */
 	DWC_ETH_QOS_set_rgmii_loopback_mode(loopback_mode);
 
