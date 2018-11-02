@@ -355,20 +355,25 @@ void rmnet_perf_core_send_skb(struct sk_buff *skb, struct rmnet_endpoint *ep,
 	if (ip_version == 0x04) {
 		ip4hn = (struct iphdr *) data;
 		rmnet_set_skb_proto(skb);
-		if (ip4hn->protocol == IPPROTO_TCP) {
+		/* If the checksum is unnecessary, update the header fields.
+		 * Otherwise, we know that this is a single packet that
+		 * failed checksum validation, so we don't want to touch
+		 * the headers.
+		 */
+		if (ip4hn->protocol == IPPROTO_TCP &&
+		    skb->ip_summed == CHECKSUM_UNNECESSARY) {
 			ip4hn->tot_len = htons(skb->len);
 			ip4hn->check = 0;
 			ip4hn->check = ip_fast_csum(ip4hn, (int)ip4hn->ihl);
-			skb->ip_summed = CHECKSUM_UNNECESSARY;
 		}
 		rmnet_deliver_skb(skb, perf->rmnet_port);
 	} else  if (ip_version == 0x06) {
 		ip6hn = (struct ipv6hdr *)data;
 		rmnet_set_skb_proto(skb);
-		if (ip6hn->nexthdr == IPPROTO_TCP) {
+		if (ip6hn->nexthdr == IPPROTO_TCP &&
+		    skb->ip_summed == CHECKSUM_UNNECESSARY) {
 			ip6hn->payload_len = htons(skb->len -
 						   sizeof(struct ipv6hdr));
-			skb->ip_summed = CHECKSUM_UNNECESSARY;
 		}
 		rmnet_deliver_skb(skb, perf->rmnet_port);
 	} else {
@@ -423,6 +428,9 @@ void rmnet_perf_core_flush_curr_pkt(struct rmnet_perf *perf,
 		__skb_set_hash(skbn, 0, 0, 0);
 	}
 
+	/* If the packet passed checksum validation, tell the stack */
+	if (pkt_info->csum_valid)
+		skbn->ip_summed = CHECKSUM_UNNECESSARY;
 	skbn->dev = skb->dev;
 	skbn->hash = pkt_info->hash_key;
 	skbn->sw_hash = 1;
@@ -470,6 +478,107 @@ void rmnet_perf_core_handle_map_control_end(struct rmnet_map_dl_ind_trl *dltrl)
 						0xDEF, 0xDEF, NULL, NULL);
 }
 
+int rmnet_perf_core_validate_pkt_csum(struct sk_buff *skb,
+				      struct rmnet_perf_pkt_info *pkt_info)
+{
+	int result;
+	unsigned int pkt_len = pkt_info->header_len + pkt_info->payload_len;
+
+	skb_pull(skb, sizeof(struct rmnet_map_header));
+	if (pkt_info->ip_proto == 0x04) {
+		skb->protocol = htons(ETH_P_IP);
+	} else if (pkt_info->ip_proto == 0x06) {
+		skb->protocol = htons(ETH_P_IPV6);
+	} else {
+		pr_err("%s(): protocol field not set properly, protocol = %u\n",
+		       __func__, pkt_info->ip_proto);
+	}
+	result = rmnet_map_checksum_downlink_packet(skb, pkt_len);
+	skb_push(skb, sizeof(struct rmnet_map_header));
+	/* Mark the current packet as OK if csum is valid */
+	if (likely(result == 0))
+		pkt_info->csum_valid = true;
+	return result;
+}
+
+void rmnet_perf_core_handle_packet_ingress(struct sk_buff *skb,
+					   struct rmnet_endpoint *ep,
+					   struct rmnet_perf_pkt_info *pkt_info,
+					   u32 frame_len, u32 trailer_len)
+{
+	unsigned char *payload = (unsigned char *)
+				 (skb->data + sizeof(struct rmnet_map_header));
+	struct rmnet_perf *perf = rmnet_perf_config_get_perf();
+	u16 pkt_len;
+
+	pkt_info->ep = ep;
+	pkt_info->ip_proto = (*payload & 0xF0) >> 4;
+	if (pkt_info->ip_proto == 4) {
+		struct iphdr *iph = (struct iphdr *)payload;
+
+		pkt_info->iphdr.v4hdr = iph;
+		pkt_info->trans_proto = iph->protocol;
+		pkt_info->header_len = iph->ihl * 4;
+	} else if (pkt_info->ip_proto == 6) {
+		struct ipv6hdr *iph = (struct ipv6hdr *)payload;
+
+		pkt_info->iphdr.v6hdr = iph;
+		pkt_info->trans_proto = iph->nexthdr;
+		pkt_info->header_len = sizeof(*iph);
+	} else {
+		pr_err("%s(): invalid packet\n", __func__);
+		return;
+	}
+
+	pkt_len = frame_len - sizeof(struct rmnet_map_header) - trailer_len;
+
+	if (pkt_info->trans_proto == IPPROTO_TCP) {
+		struct tcphdr *tp = (struct tcphdr *)
+				    (payload + pkt_info->header_len);
+
+		pkt_info->trns_hdr.tp = tp;
+		pkt_info->header_len += tp->doff * 4;
+		pkt_info->payload_len = pkt_len - pkt_info->header_len;
+		pkt_info->hash_key =
+			rmnet_perf_core_compute_flow_hash(pkt_info);
+
+		if (rmnet_perf_core_validate_pkt_csum(skb, pkt_info))
+			goto flush;
+
+		rmnet_perf_tcp_opt_ingress(perf, skb, pkt_info);
+	} else if (pkt_info->trans_proto == IPPROTO_UDP) {
+		struct udphdr *up = (struct udphdr *)
+				    (payload + pkt_info->header_len);
+
+		pkt_info->trns_hdr.up = up;
+		pkt_info->header_len += sizeof(*up);
+		pkt_info->payload_len = pkt_len - pkt_info->header_len;
+		pkt_info->hash_key =
+			rmnet_perf_core_compute_flow_hash(pkt_info);
+
+		/* We flush anyway, so the result of the validation
+		 * does not need to be checked.
+		 */
+		rmnet_perf_core_validate_pkt_csum(skb, pkt_info);
+		goto flush;
+	} else {
+		pkt_info->payload_len = pkt_len - pkt_info->header_len;
+		pkt_info->hash_key =
+			rmnet_perf_core_compute_flow_hash(pkt_info);
+
+		/* We flush anyway, so the result of the validation
+		 * does not need to be checked.
+		 */
+		rmnet_perf_core_validate_pkt_csum(skb, pkt_info);
+		goto flush;
+	}
+
+	return;
+
+flush:
+	rmnet_perf_core_flush_curr_pkt(perf, skb, pkt_info, pkt_len);
+}
+
 /* rmnet_perf_core_deaggregate() - Deaggregated ip packets from map frame
  * @port: allows access to our required global structures
  * @skb: the incoming aggregated MAP frame from PND
@@ -484,12 +593,8 @@ void rmnet_perf_core_deaggregate(struct sk_buff *skb,
 				 struct rmnet_port *port)
 {
 	u8 mux_id;
-	u16 ip_packet_len;
 	struct rmnet_map_header *maph;
 	uint32_t map_frame_len;
-	unsigned char *map_payload;
-	struct iphdr *ip4h;
-	struct ipv6hdr *ip6h;
 	struct rmnet_endpoint *ep;
 	struct rmnet_perf_pkt_info pkt_info;
 	struct rmnet_perf *perf;
@@ -571,91 +676,10 @@ skip_frame:
 			 * with processing the packet i.e. we know we are
 			 * dealing with a packet with no funny business inside
 			 */
-			pkt_info.ep = ep;
-			map_payload = (unsigned char *)(skb->data +
-					sizeof(struct rmnet_map_header));
-			pkt_info.ip_proto = (*map_payload & 0xF0) >> 4;
-			if (pkt_info.ip_proto == 0x04) {
-				ip4h = (struct iphdr *)map_payload;
-				pkt_info.iphdr.v4hdr = (struct iphdr *) ip4h;
-				pkt_info.trans_proto =  ip4h->protocol;
-				if (pkt_info.trans_proto == IPPROTO_TCP) {
-					pkt_info.trns_hdr.tp = (struct tcphdr *)
-						(map_payload + ip4h->ihl*4);
-					pkt_info.header_len = (ip4h->ihl * 4) +
-					    (pkt_info.trns_hdr.tp->doff * 4);
-					pkt_info.payload_len = map_frame_len -
-					    (sizeof(struct rmnet_map_header) +
-					    trailer_len +
-					    pkt_info.header_len);
-					pkt_info.hash_key =
-				rmnet_perf_core_compute_flow_hash(&pkt_info);
-					rmnet_perf_tcp_opt_ingress(perf, skb,
-								   &pkt_info);
-				} else if (pkt_info.trans_proto ==
-					   IPPROTO_UDP) {
-					pkt_info.trns_hdr.up = (struct udphdr *)
-						(map_payload + ip4h->ihl*4);
-					ip_packet_len = map_frame_len -
-					    (sizeof(struct rmnet_map_header) +
-					    trailer_len);
-					pkt_info.hash_key =
-				rmnet_perf_core_compute_flow_hash(&pkt_info);
-					rmnet_perf_core_flush_curr_pkt(perf,
-						skb, &pkt_info, ip_packet_len);
-				} else {
-					ip_packet_len = map_frame_len -
-					    (sizeof(struct rmnet_map_header) +
-					    trailer_len);
-					pkt_info.hash_key =
-				rmnet_perf_core_compute_flow_hash(&pkt_info);
-					rmnet_perf_core_flush_curr_pkt(perf,
-						skb, &pkt_info, ip_packet_len);
-				}
-			} else if (pkt_info.ip_proto == 0x06) {
-				ip6h = (struct ipv6hdr *)map_payload;
-				pkt_info.iphdr.v6hdr = (struct ipv6hdr *) ip6h;
-				pkt_info.trans_proto =  ip6h->nexthdr;
-				if (pkt_info.trans_proto == IPPROTO_TCP) {
-					pkt_info.trns_hdr.tp = (struct tcphdr *)
-						(map_payload +
-						 sizeof(struct ipv6hdr));
-					pkt_info.header_len =
-						sizeof(struct ipv6hdr) +
-						(pkt_info.trns_hdr.tp->doff *
-						 4);
-					pkt_info.payload_len = map_frame_len -
-					    (sizeof(struct rmnet_map_header) +
-					    trailer_len +
-					    pkt_info.header_len);
-					pkt_info.hash_key =
-				rmnet_perf_core_compute_flow_hash(&pkt_info);
-					rmnet_perf_tcp_opt_ingress(perf, skb,
-								   &pkt_info);
-				} else if (pkt_info.trans_proto ==
-					   IPPROTO_UDP) {
-					pkt_info.trns_hdr.up = (struct udphdr *)
-						(map_payload +
-						 sizeof(struct ipv6hdr));
-					ip_packet_len = map_frame_len -
-					    (sizeof(struct rmnet_map_header) +
-					    trailer_len);
-					pkt_info.hash_key =
-				rmnet_perf_core_compute_flow_hash(&pkt_info);
-					rmnet_perf_core_flush_curr_pkt(perf,
-						skb, &pkt_info, ip_packet_len);
-				} else {
-					ip_packet_len = map_frame_len -
-					    (sizeof(struct rmnet_map_header) +
-					    trailer_len);
-					pkt_info.hash_key =
-				rmnet_perf_core_compute_flow_hash(&pkt_info);
-					rmnet_perf_core_flush_curr_pkt(perf,
-						skb, &pkt_info, ip_packet_len);
-				}
-			} else {
-				pr_err("%s(): invalid packet\n", __func__);
-			}
+			rmnet_perf_core_handle_packet_ingress(skb, ep,
+							      &pkt_info,
+							      map_frame_len,
+							      trailer_len);
 bad_data:
 			skb_pull(skb, map_frame_len);
 			co++;
