@@ -938,6 +938,8 @@ void rmnet_shs_assign(struct sk_buff *skb, struct rmnet_port *port)
 	 */
 	if (!rmnet_shs_cfg.is_pkt_parked) {
 		rmnet_shs_cfg.is_pkt_parked = 1;
+
+		rmnet_shs_cfg.force_flush_state = RMNET_SHS_FLUSH_OFF;
 		if (hrtimer_active(&rmnet_shs_cfg.hrtimer_shs)) {
 			trace_rmnet_shs_low(RMNET_SHS_ASSIGN,
 				    RMNET_SHS_ASSIGN_PARK_TMR_CANCEL,
