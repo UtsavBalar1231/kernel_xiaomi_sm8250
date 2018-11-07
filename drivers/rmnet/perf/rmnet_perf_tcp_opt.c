@@ -594,6 +594,7 @@ void rmnet_perf_tcp_opt_ingress(struct rmnet_perf *perf, struct sk_buff *skb,
 	bool match;
 	enum rmnet_perf_tcp_opt_merge_check_rc rc = 0;
 	bool flow_node_exists = 0;
+	struct napi_struct *napi = NULL;
 	//pkt_info->hash_key = rmnet_perf_core_compute_flow_hash(pkt_info);
 
 handle_pkt:
@@ -625,9 +626,12 @@ handle_pkt:
 							       pkt_info);
 				rmnet_perf_tcp_opt_flush_single_flow_node(perf,
 								flow_node);
+				napi = get_current_napi_context();
+				napi_gro_flush(napi, false);
 				rmnet_perf_core_flush_curr_pkt(perf, skb,
 							       pkt_info,
 				pkt_info->header_len + pkt_info->payload_len);
+				napi_gro_flush(napi, false);
 				rmnet_perf_tcp_opt_flush_reason_cnt[
 					RMNET_PERF_TCP_OPT_TCP_FLUSH_FORCE]++;
 			} else if (rc == RMNET_PERF_TCP_OPT_FLUSH_ALL) {
@@ -664,6 +668,8 @@ handle_pkt:
 			rmnet_perf_tcp_opt_update_flow(flow_node, pkt_info);
 			rmnet_perf_core_flush_curr_pkt(perf, skb, pkt_info,
 				pkt_info->header_len + pkt_info->payload_len);
+			napi = get_current_napi_context();
+			napi_gro_flush(napi, false);
 			rmnet_perf_tcp_opt_flush_reason_cnt[
 				RMNET_PERF_TCP_OPT_TCP_FLUSH_FORCE]++;
 		} else
