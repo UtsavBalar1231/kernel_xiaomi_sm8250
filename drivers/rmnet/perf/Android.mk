@@ -1,4 +1,5 @@
 ifneq ($(TARGET_BOARD_AUTO),true)
+ifneq ($(TARGET_PRODUCT),qssi)
 ifeq ($(call is-board-platform-in-list, msmnile),true)
 LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
@@ -21,4 +22,5 @@ $(warning $(DLKM_DIR))
 include $(DLKM_DIR)/AndroidKernelModule.mk
 
 endif #End of check for target
+endif #End of Check for qssi target
 endif #End of check for AUTO Target

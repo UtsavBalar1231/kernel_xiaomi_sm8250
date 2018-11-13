@@ -1,3 +1,4 @@
+ifneq ($(TARGET_PRODUCT),qssi)
 ifeq ($(call is-board-platform-in-list, msmnile),true)
 #Make file to create RMNET_SHS DLKM
 LOCAL_PATH := $(call my-dir)
@@ -21,3 +22,4 @@ $(warning $(DLKM_DIR))
 include $(DLKM_DIR)/AndroidKernelModule.mk
 
 endif #End of Check for target
+endif #End of Check for qssi target
