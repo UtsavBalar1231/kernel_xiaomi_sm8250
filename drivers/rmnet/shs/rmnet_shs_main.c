@@ -146,14 +146,18 @@ static int rmnet_shs_check_skb_can_gro(struct sk_buff *skb)
 static void rmnet_shs_deliver_skb(struct sk_buff *skb)
 {
 	struct rmnet_priv *priv;
+	struct napi_struct *napi;
 
 	trace_rmnet_shs_low(RMNET_SHS_DELIVER_SKB, RMNET_SHS_DELIVER_SKB_START,
 			    0xDEF, 0xDEF, 0xDEF, 0xDEF, skb, NULL);
 
 	if (!rmnet_shs_check_skb_can_gro(skb)) {
-		priv = netdev_priv(skb->dev);
-		gro_cells_receive(&priv->gro_cells, skb);
-
+		if ((napi = get_current_napi_context())) {
+			napi_gro_receive(napi, skb);
+		} else {
+			priv = netdev_priv(skb->dev);
+			gro_cells_receive(&priv->gro_cells, skb);
+		}
 	} else {
 		netif_receive_skb(skb);
 	}
