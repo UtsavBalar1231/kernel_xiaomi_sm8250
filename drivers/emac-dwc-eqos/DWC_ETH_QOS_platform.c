@@ -110,6 +110,18 @@ static ssize_t read_phy_reg_dump(struct file *file,
 					 i, phydata);
 	}
 
+	if ((pdata->phydev->phy_id & pdata->phydev->drv->phy_id_mask) == MICREL_PHY_ID) {
+		int i = 0;
+		u16 mmd_phydata = 0;
+		for(i=0;i<=8;i++){
+			DWC_ETH_QOS_mdio_mmd_register_read_direct(pdata, pdata->phyaddr,
+				DWC_ETH_QOS_MICREL_PHY_DEBUG_MMD_DEV_ADDR, i, &mmd_phydata);
+			EMACDBG("Read %#x from offset %#x", mmd_phydata, i);
+			len += scnprintf(buf + len, buf_len - len,
+				"Micrel PHY MMD Register (%#x) = %#x\n", i, mmd_phydata);
+		}
+	}
+
 	if (len > buf_len) {
 		EMACERR(" %s (len > buf_len) buffer not sufficient\n",__func__);
 		len = buf_len;
@@ -853,7 +865,8 @@ int DWC_ETH_QOS_enable_ptp_clk(struct device *dev)
 	int ret;
 	const char* ptp_clock_name;
 
-	if (dwc_eth_qos_res_data.emac_hw_version_type == EMAC_HW_v2_1_0)
+	if (dwc_eth_qos_res_data.emac_hw_version_type == EMAC_HW_v2_1_0
+        || dwc_eth_qos_res_data.emac_hw_version_type == EMAC_HW_v2_1_2)
 		ptp_clock_name = "emac_ptp_clk";
 	else
 		ptp_clock_name = "eth_ptp_clk";
