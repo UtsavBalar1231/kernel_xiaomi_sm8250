@@ -1692,7 +1692,7 @@ static unsigned int DWC_ETH_QOS_map_skb(struct net_device *dev,
 		}
 	}
 
-	if (buffer->dma == 0 && buffer->dma2 == 0)
+	if (prev_buffer != NULL && buffer->dma == 0 && buffer->dma2 == 0)
 		prev_buffer->skb = skb;
 	else
 		buffer->skb = skb;
