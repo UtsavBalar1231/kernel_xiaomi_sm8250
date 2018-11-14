@@ -224,14 +224,17 @@ u32 rmnet_shs_form_hash(u32 index, u32 maplen, u32 hash)
 	int offsetmap[MAX_CPUS / 2] = {8, 4, 3, 2};
 	u32 ret = 0;
 
+	if (!maplen) {
+		rmnet_shs_crit_err[RMNET_SHS_MAIN_MAP_LEN_INVALID]++;
+		return ret;
+	}
+
 	if (maplen < MAX_CPUS)
 		ret = ((((index + ((maplen % 2) ? 1 : 0))) << 28)
 			* offsetmap[(maplen - 1) >> 1]) | (hash & 0xFFFFFF);
 
 	trace_rmnet_shs_low(RMNET_SHS_HASH_MAP, RMNET_SHS_HASH_MAP_FORM_HASH,
 			    ret, hash, index, maplen, NULL, NULL);
-	if (maplen == 0)
-		rmnet_shs_crit_err[RMNET_SHS_MAIN_MAP_LEN_INVALID]++;
 
 	return ret;
 }
@@ -289,12 +292,16 @@ int rmnet_shs_get_suggested_cpu(struct rmnet_shs_skbn_s *node_p)
 
 int rmnet_shs_get_hash_map_idx_to_stamp(struct rmnet_shs_skbn_s *node_p)
 {
-	int cpu, idx;
+	int cpu, idx = INVALID_CPU;
 	struct rps_map *map;
 
 	cpu = rmnet_shs_get_suggested_cpu(node_p);
 
+
 	map = rcu_dereference(node_p->dev->_rx->rps_map);
+	if (!node_p->dev || !node_p->dev->_rx || !map)
+		return idx;
+
 	idx = rmnet_shs_map_idx_from_cpu(cpu, map);
 
 	trace_rmnet_shs_low(RMNET_SHS_HASH_MAP,
@@ -402,6 +409,12 @@ int rmnet_shs_node_can_flush_pkts(struct rmnet_shs_skbn_s *node, u8 force_flush)
 		}
 		node->is_shs_enabled = 1;
 		map = rcu_dereference(node->dev->_rx->rps_map);
+		if (!node->dev->_rx || !map){
+			node->is_shs_enabled = 0;
+			ret = 1;
+			break;
+		}
+
 
 		/* If the flow is going to the same core itself
 		 */
@@ -451,13 +464,17 @@ void rmnet_shs_flush_node(struct rmnet_shs_skbn_s *node)
 	u32 skb_bytes_delivered = 0;
 	u32 hash2stamp;
 
-	map = rcu_dereference(node->dev->_rx->rps_map);
-
 	if (!node->skb_list.head)
 		return;
 
-	hash2stamp = rmnet_shs_form_hash(node->map_index,
+	map = rcu_dereference(node->dev->_rx->rps_map);
+
+	if (!map) {
+		hash2stamp = rmnet_shs_form_hash(node->map_index,
 					 map->len, node->skb_list.head->hash);
+	} else {
+		node->is_shs_enabled = 0;
+	}
 	trace_rmnet_shs_high(RMNET_SHS_FLUSH,
 			     RMNET_SHS_FLUSH_NODE_START,
 			     node->hash, hash2stamp,
@@ -692,7 +709,6 @@ void rmnet_shs_aggregate_init(void)
 
 void rmnet_shs_ps_on_hdlr(void *port)
 {
-	rmnet_shs_flush_table(1);
 	rmnet_shs_wq_pause();
 }
 
