@@ -657,6 +657,10 @@ void rmnet_shs_wq_update_cpu_rx_tbl(struct rmnet_shs_wq_hstat_s *hstat_p)
 		return;
 
 	map = rcu_dereference(node_p->dev->_rx->rps_map);
+
+	if (!map)
+		return;
+
 	map_idx = node_p->map_index;
 	cpu_num = map->cpus[map_idx];
 
