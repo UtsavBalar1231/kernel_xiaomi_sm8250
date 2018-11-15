@@ -1167,15 +1167,6 @@ static int DWC_ETH_QOS_init_phy(struct net_device *dev)
 		phydev->irq = PHY_IGNORE_INTERRUPT;
 		phydev->interrupts =  PHY_INTERRUPT_ENABLED;
 
-        if ((phydev->phy_id & phydev->drv->phy_id_mask) == MICREL_PHY_ID) {
-            DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
-                 DWC_ETH_QOS_MICREL_PHY_CTL, DWC_ETH_QOS_MICREL_INTR_LEVEL);
-            DWC_ETH_QOS_mdio_read_direct(pdata, pdata->phyaddr,
-                 DWC_ETH_QOS_MICREL_PHY_CTL, &phydata);
-            EMACDBG("Micrel PHY Control Reg (%#x) = %#x\n",
-                    DWC_ETH_QOS_MICREL_PHY_CTL, phydata);
-        }
-
 		if (phydev->drv->config_intr &&
 			!phydev->drv->config_intr(phydev))
 			DWC_ETH_QOS_request_phy_wol(pdata);
