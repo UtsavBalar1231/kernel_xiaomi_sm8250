@@ -16,6 +16,9 @@
 #include <linux/skbuff.h>
 #include "rmnet_shs_wq.h"
 
+#ifndef _RMNET_SHS_H_
+#define _RMNET_SHS_H_
+
 #include <../drivers/net/ethernet/qualcomm/rmnet/rmnet_config.h>
 #include <../drivers/net/ethernet/qualcomm/rmnet/rmnet_map.h>
 #include <../drivers/net/ethernet/qualcomm/rmnet/rmnet_private.h>
@@ -24,14 +27,11 @@
 
 #include <../include/soc/qcom/qmi_rmnet.h>
 
-
-#ifndef _RMNET_SHS_H_
-#define _RMNET_SHS_H_
-
 #define RMNET_SHS_HT rmnet_shs_ht
 #define RMNET_SHS_HT_SIZE 9
 #define RMNET_SHS_MAX_SKB_INACTIVE_TSEC 30
 #define MAX_SILVER_CORES 4
+#define MAX_CPUS  8
 
 //#define RMNET_SHS_MAX_UDP_SILVER_CORE_DATA_RATE 1073741824 //1.0Gbps
 //#define RMNET_SHS_MAX_UDP_SILVER_CORE_DATA_RATE 320787200 //320 Mbps
@@ -53,18 +53,26 @@
 #define RMNET_SHS_UDP_PPS_PERF_CPU_LTHRESH 40000
 #define RMNET_SHS_TCP_PPS_PERF_CPU_LTHRESH (40000*RMNET_SHS_TCP_COALESCING_RATIO)
 
+struct core_flush_s {
+	struct  hrtimer core_timer;
+	struct work_struct work;
+	struct timespec coretime;
+	int coresum;
+	u8 core;
+};
+
 struct rmnet_shs_cfg_s {
 	struct	hrtimer hrtimer_shs;
-	struct rps_map *map;
 	struct rmnet_map_dl_ind dl_mrk_ind_cb;
 	struct qmi_rmnet_ps_ind rmnet_idl_ind_cb;
 	struct rmnet_port *port;
+	struct  core_flush_s core_flush[MAX_CPUS];
+	u64 core_skbs[MAX_CPUS];
 	long int num_bytes_parked;
 	long int num_pkts_parked;
 	u32 is_reg_dl_mrk_ind;
 	u8 is_pkt_parked;
 	u8 is_timer_init;
-	u8 high_prio;
 	u8 force_flush_state;
 };
 
@@ -93,8 +101,6 @@ struct rmnet_shs_skbn_s {
 	/* n/w stack CPU pkt processing queue head */
 	u32 hash;
 	/*incoming hash*/
-	u32 parked_skbs;
-	/*num skbs parked per flow*/
 	u16 map_index;
 	/* rps map index assigned*/
 	u16 map_cpu;
@@ -132,6 +138,10 @@ struct rmnet_shs_cpu_node_s {
 	struct list_head node_list_id;
 	u32 qhead;
 	u32 qtail;
+	u32 qdiff;
+	u32 parkedlen;
+	u8 prio;
+	u8 wqprio;
 };
 
 enum rmnet_shs_trace_func {
@@ -215,6 +225,7 @@ enum rmnet_shs_trace_evt {
 	RMNET_SHS_DL_MRK_END,
 };
 
+extern struct rmnet_shs_flush_work shs_delayed_work;
 extern spinlock_t rmnet_shs_ht_splock;
 extern struct hlist_head RMNET_SHS_HT[1 << (RMNET_SHS_HT_SIZE)];
 
@@ -225,8 +236,9 @@ extern int (*rmnet_shs_skb_entry)(struct sk_buff *skb,
 				  struct rmnet_port *port);
 int rmnet_shs_is_lpwr_cpu(u16 cpu);
 void rmnet_shs_cancel_table(void);
-
 void rmnet_shs_aggregate_init(void);
+
+int rmnet_shs_chk_and_flush_node(struct rmnet_shs_skbn_s *node, u8 force_flush);
 void rmnet_shs_dl_hdr_handler(struct rmnet_map_dl_ind_hdr *dlhdr);
 void rmnet_shs_dl_trl_handler(struct rmnet_map_dl_ind_trl *dltrl);
 void rmnet_shs_assign(struct sk_buff *skb, struct rmnet_port *port);
@@ -236,5 +248,5 @@ void rmnet_shs_init(struct net_device *dev);
 void rmnet_shs_exit(void);
 void rmnet_shs_ps_on_hdlr(void *port);
 void rmnet_shs_ps_off_hdlr(void *port);
-
+void rmnet_shs_update_cpu_proc_q_all_cpus(void);
 #endif /* _RMNET_SHS_H_ */

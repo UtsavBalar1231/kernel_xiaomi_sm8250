@@ -363,7 +363,8 @@ int DWC_ETH_QOS_rgmii_io_macro_init(struct DWC_ETH_QOS_prv_data *pdata)
 	uint loopback_mode_en = 0;
 	uint rgmii_data_divide_clk;
 	ULONG data;
-	if (pdata->emac_hw_version_type == EMAC_HW_v2_3_0) {
+
+	if (pdata->emac_hw_version_type == EMAC_HW_v2_3_0 || (pdata->emac_hw_version_type == EMAC_HW_v2_3_1)) {
 		if(pdata->io_macro_phy_intf == RGMII_MODE)
 			loopback_mode_en = 0x1;
 		rgmii_data_divide_clk = 0x0;
@@ -373,9 +374,6 @@ int DWC_ETH_QOS_rgmii_io_macro_init(struct DWC_ETH_QOS_prv_data *pdata)
 	}
 
 	EMACDBG("Enter\n");
-
-	if (pdata->emac_hw_version_type == EMAC_HW_v2_3_0)
-		loopback_mode = 0x1;
 
 	/* Loopback is disabled */
 	DWC_ETH_QOS_set_rgmii_loopback_mode(loopback_mode);
@@ -404,7 +402,8 @@ int DWC_ETH_QOS_rgmii_io_macro_init(struct DWC_ETH_QOS_prv_data *pdata)
 				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x1);
 				RGMII_LOOPBACK_EN_UDFWR(loopback_mode_en);
 				if (pdata->emac_hw_version_type == EMAC_HW_v2_1_0 ||
-					pdata->emac_hw_version_type == EMAC_HW_v2_1_2)
+					pdata->emac_hw_version_type == EMAC_HW_v2_1_2 ||
+					(pdata->emac_hw_version_type == EMAC_HW_v2_3_1))
 					RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x1);
 			} else {
 				/* Enable DDR mode*/
@@ -426,8 +425,11 @@ int DWC_ETH_QOS_rgmii_io_macro_init(struct DWC_ETH_QOS_prv_data *pdata)
 
 				/* Program PRG_RCLK_DLY to 52 ns for a required delay of 2 ns
 				on EMAC core version 2.1.0 */
-				if (pdata->emac_hw_version_type == EMAC_HW_v2_1_0)
+				if (pdata->emac_hw_version_type == EMAC_HW_v2_1_0
+					|| pdata->emac_hw_version_type == EMAC_HW_v2_1_2)
 					SDCC_HC_PRG_RCLK_DLY_UDFWR(52);
+				else if (pdata->emac_hw_version_type == EMAC_HW_v2_3_1)
+					SDCC_HC_PRG_RCLK_DLY_UDFWR(104);
 				else { /* Program PRG_RCLK_DLY to 57 for a required delay of 1.8 ns */
 					SDCC_HC_PRG_RCLK_DLY_UDFWR(57);
 				}
@@ -457,7 +459,8 @@ int DWC_ETH_QOS_rgmii_io_macro_init(struct DWC_ETH_QOS_prv_data *pdata)
 				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x0);
 				RGMII_LOOPBACK_EN_UDFWR(loopback_mode_en);
 				if (pdata->emac_hw_version_type == EMAC_HW_v2_1_0 ||
-					pdata->emac_hw_version_type == EMAC_HW_v2_1_2)
+					pdata->emac_hw_version_type == EMAC_HW_v2_1_2 ||
+					(pdata->emac_hw_version_type == EMAC_HW_v2_3_1))
 					RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x1);
 				if (pdata->emac_hw_version_type == EMAC_HW_v2_1_2)
 					RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x1);
@@ -498,10 +501,13 @@ int DWC_ETH_QOS_rgmii_io_macro_init(struct DWC_ETH_QOS_prv_data *pdata)
 				RGMII_MAX_SPD_PRG_9_UDFWR(0x13);
 				RGMII_CONFIG_2_RERVED_CONFIG_16_EN_UDFWR(0x1);
 				/* Rx Path */
+				if (pdata->emac_hw_version_type == EMAC_HW_v2_3_1)
+					RGMII_LOOPBACK_EN_UDFWR(loopback_mode_en);
 				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x0);
 				RGMII_LOOPBACK_EN_UDFWR(loopback_mode_en);
 				if (pdata->emac_hw_version_type == EMAC_HW_v2_1_0 ||
-					pdata->emac_hw_version_type == EMAC_HW_v2_1_2)
+					pdata->emac_hw_version_type == EMAC_HW_v2_1_2 ||
+					(pdata->emac_hw_version_type == EMAC_HW_v2_3_1))
 					RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x1);
 				if (pdata->emac_hw_version_type == EMAC_HW_v2_1_2)
 					RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x1);
@@ -548,7 +554,7 @@ int DWC_ETH_QOS_rgmii_io_macro_init(struct DWC_ETH_QOS_prv_data *pdata)
 		RGMII_MAX_SPD_PRG_2_UDFWR(0x1);
 		RGMII_MAX_SPD_PRG_9_UDFWR(0x13);
 		RGMII_CONFIG_2_RERVED_CONFIG_16_EN_UDFWR(0x0);
-		if (pdata->emac_hw_version_type == EMAC_HW_v2_3_0)
+		if (pdata->emac_hw_version_type == EMAC_HW_v2_3_0 || (pdata->emac_hw_version_type == EMAC_HW_v2_3_1))
 			RGMII_LOOPBACK_EN_UDFWR(0x0);
 		else
 			RGMII_LOOPBACK_EN_UDFWR(0x1);
@@ -567,7 +573,8 @@ int DWC_ETH_QOS_rgmii_io_macro_init(struct DWC_ETH_QOS_prv_data *pdata)
 		RGMII_CONFIG_2_RERVED_CONFIG_16_EN_UDFWR(0x1);
 		if (pdata->emac_hw_version_type == EMAC_HW_v2_1_2)
 			RGMII_CONFIG_2_TX_CLK_PHASE_SHIFT_EN_UDFWR(0x1);
-
+		if (pdata->emac_hw_version_type == EMAC_HW_v2_3_1)
+			RGMII_LOOPBACK_EN_UDFWR(0x1);
 		break;
 	}
 

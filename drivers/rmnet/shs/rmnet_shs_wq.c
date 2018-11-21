@@ -25,12 +25,21 @@ MODULE_LICENSE("GPL v2");
 #define RMNET_SHS_BYTE_TO_BIT(x) ((x)*8)
 #define RMNET_SHS_MIN_HSTAT_NODES_REQD 16
 #define RMNET_SHS_WQ_DELAY_TICKS  10
+
+#define PERIODIC_CLEAN 0
+/* FORCE_CLEAN should only used during module de-ini.*/
+#define FORCE_CLEAN 1
 /* Time to wait (in time ticks) before re-triggering the workqueue
  *	1   tick  = 10 ms (Maximum possible resolution)
  *	100 ticks = 1 second
  */
 
 /* Local Definitions and Declarations */
+unsigned int rmnet_shs_cpu_prio_dur __read_mostly = RMNET_SHS_WQ_DELAY_TICKS;
+module_param(rmnet_shs_cpu_prio_dur, uint, 0644);
+MODULE_PARM_DESC(rmnet_shs_cpu_prio_dur, "Priority ignore duration(ticks)");
+
+#define PRIO_BACKOFF ((!rmnet_shs_cpu_prio_dur) ? 2 : rmnet_shs_cpu_prio_dur)
 
 unsigned int rmnet_shs_wq_frequency __read_mostly = RMNET_SHS_WQ_DELAY_TICKS;
 module_param(rmnet_shs_wq_frequency, uint, 0644);
@@ -141,7 +150,6 @@ static struct workqueue_struct *rmnet_shs_wq;
 static struct rmnet_shs_delay_wq_s *rmnet_shs_delayed_wq;
 static struct rmnet_shs_wq_rx_flow_s rmnet_shs_rx_flow_tbl;
 
-
 static struct list_head rmnet_shs_wq_hstat_tbl =
 				LIST_HEAD_INIT(rmnet_shs_wq_hstat_tbl);
 static int rmnet_shs_flow_dbg_stats_idx_cnt;
@@ -153,21 +161,23 @@ static struct list_head rmnet_shs_wq_ep_tbl =
  */
 void rmnet_shs_wq_ep_tbl_add(struct rmnet_shs_wq_ep_s *ep)
 {
+	unsigned long flags;
 	trace_rmnet_shs_wq_low(RMNET_SHS_WQ_EP_TBL, RMNET_SHS_WQ_EP_TBL_ADD,
 				0xDEF, 0xDEF, 0xDEF, 0xDEF, ep, NULL);
-	spin_lock(&rmnet_shs_hstat_tbl_lock);
+	spin_lock_irqsave(&rmnet_shs_hstat_tbl_lock, flags);
 	list_add(&ep->ep_list_id, &rmnet_shs_wq_ep_tbl);
-	spin_unlock(&rmnet_shs_hstat_tbl_lock);
+	spin_unlock_irqrestore(&rmnet_shs_hstat_tbl_lock, flags);
 }
 
 void rmnet_shs_wq_ep_tbl_remove(struct rmnet_shs_wq_ep_s *ep)
 {
+	unsigned long flags;
 	trace_rmnet_shs_wq_low(RMNET_SHS_WQ_EP_TBL, RMNET_SHS_WQ_EP_TBL_DEL,
 				0xDEF, 0xDEF, 0xDEF, 0xDEF, ep, NULL);
 
-	spin_lock(&rmnet_shs_hstat_tbl_lock);
+	spin_lock_irqsave(&rmnet_shs_hstat_tbl_lock, flags);
 	list_del_init(&ep->ep_list_id);
-	spin_unlock(&rmnet_shs_hstat_tbl_lock);
+	spin_unlock_irqrestore(&rmnet_shs_hstat_tbl_lock, flags);
 
 }
 
@@ -176,23 +186,27 @@ void rmnet_shs_wq_ep_tbl_remove(struct rmnet_shs_wq_ep_s *ep)
  */
 void rmnet_shs_wq_hstat_tbl_add(struct rmnet_shs_wq_hstat_s *hnode)
 {
+	unsigned long flags;
+
 	trace_rmnet_shs_wq_low(RMNET_SHS_WQ_HSTAT_TBL,
 			       RMNET_SHS_WQ_HSTAT_TBL_ADD,
 				0xDEF, 0xDEF, 0xDEF, 0xDEF, hnode, NULL);
-	spin_lock(&rmnet_shs_hstat_tbl_lock);
+	spin_lock_irqsave(&rmnet_shs_hstat_tbl_lock, flags);
 	list_add(&hnode->hstat_node_id, &rmnet_shs_wq_hstat_tbl);
-	spin_unlock(&rmnet_shs_hstat_tbl_lock);
+	spin_unlock_irqrestore(&rmnet_shs_hstat_tbl_lock, flags);
 }
 
 void rmnet_shs_wq_hstat_tbl_remove(struct rmnet_shs_wq_hstat_s *hnode)
 {
+	unsigned long flags;
+
 	trace_rmnet_shs_wq_low(RMNET_SHS_WQ_HSTAT_TBL,
 			       RMNET_SHS_WQ_HSTAT_TBL_DEL,
 				0xDEF, 0xDEF, 0xDEF, 0xDEF, hnode, NULL);
 
-	spin_lock(&rmnet_shs_hstat_tbl_lock);
+	spin_lock_irqsave(&rmnet_shs_hstat_tbl_lock, flags);
 	list_del_init(&hnode->hstat_node_id);
-	spin_unlock(&rmnet_shs_hstat_tbl_lock);
+	spin_unlock_irqrestore(&rmnet_shs_hstat_tbl_lock, flags);
 
 }
 
@@ -202,37 +216,43 @@ void rmnet_shs_wq_hstat_tbl_remove(struct rmnet_shs_wq_hstat_s *hnode)
  */
 void rmnet_shs_wq_cpu_list_remove(struct rmnet_shs_wq_hstat_s *hnode)
 {
+	unsigned long flags;
+
 	trace_rmnet_shs_wq_low(RMNET_SHS_WQ_CPU_HSTAT_TBL,
 			    RMNET_SHS_WQ_CPU_HSTAT_TBL_DEL,
 			    0xDEF, 0xDEF, 0xDEF, 0xDEF, hnode, NULL);
-	spin_lock(&rmnet_shs_hstat_tbl_lock);
+	spin_lock_irqsave(&rmnet_shs_hstat_tbl_lock, flags);
 	list_del_init(&hnode->cpu_node_id);
-	spin_unlock(&rmnet_shs_hstat_tbl_lock);
+	spin_unlock_irqrestore(&rmnet_shs_hstat_tbl_lock, flags);
 
 }
 
 void rmnet_shs_wq_cpu_list_add(struct rmnet_shs_wq_hstat_s *hnode,
 			    struct list_head *head)
 {
+	unsigned long flags;
+
 	trace_rmnet_shs_wq_low(RMNET_SHS_WQ_CPU_HSTAT_TBL,
 			    RMNET_SHS_WQ_CPU_HSTAT_TBL_ADD,
 			    0xDEF, 0xDEF, 0xDEF, 0xDEF, hnode, NULL);
 
-	spin_lock(&rmnet_shs_hstat_tbl_lock);
+	spin_lock_irqsave(&rmnet_shs_hstat_tbl_lock, flags);
 	list_add(&hnode->cpu_node_id, head);
-	spin_unlock(&rmnet_shs_hstat_tbl_lock);
+	spin_unlock_irqrestore(&rmnet_shs_hstat_tbl_lock, flags);
 }
 
 void rmnet_shs_wq_cpu_list_move(struct rmnet_shs_wq_hstat_s *hnode,
 			     struct list_head *head)
 {
+	unsigned long flags;
+
 	trace_rmnet_shs_wq_low(RMNET_SHS_WQ_CPU_HSTAT_TBL,
 			    RMNET_SHS_WQ_CPU_HSTAT_TBL_MOVE,
 			    hnode->current_cpu,
 			    0xDEF, 0xDEF, 0xDEF, hnode, NULL);
-	spin_lock(&rmnet_shs_hstat_tbl_lock);
+	spin_lock_irqsave(&rmnet_shs_hstat_tbl_lock, flags);
 	list_move(&hnode->cpu_node_id, head);
-	spin_unlock(&rmnet_shs_hstat_tbl_lock);
+	spin_unlock_irqrestore(&rmnet_shs_hstat_tbl_lock, flags);
 
 }
 
@@ -300,8 +320,9 @@ struct rmnet_shs_wq_hstat_s *rmnet_shs_wq_get_new_hstat_node(void)
 {
 	struct rmnet_shs_wq_hstat_s *hnode;
 	struct rmnet_shs_wq_hstat_s *ret_node = NULL;
+	unsigned long flags;
 
-	spin_lock(&rmnet_shs_hstat_tbl_lock);
+	spin_lock_irqsave(&rmnet_shs_hstat_tbl_lock, flags);
 	list_for_each_entry(hnode, &rmnet_shs_wq_hstat_tbl, hstat_node_id) {
 		if (hnode == NULL)
 			continue;
@@ -313,7 +334,7 @@ struct rmnet_shs_wq_hstat_s *rmnet_shs_wq_get_new_hstat_node(void)
 			break;
 		}
 	}
-	spin_unlock(&rmnet_shs_hstat_tbl_lock);
+	spin_unlock_irqrestore(&rmnet_shs_hstat_tbl_lock, flags);
 
 	if (ret_node) {
 		trace_rmnet_shs_wq_low(RMNET_SHS_WQ_HSTAT_TBL,
@@ -333,7 +354,6 @@ struct rmnet_shs_wq_hstat_s *rmnet_shs_wq_get_new_hstat_node(void)
 		rmnet_shs_crit_err[RMNET_SHS_WQ_ALLOC_HSTAT_ERR]++;
 		return NULL;
 	}
-
 
 	rmnet_shs_wq_hstat_reset_node(ret_node);
 	ret_node->is_perm = 0;
@@ -477,7 +497,6 @@ void rmnet_shs_wq_update_hash_stats(struct rmnet_shs_wq_hstat_s *hstats_p)
 				hstats_p->hash, 0xDEF, hstats_p->rx_pps,
 				hstats_p->rx_bps, hstats_p, NULL);
 
-
 	rmnet_shs_wq_update_hstat_rps_msk(hstats_p);
 	hstats_p->inactive_duration = 0;
 	hstats_p->l_epoch = node_p->hstats->c_epoch;
@@ -581,6 +600,9 @@ static void rmnet_shs_wq_refresh_cpu_stats(u16 cpu)
 	cpu_p = &rmnet_shs_rx_flow_tbl.cpu_list[cpu];
 	new_skbs = cpu_p->rx_skbs - cpu_p->last_rx_skbs;
 
+	if (rmnet_shs_cpu_node_tbl[cpu].wqprio)
+		rmnet_shs_cpu_node_tbl[cpu].wqprio = (rmnet_shs_cpu_node_tbl[cpu].wqprio + 1)
+						     % (PRIO_BACKOFF);
 	if (new_skbs == 0) {
 		cpu_p->l_epoch =  rmnet_shs_wq_tnsec;
 		cpu_p->rx_bps = 0;
@@ -640,9 +662,12 @@ void rmnet_shs_wq_update_cpu_rx_tbl(struct rmnet_shs_wq_hstat_s *hstat_p)
 		return;
 
 	map = rcu_dereference(node_p->dev->_rx->rps_map);
+
+	if (!map)
+		return;
+
 	map_idx = node_p->map_index;
 	cpu_num = map->cpus[map_idx];
-
 
 	skb_diff = hstat_p->rx_skb - hstat_p->last_rx_skb;
 	byte_diff = hstat_p->rx_bytes - hstat_p->last_rx_bytes;
@@ -818,6 +843,13 @@ u16 rmnet_shs_wq_find_cpu_to_move_flows(u16 current_cpu,
 	    (cur_cpu_rx_pps > pps_uthresh)) {
 		return cpu_to_move;
 	}
+	/* If a core (should only be lpwr was marked prio we don't touch it
+	 * for a few ticks and reset it afterwards
+	 */
+
+	if (rmnet_shs_cpu_node_tbl[current_cpu].wqprio) {
+		return current_cpu;
+	}
 
 	for (cpu_num = 0; cpu_num < MAX_CPUS; cpu_num++) {
 
@@ -826,7 +858,8 @@ u16 rmnet_shs_wq_find_cpu_to_move_flows(u16 current_cpu,
 		/* We are looking for a core that is configured and that
 		 * can handle traffic better than the current core
 		 */
-		if ((cpu_num == current_cpu) || (!is_core_in_msk))
+		if ((cpu_num == current_cpu) || (!is_core_in_msk) ||
+		    !cpu_online(current_cpu))
 			continue;
 
 		pps_uthresh = rmnet_shs_cpu_rx_max_pps_thresh[cpu_num];
@@ -837,9 +870,9 @@ u16 rmnet_shs_wq_find_cpu_to_move_flows(u16 current_cpu,
 		reqd_pps = cpu_rx_pps + cur_cpu_rx_pps;
 
 		trace_rmnet_shs_wq_low(RMNET_SHS_WQ_CPU_STATS,
-				      RMNET_SHS_WQ_CPU_STATS_CORE2SWITCH_FIND,
-				      current_cpu, cpu_num, reqd_pps,
-				      cpu_rx_pps, NULL, NULL);
+				       RMNET_SHS_WQ_CPU_STATS_CORE2SWITCH_FIND,
+				       current_cpu, cpu_num, reqd_pps,
+				       cpu_rx_pps, NULL, NULL);
 
 		/* Return the first available CPU */
 		if ((reqd_pps > pps_lthresh) && (reqd_pps < pps_uthresh)) {
@@ -1119,7 +1152,7 @@ int rmnet_shs_wq_get_perf_cpu_new_flow(struct net_device *dev)
 	return cpu_assigned;
 }
 
-void rmnet_shs_wq_cleanup_hash_tbl(void)
+void rmnet_shs_wq_cleanup_hash_tbl(u8 force_clean)
 {
 	struct rmnet_shs_skbn_s *node_p;
 	time_t tns2s;
@@ -1133,9 +1166,12 @@ void rmnet_shs_wq_cleanup_hash_tbl(void)
 		if (hnode == NULL)
 			continue;
 
+		if (hnode->node == NULL)
+			continue;
+
 		node_p = hnode->node;
 		tns2s = RMNET_SHS_NSEC_TO_SEC(hnode->inactive_duration);
-		if (tns2s > rmnet_shs_max_flow_inactivity_sec) {
+		if (tns2s > rmnet_shs_max_flow_inactivity_sec || force_clean) {
 
 			trace_rmnet_shs_wq_low(RMNET_SHS_WQ_FLOW_STATS,
 			    RMNET_SHS_WQ_FLOW_STATS_FLOW_INACTIVE_TIMEOUT,
@@ -1149,11 +1185,12 @@ void rmnet_shs_wq_cleanup_hash_tbl(void)
 				kfree(node_p);
 			}
 			rmnet_shs_wq_cpu_list_remove(hnode);
-			if (hnode->is_perm == 0) {
+			if (hnode->is_perm == 0 || force_clean) {
 				rmnet_shs_wq_hstat_tbl_remove(hnode);
 				kfree(hnode);
-			} else
+			} else {
 				rmnet_shs_wq_hstat_reset_node(hnode);
+			}
 			spin_unlock_irqrestore(&rmnet_shs_ht_splock, ht_flags);
 		}
 	}
@@ -1250,7 +1287,7 @@ static void rmnet_shs_wq_update_stats(void)
 	rmnet_shs_wq_eval_suggested_cpu();
 	rmnet_shs_wq_refresh_new_flow_list();
 	/*Invoke after both the locks are released*/
-	rmnet_shs_wq_cleanup_hash_tbl();
+	rmnet_shs_wq_cleanup_hash_tbl(PERIODIC_CLEAN);
 }
 
 void rmnet_shs_wq_process_wq(struct work_struct *work)
@@ -1289,7 +1326,6 @@ void rmnet_shs_wq_clean_ep_tbl(void)
 void rmnet_shs_wq_exit(void)
 {
 
-
 	/*If Wq is not initialized, nothing to cleanup */
 	if (!rmnet_shs_wq || !rmnet_shs_delayed_wq)
 		return;
@@ -1304,8 +1340,8 @@ void rmnet_shs_wq_exit(void)
 
 	rmnet_shs_delayed_wq = NULL;
 	rmnet_shs_wq = NULL;
+	rmnet_shs_wq_cleanup_hash_tbl(FORCE_CLEAN);
 	rmnet_shs_wq_clean_ep_tbl();
-
 	trace_rmnet_shs_wq_high(RMNET_SHS_WQ_EXIT, RMNET_SHS_WQ_EXIT_END,
 				   0xDEF, 0xDEF, 0xDEF, 0xDEF, NULL, NULL);
 }

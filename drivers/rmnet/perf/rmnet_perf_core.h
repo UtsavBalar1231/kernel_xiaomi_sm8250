@@ -31,6 +31,7 @@ struct rmnet_perf {
  */
 struct rmnet_perf_pkt_info {
 	bool first_packet;
+	bool csum_valid;
 	unsigned char ip_proto;
 	unsigned char trans_proto;
 	u16 header_len;

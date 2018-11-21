@@ -17,9 +17,16 @@
 #define _RMNET_SHS_WQ_H_
 
 #include "rmnet_shs_config.h"
+#include "rmnet_shs.h"
 
-#define MAX_CPUS  8
 #define MAX_SUPPORTED_FLOWS_DEBUG 16
+
+#define RMNET_SHS_RX_BPNSEC_TO_BPSEC(x) ((x)*1000000000)
+#define RMNET_SHS_SEC_TO_NSEC(x) ((x)*1000000000)
+#define RMNET_SHS_NSEC_TO_SEC(x) ((x)/1000000000)
+#define RMNET_SHS_BYTE_TO_BIT(x) ((x)*8)
+#define RMNET_SHS_MIN_HSTAT_NODES_REQD 16
+#define RMNET_SHS_WQ_DELAY_TICKS  10
 
 /* stores wq and end point details */
 
@@ -193,6 +200,9 @@ enum rmnet_shs_wq_trace_evt {
 
 
 };
+
+extern struct rmnet_shs_cpu_node_s rmnet_shs_cpu_node_tbl[MAX_CPUS];
+
 void rmnet_shs_wq_init(struct net_device *dev);
 void rmnet_shs_wq_exit(void);
 void rmnet_shs_wq_restart(void);

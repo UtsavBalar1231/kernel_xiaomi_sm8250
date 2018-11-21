@@ -285,6 +285,28 @@ static inline u32 DWC_ETH_QOS_mmd_eee_adv_to_ethtool_adv_t(u16 eee_adv)
 #endif
 
 /*!
+* \brief API to disable EEE mode.
+*
+* \details This function disable smart EEE
+* \param[in] phydev - pointer to target phy_device structure
+*/
+
+static void DWC_ETH_QOS_disable_smart_eee(struct phy_device *phydev)
+{
+	u32 smart_eee;
+
+	smart_eee = DWC_ETH_QOS_phy_read_mmd_indirect(
+		phydev->mdio.bus, AR8035_SMART_EEE_CTRL_3,
+		MDIO_MMD_PCS, phydev->mdio.addr);
+
+	smart_eee &= ~AR8035_SMART_EEE_EN;
+	DWC_ETH_QOS_phy_write_mmd_indirect(
+		phydev->mdio.bus, AR8035_SMART_EEE_CTRL_3,
+		MDIO_MMD_PCS,phydev->mdio.addr, smart_eee);
+
+}
+
+/*!
 * \brief API to initialize and check EEE mode.
 *
 * \details This function checks if the EEE is supported by
@@ -378,15 +400,7 @@ static int DWC_ETH_QOS_phy_init_eee(struct phy_device *phydev,
 
 		/* Disable smart EEE feature in AR8035*/
 		if (phydev->phy_id == ATH8035_PHY_ID || phydev->phy_id == ATH8030_PHY_ID) {
-			u32 smart_eee = DWC_ETH_QOS_phy_read_mmd_indirect(
-			   phydev->mdio.bus, AR8035_SMART_EEE_CTRL_3,
-			   MDIO_MMD_PCS, phydev->mdio.addr);
-
-			smart_eee &= ~AR8035_SMART_EEE_EN;
-
-			DWC_ETH_QOS_phy_write_mmd_indirect(
-			   phydev->mdio.bus, AR8035_SMART_EEE_CTRL_3,
-			   MDIO_MMD_PCS,phydev->mdio.addr, smart_eee);
+			DWC_ETH_QOS_disable_smart_eee(phydev);
 		}
 
 		ret = 0; /* EEE supported */
@@ -420,6 +434,16 @@ bool DWC_ETH_QOS_eee_init(struct DWC_ETH_QOS_prv_data *pdata)
 	EMACDBG("Enter\n");
 
 	hw_if = &pdata->hw_if;
+
+	/* Disable smart EEE & EEE for ATH8030*/
+	if ((pdata->emac_hw_version_type == EMAC_HW_v2_3_1)
+		&& (pdata->io_macro_phy_intf == RMII_MODE) &&
+		pdata->phydev->phy_id == ATH8030_PHY_ID) {
+		//disable smart EEE
+		DWC_ETH_QOS_disable_smart_eee(pdata->phydev);
+		EMACDBG("disable smart EEE for 8030\n");
+	}
+
 	/* For RMII mode EEE is not supported */
 	if (pdata->io_macro_phy_intf == RMII_MODE)
 		goto phy_eee_failed;

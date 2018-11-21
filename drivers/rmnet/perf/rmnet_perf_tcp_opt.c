@@ -136,9 +136,7 @@ rmnet_perf_tcp_opt_tcp_flag_flush(struct rmnet_perf_pkt_info *pkt_info)
  * @pkt_info: characteristics of the current packet
  *
  * 1. check src/dest IP addr and TCP port & next seq match
- * 2. validate checksum - it also checks the ip flag
- * 3. check if timestamp changed
- * 4. check if size overflow
+ * 2. check if size overflow
  *
  * Return:
  *    - true if Pkt can be merged
@@ -151,7 +149,6 @@ rmnet_perf_tcp_opt_pkt_can_be_merged(struct sk_buff *skb,
 {
 	struct iphdr *ip4h;
 	struct ipv6hdr *ip6h;
-	int result = 0;
 	u16 payload_len = pkt_info->payload_len;
 	struct tcphdr *tp = pkt_info->trns_hdr.tp;
 
@@ -186,29 +183,7 @@ rmnet_perf_tcp_opt_pkt_can_be_merged(struct sk_buff *skb,
 		return RMNET_PERF_TCP_OPT_FLUSH_SOME;
 	}
 
-	/* 2. validate checksum - it also checks the ip flag */
-	skb_pull(skb, sizeof(struct rmnet_map_header));
-	if (pkt_info->ip_proto == 0x04) {
-		skb->protocol = htons(ETH_P_IP);
-	} else if (pkt_info->ip_proto == 0x06) {
-		skb->protocol = htons(ETH_P_IPV6);
-	} else {
-		pr_err("%s(): protocol field not set properly, protocol = %u\n",
-		       __func__, pkt_info->ip_proto);
-	}
-	result = rmnet_map_checksum_downlink_packet(skb, pkt_info->header_len +
-							 payload_len);
-	skb_push(skb, sizeof(struct rmnet_map_header));
-	if (!(likely((result == 0)))) {
-		//TODO: later on might want to make macro out of this
-		//(result == RMNET_MAP_CHECKSUM_SKIPPED)))) {
-		pr_err("Wrong csum %d", result);
-		rmnet_perf_tcp_opt_flush_reason_cnt[
-					RMNET_PERF_TCP_OPT_CHECKSUM_ERR]++;
-		return RMNET_PERF_TCP_OPT_FLUSH_ALL;
-	}
-
-	/* 3. check if size overflow */
+	/* 2. check if size overflow */
 	if ((payload_len + flow_node->len >= rmnet_perf_tcp_opt_flush_limit)) {
 		rmnet_perf_tcp_opt_flush_reason_cnt[
 						RMNET_PERF_TCP_OPT_64K_LIMIT]++;
@@ -332,6 +307,9 @@ static void rmnet_perf_tcp_opt_flush_single_flow_node(struct rmnet_perf *perf,
 					       __func__);
 				} else {
 					skbn->hash = flow_node->hash_value;
+					skbn->sw_hash = 1;
+					/* data is already validated */
+					skbn->ip_summed = CHECKSUM_UNNECESSARY;
 					rmnet_perf_core_send_skb(skbn, ep,
 								 perf, NULL);
 				}
@@ -593,6 +571,7 @@ void rmnet_perf_tcp_opt_ingress(struct rmnet_perf *perf, struct sk_buff *skb,
 	bool match;
 	enum rmnet_perf_tcp_opt_merge_check_rc rc = 0;
 	bool flow_node_exists = 0;
+	struct napi_struct *napi = NULL;
 	//pkt_info->hash_key = rmnet_perf_core_compute_flow_hash(pkt_info);
 
 handle_pkt:
@@ -624,9 +603,12 @@ handle_pkt:
 							       pkt_info);
 				rmnet_perf_tcp_opt_flush_single_flow_node(perf,
 								flow_node);
+				napi = get_current_napi_context();
+				napi_gro_flush(napi, false);
 				rmnet_perf_core_flush_curr_pkt(perf, skb,
 							       pkt_info,
 				pkt_info->header_len + pkt_info->payload_len);
+				napi_gro_flush(napi, false);
 				rmnet_perf_tcp_opt_flush_reason_cnt[
 					RMNET_PERF_TCP_OPT_TCP_FLUSH_FORCE]++;
 			} else if (rc == RMNET_PERF_TCP_OPT_FLUSH_ALL) {
@@ -663,6 +645,8 @@ handle_pkt:
 			rmnet_perf_tcp_opt_update_flow(flow_node, pkt_info);
 			rmnet_perf_core_flush_curr_pkt(perf, skb, pkt_info,
 				pkt_info->header_len + pkt_info->payload_len);
+			napi = get_current_napi_context();
+			napi_gro_flush(napi, false);
 			rmnet_perf_tcp_opt_flush_reason_cnt[
 				RMNET_PERF_TCP_OPT_TCP_FLUSH_FORCE]++;
 		} else
