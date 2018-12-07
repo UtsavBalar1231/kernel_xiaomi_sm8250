@@ -4211,6 +4211,9 @@ void lockdep_reset(void)
 	raw_local_irq_restore(flags);
 }
 
+/*
+ * Remove all references to a lock class. The caller must hold the graph lock.
+ */
 static void zap_class(struct lock_class *class)
 {
 	int i;
@@ -4318,6 +4321,7 @@ void lockdep_reset_lock(struct lockdep_map *lock)
 	int j, locked;
 
 	raw_local_irq_save(flags);
+	locked = graph_lock();
 
 	/*
 	 * Remove all classes this lock might have:
@@ -4334,7 +4338,6 @@ void lockdep_reset_lock(struct lockdep_map *lock)
 	 * Debug check: in the end all mapped classes should
 	 * be gone.
 	 */
-	locked = graph_lock();
 	if (unlikely(lock_class_cache_is_registered(lock))) {
 		if (debug_locks_off_graph_unlock()) {
 			/*
