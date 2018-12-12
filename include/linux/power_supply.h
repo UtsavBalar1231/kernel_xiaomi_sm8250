@@ -467,6 +467,7 @@ enum power_supply_property {
 	POWER_SUPPLY_PROP_OTG_STATE,
 	POWER_SUPPLY_PROP_FG_TYPE,
 	POWER_SUPPLY_PROP_CHARGER_STATUS,
+	POWER_SUPPLY_PROP_MOISTURE_DETECTION_ENABLE,
 	/* Local extensions of type int64_t */
 	POWER_SUPPLY_PROP_CHARGE_COUNTER_EXT,
 	/* Properties of type `const char *' */
