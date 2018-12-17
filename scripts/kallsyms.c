@@ -111,7 +111,7 @@ static int check_symbol_range(const char *sym, unsigned long long addr,
 
 static int read_symbol(FILE *in, struct sym_entry *s)
 {
-	char sym[500], stype;
+	char sym[500], stype, *p;
 	int rc;
 
 	rc = fscanf(in, "%llx %c %499s\n", &s->addr, &stype, sym);
@@ -154,6 +154,18 @@ static int read_symbol(FILE *in, struct sym_entry *s)
 		return -1;
 	/* exclude s390 kasan local symbols */
 	else if (!strncmp(sym, ".LASANPC", 8))
+		return -1;
+
+	/* gcc-nm produces extra weak symbols for C files
+	 * in the form
+	 * 000000000003aa8b W version.c.36323a88
+	 * ignore they are outside the supported range
+	 * and confuse the symbol generation, and they
+	 * are not useful for symbolization.
+	 */
+	else if ((stype = 'W' || stype == 'w') &&
+		(p = strstr(sym, ".c.")) &&
+		isxdigit(p[3]))
 		return -1;
 
 	/* include the type field in the symbol name, so that it gets
