@@ -48,6 +48,12 @@
  * @brief: Driver functions.
  */
 #include "DWC_ETH_QOS_yheader.h"
+#include "DWC_ETH_QOS_yapphdr.h"
+
+extern int ETH_PPSOUT_Config(struct DWC_ETH_QOS_prv_data *pdata, struct ifr_data_struct* req);
+extern void DWC_ETH_QOS_pps_timer_init(struct ifr_data_struct* req);
+
+
 
 /*!
  * \brief API to adjust the frequency of hardware clock.
@@ -277,6 +283,8 @@ static struct ptp_clock_info DWC_ETH_QOS_ptp_clock_ops = {
 int DWC_ETH_QOS_ptp_init(struct DWC_ETH_QOS_prv_data *pdata)
 {
 	int ret = 0;
+	struct ifr_data_struct req = {0};
+	struct ETH_PPS_Config eth_pps_cfg = {0};
 
 	DBGPR_PTP("-->DWC_ETH_QOS_ptp_init\n");
 
@@ -302,6 +310,17 @@ int DWC_ETH_QOS_ptp_init(struct DWC_ETH_QOS_prv_data *pdata)
 		pr_alert("ptp_clock_register() failed\n");
 	} else {
 		pr_alert("Added PTP HW clock successfully\n");
+	}
+	if (pdata->emac_hw_version_type == EMAC_HW_v2_3_1) {
+		/*Configuaring PPS0 PPS output frequency to defualt 19.2 Mhz*/
+		eth_pps_cfg.ppsout_ch = 0;
+		eth_pps_cfg.ptpclk_freq == DWC_ETH_QOS_DEFAULT_PTP_CLOCK;
+		eth_pps_cfg.ppsout_freq = 19200000;
+		eth_pps_cfg.ppsout_start = 1;
+		req.ptr = (void*)&eth_pps_cfg;
+
+		DWC_ETH_QOS_pps_timer_init(&req);
+		ret = ETH_PPSOUT_Config(pdata, &req);
 	}
 
 	DBGPR_PTP("<--DWC_ETH_QOS_ptp_init\n");

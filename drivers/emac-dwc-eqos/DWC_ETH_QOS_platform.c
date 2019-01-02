@@ -422,7 +422,8 @@ static void DWC_ETH_QOS_configure_gpio_pins(struct platform_device *pdev)
 		}
 		EMACDBG("get pinctrl succeed\n");
 
-		if (dwc_eth_qos_res_data.emac_hw_version_type == EMAC_HW_v2_2_0) {
+		if (dwc_eth_qos_res_data.emac_hw_version_type == EMAC_HW_v2_2_0 ||
+			dwc_eth_qos_res_data.emac_hw_version_type == EMAC_HW_v2_3_1) {
 			/* PPS0 pin */
 			emac_pps_0 = pinctrl_lookup_state(pinctrl, EMAC_PIN_PPS0);
 			if (IS_ERR_OR_NULL(emac_pps_0)) {
@@ -435,7 +436,9 @@ static void DWC_ETH_QOS_configure_gpio_pins(struct platform_device *pdev)
 			if (ret) EMACERR("Unable to set emac_pps_0 state, err = %d\n", ret);
 			else EMACDBG("Set emac_pps_0 succeed\n");
 
-			return;
+			if (dwc_eth_qos_res_data.emac_hw_version_type == EMAC_HW_v2_2_0) {
+				return;
+			}
 		}
 
 		/* MDIO Pin ctlrs*/

@@ -434,6 +434,7 @@ struct ETH_PPS_Config
 	unsigned int ppsout_freq;
 	unsigned int ppsout_ch;
 	unsigned int ppsout_duty;
+	unsigned int ppsout_start;
 };
 #endif
 
