@@ -82,8 +82,8 @@ static inline void pmd_populate(struct mm_struct *mm, pmd_t *pmdp,
 #define pmd_pgtable(pmd) pmd_page(pmd)
 #endif
 
-extern pte_t *pte_alloc_one_kernel(struct mm_struct *mm, unsigned long addr);
-extern pgtable_t pte_alloc_one(struct mm_struct *mm, unsigned long addr);
+extern pte_t *pte_alloc_one_kernel(struct mm_struct *mm);
+extern pgtable_t pte_alloc_one(struct mm_struct *mm);
 
 static inline void pte_free_kernel(struct mm_struct *mm, pte_t *pte)
 {
