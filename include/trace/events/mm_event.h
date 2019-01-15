@@ -7,8 +7,10 @@
 #include <linux/types.h>
 #include <linux/tracepoint.h>
 #include <linux/mm.h>
+#include <linux/mm_event.h>
 
 struct mm_event_task;
+struct mm_event_vmstat;
 
 #define show_mm_event_type(type)					\
 	__print_symbolic(type,                                          \
@@ -44,6 +46,60 @@ TRACE_EVENT(mm_event_record,
 					show_mm_event_type(__entry->type),
 					__entry->count, __entry->avg_lat,
 					__entry->max_lat)
+);
+
+TRACE_EVENT(mm_event_vmstat_record,
+
+	TP_PROTO(struct mm_event_vmstat *vmstat),
+
+	TP_ARGS(vmstat),
+
+	TP_STRUCT__entry(
+		__field(unsigned long, free)
+		__field(unsigned long, file)
+		__field(unsigned long, anon)
+		__field(unsigned long, ion)
+		__field(unsigned long, slab)
+		__field(unsigned long, ws_refault)
+		__field(unsigned long, ws_activate)
+		__field(unsigned long, mapped)
+		__field(unsigned long, pgin)
+		__field(unsigned long, pgout)
+		__field(unsigned long, swpin)
+		__field(unsigned long, swpout)
+		__field(unsigned long, reclaim_steal)
+		__field(unsigned long, reclaim_scan)
+		__field(unsigned long, compact_scan)
+	),
+
+	TP_fast_assign(
+		__entry->free		= vmstat->free;
+		__entry->file		= vmstat->file;
+		__entry->anon		= vmstat->anon;
+		__entry->ion		= vmstat->ion;
+		__entry->slab		= vmstat->slab;
+		__entry->ws_refault	= vmstat->ws_refault;
+		__entry->ws_activate	= vmstat->ws_activate;
+		__entry->mapped		= vmstat->mapped;
+		__entry->pgin		= vmstat->pgin;
+		__entry->pgout		= vmstat->pgout;
+		__entry->swpin		= vmstat->swpin;
+		__entry->swpout		= vmstat->swpout;
+		__entry->reclaim_steal	= vmstat->reclaim_steal;
+		__entry->reclaim_scan	= vmstat->reclaim_scan;
+		__entry->compact_scan	= vmstat->compact_scan;
+	),
+
+	TP_printk("free=%lu file=%lu anon=%lu ion=%lu slab=%lu ws_refault=%lu "
+		  "ws_activate=%lu mapped=%lu pgin=%lu pgout=%lu, swpin=%lu "
+		  "swpout=%lu reclaim_steal=%lu reclaim_scan=%lu compact_scan=%lu",
+			__entry->free, __entry->file,
+			__entry->anon, __entry->ion, __entry->slab,
+			__entry->ws_refault, __entry->ws_activate,
+			__entry->mapped, __entry->pgin, __entry->pgout,
+			__entry->swpin, __entry->swpout,
+			__entry->reclaim_steal, __entry->reclaim_scan,
+			__entry->compact_scan)
 );
 
 #endif /* _TRACE_MM_EVENT_H */
