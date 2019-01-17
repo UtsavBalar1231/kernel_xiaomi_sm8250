@@ -606,6 +606,7 @@ static void devfreq_dev_release(struct device *dev)
 		devfreq->profile->exit(devfreq->dev.parent);
 
 	mutex_destroy(&devfreq->lock);
+	event_mutex_destroy(devfreq);
 	kfree(devfreq);
 }
 
@@ -649,6 +650,7 @@ struct devfreq *devfreq_add_device(struct device *dev,
 	}
 
 	mutex_init(&devfreq->lock);
+	event_mutex_init(devfreq);
 	mutex_lock(&devfreq->lock);
 	devfreq->dev.parent = dev;
 	devfreq->dev.class = devfreq_class;
@@ -1170,12 +1172,13 @@ static ssize_t governor_store(struct device *dev, struct device_attribute *attr,
 		goto out;
 	}
 
+	event_mutex_lock(df);
 	if (df->governor) {
 		ret = df->governor->event_handler(df, DEVFREQ_GOV_STOP, NULL);
 		if (ret) {
 			dev_warn(dev, "%s: Governor %s not stopped(%d)\n",
 				 __func__, df->governor->name, ret);
-			goto out;
+			goto gov_stop_out;
 		}
 	}
 	prev_governor = df->governor;
@@ -1196,6 +1199,9 @@ static ssize_t governor_store(struct device *dev, struct device_attribute *attr,
 			df->governor = NULL;
 		}
 	}
+
+gov_stop_out:
+	event_mutex_unlock(df);
 out:
 	mutex_unlock(&devfreq_list_lock);
 
@@ -1290,8 +1296,10 @@ static ssize_t polling_interval_store(struct device *dev,
 	if (ret != 1)
 		return -EINVAL;
 
+	event_mutex_lock(df);
 	df->governor->event_handler(df, DEVFREQ_GOV_INTERVAL, &value);
 	ret = count;
+	event_mutex_unlock(df);
 
 	return ret;
 }
@@ -1308,6 +1316,7 @@ static ssize_t min_freq_store(struct device *dev, struct device_attribute *attr,
 	if (ret != 1)
 		return -EINVAL;
 
+	event_mutex_lock(df);
 	mutex_lock(&df->lock);
 
 	if (value) {
@@ -1330,6 +1339,7 @@ static ssize_t min_freq_store(struct device *dev, struct device_attribute *attr,
 	ret = count;
 unlock:
 	mutex_unlock(&df->lock);
+	event_mutex_unlock(df);
 	return ret;
 }
 
@@ -1352,6 +1362,7 @@ static ssize_t __maybe_unused max_freq_store(struct device *dev, struct device_a
 	if (ret != 1)
 		return -EINVAL;
 
+	event_mutex_lock(df);
 	mutex_lock(&df->lock);
 
 	if (value) {
@@ -1374,6 +1385,7 @@ static ssize_t __maybe_unused max_freq_store(struct device *dev, struct device_a
 	ret = count;
 unlock:
 	mutex_unlock(&df->lock);
+	event_mutex_unlock(df);
 	return ret;
 }
 static DEVICE_ATTR_RW(min_freq);
