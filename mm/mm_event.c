@@ -69,7 +69,7 @@ static void record_vmstat(void)
 		vmstat.reclaim_scan += this->event[PGSCAN_DIRECT] +
 					this->event[PGSCAN_KSWAPD];
 		vmstat.compact_scan += this->event[COMPACTFREE_SCANNED] +
-					this->event[COMPACTFREE_SCANNED];
+					this->event[COMPACTMIGRATE_SCANNED];
 	}
 	put_online_cpus();
 	trace_mm_event_vmstat_record(&vmstat);
