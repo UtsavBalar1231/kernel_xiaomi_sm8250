@@ -23,7 +23,8 @@ Properties:
 - reg:
 	Usage: required
 	Value type: <prop-encoded-array>
-	Definition: Specifies the base physical address for PDC hardware.
+	Definition: Specifies the base physical address for PDC hardware and
+	            the interrupt type configuration register.
 
 - interrupt-cells:
 	Usage: required
@@ -54,7 +55,7 @@ Example:
 
 	pdc: interrupt-controller@b220000 {
 		compatible = "qcom,sdm845-pdc";
-		reg = <0xb220000 0x30000>;
+		reg = <0xb220000 0x30000>, <0x179900f0 0x60>;
 		qcom,pdc-ranges = <0 480 94>, <94 609 15>, <115 630 7>;
 		#interrupt-cells = <2>;
 		interrupt-parent = <&intc>;
