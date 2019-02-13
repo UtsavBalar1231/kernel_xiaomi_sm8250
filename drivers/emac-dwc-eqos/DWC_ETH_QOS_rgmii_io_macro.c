@@ -423,10 +423,9 @@ int DWC_ETH_QOS_rgmii_io_macro_init(struct DWC_ETH_QOS_prv_data *pdata)
 				 */
 				RGMII_CONFIG_2_RX_PROG_SWAP_UDFWR(0x1);
 
-				/* Program PRG_RCLK_DLY to 52 ns for a required delay of 2 ns
-				on EMAC core version 2.1.0 */
-				if (pdata->emac_hw_version_type == EMAC_HW_v2_1_0
-					|| pdata->emac_hw_version_type == EMAC_HW_v2_1_2)
+				/* Program PRG_RCLK_DLY to 52 ns for a required delay of 2 ns on HANA AU */
+				if (pdata->emac_hw_version_type == EMAC_HW_v2_1_0 ||
+					pdata->emac_hw_version_type == EMAC_HW_v2_1_2)
 					SDCC_HC_PRG_RCLK_DLY_UDFWR(52);
 				else if (pdata->emac_hw_version_type == EMAC_HW_v2_3_1)
 					SDCC_HC_PRG_RCLK_DLY_UDFWR(104);
