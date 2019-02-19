@@ -57,8 +57,6 @@ tlb_flush_pmd_range(struct mmu_gather *tlb, unsigned long address,
 		tlb->end_addr = address + size;
 }
 
-#define tlb_migrate_finish(mm)	platform_tlb_migrate_finish(mm)
-
 #include <asm-generic/tlb.h>
 
 #endif /* _ASM_IA64_TLB_H */
