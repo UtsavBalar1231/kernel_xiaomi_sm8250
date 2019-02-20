@@ -4930,8 +4930,8 @@ static VOID DWC_ETH_QOS_config_timer_registers(
 #ifdef CONFIG_PPS_OUTPUT
 		/* If default_addend is already programmed, then we expect that
       * sub_second_increment is also programmed already */
-    if(pdata->default_addend == 0){
-			hw_if->config_sub_second_increment(DWC_ETH_QOS_SYSCLOCK); // Using default 250MHz
+		if(pdata->default_addend == 0){
+			hw_if->config_sub_second_increment(DWC_ETH_QOS_DEFAULT_PTP_CLOCK); // Using default 50MHz
 		}
 		else {
 			u64 pclk;
@@ -4941,7 +4941,7 @@ static VOID DWC_ETH_QOS_config_timer_registers(
 			hw_if->config_sub_second_increment((u32)pclk);
 		}
 #else
-		hw_if->config_sub_second_increment(DWC_ETH_QOS_SYSCLOCK);
+		hw_if->config_sub_second_increment(DWC_ETH_QOS_DEFAULT_PTP_CLOCK);
 #endif
 		/* formula is :
 		 * addend = 2^32/freq_div_ratio;
@@ -4958,12 +4958,12 @@ static VOID DWC_ETH_QOS_config_timer_registers(
 		 */
 #ifdef CONFIG_PPS_OUTPUT
 		if(pdata->default_addend == 0){
-			temp = (u64)(50000000ULL << 32);
+			temp = (u64)((u64)DWC_ETH_QOS_DEFAULT_PTP_CLOCK  << 32);
 			pdata->default_addend = div_u64(temp, DWC_ETH_QOS_SYSCLOCK);
-			EMACDBG("Using default PTP clock = 250MHz\n");
+			EMACDBG("Using default PTP clock = 50MHz\n");
 		}
 #else
-		temp = (u64)(50000000ULL << 32);
+		temp = (u64)((u64)DWC_ETH_QOS_DEFAULT_PTP_CLOCK << 32);
 		pdata->default_addend = div_u64(temp, DWC_ETH_QOS_SYSCLOCK);
 #endif
 		hw_if->config_addend(pdata->default_addend);
@@ -6061,7 +6061,7 @@ static int DWC_ETH_QOS_handle_hwtstamp_ioctl(struct DWC_ETH_QOS_prv_data *pdata,
 		/* If default_addend is already programmed, then we expect that
 		* sub_second_increment is also programmed already */
 		if (pdata->default_addend == 0) {
-			hw_if->config_sub_second_increment(DWC_ETH_QOS_SYSCLOCK); // Using default 250MHz
+		     hw_if->config_sub_second_increment(DWC_ETH_QOS_DEFAULT_PTP_CLOCK); // Using default 50MHz
 		} else {
 			u64 pclk;
 			pclk = (u64) (pdata->default_addend) *  DWC_ETH_QOS_SYSCLOCK;
@@ -6070,7 +6070,7 @@ static int DWC_ETH_QOS_handle_hwtstamp_ioctl(struct DWC_ETH_QOS_prv_data *pdata,
 			hw_if->config_sub_second_increment((u32)pclk);
 		}
 #else
-		hw_if->config_sub_second_increment(DWC_ETH_QOS_SYSCLOCK);
+		hw_if->config_sub_second_increment(DWC_ETH_QOS_DEFAULT_PTP_CLOCK);
 #endif
 		/* formula is :
 		 * addend = 2^32/freq_div_ratio;
@@ -6087,12 +6087,13 @@ static int DWC_ETH_QOS_handle_hwtstamp_ioctl(struct DWC_ETH_QOS_prv_data *pdata,
 		 *
 		 */
 #ifdef CONFIG_PPS_OUTPUT
-	if(pdata->default_addend == 0){
-		temp = (u64)(50000000ULL << 32);
-		pdata->default_addend = div_u64(temp, DWC_ETH_QOS_SYSCLOCK);
-		EMACINFO("Using default PTP clock = 250MHz\n");
+		if(pdata->default_addend == 0){
+			temp = (u64)((u64)DWC_ETH_QOS_DEFAULT_PTP_CLOCK << 32);
+			pdata->default_addend = div_u64(temp, DWC_ETH_QOS_SYSCLOCK);
+			EMACINFO("Using default PTP clock = 50MHz\n");
+		}
 #else
-		temp = (u64)(50000000ULL << 32);
+		temp = (u64)((u64)DWC_ETH_QOS_DEFAULT_PTP_CLOCK << 32);
 		pdata->default_addend = div_u64(temp, DWC_ETH_QOS_SYSCLOCK);
 #endif
 		hw_if->config_addend(pdata->default_addend);

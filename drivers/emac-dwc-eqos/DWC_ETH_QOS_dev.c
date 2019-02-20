@@ -1156,7 +1156,7 @@ static INT config_sub_second_increment(ULONG ptp_clock)
 	}
 #else
 	if (GET_VALUE(VARMAC_TCR, MAC_TCR_TSCFUPDT_LPOS, MAC_TCR_TSCFUPDT_HPOS) == 1) {
-      val = ((1 * 1000000000ull) / 50000000);
+      val = ((1 * 1000000000ull) / DWC_ETH_QOS_DEFAULT_PTP_CLOCK);
     }
     else {
       val = ((1 * 1000000000ull) / ptp_clock);
