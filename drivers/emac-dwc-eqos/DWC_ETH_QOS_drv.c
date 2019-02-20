@@ -5177,10 +5177,6 @@ void DWC_ETH_QOS_pps_timer_init(struct ifr_data_struct *req)
 
 	/* Enable timestamping. This is required to start system time generator.*/
 	MAC_TCR_TSENA_UDFWR(0x1);
-	MAC_TCR_TSCTRLSSR_UDFWR(0x1);
-	MAC_TCR_TSVER2ENA_UDFWR(0x1);
-	MAC_TCR_TSIPENA_UDFWR(0x1);
-	MAC_TCR_TSENALL_UDFWR(0x1);
 
 	/* Configure MAC Sub-second and Sub-nanosecond increment register based on PTP clock. */
 	MAC_SSIR_SSINC_UDFWR(0x4); // Sub-second increment value for 250MHz and 230.4MHz ptp clock
