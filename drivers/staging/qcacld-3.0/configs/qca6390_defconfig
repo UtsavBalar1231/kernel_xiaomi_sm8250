@@ -59,7 +59,6 @@ ifeq ($(CONFIG_ICNSS), y)
 	CONFIG_HELIUMPLUS := y
 	CONFIG_64BIT_PADDR := y
 	CONFIG_FEATURE_TSO := y
-	CONFIG_FEATURE_TSO_DEBUG := y
 	ifeq ($(CONFIG_INET_LRO), y)
 		CONFIG_WLAN_LRO := y
 	else
@@ -338,7 +337,6 @@ CONFIG_DP_INTR_POLL_BASED := y
 CONFIG_TX_PER_PDEV_DESC_POOL := y
 CONFIG_DP_TRACE := y
 CONFIG_FEATURE_TSO := y
-CONFIG_TSO_DEBUG_LOG_ENABLE := y
 CONFIG_DP_LFR := y
 CONFIG_HTT_PADDR64 := y
 CONFIG_RX_OL := y
@@ -403,9 +401,6 @@ CONFIG_WLAN_LOG_FATAL := y
 CONFIG_WLAN_LOG_ERROR := y
 CONFIG_WLAN_LOG_WARN := y
 CONFIG_WLAN_LOG_INFO := y
-CONFIG_WLAN_LOG_DEBUG := y
-CONFIG_WLAN_LOG_ENTER := y
-CONFIG_WLAN_LOG_EXIT := y
 
 #Enable OL debug and wmi unified functions
 CONFIG_ATH_PERF_PWR_OFFLOAD := y
@@ -586,20 +581,11 @@ CONFIG_FEATURE_HTC_CREDIT_HISTORY := y
 #Flag to enable MTRACE feature
 CONFIG_TRACE_RECORD_FEATURE := y
 
-#Flag to enable p2p debug feature
-CONFIG_WLAN_FEATURE_P2P_DEBUG := y
-
-#Flag to enable roam debug log
-CONFIG_FEATURE_ROAM_DEBUG := y
-
 #Flag to enable DFS Master feature
 CONFIG_WLAN_DFS_MASTER_ENABLE := y
 
 #Flag to enable WEXT support for STA/AP/P2P interfaces
 CONFIG_WLAN_WEXT_SUPPORT_ENABLE := y
-
-#Flag to enable/disable MTRACE feature
-CONFIG_ENABLE_MTRACE_LOG := y
 
 #Flag to enable nud tracking feature
 CONFIG_WLAN_NUD_TRACKING := y
@@ -623,9 +609,6 @@ CONFIG_CP_STATS := y
 CONFIG_FEATURE_WLAN_WAPI := y
 
 CONFIG_AGEIE_ON_SCAN_RESULTS := y
-
-#Flag to enable FW log parsing support feature
-CONFIG_FEATURE_FW_LOG_PARSING := y
 
 CONFIG_PTT_SOCK_SVC_ENABLE := y
 CONFIG_SOFTAP_CHANNEL_RANGE := y
@@ -713,9 +696,6 @@ endif
 ifeq ($(CONFIG_LITHIUM), y)
 	CONFIG_FEATURE_UNIT_TEST_SUSPEND := y
 endif
-
-#Flag to enable hdd memory dump feature
-CONFIG_FEATURE_MEMDUMP_ENABLE := y
 
 #Flag to enable/disable WLAN D0-WOW
 ifeq ($(CONFIG_PCI_MSM), y)
