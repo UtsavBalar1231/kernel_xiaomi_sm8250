@@ -75,8 +75,6 @@ module_param(lock_stat, int, 0644);
 #define lock_stat 0
 #endif
 
-static bool check_data_structure_consistency;
-
 static int lockdep_log = 1;
 
 static int lockdep_logging_off(void)
@@ -823,6 +821,8 @@ static bool assign_lock_key(struct lockdep_map *lock)
 	return true;
 }
 
+#ifdef CONFIG_DEBUG_LOCKDEP
+
 /* Check whether element @e occurs in list @h */
 static bool in_list(struct list_head *e, struct list_head *h)
 {
@@ -887,15 +887,15 @@ static bool check_lock_chain_key(struct lock_chain *chain)
 	 * The 'unsigned long long' casts avoid that a compiler warning
 	 * is reported when building tools/lib/lockdep.
 	 */
-	if (chain->chain_key != chain_key)
+	if (chain->chain_key != chain_key) {
 		printk(KERN_INFO "chain %lld: key %#llx <> %#llx\n",
 		       (unsigned long long)(chain - lock_chains),
 		       (unsigned long long)chain->chain_key,
 		       (unsigned long long)chain_key);
-	return chain->chain_key == chain_key;
-#else
-	return true;
+		return false;
+	}
 #endif
+	return true;
 }
 
 static bool in_any_zapped_class_list(struct lock_class *class)
@@ -903,15 +903,15 @@ static bool in_any_zapped_class_list(struct lock_class *class)
 	struct pending_free *pf;
 	int i;
 
-	for (i = 0, pf = delayed_free.pf; i < ARRAY_SIZE(delayed_free.pf);
-	     i++, pf++)
+	for (i = 0, pf = delayed_free.pf; i < ARRAY_SIZE(delayed_free.pf); i++, pf++) {
 		if (in_list(&class->lock_entry, &pf->zapped))
 			return true;
+	}
 
 	return false;
 }
 
-static bool check_data_structures(void)
+static bool __check_data_structures(void)
 {
 	struct lock_class *class;
 	struct lock_chain *chain;
@@ -927,7 +927,6 @@ static bool check_data_structures(void)
 		    !in_any_zapped_class_list(class)) {
 			printk(KERN_INFO "class %px/%s is not in any class list\n",
 			       class, class->name ? : "(?)");
-			return false;
 			return false;
 		}
 	}
@@ -984,6 +983,27 @@ static bool check_data_structures(void)
 
 	return true;
 }
+
+int check_consistency = 0;
+module_param(check_consistency, int, 0644);
+
+static void check_data_structures(void)
+{
+	static bool once = false;
+
+	if (check_consistency && !once) {
+		if (!__check_data_structures()) {
+			once = true;
+			WARN_ON(once);
+		}
+	}
+}
+
+#else /* CONFIG_DEBUG_LOCKDEP */
+
+static inline void check_data_structures(void) { }
+
+#endif /* CONFIG_DEBUG_LOCKDEP */
 
 /*
  * Initialize the lock_classes[] array elements, the free_lock_classes list
@@ -4560,10 +4580,11 @@ static void remove_class_from_lock_chain(struct pending_free *pf,
 		if (chain_hlocks[i] != class - lock_classes)
 			continue;
 		/* The code below leaks one chain_hlock[] entry. */
-		if (--chain->depth > 0)
+		if (--chain->depth > 0) {
 			memmove(&chain_hlocks[i], &chain_hlocks[i + 1],
 				(chain->base + chain->depth - i) *
 				sizeof(chain_hlocks[0]));
+		}
 		/*
 		 * Each lock class occurs at most once in a lock chain so once
 		 * we found a match we can break out of this loop.
@@ -4717,8 +4738,7 @@ static void __free_zapped_classes(struct pending_free *pf)
 {
 	struct lock_class *class;
 
-	if (check_data_structure_consistency)
-		WARN_ON_ONCE(!check_data_structures());
+	check_data_structures();
 
 	list_for_each_entry(class, &pf->zapped, lock_entry)
 		reinit_class(class);
