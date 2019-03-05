@@ -191,7 +191,8 @@ struct compact_control {
 	unsigned long total_free_scanned;
 	unsigned long free_pfn;		/* isolate_freepages search base */
 	unsigned long migrate_pfn;	/* isolate_migratepages search base */
-	unsigned int fast_search_fail;	/* failures to use free list searches */
+	unsigned short fast_search_fail;/* failures to use free list searches */
+	short search_order;		/* order to start a fast search at */
 	const gfp_t gfp_mask;		/* gfp mask of a direct compactor */
 	int order;			/* order a direct compactor needs */
 	int migratetype;		/* migratetype of direct compactor */
