@@ -660,7 +660,13 @@ static void configure_phy_rx_tx_delay(struct DWC_ETH_QOS_prv_data *pdata)
 
 	case SPEED_100:
 	case SPEED_10:
-		if (pdata->io_macro_tx_mode_non_id ||
+		if (pdata->emac_hw_version_type == EMAC_HW_v2_1_0 ||
+			pdata->emac_hw_version_type == EMAC_HW_v2_1_2) {
+			if (pdata->io_macro_tx_mode_non_id)
+				set_phy_rx_tx_delay(pdata, DISABLE_RX_DELAY, ENABLE_TX_DELAY);
+		} else {
+
+			if (pdata->io_macro_tx_mode_non_id ||
 				pdata->io_macro_phy_intf == MII_MODE) {
 				/* Settings for Non-ID mode or MII mode */
 				set_phy_rx_tx_delay(pdata, DISABLE_RX_DELAY, ENABLE_TX_DELAY);
