@@ -295,6 +295,9 @@ static INT DWC_ETH_QOS_mdio_reset(struct mii_bus *bus)
 
 	DBGPR_MDIO("-->DWC_ETH_QOS_mdio_reset: phyaddr : %d\n", pdata->phyaddr);
 
+	if (pdata->res_data->early_eth_en)
+		return 0;
+
 #if 0 /* def DWC_ETH_QOS_CONFIG_PGTEST */
 	pr_alert("PHY Programming for Autoneg disable\n");
 	hw_if->read_phy_regs(pdata->phyaddr, MII_BMCR, &phydata);
@@ -458,7 +461,7 @@ static void DWC_ETH_QOS_set_phy_hibernation_mode(struct DWC_ETH_QOS_prv_data *pd
 								uint mode)
 {
 	u32 phydata = 0;
-	EMACINFO("Enter\n");
+	EMACDBG("Enter\n");
 
 	DWC_ETH_QOS_mdio_write_direct(pdata, pdata->phyaddr,
 				DWC_ETH_QOS_PHY_DEBUG_PORT_ADDR_OFFSET,
@@ -467,7 +470,7 @@ static void DWC_ETH_QOS_set_phy_hibernation_mode(struct DWC_ETH_QOS_prv_data *pd
 				DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT,
 				&phydata);
 
-	EMACINFO("value read 0x%x\n", phydata);
+	EMACDBG("value read 0x%x\n", phydata);
 
 	phydata = ((phydata & DWC_ETH_QOS_PHY_HIB_CTRL_PS_HIB_EN_WR_MASK)
 			   | ((DWC_ETH_QOS_PHY_HIB_CTRL_PS_HIB_EN_MASK & mode) << 15));
@@ -482,7 +485,7 @@ static void DWC_ETH_QOS_set_phy_hibernation_mode(struct DWC_ETH_QOS_prv_data *pd
 				DWC_ETH_QOS_PHY_DEBUG_PORT_DATAPORT,
 				&phydata);
 
-	EMACINFO("Exit value written 0x%x\n", phydata);
+	EMACDBG("Exit value written 0x%x\n", phydata);
 }
 
 /*!
@@ -897,6 +900,11 @@ void DWC_ETH_QOS_adjust_link(struct net_device *dev)
 	if (!phydev)
 		return;
 
+	if (pdata->oldlink == -1 && !phydev->link) {
+		pdata->oldlink = phydev->link;
+		return;
+	}
+
 	DBGPR_MDIO(
 		"-->DWC_ETH_QOS_adjust_link. address %d link %d\n",
 		phydev->mdio.addr, phydev->link);
@@ -1038,7 +1046,7 @@ static void DWC_ETH_QOS_request_phy_wol(struct DWC_ETH_QOS_prv_data *pdata)
 				enable_irq_wake(pdata->phy_irq);
 
 				device_set_wakeup_enable(&pdata->pdev->dev, 1);
-				EMACINFO("Enabled WoL[0x%x] in %s\n", wol.wolopts,
+				EMACDBG("Enabled WoL[0x%x] in %s\n", wol.wolopts,
 						 pdata->phydev->drv->name);
 			}
 		}
@@ -1113,19 +1121,32 @@ static int DWC_ETH_QOS_init_phy(struct net_device *dev)
 		EMACDBG("Phy polling enabled\n");
 #endif
 
-	if (pdata->interface == PHY_INTERFACE_MODE_GMII ||
-	    pdata->interface == PHY_INTERFACE_MODE_RGMII) {
-		phy_set_max_speed(phydev, SPEED_1000);
-		/* Half duplex not supported */
-		phydev->supported &= ~(SUPPORTED_10baseT_Half | SUPPORTED_100baseT_Half | SUPPORTED_1000baseT_Half);
-	} else if ((pdata->interface == PHY_INTERFACE_MODE_MII) ||
-		   (pdata->interface == PHY_INTERFACE_MODE_RMII)) {
-		phy_set_max_speed(phydev, SPEED_100);
-		/* Half duplex is not supported */
-		phydev->supported &= ~(SUPPORTED_10baseT_Half | SUPPORTED_100baseT_Half);
-	}
 
-	phydev->advertising = phydev->supported;
+
+	if (pdata->res_data->early_eth_en ) {
+		phydev->autoneg = AUTONEG_DISABLE;
+		phydev->speed = SPEED_100;
+		phy_set_max_speed(phydev, SPEED_100);
+		phydev->duplex = DUPLEX_FULL;
+		phydev->supported = SUPPORTED_100baseT_Full | SUPPORTED_TP | SUPPORTED_MII;
+		phydev->supported &= ~(SUPPORTED_10baseT_Half | SUPPORTED_100baseT_Half | SUPPORTED_1000baseT_Half);
+		phydev->supported &= ~SUPPORTED_Autoneg;
+		phydev->advertising = phydev->supported;
+		phydev->advertising &= ~ADVERTISED_Autoneg;
+		EMACDBG("Set max speed to SPEED_100 as early ethernet enabled\n");
+	}
+	else {
+		if (pdata->interface == PHY_INTERFACE_MODE_GMII || pdata->interface == PHY_INTERFACE_MODE_RGMII) {
+			phy_set_max_speed(phydev, SPEED_1000);
+			/* Half duplex not supported */
+			phydev->supported &= ~(SUPPORTED_10baseT_Half | SUPPORTED_100baseT_Half | SUPPORTED_1000baseT_Half);
+		} else if ((pdata->interface == PHY_INTERFACE_MODE_MII) || (pdata->interface == PHY_INTERFACE_MODE_RMII)) {
+			phy_set_max_speed(phydev, SPEED_100);
+			/* Half duplex is not supported */
+			phydev->supported &= ~(SUPPORTED_10baseT_Half | SUPPORTED_100baseT_Half);
+		}
+		phydev->advertising = phydev->supported;
+	}
 
 	pdata->phydev = phydev;
 
@@ -1218,6 +1239,7 @@ int DWC_ETH_QOS_mdio_register(struct net_device *dev)
 	int ret = Y_SUCCESS;
 	int phy_reg_read_status, mii_status;
 	u32 phy_id, phy_id1, phy_id2;
+	u32 phydata = 0;
 
 	DBGPR_MDIO("-->DWC_ETH_QOS_mdio_register\n");
 
@@ -1251,6 +1273,17 @@ int DWC_ETH_QOS_mdio_register(struct net_device *dev)
 	pdata->bus_id = 0x1;
 	pdata->phy_intr_en = false;
 	pdata->always_on_phy = false;
+
+	if(pdata->res_data->early_eth_en) {
+		EMACDBG("Updated speed to 100 in emac\n");
+		pdata->hw_if.set_mii_speed_100();
+
+		phydata = BMCR_SPEED100;
+		phydata |= BMCR_FULLDPLX;
+		EMACDBG("Updated speed to 100 and autoneg disable\n");
+		pdata->hw_if.write_phy_regs(pdata->phyaddr,
+				MII_BMCR, phydata);
+	}
 
 	DBGPHY_REGS(pdata);
 

@@ -1084,7 +1084,7 @@ static void DWC_ETH_QOS_get_ethtool_stats(
 	
 	/* Update IPA stats */
 	if (pdata->ipa_enabled) {
-		EMACINFO("Add IPA stats\n");
+		EMACDBG("Add IPA stats\n");
 		DWC_ETH_QOS_ipa_stats_read(pdata);
 		for (i = 0; i < DWC_ETH_QOS_IPA_STAT_LEN; i++) {
 			char *p = (char *)pdata +
@@ -1203,7 +1203,7 @@ static int DWC_ETH_QOS_get_ts_info(struct net_device *dev,
 	struct DWC_ETH_QOS_prv_data *pdata = netdev_priv(dev);
 	DBGPR("-->DWC_ETH_QOS_get_ts_info\n");
 	info->phc_index = DWC_ETH_QOS_phc_index(pdata);
-	EMACINFO("PHC index = %d\n", info->phc_index);
+	EMACDBG("PHC index = %d\n", info->phc_index);
 	DBGPR("<--DWC_ETH_QOS_get_ts_info\n");
 	return 0;
 }

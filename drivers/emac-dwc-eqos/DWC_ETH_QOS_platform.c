@@ -87,6 +87,37 @@ module_param(phy_interrupt_en, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 MODULE_PARM_DESC(phy_interrupt_en,
 		"Enable PHY interrupt [0-DISABLE, 1-ENABLE]");
 
+struct ip_params pparams = {"", "", "", ""};
+static int __init set_early_ethernet_ipv4(char *str)
+{
+	if (str) {
+		strlcpy(pparams.ip_addr, str, sizeof(pparams.ip_addr));
+		EMACDBG("Early ethernet IPv4 addr assigned: %s\n", pparams.ip_addr);
+	}
+	return 1;
+}
+__setup("eipv4=", set_early_ethernet_ipv4);
+
+static int __init set_early_ethernet_ipv6(char* ipv6_addr)
+{
+	if (ipv6_addr) {
+		strlcpy(pparams.ipv6_addr, ipv6_addr, sizeof(pparams.ipv6_addr));
+		EMACDBG("Early ethernet IPv6 addr assigned: %s\n", pparams.ipv6_addr);
+	}
+	return 1;
+}
+__setup("eipv6=", set_early_ethernet_ipv6);
+
+static int __init set_early_ethernet_mac(char* mac_addr)
+{
+	if (mac_addr) {
+		strlcpy(pparams.mac_addr, mac_addr, sizeof(pparams.mac_addr));
+		EMACDBG("Early ethernet MAC address assigned: %s\n", pparams.mac_addr);
+		pparams.mac_addr[17] = '\0';
+	}
+	return 1;
+}
+__setup("ermac=", set_early_ethernet_mac);
 static ssize_t read_phy_reg_dump(struct file *file,
 	char __user *user_buf, size_t count, loff_t *ppos)
 {
@@ -750,6 +781,11 @@ static int DWC_ETH_QOS_get_dts_config(struct platform_device *pdev)
 
 	}
 
+	dwc_eth_qos_res_data.early_eth_en = 0;
+	if (of_property_read_bool(pdev->dev.of_node, "early-ethernet-en"))
+		dwc_eth_qos_res_data.early_eth_en = 1;
+	EMACDBG("Early Ethernet EN: %d\n", dwc_eth_qos_res_data.early_eth_en);
+
 	ret = DWC_ETH_QOS_get_io_macro_config(pdev);
 	if (ret)
 		goto err_out;
@@ -1336,7 +1372,8 @@ static int DWC_ETH_QOS_init_gpios(struct device *dev)
 		}
 	}
 
-	if (dwc_eth_qos_res_data.is_gpio_phy_reset) {
+	if (dwc_eth_qos_res_data.is_gpio_phy_reset &&
+		!dwc_eth_qos_res_data.early_eth_en) {
 		ret = setup_gpio_output_common(
 			dev, EMAC_GPIO_PHY_RESET_NAME,
 			&dwc_eth_qos_res_data.gpio_phy_reset, PHY_RESET_GPIO_LOW);
@@ -1365,6 +1402,56 @@ static struct of_device_id DWC_ETH_QOS_plat_drv_match[] = {
 	{}
 };
 
+int DWC_ETH_QOS_add_ipaddr(struct ip_params *ip_info, struct net_device *dev)
+{
+	int res=0;
+	struct ifreq ir;
+	struct in6_ifreq ir6;
+	struct sockaddr_in *sin = (void *) &ir.ifr_ifru.ifru_addr;
+	char* prefix;
+
+	/*For valid Ipv4 address*/
+	memset(&ir, 0, sizeof(ir));
+	if (1 == in4_pton(ip_info->ip_addr, -1, (u8*)&sin->sin_addr.s_addr, -1, NULL)) {
+		strlcpy(ir.ifr_ifrn.ifrn_name, dev->name, sizeof(ir.ifr_ifrn.ifrn_name) + 1);
+		sin->sin_family = AF_INET;
+		sin->sin_port = 0;
+		res = devinet_ioctl(&init_net, SIOCSIFADDR, (struct ifreq __user *) &ir);
+		if (res)
+			EMACERR( "Can't setup IPv4 address!: %d\r\n", res);
+		else
+			EMACDBG("Assigned IPv4 address: %s\r\n", ip_info->ip_addr);
+	}
+
+	return res;
+}
+
+/*!
+ * \brief API to extract MAC Address from given string
+ *
+ * \param[in] pointer to MAC Address string
+ *
+ * \return None
+ */
+void DWC_ETH_QOS_extract_macid(char *mac_addr)
+{
+	char *input = NULL;
+	int i = 0;
+	int mac_id = 0;
+
+	if (!mac_addr)
+		return;
+
+	/* Extract MAC ID byte by byte */
+	input = strsep(&mac_addr, ":");
+	while(input != NULL && i < DWC_ETH_QOS_MAC_ADDR_LEN) {
+		sscanf(input, "%x", &mac_id);
+		dev_addr[i++] = mac_id;
+		input = strsep(&mac_addr, ":");
+	}
+	return;
+}
+
 static int DWC_ETH_QOS_configure_netdevice(struct platform_device *pdev)
 {
 	struct DWC_ETH_QOS_prv_data *pdata = NULL;
@@ -1387,6 +1474,10 @@ static int DWC_ETH_QOS_configure_netdevice(struct platform_device *pdev)
 		ret = -ENOMEM;
 		goto err_out_dev_failed;
 	}
+
+	if (pparams.mac_addr != "")
+		DWC_ETH_QOS_extract_macid(pparams.mac_addr);
+
 	dev->dev_addr[0] = dev_addr[0];
 	dev->dev_addr[1] = dev_addr[1];
 	dev->dev_addr[2] = dev_addr[2];
@@ -1437,8 +1528,14 @@ static int DWC_ETH_QOS_configure_netdevice(struct platform_device *pdev)
 	pdata->emac_hw_version_type = dwc_eth_qos_res_data.emac_hw_version_type;
 
 	/* Scale the clocks to 10Mbps speed */
-	pdata->speed = SPEED_10;
-	DWC_ETH_QOS_set_clk_and_bus_config(pdata, SPEED_10);
+	if (pdata->res_data->early_eth_en) {
+		pdata->speed = SPEED_100;
+		DWC_ETH_QOS_set_clk_and_bus_config(pdata, SPEED_100);
+	}
+	else {
+		pdata->speed = SPEED_10;
+		DWC_ETH_QOS_set_clk_and_bus_config(pdata, SPEED_10);
+	}
 
 	DWC_ETH_QOS_set_rgmii_func_clk_en();
 
@@ -1456,7 +1553,7 @@ static int DWC_ETH_QOS_configure_netdevice(struct platform_device *pdev)
 	pdata->ipa_enabled = 0;
 #endif
 
-	EMACINFO("EMAC IPA enabled: %d\n", pdata->ipa_enabled);
+	EMACDBG("EMAC IPA enabled: %d\n", pdata->ipa_enabled);
 	if (pdata->ipa_enabled) {
 		pdata->prv_ipa.ipa_ver = ipa_get_hw_type();
 		device_init_wakeup(&pdev->dev, 1);
@@ -1611,6 +1708,9 @@ static int DWC_ETH_QOS_configure_netdevice(struct platform_device *pdev)
 		INIT_WORK(&pdata->qmp_mailbox_work, DWC_ETH_QOS_qmp_mailbox_work);
 		queue_work(system_wq, &pdata->qmp_mailbox_work);
 	}
+
+	if (pdata->res_data->early_eth_en)
+		ret = DWC_ETH_QOS_add_ipaddr(&pparams, dev);
 
 	EMACDBG("<-- DWC_ETH_QOS_configure_netdevice\n");
 
@@ -2189,7 +2289,7 @@ static int DWC_ETH_QOS_init_module(void)
 {
 	INT ret = 0;
 
-	DBGPR("-->DWC_ETH_QOS_init_module\n");
+	EMACDBG("-->DWC_ETH_QOS_init_module\n");
 
 	ret = platform_driver_register(&DWC_ETH_QOS_plat_drv);
 	if (ret < 0) {
@@ -2199,15 +2299,15 @@ static int DWC_ETH_QOS_init_module(void)
 
 	ipc_emac_log_ctxt = ipc_log_context_create(IPCLOG_STATE_PAGES,"emac", 0);
 	if (!ipc_emac_log_ctxt)
-		pr_err("Error creating logging context for emac\n");
+		EMACERR("Error creating logging context for emac\n");
 	else
-		pr_info("IPC logging has been enabled for emac\n");
+		EMACDBG("IPC logging has been enabled for emac\n");
 
 #ifdef DWC_ETH_QOS_CONFIG_DEBUGFS
 	create_debug_files();
 #endif
 
-	DBGPR("<--DWC_ETH_QOS_init_module\n");
+	EMACDBG("<--DWC_ETH_QOS_init_module\n");
 
 	return ret;
 }

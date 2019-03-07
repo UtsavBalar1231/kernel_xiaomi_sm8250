@@ -4795,8 +4795,6 @@ static INT DWC_ETH_QOS_yinit(struct DWC_ETH_QOS_prv_data *pdata)
 	for (QINX = 0; QINX < DWC_ETH_QOS_TX_QUEUE_CNT; QINX++)
 		configure_mtl_queue(QINX, pdata);
 
-	/* Mapping MTL Rx queue and DMA Rx channel. */
-	MTL_RQDCM0R_RGWR(0x3020100);
 #ifdef DWC_ETH_QOS_CERTIFICATION_PKTBURSTCNT
 	/* enable tx drop status */
 	MTL_OMR_DTXSTS_UDFWR(0x1);
@@ -4804,6 +4802,12 @@ static INT DWC_ETH_QOS_yinit(struct DWC_ETH_QOS_prv_data *pdata)
 
 	configure_mac(pdata);
 	configure_dma_sys_bus(pdata);
+
+	/* Mapping MTL Rx queue and DMA Rx channel. */
+	if (pdata->res_data->early_eth_en)
+		MTL_RQDCM0R_RGWR(0x3020101);
+	else /* Mapped RX queue 0 to DMA channel 1 */
+		MTL_RQDCM0R_RGWR(0x3020100);
 
 	for (QINX = 0; QINX < DWC_ETH_QOS_TX_QUEUE_CNT; QINX++) {
 		if (pdata->ipa_enabled && QINX == IPA_DMA_TX_CH)

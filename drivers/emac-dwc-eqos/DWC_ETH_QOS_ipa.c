@@ -104,7 +104,7 @@ void DWC_ETH_QOS_ipa_offload_event_handler(
 
 	IPA_LOCK();
 
-	EMACINFO("Enter: event=%s\n", IPA_OFFLOAD_EVENT_string[ev]);
+	EMACDBG("Enter: event=%s\n", IPA_OFFLOAD_EVENT_string[ev]);
 	EMACDBG("PHY_link=%d\n"
 	"emac_dev_ready=%d\n"
 	"ipa_ready=%d\n"
@@ -202,7 +202,7 @@ void DWC_ETH_QOS_ipa_offload_event_handler(
 	case EV_IPA_UC_READY:
 		{
 			pdata->prv_ipa.ipa_uc_ready = true;
-			EMACINFO("%s:%d ipa uC is ready\n", __func__, __LINE__);
+			EMACDBG("%s:%d ipa uC is ready\n", __func__, __LINE__);
 
 			if (!pdata->prv_ipa.emac_dev_ready)
 				break;
@@ -265,7 +265,7 @@ void DWC_ETH_QOS_ipa_offload_event_handler(
 		break;
 	}
 
-	EMACINFO("Exit: event=%s\n", IPA_OFFLOAD_EVENT_string[ev]);
+	EMACDBG("Exit: event=%s\n", IPA_OFFLOAD_EVENT_string[ev]);
 	IPA_UNLOCK();
 }
 
@@ -281,7 +281,7 @@ int DWC_ETH_QOS_enable_ipa_offload(struct DWC_ETH_QOS_prv_data *pdata)
 			EMACERR("IPA Offload Init Failed \n");
 			goto fail;
 		}
-		EMACINFO("IPA Offload Initialized Successfully \n");
+		EMACDBG("IPA Offload Initialized Successfully \n");
 		pdata->prv_ipa.ipa_offload_init = true;
 	}
 
@@ -292,7 +292,7 @@ int DWC_ETH_QOS_enable_ipa_offload(struct DWC_ETH_QOS_prv_data *pdata)
 			pdata->prv_ipa.ipa_offload_conn = false;
 			goto fail;
 		}
-		EMACINFO("IPA Offload Connect Successfully\n");
+		EMACDBG("IPA Offload Connect Successfully\n");
 		pdata->prv_ipa.ipa_offload_conn = true;
 
 		/*Initialize DMA CHs for offload*/
@@ -305,12 +305,12 @@ int DWC_ETH_QOS_enable_ipa_offload(struct DWC_ETH_QOS_prv_data *pdata)
 
 	if (!pdata->prv_ipa.ipa_debugfs_exists) {
 		if (!DWC_ETH_QOS_ipa_create_debugfs(pdata)) {
-			EMACINFO("eMAC Debugfs created  \n");
+			EMACDBG("eMAC Debugfs created  \n");
 			pdata->prv_ipa.ipa_debugfs_exists = true;
 		} else EMACERR("eMAC Debugfs failed \n");
 	}
 
-	EMACINFO("IPA Offload Enabled successfully\n");
+	EMACDBG("IPA Offload Enabled successfully\n");
 	return ret;
 
 fail:
@@ -318,7 +318,7 @@ fail:
 		if( DWC_ETH_QOS_ipa_offload_disconnect(pdata) )
 			EMACERR("IPA Offload Disconnect Failed \n");
 		else
-			EMACINFO("IPA Offload Disconnect Successfully \n");
+			EMACDBG("IPA Offload Disconnect Successfully \n");
 		pdata->prv_ipa.ipa_offload_conn = false;
 	}
 
@@ -326,7 +326,7 @@ fail:
 		if ( DWC_ETH_QOS_ipa_offload_cleanup(pdata ))
 			EMACERR("IPA Offload Cleanup Failed \n");
 		else
-			EMACINFO("IPA Offload Cleanup Success \n");
+			EMACDBG("IPA Offload Cleanup Success \n");
 		pdata->prv_ipa.ipa_offload_init = false;
 	}
 
@@ -355,7 +355,7 @@ int DWC_ETH_QOS_disable_ipa_offload(struct DWC_ETH_QOS_prv_data *pdata)
 			EMACERR("IPA Offload Cleanup Failed, err: %d\n", ret);
 			return ret;
 		}
-		EMACINFO("IPA Offload Cleanup Success \n");
+		EMACDBG("IPA Offload Cleanup Success \n");
 		pdata->prv_ipa.ipa_offload_init = false;
 	}
 
@@ -534,12 +534,12 @@ static int DWC_ETH_QOS_ipa_ready(struct DWC_ETH_QOS_prv_data *pdata)
 		ret = ipa_register_ipa_ready_cb(DWC_ETH_QOS_ipa_ready_cb,
 										(void *)pdata);
 		if (ret == -ENXIO) {
-			EMACINFO("%s: IPA driver context is not even ready\n", __func__);
+			EMACDBG("%s: IPA driver context is not even ready\n", __func__);
 			return ret;
 		}
 
 		if (ret != -EEXIST) {
-			EMACINFO("%s:%d register ipa ready cb\n", __func__, __LINE__);
+			EMACDBG("%s:%d register ipa ready cb\n", __func__, __LINE__);
 			return ret;
 		}
 	}
@@ -566,7 +566,7 @@ static int DWC_ETH_QOS_ipa_uc_ready(struct DWC_ETH_QOS_prv_data *pdata)
 
 	ret = ipa_uc_offload_reg_rdyCB(&param);
 	if (ret == 0 && param.is_uC_ready) {
-		EMACINFO("%s:%d ipa uc ready\n", __func__, __LINE__);
+		EMACDBG("%s:%d ipa uc ready\n", __func__, __LINE__);
 		pdata->prv_ipa.ipa_uc_ready = true;
 	}
 
@@ -748,7 +748,7 @@ static int DWC_ETH_QOS_ipa_offload_init(struct DWC_ETH_QOS_prv_data *pdata)
 		ipa_vlan_mode = 0;
 	}
 
-	EMACINFO("IPA VLAN mode %d\n", ipa_vlan_mode);
+	EMACDBG("IPA VLAN mode %d\n", ipa_vlan_mode);
 
 	memset(&in, 0, sizeof(in));
 	memset(&out, 0, sizeof(out));
@@ -817,7 +817,7 @@ int DWC_ETH_QOS_ipa_offload_cleanup(struct DWC_ETH_QOS_prv_data *pdata)
 	struct DWC_ETH_QOS_prv_ipa_data *ntn_ipa = &pdata->prv_ipa;
 	int ret = 0;
 
-	EMACINFO("%s - begin\n", __func__);
+	EMACDBG("%s - begin\n", __func__);
 
 	if (!pdata) {
 		EMACERR("Null Param %s \n", __func__);
@@ -836,7 +836,7 @@ int DWC_ETH_QOS_ipa_offload_cleanup(struct DWC_ETH_QOS_prv_data *pdata)
 		return -1;
 	}
 
-	EMACINFO("%s - end\n", __func__);
+	EMACDBG("%s - end\n", __func__);
 
 	return 0;
 }
@@ -969,7 +969,7 @@ static int DWC_ETH_QOS_ipa_offload_connect(struct DWC_ETH_QOS_prv_data *pdata)
 	int i = 0;
 
 
-	EMACINFO("%s - begin\n", __func__);
+	EMACDBG("%s - begin\n", __func__);
 
 	if(!pdata) {
 		EMACERR( "Null Param %s \n", __func__);
@@ -1070,9 +1070,9 @@ static int DWC_ETH_QOS_ipa_offload_connect(struct DWC_ETH_QOS_prv_data *pdata)
 	}
 
 	/* Dump UL and DL Setups */
-	EMACINFO("IPA Offload UL client %d ring_base_pa 0x%x ntn_ring_size %d buff_pool_base_pa 0x%x num_buffers %d data_buff_size %d ntn_reg_base_ptr_pa 0x%x\n",
+	EMACDBG("IPA Offload UL client %d ring_base_pa 0x%x ntn_ring_size %d buff_pool_base_pa 0x%x num_buffers %d data_buff_size %d ntn_reg_base_ptr_pa 0x%x\n",
 		rx_setup_info.client, rx_setup_info.ring_base_pa, rx_setup_info.ntn_ring_size, rx_setup_info.buff_pool_base_pa, rx_setup_info.num_buffers, rx_setup_info.data_buff_size, rx_setup_info.ntn_reg_base_ptr_pa);
-	EMACINFO("IPA Offload DL client %d ring_base_pa 0x%x ntn_ring_size %d buff_pool_base_pa 0x%x num_buffers %d data_buff_size %d ntn_reg_base_ptr_pa 0x%x\n",
+	EMACDBG("IPA Offload DL client %d ring_base_pa 0x%x ntn_ring_size %d buff_pool_base_pa 0x%x num_buffers %d data_buff_size %d ntn_reg_base_ptr_pa 0x%x\n",
 		tx_setup_info.client, tx_setup_info.ring_base_pa, tx_setup_info.ntn_ring_size, tx_setup_info.buff_pool_base_pa, tx_setup_info.num_buffers, tx_setup_info.data_buff_size, tx_setup_info.ntn_reg_base_ptr_pa);
 
 	in.u.ntn.ul = rx_setup_info;
@@ -1084,6 +1084,9 @@ static int DWC_ETH_QOS_ipa_offload_connect(struct DWC_ETH_QOS_prv_data *pdata)
 		ret = -1;
 		goto mem_free;
 	}
+
+    /* Mapped RX queue 0 to DMA channel 0 on successful IPA offload connect */
+    MTL_RQDCM0R_RGWR(0x3020100);
 
     ntn_ipa->uc_db_rx_addr = out.u.ntn.ul_uc_db_pa;
     ntn_ipa->uc_db_tx_addr = out.u.ntn.dl_uc_db_pa;
@@ -1140,7 +1143,7 @@ static int DWC_ETH_QOS_ipa_offload_connect(struct DWC_ETH_QOS_prv_data *pdata)
 		}
 	}
 
-	EMACINFO("%s - end \n", __func__);
+	EMACDBG("%s - end \n", __func__);
 	return 0;
 }
 
@@ -1160,7 +1163,7 @@ static int DWC_ETH_QOS_ipa_offload_disconnect(struct DWC_ETH_QOS_prv_data *pdata
 	struct DWC_ETH_QOS_prv_ipa_data *ntn_ipa = &pdata->prv_ipa;
 	int ret = 0;
 
-	EMACINFO("%s - begin \n", __func__);
+	EMACDBG("%s - begin \n", __func__);
 
 	if(!pdata) {
 		EMACERR( "Null Param %s \n", __func__);
@@ -1173,7 +1176,7 @@ static int DWC_ETH_QOS_ipa_offload_disconnect(struct DWC_ETH_QOS_prv_data *pdata
 		return ret;
 	}
 
-	EMACINFO("%s - end \n", __func__);
+	EMACDBG("%s - end \n", __func__);
 	return 0;
 }
 
