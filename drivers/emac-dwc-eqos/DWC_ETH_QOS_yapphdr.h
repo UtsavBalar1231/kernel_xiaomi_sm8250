@@ -1,4 +1,4 @@
-/* Copyright (c) 2017, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2017,2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -50,7 +50,7 @@
 #define DWC_ETH_QOS_MAX_TX_QUEUE_CNT 8
 #define DWC_ETH_QOS_MAX_RX_QUEUE_CNT 8
 
-#define CONFIG_PPS_OUTPUT   // for PPS Output
+//#define CONFIG_PPS_OUTPUT   // for PPS Output
 
 /* Private IOCTL for handling device specific task */
 #define DWC_ETH_QOS_PRV_IOCTL	SIOCDEVPRIVATE
