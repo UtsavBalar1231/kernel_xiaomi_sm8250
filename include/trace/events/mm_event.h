@@ -91,7 +91,7 @@ TRACE_EVENT(mm_event_vmstat_record,
 	),
 
 	TP_printk("free=%lu file=%lu anon=%lu ion=%lu slab=%lu ws_refault=%lu "
-		  "ws_activate=%lu mapped=%lu pgin=%lu pgout=%lu, swpin=%lu "
+		  "ws_activate=%lu mapped=%lu pgin=%lu pgout=%lu swpin=%lu "
 		  "swpout=%lu reclaim_steal=%lu reclaim_scan=%lu compact_scan=%lu",
 			__entry->free, __entry->file,
 			__entry->anon, __entry->ion, __entry->slab,
