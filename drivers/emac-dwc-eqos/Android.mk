@@ -20,7 +20,7 @@ KBUILD_OPTIONS += DCONFIG_DEBUGFS_OBJ=1
 #KBUILD_OPTIONS += DDWC_ETH_QOS_TEST=1
 
 LOCAL_MODULE      := emac_dwc_eqos.ko
-LOCAL_MODULE_TAGS := debug
+LOCAL_MODULE_TAGS := optional
 include $(DLKM_DIR)/AndroidKernelModule.mk
 endif
 endif
