@@ -61,6 +61,10 @@ struct emac_emb_smmu_cb_ctx emac_emb_smmu_ctx = {0};
 #define INVALID_MODULE_PARAM_VAL 0xFFFFFFFF
 static struct qmp_pkt pkt;
 static char qmp_buf[MAX_QMP_MSG_SIZE + 1] = {0};
+extern int create_pps_interrupt_info_device_node(dev_t *pps_dev_t,
+	struct cdev* pps_cdev, struct class* pps_class,
+	char *pps_dev_node_name);
+extern int remove_pps_interrupt_info_device_node(struct DWC_ETH_QOS_prv_data *pdata);
 
 int ipa_offload_en = 1;
 module_param(ipa_offload_en, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
@@ -718,6 +722,31 @@ static int DWC_ETH_QOS_get_dts_config(struct platform_device *pdev)
 		dwc_eth_qos_res_data.emac_hw_version_type = EMAC_HW_None;
 	}
 	EMACDBG(": emac_core_version = %d\n", dwc_eth_qos_res_data.emac_hw_version_type);
+
+	if (dwc_eth_qos_res_data.emac_hw_version_type == EMAC_HW_v2_3_1) {
+
+		resource = platform_get_resource_byname(pdev, IORESOURCE_IRQ,
+			"ptp_pps_irq_0");
+		if (!resource) {
+			EMACERR("get ptp_pps_irq_0 resource failed\n");
+			ret = -ENODEV;
+			goto err_out;
+		}
+		dwc_eth_qos_res_data.ptp_pps_avb_class_a_irq = resource->start;
+		EMACDBG("ptp_pps_avb_class_a_irq = %d\n",
+			dwc_eth_qos_res_data.ptp_pps_avb_class_a_irq);
+
+		resource = platform_get_resource_byname(pdev, IORESOURCE_IRQ,
+				"ptp_pps_irq_1");
+		if (!resource) {
+			EMACERR("get ptp_pps_irq_1 resource failed\n");
+			ret = -ENODEV;
+			goto err_out;
+		}
+		dwc_eth_qos_res_data.ptp_pps_avb_class_b_irq = resource->start;
+		EMACDBG("ptp_pps_avb_class_b_irq = %d\n", dwc_eth_qos_res_data.ptp_pps_avb_class_b_irq);
+
+	}
 
 	ret = DWC_ETH_QOS_get_io_macro_config(pdev);
 	if (ret)
@@ -1549,6 +1578,14 @@ static int DWC_ETH_QOS_configure_netdevice(struct platform_device *pdev)
 	if (!pdata->always_on_phy)
 		DWC_ETH_QOS_set_clk_and_bus_config(pdata, SPEED_10);
 
+	if (pdata->emac_hw_version_type == EMAC_HW_v2_3_1) {
+		create_pps_interrupt_info_device_node(&pdata->avb_class_a_dev_t,
+			pdata->avb_class_a_cdev, pdata->avb_class_a_class, AVB_CLASS_A_POLL_DEV_NODE_NAME);
+
+		create_pps_interrupt_info_device_node(&pdata->avb_class_b_dev_t,
+			pdata->avb_class_b_cdev ,pdata->avb_class_b_class, AVB_CLASS_B_POLL_DEV_NODE_NAME);
+	}
+
 	DWC_ETH_QOS_create_debugfs(pdata);
 
 	if (EMAC_HW_v2_0_0 == pdata->emac_hw_version_type)
@@ -1856,6 +1893,9 @@ int DWC_ETH_QOS_remove(struct platform_device *pdev)
 
 	DWC_ETH_QOS_cleanup_debugfs(pdata);
 
+	if (pdata->emac_hw_version_type == EMAC_HW_v2_3_1)
+		remove_pps_interrupt_info_device_node(pdata);
+
 #ifdef PER_CH_INT
 	DWC_ETH_QOS_deregister_per_ch_intr(pdata);
 #endif
@@ -1867,6 +1907,17 @@ int DWC_ETH_QOS_remove(struct platform_device *pdev)
 	if (pdata->phy_irq != 0) {
 		free_irq(pdata->phy_irq, pdata);
 		pdata->phy_irq = 0;
+	}
+
+	if (dwc_eth_qos_res_data.emac_hw_version_type == EMAC_HW_v2_3_1) {
+		if (dwc_eth_qos_res_data.ptp_pps_avb_class_a_irq != 0) {
+			free_irq(dwc_eth_qos_res_data.ptp_pps_avb_class_a_irq, pdata);
+			dwc_eth_qos_res_data.ptp_pps_avb_class_a_irq = 0;
+		}
+		if (dwc_eth_qos_res_data.ptp_pps_avb_class_b_irq != 0) {
+			free_irq(dwc_eth_qos_res_data.ptp_pps_avb_class_b_irq, pdata);
+			dwc_eth_qos_res_data.ptp_pps_avb_class_b_irq = 0;
+		}
 	}
 
 	if (pdata->phy_intr_en && pdata->phy_irq)

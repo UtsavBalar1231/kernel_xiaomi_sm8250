@@ -419,6 +419,16 @@
 #define DWC_ETH_QOS_TXQ_CNT 5
 #define DWC_ETH_QOS_RXQ_CNT 4
 
+/* PPS */
+#define AVB_CLASS_A_POLL_DEV_NODE_NAME "avb_class_a_intr"
+#define AVB_CLASS_B_POLL_DEV_NODE_NAME "avb_class_b_intr"
+#define DWC_ETH_QOS_PPS_STOP 0
+#define DWC_ETH_QOS_PPS_START 1
+#define DWC_ETH_QOS_PPS_CH_0 0
+#define DWC_ETH_QOS_PPS_CH_1 1
+#define DWC_ETH_QOS_PPS_CH_2 2
+#define DWC_ETH_QOS_PPS_CH_3 3
+
 /* Helper macros for TX descriptor handling */
 #define GET_TX_QUEUE_PTR(QINX) (&pdata->tx_queue[(QINX)])
 #define GET_TX_DESC_PTR(QINX, DINX) (pdata->tx_queue[(QINX)].tx_desc_data.tx_desc_ptrs[(DINX)])
@@ -1520,6 +1530,8 @@ struct DWC_ETH_QOS_res_data {
 	u32 rgmii_mem_size;
 	u32 sbd_intr;
 	u32 lpi_intr;
+	u32 ptp_pps_avb_class_a_irq;
+	u32 ptp_pps_avb_class_b_irq;
 	u32 io_macro_tx_mode_non_id;
 	IO_MACRO_PHY_MODE io_macro_phy_intf;
 	u32 phy_intr;
@@ -1825,6 +1837,21 @@ struct DWC_ETH_QOS_prv_data {
 	struct dentry *debugfs_dir;
 	/* ptp clock frequency set by PTPCLK_Config ioctl default value is 250MHz */
 	unsigned int ptpclk_freq;
+
+	ULONG avb_class_a_intr_cnt;
+	ULONG avb_class_b_intr_cnt;
+
+
+	/* avb_class_a dev node variables*/
+	dev_t avb_class_a_dev_t;
+	struct cdev* avb_class_a_cdev;
+	struct class* avb_class_a_class;
+
+	/* avb_class_b dev node variables*/
+	dev_t avb_class_b_dev_t;
+	struct cdev* avb_class_b_cdev;
+	struct class* avb_class_b_class;
+
 };
 
 typedef enum {

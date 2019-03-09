@@ -54,6 +54,11 @@
 #include "DWC_ETH_QOS_ipa.h"
 
 extern ULONG dwc_eth_qos_base_addr;
+extern bool avb_class_b_msg_wq_flag;
+extern bool avb_class_a_msg_wq_flag;
+extern wait_queue_head_t avb_class_a_msg_wq;
+extern wait_queue_head_t avb_class_b_msg_wq;
+
 
 #include "DWC_ETH_QOS_yregacc.h"
 #define DEFAULT_START_TIME 0x1900
@@ -5094,6 +5099,66 @@ static int ETH_PTPCLK_Config(struct DWC_ETH_QOS_prv_data *pdata, struct ifr_data
 	return ret;
 }
 
+irqreturn_t DWC_ETH_QOS_PPS_avb_class_a(int irq, void *dev_id)
+{
+	struct DWC_ETH_QOS_prv_data *pdata =
+		(struct DWC_ETH_QOS_prv_data *)dev_id;
+
+	pdata->avb_class_a_intr_cnt++;
+	avb_class_a_msg_wq_flag = 1;
+	wake_up_interruptible(&avb_class_a_msg_wq);
+	return IRQ_HANDLED;
+}
+irqreturn_t DWC_ETH_QOS_PPS_avb_class_b(int irq, void *dev_id)
+{
+	struct DWC_ETH_QOS_prv_data *pdata =
+		(struct DWC_ETH_QOS_prv_data *)dev_id;
+
+	pdata->avb_class_b_intr_cnt++;
+	avb_class_b_msg_wq_flag = 1;
+	wake_up_interruptible(&avb_class_b_msg_wq);
+	return IRQ_HANDLED;
+}
+
+
+void Register_PPS_ISR(struct DWC_ETH_QOS_prv_data *pdata, int ch)
+{
+	int ret;
+
+	if (ch == DWC_ETH_QOS_PPS_CH_2 ) {
+		ret = request_irq(pdata->res_data->ptp_pps_avb_class_a_irq, DWC_ETH_QOS_PPS_avb_class_a,
+						IRQF_TRIGGER_RISING, DEV_NAME, pdata);
+		if (ret) {
+			EMACERR("Req ptp_pps_avb_class_a_irq Failed ret=%d\n",ret);
+		} else {
+			EMACERR("Req ptp_pps_avb_class_a_irq pass \n");
+		}
+	} else if (ch == DWC_ETH_QOS_PPS_CH_3) {
+		ret = request_irq(pdata->res_data->ptp_pps_avb_class_b_irq, DWC_ETH_QOS_PPS_avb_class_b,
+						IRQF_TRIGGER_RISING, DEV_NAME, pdata);
+		if (ret) {
+			EMACERR("Req ptp_pps_avb_class_b_irq Failed ret=%d\n",ret);
+		} else {
+			EMACERR("Req ptp_pps_avb_class_b_irq pass \n");
+		}
+	} else
+		EMACERR("Invalid channel %d\n", ch);
+}
+
+void Unregister_PPS_ISR(struct DWC_ETH_QOS_prv_data *pdata, int ch)
+{
+	if (ch == DWC_ETH_QOS_PPS_CH_2) {
+		if (pdata->res_data->ptp_pps_avb_class_a_irq != 0) {
+			free_irq(pdata->res_data->ptp_pps_avb_class_a_irq, pdata);
+		}
+	} else if (ch == DWC_ETH_QOS_PPS_CH_3) {
+		if (pdata->res_data->ptp_pps_avb_class_b_irq != 0) {
+			free_irq(pdata->res_data->ptp_pps_avb_class_b_irq, pdata);
+		}
+	} else
+		EMACERR("Invalid channel %d\n", ch);
+}
+
 static void configure_target_time_reg(u32 ch)
 {
 	u32 data = 0x0;
@@ -5143,22 +5208,22 @@ void stop_pps(int ch)
 {
 	u32 pps_mode_select = 3;
 
-	if (ch == 0) {
+	if (ch == DWC_ETH_QOS_PPS_CH_0) {
 		EMACDBG("stop pps with channel %d\n", ch);
 		MAC_PPSC_PPSEN0_UDFWR(0x1);
 		MAC_PPSC_TRGTMODSEL0_UDFWR(pps_mode_select);
 		MAC_PPSC_PPSCTRL0_UDFWR(0x5);
-	} else if (ch == 1) {
+	} else if (ch == DWC_ETH_QOS_PPS_CH_1) {
 		EMACDBG("stop pps with channel %d\n", ch);
 		MAC_PPSC_PPSEN0_UDFWR(0x1);
 		MAC_PPSC_TRGTMODSEL1_UDFWR(pps_mode_select);
 		MAC_PPSC_PPSCMD1_UDFWR(0x5);
-	} else if (ch == 2) {
+	} else if (ch == DWC_ETH_QOS_PPS_CH_2) {
 		EMACDBG("stop pps with channel %d\n", ch);
 		MAC_PPSC_PPSEN0_UDFWR(0x1);
 		MAC_PPSC_TRGTMODSEL2_UDFWR(pps_mode_select);
 		MAC_PPSC_PPSCMD2_UDFWR(0x5);
-	} else if (ch == 3) {
+	} else if (ch == DWC_ETH_QOS_PPS_CH_3) {
 		EMACDBG("stop pps with channel %d\n", ch);
 		MAC_PPSC_PPSEN0_UDFWR(0x1);
 		MAC_PPSC_TRGTMODSEL3_UDFWR(pps_mode_select);
@@ -5184,7 +5249,8 @@ int ETH_PPSOUT_Config(struct DWC_ETH_QOS_prv_data *pdata, struct ifr_data_struct
 	int interval, width;
 	int interval_ns; /*interval in nano seconds*/
 
-	if (pdata->emac_hw_version_type == EMAC_HW_v2_3_1) {
+	if (pdata->emac_hw_version_type == EMAC_HW_v2_3_1 &&
+		eth_pps_cfg->ptpclk_freq <= 0) {
 		/* Set PTP clock to default 250 */
 		eth_pps_cfg->ptpclk_freq = DWC_ETH_QOS_DEFAULT_PTP_CLOCK;
 	}
@@ -5234,18 +5300,18 @@ int ETH_PPSOUT_Config(struct DWC_ETH_QOS_prv_data *pdata, struct ifr_data_struct
 	}
 
 	switch (eth_pps_cfg->ppsout_ch) {
-	case 0:
+	case DWC_ETH_QOS_PPS_CH_0:
 		if (pdata->emac_hw_version_type == EMAC_HW_v2_3_1) {
-			if (eth_pps_cfg->ppsout_start == 1) {
+			if (eth_pps_cfg->ppsout_start == DWC_ETH_QOS_PPS_START) {
 				MAC_PPSC_PPSEN0_UDFWR(0x1);
-				MAC_PPS_INTVAL_PPSINT0_UDFWR(0, interval);
-				MAC_PPS_WIDTH_PPSWIDTH0_UDFWR(0, width);
-				configure_target_time_reg(0);
+				MAC_PPS_INTVAL_PPSINT0_UDFWR(DWC_ETH_QOS_PPS_CH_0, interval);
+				MAC_PPS_WIDTH_PPSWIDTH0_UDFWR(DWC_ETH_QOS_PPS_CH_0, width);
+				configure_target_time_reg(DWC_ETH_QOS_PPS_CH_0);
 				MAC_PPSC_TRGTMODSEL0_UDFWR(0x2);
 				MAC_PPSC_PPSCTRL0_UDFWR(0x2);
-			} else if (eth_pps_cfg->ppsout_start == 0) {
+			} else if (eth_pps_cfg->ppsout_start == DWC_ETH_QOS_PPS_STOP) {
 				EMACDBG("STOP pps for channel 0\n");
-				stop_pps(0);
+				stop_pps(DWC_ETH_QOS_PPS_CH_0);
 			}
 		} else{
 			MAC_PPS_INTVAL0_PPSINT0_UDFWR(interval);  // interval
@@ -5257,59 +5323,52 @@ int ETH_PPSOUT_Config(struct DWC_ETH_QOS_prv_data *pdata, struct ifr_data_struct
 		}
 		break;
 
-	case 1:
-		if (pdata->emac_hw_version_type != EMAC_HW_v2_3_1) {
-			EMACINFO("PPS Channel 1 only supported for 2.3.1");
-			return -EOPNOTSUPP;
-		}
-		if (eth_pps_cfg->ppsout_start == 1) {
-			MAC_PPS_INTVAL_PPSINT0_UDFWR(1, interval);
-			MAC_PPS_WIDTH_PPSWIDTH0_UDFWR(1, width);
-			configure_target_time_reg(1);
+	case DWC_ETH_QOS_PPS_CH_1:
+		if (eth_pps_cfg->ppsout_start == DWC_ETH_QOS_PPS_START) {
+			MAC_PPS_INTVAL_PPSINT0_UDFWR(DWC_ETH_QOS_PPS_CH_1, interval);
+			MAC_PPS_WIDTH_PPSWIDTH0_UDFWR(DWC_ETH_QOS_PPS_CH_1, width);
+			configure_target_time_reg(DWC_ETH_QOS_PPS_CH_1);
 			MAC_PPSC_TRGTMODSEL1_UDFWR(0x2);
 			MAC_PPSC_PPSEN0_UDFWR(0x1);
 			MAC_PPSC_PPSCMD1_UDFWR(0x2);
 		}
-		else if (eth_pps_cfg->ppsout_start == 0) {
-			EMACDBG("STOP pps for chanel 1\n");
-			stop_pps(1);
+		else if (eth_pps_cfg->ppsout_start == DWC_ETH_QOS_PPS_STOP) {
+			EMACDBG("STOP pps for channel 1\n");
+			stop_pps(DWC_ETH_QOS_PPS_CH_1);
 		}
 		break;
 
-	case 2:
-		if (pdata->emac_hw_version_type != EMAC_HW_v2_3_1) {
-			EMACINFO("PPS Channel 2 only supported for 2.3.1");
-			return -EOPNOTSUPP;
-		}
-		if (eth_pps_cfg->ppsout_start == 1) {
-			MAC_PPS_INTVAL_PPSINT0_UDFWR(2, interval);
-			MAC_PPS_WIDTH_PPSWIDTH0_UDFWR(2, width);
-			configure_target_time_reg(2);
+	case DWC_ETH_QOS_PPS_CH_2:
+		if (eth_pps_cfg->ppsout_start == DWC_ETH_QOS_PPS_START) {
+
+			Register_PPS_ISR(pdata, DWC_ETH_QOS_PPS_CH_2);
+			MAC_PPS_INTVAL_PPSINT0_UDFWR(DWC_ETH_QOS_PPS_CH_2, interval);
+			MAC_PPS_WIDTH_PPSWIDTH0_UDFWR(DWC_ETH_QOS_PPS_CH_2, width);
+			configure_target_time_reg(DWC_ETH_QOS_PPS_CH_2);
 			MAC_PPSC_TRGTMODSEL2_UDFWR(0x2);
 			MAC_PPSC_PPSEN0_UDFWR(0x1);
 			MAC_PPSC_PPSCMD2_UDFWR(0x2);
 		}
-		else if (eth_pps_cfg->ppsout_start == 0) {
-			EMACDBG("STOP pps for chanel 2\n");
-			stop_pps(2);
+		else if (eth_pps_cfg->ppsout_start == DWC_ETH_QOS_PPS_STOP) {
+			Unregister_PPS_ISR(pdata, DWC_ETH_QOS_PPS_CH_2);
+			EMACDBG("STOP pps for channel 2\n");
+			stop_pps(DWC_ETH_QOS_PPS_CH_2);
 		}
 		break;
-	case 3:
-		if (pdata->emac_hw_version_type != EMAC_HW_v2_3_1) {
-			EMACINFO("PPS Channel 3 only supported for 2.3.1");
-			return -EOPNOTSUPP;
-		}
-		if (eth_pps_cfg->ppsout_start == 1) {
+	case DWC_ETH_QOS_PPS_CH_3:
+		if (eth_pps_cfg->ppsout_start == DWC_ETH_QOS_PPS_START) {
+			Register_PPS_ISR(pdata, DWC_ETH_QOS_PPS_CH_3);
 			EMACDBG("start pps for chanel 3\n");
-			MAC_PPS_INTVAL_PPSINT0_UDFWR(3, interval);
-			MAC_PPS_WIDTH_PPSWIDTH0_UDFWR(3, width);
-			configure_target_time_reg(3);
+			MAC_PPS_INTVAL_PPSINT0_UDFWR(DWC_ETH_QOS_PPS_CH_3, interval);
+			MAC_PPS_WIDTH_PPSWIDTH0_UDFWR(DWC_ETH_QOS_PPS_CH_3, width);
+			configure_target_time_reg(DWC_ETH_QOS_PPS_CH_3);
 			MAC_PPSC_TRGTMODSEL3_UDFWR(0x2);
 			MAC_PPSC_PPSEN0_UDFWR(0x1);
 			MAC_PPSC_PPSCMD3_UDFWR(0x2);
-		} else if (eth_pps_cfg->ppsout_start == 0) {
-			EMACDBG("STOP pps for chanel 2\n");
-			stop_pps(3);
+		} else if (eth_pps_cfg->ppsout_start == DWC_ETH_QOS_PPS_STOP) {
+			Unregister_PPS_ISR(pdata, DWC_ETH_QOS_PPS_CH_3);
+			EMACDBG("STOP pps for channel 3\n");
+			stop_pps(DWC_ETH_QOS_PPS_CH_3);
 		}
 		break;
 	default:
@@ -5950,20 +6009,16 @@ static int DWC_ETH_QOS_handle_hwtstamp_ioctl(struct DWC_ETH_QOS_prv_data *pdata,
 
 		/* program Sub Second Increment Reg */
 #ifdef CONFIG_PPS_OUTPUT
-		if (pdata->emac_hw_version_type == EMAC_HW_v2_3_1) {
-			hw_if->config_sub_second_increment(DWC_ETH_QOS_SYSCLOCK);
+		/* If default_addend is already programmed, then we expect that
+		* sub_second_increment is also programmed already */
+		if (pdata->default_addend == 0) {
+			hw_if->config_sub_second_increment(DWC_ETH_QOS_SYSCLOCK); // Using default 250MHz
 		} else {
-			/* If default_addend is already programmed, then we expect that
-			* sub_second_increment is also programmed already */
-			if (pdata->default_addend == 0) {
-				hw_if->config_sub_second_increment(DWC_ETH_QOS_SYSCLOCK); // Using default 250MHz
-			} else {
-				u64 pclk;
-				pclk = (u64) (pdata->default_addend) *  DWC_ETH_QOS_SYSCLOCK;
-				pclk += 0x8000000;
-				pclk >>= 32;
-				hw_if->config_sub_second_increment((u32)pclk);
-			}
+			u64 pclk;
+			pclk = (u64) (pdata->default_addend) *  DWC_ETH_QOS_SYSCLOCK;
+			pclk += 0x8000000;
+			pclk >>= 32;
+			hw_if->config_sub_second_increment((u32)pclk);
 		}
 #else
 		hw_if->config_sub_second_increment(DWC_ETH_QOS_SYSCLOCK);
@@ -5983,15 +6038,10 @@ static int DWC_ETH_QOS_handle_hwtstamp_ioctl(struct DWC_ETH_QOS_prv_data *pdata,
 		 *
 		 */
 #ifdef CONFIG_PPS_OUTPUT
-	if (pdata->emac_hw_version_type == EMAC_HW_v2_3_1) {
-			temp = (u64)(50000000ULL << 32);
-			pdata->default_addend = div_u64(temp, DWC_ETH_QOS_SYSCLOCK);
-	} else {
-		if(pdata->default_addend == 0){
-			temp = (u64)(50000000ULL << 32);
-			pdata->default_addend = div_u64(temp, DWC_ETH_QOS_SYSCLOCK);
-			EMACINFO("Using default PTP clock = 250MHz\n");
-		}
+	if(pdata->default_addend == 0){
+		temp = (u64)(50000000ULL << 32);
+		pdata->default_addend = div_u64(temp, DWC_ETH_QOS_SYSCLOCK);
+		EMACINFO("Using default PTP clock = 250MHz\n");
 	}
 #else
 		temp = (u64)(50000000ULL << 32);
@@ -6100,7 +6150,9 @@ static int DWC_ETH_QOS_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 {
 	struct DWC_ETH_QOS_prv_data *pdata = netdev_priv(dev);
 	struct ifr_data_struct req;
+#ifdef CONFIG_PPS_OUTPUT
 	struct ETH_PPS_Config eth_pps_cfg;
+#endif
 	struct mii_ioctl_data *data = if_mii(ifr);
 	unsigned int reg_val = 0;
 	int ret = 0;
@@ -6142,13 +6194,13 @@ static int DWC_ETH_QOS_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 	   if (copy_from_user(&req, ifr->ifr_ifru.ifru_data,
 			   sizeof(struct ifr_data_struct)))
 			return -EFAULT;
-		if (pdata->emac_hw_version_type == EMAC_HW_v2_3_1) {
-			if (copy_from_user(&eth_pps_cfg, req.ptr,
-				sizeof(struct ETH_PPS_Config))) {
-				return -EFAULT;
-			}
-			req.ptr = &eth_pps_cfg;
+#ifdef CONFIG_PPS_OUTPUT
+		if (copy_from_user(&eth_pps_cfg, req.ptr,
+			sizeof(struct ETH_PPS_Config))) {
+			return -EFAULT;
 		}
+		req.ptr = &eth_pps_cfg;
+#endif
 		ret = DWC_ETH_QOS_handle_prv_ioctl(pdata, &req);
 		req.command_error = ret;
 
