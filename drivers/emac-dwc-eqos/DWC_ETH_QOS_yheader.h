@@ -427,8 +427,8 @@ extern void *ipc_emac_log_ctxt;
 #define DWC_ETH_QOS_SYSCLOCK	250000000 /* System clock is 250MHz */
 #define DWC_ETH_QOS_SYSTIMEPERIOD	4 /* System time period is 4ns */
 
-#define DWC_ETH_QOS_DEFAULT_PTP_CLOCK 50000000
-#define DWC_ETH_QOS_DEFAULT_LPASS_CLOCK 250000000
+#define DWC_ETH_QOS_DEFAULT_PTP_CLOCK    96000000
+#define DWC_ETH_QOS_DEFAULT_LPASS_PPS_FREQUENCY 19200000
 
 #define DWC_ETH_QOS_TX_QUEUE_CNT (pdata->tx_queue_cnt)
 #define DWC_ETH_QOS_RX_QUEUE_CNT (pdata->rx_queue_cnt)
@@ -1006,6 +1006,7 @@ struct hw_if_struct {
 	/* for hw time stamping */
 	INT(*config_hw_time_stamping)(UINT);
 	INT(*config_sub_second_increment)(unsigned long ptp_clock);
+	INT(*config_default_addend)(struct DWC_ETH_QOS_prv_data *pdata, unsigned long ptp_clock);
 	INT(*init_systime)(UINT, UINT);
 	INT(*config_addend)(UINT);
 	INT(*adjust_systime)(UINT, UINT, INT, bool);

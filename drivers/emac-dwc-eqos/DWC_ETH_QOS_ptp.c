@@ -318,9 +318,10 @@ int DWC_ETH_QOS_ptp_init(struct DWC_ETH_QOS_prv_data *pdata)
 	if (pdata->res_data->pps_lpass_conn_en) {
 		/*Configuring PPS0 PPS output frequency to defualt 19.2 Mhz*/
 		eth_pps_cfg.ppsout_ch = 0;
-		eth_pps_cfg.ptpclk_freq = DWC_ETH_QOS_DEFAULT_LPASS_CLOCK;
-		eth_pps_cfg.ppsout_freq = 19200000;
+		eth_pps_cfg.ptpclk_freq = DWC_ETH_QOS_DEFAULT_PTP_CLOCK;
+		eth_pps_cfg.ppsout_freq = DWC_ETH_QOS_DEFAULT_LPASS_PPS_FREQUENCY;
 		eth_pps_cfg.ppsout_start = 1;
+		eth_pps_cfg.ppsout_duty = 50;
 		req.ptr = (void*)&eth_pps_cfg;
 
 		DWC_ETH_QOS_pps_timer_init(&req);
