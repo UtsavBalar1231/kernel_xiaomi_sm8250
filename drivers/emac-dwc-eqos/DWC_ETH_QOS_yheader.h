@@ -1,4 +1,4 @@
-/* Copyright (c) 2017-2018, The Linux Foundation. All rights
+/* Copyright (c) 2017-2019, The Linux Foundation. All rights
  * reserved.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -1564,6 +1564,9 @@ struct DWC_ETH_QOS_res_data {
 	bool is_pinctrl_names;
 	int gpio_phy_intr_redirect;
 	int gpio_phy_reset;
+	struct pinctrl *pinctrl;
+	struct pinctrl_state *rgmii_rxc_suspend_state;
+	struct pinctrl_state *rgmii_rxc_resume_state;
 
 	/* Regulators */
 	struct regulator *gdsc_emac;
@@ -2036,6 +2039,8 @@ void DWC_ETH_QOS_set_clk_and_bus_config(struct DWC_ETH_QOS_prv_data *pdata, int 
 #define EMAC_PHY_RESET "dev-emac-phy_reset_state"
 #define EMAC_PHY_INTR "dev-emac-phy_intr"
 #define EMAC_PIN_PPS0 "dev-emac_pin_pps_0"
+#define EMAC_RGMII_RXC_SUSPEND "dev-emac-rgmii_rxc_suspend_state"
+#define EMAC_RGMII_RXC_RESUME "dev-emac-rgmii_rxc_resume_state"
 
 #ifdef PER_CH_INT
 void DWC_ETH_QOS_handle_DMA_Int(struct DWC_ETH_QOS_prv_data *pdata, int chinx, bool);
