@@ -1834,6 +1834,7 @@ static void DWC_ETH_QOS_default_rx_confs(struct DWC_ETH_QOS_prv_data *pdata)
 int DWC_ETH_QOS_add_ipv6addr(struct ip_params *ip_info, struct net_device *dev)
 {
 	int res=0;
+#ifdef DWC_ETH_QOS_BUILTIN
 	struct in6_ifreq ir6;
 	char* prefix;
 
@@ -1858,7 +1859,7 @@ int DWC_ETH_QOS_add_ipv6addr(struct ip_params *ip_info, struct net_device *dev)
 			EMACDBG("Assigned IPv6 address: %s\r\n", ip_info->ipv6_addr);
 
 	}
-
+#endif
 	return res;
 }
 

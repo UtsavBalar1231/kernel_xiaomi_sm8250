@@ -1405,6 +1405,7 @@ static struct of_device_id DWC_ETH_QOS_plat_drv_match[] = {
 int DWC_ETH_QOS_add_ipaddr(struct ip_params *ip_info, struct net_device *dev)
 {
 	int res=0;
+#ifdef DWC_ETH_QOS_BUILTIN
 	struct ifreq ir;
 	struct in6_ifreq ir6;
 	struct sockaddr_in *sin = (void *) &ir.ifr_ifru.ifru_addr;
@@ -1422,7 +1423,7 @@ int DWC_ETH_QOS_add_ipaddr(struct ip_params *ip_info, struct net_device *dev)
 		else
 			EMACDBG("Assigned IPv4 address: %s\r\n", ip_info->ip_addr);
 	}
-
+#endif
 	return res;
 }
 
