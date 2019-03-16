@@ -87,37 +87,98 @@ module_param(phy_interrupt_en, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 MODULE_PARM_DESC(phy_interrupt_en,
 		"Enable PHY interrupt [0-DISABLE, 1-ENABLE]");
 
-struct ip_params pparams = {"", "", "", ""};
-static int __init set_early_ethernet_ipv4(char *str)
+struct ip_params pparams = {0};
+#ifdef DWC_ETH_QOS_BUILTIN
+/*!
+ * \brief API to extract MAC Address from given string
+ *
+ * \param[in] pointer to MAC Address string
+ *
+ * \return None
+ */
+void DWC_ETH_QOS_extract_macid(char *mac_addr)
 {
-	if (str) {
-		strlcpy(pparams.ip_addr, str, sizeof(pparams.ip_addr));
-		EMACDBG("Early ethernet IPv4 addr assigned: %s\n", pparams.ip_addr);
+	char *input = NULL;
+	int i = 0;
+	int mac_id = 0;
+	UCHAR dev_addr_temp[DWC_ETH_QOS_MAC_ADDR_LEN];
+	int ret;
+
+	if (!mac_addr)
+		return;
+
+	/* Extract MAC ID byte by byte */
+	input = strsep(&mac_addr, ":");
+	while(input != NULL && i < DWC_ETH_QOS_MAC_ADDR_LEN) {
+		sscanf(input, "%x", &mac_id);
+		dev_addr_temp[i++] = mac_id;
+		input = strsep(&mac_addr, ":");
 	}
-	return 1;
+	if (!is_valid_ether_addr(dev_addr_temp))
+		return;
+	else {
+		memcpy(pparams.mac_addr, dev_addr_temp, sizeof(pparams.mac_addr));
+		pparams.is_valid_mac_addr = true;
+	}
+
+	return;
+}
+
+static int __init set_early_ethernet_ipv4(char *ipv4_addr_in)
+{
+	int ret = 1;
+	pparams.is_valid_ipv4_addr = false;
+
+	if (!ipv4_addr_in)
+		return ret;
+
+	strlcpy(pparams.ipv4_addr_str, ipv4_addr_in, sizeof(pparams.ipv4_addr_str));
+	EMACDBG("Early ethernet IPv4 addr assigned: %s\n", pparams.ipv4_addr_str);
+
+	ret = in4_pton(pparams.ipv4_addr_str, -1,
+				(u8*)&pparams.ipv4_addr.s_addr, -1, NULL);
+	if (ret != 1 || pparams.ipv4_addr.s_addr == 0)
+		return ret;
+
+	pparams.is_valid_ipv4_addr = true;
+	return ret;
 }
 __setup("eipv4=", set_early_ethernet_ipv4);
 
-static int __init set_early_ethernet_ipv6(char* ipv6_addr)
+static int __init set_early_ethernet_ipv6(char* ipv6_addr_in)
 {
-	if (ipv6_addr) {
-		strlcpy(pparams.ipv6_addr, ipv6_addr, sizeof(pparams.ipv6_addr));
-		EMACDBG("Early ethernet IPv6 addr assigned: %s\n", pparams.ipv6_addr);
-	}
-	return 1;
+	int ret = 1;
+	pparams.is_valid_ipv6_addr = false;
+
+	if (!ipv6_addr_in)
+		return ret;
+
+	strlcpy(pparams.ipv6_addr, ipv6_addr_in, sizeof(pparams.ipv6_addr));
+	EMACDBG("Early ethernet IPv6 addr assigned: %s\n", pparams.ipv6_addr);
+
+	return ret;
 }
 __setup("eipv6=", set_early_ethernet_ipv6);
 
 static int __init set_early_ethernet_mac(char* mac_addr)
 {
-	if (mac_addr) {
-		strlcpy(pparams.mac_addr, mac_addr, sizeof(pparams.mac_addr));
-		EMACDBG("Early ethernet MAC address assigned: %s\n", pparams.mac_addr);
-		pparams.mac_addr[17] = '\0';
-	}
-	return 1;
+	int ret = 1;
+	char temp_mac_addr[DWC_ETH_QOS_MAC_ADDR_STR_LEN];
+	pparams.is_valid_mac_addr = false;
+
+	if(!mac_addr)
+		return ret;
+
+	strlcpy(temp_mac_addr, mac_addr, sizeof(temp_mac_addr));
+	EMACDBG("Early ethernet MAC address assigned: %s\n", temp_mac_addr);
+	temp_mac_addr[DWC_ETH_QOS_MAC_ADDR_STR_LEN-1] = '\0';
+
+	DWC_ETH_QOS_extract_macid(temp_mac_addr);
+	return ret;
 }
 __setup("ermac=", set_early_ethernet_mac);
+#endif
+
 static ssize_t read_phy_reg_dump(struct file *file,
 	char __user *user_buf, size_t count, loff_t *ppos)
 {
@@ -782,9 +843,14 @@ static int DWC_ETH_QOS_get_dts_config(struct platform_device *pdev)
 	}
 
 	dwc_eth_qos_res_data.early_eth_en = 0;
-	if (of_property_read_bool(pdev->dev.of_node, "early-ethernet-en"))
+	if(pparams.is_valid_ipv4_addr || pparams.is_valid_ipv6_addr) {
+		/* For 1000BASE-T mode, auto-negotiation is required and
+			always used to establish a link.
+			Configure phy and MAC in 100Mbps mode with autoneg disable
+			as link up takes more time with autoneg enabled  */
 		dwc_eth_qos_res_data.early_eth_en = 1;
-	EMACDBG("Early Ethernet EN: %d\n", dwc_eth_qos_res_data.early_eth_en);
+		EMACINFO("Early ethernet is enabled\n");
+	}
 
 	ret = DWC_ETH_QOS_get_io_macro_config(pdev);
 	if (ret)
@@ -1407,50 +1473,22 @@ int DWC_ETH_QOS_add_ipaddr(struct ip_params *ip_info, struct net_device *dev)
 	int res=0;
 #ifdef DWC_ETH_QOS_BUILTIN
 	struct ifreq ir;
-	struct in6_ifreq ir6;
 	struct sockaddr_in *sin = (void *) &ir.ifr_ifru.ifru_addr;
-	char* prefix;
 
 	/*For valid Ipv4 address*/
 	memset(&ir, 0, sizeof(ir));
-	if (1 == in4_pton(ip_info->ip_addr, -1, (u8*)&sin->sin_addr.s_addr, -1, NULL)) {
-		strlcpy(ir.ifr_ifrn.ifrn_name, dev->name, sizeof(ir.ifr_ifrn.ifrn_name) + 1);
-		sin->sin_family = AF_INET;
-		sin->sin_port = 0;
-		res = devinet_ioctl(&init_net, SIOCSIFADDR, (struct ifreq __user *) &ir);
-		if (res)
-			EMACERR( "Can't setup IPv4 address!: %d\r\n", res);
-		else
-			EMACDBG("Assigned IPv4 address: %s\r\n", ip_info->ip_addr);
-	}
+	memcpy(&sin->sin_addr.s_addr, &ip_info->ipv4_addr,
+		   sizeof(sin->sin_addr.s_addr));
+	strlcpy(ir.ifr_ifrn.ifrn_name, dev->name, sizeof(ir.ifr_ifrn.ifrn_name) + 1);
+	sin->sin_family = AF_INET;
+	sin->sin_port = 0;
+	res = devinet_ioctl(&init_net, SIOCSIFADDR, (struct ifreq __user *)&ir);
+	if (res)
+		EMACERR( "Can't setup IPv4 address!: %d\r\n", res);
+	else
+		EMACDBG("Assigned IPv4 address: %s\r\n", ip_info->ipv4_addr_str);
 #endif
 	return res;
-}
-
-/*!
- * \brief API to extract MAC Address from given string
- *
- * \param[in] pointer to MAC Address string
- *
- * \return None
- */
-void DWC_ETH_QOS_extract_macid(char *mac_addr)
-{
-	char *input = NULL;
-	int i = 0;
-	int mac_id = 0;
-
-	if (!mac_addr)
-		return;
-
-	/* Extract MAC ID byte by byte */
-	input = strsep(&mac_addr, ":");
-	while(input != NULL && i < DWC_ETH_QOS_MAC_ADDR_LEN) {
-		sscanf(input, "%x", &mac_id);
-		dev_addr[i++] = mac_id;
-		input = strsep(&mac_addr, ":");
-	}
-	return;
 }
 
 static int DWC_ETH_QOS_configure_netdevice(struct platform_device *pdev)
@@ -1476,8 +1514,8 @@ static int DWC_ETH_QOS_configure_netdevice(struct platform_device *pdev)
 		goto err_out_dev_failed;
 	}
 
-	if (pparams.mac_addr != "")
-		DWC_ETH_QOS_extract_macid(pparams.mac_addr);
+	if (pparams.is_valid_mac_addr == true)
+		memcpy(dev_addr, pparams.mac_addr, sizeof(dev_addr));
 
 	dev->dev_addr[0] = dev_addr[0];
 	dev->dev_addr[1] = dev_addr[1];

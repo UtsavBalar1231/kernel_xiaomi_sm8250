@@ -374,6 +374,7 @@ extern void *ipc_emac_log_ctxt;
 		"<error>"))))
 
 #define DWC_ETH_QOS_MAC_ADDR_LEN 6
+#define DWC_ETH_QOS_MAC_ADDR_STR_LEN 18
 #ifndef DWC_ETH_QOS_ENABLE_VLAN_TAG
 #define VLAN_HLEN 0
 #endif
@@ -1868,10 +1869,15 @@ struct DWC_ETH_QOS_prv_data {
 };
 
 struct ip_params {
-	char mac_addr[18];
+	UCHAR mac_addr[DWC_ETH_QOS_MAC_ADDR_LEN];
+	bool is_valid_mac_addr;
 	char link_speed[32];
-	char ip_addr[32];
+	bool is_valid_link_speed;
+	char ipv4_addr_str[32];
+	struct in_addr ipv4_addr;
+	bool is_valid_ipv4_addr;
 	char ipv6_addr[48];
+	bool is_valid_ipv6_addr;
 };
 
 typedef enum {
