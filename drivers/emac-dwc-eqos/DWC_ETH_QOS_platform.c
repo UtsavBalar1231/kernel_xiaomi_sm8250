@@ -100,8 +100,7 @@ void DWC_ETH_QOS_extract_macid(char *mac_addr)
 {
 	char *input = NULL;
 	int i = 0;
-	int mac_id = 0;
-	UCHAR dev_addr_temp[DWC_ETH_QOS_MAC_ADDR_LEN];
+	UCHAR mac_id = 0;
 	int ret;
 
 	if (!mac_addr)
@@ -111,15 +110,14 @@ void DWC_ETH_QOS_extract_macid(char *mac_addr)
 	input = strsep(&mac_addr, ":");
 	while(input != NULL && i < DWC_ETH_QOS_MAC_ADDR_LEN) {
 		sscanf(input, "%x", &mac_id);
-		dev_addr_temp[i++] = mac_id;
+		pparams.mac_addr[i++] = mac_id;
 		input = strsep(&mac_addr, ":");
 	}
-	if (!is_valid_ether_addr(dev_addr_temp))
+	if (!is_valid_ether_addr(pparams.mac_addr)) {
+		EMACERR("Invalid Mac address programmed: %s\n", mac_addr);
 		return;
-	else {
-		memcpy(pparams.mac_addr, dev_addr_temp, sizeof(pparams.mac_addr));
+	} else
 		pparams.is_valid_mac_addr = true;
-	}
 
 	return;
 }
@@ -137,8 +135,10 @@ static int __init set_early_ethernet_ipv4(char *ipv4_addr_in)
 
 	ret = in4_pton(pparams.ipv4_addr_str, -1,
 				(u8*)&pparams.ipv4_addr.s_addr, -1, NULL);
-	if (ret != 1 || pparams.ipv4_addr.s_addr == 0)
+	if (ret != 1 || pparams.ipv4_addr.s_addr == 0) {
+		EMACERR("Invalid ipv4 address programmed: %s\n", ipv4_addr_in);
 		return ret;
+	}
 
 	pparams.is_valid_ipv4_addr = true;
 	return ret;
@@ -843,7 +843,8 @@ static int DWC_ETH_QOS_get_dts_config(struct platform_device *pdev)
 	}
 
 	dwc_eth_qos_res_data.early_eth_en = 0;
-	if(pparams.is_valid_ipv4_addr || pparams.is_valid_ipv6_addr) {
+	if(pparams.is_valid_mac_addr &&
+	   (pparams.is_valid_ipv4_addr || pparams.is_valid_ipv6_addr)) {
 		/* For 1000BASE-T mode, auto-negotiation is required and
 			always used to establish a link.
 			Configure phy and MAC in 100Mbps mode with autoneg disable
@@ -1515,7 +1516,7 @@ static int DWC_ETH_QOS_configure_netdevice(struct platform_device *pdev)
 	}
 
 	if (pparams.is_valid_mac_addr == true)
-		memcpy(dev_addr, pparams.mac_addr, sizeof(dev_addr));
+		ether_addr_copy(dev_addr, pparams.mac_addr);
 
 	dev->dev_addr[0] = dev_addr[0];
 	dev->dev_addr[1] = dev_addr[1];
