@@ -571,8 +571,8 @@ struct smb_charger {
 	struct mutex		smb_lock;
 	struct mutex		ps_change_lock;
 	struct mutex		irq_status_lock;
+	struct mutex		moisture_detection_enable;
 	struct mutex		dcin_aicl_lock;
-	spinlock_t		moisture_detection_enable;
 	spinlock_t		typec_pr_lock;
 	struct mutex		adc_lock;
 	struct mutex		dpdm_lock;
@@ -971,6 +971,10 @@ struct smb_charger {
 
 	int			night_chg_flag;
 	u8			apsd_stats;
+
+	/* lpd timer work */
+	struct workqueue_struct *wq;
+	struct work_struct	lpd_recheck_work;
 };
 
 int smblib_read(struct smb_charger *chg, u16 addr, u8 *val);
