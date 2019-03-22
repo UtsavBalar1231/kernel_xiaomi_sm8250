@@ -5281,10 +5281,10 @@ int ETH_PPSOUT_Config(struct DWC_ETH_QOS_prv_data *pdata, struct ifr_data_struct
 	int interval, width;
 	int interval_ns; /*interval in nano seconds*/
 
-	if (pdata->emac_hw_version_type == EMAC_HW_v2_3_1 &&
+	if (pdata->res_data->pps_lpass_conn_en &&
 		eth_pps_cfg->ptpclk_freq <= 0) {
 		/* Set PTP clock to default 250 */
-		eth_pps_cfg->ptpclk_freq = DWC_ETH_QOS_DEFAULT_PTP_CLOCK;
+		eth_pps_cfg->ptpclk_freq = DWC_ETH_QOS_DEFAULT_LPASS_CLOCK;
 	}
 
 	if ((eth_pps_cfg->ppsout_ch < 0) ||
@@ -5323,7 +5323,7 @@ int ETH_PPSOUT_Config(struct DWC_ETH_QOS_prv_data *pdata, struct ifr_data_struct
 
 	EMACDBG("PPS: PPSOut_Config: interval=%d, width=%d\n", interval, width);
 
-	if (pdata->emac_hw_version_type == EMAC_HW_v2_3_1) {
+	if (pdata->res_data->pps_lpass_conn_en) {
 		//calculate interval & width
 		interval_ns = (1000000000/eth_pps_cfg->ppsout_freq) ;
 		interval = ((interval_ns)/4) - 1;
@@ -5333,7 +5333,7 @@ int ETH_PPSOUT_Config(struct DWC_ETH_QOS_prv_data *pdata, struct ifr_data_struct
 
 	switch (eth_pps_cfg->ppsout_ch) {
 	case DWC_ETH_QOS_PPS_CH_0:
-		if (pdata->emac_hw_version_type == EMAC_HW_v2_3_1) {
+		if (pdata->res_data->pps_lpass_conn_en) {
 			if (eth_pps_cfg->ppsout_start == DWC_ETH_QOS_PPS_START) {
 				MAC_PPSC_PPSEN0_UDFWR(0x1);
 				MAC_PPS_INTVAL_PPSINT0_UDFWR(DWC_ETH_QOS_PPS_CH_0, interval);
