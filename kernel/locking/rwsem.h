@@ -221,7 +221,6 @@ static inline bool rwsem_list_add_per_prio(struct rwsem_waiter *waiter_in,
 }
 #endif
 
-#ifdef CONFIG_RWSEM_XCHGADD_ALGORITHM
 /*
  * lock for reading
  */
@@ -328,5 +327,3 @@ static inline void __downgrade_write(struct rw_semaphore *sem)
 	if (tmp < 0)
 		rwsem_downgrade_wake(sem);
 }
-
-#endif /* CONFIG_RWSEM_XCHGADD_ALGORITHM */
