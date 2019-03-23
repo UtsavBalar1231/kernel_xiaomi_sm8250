@@ -91,6 +91,11 @@ struct rmnet_shs_wq_cpu_rx_pkt_q_s {
 	u64 last_rx_bps; /* bits per second*/
 	u64 avg_pps;
 	u64 rx_bps_est; /*estimated bits per second*/
+	u32 qhead;          /* queue head */
+	u32 last_qhead;     /* last queue head */
+	u32 qhead_diff; /* diff in pp in last tick*/
+	u32 qhead_start; /* start mark of total pp*/
+	u32 qhead_total; /* end mark of total pp*/
 	int flows;
 };
 

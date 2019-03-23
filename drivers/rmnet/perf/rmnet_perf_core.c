@@ -1,4 +1,4 @@
-/* Copyright (c) 2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -25,9 +25,13 @@
 #include <../drivers/net/ethernet/qualcomm/rmnet/rmnet_private.h>
 #include <../drivers/net/ethernet/qualcomm/rmnet/rmnet_handlers.h>
 #include <../drivers/net/ethernet/qualcomm/rmnet/rmnet_config.h>
-#include "rmnet_perf_tcp_opt.h"
+#include "rmnet_perf_opt.h"
 #include "rmnet_perf_core.h"
 #include "rmnet_perf_config.h"
+
+#ifdef CONFIG_QCOM_QMI_POWER_COLLAPSE
+#include <soc/qcom/qmi_rmnet.h>
+#endif
 
 /* Each index tells us the number of iterations it took us to find a recycled
  * skb
@@ -89,6 +93,17 @@ MODULE_PARM_DESC(enable_packet_dropper, "enable_packet_dropper");
 unsigned long int packet_dropper_time = 1;
 module_param(packet_dropper_time, ulong, 0644);
 MODULE_PARM_DESC(packet_dropper_time, "packet_dropper_time");
+
+unsigned long int rmnet_perf_flush_shs = 0;
+module_param(rmnet_perf_flush_shs, ulong, 0644);
+MODULE_PARM_DESC(rmnet_perf_flush_shs, "rmnet_perf_flush_shs");
+
+unsigned long int rmnet_perf_frag_flush = 0;
+module_param(rmnet_perf_frag_flush, ulong, 0444);
+MODULE_PARM_DESC(rmnet_perf_frag_flush,
+		 "Number of packet fragments flushed to stack");
+
+#define SHS_FLUSH 0
 
 /* rmnet_perf_core_free_held_skbs() - Free held SKBs given to us by physical
  *		device
@@ -357,21 +372,19 @@ void rmnet_perf_core_send_skb(struct sk_buff *skb, struct rmnet_endpoint *ep,
 		rmnet_set_skb_proto(skb);
 		/* If the checksum is unnecessary, update the header fields.
 		 * Otherwise, we know that this is a single packet that
-		 * failed checksum validation, so we don't want to touch
-		 * the headers.
+		 * either failed checksum validation, or is not coalescable
+		 * (fragment, ICMP, etc), so don't touch the headers.
 		 */
-		if (ip4hn->protocol == IPPROTO_TCP &&
-		    skb->ip_summed == CHECKSUM_UNNECESSARY) {
+		if (skb_csum_unnecessary(skb)) {
 			ip4hn->tot_len = htons(skb->len);
 			ip4hn->check = 0;
 			ip4hn->check = ip_fast_csum(ip4hn, (int)ip4hn->ihl);
 		}
 		rmnet_deliver_skb(skb, perf->rmnet_port);
-	} else  if (ip_version == 0x06) {
+	} else if (ip_version == 0x06) {
 		ip6hn = (struct ipv6hdr *)data;
 		rmnet_set_skb_proto(skb);
-		if (ip6hn->nexthdr == IPPROTO_TCP &&
-		    skb->ip_summed == CHECKSUM_UNNECESSARY) {
+		if (skb_csum_unnecessary(skb)) {
 			ip6hn->payload_len = htons(skb->len -
 						   sizeof(struct ipv6hdr));
 		}
@@ -397,7 +410,8 @@ void rmnet_perf_core_send_skb(struct sk_buff *skb, struct rmnet_endpoint *ep,
 void rmnet_perf_core_flush_curr_pkt(struct rmnet_perf *perf,
 				    struct sk_buff *skb,
 				    struct rmnet_perf_pkt_info *pkt_info,
-				    u16 packet_len)
+				    u16 packet_len, bool flush_shs,
+				    bool skip_hash)
 {
 	struct sk_buff *skbn;
 	struct rmnet_endpoint *ep = pkt_info->ep;
@@ -407,34 +421,47 @@ void rmnet_perf_core_flush_curr_pkt(struct rmnet_perf *perf,
 		return;
 	}
 
-	if (pkt_info->trans_proto != IPPROTO_UDP || packet_len < 64) {
-		/* allocate the sk_buff of proper size for this packet */
-		skbn = alloc_skb(packet_len + RMNET_MAP_DEAGGR_SPACING,
-				 GFP_ATOMIC);
-		if (!skbn)
-			return;
+	/* allocate the sk_buff of proper size for this packet */
+	skbn = alloc_skb(packet_len + RMNET_MAP_DEAGGR_SPACING,
+			 GFP_ATOMIC);
+	if (!skbn)
+		return;
 
-		skb_reserve(skbn, RMNET_MAP_DEAGGR_HEADROOM);
-		skb_put(skbn, packet_len);
-		memcpy(skbn->data, pkt_info->iphdr.v4hdr, packet_len);
-	} else {
-		skbn = skb_clone(skb, GFP_ATOMIC);
-		if (!skbn)
-			return;
-
-		skb_pull(skbn, sizeof(struct rmnet_map_header));
-		skb_trim(skbn, packet_len);
-		skbn->truesize = SKB_TRUESIZE(packet_len);
-		__skb_set_hash(skbn, 0, 0, 0);
-	}
+	skb_reserve(skbn, RMNET_MAP_DEAGGR_HEADROOM);
+	skb_put(skbn, packet_len);
+	memcpy(skbn->data, pkt_info->iphdr.v4hdr, packet_len);
 
 	/* If the packet passed checksum validation, tell the stack */
 	if (pkt_info->csum_valid)
 		skbn->ip_summed = CHECKSUM_UNNECESSARY;
 	skbn->dev = skb->dev;
-	skbn->hash = pkt_info->hash_key;
-	skbn->sw_hash = 1;
+
+	/* Only set hash info if we actually calculated it */
+	if (!skip_hash) {
+		skbn->hash = pkt_info->hash_key;
+		skbn->sw_hash = 1;
+	}
+
+	skbn->cb[SHS_FLUSH] = (char) flush_shs;
 	rmnet_perf_core_send_skb(skbn, ep, perf, pkt_info);
+}
+
+/* DL marker is off, we need to flush more aggresively at end of chains */
+void rmnet_perf_core_ps_on(void *port)
+{
+	struct rmnet_perf *perf = rmnet_perf_config_get_perf();
+
+	rmnet_perf_core_bm_flush_on = 0;
+	rmnet_perf_opt_flush_all_flow_nodes(perf);
+	rmnet_perf_core_flush_reason_cnt[RMNET_PERF_CORE_PS_MODE_ON]++;
+	/* Essentially resets expected packet count to safe state */
+	perf->core_meta->bm_state->expect_packets = -1;
+}
+
+/* DL marker on, we can try to coalesce more packets */
+void rmnet_perf_core_ps_off(void *port)
+{
+	rmnet_perf_core_bm_flush_on = 1;
 }
 
 void
@@ -449,7 +476,7 @@ rmnet_perf_core_handle_map_control_start(struct rmnet_map_dl_ind_hdr *dlhdr)
 	 */
 	if (!bm_state->wait_for_start) {
 		/* flush everything, we got a 2nd start */
-		rmnet_perf_tcp_opt_flush_all_flow_nodes(perf);
+		rmnet_perf_opt_flush_all_flow_nodes(perf);
 		rmnet_perf_core_flush_reason_cnt[
 					RMNET_PERF_CORE_DL_MARKER_FLUSHES]++;
 	} else {
@@ -469,7 +496,7 @@ void rmnet_perf_core_handle_map_control_end(struct rmnet_map_dl_ind_trl *dltrl)
 	struct rmnet_perf_core_burst_marker_state *bm_state;
 
 	bm_state = perf->core_meta->bm_state;
-	rmnet_perf_tcp_opt_flush_all_flow_nodes(perf);
+	rmnet_perf_opt_flush_all_flow_nodes(perf);
 	rmnet_perf_core_flush_reason_cnt[RMNET_PERF_CORE_DL_MARKER_FLUSHES]++;
 	bm_state->wait_for_start = true;
 	bm_state->curr_seq = 0;
@@ -510,7 +537,9 @@ void rmnet_perf_core_handle_packet_ingress(struct sk_buff *skb,
 				 (skb->data + sizeof(struct rmnet_map_header));
 	struct rmnet_perf *perf = rmnet_perf_config_get_perf();
 	u16 pkt_len;
+	bool skip_hash = false;
 
+	pkt_len = frame_len - sizeof(struct rmnet_map_header) - trailer_len;
 	pkt_info->ep = ep;
 	pkt_info->ip_proto = (*payload & 0xF0) >> 4;
 	if (pkt_info->ip_proto == 4) {
@@ -519,18 +548,23 @@ void rmnet_perf_core_handle_packet_ingress(struct sk_buff *skb,
 		pkt_info->iphdr.v4hdr = iph;
 		pkt_info->trans_proto = iph->protocol;
 		pkt_info->header_len = iph->ihl * 4;
+		skip_hash = !!(ntohs(iph->frag_off) & (IP_MF | IP_OFFSET));
 	} else if (pkt_info->ip_proto == 6) {
 		struct ipv6hdr *iph = (struct ipv6hdr *)payload;
 
 		pkt_info->iphdr.v6hdr = iph;
 		pkt_info->trans_proto = iph->nexthdr;
 		pkt_info->header_len = sizeof(*iph);
+		skip_hash = iph->nexthdr == NEXTHDR_FRAGMENT;
 	} else {
-		pr_err("%s(): invalid packet\n", __func__);
 		return;
 	}
 
-	pkt_len = frame_len - sizeof(struct rmnet_map_header) - trailer_len;
+	/* Push out fragments immediately */
+	if (skip_hash) {
+		rmnet_perf_frag_flush++;
+		goto flush;
+	}
 
 	if (pkt_info->trans_proto == IPPROTO_TCP) {
 		struct tcphdr *tp = (struct tcphdr *)
@@ -545,7 +579,8 @@ void rmnet_perf_core_handle_packet_ingress(struct sk_buff *skb,
 		if (rmnet_perf_core_validate_pkt_csum(skb, pkt_info))
 			goto flush;
 
-		rmnet_perf_tcp_opt_ingress(perf, skb, pkt_info);
+		if (!rmnet_perf_opt_ingress(perf, skb, pkt_info))
+			goto flush;
 	} else if (pkt_info->trans_proto == IPPROTO_UDP) {
 		struct udphdr *up = (struct udphdr *)
 				    (payload + pkt_info->header_len);
@@ -556,16 +591,14 @@ void rmnet_perf_core_handle_packet_ingress(struct sk_buff *skb,
 		pkt_info->hash_key =
 			rmnet_perf_core_compute_flow_hash(pkt_info);
 
-		/* We flush anyway, so the result of the validation
-		 * does not need to be checked.
-		 */
-		rmnet_perf_core_validate_pkt_csum(skb, pkt_info);
-		goto flush;
+		if (rmnet_perf_core_validate_pkt_csum(skb, pkt_info))
+			goto flush;
+
+		if (!rmnet_perf_opt_ingress(perf, skb, pkt_info))
+			goto flush;
 	} else {
 		pkt_info->payload_len = pkt_len - pkt_info->header_len;
-		pkt_info->hash_key =
-			rmnet_perf_core_compute_flow_hash(pkt_info);
-
+		skip_hash = true;
 		/* We flush anyway, so the result of the validation
 		 * does not need to be checked.
 		 */
@@ -576,7 +609,8 @@ void rmnet_perf_core_handle_packet_ingress(struct sk_buff *skb,
 	return;
 
 flush:
-	rmnet_perf_core_flush_curr_pkt(perf, skb, pkt_info, pkt_len);
+	rmnet_perf_core_flush_curr_pkt(perf, skb, pkt_info, pkt_len, false,
+				       skip_hash);
 }
 
 /* rmnet_perf_core_deaggregate() - Deaggregated ip packets from map frame
@@ -659,6 +693,13 @@ skip_frame:
 				goto bad_data;
 			skb->dev = ep->egress_dev;
 
+#ifdef CONFIG_QCOM_QMI_POWER_COLLAPSE
+			/* Wakeup PS work on DL packets */
+			if ((port->data_format & RMNET_INGRESS_FORMAT_PS) &&
+					!RMNET_MAP_GET_CD_BIT(skb))
+				qmi_rmnet_work_maybe_restart(port);
+#endif
+
 			if (enable_packet_dropper) {
 				getnstimeofday(&curr_time);
 				if (last_drop_time.tv_sec == 0 &&
@@ -694,13 +735,13 @@ next_chain:
 	 */
 	if (!rmnet_perf_core_bm_flush_on ||
 	    (int) perf->core_meta->bm_state->expect_packets <= 0) {
-		rmnet_perf_tcp_opt_flush_all_flow_nodes(perf);
+		rmnet_perf_opt_flush_all_flow_nodes(perf);
 		rmnet_perf_core_free_held_skbs(perf);
 		rmnet_perf_core_flush_reason_cnt[
 					RMNET_PERF_CORE_IPA_ZERO_FLUSH]++;
 	} else if (perf->core_meta->skb_needs_free_list->num_skbs_held >=
 		   rmnet_perf_core_num_skbs_max) {
-		rmnet_perf_tcp_opt_flush_all_flow_nodes(perf);
+		rmnet_perf_opt_flush_all_flow_nodes(perf);
 		rmnet_perf_core_free_held_skbs(perf);
 		rmnet_perf_core_flush_reason_cnt[
 					RMNET_PERF_CORE_SK_BUFF_HELD_LIMIT]++;
@@ -708,7 +749,7 @@ next_chain:
 
 	goto update_stats;
 drop_packets:
-	rmnet_perf_tcp_opt_flush_all_flow_nodes(perf);
+	rmnet_perf_opt_flush_all_flow_nodes(perf);
 	rmnet_perf_core_free_held_skbs(perf);
 update_stats:
 	rmnet_perf_core_pre_ip_count += co;

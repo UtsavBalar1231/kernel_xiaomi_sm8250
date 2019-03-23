@@ -1,4 +1,4 @@
-/* Copyright (c) 2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -20,7 +20,7 @@
 #define RMNET_PERF_CORE_RECYCLE_SKB_SIZE    65600//33000//32768//65600
 
 struct rmnet_perf {
-	struct rmnet_perf_tcp_opt_meta *tcp_opt_meta;
+	struct rmnet_perf_opt_meta *opt_meta;
 	struct rmnet_perf_core_meta *core_meta;
 	struct rmnet_port *rmnet_port;
 };
@@ -79,12 +79,14 @@ struct rmnet_perf_core_meta {
 	//spinlock_t timer_lock;
 	struct rmnet_perf_core_burst_marker_state *bm_state;
 	struct rmnet_map_dl_ind *dl_ind;
+	struct qmi_rmnet_ps_ind *ps_ind;
 };
 
 enum rmnet_perf_core_flush_reasons {
 	RMNET_PERF_CORE_IPA_ZERO_FLUSH,
 	RMNET_PERF_CORE_SK_BUFF_HELD_LIMIT,
 	RMNET_PERF_CORE_DL_MARKER_FLUSHES,
+	RMNET_PERF_CORE_PS_MODE_ON,
 	RMNET_PERF_CORE_NUM_CONDITIONS
 };
 
@@ -109,6 +111,8 @@ enum rmnet_perf_trace_evt {
 	RMNET_PERF_DEAG_PKT,
 };
 
+void rmnet_perf_core_ps_on(void *port);
+void rmnet_perf_core_ps_off(void *port);
 void rmnet_perf_core_reset_recycled_skb(struct sk_buff *skb);
 struct sk_buff *rmnet_perf_core_elligible_for_cache_skb(struct rmnet_perf *perf,
 							u32 len);
@@ -119,7 +123,8 @@ void rmnet_perf_core_send_skb(struct sk_buff *skb, struct rmnet_endpoint *ep,
 void rmnet_perf_core_flush_curr_pkt(struct rmnet_perf *perf,
 				    struct sk_buff *skb,
 				    struct rmnet_perf_pkt_info *pkt_info,
-				    u16 packet_len);
+				    u16 packet_len, bool flush_shs,
+				    bool skip_hash);
 void rmnet_perf_core_deaggregate(struct sk_buff *skb,
 				struct rmnet_port *port);
 u32 rmnet_perf_core_compute_flow_hash(struct rmnet_perf_pkt_info *pkt_info);

@@ -1,4 +1,4 @@
-/* Copyright (c) 2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2018-2019 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -33,17 +33,30 @@
 #define MAX_SILVER_CORES 4
 #define MAX_CPUS  8
 
+/* RPS mask change's Default core for orphaned CPU flows */
+#define MAIN_CORE 0
+#define UPDATE_MASK 0xFF
+
 //#define RMNET_SHS_MAX_UDP_SILVER_CORE_DATA_RATE 1073741824 //1.0Gbps
 //#define RMNET_SHS_MAX_UDP_SILVER_CORE_DATA_RATE 320787200 //320 Mbps
 //#define RMNET_SHS_MAX_UDP_GOLD_CORE_DATA_RATE 3650722201 //3.4 Gbps
 //#define RMNET_SHS_UDP_PPS_SILVER_CORE_UPPER_THRESH 90000
 //#define RMNET_SHS_TCP_PPS_SILVER_CORE_UPPER_THRESH 90000
 
+#define SHS_TRACE_ERR(...) if (rmnet_shs_debug) \
+	trace_rmnet_shs_err(__VA_ARGS__)
+
+#define SHS_TRACE_HIGH(...) if (rmnet_shs_debug) \
+	trace_rmnet_shs_high(__VA_ARGS__)
+
+#define SHS_TRACE_LOW(...) if (rmnet_shs_debug) \
+	trace_rmnet_shs_low(__VA_ARGS__)
+
 #define RMNET_SHS_MAX_SILVER_CORE_BURST_CAPACITY  204800
 
 #define RMNET_SHS_TCP_COALESCING_RATIO 23 //Heuristic
-#define RMNET_SHS_UDP_PPS_LPWR_CPU_UTHRESH 70000
-#define RMNET_SHS_TCP_PPS_LPWR_CPU_UTHRESH (70000*RMNET_SHS_TCP_COALESCING_RATIO)
+#define RMNET_SHS_UDP_PPS_LPWR_CPU_UTHRESH 80000
+#define RMNET_SHS_TCP_PPS_LPWR_CPU_UTHRESH (80000*RMNET_SHS_TCP_COALESCING_RATIO)
 
 #define RMNET_SHS_UDP_PPS_PERF_CPU_UTHRESH 210000
 #define RMNET_SHS_TCP_PPS_PERF_CPU_UTHRESH (210000*RMNET_SHS_TCP_COALESCING_RATIO)
@@ -74,6 +87,11 @@ struct rmnet_shs_cfg_s {
 	u8 is_pkt_parked;
 	u8 is_timer_init;
 	u8 force_flush_state;
+	u8 rmnet_shs_init_complete;
+	u8 dl_ind_state;
+	u8 map_mask;
+	u8 map_len;
+
 };
 
 struct rmnet_shs_skb_list {
@@ -81,6 +99,7 @@ struct rmnet_shs_skb_list {
 	struct sk_buff *tail;
 	u64 num_parked_bytes;
 	u32 num_parked_skbs;
+	u32 skb_load;
 };
 
 struct rmnet_shs_skbn_s {
@@ -116,11 +135,32 @@ enum rmnet_shs_tmr_force_flush_state_e {
 	RMNET_SHS_FLUSH_ON,
 	RMNET_SHS_FLUSH_DONE
 };
+
+enum rmnet_shs_switch_reason_e {
+	RMNET_SHS_SWITCH_INSTANT_RATE,
+	RMNET_SHS_SWITCH_WQ_RATE,
+	RMNET_SHS_OOO_PACKET_SWITCH,
+	RMNET_SHS_OOO_PACKET_TOTAL,
+	RMNET_SHS_SWITCH_MAX_REASON
+};
+
+enum rmnet_shs_dl_ind_state {
+	RMNET_SHS_HDR_PENDING,
+	RMNET_SHS_END_PENDING,
+	RMNET_SHS_IND_COMPLETE,
+	RMNET_SHS_DL_IND_MAX_STATE
+};
+
+
 enum rmnet_shs_flush_reason_e {
 	RMNET_SHS_FLUSH_PKT_LIMIT,
 	RMNET_SHS_FLUSH_BYTE_LIMIT,
 	RMNET_SHS_FLUSH_TIMER_EXPIRY,
 	RMNET_SHS_FLUSH_RX_DL_TRAILER,
+	RMNET_SHS_FLUSH_INV_DL_IND,
+	RMNET_SHS_FLUSH_WQ_FB_FLUSH,
+	RMNET_SHS_FLUSH_WQ_CORE_FLUSH,
+	RMNET_SHS_FLUSH_PSH_PKT_FLUSH,
 	RMNET_SHS_FLUSH_MAX_REASON
 };
 
@@ -156,6 +196,13 @@ enum rmnet_shs_trace_func {
 	RMNET_SHS_FLUSH,
 	RMNET_SHS_DL_MRK,
 };
+
+enum rmnet_shs_flush_context {
+	RMNET_RX_CTXT,
+	RMNET_WQ_CTXT,
+	RMNET_MAX_CTXT
+};
+
 
 /* Trace events and functions */
 enum rmnet_shs_trace_evt {
@@ -236,17 +283,22 @@ extern int (*rmnet_shs_skb_entry)(struct sk_buff *skb,
 				  struct rmnet_port *port);
 int rmnet_shs_is_lpwr_cpu(u16 cpu);
 void rmnet_shs_cancel_table(void);
-void rmnet_shs_aggregate_init(void);
+void rmnet_shs_rx_wq_init(void);
+void rmnet_shs_rx_wq_exit(void);
+int rmnet_shs_get_mask_len(u8 mask);
 
-int rmnet_shs_chk_and_flush_node(struct rmnet_shs_skbn_s *node, u8 force_flush);
+int rmnet_shs_chk_and_flush_node(struct rmnet_shs_skbn_s *node,
+				 u8 force_flush, u8 ctxt);
 void rmnet_shs_dl_hdr_handler(struct rmnet_map_dl_ind_hdr *dlhdr);
 void rmnet_shs_dl_trl_handler(struct rmnet_map_dl_ind_trl *dltrl);
 void rmnet_shs_assign(struct sk_buff *skb, struct rmnet_port *port);
-void rmnet_shs_flush_table(u8 is_force_flush);
+void rmnet_shs_flush_table(u8 is_force_flush, u8 ctxt);
 void rmnet_shs_cpu_node_remove(struct rmnet_shs_skbn_s *node);
-void rmnet_shs_init(struct net_device *dev);
+void rmnet_shs_init(struct net_device *dev, struct net_device *vnd);
 void rmnet_shs_exit(void);
 void rmnet_shs_ps_on_hdlr(void *port);
 void rmnet_shs_ps_off_hdlr(void *port);
 void rmnet_shs_update_cpu_proc_q_all_cpus(void);
+
+u32 rmnet_shs_get_cpu_qhead(u8 cpu_num);
 #endif /* _RMNET_SHS_H_ */

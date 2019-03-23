@@ -1,4 +1,4 @@
-/* Copyright (c) 2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2018-2019 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -100,6 +100,14 @@ MODULE_PARM_DESC(rmnet_shs_cpu_rx_bps, "SHS stamp enq rate per CPU");
 unsigned long long rmnet_shs_cpu_rx_pps[MAX_CPUS];
 module_param_array(rmnet_shs_cpu_rx_pps, ullong, 0, 0444);
 MODULE_PARM_DESC(rmnet_shs_cpu_rx_pps, "SHS stamp pkt enq rate per CPU");
+
+unsigned long long rmnet_shs_cpu_qhead_diff[MAX_CPUS];
+module_param_array(rmnet_shs_cpu_qhead_diff, ullong, 0, 0444);
+MODULE_PARM_DESC(rmnet_shs_cpu_qhead_diff, "SHS nw stack queue processed diff");
+
+unsigned long long rmnet_shs_cpu_qhead_total[MAX_CPUS];
+module_param_array(rmnet_shs_cpu_qhead_total, ullong, 0, 0444);
+MODULE_PARM_DESC(rmnet_shs_cpu_qhead_total, "SHS nw stack queue processed total");
 
 unsigned long rmnet_shs_flow_hash[MAX_SUPPORTED_FLOWS_DEBUG];
 module_param_array(rmnet_shs_flow_hash, ulong, 0, 0444);
@@ -297,7 +305,7 @@ void rmnet_shs_wq_hstat_alloc_nodes(u8 num_nodes_to_allocate, u8 is_store_perm)
 	struct rmnet_shs_wq_hstat_s *hnode = NULL;
 
 	while (num_nodes_to_allocate > 0) {
-		hnode = kzalloc(sizeof(*hnode), 0);
+		hnode = kzalloc(sizeof(*hnode), GFP_ATOMIC);
 		if (hnode) {
 			hnode->is_perm = is_store_perm;
 			rmnet_shs_wq_hstat_reset_node(hnode);
@@ -349,7 +357,8 @@ struct rmnet_shs_wq_hstat_s *rmnet_shs_wq_get_new_hstat_node(void)
 	 * However, this newly allocated memory will be released as soon as we
 	 * realize that this flow is inactive
 	 */
-	ret_node = kzalloc(sizeof(*hnode), 0);
+	ret_node = kzalloc(sizeof(*hnode), GFP_ATOMIC);
+
 	if (!ret_node) {
 		rmnet_shs_crit_err[RMNET_SHS_WQ_ALLOC_HSTAT_ERR]++;
 		return NULL;
@@ -534,7 +543,8 @@ static void rmnet_shs_wq_refresh_cpu_rates_debug(u16 cpu,
 	rmnet_shs_cpu_rx_flows[cpu] = cpu_p->flows;
 	rmnet_shs_cpu_rx_bytes[cpu] = cpu_p->rx_bytes;
 	rmnet_shs_cpu_rx_pkts[cpu] = cpu_p->rx_skbs;
-
+	rmnet_shs_cpu_qhead_diff[cpu] = cpu_p->qhead_diff;
+	rmnet_shs_cpu_qhead_total[cpu] = cpu_p->qhead_total;
 }
 
 static void rmnet_shs_wq_refresh_dl_mrkr_stats(void)
@@ -596,9 +606,20 @@ static void rmnet_shs_wq_refresh_cpu_stats(u16 cpu)
 	struct rmnet_shs_wq_cpu_rx_pkt_q_s *cpu_p;
 	time_t tdiff;
 	u64 new_skbs, new_bytes;
+	u32 new_qhead;
 
 	cpu_p = &rmnet_shs_rx_flow_tbl.cpu_list[cpu];
 	new_skbs = cpu_p->rx_skbs - cpu_p->last_rx_skbs;
+
+	new_qhead = rmnet_shs_get_cpu_qhead(cpu);
+	if (cpu_p->qhead_start == 0) {
+		cpu_p->qhead_start = new_qhead;
+	}
+
+	cpu_p->last_qhead = cpu_p->qhead;
+	cpu_p->qhead = new_qhead;
+	cpu_p->qhead_diff = cpu_p->qhead - cpu_p->last_qhead;
+	cpu_p->qhead_total = cpu_p->qhead - cpu_p->qhead_start;
 
 	if (rmnet_shs_cpu_node_tbl[cpu].wqprio)
 		rmnet_shs_cpu_node_tbl[cpu].wqprio = (rmnet_shs_cpu_node_tbl[cpu].wqprio + 1)
@@ -661,16 +682,20 @@ void rmnet_shs_wq_update_cpu_rx_tbl(struct rmnet_shs_wq_hstat_s *hstat_p)
 	if (hstat_p->inactive_duration > 0)
 		return;
 
+	rcu_read_lock();
 	map = rcu_dereference(node_p->dev->_rx->rps_map);
 
-	if (!map)
+	if (!map || node_p->map_index > map->len || !map->len) {
+		rcu_read_unlock();
 		return;
+	}
 
 	map_idx = node_p->map_index;
 	cpu_num = map->cpus[map_idx];
 
 	skb_diff = hstat_p->rx_skb - hstat_p->last_rx_skb;
 	byte_diff = hstat_p->rx_bytes - hstat_p->last_rx_bytes;
+	rcu_read_unlock();
 
 	if (hstat_p->is_new_flow) {
 		rmnet_shs_wq_cpu_list_add(hstat_p,
@@ -825,6 +850,7 @@ u16 rmnet_shs_wq_find_cpu_to_move_flows(u16 current_cpu,
 	u16 cpu_to_move = current_cpu;
 	u16 cpu_num;
 	u8 is_core_in_msk;
+	u32 cpu_to_move_util = 0;
 
 	if (!ep) {
 		rmnet_shs_crit_err[RMNET_SHS_WQ_EP_ACCESS_ERR]++;
@@ -834,13 +860,15 @@ u16 rmnet_shs_wq_find_cpu_to_move_flows(u16 current_cpu,
 	cur_cpu_list_p = &rx_flow_tbl_p->cpu_list[current_cpu];
 	cur_cpu_rx_pps = cur_cpu_list_p->rx_pps;
 	pps_uthresh = rmnet_shs_cpu_rx_max_pps_thresh[current_cpu];
+	pps_lthresh = rmnet_shs_cpu_rx_min_pps_thresh[current_cpu];
+
 	/* If we are already on a perf core and required pps is beyond
 	 * beyond the capacity that even perf cores aren't sufficient
 	 * there is nothing much we can do. So we will continue to let flows
 	 * process packets on same perf core
 	 */
 	if (!rmnet_shs_is_lpwr_cpu(current_cpu) &&
-	    (cur_cpu_rx_pps > pps_uthresh)) {
+	    (cur_cpu_rx_pps > pps_lthresh)) {
 		return cpu_to_move;
 	}
 	/* If a core (should only be lpwr was marked prio we don't touch it
@@ -874,10 +902,11 @@ u16 rmnet_shs_wq_find_cpu_to_move_flows(u16 current_cpu,
 				       current_cpu, cpu_num, reqd_pps,
 				       cpu_rx_pps, NULL, NULL);
 
-		/* Return the first available CPU */
-		if ((reqd_pps > pps_lthresh) && (reqd_pps < pps_uthresh)) {
+		/* Return the most available valid CPU */
+		if ((reqd_pps > pps_lthresh) && (reqd_pps < pps_uthresh) &&
+			cpu_rx_pps <= cpu_to_move_util) {
 			cpu_to_move = cpu_num;
-			break;
+			cpu_to_move_util = cpu_rx_pps;
 		}
 	}
 
@@ -886,7 +915,6 @@ u16 rmnet_shs_wq_find_cpu_to_move_flows(u16 current_cpu,
 			     current_cpu, cpu_to_move, cur_cpu_rx_pps,
 			     rx_flow_tbl_p->cpu_list[cpu_to_move].rx_pps,
 			     NULL, NULL);
-
 	return cpu_to_move;
 }
 
@@ -1206,14 +1234,14 @@ void rmnet_shs_wq_update_ep_rps_msk(struct rmnet_shs_wq_ep_s *ep)
 		rmnet_shs_crit_err[RMNET_SHS_WQ_EP_ACCESS_ERR]++;
 		return;
 	}
-
+	rcu_read_lock();
 	map = rcu_dereference(ep->ep->egress_dev->_rx->rps_map);
 	ep->rps_config_msk = 0;
 	if (map != NULL) {
 		for (len = 0; len < map->len; len++)
 			ep->rps_config_msk |= (1 << map->cpus[len]);
 	}
-
+	rcu_read_unlock();
 	ep->default_core_msk = ep->rps_config_msk & 0x0F;
 	ep->pri_core_msk = ep->rps_config_msk & 0xF0;
 }
@@ -1260,6 +1288,26 @@ void rmnet_shs_wq_refresh_ep_masks(void)
 		rmnet_shs_wq_update_ep_rps_msk(ep);
 	}
 }
+
+void rmnet_shs_update_cfg_mask(void)
+{
+	/* Start with most avaible mask all eps could share*/
+	u8 mask = UPDATE_MASK;
+	struct rmnet_shs_wq_ep_s *ep;
+
+	list_for_each_entry(ep, &rmnet_shs_wq_ep_tbl, ep_list_id) {
+
+		if (!ep->is_ep_active)
+			continue;
+		/* Bitwise and to get common mask  VNDs with different mask
+		 * will have UNDEFINED behavior
+		 */
+		mask &= ep->rps_config_msk;
+	}
+	rmnet_shs_cfg.map_mask = mask;
+	rmnet_shs_cfg.map_len = rmnet_shs_get_mask_len(mask);
+}
+
 static void rmnet_shs_wq_update_stats(void)
 {
 	struct timespec time;
@@ -1268,6 +1316,7 @@ static void rmnet_shs_wq_update_stats(void)
 	(void) getnstimeofday(&time);
 	rmnet_shs_wq_tnsec = RMNET_SHS_SEC_TO_NSEC(time.tv_sec) + time.tv_nsec;
 	rmnet_shs_wq_refresh_ep_masks();
+	rmnet_shs_update_cfg_mask();
 
 	list_for_each_entry(hnode, &rmnet_shs_wq_hstat_tbl, hstat_node_id) {
 		if (!hnode)
@@ -1363,7 +1412,7 @@ void rmnet_shs_wq_gather_rmnet_ep(struct net_device *dev)
 		trace_rmnet_shs_wq_high(RMNET_SHS_WQ_EP_TBL,
 					RMNET_SHS_WQ_EP_TBL_INIT,
 					0xDEF, 0xDEF, 0xDEF, 0xDEF, ep, NULL);
-		ep_wq = kzalloc(sizeof(*ep_wq), 0);
+		ep_wq = kzalloc(sizeof(*ep_wq), GFP_ATOMIC);
 		if (!ep_wq) {
 			rmnet_shs_crit_err[RMNET_SHS_WQ_ALLOC_EP_TBL_ERR]++;
 			return;
@@ -1423,7 +1472,7 @@ void rmnet_shs_wq_init(struct net_device *dev)
 	}
 
 	rmnet_shs_delayed_wq = kmalloc(sizeof(struct rmnet_shs_delay_wq_s),
-						GFP_ATOMIC);
+				       GFP_ATOMIC);
 
 	if (!rmnet_shs_delayed_wq) {
 		rmnet_shs_crit_err[RMNET_SHS_WQ_ALLOC_DEL_WQ_ERR]++;
