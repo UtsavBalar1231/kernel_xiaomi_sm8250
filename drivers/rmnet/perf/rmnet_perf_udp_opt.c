@@ -52,7 +52,6 @@ update_udp_flush_stat(enum rmnet_perf_udp_opt_flush_reasons stat)
 }
 
 /* udp_pkt_can_be_merged() - Check if packet can be merged
- * @skb:        Source socket buffer containing current MAP frames
  * @flow_node:  flow node meta data for checking condition
  * @pkt_info: characteristics of the current packet
  *
@@ -64,23 +63,29 @@ update_udp_flush_stat(enum rmnet_perf_udp_opt_flush_reasons stat)
  *      merge status
  **/
 static enum rmnet_perf_udp_opt_merge_check_rc
-udp_pkt_can_be_merged(struct sk_buff *skb,
-		      struct rmnet_perf_opt_flow_node *flow_node,
+udp_pkt_can_be_merged(struct rmnet_perf_opt_flow_node *flow_node,
 		      struct rmnet_perf_pkt_info *pkt_info)
 {
-	u16 payload_len = pkt_info->payload_len;
+	u16 gso_len;
+
+	/* Use any previous GRO information, if present */
+	if (pkt_info->frag_desc && pkt_info->frag_desc->gso_size)
+		gso_len = pkt_info->frag_desc->gso_size;
+	else
+		gso_len = pkt_info->payload_len;
 
 	/* 1. validate length */
-	if (flow_node->gso_len != payload_len) {
+	if (flow_node->gso_len != gso_len) {
 		update_udp_flush_stat(RMNET_PERF_UDP_OPT_LENGTH_MISMATCH);
 		return RMNET_PERF_UDP_OPT_FLUSH_SOME;
 	}
 
 	/* 2. check for size/count overflow */
-	if ((payload_len + flow_node->len >= rmnet_perf_udp_opt_flush_limit)) {
+	if (pkt_info->payload_len + flow_node->len >=
+	    rmnet_perf_udp_opt_flush_limit) {
 		update_udp_flush_stat(RMNET_PERF_UDP_OPT_64K_LIMIT);
 		return RMNET_PERF_UDP_OPT_FLUSH_SOME;
-	} else if ((flow_node->num_pkts_held >= 50)) {
+	} else if (flow_node->num_pkts_held >= 50) {
 		update_udp_flush_stat(RMNET_PERF_UDP_OPT_NO_SPACE_IN_NODE);
 		return RMNET_PERF_UDP_OPT_FLUSH_SOME;
 	}
@@ -88,8 +93,6 @@ udp_pkt_can_be_merged(struct sk_buff *skb,
 }
 
 /* rmnet_perf_udp_opt_ingress() - Core business logic of udp_opt
- * @perf: allows access to our required global structures
- * @skb: the incoming ip packet
  * @pkt_info: characteristics of the current packet
  * @flush: IP flag mismatch detected
  *
@@ -101,8 +104,7 @@ udp_pkt_can_be_merged(struct sk_buff *skb,
  * Return:
  *		- void
  **/
-void rmnet_perf_udp_opt_ingress(struct rmnet_perf *perf, struct sk_buff *skb,
-				struct rmnet_perf_opt_flow_node *flow_node,
+void rmnet_perf_udp_opt_ingress(struct rmnet_perf_opt_flow_node *flow_node,
 				struct rmnet_perf_pkt_info *pkt_info,
 				bool flush)
 {
@@ -110,9 +112,10 @@ void rmnet_perf_udp_opt_ingress(struct rmnet_perf *perf, struct sk_buff *skb,
 
 	if (flush) {
 		rmnet_perf_opt_update_flow(flow_node, pkt_info);
-		rmnet_perf_opt_flush_single_flow_node(perf, flow_node);
-		rmnet_perf_core_flush_curr_pkt(perf, skb, pkt_info,
-					       pkt_info->header_len +
+		rmnet_perf_opt_flush_single_flow_node(flow_node);
+		rmnet_perf_core_flush_curr_pkt(pkt_info,
+					       pkt_info->ip_len +
+					       pkt_info->trans_len +
 					       pkt_info->payload_len, false,
 					       false);
 		update_udp_flush_stat(RMNET_PERF_UDP_OPT_FLAG_MISMATCH);
@@ -122,17 +125,15 @@ void rmnet_perf_udp_opt_ingress(struct rmnet_perf *perf, struct sk_buff *skb,
 	/* Go ahead and insert the packet now if we're not holding anything.
 	 * We know at this point that it's a normal packet in the flow
 	 */
-	if (!flow_node->num_pkts_held) {
-		rmnet_perf_opt_insert_pkt_in_flow(skb, flow_node, pkt_info);
-		return;
-	}
+	if (!flow_node->num_pkts_held)
+		goto insert;
 
-	rc = udp_pkt_can_be_merged(skb, flow_node, pkt_info);
-	if (rc == RMNET_PERF_UDP_OPT_FLUSH_SOME) {
-		rmnet_perf_opt_flush_single_flow_node(perf, flow_node);
-		rmnet_perf_opt_insert_pkt_in_flow(skb, flow_node, pkt_info);
-	} else if (rc == RMNET_PERF_UDP_OPT_MERGE_SUCCESS) {
+	rc = udp_pkt_can_be_merged(flow_node, pkt_info);
+	if (rc == RMNET_PERF_UDP_OPT_FLUSH_SOME)
+		rmnet_perf_opt_flush_single_flow_node(flow_node);
+	else if (rc == RMNET_PERF_UDP_OPT_MERGE_SUCCESS)
 		pkt_info->first_packet = false;
-		rmnet_perf_opt_insert_pkt_in_flow(skb, flow_node, pkt_info);
-	}
+
+insert:
+	rmnet_perf_opt_insert_pkt_in_flow(flow_node, pkt_info);
 }

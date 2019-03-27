@@ -33,8 +33,7 @@ enum rmnet_perf_udp_opt_flush_reasons {
 	RMNET_PERF_UDP_OPT_NUM_CONDITIONS
 };
 
-void rmnet_perf_udp_opt_ingress(struct rmnet_perf *perf, struct sk_buff *skb,
-				struct rmnet_perf_opt_flow_node *flow_node,
+void rmnet_perf_udp_opt_ingress(struct rmnet_perf_opt_flow_node *flow_node,
 				struct rmnet_perf_pkt_info *pkt_info,
 				bool flush);
 #endif /* _RMNET_PERF_UDP_OPT_H_ */
