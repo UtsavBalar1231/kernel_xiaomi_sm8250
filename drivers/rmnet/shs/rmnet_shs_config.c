@@ -68,6 +68,8 @@ void __exit rmnet_shs_module_exit(void)
 	RCU_INIT_POINTER(rmnet_shs_skb_entry, NULL);
 
 	if (rmnet_shs_cfg.rmnet_shs_init_complete) {
+		qmi_rmnet_ps_ind_deregister(rmnet_shs_cfg.port,
+					    &rmnet_shs_cfg.rmnet_idl_ind_cb);
 		rmnet_shs_cancel_table();
 		rmnet_shs_rx_wq_exit();
 		rmnet_shs_wq_exit();
@@ -109,6 +111,8 @@ static int rmnet_shs_dev_notify_cb(struct notifier_block *nb,
 		    !strcmp(dev->name, "rmnet_mhi0"))) &&
 		    rmnet_shs_cfg.rmnet_shs_init_complete) {
 			RCU_INIT_POINTER(rmnet_shs_skb_entry, NULL);
+			qmi_rmnet_ps_ind_deregister(rmnet_shs_cfg.port,
+					    &rmnet_shs_cfg.rmnet_idl_ind_cb);
 			rmnet_shs_cancel_table();
 			rmnet_shs_rx_wq_exit();
 			rmnet_shs_wq_exit();
