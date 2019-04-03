@@ -996,6 +996,13 @@ void DWC_ETH_QOS_adjust_link(struct net_device *dev)
 	if (new_state) {
 		phy_print_status(phydev);
 
+#ifdef CONFIG_MSM_BOOT_TIME_MARKER
+		if ((phydev->link == 1) && !pdata->print_kpi) {
+			place_marker("M - Ethernet is Ready.Link is UP");
+			pdata->print_kpi = 1;
+		}
+#endif
+
 		if (pdata->ipa_enabled && netif_running(dev)) {
 			if (phydev->link == 1)
 				 DWC_ETH_QOS_ipa_offload_event_handler(pdata, EV_PHY_LINK_UP);

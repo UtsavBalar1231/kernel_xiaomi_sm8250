@@ -2013,7 +2013,9 @@ static int DWC_ETH_QOS_probe(struct platform_device *pdev)
 	int ret = 0;
 
 	EMACDBG("--> DWC_ETH_QOS_probe\n");
-
+#ifdef CONFIG_MSM_BOOT_TIME_MARKER
+	place_marker("M - Ethernet probe start");
+#endif
 	if (of_device_is_compatible(pdev->dev.of_node, "qcom,emac-smmu-embedded"))
 		return emac_emb_smmu_cb_probe(pdev);
 
@@ -2309,7 +2311,9 @@ static INT DWC_ETH_QOS_suspend(struct platform_device *pdev, pm_message_t state)
 	DWC_ETH_QOS_suspend_clks(pdata);
 
 	EMACDBG("<--DWC_ETH_QOS_suspend ret = %d\n", ret);
-
+#ifdef CONFIG_MSM_BOOT_TIME_MARKER
+	pdata->print_kpi = 0;
+#endif
 	return ret;
 }
 
