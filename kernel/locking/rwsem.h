@@ -228,6 +228,8 @@ static inline void __down_read(struct rw_semaphore *sem)
 {
 	if (unlikely(atomic_long_inc_return_acquire(&sem->count) <= 0))
 		rwsem_down_read_failed(sem);
+	else
+		rwsem_set_reader_owned(sem);
 }
 
 static inline int __down_read_killable(struct rw_semaphore *sem)
@@ -235,8 +237,9 @@ static inline int __down_read_killable(struct rw_semaphore *sem)
 	if (unlikely(atomic_long_inc_return_acquire(&sem->count) <= 0)) {
 		if (IS_ERR(rwsem_down_read_failed_killable(sem)))
 			return -EINTR;
+	} else {
+		rwsem_set_reader_owned(sem);
 	}
-
 	return 0;
 }
 
@@ -250,6 +253,7 @@ static inline int __down_read_trylock(struct rw_semaphore *sem)
 	do {
 		if (atomic_long_try_cmpxchg_acquire(&sem->count, &tmp,
 					tmp + RWSEM_ACTIVE_READ_BIAS)) {
+			rwsem_set_reader_owned(sem);
 			return 1;
 		}
 	} while (tmp >= 0);
@@ -267,6 +271,7 @@ static inline void __down_write(struct rw_semaphore *sem)
 					     &sem->count);
 	if (unlikely(tmp != RWSEM_ACTIVE_WRITE_BIAS))
 		rwsem_down_write_failed(sem);
+	rwsem_set_owner(sem);
 }
 
 static inline int __down_write_killable(struct rw_semaphore *sem)
@@ -278,6 +283,7 @@ static inline int __down_write_killable(struct rw_semaphore *sem)
 	if (unlikely(tmp != RWSEM_ACTIVE_WRITE_BIAS))
 		if (IS_ERR(rwsem_down_write_failed_killable(sem)))
 			return -EINTR;
+	rwsem_set_owner(sem);
 	return 0;
 }
 
@@ -287,7 +293,11 @@ static inline int __down_write_trylock(struct rw_semaphore *sem)
 
 	tmp = atomic_long_cmpxchg_acquire(&sem->count, RWSEM_UNLOCKED_VALUE,
 		      RWSEM_ACTIVE_WRITE_BIAS);
-	return tmp == RWSEM_UNLOCKED_VALUE;
+	if (tmp == RWSEM_UNLOCKED_VALUE) {
+		rwsem_set_owner(sem);
+		return true;
+	}
+	return false;
 }
 
 /*
@@ -297,6 +307,7 @@ static inline void __up_read(struct rw_semaphore *sem)
 {
 	long tmp;
 
+	rwsem_clear_reader_owned(sem);
 	tmp = atomic_long_dec_return_release(&sem->count);
 	if (unlikely(tmp < -1 && (tmp & RWSEM_ACTIVE_MASK) == 0))
 		rwsem_wake(sem);
@@ -307,6 +318,7 @@ static inline void __up_read(struct rw_semaphore *sem)
  */
 static inline void __up_write(struct rw_semaphore *sem)
 {
+	rwsem_clear_owner(sem);
 	if (unlikely(atomic_long_sub_return_release(RWSEM_ACTIVE_WRITE_BIAS,
 						    &sem->count) < 0))
 		rwsem_wake(sem);
@@ -327,6 +339,7 @@ static inline void __downgrade_write(struct rw_semaphore *sem)
 	 * write side. As such, rely on RELEASE semantics.
 	 */
 	tmp = atomic_long_add_return_release(-RWSEM_WAITING_BIAS, &sem->count);
+	rwsem_set_reader_owned(sem);
 	if (tmp < 0)
 		rwsem_downgrade_wake(sem);
 }
