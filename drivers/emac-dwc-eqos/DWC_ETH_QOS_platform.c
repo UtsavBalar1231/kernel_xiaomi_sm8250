@@ -2257,12 +2257,12 @@ static INT DWC_ETH_QOS_resume(struct platform_device *pdev)
 	struct DWC_ETH_QOS_prv_data *pdata = netdev_priv(dev);
 	INT ret;
 
-	DBGPR("-->DWC_ETH_QOS_resume\n");
+	EMACDBG("-->DWC_ETH_QOS_resume\n");
 	if (of_device_is_compatible(pdev->dev.of_node, "qcom,emac-smmu-embedded"))
 		return 0;
 
 	if (!dev || !netif_running(dev)) {
-		DBGPR("<--DWC_ETH_QOS_dev_resume\n");
+		EMACERR("<--DWC_ETH_QOS_dev_resume not possible\n");
 		return -EINVAL;
 	}
 
@@ -2294,7 +2294,7 @@ static INT DWC_ETH_QOS_resume(struct platform_device *pdev)
 	/* Set a wakeup event to ensure enough time for processing */
 	pm_wakeup_event(&pdev->dev, 5000);
 
-	DBGPR("<--DWC_ETH_QOS_resume\n");
+	EMACDBG("<--DWC_ETH_QOS_resume\n");
 
 	return ret;
 }
