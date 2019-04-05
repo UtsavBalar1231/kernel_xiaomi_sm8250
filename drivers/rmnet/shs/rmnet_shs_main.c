@@ -711,8 +711,6 @@ static void rmnet_shs_flush_core_work(struct work_struct *work)
 	rmnet_shs_flush_reason[RMNET_SHS_FLUSH_WQ_CORE_FLUSH]++;
 }
 
-
-
 /* Flushes all the packets parked in order for this flow */
 void rmnet_shs_flush_node(struct rmnet_shs_skbn_s *node, u8 ctext)
 {
@@ -767,6 +765,48 @@ void rmnet_shs_flush_node(struct rmnet_shs_skbn_s *node, u8 ctext)
 	SHS_TRACE_HIGH(RMNET_SHS_FLUSH, RMNET_SHS_FLUSH_NODE_END,
 			     node->hash, hash2stamp,
 			     skbs_delivered, skb_bytes_delivered, node, NULL);
+}
+
+void rmnet_shs_clear_node(struct rmnet_shs_skbn_s *node, u8 ctxt)
+{
+	struct sk_buff *skb;
+	struct sk_buff *nxt_skb = NULL;
+	u32 skbs_delivered = 0;
+	u32 skb_bytes_delivered = 0;
+	u32 hash2stamp;
+	u8 map, maplen;
+
+	if (!node->skb_list.head)
+		return;
+	map = rmnet_shs_cfg.map_mask;
+	maplen = rmnet_shs_cfg.map_len;
+
+	if (map) {
+		hash2stamp = rmnet_shs_form_hash(node->map_index,
+						 maplen,
+						 node->skb_list.head->hash);
+	} else {
+		node->is_shs_enabled = 0;
+	}
+
+	for ((skb = node->skb_list.head); skb != NULL; skb = nxt_skb) {
+		nxt_skb = skb->next;
+		if (node->is_shs_enabled)
+			skb->hash = hash2stamp;
+
+		skb->next = NULL;
+		skbs_delivered += 1;
+		skb_bytes_delivered += skb->len;
+		if (ctxt == RMNET_RX_CTXT)
+			rmnet_shs_deliver_skb(skb);
+		else
+			rmnet_shs_deliver_skb_wq(skb);
+	}
+	rmnet_shs_crit_err[RMNET_SHS_WQ_COMSUME_PKTS]++;
+
+	rmnet_shs_cfg.num_bytes_parked -= skb_bytes_delivered;
+	rmnet_shs_cfg.num_pkts_parked -= skbs_delivered;
+	rmnet_shs_cpu_node_tbl[node->map_cpu].parkedlen -= skbs_delivered;
 }
 
 /* Evaluates if all the packets corresponding to a particular flow can
@@ -1070,6 +1110,20 @@ static void rmnet_flush_buffered(struct work_struct *work)
 		rmnet_shs_flush_table(is_force_flush,
 				      RMNET_WQ_CTXT);
 
+		/* If packets remain restart the timer in case there are no
+		 * more NET_RX flushes coming so pkts are no lost
+		 */
+		if (rmnet_shs_fall_back_timer &&
+		    rmnet_shs_cfg.num_bytes_parked &&
+		    rmnet_shs_cfg.num_pkts_parked){
+			if(hrtimer_active(&rmnet_shs_cfg.hrtimer_shs)) {
+				hrtimer_cancel(&rmnet_shs_cfg.hrtimer_shs);
+			}
+
+			hrtimer_start(&rmnet_shs_cfg.hrtimer_shs,
+				      ns_to_ktime(rmnet_shs_timeout * NS_IN_MS),
+				      HRTIMER_MODE_REL);
+		}
 		rmnet_shs_flush_reason[RMNET_SHS_FLUSH_WQ_FB_FLUSH]++;
 		local_bh_enable();
 	}
