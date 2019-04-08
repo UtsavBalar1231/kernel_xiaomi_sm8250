@@ -1122,30 +1122,24 @@ static int DWC_ETH_QOS_init_phy(struct net_device *dev)
 #endif
 
 
+	if (pdata->interface == PHY_INTERFACE_MODE_GMII || pdata->interface == PHY_INTERFACE_MODE_RGMII) {
+		phy_set_max_speed(phydev, SPEED_1000);
+		/* Half duplex not supported */
+		phydev->supported &= ~(SUPPORTED_10baseT_Half | SUPPORTED_100baseT_Half | SUPPORTED_1000baseT_Half);
+	} else if ((pdata->interface == PHY_INTERFACE_MODE_MII) || (pdata->interface == PHY_INTERFACE_MODE_RMII)) {
+		phy_set_max_speed(phydev, SPEED_100);
+		/* Half duplex is not supported */
+		phydev->supported &= ~(SUPPORTED_10baseT_Half | SUPPORTED_100baseT_Half);
+	}
+	phydev->advertising = phydev->supported;
 
 	if (pdata->res_data->early_eth_en ) {
 		phydev->autoneg = AUTONEG_DISABLE;
 		phydev->speed = SPEED_100;
-		phy_set_max_speed(phydev, SPEED_100);
 		phydev->duplex = DUPLEX_FULL;
-		phydev->supported = SUPPORTED_100baseT_Full | SUPPORTED_TP | SUPPORTED_MII;
-		phydev->supported &= ~(SUPPORTED_10baseT_Half | SUPPORTED_100baseT_Half | SUPPORTED_1000baseT_Half);
-		phydev->supported &= ~SUPPORTED_Autoneg;
 		phydev->advertising = phydev->supported;
-		phydev->advertising &= ~ADVERTISED_Autoneg;
+		phydev->advertising &= ~(SUPPORTED_1000baseT_Full);
 		EMACDBG("Set max speed to SPEED_100 as early ethernet enabled\n");
-	}
-	else {
-		if (pdata->interface == PHY_INTERFACE_MODE_GMII || pdata->interface == PHY_INTERFACE_MODE_RGMII) {
-			phy_set_max_speed(phydev, SPEED_1000);
-			/* Half duplex not supported */
-			phydev->supported &= ~(SUPPORTED_10baseT_Half | SUPPORTED_100baseT_Half | SUPPORTED_1000baseT_Half);
-		} else if ((pdata->interface == PHY_INTERFACE_MODE_MII) || (pdata->interface == PHY_INTERFACE_MODE_RMII)) {
-			phy_set_max_speed(phydev, SPEED_100);
-			/* Half duplex is not supported */
-			phydev->supported &= ~(SUPPORTED_10baseT_Half | SUPPORTED_100baseT_Half);
-		}
-		phydev->advertising = phydev->supported;
 	}
 
 	pdata->phydev = phydev;
