@@ -452,8 +452,6 @@ void rmnet_perf_core_ps_on(void *port)
 	struct rmnet_perf *perf = rmnet_perf_config_get_perf();
 
 	rmnet_perf_core_bm_flush_on = 0;
-	rmnet_perf_opt_flush_all_flow_nodes(perf);
-	rmnet_perf_core_flush_reason_cnt[RMNET_PERF_CORE_PS_MODE_ON]++;
 	/* Essentially resets expected packet count to safe state */
 	perf->core_meta->bm_state->expect_packets = -1;
 }
