@@ -24,7 +24,6 @@ MODULE_LICENSE("GPL v2");
 #define RMNET_SHS_NSEC_TO_SEC(x) ((x)/1000000000)
 #define RMNET_SHS_BYTE_TO_BIT(x) ((x)*8)
 #define RMNET_SHS_MIN_HSTAT_NODES_REQD 16
-#define RMNET_SHS_WQ_DELAY_TICKS  10
 
 #define PERIODIC_CLEAN 0
 /* FORCE_CLEAN should only used during module de-ini.*/
@@ -35,7 +34,7 @@ MODULE_LICENSE("GPL v2");
  */
 
 /* Local Definitions and Declarations */
-unsigned int rmnet_shs_cpu_prio_dur __read_mostly = RMNET_SHS_WQ_DELAY_TICKS;
+unsigned int rmnet_shs_cpu_prio_dur __read_mostly = 3;
 module_param(rmnet_shs_cpu_prio_dur, uint, 0644);
 MODULE_PARM_DESC(rmnet_shs_cpu_prio_dur, "Priority ignore duration(ticks)");
 
@@ -1180,6 +1179,22 @@ int rmnet_shs_wq_get_perf_cpu_new_flow(struct net_device *dev)
 	return cpu_assigned;
 }
 
+
+static int rmnet_shs_wq_time_check(time_t time, int num_flows)
+{
+
+	int ret = false;
+
+	if (time > rmnet_shs_max_flow_inactivity_sec)
+		ret = true;
+	else if (num_flows > FLOW_LIMIT2 && time > INACTIVE_TSEC2)
+		ret = true;
+	else if (num_flows > FLOW_LIMIT1 && time > INACTIVE_TSEC1)
+		ret = true;
+
+	return ret;
+}
+
 void rmnet_shs_wq_cleanup_hash_tbl(u8 force_clean)
 {
 	struct rmnet_shs_skbn_s *node_p;
@@ -1199,7 +1214,13 @@ void rmnet_shs_wq_cleanup_hash_tbl(u8 force_clean)
 
 		node_p = hnode->node;
 		tns2s = RMNET_SHS_NSEC_TO_SEC(hnode->inactive_duration);
-		if (tns2s > rmnet_shs_max_flow_inactivity_sec || force_clean) {
+
+		/* Flows are cleanup from book keeping faster if
+		 * there are a lot of active flows already in memory
+		 */
+
+		if (rmnet_shs_wq_time_check(tns2s, rmnet_shs_cfg.num_flows) ||
+		    force_clean) {
 
 			trace_rmnet_shs_wq_low(RMNET_SHS_WQ_FLOW_STATS,
 			    RMNET_SHS_WQ_FLOW_STATS_FLOW_INACTIVE_TIMEOUT,
@@ -1219,6 +1240,7 @@ void rmnet_shs_wq_cleanup_hash_tbl(u8 force_clean)
 			} else {
 				rmnet_shs_wq_hstat_reset_node(hnode);
 			}
+			rmnet_shs_cfg.num_flows--;
 			spin_unlock_irqrestore(&rmnet_shs_ht_splock, ht_flags);
 		}
 	}

@@ -1323,7 +1323,6 @@ void rmnet_shs_assign(struct sk_buff *skb, struct rmnet_port *port)
 				RMNET_SHS_ASSIGN_MATCH_FLOW_COMPLETE,
 				0xDEF, 0xDEF, 0xDEF, 0xDEF, skb, NULL);
 
-			node_p->num_skb_bytes += skb->len;
 			cpu_map_index = node_p->map_index;
 
 			rmnet_shs_chain_to_skb_list(skb, node_p);
@@ -1341,13 +1340,18 @@ void rmnet_shs_assign(struct sk_buff *skb, struct rmnet_port *port)
 			rmnet_shs_crit_err[RMNET_SHS_RPS_MASK_CHANGE]++;
 			break;
 		}
-
 		node_p = kzalloc(sizeof(*node_p), GFP_ATOMIC);
 
 		if (!node_p) {
 			rmnet_shs_crit_err[RMNET_SHS_MAIN_MALLOC_ERR]++;
 			break;
 		}
+
+		if (rmnet_shs_cfg.num_flows > MAX_FLOWS) {
+			rmnet_shs_crit_err[RMNET_SHS_MAX_FLOWS]++;
+			break;
+		}
+		rmnet_shs_cfg.num_flows++;
 
 		node_p->dev = skb->dev;
 		node_p->hash = skb->hash;
