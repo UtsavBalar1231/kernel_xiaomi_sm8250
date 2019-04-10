@@ -992,6 +992,11 @@ void rmnet_shs_chain_to_skb_list(struct sk_buff *skb,
 
 		}
 	} else {
+		/* This should only have TCP based on current
+		 * rmnet_shs_is_skb_stamping_reqd logic. Unoptimal
+		 * if non UDP/TCP protos are supported
+		 */
+
 		/* Early flush for TCP if PSH packet.
 		 * Flush before parking PSH packet.
 		 */
@@ -1002,15 +1007,19 @@ void rmnet_shs_chain_to_skb_list(struct sk_buff *skb,
 			pushflush = 1;
 		}
 
-		/* TCP load tweaked for WQ since LRO changes load
-		 * of each packet
-		 */
-		node->num_skb += ((skb->len / 4000) + 1);
-		rmnet_shs_cpu_node_tbl[node->map_cpu].parkedlen++;
-		node->skb_list.skb_load += ((skb->len / 4000) + 1);
+		/* TCP support for gso marked packets */
+		if (skb_shinfo(skb)->gso_segs) {
+			node->num_skb += skb_shinfo(skb)->gso_segs;
+			rmnet_shs_cpu_node_tbl[node->map_cpu].parkedlen++;
+			node->skb_list.skb_load += skb_shinfo(skb)->gso_segs;
+		} else {
+			node->num_skb += 1;
+			rmnet_shs_cpu_node_tbl[node->map_cpu].parkedlen++;
+			node->skb_list.skb_load++;
+
+		}
 
 	}
-
 	node->num_skb_bytes += skb->len;
 
 	node->skb_list.num_parked_bytes += skb->len;
