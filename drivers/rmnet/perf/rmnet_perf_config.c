@@ -106,11 +106,13 @@ static void rmnet_perf_config_free_64k_buffs(struct rmnet_perf *perf)
  *		- status of the freeing dependent on the validity of the perf
  **/
 static enum rmnet_perf_resource_management_e
-rmnet_perf_config_free_resources(struct rmnet_perf *perf,
-				 struct net_device *dev)
+rmnet_perf_config_free_resources(struct rmnet_perf *perf)
 {
-	if (!perf)
+	if (!perf) {
+		pr_err("%s(): Cannot free resources without proper perf\n",
+		       __func__);
 		return RMNET_PERF_RESOURCE_MGMT_FAIL;
+	}
 
 	/* Free everything flow nodes currently hold */
 	rmnet_perf_opt_flush_all_flow_nodes(perf);
@@ -264,11 +266,9 @@ rmnet_perf_config_register_callbacks(struct net_device *dev,
 	return rc;
 }
 
-static void rmnet_perf_netdev_down(struct net_device *dev)
+static enum rmnet_perf_resource_management_e rmnet_perf_netdev_down(void)
 {
-	enum rmnet_perf_resource_management_e config_status;
-
-	config_status = rmnet_perf_config_free_resources(perf, dev);
+	return rmnet_perf_config_free_resources(perf);
 }
 
 static int rmnet_perf_netdev_up(struct net_device *real_dev,
@@ -302,14 +302,49 @@ static int rmnet_perf_netdev_up(struct net_device *real_dev,
 	return RMNET_PERF_RESOURCE_MGMT_SUCCESS;
 }
 
+static enum rmnet_perf_resource_management_e
+rmnet_perf_dereg_callbacks(struct net_device *dev,
+			   struct rmnet_perf_core_meta *core_meta)
+{
+	struct rmnet_port *port;
+	enum rmnet_perf_resource_management_e return_val =
+					RMNET_PERF_RESOURCE_MGMT_SUCCESS;
+	enum rmnet_perf_resource_management_e return_val_final =
+					RMNET_PERF_RESOURCE_MGMT_SUCCESS;
+
+	port = rmnet_get_port(dev);
+	if (!port || !core_meta) {
+		pr_err("%s(): rmnet port or core_meta is missing for "
+		       "dev = %s\n", __func__, dev->name);
+		return RMNET_PERF_RESOURCE_MGMT_FAIL;
+	}
+
+	/* Unregister for DL marker */
+	return_val = rmnet_map_dl_ind_deregister(port, core_meta->dl_ind);
+	return_val_final = return_val;
+	if (!return_val)
+		kfree(core_meta->dl_ind);
+	return_val = qmi_rmnet_ps_ind_deregister(port, core_meta->ps_ind);
+	return_val_final |= return_val;
+	if (!return_val)
+		kfree(core_meta->ps_ind);
+
+	if (return_val_final)
+		pr_err("%s(): rmnet_perf related callbacks may "
+			"not be deregistered properly\n",
+			__func__);
+
+	return return_val_final;
+}
+
 /* TODO Needs modifying*/
 static int rmnet_perf_config_notify_cb(struct notifier_block *nb,
 				       unsigned long event, void *data)
 {
+	struct rmnet_port *port;
 	enum rmnet_perf_resource_management_e return_val =
 					RMNET_PERF_RESOURCE_MGMT_SUCCESS;
 	struct net_device *dev = netdev_notifier_info_to_dev(data);
-	struct rmnet_port *port = rmnet_get_port(dev);
 
 	if (!dev)
 		return NOTIFY_DONE;
@@ -323,14 +358,11 @@ static int rmnet_perf_config_notify_cb(struct notifier_block *nb,
 				perf->core_meta;
 			pr_err("%s(): rmnet_perf netdevice unregister\n",
 			       __func__);
-			/* Unregister for DL marker */
-			rmnet_map_dl_ind_deregister(port,
-						    core_meta->dl_ind);
-			kfree(core_meta->dl_ind);
-			qmi_rmnet_ps_ind_deregister(port,
-						    core_meta->ps_ind);
-			kfree(core_meta->ps_ind);
-			rmnet_perf_netdev_down(dev);
+			return_val = rmnet_perf_dereg_callbacks(dev, core_meta);
+			return_val |= rmnet_perf_netdev_down();
+			if (return_val)
+				pr_err("%s(): Error on netdev down event\n",
+				       __func__);
 			RCU_INIT_POINTER(rmnet_perf_deag_entry, NULL);
 		}
 		break;
@@ -340,8 +372,6 @@ static int rmnet_perf_config_notify_cb(struct notifier_block *nb,
 		/* Check prevents us from allocating resources for every
 		 * interface
 		 */
-
-
 		if (!rmnet_perf_deag_entry &&
 		    strncmp(dev->name, "rmnet_data", 10) == 0) {
 			struct rmnet_priv *priv = netdev_priv(dev);
@@ -349,11 +379,16 @@ static int rmnet_perf_config_notify_cb(struct notifier_block *nb,
 			return_val |= rmnet_perf_netdev_up(priv->real_dev,
 							   port);
 			if (return_val == RMNET_PERF_RESOURCE_MGMT_FAIL) {
-				pr_err("%s(): rmnet_perf allocation or "
-				       "registry failed. Potentially falling "
-				       "back on legacy path\n",
+				pr_err("%s(): rmnet_perf allocation "
+				       "failed. Falling back on legacy path\n",
 					__func__);
 				goto exit;
+			} else if (return_val ==
+				   RMNET_PERF_RESOURCE_MGMT_SEMI_FAIL) {
+				pr_err("%s(): rmnet_perf recycle buffer "
+				       "allocation or callback registry "
+				       "failed. Continue without them\n",
+					__func__);
 			}
 			RCU_INIT_POINTER(rmnet_perf_deag_entry,
 					 rmnet_perf_core_deaggregate);
