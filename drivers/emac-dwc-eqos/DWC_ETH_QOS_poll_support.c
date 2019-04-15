@@ -42,7 +42,6 @@ static ssize_t pps_fops_read(struct file *filp, char __user *buf,
 	info = filp->private_data;
 
 	if (info->channel_no == AVB_CLASS_A_CHANNEL_NUM ) {
-		avb_class_a_msg_wq_flag = 0;
 		temp_buf = kzalloc(buf_len, GFP_KERNEL);
 		if (!temp_buf)
 			return -ENOMEM;
@@ -57,7 +56,6 @@ static ssize_t pps_fops_read(struct file *filp, char __user *buf,
 		kfree(temp_buf);
 		EMACERR("poll pps2intr info=%d sent by kernel\n", gDWC_ETH_QOS_prv_data->avb_class_a_intr_cnt);
 	} else if (info->channel_no == AVB_CLASS_B_CHANNEL_NUM ) {
-		avb_class_b_msg_wq_flag = 0;
 		temp_buf = kzalloc(buf_len, GFP_KERNEL);
 		if (!temp_buf)
 			return -ENOMEM;
@@ -94,6 +92,7 @@ static unsigned int pps_fops_poll(struct file *file, poll_table *wait)
 		if (avb_class_a_msg_wq_flag == 1) {
 			//Sending read mask
 			mask |= POLLIN | POLLRDNORM;
+			avb_class_a_msg_wq_flag = 0;
 		}
 	} else if (info->channel_no == AVB_CLASS_B_CHANNEL_NUM) {
 		EMACDBG("avb_class_b_fops_poll wait\n");
@@ -105,6 +104,7 @@ static unsigned int pps_fops_poll(struct file *file, poll_table *wait)
 		if (avb_class_b_msg_wq_flag == 1) {
 			//Sending read mask
 			mask |= POLLIN | POLLRDNORM;
+			avb_class_b_msg_wq_flag = 0;
 		}
 	} else {
 		EMACERR("invalid channel %d\n",info->channel_no);
