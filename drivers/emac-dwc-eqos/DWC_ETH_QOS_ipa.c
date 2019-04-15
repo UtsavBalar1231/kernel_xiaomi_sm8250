@@ -660,6 +660,7 @@ static void ntn_ipa_notify_cb(void *priv, enum ipa_dp_evt_type evt,
 	struct DWC_ETH_QOS_prv_ipa_data *ntn_ipa = &pdata->prv_ipa;
 	struct sk_buff *skb = (struct sk_buff *)data;
 	struct iphdr *ip_hdr = NULL;
+	int stat = NET_RX_SUCCESS;
 
 	if(!pdata || !skb) {
 		EMACERR("Null Param %s pdata %p skb %p \n", __func__, pdata, skb);
@@ -686,21 +687,25 @@ static void ntn_ipa_notify_cb(void *priv, enum ipa_dp_evt_type evt,
 		/* Submit packet to network stack */
 		/* If its a ping packet submit it via rx_ni else use rx */
 		if (ip_hdr->protocol == IPPROTO_ICMP) {
-			netif_rx_ni(skb);
+			stat = netif_rx_ni(skb);
 		} else if ((pdata->dev->stats.rx_packets %
 				IPA_ETH_RX_SOFTIRQ_THRESH) == 0){
-			netif_rx_ni(skb);
+			stat = netif_rx_ni(skb);
 		} else {
-			netif_rx(skb);
+			stat = netif_rx(skb);
 		}
 
-		/* Update Statistics */
-		pdata->ipa_stats.ipa_ul_exception++;
+		if(stat == NET_RX_DROP) {
+			pdata->dev->stats.rx_dropped++;
+		} else {
+			/* Update Statistics */
+			pdata->ipa_stats.ipa_ul_exception++;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
-		pdata->dev->last_rx = jiffies;
+			pdata->dev->last_rx = jiffies;
 #endif
-		pdata->dev->stats.rx_packets++;
-		pdata->dev->stats.rx_bytes += skb->len;
+			pdata->dev->stats.rx_packets++;
+			pdata->dev->stats.rx_bytes += skb->len;
+		}
 	} else {
 		EMACERR("Unhandled Evt %d ",evt);
 		dev_kfree_skb_any(skb);
