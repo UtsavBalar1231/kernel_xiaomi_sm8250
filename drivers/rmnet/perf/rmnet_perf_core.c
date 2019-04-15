@@ -561,6 +561,7 @@ void rmnet_perf_core_handle_packet_ingress(struct sk_buff *skb,
 	/* Push out fragments immediately */
 	if (skip_hash) {
 		rmnet_perf_frag_flush++;
+		rmnet_perf_core_validate_pkt_csum(skb, pkt_info);
 		goto flush;
 	}
 
