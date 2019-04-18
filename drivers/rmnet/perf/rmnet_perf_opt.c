@@ -78,13 +78,17 @@ static int rmnet_perf_set_opt_mode(const char *val,
 				   const struct kernel_param *kp)
 {
 	struct rmnet_perf *perf;
+	unsigned long ht_flags;
 	int old_mode = rmnet_perf_opt_mode;
 	int rc = -EINVAL;
 	char value[4];
 
 	strlcpy(value, val, 4);
 	value[3] = '\0';
-	spin_lock(&rmnet_perf_opt_lock);
+
+	local_bh_disable();
+	spin_lock_irqsave(&rmnet_perf_opt_lock, ht_flags);
+
 	if (!strcmp(value, "tcp"))
 		rmnet_perf_opt_mode = RMNET_PERF_OPT_MODE_TCP;
 	else if (!strcmp(value, "udp"))
@@ -121,7 +125,9 @@ static int rmnet_perf_set_opt_mode(const char *val,
 	}
 
 out:
-	spin_unlock(&rmnet_perf_opt_lock);
+	spin_unlock_irqrestore(&rmnet_perf_opt_lock, ht_flags);
+	local_bh_enable();
+
 	return rc;
 }
 
