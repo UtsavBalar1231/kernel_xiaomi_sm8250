@@ -1227,6 +1227,7 @@ void rmnet_shs_wq_cleanup_hash_tbl(u8 force_clean)
 			    node_p->hash, tns2s, 0xDEF, 0xDEF, node_p, hnode);
 
 			spin_lock_irqsave(&rmnet_shs_ht_splock, ht_flags);
+			rmnet_shs_clear_node(node_p, RMNET_WQ_CTXT);
 			rmnet_shs_wq_dec_cpu_flow(hnode->current_cpu);
 			if (node_p) {
 				rmnet_shs_cpu_node_remove(node_p);

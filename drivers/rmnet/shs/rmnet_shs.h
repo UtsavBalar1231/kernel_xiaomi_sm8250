@@ -308,6 +308,7 @@ void rmnet_shs_exit(void);
 void rmnet_shs_ps_on_hdlr(void *port);
 void rmnet_shs_ps_off_hdlr(void *port);
 void rmnet_shs_update_cpu_proc_q_all_cpus(void);
+void rmnet_shs_clear_node(struct rmnet_shs_skbn_s *node, u8 ctxt);
 
 u32 rmnet_shs_get_cpu_qhead(u8 cpu_num);
 #endif /* _RMNET_SHS_H_ */
