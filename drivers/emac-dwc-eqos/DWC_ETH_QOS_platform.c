@@ -1037,8 +1037,9 @@ int DWC_ETH_QOS_enable_ptp_clk(struct device *dev)
 	int ret;
 	const char* ptp_clock_name;
 
-	if (dwc_eth_qos_res_data.emac_hw_version_type == EMAC_HW_v2_1_0 ||
-		dwc_eth_qos_res_data.emac_hw_version_type == EMAC_HW_v2_1_2)
+	if (dwc_eth_qos_res_data.emac_hw_version_type == EMAC_HW_v2_1_0
+	    || dwc_eth_qos_res_data.emac_hw_version_type == EMAC_HW_v2_1_2
+	    || dwc_eth_qos_res_data.emac_hw_version_type == EMAC_HW_v2_1_1)
 		ptp_clock_name = "emac_ptp_clk";
 	else
 		ptp_clock_name = "eth_ptp_clk";
@@ -1186,8 +1187,9 @@ static int DWC_ETH_QOS_get_clks(struct device *dev)
 	dwc_eth_qos_res_data.rgmii_clk = NULL;
 	dwc_eth_qos_res_data.ptp_clk = NULL;
 
-	if (dwc_eth_qos_res_data.emac_hw_version_type == EMAC_HW_v2_1_0 ||
-		(dwc_eth_qos_res_data.emac_hw_version_type == EMAC_HW_v2_1_2)) {
+	if (dwc_eth_qos_res_data.emac_hw_version_type == EMAC_HW_v2_1_0
+	    || dwc_eth_qos_res_data.emac_hw_version_type == EMAC_HW_v2_1_2
+	    || dwc_eth_qos_res_data.emac_hw_version_type == EMAC_HW_v2_1_1) {
 		/* EMAC core version 2.1.0 clocks */
 		axi_clock_name = "emac_axi_clk";
 		ahb_clock_name = "emac_slv_ahb_clk";

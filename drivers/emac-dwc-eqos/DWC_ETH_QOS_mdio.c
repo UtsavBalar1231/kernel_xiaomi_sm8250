@@ -543,7 +543,8 @@ static void set_phy_rx_tx_delay(struct DWC_ETH_QOS_prv_data *pdata,
 			EMACDBG("Read 0x%x from offset 0x8\n",phydata);
 			phydata = 0;
 
-		if (pdata->emac_hw_version_type == EMAC_HW_v2_1_2) {
+		if (pdata->emac_hw_version_type == EMAC_HW_v2_1_2
+			|| pdata->emac_hw_version_type == EMAC_HW_v2_1_1) {
 			u16 tx_clk = 0xE;
 			/* Provide TX_CLK  delay of -0.06nsec */
 			DWC_ETH_QOS_mdio_mmd_register_read_direct(pdata, pdata->phyaddr,
@@ -562,7 +563,8 @@ static void set_phy_rx_tx_delay(struct DWC_ETH_QOS_prv_data *pdata,
 		DWC_ETH_QOS_mdio_mmd_register_read_direct(pdata, pdata->phyaddr,
 					DWC_ETH_QOS_MICREL_PHY_DEBUG_MMD_DEV_ADDR,0x5,&phydata);
 		phydata &= ~(0xFF);
-		if (pdata->emac_hw_version_type == EMAC_HW_v2_1_2)
+		if (pdata->emac_hw_version_type == EMAC_HW_v2_1_2 ||
+			pdata->emac_hw_version_type == EMAC_HW_v2_1_1)
 			phydata |= ((0x2 << 12) | (0x2 << 8) | (0x2 << 4) | 0x2);
 		else
 			/* Default settings for EMAC_HW_v2_1_0 */
@@ -579,7 +581,8 @@ static void set_phy_rx_tx_delay(struct DWC_ETH_QOS_prv_data *pdata,
 			DWC_ETH_QOS_mdio_mmd_register_read_direct(pdata, pdata->phyaddr,
 					DWC_ETH_QOS_MICREL_PHY_DEBUG_MMD_DEV_ADDR,0x4,&phydata);
 		phydata &= ~(0xF << 4);
-		if (pdata->emac_hw_version_type == EMAC_HW_v2_1_2)
+		if (pdata->emac_hw_version_type == EMAC_HW_v2_1_2 ||
+			pdata->emac_hw_version_type == EMAC_HW_v2_1_1)
 			phydata |= (0x2 << 4);
 		else
 			/* Default settings for EMAC_HW_v2_1_0 */
@@ -654,9 +657,10 @@ static void configure_phy_rx_tx_delay(struct DWC_ETH_QOS_prv_data *pdata)
 			set_phy_rx_tx_delay(pdata, ENABLE_RX_DELAY, ENABLE_TX_DELAY);
 		} else {
 			/* Settings for RGMII ID mode.
-			Not applicable for EMAC core version 2.1.0 and 2.1.2 */
+			Not applicable for EMAC core version 2.1.0, 2.1.2 and 2.1.1 */
 			if (pdata->emac_hw_version_type != EMAC_HW_v2_1_0 &&
-				pdata->emac_hw_version_type != EMAC_HW_v2_1_2)
+				pdata->emac_hw_version_type != EMAC_HW_v2_1_2 &&
+				pdata->emac_hw_version_type != EMAC_HW_v2_1_1)
 				set_phy_rx_tx_delay(pdata, DISABLE_RX_DELAY, DISABLE_TX_DELAY);
 		}
 		break;
@@ -675,9 +679,10 @@ static void configure_phy_rx_tx_delay(struct DWC_ETH_QOS_prv_data *pdata)
 				set_phy_rx_tx_delay(pdata, DISABLE_RX_DELAY, ENABLE_TX_DELAY);
 			} else {
 				/* Settings for RGMII ID mode */
-				/* Not applicable for EMAC core version 2.1.0 and 2.1.2 */
+				/* Not applicable for EMAC core version 2.1.0, 2.1.2 and 2.1.1 */
 				if (pdata->emac_hw_version_type != EMAC_HW_v2_1_0 &&
-					pdata->emac_hw_version_type != EMAC_HW_v2_1_2)
+					pdata->emac_hw_version_type != EMAC_HW_v2_1_2 &&
+					pdata->emac_hw_version_type != EMAC_HW_v2_1_1)
 					set_phy_rx_tx_delay(pdata, DISABLE_RX_DELAY, DISABLE_TX_DELAY);
 			}
 		}
