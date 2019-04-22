@@ -560,10 +560,14 @@ retry:
 				      addr);
 		}
 
-		if (was_major)
-			mm_event_end(MM_MAJ_FAULT, event_ts);
-		else
+		if (was_major) {
+			if (fault & VM_FAULT_SWAP)
+				mm_event_end(MM_SWP_FAULT, event_ts);
+			else
+				mm_event_end(MM_MAJ_FAULT, event_ts);
+		} else {
 			mm_event_end(MM_MIN_FAULT, event_ts);
+		}
 
 		return 0;
 	}
