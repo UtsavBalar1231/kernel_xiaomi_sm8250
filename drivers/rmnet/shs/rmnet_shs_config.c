@@ -102,7 +102,8 @@ static int rmnet_shs_dev_notify_cb(struct notifier_block *nb,
 		 * phy_dev is going down.
 		 */
 		if ((rmnet_is_real_dev_registered(dev) &&
-		    !strcmp(dev->name, "rmnet_ipa0")) &&
+		    (!strcmp(dev->name, "rmnet_ipa0") ||
+		    !strcmp(dev->name, "rmnet_mhi0"))) &&
 		    rmnet_shs_cfg.rmnet_shs_init_complete) {
 			RCU_INIT_POINTER(rmnet_shs_skb_entry, NULL);
 			rmnet_shs_cancel_table();
@@ -117,7 +118,8 @@ static int rmnet_shs_dev_notify_cb(struct notifier_block *nb,
 		break;
 
 	case NETDEV_UP:
-		if (strncmp(dev->name, "rmnet_ipa0", 10) == 0)
+		if (strncmp(dev->name, "rmnet_ipa0", 10) == 0 ||
+		    strncmp(dev->name, "rmnet_mhi0", 10) == 0)
 			phy_dev = dev;
 
 
