@@ -126,7 +126,8 @@
 #include <linux/mailbox_controller.h>
 #include <linux/ipc_logging.h>
 #include <linux/inetdevice.h>
-#include <net/addrconf.h>
+#include <net/inet_common.h>
+#include <net/ipv6.h>
 #include <linux/inet.h>
 #include <asm/uaccess.h>
 
@@ -1868,6 +1869,7 @@ struct DWC_ETH_QOS_prv_data {
 	struct cdev* avb_class_b_cdev;
 	struct class* avb_class_b_class;
 
+	struct delayed_work ipv6_addr_assign_wq;
 };
 
 struct ip_params {
@@ -1878,7 +1880,8 @@ struct ip_params {
 	char ipv4_addr_str[32];
 	struct in_addr ipv4_addr;
 	bool is_valid_ipv4_addr;
-	char ipv6_addr[48];
+	char ipv6_addr_str[48];
+	struct in6_ifreq ipv6_addr;
 	bool is_valid_ipv6_addr;
 };
 
@@ -2044,8 +2047,8 @@ irqreturn_t DWC_ETH_QOS_PHY_ISR(int irq, void *dev_id);
 
 void DWC_ETH_QOS_dma_desc_stats_read(struct DWC_ETH_QOS_prv_data *pdata);
 void DWC_ETH_QOS_dma_desc_stats_init(struct DWC_ETH_QOS_prv_data *pdata);
-int DWC_ETH_QOS_add_ipaddr(struct ip_params *ip_info, struct net_device *dev);
-int DWC_ETH_QOS_add_ipv6addr(struct ip_params *ip_info, struct net_device *dev);
+int DWC_ETH_QOS_add_ipaddr(struct DWC_ETH_QOS_prv_data *);
+int DWC_ETH_QOS_add_ipv6addr(struct DWC_ETH_QOS_prv_data *);
 
 /* For debug prints*/
 #define DRV_NAME "qcom-emac-dwc-eqos"

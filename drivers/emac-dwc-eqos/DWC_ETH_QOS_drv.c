@@ -64,7 +64,6 @@ extern wait_queue_head_t avb_class_b_msg_wq;
 #define DEFAULT_START_TIME 0x1900
 
 static INT DWC_ETH_QOS_GSTATUS;
-extern struct ip_params pparams;
 
 /* SA(Source Address) operations on TX */
 unsigned char mac_addr0[6] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 };
@@ -1835,38 +1834,6 @@ static void DWC_ETH_QOS_default_rx_confs(struct DWC_ETH_QOS_prv_data *pdata)
 	DBGPR("<--DWC_ETH_QOS_default_rx_confs\n");
 }
 
-int DWC_ETH_QOS_add_ipv6addr(struct ip_params *ip_info, struct net_device *dev)
-{
-	int res=0;
-#ifdef DWC_ETH_QOS_BUILTIN
-	struct in6_ifreq ir6;
-	char* prefix;
-
-	/*For valid IPv6 address*/
-
-	memset(&ir6, 0, sizeof(ir6));
-	if (1 == in6_pton(ip_info->ipv6_addr, -1, (u8*)&ir6.ifr6_addr.s6_addr32, -1, NULL)) {
-		EMACDBG( "Setup IPv6 address!\r\n");
-		ir6.ifr6_ifindex = dev->ifindex;
-		//ir6.ifr6_prefixlen = 0;
-		if ((prefix = strchr(ip_info->ipv6_addr, '/')) == NULL)
-			ir6.ifr6_prefixlen = 0;
-		else {
-			ir6.ifr6_prefixlen = simple_strtoul(prefix+1, NULL, 0);
-			if (ir6.ifr6_prefixlen > 128)
-				ir6.ifr6_prefixlen = 0;
-		}
-		res = addrconf_add_ifaddr(&init_net, (struct in6_ifreq __user *) &ir6);
-		if (res)
-			EMACERR( "Can't setup IPv6 address!\r\n");
-		else
-			EMACDBG("Assigned IPv6 address: %s\r\n", ip_info->ipv6_addr);
-
-	}
-#endif
-	return res;
-}
-
 /*!
  * \brief API to open a device for data transmission & reception.
  *
@@ -1881,7 +1848,6 @@ int DWC_ETH_QOS_add_ipv6addr(struct ip_params *ip_info, struct net_device *dev)
  *
  * \retval 0 on success & negative number on failure.
  */
-
 static int DWC_ETH_QOS_open(struct net_device *dev)
 {
 	struct DWC_ETH_QOS_prv_data *pdata = netdev_priv(dev);
@@ -1970,9 +1936,6 @@ static int DWC_ETH_QOS_open(struct net_device *dev)
 #else
 	netif_tx_disable(dev);
 #endif /* end of DWC_ETH_QOS_CONFIG_PGTEST */
-
-	//if (pdata->res_data->early_eth_en)
-		//DWC_ETH_QOS_add_ipv6addr(&pparams, dev);
 
 	EMACDBG("<--DWC_ETH_QOS_open\n");
 
@@ -3002,6 +2965,10 @@ static void DWC_ETH_QOS_tx_interrupt(struct net_device *dev,
 			pdata->xstats.q_tx_pkt_n[qinx]++;
 			pdata->xstats.tx_pkt_n++;
 			dev->stats.tx_packets++;
+#ifdef DWC_ETH_QOS_BUILTIN
+			if (dev->stats.tx_packets == 1)
+				EMACINFO("Transmitted First Rx packet\n");
+#endif
 		}
 #else
 		if ((hw_if->get_tx_desc_ls(txptr)) && !(hw_if->get_tx_desc_ctxt(txptr))) {
@@ -3089,12 +3056,20 @@ static void DWC_ETH_QOS_receive_skb(struct DWC_ETH_QOS_prv_data *pdata,
 				    struct net_device *dev, struct sk_buff *skb,
 				    UINT qinx)
 {
+	static int cnt_ipv4 = 0, cnt_ipv6 = 0;
 	struct DWC_ETH_QOS_rx_queue *rx_queue = GET_RX_QUEUE_PTR(qinx);
 
 	skb_record_rx_queue(skb, qinx);
 	skb->dev = dev;
 	skb->protocol = eth_type_trans(skb, dev);
 
+#ifdef DWC_ETH_QOS_BUILTIN
+	if (skb->protocol == htons(ETH_P_IPV6) && (cnt_ipv6++ == 1)) {
+		EMACINFO("Received first ipv6 packet\n");
+	}
+	if (skb->protocol == htons(ETH_P_IP) && (cnt_ipv4++ == 1))
+		EMACINFO("Received first ipv4 packet\n");
+#endif
 	if (dev->features & NETIF_F_GRO) {
 		napi_gro_receive(&rx_queue->napi, skb);
 	}
@@ -3904,6 +3879,10 @@ static int DWC_ETH_QOS_clean_rx_irq(struct DWC_ETH_QOS_prv_data *pdata,
 				/* update the statistics */
 				dev->stats.rx_packets++;
 				dev->stats.rx_bytes += skb->len;
+#ifdef DWC_ETH_QOS_BUILTIN
+				if (dev->stats.rx_packets == 1)
+					EMACINFO("Received First Rx packet\n");
+#endif
 				DWC_ETH_QOS_receive_skb(pdata, dev, skb, qinx);
 				received++;
 			} else {

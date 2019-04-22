@@ -131,7 +131,7 @@ static int __init set_early_ethernet_ipv4(char *ipv4_addr_in)
 		return ret;
 
 	strlcpy(pparams.ipv4_addr_str, ipv4_addr_in, sizeof(pparams.ipv4_addr_str));
-	EMACDBG("Early ethernet IPv4 addr assigned: %s\n", pparams.ipv4_addr_str);
+	EMACDBG("Early ethernet IPv4 addr: %s\n", pparams.ipv4_addr_str);
 
 	ret = in4_pton(pparams.ipv4_addr_str, -1,
 				(u8*)&pparams.ipv4_addr.s_addr, -1, NULL);
@@ -153,9 +153,17 @@ static int __init set_early_ethernet_ipv6(char* ipv6_addr_in)
 	if (!ipv6_addr_in)
 		return ret;
 
-	strlcpy(pparams.ipv6_addr, ipv6_addr_in, sizeof(pparams.ipv6_addr));
-	EMACDBG("Early ethernet IPv6 addr assigned: %s\n", pparams.ipv6_addr);
+	strlcpy(pparams.ipv6_addr_str, ipv6_addr_in, sizeof(pparams.ipv6_addr_str));
+	EMACDBG("Early ethernet IPv6 addr: %s\n", pparams.ipv6_addr_str);
 
+	ret = in6_pton(pparams.ipv6_addr_str, -1,
+				   (u8 *)&pparams.ipv6_addr.ifr6_addr.s6_addr32, -1, NULL);
+	if (ret != 1 || pparams.ipv6_addr.ifr6_addr.s6_addr32 == 0)  {
+		EMACERR("Invalid ipv6 address programmed: %s\n", ipv6_addr_in);
+		return ret;
+	}
+
+	pparams.is_valid_ipv6_addr = true;
 	return ret;
 }
 __setup("eipv6=", set_early_ethernet_ipv6);
@@ -1469,27 +1477,93 @@ static struct of_device_id DWC_ETH_QOS_plat_drv_match[] = {
 	{}
 };
 
-int DWC_ETH_QOS_add_ipaddr(struct ip_params *ip_info, struct net_device *dev)
+void is_ipv6_NW_stack_ready(struct work_struct *work)
 {
-	int res=0;
+	struct delayed_work *dwork;
+	struct DWC_ETH_QOS_prv_data *pdata;
+	int ret;
+
+	EMACDBG("\n");
+	dwork = container_of(work, struct delayed_work, work);
+	pdata = container_of(dwork, struct DWC_ETH_QOS_prv_data, ipv6_addr_assign_wq);
+
+	ret = DWC_ETH_QOS_add_ipv6addr(pdata);
+	if (ret)
+		return;
+
+	cancel_delayed_work_sync(&pdata->ipv6_addr_assign_wq);
+	flush_delayed_work(&pdata->ipv6_addr_assign_wq);
+	return;
+}
+
+int DWC_ETH_QOS_add_ipv6addr(struct DWC_ETH_QOS_prv_data *pdata)
+{
+	int ret = -EFAULT;;
 #ifdef DWC_ETH_QOS_BUILTIN
+	struct in6_ifreq ir6;
+	char* prefix;
+	struct ip_params *ip_info = &pparams;
+	struct net *net = dev_net(pdata->dev);
+
+	EMACDBG("\n");
+	if (!net || !net->genl_sock || !net->genl_sock->sk_socket)
+		EMACERR("Sock is null, unable to assign ipv6 address\n");
+
+	if (!net->ipv6.devconf_dflt) {
+		EMACDBG("ipv6.devconf_dflt is null, schedule wq\n");
+		schedule_delayed_work(&pdata->ipv6_addr_assign_wq, msecs_to_jiffies(1000));
+		return ret;
+	}
+
+	/*For valid IPv6 address*/
+	memset(&ir6, 0, sizeof(ir6));
+	memcpy(&ir6, &ip_info->ipv6_addr, sizeof(struct in6_ifreq));
+	ir6.ifr6_ifindex = pdata->dev->ifindex;
+
+	if ((prefix = strchr(ip_info->ipv6_addr_str, '/')) == NULL)
+		ir6.ifr6_prefixlen = 0;
+	else {
+		ir6.ifr6_prefixlen = simple_strtoul(prefix + 1, NULL, 0);
+		if (ir6.ifr6_prefixlen > 128)
+			ir6.ifr6_prefixlen = 0;
+	}
+
+	ret = inet6_ioctl(net->genl_sock->sk_socket, SIOCSIFADDR, (unsigned long)(void *)&ir6);
+	if (ret)
+		EMACERR("Can't setup IPv6 address!\r\n");
+	else
+		EMACDBG("Assigned IPv6 address: %s\r\n", ip_info->ipv6_addr_str);
+#endif
+	return ret;
+}
+
+int DWC_ETH_QOS_add_ipaddr(struct DWC_ETH_QOS_prv_data *pdata)
+{
+	int ret=0;
+#ifdef DWC_ETH_QOS_BUILTIN
+	struct ip_params *ip_info = &pparams;
 	struct ifreq ir;
 	struct sockaddr_in *sin = (void *) &ir.ifr_ifru.ifru_addr;
+	struct net *net = dev_net(pdata->dev);
+
+	if (!net || !net->genl_sock || !net->genl_sock->sk_socket)
+		EMACERR("Sock is null, unable to assign ipv4 address\n");
 
 	/*For valid Ipv4 address*/
 	memset(&ir, 0, sizeof(ir));
 	memcpy(&sin->sin_addr.s_addr, &ip_info->ipv4_addr,
 		   sizeof(sin->sin_addr.s_addr));
-	strlcpy(ir.ifr_ifrn.ifrn_name, dev->name, sizeof(ir.ifr_ifrn.ifrn_name) + 1);
+	strlcpy(ir.ifr_ifrn.ifrn_name, pdata->dev->name, sizeof(ir.ifr_ifrn.ifrn_name) + 1);
 	sin->sin_family = AF_INET;
 	sin->sin_port = 0;
-	res = devinet_ioctl(&init_net, SIOCSIFADDR, (struct ifreq __user *)&ir);
-	if (res)
-		EMACERR( "Can't setup IPv4 address!: %d\r\n", res);
+
+	ret = inet_ioctl(net->genl_sock->sk_socket, SIOCSIFADDR, (unsigned long)(void *)&ir);
+	if (ret)
+		EMACERR( "Can't setup IPv4 address!: %d\r\n", ret);
 	else
 		EMACDBG("Assigned IPv4 address: %s\r\n", ip_info->ipv4_addr_str);
 #endif
-	return res;
+	return ret;
 }
 
 static int DWC_ETH_QOS_configure_netdevice(struct platform_device *pdev)
@@ -1749,8 +1823,18 @@ static int DWC_ETH_QOS_configure_netdevice(struct platform_device *pdev)
 		queue_work(system_wq, &pdata->qmp_mailbox_work);
 	}
 
-	if (pdata->res_data->early_eth_en)
-		ret = DWC_ETH_QOS_add_ipaddr(&pparams, dev);
+	if (pdata->res_data->early_eth_en) {
+		if (pparams.is_valid_ipv4_addr)
+			ret = DWC_ETH_QOS_add_ipaddr(pdata);
+
+		if (pparams.is_valid_ipv6_addr) {
+			INIT_DELAYED_WORK(&pdata->ipv6_addr_assign_wq, is_ipv6_NW_stack_ready);
+			ret = DWC_ETH_QOS_add_ipv6addr(pdata);
+			if (ret)
+				schedule_delayed_work(&pdata->ipv6_addr_assign_wq, msecs_to_jiffies(1000));
+		}
+
+	}
 
 	EMACDBG("<-- DWC_ETH_QOS_configure_netdevice\n");
 
