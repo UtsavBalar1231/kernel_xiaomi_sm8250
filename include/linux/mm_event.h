@@ -5,6 +5,7 @@
 enum mm_event_type {
 	MM_MIN_FAULT = 0,
 	MM_MAJ_FAULT,
+	MM_READ_IO,
 	MM_COMPACTION,
 	MM_RECLAIM,
 	MM_SWP_FAULT,
