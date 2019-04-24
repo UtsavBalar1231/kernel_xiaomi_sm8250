@@ -47,8 +47,7 @@ static void record_vmstat(void)
 			global_node_page_state(NR_INACTIVE_FILE);
 	vmstat.anon = global_node_page_state(NR_ACTIVE_ANON) +
 			global_node_page_state(NR_INACTIVE_ANON);
-	vmstat.ion = global_node_page_state(NR_ION_HEAP) +
-		global_node_page_state(NR_ION_HEAP_POOL);
+	vmstat.ion = global_node_page_state(NR_ION_HEAP);
 
 	vmstat.ws_refault = global_node_page_state(WORKINGSET_REFAULT);
 	vmstat.ws_activate = global_node_page_state(WORKINGSET_ACTIVATE);
