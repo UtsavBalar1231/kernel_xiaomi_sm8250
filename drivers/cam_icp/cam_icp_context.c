@@ -129,6 +129,7 @@ static int __cam_icp_config_dev_in_ready(struct cam_context *ctx,
 	size_t len;
 	uintptr_t packet_addr;
 	struct cam_packet *packet;
+	size_t remain_len = 0;
 
 	rc = cam_mem_get_cpu_buf((int32_t) cmd->packet_handle,
 		&packet_addr, &len);
@@ -139,8 +140,25 @@ static int __cam_icp_config_dev_in_ready(struct cam_context *ctx,
 		return rc;
 	}
 
+	remain_len = len;
+	if ((len < sizeof(struct cam_packet)) ||
+		(cmd->offset >= (len - sizeof(struct cam_packet)))) {
+		CAM_ERR(CAM_CTXT,
+			"Invalid offset, len: %zu cmd offset: %llu sizeof packet: %zu",
+			len, cmd->offset, sizeof(struct cam_packet));
+		return -EINVAL;
+	}
+
+	remain_len -= (size_t)cmd->offset;
 	packet = (struct cam_packet *) ((uint8_t *)packet_addr +
 		(uint32_t)cmd->offset);
+
+	rc = cam_packet_util_validate_packet(packet, remain_len);
+	if (rc) {
+		CAM_ERR(CAM_CTXT, "Invalid packet params, remain length: %zu",
+			remain_len);
+		return rc;
+	}
 
 	if (((packet->header.op_code & 0xff) ==
 		CAM_ICP_OPCODE_IPE_SETTINGS) ||

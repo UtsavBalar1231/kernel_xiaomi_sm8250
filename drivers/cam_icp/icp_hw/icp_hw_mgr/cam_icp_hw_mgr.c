@@ -3853,6 +3853,9 @@ static int cam_icp_mgr_process_cmd_desc(struct cam_icp_hw_mgr *hw_mgr,
 
 	cmd_desc = (struct cam_cmd_buf_desc *)
 		((uint32_t *) &packet->payload + packet->cmd_buf_offset/4);
+	rc = cam_packet_util_validate_cmd_desc(cmd_desc);
+	if (rc)
+		return rc;
 
 	*fw_cmd_buf_iova_addr = 0;
 	for (i = 0; i < packet->num_cmd_buf; i++, num_cmd_buf++) {
@@ -3868,6 +3871,17 @@ static int cam_icp_mgr_process_cmd_desc(struct cam_icp_hw_mgr *hw_mgr,
 				return rc;
 			}
 			*fw_cmd_buf_iova_addr = addr;
+
+			if ((cmd_desc[i].offset >= len) ||
+				((len - cmd_desc[i].offset) <
+				cmd_desc[i].size)){
+				CAM_ERR(CAM_ICP,
+					"Invalid offset, i: %d offset: %u len: %zu size: %zu",
+					i, cmd_desc[i].offset,
+					len, cmd_desc[i].size);
+				return -EINVAL;
+			}
+
 			*fw_cmd_buf_iova_addr =
 				(*fw_cmd_buf_iova_addr + cmd_desc[i].offset);
 			rc = cam_mem_get_cpu_buf(cmd_desc[i].mem_handle,

@@ -473,6 +473,17 @@ int cam_hw_cdm_submit_bl(struct cam_hw_info *cdm_hw,
 
 		if ((!rc) && (hw_vaddr_ptr) && (len) &&
 			(len >= cdm_cmd->cmd[i].offset)) {
+
+			if ((len - cdm_cmd->cmd[i].offset) <
+				cdm_cmd->cmd[i].len) {
+				CAM_ERR(CAM_CDM,
+					"Not enough buffer cmd offset: %u cmd length: %u",
+					cdm_cmd->cmd[i].offset,
+					cdm_cmd->cmd[i].len);
+				rc = -EINVAL;
+				break;
+			}
+
 			CAM_DBG(CAM_CDM, "Got the HW VA");
 			if (core->bl_tag >=
 				(CAM_CDM_HWFIFO_SIZE - 1))
