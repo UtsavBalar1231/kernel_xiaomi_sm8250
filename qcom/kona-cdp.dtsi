@@ -513,6 +513,10 @@
 	};
 };
 
+&spmi_debug_bus {
+	status = "ok";
+};
+
 &kona_snd {
 	qcom,model = "kona-cdp-snd-card";
 	qcom,audio-routing =
