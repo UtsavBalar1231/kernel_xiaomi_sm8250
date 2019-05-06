@@ -2202,6 +2202,12 @@
 		status = "disabled";
 	};
 
+	extcon_storage_cd: extcon_storage_cd {
+		compatible = "extcon-gpio";
+		extcon-id = <62>; /* EXTCON_MECHANICAL */
+		status = "disabled";
+	};
+
 	ipcc_mproc: qcom,ipcc@408000 {
 		compatible = "qcom,ipcc";
 		reg = <0x408000 0x1000>;
