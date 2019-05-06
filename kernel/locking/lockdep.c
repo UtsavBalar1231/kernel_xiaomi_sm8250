@@ -1770,6 +1770,7 @@ check_noncircular(struct held_lock *src, struct held_lock *target,
 	return ret;
 }
 
+#ifdef CONFIG_LOCKDEP_SMALL
 /*
  * Check that the dependency graph starting at <src> can lead to
  * <target> or not. If it can, <src> -> <target> dependency is already
@@ -1799,6 +1800,7 @@ check_redundant(struct held_lock *src, struct held_lock *target)
 
 	return ret;
 }
+#endif
 
 #ifdef CONFIG_TRACE_IRQFLAGS
 
@@ -2459,12 +2461,14 @@ check_prev_add(struct task_struct *curr, struct held_lock *prev,
 		}
 	}
 
+#ifdef CONFIG_LOCKDEP_SMALL
 	/*
 	 * Is the <prev> -> <next> link redundant?
 	 */
 	ret = check_redundant(prev, next);
 	if (ret != 1)
 		return ret;
+#endif
 
 	if (!trace->nr_entries && !save_trace(trace))
 		return 0;
