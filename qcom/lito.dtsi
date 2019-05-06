@@ -2078,3 +2078,4 @@
 
 #include "lito-qupv3.dtsi"
 #include "lito-coresight.dtsi"
+#include "lito-camera.dtsi"
