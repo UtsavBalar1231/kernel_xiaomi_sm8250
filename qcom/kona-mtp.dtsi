@@ -415,6 +415,10 @@
 	};
 };
 
+&spmi_debug_bus {
+	status = "ok";
+};
+
 &dsi_sw43404_amoled_cmd {
 	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
