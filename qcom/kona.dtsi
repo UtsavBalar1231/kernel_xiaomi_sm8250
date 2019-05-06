@@ -1083,7 +1083,7 @@
 				<&clock_gcc GCC_NPU_BWMON_AXI_CLK>;
 		clock-names = "npu_bwmon_ahb", "npu_bwmon_axi";
 		qcom,bwmon_clks = "npu_bwmon_ahb", "npu_bwmon_axi";
-		interrupts = <GIC_SPI 347 IRQ_TYPE_LEVEL_HIGH>;
+		interrupts = <GIC_SPI 476 IRQ_TYPE_LEVEL_HIGH>;
 		qcom,mport = <0>;
 		qcom,hw-timer-hz = <19200000>;
 		qcom,target-dev = <&npu_npu_ddr_bw>;
