@@ -1990,6 +1990,7 @@
 #include "lito-vidc.dtsi"
 #include "lito-audio.dtsi"
 #include "lito-bus.dtsi"
+#include "lito-gpu.dtsi"
 
 &ufs_phy_gdsc {
 	status = "ok";
