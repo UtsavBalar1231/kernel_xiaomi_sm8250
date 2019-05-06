@@ -1058,8 +1058,9 @@
 
 	videocc: qcom,videocc@ab00000 {
 		compatible = "qcom,lito-videocc", "syscon";
-		reg = <0x0ab00000 0x10000>;
-		reg-names = "cc_base";
+		reg = <0x0ab00000 0x10000>,
+			<0x786008 0x4>;
+		reg-names = "cc_base", "efuse";
 		vdd_cx-supply = <&VDD_CX_LEVEL>;
 		clock-names = "cfg_ahb_clk";
 		clocks = <&gcc GCC_VIDEO_AHB_CLK>;
