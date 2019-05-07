@@ -85,6 +85,7 @@ Optional properties:
 					property properly will be taken care in the DSI PHY DRM driver.
 - qcom,cmd-sync-wait-broadcast:		Boolean used to broadcast dcs command to panels.
 - qcom,mdss-dsi-fbc-enable:		Boolean used to enable frame buffer compression mode.
+- qcom,mdss-dsi-panel-mode-switch:	Boolean used to enable panel operating mode switch.
 - qcom,mdss-dsi-fbc-slice-height:	Slice height(in lines) of compressed block.
 					Expressed as power of 2. To set as 128 lines,
 					this should be set to 7.
@@ -556,6 +557,8 @@ Optional properties:
 					Each child represents timings settings for a specific resolution.
 - qcom,mdss-dsi-post-init-delay:        Specifies required number of frames to wait so that panel can be functional
 					to show proper display.
+- qcom,mdss-dsi-video-mode:		A boolean to indicates current timing can only work in video mode.
+- qcom,mdss-dsi-cmd-mode:		A boolean to indicates current timing can only work in command mode.
 
 Additional properties added to the second level nodes that represent timings properties:
 - qcom,mdss-dsi-timing-default:		Property that specifies the current child as the default
@@ -583,6 +586,7 @@ Example:
 		qcom,mdss-dsi-panel-destination = "display_1";
 		qcom,cmd-sync-wait-broadcast;
 		qcom,mdss-dsi-fbc-enable;
+		qcom,mdss-dsi-panel-mode-switch;
 		qcom,mdss-dsi-fbc-slice-height = <5>;
 		qcom,mdss-dsi-fbc-2d-pred-mode;
 		qcom,mdss-dsi-fbc-ver2-mode;
@@ -714,6 +718,7 @@ Example:
 		qcom,adjust-timer-wakeup-ms = <1>;
 		qcom,mdss-dsi-display-timings {
 			wqhd {
+				qcom,mdss-dsi-cmd-mode;
 				qcom,mdss-dsi-timing-default;
 				qcom,mdss-dsi-panel-width = <720>;
 				qcom,mdss-dsi-panel-height = <2560>;
