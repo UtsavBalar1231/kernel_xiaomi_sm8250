@@ -3,6 +3,8 @@
 #include "dsi-panel-sw43404-amoled-dsc-fhd-plus-cmd.dtsi"
 #include "dsi-panel-sharp-dsc-4k-cmd.dtsi"
 #include "dsi-panel-sharp-dsc-4k-video.dtsi"
+#include "dsi-panel-sharp-qsync-wqhd-cmd.dtsi"
+#include "dsi-panel-sharp-qsync-wqhd-video.dtsi"
 #include "dsi-panel-sharp-1080p-cmd.dtsi"
 #include "dsi-panel-nt35597-truly-dualmipi-wqxga-cmd.dtsi"
 #include "dsi-panel-nt35597-truly-dualmipi-wqxga-video.dtsi"
@@ -265,6 +267,28 @@
 		timing@0 {
 			qcom,mdss-dsi-panel-phy-timings = [00 1e 08 07 24 22 08
 				08 05 02 04 00 19 18];
+			qcom,display-topology = <2 2 2>;
+			qcom,default-topology-index = <0>;
+		};
+	};
+};
+
+&dsi_sharp_qsync_wqhd_cmd {
+	qcom,mdss-dsi-display-timings {
+		timing@0 {
+			qcom,mdss-dsi-panel-phy-timings = [00 0b 03 02 1d 1c 03
+				03 01 02 04 00 0c 12];
+			qcom,display-topology = <2 2 2>;
+			qcom,default-topology-index = <0>;
+		};
+	};
+};
+
+&dsi_sharp_qsync_wqhd_video {
+	qcom,mdss-dsi-display-timings {
+		timing@0 {
+			qcom,mdss-dsi-panel-phy-timings = [00 14 05 05 1f 1f 05
+				05 03 02 04 00 12 15];
 			qcom,display-topology = <2 2 2>;
 			qcom,default-topology-index = <0>;
 		};
