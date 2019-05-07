@@ -13,9 +13,10 @@
 	};
 
 	/* QUPV3_0_SE0 */
-	i3c0: i3c@980000 {
+	i3c0: i3c-master@980000 {
 		compatible = "qcom,geni-i3c";
-		reg = <0x980000 0x4000>;
+		reg = <0x980000 0x4000>,
+			<0x0EC30000 0x10000>;
 		clock-names = "se-clk", "m-ahb", "s-ahb";
 		clocks = <&clock_gcc GCC_QUPV3_WRAP0_S0_CLK>,
 			<&clock_gcc GCC_QUPV3_WRAP_0_M_AHB_CLK>,
