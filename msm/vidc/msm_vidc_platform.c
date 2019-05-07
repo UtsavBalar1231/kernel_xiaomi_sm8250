@@ -299,7 +299,7 @@ static struct msm_vidc_common_data lito_common_data_v0[] = {
 		.value = 0,
 	},
 	{
-		.key = "qcom,domain-cvp",
+		.key = "qcom,cvp-internal",
 		.value = 1,
 	},
 	{
@@ -370,7 +370,7 @@ static struct msm_vidc_common_data lito_common_data_v1[] = {
 		.value = 0,
 	},
 	{
-		.key = "qcom,domain-cvp",
+		.key = "qcom,cvp-internal",
 		.value = 1,
 	},
 	{
@@ -445,8 +445,8 @@ static struct msm_vidc_common_data kona_common_data[] = {
 		.value = 0,
 	},
 	{
-		.key = "qcom,domain-cvp",
-		.value = 0,
+		.key = "qcom,cvp-external",
+		.value = 1,
 	},
 	{
 		.key = "qcom,decode-batching",
@@ -587,7 +587,7 @@ static struct msm_vidc_common_data sm8150_common_data[] = {
 		.value = 0,
 	},
 	{
-		.key = "qcom,domain-cvp",
+		.key = "qcom,cvp-internal",
 		.value = 1,
 	},
 	{

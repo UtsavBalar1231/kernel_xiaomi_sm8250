@@ -50,11 +50,6 @@ static inline bool is_vidc_cvp_enabled(struct msm_vidc_inst *inst)
 	return !!inst->cvp;
 }
 
-static inline bool is_vidc_cvp_allowed(struct msm_vidc_inst *inst)
-{
-	return false;
-}
-
 struct msm_cvp_buffer_type {
 	u32 buffer_addr;
 	u32 size;
@@ -143,6 +138,7 @@ struct msm_cvp_buf {
 
 struct msm_cvp_external {
 	void *priv;
+	void *arg;
 	u32 session_id;
 	u32 width;
 	u32 height;
@@ -151,6 +147,7 @@ struct msm_cvp_external {
 	bool downscale;
 	u32 framecount;
 	u32 buffer_idx;
+	bool metadata_available;
 	struct msm_cvp_buf fullres_buffer;
 	struct msm_cvp_buf src_buffer;
 	struct msm_cvp_buf ref_buffer;
@@ -161,8 +158,7 @@ struct msm_cvp_external {
 };
 
 int msm_vidc_cvp_preprocess(struct msm_vidc_inst *inst,
-		struct vb2_buffer *vb);
+		struct msm_vidc_buffer *mbuf);
 int msm_vidc_cvp_prepare_preprocess(struct msm_vidc_inst *inst);
 int msm_vidc_cvp_unprepare_preprocess(struct msm_vidc_inst *inst);
-
 #endif

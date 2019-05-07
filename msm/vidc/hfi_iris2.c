@@ -383,7 +383,7 @@ int __boot_firmware_iris2(struct venus_hfi_device *device)
 	u32 ctrl_init_val = 0, ctrl_status = 0, count = 0, max_tries = 10000;
 
 	ctrl_init_val = BIT(0);
-	if (device->res->domain_cvp)
+	if (device->res->cvp_internal)
 		ctrl_init_val |= BIT(1);
 
 	__write_register(device, CTRL_INIT_IRIS2, ctrl_init_val);

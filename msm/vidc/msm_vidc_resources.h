@@ -188,7 +188,8 @@ struct msm_vidc_platform_resources {
 	int msm_vidc_hw_rsp_timeout;
 	int msm_vidc_firmware_unload_delay;
 	uint32_t msm_vidc_pwr_collapse_delay;
-	bool domain_cvp;
+	bool cvp_internal;
+	bool cvp_external;
 	bool non_fatal_pagefaults;
 	bool cache_pagetables;
 	bool decode_batching;

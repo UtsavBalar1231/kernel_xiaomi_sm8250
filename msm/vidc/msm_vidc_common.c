@@ -15,6 +15,7 @@
 #include "vidc_hfi.h"
 #include "msm_vidc_debug.h"
 #include "msm_vidc_clocks.h"
+#include "msm_cvp_external.h"
 #include "msm_cvp_internal.h"
 #include "msm_vidc_buffer_calculations.h"
 
@@ -4058,6 +4059,34 @@ int msm_vidc_comm_cmd(void *instance, union msm_v4l2_cmd *cmd)
 	return rc;
 }
 
+static int msm_comm_preprocess(struct msm_vidc_inst *inst,
+		struct msm_vidc_buffer *mbuf)
+{
+	int rc = 0;
+
+	if (!inst || !mbuf) {
+		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		return -EINVAL;
+	}
+
+	/* preprocessing is allowed for encoder input buffer only */
+	if (!is_encode_session(inst) || mbuf->vvb.vb2_buf.type != INPUT_MPLANE)
+		return 0;
+
+	/* preprocessing is done using CVP module only */
+	if (!is_vidc_cvp_enabled(inst))
+		return 0;
+
+	rc = msm_vidc_cvp_preprocess(inst, mbuf);
+	if (rc) {
+		dprintk(VIDC_ERR, "%s: cvp preprocess failed\n",
+			__func__);
+		return rc;
+	}
+
+	return rc;
+}
+
 static void populate_frame_data(struct vidc_frame_data *data,
 		struct msm_vidc_buffer *mbuf, struct msm_vidc_inst *inst)
 {
@@ -4264,6 +4293,10 @@ int msm_comm_qbuf(struct msm_vidc_inst *inst, struct msm_vidc_buffer *mbuf)
 		return 0;
 	}
 
+	rc = msm_comm_preprocess(inst, mbuf);
+	if (rc)
+		return rc;
+
 	rc = msm_comm_scale_clocks_and_bus(inst);
 	if (rc)
 		dprintk(VIDC_ERR, "%s: scale clocks failed\n", __func__);
@@ -4280,6 +4313,7 @@ int msm_comm_qbufs(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
 	struct msm_vidc_buffer *mbuf;
+	bool found;
 
 	if (!inst) {
 		dprintk(VIDC_ERR, "%s: Invalid arguments\n", __func__);
@@ -4292,24 +4326,36 @@ int msm_comm_qbufs(struct msm_vidc_inst *inst)
 		return 0;
 	}
 
-	rc = msm_comm_scale_clocks_and_bus(inst);
-	if (rc)
-		dprintk(VIDC_ERR, "%s: scale clocks failed\n", __func__);
-
-	mutex_lock(&inst->registeredbufs.lock);
-	list_for_each_entry(mbuf, &inst->registeredbufs.list, list) {
-		/* Queue only deferred buffers */
-		if (!(mbuf->flags & MSM_VIDC_FLAG_DEFERRED))
-			continue;
-		print_vidc_buffer(VIDC_DBG, "qbufs", inst, mbuf);
-		rc = msm_comm_qbuf_to_hfi(inst, mbuf);
-		if (rc) {
-			dprintk(VIDC_ERR, "%s: Failed qbuf to hfi: %d\n",
-				__func__, rc);
+	do {
+		mutex_lock(&inst->registeredbufs.lock);
+		found = false;
+		list_for_each_entry(mbuf, &inst->registeredbufs.list, list) {
+			/* Queue only deferred buffers */
+			if (mbuf->flags & MSM_VIDC_FLAG_DEFERRED) {
+				found = true;
+				break;
+			}
+		}
+		mutex_unlock(&inst->registeredbufs.lock);
+		if (!found) {
+			dprintk(VIDC_DBG,
+				"%s: no more deferred qbufs\n", __func__);
 			break;
 		}
-	}
-	mutex_unlock(&inst->registeredbufs.lock);
+
+		/* do not call msm_comm_qbuf() under registerbufs lock */
+		if (!kref_get_mbuf(inst, mbuf)) {
+			dprintk(VIDC_ERR, "%s: mbuf not found\n", __func__);
+			rc = -EINVAL;
+			break;
+		}
+		rc = msm_comm_qbuf(inst, mbuf);
+		kref_put_mbuf(mbuf);
+		if (rc) {
+			dprintk(VIDC_ERR, "%s: failed qbuf\n", __func__);
+			break;
+		}
+	} while (found);
 
 	return rc;
 }

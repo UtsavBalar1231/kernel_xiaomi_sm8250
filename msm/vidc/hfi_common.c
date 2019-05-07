@@ -299,7 +299,7 @@ static int __dsp_send_hfi_queue(struct venus_hfi_device *device)
 {
 	int rc;
 
-	if (!device->res->domain_cvp)
+	if (!device->res->cvp_internal)
 		return 0;
 
 	if (!device->dsp_iface_q_table.mem_data.dma_handle) {
@@ -333,7 +333,7 @@ static int __dsp_suspend(struct venus_hfi_device *device, bool force, u32 flags)
 	int rc;
 	struct hal_session *temp;
 
-	if (!device->res->domain_cvp)
+	if (!device->res->cvp_internal)
 		return 0;
 
 	if (!(device->dsp_flags & DSP_INIT))
@@ -374,7 +374,7 @@ static int __dsp_resume(struct venus_hfi_device *device, u32 flags)
 {
 	int rc;
 
-	if (!device->res->domain_cvp)
+	if (!device->res->cvp_internal)
 		return 0;
 
 	if (!(device->dsp_flags & DSP_SUSPEND)) {
@@ -400,7 +400,7 @@ static int __dsp_shutdown(struct venus_hfi_device *device, u32 flags)
 {
 	int rc;
 
-	if (!device->res->domain_cvp)
+	if (!device->res->cvp_internal)
 		return 0;
 
 	if (!(device->dsp_flags & DSP_INIT)) {
@@ -1171,7 +1171,7 @@ static inline int __boot_firmware_common(struct venus_hfi_device *device)
 	u32 ctrl_init_val = 0, ctrl_status = 0, count = 0, max_tries = 10000;
 
 	ctrl_init_val = BIT(0);
-	if (device->res->domain_cvp)
+	if (device->res->cvp_internal)
 		ctrl_init_val |= BIT(1);
 
 	__write_register(device, CTRL_INIT, ctrl_init_val);
@@ -1688,7 +1688,7 @@ static void __interface_queues_release(struct venus_hfi_device *device)
 	device->mem_addr.align_virtual_addr = NULL;
 	device->mem_addr.align_device_addr = 0;
 
-	if (device->res->domain_cvp)
+	if (device->res->cvp_internal)
 		__interface_dsp_queues_release(device);
 }
 
@@ -1901,7 +1901,7 @@ static int __interface_queues_init(struct venus_hfi_device *dev)
 	}
 
 
-	if (dev->res->domain_cvp) {
+	if (dev->res->cvp_internal) {
 		rc = __interface_dsp_queues_init(dev);
 		if (rc) {
 			dprintk(VIDC_ERR, "dsp_queues_init failed\n");

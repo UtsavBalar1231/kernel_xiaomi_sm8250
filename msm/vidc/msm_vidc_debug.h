@@ -61,6 +61,7 @@ extern bool msm_vidc_thermal_mitigation_disabled;
 extern int msm_vidc_clock_voting;
 extern bool msm_vidc_syscache_disable;
 extern bool msm_vidc_lossless_encode;
+extern bool msm_vidc_cvp_usage;
 
 #define dprintk(__level, __fmt, ...)	\
 	do { \

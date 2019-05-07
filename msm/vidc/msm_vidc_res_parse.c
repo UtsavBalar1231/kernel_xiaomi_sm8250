@@ -806,8 +806,10 @@ int read_platform_resources_from_drv_data(
 			"qcom,fw-unload-delay");
 	res->msm_vidc_hw_rsp_timeout = find_key_value(platform_data,
 			"qcom,hw-resp-timeout");
-	res->domain_cvp = find_key_value(platform_data,
-			"qcom,domain-cvp");
+	res->cvp_internal = find_key_value(platform_data,
+			"qcom,cvp-internal");
+	res->cvp_external = find_key_value(platform_data,
+			"qcom,cvp-external");
 	res->non_fatal_pagefaults = find_key_value(platform_data,
 			"qcom,domain-attr-non-fatal-faults");
 	res->cache_pagetables = find_key_value(platform_data,

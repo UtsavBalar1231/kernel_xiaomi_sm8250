@@ -519,7 +519,7 @@ static int msm_vidc_probe_vidc_device(struct platform_device *pdev)
 	}
 
 	/* setup the cvp device */
-	if (core->resources.domain_cvp) {
+	if (core->resources.cvp_internal) {
 		rc = msm_vidc_register_video_device(MSM_VIDC_CVP,
 				nr + 2, core, dev);
 		if (rc) {
@@ -583,7 +583,7 @@ static int msm_vidc_probe_vidc_device(struct platform_device *pdev)
 err_fail_sub_device_probe:
 	vidc_hfi_deinitialize(core->hfi_type, core->device);
 err_cores_exceeded:
-	if (core->resources.domain_cvp) {
+	if (core->resources.cvp_internal) {
 		device_remove_file(&core->vdev[MSM_VIDC_CVP].vdev.dev,
 			&dev_attr_link_name);
 		video_unregister_device(&core->vdev[MSM_VIDC_CVP].vdev);
@@ -663,7 +663,7 @@ static int msm_vidc_remove(struct platform_device *pdev)
 	}
 
 	vidc_hfi_deinitialize(core->hfi_type, core->device);
-	if (core->resources.domain_cvp) {
+	if (core->resources.cvp_internal) {
 		device_remove_file(&core->vdev[MSM_VIDC_CVP].vdev.dev,
 				&dev_attr_link_name);
 		video_unregister_device(&core->vdev[MSM_VIDC_CVP].vdev);

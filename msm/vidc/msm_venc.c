@@ -3833,7 +3833,6 @@ int msm_venc_set_hdr_info(struct msm_vidc_inst *inst)
 int msm_venc_set_extradata(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
-	struct v4l2_ctrl *cvp_ctrl;
 	u32 value = 0x0;
 	u32 codec;
 
@@ -3872,25 +3871,13 @@ int msm_venc_set_extradata(struct msm_vidc_inst *inst)
 		}
 	}
 
-	cvp_ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VENC_CVP_DISABLE);
-	if (cvp_ctrl->val == V4L2_MPEG_MSM_VIDC_ENABLE) {
-		if (inst->prop.extradata_ctrls & EXTRADATA_ENC_INPUT_CVP) {
-			dprintk(VIDC_ERR,
-				"%s: invalid params\n", __func__);
-			return -EINVAL;
-		}
-	} else {
-		/*
-		 * For now, enable CVP metadata only if client provides it.
-		 * Once the kernel-mode CVP metadata implementation
-		 * is completed, this condition should be removed.
-		 */
-		if (inst->prop.extradata_ctrls & EXTRADATA_ENC_INPUT_CVP)
-			value = 0x1;
-
-	}
+	if (inst->prop.extradata_ctrls & EXTRADATA_ENC_INPUT_CVP)
+		value = 0x1;
+	dprintk(VIDC_DBG, "%s: CVP extradata %d\n", __func__, value);
 	rc = msm_comm_set_extradata(inst,
 		HFI_PROPERTY_PARAM_VENC_CVP_METADATA_EXTRADATA, value);
+	if (rc)
+		dprintk(VIDC_ERR, "%s: set CVP extradata failed\n", __func__);
 
 	return rc;
 }

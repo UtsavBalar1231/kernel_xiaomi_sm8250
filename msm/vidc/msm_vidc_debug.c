@@ -25,6 +25,7 @@ bool msm_vidc_fw_coverage = !true;
 bool msm_vidc_thermal_mitigation_disabled = !true;
 int msm_vidc_clock_voting = !1;
 bool msm_vidc_syscache_disable = !true;
+bool msm_vidc_cvp_usage = !true;
 
 #define MAX_DBG_BUF_SIZE 4096
 
@@ -188,6 +189,7 @@ struct dentry *msm_vidc_debugfs_init_drv(void)
 			&msm_vidc_clock_voting) &&
 	__debugfs_create(bool, "disable_video_syscache",
 			&msm_vidc_syscache_disable) &&
+	__debugfs_create(bool, "cvp_usage", &msm_vidc_cvp_usage) &&
 	__debugfs_create(bool, "lossless_encoding",
 			&msm_vidc_lossless_encode);
 

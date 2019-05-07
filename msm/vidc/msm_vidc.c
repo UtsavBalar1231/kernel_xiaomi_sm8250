@@ -325,46 +325,6 @@ int msm_vidc_release_buffer(void *instance, int type, unsigned int index)
 }
 EXPORT_SYMBOL(msm_vidc_release_buffer);
 
-static int msm_vidc_preprocess(struct msm_vidc_inst *inst,
-		struct vb2_buffer *vb)
-{
-	int rc = 0;
-	struct buf_queue *q;
-
-	if (!inst || !vb) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
-		return -EINVAL;
-	}
-
-	if (!is_encode_session(inst) || vb->type !=
-		V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE)
-		return 0;
-
-	if (!is_vidc_cvp_enabled(inst))
-		return 0;
-
-	q = msm_comm_get_vb2q(inst, vb->type);
-	if (!q) {
-		dprintk(VIDC_ERR, "%s: queue not found for type %d\n",
-			__func__, vb->type);
-		return -EINVAL;
-	}
-	if (!q->vb2_bufq.streaming) {
-		dprintk(VIDC_ERR,
-			"%s: enable input port streaming before queuing input buffers\n",
-			__func__);
-		return -EINVAL;
-	}
-	rc = msm_vidc_cvp_preprocess(inst, vb);
-	if (rc) {
-		dprintk(VIDC_ERR, "%s: cvp preprocess failed\n",
-			__func__);
-		return rc;
-	}
-
-	return rc;
-}
-
 int msm_vidc_qbuf(void *instance, struct v4l2_buffer *b)
 {
 	struct msm_vidc_inst *inst = instance;
@@ -739,6 +699,51 @@ static int msm_vidc_set_properties(struct msm_vidc_inst *inst)
 	return rc;
 }
 
+bool is_vidc_cvp_allowed(struct msm_vidc_inst *inst)
+{
+	bool allowed = false;
+	struct msm_vidc_core *core;
+	struct v4l2_ctrl *cvp_disable;
+
+	if (!inst || !inst->core) {
+		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		goto exit;
+	}
+	core = inst->core;
+
+	/*
+	 * CVP enable if
+	 * - platform support CVP external
+	 * - client did not disable CVP forcefully
+	 *      - client may disable forcefully to save power
+	 * - client did not enable CVP extradata
+	 *      - if enabled, client will give CVP extradata
+	 * - rate control is not one of below modes
+	 *      - RATE_CONTROL_OFF
+	 *      - V4L2_MPEG_VIDEO_BITRATE_MODE_CQ
+	 *      - V4L2_MPEG_VIDEO_BITRATE_MODE_CBR_PLUS
+	 */
+	cvp_disable = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VENC_CVP_DISABLE);
+
+	if (core->resources.cvp_external && !cvp_disable->val &&
+		!(inst->prop.extradata_ctrls & EXTRADATA_ENC_INPUT_CVP) &&
+		inst->rc_type != RATE_CONTROL_OFF &&
+		inst->rc_type != V4L2_MPEG_VIDEO_BITRATE_MODE_CQ &&
+		!inst->clk_data.is_cbr_plus) {
+		dprintk(VIDC_DBG, "%s: cvp allowed\n", __func__);
+		allowed = true;
+	} else {
+		dprintk(VIDC_DBG,
+			"%s: cvp not allowed, cvp_external %d cvp_disable %d extradata %#x rc_type %d\n",
+			__func__, core->resources.cvp_external,
+			cvp_disable->val, inst->prop.extradata_ctrls,
+			inst->rc_type);
+		allowed = false;
+	}
+exit:
+	return allowed;
+}
+
 static int msm_vidc_prepare_preprocess(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
@@ -746,6 +751,11 @@ static int msm_vidc_prepare_preprocess(struct msm_vidc_inst *inst)
 	if (!inst) {
 		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
 		return -EINVAL;
+	}
+
+	if (!msm_vidc_cvp_usage) {
+		dprintk(VIDC_DBG, "%s: cvp usage disabled\n", __func__);
+		return 0;
 	}
 
 	if (!is_vidc_cvp_allowed(inst)) {
@@ -756,12 +766,21 @@ static int msm_vidc_prepare_preprocess(struct msm_vidc_inst *inst)
 	rc = msm_vidc_cvp_prepare_preprocess(inst);
 	if (rc) {
 		dprintk(VIDC_WARN, "%s: no cvp preprocessing\n", __func__);
-		msm_vidc_cvp_unprepare_preprocess(inst);
 		goto exit;
 	}
 	dprintk(VIDC_DBG, "%s: cvp enabled\n", __func__);
 
+	dprintk(VIDC_DBG, "%s: set CVP extradata\n", __func__);
+	rc = msm_comm_set_extradata(inst,
+		HFI_PROPERTY_PARAM_VENC_CVP_METADATA_EXTRADATA, 1);
+	if (rc) {
+		dprintk(VIDC_WARN, "%s: set CVP extradata failed\n", __func__);
+		goto exit;
+	}
+
 exit:
+	if (rc)
+		msm_vidc_cvp_unprepare_preprocess(inst);
 	return rc;
 }
 
@@ -781,6 +800,15 @@ static inline int start_streaming(struct msm_vidc_inst *inst)
 		dprintk(VIDC_ERR, "%s: %x: set props failed\n",
 			__func__, hash32_ptr(inst->session));
 		goto fail_start;
+	}
+
+	if (is_encode_session(inst)) {
+		rc = msm_vidc_prepare_preprocess(inst);
+		if (rc) {
+			dprintk(VIDC_WARN, "%s: no preprocessing\n", __func__);
+			/* ignore error */
+			rc = 0;
+		}
 	}
 
 	b.buffer_type = HFI_BUFFER_OUTPUT;
@@ -968,16 +996,6 @@ static int msm_vidc_start_streaming(struct vb2_queue *q, unsigned int count)
 		goto stream_start_failed;
 	}
 
-	if (is_encode_session(inst) && q->type ==
-			V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE) {
-		rc = msm_vidc_prepare_preprocess(inst);
-		if (rc) {
-			dprintk(VIDC_WARN, "%s: no preprocessing\n", __func__);
-			/* ignore error */
-			rc = 0;
-		}
-	}
-
 	rc = msm_comm_qbufs(inst);
 	if (rc) {
 		dprintk(VIDC_ERR,
@@ -1027,24 +1045,6 @@ stream_start_failed:
 	return rc;
 }
 
-static inline int stop_streaming(struct msm_vidc_inst *inst)
-{
-	int rc = 0;
-
-	dprintk(VIDC_DBG, "%s: %x : inst %pK\n", __func__,
-		hash32_ptr(inst->session), inst);
-
-	rc = msm_comm_try_state(inst, MSM_VIDC_RELEASE_RESOURCES_DONE);
-	if (rc)
-		dprintk(VIDC_ERR,
-			"Failed to move inst: %pK to state %d\n",
-				inst, MSM_VIDC_RELEASE_RESOURCES_DONE);
-
-	msm_clock_data_reset(inst);
-
-	return rc;
-}
-
 static int msm_vidc_unprepare_preprocess(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
@@ -1066,6 +1066,32 @@ static int msm_vidc_unprepare_preprocess(struct msm_vidc_inst *inst)
 	return rc;
 }
 
+static inline int stop_streaming(struct msm_vidc_inst *inst)
+{
+	int rc = 0;
+
+	dprintk(VIDC_DBG, "%s: %x : inst %pK\n", __func__,
+		hash32_ptr(inst->session), inst);
+
+	rc = msm_comm_try_state(inst, MSM_VIDC_RELEASE_RESOURCES_DONE);
+	if (rc)
+		dprintk(VIDC_ERR,
+			"Failed to move inst: %pK to state %d\n",
+				inst, MSM_VIDC_RELEASE_RESOURCES_DONE);
+
+	if (is_encode_session(inst)) {
+		rc = msm_vidc_unprepare_preprocess(inst);
+		if (rc)
+			dprintk(VIDC_ERR,
+				"%s: failed to unprepare preprocess\n",
+				__func__);
+	}
+
+	msm_clock_data_reset(inst);
+
+	return rc;
+}
+
 static void msm_vidc_stop_streaming(struct vb2_queue *q)
 {
 	struct msm_vidc_inst *inst;
@@ -1078,16 +1104,6 @@ static void msm_vidc_stop_streaming(struct vb2_queue *q)
 
 	inst = q->drv_priv;
 	dprintk(VIDC_DBG, "Streamoff called on: %d capability\n", q->type);
-
-	if (is_encode_session(inst) && q->type ==
-			V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE) {
-		rc = msm_vidc_unprepare_preprocess(inst);
-		if (rc)
-			dprintk(VIDC_ERR,
-				"%s: failed to unprepare preprocess\n",
-				__func__);
-	}
-
 	switch (q->type) {
 	case INPUT_MPLANE:
 		if (!inst->bufq[OUTPUT_PORT].vb2_bufq.streaming)
@@ -1209,20 +1225,11 @@ static void msm_vidc_buf_queue(struct vb2_buffer *vb2)
 		return;
 	}
 
-	/* do preprocessing if any */
-	rc = msm_vidc_preprocess(inst, vb2);
-	if (rc) {
-		dprintk(VIDC_ERR, "%s: preprocess failed %x\n",
-			__func__, hash32_ptr(inst->session));
-		goto exit;
-	}
-
 	if (inst->batch.enable)
 		rc = msm_vidc_queue_buf_batch(inst, vb2);
 	else
 		rc = msm_vidc_queue_buf(inst, vb2);
 
-exit:
 	if (rc) {
 		print_vb2_buffer(VIDC_ERR, "failed vb2-qbuf", inst, vb2);
 		msm_comm_generate_session_error(inst);

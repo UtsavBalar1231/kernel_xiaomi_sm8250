@@ -171,6 +171,66 @@ error:
 	return rc;
 }
 
+static int msm_cvp_init_downscale_resolution(struct msm_vidc_inst *inst)
+{
+	struct msm_cvp_external *cvp;
+	const u32 width_max = 1920;
+	u32 width, height, ds_width, ds_height, temp;
+
+	if (!inst || !inst->cvp) {
+		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		return -EINVAL;
+	}
+	cvp = inst->cvp;
+
+	ds_width = cvp->width;
+	ds_height = cvp->height;
+
+	if (!cvp->downscale) {
+		dprintk(VIDC_DBG, "%s: downscaling not enabled\n", __func__);
+		goto exit;
+	}
+
+	/* Step 1) make width always the larger number */
+	if (cvp->height > cvp->width) {
+		width = cvp->height;
+		height = cvp->width;
+	} else {
+		width = cvp->width;
+		height = cvp->height;
+	}
+	/*
+	 * Step 2) Downscale width by 4 and round
+	 * make sure width stays between 480 and 1920
+	 */
+	ds_width = (width + 2) >> 2;
+	if (ds_width < 480)
+		ds_width = 480;
+	if (ds_width > width_max)
+		ds_width = width_max;
+	ds_height = (height * ds_width) / width;
+	if (ds_height < 128)
+		ds_height = 128;
+
+	/* Step 3) do not downscale if width is less than 480 */
+	if (width <= 480)
+		ds_width = width;
+	if (ds_width == width)
+		ds_height = height;
+
+	/* Step 4) switch width and height if already switched */
+	if (height > width) {
+		temp = ds_height;
+		ds_height = ds_width;
+		ds_width = temp;
+	}
+
+exit:
+	cvp->ds_width = ds_width;
+	cvp->ds_height = ds_height;
+	return 0;
+}
+
 static void msm_cvp_deinit_downscale_buffers(struct msm_vidc_inst *inst)
 {
 	struct msm_cvp_external *cvp;
@@ -389,15 +449,12 @@ static int msm_cvp_init_internal_buffers(struct msm_vidc_inst *inst)
 	struct cvp_kmd_arg *arg;
 	struct msm_cvp_session_set_persist_buffers_packet persist2_packet;
 
-	if (!inst || !inst->cvp) {
+	if (!inst || !inst->cvp || !inst->cvp->arg) {
 		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
 		return -EINVAL;
 	}
-	arg = kzalloc(sizeof(struct cvp_kmd_arg), GFP_KERNEL);
-	if (!arg)
-		return -ENOMEM;
-
 	cvp = inst->cvp;
+	arg = cvp->arg;
 	dprintk(VIDC_DBG, "%s:\n", __func__);
 
 	cvp->persist2_buffer.size = HFI_DME_INTERNAL_PERSIST_2_BUFFER_SIZE;
@@ -451,35 +508,36 @@ static int msm_cvp_init_internal_buffers(struct msm_vidc_inst *inst)
 	print_cvp_buffer(VIDC_DBG, "alloc: output_buffer",
 			inst, &cvp->output_buffer);
 
-	kfree(arg);
 	return rc;
 
 error:
 	msm_cvp_deinit_internal_buffers(inst);
-	kfree(arg);
 	return rc;
 }
 
 static int msm_cvp_prepare_extradata(struct msm_vidc_inst *inst,
-		struct vb2_buffer *vb)
+		struct msm_vidc_buffer *mbuf)
 {
 	int rc = 0;
 	struct msm_cvp_external *cvp;
-	struct dma_buf *dbuf = NULL;
-	char *kvaddr = NULL;
+	struct vb2_buffer *vb;
+	struct dma_buf *dbuf;
+	char *kvaddr;
 	struct msm_vidc_extradata_header *e_hdr;
 	bool input_extradata, found_end;
 
-	if (!inst || !inst->cvp || !vb) {
+	if (!inst || !inst->cvp || !mbuf) {
 		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
 		return -EINVAL;
 	}
+	cvp = inst->cvp;
+
+	vb = &mbuf->vvb.vb2_buf;
 	if (vb->num_planes <= 1) {
 		dprintk(VIDC_ERR, "%s: extradata plane not enabled\n",
 			__func__);
 		return -EINVAL;
 	}
-	cvp = inst->cvp;
 
 	dbuf = dma_buf_get(vb->planes[1].m.fd);
 	if (!dbuf) {
@@ -539,17 +597,24 @@ static int msm_cvp_prepare_extradata(struct msm_vidc_inst *inst,
 			dbuf->size);
 		goto error;
 	}
-	/* copy payload */
-	e_hdr->version = 0x00000001;
-	e_hdr->port_index = 1;
-	e_hdr->type = MSM_VIDC_EXTRADATA_CVP_METADATA;
-	e_hdr->data_size = sizeof(struct msm_vidc_enc_cvp_metadata_payload);
-	e_hdr->size = sizeof(struct msm_vidc_extradata_header) +
+	if (cvp->metadata_available) {
+		cvp->metadata_available = false;
+
+		/* copy payload */
+		e_hdr->version = 0x00000001;
+		e_hdr->port_index = 1;
+		e_hdr->type = MSM_VIDC_EXTRADATA_CVP_METADATA;
+		e_hdr->data_size =
+			sizeof(struct msm_vidc_enc_cvp_metadata_payload);
+		e_hdr->size = sizeof(struct msm_vidc_extradata_header) +
 			e_hdr->data_size;
-	dma_buf_begin_cpu_access(cvp->output_buffer.dbuf, DMA_BIDIRECTIONAL);
-	memcpy(e_hdr->data, cvp->output_buffer.kvaddr,
+		dma_buf_begin_cpu_access(cvp->output_buffer.dbuf,
+			DMA_BIDIRECTIONAL);
+		memcpy(e_hdr->data, cvp->output_buffer.kvaddr,
 			sizeof(struct msm_vidc_enc_cvp_metadata_payload));
-	dma_buf_end_cpu_access(cvp->output_buffer.dbuf, DMA_BIDIRECTIONAL);
+		dma_buf_end_cpu_access(cvp->output_buffer.dbuf,
+			DMA_BIDIRECTIONAL);
+	}
 	/* fill extradata none */
 	e_hdr = (struct msm_vidc_extradata_header *)
 			((char *)e_hdr + e_hdr->size);
@@ -607,26 +672,51 @@ static int msm_cvp_reference_management(struct msm_vidc_inst *inst)
 }
 
 static int msm_cvp_frame_process(struct msm_vidc_inst *inst,
-		struct vb2_buffer *vb)
+		struct msm_vidc_buffer *mbuf)
 {
 	int rc = 0;
 	struct msm_cvp_external *cvp;
+	struct vb2_buffer *vb;
 	struct cvp_kmd_arg *arg;
 	struct msm_cvp_dme_frame_packet *frame;
+	const u32 fps_max = 60;
+	u32 fps, skip_framecount;
+	bool skipframe = false;
 
-	if (!inst || !inst->cvp) {
+	if (!inst || !inst->cvp || !inst->cvp->arg || !mbuf) {
 		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
 		return -EINVAL;
 	}
-	arg = kzalloc(sizeof(struct cvp_kmd_arg), GFP_KERNEL);
-	if (!arg)
-		return -ENOMEM;
-
 	cvp = inst->cvp;
+	arg = cvp->arg;
+
+	vb = &mbuf->vvb.vb2_buf;
 	cvp->fullres_buffer.index = vb->index;
 	cvp->fullres_buffer.fd = vb->planes[0].m.fd;
 	cvp->fullres_buffer.size = vb->planes[0].length;
 	cvp->fullres_buffer.offset = vb->planes[0].data_offset;
+
+	/* frame skip logic */
+	fps = max(inst->clk_data.operating_rate,
+			inst->clk_data.frame_rate) >> 16;
+	if (fps > fps_max) {
+		/*
+		 * fps <= 120: 0, 2, 4, 6 .. are not skipped
+		 * fps <= 180: 0, 3, 6, 9 .. are not skipped
+		 * fps <= 240: 0, 4, 8, 12 .. are not skipped
+		 * fps <= 960: 0, 16, 32, 48 .. are not skipped
+		 */
+		fps = ALIGN(fps, fps_max);
+		skip_framecount = fps / fps_max;
+		skipframe = !(cvp->framecount % skip_framecount);
+	}
+	if (skipframe) {
+		print_cvp_buffer(VIDC_DBG, "input frame skipped",
+			inst, &cvp->fullres_buffer);
+		cvp->framecount++;
+		cvp->metadata_available = false;
+		return 0;
+	}
 
 	arg->type = CVP_KMD_SEND_CMD_PKT;
 	frame = (struct msm_cvp_dme_frame_packet *)&arg->data.hfi_pkt.pkt_data;
@@ -680,18 +770,19 @@ static int msm_cvp_frame_process(struct msm_vidc_inst *inst,
 		goto error;
 	}
 	cvp->framecount++;
+	cvp->metadata_available = true;
 
 error:
-	kfree(arg);
 	return rc;
 }
 
-int msm_vidc_cvp_preprocess(struct msm_vidc_inst *inst, struct vb2_buffer *vb)
+int msm_vidc_cvp_preprocess(struct msm_vidc_inst *inst,
+		struct msm_vidc_buffer *mbuf)
 {
 	int rc = 0;
 	struct msm_cvp_external *cvp;
 
-	if (!inst || !inst->cvp || !vb) {
+	if (!inst || !inst->cvp || !mbuf) {
 		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
 		return -EINVAL;
 	}
@@ -702,13 +793,13 @@ int msm_vidc_cvp_preprocess(struct msm_vidc_inst *inst, struct vb2_buffer *vb)
 	}
 	cvp = inst->cvp;
 
-	rc = msm_cvp_frame_process(inst, vb);
+	rc = msm_cvp_frame_process(inst, mbuf);
 	if (rc) {
 		dprintk(VIDC_ERR, "%s: cvp process failed\n", __func__);
 		return rc;
 	}
 
-	rc = msm_cvp_prepare_extradata(inst, vb);
+	rc = msm_cvp_prepare_extradata(inst, mbuf);
 	if (rc) {
 		dprintk(VIDC_ERR, "%s: prepare extradata failed\n", __func__);
 		return rc;
@@ -760,6 +851,8 @@ static int msm_vidc_cvp_close(struct msm_vidc_inst *inst)
 			"%s: cvp close failed with error %d\n", __func__, rc);
 	cvp->priv = NULL;
 
+	kfree(cvp->arg);
+	cvp->arg = NULL;
 	kfree(inst->cvp);
 	inst->cvp = NULL;
 
@@ -792,39 +885,25 @@ static int msm_vidc_cvp_init(struct msm_vidc_inst *inst)
 	struct msm_cvp_dme_basic_config_packet *dmecfg;
 	u32 color_fmt;
 
-	if (!inst || !inst->cvp) {
+	if (!inst || !inst->cvp || !inst->cvp->arg) {
 		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
 		return -EINVAL;
 	}
-	arg = kzalloc(sizeof(struct cvp_kmd_arg), GFP_KERNEL);
-	if (!arg)
-		return -ENOMEM;
-
-	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
 	cvp = inst->cvp;
-
+	arg = cvp->arg;
 	cvp->framecount = 0;
+	cvp->metadata_available = false;
+	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
 	cvp->width = f->fmt.pix_mp.width;
 	cvp->height = f->fmt.pix_mp.height;
 	color_fmt = msm_comm_convert_color_fmt(f->fmt.pix_mp.pixelformat);
 
 	/* enable downscale always */
 	cvp->downscale = true;
-	if (cvp->width * cvp->height < 640 * 480) {
-		cvp->ds_width = cvp->width;
-		cvp->ds_height = cvp->height;
-	} else if (cvp->width * cvp->height < 1920 * 1080) {
-		if (cvp->ds_width >= cvp->ds_height) {
-			cvp->ds_width = 480;
-			cvp->ds_height = 270;
-		} else {
-			cvp->ds_width = 270;
-			cvp->ds_height = 480;
-		}
-	} else {
-		cvp->ds_width = cvp->width / 4;
-		cvp->ds_height = cvp->height / 4;
-	}
+	rc = msm_cvp_init_downscale_resolution(inst);
+	if (rc)
+		goto error;
+
 	dprintk(VIDC_DBG,
 		"%s: pixelformat %#x, wxh %dx%d downscale %d ds_wxh %dx%d\n",
 		__func__, f->fmt.pix_mp.pixelformat,
@@ -873,12 +952,10 @@ static int msm_vidc_cvp_init(struct msm_vidc_inst *inst)
 	if (rc)
 		goto error;
 
-	kfree(arg);
 	return rc;
 
 error:
 	msm_vidc_cvp_deinit(inst);
-	kfree(arg);
 	return rc;
 }
 
@@ -892,17 +969,21 @@ static int msm_vidc_cvp_open(struct msm_vidc_inst *inst)
 		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
 		return -EINVAL;
 	}
-	arg = kzalloc(sizeof(struct cvp_kmd_arg), GFP_KERNEL);
-	if (!arg)
-		return -ENOMEM;
 
 	inst->cvp = kzalloc(sizeof(struct msm_cvp_external), GFP_KERNEL);
 	if (!inst->cvp) {
 		dprintk(VIDC_ERR, "%s: failed to allocate\n", __func__);
-		rc = -ENOMEM;
-		goto error;
+		return -ENOMEM;
 	}
 	cvp = inst->cvp;
+
+	cvp->arg = kzalloc(sizeof(struct cvp_kmd_arg), GFP_KERNEL);
+	if (!cvp->arg) {
+		kfree(inst->cvp);
+		inst->cvp = NULL;
+		return -ENOMEM;
+	}
+	arg = cvp->arg;
 
 	dprintk(VIDC_DBG, "%s: opening cvp\n", __func__);
 	cvp->priv = msm_cvp_open(0, MSM_VIDC_CVP);
@@ -923,14 +1004,10 @@ static int msm_vidc_cvp_open(struct msm_vidc_inst *inst)
 	dprintk(VIDC_DBG, "%s: cvp session id %#x\n",
 		__func__, cvp->session_id);
 
-	kfree(arg);
 	return 0;
 
 error:
 	msm_vidc_cvp_close(inst);
-	kfree(inst->cvp);
-	inst->cvp = NULL;
-	kfree(arg);
 	return rc;
 }
 
