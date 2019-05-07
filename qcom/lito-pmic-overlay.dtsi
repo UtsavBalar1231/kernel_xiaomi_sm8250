@@ -8,6 +8,34 @@
 	clocks = <&rpmhcc RPMH_CXO_CLK>;
 };
 
+&pm8150_gpios {
+	interrupts = <0x0 0xc3 0x0 IRQ_TYPE_NONE>;
+	interrupt-names = "pm8150_gpio4";
+	qcom,gpios-disallowed = <1 2 3 5 6 7 8 9 10>;
+};
+
+&pm8150l_gpios {
+	/delete-property/ qcom,gpios-disallowed;
+	interrupts = <0x4 0xc0 0x0 IRQ_TYPE_NONE>,
+			<0x4 0xc1 0x0 IRQ_TYPE_NONE>,
+			<0x4 0xc2 0x0 IRQ_TYPE_NONE>,
+			<0x4 0xc3 0x0 IRQ_TYPE_NONE>,
+			<0x4 0xc4 0x0 IRQ_TYPE_NONE>,
+			<0x4 0xc5 0x0 IRQ_TYPE_NONE>,
+			<0x4 0xc6 0x0 IRQ_TYPE_NONE>,
+			<0x4 0xc7 0x0 IRQ_TYPE_NONE>,
+			<0x4 0xc8 0x0 IRQ_TYPE_NONE>,
+			<0x4 0xc9 0x0 IRQ_TYPE_NONE>,
+			<0x4 0xca 0x0 IRQ_TYPE_NONE>,
+			<0x4 0xcb 0x0 IRQ_TYPE_NONE>;
+	interrupt-names = "pm8150l_gpio1", "pm8150l_gpio2",
+			"pm8150l_gpio3", "pm8150l_gpio4",
+			"pm8150l_gpio5", "pm8150l_gpio6",
+			"pm8150l_gpio7", "pm8150l_gpio8",
+			"pm8150l_gpio9", "pm8150l_gpio10",
+			"pm8150l_gpio11", "pm8150l_gpio12";
+};
+
 &pm8150l_clkdiv {
 	/delete-property/ clocks;
 	clocks = <&rpmhcc RPMH_CXO_CLK>;
