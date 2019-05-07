@@ -2374,7 +2374,7 @@ int msm_venc_set_vbv_delay(struct msm_vidc_inst *inst)
 	height = f->fmt.pix_mp.height;
 	width = f->fmt.pix_mp.width;
 	mbpf = NUM_MBS_PER_FRAME(height, width);
-	fps = inst->clk_data.frame_rate;
+	fps = inst->clk_data.frame_rate >> 16;
 	mbpf = NUM_MBS_PER_FRAME(height, width);
 	mbps = NUM_MBS_PER_SEC(height, width, fps);
 
@@ -2850,11 +2850,13 @@ int msm_venc_set_slice_control_mode(struct msm_vidc_inst *inst)
 	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
 	output_width = f->fmt.pix_mp.width;
 	output_height = f->fmt.pix_mp.height;
-	if (output_height < 128 ||
-		(codec != V4L2_PIX_FMT_HEVC && output_width < 384) ||
-		(codec != V4L2_PIX_FMT_H264 && output_width < 192)) {
+	if ((codec == V4L2_PIX_FMT_HEVC) &&
+		(output_height < 128 || output_width < 384))
 		goto set_and_exit;
-	}
+
+	if ((codec == V4L2_PIX_FMT_H264) &&
+		(output_height < 128 || output_width < 192))
+		goto set_and_exit;
 
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_MULTI_SLICE_MODE);
 	if (ctrl->val == V4L2_MPEG_VIDEO_MULTI_SICE_MODE_MAX_MB) {
