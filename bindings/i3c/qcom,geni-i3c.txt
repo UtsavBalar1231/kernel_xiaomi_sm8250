@@ -30,7 +30,7 @@ I3C device connected on the bus follow the generic description (see
 Documentation/devicetree/bindings/i3c/i3c.txt for more details).
 
 Example:
-        i3c0: i3c@980000 {
+        i3c0: i3c-master@980000 {
 		compatible = "qcom,geni-i3c";
 		reg = <0x980000 0x4000>,
 			<0xec30000 0x10000>;
