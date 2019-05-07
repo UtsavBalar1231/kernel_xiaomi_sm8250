@@ -50,6 +50,9 @@ SoCs:
 - LITO
   compatible = "qcom,lito"
 
+- BENGAL
+  compatible = "qcom,bengal"
+
 - SDMSHRIKE
   compatible = "qcom,sdmshrike"
 
@@ -167,6 +170,7 @@ compatible = "qcom,lito-mtp"
 compatible = "qcom,lito-cdp"
 compatible = "qcom,lito-atp"
 compatible = "qcom,lito-qrd"
+compatible = "qcom,bengal-rumi"
 compatible = "qcom,sdmshrike-rumi"
 compatible = "qcom,sdmshrike-mtp"
 compatible = "qcom,sdmshrike-cdp"

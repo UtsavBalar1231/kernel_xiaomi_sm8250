@@ -1,0 +1,13 @@
+&soc {
+	timer {
+		clock-frequency = <800000>;
+	};
+
+	timer@f120000 {
+		clock-frequency = <800000>;
+	};
+
+	wdog: qcom,wdt@f017000 {
+		status = "disabled";
+	};
+};
