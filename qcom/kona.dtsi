@@ -3470,12 +3470,13 @@
 			     <GIC_SPI 254 IRQ_TYPE_LEVEL_HIGH>,
 			     <GIC_SPI 255 IRQ_TYPE_LEVEL_HIGH>,
 			     <GIC_SPI 256 IRQ_TYPE_LEVEL_HIGH>;
-		qcom,max-num-gpii = <13>;
+		qcom,max-num-gpii = <15>;
 		qcom,gpii-mask = <0x7ff>;
 		qcom,ev-factor = <2>;
+		qcom,gpii_offset;
 		iommus = <&apps_smmu 0x5b6 0x0>;
 		qcom,smmu-cfg = <0x1>;
-		qcom,iova-range = <0x0 0x100000 0x0 0x100000>;
+		qcom,iommu-dma-addr-pool = <0x100000 0x100000>;
 		status = "ok";
 	};
 
@@ -3497,9 +3498,10 @@
 		qcom,max-num-gpii = <10>;
 		qcom,gpii-mask = <0x3f>;
 		qcom,ev-factor = <2>;
+		qcom,gpii_offset;
 		iommus = <&apps_smmu 0x56 0x0>;
 		qcom,smmu-cfg = <0x1>;
-		qcom,iova-range = <0x0 0x100000 0x0 0x100000>;
+		qcom,iommu-dma-addr-pool = <0x100000 0x100000>;
 		status = "ok";
 	};
 
@@ -3521,9 +3523,10 @@
 		qcom,max-num-gpii = <10>;
 		qcom,gpii-mask = <0x3f>;
 		qcom,ev-factor = <2>;
+		qcom,gpii_offset;
 		iommus = <&apps_smmu 0x76 0x0>;
 		qcom,smmu-cfg = <0x1>;
-		qcom,iova-range = <0x0 0x100000 0x0 0x100000>;
+		qcom,iommu-dma-addr-pool = <0x100000 0x100000>;
 		status = "ok";
 	};
 
