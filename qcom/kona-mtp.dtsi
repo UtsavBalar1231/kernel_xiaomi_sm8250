@@ -302,6 +302,12 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 #include "smb1390.dtsi"
+
+	halo,hl6111r@25 {
+		compatible = "halo,hl6111r";
+		reg = <0x25>;
+		status = "ok";
+	};
 };
 
 &smb1390 {
