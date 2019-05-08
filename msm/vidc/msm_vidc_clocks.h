@@ -11,6 +11,8 @@ void msm_clock_data_reset(struct msm_vidc_inst *inst);
 int msm_vidc_set_clocks(struct msm_vidc_core *core);
 int msm_comm_vote_bus(struct msm_vidc_core *core);
 int msm_dcvs_try_enable(struct msm_vidc_inst *inst);
+bool res_is_less_than(u32 width, u32 height, u32 ref_width, u32 ref_height);
+bool res_is_greater_than(u32 width, u32 height, u32 ref_width, u32 ref_height);
 int msm_vidc_get_mbs_per_frame(struct msm_vidc_inst *inst);
 int msm_comm_scale_clocks_and_bus(struct msm_vidc_inst *inst);
 int msm_comm_init_clocks_and_bus_data(struct msm_vidc_inst *inst);

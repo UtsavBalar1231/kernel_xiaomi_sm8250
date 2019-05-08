@@ -729,7 +729,7 @@ bool is_vidc_cvp_allowed(struct msm_vidc_inst *inst)
 		!(inst->prop.extradata_ctrls & EXTRADATA_ENC_INPUT_CVP) &&
 		inst->rc_type != RATE_CONTROL_OFF &&
 		inst->rc_type != V4L2_MPEG_VIDEO_BITRATE_MODE_CQ &&
-		!inst->clk_data.is_cbr_plus) {
+		!inst->clk_data.is_legacy_cbr) {
 		dprintk(VIDC_DBG, "%s: cvp allowed\n", __func__);
 		allowed = true;
 	} else {

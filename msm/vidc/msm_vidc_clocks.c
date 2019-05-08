@@ -1242,7 +1242,7 @@ int msm_vidc_decide_work_route_iris2(struct msm_vidc_inst *inst)
 	int rc = 0;
 	struct hfi_device *hdev;
 	struct hfi_video_work_route pdata;
-	bool cbr_plus;
+	bool is_legacy_cbr;
 	u32 codec;
 
 	if (!inst || !inst->core || !inst->core->device) {
@@ -1253,7 +1253,7 @@ int msm_vidc_decide_work_route_iris2(struct msm_vidc_inst *inst)
 	}
 
 	hdev = inst->core->device;
-	cbr_plus = inst->clk_data.is_cbr_plus;
+	is_legacy_cbr = inst->clk_data.is_legacy_cbr;
 	pdata.video_work_route = 4;
 
 	codec  = get_v4l2_codec(inst);
@@ -1263,7 +1263,6 @@ int msm_vidc_decide_work_route_iris2(struct msm_vidc_inst *inst)
 			pdata.video_work_route = 1;
 	} else if (inst->session_type == MSM_VIDC_ENCODER) {
 		u32 slice_mode, width, height;
-		bool is_1080p_above;
 		struct v4l2_format *f;
 
 		slice_mode =  msm_comm_g_ctrl_for_id(inst,
@@ -1272,11 +1271,8 @@ int msm_vidc_decide_work_route_iris2(struct msm_vidc_inst *inst)
 		height = f->fmt.pix_mp.height;
 		width = f->fmt.pix_mp.width;
 
-		is_1080p_above = res_is_greater_than(width, height, 1920, 1088);
-
 		if (slice_mode == V4L2_MPEG_VIDEO_MULTI_SICE_MODE_MAX_BYTES ||
-			codec == V4L2_PIX_FMT_VP8 ||
-			(!is_1080p_above && !cbr_plus)) {
+			codec == V4L2_PIX_FMT_VP8 || is_legacy_cbr) {
 			pdata.video_work_route = 1;
 		}
 	} else {
