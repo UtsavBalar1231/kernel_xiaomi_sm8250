@@ -2,7 +2,7 @@ ifneq ($(TARGET_BOARD_AUTO),true)
 ifneq ($(TARGET_PRODUCT),qssi)
 
 RMNET_PERF_DLKM_PLATFORMS_LIST := msmnile
-#RMNET_PERF_DLKM_PLATFORMS_LIST += kona
+RMNET_PERF_DLKM_PLATFORMS_LIST += kona
 
 ifeq ($(call is-board-platform-in-list, $(RMNET_PERF_DLKM_PLATFORMS_LIST)),true)
 LOCAL_PATH := $(call my-dir)
