@@ -157,6 +157,122 @@ static struct msm_vidc_codec default_codecs[] = {
 	{ENC, H264}, {ENC, HEVC}, {ENC, VP8},
 };
 
+static struct msm_vidc_codec_capability lito_capabilities_v0[] = {
+	/* {cap_type, domains, codecs, min, max, step_size, default_value} */
+	{CAP_FRAME_WIDTH, DOMAINS_ALL, CODECS_ALL, 96, 5760, 1, 1920},
+	{CAP_FRAME_HEIGHT, DOMAINS_ALL, CODECS_ALL, 96, 5760, 1, 1080},
+	/*  ((5760 * 2880) / 256) */
+	{CAP_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 1, 64800, 1, 34560},
+	/* ((4096x2160)/256)@90fps */
+	{CAP_MBS_PER_SECOND, DOMAINS_ALL, CODECS_ALL, 1, 3110400, 1, 2073600},
+	{CAP_FRAMERATE, DOMAINS_ALL, CODECS_ALL, 1, 480, 1, 30},
+	{CAP_BITRATE, DOMAINS_ALL, CODECS_ALL, 1, 200000000, 1, 20000000},
+	{CAP_SCALE_X, DOMAINS_ALL, CODECS_ALL, 4096, 65536, 1, 4096},
+	{CAP_SCALE_Y, DOMAINS_ALL, CODECS_ALL, 4096, 65536, 1, 4096},
+	{CAP_BFRAME, ENC, H264|HEVC, 0, 1, 1, 0},
+	{CAP_HIER_P_NUM_ENH_LAYERS, ENC, H264|HEVC, 0, 6, 1, 0},
+	{CAP_LTR_COUNT, ENC, H264|HEVC, 0, 4, 1, 0},
+	/* ((1920 * 1088) / 256) * 30 fps */
+	{CAP_MBS_PER_SECOND_POWER_SAVE, ENC, CODECS_ALL,
+		0, 244800, 1, 244800},
+	{CAP_I_FRAME_QP, ENC, H264|HEVC, 0, 51, 1, 10},
+	{CAP_P_FRAME_QP, ENC, H264|HEVC, 0, 51, 1, 20},
+	{CAP_B_FRAME_QP, ENC, H264|HEVC, 0, 51, 1, 20},
+	{CAP_I_FRAME_QP, ENC, VP8|VP9, 0, 127, 1, 20},
+	{CAP_P_FRAME_QP, ENC, VP8|VP9, 0, 127, 1, 40},
+	{CAP_B_FRAME_QP, ENC, VP8|VP9, 0, 127, 1, 40},
+	/* 10 slices */
+	{CAP_SLICE_BYTE, ENC, H264|HEVC, 1, 10, 1, 10},
+	{CAP_SLICE_MB, ENC, H264|HEVC, 1, 10, 1, 10},
+	{CAP_MAX_VIDEOCORES, DOMAINS_ALL, CODECS_ALL, 0, 1, 1, 1},
+
+	/* VP8 specific */
+	{CAP_FRAME_WIDTH, ENC|DEC, VP8, 96, 1920, 1, 1920},
+	{CAP_FRAME_HEIGHT, ENC|DEC, VP8, 96, 1080, 1, 1080},
+	/* (1920 * 1088) / 256 */
+	{CAP_MBS_PER_FRAME, ENC|DEC, VP8, 1, 8160, 1, 8160},
+	/* ((1920 * 1088) / 256) * 120*/
+	{CAP_MBS_PER_SECOND, ENC|DEC, VP8, 1, 979200, 1, 244800},
+	{CAP_FRAMERATE, ENC|DEC, VP8, 1, 120, 1, 30},
+	{CAP_BITRATE, ENC, VP8, 1, 40000000, 1, 20000000},
+	{CAP_BITRATE, DEC, VP8, 1, 100000000, 1, 20000000},
+
+	/* Mpeg2 decoder specific */
+	{CAP_FRAME_WIDTH, DEC, MPEG2, 96, 1920, 1, 1920},
+	{CAP_FRAME_HEIGHT, DEC, MPEG2, 96, 1920, 1, 1080},
+	/* (1920 * 1088) / 256 */
+	{CAP_MBS_PER_FRAME, DEC, MPEG2, 1, 8160, 1, 8160},
+	/* ((1920 * 1088) / 256) * 30*/
+	{CAP_MBS_PER_SECOND, DEC, MPEG2, 1, 244800, 1, 244800},
+	{CAP_FRAMERATE, DEC, MPEG2, 1, 30, 1, 30},
+	{CAP_BITRATE, DEC, MPEG2, 1, 40000000, 1, 20000000},
+
+	/* Secure usecase specific */
+	{CAP_SECURE_FRAME_WIDTH, DOMAINS_ALL, CODECS_ALL, 96, 4096, 1, 1920},
+	{CAP_SECURE_FRAME_HEIGHT, DOMAINS_ALL, CODECS_ALL, 96, 4096, 1, 1080},
+	/* (4096 * 2160) / 256 */
+	{CAP_SECURE_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 1, 34560, 1, 34560},
+	{CAP_SECURE_BITRATE, DOMAINS_ALL, CODECS_ALL, 1, 40000000, 1, 20000000},
+};
+
+static struct msm_vidc_codec_capability lito_capabilities_v1[] = {
+	/* {cap_type, domains, codecs, min, max, step_size, default_value} */
+	{CAP_FRAME_WIDTH, DOMAINS_ALL, CODECS_ALL, 96, 4096, 1, 1920},
+	{CAP_FRAME_HEIGHT, DOMAINS_ALL, CODECS_ALL, 96, 4096, 1, 1080},
+	/*  ((4096 * 2160) / 256) */
+	{CAP_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 1, 34560, 1, 34560},
+	/* 4K@30 decode + 1080@30 encode */
+	{CAP_MBS_PER_SECOND, DOMAINS_ALL, CODECS_ALL, 1, 1281600, 1, 2073600},
+	{CAP_FRAMERATE, DOMAINS_ALL, CODECS_ALL, 1, 240, 1, 30},
+	{CAP_BITRATE, DOMAINS_ALL, CODECS_ALL, 1, 100000000, 1, 20000000},
+	{CAP_SCALE_X, DOMAINS_ALL, CODECS_ALL, 4096, 65536, 1, 4096},
+	{CAP_SCALE_Y, DOMAINS_ALL, CODECS_ALL, 4096, 65536, 1, 4096},
+	{CAP_BFRAME, ENC, H264|HEVC, 0, 1, 1, 0},
+	{CAP_HIER_P_NUM_ENH_LAYERS, ENC, H264|HEVC, 0, 6, 1, 0},
+	{CAP_LTR_COUNT, ENC, H264|HEVC, 0, 4, 1, 0},
+	/* ((1920 * 1088) / 256) * 30 fps */
+	{CAP_MBS_PER_SECOND_POWER_SAVE, ENC, CODECS_ALL,
+		0, 244800, 1, 244800},
+	{CAP_I_FRAME_QP, ENC, H264|HEVC, 0, 51, 1, 10},
+	{CAP_P_FRAME_QP, ENC, H264|HEVC, 0, 51, 1, 20},
+	{CAP_B_FRAME_QP, ENC, H264|HEVC, 0, 51, 1, 20},
+	{CAP_I_FRAME_QP, ENC, VP8|VP9, 0, 127, 1, 20},
+	{CAP_P_FRAME_QP, ENC, VP8|VP9, 0, 127, 1, 40},
+	{CAP_B_FRAME_QP, ENC, VP8|VP9, 0, 127, 1, 40},
+	/* 10 slices */
+	{CAP_SLICE_BYTE, ENC, H264|HEVC, 1, 10, 1, 10},
+	{CAP_SLICE_MB, ENC, H264|HEVC, 1, 10, 1, 10},
+	{CAP_MAX_VIDEOCORES, DOMAINS_ALL, CODECS_ALL, 0, 1, 1, 1},
+
+	/* VP8 specific */
+	{CAP_FRAME_WIDTH, ENC|DEC, VP8, 96, 1920, 1, 1920},
+	{CAP_FRAME_HEIGHT, ENC|DEC, VP8, 96, 1080, 1, 1080},
+	/* (1920 * 1088) / 256 */
+	{CAP_MBS_PER_FRAME, ENC|DEC, VP8, 1, 8160, 1, 8160},
+	/* ((1920 * 1088) / 256) * 120*/
+	{CAP_MBS_PER_SECOND, ENC|DEC, VP8, 1, 979200, 1, 244800},
+	{CAP_FRAMERATE, ENC|DEC, VP8, 1, 120, 1, 30},
+	{CAP_BITRATE, ENC, VP8, 1, 40000000, 1, 20000000},
+	{CAP_BITRATE, DEC, VP8, 1, 100000000, 1, 20000000},
+
+	/* Mpeg2 decoder specific */
+	{CAP_FRAME_WIDTH, DEC, MPEG2, 96, 1920, 1, 1920},
+	{CAP_FRAME_HEIGHT, DEC, MPEG2, 96, 1920, 1, 1080},
+	/* (1920 * 1088) / 256 */
+	{CAP_MBS_PER_FRAME, DEC, MPEG2, 1, 8160, 1, 8160},
+	/* ((1920 * 1088) / 256) * 30*/
+	{CAP_MBS_PER_SECOND, DEC, MPEG2, 1, 244800, 1, 244800},
+	{CAP_FRAMERATE, DEC, MPEG2, 1, 30, 1, 30},
+	{CAP_BITRATE, DEC, MPEG2, 1, 40000000, 1, 20000000},
+
+	/* Secure usecase specific */
+	{CAP_SECURE_FRAME_WIDTH, DOMAINS_ALL, CODECS_ALL, 96, 4096, 1, 1920},
+	{CAP_SECURE_FRAME_HEIGHT, DOMAINS_ALL, CODECS_ALL, 96, 4096, 1, 1080},
+	/* (4096 * 2160) / 256 */
+	{CAP_SECURE_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 1, 34560, 1, 34560},
+	{CAP_SECURE_BITRATE, DOMAINS_ALL, CODECS_ALL, 1, 40000000, 1, 20000000},
+};
+
 static struct msm_vidc_codec_capability kona_capabilities[] = {
 	/* {cap_type, domains, codecs, min, max, step_size, default_value,} */
 	{CAP_FRAME_WIDTH, DOMAINS_ALL, CODECS_ALL, 128, 8192, 1, 1920},
@@ -263,7 +379,7 @@ static struct msm_vidc_common_data lito_common_data_v0[] = {
 	},
 	{
 		.key = "qcom,max-secure-instances",
-		.value = 5,
+		.value = 3,
 	},
 	{
 		.key = "qcom,max-hw-load",
@@ -275,7 +391,7 @@ static struct msm_vidc_common_data lito_common_data_v0[] = {
 		.value = 8160,/* ((1920x1088)/256) */
 	},
 	{
-		.key = "qcom,qcom,max-hq-mbs-per-sec",
+		.key = "qcom,max-hq-mbs-per-sec",
 		.value = 244800,/* ((1920x1088)/256) MBs@30fps */
 	},
 	{
@@ -335,7 +451,7 @@ static struct msm_vidc_common_data lito_common_data_v1[] = {
 	},
 	{
 		.key = "qcom,max-secure-instances",
-		.value = 5,
+		.value = 3,
 	},
 	{
 		.key = "qcom,max-hw-load",
@@ -346,7 +462,7 @@ static struct msm_vidc_common_data lito_common_data_v1[] = {
 		.value = 8160,/* ((1920x1088)/256) */
 	},
 	{
-		.key = "qcom,qcom,max-hq-mbs-per-sec",
+		.key = "qcom,max-hq-mbs-per-sec",
 		.value = 244800,/* ((1920x1088)/256) MBs@30fps */
 	},
 	{
@@ -810,6 +926,10 @@ static struct msm_vidc_platform_data lito_data = {
 	.sku_version = 0,
 	.vpu_ver = VPU_VERSION_IRIS1,
 	.ubwc_config = 0x0,
+	.codecs = default_codecs,
+	.codecs_count = ARRAY_SIZE(default_codecs),
+	.codec_caps = lito_capabilities_v0,
+	.codec_caps_count = ARRAY_SIZE(lito_capabilities_v0),
 };
 
 static struct msm_vidc_platform_data kona_data = {
@@ -1016,6 +1136,8 @@ void *vidc_get_drv_data(struct device *dev)
 			driver_data->common_data = lito_common_data_v1;
 			driver_data->common_data_length =
 					ARRAY_SIZE(lito_common_data_v1);
+			driver_data->codec_caps = lito_capabilities_v1;
+			driver_data->codec_caps_count = ARRAY_SIZE(lito_capabilities_v1);
 		}
 	}
 
