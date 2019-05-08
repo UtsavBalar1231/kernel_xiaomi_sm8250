@@ -111,6 +111,8 @@ memory allocation over a PCIe bridge
 				0 (use scm call),
 				1 (override scm call as though it returned true), and
 				2 (override scm call as though it returned false)
+- qcom,ram-collection-on-crash: Boolean that controls IPA/GSI memory
+				collection upon system crash
 
 Optional properties:
 -qcom,ipa-pipe-mem: Specifies the base physical address and the
