@@ -1153,6 +1153,7 @@
 
 		lanes-per-direction = <2>;
 		dev-ref-clk-freq = <0>; /* 19.2 MHz */
+		spm-level = <5>;
 
 		clock-names =
 			"core_clk",
