@@ -574,10 +574,6 @@ struct vidc_hal_sys_init_done {
 	u32 max_sessions_supported;
 };
 
-struct vidc_hal_session_init_done {
-	struct msm_vidc_capability capability;
-};
-
 struct msm_vidc_cb_cmd_done {
 	u32 device_id;
 	void *session_id;
@@ -592,7 +588,6 @@ struct msm_vidc_cb_cmd_done {
 		struct vidc_hal_ebd ebd;
 		struct vidc_hal_fbd fbd;
 		struct vidc_hal_sys_init_done sys_init_done;
-		struct vidc_hal_session_init_done session_init_done;
 		struct hal_buffer_info buffer_info;
 		struct vidc_register_buffer regbuf;
 		struct vidc_unregister_buffer unregbuf;

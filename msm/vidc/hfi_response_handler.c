@@ -109,8 +109,7 @@ static int hfi_process_sess_evt_seq_changed(u32 device_id,
 	struct hfi_colour_space *colour_info;
 
 	if (sizeof(struct hfi_msg_event_notify_packet) > pkt->size) {
-		dprintk(VIDC_ERR,
-				"hal_process_session_init_done: bad_pkt_size\n");
+		dprintk(VIDC_ERR, "%s: bad_pkt_size\n", __func__);
 		return -E2BIG;
 	}
 
@@ -285,8 +284,7 @@ static int hfi_process_evt_release_buffer_ref(u32 device_id,
 			"RECEIVED: EVENT_NOTIFY - release_buffer_reference\n");
 	if (sizeof(struct hfi_msg_event_notify_packet)
 		> pkt->size) {
-		dprintk(VIDC_ERR,
-				"hal_process_session_init_done: bad_pkt_size\n");
+		dprintk(VIDC_ERR, "%s: bad_pkt_size\n", __func__);
 		return -E2BIG;
 	}
 
@@ -618,7 +616,6 @@ static int hfi_process_session_init_done(u32 device_id,
 {
 	struct hfi_msg_sys_session_init_done_packet *pkt = _pkt;
 	struct msm_vidc_cb_cmd_done cmd_done = {0};
-	struct vidc_hal_session_init_done session_init_done = { {0} };
 
 	dprintk(VIDC_DBG, "RECEIVED: SESSION_INIT_DONE[%x]\n", pkt->session_id);
 
@@ -631,8 +628,6 @@ static int hfi_process_session_init_done(u32 device_id,
 	cmd_done.device_id = device_id;
 	cmd_done.session_id = (void *)(uintptr_t)pkt->session_id;
 	cmd_done.status = hfi_map_err_status(pkt->error_type);
-	cmd_done.data.session_init_done = session_init_done;
-	cmd_done.size = sizeof(struct vidc_hal_session_init_done);
 
 	info->response_type = HAL_SESSION_INIT_DONE;
 	info->response.cmd = cmd_done;
