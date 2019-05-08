@@ -998,11 +998,6 @@ static struct msm_vidc_format_desc venc_output_formats[] = {
 		.description = "HEVC compressed format",
 		.fourcc = V4L2_PIX_FMT_HEVC,
 	},
-	{
-		.name = "TME",
-		.description = "TME MBI format",
-		.fourcc = V4L2_PIX_FMT_TME,
-	},
 };
 
 struct msm_vidc_format_constraint enc_pix_format_constraints[] = {
