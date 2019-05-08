@@ -664,3 +664,4 @@
 };
 
 #include "bengal-regulator.dtsi"
+#include "bengal-pinctrl.dtsi"
