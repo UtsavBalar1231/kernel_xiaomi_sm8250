@@ -262,6 +262,21 @@ First Level Node - QGAUGE device
 		    capacity learning cycle. If this is not specified, then
 		    the default value is 0. Unit is in decipercentage.
 
+- qcom,cl-min-delta-batt-soc
+	Usage:      optional
+	Value type: <u32>
+	Definition: Minimum change in battery SOC to qualify for capacity
+		    learning. If this is not specified, then the default
+		    value is 10. Unit is in percentage.
+
+- qcom,cl-wt-enable
+	Usage:      optional
+	Value type: <bool>
+	Definition: A boolean property to enable weighted capacity learning
+		    based on change in battery SOC during a charging cycle.
+		    If this is specified, then "qcom,cl-min-start-soc" and
+		    "qcom,cl-max-start-soc" is not used.
+
 - qcom,esr-disable
 	Usage:      optional
 	Value type: <bool>
@@ -321,6 +336,11 @@ First Level Node - QGAUGE device
 	Definition: The SOC difference allowed between PON and SHUTDOWN SOC
 		    for the shutdown SOC to be used. If the difference is
 		    beyond this value the PON SOC is used.
+
+- qcom,qg-use-s7-ocv
+	Usage:      optional
+	Value type: <bool>
+	Definition: Boolean property to use S7 for PON OCV.
 
 ==========================================================
 Second Level Nodes - Peripherals managed by QGAUGE driver
