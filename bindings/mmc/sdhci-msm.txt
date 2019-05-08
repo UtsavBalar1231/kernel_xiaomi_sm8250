@@ -3,13 +3,12 @@ Qualcomm Technologies, Inc. Standard Secure Digital Host Controller (SDHC)
 Secure Digital Host Controller provides standard host interface to SD/MMC/SDIO cards.
 
 Required properties:
-- compatible: Should contain:
-		"qcom,sdhci-msm-v4" for sdcc versions less than 5.0
-		"qcom,sdhci-msm-v5" for sdcc versions >= 5.0
-		For SDCC version 5.0.0, MCI registers are removed from SDCC
-		interface and some registers are moved to HC. New compatible
-		string is added to support this change - "qcom,sdhci-msm-v5".
+  - compatible : should be "qcom,sdhci-msm"
+		For SDCC version 5.0.0, MCI registers are removed from SDCC interface
+		and some registers are moved to HC. New compatible string is added to
+		support this change - "qcom,sdhci-msm-v5".
   - reg : should contain SDHC, SD Core register map.
+  - compatible: "qcom,sdhci-msm-cqe" - Optional in case the controller support CQE.
   - reg-names : indicates various resources passed to driver (via reg proptery) by name.
 		Required "reg-names" are "hc_mem" and "core_mem"
 		optional ones are "tlmm_mem"
@@ -91,8 +90,8 @@ Optional Properties:
 	  SDCC registers before resuming to normal operation.
 	- qcom,force-sdhc1-probe: Force probing sdhc1 even if it is not the boot device.
 	- qcom,dll-hsr-list: List of DLL-HSR values which are tuned for given process-node
-			and platform. The sequence of values in this list must follow the
-			sequence listed in sdhci_msm_dll_hsr data structure.
+			 and platform. The sequence of values in this list must follow the
+			 sequence listed in sdhci_msm_dll_hsr data structure.
 In the following, <supply> can be vdd (flash core voltage) or vdd-io (I/O voltage).
 	- qcom,<supply>-always-on - specifies whether supply should be kept "on" always.
 	- qcom,<supply>-lpm_sup - specifies whether supply can be kept in low power mode (lpm).
