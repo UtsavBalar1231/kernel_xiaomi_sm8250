@@ -219,7 +219,7 @@
 	qcom,mdss-dsi-max-refresh-rate = <60>;
 	qcom,mdss-dsi-display-timings {
 		timing@0 {
-			qcom,mdss-dsi-panel-phy-timings = [00 14 05 05 1f 1e 05
+			qcom,mdss-dsi-panel-phy-timings = [00 14 05 05 1f 1f 05
 				05 03 02 04 00 12 15];
 			qcom,display-topology = <2 2 1>;
 			qcom,default-topology-index = <0>;
