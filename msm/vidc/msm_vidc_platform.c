@@ -770,7 +770,7 @@ static struct msm_vidc_common_data sdm670_common_data_v1[] = {
 };
 
 static struct msm_vidc_efuse_data lito_efuse_data[] = {
-	EFUSE_ENTRY(0x00786018, 4, 0x00000400, 0x0a, SKU_VERSION),
+	EFUSE_ENTRY(0x00786008, 4, 0x00200000, 0x15, SKU_VERSION),
 };
 
 static struct msm_vidc_efuse_data sdm670_efuse_data[] = {
