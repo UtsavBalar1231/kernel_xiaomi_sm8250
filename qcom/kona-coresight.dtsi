@@ -2797,8 +2797,33 @@
 
 		coresight-name = "coresight-cti-gpu_cortex_m3";
 
-		clocks = <&clock_aop QDSS_CLK>;
-		clock-names = "apb_pclk";
+		clocks =  <&clock_aop QDSS_CLK>,
+			<&clock_gpucc GPU_CC_CXO_CLK>,
+			<&clock_gcc GCC_DDRSS_GPU_AXI_CLK>,
+			<&clock_gcc GCC_GPU_MEMNOC_GFX_CLK>,
+			<&clock_gpucc GPU_CC_CX_GMU_CLK>,
+			<&clock_gpucc GPU_CC_AHB_CLK>,
+			<&clock_cpucc L3_GPU_VOTE_CLK>;
+
+		clock-names = "apb_pclk",
+			"rbbmtimer_clk",
+			"mem_clk",
+			"mem_iface_clk",
+			"gmu_clk",
+			"gpu_cc_ahb",
+			"l3_vote";
+
+		qcom,proxy-clks = "rbbmtimer_clk",
+			"mem_clk",
+			"mem_iface_clk",
+			"gmu_clk",
+			"gpu_cc_ahb",
+			"l3_vote";
+
+		vddcx-supply = <&gpu_cx_gdsc>;
+		vdd-supply = <&gpu_gx_gdsc>;
+		regulator-names = "vddcx", "vdd";
+		qcom,proxy-regs  = "vddcx", "vdd";
 	};
 
 	cti_gpu_isdb: cti@6961000 {
@@ -2809,8 +2834,33 @@
 
 		coresight-name = "coresight-cti-gpu_isdb_cti";
 
-		clocks = <&clock_aop QDSS_CLK>;
-		clock-names = "apb_pclk";
+		clocks =  <&clock_aop QDSS_CLK>,
+			<&clock_gpucc GPU_CC_CXO_CLK>,
+			<&clock_gcc GCC_DDRSS_GPU_AXI_CLK>,
+			<&clock_gcc GCC_GPU_MEMNOC_GFX_CLK>,
+			<&clock_gpucc GPU_CC_CX_GMU_CLK>,
+			<&clock_gpucc GPU_CC_AHB_CLK>,
+			<&clock_cpucc L3_GPU_VOTE_CLK>;
+
+		clock-names = "apb_pclk",
+			"rbbmtimer_clk",
+			"mem_clk",
+			"mem_iface_clk",
+			"gmu_clk",
+			"gpu_cc_ahb",
+			"l3_vote";
+
+		qcom,proxy-clks = "rbbmtimer_clk",
+			"mem_clk",
+			"mem_iface_clk",
+			"gmu_clk",
+			"gpu_cc_ahb",
+			"l3_vote";
+
+		vddcx-supply = <&gpu_cx_gdsc>;
+		vdd-supply = <&gpu_gx_gdsc>;
+		regulator-names = "vddcx", "vdd";
+		qcom,proxy-regs  = "vddcx", "vdd";
 	};
 
 	cti_iris: cti@6831000 {
