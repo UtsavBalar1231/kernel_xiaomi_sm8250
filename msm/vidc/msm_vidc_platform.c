@@ -779,7 +779,7 @@ static struct msm_vidc_efuse_data sdm670_efuse_data[] = {
 
 /* Default UBWC config for LPDDR5 */
 static struct msm_vidc_ubwc_config_data kona_ubwc_data[] = {
-	UBWC_CONFIG(1, 1, 1, 0, 0, 0, 8, 32, 15, 0, 0),
+	UBWC_CONFIG(1, 1, 1, 0, 0, 0, 8, 32, 16, 0, 0),
 };
 
 static struct msm_vidc_platform_data default_data = {
