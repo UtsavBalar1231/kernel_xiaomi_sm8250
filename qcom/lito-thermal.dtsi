@@ -908,6 +908,11 @@
 				cooling-device = <&CPU7 (THERMAL_MAX_LIMIT-3)
 							(THERMAL_MAX_LIMIT-3)>;
 			};
+
+			lpi_cx_vdd_cdev {
+				trip = <&aoss0_trip>;
+				cooling-device = <&lpi_cx_cdev 0 0>;
+			};
 		};
 	};
 
@@ -943,6 +948,11 @@
 				trip = <&cpu_1_3_trip>;
 				cooling-device = <&CPU7 (THERMAL_MAX_LIMIT-3)
 							(THERMAL_MAX_LIMIT-3)>;
+			};
+
+			lpi_cx_vdd_cdev {
+				trip = <&cpu_1_3_trip>;
+				cooling-device = <&lpi_cx_cdev 0 0>;
 			};
 		};
 	};
@@ -980,6 +990,11 @@
 				cooling-device = <&CPU7 (THERMAL_MAX_LIMIT-3)
 							(THERMAL_MAX_LIMIT-3)>;
 			};
+
+			lpi_cx_vdd_cdev {
+				trip = <&gpuss0_trip>;
+				cooling-device = <&lpi_cx_cdev 0 0>;
+			};
 		};
 	};
 
@@ -1016,6 +1031,11 @@
 				cooling-device = <&CPU7 (THERMAL_MAX_LIMIT-3)
 							(THERMAL_MAX_LIMIT-3)>;
 			};
+
+			lpi_cx_vdd_cdev {
+				trip = <&camera_trip>;
+				cooling-device = <&lpi_cx_cdev 0 0>;
+			};
 		};
 	};
 
@@ -1051,6 +1071,11 @@
 				trip = <&mdm_scl_trip>;
 				cooling-device = <&CPU7 (THERMAL_MAX_LIMIT-3)
 							(THERMAL_MAX_LIMIT-3)>;
+			};
+
+			lpi_cx_vdd_cdev {
+				trip = <&mdm_scl_trip>;
+				cooling-device = <&lpi_cx_cdev 0 0>;
 			};
 		};
 	};
