@@ -2138,7 +2138,7 @@
 		qcom,ev-factor = <2>;
 		iommus = <&apps_smmu 0x4f6 0x0>;
 		qcom,smmu-cfg = <0x1>;
-		qcom,iova-range = <0x0 0x100000 0x0 0x100000>;
+		qcom,iommu-dma-addr-pool = <0x100000 0x100000>;
 		status = "ok";
 	};
 
@@ -2162,7 +2162,7 @@
 		qcom,ev-factor = <2>;
 		iommus = <&apps_smmu 0x36 0x0>;
 		qcom,smmu-cfg = <0x1>;
-		qcom,iova-range = <0x0 0x100000 0x0 0x100000>;
+		qcom,iommu-dma-addr-pool = <0x100000 0x100000>;
 		status = "ok";
 	};
 
