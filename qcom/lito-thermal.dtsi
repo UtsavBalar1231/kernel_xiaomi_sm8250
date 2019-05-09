@@ -45,6 +45,81 @@
 	};
 };
 
+&soc {
+	qmi-tmd-devices {
+		compatible = "qcom,qmi-cooling-devices";
+
+		modem {
+			qcom,instance-id = <0x0>;
+
+			modem_pa: modem_pa {
+				qcom,qmi-dev-name = "pa";
+				#cooling-cells = <2>;
+			};
+
+			modem_proc: modem_proc {
+				qcom,qmi-dev-name = "modem";
+				#cooling-cells = <2>;
+			};
+
+			modem_current: modem_current {
+				qcom,qmi-dev-name = "modem_current";
+				#cooling-cells = <2>;
+			};
+
+			modem_skin: modem_skin {
+				qcom,qmi-dev-name = "modem_skin";
+				#cooling-cells = <2>;
+			};
+
+			modem_skin0: modem_skin0 {
+				qcom,qmi-dev-name = "modem_skin0";
+				#cooling-cells = <2>;
+			};
+
+			modem_skin1: modem_skin1 {
+				qcom,qmi-dev-name = "modem_skin1";
+				#cooling-cells = <2>;
+			};
+
+			modem_skin2: modem_skin2 {
+				qcom,qmi-dev-name = "modem_skin2";
+				#cooling-cells = <2>;
+			};
+
+			modem_skin3: modem_skin3 {
+				qcom,qmi-dev-name = "modem_skin3";
+				#cooling-cells = <2>;
+			};
+
+			modem_mmw0: modem_mmw0 {
+				qcom,qmi-dev-name = "mmw0";
+				#cooling-cells = <2>;
+			};
+
+			modem_mmw1: modem_mmw1 {
+				qcom,qmi-dev-name = "mmw1";
+				#cooling-cells = <2>;
+			};
+
+			modem_mmw2: modem_mmw2 {
+				qcom,qmi-dev-name = "mmw2";
+				#cooling-cells = <2>;
+			};
+
+			modem_mmw3: modem_mmw3 {
+				qcom,qmi-dev-name = "mmw3";
+				#cooling-cells = <2>;
+			};
+
+			modem_bcl: modem_bcl {
+				qcom,qmi-dev-name = "vbatt_low";
+				#cooling-cells = <2>;
+			};
+		};
+	};
+};
+
 &thermal_zones {
 	aoss0-usr {
 		polling-delay-passive = <0>;
