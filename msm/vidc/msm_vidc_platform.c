@@ -533,6 +533,10 @@ static struct msm_vidc_common_data kona_common_data[] = {
 					 */
 	},
 	{
+		.key = "qcom,max-mbpf",
+		.value = 138240,	/* (8192x4320)/256 */
+	},
+	{
 		.key = "qcom,max-hq-mbs-per-frame",
 		.value = 34560,		/* 4096x2160 */
 	},
