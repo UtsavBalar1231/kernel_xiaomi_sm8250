@@ -2753,6 +2753,7 @@
 #include "lito-audio.dtsi"
 #include "lito-bus.dtsi"
 #include "lito-gpu.dtsi"
+#include "lito-thermal.dtsi"
 
 &ufs_phy_gdsc {
 	status = "ok";

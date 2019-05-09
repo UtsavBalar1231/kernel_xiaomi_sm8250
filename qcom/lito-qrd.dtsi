@@ -1,6 +1,7 @@
 #include "lito-pmic-overlay.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include "lito-audio-overlay.dtsi"
+#include "lito-thermal-overlay.dtsi"
 
 &soc {
 

@@ -3,6 +3,7 @@
 #include "lito-pmic-overlay.dtsi"
 #include "lito-camera-sensor-cdp.dtsi"
 #include "lito-sde-display.dtsi"
+#include "lito-thermal-overlay.dtsi"
 
 &soc {
 
