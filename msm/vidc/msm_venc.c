@@ -3432,7 +3432,8 @@ int msm_venc_set_video_csc(struct msm_vidc_inst *inst)
 	}
 	hdev = inst->core->device;
 
-	if (get_v4l2_codec(inst) != V4L2_PIX_FMT_H264)
+	if (get_v4l2_codec(inst) != V4L2_PIX_FMT_H264 &&
+		get_v4l2_codec(inst) != V4L2_PIX_FMT_HEVC)
 		return 0;
 
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_VPE_CSC);
