@@ -1,6 +1,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include "lito-audio-overlay.dtsi"
 #include "lito-pmic-overlay.dtsi"
+#include "lito-camera-sensor-cdp.dtsi"
 
 &soc {
 
