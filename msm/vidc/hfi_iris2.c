@@ -14,6 +14,11 @@
 #define CPU_IC_BASE_OFFS_IRIS2		(CPU_BASE_OFFS_IRIS2)
 
 #define CPU_CS_A2HSOFTINTCLR_IRIS2	(CPU_CS_BASE_OFFS_IRIS2 + 0x1C)
+#define CPU_CS_VCICMD_IRIS2		(CPU_CS_BASE_OFFS_IRIS2 + 0x20)
+#define CPU_CS_VCICMDARG0_IRIS2		(CPU_CS_BASE_OFFS_IRIS2 + 0x24)
+#define CPU_CS_VCICMDARG1_IRIS2		(CPU_CS_BASE_OFFS_IRIS2 + 0x28)
+#define CPU_CS_VCICMDARG2_IRIS2		(CPU_CS_BASE_OFFS_IRIS2 + 0x2C)
+#define CPU_CS_VCICMDARG3_IRIS2		(CPU_CS_BASE_OFFS_IRIS2 + 0x30)
 #define CPU_CS_VMIMSG_IRIS2		(CPU_CS_BASE_OFFS_IRIS2 + 0x34)
 #define CPU_CS_VMIMSGAG0_IRIS2		(CPU_CS_BASE_OFFS_IRIS2 + 0x38)
 #define CPU_CS_VMIMSGAG1_IRIS2		(CPU_CS_BASE_OFFS_IRIS2 + 0x3C)
@@ -160,6 +165,11 @@ void __setup_ucregion_memory_map_iris2(struct venus_hfi_device *device)
 	if (device->qdss.align_device_addr)
 		__write_register(device, MMAP_ADDR_IRIS2,
 				(u32)device->qdss.align_device_addr);
+	/* update queues vaddr for debug purpose */
+	__write_register(device, CPU_CS_VCICMDARG0_IRIS2,
+		(u32)device->iface_q_table.align_virtual_addr);
+	__write_register(device, CPU_CS_VCICMDARG1_IRIS2,
+		(u32)((u64)device->iface_q_table.align_virtual_addr >> 32));
 }
 
 void __power_off_iris2(struct venus_hfi_device *device)
