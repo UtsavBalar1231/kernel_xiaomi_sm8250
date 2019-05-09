@@ -24,6 +24,7 @@
 		qcom,use-pdc-interrupts;
 
 		USB3_GDSC-supply = <&usb30_prim_gdsc>;
+		dpdm-supply = <&usb2_phy0>;
 		clocks = <&gcc GCC_USB30_PRIM_MASTER_CLK>,
 			<&gcc GCC_CFG_NOC_USB3_PRIM_AXI_CLK>,
 			<&gcc GCC_AGGRE_USB3_PRIM_AXI_CLK>,
@@ -61,7 +62,7 @@
 			snps,usb3-u1u2-disable;
 			usb-core-id = <0>;
 			tx-fifo-resize;
-			maximum-speed = "super-speed";
+			maximum-speed = "high-speed";
 			dr_mode = "drd";
 		};
 
@@ -103,7 +104,7 @@
 
 		vdd-supply = <&pm8150_l5>;
 		vdda18-supply = <&pm8150_l12>;
-		vdda33-supply = <&pm8150_l2>;
+		vdda33-supply = <&pm8150a_l2>;
 		qcom,vdd-voltage-level = <0 880000 880000>;
 
 		clocks = <&rpmhcc RPMH_CXO_CLK>;
@@ -123,7 +124,7 @@
 		vdd-supply = <&pm8150_l5>;
 		qcom,vdd-voltage-level = <0 880000 880000>;
 		qcom,vdd-max-load-uA = <47000>;
-		core-supply = <&pm8150a_l7>;
+		core-supply = <&pm8150a_l9>;
 		qcom,vbus-valid-override;
 		qcom,qmp-phy-init-seq =
 			/* <reg_offset, value, delay> */
