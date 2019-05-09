@@ -713,6 +713,14 @@
 				type = "passive";
 			};
 		};
+
+		cooling-maps {
+			gpu_cdev {
+				trip = <&gpu_trip0>;
+				cooling-device = <&msm_gpu THERMAL_NO_LIMIT
+							THERMAL_NO_LIMIT>;
+			};
+		};
 	};
 
 	cpu-0-max-step {
