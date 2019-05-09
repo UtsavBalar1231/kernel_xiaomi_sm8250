@@ -9,18 +9,14 @@
 #include "vidc_hfi_api.h"
 #include <linux/of_fdt.h>
 
-int msm_vidc_debug = VIDC_ERR | VIDC_WARN;
+int msm_vidc_debug = VIDC_ERR | VIDC_WARN | VIDC_PRINTK |
+	FW_HIGH | FW_ERROR | FW_FATAL | FW_FTRACE;
 EXPORT_SYMBOL(msm_vidc_debug);
-
-int msm_vidc_debug_out = VIDC_OUT_PRINTK;
-EXPORT_SYMBOL(msm_vidc_debug_out);
 
 bool msm_vidc_lossless_encode = !true;
 EXPORT_SYMBOL(msm_vidc_lossless_encode);
 
-int msm_vidc_fw_debug = HFI_DEBUG_MSG_HIGH |
-	HFI_DEBUG_MSG_ERROR | HFI_DEBUG_MSG_FATAL;
-int msm_vidc_fw_debug_mode = 1;
+int msm_vidc_fw_debug_mode = HFI_DEBUG_MODE_QUEUE;
 bool msm_vidc_fw_coverage = !true;
 bool msm_vidc_thermal_mitigation_disabled = !true;
 int msm_vidc_clock_voting = !1;
@@ -179,10 +175,8 @@ struct dentry *msm_vidc_debugfs_init_drv(void)
 
 	ok =
 	__debugfs_create(x32, "debug_level", &msm_vidc_debug) &&
-	__debugfs_create(x32, "fw_level", &msm_vidc_fw_debug) &&
 	__debugfs_create(u32, "fw_debug_mode", &msm_vidc_fw_debug_mode) &&
 	__debugfs_create(bool, "fw_coverage", &msm_vidc_fw_coverage) &&
-	__debugfs_create(u32, "debug_output", &msm_vidc_debug_out) &&
 	__debugfs_create(bool, "disable_thermal_mitigation",
 			&msm_vidc_thermal_mitigation_disabled) &&
 	__debugfs_create(u32, "core_clock_voting",

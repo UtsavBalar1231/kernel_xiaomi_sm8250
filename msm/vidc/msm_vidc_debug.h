@@ -32,18 +32,25 @@
  */
 
 enum vidc_msg_prio {
-	VIDC_ERR  = 0x0001,
-	VIDC_WARN = 0x0002,
-	VIDC_INFO = 0x0004,
-	VIDC_DBG  = 0x0008,
-	VIDC_PROF = 0x0010,
-	VIDC_PKT  = 0x0020,
-	VIDC_FW   = 0x1000,
+	VIDC_ERR        = 0x00000001,
+	VIDC_WARN       = 0x00000002,
+	VIDC_INFO       = 0x00000004,
+	VIDC_DBG        = 0x00000008,
+	VIDC_PROF       = 0x00000010,
+	VIDC_PKT        = 0x00000020,
+	VIDC_PRINTK     = 0x00001000,
+	VIDC_FTRACE     = 0x00002000,
+	FW_LOW          = 0x00010000,
+	FW_MEDIUM       = 0x00020000,
+	FW_HIGH         = 0x00040000,
+	FW_ERROR        = 0x00080000,
+	FW_FATAL        = 0x00100000,
+	FW_PERF         = 0x00200000,
+	FW_PRINTK       = 0x10000000,
+	FW_FTRACE       = 0x20000000,
 };
-
-enum vidc_msg_out {
-	VIDC_OUT_PRINTK = 0,
-};
+#define FW_LOGSHIFT    16
+#define FW_LOGMASK     0x0FFF0000
 
 enum msm_vidc_debugfs_event {
 	MSM_VIDC_DEBUGFS_EVENT_ETB,
@@ -53,8 +60,6 @@ enum msm_vidc_debugfs_event {
 };
 
 extern int msm_vidc_debug;
-extern int msm_vidc_debug_out;
-extern int msm_vidc_fw_debug;
 extern int msm_vidc_fw_debug_mode;
 extern bool msm_vidc_fw_coverage;
 extern bool msm_vidc_thermal_mitigation_disabled;
@@ -66,9 +71,19 @@ extern bool msm_vidc_cvp_usage;
 #define dprintk(__level, __fmt, ...)	\
 	do { \
 		if (msm_vidc_debug & __level) { \
-			if (msm_vidc_debug_out == VIDC_OUT_PRINTK) { \
+			if (msm_vidc_debug & VIDC_FTRACE) { \
+				char trace_logbuf[MAX_TRACER_LOG_LENGTH]; \
+				int log_length = snprintf(trace_logbuf, \
+					MAX_TRACER_LOG_LENGTH, \
+					VIDC_DBG_TAG __fmt, \
+					get_debug_level_str(__level), \
+					##__VA_ARGS__); \
+				trace_msm_vidc_printf(trace_logbuf, \
+					log_length); \
+			} \
+			if (msm_vidc_debug & VIDC_PRINTK) { \
 				pr_info(VIDC_DBG_TAG __fmt, \
-					get_debug_level_str(__level),	\
+					get_debug_level_str(__level), \
 					##__VA_ARGS__); \
 			} \
 		} \
@@ -76,13 +91,8 @@ extern bool msm_vidc_cvp_usage;
 
 #define dprintk_ratelimit(__level, __fmt, arg...) \
 	do { \
-		if (msm_vidc_debug & __level) { \
-			if (msm_vidc_debug_out == VIDC_OUT_PRINTK && \
-					msm_vidc_check_ratelimit()) { \
-				pr_info(VIDC_DBG_TAG __fmt, \
-					get_debug_level_str(__level),	\
-					## arg); \
-			} \
+		if (msm_vidc_check_ratelimit()) { \
+			dprintk(__level, __fmt, arg); \
 		} \
 	} while (0)
 
@@ -118,8 +128,6 @@ static inline char *get_debug_level_str(int level)
 		return "prof";
 	case VIDC_PKT:
 		return "pkt";
-	case VIDC_FW:
-		return "fw";
 	default:
 		return "???";
 	}
