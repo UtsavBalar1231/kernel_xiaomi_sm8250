@@ -44,6 +44,22 @@ First Level Node - FG Gen4 device
 	Definition: Phandle of the nvmem device name to access SDAM to store
 		    parameters.
 
+- io-channels
+- io-channel-names
+	Usage:      optional
+	Value type: <phandle>
+	Definition: Specified if battery id is obtained through ADC channel
+		    If specified, it should have a name "batt_id".
+		    For details about IIO bindings see:
+		    Documentation/devicetree/bindings/iio/iio-bindings.txt
+
+- qcom,batt-id-pullup-kohms
+	Usage:      optional
+	Value type: <u32>
+	Definition: Battery id pull up resistor value in KOhms. This needs to
+		    be specified if battery id is obtained through ADC channel.
+		    If not specified, a default value of 100 KOhms is used.
+
 - qcom,fg-cutoff-voltage
 	Usage:      optional
 	Value type: <u32>
@@ -502,6 +518,8 @@ pm8150b_fg: qpnp,fg {
 	qcom,pmic-revid = <&pm8150b_revid>;
 	nvmem-names = "fg_sdam";
 	nvmem = <&pm8150_sdam_2>;
+	io-channels = <&pm8150b_vadc ADC_BAT_ID_PU2>;
+	io-channel-names = "batt_id";
 	#thermal-sensor-cells = <0>;
 	status = "okay";
 
