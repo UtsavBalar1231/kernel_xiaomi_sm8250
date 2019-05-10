@@ -82,6 +82,17 @@
 	(((c) && (c)->core_ops && (c)->core_ops->op) ? \
 	((c)->core_ops->op(__VA_ARGS__)) : 0)
 
+/*
+ * Convert Q16 number into Integer and Fractional part upto 2 places.
+ * Ex : 105752 / 65536 = 1.61; 1.61 in Q16 = 105752;
+ * Integer part =  105752 / 65536 = 1;
+ * Reminder = 105752 * 0xFFFF = 40216; Last 16 bits.
+ * Fractional part = 40216 * 100 / 65536 = 61;
+ * Now convert to FP(1, 61, 100).
+ */
+#define Q16_INT(q) ((q) >> 16)
+#define Q16_FRAC(q) ((((q) & 0xFFFF) * 100) >> 16)
+
 struct msm_vidc_inst;
 
 enum vidc_ports {
