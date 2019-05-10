@@ -344,6 +344,9 @@ int msm_comm_vote_bus(struct msm_vidc_core *core)
 				(inst->clk_data.frame_rate >> 16) *
 				vote_data[i].fps;
 			}
+		} else if (inst->session_type == MSM_VIDC_DECODER) {
+			vote_data[i].bitrate =
+				filled_len * vote_data[i].fps * 8;
 		}
 
 		vote_data[i].power_mode = 0;

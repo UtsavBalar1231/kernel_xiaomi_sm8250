@@ -134,7 +134,7 @@ static unsigned long __calculate_decoder(struct vidc_bus_vote_data *d,
 	lcu_per_frame = DIV_ROUND_UP(width, lcu_size) *
 		DIV_ROUND_UP(height, lcu_size);
 
-	bitrate = __lut(width, height, fps)->bitrate;
+	bitrate = (d->bitrate + 1000000 - 1) / 1000000;
 
 	bins_to_bit_factor = FP_INT(4);
 
