@@ -2856,6 +2856,7 @@
 		qcom,ssctl-instance-id = <0x14>;
 		qcom,firmware-name = "adsp";
 		memory-region = <&pil_adsp_mem>;
+		qcom,signal-aop;
 		qcom,complete-ramdump;
 
 		/* Inputs from lpass */
@@ -2875,6 +2876,7 @@
 		qcom,smem-states = <&adsp_smp2p_out 0>;
 		qcom,smem-state-names = "qcom,force-stop";
 
+		mboxes = <&qmp_aop 0>;
 		mbox-names = "adsp-pil";
 	};
 
@@ -2897,6 +2899,7 @@
 		qcom,ssctl-instance-id = <0x17>;
 		qcom,firmware-name = "cdsp";
 		memory-region = <&pil_cdsp_mem>;
+		qcom,signal-aop;
 		qcom,complete-ramdump;
 
 		qcom,msm-bus,name = "pil-cdsp";
@@ -2923,6 +2926,7 @@
 		qcom,smem-states = <&cdsp_smp2p_out 0>;
 		qcom,smem-state-names = "qcom,force-stop";
 
+		mboxes = <&qmp_aop 0>;
 		mbox-names = "cdsp-pil";
 	};
 
