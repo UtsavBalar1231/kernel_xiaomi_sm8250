@@ -24,3 +24,7 @@
 		regulator-name = "smb5-vconn";
 	};
 };
+
+&usb0 {
+	extcon = <&pm7250b_pdphy>, <&eud>;
+};
