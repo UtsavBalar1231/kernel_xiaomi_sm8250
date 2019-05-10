@@ -472,10 +472,20 @@
 			reg = <0x0 0x8c000000 0x0 0xc900000>;
 		};
 
-		qseecom_mem: qseecom_mem_region@9e000000 {
-			compatible = "removed-dma-pool";
-			no-map;
-			reg = <0x0 0x9e000000 0x0 0x1400000>;
+		qseecom_mem: qseecom_region {
+			compatible = "shared-dma-pool";
+			alloc-ranges = <0x0 0x00000000 0x0 0xffffffff>;
+			reusable;
+			alignment = <0x0 0x400000>;
+			size = <0x0 0x1400000>;
+		};
+
+		qseecom_ta_mem: qseecom_ta_region {
+			compatible = "shared-dma-pool";
+			alloc-ranges = <0x0 0x00000000 0x0 0xffffffff>;
+			reusable;
+			alignment = <0x0 0x400000>;
+			size = <0x0 0x1000000>;
 		};
 
 		cdsp_sec_mem: cdsp_sec_regions@9f400000 {
@@ -697,6 +707,22 @@
 		reg = <0xc264000 0x4>,
 		      <0x1fd3000 0x4>;
 		reg-names = "pshold-base", "tcsr-boot-misc-detect";
+	};
+
+	qcom_seecom: qseecom@82200000 {
+		compatible = "qcom,qseecom";
+		reg = <0x82200000 0x2200000>;
+		reg-names = "secapp-region";
+		memory-region = <&qseecom_mem>;
+		qcom,hlos-num-ce-hw-instances = <1>;
+		qcom,hlos-ce-hw-instance = <0>;
+		qcom,qsee-ce-hw-instance = <0>;
+		qcom,disk-encrypt-pipe-pair = <2>;
+		qcom,support-fde;
+		qcom,no-clock-support;
+		qcom,fde-key-size;
+		qcom,commonlib64-loaded-by-uefi;
+		qcom,qsee-reentrancy-support = <2>;
 	};
 
 	qcom,mpm2-sleep-counter@0xc221000 {
