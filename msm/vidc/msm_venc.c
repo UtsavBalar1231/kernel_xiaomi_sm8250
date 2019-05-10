@@ -792,7 +792,7 @@ static struct msm_vidc_ctrl msm_venc_ctrls[] = {
 		.name = "Set Blur width/height",
 		.type = V4L2_CTRL_TYPE_INTEGER,
 		.minimum = 0,
-		.maximum = 0xFFFFFFFF,
+		.maximum = S32_MAX,
 		.default_value = 0,
 		.step = 1,
 	},
@@ -3788,7 +3788,9 @@ int msm_venc_set_blur_resolution(struct msm_vidc_inst *inst)
 
 	frame_sz.buffer_type = HFI_BUFFER_INPUT;
 	frame_sz.height = ctrl->val & 0xFFFF;
-	frame_sz.width = (ctrl->val & 0xFFFF0000) >> 16;
+	frame_sz.width = (ctrl->val & 0x7FFF0000) >> 16;
+	dprintk(VIDC_DBG, "%s: type %u, height %u, width %u\n", __func__,
+		frame_sz.buffer_type, frame_sz.height, frame_sz.width);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_CONFIG_VENC_BLUR_FRAME_SIZE, &frame_sz,
 		sizeof(frame_sz));
