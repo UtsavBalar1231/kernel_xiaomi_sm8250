@@ -4431,15 +4431,6 @@ static int __venus_power_on(struct venus_hfi_device *device)
 	device->intr_status = 0;
 	enable_irq(device->hal_data->irq);
 
-	/*
-	 * Hand off control of regulators to h/w _after_ enabling clocks.
-	 * Note that the GDSC will turn off when switching from normal
-	 * (s/w triggered) to fast (HW triggered) unless the h/w vote is
-	 * present. Since Venus isn't up yet, the GDSC will be off briefly.
-	 */
-	if (__enable_hw_power_collapse(device))
-		dprintk(VIDC_ERR, "Failed to enabled inter-frame PC\n");
-
 	return rc;
 
 fail_enable_clks:
@@ -4535,6 +4526,15 @@ static inline int __resume(struct venus_hfi_device *device)
 		goto err_set_video_state;
 	}
 
+	/*
+	 * Hand off control of regulators to h/w _after_ loading fw.
+	 * Note that the GDSC will turn off when switching from normal
+	 * (s/w triggered) to fast (HW triggered) unless the h/w vote is
+	 * present.
+	 */
+	if (__enable_hw_power_collapse(device))
+		dprintk(VIDC_ERR, "Failed to enabled inter-frame PC\n");
+
 	call_venus_op(device, setup_ucregion_memmap, device);
 
 	/* Wait for boot completion */
@@ -4621,6 +4621,15 @@ static int __load_fw(struct venus_hfi_device *device)
 			goto fail_protect_mem;
 		}
 	}
+	/*
+	 * Hand off control of regulators to h/w _after_ loading fw.
+	 * Note that the GDSC will turn off when switching from normal
+	 * (s/w triggered) to fast (HW triggered) unless the h/w vote is
+	 * present.
+	 */
+	if (__enable_hw_power_collapse(device))
+		dprintk(VIDC_ERR, "Failed to enabled inter-frame PC\n");
+
 	trace_msm_v4l2_vidc_fw_load_end("msm_v4l2_vidc venus_fw load end");
 	return rc;
 fail_protect_mem:
