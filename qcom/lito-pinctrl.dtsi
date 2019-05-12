@@ -118,6 +118,62 @@
 			};
 		};
 
+		qupv3_se0_i3c_pins: qupv3_se0_i3c_pins {
+			qupv3_se0_i3c_active: qupv3_se0_i3c_active {
+				mux {
+					pins = "gpio42", "gpio43";
+					function = "ibi_i3c";
+				};
+
+				config {
+					pins = "gpio42", "gpio43";
+					drive-strength = <16>;
+					bias-pull-up;
+				};
+			};
+
+			qupv3_se0_i3c_sleep: qupv3_se0_i3c_sleep {
+				mux {
+					pins = "gpio42", "gpio43";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio42", "gpio43";
+					drive-strength = <2>;
+					bias-disable;
+				};
+			};
+		};
+
+		qupv3_se6_i3c_pins: qupv3_se6_i3c_pins {
+			qupv3_se6_i3c_active: qupv3_se6_i3c_active {
+				mux {
+					pins = "gpio59", "gpio60";
+					function = "ibi_i3c";
+				};
+
+				config {
+					pins = "gpio59", "gpio60";
+					drive-strength = <16>;
+					bias-pull-up;
+				};
+			};
+
+			qupv3_se6_i3c_sleep: qupv3_se6_i3c_sleep {
+				mux {
+					pins = "gpio59", "gpio60";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio59", "gpio60";
+					drive-strength = <2>;
+					bias-disable;
+				};
+			};
+		};
+
 		ufs_dev_reset_assert: ufs_dev_reset_assert {
 			config {
 				pins = "ufs_reset";
