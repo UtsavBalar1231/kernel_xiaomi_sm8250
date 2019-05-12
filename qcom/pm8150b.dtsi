@@ -393,6 +393,14 @@
 				qcom,pre-scaling = <1 1>;
 			};
 
+			bat_id@4b {
+				reg = <ADC_BAT_ID_PU2>;
+				label = "bat_id";
+				qcom,ratiometric;
+				qcom,hw-settle-time = <200>;
+				qcom,pre-scaling = <1 1>;
+			};
+
 			smb1390_therm@e {
 				reg = <ADC_AMUX_THM2>;
 				label = "smb1390_therm";
