@@ -319,10 +319,10 @@
 			qcom,msm-bus,num-paths = <1>;
 			qcom,msm-bus,vectors-KBps =
 				<MSM_BUS_MASTER_NPU>,
-				<MSM_BUS_SLAVE_CDSP_MEM_NOC>,
+				<MSM_BUS_SLAVE_CDSP_GEM_NOC>,
 				<0 0>,
 				<MSM_BUS_MASTER_NPU>,
-				<MSM_BUS_SLAVE_CDSP_MEM_NOC>,
+				<MSM_BUS_SLAVE_CDSP_GEM_NOC>,
 				<0 1000>;
 		};
 
@@ -338,10 +338,10 @@
 			qcom,msm-bus,num-paths = <1>;
 			qcom,msm-bus,vectors-KBps =
 				<MSM_BUS_MASTER_NPU>,
-				<MSM_BUS_SLAVE_CDSP_MEM_NOC>,
+				<MSM_BUS_SLAVE_CDSP_GEM_NOC>,
 				<0 0>,
 				<MSM_BUS_MASTER_NPU>,
-				<MSM_BUS_SLAVE_CDSP_MEM_NOC>,
+				<MSM_BUS_SLAVE_CDSP_GEM_NOC>,
 				<0 1000>;
 		};
 	};
