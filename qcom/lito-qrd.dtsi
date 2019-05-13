@@ -1,3 +1,5 @@
+#include "lito-pmic-overlay.dtsi"
+
 &soc {
 
 };
@@ -26,4 +28,27 @@
 	qcom,vddp-ref-clk-max-microamp = <100>;
 
 	status = "ok";
+};
+
+&pm8150a_amoled {
+	status = "ok";
+};
+
+&pm7250b_charger {
+	status = "ok";
+	qcom,sec-charger-config = <1>;
+	qcom,auto-recharge-soc = <98>;
+	qcom,step-charging-enable;
+	qcom,sw-jeita-enable;
+	qcom,charger-temp-max = <800>;
+	qcom,smb-temp-max = <800>;
+	qcom,suspend-input-on-debug-batt;
+};
+
+&pm7250b_qg {
+	status = "ok";
+	qcom,qg-iterm-ma = <100>;
+	qcom,hold-soc-while-full;
+	qcom,linearize-soc;
+	qcom,cl-feedback-on;
 };
