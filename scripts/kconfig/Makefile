@@ -167,8 +167,8 @@ hostprogs-y := conf
 targets		+= zconf.lex.c
 
 # generated files seem to need this to find local include files
-HOSTCFLAGS_zconf.lex.o	:= -I$(src)
-HOSTCFLAGS_zconf.tab.o	:= -I$(src)
+HOSTCFLAGS_zconf.lex.o	:= -I  $(srctree)/$(src)
+HOSTCFLAGS_zconf.tab.o	:= -I  $(srctree)/$(src)
 
 # nconf: Used for the nconfig target based on ncurses
 hostprogs-y	+= nconf
