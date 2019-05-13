@@ -132,7 +132,7 @@ int msm_vidc_get_mbs_per_frame(struct msm_vidc_inst *inst)
 	return NUM_MBS_PER_FRAME(height, width);
 }
 
-static int msm_vidc_get_fps(struct msm_vidc_inst *inst)
+int msm_vidc_get_fps(struct msm_vidc_inst *inst)
 {
 	int fps;
 
@@ -148,9 +148,15 @@ static int msm_vidc_get_fps(struct msm_vidc_inst *inst)
 void update_recon_stats(struct msm_vidc_inst *inst,
 	struct recon_stats_type *recon_stats)
 {
+	struct v4l2_ctrl *ctrl;
 	struct recon_buf *binfo;
 	u32 CR = 0, CF = 0;
 	u32 frame_size;
+
+	/* do not consider recon stats in case of superframe */
+	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_SUPERFRAME);
+	if (ctrl->val)
+		return;
 
 	CR = get_ubwc_compression_ratio(recon_stats->ubwc_stats_info);
 

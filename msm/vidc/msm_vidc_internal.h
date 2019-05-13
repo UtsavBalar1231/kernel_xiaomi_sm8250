@@ -51,6 +51,8 @@
 
 /* Maintains the number of FTB's between each FBD over a window */
 #define DCVS_FTB_WINDOW 16
+/* Superframe can have maximum of 32 frames */
+#define VIDC_SUPERFRAME_MAX 32
 
 #define V4L2_EVENT_VIDC_BASE  10
 #define INPUT_MPLANE V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE
@@ -477,6 +479,7 @@ struct msm_vidc_inst {
 	struct msm_vidc_list etb_data;
 	struct msm_vidc_list fbd_data;
 	struct buffer_requirements buff_req;
+	struct vidc_frame_data superframe_data[VIDC_SUPERFRAME_MAX];
 	struct v4l2_ctrl_handler ctrl_handler;
 	struct completion completions[SESSION_MSG_END - SESSION_MSG_START + 1];
 	struct v4l2_ctrl **cluster;

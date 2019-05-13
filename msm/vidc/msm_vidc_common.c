@@ -2436,6 +2436,7 @@ static void handle_ebd(enum hal_command_response cmd, void *data)
 	struct vidc_hal_ebd *empty_buf_done;
 	u32 planes[VIDEO_MAX_PLANES] = {0};
 	struct v4l2_format *f;
+	struct v4l2_ctrl *ctrl;
 
 	if (!response) {
 		dprintk(VIDC_ERR, "Invalid response from vidc_hal\n");
@@ -2468,9 +2469,23 @@ static void handle_ebd(enum hal_command_response cmd, void *data)
 			__func__, planes[0], planes[1]);
 		goto exit;
 	}
-	mbuf->flags &= ~MSM_VIDC_FLAG_QUEUED;
 	vb = &mbuf->vvb.vb2_buf;
 
+	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_SUPERFRAME);
+	if (ctrl->val && empty_buf_done->offset +
+		empty_buf_done->filled_len < vb->planes[0].length) {
+		dprintk(VIDC_HIGH,
+			"%s: %x : addr (%#x): offset (%d) + filled_len (%d) < length (%d)\n",
+			__func__, hash32_ptr(inst->session),
+			empty_buf_done->packet_buffer,
+			empty_buf_done->offset,
+			empty_buf_done->filled_len,
+			vb->planes[0].length);
+		kref_put_mbuf(mbuf);
+		goto exit;
+	}
+
+	mbuf->flags &= ~MSM_VIDC_FLAG_QUEUED;
 	vb->planes[0].bytesused = response->input_done.filled_len;
 	if (vb->planes[0].bytesused > vb->planes[0].length)
 		dprintk(VIDC_LOW, "bytesused overflow length\n");
@@ -4315,6 +4330,98 @@ err_bad_input:
 	return rc;
 }
 
+static int msm_comm_qbuf_superframe_to_hfi(struct msm_vidc_inst *inst,
+		struct msm_vidc_buffer *mbuf)
+{
+	int rc, i;
+	struct hfi_device *hdev;
+	struct v4l2_format *f;
+	struct v4l2_ctrl *ctrl;
+	u64 ts_delta_us;
+	struct vidc_frame_data *frames;
+	u32 num_etbs, superframe_count, frame_size, hfi_fmt;
+
+	if (!inst || !inst->core || !inst->core->device || !mbuf) {
+		dprintk(VIDC_ERR, "%s: Invalid arguments\n", __func__);
+		return -EINVAL;
+	}
+	hdev = inst->core->device;
+	frames = inst->superframe_data;
+
+	if (!is_input_buffer(mbuf))
+		return msm_comm_qbuf_to_hfi(inst, mbuf);
+
+	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_SUPERFRAME);
+	superframe_count = ctrl->val;
+	if (superframe_count > VIDC_SUPERFRAME_MAX) {
+		dprintk(VIDC_ERR, "%s: wrong superframe count %d, max %d\n",
+			__func__, superframe_count, VIDC_SUPERFRAME_MAX);
+		return -EINVAL;
+	}
+
+	ts_delta_us = 1000000 / (inst->clk_data.frame_rate >> 16);
+	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
+	hfi_fmt = msm_comm_convert_color_fmt(f->fmt.pix_mp.pixelformat);
+	frame_size = VENUS_BUFFER_SIZE(hfi_fmt, f->fmt.pix_mp.width,
+			f->fmt.pix_mp.height);
+	if (frame_size * superframe_count !=
+		mbuf->vvb.vb2_buf.planes[0].length) {
+		dprintk(VIDC_ERR,
+			"%s: %#x : invalid superframe length, pxlfmt %#x wxh %dx%d framesize %d count %d length %d\n",
+			__func__, hash32_ptr(inst->session),
+			f->fmt.pix_mp.pixelformat, f->fmt.pix_mp.width,
+			f->fmt.pix_mp.height, frame_size, superframe_count,
+			mbuf->vvb.vb2_buf.planes[0].length);
+		return -EINVAL;
+	}
+
+	num_etbs = 0;
+	populate_frame_data(&frames[0], mbuf, inst);
+	/* prepare superframe buffers */
+	frames[0].filled_len = frame_size;
+	/*
+	 * superframe logic updates extradata and eos flags only, so
+	 * ensure no other flags are populated in populate_frame_data()
+	 */
+	frames[0].flags &= ~HAL_BUFFERFLAG_EXTRADATA;
+	frames[0].flags &= ~HAL_BUFFERFLAG_EOS;
+	if (frames[0].flags)
+		dprintk(VIDC_ERR, "%s: invalid flags %#x\n",
+			__func__, frames[0].flags);
+	frames[0].flags = 0;
+
+	for (i = 0; i < superframe_count; i++) {
+		if (i)
+			memcpy(&frames[i], &frames[0],
+				sizeof(struct vidc_frame_data));
+		frames[i].offset += i * frame_size;
+		frames[i].timestamp += i * ts_delta_us;
+		if (!i) {
+			/* first frame */
+			if (frames[i].extradata_addr)
+				frames[i].flags |= HAL_BUFFERFLAG_EXTRADATA;
+		} else if (i == superframe_count - 1) {
+			/* last frame */
+			if (mbuf->vvb.flags & V4L2_BUF_FLAG_EOS)
+				frames[i].flags |= HAL_BUFFERFLAG_EOS;
+		}
+		num_etbs++;
+	}
+
+	rc = call_hfi_op(hdev, session_process_batch, inst->session,
+			num_etbs, frames, 0, NULL);
+	if (rc) {
+		dprintk(VIDC_ERR, "%s: Failed to qbuf: %d\n", __func__, rc);
+		return rc;
+	}
+	/* update mbuf flags */
+	mbuf->flags |= MSM_VIDC_FLAG_QUEUED;
+	mbuf->flags &= ~MSM_VIDC_FLAG_DEFERRED;
+	msm_vidc_debugfs_update(inst, MSM_VIDC_DEBUGFS_EVENT_ETB);
+
+	return 0;
+}
+
 static int msm_comm_qbuf_in_rbr(struct msm_vidc_inst *inst,
 		struct msm_vidc_buffer *mbuf)
 {
@@ -4345,6 +4452,7 @@ static int msm_comm_qbuf_in_rbr(struct msm_vidc_inst *inst,
 int msm_comm_qbuf(struct msm_vidc_inst *inst, struct msm_vidc_buffer *mbuf)
 {
 	int rc = 0;
+	struct v4l2_ctrl *ctrl;
 
 	if (!inst || !mbuf) {
 		dprintk(VIDC_ERR, "%s: Invalid arguments\n", __func__);
@@ -4371,7 +4479,11 @@ int msm_comm_qbuf(struct msm_vidc_inst *inst, struct msm_vidc_buffer *mbuf)
 		dprintk(VIDC_ERR, "%s: scale clocks failed\n", __func__);
 
 	print_vidc_buffer(VIDC_HIGH, "qbuf", inst, mbuf);
-	rc = msm_comm_qbuf_to_hfi(inst, mbuf);
+	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_SUPERFRAME);
+	if (ctrl->val)
+		rc = msm_comm_qbuf_superframe_to_hfi(inst, mbuf);
+	else
+		rc = msm_comm_qbuf_to_hfi(inst, mbuf);
 	if (rc)
 		dprintk(VIDC_ERR, "%s: Failed qbuf to hfi: %d\n", __func__, rc);
 
@@ -4975,14 +5087,23 @@ int msm_comm_set_buffer_count(struct msm_vidc_inst *inst,
 	int host_count, int act_count, enum hal_buffer type)
 {
 	int rc = 0;
+	struct v4l2_ctrl *ctrl;
 	struct hfi_device *hdev;
 	struct hfi_buffer_count_actual buf_count;
 
+	if (!inst || !inst->core || !inst->core->device) {
+		dprintk(VIDC_ERR, "%s invalid parameters\n", __func__);
+		return -EINVAL;
+	}
 	hdev = inst->core->device;
 
 	buf_count.buffer_type = get_hfi_buffer(type);
 	buf_count.buffer_count_actual = act_count;
 	buf_count.buffer_count_min_host = host_count;
+	/* set total superframe buffers count */
+	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_SUPERFRAME);
+	if (ctrl->val)
+		buf_count.buffer_count_actual = act_count * ctrl->val;
 	dprintk(VIDC_HIGH, "%s: %x : hal_buffer %d min_host %d actual %d\n",
 		__func__, hash32_ptr(inst->session), type,
 		host_count, act_count);
