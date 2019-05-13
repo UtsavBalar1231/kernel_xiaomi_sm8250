@@ -3310,6 +3310,11 @@
 			qcom,dump-size = <0x1000>;
 			qcom,dump-id = <0xe8>;
 		};
+
+		cpuss_dump {
+			qcom,dump-size = <0x30000>;
+			qcom,dump-id = <0xEF>;
+		};
 	};
 
 	qcom_tzlog: tz-log@146bf720 {
