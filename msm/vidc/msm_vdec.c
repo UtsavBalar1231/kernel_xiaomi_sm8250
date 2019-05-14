@@ -83,20 +83,6 @@ static struct msm_vidc_ctrl msm_vdec_ctrls[] = {
 		.step = 1,
 	},
 	{
-		.id = V4L2_CID_MPEG_VIDC_VIDEO_PICTYPE_DEC_MODE,
-		.name = "Picture Type Decoding",
-		.type = V4L2_CTRL_TYPE_BITMASK,
-		.minimum = 0,
-		.maximum = (V4L2_MPEG_VIDC_VIDEO_PICTYPE_DECODE_I |
-				V4L2_MPEG_VIDC_VIDEO_PICTYPE_DECODE_P |
-				V4L2_MPEG_VIDC_VIDEO_PICTYPE_DECODE_B),
-		.default_value = (V4L2_MPEG_VIDC_VIDEO_PICTYPE_DECODE_I |
-				  V4L2_MPEG_VIDC_VIDEO_PICTYPE_DECODE_P |
-				  V4L2_MPEG_VIDC_VIDEO_PICTYPE_DECODE_B),
-		.step = 0,
-		.qmenu = NULL,
-	},
-	{
 		.id = V4L2_CID_MPEG_VIDC_VIDEO_SYNC_FRAME_DECODE,
 		.name = "Sync Frame Decode",
 		.type = V4L2_CTRL_TYPE_BOOLEAN,
@@ -854,7 +840,6 @@ int msm_vdec_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 			(msm_comm_v4l2_to_hfi(ctrl->id, ctrl->val) << 28);
 		break;
 	case V4L2_CID_MPEG_VIDC_VIDEO_DECODE_ORDER:
-	case V4L2_CID_MPEG_VIDC_VIDEO_PICTYPE_DEC_MODE:
 	case V4L2_CID_MPEG_VIDC_VIDEO_CONCEAL_COLOR_8BIT:
 	case V4L2_CID_MPEG_VIDC_VIDEO_CONCEAL_COLOR_10BIT:
 		break;
@@ -1107,32 +1092,6 @@ int msm_vdec_set_output_order(struct msm_vidc_inst *inst)
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_VDEC_OUTPUT_ORDER, &output_order,
 		sizeof(u32));
-	if (rc)
-		dprintk(VIDC_ERR, "%s: set property failed\n", __func__);
-
-	return rc;
-}
-
-int msm_vdec_set_picture_type(struct msm_vidc_inst *inst)
-{
-	int rc = 0;
-	struct hfi_device *hdev;
-	struct v4l2_ctrl *ctrl;
-	struct hfi_enable_picture enable_picture;
-
-	if (!inst || !inst->core) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
-		return -EINVAL;
-	}
-	hdev = inst->core->device;
-
-	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_PICTYPE_DEC_MODE);
-	enable_picture.picture_type = ctrl->val;
-
-	dprintk(VIDC_DBG, "%s: %#x\n", __func__, enable_picture.picture_type);
-	rc = call_hfi_op(hdev, session_set_property, inst->session,
-		HFI_PROPERTY_PARAM_VDEC_PICTURE_TYPE_DECODE, &enable_picture,
-		sizeof(enable_picture));
 	if (rc)
 		dprintk(VIDC_ERR, "%s: set property failed\n", __func__);
 
@@ -1462,9 +1421,6 @@ int msm_vdec_set_properties(struct msm_vidc_inst *inst)
 		if (rc)
 			goto exit;
 		rc = msm_vdec_set_output_order(inst);
-		if (rc)
-			goto exit;
-		rc = msm_vdec_set_picture_type(inst);
 		if (rc)
 			goto exit;
 		rc = msm_vdec_set_sync_frame_mode(inst);
