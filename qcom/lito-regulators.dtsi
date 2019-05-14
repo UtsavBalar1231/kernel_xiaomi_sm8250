@@ -1,6 +1,6 @@
 #include <dt-bindings/regulator/qcom,rpmh-regulator-levels.h>
 
-&soc {
+&apps_rsc {
 	/* PM8150 S1 + S9 + s10 = VDD_CX supply */
 	rpmh-regulator-cxlvl {
 		compatible = "qcom,rpmh-arc-regulator";
@@ -674,14 +674,20 @@
 	};
 
 	rpmh-regulator-ldoc8 {
-		compatible = "qcom,rpmh-xob-regulator";
+		compatible = "qcom,rpmh-vrm-regulator";
 		qcom,resource-name = "ldoc8";
+		qcom,regulator-type = "pmic5-ldo";
+		qcom,supported-modes =
+			<RPMH_REGULATOR_MODE_LPM
+			 RPMH_REGULATOR_MODE_HPM>;
+		qcom,mode-threshold-currents = <0 1>;
 		L8C: pm8150a_l8: regulator-pm8150a-l8 {
 			regulator-name = "pm8150a_l8";
 			qcom,set = <RPMH_REGULATOR_SET_ALL>;
 			regulator-min-microvolt = <1704000>;
 			regulator-max-microvolt = <1952000>;
 			qcom,init-voltage = <1704000>;
+			qcom,init-mode = <RPMH_REGULATOR_MODE_LPM>;
 		};
 	};
 
@@ -768,7 +774,9 @@
 			qcom,init-mode = <RPMH_REGULATOR_MODE_AUTO>;
 		};
 	};
+};
 
+&soc {
 	refgen: refgen-regulator@88e7000 {
 		compatible = "qcom,refgen-kona-regulator";
 		reg = <0x88e7000 0x60>;
