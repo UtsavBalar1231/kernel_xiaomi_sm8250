@@ -206,6 +206,20 @@
 
 &pm7250b_charger {
 	status = "ok";
+	io-channels = <&pm7250b_vadc ADC_USB_IN_V_16>,
+		      <&pm7250b_vadc ADC_USB_IN_I>,
+		      <&pm7250b_vadc ADC_CHG_TEMP>,
+		      <&pm7250b_vadc ADC_DIE_TEMP>,
+		      <&pm7250b_vadc ADC_AMUX_THM3_PU2>,
+		      <&pm7250b_vadc ADC_SBUx>,
+		      <&pm7250b_vadc ADC_VPH_PWR>;
+	io-channel-names = "usb_in_voltage",
+			   "usb_in_current",
+			   "chg_temp",
+			   "die_temp",
+			   "conn_temp",
+			   "sbux_res",
+			   "vph_voltage";
 	qcom,sec-charger-config = <1>;
 	qcom,auto-recharge-soc = <98>;
 	qcom,step-charging-enable;
@@ -217,6 +231,10 @@
 
 &pm7250b_qg {
 	status = "ok";
+	io-channels = <&pm7250b_vadc ADC_BAT_THERM_PU2>,
+		      <&pm7250b_vadc ADC_BAT_ID_PU2>;
+	io-channel-names = "batt-therm",
+			   "batt-id";
 	qcom,qg-iterm-ma = <100>;
 	qcom,hold-soc-while-full;
 	qcom,linearize-soc;
