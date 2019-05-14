@@ -23,6 +23,8 @@ Only for qcom,devfreq-fw:
 			  table.
 			- "perf-base": address of register to request a
 			  frequency.
+Optional properties:
+- qcom,ftbl-row-size:    Size of the LUT row size.
 
 Example:
 
