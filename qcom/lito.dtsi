@@ -32,6 +32,8 @@
 		swr0 = &swr0;
 		swr1 = &swr1;
 		swr2 = &swr2;
+		sdhc1 = &sdhc_1; /* SDC1 eMMC slot */
+		sdhc2 = &sdhc_2; /* SDC2 SD Card slot */
 	};
 
 	cpus {
@@ -1388,6 +1390,69 @@
 		status = "disabled";
 	};
 
+	sdhc_1: sdhci@7c4000 {
+		compatible = "qcom,sdhci-msm-v5", "qcom,sdhci-msm-cqe";
+		reg = <0x7c4000 0x1000>, <0x7c5000 0x1000>;
+		reg-names = "hc_mem", "cqhci_mem";
+
+		interrupts = <GIC_SPI 202 IRQ_TYPE_NONE>,
+					<GIC_SPI 204 IRQ_TYPE_NONE>;
+		interrupt-names = "hc_irq", "pwr_irq";
+
+		qcom,bus-width = <8>;
+		qcom,large-address-bus;
+
+		qcom,clk-rates = <400000 20000000 25000000 50000000 100000000
+						192000000 384000000>;
+		qcom,bus-speed-mode = "HS400_1p8v", "HS200_1p8v", "DDR_1p8v";
+
+		qcom,devfreq,freq-table = <50000000 200000000>;
+
+		qcom,scaling-lower-bus-speed-mode = "DDR52";
+
+		clocks = <&gcc GCC_SDCC1_AHB_CLK>,
+			<&gcc GCC_SDCC1_APPS_CLK>,
+			<&gcc GCC_SDCC1_ICE_CORE_CLK>;
+		clock-names = "iface_clk", "core_clk", "ice_core_clk";
+
+		qcom,ice-clk-rates = <300000000 100000000>;
+
+		/* DLL HSR settings. Refer go/hsr - <Target> DLL settings */
+		qcom,dll-hsr-list = <0x000f642c 0x0 0x0 0x2c010800 0x80040868>;
+
+		qcom,nonremovable;
+		status = "disabled";
+	};
+
+	sdhc_2: sdhci@8804000 {
+		compatible = "qcom,sdhci-msm-v5";
+		reg = <0x8804000 0x1000>;
+		reg-names = "hc_mem";
+
+		interrupts = <GIC_SPI 207 IRQ_TYPE_NONE>,
+					<GIC_SPI 223 IRQ_TYPE_NONE>;
+		interrupt-names = "hc_irq", "pwr_irq";
+
+		qcom,bus-width = <4>;
+		qcom,large-address-bus;
+
+		qcom,clk-rates = <400000 20000000 25000000
+				50000000 100000000 202000000>;
+		qcom,bus-speed-mode = "SDR12", "SDR25", "SDR50", "DDR50",
+				      "SDR104";
+
+		qcom,devfreq,freq-table = <50000000 202000000>;
+
+		clocks = <&gcc GCC_SDCC2_AHB_CLK>,
+			<&gcc GCC_SDCC2_APPS_CLK>;
+		clock-names = "iface_clk", "core_clk";
+
+		/* DLL HSR settings. Refer go/hsr - <Target> DLL settings */
+		qcom,dll-hsr-list = <0x0007642c 0x0 0x10 0x2c010800 0x80040868>;
+
+		status = "disabled";
+	};
+
 	apps_rsc: rsc@18200000 {
 		label = "apps_rsc";
 		compatible = "qcom,rpmh-rsc";
@@ -2279,6 +2344,7 @@
 		qcom,wlan-msa-memory = <0x200000>;
 		qcom,wlan-msa-fixed-region = <&pil_wlan_fw_mem>;
 	};
+
 };
 
 #include "lito-pinctrl.dtsi"
