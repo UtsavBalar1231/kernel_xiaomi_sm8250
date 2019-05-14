@@ -4,7 +4,7 @@
 		status = "ok";
 	};
 
-	cam_csiphy0: qcom,csiphy@ace0000 {
+	cam_csiphy0: qcom,csiphy0 {
 		cell-index = <0>;
 		compatible = "qcom,csiphy-v1.2.2", "qcom,csiphy";
 		reg = <0x0ace0000 0x2000>;
@@ -34,7 +34,7 @@
 		status = "ok";
 	};
 
-	cam_csiphy1: qcom,csiphy@ace2000 {
+	cam_csiphy1: qcom,csiphy1 {
 		cell-index = <1>;
 		compatible = "qcom,csiphy-v1.2.2", "qcom,csiphy";
 		reg = <0xace2000 0x2000>;
@@ -67,7 +67,7 @@
 		status = "ok";
 	};
 
-	cam_csiphy2: qcom,csiphy@ace4000 {
+	cam_csiphy2: qcom,csiphy2 {
 		cell-index = <2>;
 		compatible = "qcom,csiphy-v1.2.2", "qcom,csiphy";
 		reg = <0xace4000 0x2000>;
@@ -99,7 +99,7 @@
 		status = "ok";
 	};
 
-	cam_csiphy3: qcom,csiphy@ace6000 {
+	cam_csiphy3: qcom,csiphy3 {
 		cell-index = <3>;
 		compatible = "qcom,csiphy-v1.2.2", "qcom,csiphy";
 		reg = <0xace6000 0x2000>;
@@ -131,7 +131,7 @@
 		status = "ok";
 	};
 
-	cam_cci0: qcom,cci@ac4a000 {
+	cam_cci0: qcom,cci0 {
 		cell-index = <0>;
 		compatible = "qcom,cci";
 		#address-cells = <1>;
@@ -226,7 +226,7 @@
 		};
 	};
 
-	cam_cci1: qcom,cci@ac4b000 {
+	cam_cci1: qcom,cci1 {
 		cell-index = <1>;
 		compatible = "qcom,cci";
 		#address-cells = <1>;
@@ -524,7 +524,7 @@
 		status = "ok";
 	};
 
-	qcom,cpas-cdm0@ac48000 {
+	qcom,cpas-cdm0 {
 		cell-index = <0>;
 		compatible = "qcom,cam170-cpas-cdm0";
 		label = "cpas-cdm";
@@ -551,7 +551,7 @@
 		status = "ok";
 	};
 
-	cam_csid0: qcom,csid0@acb3000 {
+	cam_csid0: qcom,csid0 {
 		cell-index = <0>;
 		compatible = "qcom,csid175_200";
 		reg-names = "csid";
@@ -589,7 +589,7 @@
 		status = "ok";
 	};
 
-	cam_vfe0: qcom,vfe0@acaf000 {
+	cam_vfe0: qcom,vfe0 {
 		cell-index = <0>;
 		compatible = "qcom,vfe175_130";
 		reg-names = "ife";
@@ -622,7 +622,7 @@
 		status = "ok";
 	};
 
-	cam_csid1: qcom,csid1@acba000 {
+	cam_csid1: qcom,csid1 {
 		cell-index = <1>;
 		compatible = "qcom,csid175_200";
 		reg-names = "csid";
@@ -660,7 +660,7 @@
 		status = "ok";
 	};
 
-	cam_vfe1: qcom,vfe1@acb6000 {
+	cam_vfe1: qcom,vfe1 {
 		cell-index = <1>;
 		compatible = "qcom,vfe175_130";
 		reg-names = "ife";
@@ -693,7 +693,7 @@
 		status = "ok";
 	};
 
-	cam_csid_lite0: qcom,csid-lite0@acc8000 {
+	cam_csid_lite0: qcom,csid-lite0 {
 		cell-index = <2>;
 		compatible = "qcom,csid-lite175";
 		reg-names = "csid-lite";
@@ -728,7 +728,7 @@
 		status = "ok";
 	};
 
-	cam_vfe_lite0: qcom,vfe-lite0@acc4000 {
+	cam_vfe_lite0: qcom,vfe-lite0 {
 		cell-index = <2>;
 		compatible = "qcom,vfe-lite175";
 		reg-names = "ife-lite";
@@ -768,7 +768,7 @@
 		status = "ok";
 	};
 
-	cam_a5: qcom,a5@ac00000 {
+	cam_a5: qcom,a5 {
 		cell-index = <0>;
 		compatible = "qcom,cam-a5";
 		reg = <0xac00000 0x6000>,
@@ -911,7 +911,7 @@
 		status = "ok";
 	};
 
-	cam_jpeg_enc: qcom,jpegenc@ac4e000 {
+	cam_jpeg_enc: qcom,jpegenc {
 		cell-index = <0>;
 		compatible = "qcom,cam_jpeg_enc";
 		reg-names = "jpege_hw";
@@ -934,7 +934,7 @@
 		status = "ok";
 	};
 
-	cam_jpeg_dma: qcom,jpegdma@ac52000 {
+	cam_jpeg_dma: qcom,jpegdma {
 		cell-index = <0>;
 		compatible = "qcom,cam_jpeg_dma";
 		reg-names = "jpegdma_hw";
@@ -964,7 +964,7 @@
 		status = "ok";
 	};
 
-	cam_fd: qcom,fd@ac5a000 {
+	cam_fd: qcom,fd {
 		cell-index = <0>;
 		compatible = "qcom,fd501";
 		reg-names = "fd_core", "fd_wrapper";
@@ -1000,7 +1000,7 @@
 		status = "ok";
 	};
 
-	cam_lrme: qcom,lrme@ac6b000 {
+	cam_lrme: qcom,lrme {
 		cell-index = <0>;
 		compatible = "qcom,lrme";
 		reg-names = "lrme";
@@ -1025,7 +1025,7 @@
 		status = "ok";
 	};
 
-	qcom,cam-cpas@ac40000 {
+	qcom,cam-cpas {
 		cell-index = <0>;
 		compatible = "qcom,cam-cpas";
 		label = "cpas";
