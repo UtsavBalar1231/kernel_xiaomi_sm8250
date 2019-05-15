@@ -1,3 +1,5 @@
+#include "lito-audio-overlay.dtsi"
+
 &soc {
 
 };
