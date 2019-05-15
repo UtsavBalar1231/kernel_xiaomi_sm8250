@@ -6,6 +6,13 @@
 
 };
 
+/ {
+	mtp_batterydata: qcom,battery-data {
+		qcom,batt-id-range-pct = <15>;
+		#include "qg-batterydata-alium-3600mah.dtsi"
+	};
+};
+
 &ufsphy_mem {
 	compatible = "qcom,ufs-phy-qmp-v4-card";
 
@@ -148,6 +155,7 @@
 			   "conn_temp",
 			   "sbux_res",
 			   "vph_voltage";
+	qcom,battery-data = <&mtp_batterydata>;
 	qcom,sec-charger-config = <1>;
 	qcom,auto-recharge-soc = <98>;
 	qcom,step-charging-enable;
@@ -163,6 +171,7 @@
 		      <&pm7250b_vadc ADC_BAT_ID_PU2>;
 	io-channel-names = "batt-therm",
 			   "batt-id";
+	qcom,battery-data = <&mtp_batterydata>;
 	qcom,qg-iterm-ma = <100>;
 	qcom,hold-soc-while-full;
 	qcom,linearize-soc;
