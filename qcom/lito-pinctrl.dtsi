@@ -1558,5 +1558,31 @@
 				};
 			};
 		};
+
+		sde_dp_usbplug_cc_suspend: sde_dp_usbplug_cc_susppend {
+			mux {
+				pins = "gpio114";
+				function = "";
+			};
+
+				config {
+				pins = "gpio114";
+				bias-pull-down;
+				drive-strength = <2>;
+			};
+		};
+
+		sde_dp_usbplug_cc_active: sde_dp_usbplug_cc_active {
+			mux {
+				pins = "gpio114";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio114";
+				bias-disable;
+				drive-strenght = <16>;
+			};
+		};
 	};
 };
