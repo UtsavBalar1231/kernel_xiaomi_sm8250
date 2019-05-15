@@ -257,7 +257,7 @@
 			<RPMH_REGULATOR_MODE_LPM
 			 RPMH_REGULATOR_MODE_HPM>;
 		qcom,mode-threshold-currents = <0 1>;
-		proxy_supply = <&pm8150_l9>;
+		proxy-supply = <&pm8150_l9>;
 		L9A: pm8150_l9: regulator-pm8150-l9 {
 			regulator-name = "pm8150_l9";
 			qcom,set = <RPMH_REGULATOR_SET_ALL>;
