@@ -2783,8 +2783,10 @@
 	icnss: qcom,icnss@18800000 {
 		status = "disabled";
 		compatible = "qcom,icnss";
-		reg = <0x18800000 0x800000>;
-		reg-names = "membase";
+		reg = <0x18800000 0x800000>,
+		      <0xb0000000 0x10000>;
+		reg-names = "membase", "smmu_iova_ipa";
+		iommus = <&apps_smmu 0xC0 0x1>;
 		interrupts = <GIC_SPI 132 IRQ_TYPE_LEVEL_HIGH /* CE0 */ >,
 			     <GIC_SPI 81 IRQ_TYPE_LEVEL_HIGH /* CE1 */ >,
 			     <GIC_SPI 415 IRQ_TYPE_LEVEL_HIGH /* CE2 */ >,
@@ -2797,9 +2799,9 @@
 			     <GIC_SPI 119 IRQ_TYPE_LEVEL_HIGH /* CE9 */ >,
 			     <GIC_SPI 120 IRQ_TYPE_LEVEL_HIGH /* CE10 */ >,
 			     <GIC_SPI 87 IRQ_TYPE_LEVEL_HIGH /* CE11 */ >;
-		qcom,smmu-s1-bypass;
-		qcom,wlan-msa-memory = <0x200000>;
 		qcom,wlan-msa-fixed-region = <&pil_wlan_fw_mem>;
+		qcom,iommu-dma-addr-pool = <0xa0000000 0x10000000>;
+		qcom,iommu-dma = "bypass";
 	};
 
 	qcom,npu@9800000 {
