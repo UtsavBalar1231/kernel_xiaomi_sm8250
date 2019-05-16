@@ -2787,6 +2787,10 @@
 	#include "pm8008.dtsi"
 };
 
+&qupv3_se2_2uart {
+	status = "ok";
+};
+
 &tlmm {
 	pm8008_active: pm8008_active {
 		mux {
