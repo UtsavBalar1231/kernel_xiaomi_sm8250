@@ -3,7 +3,7 @@
 	qcom,mdss-dsi-panel-name =
 		"sw43404 amoled video mode dsi boe panel with DSC";
 	qcom,mdss-dsi-panel-type = "dsi_video_mode";
-
+	qcom,mdss-dsi-panel-physical-type = "oled";
 	qcom,dsi-ctrl-num = <0>;
 	qcom,dsi-phy-num = <0>;
 
