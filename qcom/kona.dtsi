@@ -1768,6 +1768,8 @@
 			<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_DISPLAY_CFG 0 1>;
 		qcom,support-hw-trigger;
 		qcom,retain-regs;
+		proxy-supply = <&mdss_core_gdsc>;
+		qcom,proxy-consumer-enable;
 	};
 
 	/* GPU_CC GDSCs */
