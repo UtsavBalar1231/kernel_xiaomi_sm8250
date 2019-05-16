@@ -40,6 +40,16 @@ dtb-$(CONFIG_ARCH_LITO) += lito-rumi.dtb \
                 lito-qrd.dtb
 endif
 
+
+ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
+        dtbo-$(CONFIG_ARCH_BENGAL) += \
+                bengal-rumi-overlay.dtbo
+
+bengal-rumi-overlay.dtbo-base := bengal.dtb
+else
+dtb-$(CONFIG_ARCH_BENGAL) += bengal-rumi.dtb
+endif
+
 always		:= $(dtb-y)
 subdir-y	:= $(dts-dirs)
 clean-files    := *.dtb *.dtbo
