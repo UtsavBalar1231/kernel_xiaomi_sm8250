@@ -2848,10 +2848,6 @@ static inline int validate_chain(struct task_struct *curr,
 {
 	return 1;
 }
-
-static void print_lock_trace(struct lock_trace *trace, unsigned int spaces)
-{
-}
 #endif
 
 /*
