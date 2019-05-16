@@ -1074,7 +1074,10 @@ int msm_venc_inst_init(struct msm_vidc_inst *inst)
 	f->fmt.pix_mp.height = DEFAULT_HEIGHT;
 	f->fmt.pix_mp.width = DEFAULT_WIDTH;
 	f->fmt.pix_mp.pixelformat = V4L2_PIX_FMT_NV12_UBWC;
-	f->fmt.pix_mp.num_planes = 2;
+	if(inst->core->platform_data->vpu_ver == VPU_VERSION_IRIS1)
+		f->fmt.pix_mp.num_planes = 1;
+	else
+		f->fmt.pix_mp.num_planes = 2;
 	f->fmt.pix_mp.plane_fmt[0].sizeimage =
 		msm_vidc_calculate_enc_input_frame_size(inst);
 	f->fmt.pix_mp.plane_fmt[1].sizeimage =
@@ -1589,6 +1592,7 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 		if ((inst->prop.extradata_ctrls & EXTRADATA_ENC_INPUT_ROI) ||
 		(inst->prop.extradata_ctrls & EXTRADATA_ENC_INPUT_HDR10PLUS)) {
 			f = &inst->fmts[INPUT_PORT].v4l2_fmt;
+			f->fmt.pix_mp.num_planes = 2;
 			f->fmt.pix_mp.plane_fmt[1].sizeimage =
 				msm_vidc_calculate_enc_input_extra_size(inst);
 		}
