@@ -3683,10 +3683,11 @@
 		status = "ok";
 	};
 
-	qcom,cnss-qca6390@a0000000 {
+	qcom,cnss-qca6390@b0000000 {
 		compatible = "qcom,cnss-qca6390";
-		reg = <0xb0000000 0x10000>;
-		reg-names = "smmu_iova_ipa";
+		reg = <0xb0000000 0x10000>,
+		      <0xb2e5510 0x5c0>;
+		reg-names = "smmu_iova_ipa", "tcs_cmd";
 		wlan-en-gpio = <&tlmm 20 0>;
 		pinctrl-names = "wlan_en_active", "wlan_en_sleep";
 		pinctrl-0 = <&cnss_wlan_en_active>;
