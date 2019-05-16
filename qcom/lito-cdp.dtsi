@@ -223,6 +223,7 @@
 			   "conn_temp",
 			   "sbux_res",
 			   "vph_voltage";
+	qcom,batteryless-platform;
 	qcom,sec-charger-config = <1>;
 	qcom,auto-recharge-soc = <98>;
 	qcom,step-charging-enable;
