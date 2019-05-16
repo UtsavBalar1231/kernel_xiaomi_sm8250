@@ -1717,6 +1717,15 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 			return -EINVAL;
 		}
 		break;
+	case V4L2_CID_MPEG_VIDC_VIDEO_BLUR_DIMENSIONS:
+		if (inst->state == MSM_VIDC_START_DONE) {
+			rc = msm_venc_set_blur_resolution(inst);
+			if (rc)
+				dprintk(VIDC_ERR,
+					"%s: set blur resolution failed\n",
+					__func__);
+		}
+		break;
 	case V4L2_CID_MPEG_VIDC_VIDEO_HEVC_MAX_HIER_CODING_LAYER:
 	case V4L2_CID_MPEG_VIDEO_HEVC_HIER_CODING_TYPE:
 	case V4L2_CID_ROTATE:
@@ -1747,7 +1756,6 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 	case V4L2_CID_MPEG_VIDEO_HEVC_SIZE_OF_LENGTH_FIELD:
 	case V4L2_CID_MPEG_VIDEO_H264_VUI_EXT_SAR_WIDTH:
 	case V4L2_CID_MPEG_VIDEO_H264_VUI_EXT_SAR_HEIGHT:
-	case V4L2_CID_MPEG_VIDC_VIDEO_BLUR_DIMENSIONS:
 	case V4L2_CID_MPEG_VIDC_VIDEO_PRIORITY:
 	case V4L2_CID_MPEG_VIDC_VIDEO_INTRA_REFRESH_RANDOM:
 	case V4L2_CID_MPEG_VIDEO_CYCLIC_INTRA_REFRESH_MB:
@@ -3840,8 +3848,6 @@ int msm_venc_set_extradata(struct msm_vidc_inst *inst)
 	codec = get_v4l2_codec(inst);
 	if (inst->prop.extradata_ctrls == EXTRADATA_NONE) {
 		// Disable all Extradata
-		msm_comm_set_index_extradata(inst,
-			MSM_VIDC_EXTRADATA_ASPECT_RATIO, 0x0);
 		msm_comm_set_extradata(inst,
 			HFI_PROPERTY_PARAM_VENC_LTR_INFO, 0x0);
 		msm_comm_set_extradata(inst,
