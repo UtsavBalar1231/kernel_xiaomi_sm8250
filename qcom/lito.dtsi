@@ -2663,6 +2663,14 @@
 		qcom,wlan-msa-fixed-region = <&pil_wlan_fw_mem>;
 	};
 
+	qcom,npu@9800000 {
+		compatible = "qcom,pil-tz-generic";
+		reg = <0x9800000 0x800000>;
+		status = "ok";
+		qcom,pas-id = <23>;
+		qcom,firmware-name = "npu";
+		memory-region = <&pil_npu_mem>;
+	};
 };
 
 #include "lito-pinctrl.dtsi"
