@@ -9,6 +9,7 @@
 	kona_qrd_batterydata: qcom,battery-data {
 		qcom,batt-id-range-pct = <15>;
 		#include "fg-gen4-batterydata-mlp466274-3650mah.dtsi"
+		#include "fg-gen4-batterydata-atl466274-3650mah.dtsi"
 	};
 };
 
