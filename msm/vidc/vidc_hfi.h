@@ -257,10 +257,6 @@ struct hfi_data_payload {
 	u8 rg_data[1];
 };
 
-struct hfi_enable_picture {
-	u32 picture_type;
-};
-
 struct hfi_mb_error_map {
 	u32 error_map_size;
 	u8 rg_error_map[1];
