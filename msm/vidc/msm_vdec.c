@@ -1366,7 +1366,7 @@ int msm_vdec_set_extradata(struct msm_vidc_inst *inst)
 
 	if (codec == V4L2_PIX_FMT_VP9 || codec == V4L2_PIX_FMT_HEVC) {
 		msm_comm_set_extradata(inst,
-			HFI_PROPERTY_PARAM_HDR10_HIST_EXTRADATA, 0x1);
+			HFI_PROPERTY_PARAM_VDEC_HDR10_HIST_EXTRADATA, 0x1);
 	}
 
 	msm_comm_set_extradata(inst,
