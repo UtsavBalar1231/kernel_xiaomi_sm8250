@@ -156,3 +156,7 @@
 
 	status = "ok";
 };
+
+&qupv3_se9_i2c {
+	status = "disabled";
+};
