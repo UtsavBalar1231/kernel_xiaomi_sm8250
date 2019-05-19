@@ -2094,7 +2094,7 @@ static int venus_hfi_core_init(void *device)
 	if (rc || __iface_cmdq_write(dev, &version_pkt))
 		dprintk(VIDC_WARN, "Failed to send image version pkt to f/w\n");
 
-	__sys_set_debug(device, msm_vidc_fw_debug);
+	__sys_set_debug(device, (msm_vidc_debug & FW_LOGMASK) >> FW_LOGSHIFT);
 
 	__enable_subcaches(device);
 	__set_subcaches(device);
@@ -2291,7 +2291,8 @@ err_set_prop:
 
 static void __set_default_sys_properties(struct venus_hfi_device *device)
 {
-	if (__sys_set_debug(device, msm_vidc_fw_debug))
+	if (__sys_set_debug(device,
+			(msm_vidc_debug & FW_LOGMASK) >> FW_LOGSHIFT))
 		dprintk(VIDC_WARN, "Setting fw_debug msg ON failed\n");
 	if (__sys_set_power_control(device, true))
 		dprintk(VIDC_WARN, "Setting h/w power collapse ON failed\n");
@@ -3238,7 +3239,7 @@ static void __process_sys_error(struct venus_hfi_device *device)
 static void __flush_debug_queue(struct venus_hfi_device *device, u8 *packet)
 {
 	bool local_packet = false;
-	enum vidc_msg_prio log_level = VIDC_FW;
+	enum vidc_msg_prio log_level = msm_vidc_debug;
 
 	if (!device) {
 		dprintk(VIDC_ERR, "%s: Invalid params\n", __func__);
@@ -3256,11 +3257,10 @@ static void __flush_debug_queue(struct venus_hfi_device *device, u8 *packet)
 		local_packet = true;
 
 		/*
-		 * Local packek is used when something FATAL occurred.
-		 * It is good to print these logs by default.
+		 * Local packek is used when error occurred.
+		 * It is good to print these logs to printk as well.
 		 */
-
-		log_level = VIDC_ERR;
+		log_level |= VIDC_PRINTK;
 	}
 
 	while (!__iface_dbgq_read(device, packet)) {
@@ -4594,7 +4594,7 @@ static inline int __resume(struct venus_hfi_device *device)
 				device->res->pm_qos_latency_us);
 	}
 
-	__sys_set_debug(device, msm_vidc_fw_debug);
+	__sys_set_debug(device, (msm_vidc_debug & FW_LOGMASK) >> FW_LOGSHIFT);
 
 	__enable_subcaches(device);
 	__set_subcaches(device);
