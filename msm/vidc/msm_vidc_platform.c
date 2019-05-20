@@ -1073,7 +1073,7 @@ static int msm_vidc_read_efuse(
 				data->sku_version =
 					(efuse & (efuse_data[i]).mask) >>
 					(efuse_data[i]).shift;
-				dprintk(VIDC_DBG,
+				dprintk(VIDC_HIGH,
 					"efuse 0x%x, platform version 0x%x\n",
 					efuse, data->sku_version);
 
@@ -1124,7 +1124,7 @@ void *vidc_get_drv_data(struct device *dev)
 			dprintk(VIDC_ERR,
 				"Failed to get ddr type, use LPDDR5\n");
 		}
-		dprintk(VIDC_DBG, "DDR Type %x\n", ddr_type);
+		dprintk(VIDC_HIGH, "DDR Type %x\n", ddr_type);
 
 		if (driver_data->ubwc_config &&
 			(ddr_type == DDR_TYPE_LPDDR4 ||

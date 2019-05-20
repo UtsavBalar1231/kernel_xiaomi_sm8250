@@ -193,7 +193,7 @@ void __power_off_iris2(struct venus_hfi_device *device)
 			 __read_register(device,
 				AON_WRAPPER_MVP_NOC_LPI_STATUS);
 		reg_status = lpi_status & BIT(0);
-		dprintk(VIDC_DBG,
+		dprintk(VIDC_HIGH,
 			"Noc: lpi_status %d noc_status %d (count %d)\n",
 			lpi_status, reg_status, count);
 		usleep_range(50, 100);
@@ -213,7 +213,7 @@ void __power_off_iris2(struct venus_hfi_device *device)
 		lpi_status = __read_register(device,
 				 WRAPPER_DEBUG_BRIDGE_LPI_STATUS_IRIS2);
 		reg_status = lpi_status & 0x7;
-		dprintk(VIDC_DBG,
+		dprintk(VIDC_HIGH,
 			"DBLP Set : lpi_status %d reg_status %d (count %d)\n",
 			lpi_status, reg_status, count);
 		usleep_range(50, 100);
@@ -232,7 +232,7 @@ void __power_off_iris2(struct venus_hfi_device *device)
 	while (lpi_status && count < max_count) {
 		lpi_status = __read_register(device,
 				 WRAPPER_DEBUG_BRIDGE_LPI_STATUS_IRIS2);
-		dprintk(VIDC_DBG,
+		dprintk(VIDC_HIGH,
 			"DBLP Release: lpi_status %d(count %d)\n",
 			lpi_status, count);
 		usleep_range(50, 100);
@@ -252,10 +252,10 @@ void __power_off_iris2(struct venus_hfi_device *device)
 
 	/* HPG 6.1.2 Step 5 */
 	if (__disable_regulators(device))
-		dprintk(VIDC_WARN, "Failed to disable regulators\n");
+		dprintk(VIDC_ERR, "Failed to disable regulators\n");
 
 	if (__unvote_buses(device))
-		dprintk(VIDC_WARN, "Failed to unvote for buses\n");
+		dprintk(VIDC_ERR, "Failed to unvote for buses\n");
 	device->power_enabled = false;
 }
 
@@ -272,20 +272,20 @@ int __prepare_pc_iris2(struct venus_hfi_device *device)
 	idle_status = ctrl_status & BIT(30);
 
 	if (pc_ready) {
-		dprintk(VIDC_DBG, "Already in pc_ready state\n");
+		dprintk(VIDC_HIGH, "Already in pc_ready state\n");
 		return 0;
 	}
 
 	wfi_status = BIT(0) & __read_register(device,
 				WRAPPER_TZ_CPU_STATUS);
 	if (!wfi_status || !idle_status) {
-		dprintk(VIDC_WARN, "Skipping PC, wfi status not set\n");
+		dprintk(VIDC_ERR, "Skipping PC, wfi status not set\n");
 		goto skip_power_off;
 	}
 
 	rc = __prepare_pc(device);
 	if (rc) {
-		dprintk(VIDC_WARN, "Failed __prepare_pc %d\n", rc);
+		dprintk(VIDC_ERR, "Failed __prepare_pc %d\n", rc);
 		goto skip_power_off;
 	}
 
@@ -307,7 +307,7 @@ int __prepare_pc_iris2(struct venus_hfi_device *device)
 	return rc;
 
 skip_power_off:
-	dprintk(VIDC_WARN, "Skip PC, wfi=%#x, idle=%#x, pcr=%#x, ctrl=%#x)\n",
+	dprintk(VIDC_ERR, "Skip PC, wfi=%#x, idle=%#x, pcr=%#x, ctrl=%#x)\n",
 		wfi_status, idle_status, pc_ready, ctrl_status);
 	return -EAGAIN;
 }
@@ -377,7 +377,7 @@ void __core_clear_interrupt_iris2(struct venus_hfi_device *device)
 	if (intr_status & mask) {
 		device->intr_status |= intr_status;
 		device->reg_count++;
-		dprintk(VIDC_DBG,
+		dprintk(VIDC_LOW,
 			"INTERRUPT for device: %pK: times: %d interrupt_status: %d\n",
 			device, device->reg_count, intr_status);
 	} else {

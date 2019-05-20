@@ -152,7 +152,7 @@ int msm_vidc_query_ctrl(void *instance, struct v4l2_queryctrl *q_ctrl)
 	else
 		q_ctrl->flags = 0;
 
-	dprintk(VIDC_DBG, "query ctrl: %s: min %d, max %d, flags %#x\n",
+	dprintk(VIDC_HIGH, "query ctrl: %s: min %d, max %d, flags %#x\n",
 		ctrl->name, q_ctrl->minimum, q_ctrl->maximum, q_ctrl->flags);
 	return rc;
 }
@@ -171,7 +171,7 @@ int msm_vidc_s_fmt(void *instance, struct v4l2_format *f)
 	if (inst->session_type == MSM_VIDC_ENCODER)
 		rc = msm_venc_s_fmt(instance, f);
 
-	dprintk(VIDC_DBG,
+	dprintk(VIDC_HIGH,
 		"s_fmt: %x : type %d wxh %dx%d pixelfmt %#x num_planes %d size[0] %d size[1] %d in_reconfig %d\n",
 		hash32_ptr(inst->session), f->type,
 		f->fmt.pix_mp.width, f->fmt.pix_mp.height,
@@ -195,7 +195,7 @@ int msm_vidc_g_fmt(void *instance, struct v4l2_format *f)
 	if (inst->session_type == MSM_VIDC_ENCODER)
 		rc = msm_venc_g_fmt(instance, f);
 
-	dprintk(VIDC_DBG,
+	dprintk(VIDC_HIGH,
 		"g_fmt: %x : type %d wxh %dx%d pixelfmt %#x num_planes %d size[0] %d size[1] %d in_reconfig %d\n",
 		hash32_ptr(inst->session), f->type,
 		f->fmt.pix_mp.width, f->fmt.pix_mp.height,
@@ -309,12 +309,12 @@ int msm_vidc_release_buffer(void *instance, int type, unsigned int index)
 			continue;
 
 		if (mbuf->flags & MSM_VIDC_FLAG_RBR_PENDING) {
-			print_vidc_buffer(VIDC_DBG,
+			print_vidc_buffer(VIDC_HIGH,
 				"skip rel buf (rbr pending)", inst, mbuf);
 			continue;
 		}
 
-		print_vidc_buffer(VIDC_DBG, "release buf", inst, mbuf);
+		print_vidc_buffer(VIDC_HIGH, "release buf", inst, mbuf);
 		msm_comm_unmap_vidc_buffer(inst, mbuf);
 		list_del(&mbuf->list);
 		kref_put_mbuf(mbuf);
@@ -435,7 +435,7 @@ int msm_vidc_streamon(void *instance, enum v4l2_buf_type i)
 			"Failed to find buffer queue for type = %d\n", i);
 		return -EINVAL;
 	}
-	dprintk(VIDC_DBG, "Calling streamon\n");
+	dprintk(VIDC_HIGH, "Calling streamon\n");
 	mutex_lock(&q->lock);
 	rc = vb2_streamon(&q->vb2_bufq, i);
 	mutex_unlock(&q->lock);
@@ -464,7 +464,7 @@ int msm_vidc_streamoff(void *instance, enum v4l2_buf_type i)
 	}
 
 	if (!inst->in_reconfig) {
-		dprintk(VIDC_DBG, "%s: inst %pK release resources\n",
+		dprintk(VIDC_HIGH, "%s: inst %pK release resources\n",
 			__func__, inst);
 		rc = msm_comm_try_state(inst, MSM_VIDC_RELEASE_RESOURCES_DONE);
 		if (rc)
@@ -473,7 +473,7 @@ int msm_vidc_streamoff(void *instance, enum v4l2_buf_type i)
 				__func__, inst);
 	}
 
-	dprintk(VIDC_DBG, "Calling streamoff\n");
+	dprintk(VIDC_HIGH, "Calling streamoff\n");
 	mutex_lock(&q->lock);
 	rc = vb2_streamoff(&q->vb2_bufq, i);
 	mutex_unlock(&q->lock);
@@ -553,7 +553,7 @@ static void msm_vidc_cleanup_buffer(struct vb2_buffer *vb)
 	}
 
 	if (q->vb2_bufq.streaming) {
-		dprintk(VIDC_DBG, "%d PORT is streaming\n",
+		dprintk(VIDC_HIGH, "%d PORT is streaming\n",
 			vb->type);
 		return;
 	}
@@ -591,7 +591,7 @@ static int msm_vidc_queue_setup(struct vb2_queue *q,
 	case INPUT_MPLANE: {
 		fmt = &inst->fmts[INPUT_PORT];
 		if (*num_buffers < fmt->count_min_host) {
-			dprintk(VIDC_DBG,
+			dprintk(VIDC_HIGH,
 				"Client passed num buffers %d less than the min_host count %d\n",
 				*num_buffers, fmt->count_min_host);
 		}
@@ -612,7 +612,7 @@ static int msm_vidc_queue_setup(struct vb2_queue *q,
 		if (inst->session_type != MSM_VIDC_DECODER &&
 			inst->state > MSM_VIDC_LOAD_RESOURCES_DONE) {
 			if (*num_buffers < fmt->count_min_host) {
-				dprintk(VIDC_DBG,
+				dprintk(VIDC_HIGH,
 					"Client passed num buffers %d less than the min_host count %d\n",
 						*num_buffers,
 						fmt->count_min_host);
@@ -637,7 +637,7 @@ static int msm_vidc_queue_setup(struct vb2_queue *q,
 		break;
 	}
 
-	dprintk(VIDC_DBG,
+	dprintk(VIDC_HIGH,
 		"queue_setup: %x : type %d num_buffers %d num_planes %d sizes[0] %d sizes[1] %d\n",
 		hash32_ptr(inst->session), q->type, *num_buffers,
 		*num_planes, sizes[0], sizes[1]);
@@ -652,7 +652,7 @@ static inline int msm_vidc_verify_buffer_counts(struct msm_vidc_inst *inst)
 	if (inst->session_type == MSM_VIDC_DECODER &&
 			(inst->state < MSM_VIDC_LOAD_RESOURCES_DONE ||
 			inst->state >= MSM_VIDC_RELEASE_RESOURCES_DONE)) {
-		dprintk(VIDC_DBG,
+		dprintk(VIDC_HIGH,
 			"No need to verify buffer counts : %pK\n", inst);
 		return 0;
 	}
@@ -661,7 +661,7 @@ static inline int msm_vidc_verify_buffer_counts(struct msm_vidc_inst *inst)
 		struct hal_buffer_requirements *req = &inst->buff_req.buffer[i];
 
 		if (req && (req->buffer_type == HAL_BUFFER_OUTPUT)) {
-			dprintk(VIDC_DBG, "Verifying Buffer : %d\n",
+			dprintk(VIDC_HIGH, "Verifying Buffer : %d\n",
 				req->buffer_type);
 			if (req->buffer_count_actual <
 					req->buffer_count_min_host ||
@@ -732,10 +732,10 @@ bool is_vidc_cvp_allowed(struct msm_vidc_inst *inst)
 		inst->rc_type != V4L2_MPEG_VIDEO_BITRATE_MODE_CQ &&
 		!inst->clk_data.is_legacy_cbr &&
 		!is_secure_session(inst)) {
-		dprintk(VIDC_DBG, "%s: cvp allowed\n", __func__);
+		dprintk(VIDC_HIGH, "%s: cvp allowed\n", __func__);
 		allowed = true;
 	} else {
-		dprintk(VIDC_DBG,
+		dprintk(VIDC_HIGH,
 			"%s: cvp not allowed, cvp_external %d cvp_disable %d extradata %#x rc_type %d legacy_cbr %d secure %d\n",
 			__func__, core->resources.cvp_external,
 			cvp_disable->val, inst->prop.extradata_ctrls,
@@ -757,27 +757,27 @@ static int msm_vidc_prepare_preprocess(struct msm_vidc_inst *inst)
 	}
 
 	if (!msm_vidc_cvp_usage) {
-		dprintk(VIDC_DBG, "%s: cvp usage disabled\n", __func__);
+		dprintk(VIDC_HIGH, "%s: cvp usage disabled\n", __func__);
 		return 0;
 	}
 
 	if (!is_vidc_cvp_allowed(inst)) {
-		dprintk(VIDC_DBG, "%s: cvp not allowed\n", __func__);
+		dprintk(VIDC_HIGH, "%s: cvp not allowed\n", __func__);
 		return 0;
 	}
 
 	rc = msm_vidc_cvp_prepare_preprocess(inst);
 	if (rc) {
-		dprintk(VIDC_WARN, "%s: no cvp preprocessing\n", __func__);
+		dprintk(VIDC_ERR, "%s: no cvp preprocessing\n", __func__);
 		goto exit;
 	}
-	dprintk(VIDC_DBG, "%s: cvp enabled\n", __func__);
+	dprintk(VIDC_HIGH, "%s: cvp enabled\n", __func__);
 
-	dprintk(VIDC_DBG, "%s: set CVP extradata\n", __func__);
+	dprintk(VIDC_HIGH, "%s: set CVP extradata\n", __func__);
 	rc = msm_comm_set_extradata(inst,
 		HFI_PROPERTY_PARAM_VENC_CVP_METADATA_EXTRADATA, 1);
 	if (rc) {
-		dprintk(VIDC_WARN, "%s: set CVP extradata failed\n", __func__);
+		dprintk(VIDC_ERR, "%s: set CVP extradata failed\n", __func__);
 		goto exit;
 	}
 
@@ -794,7 +794,7 @@ static inline int start_streaming(struct msm_vidc_inst *inst)
 	struct hfi_buffer_size_minimum b;
 	struct v4l2_format *f;
 
-	dprintk(VIDC_DBG, "%s: %x : inst %pK\n", __func__,
+	dprintk(VIDC_HIGH, "%s: %x : inst %pK\n", __func__,
 		hash32_ptr(inst->session), inst);
 	hdev = inst->core->device;
 
@@ -808,7 +808,7 @@ static inline int start_streaming(struct msm_vidc_inst *inst)
 	if (is_encode_session(inst)) {
 		rc = msm_vidc_prepare_preprocess(inst);
 		if (rc) {
-			dprintk(VIDC_WARN, "%s: no preprocessing\n", __func__);
+			dprintk(VIDC_ERR, "%s: no preprocessing\n", __func__);
 			/* ignore error */
 			rc = 0;
 		}
@@ -914,7 +914,7 @@ static inline int start_streaming(struct msm_vidc_inst *inst)
 	}
 
 	inst->batch.enable = is_batching_allowed(inst);
-	dprintk(VIDC_DBG, "%s: batching %s for inst %pK (%#x)\n",
+	dprintk(VIDC_HIGH, "%s: batching %s for inst %pK (%#x)\n",
 		__func__, inst->batch.enable ? "enabled" : "disabled",
 		inst, hash32_ptr(inst->session));
 
@@ -978,7 +978,7 @@ static int msm_vidc_start_streaming(struct vb2_queue *q, unsigned int count)
 		return -EINVAL;
 	}
 	hdev = inst->core->device;
-	dprintk(VIDC_DBG, "Streamon called on: %d capability for inst: %pK\n",
+	dprintk(VIDC_HIGH, "Streamon called on: %d capability for inst: %pK\n",
 		q->type, inst);
 	switch (q->type) {
 	case INPUT_MPLANE:
@@ -1075,7 +1075,7 @@ static inline int stop_streaming(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
 
-	dprintk(VIDC_DBG, "%s: %x : inst %pK\n", __func__,
+	dprintk(VIDC_HIGH, "%s: %x : inst %pK\n", __func__,
 		hash32_ptr(inst->session), inst);
 
 	rc = msm_comm_try_state(inst, MSM_VIDC_RELEASE_RESOURCES_DONE);
@@ -1108,7 +1108,7 @@ static void msm_vidc_stop_streaming(struct vb2_queue *q)
 	}
 
 	inst = q->drv_priv;
-	dprintk(VIDC_DBG, "Streamoff called on: %d capability\n", q->type);
+	dprintk(VIDC_HIGH, "Streamoff called on: %d capability\n", q->type);
 	switch (q->type) {
 	case INPUT_MPLANE:
 		if (!inst->bufq[OUTPUT_PORT].vb2_bufq.streaming)
@@ -1434,13 +1434,13 @@ static int try_get_ctrl_for_instance(struct msm_vidc_inst *inst,
 		break;
 	case V4L2_CID_MIN_BUFFERS_FOR_CAPTURE:
 		ctrl->val = inst->fmts[OUTPUT_PORT].count_min_host;
-		dprintk(VIDC_DBG, "g_min: %x : hal_buffer %d min buffers %d\n",
+		dprintk(VIDC_HIGH, "g_min: %x : hal_buffer %d min buffers %d\n",
 			hash32_ptr(inst->session), HAL_BUFFER_OUTPUT,
 			ctrl->val);
 		break;
 	case V4L2_CID_MIN_BUFFERS_FOR_OUTPUT:
 		ctrl->val = inst->fmts[INPUT_PORT].count_min_host;
-		dprintk(VIDC_DBG, "g_min: %x : hal_buffer %d min buffers %d\n",
+		dprintk(VIDC_HIGH, "g_min: %x : hal_buffer %d min buffers %d\n",
 			hash32_ptr(inst->session), HAL_BUFFER_INPUT, ctrl->val);
 		break;
 	case V4L2_CID_MPEG_VIDC_VIDEO_EXTRADATA:
@@ -1491,7 +1491,7 @@ void *msm_vidc_open(int core_id, int session_type)
 	}
 
 	pr_info(VIDC_DBG_TAG "Opening video instance: %pK, %d\n",
-		"info", inst, session_type);
+		"high", inst, session_type);
 	mutex_init(&inst->sync_lock);
 	mutex_init(&inst->bufq[OUTPUT_PORT].lock);
 	mutex_init(&inst->bufq[INPUT_PORT].lock);
@@ -1761,7 +1761,7 @@ int msm_vidc_destroy(struct msm_vidc_inst *inst)
 	msm_vidc_debugfs_deinit_inst(inst);
 
 	pr_info(VIDC_DBG_TAG "Closed video instance: %pK\n",
-			"info", inst);
+			"high", inst);
 	kfree(inst);
 	return 0;
 }

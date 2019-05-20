@@ -1154,7 +1154,7 @@ int msm_venc_enum_fmt(struct msm_vidc_inst *inst, struct v4l2_fmtdesc *f)
 				sizeof(f->description));
 		f->pixelformat = fmt_desc->fourcc;
 	} else {
-		dprintk(VIDC_DBG, "No more formats found\n");
+		dprintk(VIDC_HIGH, "No more formats found\n");
 		rc = -EINVAL;
 	}
 	return rc;
@@ -1370,7 +1370,7 @@ static int msm_venc_resolve_rc_enable(struct msm_vidc_inst *inst,
 	u32 codec;
 
 	if (!ctrl->val) {
-		dprintk(VIDC_DBG,
+		dprintk(VIDC_HIGH,
 			"RC is not enabled. Setting RC OFF\n");
 		inst->rc_type = RATE_CONTROL_OFF;
 	} else {
@@ -1382,7 +1382,7 @@ static int msm_venc_resolve_rc_enable(struct msm_vidc_inst *inst,
 	if (msm_vidc_lossless_encode
 		&& (codec == V4L2_PIX_FMT_HEVC ||
 			codec == V4L2_PIX_FMT_H264)) {
-		dprintk(VIDC_DBG,
+		dprintk(VIDC_HIGH,
 			"Reset RC mode to RC_LOSSLESS for HEVC lossless encoding\n");
 		inst->rc_type = RATE_CONTROL_LOSSLESS;
 	}
@@ -1393,7 +1393,7 @@ static int msm_venc_resolve_rate_control(struct msm_vidc_inst *inst,
 		struct v4l2_ctrl *ctrl)
 {
 	if (inst->rc_type == RATE_CONTROL_LOSSLESS) {
-		dprintk(VIDC_DBG,
+		dprintk(VIDC_HIGH,
 			"Skip RC mode when enabling lossless encoding\n");
 		return 0;
 	}
@@ -1431,7 +1431,7 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 	cll_sei = &(inst->hdr10_sei_params.cll_sei);
 	codec = get_v4l2_codec(inst);
 
-	dprintk(VIDC_DBG,
+	dprintk(VIDC_HIGH,
 		"%s: %x : name %s, id 0x%x value %d\n",
 		__func__, hash32_ptr(inst->session), ctrl->name,
 		ctrl->id, ctrl->val);
@@ -1537,7 +1537,7 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 		u32 info_type = ((u32)ctrl->val >> 28) & 0xF;
 		u32 val = (ctrl->val & 0xFFFFFFF);
 
-		dprintk(VIDC_DBG, "Ctrl:%d, HDR Info with value %u (%#X)",
+		dprintk(VIDC_HIGH, "Ctrl:%d, HDR Info with value %u (%#X)",
 				info_type, val, ctrl->val);
 		switch (info_type) {
 		case MSM_VIDC_RGB_PRIMARY_00:
@@ -1767,7 +1767,7 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 	case V4L2_CID_MPEG_VIDC_VENC_NATIVE_RECORDER:
 	case V4L2_CID_MPEG_VIDC_VENC_RC_TIMESTAMP_DISABLE:
 	case V4L2_CID_MPEG_VIDEO_VBV_DELAY:
-		dprintk(VIDC_DBG, "Control set: ID : %x Val : %d\n",
+		dprintk(VIDC_HIGH, "Control set: ID : %x Val : %d\n",
 			ctrl->id, ctrl->val);
 		break;
 	default:
@@ -1796,7 +1796,7 @@ int msm_venc_set_frame_size(struct msm_vidc_inst *inst)
 	frame_sz.buffer_type = HFI_BUFFER_INPUT;
 	frame_sz.width = f->fmt.pix_mp.width;
 	frame_sz.height = f->fmt.pix_mp.height;
-	dprintk(VIDC_DBG, "%s: input %d %d\n", __func__,
+	dprintk(VIDC_HIGH, "%s: input %d %d\n", __func__,
 			frame_sz.width, frame_sz.height);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_FRAME_SIZE, &frame_sz, sizeof(frame_sz));
@@ -1810,7 +1810,7 @@ int msm_venc_set_frame_size(struct msm_vidc_inst *inst)
 	frame_sz.buffer_type = HFI_BUFFER_OUTPUT;
 	frame_sz.width = f->fmt.pix_mp.width;
 	frame_sz.height = f->fmt.pix_mp.height;
-	dprintk(VIDC_DBG, "%s: output %d %d\n", __func__,
+	dprintk(VIDC_HIGH, "%s: output %d %d\n", __func__,
 			frame_sz.width, frame_sz.height);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_FRAME_SIZE, &frame_sz, sizeof(frame_sz));
@@ -1839,7 +1839,7 @@ int msm_venc_set_frame_rate(struct msm_vidc_inst *inst)
 	frame_rate.buffer_type = HFI_BUFFER_OUTPUT;
 	frame_rate.frame_rate = inst->clk_data.frame_rate;
 
-	dprintk(VIDC_DBG, "%s: %#x\n", __func__, frame_rate.frame_rate);
+	dprintk(VIDC_HIGH, "%s: %#x\n", __func__, frame_rate.frame_rate);
 
 	rc = call_hfi_op(hdev, session_set_property,
 		inst->session, HFI_PROPERTY_CONFIG_FRAME_RATE,
@@ -1946,7 +1946,7 @@ int msm_venc_set_secure_mode(struct msm_vidc_inst *inst)
 		}
 	}
 
-	dprintk(VIDC_DBG, "%s: %d\n", __func__, enable.enable);
+	dprintk(VIDC_HIGH, "%s: %d\n", __func__, enable.enable);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_SECURE_SESSION, &enable, sizeof(enable));
 	if (rc)
@@ -1971,7 +1971,7 @@ int msm_venc_set_priority(struct msm_vidc_inst *inst)
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_PRIORITY);
 	enable.enable = !!ctrl->val;
 
-	dprintk(VIDC_DBG, "%s: %d\n", __func__, enable.enable);
+	dprintk(VIDC_HIGH, "%s: %d\n", __func__, enable.enable);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_CONFIG_REALTIME, &enable, sizeof(enable));
 	if (rc)
@@ -1996,7 +1996,7 @@ int msm_venc_set_operating_rate(struct msm_vidc_inst *inst)
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_OPERATING_RATE);
 	op_rate.operating_rate = ctrl->val;
 
-	dprintk(VIDC_DBG, "%s: %d\n", __func__, op_rate.operating_rate >> 16);
+	dprintk(VIDC_HIGH, "%s: %d\n", __func__, op_rate.operating_rate >> 16);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_CONFIG_OPERATING_RATE, &op_rate, sizeof(op_rate));
 	if (rc) {
@@ -2028,7 +2028,7 @@ int msm_venc_set_profile_level(struct msm_vidc_inst *inst)
 	profile_level.profile = inst->profile;
 	profile_level.level = inst->level;
 
-	dprintk(VIDC_DBG, "%s: %#x %#x\n", __func__,
+	dprintk(VIDC_HIGH, "%s: %#x %#x\n", __func__,
 		profile_level.profile, profile_level.level);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_PROFILE_LEVEL_CURRENT, &profile_level,
@@ -2058,7 +2058,7 @@ int msm_venc_set_idr_period(struct msm_vidc_inst *inst)
 
 	idr_period.idr_period = 1;
 
-	dprintk(VIDC_DBG, "%s: %d\n", __func__, idr_period.idr_period);
+	dprintk(VIDC_HIGH, "%s: %d\n", __func__, idr_period.idr_period);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_CONFIG_VENC_IDR_PERIOD, &idr_period,
 		sizeof(idr_period));
@@ -2126,7 +2126,7 @@ void msm_venc_decide_bframe(struct msm_vidc_inst *inst)
 			 */
 			inst->prop.bframe_changed = true;
 			bframe_ctrl->val = MAX_NUM_B_FRAMES;
-			dprintk(VIDC_DBG, "Bframe is forcefully enabled\n");
+			dprintk(VIDC_HIGH, "Bframe is forcefully enabled\n");
 		} else {
 			/*
 			 * Native recorder is not enabled
@@ -2135,7 +2135,7 @@ void msm_venc_decide_bframe(struct msm_vidc_inst *inst)
 			goto disable_bframe;
 		}
 	}
-	dprintk(VIDC_DBG, "Bframe can be enabled!\n");
+	dprintk(VIDC_HIGH, "Bframe can be enabled!\n");
 
 	return;
 disable_bframe:
@@ -2147,9 +2147,9 @@ disable_bframe:
 		 */
 		inst->prop.bframe_changed = true;
 		bframe_ctrl->val = 0;
-		dprintk(VIDC_DBG, "Bframe is forcefully disabled!\n");
+		dprintk(VIDC_HIGH, "Bframe is forcefully disabled!\n");
 	} else {
-		dprintk(VIDC_DBG, "Bframe is disabled\n");
+		dprintk(VIDC_HIGH, "Bframe is disabled\n");
 	}
 }
 
@@ -2167,7 +2167,7 @@ int msm_venc_set_adaptive_bframes(struct msm_vidc_inst *inst)
 
 	enable.enable = true;
 
-	dprintk(VIDC_DBG, "%s: %d\n", __func__, enable.enable);
+	dprintk(VIDC_HIGH, "%s: %d\n", __func__, enable.enable);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_VENC_ADAPTIVE_B, &enable, sizeof(enable));
 	if (rc)
@@ -2243,7 +2243,7 @@ int msm_venc_set_intra_period(struct msm_vidc_inst *inst)
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_B_FRAMES);
 	intra_period.bframes = ctrl->val;
 
-	dprintk(VIDC_DBG, "%s: %d %d\n", __func__, intra_period.pframes,
+	dprintk(VIDC_HIGH, "%s: %d %d\n", __func__, intra_period.pframes,
 		intra_period.bframes);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_CONFIG_VENC_INTRA_PERIOD, &intra_period,
@@ -2276,7 +2276,7 @@ int msm_venc_set_request_keyframe(struct msm_vidc_inst *inst)
 	}
 	hdev = inst->core->device;
 
-	dprintk(VIDC_DBG, "%s\n", __func__);
+	dprintk(VIDC_HIGH, "%s\n", __func__);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_CONFIG_VENC_REQUEST_SYNC_FRAME, NULL, 0);
 	if (rc) {
@@ -2344,7 +2344,7 @@ int msm_venc_set_rate_control(struct msm_vidc_inst *inst)
 			inst->rc_type);
 		break;
 	}
-	dprintk(VIDC_DBG, "%s: %d\n", __func__, inst->rc_type);
+	dprintk(VIDC_HIGH, "%s: %d\n", __func__, inst->rc_type);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_VENC_RATE_CONTROL, &hfi_rc,
 		sizeof(u32));
@@ -2419,7 +2419,7 @@ int msm_venc_set_vbv_delay(struct msm_vidc_inst *inst)
 	}
 
 set_vbv_delay:
-	dprintk(VIDC_DBG, "Set hrd_buf_size %d",
+	dprintk(VIDC_HIGH, "Set hrd_buf_size %d",
 				hrd_buf_size.vbv_hrd_buf_size);
 	rc = call_hfi_op(hdev, session_set_property,
 		(void *)inst->session,
@@ -2456,7 +2456,7 @@ int msm_venc_set_input_timestamp_rc(struct msm_vidc_inst *inst)
 	 */
 	enable.enable = !!ctrl->val;
 
-	dprintk(VIDC_DBG, "%s: %d\n", __func__, enable.enable);
+	dprintk(VIDC_HIGH, "%s: %d\n", __func__, enable.enable);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_VENC_DISABLE_RC_TIMESTAMP, &enable,
 		sizeof(enable));
@@ -2481,12 +2481,12 @@ int msm_venc_set_bitrate(struct msm_vidc_inst *inst)
 	hdev = inst->core->device;
 
 	if (inst->layer_bitrate) {
-		dprintk(VIDC_DBG, "%s: Layer bitrate is enabled\n", __func__);
+		dprintk(VIDC_HIGH, "%s: Layer bitrate is enabled\n", __func__);
 		return 0;
 	}
 
 	enable.enable = 0;
-	dprintk(VIDC_DBG, "%s: bitrate type: %d\n",
+	dprintk(VIDC_HIGH, "%s: bitrate type: %d\n",
 		__func__, enable.enable);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_VENC_BITRATE_TYPE, &enable,
@@ -2499,7 +2499,7 @@ int msm_venc_set_bitrate(struct msm_vidc_inst *inst)
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_BITRATE);
 	bitrate.bit_rate = ctrl->val;
 	bitrate.layer_id = MSM_VIDC_ALL_LAYER_ID;
-	dprintk(VIDC_DBG, "%s: %d\n", __func__, bitrate.bit_rate);
+	dprintk(VIDC_HIGH, "%s: %d\n", __func__, bitrate.bit_rate);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_CONFIG_VENC_TARGET_BITRATE, &bitrate,
 		sizeof(bitrate));
@@ -2532,14 +2532,14 @@ int msm_venc_set_layer_bitrate(struct msm_vidc_inst *inst)
 		V4L2_CID_MPEG_VIDEO_HEVC_HIER_CODING_LAYER);
 
 	if (!max_layer->val || !layer->val) {
-		dprintk(VIDC_DBG,
+		dprintk(VIDC_HIGH,
 			"%s: Hierp layer not set. Ignore layer bitrate\n",
 			__func__);
 		goto error;
 	}
 
 	if (max_layer->val < layer->val) {
-		dprintk(VIDC_DBG,
+		dprintk(VIDC_HIGH,
 			"%s: Hierp layer greater than max isn't allowed\n",
 			__func__);
 		goto error;
@@ -2561,7 +2561,7 @@ int msm_venc_set_layer_bitrate(struct msm_vidc_inst *inst)
 	/* Set layer bitrates only when highest layer br ratio is 100. */
 	if (layer_br_ratios[layer->val-1]->val != MAX_BIT_RATE_RATIO ||
 		layer_br_ratios[0]->val == 0) {
-		dprintk(VIDC_DBG,
+		dprintk(VIDC_HIGH,
 			"%s: Improper layer bitrate ratio\n",
 			__func__);
 		goto error;
@@ -2569,7 +2569,7 @@ int msm_venc_set_layer_bitrate(struct msm_vidc_inst *inst)
 
 	for (i = layer->val - 1; i > 0; --i) {
 		if (layer_br_ratios[i]->val == 0) {
-			dprintk(VIDC_DBG,
+			dprintk(VIDC_HIGH,
 				"%s: Layer ratio must be non-zero\n",
 				__func__);
 			goto error;
@@ -2578,7 +2578,7 @@ int msm_venc_set_layer_bitrate(struct msm_vidc_inst *inst)
 	}
 
 	enable.enable = 1;
-	dprintk(VIDC_DBG, "%s: %d\n", __func__, enable.enable);
+	dprintk(VIDC_HIGH, "%s: %d\n", __func__, enable.enable);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_VENC_BITRATE_TYPE, &enable,
 		sizeof(enable));
@@ -2592,7 +2592,7 @@ int msm_venc_set_layer_bitrate(struct msm_vidc_inst *inst)
 		layer_br.bit_rate =
 			bitrate->val * layer_br_ratios[i]->val / 100;
 		layer_br.layer_id = i;
-		dprintk(VIDC_DBG,
+		dprintk(VIDC_HIGH,
 			"%s: Bitrate for Layer[%u]: [%u]\n",
 			__func__, layer_br.layer_id, layer_br.bit_rate);
 
@@ -2657,7 +2657,7 @@ int msm_venc_set_frame_qp(struct msm_vidc_inst *inst)
 			return 0;
 	} else {
 		if (!(inst->client_set_ctrls & CLIENT_SET_I_QP)) {
-			dprintk(VIDC_WARN,
+			dprintk(VIDC_ERR,
 				"%s: Client value is not valid\n", __func__);
 			return -EINVAL;
 		}
@@ -2673,7 +2673,7 @@ int msm_venc_set_frame_qp(struct msm_vidc_inst *inst)
 
 	qp.qp_packed = i_qp->val | p_qp->val << 8 | b_qp->val << 16;
 
-	dprintk(VIDC_DBG, "%s: layers %#x frames %#x qp_packed %#x\n",
+	dprintk(VIDC_HIGH, "%s: layers %#x frames %#x qp_packed %#x\n",
 		__func__, qp.layer_id, qp.enable, qp.qp_packed);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_CONFIG_VENC_FRAME_QP, &qp, sizeof(qp));
@@ -2698,7 +2698,7 @@ int msm_venc_set_qp_range(struct msm_vidc_inst *inst)
 
 	if (!(inst->client_set_ctrls & CLIENT_SET_MIN_QP) &&
 		!(inst->client_set_ctrls & CLIENT_SET_MAX_QP)) {
-		dprintk(VIDC_DBG,
+		dprintk(VIDC_HIGH,
 			"%s: Client didn't set QP range.\n", __func__);
 		return 0;
 	}
@@ -2712,7 +2712,7 @@ int msm_venc_set_qp_range(struct msm_vidc_inst *inst)
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_HEVC_MAX_QP);
 	qp_range.max_qp.qp_packed = ctrl->val;
 
-	dprintk(VIDC_DBG,
+	dprintk(VIDC_HIGH,
 			"%s: layers %#x qp_min %#x qp_max %#x\n",
 			__func__, qp_range.min_qp.layer_id,
 			qp_range.min_qp.qp_packed, qp_range.max_qp.qp_packed);
@@ -2744,7 +2744,7 @@ int msm_venc_set_frame_quality(struct msm_vidc_inst *inst)
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_COMPRESSION_QUALITY);
 	frame_quality.frame_quality = ctrl->val;
 
-	dprintk(VIDC_DBG, "%s: %d\n", __func__, frame_quality.frame_quality);
+	dprintk(VIDC_HIGH, "%s: %d\n", __func__, frame_quality.frame_quality);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_CONFIG_HEIC_FRAME_QUALITY, &frame_quality,
 		sizeof(frame_quality));
@@ -2778,7 +2778,7 @@ int msm_venc_set_grid(struct msm_vidc_inst *inst)
 	else
 		grid_enable.grid_enable = true;
 
-	dprintk(VIDC_DBG, "%s: %d\n", __func__, grid_enable.grid_enable);
+	dprintk(VIDC_HIGH, "%s: %d\n", __func__, grid_enable.grid_enable);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_CONFIG_HEIC_GRID_ENABLE, &grid_enable,
 		sizeof(grid_enable));
@@ -2810,7 +2810,7 @@ int msm_venc_set_entropy_mode(struct msm_vidc_inst *inst)
 			ctrl->val);
 	entropy.cabac_model = HFI_H264_CABAC_MODEL_2;
 
-	dprintk(VIDC_DBG, "%s: %d\n", __func__, entropy.entropy_mode);
+	dprintk(VIDC_HIGH, "%s: %d\n", __func__, entropy.entropy_mode);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_VENC_H264_ENTROPY_CONTROL, &entropy,
 		sizeof(entropy));
@@ -2916,7 +2916,7 @@ set_and_exit:
 	multi_slice_control.slice_size = slice_val;
 
 	hdev = inst->core->device;
-	dprintk(VIDC_DBG, "%s: %d %d\n", __func__,
+	dprintk(VIDC_HIGH, "%s: %d %d\n", __func__,
 			multi_slice_control.multi_slice,
 			multi_slice_control.slice_size);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
@@ -2972,7 +2972,7 @@ int msm_venc_set_intra_refresh_mode(struct msm_vidc_inst *inst)
 		intra_refresh.mbs = 0;
 	}
 
-	dprintk(VIDC_DBG, "%s: %d %d\n", __func__,
+	dprintk(VIDC_HIGH, "%s: %d %d\n", __func__,
 			intra_refresh.mode, intra_refresh.mbs);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_VENC_INTRA_REFRESH, &intra_refresh,
@@ -2999,12 +2999,12 @@ int msm_venc_set_bitrate_savings_mode(struct msm_vidc_inst *inst)
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VENC_BITRATE_SAVINGS);
 	enable.enable = !!ctrl->val;
 	if (!ctrl->val && inst->rc_type != V4L2_MPEG_VIDEO_BITRATE_MODE_VBR) {
-		dprintk(VIDC_DBG,
+		dprintk(VIDC_HIGH,
 			"Can't disable bitrate savings for non-VBR_CFR\n");
 		enable.enable = 1;
 	}
 
-	dprintk(VIDC_DBG, "%s: %d\n", __func__, enable.enable);
+	dprintk(VIDC_HIGH, "%s: %d\n", __func__, enable.enable);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_VENC_BITRATE_SAVINGS, &enable,
 		sizeof(enable));
@@ -3041,7 +3041,7 @@ int msm_venc_set_loop_filter_mode(struct msm_vidc_inst *inst)
 	h264_db_control.slice_alpha_offset = ctrl_a->val;
 	h264_db_control.slice_beta_offset = ctrl_b->val;
 
-	dprintk(VIDC_DBG, "%s: %d %d %d\n", __func__,
+	dprintk(VIDC_HIGH, "%s: %d %d %d\n", __func__,
 		h264_db_control.mode, h264_db_control.slice_alpha_offset,
 		h264_db_control.slice_beta_offset);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
@@ -3077,7 +3077,7 @@ int msm_venc_set_sequence_header_mode(struct msm_vidc_inst *inst)
 	else
 		enable.enable = false;
 
-	dprintk(VIDC_DBG, "%s: %d\n", __func__, enable.enable);
+	dprintk(VIDC_HIGH, "%s: %d\n", __func__, enable.enable);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_CONFIG_VENC_SYNC_FRAME_SEQUENCE_HEADER, &enable,
 		sizeof(enable));
@@ -3108,7 +3108,7 @@ int msm_venc_set_au_delimiter_mode(struct msm_vidc_inst *inst)
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_AU_DELIMITER);
 	enable.enable = !!ctrl->val;
 
-	dprintk(VIDC_DBG, "%s: %d\n", __func__, enable.enable);
+	dprintk(VIDC_HIGH, "%s: %d\n", __func__, enable.enable);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_VENC_GENERATE_AUDNAL, &enable,
 		sizeof(enable));
@@ -3175,7 +3175,7 @@ int msm_venc_set_base_layer_priority_id(struct msm_vidc_inst *inst)
 	max_layer = get_ctrl(inst,
 		V4L2_CID_MPEG_VIDC_VIDEO_HEVC_MAX_HIER_CODING_LAYER);
 	if (max_layer->val <= 0) {
-		dprintk(VIDC_DBG, "%s: Layer id can only be set with Hierp\n",
+		dprintk(VIDC_HIGH, "%s: Layer id can only be set with Hierp\n",
 			__func__);
 		return 0;
 	}
@@ -3183,7 +3183,7 @@ int msm_venc_set_base_layer_priority_id(struct msm_vidc_inst *inst)
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_BASELAYER_ID);
 	baselayerid = ctrl->val;
 
-	dprintk(VIDC_DBG, "%s: %d\n", __func__, baselayerid);
+	dprintk(VIDC_HIGH, "%s: %d\n", __func__, baselayerid);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_CONFIG_VENC_BASELAYER_PRIORITYID, &baselayerid,
 		sizeof(baselayerid));
@@ -3229,13 +3229,13 @@ int msm_venc_set_hp_max_layer(struct msm_vidc_inst *inst)
 		hp_layer = ctrl->val - 1;
 
 	if (inst->hybrid_hp) {
-		dprintk(VIDC_DBG, "%s: Hybrid hierp layer: %d\n",
+		dprintk(VIDC_HIGH, "%s: Hybrid hierp layer: %d\n",
 			__func__, hp_layer);
 		rc = call_hfi_op(hdev, session_set_property, inst->session,
 			HFI_PROPERTY_PARAM_VENC_HIER_P_HYBRID_MODE,
 			&hp_layer, sizeof(hp_layer));
 	} else {
-		dprintk(VIDC_DBG, "%s: Hierp max layer: %d\n",
+		dprintk(VIDC_HIGH, "%s: Hierp max layer: %d\n",
 			__func__, hp_layer);
 		rc = call_hfi_op(hdev, session_set_property, inst->session,
 			HFI_PROPERTY_PARAM_VENC_HIER_P_MAX_NUM_ENH_LAYER,
@@ -3267,7 +3267,7 @@ int msm_venc_set_hp_layer(struct msm_vidc_inst *inst)
 		return 0;
 
 	if (inst->hybrid_hp) {
-		dprintk(VIDC_WARN,
+		dprintk(VIDC_ERR,
 			"%s: Setting layer isn't allowed with hybrid hp\n",
 			__func__);
 		return 0;
@@ -3279,7 +3279,7 @@ int msm_venc_set_hp_layer(struct msm_vidc_inst *inst)
 		V4L2_CID_MPEG_VIDEO_HEVC_HIER_CODING_LAYER);
 
 	if (max_layer->val < ctrl->val) {
-		dprintk(VIDC_WARN,
+		dprintk(VIDC_ERR,
 			"%s: HP layer count greater than max isn't allowed\n",
 			__func__);
 		return 0;
@@ -3292,7 +3292,7 @@ int msm_venc_set_hp_layer(struct msm_vidc_inst *inst)
 	if (ctrl->val)
 		hp_layer = ctrl->val - 1;
 
-	dprintk(VIDC_DBG, "%s: Hierp enhancement layer: %d\n",
+	dprintk(VIDC_HIGH, "%s: Hierp enhancement layer: %d\n",
 		__func__, hp_layer);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_CONFIG_VENC_HIER_P_ENH_LAYER,
@@ -3323,7 +3323,7 @@ int msm_venc_set_vpx_error_resilience(struct msm_vidc_inst *inst)
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_VPX_ERROR_RESILIENCE);
 	enable.enable = !!ctrl->val;
 
-	dprintk(VIDC_DBG, "%s: %d\n", __func__, enable.enable);
+	dprintk(VIDC_HIGH, "%s: %d\n", __func__, enable.enable);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_VENC_VPX_ERROR_RESILIENCE_MODE, &enable,
 		sizeof(enable));
@@ -3369,7 +3369,7 @@ int msm_venc_set_video_signal_info(struct msm_vidc_inst *inst)
 	signal_info.transfer_characteristics = ctrl_tr->val;
 	signal_info.matrix_coeffs = ctrl_mc->val;
 
-	dprintk(VIDC_DBG, "%s: %d %d %d %d\n", __func__,
+	dprintk(VIDC_HIGH, "%s: %d %d %d %d\n", __func__,
 		signal_info.color_primaries, signal_info.video_full_range,
 		signal_info.transfer_characteristics,
 		signal_info.matrix_coeffs);
@@ -3415,7 +3415,7 @@ int msm_venc_set_rotation(struct msm_vidc_inst *inst)
 	else if (vflip->val == V4L2_MPEG_MSM_VIDC_ENABLE)
 		vpe_rotation.flip = HFI_FLIP_VERTICAL;
 
-	dprintk(VIDC_DBG, "Set rotation = %d, flip = %d\n",
+	dprintk(VIDC_HIGH, "Set rotation = %d, flip = %d\n",
 			vpe_rotation.rotation, vpe_rotation.flip);
 	rc = call_hfi_op(hdev, session_set_property,
 				(void *)inst->session,
@@ -3479,14 +3479,14 @@ int msm_venc_set_8x8_transform(struct msm_vidc_inst *inst)
 	hdev = inst->core->device;
 
 	if (get_v4l2_codec(inst) != V4L2_PIX_FMT_H264) {
-		dprintk(VIDC_DBG, "%s: skip as codec is not H264\n",
+		dprintk(VIDC_HIGH, "%s: skip as codec is not H264\n",
 			__func__);
 		return 0;
 	}
 
 	if (inst->profile != HFI_H264_PROFILE_HIGH &&
 		inst->profile != HFI_H264_PROFILE_CONSTRAINED_HIGH) {
-		dprintk(VIDC_DBG, "%s: skip due to %#x\n",
+		dprintk(VIDC_HIGH, "%s: skip due to %#x\n",
 			__func__, inst->profile);
 		return 0;
 	}
@@ -3494,7 +3494,7 @@ int msm_venc_set_8x8_transform(struct msm_vidc_inst *inst)
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_H264_8X8_TRANSFORM);
 	enable.enable = !!ctrl->val;
 
-	dprintk(VIDC_DBG, "%s: %d\n", __func__, enable.enable);
+	dprintk(VIDC_HIGH, "%s: %d\n", __func__, enable.enable);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_VENC_H264_8X8_TRANSFORM, &enable,
 		sizeof(enable));
@@ -3542,7 +3542,7 @@ int msm_venc_set_vui_timing_info(struct msm_vidc_inst *inst)
 	timing_info.fixed_frame_rate = cfr;
 	timing_info.time_scale = NSEC_PER_SEC;
 
-	dprintk(VIDC_DBG, "%s: %d %d\n", __func__, timing_info.enable,
+	dprintk(VIDC_HIGH, "%s: %d %d\n", __func__, timing_info.enable,
 		timing_info.fixed_frame_rate);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_VENC_VUI_TIMING_INFO, &timing_info,
@@ -3591,7 +3591,7 @@ int msm_venc_set_nal_stream_format(struct msm_vidc_inst *inst)
 		break;
 	}
 
-	dprintk(VIDC_DBG, "%s: %#x\n", __func__,
+	dprintk(VIDC_HIGH, "%s: %#x\n", __func__,
 			stream_format.nal_stream_format_select);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_NAL_STREAM_FORMAT_SELECT, &stream_format,
@@ -3637,7 +3637,7 @@ int msm_venc_set_ltr_mode(struct msm_vidc_inst *inst)
 	ltr.ltr_count =  ctrl->val;
 	ltr.ltr_mode = HFI_LTR_MODE_MANUAL;
 	ltr.trust_mode = 1;
-	dprintk(VIDC_DBG, "%s: %d %d\n", __func__,
+	dprintk(VIDC_HIGH, "%s: %d %d\n", __func__,
 			ltr.ltr_mode, ltr.ltr_count);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_VENC_LTRMODE, &ltr, sizeof(ltr));
@@ -3669,7 +3669,7 @@ int msm_venc_set_ltr_useframe(struct msm_vidc_inst *inst)
 	use_ltr.ref_ltr = ctrl->val;
 	use_ltr.use_constrnt = false;
 	use_ltr.frames = 0;
-	dprintk(VIDC_DBG, "%s: %d\n", __func__, use_ltr.ref_ltr);
+	dprintk(VIDC_HIGH, "%s: %d\n", __func__, use_ltr.ref_ltr);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_CONFIG_VENC_USELTRFRAME, &use_ltr,
 		sizeof(use_ltr));
@@ -3700,7 +3700,7 @@ int msm_venc_set_ltr_markframe(struct msm_vidc_inst *inst)
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_MARKLTRFRAME);
 	mark_ltr.mark_frame = ctrl->val;
 
-	dprintk(VIDC_DBG, "%s: %d\n", __func__, mark_ltr.mark_frame);
+	dprintk(VIDC_HIGH, "%s: %d\n", __func__, mark_ltr.mark_frame);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_CONFIG_VENC_MARKLTRFRAME, &mark_ltr,
 		sizeof(mark_ltr));
@@ -3736,7 +3736,7 @@ int msm_venc_set_dyn_qp(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 	if (get_v4l2_codec(inst) == V4L2_PIX_FMT_VP8)
 		qp.enable &= ~QP_ENABLE_B;
 
-	dprintk(VIDC_DBG, "%s: %#x\n", __func__,
+	dprintk(VIDC_HIGH, "%s: %#x\n", __func__,
 		ctrl->val);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_CONFIG_VENC_FRAME_QP, &qp, sizeof(qp));
@@ -3774,7 +3774,7 @@ int msm_venc_set_aspect_ratio(struct msm_vidc_inst *inst)
 		return 0;
 	sar.aspect_height = ctrl->val;
 
-	dprintk(VIDC_DBG, "%s: %d %d\n", __func__,
+	dprintk(VIDC_HIGH, "%s: %d %d\n", __func__,
 		sar.aspect_width, sar.aspect_height);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_VENC_ASPECT_RATIO, &sar, sizeof(sar));
@@ -3802,7 +3802,7 @@ int msm_venc_set_blur_resolution(struct msm_vidc_inst *inst)
 	frame_sz.buffer_type = HFI_BUFFER_INPUT;
 	frame_sz.height = ctrl->val & 0xFFFF;
 	frame_sz.width = (ctrl->val & 0x7FFF0000) >> 16;
-	dprintk(VIDC_DBG, "%s: type %u, height %u, width %u\n", __func__,
+	dprintk(VIDC_HIGH, "%s: type %u, height %u, width %u\n", __func__,
 		frame_sz.buffer_type, frame_sz.height, frame_sz.width);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_CONFIG_VENC_BLUR_FRAME_SIZE, &frame_sz,
@@ -3833,7 +3833,7 @@ int msm_venc_set_hdr_info(struct msm_vidc_inst *inst)
 		return 0;
 
 	/* No conversion to HFI needed as both structures are same */
-	dprintk(VIDC_DBG, "%s: setting hdr info\n", __func__);
+	dprintk(VIDC_HIGH, "%s: setting hdr info\n", __func__);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_VENC_HDR10_PQ_SEI, &inst->hdr10_sei_params,
 		sizeof(inst->hdr10_sei_params));
@@ -3884,7 +3884,7 @@ int msm_venc_set_extradata(struct msm_vidc_inst *inst)
 
 	if (inst->prop.extradata_ctrls & EXTRADATA_ENC_INPUT_CVP)
 		value = 0x1;
-	dprintk(VIDC_DBG, "%s: CVP extradata %d\n", __func__, value);
+	dprintk(VIDC_HIGH, "%s: CVP extradata %d\n", __func__, value);
 	rc = msm_comm_set_extradata(inst,
 		HFI_PROPERTY_PARAM_VENC_CVP_METADATA_EXTRADATA, value);
 	if (rc)
@@ -3904,7 +3904,7 @@ int msm_venc_set_lossless(struct msm_vidc_inst *inst)
 	if (inst->rc_type != RATE_CONTROL_LOSSLESS)
 		return 0;
 
-	dprintk(VIDC_DBG, "%s: enable lossless encoding\n", __func__);
+	dprintk(VIDC_HIGH, "%s: enable lossless encoding\n", __func__);
 	enable.enable = 1;
 	rc = call_hfi_op(hdev, session_set_property,
 		inst->session,
@@ -4060,7 +4060,7 @@ exit:
 	if (rc)
 		dprintk(VIDC_ERR, "%s: failed with %d\n", __func__, rc);
 	else
-		dprintk(VIDC_DBG, "%s: set properties successful\n", __func__);
+		dprintk(VIDC_HIGH, "%s: set properties successful\n", __func__);
 
 	return rc;
 }

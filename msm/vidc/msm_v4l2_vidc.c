@@ -391,11 +391,11 @@ static ssize_t thermal_level_store(struct device *dev,
 
 	rc = kstrtoint(buf, 0, &val);
 	if (rc || val < 0) {
-		dprintk(VIDC_WARN,
+		dprintk(VIDC_ERR,
 			"Invalid thermal level value: %s\n", buf);
 		return -EINVAL;
 	}
-	dprintk(VIDC_DBG, "Thermal level old %d new %d\n",
+	dprintk(VIDC_HIGH, "Thermal level old %d new %d\n",
 			vidc_driver->thermal_level, val);
 
 	if (val == vidc_driver->thermal_level)
@@ -551,7 +551,7 @@ static int msm_vidc_probe_vidc_device(struct platform_device *pdev)
 		if (rc != -EPROBE_DEFER)
 			dprintk(VIDC_ERR, "Failed to create HFI device\n");
 		else
-			dprintk(VIDC_DBG, "msm_vidc: request probe defer\n");
+			dprintk(VIDC_HIGH, "msm_vidc: request probe defer\n");
 		goto err_cores_exceeded;
 	}
 
@@ -564,7 +564,7 @@ static int msm_vidc_probe_vidc_device(struct platform_device *pdev)
 
 	vidc_driver->sku_version = core->resources.sku_version;
 
-	dprintk(VIDC_DBG, "populating sub devices\n");
+	dprintk(VIDC_HIGH, "populating sub devices\n");
 	/*
 	 * Trigger probe for each sub-device i.e. qcom,msm-vidc,context-bank.
 	 * When msm_vidc_probe is called for each sub-device, parse the
@@ -709,7 +709,7 @@ static int msm_vidc_pm_suspend(struct device *dev)
 	if (rc == -ENOTSUPP)
 		rc = 0;
 	else if (rc)
-		dprintk(VIDC_WARN, "Failed to suspend: %d\n", rc);
+		dprintk(VIDC_ERR, "Failed to suspend: %d\n", rc);
 
 
 	return rc;
@@ -717,7 +717,7 @@ static int msm_vidc_pm_suspend(struct device *dev)
 
 static int msm_vidc_pm_resume(struct device *dev)
 {
-	dprintk(VIDC_INFO, "%s\n", __func__);
+	dprintk(VIDC_HIGH, "%s\n", __func__);
 	return 0;
 }
 

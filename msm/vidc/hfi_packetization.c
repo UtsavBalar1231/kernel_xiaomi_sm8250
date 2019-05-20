@@ -70,7 +70,7 @@ enum hal_video_codec vidc_get_hal_codec(u32 hfi_codec)
 		hal_codec = HAL_VIDEO_CODEC_CVP;
 		break;
 	default:
-		dprintk(VIDC_INFO, "%s: invalid codec 0x%x\n",
+		dprintk(VIDC_HIGH, "%s: invalid codec 0x%x\n",
 			__func__, hfi_codec);
 		hal_codec = 0;
 		break;
@@ -135,7 +135,7 @@ u32 vidc_get_hfi_codec(enum hal_video_codec hal_codec)
 		hfi_codec = HFI_VIDEO_CODEC_CVP;
 		break;
 	default:
-		dprintk(VIDC_INFO, "%s: invalid codec 0x%x\n",
+		dprintk(VIDC_HIGH, "%s: invalid codec 0x%x\n",
 			__func__, hal_codec);
 		hfi_codec = 0;
 		break;
@@ -207,7 +207,7 @@ int create_pkt_cmd_sys_coverage_config(
 	pkt->num_properties = 1;
 	pkt->rg_property_data[0] = HFI_PROPERTY_SYS_CONFIG_COVERAGE;
 	pkt->rg_property_data[1] = mode;
-	dprintk(VIDC_DBG, "Firmware coverage mode %d\n",
+	dprintk(VIDC_HIGH, "Firmware coverage mode %d\n",
 			pkt->rg_property_data[1]);
 	return 0;
 }
@@ -256,7 +256,7 @@ int create_pkt_cmd_sys_set_resource(
 
 		for (i = 0; i < hfi_sc_info->num_entries; i++) {
 			hfi_sc[i] = res_sc[i];
-		dprintk(VIDC_DBG, "entry hfi#%d, sc_id %d, size %d\n",
+		dprintk(VIDC_HIGH, "entry hfi#%d, sc_id %d, size %d\n",
 				 i, hfi_sc[i].sc_id, hfi_sc[i].size);
 		}
 		break;
@@ -297,7 +297,7 @@ int create_pkt_cmd_sys_release_resource(
 		rc = -ENOTSUPP;
 	}
 
-	dprintk(VIDC_DBG,
+	dprintk(VIDC_HIGH,
 		"rel_res: pkt_type 0x%x res_type 0x%x prepared\n",
 		pkt->packet_type, pkt->resource_type);
 
@@ -785,7 +785,7 @@ int create_pkt_cmd_session_set_property(
 	if (size && pdata)
 		memcpy(&pkt->rg_property_data[1], pdata, size);
 
-	dprintk(VIDC_DBG, "Setting HAL Property = 0x%x\n", ptype);
+	dprintk(VIDC_HIGH, "Setting HAL Property = 0x%x\n", ptype);
 	return 0;
 }
 
@@ -804,7 +804,7 @@ static int get_hfi_ssr_type(enum hal_ssr_trigger_type type)
 		rc = HFI_TEST_SSR_HW_WDOG_IRQ;
 		break;
 	default:
-		dprintk(VIDC_WARN,
+		dprintk(VIDC_ERR,
 			"SSR trigger type not recognized, using WDOG.\n");
 	}
 	return rc;
@@ -881,7 +881,7 @@ static struct hfi_packetization_ops hfi_default = {
 struct hfi_packetization_ops *hfi_get_pkt_ops_handle(
 			enum hfi_packetization_type type)
 {
-	dprintk(VIDC_DBG, "%s selected\n",
+	dprintk(VIDC_HIGH, "%s selected\n",
 		type == HFI_PACKETIZATION_4XX ?
 		"4xx packetization" : "Unknown hfi");
 

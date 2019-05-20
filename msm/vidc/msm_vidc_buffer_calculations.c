@@ -617,7 +617,7 @@ int msm_vidc_init_buffer_count(struct msm_vidc_inst *inst)
 	fmt->count_min_host = fmt->count_actual =
 		fmt->count_min + extra_buff_count;
 
-	dprintk(VIDC_DBG, "%s: %x : input min %d min_host %d actual %d\n",
+	dprintk(VIDC_HIGH, "%s: %x : input min %d min_host %d actual %d\n",
 		__func__, hash32_ptr(inst->session),
 		fmt->count_min, fmt->count_min_host, fmt->count_actual);
 
@@ -648,7 +648,7 @@ int msm_vidc_init_buffer_count(struct msm_vidc_inst *inst)
 	fmt->count_min_host = fmt->count_actual =
 		fmt->count_min + extra_buff_count;
 
-	dprintk(VIDC_DBG, "%s: %x : output min %d min_host %d actual %d\n",
+	dprintk(VIDC_HIGH, "%s: %x : output min %d min_host %d actual %d\n",
 		__func__, hash32_ptr(inst->session),
 		fmt->count_min, fmt->count_min_host, fmt->count_actual);
 
@@ -768,10 +768,10 @@ u32 msm_vidc_calculate_dec_input_frame_size(struct msm_vidc_inst *inst)
 	if (inst->buffer_size_limit &&
 		(inst->buffer_size_limit < frame_size)) {
 		frame_size = inst->buffer_size_limit;
-		dprintk(VIDC_DBG, "input buffer size limited to %d\n",
+		dprintk(VIDC_HIGH, "input buffer size limited to %d\n",
 			frame_size);
 	} else {
-		dprintk(VIDC_DBG, "set input buffer size to %d\n",
+		dprintk(VIDC_HIGH, "set input buffer size to %d\n",
 			frame_size);
 	}
 

@@ -47,13 +47,13 @@ struct msm_vidc_core_ops core_ops_iris2 = {
 
 static inline void msm_dcvs_print_dcvs_stats(struct clock_data *dcvs)
 {
-	dprintk(VIDC_PROF,
+	dprintk(VIDC_PERF,
 		"DCVS: Load_Low %lld, Load Norm %lld, Load High %lld\n",
 		dcvs->load_low,
 		dcvs->load_norm,
 		dcvs->load_high);
 
-	dprintk(VIDC_PROF,
+	dprintk(VIDC_PERF,
 		"DCVS: min_threshold %d, max_threshold %d\n",
 		dcvs->min_threshold, dcvs->max_threshold);
 }
@@ -230,7 +230,7 @@ static int fill_dynamic_stats(struct msm_vidc_inst *inst,
 		vote_data->use_dpb_read = true;
 	}
 
-	dprintk(VIDC_PROF,
+	dprintk(VIDC_PERF,
 		"Input CR = %d Recon CR = %d Complexity Factor = %d\n",
 			vote_data->input_cr, vote_data->compression_ratio,
 			vote_data->complexity_factor);
@@ -257,12 +257,12 @@ int msm_comm_vote_bus(struct msm_vidc_core *core)
 	vote_data = kzalloc(sizeof(struct vidc_bus_vote_data) *
 			MAX_SUPPORTED_INSTANCES, GFP_ATOMIC);
 	if (!vote_data) {
-		dprintk(VIDC_DBG,
+		dprintk(VIDC_LOW,
 			"vote_data allocation with GFP_ATOMIC failed\n");
 		vote_data = kzalloc(sizeof(struct vidc_bus_vote_data) *
 			MAX_SUPPORTED_INSTANCES, GFP_KERNEL);
 		if (!vote_data) {
-			dprintk(VIDC_DBG,
+			dprintk(VIDC_ERR,
 				"vote_data allocation failed\n");
 			return -EINVAL;
 		}
@@ -293,7 +293,7 @@ int msm_comm_vote_bus(struct msm_vidc_core *core)
 
 		if ((!filled_len || !device_addr) &&
 			(inst->session_type != MSM_VIDC_CVP)) {
-			dprintk(VIDC_DBG, "%s: no input for session %x\n",
+			dprintk(VIDC_LOW, "%s: no input for session %x\n",
 				__func__, hash32_ptr(inst->session));
 			continue;
 		}
@@ -414,7 +414,7 @@ static int msm_dcvs_scale_clocks(struct msm_vidc_inst *inst,
 	inst->clk_data.dcvs_flags = 0;
 
 	if (!inst->clk_data.dcvs_mode || inst->batch.enable) {
-		dprintk(VIDC_DBG, "Skip DCVS (dcvs %d, batching %d)\n",
+		dprintk(VIDC_LOW, "Skip DCVS (dcvs %d, batching %d)\n",
 			inst->clk_data.dcvs_mode, inst->batch.enable);
 		/* update load (freq) with normal value */
 		inst->clk_data.load = inst->clk_data.load_norm;
@@ -463,7 +463,7 @@ static int msm_dcvs_scale_clocks(struct msm_vidc_inst *inst,
 		dcvs->dcvs_flags = 0;
 	}
 
-	dprintk(VIDC_PROF,
+	dprintk(VIDC_PERF,
 		"DCVS: %x : total bufs %d outside fw %d max threshold %d with fw %d min bufs %d flags %#x\n",
 		hash32_ptr(inst->session), fmt->count_actual,
 		bufs_with_client, dcvs->max_threshold, bufs_with_fw,
@@ -489,7 +489,7 @@ static void msm_vidc_update_freq_entry(struct msm_vidc_inst *inst,
 	if (!found) {
 		temp = kzalloc(sizeof(*temp), GFP_KERNEL);
 		if (!temp) {
-			dprintk(VIDC_WARN, "%s: malloc failure.\n", __func__);
+			dprintk(VIDC_ERR, "%s: malloc failure.\n", __func__);
 			goto exit;
 		}
 		temp->freq = freq;
@@ -523,7 +523,7 @@ static unsigned long msm_vidc_max_freq(struct msm_vidc_core *core)
 
 	allowed_clks_tbl = core->resources.allowed_clks_tbl;
 	freq = allowed_clks_tbl[0].clock_rate;
-	dprintk(VIDC_PROF, "Max rate = %lu\n", freq);
+	dprintk(VIDC_PERF, "Max rate = %lu\n", freq);
 	return freq;
 }
 
@@ -571,7 +571,7 @@ void msm_comm_update_input_cr(struct msm_vidc_inst *inst,
 	if (!found) {
 		temp = kzalloc(sizeof(*temp), GFP_KERNEL);
 		if (!temp)  {
-			dprintk(VIDC_WARN, "%s: malloc failure.\n", __func__);
+			dprintk(VIDC_ERR, "%s: malloc failure.\n", __func__);
 			goto exit;
 		}
 		temp->index = index;
@@ -642,7 +642,7 @@ static unsigned long msm_vidc_calc_freq_ar50(struct msm_vidc_inst *inst,
 	freq = max(vpp_cycles, vsp_cycles);
 	freq = max(freq, fw_cycles);
 
-	dprintk(VIDC_DBG, "Update DCVS Load\n");
+	dprintk(VIDC_LOW, "Update DCVS Load\n");
 	allowed_clks_tbl = core->resources.allowed_clks_tbl;
 	for (i = core->resources.allowed_clks_tbl_size - 1; i >= 0; i--) {
 		rate = allowed_clks_tbl[i].clock_rate;
@@ -658,7 +658,7 @@ static unsigned long msm_vidc_calc_freq_ar50(struct msm_vidc_inst *inst,
 
 	msm_dcvs_print_dcvs_stats(dcvs);
 
-	dprintk(VIDC_PROF, "%s Inst %pK : Filled Len = %d Freq = %llu\n",
+	dprintk(VIDC_PERF, "%s Inst %pK : Filled Len = %d Freq = %llu\n",
 		__func__, inst, filled_len, freq);
 
 	return (unsigned long) freq;
@@ -749,7 +749,7 @@ static unsigned long msm_vidc_calc_freq_iris1(struct msm_vidc_inst *inst,
 	dcvs->load_high = i > 0 ? allowed_clks_tbl[i-1].clock_rate :
 		dcvs->load_norm;
 
-	dprintk(VIDC_PROF,
+	dprintk(VIDC_PERF,
 		"%s: inst %pK: %x : filled len %d required freq %llu load_norm %llu\n",
 		__func__, inst, hash32_ptr(inst->session),
 		filled_len, freq, dcvs->load_norm);
@@ -842,7 +842,7 @@ static unsigned long msm_vidc_calc_freq_iris2(struct msm_vidc_inst *inst,
 	dcvs->load_high = i > 0 ? allowed_clks_tbl[i-1].clock_rate :
 		dcvs->load_norm;
 
-	dprintk(VIDC_PROF,
+	dprintk(VIDC_PERF,
 		"%s: inst %pK: %x : filled len %d required freq %llu load_norm %llu\n",
 		__func__, inst, hash32_ptr(inst->session),
 		filled_len, freq, dcvs->load_norm);
@@ -888,7 +888,7 @@ int msm_vidc_set_clocks(struct msm_vidc_core *core)
 		mutex_unlock(&inst->registeredbufs.lock);
 
 		if (!filled_len || !device_addr) {
-			dprintk(VIDC_DBG, "%s no input for session %x\n",
+			dprintk(VIDC_LOW, "%s no input for session %x\n",
 				__func__, hash32_ptr(inst->session));
 			continue;
 		}
@@ -905,7 +905,7 @@ int msm_vidc_set_clocks(struct msm_vidc_core *core)
 		freq_core_max = max_t(unsigned long, freq_core_1, freq_core_2);
 
 		if (msm_vidc_clock_voting) {
-			dprintk(VIDC_PROF,
+			dprintk(VIDC_PERF,
 				"msm_vidc_clock_voting %d\n",
 				 msm_vidc_clock_voting);
 			freq_core_max = msm_vidc_clock_voting;
@@ -942,7 +942,7 @@ int msm_vidc_set_clocks(struct msm_vidc_core *core)
 	core->curr_freq = rate;
 	mutex_unlock(&core->lock);
 
-	dprintk(VIDC_PROF,
+	dprintk(VIDC_PERF,
 		"%s: clock rate %lu requested %lu increment %d decrement %d\n",
 		__func__, core->curr_freq, core->min_freq,
 		increment, decrement);
@@ -982,7 +982,7 @@ int msm_comm_scale_clocks(struct msm_vidc_inst *inst)
 	mutex_unlock(&inst->registeredbufs.lock);
 
 	if (!filled_len || !device_addr) {
-		dprintk(VIDC_DBG, "%s no input for session %x\n",
+		dprintk(VIDC_LOW, "%s no input for session %x\n",
 			__func__, hash32_ptr(inst->session));
 		return 0;
 	}
@@ -1018,11 +1018,11 @@ int msm_comm_scale_clocks_and_bus(struct msm_vidc_inst *inst)
 	hdev = core->device;
 
 	if (msm_comm_scale_clocks(inst)) {
-		dprintk(VIDC_WARN,
+		dprintk(VIDC_ERR,
 			"Failed to scale clocks. Performance might be impacted\n");
 	}
 	if (msm_comm_vote_bus(core)) {
-		dprintk(VIDC_WARN,
+		dprintk(VIDC_ERR,
 			"Failed to scale DDR bus. Performance might be impacted\n");
 	}
 	return 0;
@@ -1042,12 +1042,12 @@ int msm_dcvs_try_enable(struct msm_vidc_inst *inst)
 			inst->batch.enable ||
 			inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_CQ ||
 			inst->grid_enable) {
-		dprintk(VIDC_PROF, "DCVS disabled: %pK\n", inst);
+		dprintk(VIDC_HIGH, "DCVS disabled: %pK\n", inst);
 		inst->clk_data.dcvs_mode = false;
 		return false;
 	}
 	inst->clk_data.dcvs_mode = true;
-	dprintk(VIDC_PROF, "DCVS enabled: %pK\n", inst);
+	dprintk(VIDC_HIGH, "DCVS enabled: %pK\n", inst);
 
 	return true;
 }
@@ -1064,7 +1064,7 @@ int msm_comm_init_clocks_and_bus_data(struct msm_vidc_inst *inst)
 	}
 
 	if (inst->session_type == MSM_VIDC_CVP) {
-		dprintk(VIDC_DBG, "%s: cvp session\n", __func__);
+		dprintk(VIDC_LOW, "%s: cvp session\n", __func__);
 		return 0;
 	}
 
@@ -1100,7 +1100,7 @@ void msm_clock_data_reset(struct msm_vidc_inst *inst)
 	struct clock_data *dcvs;
 	struct msm_vidc_format *fmt;
 
-	dprintk(VIDC_DBG, "Init DCVS Load\n");
+	dprintk(VIDC_HIGH, "Init DCVS Load\n");
 
 	if (!inst || !inst->core || !inst->clk_data.entry) {
 		dprintk(VIDC_ERR, "%s Invalid args: Inst = %pK\n",
@@ -1224,7 +1224,7 @@ int msm_vidc_decide_work_route_iris1(struct msm_vidc_inst *inst)
 				V4L2_MPEG_VIDEO_BITRATE_MODE_CBR_VFR &&
 			mbps <= CBR_VFR_MB_LIMIT)) {
 			pdata.video_work_route = 1;
-			dprintk(VIDC_DBG, "Configured work route = 1");
+			dprintk(VIDC_HIGH, "Configured work route = 1");
 		}
 	} else {
 		return -EINVAL;
@@ -1237,7 +1237,7 @@ decision_done:
 			(void *)inst->session, HFI_PROPERTY_PARAM_WORK_ROUTE,
 			(void *)&pdata, sizeof(pdata));
 	if (rc)
-		dprintk(VIDC_WARN,
+		dprintk(VIDC_ERR,
 			" Failed to configure work route %pK\n", inst);
 
 	return rc;
@@ -1285,14 +1285,14 @@ int msm_vidc_decide_work_route_iris2(struct msm_vidc_inst *inst)
 		return -EINVAL;
 	}
 
-	dprintk(VIDC_DBG, "Configurng work route = %u",
+	dprintk(VIDC_HIGH, "Configurng work route = %u",
 			pdata.video_work_route);
 
 	rc = call_hfi_op(hdev, session_set_property,
 			(void *)inst->session, HFI_PROPERTY_PARAM_WORK_ROUTE,
 			(void *)&pdata, sizeof(pdata));
 	if (rc)
-		dprintk(VIDC_WARN,
+		dprintk(VIDC_ERR,
 			" Failed to configure work route %pK\n", inst);
 	else
 		inst->clk_data.work_route = pdata.video_work_route;
@@ -1348,7 +1348,7 @@ decision_done:
 			(void *)inst->session, HFI_PROPERTY_PARAM_WORK_MODE,
 			(void *)&pdata, sizeof(pdata));
 	if (rc)
-		dprintk(VIDC_WARN,
+		dprintk(VIDC_ERR,
 				" Failed to configure Work Mode %pK\n", inst);
 
 	/* For WORK_MODE_1, set Low Latency mode by default to HW. */
@@ -1388,7 +1388,7 @@ int msm_vidc_decide_work_mode_iris1(struct msm_vidc_inst *inst)
 
 	if (inst->clk_data.low_latency_mode) {
 		pdata.video_work_mode = HFI_WORKMODE_1;
-		dprintk(VIDC_DBG, "Configured work mode = 1");
+		dprintk(VIDC_HIGH, "Configured work mode = 1");
 		goto decision_done;
 	}
 
@@ -1432,7 +1432,7 @@ decision_done:
 			(void *)inst->session, HFI_PROPERTY_PARAM_WORK_MODE,
 			(void *)&pdata, sizeof(pdata));
 	if (rc)
-		dprintk(VIDC_WARN,
+		dprintk(VIDC_ERR,
 			" Failed to configure Work Mode %pK\n", inst);
 
 	/* For WORK_MODE_1, set Low Latency mode by default to HW. */
@@ -1494,7 +1494,7 @@ int msm_vidc_decide_work_mode_iris2(struct msm_vidc_inst *inst)
 		}
 		if (inst->rc_type == RATE_CONTROL_LOSSLESS &&
 			out_f->fmt.pix_mp.pixelformat == V4L2_PIX_FMT_H264) {
-			dprintk(VIDC_DBG,
+			dprintk(VIDC_HIGH,
 				"Set work mode to low latency for AVC lossless encoding.");
 			latency.enable = true;
 		}
@@ -1502,7 +1502,7 @@ int msm_vidc_decide_work_mode_iris2(struct msm_vidc_inst *inst)
 		return -EINVAL;
 	}
 
-	dprintk(VIDC_DBG, "Configuring work mode = %u low latency = %u",
+	dprintk(VIDC_HIGH, "Configuring work mode = %u low latency = %u",
 			pdata.video_work_mode,
 			latency.enable);
 
@@ -1512,7 +1512,7 @@ int msm_vidc_decide_work_mode_iris2(struct msm_vidc_inst *inst)
 			HFI_PROPERTY_PARAM_VENC_LOW_LATENCY_MODE,
 			(void *)&latency, sizeof(latency));
 		if (rc)
-			dprintk(VIDC_WARN,
+			dprintk(VIDC_ERR,
 				" Failed to configure low latency %pK\n", inst);
 		else
 			inst->clk_data.low_latency_mode = latency.enable;
@@ -1522,7 +1522,7 @@ int msm_vidc_decide_work_mode_iris2(struct msm_vidc_inst *inst)
 			(void *)inst->session, HFI_PROPERTY_PARAM_WORK_MODE,
 			(void *)&pdata, sizeof(pdata));
 	if (rc)
-		dprintk(VIDC_WARN,
+		dprintk(VIDC_ERR,
 			" Failed to configure Work Mode %pK\n", inst);
 	else
 		inst->clk_data.work_mode = pdata.video_work_mode;
@@ -1541,7 +1541,7 @@ static inline int msm_vidc_power_save_mode_enable(struct msm_vidc_inst *inst,
 
 	hdev = inst->core->device;
 	if (inst->session_type != MSM_VIDC_ENCODER) {
-		dprintk(VIDC_DBG,
+		dprintk(VIDC_LOW,
 			"%s : Not an encoder session. Nothing to do\n",
 				__func__);
 		return 0;
@@ -1576,7 +1576,7 @@ static inline int msm_vidc_power_save_mode_enable(struct msm_vidc_inst *inst,
 		inst->flags | VIDC_LOW_POWER :
 		inst->flags & ~VIDC_LOW_POWER;
 
-	dprintk(VIDC_PROF,
+	dprintk(VIDC_HIGH,
 		"Power Save Mode for inst: %pK Enable = %d\n", inst, enable);
 fail_power_mode_set:
 	return rc;
@@ -1587,7 +1587,7 @@ static int msm_vidc_move_core_to_power_save_mode(struct msm_vidc_core *core,
 {
 	struct msm_vidc_inst *inst = NULL;
 
-	dprintk(VIDC_PROF, "Core %d : Moving all inst to LP mode\n", core_id);
+	dprintk(VIDC_HIGH, "Core %d : Moving all inst to LP mode\n", core_id);
 	mutex_lock(&core->lock);
 	list_for_each_entry(inst, &core->instances, list) {
 		if (inst->clk_data.core_id == core_id &&
@@ -1692,12 +1692,12 @@ int msm_vidc_decide_core_and_power_mode_iris1(struct msm_vidc_inst *inst)
 	cur_inst_lp_load = (msm_comm_get_inst_load(inst,
 		LOAD_CALC_NO_QUIRKS) * lp_cycles)/inst->clk_data.work_route;
 
-	dprintk(VIDC_DBG, "Core 0 RT Load = %d Core 1 RT Load = %d\n",
+	dprintk(VIDC_HIGH, "Core 0 RT Load = %d Core 1 RT Load = %d\n",
 		 core0_load, core1_load);
-	dprintk(VIDC_DBG, "Core 0 RT LP Load = %d Core 1 RT LP Load = %d\n",
+	dprintk(VIDC_HIGH, "Core 0 RT LP Load = %d Core 1 RT LP Load = %d\n",
 		core0_lp_load, core1_lp_load);
-	dprintk(VIDC_DBG, "Max Load = %lu\n", max_freq);
-	dprintk(VIDC_DBG, "Current Load = %d Current LP Load = %d\n",
+	dprintk(VIDC_HIGH, "Max Load = %lu\n", max_freq);
+	dprintk(VIDC_HIGH, "Current Load = %d Current LP Load = %d\n",
 		current_inst_load, cur_inst_lp_load);
 
 	if (inst->session_type == MSM_VIDC_ENCODER) {
@@ -1728,14 +1728,14 @@ int msm_vidc_decide_core_and_power_mode_iris1(struct msm_vidc_inst *inst)
 
 	if (current_inst_load + min_load < max_freq) {
 		inst->clk_data.core_id = min_core_id;
-		dprintk(VIDC_DBG,
+		dprintk(VIDC_HIGH,
 			"Selected normally : Core ID = %d\n",
 				inst->clk_data.core_id);
 		msm_vidc_power_save_mode_enable(inst, false);
 	} else if (cur_inst_lp_load + min_load < max_freq) {
 		/* Move current instance to LP and return */
 		inst->clk_data.core_id = min_core_id;
-		dprintk(VIDC_DBG,
+		dprintk(VIDC_HIGH,
 			"Selected by moving current to LP : Core ID = %d\n",
 				inst->clk_data.core_id);
 		msm_vidc_power_save_mode_enable(inst, true);
@@ -1743,7 +1743,7 @@ int msm_vidc_decide_core_and_power_mode_iris1(struct msm_vidc_inst *inst)
 	} else if (cur_inst_lp_load + min_lp_load < max_freq) {
 		/* Move all instances to LP mode and return */
 		inst->clk_data.core_id = min_lp_core_id;
-		dprintk(VIDC_DBG,
+		dprintk(VIDC_HIGH,
 			"Moved all inst's to LP: Core ID = %d\n",
 				inst->clk_data.core_id);
 		msm_vidc_move_core_to_power_save_mode(core, min_lp_core_id);
@@ -1756,7 +1756,7 @@ int msm_vidc_decide_core_and_power_mode_iris1(struct msm_vidc_inst *inst)
 
 decision_done:
 	core_info.video_core_enable_mask = inst->clk_data.core_id;
-	dprintk(VIDC_DBG,
+	dprintk(VIDC_HIGH,
 		"Core Enable Mask %d\n", core_info.video_core_enable_mask);
 
 	rc = call_hfi_op(hdev, session_set_property,
@@ -1764,7 +1764,7 @@ decision_done:
 			HFI_PROPERTY_CONFIG_VIDEOCORES_USAGE, &core_info,
 			sizeof(core_info));
 	if (rc)
-		dprintk(VIDC_WARN,
+		dprintk(VIDC_ERR,
 				" Failed to configure CORE ID %pK\n", inst);
 
 	rc = msm_comm_scale_clocks_and_bus(inst);
@@ -1802,7 +1802,7 @@ void msm_print_core_status(struct msm_vidc_core *core, u32 core_id)
 	struct v4l2_format *out_f;
 	struct v4l2_format *inp_f;
 
-	dprintk(VIDC_PROF, "Instances running on core %u", core_id);
+	dprintk(VIDC_PERF, "Instances running on core %u", core_id);
 	mutex_lock(&core->lock);
 	list_for_each_entry(inst, &core->instances, list) {
 
@@ -1811,7 +1811,7 @@ void msm_print_core_status(struct msm_vidc_core *core, u32 core_id)
 			continue;
 		out_f = &inst->fmts[OUTPUT_PORT].v4l2_fmt;
 		inp_f = &inst->fmts[INPUT_PORT].v4l2_fmt;
-		dprintk(VIDC_PROF,
+		dprintk(VIDC_PERF,
 			"inst %pK (%4ux%4u) to (%4ux%4u) %3u %s %s %s %s %lu\n",
 			inst,
 			inp_f->fmt.pix_mp.width,

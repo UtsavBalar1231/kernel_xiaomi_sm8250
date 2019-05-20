@@ -187,7 +187,7 @@ static int msm_cvp_init_downscale_resolution(struct msm_vidc_inst *inst)
 	ds_height = cvp->height;
 
 	if (!cvp->downscale) {
-		dprintk(VIDC_DBG, "%s: downscaling not enabled\n", __func__);
+		dprintk(VIDC_HIGH, "%s: downscaling not enabled\n", __func__);
 		goto exit;
 	}
 
@@ -240,10 +240,10 @@ static void msm_cvp_deinit_downscale_buffers(struct msm_vidc_inst *inst)
 		return;
 	}
 	cvp = inst->cvp;
-	dprintk(VIDC_DBG, "%s:\n", __func__);
+	dprintk(VIDC_HIGH, "%s:\n", __func__);
 
 	if (cvp->src_buffer.dbuf) {
-		print_cvp_buffer(VIDC_DBG, "free: src_buffer",
+		print_cvp_buffer(VIDC_HIGH, "free: src_buffer",
 				inst, &cvp->src_buffer);
 		if (msm_cvp_free_buffer(inst, &cvp->src_buffer))
 			print_cvp_buffer(VIDC_ERR,
@@ -251,7 +251,7 @@ static void msm_cvp_deinit_downscale_buffers(struct msm_vidc_inst *inst)
 				inst, &cvp->src_buffer);
 	}
 	if (cvp->ref_buffer.dbuf) {
-		print_cvp_buffer(VIDC_DBG, "free: ref_buffer",
+		print_cvp_buffer(VIDC_HIGH, "free: ref_buffer",
 				inst, &cvp->ref_buffer);
 		if (msm_cvp_free_buffer(inst, &cvp->ref_buffer))
 			print_cvp_buffer(VIDC_ERR,
@@ -272,10 +272,10 @@ static int msm_cvp_init_downscale_buffers(struct msm_vidc_inst *inst)
 	cvp = inst->cvp;
 
 	if (!cvp->downscale) {
-		dprintk(VIDC_DBG, "%s: downscaling not enabled\n", __func__);
+		dprintk(VIDC_HIGH, "%s: downscaling not enabled\n", __func__);
 		return 0;
 	}
-	dprintk(VIDC_DBG, "%s:\n", __func__);
+	dprintk(VIDC_HIGH, "%s:\n", __func__);
 
 	cvp->src_buffer.size = VENUS_BUFFER_SIZE(COLOR_FMT_NV12_UBWC,
 			cvp->ds_width, cvp->ds_height);
@@ -286,7 +286,7 @@ static int msm_cvp_init_downscale_buffers(struct msm_vidc_inst *inst)
 			inst, &cvp->src_buffer);
 		goto error;
 	}
-	print_cvp_buffer(VIDC_DBG, "alloc: src_buffer",
+	print_cvp_buffer(VIDC_HIGH, "alloc: src_buffer",
 			inst, &cvp->src_buffer);
 
 	cvp->ref_buffer.size = cvp->src_buffer.size;
@@ -297,7 +297,7 @@ static int msm_cvp_init_downscale_buffers(struct msm_vidc_inst *inst)
 			inst, &cvp->ref_buffer);
 		goto error;
 	}
-	print_cvp_buffer(VIDC_DBG, "alloc: ref_buffer",
+	print_cvp_buffer(VIDC_HIGH, "alloc: ref_buffer",
 			inst, &cvp->ref_buffer);
 
 	return rc;
@@ -316,10 +316,10 @@ static void msm_cvp_deinit_context_buffers(struct msm_vidc_inst *inst)
 		return;
 	}
 	cvp = inst->cvp;
-	dprintk(VIDC_DBG, "%s:\n", __func__);
+	dprintk(VIDC_HIGH, "%s:\n", __func__);
 
 	if (cvp->context_buffer.dbuf) {
-		print_cvp_buffer(VIDC_DBG, "free: context_buffer",
+		print_cvp_buffer(VIDC_HIGH, "free: context_buffer",
 				inst, &cvp->context_buffer);
 		if (msm_cvp_free_buffer(inst, &cvp->context_buffer))
 			print_cvp_buffer(VIDC_ERR,
@@ -327,7 +327,7 @@ static void msm_cvp_deinit_context_buffers(struct msm_vidc_inst *inst)
 				inst, &cvp->context_buffer);
 	}
 	if (cvp->refcontext_buffer.dbuf) {
-		print_cvp_buffer(VIDC_DBG, "free: refcontext_buffer",
+		print_cvp_buffer(VIDC_HIGH, "free: refcontext_buffer",
 				inst, &cvp->refcontext_buffer);
 		if (msm_cvp_free_buffer(inst, &cvp->refcontext_buffer))
 			print_cvp_buffer(VIDC_ERR,
@@ -346,7 +346,7 @@ static int msm_cvp_init_context_buffers(struct msm_vidc_inst *inst)
 		return -EINVAL;
 	}
 	cvp = inst->cvp;
-	dprintk(VIDC_DBG, "%s:\n", __func__);
+	dprintk(VIDC_HIGH, "%s:\n", __func__);
 
 	cvp->context_buffer.size = HFI_DME_FRAME_CONTEXT_BUFFER_SIZE;
 	rc = msm_cvp_allocate_buffer(inst, &cvp->context_buffer, false);
@@ -356,7 +356,7 @@ static int msm_cvp_init_context_buffers(struct msm_vidc_inst *inst)
 			inst, &cvp->context_buffer);
 		goto error;
 	}
-	print_cvp_buffer(VIDC_DBG, "alloc: context_buffer",
+	print_cvp_buffer(VIDC_HIGH, "alloc: context_buffer",
 			inst, &cvp->context_buffer);
 
 	cvp->refcontext_buffer.size = cvp->context_buffer.size;
@@ -367,7 +367,7 @@ static int msm_cvp_init_context_buffers(struct msm_vidc_inst *inst)
 			inst, &cvp->refcontext_buffer);
 		goto error;
 	}
-	print_cvp_buffer(VIDC_DBG, "alloc: refcontext_buffer",
+	print_cvp_buffer(VIDC_HIGH, "alloc: refcontext_buffer",
 			inst, &cvp->refcontext_buffer);
 
 	return rc;
@@ -390,10 +390,10 @@ static void msm_cvp_deinit_internal_buffers(struct msm_vidc_inst *inst)
 	}
 
 	cvp = inst->cvp;
-	dprintk(VIDC_DBG, "%s:\n", __func__);
+	dprintk(VIDC_HIGH, "%s:\n", __func__);
 
 	if (cvp->output_buffer.dbuf) {
-		print_cvp_buffer(VIDC_DBG, "free: output_buffer",
+		print_cvp_buffer(VIDC_HIGH, "free: output_buffer",
 				inst, &cvp->output_buffer);
 		rc = msm_cvp_free_buffer(inst, &cvp->output_buffer);
 		if (rc)
@@ -403,7 +403,7 @@ static void msm_cvp_deinit_internal_buffers(struct msm_vidc_inst *inst)
 	}
 
 	if (cvp->persist2_buffer.dbuf) {
-		print_cvp_buffer(VIDC_DBG, "free: persist2_buffer",
+		print_cvp_buffer(VIDC_HIGH, "free: persist2_buffer",
 			inst, &cvp->persist2_buffer);
 		memset(&persist2_packet, 0, sizeof(struct
 			msm_cvp_session_release_persist_buffers_packet));
@@ -455,7 +455,7 @@ static int msm_cvp_init_internal_buffers(struct msm_vidc_inst *inst)
 	}
 	cvp = inst->cvp;
 	arg = cvp->arg;
-	dprintk(VIDC_DBG, "%s:\n", __func__);
+	dprintk(VIDC_HIGH, "%s:\n", __func__);
 
 	cvp->persist2_buffer.size = HFI_DME_INTERNAL_PERSIST_2_BUFFER_SIZE;
 	rc = msm_cvp_allocate_buffer(inst, &cvp->persist2_buffer, false);
@@ -465,7 +465,7 @@ static int msm_cvp_init_internal_buffers(struct msm_vidc_inst *inst)
 			inst, &cvp->persist2_buffer);
 		goto error;
 	}
-	print_cvp_buffer(VIDC_DBG, "alloc: persist2_buffer",
+	print_cvp_buffer(VIDC_HIGH, "alloc: persist2_buffer",
 			inst, &cvp->persist2_buffer);
 
 	/* set buffer */
@@ -505,7 +505,7 @@ static int msm_cvp_init_internal_buffers(struct msm_vidc_inst *inst)
 			inst, &cvp->output_buffer);
 		goto error;
 	}
-	print_cvp_buffer(VIDC_DBG, "alloc: output_buffer",
+	print_cvp_buffer(VIDC_HIGH, "alloc: output_buffer",
 			inst, &cvp->output_buffer);
 
 	return rc;
@@ -711,7 +711,7 @@ static int msm_cvp_frame_process(struct msm_vidc_inst *inst,
 		skipframe = !(cvp->framecount % skip_framecount);
 	}
 	if (skipframe) {
-		print_cvp_buffer(VIDC_DBG, "input frame skipped",
+		print_cvp_buffer(VIDC_LOW, "input frame skipped",
 			inst, &cvp->fullres_buffer);
 		cvp->framecount++;
 		cvp->metadata_available = false;
@@ -754,7 +754,7 @@ static int msm_cvp_frame_process(struct msm_vidc_inst *inst,
 	frame->refframe_contextbuffer.buffer_addr = cvp->refcontext_buffer.fd;
 	frame->refframe_contextbuffer.size = cvp->refcontext_buffer.size;
 
-	print_cvp_buffer(VIDC_DBG, "input frame", inst, &cvp->fullres_buffer);
+	print_cvp_buffer(VIDC_LOW, "input frame", inst, &cvp->fullres_buffer);
 	rc = msm_cvp_private(cvp->priv, CVP_KMD_SEND_CMD_PKT, arg);
 	if (rc) {
 		print_cvp_buffer(VIDC_ERR, "send failed: input frame",
@@ -825,7 +825,7 @@ static int msm_vidc_cvp_deinit(struct msm_vidc_inst *inst)
 	}
 	cvp = inst->cvp;
 
-	dprintk(VIDC_DBG, "%s: cvp session %#x\n", __func__, cvp->session_id);
+	dprintk(VIDC_HIGH, "%s: cvp session %#x\n", __func__, cvp->session_id);
 	msm_cvp_deinit_internal_buffers(inst);
 	msm_cvp_deinit_context_buffers(inst);
 	msm_cvp_deinit_downscale_buffers(inst);
@@ -844,7 +844,7 @@ static int msm_vidc_cvp_close(struct msm_vidc_inst *inst)
 	}
 	cvp = inst->cvp;
 
-	dprintk(VIDC_DBG, "%s: cvp session %#x\n", __func__, cvp->session_id);
+	dprintk(VIDC_HIGH, "%s: cvp session %#x\n", __func__, cvp->session_id);
 	rc = msm_cvp_close(cvp->priv);
 	if (rc)
 		dprintk(VIDC_ERR,
@@ -866,7 +866,7 @@ int msm_vidc_cvp_unprepare_preprocess(struct msm_vidc_inst *inst)
 		return -EINVAL;
 	}
 	if (!inst->cvp) {
-		dprintk(VIDC_DBG, "%s: cvp not enabled or closed\n", __func__);
+		dprintk(VIDC_HIGH, "%s: cvp not enabled or closed\n", __func__);
 		return 0;
 	}
 
@@ -904,7 +904,7 @@ static int msm_vidc_cvp_init(struct msm_vidc_inst *inst)
 	if (rc)
 		goto error;
 
-	dprintk(VIDC_DBG,
+	dprintk(VIDC_HIGH,
 		"%s: pixelformat %#x, wxh %dx%d downscale %d ds_wxh %dx%d\n",
 		__func__, f->fmt.pix_mp.pixelformat,
 		cvp->width, cvp->height, cvp->downscale,
@@ -985,7 +985,7 @@ static int msm_vidc_cvp_open(struct msm_vidc_inst *inst)
 	}
 	arg = cvp->arg;
 
-	dprintk(VIDC_DBG, "%s: opening cvp\n", __func__);
+	dprintk(VIDC_HIGH, "%s: opening cvp\n", __func__);
 	cvp->priv = msm_cvp_open(0, MSM_VIDC_CVP);
 	if (!cvp->priv) {
 		dprintk(VIDC_ERR, "%s: failed to open cvp session\n", __func__);
@@ -1001,7 +1001,7 @@ static int msm_vidc_cvp_open(struct msm_vidc_inst *inst)
 		goto error;
 	}
 	cvp->session_id = arg->data.session.session_id;
-	dprintk(VIDC_DBG, "%s: cvp session id %#x\n",
+	dprintk(VIDC_HIGH, "%s: cvp session id %#x\n",
 		__func__, cvp->session_id);
 
 	return 0;

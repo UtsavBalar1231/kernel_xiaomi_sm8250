@@ -94,7 +94,7 @@ void handle_session_register_buffer_done(enum hal_command_response cmd,
 			__func__, response->data.regbuf.client_data);
 		goto exit;
 	}
-	print_cvp_buffer(VIDC_DBG, "register_done", inst, cbuf);
+	print_cvp_buffer(VIDC_HIGH, "register_done", inst, cbuf);
 
 	event.type = V4L2_EVENT_MSM_VIDC_REGISTER_BUFFER_DONE;
 	data = (u32 *)event.u.data;
@@ -146,7 +146,7 @@ void handle_session_unregister_buffer_done(enum hal_command_response cmd,
 			__func__, response->data.unregbuf.client_data);
 		goto exit;
 	}
-	print_cvp_buffer(VIDC_DBG, "unregister_done", inst, cbuf);
+	print_cvp_buffer(VIDC_HIGH, "unregister_done", inst, cbuf);
 
 	rc = inst->smem_ops->smem_unmap_dma_buf(inst, &cbuf->smem);
 	if (rc) {
@@ -262,7 +262,7 @@ static int msm_cvp_get_session_info(struct msm_vidc_inst *inst,
 	}
 
 	session->session_id = hash32_ptr(inst->session);
-	dprintk(VIDC_DBG, "%s: id 0x%x\n", __func__, session->session_id);
+	dprintk(VIDC_HIGH, "%s: id 0x%x\n", __func__, session->session_id);
 
 	return rc;
 }
@@ -277,7 +277,7 @@ static int msm_cvp_request_power(struct msm_vidc_inst *inst,
 		return -EINVAL;
 	}
 
-	dprintk(VIDC_DBG,
+	dprintk(VIDC_HIGH,
 		"%s: clock_cycles_a %d, clock_cycles_b %d, ddr_bw %d sys_cache_bw %d\n",
 		__func__, power->clock_cycles_a, power->clock_cycles_b,
 		power->ddr_bw, power->sys_cache_bw);
@@ -344,7 +344,7 @@ static int msm_cvp_register_buffer(struct msm_vidc_inst *inst,
 		return -EINVAL;
 	}
 	hdev = inst->core->device;
-	print_client_buffer(VIDC_DBG, "register", inst, buf);
+	print_client_buffer(VIDC_HIGH, "register", inst, buf);
 
 	mutex_lock(&inst->cvpbufs.lock);
 	found = false;
@@ -423,7 +423,7 @@ static int msm_cvp_unregister_buffer(struct msm_vidc_inst *inst,
 		return -EINVAL;
 	}
 	hdev = inst->core->device;
-	print_client_buffer(VIDC_DBG, "unregister", inst, buf);
+	print_client_buffer(VIDC_HIGH, "unregister", inst, buf);
 
 	mutex_lock(&inst->cvpbufs.lock);
 	found = false;
@@ -576,7 +576,7 @@ int msm_cvp_inst_deinit(struct msm_vidc_inst *inst)
 		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
 		return -EINVAL;
 	}
-	dprintk(VIDC_DBG, "%s: inst %pK (%#x)\n", __func__,
+	dprintk(VIDC_HIGH, "%s: inst %pK (%#x)\n", __func__,
 		inst, hash32_ptr(inst->session));
 
 	rc = msm_comm_try_state(inst, MSM_VIDC_CLOSE_DONE);
@@ -614,7 +614,7 @@ int msm_cvp_inst_init(struct msm_vidc_inst *inst)
 		return -EINVAL;
 	}
 
-	dprintk(VIDC_DBG, "%s: inst %pK (%#x)\n", __func__,
+	dprintk(VIDC_HIGH, "%s: inst %pK (%#x)\n", __func__,
 		inst, hash32_ptr(inst->session));
 
 	/* set default frequency */

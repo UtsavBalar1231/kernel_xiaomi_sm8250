@@ -711,7 +711,7 @@ int msm_vdec_enum_fmt(struct msm_vidc_inst *inst, struct v4l2_fmtdesc *f)
 				sizeof(f->description));
 		f->pixelformat = fmt_desc->fourcc;
 	} else {
-		dprintk(VIDC_DBG, "No more formats found\n");
+		dprintk(VIDC_HIGH, "No more formats found\n");
 		rc = -EINVAL;
 	}
 	return rc;
@@ -789,7 +789,7 @@ int msm_vdec_inst_init(struct msm_vidc_inst *inst)
 				is_decode_session(temp) &&
 				!is_thumbnail_session(temp)) {
 				inst->decode_batching = false;
-				dprintk(VIDC_DBG,
+				dprintk(VIDC_HIGH,
 				"Disable decode-batching in multi sessions\n");
 				break;
 			}
@@ -833,7 +833,7 @@ int msm_vdec_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 		return -EINVAL;
 	}
 
-	dprintk(VIDC_DBG,
+	dprintk(VIDC_HIGH,
 		"%s: %x : control name = %s, id = 0x%x value = %d\n",
 		__func__, hash32_ptr(inst->session), ctrl->name,
 		ctrl->id, ctrl->val);
@@ -937,7 +937,7 @@ int msm_vdec_set_frame_size(struct msm_vidc_inst *inst)
 	frame_size.buffer_type = HFI_BUFFER_INPUT;
 	frame_size.width = f->fmt.pix_mp.width;
 	frame_size.height = f->fmt.pix_mp.height;
-	dprintk(VIDC_DBG, "%s: input wxh %dx%d\n", __func__,
+	dprintk(VIDC_HIGH, "%s: input wxh %dx%d\n", __func__,
 		frame_size.width, frame_size.height);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_FRAME_SIZE, &frame_size, sizeof(frame_size));
@@ -1075,7 +1075,7 @@ int msm_vdec_set_profile_level(struct msm_vidc_inst *inst)
 	profile_level.profile = inst->profile;
 	profile_level.level = inst->level;
 
-	dprintk(VIDC_DBG, "%s: %#x %#x\n", __func__,
+	dprintk(VIDC_HIGH, "%s: %#x %#x\n", __func__,
 		profile_level.profile, profile_level.level);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_PROFILE_LEVEL_CURRENT, &profile_level,
@@ -1100,7 +1100,7 @@ int msm_vdec_set_output_order(struct msm_vidc_inst *inst)
 	hdev = inst->core->device;
 
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_DECODE_ORDER);
-	dprintk(VIDC_DBG, "%s: %d\n", __func__, ctrl->val);
+	dprintk(VIDC_HIGH, "%s: %d\n", __func__, ctrl->val);
 	if (ctrl->val == V4L2_MPEG_MSM_VIDC_ENABLE)
 		output_order = HFI_OUTPUT_ORDER_DECODE;
 	else
@@ -1131,7 +1131,7 @@ int msm_vdec_set_sync_frame_mode(struct msm_vidc_inst *inst)
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_SYNC_FRAME_DECODE);
 	hfi_property.enable = (bool)ctrl->val;
 
-	dprintk(VIDC_DBG, "%s: %#x\n", __func__, hfi_property.enable);
+	dprintk(VIDC_HIGH, "%s: %#x\n", __func__, hfi_property.enable);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_VDEC_THUMBNAIL_MODE, &hfi_property,
 		sizeof(hfi_property));
@@ -1169,7 +1169,7 @@ int msm_vdec_set_secure_mode(struct msm_vidc_inst *inst)
 		}
 	}
 
-	dprintk(VIDC_DBG, "%s: %#x\n", __func__, ctrl->val);
+	dprintk(VIDC_HIGH, "%s: %#x\n", __func__, ctrl->val);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_SECURE_SESSION, &ctrl->val, sizeof(u32));
 	if (rc)
@@ -1247,7 +1247,7 @@ int msm_vdec_set_output_stream_mode(struct msm_vidc_inst *inst)
 		f = &inst->fmts[OUTPUT_PORT].v4l2_fmt;
 		frame_sz.width = f->fmt.pix_mp.width;
 		frame_sz.height = f->fmt.pix_mp.height;
-		dprintk(VIDC_DBG,
+		dprintk(VIDC_HIGH,
 			"frame_size: hal buffer type %d, width %d, height %d\n",
 			frame_sz.buffer_type, frame_sz.width, frame_sz.height);
 		rc = call_hfi_op(hdev, session_set_property, inst->session,
@@ -1280,7 +1280,7 @@ int msm_vdec_set_priority(struct msm_vidc_inst *inst)
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_PRIORITY);
 	hfi_property.enable = (bool)ctrl->val;
 
-	dprintk(VIDC_DBG, "%s: %#x\n", __func__, hfi_property.enable);
+	dprintk(VIDC_HIGH, "%s: %#x\n", __func__, hfi_property.enable);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_CONFIG_REALTIME, &hfi_property,
 		sizeof(hfi_property));
@@ -1309,7 +1309,7 @@ int msm_vdec_set_operating_rate(struct msm_vidc_inst *inst)
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_OPERATING_RATE);
 	operating_rate.operating_rate = ctrl->val;
 
-	dprintk(VIDC_DBG, "%s: %#x\n", __func__,
+	dprintk(VIDC_HIGH, "%s: %#x\n", __func__,
 			operating_rate.operating_rate);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_CONFIG_OPERATING_RATE, &operating_rate,
@@ -1339,7 +1339,7 @@ int msm_vdec_set_conceal_color(struct msm_vidc_inst *inst)
 	conceal_color.conceal_color_8bit = ctrl_8b->val;
 	conceal_color.conceal_color_10bit = ctrl_10b->val;
 
-	dprintk(VIDC_DBG, "%s: %#x %#x\n", __func__,
+	dprintk(VIDC_HIGH, "%s: %#x %#x\n", __func__,
 		conceal_color.conceal_color_8bit,
 		conceal_color.conceal_color_10bit);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
@@ -1474,7 +1474,7 @@ exit:
 	if (rc)
 		dprintk(VIDC_ERR, "%s: failed with %d\n", __func__, rc);
 	else
-		dprintk(VIDC_DBG, "%s: set properties successful\n", __func__);
+		dprintk(VIDC_HIGH, "%s: set properties successful\n", __func__);
 
 	return rc;
 }

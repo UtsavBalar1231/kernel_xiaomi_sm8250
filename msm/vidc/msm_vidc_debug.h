@@ -33,11 +33,10 @@
 
 enum vidc_msg_prio {
 	VIDC_ERR        = 0x00000001,
-	VIDC_WARN       = 0x00000002,
-	VIDC_INFO       = 0x00000004,
-	VIDC_DBG        = 0x00000008,
-	VIDC_PROF       = 0x00000010,
-	VIDC_PKT        = 0x00000020,
+	VIDC_HIGH       = 0x00000002,
+	VIDC_LOW        = 0x00000004,
+	VIDC_PERF       = 0x00000008,
+	VIDC_PKT        = 0x00000010,
 	VIDC_PRINTK     = 0x00001000,
 	VIDC_FTRACE     = 0x00002000,
 	FW_LOW          = 0x00010000,
@@ -119,7 +118,7 @@ extern bool msm_vidc_cvp_usage;
 
 #define MSM_VIDC_ERROR(value)					\
 	do {	if (value)					\
-			dprintk(VIDC_DBG, "BugOn");		\
+			dprintk(VIDC_ERR, "BugOn");		\
 		BUG_ON(value);					\
 	} while (0)
 
@@ -139,14 +138,12 @@ static inline char *get_debug_level_str(int level)
 	switch (level) {
 	case VIDC_ERR:
 		return "err";
-	case VIDC_WARN:
-		return "warn";
-	case VIDC_INFO:
-		return "info";
-	case VIDC_DBG:
-		return "dbg";
-	case VIDC_PROF:
-		return "prof";
+	case VIDC_HIGH:
+		return "high";
+	case VIDC_LOW:
+		return "low";
+	case VIDC_PERF:
+		return "perf";
 	case VIDC_PKT:
 		return "pkt";
 	default:
@@ -161,7 +158,7 @@ static inline void tic(struct msm_vidc_inst *i, enum profiling_points p,
 
 	if (!i->debug.pdata[p].name[0])
 		memcpy(i->debug.pdata[p].name, b, 64);
-	if ((msm_vidc_debug & VIDC_PROF) &&
+	if ((msm_vidc_debug & VIDC_PERF) &&
 		i->debug.pdata[p].sampling) {
 		do_gettimeofday(&__ddl_tv);
 		i->debug.pdata[p].start =
@@ -174,7 +171,7 @@ static inline void toc(struct msm_vidc_inst *i, enum profiling_points p)
 {
 	struct timeval __ddl_tv;
 
-	if ((msm_vidc_debug & VIDC_PROF) &&
+	if ((msm_vidc_debug & VIDC_PERF) &&
 		!i->debug.pdata[p].sampling) {
 		do_gettimeofday(&__ddl_tv);
 		i->debug.pdata[p].stop = (__ddl_tv.tv_sec * 1000)
@@ -191,15 +188,15 @@ static inline void show_stats(struct msm_vidc_inst *i)
 
 	for (x = 0; x < MAX_PROFILING_POINTS; x++) {
 		if (i->debug.pdata[x].name[0] &&
-				(msm_vidc_debug & VIDC_PROF)) {
+				(msm_vidc_debug & VIDC_PERF)) {
 			if (i->debug.samples) {
-				dprintk(VIDC_PROF, "%s averaged %d ms/sample\n",
+				dprintk(VIDC_PERF, "%s averaged %d ms/sample\n",
 						i->debug.pdata[x].name,
 						i->debug.pdata[x].cumulative /
 						i->debug.samples);
 			}
 
-			dprintk(VIDC_PROF, "%s Samples: %d\n",
+			dprintk(VIDC_PERF, "%s Samples: %d\n",
 					i->debug.pdata[x].name,
 					i->debug.samples);
 		}

@@ -111,7 +111,7 @@ static int msm_dma_get_device_address(struct dma_buf *dbuf, unsigned long align,
 		trace_msm_smem_buffer_iommu_op_end("MAP", 0, 0,
 			align, *iova, *buffer_size);
 	} else {
-		dprintk(VIDC_DBG, "iommu not present, use phys mem addr\n");
+		dprintk(VIDC_HIGH, "iommu not present, use phys mem addr\n");
 	}
 
 	return 0;
@@ -132,14 +132,14 @@ static int msm_dma_put_device_address(u32 flags,
 	int rc = 0;
 
 	if (!mapping_info) {
-		dprintk(VIDC_WARN, "Invalid mapping_info\n");
+		dprintk(VIDC_ERR, "Invalid mapping_info\n");
 		return -EINVAL;
 	}
 
 	if (!mapping_info->dev || !mapping_info->table ||
 		!mapping_info->buf || !mapping_info->attach ||
 		!mapping_info->cb_info) {
-		dprintk(VIDC_WARN, "Invalid params\n");
+		dprintk(VIDC_ERR, "Invalid params\n");
 		return -EINVAL;
 	}
 
@@ -263,7 +263,7 @@ int msm_smem_unmap_dma_buf(struct msm_vidc_inst *inst, struct msm_smem *smem)
 	if (smem->refcount) {
 		smem->refcount--;
 	} else {
-		dprintk(VIDC_WARN,
+		dprintk(VIDC_ERR,
 			"unmap called while refcount is zero already\n");
 		return -EINVAL;
 	}
@@ -344,13 +344,13 @@ static int alloc_dma_mem(size_t size, u32 align, u32 flags,
 
 	if (is_iommu_present(res)) {
 		if (flags & SMEM_ADSP) {
-			dprintk(VIDC_DBG, "Allocating from ADSP heap\n");
+			dprintk(VIDC_HIGH, "Allocating from ADSP heap\n");
 			heap_mask = ION_HEAP(ION_ADSP_HEAP_ID);
 		} else {
 			heap_mask = ION_HEAP(ION_SYSTEM_HEAP_ID);
 		}
 	} else {
-		dprintk(VIDC_DBG,
+		dprintk(VIDC_HIGH,
 			"allocate shared memory from adsp heap size %zx align %d\n",
 			size, align);
 		heap_mask = ION_HEAP(ION_ADSP_HEAP_ID);
@@ -427,7 +427,7 @@ static int alloc_dma_mem(size_t size, u32 align, u32 flags,
 		}
 	}
 
-	dprintk(VIDC_DBG,
+	dprintk(VIDC_HIGH,
 		"%s: dma_buf = %pK, device_addr = %x, size = %d, kvaddr = %pK, buffer_type = %#x, flags = %#lx\n",
 		__func__, mem->dma_buf, mem->device_addr, mem->size,
 		mem->kvaddr, mem->buffer_type, mem->flags);
@@ -444,7 +444,7 @@ fail_shared_mem_alloc:
 
 static int free_dma_mem(struct msm_smem *mem)
 {
-	dprintk(VIDC_DBG,
+	dprintk(VIDC_HIGH,
 		"%s: dma_buf = %pK, device_addr = %x, size = %d, kvaddr = %pK, buffer_type = %#x\n",
 		__func__, mem->dma_buf, mem->device_addr, mem->size,
 		mem->kvaddr, mem->buffer_type);

@@ -143,7 +143,7 @@ static int msm_vidc_load_reg_table(struct msm_vidc_platform_resources *res)
 		 * qcom,reg-presets is an optional property.  It likely won't be
 		 * present if we don't have any register settings to program
 		 */
-		dprintk(VIDC_DBG, "qcom,reg-presets not found\n");
+		dprintk(VIDC_HIGH, "qcom,reg-presets not found\n");
 		return 0;
 	}
 
@@ -153,7 +153,7 @@ static int msm_vidc_load_reg_table(struct msm_vidc_platform_resources *res)
 	reg_set->count /=  sizeof(*reg_set->reg_tbl) / sizeof(u32);
 
 	if (!reg_set->count) {
-		dprintk(VIDC_DBG, "no elements in reg set\n");
+		dprintk(VIDC_HIGH, "no elements in reg set\n");
 		return rc;
 	}
 
@@ -172,7 +172,7 @@ static int msm_vidc_load_reg_table(struct msm_vidc_platform_resources *res)
 		return -EINVAL;
 	}
 	for (i = 0; i < reg_set->count; i++) {
-		dprintk(VIDC_DBG,
+		dprintk(VIDC_HIGH,
 			"reg = %x, value = %x\n",
 			reg_set->reg_tbl[i].reg,
 			reg_set->reg_tbl[i].value
@@ -192,7 +192,7 @@ static int msm_vidc_load_qdss_table(struct msm_vidc_platform_resources *res)
 		 * qcom,qdss-presets is an optional property. It likely won't be
 		 * present if we don't have any register settings to program
 		 */
-		dprintk(VIDC_DBG, "qcom,qdss-presets not found\n");
+		dprintk(VIDC_HIGH, "qcom,qdss-presets not found\n");
 		return rc;
 	}
 
@@ -202,7 +202,7 @@ static int msm_vidc_load_qdss_table(struct msm_vidc_platform_resources *res)
 	qdss_addr_set->count /= sizeof(*qdss_addr_set->addr_tbl) / sizeof(u32);
 
 	if (!qdss_addr_set->count) {
-		dprintk(VIDC_DBG, "no elements in qdss reg set\n");
+		dprintk(VIDC_HIGH, "no elements in qdss reg set\n");
 		return rc;
 	}
 
@@ -226,7 +226,7 @@ static int msm_vidc_load_qdss_table(struct msm_vidc_platform_resources *res)
 	}
 
 	for (i = 0; i < qdss_addr_set->count; i++) {
-		dprintk(VIDC_DBG, "qdss addr = %x, value = %x\n",
+		dprintk(VIDC_HIGH, "qdss addr = %x, value = %x\n",
 				qdss_addr_set->addr_tbl[i].start,
 				qdss_addr_set->addr_tbl[i].size);
 	}
@@ -243,7 +243,7 @@ static int msm_vidc_load_subcache_info(struct msm_vidc_platform_resources *res)
 	num_subcaches = of_property_count_strings(pdev->dev.of_node,
 		"cache-slice-names");
 	if (num_subcaches <= 0) {
-		dprintk(VIDC_DBG, "No subcaches found\n");
+		dprintk(VIDC_HIGH, "No subcaches found\n");
 		goto err_load_subcache_table_fail;
 	}
 
@@ -257,7 +257,7 @@ static int msm_vidc_load_subcache_info(struct msm_vidc_platform_resources *res)
 	}
 
 	subcaches->count = num_subcaches;
-	dprintk(VIDC_DBG, "Found %d subcaches\n", num_subcaches);
+	dprintk(VIDC_HIGH, "Found %d subcaches\n", num_subcaches);
 
 	for (c = 0; c < num_subcaches; ++c) {
 		struct subcache_info *vsc = &res->subcache_set.subcache_tbl[c];
@@ -303,7 +303,7 @@ int msm_vidc_load_u32_table(struct platform_device *pdev,
 	u32 *ptbl = NULL;
 
 	if (!of_find_property(of_node, table_name, NULL)) {
-		dprintk(VIDC_DBG, "%s not found\n", table_name);
+		dprintk(VIDC_HIGH, "%s not found\n", table_name);
 		return 0;
 	}
 
@@ -350,7 +350,7 @@ static int msm_vidc_load_allowed_clocks_table(
 
 	if (!of_find_property(pdev->dev.of_node,
 			"qcom,allowed-clock-rates", NULL)) {
-		dprintk(VIDC_DBG, "qcom,allowed-clock-rates not found\n");
+		dprintk(VIDC_HIGH, "qcom,allowed-clock-rates not found\n");
 		return 0;
 	}
 
@@ -436,7 +436,7 @@ static int msm_vidc_populate_bus(struct device *dev,
 			range, ARRAY_SIZE(range));
 	if (rc) {
 		rc = 0;
-		dprintk(VIDC_DBG,
+		dprintk(VIDC_HIGH,
 				"'qcom,range' not found defaulting to <0 INT_MAX>\n");
 		range[0] = 0;
 		range[1] = INT_MAX;
@@ -447,7 +447,7 @@ static int msm_vidc_populate_bus(struct device *dev,
 
 	buses->count++;
 	bus->dev = dev;
-	dprintk(VIDC_DBG, "Found bus %s [%d->%d] with mode %s\n",
+	dprintk(VIDC_HIGH, "Found bus %s [%d->%d] with mode %s\n",
 			bus->name, bus->master, bus->slave, bus->mode);
 err_bus:
 	return rc;
@@ -467,7 +467,7 @@ static int msm_vidc_load_buffer_usage_table(
 		 * likely won't be present if the core doesn't support content
 		 * protection
 		 */
-		dprintk(VIDC_DBG, "buffer-type-tz-usage-table not found\n");
+		dprintk(VIDC_HIGH, "buffer-type-tz-usage-table not found\n");
 		return 0;
 	}
 
@@ -476,7 +476,7 @@ static int msm_vidc_load_buffer_usage_table(
 	buffer_usage_set->count /=
 		sizeof(*buffer_usage_set->buffer_usage_tbl) / sizeof(u32);
 	if (!buffer_usage_set->count) {
-		dprintk(VIDC_DBG, "no elements in buffer usage set\n");
+		dprintk(VIDC_HIGH, "no elements in buffer usage set\n");
 		return 0;
 	}
 
@@ -565,7 +565,7 @@ static int msm_vidc_load_regulator_table(
 		regulator_node = of_parse_phandle(domains_parent_node,
 				domains_property->name, 0);
 		if (IS_ERR(regulator_node)) {
-			dprintk(VIDC_WARN, "%s is not a phandle\n",
+			dprintk(VIDC_ERR, "%s is not a phandle\n",
 					domains_property->name);
 			continue;
 		}
@@ -587,13 +587,13 @@ static int msm_vidc_load_regulator_table(
 		rinfo->has_hw_power_collapse = of_property_read_bool(
 			regulator_node, "qcom,support-hw-trigger");
 
-		dprintk(VIDC_DBG, "Found regulator %s: h/w collapse = %s\n",
+		dprintk(VIDC_HIGH, "Found regulator %s: h/w collapse = %s\n",
 				rinfo->name,
 				rinfo->has_hw_power_collapse ? "yes" : "no");
 	}
 
 	if (!regulators->count)
-		dprintk(VIDC_DBG, "No regulators found");
+		dprintk(VIDC_HIGH, "No regulators found");
 
 	return 0;
 
@@ -614,7 +614,7 @@ static int msm_vidc_load_clock_table(
 	num_clocks = of_property_count_strings(pdev->dev.of_node,
 				"clock-names");
 	if (num_clocks <= 0) {
-		dprintk(VIDC_DBG, "No clocks found\n");
+		dprintk(VIDC_HIGH, "No clocks found\n");
 		clocks->count = 0;
 		rc = 0;
 		goto err_load_clk_table_fail;
@@ -645,7 +645,7 @@ static int msm_vidc_load_clock_table(
 	}
 
 	clocks->count = num_clocks;
-	dprintk(VIDC_DBG, "Found %d clocks\n", num_clocks);
+	dprintk(VIDC_HIGH, "Found %d clocks\n", num_clocks);
 
 	for (c = 0; c < num_clocks; ++c) {
 		struct clock_info *vc = &res->clock_set.clock_tbl[c];
@@ -664,7 +664,7 @@ static int msm_vidc_load_clock_table(
 		else
 			vc->has_mem_retention = false;
 
-		dprintk(VIDC_DBG, "Found clock %s: scale-able = %s\n", vc->name,
+		dprintk(VIDC_HIGH, "Found clock %s: scale-able = %s\n", vc->name,
 			vc->has_scaling ? "yes" : "no");
 	}
 
@@ -686,7 +686,7 @@ static int msm_vidc_load_reset_table(
 	num_clocks = of_property_count_strings(pdev->dev.of_node,
 				"reset-names");
 	if (num_clocks <= 0) {
-		dprintk(VIDC_DBG, "No reset clocks found\n");
+		dprintk(VIDC_HIGH, "No reset clocks found\n");
 		rst->count = 0;
 		return 0;
 	}
@@ -697,7 +697,7 @@ static int msm_vidc_load_reset_table(
 		return -ENOMEM;
 
 	rst->count = num_clocks;
-	dprintk(VIDC_DBG, "Found %d reset clocks\n", num_clocks);
+	dprintk(VIDC_HIGH, "Found %d reset clocks\n", num_clocks);
 
 	for (c = 0; c < num_clocks; ++c) {
 		struct reset_info *rc = &res->reset_set.reset_tbl[c];
@@ -719,12 +719,12 @@ static int msm_decide_dt_node(
 	rc = of_property_read_u32(pdev->dev.of_node, "sku-index",
 			&sku_index);
 	if (rc) {
-		dprintk(VIDC_DBG, "'sku_index' not found in node\n");
+		dprintk(VIDC_HIGH, "'sku_index' not found in node\n");
 		return 0;
 	}
 
 	if (sku_index != res->sku_version) {
-		dprintk(VIDC_DBG,
+		dprintk(VIDC_HIGH,
 			"Failed to parser dt: sku_index %d res->sku_version - %d\n",
 			sku_index, res->sku_version);
 		return -EINVAL;
@@ -772,7 +772,7 @@ int read_platform_resources_from_drv_data(
 
 	res->fw_name = "venus";
 
-	dprintk(VIDC_DBG, "Firmware filename: %s\n", res->fw_name);
+	dprintk(VIDC_HIGH, "Firmware filename: %s\n", res->fw_name);
 
 	res->max_load = find_key_value(platform_data,
 			"qcom,max-hw-load");
@@ -859,7 +859,7 @@ static int msm_vidc_populate_cx_ipeak_context(
 	if (IS_ERR(res->cx_ipeak_context)) {
 		rc = PTR_ERR(res->cx_ipeak_context);
 		if (rc == -EPROBE_DEFER)
-			dprintk(VIDC_INFO,
+			dprintk(VIDC_HIGH,
 					"cx-ipeak register failed. Deferring probe!");
 		else
 			dprintk(VIDC_ERR,
@@ -870,14 +870,14 @@ static int msm_vidc_populate_cx_ipeak_context(
 	}
 
 	if (res->cx_ipeak_context)
-		dprintk(VIDC_INFO, "cx-ipeak register successful");
+		dprintk(VIDC_HIGH, "cx-ipeak register successful");
 	else
-		dprintk(VIDC_INFO, "cx-ipeak register not implemented");
+		dprintk(VIDC_HIGH, "cx-ipeak register not implemented");
 
 	of_property_read_u32(pdev->dev.of_node,
 		"qcom,clock-freq-threshold",
 		&res->clk_freq_threshold);
-	dprintk(VIDC_DBG, "cx ipeak threshold frequency = %u\n",
+	dprintk(VIDC_HIGH, "cx ipeak threshold frequency = %u\n",
 			res->clk_freq_threshold);
 
 	return rc;
@@ -914,11 +914,11 @@ int read_platform_resources_from_dt(
 
 	rc = msm_vidc_load_subcache_info(res);
 	if (rc)
-		dprintk(VIDC_WARN, "Failed to load subcache info: %d\n", rc);
+		dprintk(VIDC_ERR, "Failed to load subcache info: %d\n", rc);
 
 	rc = msm_vidc_load_qdss_table(res);
 	if (rc)
-		dprintk(VIDC_WARN, "Failed to load qdss reg table: %d\n", rc);
+		dprintk(VIDC_ERR, "Failed to load qdss reg table: %d\n", rc);
 
 	rc = msm_vidc_load_reg_table(res);
 	if (rc) {
@@ -1026,8 +1026,8 @@ static int msm_vidc_setup_context_bank(struct msm_vidc_platform_resources *res,
 	dma_set_max_seg_size(dev, DMA_BIT_MASK(32));
 	dma_set_seg_boundary(dev, DMA_BIT_MASK(64));
 
-	dprintk(VIDC_DBG, "Attached %s and created mapping\n", dev_name(dev));
-	dprintk(VIDC_DBG,
+	dprintk(VIDC_HIGH, "Attached %s and created mapping\n", dev_name(dev));
+	dprintk(VIDC_HIGH,
 		"Context bank name:%s, buffer_type: %#x, is_secure: %d, address range start: %#x, size: %#x, dev: %pK, domain: %pK",
 		cb->name, cb->buffer_type, cb->is_secure, cb->addr_range.start,
 		cb->addr_range.size, cb->dev, cb->domain);
@@ -1098,12 +1098,12 @@ static int msm_vidc_populate_context_bank(struct device *dev,
 
 	rc = of_property_read_string(np, "label", &cb->name);
 	if (rc) {
-		dprintk(VIDC_DBG,
+		dprintk(VIDC_HIGH,
 			"Failed to read cb label from device tree\n");
 		rc = 0;
 	}
 
-	dprintk(VIDC_DBG, "%s: context bank has name %s\n", __func__, cb->name);
+	dprintk(VIDC_HIGH, "%s: context bank has name %s\n", __func__, cb->name);
 	rc = of_property_read_u32_array(np, "virtual-addr-pool",
 			(u32 *)&cb->addr_range, 2);
 	if (rc) {
@@ -1114,7 +1114,7 @@ static int msm_vidc_populate_context_bank(struct device *dev,
 	}
 
 	cb->is_secure = of_property_read_bool(np, "qcom,secure-context-bank");
-	dprintk(VIDC_DBG, "context bank %s : secure = %d\n",
+	dprintk(VIDC_HIGH, "context bank %s : secure = %d\n",
 			cb->name, cb->is_secure);
 
 	/* setup buffer type for each sub device*/
@@ -1124,7 +1124,7 @@ static int msm_vidc_populate_context_bank(struct device *dev,
 		rc = -ENOENT;
 		goto err_setup_cb;
 	}
-	dprintk(VIDC_DBG,
+	dprintk(VIDC_HIGH,
 		"context bank %s address start = %x address size = %x buffer_type = %x\n",
 		cb->name, cb->addr_range.start,
 		cb->addr_range.size, cb->buffer_type);
@@ -1164,7 +1164,7 @@ static int msm_vidc_populate_legacy_context_bank(
 	domains_parent_node = of_find_node_by_name(pdev->dev.of_node,
 			"qcom,vidc-iommu-domains");
 	if (!domains_parent_node) {
-		dprintk(VIDC_DBG,
+		dprintk(VIDC_HIGH,
 			"%s legacy iommu domains not present\n", __func__);
 		return 0;
 	}
@@ -1231,7 +1231,7 @@ static int msm_vidc_populate_legacy_context_bank(
 			dprintk(VIDC_ERR, "Cannot setup context bank %d\n", rc);
 			goto err_setup_cb;
 		}
-		dprintk(VIDC_DBG,
+		dprintk(VIDC_HIGH,
 			"%s: context bank %s secure %d addr start = %#x addr size = %#x buffer_type = %#x\n",
 			__func__, cb->name, cb->is_secure, cb->addr_range.start,
 			cb->addr_range.size, cb->buffer_type);
@@ -1268,7 +1268,7 @@ int read_context_bank_resources_from_dt(struct platform_device *pdev)
 	if (rc)
 		dprintk(VIDC_ERR, "Failed to probe context bank\n");
 	else
-		dprintk(VIDC_DBG, "Successfully probed context bank\n");
+		dprintk(VIDC_HIGH, "Successfully probed context bank\n");
 
 	return rc;
 }
