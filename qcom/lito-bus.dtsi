@@ -554,6 +554,19 @@
 			qcom,prio = <2>;
 		};
 
+		mas_xm_emmc: mas-xm-emmc {
+			cell-id = <MSM_BUS_MASTER_EMMC>;
+			label = "mas-xm-emmc";
+			qcom,buswidth = <8>;
+			qcom,agg-ports = <1>;
+			qcom,qport = <4>;
+			qcom,connections = <&slv_qns_a1noc_snoc>;
+			qcom,bus-dev = <&fab_aggre1_noc>;
+			qcom,bcms = <&bcm_cn1>;
+			qcom,ap-owned;
+			qcom,prio = <2>;
+		};
+
 		mas_xm_ufs_mem: mas-xm-ufs-mem {
 			cell-id = <MSM_BUS_MASTER_UFS_MEM>;
 			label = "mas-xm-ufs-mem";
@@ -701,7 +714,7 @@
 				&slv_qhs_vsense_ctrl_cfg &slv_qhs_crypto0_cfg
 				&slv_qhs_pimem_cfg &slv_qhs_cpr_mx
 				&slv_qhs_qup0 &slv_qhs_qup1
-				&slv_qhs_clk_ctl>;
+				&slv_qhs_clk_ctl &slv_qhs_emmc_cfg>;
 			qcom,bus-dev = <&fab_config_noc>;
 			qcom,bcms = <&bcm_cn0>;
 		};
@@ -731,7 +744,7 @@
 				&slv_qhs_vsense_ctrl_cfg &slv_qhs_crypto0_cfg
 				&slv_qhs_pimem_cfg &slv_qhs_cpr_mx
 				&slv_qhs_qup0 &slv_qhs_qup1
-				&slv_qhs_clk_ctl>;
+				&slv_qhs_clk_ctl &slv_qhs_emmc_cfg>;
 			qcom,bus-dev = <&fab_config_noc>;
 			qcom,bcms = <&bcm_cn0>;
 		};
@@ -1573,6 +1586,15 @@
 			qcom,agg-ports = <1>;
 			qcom,bus-dev = <&fab_config_noc>;
 			qcom,bcms = <&bcm_cn0>;
+		};
+
+		slv_qhs_emmc_cfg:slv-qhs-emmc-cfg {
+			cell-id = <MSM_BUS_SLAVE_EMMC_CFG>;
+			label = "slv-qhs-emmc-cfg";
+			qcom,buswidth = <4>;
+			qcom,agg-ports = <1>;
+			qcom,bus-dev = <&fab_config_noc>;
+			qcom,bcms = <&bcm_cn1>;
 		};
 
 		slv_qhs_usb3_0:slv-qhs-usb3-0 {
