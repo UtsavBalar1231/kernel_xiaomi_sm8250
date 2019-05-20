@@ -2,6 +2,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include "lito-audio-overlay.dtsi"
 #include "lito-thermal-overlay.dtsi"
+#include "lito-camera-sensor-qrd.dtsi"
 
 &soc {
 
