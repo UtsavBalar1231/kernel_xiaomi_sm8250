@@ -58,11 +58,11 @@
 
 		qcom,idle-timeout = <1000000>; /* msecs */
 
-		qcom,highest-bank-bit = <16>;
+		qcom,highest-bank-bit = <14>;
 
 		qcom,min-access-length = <32>;
 
-		qcom,ubwc-mode = <4>;
+		qcom,ubwc-mode = <3>;
 		qcom,no-nap;
 		qcom,snapshot-size = <2048576>; /* bytes */
 		qcom,gpu-qdss-stm = <0x161c0000 0x40000>; /* base addr, size */
