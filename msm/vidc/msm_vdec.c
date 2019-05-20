@@ -848,7 +848,6 @@ int msm_vdec_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 		if (ctrl->val)
 			inst->flags |= VIDC_THUMBNAIL;
 
-		msm_dcvs_try_enable(inst);
 		rc = msm_vidc_set_buffer_count_for_thumbnail(inst);
 		if (rc) {
 			dprintk(VIDC_ERR, "Failed to set buffer count\n");

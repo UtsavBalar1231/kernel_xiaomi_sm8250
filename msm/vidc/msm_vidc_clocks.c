@@ -1030,15 +1030,18 @@ int msm_comm_scale_clocks_and_bus(struct msm_vidc_inst *inst)
 
 int msm_dcvs_try_enable(struct msm_vidc_inst *inst)
 {
-	if (!inst) {
+	if (!inst || !inst->core) {
 		dprintk(VIDC_ERR, "%s: Invalid args: %p\n", __func__, inst);
 		return -EINVAL;
 	}
 
 	if (msm_vidc_clock_voting ||
+			!inst->core->resources.dcvs ||
 			inst->flags & VIDC_THUMBNAIL ||
 			inst->clk_data.low_latency_mode ||
-			inst->batch.enable) {
+			inst->batch.enable ||
+			inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_CQ ||
+			inst->grid_enable) {
 		dprintk(VIDC_PROF, "DCVS disabled: %pK\n", inst);
 		inst->clk_data.dcvs_mode = false;
 		return false;

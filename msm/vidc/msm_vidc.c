@@ -918,6 +918,8 @@ static inline int start_streaming(struct msm_vidc_inst *inst)
 		__func__, inst->batch.enable ? "enabled" : "disabled",
 		inst, hash32_ptr(inst->session));
 
+	msm_dcvs_try_enable(inst);
+
 	/*
 	 * For seq_changed_insufficient, driver should set session_continue
 	 * to firmware after the following sequence
@@ -1570,7 +1572,6 @@ void *msm_vidc_open(int core_id, int session_type)
 		goto fail_init;
 	}
 
-	msm_dcvs_try_enable(inst);
 	if (msm_comm_check_for_inst_overload(core)) {
 		dprintk(VIDC_ERR,
 			"Instance count reached Max limit, rejecting session");
