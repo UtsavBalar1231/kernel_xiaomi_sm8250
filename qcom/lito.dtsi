@@ -1841,6 +1841,31 @@
 			qcom,dump-size = <0x1000>;
 			qcom,dump-id = <0xe8>;
 		};
+
+		ipa {
+			qcom,dump-size = <0x11000>;
+			qcom,dump-id = <0x150>;
+		};
+
+		etf_slpi {
+			qcom,dump-size = <0x4000>;
+			qcom,dump-id = <0xf3>;
+		};
+
+		etfslpi_reg {
+			qcom,dump-size = <0x1000>;
+			qcom,dump-id = <0x103>;
+		};
+
+		etf_lpass {
+			qcom,dump-size = <0x4000>;
+			qcom,dump-id = <0xf4>;
+		};
+
+		etflpass_reg {
+			qcom,dump-size = <0x1000>;
+			qcom,dump-id = <0x104>;
+		};
 	};
 
 	qcom,chd_silver {
