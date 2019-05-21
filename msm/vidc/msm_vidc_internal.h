@@ -514,6 +514,7 @@ struct msm_vidc_inst {
 	struct msm_vidc_codec_data *codec_data;
 	struct hal_hdr10_pq_sei hdr10_sei_params;
 	struct batch_mode batch;
+	bool decode_batching;
 	struct msm_vidc_inst_smem_ops *smem_ops;
 	int (*buffer_size_calculators)(struct msm_vidc_inst *inst);
 };

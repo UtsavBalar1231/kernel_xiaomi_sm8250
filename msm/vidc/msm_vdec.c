@@ -776,8 +776,26 @@ int msm_vdec_inst_init(struct msm_vidc_inst *inst)
 
 	inst->clk_data.frame_rate = (DEFAULT_FPS << 16);
 	inst->clk_data.operating_rate = (DEFAULT_FPS << 16);
-	if (core->resources.decode_batching)
+	if (core->resources.decode_batching) {
+		struct msm_vidc_inst *temp;
+
 		inst->batch.size = MAX_DEC_BATCH_SIZE;
+		inst->decode_batching = true;
+
+		mutex_lock(&core->lock);
+		list_for_each_entry(temp, &core->instances, list) {
+			if (temp != inst &&
+				temp->state != MSM_VIDC_CORE_INVALID &&
+				is_decode_session(temp) &&
+				!is_thumbnail_session(temp)) {
+				inst->decode_batching = false;
+				dprintk(VIDC_DBG,
+				"Disable decode-batching in multi sessions\n");
+				break;
+			}
+		}
+		mutex_unlock(&core->lock);
+	}
 
 	inst->buff_req.buffer[1].buffer_type = HAL_BUFFER_INPUT;
 	inst->buff_req.buffer[1].buffer_count_min_host =

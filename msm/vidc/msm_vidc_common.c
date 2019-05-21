@@ -2787,7 +2787,7 @@ bool is_batching_allowed(struct msm_vidc_inst *inst)
 	maxmbs = inst->capability.cap[CAP_BATCH_MAX_MB_PER_FRAME].max;
 	maxfps = inst->capability.cap[CAP_BATCH_MAX_FPS].max;
 
-	return (inst->core->resources.decode_batching &&
+	return (inst->decode_batching &&
 		is_decode_session(inst) &&
 		!is_thumbnail_session(inst) &&
 		!inst->clk_data.low_latency_mode &&

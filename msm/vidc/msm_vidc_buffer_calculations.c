@@ -610,7 +610,7 @@ int msm_vidc_init_buffer_count(struct msm_vidc_inst *inst)
 				HAL_BUFFER_INPUT);
 	fmt->count_min = input_min_count;
 	/* batching needs minimum batch size count of input buffers */
-	if (inst->core->resources.decode_batching &&
+	if (inst->decode_batching &&
 		is_decode_session(inst) &&
 		fmt->count_min < inst->batch.size)
 		fmt->count_min = inst->batch.size;
@@ -711,7 +711,7 @@ int msm_vidc_get_extra_buff_count(struct msm_vidc_inst *inst,
 	 * batch size count of extra buffers added on output port
 	 */
 	if (buffer_type == HAL_BUFFER_OUTPUT) {
-		if (inst->core->resources.decode_batching &&
+		if (inst->decode_batching &&
 			is_decode_session(inst) &&
 			count < inst->batch.size)
 			count = inst->batch.size;
