@@ -608,6 +608,32 @@
 		qcom,iommu-dma-addr-pool = <0x40000000 0xc0000000>;
 		qcom,iommu-dma = "bypass";
 		status = "ok";
+
+		/* Slimbus Slave DT for WCN3990 */
+		btfmslim_codec: wcn3990 {
+			compatible = "qcom,btfmslim_slave";
+			elemental-addr = [00 01 20 02 17 02];
+			qcom,btfm-slim-ifd = "btfmslim_slave_ifd";
+			qcom,btfm-slim-ifd-elemental-addr = [00 00 20 02 17 02];
+		};
+	};
+
+	bluetooth: bt_wcn3990 {
+		compatible = "qca,wcn3990";
+		qca,bt-vdd-io-supply = <&pm8150_s4>;
+		qca,bt-vdd-core-supply = <&pm8150a_l2>;
+		qca,bt-vdd-pa-supply = <&pm8150a_l10>;
+		qca,bt-vdd-xtal-supply = <&pm8150_l14>;
+
+		qca,bt-vdd-io-voltage-level = <1800000 1800000>; /* IO */
+		qca,bt-vdd-core-voltage-level = <1245000 1328000>; /* RFA */
+		qca,bt-vdd-pa-voltage-level =  <3000000 3312000>;  /*chain0 */
+		qca,bt-vdd-xtal-voltage-level = <1700000 1900000>; /* XO */
+
+		qca,bt-vdd-io-current-level = <1>; /* LPM/PFM */
+		qca,bt-vdd-core-current-level = <1>; /* LPM/PFM */
+		qca,bt-vdd-pa-current-level = <1>; /* LPM/PFM */
+		qca,bt-vdd-xtal-current-level = <1>; /* LPM/PFM */
 	};
 
 	thermal_zones: thermal-zones {
@@ -2898,6 +2924,10 @@
 
 &qupv3_se2_2uart {
 	status = "ok";
+};
+
+&qupv3_se5_4uart {
+	status = "disabled";
 };
 
 &tlmm {
