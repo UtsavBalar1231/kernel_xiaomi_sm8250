@@ -1,1 +1,14 @@
 #include "kona-cdp.dtsi"
+
+&pm8150a_amoled {
+	status = "disabled";
+};
+
+&pm8150l_lcdb {
+	status = "ok";
+};
+
+&pm8150l_wled {
+	qcom,string-cfg = <7>;
+	status = "ok";
+};
