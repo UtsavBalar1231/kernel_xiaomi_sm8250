@@ -1528,7 +1528,7 @@ int msm_vidc_decide_work_mode_iris2(struct msm_vidc_inst *inst)
 static inline int msm_vidc_power_save_mode_enable(struct msm_vidc_inst *inst,
 	bool enable)
 {
-	u32 rc = 0, mbs_per_frame, mbs_per_sec;
+	u32 rc = 0;
 	u32 prop_id = 0;
 	void *pdata = NULL;
 	struct hfi_device *hdev = NULL;
@@ -1542,18 +1542,6 @@ static inline int msm_vidc_power_save_mode_enable(struct msm_vidc_inst *inst,
 		return 0;
 	}
 
-	/* Power saving always disabled for CQ and LOSSLESS RC modes. */
-	mbs_per_frame = msm_vidc_get_mbs_per_frame(inst);
-	mbs_per_sec = mbs_per_frame * msm_vidc_get_fps(inst);
-	if (inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_CQ ||
-		inst->rc_type == RATE_CONTROL_LOSSLESS ||
-		(mbs_per_frame <=
-		 inst->core->resources.max_hq_mbs_per_frame &&
-		 mbs_per_sec <=
-		 inst->core->resources.max_hq_mbs_per_sec)) {
-		enable = false;
-	}
-
 	prop_id = HFI_PROPERTY_CONFIG_VENC_PERF_MODE;
 	hfi_perf_mode = enable ? HFI_VENC_PERFMODE_POWER_SAVE :
 		HFI_VENC_PERFMODE_MAX_QUALITY;
@@ -1565,7 +1553,7 @@ static inline int msm_vidc_power_save_mode_enable(struct msm_vidc_inst *inst,
 		dprintk(VIDC_ERR,
 			"%s: Failed to set power save mode for inst: %pK\n",
 			__func__, inst);
-		goto fail_power_mode_set;
+		return rc;
 	}
 	inst->flags = enable ?
 		inst->flags | VIDC_LOW_POWER :
@@ -1573,7 +1561,7 @@ static inline int msm_vidc_power_save_mode_enable(struct msm_vidc_inst *inst,
 
 	dprintk(VIDC_HIGH,
 		"Power Save Mode for inst: %pK Enable = %d\n", inst, enable);
-fail_power_mode_set:
+
 	return rc;
 }
 
@@ -1614,6 +1602,9 @@ static u32 get_core_load(struct msm_vidc_core *core,
 			cycles = lp_cycles = inst->clk_data.entry->vpp_cycles;
 		} else if (inst->session_type == MSM_VIDC_ENCODER) {
 			lp_mode |= inst->flags & VIDC_LOW_POWER;
+			if (inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_CQ)
+				lp_mode = false;
+
 			cycles = lp_mode ?
 				inst->clk_data.entry->low_power_cycles :
 				inst->clk_data.entry->vpp_cycles;
@@ -1632,16 +1623,13 @@ static u32 get_core_load(struct msm_vidc_core *core,
 
 int msm_vidc_decide_core_and_power_mode_iris1(struct msm_vidc_inst *inst)
 {
-	int rc = 0, hier_mode = 0;
-	struct hfi_device *hdev;
-	struct msm_vidc_core *core;
+	bool enable = false;
+	int rc = 0;
+	u32 core_load = 0, core_lp_load = 0;
+	u32 cur_inst_load = 0, cur_inst_lp_load = 0;
+	u32 mbpf, mbps, max_hq_mbpf, max_hq_mbps;
 	unsigned long max_freq, lp_cycles = 0;
-	struct hfi_videocores_usage_type core_info;
-	u32 core0_load = 0, core1_load = 0, core0_lp_load = 0,
-		core1_lp_load = 0;
-	u32 current_inst_load = 0, cur_inst_lp_load = 0,
-		min_load = 0, min_lp_load = 0;
-	u32 min_core_id, min_lp_core_id;
+	struct msm_vidc_core *core;
 
 	if (!inst || !inst->core || !inst->core->device) {
 		dprintk(VIDC_ERR,
@@ -1651,131 +1639,80 @@ int msm_vidc_decide_core_and_power_mode_iris1(struct msm_vidc_inst *inst)
 	}
 
 	core = inst->core;
-	hdev = core->device;
 	max_freq = msm_vidc_max_freq(inst->core);
 	inst->clk_data.core_id = 0;
 
-	core0_load = get_core_load(core, VIDC_CORE_ID_1, false, true);
-	core1_load = get_core_load(core, VIDC_CORE_ID_2, false, true);
-	core0_lp_load = get_core_load(core, VIDC_CORE_ID_1, true, true);
-	core1_lp_load = get_core_load(core, VIDC_CORE_ID_2, true, true);
-
-	min_load = min(core0_load, core1_load);
-	min_core_id = core0_load < core1_load ?
-		VIDC_CORE_ID_1 : VIDC_CORE_ID_2;
-	min_lp_load = min(core0_lp_load, core1_lp_load);
-	min_lp_core_id = core0_lp_load < core1_lp_load ?
-		VIDC_CORE_ID_1 : VIDC_CORE_ID_2;
+	core_load = get_core_load(core, VIDC_CORE_ID_1, false, true);
+	core_lp_load = get_core_load(core, VIDC_CORE_ID_1, true, true);
 
 	lp_cycles = inst->session_type == MSM_VIDC_ENCODER ?
 			inst->clk_data.entry->low_power_cycles :
 			inst->clk_data.entry->vpp_cycles;
-	/*
-	 * Incase there is only 1 core enabled, mark it as the core
-	 * with min load. This ensures that this core is selected and
-	 * video session is set to run on the enabled core.
-	 */
-	if (inst->capability.cap[CAP_MAX_VIDEOCORES].max <= VIDC_CORE_ID_1) {
-		min_core_id = min_lp_core_id = VIDC_CORE_ID_1;
-		min_load = core0_load;
-		min_lp_load = core0_lp_load;
-	}
 
-	current_inst_load = (msm_comm_get_inst_load(inst, LOAD_CALC_NO_QUIRKS) *
+	cur_inst_load = (msm_comm_get_inst_load(inst, LOAD_CALC_NO_QUIRKS) *
 		inst->clk_data.entry->vpp_cycles)/inst->clk_data.work_route;
 
 	cur_inst_lp_load = (msm_comm_get_inst_load(inst,
 		LOAD_CALC_NO_QUIRKS) * lp_cycles)/inst->clk_data.work_route;
 
-	dprintk(VIDC_HIGH, "Core 0 RT Load = %d Core 1 RT Load = %d\n",
-		 core0_load, core1_load);
-	dprintk(VIDC_HIGH, "Core 0 RT LP Load = %d Core 1 RT LP Load = %d\n",
-		core0_lp_load, core1_lp_load);
+	mbpf = msm_vidc_get_mbs_per_frame(inst);
+	mbps = mbpf * msm_vidc_get_fps(inst);
+	max_hq_mbpf = core->resources.max_hq_mbs_per_frame;
+	max_hq_mbps = core->resources.max_hq_mbs_per_sec;
+
+	dprintk(VIDC_HIGH, "Core RT Load = %d LP Load = %d\n",
+		 core_load, core_lp_load);
 	dprintk(VIDC_HIGH, "Max Load = %lu\n", max_freq);
 	dprintk(VIDC_HIGH, "Current Load = %d Current LP Load = %d\n",
-		current_inst_load, cur_inst_lp_load);
+		cur_inst_load, cur_inst_lp_load);
 
-	if (inst->session_type == MSM_VIDC_ENCODER) {
-		/* Hier mode can be normal HP or Hybrid HP. */
-		u32 max_cores, work_mode;
-
-		hier_mode = msm_comm_g_ctrl_for_id(inst,
-			V4L2_CID_MPEG_VIDEO_HEVC_HIER_CODING_LAYER);
-		max_cores = inst->capability.cap[CAP_MAX_VIDEOCORES].max;
-		work_mode = inst->clk_data.work_mode;
-		if (hier_mode && max_cores >= VIDC_CORE_ID_3 &&
-			work_mode == HFI_WORKMODE_2) {
-			if (current_inst_load / 2 + core0_load <= max_freq &&
-			current_inst_load / 2 + core1_load <= max_freq) {
-				inst->clk_data.core_id = VIDC_CORE_ID_3;
-				msm_vidc_power_save_mode_enable(inst, false);
-				goto decision_done;
-			}
-			if (cur_inst_lp_load / 2 + core0_lp_load <= max_freq &&
-			cur_inst_lp_load / 2 + core1_lp_load <= max_freq) {
-				inst->clk_data.core_id = VIDC_CORE_ID_3;
-				msm_vidc_power_save_mode_enable(inst, true);
-				goto decision_done;
-			}
-		}
-
+	if (inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_CQ &&
+		(core_load > max_freq || core_lp_load > max_freq)) {
+		dprintk(VIDC_ERR,
+			"CQ session - Core cannot support this load\n");
+		return -EINVAL;
 	}
 
-	if (current_inst_load + min_load < max_freq) {
-		inst->clk_data.core_id = min_core_id;
-		dprintk(VIDC_HIGH,
-			"Selected normally : Core ID = %d\n",
-				inst->clk_data.core_id);
-		msm_vidc_power_save_mode_enable(inst, false);
-	} else if (cur_inst_lp_load + min_load < max_freq) {
-		/* Move current instance to LP and return */
-		inst->clk_data.core_id = min_core_id;
-		dprintk(VIDC_HIGH,
-			"Selected by moving current to LP : Core ID = %d\n",
-				inst->clk_data.core_id);
+	if (cur_inst_load + core_load <= max_freq) {
+		if (mbpf > max_hq_mbpf || mbps > max_hq_mbps)
+			enable = true;
+		msm_vidc_power_save_mode_enable(inst, enable);
+	} else if (cur_inst_lp_load + core_load <= max_freq) {
 		msm_vidc_power_save_mode_enable(inst, true);
-
-	} else if (cur_inst_lp_load + min_lp_load < max_freq) {
-		/* Move all instances to LP mode and return */
-		inst->clk_data.core_id = min_lp_core_id;
-		dprintk(VIDC_HIGH,
-			"Moved all inst's to LP: Core ID = %d\n",
-				inst->clk_data.core_id);
-		msm_vidc_move_core_to_power_save_mode(core, min_lp_core_id);
+	} else if (cur_inst_lp_load + core_lp_load <= max_freq) {
+		dprintk(VIDC_HIGH, "Moved all inst's to LP");
+		msm_vidc_move_core_to_power_save_mode(core, VIDC_CORE_ID_1);
 	} else {
-		rc = -EINVAL;
-		dprintk(VIDC_ERR,
-			"Sorry ... Core Can't support this load\n");
-		return rc;
+		dprintk(VIDC_ERR, "Core cannot support this load\n");
+		return -EINVAL;
 	}
 
-decision_done:
-	core_info.video_core_enable_mask = inst->clk_data.core_id;
-	dprintk(VIDC_HIGH,
-		"Core Enable Mask %d\n", core_info.video_core_enable_mask);
-
-	rc = call_hfi_op(hdev, session_set_property,
-			(void *)inst->session,
-			HFI_PROPERTY_CONFIG_VIDEOCORES_USAGE, &core_info,
-			sizeof(core_info));
-	if (rc)
-		dprintk(VIDC_ERR,
-				" Failed to configure CORE ID %pK\n", inst);
-
+	inst->clk_data.core_id = VIDC_CORE_ID_1;
 	rc = msm_comm_scale_clocks_and_bus(inst);
-
 	msm_print_core_status(core, VIDC_CORE_ID_1);
-	msm_print_core_status(core, VIDC_CORE_ID_2);
-
 	return rc;
 }
 
 int msm_vidc_decide_core_and_power_mode_iris2(struct msm_vidc_inst *inst)
 {
+	u32 mbpf, mbps, max_hq_mbpf, max_hq_mbps;
+	bool enable = true;
+
 	inst->clk_data.core_id = VIDC_CORE_ID_1;
 	msm_print_core_status(inst->core, VIDC_CORE_ID_1);
 
-	return msm_vidc_power_save_mode_enable(inst, true);
+	/* Power saving always disabled for CQ and LOSSLESS RC modes. */
+	mbpf = msm_vidc_get_mbs_per_frame(inst);
+	mbps = mbpf * msm_vidc_get_fps(inst);
+	max_hq_mbpf = inst->core->resources.max_hq_mbs_per_frame;
+	max_hq_mbps = inst->core->resources.max_hq_mbs_per_sec;
+
+	if (inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_CQ ||
+		inst->rc_type == RATE_CONTROL_LOSSLESS ||
+		(mbpf <= max_hq_mbpf && mbps <= max_hq_mbps))
+		enable = false;
+
+	return msm_vidc_power_save_mode_enable(inst, enable);
 }
 
 void msm_vidc_init_core_clk_ops(struct msm_vidc_core *core)
