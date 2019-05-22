@@ -110,7 +110,7 @@
 	((((width + 15) >> 4) << 7))
 
 #define SIZE_H264D_LB_RECON_DMA_METADATA_WR(width, height) \
-	(ALIGN(height, 8) * 32)
+	(ALIGN(height, 16) * 32)
 
 #define SIZE_H264D_QP(width, height) \
 	(((width + 63) >> 6) * ((height + 63) >> 6) * 128)
