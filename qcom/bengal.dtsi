@@ -609,6 +609,7 @@
 };
 
 #include "bengal-gdsc.dtsi"
+#include "bengal-usb.dtsi"
 
 &gcc_camss_top_gdsc {
 	status = "ok";
