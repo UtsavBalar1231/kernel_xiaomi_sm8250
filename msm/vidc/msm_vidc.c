@@ -1536,6 +1536,7 @@ void *msm_vidc_open(int core_id, int session_type)
 	INIT_MSM_VIDC_LIST(&inst->etb_data);
 	INIT_MSM_VIDC_LIST(&inst->fbd_data);
 
+	INIT_DELAYED_WORK(&inst->batch_work, msm_vidc_batch_handler);
 	kref_init(&inst->kref);
 
 	inst->session_type = session_type;
@@ -1695,6 +1696,8 @@ static void msm_vidc_cleanup_instance(struct msm_vidc_inst *inst)
 		kref_put_mbuf(temp);
 	}
 	mutex_unlock(&inst->registeredbufs.lock);
+
+	cancel_batch_work(inst);
 
 	msm_comm_free_freq_table(inst);
 

@@ -4351,6 +4351,35 @@ err_bad_input:
 	return rc;
 }
 
+void msm_vidc_batch_handler(struct work_struct *work)
+{
+	int rc = 0;
+	struct msm_vidc_inst *inst;
+
+	inst = container_of(work, struct msm_vidc_inst, batch_work.work);
+
+	inst = get_inst(get_vidc_core(MSM_VIDC_CORE_VENUS), inst);
+	if (!inst) {
+		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		return;
+	}
+
+	if (inst->state == MSM_VIDC_CORE_INVALID) {
+		dprintk(VIDC_ERR, "%s: invalid state\n", __func__);
+		goto exit;
+	}
+
+	dprintk(VIDC_HIGH, "%s: %x: queue pending batch buffers\n",
+		__func__, hash32_ptr(inst->session));
+
+	rc = msm_comm_qbufs_batch(inst, NULL);
+	if (rc)
+		dprintk(VIDC_ERR, "%s: batch qbufs failed\n", __func__);
+
+exit:
+	put_inst(inst);
+}
+
 static int msm_comm_qbuf_superframe_to_hfi(struct msm_vidc_inst *inst,
 		struct msm_vidc_buffer *mbuf)
 {
@@ -4562,6 +4591,45 @@ int msm_comm_qbufs(struct msm_vidc_inst *inst)
 	return rc;
 }
 
+int msm_comm_qbufs_batch(struct msm_vidc_inst *inst,
+		struct msm_vidc_buffer *mbuf)
+{
+	int rc = 0;
+	struct msm_vidc_buffer *buf;
+
+	rc = msm_comm_scale_clocks_and_bus(inst);
+	if (rc)
+		dprintk(VIDC_ERR, "%s: scale clocks failed\n", __func__);
+
+	mutex_lock(&inst->registeredbufs.lock);
+	list_for_each_entry(buf, &inst->registeredbufs.list, list) {
+		/* Don't queue if buffer is not OUTPUT_MPLANE */
+		if (buf->vvb.vb2_buf.type != OUTPUT_MPLANE)
+			goto loop_end;
+		/* Don't queue if buffer is not a deferred buffer */
+		if (!(buf->flags & MSM_VIDC_FLAG_DEFERRED))
+			goto loop_end;
+		/* Don't queue if RBR event is pending on this buffer */
+		if (buf->flags & MSM_VIDC_FLAG_RBR_PENDING)
+			goto loop_end;
+
+		print_vidc_buffer(VIDC_HIGH, "batch-qbuf", inst, buf);
+		rc = msm_comm_qbuf_to_hfi(inst, buf);
+		if (rc) {
+			dprintk(VIDC_ERR, "%s: Failed batch qbuf to hfi: %d\n",
+				__func__, rc);
+			break;
+		}
+loop_end:
+		/* Queue pending buffers till the current buffer only */
+		if (buf == mbuf)
+			break;
+	}
+	mutex_unlock(&inst->registeredbufs.lock);
+
+	return rc;
+}
+
 /*
  * msm_comm_qbuf_decode_batch - count the buffers which are not queued to
  *              firmware yet (count includes rbr pending buffers too) and
@@ -4574,9 +4642,8 @@ int msm_comm_qbuf_decode_batch(struct msm_vidc_inst *inst,
 {
 	int rc = 0;
 	u32 count = 0;
-	struct msm_vidc_buffer *buf;
 
-	if (!inst || !mbuf) {
+	if (!inst || !inst->core || !mbuf) {
 		dprintk(VIDC_ERR, "%s: Invalid arguments\n", __func__);
 		return -EINVAL;
 	}
@@ -4601,41 +4668,53 @@ int msm_comm_qbuf_decode_batch(struct msm_vidc_inst *inst,
 		if (count < inst->batch.size) {
 			print_vidc_buffer(VIDC_HIGH,
 				"batch-qbuf deferred", inst, mbuf);
+			schedule_batch_work(inst);
 			return 0;
 		}
+
+		/*
+		 * Batch completed - queing bufs to firmware.
+		 * so cancel pending work if any.
+		 */
+		cancel_batch_work(inst);
 	}
 
-	rc = msm_comm_scale_clocks_and_bus(inst);
+	rc = msm_comm_qbufs_batch(inst, mbuf);
 	if (rc)
-		dprintk(VIDC_ERR, "%s: scale clocks failed\n", __func__);
-
-	mutex_lock(&inst->registeredbufs.lock);
-	list_for_each_entry(buf, &inst->registeredbufs.list, list) {
-		/* Don't queue if buffer is not CAPTURE_MPLANE */
-		if (buf->vvb.vb2_buf.type != OUTPUT_MPLANE)
-			goto loop_end;
-		/* Don't queue if buffer is not a deferred buffer */
-		if (!(buf->flags & MSM_VIDC_FLAG_DEFERRED))
-			goto loop_end;
-		/* Don't queue if RBR event is pending on this buffer */
-		if (buf->flags & MSM_VIDC_FLAG_RBR_PENDING)
-			goto loop_end;
-
-		print_vidc_buffer(VIDC_HIGH, "batch-qbuf", inst, buf);
-		rc = msm_comm_qbuf_to_hfi(inst, buf);
-		if (rc) {
-			dprintk(VIDC_ERR, "%s: Failed qbuf to hfi: %d\n",
-				__func__, rc);
-			break;
-		}
-loop_end:
-		/* Queue pending buffers till the current buffer only */
-		if (buf == mbuf)
-			break;
-	}
-	mutex_unlock(&inst->registeredbufs.lock);
+		dprintk(VIDC_ERR, "%s: Failed qbuf to hfi: %d\n",
+			__func__, rc);
 
 	return rc;
+}
+
+int schedule_batch_work(struct msm_vidc_inst *inst)
+{
+	struct msm_vidc_core *core;
+	struct msm_vidc_platform_resources *res;
+
+	if (!inst || !inst->core) {
+		dprintk(VIDC_ERR, "%s: Invalid arguments\n", __func__);
+		return -EINVAL;
+	}
+	core = inst->core;
+	res = &core->resources;
+
+	cancel_delayed_work(&inst->batch_work);
+	queue_delayed_work(core->vidc_core_workq, &inst->batch_work,
+		msecs_to_jiffies(res->batch_timeout));
+
+	return 0;
+}
+
+int cancel_batch_work(struct msm_vidc_inst *inst)
+{
+	if (!inst) {
+		dprintk(VIDC_ERR, "%s: Invalid arguments\n", __func__);
+		return -EINVAL;
+	}
+	cancel_delayed_work(&inst->batch_work);
+
+	return 0;
 }
 
 int msm_comm_try_get_bufreqs(struct msm_vidc_inst *inst)
@@ -5331,6 +5410,7 @@ int msm_comm_flush(struct msm_vidc_inst *inst, u32 flags)
 
 	msm_clock_data_reset(inst);
 
+	cancel_batch_work(inst);
 	if (inst->state == MSM_VIDC_CORE_INVALID) {
 		dprintk(VIDC_ERR,
 				"Core %pK and inst %pK are in bad state\n",

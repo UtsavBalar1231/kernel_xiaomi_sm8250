@@ -195,6 +195,7 @@ struct msm_vidc_platform_resources {
 	bool non_fatal_pagefaults;
 	bool cache_pagetables;
 	bool decode_batching;
+	uint32_t batch_timeout;
 	bool dcvs;
 	struct msm_vidc_codec_data *codec_data;
 	int codec_data_count;
