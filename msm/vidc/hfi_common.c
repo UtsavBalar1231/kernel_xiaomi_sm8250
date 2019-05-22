@@ -3239,7 +3239,7 @@ static void __process_sys_error(struct venus_hfi_device *device)
 static void __flush_debug_queue(struct venus_hfi_device *device, u8 *packet)
 {
 	bool local_packet = false;
-	enum vidc_msg_prio log_level = msm_vidc_debug;
+	enum vidc_msg_prio log_level = msm_vidc_debug & FW_LOGMASK;
 
 	if (!device) {
 		dprintk(VIDC_ERR, "%s: Invalid params\n", __func__);
@@ -3260,7 +3260,7 @@ static void __flush_debug_queue(struct venus_hfi_device *device, u8 *packet)
 		 * Local packek is used when error occurred.
 		 * It is good to print these logs to printk as well.
 		 */
-		log_level |= VIDC_PRINTK;
+		log_level |= FW_PRINTK;
 	}
 
 	while (!__iface_dbgq_read(device, packet)) {
@@ -3286,7 +3286,7 @@ static void __flush_debug_queue(struct venus_hfi_device *device, u8 *packet)
 			 * from the message fixes this to print it in a single
 			 * line.
 			 */
-			dprintk(log_level, "%s", &pkt->rg_msg_data[1]);
+			dprintk_firmware(log_level, "%s", &pkt->rg_msg_data[1]);
 		}
 	}
 
