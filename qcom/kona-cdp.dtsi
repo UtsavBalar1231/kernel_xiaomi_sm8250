@@ -96,6 +96,7 @@
 	compatible = "qcom,ufs-phy-qmp-v4-card";
 
 	vdda-phy-supply = <&pm8150_l5>; /* 0.88v */
+	vdda-phy-always-on;
 	vdda-pll-supply = <&pm8150_l9>; /* 1.2v */
 	vdda-phy-max-microamp = <87100>;
 	vdda-pll-max-microamp = <18300>;
