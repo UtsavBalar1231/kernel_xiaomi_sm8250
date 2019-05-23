@@ -2726,6 +2726,7 @@
 		qcom,additional-mapping = <0x146a9000 0x146a9000 0x2000>;
 		dma-coherent;
 		qcom,iommu-dma = "fastmap";
+		qcom,ipa-q6-smem-size = <26624>;
 	};
 
 	ipa_smmu_wlan: ipa_smmu_wlan {
