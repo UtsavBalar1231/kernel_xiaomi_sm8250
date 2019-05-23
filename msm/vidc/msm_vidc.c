@@ -721,7 +721,8 @@ bool is_vidc_cvp_allowed(struct msm_vidc_inst *inst)
 	 * - rate control is not one of below modes
 	 *      - RATE_CONTROL_OFF
 	 *      - V4L2_MPEG_VIDEO_BITRATE_MODE_CQ
-	 *      - V4L2_MPEG_VIDEO_BITRATE_MODE_CBR_PLUS
+	 *      - V4L2_MPEG_VIDEO_BITRATE_MODE_CBR
+	 * - not secure session
 	 */
 	cvp_disable = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VENC_CVP_DISABLE);
 
@@ -729,15 +730,17 @@ bool is_vidc_cvp_allowed(struct msm_vidc_inst *inst)
 		!(inst->prop.extradata_ctrls & EXTRADATA_ENC_INPUT_CVP) &&
 		inst->rc_type != RATE_CONTROL_OFF &&
 		inst->rc_type != V4L2_MPEG_VIDEO_BITRATE_MODE_CQ &&
-		!inst->clk_data.is_legacy_cbr) {
+		!inst->clk_data.is_legacy_cbr &&
+		!is_secure_session(inst)) {
 		dprintk(VIDC_DBG, "%s: cvp allowed\n", __func__);
 		allowed = true;
 	} else {
 		dprintk(VIDC_DBG,
-			"%s: cvp not allowed, cvp_external %d cvp_disable %d extradata %#x rc_type %d\n",
+			"%s: cvp not allowed, cvp_external %d cvp_disable %d extradata %#x rc_type %d legacy_cbr %d secure %d\n",
 			__func__, core->resources.cvp_external,
 			cvp_disable->val, inst->prop.extradata_ctrls,
-			inst->rc_type);
+			inst->rc_type, inst->clk_data.is_legacy_cbr,
+			is_secure_session(inst));
 		allowed = false;
 	}
 exit:
