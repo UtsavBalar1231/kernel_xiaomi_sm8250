@@ -78,6 +78,7 @@ Optional properties:
 - non-removable		: defines if the connected ufs device is not removable
 - resets            : reset node register
 - reset-names       : describe reset node register, the "rst" corresponds to reset the whole UFS IP.
+- force-g4          : forces UFS Host PHY to be initialized in HS-G4
 
 Note: If above properties are not defined it can be assumed that the supply
 regulators or clocks are always on.
@@ -110,6 +111,7 @@ Example:
 		rpm-level = <3>;
 		spm-level = <5>;
 		dev-ref-clk-freq = <0>; /* reference clock freq: 19.2 MHz */
+		force-g4;
 	};
 
 ==== MSM UFS platform driver properties =====
