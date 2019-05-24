@@ -798,7 +798,7 @@
 			<300000000 0 600000000 0>;
 		clock-cntl-level = "svs", "svs_l1";
 		fw_name = "CAMERA_ICP.elf";
-		ubwc-cfg = <0x73 0x1CF>;
+		ubwc-cfg = <0x1073 0x101CF>;
 		status = "ok";
 	};
 
