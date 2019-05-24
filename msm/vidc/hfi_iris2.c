@@ -390,7 +390,7 @@ void __core_clear_interrupt_iris2(struct venus_hfi_device *device)
 int __boot_firmware_iris2(struct venus_hfi_device *device)
 {
 	int rc = 0;
-	u32 ctrl_init_val = 0, ctrl_status = 0, count = 0, max_tries = 10000;
+	u32 ctrl_init_val = 0, ctrl_status = 0, count = 0, max_tries = 1000;
 
 	ctrl_init_val = BIT(0);
 	if (device->res->cvp_internal)
