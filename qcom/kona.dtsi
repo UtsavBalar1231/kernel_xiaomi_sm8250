@@ -2533,7 +2533,7 @@
 		compatible = "qcom,ipa-mpm";
 		qcom,mhi-chdb-base = <0x64300300>;
 		qcom,mhi-erdb-base = <0x64300700>;
-		qcom,iova-mapping = <0x10000000 0x1FFFFFFF>;
+		qcom,iova-mapping = <0x10000000 0x0FFFFFFF>;
 	};
 
 	ipa_hw: qcom,ipa@1e00000 {
