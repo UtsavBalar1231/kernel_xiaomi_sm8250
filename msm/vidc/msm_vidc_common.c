@@ -5261,7 +5261,47 @@ void msm_vidc_ssr_handler(struct work_struct *work)
 	mutex_unlock(&core->lock);
 }
 
-static int msm_vidc_load_supported(struct msm_vidc_inst *inst)
+static int msm_vidc_check_mbpf_supported(struct msm_vidc_inst *inst)
+{
+	u32 mbpf = 0;
+	struct msm_vidc_core *core;
+	struct msm_vidc_inst *temp;
+
+	if (!inst || !inst->core) {
+		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		return -EINVAL;
+	}
+	core = inst->core;
+
+	if (!core->resources.max_mbpf) {
+		dprintk(VIDC_DBG, "%s: max mbpf not available\n",
+			__func__);
+		return 0;
+	}
+
+	mutex_lock(&core->lock);
+	list_for_each_entry(temp, &core->instances, list) {
+		/* ignore invalid session */
+		if (temp->state == MSM_VIDC_CORE_INVALID)
+			continue;
+		/* ignore thumbnail session */
+		if (is_thumbnail_session(temp))
+			continue;
+		mbpf += NUM_MBS_PER_FRAME(
+			temp->fmts[INPUT_PORT].v4l2_fmt.fmt.pix_mp.height,
+			temp->fmts[INPUT_PORT].v4l2_fmt.fmt.pix_mp.width);
+	}
+	mutex_unlock(&core->lock);
+
+	if (mbpf > core->resources.max_mbpf) {
+		msm_vidc_print_running_insts(inst->core);
+		return -EBUSY;
+	}
+
+	return 0;
+}
+
+static int msm_vidc_check_mbps_supported(struct msm_vidc_inst *inst)
 {
 	int num_mbs_per_sec = 0, max_load_adj = 0;
 	enum load_calc_quirks quirks = LOAD_CALC_IGNORE_TURBO_LOAD |
@@ -5389,12 +5429,16 @@ int msm_vidc_check_session_supported(struct msm_vidc_inst *inst)
 	capability = &inst->capability;
 	hdev = inst->core->device;
 	core = inst->core;
-	rc = msm_vidc_load_supported(inst);
+	rc = msm_vidc_check_mbps_supported(inst);
 	if (rc) {
 		dprintk(VIDC_WARN,
 			"%s: Hardware is overloaded\n", __func__);
 		return rc;
 	}
+
+	rc = msm_vidc_check_mbpf_supported(inst);
+	if (rc)
+		return rc;
 
 	if (!is_thermal_permissible(core)) {
 		dprintk(VIDC_WARN,
