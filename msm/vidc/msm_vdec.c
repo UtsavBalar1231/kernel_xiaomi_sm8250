@@ -662,6 +662,10 @@ int msm_vdec_g_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 
 	if (f->type == OUTPUT_MPLANE) {
 		fmt = &inst->fmts[OUTPUT_PORT].v4l2_fmt;
+		if (inst->in_reconfig) {
+			fmt->fmt.pix_mp.width = inst->reconfig_width;
+			fmt->fmt.pix_mp.height = inst->reconfig_height;
+		}
 		fmt->fmt.pix_mp.plane_fmt[0].sizeimage =
 			msm_vidc_calculate_dec_output_frame_size(inst);
 		if (fmt->fmt.pix_mp.num_planes > 1)
@@ -670,10 +674,6 @@ int msm_vdec_g_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 		memcpy(f, fmt, sizeof(struct v4l2_format));
 	} else if (f->type == INPUT_MPLANE) {
 		fmt = &inst->fmts[INPUT_PORT].v4l2_fmt;
-		if (inst->in_reconfig) {
-			fmt->fmt.pix_mp.width = inst->reconfig_width;
-			fmt->fmt.pix_mp.height = inst->reconfig_height;
-		}
 		fmt->fmt.pix_mp.plane_fmt[0].sizeimage =
 			msm_vidc_calculate_dec_input_frame_size(inst);
 		memcpy(f, fmt, sizeof(struct v4l2_format));
