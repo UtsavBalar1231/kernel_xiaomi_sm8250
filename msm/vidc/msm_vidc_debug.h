@@ -89,6 +89,27 @@ extern bool msm_vidc_cvp_usage;
 		} \
 	} while (0)
 
+#define dprintk_firmware(__level, __fmt, ...)	\
+	do { \
+		if (msm_vidc_debug & __level) { \
+			if (msm_vidc_debug & FW_FTRACE) { \
+				char trace_logbuf[MAX_TRACER_LOG_LENGTH]; \
+				int log_length = snprintf(trace_logbuf, \
+					MAX_TRACER_LOG_LENGTH, \
+					VIDC_DBG_TAG __fmt, \
+					get_debug_level_str(__level), \
+					##__VA_ARGS__); \
+				trace_msm_vidc_printf(trace_logbuf, \
+					log_length); \
+			} \
+			if (msm_vidc_debug & FW_PRINTK) { \
+				pr_info(VIDC_DBG_TAG __fmt, \
+					get_debug_level_str(__level), \
+					##__VA_ARGS__); \
+			} \
+		} \
+	} while (0)
+
 #define dprintk_ratelimit(__level, __fmt, arg...) \
 	do { \
 		if (msm_vidc_check_ratelimit()) { \
