@@ -2875,9 +2875,11 @@
 		compatible = "qcom,pil-tz-generic";
 		reg = <0x17300000 0x00100>;
 
-		vdd_cx-supply = <&VDD_CX_LEVEL>;
+		vdd_cx-supply = <&L11A_LEVEL>;
 		qcom,vdd_cx-uV-uA = <RPMH_REGULATOR_LEVEL_TURBO 0>;
-		qcom,proxy-reg-names = "vdd_cx";
+		vdd_mx-supply = <&L4A_LEVEL>;
+		qcom,vdd_mx-uV-uA = <RPMH_REGULATOR_LEVEL_TURBO 0>;
+		qcom,proxy-reg-names = "vdd_cx","vdd_mx";
 
 		clocks = <&clock_rpmh RPMH_CXO_CLK>;
 		clock-names = "xo";
