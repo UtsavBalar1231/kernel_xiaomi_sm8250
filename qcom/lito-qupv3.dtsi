@@ -12,8 +12,10 @@
 	qupv3_0: qcom,qupv3_0_geni_se@8c0000 {
 		compatible = "qcom,qupv3-geni-se";
 		reg = <0x8c0000 0x2000>;
-		qcom,bus-mas-id = <MSM_BUS_MASTER_QUP_0>;
-		qcom,bus-slv-id = <MSM_BUS_SLAVE_EBI_CH0>;
+		qcom,msm-bus,num-paths = <2>;
+		qcom,msm-bus,vectors-bus-ids =
+			<MSM_BUS_MASTER_QUP_CORE_0 MSM_BUS_SLAVE_QUP_CORE_0>,
+			<MSM_BUS_MASTER_QUP_0 MSM_BUS_SLAVE_EBI_CH0>;
 		iommus = <&apps_smmu 0x4e3 0x0>;
 		qcom,iommu-dma-addr-pool = <0x40000000 0xc0000000>;
 		qcom,iommu-dma = "bypass";
@@ -299,8 +301,10 @@
 	qupv3_1: qcom,qupv3_1_geni_se@9c0000 {
 		compatible = "qcom,qupv3-geni-se";
 		reg = <0x9c0000 0x2000>;
-		qcom,bus-mas-id = <MSM_BUS_MASTER_QUP_1>;
-		qcom,bus-slv-id = <MSM_BUS_SLAVE_EBI_CH0>;
+		qcom,msm-bus,num-paths = <2>;
+		qcom,msm-bus,vectors-bus-ids =
+			<MSM_BUS_MASTER_QUP_CORE_1 MSM_BUS_SLAVE_QUP_CORE_1>,
+			<MSM_BUS_MASTER_QUP_1 MSM_BUS_SLAVE_EBI_CH0>;
 		iommus = <&apps_smmu 0x023 0x0>;
 		qcom,iommu-dma-addr-pool = <0x40000000 0xc0000000>;
 		qcom,iommu-dma = "bypass";
