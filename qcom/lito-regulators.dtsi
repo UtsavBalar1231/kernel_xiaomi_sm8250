@@ -784,9 +784,9 @@
 };
 
 &soc {
-	refgen: refgen-regulator@88e7000 {
+	refgen: refgen-regulator@ff1000 {
 		compatible = "qcom,refgen-kona-regulator";
-		reg = <0x88e7000 0x60>;
+		reg = <0xff1000 0x84>;
 		regulator-name = "refgen";
 		regulator-enable-ramp-delay = <5>;
 	};
