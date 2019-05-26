@@ -6,9 +6,7 @@
 		reg = <0 0 0 0 0 >;
 
 		/* controller specific configuration */
-		qcom,smmu-cfg = <0x1d>;
-		qcom,addr-win = <0x0 0x20000000 0x0 0x3fffffff>;
-		qcom,iommu-dma = "disabled";
+		qcom,iommu-group = <&mhi_0_iommu_group>;
 
 		esoc-names = "mdm";
 		esoc-0 = <&mdm0>;
@@ -16,6 +14,15 @@
 		/* mhi bus specific settings */
 		mhi,max-channels = <110>;
 		mhi,timeout = <2000>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		mhi_0_iommu_group: mhi_0_iommu_group {
+			qcom,iommu-dma-addr-pool = <0x20000000 0x1fffffff>;
+			qcom,iommu-dma = "fastmap";
+			qcom,iommu-pagetable = "coherent";
+		};
 
 		mhi_channels: mhi_channels {
 			#address-cells = <1>;
