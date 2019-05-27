@@ -10,6 +10,12 @@
 	qcom,msm-id = <417 0x10000>;
 	interrupt-parent = <&intc>;
 
+	#address-cells = <2>;
+	#size-cells = <2>;
+	memory { device_type = "memory"; reg = <0 0 0 0>; };
+
+	alias { };
+
 	cpus {
 		#address-cells = <2>;
 		#size-cells = <0>;
