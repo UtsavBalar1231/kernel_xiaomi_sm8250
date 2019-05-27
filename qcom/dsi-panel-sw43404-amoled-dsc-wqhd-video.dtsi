@@ -33,12 +33,12 @@
 		timing@0 {
 			qcom,mdss-dsi-panel-width = <1440>;
 			qcom,mdss-dsi-panel-height = <2880>;
-			qcom,mdss-dsi-h-front-porch = <12>;
-			qcom,mdss-dsi-h-back-porch = <12>;
+			qcom,mdss-dsi-h-front-porch = <10>;
+			qcom,mdss-dsi-h-back-porch = <10>;
 			qcom,mdss-dsi-h-pulse-width = <12>;
 			qcom,mdss-dsi-h-sync-skew = <0>;
 			qcom,mdss-dsi-v-back-porch = <10>;
-			qcom,mdss-dsi-v-front-porch = <20>;
+			qcom,mdss-dsi-v-front-porch = <10>;
 			qcom,mdss-dsi-v-pulse-width = <1>;
 			qcom,mdss-dsi-h-left-border = <0>;
 			qcom,mdss-dsi-panel-framerate = <60>;
@@ -89,7 +89,7 @@
 			qcom,mdss-dsi-nolp-command-state =
 				"dsi_lp_mode";
 			qcom,compression-mode = "dsc";
-			qcom,mdss-dsc-slice-height = <720>;
+			qcom,mdss-dsc-slice-height = <180>;
 			qcom,mdss-dsc-slice-width = <720>;
 			qcom,mdss-dsc-slice-per-pkt = <2>;
 			qcom,mdss-dsc-bit-per-component = <8>;
