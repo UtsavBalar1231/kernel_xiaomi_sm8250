@@ -2474,7 +2474,7 @@
 
 	npu_npu_ddr_bwmon: qcom,npu-npu-ddr-bwmon@9960300 {
 		compatible = "qcom,bimc-bwmon4";
-		reg = <0x70300 0x300>, <0x00070200 0x200>;
+		reg = <0x00060400 0x300>, <0x00060300 0x200>;
 		reg-names = "base", "global_base";
 		interrupts = <GIC_SPI 365 IRQ_TYPE_LEVEL_HIGH>;
 		qcom,mport = <0>;
