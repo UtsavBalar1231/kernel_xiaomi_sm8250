@@ -15,6 +15,8 @@ Required properties:
 			 on Kona platform,
 			"qcom,ufs-phy-qmp-v4-card" for V4 ufs card phy present
 			 on Kona platform,
+			"qcom,ufs-phy-qmp-v4-lito" for V4 ufs phy present
+			 on lito platform,
 			"qcom,ufs-phy-qrbtc-sdm845" for phy support
 			 for sdm845 emulation,
 		        "qcom,ufs-phy-qmp-v3-falcon" for phy support
