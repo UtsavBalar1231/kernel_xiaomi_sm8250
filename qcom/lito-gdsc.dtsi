@@ -90,9 +90,15 @@
 		reg = <0xaf03000 0x4>;
 		regulator-name = "mdss_core_gdsc";
 		qcom,support-hw-trigger;
+		qcom,msm-bus,name = "mdss_core_gdsc_ahb";
+		qcom,msm-bus,num-cases = <2>;
+		qcom,msm-bus,num-paths = <1>;
+		qcom,msm-bus,vectors-KBps =
+			<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_DISPLAY_CFG 0 0>,
+			<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_DISPLAY_CFG 0 1>;
+		qcom,retain-regs;
 		proxy-supply = <&mdss_core_gdsc>;
 		qcom,proxy-consumer-enable;
-		status = "disabled";
 	};
 
 	/* GPU_CC GDSCs */
