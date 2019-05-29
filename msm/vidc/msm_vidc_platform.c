@@ -188,7 +188,7 @@ static struct msm_vidc_codec_capability lito_capabilities_v0[] = {
 
 	/* VP8 specific */
 	{CAP_FRAME_WIDTH, ENC|DEC, VP8, 96, 1920, 1, 1920},
-	{CAP_FRAME_HEIGHT, ENC|DEC, VP8, 96, 1080, 1, 1080},
+	{CAP_FRAME_HEIGHT, ENC|DEC, VP8, 96, 1920, 1, 1080},
 	/* (1920 * 1088) / 256 */
 	{CAP_MBS_PER_FRAME, ENC|DEC, VP8, 1, 8160, 1, 8160},
 	/* ((1920 * 1088) / 256) * 120*/
@@ -246,7 +246,7 @@ static struct msm_vidc_codec_capability lito_capabilities_v1[] = {
 
 	/* VP8 specific */
 	{CAP_FRAME_WIDTH, ENC|DEC, VP8, 96, 1920, 1, 1920},
-	{CAP_FRAME_HEIGHT, ENC|DEC, VP8, 96, 1080, 1, 1080},
+	{CAP_FRAME_HEIGHT, ENC|DEC, VP8, 96, 1920, 1, 1080},
 	/* (1920 * 1088) / 256 */
 	{CAP_MBS_PER_FRAME, ENC|DEC, VP8, 1, 8160, 1, 8160},
 	/* ((1920 * 1088) / 256) * 120*/
