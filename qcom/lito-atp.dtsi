@@ -1,9 +1,26 @@
+#include <dt-bindings/gpio/gpio.h>
 #include "lito-audio-overlay.dtsi"
 #include "lito-pmic-overlay.dtsi"
 #include "lito-sde-display.dtsi"
 
 &soc {
+	gpio_keys {
+		compatible = "gpio-keys";
+		label = "gpio-keys";
 
+		pinctrl-names = "default";
+		pinctrl-0 = <&key_vol_up_default>;
+
+		vol_up {
+			label = "volume_up";
+			gpios = <&pm8150l_gpios 5 GPIO_ACTIVE_LOW>;
+			linux,input-type = <1>;
+			linux,code = <KEY_VOLUMEUP>;
+			gpio-key,wakeup;
+			debounce-interval = <15>;
+			linux,can-disable;
+		};
+	};
 };
 
 &pm8150a_amoled {
