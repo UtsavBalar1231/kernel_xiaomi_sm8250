@@ -424,6 +424,12 @@
 	};
 };
 
+&pm7250b_pdphy {
+	vdd-pdphy-supply = <&pm8150_l2>;
+	vbus-supply = <&smb5_vbus>;
+	vconn-supply = <&smb5_vconn>;
+};
+
 &usb0 {
 	extcon = <&pm7250b_pdphy>, <&eud>;
 };
