@@ -732,11 +732,8 @@ static int msm_comm_get_mbs_per_sec(struct msm_vidc_inst *inst)
 	struct v4l2_format *f;
 
 	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
-	input_port_mbs = inst->in_reconfig ?
-			NUM_MBS_PER_FRAME(inst->reconfig_width,
-				inst->reconfig_height) :
-			NUM_MBS_PER_FRAME(f->fmt.pix_mp.width,
-				f->fmt.pix_mp.height);
+	input_port_mbs = NUM_MBS_PER_FRAME(f->fmt.pix_mp.width,
+		f->fmt.pix_mp.height);
 
 	f = &inst->fmts[OUTPUT_PORT].v4l2_fmt;
 	output_port_mbs = NUM_MBS_PER_FRAME(f->fmt.pix_mp.width,
@@ -1730,11 +1727,14 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 
 	mutex_lock(&inst->lock);
 	inst->in_reconfig = true;
-	inst->reconfig_height = event_notify->height;
-	inst->reconfig_width = event_notify->width;
+	fmt = &inst->fmts[INPUT_PORT];
+	fmt->v4l2_fmt.fmt.pix_mp.height = event_notify->height;
+	fmt->v4l2_fmt.fmt.pix_mp.width = event_notify->width;
 	inst->bit_depth = event_notify->bit_depth;
 
 	fmt = &inst->fmts[OUTPUT_PORT];
+	fmt->v4l2_fmt.fmt.pix_mp.height = event_notify->height;
+	fmt->v4l2_fmt.fmt.pix_mp.width = event_notify->width;
 	extra_buff_count = msm_vidc_get_extra_buff_count(inst,
 					HAL_BUFFER_OUTPUT);
 	fmt->count_min = event_notify->capture_buf_count;
@@ -5762,7 +5762,6 @@ int msm_comm_session_continue(void *instance)
 	struct msm_vidc_inst *inst = instance;
 	int rc = 0;
 	struct hfi_device *hdev;
-	struct v4l2_format *f;
 
 	if (!inst || !inst->core || !inst->core->device)
 		return -EINVAL;
@@ -5786,12 +5785,7 @@ int msm_comm_session_continue(void *instance)
 			goto sess_continue_fail;
 		}
 		inst->in_reconfig = false;
-		f = &inst->fmts[OUTPUT_PORT].v4l2_fmt;
-		f->fmt.pix_mp.height = inst->reconfig_height;
-		f->fmt.pix_mp.width = inst->reconfig_width;
-		f = &inst->fmts[INPUT_PORT].v4l2_fmt;
-		f->fmt.pix_mp.height = inst->reconfig_height;
-		f->fmt.pix_mp.width = inst->reconfig_width;
+
 		if (msm_comm_get_stream_output_mode(inst) ==
 			HAL_VIDEO_DECODER_SECONDARY) {
 			rc = msm_comm_queue_dpb_only_buffers(inst);

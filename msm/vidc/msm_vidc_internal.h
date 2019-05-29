@@ -483,8 +483,6 @@ struct msm_vidc_inst {
 	struct v4l2_fh event_handler;
 	struct msm_smem *extradata_handle;
 	bool in_reconfig;
-	u32 reconfig_width;
-	u32 reconfig_height;
 	struct dentry *debugfs_root;
 	void *priv;
 	struct msm_vidc_debug debug;

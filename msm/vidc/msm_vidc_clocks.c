@@ -124,15 +124,10 @@ int msm_vidc_get_mbs_per_frame(struct msm_vidc_inst *inst)
 
 	out_f = &inst->fmts[OUTPUT_PORT].v4l2_fmt;
 	inp_f = &inst->fmts[INPUT_PORT].v4l2_fmt;
-	if (!inst->in_reconfig) {
-		height = max(out_f->fmt.pix_mp.height,
+	height = max(out_f->fmt.pix_mp.height,
 			inp_f->fmt.pix_mp.height);
-		width = max(out_f->fmt.pix_mp.width,
+	width = max(out_f->fmt.pix_mp.width,
 			inp_f->fmt.pix_mp.width);
-	} else {
-		height = inst->reconfig_height;
-		width = inst->reconfig_width;
-	}
 
 	return NUM_MBS_PER_FRAME(height, width);
 }
