@@ -2947,7 +2947,7 @@
 };
 
 &qupv3_se5_4uart {
-	status = "disabled";
+	status = "ok";
 };
 
 &tlmm {
