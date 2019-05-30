@@ -3049,6 +3049,7 @@
 #include "lito-bus.dtsi"
 #include "lito-gpu.dtsi"
 #include "lito-thermal.dtsi"
+#include "lito-npu.dtsi"
 
 &ufs_phy_gdsc {
 	status = "ok";
