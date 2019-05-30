@@ -2695,7 +2695,6 @@
 		qcom,modem-cfg-emb-pipe-flt;
 		qcom,ipa-wdi2;
 		qcom,ipa-wdi2_over_gsi;
-		qcom,ipa-fltrt-not-hashable;
 		qcom,use-ipa-pm;
 		qcom,arm-smmu;
 		qcom,smmu-fast-map;
