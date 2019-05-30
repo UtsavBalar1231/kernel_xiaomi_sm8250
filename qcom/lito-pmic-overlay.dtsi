@@ -424,6 +424,19 @@
 	};
 };
 
+&pm8150l_gpios {
+	eldo13_pin {
+		usb_eldo13:gpio@cb00 {
+			pins = "gpio12";
+			function = "normal";
+			qcom,drive-strength = <2>;
+			power-source = <0>;
+			bias-disable;
+			output-high;
+		};
+	};
+};
+
 &pm7250b_pdphy {
 	vdd-pdphy-supply = <&pm8150_l2>;
 	vbus-supply = <&smb5_vbus>;

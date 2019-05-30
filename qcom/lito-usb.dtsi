@@ -61,7 +61,7 @@
 			snps,usb3-u1u2-disable;
 			usb-core-id = <0>;
 			tx-fifo-resize;
-			maximum-speed = "high-speed";
+			maximum-speed = "super-speed";
 			dr_mode = "drd";
 		};
 
@@ -103,7 +103,7 @@
 
 		vdd-supply = <&pm8150_l5>;
 		vdda18-supply = <&pm8150_l12>;
-		vdda33-supply = <&pm8150a_l2>;
+		vdda33-supply = <&pm8150_l2>;
 		qcom,vdd-voltage-level = <0 880000 880000>;
 
 		clocks = <&rpmhcc RPMH_CXO_CLK>;
@@ -123,7 +123,6 @@
 		vdd-supply = <&pm8150_l5>;
 		qcom,vdd-voltage-level = <0 880000 880000>;
 		qcom,vdd-max-load-uA = <47000>;
-		core-supply = <&pm8150a_l9>;
 		qcom,vbus-valid-override;
 		qcom,qmp-phy-init-seq =
 			/* <reg_offset, value, delay> */
@@ -304,7 +303,7 @@
 			<&gcc GCC_USB3_PHY_PRIM_BCR>;
 		reset-names = "global_phy_reset", "phy_reset";
 
-		status = "disabled";
+		status = "ok";
 	};
 
 	usb_audio_qmi_dev {
