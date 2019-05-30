@@ -262,7 +262,7 @@
 
 &pm8150b_charger {
 	status = "ok";
-	qcom,sec-charger-config = <1>;
+	qcom,sec-charger-config = <0>;
 	qcom,auto-recharge-soc = <98>;
 	io-channels = <&pm8150b_vadc ADC_MID_CHG_DIV6>,
 		      <&pm8150b_vadc ADC_USB_IN_I>,
@@ -313,7 +313,6 @@
 &smb1390_charger {
 	io-channels = <&pm8150b_vadc ADC_AMUX_THM2>;
 	io-channel-names = "cp_die_temp";
-	status = "ok";
 };
 
 &pm8150_vadc {
