@@ -683,18 +683,21 @@
 			mhi_qrtr {
 				mhi,chan = "IPCR";
 				qcom,net-id = <3>;
+				mhi,early-notify;
 			};
 
 			mhi_subsys_adsp_0: mhi_dev@2 {
 				reg = <0x2>;
 				mhi,chan = "ADSP_0";
 				mhi,max-devices = <4>;
+				mhi,early-notify;
 			};
 
 			mhi_subsys_slpi_0: mhi_dev@3 {
 				reg = <0x3>;
 				mhi,chan = "SLPI_0";
 				mhi,max-devices = <4>;
+				mhi,early-notify;
 			};
 		};
 	};
