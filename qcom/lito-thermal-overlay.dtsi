@@ -128,116 +128,88 @@
 		};
 	};
 
-	pm7250b-vbat-lvl0 {
+	pm7250b-bcl-lvl0 {
 		cooling-maps {
-			vbat_cpu6 {
-				trip = <&vbat_lvl0>;
+			lbat0_cpu6 {
+				trip = <&b_bcl_lvl0>;
 				cooling-device = <&cpu6_isolate 1 1>;
 			};
 
-			vbat_cpu7 {
-				trip = <&vbat_lvl0>;
+			lbat0_cpu7 {
+				trip = <&b_bcl_lvl0>;
 				cooling-device = <&cpu7_isolate 1 1>;
 			};
 		};
 	};
 
-	pm7250b-vbat-lvl1 {
+	pm7250b-bcl-lvl1 {
 		cooling-maps {
-			vbat_cpu6 {
-				trip = <&vbat_lvl1>;
+			lbat1_cpu6 {
+				trip = <&b_bcl_lvl1>;
 				cooling-device = <&cpu6_isolate 1 1>;
 			};
 
-			vbat_cpu7 {
-				trip = <&vbat_lvl1>;
+			lbat1_cpu7 {
+				trip = <&b_bcl_lvl1>;
 				cooling-device = <&cpu7_isolate 1 1>;
 			};
 		};
 	};
 
-	pm7250b-vbat-lvl2 {
+	pm7250b-bcl-lvl2 {
 		cooling-maps {
-			vbat_cpu6 {
-				trip = <&vbat_lvl2>;
+			lbat2_cpu6 {
+				trip = <&b_bcl_lvl2>;
 				cooling-device = <&cpu6_isolate 1 1>;
 			};
 
-			vbat_cpu7 {
-				trip = <&vbat_lvl2>;
+			lbat2_cpu7 {
+				trip = <&b_bcl_lvl2>;
 				cooling-device = <&cpu7_isolate 1 1>;
 			};
 		};
 	};
 
-	pm7250b-ibat-lvl0 {
-		cooling-maps {
-			ibat_cpu6 {
-				trip = <&ibat_lvl0>;
-				cooling-device = <&cpu6_isolate 1 1>;
-			};
-
-			ibat_cpu7 {
-				trip = <&ibat_lvl0>;
-				cooling-device = <&cpu7_isolate 1 1>;
-			};
-		};
-	};
-
-	pm7250b-ibat-lvl1 {
-		cooling-maps {
-			ibat_cpu6 {
-				trip = <&ibat_lvl1>;
-				cooling-device = <&cpu6_isolate 1 1>;
-			};
-
-			ibat_cpu7 {
-				trip = <&ibat_lvl1>;
-				cooling-device = <&cpu7_isolate 1 1>;
-			};
-		};
-	};
-
-	pm8150l-vph-lvl0 {
+	pm8150l-bcl-lvl0 {
 		disable-thermal-zone;
 		cooling-maps {
 			vph_cpu6 {
-				trip = <&vph_lvl0>;
+				trip = <&l_bcl_lvl0>;
 				cooling-device = <&cpu6_isolate 1 1>;
 			};
 
 			vph_cpu7 {
-				trip = <&vph_lvl0>;
+				trip = <&l_bcl_lvl0>;
 				cooling-device = <&cpu7_isolate 1 1>;
 			};
 		};
 	};
 
-	pm8150l-vph-lvl1 {
+	pm8150l-bcl-lvl1 {
 		disable-thermal-zone;
 		cooling-maps {
 			vph_cpu6 {
-				trip = <&vph_lvl1>;
+				trip = <&l_bcl_lvl1>;
 				cooling-device = <&cpu6_isolate 1 1>;
 			};
 
 			vph_cpu7 {
-				trip = <&vph_lvl1>;
+				trip = <&l_bcl_lvl1>;
 				cooling-device = <&cpu7_isolate 1 1>;
 			};
 		};
 	};
 
-	pm8150l-vph-lvl2 {
+	pm8150l-bcl-lvl2 {
 		disable-thermal-zone;
 		cooling-maps {
 			vph_cpu6 {
-				trip = <&vph_lvl2>;
+				trip = <&l_bcl_lvl2>;
 				cooling-device = <&cpu6_isolate 1 1>;
 			};
 
 			vph_cpu7 {
-				trip = <&vph_lvl2>;
+				trip = <&l_bcl_lvl2>;
 				cooling-device = <&cpu7_isolate 1 1>;
 			};
 		};
