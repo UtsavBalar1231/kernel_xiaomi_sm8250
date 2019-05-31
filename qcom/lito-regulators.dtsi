@@ -21,7 +21,7 @@
 		VDD_CX_LEVEL_AO: S1A_LEVEL_AO:
 		pm8150_s1_level_ao: regulator-pm8150-s1-level-ao {
 			regulator-name = "pm8150_s1_level_ao";
-			qcom,set = <RPMH_REGULATOR_SET_ALL>;
+			qcom,set = <RPMH_REGULATOR_SET_ACTIVE>;
 			regulator-min-microvolt
 				= <RPMH_REGULATOR_LEVEL_RETENTION>;
 			regulator-max-microvolt
