@@ -22,7 +22,41 @@ static void print_cvp_buffer(u32 tag, const char *str,
 		cbuf->offset, cbuf->dbuf, cbuf->kvaddr);
 }
 
-static int msm_cvp_fill_planeinfo(struct cvp_kmd_color_plane_info *plane_info,
+static int msm_cvp_get_version_info(struct msm_vidc_inst *inst)
+{
+	int rc;
+	struct msm_cvp_external *cvp;
+	struct cvp_kmd_arg *arg;
+	struct cvp_kmd_sys_properties *sys_prop;
+	struct cvp_kmd_sys_property *prop_data;
+	u32 version;
+
+	if (!inst || !inst->cvp) {
+		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		return -EINVAL;
+	}
+	cvp = inst->cvp;
+	arg = cvp->arg;
+
+	memset(arg, 0, sizeof(struct cvp_kmd_arg));
+	arg->type = CVP_KMD_GET_SYS_PROPERTY;
+	sys_prop = (struct cvp_kmd_sys_properties *)&arg->data.sys_properties;
+	sys_prop->prop_num = CVP_KMD_HFI_VERSION_PROP_NUMBER;
+	prop_data = (struct  cvp_kmd_sys_property *)
+					&arg->data.sys_properties.prop_data;
+	prop_data->prop_type = CVP_KMD_HFI_VERSION_PROP_TYPE;
+	rc = msm_cvp_private(cvp->priv, CVP_KMD_GET_SYS_PROPERTY, arg);
+	if (rc) {
+		dprintk(VIDC_ERR, "%s: failed, rc %d\n", __func__, rc);
+		return rc;
+	}
+	version = prop_data->data;
+	dprintk(VIDC_HIGH, "%s: version %#x\n", __func__, version);
+
+	return 0;
+}
+
+static int msm_cvp_fill_planeinfo(struct msm_cvp_color_plane_info *plane_info,
 		u32 color_fmt, u32 width, u32 height)
 {
 	int rc = 0;
@@ -420,8 +454,14 @@ static void msm_cvp_deinit_internal_buffers(struct msm_vidc_inst *inst)
 
 		arg = kzalloc(sizeof(struct cvp_kmd_arg), GFP_KERNEL);
 		if (arg) {
-			memset(arg, 0, sizeof(struct cvp_kmd_arg));
 			arg->type = CVP_KMD_HFI_PERSIST_CMD;
+			arg->buf_offset = offsetof(struct
+			msm_cvp_session_release_persist_buffers_packet,
+				persist1_buffer) / sizeof(u32);
+			arg->buf_num = (sizeof(struct
+			msm_cvp_session_release_persist_buffers_packet) -
+				(arg->buf_offset * sizeof(u32))) /
+				sizeof(struct msm_cvp_buffer_type);
 			memcpy(&(arg->data.pbuf_cmd), &persist2_packet,
 			sizeof(struct
 			msm_cvp_session_release_persist_buffers_packet));
@@ -432,6 +472,8 @@ static void msm_cvp_deinit_internal_buffers(struct msm_vidc_inst *inst)
 					"release failed: persist2_buffer",
 					inst, &cvp->persist2_buffer);
 			kfree(arg);
+		} else {
+			dprintk(VIDC_ERR, "%s: alloc failed\n", __func__);
 		}
 
 		rc = msm_cvp_free_buffer(inst, &cvp->persist2_buffer);
@@ -481,11 +523,13 @@ static int msm_cvp_init_internal_buffers(struct msm_vidc_inst *inst)
 
 	memset(arg, 0, sizeof(struct cvp_kmd_arg));
 	arg->type = CVP_KMD_HFI_PERSIST_CMD;
-	if (sizeof(struct cvp_kmd_persist_buf) <
-		sizeof(struct msm_cvp_session_set_persist_buffers_packet)) {
-		dprintk(VIDC_ERR, "%s: insufficient size\n", __func__);
-		goto error;
-	}
+	arg->buf_offset = offsetof(
+		struct msm_cvp_session_set_persist_buffers_packet,
+		persist1_buffer) / sizeof(u32);
+	arg->buf_num = (sizeof(
+		struct msm_cvp_session_set_persist_buffers_packet) -
+		(arg->buf_offset * sizeof(u32))) /
+		sizeof(struct msm_cvp_buffer_type);
 	memcpy(&(arg->data.pbuf_cmd), &persist2_packet,
 		sizeof(struct msm_cvp_session_set_persist_buffers_packet));
 	rc = msm_cvp_private(cvp->priv, CVP_KMD_HFI_PERSIST_CMD, arg);
@@ -522,7 +566,7 @@ static int msm_cvp_prepare_extradata(struct msm_vidc_inst *inst,
 	struct msm_cvp_external *cvp;
 	struct vb2_buffer *vb;
 	struct dma_buf *dbuf;
-	char *kvaddr;
+	char *kvaddr = NULL;
 	struct msm_vidc_extradata_header *e_hdr;
 	bool input_extradata, found_end;
 
@@ -718,9 +762,14 @@ static int msm_cvp_frame_process(struct msm_vidc_inst *inst,
 		return 0;
 	}
 
+	memset(arg, 0, sizeof(struct cvp_kmd_arg));
 	arg->type = CVP_KMD_SEND_CMD_PKT;
+	arg->buf_offset = offsetof(struct msm_cvp_dme_frame_packet,
+		fullres_srcbuffer) / sizeof(u32);
+	arg->buf_num = (sizeof(struct msm_cvp_dme_frame_packet) -
+		(arg->buf_offset * sizeof(u32))) /
+		sizeof(struct msm_cvp_buffer_type);
 	frame = (struct msm_cvp_dme_frame_packet *)&arg->data.hfi_pkt.pkt_data;
-
 	frame->size = sizeof(struct msm_cvp_dme_frame_packet);
 	frame->packet_type = HFI_CMD_SESSION_CVP_DME_FRAME;
 	frame->session_id = cvp->session_id;
@@ -1003,6 +1052,12 @@ static int msm_vidc_cvp_open(struct msm_vidc_inst *inst)
 	cvp->session_id = arg->data.session.session_id;
 	dprintk(VIDC_HIGH, "%s: cvp session id %#x\n",
 		__func__, cvp->session_id);
+
+	rc = msm_cvp_get_version_info(inst);
+	if (rc) {
+		dprintk(VIDC_ERR, "%s: get_version_info failed\n", __func__);
+		goto error;
+	}
 
 	return 0;
 
