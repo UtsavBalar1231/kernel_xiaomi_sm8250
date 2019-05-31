@@ -3791,6 +3791,7 @@ int msm_venc_set_blur_resolution(struct msm_vidc_inst *inst)
 	struct hfi_device *hdev;
 	struct v4l2_ctrl *ctrl;
 	struct hfi_frame_size frame_sz;
+	struct v4l2_format *f;
 
 	if (!inst || !inst->core) {
 		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
@@ -3803,6 +3804,29 @@ int msm_venc_set_blur_resolution(struct msm_vidc_inst *inst)
 	frame_sz.buffer_type = HFI_BUFFER_INPUT;
 	frame_sz.height = ctrl->val & 0xFFFF;
 	frame_sz.width = (ctrl->val & 0x7FFF0000) >> 16;
+
+	/*
+	 * 0x0 is default value, internal blur enabled, external blur disabled
+	 * 0x1 means dynamic external blur, blur resolution will be set
+	 *     after start, internal blur disabled
+	 * 0x2 means disable both internal and external blur
+	 */
+	if (ctrl->val == 0x2) {
+		if (inst->state == MSM_VIDC_START_DONE) {
+			dprintk(VIDC_ERR,
+				"Dynamic disable all blur not supported\n");
+			return -EINVAL;
+		}
+		f = &inst->fmts[INPUT_PORT].v4l2_fmt;
+		/*
+		 * Use original input width/height (before VPSS) to inform FW
+		 * to disable all blur.
+		 */
+		frame_sz.width = f->fmt.pix_mp.width;
+		frame_sz.height = f->fmt.pix_mp.height;
+		dprintk(VIDC_HIGH, "Disable both auto and external blur\n");
+	}
+
 	dprintk(VIDC_HIGH, "%s: type %u, height %u, width %u\n", __func__,
 		frame_sz.buffer_type, frame_sz.height, frame_sz.width);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
