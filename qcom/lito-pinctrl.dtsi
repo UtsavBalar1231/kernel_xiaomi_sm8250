@@ -421,7 +421,7 @@
 		wcd938x_reset_active: wcd938x_reset_active {
 			mux {
 				pins = "gpio57";
-				function = "func2";
+				function = "gpio";
 			};
 
 			config {
@@ -434,7 +434,7 @@
 		wcd938x_reset_sleep: wcd938x_reset_sleep {
 			mux {
 				pins = "gpio57";
-				function = "func2";
+				function = "gpio";
 			};
 
 			config {
