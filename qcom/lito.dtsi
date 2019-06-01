@@ -1745,6 +1745,10 @@
 		interrupts = <GIC_PPI 5 IRQ_TYPE_LEVEL_HIGH>;
 	};
 
+	qcom_msmhdcp: qcom,msm_hdcp {
+		compatible = "qcom,msm-hdcp";
+	};
+
 	mem_dump {
 		compatible = "qcom,mem-dump";
 		memory-region = <&dump_mem>;
@@ -2828,7 +2832,6 @@
 #include "lito-usb.dtsi"
 #include "lito-ion.dtsi"
 #include "lito-vidc.dtsi"
-#include "lito-audio.dtsi"
 #include "lito-bus.dtsi"
 #include "lito-gpu.dtsi"
 #include "lito-thermal.dtsi"
@@ -2936,6 +2939,7 @@
 #include "lito-qupv3.dtsi"
 #include "lito-coresight.dtsi"
 #include "lito-camera.dtsi"
+#include "lito-audio.dtsi"
 
 &qupv3_se9_i2c {
 	status = "ok";
