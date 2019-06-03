@@ -33,7 +33,7 @@
 };
 
 &ufsphy_mem {
-	compatible = "qcom,ufs-phy-qmp-v4-card";
+	compatible = "qcom,ufs-phy-qmp-v4-lito";
 
 	vdda-phy-supply = <&pm8150_l5>;
 	vdda-pll-supply = <&pm8150_l9>;
