@@ -23,6 +23,21 @@
 			linux,can-disable;
 		};
 	};
+
+	qmp_dp_phy_core_supply: qmp_dp_phy_core_supply {
+		compatible = "regulator-fixed";
+		regulator-name = "core_supply";
+		regulator-min-microvolt = <1200000>;
+		regulator-max-microvolt = <1200000>;
+		enable-active-high;
+		gpio = <&pm8150l_gpios 12 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&usb_eldo13>;
+	};
+};
+
+&usb_qmp_dp_phy {
+	core-supply = <&qmp_dp_phy_core_supply>;
 };
 
 / {
