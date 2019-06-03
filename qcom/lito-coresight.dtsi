@@ -1384,7 +1384,7 @@
 		compatible = "qcom,coresight-remote-etm";
 
 		coresight-name = "coresight-npu-etm0";
-		qcom,inst-id = <2>;
+		qcom,inst-id = <14>;
 
 		port {
 			npu_etm0_out_funnel_npu: endpoint {
@@ -1779,11 +1779,11 @@
 		};
 	};
 
-	funnel_mq6_dup: funnel@680a000 {
+	funnel_mq6_dup: funnel_1@680c000 {
 		compatible = "arm,primecell";
 		arm,primecell-periphid = <0x000bb908>;
 
-		reg = <0x680a000 0x1000>,
+		reg = <0x680b000 0x1000>,
 			<0x680c000 0x1000>;
 
 		reg-names = "funnel-base-dummy", "funnel-base-real";
@@ -1792,6 +1792,7 @@
 
 		clocks = <&aopcc QDSS_CLK>;
 		clock-names = "apb_pclk";
+		qcom,duplicate-funnel;
 
 		ports {
 			#address-cells = <1>;
