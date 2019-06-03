@@ -1330,17 +1330,24 @@ void rmnet_shs_init(struct net_device *dev, struct net_device *vnd)
 {
 	struct rps_map *map;
 	u8 num_cpu;
+	u8 map_mask;
+	u8 map_len;
 
 	if (rmnet_shs_cfg.rmnet_shs_init_complete)
 		return;
 	map = rcu_dereference(vnd->_rx->rps_map);
 
-	if (!map)
-		return;
+	if (!map) {
+		map_mask = 0;
+		map_len = 0;
+	} else {
+		map_mask = rmnet_shs_mask_from_map(map);
+		map_len = rmnet_shs_get_mask_len(rmnet_shs_cfg.map_mask);
+	}
 
 	rmnet_shs_cfg.port = rmnet_get_port(dev);
-	rmnet_shs_cfg.map_mask = rmnet_shs_mask_from_map(map);
-	rmnet_shs_cfg.map_len = rmnet_shs_get_mask_len(rmnet_shs_cfg.map_mask);
+	rmnet_shs_cfg.map_mask = map_mask;
+	rmnet_shs_cfg.map_len = map_len;
 	for (num_cpu = 0; num_cpu < MAX_CPUS; num_cpu++)
 		INIT_LIST_HEAD(&rmnet_shs_cpu_node_tbl[num_cpu].node_list_id);
 
