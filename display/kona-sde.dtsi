@@ -6,11 +6,13 @@
 		reg = <0x0ae00000 0x84208>,
 		      <0x0aeb0000 0x2008>,
 		      <0x0aeac000 0x214>,
-		      <0x0ae8f000 0x02c>;
+		      <0x0ae8f000 0x02c>,
+		      <0x0af50000 0x038>;
 		reg-names = "mdp_phys",
 			"vbif_phys",
 			"regdma_phys",
-			"sid_phys";
+			"sid_phys",
+			"swfuse_phys";
 
 		clocks =
 			<&clock_gcc GCC_DISP_AHB_CLK>,
