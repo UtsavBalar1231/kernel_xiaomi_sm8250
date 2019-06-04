@@ -203,6 +203,18 @@
 	qcom,cl-feedback-on;
 };
 
+&wsa881x_0212 {
+	compatible = "qcom,wsa881x";
+	reg = <0x10 0x20170212>;
+	qcom,spkr-sd-n-node = <&wsa_spkr_en1>;
+};
+
+&wsa881x_0214 {
+	compatible = "qcom,wsa881x";
+	reg = <0x10 0x21170214>;
+	qcom,spkr-sd-n-node = <&wsa_spkr_en1>;
+};
+
 &lito_snd {
 	qcom,model = "lito-qrd-snd-card";
 	qcom,audio-routing =
