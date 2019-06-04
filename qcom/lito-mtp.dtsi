@@ -40,6 +40,10 @@
 	core-supply = <&qmp_dp_phy_core_supply>;
 };
 
+&sde_dp {
+	vdda-0p9-supply = <&qmp_dp_phy_core_supply>;
+};
+
 / {
 	mtp_batterydata: qcom,battery-data {
 		qcom,batt-id-range-pct = <15>;
