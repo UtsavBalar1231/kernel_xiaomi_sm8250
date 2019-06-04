@@ -1293,6 +1293,12 @@ void rmnet_shs_ps_off_hdlr(void *port)
 	rmnet_shs_wq_restart();
 }
 
+void rmnet_shs_dl_hdr_handler_v2(struct rmnet_map_dl_ind_hdr *dlhdr,
+			      struct rmnet_map_control_command_header *qcmd)
+{
+	rmnet_shs_dl_hdr_handler(dlhdr);
+}
+
 void rmnet_shs_dl_hdr_handler(struct rmnet_map_dl_ind_hdr *dlhdr)
 {
 
@@ -1311,6 +1317,12 @@ void rmnet_shs_dl_hdr_handler(struct rmnet_map_dl_ind_hdr *dlhdr)
 /* Triggers flushing of all packets upon DL trailer
  * receiving a DL trailer marker
  */
+void rmnet_shs_dl_trl_handler_v2(struct rmnet_map_dl_ind_trl *dltrl,
+			      struct rmnet_map_control_command_header *qcmd)
+{
+	rmnet_shs_dl_trl_handler(dltrl);
+}
+
 void rmnet_shs_dl_trl_handler(struct rmnet_map_dl_ind_trl *dltrl)
 {
 

@@ -16,6 +16,7 @@
 #include <linux/netdevice.h>
 #include <linux/module.h>
 #include <../drivers/net/ethernet/qualcomm/rmnet/rmnet_map.h>
+#include <../drivers/net/ethernet/qualcomm/rmnet/rmnet_private.h>
 #include "rmnet_shs_config.h"
 #include "rmnet_shs.h"
 #include "rmnet_shs_wq.h"
@@ -85,6 +86,8 @@ static int rmnet_shs_dev_notify_cb(struct notifier_block *nb,
 
 	struct net_device *dev = netdev_notifier_info_to_dev(data);
 	static struct net_device *phy_dev;
+	struct rmnet_priv *priv;
+	struct rmnet_port *port;
 
 	if (!dev) {
 		rmnet_shs_crit_err[RMNET_SHS_NETDEV_ERR]++;
@@ -139,10 +142,20 @@ static int rmnet_shs_dev_notify_cb(struct notifier_block *nb,
 				rmnet_shs_cfg.is_timer_init = 1;
 				rmnet_shs_cfg.dl_mrk_ind_cb.priority =
 				   RMNET_SHS;
-				rmnet_shs_cfg.dl_mrk_ind_cb.dl_hdr_handler =
-				   &rmnet_shs_dl_hdr_handler;
-				rmnet_shs_cfg.dl_mrk_ind_cb.dl_trl_handler =
-				   &rmnet_shs_dl_trl_handler;
+				priv = netdev_priv(dev);
+				port = rmnet_get_port(priv->real_dev);
+				if (port->data_format & RMNET_INGRESS_FORMAT_DL_MARKER_V2) {
+					rmnet_shs_cfg.dl_mrk_ind_cb.dl_hdr_handler_v2 =
+						&rmnet_shs_dl_hdr_handler_v2;
+					rmnet_shs_cfg.dl_mrk_ind_cb.dl_trl_handler_v2 =
+						&rmnet_shs_dl_trl_handler_v2;
+				} else {
+					rmnet_shs_cfg.dl_mrk_ind_cb.dl_hdr_handler =
+						&rmnet_shs_dl_hdr_handler;
+					rmnet_shs_cfg.dl_mrk_ind_cb.dl_trl_handler =
+						&rmnet_shs_dl_trl_handler;
+				}
+
 				trace_rmnet_shs_high(RMNET_SHS_MODULE,
 						     RMNET_SHS_MODULE_INIT_WQ,
 						     0xDEF, 0xDEF, 0xDEF,
