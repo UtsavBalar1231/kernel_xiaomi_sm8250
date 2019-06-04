@@ -13,7 +13,7 @@
 				= <RPMH_REGULATOR_LEVEL_RETENTION>;
 			regulator-max-microvolt
 				= <RPMH_REGULATOR_LEVEL_MAX>;
-			regulator-init-voltage-level
+			qcom,init-voltage-level
 				= <RPMH_REGULATOR_LEVEL_RETENTION>;
 			qcom,min-dropout-voltage-level = <(-1)>;
 		};
@@ -26,7 +26,7 @@
 				= <RPMH_REGULATOR_LEVEL_RETENTION>;
 			regulator-max-microvolt
 				= <RPMH_REGULATOR_LEVEL_MAX>;
-			regulator-init-voltage-level
+			qcom,init-voltage-level
 				= <RPMH_REGULATOR_LEVEL_RETENTION>;
 			qcom,min-dropout-voltage-level = <(-1)>;
 		};
