@@ -1767,6 +1767,7 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 	case V4L2_CID_MPEG_VIDC_VENC_NATIVE_RECORDER:
 	case V4L2_CID_MPEG_VIDC_VENC_RC_TIMESTAMP_DISABLE:
 	case V4L2_CID_MPEG_VIDEO_VBV_DELAY:
+	case V4L2_CID_MPEG_VIDC_VENC_BITRATE_SAVINGS:
 		dprintk(VIDC_HIGH, "Control set: ID : %x Val : %d\n",
 			ctrl->id, ctrl->val);
 		break;
