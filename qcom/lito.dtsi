@@ -2446,7 +2446,7 @@
 	};
 
 	llcc_pmu: llcc-pmu@90cc000 {
-		compatible = "qcom,qcom-llcc-pmu";
+		compatible = "qcom,llcc-pmu-ver1";
 		reg = <0x090cc000 0x300>;
 		reg-names = "lagg-base";
 	};
