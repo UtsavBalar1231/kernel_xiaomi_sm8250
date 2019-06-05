@@ -22,6 +22,7 @@
 #include <../drivers/net/ethernet/qualcomm/rmnet/rmnet_map.h>
 #include <../drivers/net/ethernet/qualcomm/rmnet/rmnet_handlers.h>
 #include <../drivers/net/ethernet/qualcomm/rmnet/rmnet_config.h>
+#include <../drivers/net/ethernet/qualcomm/rmnet/rmnet_private.h>
 
 MODULE_LICENSE("GPL v2");
 
@@ -231,10 +232,17 @@ rmnet_perf_config_register_callbacks(struct net_device *dev,
 	dl_ind = kzalloc(sizeof(struct rmnet_map_dl_ind), GFP_ATOMIC);
 	if (dl_ind) {
 		dl_ind->priority = RMNET_PERF;
-		dl_ind->dl_hdr_handler =
-			&rmnet_perf_core_handle_map_control_start;
-		dl_ind->dl_trl_handler =
-			&rmnet_perf_core_handle_map_control_end;
+		if (port->data_format & RMNET_INGRESS_FORMAT_DL_MARKER_V2) {
+			dl_ind->dl_hdr_handler_v2 =
+				&rmnet_perf_core_handle_map_control_start_v2;
+			dl_ind->dl_trl_handler_v2 =
+				&rmnet_perf_core_handle_map_control_end_v2;
+		} else {
+			dl_ind->dl_hdr_handler =
+				&rmnet_perf_core_handle_map_control_start;
+			dl_ind->dl_trl_handler =
+				&rmnet_perf_core_handle_map_control_end;
+		}
 		perf->core_meta->dl_ind = dl_ind;
 		if (rmnet_map_dl_ind_register(port, dl_ind)) {
 			kfree(dl_ind);
