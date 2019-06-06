@@ -1262,7 +1262,6 @@
 		reg-names = "tpdm-base";
 
 		coresight-name = "coresight-tpdm-npu";
-		status = "disabled";
 
 		clocks = <&aopcc QDSS_CLK>;
 
@@ -1323,8 +1322,6 @@
 		reg-names = "funnel-base";
 
 		coresight-name = "coresight-funnel-npu";
-
-		status = "disabled";
 
 		clocks = <&aopcc QDSS_CLK>;
 
