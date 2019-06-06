@@ -637,7 +637,7 @@ int msm_vidc_init_buffer_count(struct msm_vidc_inst *inst)
 			output_min_count = 6;
 			break;
 		case V4L2_PIX_FMT_VP9:
-			output_min_count = 11;
+			output_min_count = 9;
 			break;
 		}
 	}
