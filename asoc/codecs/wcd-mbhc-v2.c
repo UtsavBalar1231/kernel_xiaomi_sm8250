@@ -1105,21 +1105,27 @@ int wcd_mbhc_get_button_mask(struct wcd_mbhc *mbhc)
 	switch (btn) {
 	case 0:
 		mask = SND_JACK_BTN_0;
+        pr_debug("%s() button is 0x%x[hook]", __func__, mask);
 		break;
 	case 1:
 		mask = SND_JACK_BTN_1;
+        pr_debug("%s() button is 0x%x[volume up]", __func__, mask);
 		break;
 	case 2:
 		mask = SND_JACK_BTN_2;
+        pr_debug("%s() button is 0x%x[volume down]", __func__, mask);
 		break;
 	case 3:
 		mask = SND_JACK_BTN_3;
+        pr_debug("%s() button is 0x%x", __func__, mask);
 		break;
 	case 4:
 		mask = SND_JACK_BTN_4;
+        pr_debug("%s() button is 0x%x", __func__, mask);
 		break;
 	case 5:
 		mask = SND_JACK_BTN_5;
+        pr_debug("%s() button is 0x%x", __func__, mask);
 		break;
 	default:
 		break;
