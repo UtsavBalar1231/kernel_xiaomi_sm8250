@@ -2567,6 +2567,13 @@ static void handle_fbd(enum hal_command_response cmd, void *data)
 	mbuf->flags &= ~MSM_VIDC_FLAG_QUEUED;
 	vb = &mbuf->vvb.vb2_buf;
 
+	if (fill_buf_done->buffer_type == HAL_BUFFER_OUTPUT2 &&
+		fill_buf_done->flags1 & HAL_BUFFERFLAG_READONLY) {
+		dprintk(VIDC_ERR,
+			"%s: Read only buffer not allowed for OPB\n", __func__);
+		goto exit;
+	}
+
 	if (fill_buf_done->flags1 & HAL_BUFFERFLAG_DROP_FRAME)
 		fill_buf_done->filled_len1 = 0;
 	vb->planes[0].bytesused = fill_buf_done->filled_len1;
