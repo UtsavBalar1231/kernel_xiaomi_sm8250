@@ -776,7 +776,7 @@ int msm_vdec_inst_init(struct msm_vidc_inst *inst)
 		struct msm_vidc_inst *temp;
 
 		inst->batch.size = MAX_DEC_BATCH_SIZE;
-		inst->decode_batching = true;
+		inst->batch.enable = true;
 
 		mutex_lock(&core->lock);
 		list_for_each_entry(temp, &core->instances, list) {
@@ -784,7 +784,7 @@ int msm_vdec_inst_init(struct msm_vidc_inst *inst)
 				temp->state != MSM_VIDC_CORE_INVALID &&
 				is_decode_session(temp) &&
 				!is_thumbnail_session(temp)) {
-				inst->decode_batching = false;
+				inst->batch.enable = false;
 				dprintk(VIDC_HIGH,
 				"Disable decode-batching in multi sessions\n");
 				break;
