@@ -3236,7 +3236,7 @@ static void __process_sys_error(struct venus_hfi_device *device)
 static void __flush_debug_queue(struct venus_hfi_device *device, u8 *packet)
 {
 	bool local_packet = false;
-	enum vidc_msg_prio log_level = msm_vidc_debug & FW_LOGMASK;
+	enum vidc_msg_prio log_level = msm_vidc_debug;
 
 	if (!device) {
 		dprintk(VIDC_ERR, "%s: Invalid params\n", __func__);
