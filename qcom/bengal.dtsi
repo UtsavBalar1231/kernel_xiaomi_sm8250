@@ -875,5 +875,6 @@
 	status = "ok";
 };
 
+#include "msm-arm-smmu-bengal.dtsi"
 #include "bengal-regulator.dtsi"
 #include "bengal-pinctrl.dtsi"
