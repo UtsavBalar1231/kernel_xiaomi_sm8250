@@ -203,7 +203,7 @@
 	max(((height + 31) >> 5) * MAX_SE_NBR_CTRL_LCU32_LINE_BUFFER_SIZE, \
 	((height + 63) >> 6) * MAX_SE_NBR_CTRL_LCU64_LINE_BUFFER_SIZE))
 #define SIZE_VPXD_LB_RECON_DMA_METADATA_WR(width, height) \
-	ALIGN((ALIGN(height, 8) / (4 / 2)) * 64, BUFFER_ALIGNMENT_SIZE(32))
+	ALIGN((ALIGN(height, 16) / (4 / 2)) * 64, BUFFER_ALIGNMENT_SIZE(32))
 #define SIZE_VP8D_LB_FE_TOP_DATA(width, height) \
 	((ALIGN(width, 16) + 8) * 10 * 2)
 #define SIZE_VP9D_LB_FE_TOP_DATA(width, height) \
