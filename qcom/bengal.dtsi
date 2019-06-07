@@ -742,6 +742,7 @@
 
 #include "bengal-gdsc.dtsi"
 #include "bengal-usb.dtsi"
+#include "bengal-ion.dtsi"
 
 &gcc_camss_top_gdsc {
 	status = "ok";
