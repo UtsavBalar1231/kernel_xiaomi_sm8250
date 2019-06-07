@@ -725,6 +725,36 @@ enum multi_stream msm_comm_get_stream_output_mode(struct msm_vidc_inst *inst)
 		return HAL_VIDEO_DECODER_PRIMARY;
 }
 
+bool is_single_session(struct msm_vidc_inst *inst, u32 ignore_flags)
+{
+	bool single = true;
+	struct msm_vidc_core *core;
+	struct msm_vidc_inst *temp;
+
+	if (!inst || !inst->core) {
+		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		return false;
+	}
+	core = inst->core;
+
+	mutex_lock(&core->lock);
+	list_for_each_entry(temp, &core->instances, list) {
+		/* ignore invalid session */
+		if (temp->state == MSM_VIDC_CORE_INVALID)
+			continue;
+		if ((ignore_flags & VIDC_THUMBNAIL) &&
+			is_thumbnail_session(temp))
+			continue;
+		if (temp != inst) {
+			single = false;
+			break;
+		}
+	}
+	mutex_unlock(&core->lock);
+
+	return single;
+}
+
 static int msm_comm_get_mbs_per_sec(struct msm_vidc_inst *inst)
 {
 	int input_port_mbs, output_port_mbs;
@@ -2783,6 +2813,7 @@ static bool is_thermal_permissible(struct msm_vidc_core *core)
 bool is_batching_allowed(struct msm_vidc_inst *inst)
 {
 	u32 op_pixelformat, fps, maxmbs, maxfps;
+	u32 ignore_flags = VIDC_THUMBNAIL;
 
 	if (!inst || !inst->core)
 		return false;
@@ -2794,7 +2825,7 @@ bool is_batching_allowed(struct msm_vidc_inst *inst)
 	maxmbs = inst->capability.cap[CAP_BATCH_MAX_MB_PER_FRAME].max;
 	maxfps = inst->capability.cap[CAP_BATCH_MAX_FPS].max;
 
-	return (inst->batch.enable &&
+	return (is_single_session(inst, ignore_flags) &&
 		is_decode_session(inst) &&
 		!is_thumbnail_session(inst) &&
 		!inst->clk_data.low_latency_mode &&
@@ -3150,7 +3181,7 @@ static int msm_comm_session_init(int flipped_state,
 		goto exit;
 	}
 
-	rc = msm_vidc_init_buffer_count(inst);
+	rc = msm_vidc_calculate_buffer_counts(inst);
 	if (rc) {
 		dprintk(VIDC_ERR, "Failed to initialize buff counts\n");
 		goto exit;

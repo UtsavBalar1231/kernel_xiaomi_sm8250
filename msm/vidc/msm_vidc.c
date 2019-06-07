@@ -19,6 +19,7 @@
 #include "vidc_hfi_helper.h"
 #include "vidc_hfi_api.h"
 #include "msm_vidc_clocks.h"
+#include "msm_vidc_buffer_calculations.h"
 #include <linux/dma-buf.h>
 
 #define MAX_EVENTS 30
@@ -913,7 +914,15 @@ static inline int start_streaming(struct msm_vidc_inst *inst)
 		}
 	}
 
-	inst->batch.enable = is_batching_allowed(inst);
+	/*
+	 * if batching enabled previously then you may chose
+	 * to disable it based on recent configuration changes.
+	 * if batching already disabled do not enable it again
+	 * as sufficient extra buffers (required for batch mode
+	 * on both ports) may not have been updated to client.
+	 */
+	if (inst->batch.enable)
+		inst->batch.enable = is_batching_allowed(inst);
 	dprintk(VIDC_HIGH, "%s: batching %s for inst %pK (%#x)\n",
 		__func__, inst->batch.enable ? "enabled" : "disabled",
 		inst, hash32_ptr(inst->session));
@@ -1433,12 +1442,22 @@ static int try_get_ctrl_for_instance(struct msm_vidc_inst *inst,
 			inst->level);
 		break;
 	case V4L2_CID_MIN_BUFFERS_FOR_CAPTURE:
+		rc = msm_vidc_calculate_output_buffer_count(inst);
+		if (rc) {
+			dprintk(VIDC_ERR, "g_min: input failed\n", __func__);
+			break;
+		}
 		ctrl->val = inst->fmts[OUTPUT_PORT].count_min_host;
 		dprintk(VIDC_HIGH, "g_min: %x : hal_buffer %d min buffers %d\n",
 			hash32_ptr(inst->session), HAL_BUFFER_OUTPUT,
 			ctrl->val);
 		break;
 	case V4L2_CID_MIN_BUFFERS_FOR_OUTPUT:
+		rc = msm_vidc_calculate_input_buffer_count(inst);
+		if (rc) {
+			dprintk(VIDC_ERR, "g_min: output failed\n", __func__);
+			break;
+		}
 		ctrl->val = inst->fmts[INPUT_PORT].count_min_host;
 		dprintk(VIDC_HIGH, "g_min: %x : hal_buffer %d min buffers %d\n",
 			hash32_ptr(inst->session), HAL_BUFFER_INPUT, ctrl->val);

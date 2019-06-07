@@ -652,6 +652,16 @@ int msm_vdec_s_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 		memcpy(f, &fmt->v4l2_fmt, sizeof(struct v4l2_format));
 	}
 
+	/*
+	 * if batching enabled previously then you may chose
+	 * to disable it based on recent configuration changes.
+	 * if batching already disabled do not enable it again
+	 * as sufficient extra buffers (required for batch mode
+	 * on both ports) may not have been updated to client.
+	 */
+	if (inst->batch.enable)
+		inst->batch.enable = is_batching_allowed(inst);
+
 err_invalid_fmt:
 	return rc;
 }
@@ -773,24 +783,8 @@ int msm_vdec_inst_init(struct msm_vidc_inst *inst)
 	inst->clk_data.frame_rate = (DEFAULT_FPS << 16);
 	inst->clk_data.operating_rate = (DEFAULT_FPS << 16);
 	if (core->resources.decode_batching) {
-		struct msm_vidc_inst *temp;
-
-		inst->batch.size = MAX_DEC_BATCH_SIZE;
 		inst->batch.enable = true;
-
-		mutex_lock(&core->lock);
-		list_for_each_entry(temp, &core->instances, list) {
-			if (temp != inst &&
-				temp->state != MSM_VIDC_CORE_INVALID &&
-				is_decode_session(temp) &&
-				!is_thumbnail_session(temp)) {
-				inst->batch.enable = false;
-				dprintk(VIDC_HIGH,
-				"Disable decode-batching in multi sessions\n");
-				break;
-			}
-		}
-		mutex_unlock(&core->lock);
+		inst->batch.size = MAX_DEC_BATCH_SIZE;
 	}
 
 	inst->buff_req.buffer[1].buffer_type = HAL_BUFFER_INPUT;

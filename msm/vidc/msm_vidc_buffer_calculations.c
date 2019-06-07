@@ -591,16 +591,15 @@ void msm_vidc_init_buffer_size_calculators(struct msm_vidc_inst *inst)
 			msm_vidc_calculate_internal_buffer_sizes;
 }
 
-int msm_vidc_init_buffer_count(struct msm_vidc_inst *inst)
+int msm_vidc_calculate_input_buffer_count(struct msm_vidc_inst *inst)
 {
 	struct msm_vidc_format *fmt;
 	int extra_buff_count = 0;
-	u32 codec, input_min_count = 4, output_min_count = 4;
+	u32 input_min_count = 4;
 
 	if (!is_decode_session(inst) && !is_encode_session(inst))
 		return 0;
 
-	codec = get_v4l2_codec(inst);
 	/*
 	 * Update input buff counts
 	 * Extradata uses same count as input port
@@ -621,6 +620,19 @@ int msm_vidc_init_buffer_count(struct msm_vidc_inst *inst)
 		__func__, hash32_ptr(inst->session),
 		fmt->count_min, fmt->count_min_host, fmt->count_actual);
 
+	return 0;
+}
+
+int msm_vidc_calculate_output_buffer_count(struct msm_vidc_inst *inst)
+{
+	struct msm_vidc_format *fmt;
+	int extra_buff_count = 0;
+	u32 codec, output_min_count = 4;
+
+	if (!is_decode_session(inst) && !is_encode_session(inst))
+		return 0;
+
+	codec = get_v4l2_codec(inst);
 	/* Update output buff count: Changes for decoder based on codec */
 	if (is_decode_session(inst)) {
 		switch (codec) {
@@ -654,6 +666,21 @@ int msm_vidc_init_buffer_count(struct msm_vidc_inst *inst)
 
 	return 0;
 }
+
+int msm_vidc_calculate_buffer_counts(struct msm_vidc_inst *inst)
+{
+	int rc;
+
+	rc = msm_vidc_calculate_input_buffer_count(inst);
+	if (rc)
+		return rc;
+	rc = msm_vidc_calculate_output_buffer_count(inst);
+	if (rc)
+		return rc;
+
+	return rc;
+}
+
 u32 msm_vidc_set_buffer_count_for_thumbnail(struct msm_vidc_inst *inst)
 {
 	struct msm_vidc_format *fmt;

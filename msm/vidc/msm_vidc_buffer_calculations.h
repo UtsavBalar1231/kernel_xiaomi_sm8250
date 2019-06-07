@@ -25,7 +25,9 @@ struct msm_vidc_enc_buff_size_calculators {
 };
 
 void msm_vidc_init_buffer_size_calculators(struct msm_vidc_inst *inst);
-int msm_vidc_init_buffer_count(struct msm_vidc_inst *inst);
+int msm_vidc_calculate_input_buffer_count(struct msm_vidc_inst *inst);
+int msm_vidc_calculate_output_buffer_count(struct msm_vidc_inst *inst);
+int msm_vidc_calculate_buffer_counts(struct msm_vidc_inst *inst);
 int msm_vidc_get_extra_buff_count(struct msm_vidc_inst *inst,
 	enum hal_buffer buffer_type);
 u32 msm_vidc_calculate_dec_input_frame_size(struct msm_vidc_inst *inst);
