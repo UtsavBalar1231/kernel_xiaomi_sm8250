@@ -2622,13 +2622,42 @@
 			qupv3_se0_i3c_sleep: qupv3_se0_i3c_sleep {
 				mux {
 					pins = "gpio28", "gpio29";
-					function = "gpio";
+					function = "ibi_i3c";
 				};
 
 				config {
 					pins = "gpio28", "gpio29";
-					drive-strength = <2>;
-					bias-disable;
+					drive-strength = <16>;
+					bias-pull-up;
+				};
+			};
+		};
+
+		/* QUPv3_0 North SE1 mappings */
+		qupv3_se1_i3c_pins: qupv3_se1_i3c_pins {
+			qupv3_se1_i3c_active: qupv3_se1_i3c_active {
+				mux {
+					pins = "gpio4", "gpio5";
+					function = "ibi_i3c";
+				};
+
+				config {
+					pins = "gpio4", "gpio5";
+					drive-strength = <16>;
+					bias-pull-up;
+				};
+			};
+
+			qupv3_se1_i3c_sleep: qupv3_se1_i3c_sleep {
+				mux {
+					pins = "gpio4", "gpio5";
+					function = "ibi_i3c";
+				};
+
+				config {
+					pins = "gpio4", "gpio5";
+					drive-strength = <16>;
+					bias-pull-up;
 				};
 			};
 		};
