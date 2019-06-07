@@ -1286,36 +1286,6 @@ int msm_vdec_set_priority(struct msm_vidc_inst *inst)
 	return rc;
 }
 
-int msm_vdec_set_operating_rate(struct msm_vidc_inst *inst)
-{
-	int rc = 0;
-	struct hfi_device *hdev;
-	struct v4l2_ctrl *ctrl;
-	struct hfi_operating_rate operating_rate;
-
-	if (!inst || !inst->core) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
-		return -EINVAL;
-	}
-	hdev = inst->core->device;
-
-	if (is_decode_session(inst))
-		return 0;
-
-	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_OPERATING_RATE);
-	operating_rate.operating_rate = ctrl->val;
-
-	dprintk(VIDC_HIGH, "%s: %#x\n", __func__,
-			operating_rate.operating_rate);
-	rc = call_hfi_op(hdev, session_set_property, inst->session,
-		HFI_PROPERTY_CONFIG_OPERATING_RATE, &operating_rate,
-		sizeof(operating_rate));
-	if (rc)
-		dprintk(VIDC_ERR, "%s: set property failed\n", __func__);
-
-	return rc;
-}
-
 int msm_vdec_set_conceal_color(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
@@ -1460,9 +1430,6 @@ int msm_vdec_set_properties(struct msm_vidc_inst *inst)
 	if (rc)
 		goto exit;
 	rc = msm_vdec_set_output_buffer_counts(inst);
-	if (rc)
-		goto exit;
-	rc = msm_vdec_set_operating_rate(inst);
 	if (rc)
 		goto exit;
 
