@@ -21,3 +21,7 @@
 &CPU7 {
 	dynamic-power-coefficient = <642>;
 };
+
+&clock_camcc {
+	compatible = "qcom,camcc-kona-v2", "syscon";
+};
