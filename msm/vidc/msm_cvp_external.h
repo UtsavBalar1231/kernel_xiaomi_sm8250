@@ -37,6 +37,14 @@
 #define HFI_DME_INTERNAL_PERSIST_2_BUFFER_SIZE  (512 * 1024)
 #define HFI_DME_FRAME_CONTEXT_BUFFER_SIZE       (64 * 1024)
 
+#define CVP_KMD_HFI_VERSION_PROP_TYPE           (1)
+#define CVP_KMD_HFI_VERSION_PROP_NUMBER	        (1)
+
+static inline bool is_vidc_cvp_enabled(struct msm_vidc_inst *inst)
+{
+	return !!inst->cvp;
+}
+
 enum HFI_COLOR_PLANE_TYPE {
 	HFI_COLOR_PLANE_METADATA,
 	HFI_COLOR_PLANE_PICDATA,
@@ -45,21 +53,35 @@ enum HFI_COLOR_PLANE_TYPE {
 	HFI_MAX_COLOR_PLANES
 };
 
-static inline bool is_vidc_cvp_enabled(struct msm_vidc_inst *inst)
-{
-	return !!inst->cvp;
-}
+struct msm_cvp_color_plane_info {
+	u32 stride[HFI_MAX_COLOR_PLANES];
+	u32 buf_size[HFI_MAX_COLOR_PLANES];
+};
+
+struct msm_cvp_client_data {
+	u32 transactionid;
+	u32 client_data1;
+	u32 client_data2;
+	u32 kernel_data1;
+	u32 kernel_data2;
+	u32 reserved1;
+	u32 reserved2;
+};
 
 struct msm_cvp_buffer_type {
 	u32 buffer_addr;
 	u32 size;
+	u32 offset;
+	u32 flags;
+	u32 reserved1;
+	u32 reserved2;
 };
 
 struct msm_cvp_session_release_persist_buffers_packet {
 	u32 size;
 	u32 packet_type;
 	u32 session_id;
-	struct cvp_kmd_client_data client_data;
+	struct msm_cvp_client_data client_data;
 	u32 cvp_op;
 	struct msm_cvp_buffer_type persist1_buffer;
 	struct msm_cvp_buffer_type persist2_buffer;
@@ -69,7 +91,7 @@ struct msm_cvp_session_set_persist_buffers_packet {
 	u32 size;
 	u32 packet_type;
 	u32 session_id;
-	struct cvp_kmd_client_data client_data;
+	struct msm_cvp_client_data client_data;
 	u32 cvp_op;
 	struct msm_cvp_buffer_type persist1_buffer;
 	struct msm_cvp_buffer_type persist2_buffer;
@@ -79,13 +101,16 @@ struct msm_cvp_dme_frame_packet {
 	u32 size;
 	u32 packet_type;
 	u32 session_id;
-	struct cvp_kmd_client_data client_data;
+	struct msm_cvp_client_data client_data;
+	u32 stream_idx;
 	u32 skip_mv_calc;
 	u32 min_fpx_threshold;
 	u32 enable_descriptor_lpf;
 	u32 enable_ncc_subpel;
 	u32 descmatch_threshold;
 	int ncc_robustness_threshold;
+	u32 reserved[8];
+	u32 buf_marker;
 	struct msm_cvp_buffer_type fullres_srcbuffer;
 	struct msm_cvp_buffer_type src_buffer;
 	struct msm_cvp_buffer_type srcframe_contextbuffer;
@@ -100,15 +125,16 @@ struct msm_cvp_dme_basic_config_packet {
 	u32 size;
 	u32 packet_type;
 	u32 session_id;
-	struct cvp_kmd_client_data client_data;
+	struct msm_cvp_client_data client_data;
+	u32 stream_idx;
 	u32 srcbuffer_format;
-	struct cvp_kmd_color_plane_info srcbuffer_planeinfo;
+	struct msm_cvp_color_plane_info srcbuffer_planeinfo;
 	u32 src_width;
 	u32 src_height;
 	u32 fullres_width;
 	u32 fullres_height;
 	u32 fullresbuffer_format;
-	struct cvp_kmd_color_plane_info fullresbuffer_planeinfo;
+	struct msm_cvp_color_plane_info fullresbuffer_planeinfo;
 	u32 ds_enable;
 	u32 enable_lrme_robustness;
 	u32 enable_inlier_tracking;
