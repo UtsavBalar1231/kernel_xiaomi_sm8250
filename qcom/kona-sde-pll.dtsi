@@ -66,10 +66,16 @@
 		reg = <0x088ea000 0x200>,
 		      <0x088eaa00 0x200>,
 		      <0x088ea200 0x200>,
+		      <0x088ea2b8 0x8>,
+		      <0x088ea2e8 0x4>,
 		      <0x088ea600 0x200>,
+		      <0x088ea6b8 0x8>,
+		      <0x088ea6e8 0x4>,
 		      <0xaf03000 0x8>;
-		reg-names = "pll_base", "phy_base", "ln_tx0_base",
-			"ln_tx1_base", "gdsc_base";
+		reg-names = "pll_base", "phy_base",
+			"ln_tx0_base", "ln_tx0_tran_base", "ln_tx0_vmode_base",
+			"ln_tx1_base", "ln_tx1_tran_base", "ln_tx1_vmode_base",
+			"gdsc_base";
 
 		clocks = <&clock_dispcc DISP_CC_MDSS_AHB_CLK>,
 			<&clock_rpmh RPMH_CXO_CLK>,
