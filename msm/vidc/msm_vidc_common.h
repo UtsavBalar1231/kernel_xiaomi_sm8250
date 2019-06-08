@@ -174,6 +174,8 @@ int msm_comm_release_dpb_only_buffers(struct msm_vidc_inst *inst,
 void msm_comm_validate_output_buffers(struct msm_vidc_inst *inst);
 int msm_comm_force_cleanup(struct msm_vidc_inst *inst);
 int msm_comm_suspend(int core_id);
+int msm_comm_reset_bufreqs(struct msm_vidc_inst *inst,
+	enum hal_buffer buf_type);
 struct hal_buffer_requirements *get_buff_req_buffer(
 			struct msm_vidc_inst *inst, u32 buffer_type);
 #define IS_PRIV_CTRL(idx) (\

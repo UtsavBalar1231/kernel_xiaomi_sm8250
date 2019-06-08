@@ -3437,6 +3437,29 @@ static int get_flipped_state(int present_state,
 	return flipped_state;
 }
 
+int msm_comm_reset_bufreqs(struct msm_vidc_inst *inst, enum hal_buffer buf_type)
+{
+	struct hal_buffer_requirements *bufreqs;
+
+	if (!inst) {
+		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		return -EINVAL;
+	}
+
+	bufreqs = get_buff_req_buffer(inst, buf_type);
+	if (!bufreqs) {
+		dprintk(VIDC_ERR, "%s: invalid buf type %d\n",
+			__func__, buf_type);
+		return -EINVAL;
+	}
+	bufreqs->buffer_size = bufreqs->buffer_region_size =
+	bufreqs->buffer_count_min = bufreqs->buffer_count_min_host =
+	bufreqs->buffer_count_actual = bufreqs->contiguous =
+	bufreqs->buffer_alignment = 0;
+
+	return 0;
+}
+
 struct hal_buffer_requirements *get_buff_req_buffer(
 		struct msm_vidc_inst *inst, enum hal_buffer buffer_type)
 {
@@ -4447,6 +4470,14 @@ int msm_comm_try_get_bufreqs(struct msm_vidc_inst *inst)
 {
 	int rc = -EINVAL, i = 0;
 	union hal_get_property hprop;
+	enum hal_buffer int_buf[] = {
+			HAL_BUFFER_INTERNAL_SCRATCH,
+			HAL_BUFFER_INTERNAL_SCRATCH_1,
+			HAL_BUFFER_INTERNAL_SCRATCH_2,
+			HAL_BUFFER_INTERNAL_PERSIST,
+			HAL_BUFFER_INTERNAL_PERSIST_1,
+			HAL_BUFFER_INTERNAL_RECON,
+	};
 
 	memset(&hprop, 0x0, sizeof(hprop));
 	/*
@@ -4472,6 +4503,10 @@ int msm_comm_try_get_bufreqs(struct msm_vidc_inst *inst)
 				"Failed getting buffer requirements: %d", rc);
 			return rc;
 		}
+
+		/* reset internal buffers */
+		for (i = 0; i < ARRAY_SIZE(int_buf); i++)
+			msm_comm_reset_bufreqs(inst, int_buf[i]);
 
 		for (i = 0; i < HAL_BUFFER_MAX; i++) {
 			struct hal_buffer_requirements req;
