@@ -221,6 +221,7 @@ static void ufshcd_update_uic_error_cnt(struct ufs_hba *hba, u32 reg, int type)
 /* UIC command timeout, unit: ms */
 #define UIC_CMD_TIMEOUT	500
 
+#define UIC_MI_CMD_TIMEOUT	3000
 /* NOP OUT retries waiting for NOP IN response */
 #define NOP_OUT_RETRIES    10
 /* Timeout after 30 msecs if NOP OUT hangs without response */
@@ -5262,7 +5263,7 @@ static int ufshcd_uic_pwr_ctrl(struct ufs_hba *hba, struct uic_command *cmd)
 more_wait:
 	if (!oops_in_progress) {
 		if (!wait_for_completion_timeout(hba->uic_async_done,
-						msecs_to_jiffies(UIC_CMD_TIMEOUT))) {
+						msecs_to_jiffies(UIC_MI_CMD_TIMEOUT))) {
 			u32 intr_status = 0;
 			s64 ts_since_last_intr;
 
