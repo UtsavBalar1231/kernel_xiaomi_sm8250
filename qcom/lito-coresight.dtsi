@@ -1281,11 +1281,30 @@
 		reg-names = "tpdm-base";
 
 		coresight-name = "coresight-tpdm-npu-llm";
-		status = "disabled";
 
-		clocks = <&aopcc QDSS_CLK>;
+		clocks = <&aopcc QDSS_CLK>,
+				<&npucc NPU_CC_DL_LLM_CLK>,
+				<&npucc NPU_CC_LLM_CLK>,
+				<&npucc NPU_CC_LLM_CURR_CLK>,
+				<&npucc NPU_CC_LLM_TEMP_CLK>,
+				<&npucc NPU_CC_LLM_XO_CLK>;
 
-		clock-names = "apb_pclk";
+		clock-names = "apb_pclk",
+				"dl_llm_clk",
+				"llm_clk",
+				"llm_curr_clk",
+				"llm_temp_clk",
+				"llm_xo_clk";
+
+		qcom,proxy-clks = "dl_llm_clk",
+				"llm_clk",
+				"llm_curr_clk",
+				"llm_temp_clk",
+				"llm_xo_clk";
+
+		vdd-supply = <&npu_core_gdsc>;
+		vdd_cx-supply = <&VDD_CX_LEVEL>;
+		qcom,proxy-regs ="vdd", "vdd_cx";
 
 		port {
 			tpdm_npu_llm_out_funnel_npu: endpoint {
@@ -1301,11 +1320,28 @@
 		reg-names = "tpdm-base";
 
 		coresight-name = "coresight-tpdm-npu-dpm";
-		status = "disabled";
 
-		clocks = <&aopcc QDSS_CLK>;
+		clocks = <&aopcc QDSS_CLK>,
+				<&npucc NPU_CC_DL_DPM_CLK>,
+				<&npucc NPU_CC_DPM_CLK>,
+				<&npucc NPU_CC_DPM_TEMP_CLK>,
+				<&npucc NPU_CC_DPM_XO_CLK>;
 
-		clock-names = "apb_pclk";
+		clock-names = "apb_pclk",
+				"dl_dpm_clk",
+				"dpm_clk",
+				"dpm_temp_clk",
+				"dpm_xo_clk";
+
+		qcom,proxy-clks = "dl_dpm_clk",
+				"dpm_clk",
+				"dpm_temp_clk",
+				"dpm_xo_clk";
+
+		vdd-supply = <&npu_core_gdsc>;
+		vdd_cx-supply = <&VDD_CX_LEVEL>;
+		qcom,proxy-regs ="vdd", "vdd_cx";
+
 
 		port {
 			tpdm_npu_dpm_out_funnel_npu: endpoint {
