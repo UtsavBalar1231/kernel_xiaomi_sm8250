@@ -1248,6 +1248,15 @@ int msm_venc_s_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 		mplane->width = f->fmt.pix_mp.width;
 		mplane->height = f->fmt.pix_mp.height;
 		mplane->pixelformat = f->fmt.pix_mp.pixelformat;
+
+		if (!inst->profile) {
+			rc = msm_venc_set_default_profile(inst);
+			if (rc) {
+				dprintk(VIDC_ERR, "%s: Failed to set default profile type\n", __func__);
+				goto exit;
+			}
+		}
+
 		rc = msm_comm_try_state(inst, MSM_VIDC_OPEN_DONE);
 		if (rc) {
 			dprintk(VIDC_ERR, "Failed to open instance\n");
@@ -1324,6 +1333,26 @@ int msm_venc_s_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 	}
 exit:
 	return rc;
+}
+
+int msm_venc_set_default_profile(struct msm_vidc_inst *inst)
+{
+	if (!inst) {
+		dprintk(VIDC_ERR,
+			"%s: invalid params\n", __func__);
+		return -EINVAL;
+	}
+
+	if (get_v4l2_codec(inst) == V4L2_PIX_FMT_HEVC)
+		inst->profile = HFI_HEVC_PROFILE_MAIN;
+	else if (get_v4l2_codec(inst) == V4L2_PIX_FMT_VP8)
+		inst->profile = HFI_VP8_PROFILE_MAIN;
+	else if (get_v4l2_codec(inst) == V4L2_PIX_FMT_H264)
+		inst->profile = HFI_H264_PROFILE_HIGH;
+	else
+		dprintk(VIDC_ERR,
+			"%s: Invalid codec type %#x\n", __func__, get_v4l2_codec(inst));
+	return 0;
 }
 
 int msm_venc_g_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
