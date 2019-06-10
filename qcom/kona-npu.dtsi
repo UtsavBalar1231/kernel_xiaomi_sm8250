@@ -81,6 +81,14 @@
 		qcom,proxy-reg-names ="vdd", "vdd_cx";
 		qcom,vdd_cx-uV-uA = <RPMH_REGULATOR_LEVEL_TURBO 100000>;
 		#cooling-cells = <2>;
+		mboxes = <&ipcc_mproc IPCC_CLIENT_NPU
+				IPCC_MPROC_SIGNAL_GLINK_QMP>,
+			<&ipcc_mproc IPCC_CLIENT_NPU
+				IPCC_MPROC_SIGNAL_SMP2P>,
+			<&ipcc_mproc IPCC_CLIENT_NPU
+				IPCC_MPROC_SIGNAL_PING>;
+		mbox-names = "ipcc-glink", "ipcc-smp2p", "ipcc-ping";
+		#mbox-cells = <2>;
 		qcom,npu-pwrlevels {
 			#address-cells = <1>;
 			#size-cells = <0>;

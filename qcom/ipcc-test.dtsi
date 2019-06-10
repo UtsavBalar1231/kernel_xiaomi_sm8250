@@ -33,6 +33,6 @@
 		compatible = "qcom,ipcc-self-ping";
 		interrupts-extended = <&ipcc_mproc IPCC_CLIENT_NPU
 				IPCC_MPROC_SIGNAL_PING IRQ_TYPE_LEVEL_HIGH>;
-		mboxes = <&ipcc_mproc IPCC_CLIENT_NPU IPCC_MPROC_SIGNAL_PING>;
+		mboxes = <&msm_npu IPCC_CLIENT_NPU IPCC_MPROC_SIGNAL_PING>;
 	};
 };
