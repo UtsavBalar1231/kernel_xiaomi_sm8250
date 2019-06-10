@@ -370,7 +370,7 @@
 			qcom,base-name = "config_noc-base";
 			qcom,qos-off = <0>;
 			qcom,base-offset = <0>;
-			qcom,sbm-offset = <0>;
+			qcom,sbm-offset = <24576>;
 			qcom,bus-type = <1>;
 			clocks = <>;
 		};
@@ -1496,6 +1496,7 @@
 			qcom,agg-ports = <1>;
 			qcom,bus-dev = <&fab_config_noc>;
 			qcom,bcms = <&bcm_cn0>;
+			qcom,disable-ports = <0 1 2>;
 			mmcx-supply = <&VDD_MMCX_LEVEL>;
 			node-reg-names = "mmcx";
 		};
@@ -1589,6 +1590,7 @@
 			qcom,agg-ports = <1>;
 			qcom,bus-dev = <&fab_config_noc>;
 			qcom,bcms = <&bcm_cn0>;
+			qcom,disable-ports = <3 4>;
 			mmcx-supply = <&VDD_MMCX_LEVEL>;
 			node-reg-names = "mmcx";
 		};
@@ -1873,6 +1875,7 @@
 			qcom,agg-ports = <1>;
 			qcom,bus-dev = <&fab_config_noc>;
 			qcom,bcms = <&bcm_cn0>;
+			qcom,disable-ports = <5 6 7>;
 			mmcx-supply = <&VDD_MMCX_LEVEL>;
 			node-reg-names = "mmcx";
 		};
