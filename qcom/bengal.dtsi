@@ -644,4 +644,4 @@
 	status = "ok";
 };
 
-
+#include "bengal-regulator.dtsi"
