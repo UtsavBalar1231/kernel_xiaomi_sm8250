@@ -154,8 +154,8 @@
 	va_macro: va-macro@3370000 {
 		compatible = "qcom,va-macro";
 		reg = <0x3370000 0x0>;
-		clock-names = "va_core_clk";
-		clocks = <&clock_audio_va_1 0>;
+		clock-names = "lpass_audio_hw_vote";
+		clocks = <&lpass_audio_hw_vote 0>;
 		qcom,va-dmic-sample-rate = <600000>;
 		qcom,va-clk-mux-select = <1>;
 		qcom,va-island-mode-muxsel = <0x033A0000>;

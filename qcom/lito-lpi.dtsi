@@ -1384,7 +1384,7 @@
 				pins = "gpio1";
 				drive-strength = <2>;
 				input-enable;
-				bias-pull-down;
+				bias-bus-hold;
 			};
 		};
 
