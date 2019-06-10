@@ -175,7 +175,7 @@
 };
 
 &mdss_mdp {
-	connectors = <&sde_wb &sde_dsi &sde_dsi1 &sde_dp>;
+	connectors = <&sde_wb &sde_dsi &sde_dsi1 &sde_dp &sde_rscc>;
 };
 
 /* PHY TIMINGS REVISION W */
