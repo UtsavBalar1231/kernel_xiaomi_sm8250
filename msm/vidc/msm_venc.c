@@ -41,6 +41,7 @@
 #define MAX_CBR_H 720
 #define LEGACY_CBR_BUF_SIZE 500
 #define CBR_PLUS_BUF_SIZE 1000
+#define MAX_GOP 0xFFFFFFF
 
 #define L_MODE V4L2_MPEG_VIDEO_H264_LOOP_FILTER_MODE_DISABLED_AT_SLICE_BOUNDARY
 #define MIN_NUM_ENC_OUTPUT_BUFFERS 4
@@ -91,7 +92,7 @@ static struct msm_vidc_ctrl msm_venc_ctrls[] = {
 		.name = "Intra Period for P frames",
 		.type = V4L2_CTRL_TYPE_INTEGER,
 		.minimum = 0,
-		.maximum = INT_MAX,
+		.maximum = MAX_GOP,
 		.default_value = 2*DEFAULT_FPS-1,
 		.step = 1,
 		.qmenu = NULL,
