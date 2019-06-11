@@ -11,6 +11,7 @@
 #include <linux/platform_device.h>
 #include <linux/pm_qos.h>
 #include <linux/spinlock.h>
+#include <linux/clk-provider.h>
 #include "vidc_hfi_api.h"
 #include "vidc_hfi_helper.h"
 #include "vidc_hfi_api.h"
