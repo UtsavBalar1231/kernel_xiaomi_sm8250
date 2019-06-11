@@ -31,7 +31,6 @@
 #define LPWR_CLUSTER 0
 #define PERF_CLUSTER 4
 #define PERF_CORES 4
-#define PERF_MASK 0xF0
 
 #define INVALID_CPU -1
 
@@ -989,6 +988,7 @@ void rmnet_shs_flush_lock_table(u8 flsh, u8 ctxt)
 			    !rmnet_shs_cpu_node_tbl[cpu_num].prio) {
 
 				rmnet_shs_cpu_node_tbl[cpu_num].prio = 1;
+				rmnet_shs_boost_cpus();
 				if (hrtimer_active(&GET_CTIMER(cpu_num)))
 					hrtimer_cancel(&GET_CTIMER(cpu_num));
 
@@ -1223,8 +1223,9 @@ enum hrtimer_restart rmnet_shs_queue_core(struct hrtimer *t)
 	struct core_flush_s *core_work = container_of(t,
 				 struct core_flush_s, core_timer);
 
-	schedule_work(&core_work->work);
+	rmnet_shs_reset_cpus();
 
+	schedule_work(&core_work->work);
 	return ret;
 }
 
@@ -1320,6 +1321,8 @@ void rmnet_shs_init(struct net_device *dev, struct net_device *vnd)
 	rmnet_shs_cfg.map_len = rmnet_shs_get_mask_len(rmnet_shs_cfg.map_mask);
 	for (num_cpu = 0; num_cpu < MAX_CPUS; num_cpu++)
 		INIT_LIST_HEAD(&rmnet_shs_cpu_node_tbl[num_cpu].node_list_id);
+
+	rmnet_shs_freq_init();
 
 	rmnet_shs_cfg.rmnet_shs_init_complete = 1;
 }
@@ -1587,6 +1590,7 @@ void rmnet_shs_assign(struct sk_buff *skb, struct rmnet_port *port)
  */
 void rmnet_shs_exit(void)
 {
+	rmnet_shs_freq_exit();
 	qmi_rmnet_ps_ind_deregister(rmnet_shs_cfg.port,
 				    &rmnet_shs_cfg.rmnet_idl_ind_cb);
 

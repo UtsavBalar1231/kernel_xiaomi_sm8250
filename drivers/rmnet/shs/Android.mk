@@ -13,7 +13,7 @@ LOCAL_CLANG :=true
 LOCAL_MODULE_PATH := $(KERNEL_MODULES_OUT)
 LOCAL_MODULE := rmnet_shs.ko
 
-LOCAL_SRC_FILES := rmnet_shs_main.c rmnet_shs_config.c rmnet_shs_wq.c
+LOCAL_SRC_FILES := rmnet_shs_main.c rmnet_shs_config.c rmnet_shs_wq.c rmnet_shs_freq.c
 
 RMNET_SHS_BLD_DIR := ../../vendor/qcom/opensource/data-kernel/drivers/rmnet/shs
 DLKM_DIR := ./device/qcom/common/dlkm

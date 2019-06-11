@@ -19,6 +19,8 @@
 #ifndef _RMNET_SHS_H_
 #define _RMNET_SHS_H_
 
+#include "rmnet_shs_freq.h"
+
 #include <../drivers/net/ethernet/qualcomm/rmnet/rmnet_config.h>
 #include <../drivers/net/ethernet/qualcomm/rmnet/rmnet_map.h>
 #include <../drivers/net/ethernet/qualcomm/rmnet/rmnet_private.h>
@@ -32,6 +34,7 @@
 #define RMNET_SHS_MAX_SKB_INACTIVE_TSEC 30
 #define MAX_SILVER_CORES 4
 #define MAX_CPUS  8
+#define PERF_MASK 0xF0
 
 /* RPS mask change's Default core for orphaned CPU flows */
 #define MAIN_CORE 0
