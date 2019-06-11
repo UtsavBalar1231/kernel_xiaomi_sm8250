@@ -802,11 +802,11 @@
 
 	dcc: dcc_v2@1022000 {
 		compatible = "qcom,dcc-v2";
-		reg = <0x1023000 0x1000>,
+		reg = <0x1022000 0x1000>,
 			<0x103b000 0x5000>;
 		reg-names = "dcc-base", "dcc-ram-base";
 
-		dcc-ram-offset = <0x1b000>;
+		dcc-ram-offset = <0xb000>;
 	};
 
 	restart@c264000 {
