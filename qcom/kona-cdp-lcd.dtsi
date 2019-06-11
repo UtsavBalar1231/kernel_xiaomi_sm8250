@@ -13,55 +13,74 @@
 	status = "ok";
 };
 
-&dsi_panel_pwr_supply_avdd {
-	qcom,panel-supply-entry@1 {
-		reg = <1>;
-		qcom,supply-name = "lab";
-		qcom,supply-min-voltage = <4600000>;
-		qcom,supply-max-voltage = <6000000>;
-		qcom,supply-enable-load = <100000>;
-		qcom,supply-disable-load = <100>;
-	};
-
-	qcom,panel-supply-entry@2 {
-		reg = <2>;
-		qcom,supply-name = "ibb";
-		qcom,supply-min-voltage = <4600000>;
-		qcom,supply-max-voltage = <6000000>;
-		qcom,supply-enable-load = <100000>;
-		qcom,supply-disable-load = <100>;
-		qcom,supply-post-on-sleep = <20>;
-	};
-};
-
 &dsi_sharp_4k_dsc_cmd {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_lab_ibb>;
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_wled";
 	/delete-property/ qcom,platform-en-gpio;
 };
 
 &dsi_sharp_4k_dsc_video {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_lab_ibb>;
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_wled";
 	/delete-property/ qcom,platform-en-gpio;
 };
 
 &dsi_sharp_1080_cmd {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_lab_ibb>;
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_wled";
 };
 
 &dsi_dual_nt35597_truly_cmd {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_lab_ibb>;
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_wled";
 };
 
 &dsi_dual_nt35597_truly_video {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_lab_ibb>;
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_wled";
 };
 
 &dsi_nt35695b_truly_fhd_cmd {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_lab_ibb>;
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_wled";
 };
 
 &dsi_nt35695b_truly_fhd_video {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_lab_ibb>;
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_wled";
+};
+
+&dsi_sim_cmd {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_lab_ibb>;
+};
+
+&dsi_sim_vid {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_lab_ibb>;
+};
+
+&dsi_sim_dsc_375_cmd {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_lab_ibb>;
+};
+
+&dsi_sim_dsc_10b_cmd {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_lab_ibb>;
+};
+
+&dsi_dual_sim_cmd {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_lab_ibb>;
+};
+
+&dsi_dual_sim_vid {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_lab_ibb>;
+};
+
+&dsi_dual_sim_dsc_375_cmd {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_lab_ibb>;
+};
+
+&dsi_sim_sec_hd_cmd {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_lab_ibb>;
+	qcom,panel-sec-supply-entries = <&dsi_panel_pwr_supply_avdd>;
 };
 
 &sde_dsi {
@@ -69,4 +88,9 @@
 	lab-supply = <&lcdb_ldo_vreg>;
 	ibb-supply = <&lcdb_ncp_vreg>;
 	qcom,dsi-default-panel = <&dsi_sharp_4k_dsc_cmd>;
+};
+
+&sde_dsi1 {
+	lab-supply = <&lcdb_ldo_vreg>;
+	ibb-supply = <&lcdb_ncp_vreg>;
 };
