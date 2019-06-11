@@ -171,11 +171,13 @@ static unsigned long __calculate_decoder(struct vidc_bus_vote_data *d,
 	ddr.dpb_read = fp_div(fp_mult(ddr.dpb_read,
 			fp_mult(dpb_factor, motion_vector_complexity)),
 			dpb_read_compression_factor);
+	ddr.dpb_read += fp_div(ddr.dpb_read, FP_INT(2));
 
 	ddr.dpb_write = dpb_bpp == 8 ? y_bw_no_ubwc_8bpp : y_bw_no_ubwc_10bpp;
 	ddr.dpb_write = fp_div(fp_mult(ddr.dpb_write,
 			fp_mult(dpb_factor, dpb_write_factor)),
 			dpb_write_compression_factor);
+	ddr.dpb_write += fp_div(ddr.dpb_write, FP_INT(2));
 
 	dpb_total = ddr.dpb_read + ddr.dpb_write;
 
