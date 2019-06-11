@@ -6,11 +6,14 @@
 		#clock-cells = <1>;
 		reg = <0xae94900 0x260>,
 		      <0xae94400 0x800>,
-		      <0xaf03000 0x8>;
-		reg-names = "pll_base", "phy_base", "gdsc_base";
+		      <0xaf03000 0x8>,
+		      <0xae94200 0x100>;
+		reg-names = "pll_base", "phy_base", "gdsc_base",
+				"dynamic_pll_base";
 		clocks = <&clock_dispcc DISP_CC_MDSS_AHB_CLK>;
 		clock-names = "iface_clk";
 		clock-rate = <0>;
+		memory-region = <&dfps_data_memory>;
 		gdsc-supply = <&mdss_core_gdsc>;
 		qcom,dsi-pll-ssc-en;
 		qcom,dsi-pll-ssc-mode = "down-spread";
@@ -35,8 +38,10 @@
 		#clock-cells = <1>;
 		reg = <0xae96900 0x260>,
 		      <0xae96400 0x800>,
-		      <0xaf03000 0x8>;
-		reg-names = "pll_base", "phy_base", "gdsc_base";
+		      <0xaf03000 0x8>,
+		      <0xae96200 0x100>;
+		reg-names = "pll_base", "phy_base", "gdsc_base",
+				"dynamic_pll_base";
 		clocks = <&clock_dispcc DISP_CC_MDSS_AHB_CLK>;
 		clock-names = "iface_clk";
 		clock-rate = <0>;

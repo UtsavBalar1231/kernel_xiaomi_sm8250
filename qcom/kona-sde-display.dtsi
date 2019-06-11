@@ -150,10 +150,23 @@
 
 		clocks = <&mdss_dsi0_pll BYTECLK_MUX_0_CLK>,
 			 <&mdss_dsi0_pll PCLK_MUX_0_CLK>,
+			 <&mdss_dsi0_pll BYTECLK_SRC_0_CLK>,
+			 <&mdss_dsi0_pll PCLK_SRC_0_CLK>,
+			 <&mdss_dsi0_pll SHADOW_BYTECLK_SRC_0_CLK>,
+			 <&mdss_dsi0_pll SHADOW_PCLK_SRC_0_CLK>,
 			 <&mdss_dsi1_pll BYTECLK_MUX_1_CLK>,
-			 <&mdss_dsi1_pll PCLK_MUX_1_CLK>;
-		clock-names = "src_byte_clk0", "src_pixel_clk0",
-			      "src_byte_clk1", "src_pixel_clk1";
+			 <&mdss_dsi1_pll PCLK_MUX_1_CLK>,
+			 <&mdss_dsi1_pll BYTECLK_SRC_1_CLK>,
+			 <&mdss_dsi1_pll PCLK_SRC_1_CLK>,
+			 <&mdss_dsi1_pll SHADOW_BYTECLK_SRC_1_CLK>,
+			 <&mdss_dsi1_pll SHADOW_PCLK_SRC_1_CLK>;
+
+		clock-names = "mux_byte_clk0", "mux_pixel_clk0",
+				"src_byte_clk0", "src_pixel_clk0",
+				"shadow_byte_clk0", "shadow_pixel_clk0",
+				"mux_byte_clk1", "mux_pixel_clk1",
+				"src_byte_clk1", "src_pixel_clk1",
+				"shadow_byte_clk1", "shadow_pixel_clk1";
 
 		pinctrl-names = "panel_active", "panel_suspend";
 		pinctrl-0 = <&sde_dsi_active &sde_te_active>;
@@ -181,8 +194,8 @@
 			 <&mdss_dsi0_pll PCLK_MUX_0_CLK>,
 			 <&mdss_dsi1_pll BYTECLK_MUX_1_CLK>,
 			 <&mdss_dsi1_pll PCLK_MUX_1_CLK>;
-		clock-names = "src_byte_clk0", "src_pixel_clk0",
-			      "src_byte_clk1", "src_pixel_clk1";
+		clock-names = "mux_byte_clk0", "mux_pixel_clk0",
+			      "mux_byte_clk1", "mux_pixel_clk1";
 
 		pinctrl-names = "panel_active", "panel_suspend";
 		pinctrl-0 = <&sde_dsi1_active &sde_te1_active>;
@@ -230,6 +243,14 @@
 	qcom,mdss-dsi-panel-status-command-state = "dsi_lp_mode";
 	qcom,mdss-dsi-panel-status-value = <0x9c>;
 	qcom,mdss-dsi-panel-status-read-length = <1>;
+
+	qcom,dsi-dyn-clk-enable;
+	qcom,dsi-dyn-clk-list = <606979440 604450359 601921278>;
+
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0",
+				"src_byte_clk0", "src_pixel_clk0",
+				"shadow_byte_clk0", "shadow_pixel_clk0";
+
 	qcom,mdss-dsi-display-timings {
 		timing@0 {
 			qcom,mdss-dsi-panel-phy-timings = [00 14 05 05 1f 1e 05
@@ -254,6 +275,15 @@
 	qcom,mdss-dsi-pan-fps-update = "dfps_immediate_porch_mode_hfp";
 	qcom,mdss-dsi-min-refresh-rate = <55>;
 	qcom,mdss-dsi-max-refresh-rate = <60>;
+
+	qcom,dsi-dyn-clk-enable;
+	qcom,dsi-dyn-clk-list =
+		<534712320 532484352 530256384>;
+
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0",
+				"src_byte_clk0", "src_pixel_clk0",
+				"shadow_byte_clk0", "shadow_pixel_clk0";
+
 	qcom,mdss-dsi-display-timings {
 		timing@0 {
 			qcom,mdss-dsi-panel-phy-timings = [00 14 05 05 1f 1e 05
@@ -272,6 +302,7 @@
 	qcom,mdss-dsi-panel-status-command-state = "dsi_lp_mode";
 	qcom,mdss-dsi-panel-status-value = <0x9c>;
 	qcom,mdss-dsi-panel-status-read-length = <1>;
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
 	qcom,mdss-dsi-display-timings {
 		timing@0 {
 			qcom,mdss-dsi-panel-phy-timings = [00 12 04 04 1e 1e 04
@@ -286,6 +317,7 @@
 
 &dsi_sharp_4k_dsc_cmd {
 	qcom,ulps-enabled;
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
 	qcom,mdss-dsi-display-timings {
 		timing@0 {
 			qcom,mdss-dsi-panel-phy-timings = [00 1e 08 07 24 22 08
@@ -297,6 +329,7 @@
 };
 
 &dsi_sharp_4k_dsc_video {
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
 	qcom,mdss-dsi-display-timings {
 		timing@0 {
 			qcom,mdss-dsi-panel-phy-timings = [00 1e 08 07 24 22 08
@@ -308,6 +341,7 @@
 };
 
 &dsi_sharp_qsync_wqhd_cmd {
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
 	qcom,mdss-dsi-display-timings {
 		timing@0 {
 			qcom,mdss-dsi-panel-phy-timings = [00 0b 03 02 1d 1c 03
@@ -319,6 +353,7 @@
 };
 
 &dsi_sharp_qsync_wqhd_video {
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
 	qcom,mdss-dsi-display-timings {
 		timing@0 {
 			qcom,mdss-dsi-panel-phy-timings = [00 14 05 05 1f 1f 05
@@ -331,6 +366,7 @@
 
 &dsi_sharp_1080_cmd {
 	qcom,ulps-enabled;
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
 	qcom,mdss-dsi-display-timings {
 		timing@0 {
 			qcom,mdss-dsi-panel-phy-timings = [00 1E 08 08 24 22 08
@@ -344,6 +380,7 @@
 
 &dsi_dual_nt35597_truly_cmd {
 	qcom,ulps-enabled;
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
 	qcom,mdss-dsi-display-timings {
 		timing@0 {
 			qcom,mdss-dsi-panel-phy-timings = [00 1c 08 07 23 22 07
@@ -356,6 +393,7 @@
 };
 
 &dsi_dual_nt35597_truly_video {
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
 	qcom,mdss-dsi-min-refresh-rate = <53>;
 	qcom,mdss-dsi-max-refresh-rate = <60>;
 	qcom,mdss-dsi-pan-enable-dynamic-fps;
@@ -373,6 +411,7 @@
 
 &dsi_nt35695b_truly_fhd_cmd {
 	qcom,ulps-enabled;
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
 	qcom,mdss-dsi-display-timings {
 		timing@0 {
 			qcom,mdss-dsi-panel-phy-timings = [00 1e 08 07 24 22
@@ -384,6 +423,7 @@
 };
 
 &dsi_nt35695b_truly_fhd_video {
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
 	qcom,mdss-dsi-display-timings {
 		timing@0 {
 			qcom,mdss-dsi-panel-phy-timings = [00 1e 08 07 24 22
@@ -396,6 +436,7 @@
 
 &dsi_sim_cmd {
 	qcom,ulps-enabled;
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
 	qcom,mdss-dsi-display-timings {
 		timing@0 {
 			qcom,mdss-dsi-panel-phy-timings = [00 1c 08 07 23 22 07
@@ -446,6 +487,7 @@
 };
 
 &dsi_sim_vid {
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
 	qcom,mdss-dsi-display-timings {
 		timing@0 {
 			qcom,mdss-dsi-panel-phy-timings = [00 1c 08 07 23 22 07
@@ -459,6 +501,7 @@
 
 &dsi_sim_dsc_375_cmd {
 	qcom,ulps-enabled;
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
 	qcom,mdss-dsi-display-timings {
 		timing@0 { /* 1080p */
 			qcom,mdss-dsi-panel-phy-timings = [00 1c 08 07 23 22 07
@@ -480,6 +523,7 @@
 
 &dsi_sim_dsc_10b_cmd {
 	qcom,ulps-enabled;
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
 	qcom,mdss-dsi-display-timings {
 		timing@0 { /* QHD 60fps */
 			qcom,mdss-dsi-panel-phy-timings = [00 1c 08 07 23 22 07
@@ -508,6 +552,7 @@
 
 &dsi_dual_sim_cmd {
 	qcom,ulps-enabled;
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
 	qcom,mdss-dsi-display-timings {
 		timing@0 {
 			qcom,mdss-dsi-panel-phy-timings = [00 24 09 09 26 24 09
@@ -534,6 +579,7 @@
 };
 
 &dsi_dual_sim_vid {
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
 	qcom,mdss-dsi-display-timings {
 		timing@0 {
 			qcom,mdss-dsi-panel-phy-timings = [00 1c 08 07 23 22 07
@@ -547,6 +593,7 @@
 
 &dsi_dual_sim_dsc_375_cmd {
 	qcom,ulps-enabled;
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
 	qcom,mdss-dsi-display-timings {
 		timing@0 { /* qhd */
 			qcom,mdss-dsi-panel-phy-timings = [00 1c 08 07 23 22 07
@@ -573,6 +620,7 @@
 
 &dsi_sim_sec_hd_cmd {
 	qcom,ulps-enabled;
+	qcom,dsi-select-clocks = "mux_byte_clk1", "mux_pixel_clk1";
 	qcom,mdss-dsi-display-timings {
 		timing@0 {
 			qcom,mdss-dsi-panel-phy-timings = [00 1e 08 07 24 22
