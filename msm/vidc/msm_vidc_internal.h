@@ -470,7 +470,7 @@ struct msm_vidc_inst {
 	struct msm_vidc_list persistbufs;
 	struct msm_vidc_list pending_getpropq;
 	struct msm_vidc_list outputbufs;
-	struct msm_vidc_list reconbufs;
+	struct msm_vidc_list refbufs;
 	struct msm_vidc_list eosbufs;
 	struct msm_vidc_list registeredbufs;
 	struct msm_vidc_list cvpbufs;

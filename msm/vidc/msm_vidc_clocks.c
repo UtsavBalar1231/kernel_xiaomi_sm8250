@@ -160,9 +160,8 @@ void update_recon_stats(struct msm_vidc_inst *inst,
 		CF = recon_stats->complexity_number / frame_size;
 	else
 		CF = MSM_VIDC_MAX_UBWC_COMPLEXITY_FACTOR;
-
-	mutex_lock(&inst->reconbufs.lock);
-	list_for_each_entry(binfo, &inst->reconbufs.list, list) {
+	mutex_lock(&inst->refbufs.lock);
+	list_for_each_entry(binfo, &inst->refbufs.list, list) {
 		if (binfo->buffer_index ==
 				recon_stats->buffer_index) {
 			binfo->CR = CR;
@@ -170,7 +169,7 @@ void update_recon_stats(struct msm_vidc_inst *inst,
 			break;
 		}
 	}
-	mutex_unlock(&inst->reconbufs.lock);
+	mutex_unlock(&inst->refbufs.lock);
 }
 
 static int fill_dynamic_stats(struct msm_vidc_inst *inst,
@@ -185,8 +184,8 @@ static int fill_dynamic_stats(struct msm_vidc_inst *inst,
 	u32 min_input_cr = MSM_VIDC_MAX_UBWC_COMPRESSION_RATIO;
 	u32 min_cr = MSM_VIDC_MAX_UBWC_COMPRESSION_RATIO;
 
-	mutex_lock(&inst->reconbufs.lock);
-	list_for_each_entry_safe(binfo, nextb, &inst->reconbufs.list, list) {
+	mutex_lock(&inst->refbufs.lock);
+	list_for_each_entry_safe(binfo, nextb, &inst->refbufs.list, list) {
 		if (binfo->CR) {
 			min_cr = min(min_cr, binfo->CR);
 			max_cr = max(max_cr, binfo->CR);
@@ -196,7 +195,7 @@ static int fill_dynamic_stats(struct msm_vidc_inst *inst,
 			max_cf = max(max_cf, binfo->CF);
 		}
 	}
-	mutex_unlock(&inst->reconbufs.lock);
+	mutex_unlock(&inst->refbufs.lock);
 
 	mutex_lock(&inst->input_crs.lock);
 	list_for_each_entry_safe(temp, next, &inst->input_crs.list, list) {

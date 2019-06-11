@@ -1525,7 +1525,7 @@ void *msm_vidc_open(int core_id, int session_type)
 	INIT_MSM_VIDC_LIST(&inst->outputbufs);
 	INIT_MSM_VIDC_LIST(&inst->registeredbufs);
 	INIT_MSM_VIDC_LIST(&inst->cvpbufs);
-	INIT_MSM_VIDC_LIST(&inst->reconbufs);
+	INIT_MSM_VIDC_LIST(&inst->refbufs);
 	INIT_MSM_VIDC_LIST(&inst->eosbufs);
 	INIT_MSM_VIDC_LIST(&inst->etb_data);
 	INIT_MSM_VIDC_LIST(&inst->fbd_data);

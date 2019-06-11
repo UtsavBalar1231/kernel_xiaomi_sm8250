@@ -4891,13 +4891,13 @@ int msm_comm_release_recon_buffers(struct msm_vidc_inst *inst)
 		return -EINVAL;
 	}
 
-	mutex_lock(&inst->reconbufs.lock);
-	list_for_each_entry_safe(buf, next, &inst->reconbufs.list, list) {
+	mutex_lock(&inst->refbufs.lock);
+	list_for_each_entry_safe(buf, next, &inst->refbufs.list, list) {
 		list_del(&buf->list);
 		kfree(buf);
 	}
-	INIT_LIST_HEAD(&inst->reconbufs.list);
-	mutex_unlock(&inst->reconbufs.lock);
+	INIT_LIST_HEAD(&inst->refbufs.list);
+	mutex_unlock(&inst->refbufs.lock);
 
 	return 0;
 }
@@ -5049,32 +5049,26 @@ error:
 int msm_comm_set_recon_buffers(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
-	unsigned int i = 0;
-	struct hal_buffer_requirements *internal_buf;
+	unsigned int i = 0, bufcount = 0;
 	struct recon_buf *binfo;
-	struct msm_vidc_list *buf_list = &inst->reconbufs;
+	struct msm_vidc_list *buf_list = &inst->refbufs;
 
 	if (!inst) {
 		dprintk(VIDC_ERR, "%s invalid parameters\n", __func__);
 		return -EINVAL;
 	}
 
-	if (inst->session_type != MSM_VIDC_ENCODER) {
-		dprintk(VIDC_HIGH, "Recon buffs not req for decoder/cvp\n");
+	if (inst->session_type != MSM_VIDC_ENCODER &&
+		inst->session_type != MSM_VIDC_DECODER) {
+		dprintk(VIDC_HIGH, "Recon buffs not req for cvp\n");
 		return 0;
 	}
 
-	internal_buf = get_buff_req_buffer(inst,
-			HAL_BUFFER_INTERNAL_RECON);
-	if (!internal_buf || !internal_buf->buffer_count_actual) {
-		dprintk(VIDC_HIGH, "Inst : %pK Recon buffers not required\n",
-			inst);
-		return 0;
-	}
+	bufcount = inst->fmts[OUTPUT_PORT].count_actual;
 
 	msm_comm_release_recon_buffers(inst);
 
-	for (i = 0; i < internal_buf->buffer_count_actual; i++) {
+	for (i = 0; i < bufcount; i++) {
 		binfo = kzalloc(sizeof(*binfo), GFP_KERNEL);
 		if (!binfo) {
 			dprintk(VIDC_ERR, "Out of memory\n");
