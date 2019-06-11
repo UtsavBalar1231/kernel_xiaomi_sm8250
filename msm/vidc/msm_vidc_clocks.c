@@ -14,7 +14,7 @@
 #define MSM_VIDC_MAX_UBWC_COMPLEXITY_FACTOR (4 << 16)
 
 #define MSM_VIDC_MIN_UBWC_COMPRESSION_RATIO (1 << 16)
-#define MSM_VIDC_MAX_UBWC_COMPRESSION_RATIO (5 << 16)
+#define MSM_VIDC_MAX_UBWC_COMPRESSION_RATIO (3 << 16)
 
 static int msm_vidc_decide_work_mode_ar50(struct msm_vidc_inst *inst);
 static unsigned long msm_vidc_calc_freq_ar50(struct msm_vidc_inst *inst,
@@ -167,6 +167,7 @@ void update_recon_stats(struct msm_vidc_inst *inst,
 				recon_stats->buffer_index) {
 			binfo->CR = CR;
 			binfo->CF = CF;
+			break;
 		}
 	}
 	mutex_unlock(&inst->reconbufs.lock);
@@ -177,10 +178,12 @@ static int fill_dynamic_stats(struct msm_vidc_inst *inst,
 {
 	struct recon_buf *binfo, *nextb;
 	struct vidc_input_cr_data *temp, *next;
-	u32 min_cf = MSM_VIDC_MAX_UBWC_COMPLEXITY_FACTOR, max_cf = 0;
-	u32 min_input_cr = MSM_VIDC_MAX_UBWC_COMPRESSION_RATIO,
-		max_input_cr = 0;
-	u32 min_cr = MSM_VIDC_MAX_UBWC_COMPRESSION_RATIO, max_cr = 0;
+	u32 max_cr = MSM_VIDC_MIN_UBWC_COMPRESSION_RATIO;
+	u32 max_cf = MSM_VIDC_MIN_UBWC_COMPLEXITY_FACTOR;
+	u32 max_input_cr = MSM_VIDC_MIN_UBWC_COMPRESSION_RATIO;
+	u32 min_cf = MSM_VIDC_MAX_UBWC_COMPLEXITY_FACTOR;
+	u32 min_input_cr = MSM_VIDC_MAX_UBWC_COMPRESSION_RATIO;
+	u32 min_cr = MSM_VIDC_MAX_UBWC_COMPRESSION_RATIO;
 
 	mutex_lock(&inst->reconbufs.lock);
 	list_for_each_entry_safe(binfo, nextb, &inst->reconbufs.list, list) {
@@ -215,15 +218,6 @@ static int fill_dynamic_stats(struct msm_vidc_inst *inst,
 	vote_data->compression_ratio = min_cr;
 	vote_data->complexity_factor = max_cf;
 	vote_data->input_cr = min_input_cr;
-	vote_data->use_dpb_read = false;
-
-	/* Check if driver can vote for lower bus BW */
-	if (inst->clk_data.load < inst->clk_data.load_norm) {
-		vote_data->compression_ratio = max_cr;
-		vote_data->complexity_factor = min_cf;
-		vote_data->input_cr = max_input_cr;
-		vote_data->use_dpb_read = true;
-	}
 
 	dprintk(VIDC_PERF,
 		"Input CR = %d Recon CR = %d Complexity Factor = %d\n",
