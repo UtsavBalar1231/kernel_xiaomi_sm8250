@@ -48,6 +48,9 @@
 		qcom,vreg-0p9-voltage-level = <880000 880000 73500>;
 		qcom,vreg-cx-voltage-level = <RPMH_REGULATOR_LEVEL_MAX
 						RPMH_REGULATOR_LEVEL_NOM 0>;
+		qcom,bw-scale = <RPMH_REGULATOR_LEVEL_LOW_SVS 19200000
+				RPMH_REGULATOR_LEVEL_LOW_SVS 19200000
+				RPMH_REGULATOR_LEVEL_NOM 100000000>;
 
 		qcom,msm-bus,name = "pcie0";
 		qcom,msm-bus,num-cases = <2>;
@@ -286,6 +289,9 @@
 		qcom,vreg-0p9-voltage-level = <880000 880000 98800>;
 		qcom,vreg-cx-voltage-level = <RPMH_REGULATOR_LEVEL_MAX
 						RPMH_REGULATOR_LEVEL_NOM 0>;
+		qcom,bw-scale = <RPMH_REGULATOR_LEVEL_LOW_SVS 19200000
+				RPMH_REGULATOR_LEVEL_LOW_SVS 19200000
+				RPMH_REGULATOR_LEVEL_NOM 100000000>;
 
 		qcom,msm-bus,name = "pcie1";
 		qcom,msm-bus,num-cases = <2>;
@@ -563,6 +569,9 @@
 		qcom,vreg-0p9-voltage-level = <880000 880000 98800>;
 		qcom,vreg-cx-voltage-level = <RPMH_REGULATOR_LEVEL_MAX
 						RPMH_REGULATOR_LEVEL_NOM 0>;
+		qcom,bw-scale = <RPMH_REGULATOR_LEVEL_LOW_SVS 19200000
+				RPMH_REGULATOR_LEVEL_LOW_SVS 19200000
+				RPMH_REGULATOR_LEVEL_NOM 100000000>;
 
 		qcom,msm-bus,name = "pcie2";
 		qcom,msm-bus,num-cases = <2>;
