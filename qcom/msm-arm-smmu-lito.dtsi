@@ -19,10 +19,12 @@
 
 		clocks = <&gcc GCC_GPU_MEMNOC_GFX_CLK>,
 			 <&gcc GCC_GPU_SNOC_DVM_GFX_CLK>,
-			 <&gpucc GPU_CC_AHB_CLK>;
+			 <&gpucc GPU_CC_AHB_CLK>,
+			 <&gpucc GPU_CC_HLOS1_VOTE_GPU_SMMU_CLK>;
 		clock-names = "gcc_gpu_memnoc_gfx",
 			      "gcc_gpu_snoc_dvm_gfx",
-			      "gpu_cc_ahb";
+			      "gpu_cc_ahb",
+			      "gpu_cc_hlos1_vote_gpu_smmu_clk";
 
 		interrupts = <GIC_SPI 673 IRQ_TYPE_LEVEL_HIGH>,
 				<GIC_SPI 678 IRQ_TYPE_LEVEL_HIGH>,
