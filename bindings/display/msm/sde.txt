@@ -112,6 +112,7 @@ Optional properties:
 - qcom,sde-intf-max-prefetch-lines:	Array of u32 values for max prefetch lines on
 				each interface.
 - qcom,sde-sspp-linewidth:	A u32 value indicates the max sspp line width.
+- qcom,sde-vig-sspp-linewidth:  A u32 value indicates the max vig sspp line width.
 - qcom,sde-mixer-linewidth:	A u32 value indicates the max mixer line width.
 - qcom,sde-wb-linewidth:	A u32 value indicates the max writeback line width.
 - qcom,sde-sspp-scale-size:	A u32 value indicates the scaling block size on sspp.
