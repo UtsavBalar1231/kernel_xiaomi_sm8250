@@ -73,7 +73,7 @@
 			<0xaf03000 0x8>;
 		reg-names = "pll_base", "phy_base",
 			"ln_tx0_base", "ln_tx0_tran_base", "ln_tx0_vmode_base",
-			"ln_tx1_base", "ln_tx1_tran_base", "ln_tx0_vmode_base",
+			"ln_tx1_base", "ln_tx1_tran_base", "ln_tx1_vmode_base",
 			"gdsc_base";
 
 		clocks = <&dispcc DISP_CC_MDSS_AHB_CLK>,
