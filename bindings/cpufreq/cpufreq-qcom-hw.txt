@@ -42,6 +42,14 @@ Properties:
 	Definition:	Indicate to check for Enable of FW before registering
 			with cpufreq.
 
+- qcom,no-accumulative-counter
+	Usage:		Optional
+	Value type:	bool
+	Definition:	Indicate to disable reading of accumulative cycle
+			counter of the frequency domain. This is needed by the
+			cpufreq-hw which uses the "qcom,cpufreq-hw"
+			compatible.
+
 * Property qcom,freq-domain
 Devices supporting freq-domain must set their "qcom,freq-domain" property with
 phandle to a cpufreq_hw followed by the Domain ID(0/1) and core count in the
