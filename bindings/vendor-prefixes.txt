@@ -154,6 +154,7 @@ grmn	Garmin Limited
 gumstix	Gumstix, Inc.
 gw	Gateworks Corporation
 hannstar	HannStar Display Corporation
+halo	Halo Microelectronics Co. Ltd.
 haoyu	Haoyu Microelectronic Co. Ltd.
 hardkernel	Hardkernel Co., Ltd
 hideep	HiDeep Inc.
