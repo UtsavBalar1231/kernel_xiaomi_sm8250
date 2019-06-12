@@ -325,7 +325,7 @@ void rmnet_shs_wq_hstat_alloc_nodes(u8 num_nodes_to_allocate, u8 is_store_perm)
  */
 struct rmnet_shs_wq_hstat_s *rmnet_shs_wq_get_new_hstat_node(void)
 {
-	struct rmnet_shs_wq_hstat_s *hnode;
+	struct rmnet_shs_wq_hstat_s *hnode = NULL;
 	struct rmnet_shs_wq_hstat_s *ret_node = NULL;
 	unsigned long flags;
 
@@ -407,8 +407,8 @@ void rmnet_shs_wq_create_new_flow(struct rmnet_shs_skbn_s *node_p)
 /* Refresh the RPS mask associated with this flow */
 void rmnet_shs_wq_update_hstat_rps_msk(struct rmnet_shs_wq_hstat_s *hstat_p)
 {
-	struct rmnet_shs_skbn_s *node_p;
-	struct rmnet_shs_wq_ep_s *ep;
+	struct rmnet_shs_skbn_s *node_p = NULL;
+	struct rmnet_shs_wq_ep_s *ep = NULL;
 
 	node_p = hstat_p->node;
 
@@ -773,7 +773,7 @@ u64 rmnet_shs_wq_get_max_pps_among_cores(u32 core_msk)
 u32 rmnet_shs_wq_get_dev_rps_msk(struct net_device *dev)
 {
 	u32 dev_rps_msk = 0;
-	struct rmnet_shs_wq_ep_s *ep;
+	struct rmnet_shs_wq_ep_s *ep = NULL;
 
 	list_for_each_entry(ep, &rmnet_shs_wq_ep_tbl, ep_list_id) {
 		if (!ep)
@@ -919,7 +919,7 @@ u16 rmnet_shs_wq_find_cpu_to_move_flows(u16 current_cpu,
 
 void rmnet_shs_wq_find_cpu_and_move_flows(u16 cur_cpu)
 {
-	struct rmnet_shs_wq_ep_s *ep;
+	struct rmnet_shs_wq_ep_s *ep = NULL;
 	u16 new_cpu;
 
 	list_for_each_entry(ep, &rmnet_shs_wq_ep_tbl, ep_list_id) {
@@ -1069,7 +1069,7 @@ void rmnet_shs_wq_refresh_new_flow_list_per_ep(struct rmnet_shs_wq_ep_s *ep)
 }
 void rmnet_shs_wq_refresh_new_flow_list(void)
 {
-	struct rmnet_shs_wq_ep_s *ep;
+	struct rmnet_shs_wq_ep_s *ep = NULL;
 
 	list_for_each_entry(ep, &rmnet_shs_wq_ep_tbl, ep_list_id) {
 		if (!ep)
@@ -1088,7 +1088,7 @@ int rmnet_shs_wq_get_lpwr_cpu_new_flow(struct net_device *dev)
 	u8 lo_max;
 	int cpu_assigned = -1;
 	u8 is_match_found = 0;
-	struct rmnet_shs_wq_ep_s *ep;
+	struct rmnet_shs_wq_ep_s *ep = NULL;
 
 	if (!dev) {
 		rmnet_shs_crit_err[RMNET_SHS_NETDEV_ERR]++;
@@ -1133,7 +1133,7 @@ int rmnet_shs_wq_get_lpwr_cpu_new_flow(struct net_device *dev)
 
 int rmnet_shs_wq_get_perf_cpu_new_flow(struct net_device *dev)
 {
-	struct rmnet_shs_wq_ep_s *ep;
+	struct rmnet_shs_wq_ep_s *ep = NULL;
 	int cpu_assigned = -1;
 	u8 hi_idx;
 	u8 hi_max;
@@ -1197,11 +1197,11 @@ static int rmnet_shs_wq_time_check(time_t time, int num_flows)
 
 void rmnet_shs_wq_cleanup_hash_tbl(u8 force_clean)
 {
-	struct rmnet_shs_skbn_s *node_p;
+	struct rmnet_shs_skbn_s *node_p = NULL;
 	time_t tns2s;
 	unsigned long ht_flags;
 	struct rmnet_shs_wq_hstat_s *hnode = NULL;
-	struct list_head *ptr, *next;
+	struct list_head *ptr = NULL, *next = NULL;
 
 	list_for_each_safe(ptr, next, &rmnet_shs_wq_hstat_tbl) {
 		hnode = list_entry(ptr,
@@ -1271,7 +1271,7 @@ void rmnet_shs_wq_update_ep_rps_msk(struct rmnet_shs_wq_ep_s *ep)
 
 void rmnet_shs_wq_reset_ep_active(struct net_device *dev)
 {
-	struct rmnet_shs_wq_ep_s *ep;
+	struct rmnet_shs_wq_ep_s *ep = NULL;
 
 	list_for_each_entry(ep, &rmnet_shs_wq_ep_tbl, ep_list_id) {
 		if (!ep)
@@ -1287,7 +1287,7 @@ void rmnet_shs_wq_reset_ep_active(struct net_device *dev)
 
 void rmnet_shs_wq_set_ep_active(struct net_device *dev)
 {
-	struct rmnet_shs_wq_ep_s *ep;
+	struct rmnet_shs_wq_ep_s *ep = NULL;
 
 	list_for_each_entry(ep, &rmnet_shs_wq_ep_tbl, ep_list_id) {
 		if (!ep)
@@ -1304,7 +1304,7 @@ void rmnet_shs_wq_set_ep_active(struct net_device *dev)
 
 void rmnet_shs_wq_refresh_ep_masks(void)
 {
-	struct rmnet_shs_wq_ep_s *ep;
+	struct rmnet_shs_wq_ep_s *ep = NULL;
 
 	list_for_each_entry(ep, &rmnet_shs_wq_ep_tbl, ep_list_id) {
 
@@ -1339,7 +1339,7 @@ void rmnet_shs_update_cfg_mask(void)
 static void rmnet_shs_wq_update_stats(void)
 {
 	struct timespec time;
-	struct rmnet_shs_wq_hstat_s *hnode;
+	struct rmnet_shs_wq_hstat_s *hnode = NULL;
 
 	(void) getnstimeofday(&time);
 	rmnet_shs_wq_tnsec = RMNET_SHS_SEC_TO_NSEC(time.tv_sec) + time.tv_nsec;
@@ -1383,8 +1383,8 @@ void rmnet_shs_wq_process_wq(struct work_struct *work)
 
 void rmnet_shs_wq_clean_ep_tbl(void)
 {
-	struct rmnet_shs_wq_ep_s *ep;
-	struct list_head *ptr, *next;
+	struct rmnet_shs_wq_ep_s *ep = NULL;
+	struct list_head *ptr = NULL, *next = NULL;
 
 	list_for_each_safe(ptr, next, &rmnet_shs_wq_ep_tbl) {
 		ep = list_entry(ptr, struct rmnet_shs_wq_ep_s, ep_list_id);
