@@ -3131,7 +3131,8 @@
 		reg = <0x8804000 0x1000>;
 		reg-names = "hc_mem";
 
-		interrupts = <0 204 0>, <0 222 0>;
+		interrupts = <GIC_SPI 204 IRQ_TYPE_LEVEL_HIGH>,
+				<GIC_SPI 222 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "hc_irq", "pwr_irq";
 
 		qcom,bus-width = <4>;
