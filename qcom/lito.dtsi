@@ -1252,7 +1252,7 @@
 			<0xc263000 0x1ff>;
 		reg-names = "tsens_srot_physical",
 				"tsens_tm_physical";
-		interrupts = <&pdc 26 IRQ_TYPE_LEVEL_HIGH>,
+		interrupts-extended = <&pdc 26 IRQ_TYPE_LEVEL_HIGH>,
 				<&pdc 28 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "tsens-upper-lower", "tsens-critical";
 		#thermal-sensor-cells = <1>;
@@ -1264,7 +1264,7 @@
 			<0xc265000 0x1ff>;
 		reg-names = "tsens_srot_physical",
 			"tsens_tm_physical";
-		interrupts = <&pdc 27 IRQ_TYPE_LEVEL_HIGH>,
+		interrupts-extended = <&pdc 27 IRQ_TYPE_LEVEL_HIGH>,
 				<&pdc 29 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "tsens-upper-lower", "tsens-critical";
 		#thermal-sensor-cells = <1>;
