@@ -483,7 +483,6 @@
 		compatible = "qcom,dp-display";
 
 		vdda-lp2-supply = <&L9A>;
-		vdda-0p9-supply = <&L5A>;
 		reg =	<0xae90000 0x0dc>,
 			<0xae90200 0x0c0>,
 			<0xae90400 0x508>,
@@ -506,7 +505,6 @@
 		interrupts = <12 0>;
 
 		clocks = <&dispcc DISP_CC_MDSS_DP_AUX_CLK>,
-			<&gcc GCC_USB3_PRIM_CLKREF_CLK>,
 			<&gcc GCC_USB3_PRIM_PHY_PIPE_CLK>,
 			<&rpmhcc RPMH_CXO_CLK>,
 			<&dispcc DISP_CC_MDSS_DP_LINK_CLK>,
@@ -517,8 +515,8 @@
 			<&mdss_dp_pll DP_VCO_DIVIDED_CLK_SRC_MUX>,
 			<&dispcc DISP_CC_MDSS_DP_PIXEL_CLK>,
 			<&dispcc DISP_CC_MDSS_DP_PIXEL1_CLK>;
-		 clock-names = "core_aux_clk", "core_usb_ref_clk",
-			"core_usb_pipe_clk", "core_usb_ref_clk_src",
+		 clock-names = "core_aux_clk", "core_usb_pipe_clk",
+			"core_usb_ref_clk_src",
 			"link_clk", "link_iface_clk",
 			"pixel_clk_rcg", "pixel_parent",
 			"pixel1_clk_rcg", "pixel1_parent",
@@ -559,8 +557,8 @@
 			qcom,phy-supply-entry@0 {
 				reg = <0>;
 				qcom,supply-name = "vdda-0p9";
-				qcom,supply-min-voltage = <880000>;
-				qcom,supply-max-voltage = <880000>;
+				qcom,supply-min-voltage = <1200000>;
+				qcom,supply-max-voltage = <1200000>;
 				qcom,supply-enable-load = <36000>;
 				qcom,supply-disable-load = <0>;
 			};
