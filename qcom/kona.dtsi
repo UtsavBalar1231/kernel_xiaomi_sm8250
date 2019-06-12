@@ -57,6 +57,10 @@
 		#address-cells = <2>;
 		#size-cells = <0>;
 
+		cpuss_reg: cpuss-reg {
+			qcom,dump-size = <0x30000>;
+		};
+
 		CPU0: cpu@0 {
 			device_type = "cpu";
 			compatible = "qcom,kryo";
@@ -4288,11 +4292,6 @@
 			qcom,dump-id = <0xe8>;
 		};
 
-		cpuss_dump {
-			qcom,dump-size = <0x30000>;
-			qcom,dump-id = <0xEF>;
-		};
-
 		etf_slpi {
 			qcom,dump-size = <0x4000>;
 			qcom,dump-id = <0xf3>;
@@ -4417,6 +4416,11 @@
 
 	cpuss_dump {
 		compatible = "qcom,cpuss-dump";
+
+		qcom,cpuss_register {
+			qcom,dump-node = <&cpuss_reg>;
+			qcom,dump-id = <0xef>;
+		};
 
 		qcom,l1_i_cache0 {
 			qcom,dump-node = <&L1_I_0>;
