@@ -2,8 +2,8 @@ Qualcomm Video Clock & Reset Controller Binding
 -----------------------------------------------
 
 Required properties :
-- compatible : shall contain "qcom,sdm845-videocc" or "qcom,kona-videocc"
-		or "qcom,lito-videocc"
+- compatible : shall contain "qcom,sdm845-videocc", "qcom,videocc-kona",
+		"qcom,videocc-kona-v2" or "qcom,lito-videocc"
 - reg : shall contain base register location and length
 - clock-names : Shall contain "cfg_ahb_clk"
 - clocks : phandle + clock reference to the GCC AHB clock.

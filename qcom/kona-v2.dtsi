@@ -25,3 +25,7 @@
 &clock_camcc {
 	compatible = "qcom,camcc-kona-v2", "syscon";
 };
+
+&clock_videocc {
+	compatible = "qcom,videocc-kona-v2", "syscon";
+};
