@@ -37,6 +37,5 @@ u32 msm_vidc_calculate_enc_input_frame_size(struct msm_vidc_inst *inst);
 u32 msm_vidc_calculate_enc_output_frame_size(struct msm_vidc_inst *inst);
 u32 msm_vidc_calculate_enc_input_extra_size(struct msm_vidc_inst *inst);
 u32 msm_vidc_calculate_enc_output_extra_size(struct msm_vidc_inst *inst);
-u32 msm_vidc_set_buffer_count_for_thumbnail(struct msm_vidc_inst *inst);
 
 #endif // __H_MSM_VIDC_BUFFER_MEM_DEFS_H__

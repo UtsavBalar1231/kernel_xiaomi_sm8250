@@ -1778,6 +1778,13 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 
 	if (event == V4L2_EVENT_SEQ_CHANGED_INSUFFICIENT) {
 		dprintk(VIDC_HIGH, "V4L2_EVENT_SEQ_CHANGED_INSUFFICIENT\n");
+
+		/* decide batching as configuration changed */
+		if (inst->batch.enable)
+			inst->batch.enable = is_batching_allowed(inst);
+		dprintk(VIDC_HIGH, "%s: %x : batching %s\n",
+			__func__, hash32_ptr(inst->session),
+			inst->batch.enable ? "enabled" : "disabled");
 	}
 
 	rc = msm_vidc_check_session_supported(inst);

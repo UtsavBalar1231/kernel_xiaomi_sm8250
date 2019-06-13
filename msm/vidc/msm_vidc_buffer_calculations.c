@@ -597,14 +597,25 @@ int msm_vidc_calculate_input_buffer_count(struct msm_vidc_inst *inst)
 	int extra_buff_count = 0;
 	u32 input_min_count = 4;
 
+	if (!inst) {
+		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		return -EINVAL;
+	}
+	fmt = &inst->fmts[INPUT_PORT];
+
 	if (!is_decode_session(inst) && !is_encode_session(inst))
 		return 0;
+
+	if (is_thumbnail_session(inst)) {
+		fmt->count_min = fmt->count_min_host = fmt->count_actual =
+			MIN_NUM_THUMBNAIL_MODE_INPUT_BUFFERS;
+		return 0;
+	}
 
 	/*
 	 * Update input buff counts
 	 * Extradata uses same count as input port
 	 */
-	fmt = &inst->fmts[INPUT_PORT];
 	extra_buff_count = msm_vidc_get_extra_buff_count(inst,
 				HAL_BUFFER_INPUT);
 	fmt->count_min = input_min_count;
@@ -629,10 +640,31 @@ int msm_vidc_calculate_output_buffer_count(struct msm_vidc_inst *inst)
 	int extra_buff_count = 0;
 	u32 codec, output_min_count = 4;
 
+	if (!inst) {
+		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		return -EINVAL;
+	}
+	fmt = &inst->fmts[OUTPUT_PORT];
+	codec = get_v4l2_codec(inst);
+
 	if (!is_decode_session(inst) && !is_encode_session(inst))
 		return 0;
 
-	codec = get_v4l2_codec(inst);
+	if (is_thumbnail_session(inst)) {
+		if (codec == V4L2_PIX_FMT_VP9) {
+			fmt->count_min =
+				MIN_NUM_THUMBNAIL_MODE_OUTPUT_BUFFERS_VP9;
+			fmt->count_min_host = fmt->count_min;
+			fmt->count_actual = fmt->count_min_host;
+		} else {
+			fmt->count_min =
+				MIN_NUM_THUMBNAIL_MODE_OUTPUT_BUFFERS;
+			fmt->count_min_host = fmt->count_min;
+			fmt->count_actual = fmt->count_min_host;
+		}
+		return 0;
+	}
+
 	/* Update output buff count: Changes for decoder based on codec */
 	if (is_decode_session(inst)) {
 		switch (codec) {
@@ -653,7 +685,6 @@ int msm_vidc_calculate_output_buffer_count(struct msm_vidc_inst *inst)
 			break;
 		}
 	}
-	fmt = &inst->fmts[OUTPUT_PORT];
 	extra_buff_count = msm_vidc_get_extra_buff_count(inst,
 				HAL_BUFFER_OUTPUT);
 	fmt->count_min = output_min_count;
@@ -679,31 +710,6 @@ int msm_vidc_calculate_buffer_counts(struct msm_vidc_inst *inst)
 		return rc;
 
 	return rc;
-}
-
-u32 msm_vidc_set_buffer_count_for_thumbnail(struct msm_vidc_inst *inst)
-{
-	struct msm_vidc_format *fmt;
-
-	fmt = &inst->fmts[INPUT_PORT];
-	fmt->count_min = MIN_NUM_THUMBNAIL_MODE_INPUT_BUFFERS;
-	fmt->count_min_host = MIN_NUM_THUMBNAIL_MODE_INPUT_BUFFERS;
-	fmt->count_actual = MIN_NUM_THUMBNAIL_MODE_INPUT_BUFFERS;
-
-	fmt = &inst->fmts[OUTPUT_PORT];
-	/* VP9 super frame requires multiple frames decoding */
-	if (get_v4l2_codec(inst) == V4L2_PIX_FMT_VP9) {
-		fmt->count_min = MIN_NUM_THUMBNAIL_MODE_OUTPUT_BUFFERS_VP9;
-		fmt->count_min_host =
-			MIN_NUM_THUMBNAIL_MODE_OUTPUT_BUFFERS_VP9;
-		fmt->count_actual =
-			MIN_NUM_THUMBNAIL_MODE_OUTPUT_BUFFERS_VP9;
-	} else {
-		fmt->count_min = MIN_NUM_THUMBNAIL_MODE_OUTPUT_BUFFERS;
-		fmt->count_min_host = MIN_NUM_THUMBNAIL_MODE_OUTPUT_BUFFERS;
-		fmt->count_actual = MIN_NUM_THUMBNAIL_MODE_OUTPUT_BUFFERS;
-	}
-	return 0;
 }
 
 int msm_vidc_get_extra_buff_count(struct msm_vidc_inst *inst,

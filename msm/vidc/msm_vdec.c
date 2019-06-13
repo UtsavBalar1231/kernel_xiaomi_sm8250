@@ -856,9 +856,11 @@ int msm_vdec_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 		if (ctrl->val)
 			inst->flags |= VIDC_THUMBNAIL;
 
-		rc = msm_vidc_set_buffer_count_for_thumbnail(inst);
+		rc = msm_vidc_calculate_buffer_counts(inst);
 		if (rc) {
-			dprintk(VIDC_ERR, "Failed to set buffer count\n");
+			dprintk(VIDC_ERR,
+				"%s: %x : failed to calculate thumbnail buffer count\n",
+				__func__, hash32_ptr(inst->session));
 			return rc;
 		}
 		break;
