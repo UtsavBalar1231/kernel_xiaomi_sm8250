@@ -37,6 +37,7 @@ enum vidc_msg_prio {
 	VIDC_LOW        = 0x00000004,
 	VIDC_PERF       = 0x00000008,
 	VIDC_PKT        = 0x00000010,
+	VIDC_BUS        = 0x00000020,
 	VIDC_PRINTK     = 0x00001000,
 	VIDC_FTRACE     = 0x00002000,
 	FW_LOW          = 0x00010000,
@@ -144,6 +145,8 @@ static inline char *get_debug_level_str(int level)
 		return "perf";
 	case VIDC_PKT:
 		return "pkt";
+	case VIDC_BUS:
+		return "bus";
 	default:
 		return "???";
 	}
