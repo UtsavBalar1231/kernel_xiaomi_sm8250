@@ -799,6 +799,7 @@
 		clock-cntl-level = "svs", "svs_l1";
 		fw_name = "CAMERA_ICP.elf";
 		ubwc-cfg = <0x1073 0x101CF>;
+		qos-val = <0x00000505>;
 		status = "ok";
 	};
 
