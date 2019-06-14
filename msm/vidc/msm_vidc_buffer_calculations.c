@@ -207,15 +207,15 @@
 #define SIZE_VP8D_LB_FE_TOP_DATA(width, height) \
 	((ALIGN(width, 16) + 8) * 10 * 2)
 #define SIZE_VP9D_LB_FE_TOP_DATA(width, height) \
-	((ALIGN(ALIGN(width, 8), 64) + 8) * 10 * 2)
+	((ALIGN(ALIGN(width, 16), 64) + 8) * 10 * 2)
 #define SIZE_VP8D_LB_PE_TOP_DATA(width, height) \
 	((ALIGN(width, 16) >> 4) * 64)
 #define SIZE_VP9D_LB_PE_TOP_DATA(width, height) \
-	((ALIGN(ALIGN(width, 8), 64) >> 6) * 176)
+	((ALIGN(ALIGN(width, 16), 64) >> 6) * 176)
 #define SIZE_VP8D_LB_VSP_TOP(width, height) \
 	(((ALIGN(width, 16) >> 4) * 64 / 2) + 256)
 #define SIZE_VP9D_LB_VSP_TOP(width, height) \
-	(((ALIGN(ALIGN(width, 8), 64) >> 6) * 64 * 8) + 256)
+	(((ALIGN(ALIGN(width, 16), 64) >> 6) * 64 * 8) + 256)
 
 
 #define HFI_IRIS2_VP9D_COMV_SIZE \
@@ -967,10 +967,10 @@ static inline u32 size_vpss_lb(u32 width, u32 height)
 	opb_wr_top_line_luma_buf_size = ALIGN(opb_wr_top_line_luma_buf_size,
 		VENUS_DMA_ALIGNMENT) + (MAX_TILE_COLUMNS - 1) * 256;
 	opb_wr_top_line_luma_buf_size = max(opb_wr_top_line_luma_buf_size,
-		(32 * ALIGN(height, 8)));
+		(32 * ALIGN(height, 16)));
 	opb_wr_top_line_chroma_buf_size = opb_wr_top_line_luma_buf_size;
 	opb_lb_wr_llb_uv_buffer_size = opb_lb_wr_llb_y_buffer_size =
-		ALIGN((ALIGN(height, 8) / 2) *
+		ALIGN((ALIGN(height, 16) / 2) *
 			64, BUFFER_ALIGNMENT_SIZE(32));
 	size = NUM_OF_VPP_PIPES * 2 * (vpss_4tap_top_buffer_size +
 		vpss_div2_top_buffer_size) +
