@@ -1,5 +1,9 @@
 #include <dt-bindings/thermal/thermal.h>
 
+&mdss_mdp {
+	#cooling-cells = <2>;
+};
+
 &thermal_zones {
 	pm7250b-tz {
 		cooling-maps {
@@ -25,41 +29,6 @@
 				trip = <&pm8150_trip0>;
 				cooling-device =
 					<&CPU0 THERMAL_MAX_LIMIT
-						THERMAL_MAX_LIMIT>;
-			};
-
-			trip0_cpu1 {
-				trip = <&pm8150_trip0>;
-				cooling-device =
-					<&CPU1 THERMAL_MAX_LIMIT
-						THERMAL_MAX_LIMIT>;
-			};
-
-			trip0_cpu2 {
-				trip = <&pm8150_trip0>;
-				cooling-device =
-					<&CPU2 THERMAL_MAX_LIMIT
-						THERMAL_MAX_LIMIT>;
-			};
-
-			trip0_cpu3 {
-				trip = <&pm8150_trip0>;
-				cooling-device =
-					<&CPU3 THERMAL_MAX_LIMIT
-						THERMAL_MAX_LIMIT>;
-			};
-
-			trip0_cpu4 {
-				trip = <&pm8150_trip0>;
-				cooling-device =
-					<&CPU4 THERMAL_MAX_LIMIT
-						THERMAL_MAX_LIMIT>;
-			};
-
-			trip0_cpu5 {
-				trip = <&pm8150_trip0>;
-				cooling-device =
-					<&CPU5 THERMAL_MAX_LIMIT
 						THERMAL_MAX_LIMIT>;
 			};
 
