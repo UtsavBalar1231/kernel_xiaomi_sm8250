@@ -1057,6 +1057,59 @@
 		};
 	};
 
+	tpda_nav: tpda@6843000 {
+		compatible = "arm,primecell";
+		arm,primecell-periphid = <0x000bb969>;
+		reg = <0x6843000 0x1000>;
+		reg-names = "tpda-base";
+
+		coresight-name = "coresight-tpda-nav";
+		qcom,tpda-atid = <68>;
+		qcom,cmb-elem-size = <0 32>;
+
+		clocks = <&aopcc QDSS_CLK>;
+		clock-names = "apb_pclk";
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			port@0 {
+				reg = <0>;
+				tpda_nav_out_funnel_dl_compute: endpoint {
+					remote-endpoint =
+					<&funnel_dl_compute_in_tpda_nav>;
+				};
+			};
+
+			port@1 {
+				reg = <0>;
+				tpda_nav0_in_tpdm_nav: endpoint {
+					slave-mode;
+					remote-endpoint =
+					<&tpdm_nav_out_tpda_nav0>;
+				};
+			};
+
+		};
+	};
+
+	tpdm_nav: tpdm@6842000 {
+		compatible = "arm,primecell";
+		arm,primecell-periphid = <0x000bb968>;
+		reg = <0x6842000 0x1000>;
+		reg-names = "tpdm-base";
+
+		coresight-name = "coresight-tpdm-nav";
+
+		clocks = <&aopcc QDSS_CLK>;
+		clock-names = "apb_pclk";
+		port {
+			tpdm_nav_out_tpda_nav0: endpoint {
+				remote-endpoint =
+				<&tpda_nav0_in_tpdm_nav>;
+			};
+		};
+	};
+
 	funnel_turing: funnel@6983000 {
 		compatible = "arm,primecell";
 		arm,primecell-periphid = <0x000bb908>;
@@ -1221,6 +1274,15 @@
 					slave-mode;
 					remote-endpoint =
 					<&tpdm_compute1_out_funnel_dl_compute>;
+				};
+			};
+
+			port@5 {
+				reg = <7>;
+				funnel_dl_compute_in_tpda_nav: endpoint {
+					slave-mode;
+					remote-endpoint =
+					<&tpda_nav_out_funnel_dl_compute>;
 				};
 			};
 		};
@@ -1696,6 +1758,15 @@
 				funnel_in1_out_funnel_merg: endpoint {
 					remote-endpoint =
 						<&funnel_merg_in_funnel_in1>;
+				};
+			};
+
+			port@1 {
+				reg = <1>;
+				funnel_in1_in_tpdm_wcss: endpoint {
+					slave-mode;
+					remote-endpoint =
+					<&tpdm_wcss_out_funnel_in1>;
 				};
 			};
 
@@ -3212,6 +3283,19 @@
 			lpass_lpi_out_funnel_swao: endpoint {
 				remote-endpoint =
 					<&funnel_swao_in_lpass_lpi>;
+			};
+		};
+	};
+
+	tpdm_wcss: tpdm@069a4000 {
+		compatible = "qcom,coresight-dummy";
+
+		coresight-name = "coresight-tpdm-wcss";
+		qcom,dummy-source;
+
+		port {
+			tpdm_wcss_out_funnel_in1: endpoint {
+				remote-endpoint = <&funnel_in1_in_tpdm_wcss>;
 			};
 		};
 	};
