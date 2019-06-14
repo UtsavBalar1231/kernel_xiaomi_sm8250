@@ -606,6 +606,10 @@ int msm_vidc_calculate_input_buffer_count(struct msm_vidc_inst *inst)
 	if (!is_decode_session(inst) && !is_encode_session(inst))
 		return 0;
 
+	/* do not change buffer count while session is running  */
+	if (inst->state == MSM_VIDC_START_DONE)
+		return 0;
+
 	if (is_thumbnail_session(inst)) {
 		fmt->count_min = fmt->count_min_host = fmt->count_actual =
 			MIN_NUM_THUMBNAIL_MODE_INPUT_BUFFERS;
@@ -648,6 +652,10 @@ int msm_vidc_calculate_output_buffer_count(struct msm_vidc_inst *inst)
 	codec = get_v4l2_codec(inst);
 
 	if (!is_decode_session(inst) && !is_encode_session(inst))
+		return 0;
+
+	/* do not change buffer count while session is running  */
+	if (inst->state == MSM_VIDC_START_DONE)
 		return 0;
 
 	if (is_thumbnail_session(inst)) {

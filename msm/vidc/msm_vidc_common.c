@@ -1765,15 +1765,6 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 	fmt = &inst->fmts[OUTPUT_PORT];
 	fmt->v4l2_fmt.fmt.pix_mp.height = event_notify->height;
 	fmt->v4l2_fmt.fmt.pix_mp.width = event_notify->width;
-	extra_buff_count = msm_vidc_get_extra_buff_count(inst,
-					HAL_BUFFER_OUTPUT);
-	fmt->count_min = event_notify->capture_buf_count;
-	fmt->count_min_host = fmt->count_min + extra_buff_count;
-
-	dprintk(VIDC_HIGH, "%s: buffer[%d] count: min %d min_host %d\n",
-		__func__, HAL_BUFFER_OUTPUT, fmt->count_min,
-		fmt->count_min_host);
-
 	mutex_unlock(&inst->lock);
 
 	if (event == V4L2_EVENT_SEQ_CHANGED_INSUFFICIENT) {
@@ -1785,6 +1776,16 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 		dprintk(VIDC_HIGH, "%s: %x : batching %s\n",
 			__func__, hash32_ptr(inst->session),
 			inst->batch.enable ? "enabled" : "disabled");
+
+		extra_buff_count = msm_vidc_get_extra_buff_count(inst,
+				HAL_BUFFER_OUTPUT);
+		fmt->count_min = event_notify->capture_buf_count;
+		fmt->count_min_host = fmt->count_min + extra_buff_count;
+		dprintk(VIDC_HIGH,
+			"%s: %x : hal buffer[%d] count: min %d min_host %d\n",
+			__func__, hash32_ptr(inst->session),
+			HAL_BUFFER_OUTPUT, fmt->count_min,
+			fmt->count_min_host);
 	}
 
 	rc = msm_vidc_check_session_supported(inst);
