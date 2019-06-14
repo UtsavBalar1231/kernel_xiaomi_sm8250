@@ -5588,6 +5588,18 @@ int msm_vidc_check_session_supported(struct msm_vidc_inst *inst)
 				mbpf_max);
 			rc = -ENOTSUPP;
 		}
+		if (!rc && inst->pic_struct !=
+			MSM_VIDC_PIC_STRUCT_PROGRESSIVE &&
+			(output_width > INTERLACE_WIDTH_MAX ||
+			output_height > INTERLACE_HEIGHT_MAX ||
+			(NUM_MBS_PER_FRAME(output_height, output_width) >
+			INTERLACE_MB_PER_FRAME_MAX))) {
+			dprintk(VIDC_ERR,
+				"Unsupported interlace WxH = (%u)x(%u), max supported is - (%u)x(%u)\n",
+				output_width, output_height,
+				INTERLACE_WIDTH_MAX, INTERLACE_HEIGHT_MAX);
+			rc = -ENOTSUPP;
+		}
 	}
 	if (rc) {
 		dprintk(VIDC_ERR,
