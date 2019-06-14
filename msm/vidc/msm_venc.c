@@ -2390,11 +2390,10 @@ int msm_venc_set_rate_control(struct msm_vidc_inst *inst)
 int msm_venc_set_vbv_delay(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
+	bool is_legacy_cbr;
 	struct hfi_device *hdev;
 	struct v4l2_ctrl *ctrl;
-	u32 codec;
-	u32 height, width, fps, mbpf, mbps;
-	u32 max_fps = 15;
+	u32 codec, height, width, buf_size;
 	struct hfi_vbv_hrd_buf_size hrd_buf_size;
 	struct v4l2_format *f;
 
@@ -2408,10 +2407,6 @@ int msm_venc_set_vbv_delay(struct msm_vidc_inst *inst)
 	codec = get_v4l2_codec(inst);
 	height = f->fmt.pix_mp.height;
 	width = f->fmt.pix_mp.width;
-	mbpf = NUM_MBS_PER_FRAME(height, width);
-	fps = inst->clk_data.frame_rate >> 16;
-	mbpf = NUM_MBS_PER_FRAME(height, width);
-	mbps = NUM_MBS_PER_SEC(height, width, fps);
 
 	/* vbv delay is required for CBR_CFR and CBR_VFR only */
 	if (inst->rc_type != V4L2_MPEG_VIDEO_BITRATE_MODE_CBR &&
@@ -2422,34 +2417,39 @@ int msm_venc_set_vbv_delay(struct msm_vidc_inst *inst)
 	if (codec == V4L2_PIX_FMT_VP8)
 		return 0;
 
-	/* default behavior */
-	inst->clk_data.is_legacy_cbr = false;
-	hrd_buf_size.vbv_hrd_buf_size = CBR_PLUS_BUF_SIZE;
+	/* Default behavior */
+	is_legacy_cbr = false;
+	buf_size = CBR_PLUS_BUF_SIZE;
 
-	/* if resolution greater than MAX_CBR (720p), default behavior */
-	if (res_is_greater_than(width, height, MAX_CBR_W, MAX_CBR_H))
-		goto set_vbv_delay;
-
-	/* enable legacy cbr if resolution less than MIN_CBRPLUS (VGA) */
-	if (res_is_less_than(width, height, MIN_CBRPLUS_W, MIN_CBRPLUS_H) &&
-		mbps <= NUM_MBS_PER_SEC(MIN_CBRPLUS_H, MIN_CBRPLUS_W,
-			max_fps)) {
-		inst->clk_data.is_legacy_cbr = true;
-		hrd_buf_size.vbv_hrd_buf_size = LEGACY_CBR_BUF_SIZE;
-		goto set_vbv_delay;
-	}
-
-	/* enable legacy cbr if rate control is CBR_VFR and VBV delay is 500 */
-	if (inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_CBR_VFR) {
+	/*
+	 * Client can set vbv delay only when
+	 * resolution is between VGA and 720p
+	 */
+	if (res_is_greater_than_or_equal_to(width, height, MIN_CBRPLUS_W,
+		MIN_CBRPLUS_H) && res_is_less_than_or_equal_to(width, height,
+		MAX_CBR_W, MAX_CBR_H)) {
 		ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_VBV_DELAY);
 		if (ctrl->val == LEGACY_CBR_BUF_SIZE) {
-		    inst->clk_data.is_legacy_cbr = true;
-		    hrd_buf_size.vbv_hrd_buf_size = LEGACY_CBR_BUF_SIZE;
-		    goto set_vbv_delay;
+			is_legacy_cbr = true;
+			buf_size = LEGACY_CBR_BUF_SIZE;
+			goto set_vbv_delay;
+		} else if (ctrl->val == CBR_PLUS_BUF_SIZE) {
+			is_legacy_cbr = false;
+			buf_size = CBR_PLUS_BUF_SIZE;
+			goto set_vbv_delay;
 		}
 	}
 
+	/* Enable legacy cbr if resolution < MIN_CBRPLUS (720p) */
+	if (res_is_less_than(width, height, MAX_CBR_W, MAX_CBR_H)) {
+		is_legacy_cbr = true;
+		buf_size = LEGACY_CBR_BUF_SIZE;
+		goto set_vbv_delay;
+	}
+
 set_vbv_delay:
+	inst->clk_data.is_legacy_cbr = is_legacy_cbr;
+	hrd_buf_size.vbv_hrd_buf_size = buf_size;
 	dprintk(VIDC_HIGH, "Set hrd_buf_size %d",
 				hrd_buf_size.vbv_hrd_buf_size);
 	rc = call_hfi_op(hdev, session_set_property,
