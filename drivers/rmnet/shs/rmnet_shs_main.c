@@ -151,29 +151,62 @@ void rmnet_shs_cpu_node_move(struct rmnet_shs_skbn_s *node,
 int rmnet_shs_is_skb_stamping_reqd(struct sk_buff *skb)
 {
 	int ret_val = 0;
+	struct iphdr *ip4h;
+	struct ipv6hdr *ip6h;
 
-	/* SHS will ignore ICMP and frag pkts completely */
-	switch (skb->protocol) {
-	case htons(ETH_P_IP):
-		if (!ip_is_fragment(ip_hdr(skb)) &&
-		    ((ip_hdr(skb)->protocol == IPPROTO_TCP) ||
-		     (ip_hdr(skb)->protocol == IPPROTO_UDP)))
-			ret_val =  1;
+	/* This only applies to linear SKBs */
+	if (!skb_is_nonlinear(skb)) {
+		/* SHS will ignore ICMP and frag pkts completely */
+		switch (skb->protocol) {
+		case htons(ETH_P_IP):
+			if (!ip_is_fragment(ip_hdr(skb)) &&
+			((ip_hdr(skb)->protocol == IPPROTO_TCP) ||
+			(ip_hdr(skb)->protocol == IPPROTO_UDP)))
+				ret_val =  1;
 
-		break;
+			break;
 
-	case htons(ETH_P_IPV6):
-		if (!(ipv6_hdr(skb)->nexthdr == NEXTHDR_FRAGMENT) &&
-		    ((ipv6_hdr(skb)->nexthdr == IPPROTO_TCP) ||
-		     (ipv6_hdr(skb)->nexthdr == IPPROTO_UDP)))
-			ret_val =  1;
+		case htons(ETH_P_IPV6):
+			if (!(ipv6_hdr(skb)->nexthdr == NEXTHDR_FRAGMENT) &&
+			((ipv6_hdr(skb)->nexthdr == IPPROTO_TCP) ||
+			(ipv6_hdr(skb)->nexthdr == IPPROTO_UDP)))
+				ret_val =  1;
 
-		break;
+			break;
 
-	default:
-		break;
+		default:
+			break;
+		}
+	} else {
+		switch (skb->protocol) {
+		case htons(ETH_P_IP):
+			ip4h = (struct iphdr *)rmnet_map_data_ptr(skb);
+
+			if (!(ntohs(ip4h->frag_off) & IP_MF) &&
+			    ((ntohs(ip4h->frag_off) & IP_OFFSET) == 0) &&
+			    (ip4h->protocol == IPPROTO_TCP ||
+			     ip4h->protocol == IPPROTO_UDP)) {
+				ret_val =  1;
+			}
+
+			break;
+
+		case htons(ETH_P_IPV6):
+			ip6h = (struct ipv6hdr *)rmnet_map_data_ptr(skb);
+
+			if (!(ip6h->nexthdr == NEXTHDR_FRAGMENT) &&
+			((ip6h->nexthdr == IPPROTO_TCP) ||
+			(ip6h->nexthdr == IPPROTO_UDP)))
+				ret_val =  1;
+
+			break;
+
+		default:
+			break;
+		}
+
+
 	}
-
 	SHS_TRACE_LOW(RMNET_SHS_SKB_STAMPING, RMNET_SHS_SKB_STAMPING_END,
 			    ret_val, 0xDEF, 0xDEF, 0xDEF, skb, NULL);
 
@@ -221,21 +254,39 @@ static int rmnet_shs_is_core_loaded(int cpu)
 /* We deliver packets to GRO module only for TCP traffic*/
 static int rmnet_shs_check_skb_can_gro(struct sk_buff *skb)
 {
-	int ret_val = -EPROTONOSUPPORT;
+	int ret_val = 0;
+	struct iphdr *ip4h;
+	struct ipv6hdr *ip6h;
 
-	switch (skb->protocol) {
-	case htons(ETH_P_IP):
-		if (ip_hdr(skb)->protocol == IPPROTO_TCP)
-			ret_val =  0;
-		break;
+	if (!skb_is_nonlinear(skb)) {
+		switch (skb->protocol) {
+		case htons(ETH_P_IP):
+			if (ip_hdr(skb)->protocol == IPPROTO_TCP)
+				ret_val = 1;
+			break;
 
-	case htons(ETH_P_IPV6):
-		if (ipv6_hdr(skb)->nexthdr == IPPROTO_TCP)
-			ret_val =  0;
-		break;
-	default:
-		ret_val =  -EPROTONOSUPPORT;
-		break;
+		case htons(ETH_P_IPV6):
+			if (ipv6_hdr(skb)->nexthdr == IPPROTO_TCP)
+				ret_val = 1;
+			break;
+		default:
+			break;
+		}
+	} else {
+		switch (skb->protocol) {
+		case htons(ETH_P_IP):
+			ip4h = (struct iphdr *)rmnet_map_data_ptr(skb);
+			if (ip4h->protocol == IPPROTO_TCP)
+				ret_val = 1;
+			break;
+		case htons(ETH_P_IPV6):
+			ip6h = (struct ipv6hdr *)rmnet_map_data_ptr(skb);
+			if (ip6h->nexthdr == IPPROTO_TCP)
+				ret_val = 1;
+			break;
+		default:
+			break;
+		}
 	}
 
 	SHS_TRACE_LOW(RMNET_SHS_SKB_CAN_GRO, RMNET_SHS_SKB_CAN_GRO_END,
@@ -253,7 +304,7 @@ static void rmnet_shs_deliver_skb(struct sk_buff *skb)
 	SHS_TRACE_LOW(RMNET_SHS_DELIVER_SKB, RMNET_SHS_DELIVER_SKB_START,
 			    0xDEF, 0xDEF, 0xDEF, 0xDEF, skb, NULL);
 
-	if (!rmnet_shs_check_skb_can_gro(skb)) {
+	if (rmnet_shs_check_skb_can_gro(skb)) {
 		if ((napi = get_current_napi_context())) {
 			napi_gro_receive(napi, skb);
 		} else {
@@ -1053,59 +1104,30 @@ void rmnet_shs_chain_to_skb_list(struct sk_buff *skb,
 {
 	u8 pushflush = 0;
 	struct napi_struct *napi = get_current_napi_context();
-	/* UDP GRO should tell us how many packets make up a
-	 * coalesced packet. Use that instead for stats for wq
-	 * Node stats only used by WQ
-	 * Parkedlen useful for cpu stats used by old IB
-	 * skb_load used by IB + UDP coals
+
+	/* Early flush for TCP if PSH packet.
+	 * Flush before parking PSH packet.
 	 */
+	if (skb->cb[SKB_FLUSH]){
+		rmnet_shs_flush_lock_table(0, RMNET_RX_CTXT);
+		rmnet_shs_flush_reason[RMNET_SHS_FLUSH_PSH_PKT_FLUSH]++;
+		napi_gro_flush(napi, false);
+		pushflush = 1;
+	}
 
-	if ((skb->protocol == htons(ETH_P_IP) &&
-	     ip_hdr(skb)->protocol == IPPROTO_UDP) ||
-	    (skb->protocol == htons(ETH_P_IPV6) &&
-	     ipv6_hdr(skb)->nexthdr == IPPROTO_UDP)) {
-
-		if (skb_shinfo(skb)->gso_segs) {
-			node->num_skb += skb_shinfo(skb)->gso_segs;
-			rmnet_shs_cpu_node_tbl[node->map_cpu].parkedlen++;
-			node->skb_list.skb_load += skb_shinfo(skb)->gso_segs;
-		} else {
-			node->num_skb += 1;
-			rmnet_shs_cpu_node_tbl[node->map_cpu].parkedlen++;
-			node->skb_list.skb_load++;
-
-		}
+	/* Support for gso marked packets */
+	if (skb_shinfo(skb)->gso_segs) {
+		node->num_skb += skb_shinfo(skb)->gso_segs;
+		rmnet_shs_cpu_node_tbl[node->map_cpu].parkedlen++;
+		node->skb_list.skb_load += skb_shinfo(skb)->gso_segs;
 	} else {
-		/* This should only have TCP based on current
-		 * rmnet_shs_is_skb_stamping_reqd logic. Unoptimal
-		 * if non UDP/TCP protos are supported
-		 */
-
-		/* Early flush for TCP if PSH packet.
-		 * Flush before parking PSH packet.
-		 */
-		if (skb->cb[SKB_FLUSH]){
-			rmnet_shs_flush_lock_table(0, RMNET_RX_CTXT);
-			rmnet_shs_flush_reason[RMNET_SHS_FLUSH_PSH_PKT_FLUSH]++;
-			napi_gro_flush(napi, false);
-			pushflush = 1;
-		}
-
-		/* TCP support for gso marked packets */
-		if (skb_shinfo(skb)->gso_segs) {
-			node->num_skb += skb_shinfo(skb)->gso_segs;
-			rmnet_shs_cpu_node_tbl[node->map_cpu].parkedlen++;
-			node->skb_list.skb_load += skb_shinfo(skb)->gso_segs;
-		} else {
-			node->num_skb += 1;
-			rmnet_shs_cpu_node_tbl[node->map_cpu].parkedlen++;
-			node->skb_list.skb_load++;
-
-		}
+		node->num_skb += 1;
+		rmnet_shs_cpu_node_tbl[node->map_cpu].parkedlen++;
+		node->skb_list.skb_load++;
 
 	}
-	node->num_skb_bytes += skb->len;
 
+	node->num_skb_bytes += skb->len;
 	node->skb_list.num_parked_bytes += skb->len;
 	rmnet_shs_cfg.num_bytes_parked  += skb->len;
 
@@ -1365,16 +1387,33 @@ void rmnet_shs_cancel_table(void)
 void rmnet_shs_get_update_skb_proto(struct sk_buff *skb,
 				    struct rmnet_shs_skbn_s *node_p)
 {
-	switch (skb->protocol) {
-	case htons(ETH_P_IP):
-		node_p->skb_tport_proto = ip_hdr(skb)->protocol;
-		break;
-	case htons(ETH_P_IPV6):
-		node_p->skb_tport_proto = ipv6_hdr(skb)->nexthdr;
-		break;
-	default:
-		node_p->skb_tport_proto = IPPROTO_RAW;
-		break;
+	struct iphdr *ip4h;
+	struct ipv6hdr *ip6h;
+
+	if (!skb_is_nonlinear(skb)) {
+		switch (skb->protocol) {
+		case htons(ETH_P_IP):
+			node_p->skb_tport_proto = ip_hdr(skb)->protocol;
+			break;
+		case htons(ETH_P_IPV6):
+			node_p->skb_tport_proto = ipv6_hdr(skb)->nexthdr;
+			break;
+		default:
+			break;
+		}
+	} else {
+		switch (skb->protocol) {
+		case htons(ETH_P_IP):
+			ip4h = (struct iphdr *)rmnet_map_data_ptr(skb);
+			node_p->skb_tport_proto = ip4h->protocol;
+			break;
+		case htons(ETH_P_IPV6):
+			ip6h = (struct ipv6hdr *)rmnet_map_data_ptr(skb);
+			node_p->skb_tport_proto = ip6h->nexthdr;
+			break;
+		default:
+			break;
+		}
 	}
 }
 
