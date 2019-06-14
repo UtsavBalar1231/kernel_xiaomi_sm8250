@@ -2459,6 +2459,95 @@ static INT DWC_ETH_QOS_resume(struct platform_device *pdev)
 
 #endif /* CONFIG_PM */
 
+static int DWC_ETH_QOS_hib_restore(struct device *dev) {
+	struct DWC_ETH_QOS_prv_data *pdata = gDWC_ETH_QOS_prv_data;
+	int ret = 0;
+
+	if (of_device_is_compatible(dev->of_node, "qcom,emac-smmu-embedded"))
+		return 0;
+
+	EMACINFO(" start\n");
+
+        ret = DWC_ETH_QOS_init_regulators(dev);
+	if (ret)
+		return ret;
+
+	ret = DWC_ETH_QOS_init_gpios(dev);
+	if (ret)
+		return ret;
+
+	ret = DWC_ETH_QOS_get_clks(dev);
+	if (ret)
+		return ret;
+
+	DWC_ETH_QOS_set_clk_and_bus_config(pdata, pdata->speed);
+
+	DWC_ETH_QOS_set_rgmii_func_clk_en();
+
+#ifdef DWC_ETH_QOS_CONFIG_PTP
+	DWC_ETH_QOS_ptp_init(pdata);
+#endif /* end of DWC_ETH_QOS_CONFIG_PTP */
+
+	/* issue software reset to device */
+	pdata->hw_if.exit();
+
+	/* Bypass PHYLIB for TBI, RTBI and SGMII interface */
+	if (pdata->hw_feat.sma_sel == 1) {
+		ret = DWC_ETH_QOS_mdio_register(pdata->dev);
+		if (ret < 0) {
+			EMACERR("MDIO bus (id %d) registration failed\n",
+					  pdata->bus_id);
+			return ret;
+		}
+	}
+
+	if (!(pdata->dev->flags & IFF_UP)) {
+		pdata->dev->netdev_ops->ndo_open(pdata->dev);
+		pdata->dev->flags |= IFF_UP;
+	}
+
+	EMACINFO("end\n");
+
+	return ret;
+}
+
+static int DWC_ETH_QOS_hib_freeze(struct device *dev) {
+	struct DWC_ETH_QOS_prv_data *pdata = gDWC_ETH_QOS_prv_data;
+	int ret = 0;
+
+	if (of_device_is_compatible(dev->of_node, "qcom,emac-smmu-embedded"))
+		return 0;
+
+	EMACINFO(" start\n");
+	if (pdata->dev->flags & IFF_UP) {
+		pdata->dev->netdev_ops->ndo_stop(pdata->dev);
+		pdata->dev->flags &= ~IFF_UP;
+	}
+
+	if (pdata->hw_feat.sma_sel == 1)
+		DWC_ETH_QOS_mdio_unregister(pdata->dev);
+
+#ifdef DWC_ETH_QOS_CONFIG_PTP
+	DWC_ETH_QOS_ptp_remove(pdata);
+#endif /* end of DWC_ETH_QOS_CONFIG_PTP */
+
+	DWC_ETH_QOS_disable_clks(dev);
+
+	DWC_ETH_QOS_disable_regulators();
+
+	DWC_ETH_QOS_free_gpios();
+
+	EMACINFO("end\n");
+
+	return ret;
+}
+
+static const struct dev_pm_ops DWC_ETH_QOS_pm_ops = {
+	.freeze = DWC_ETH_QOS_hib_freeze,
+	.restore = DWC_ETH_QOS_hib_restore,
+	.thaw = DWC_ETH_QOS_hib_restore,
+};
+
 static struct platform_driver DWC_ETH_QOS_plat_drv = {
 	.probe = DWC_ETH_QOS_probe,
 	.remove = DWC_ETH_QOS_remove,
@@ -2471,6 +2560,7 @@ static struct platform_driver DWC_ETH_QOS_plat_drv = {
 		.name = DRV_NAME,
 		.owner = THIS_MODULE,
 		.of_match_table = DWC_ETH_QOS_plat_drv_match,
+		.pm = &DWC_ETH_QOS_pm_ops,
 	},
 };
 
