@@ -150,6 +150,12 @@
 		qcom,num-records = <3>;
 	};
 
+	qcom,ddr-stats@c3f001c {
+		compatible = "qcom,ddr-stats";
+		reg = <0xc300000 0x1000>, <0xc3f001c 0x4>;
+		reg-names = "phys_addr_base", "offset_addr";
+	};
+
 	qcom,rpmh-master-stats@b221200 {
 		compatible = "qcom,rpmh-master-stats-v1";
 		reg = <0xb221200 0x60>;
