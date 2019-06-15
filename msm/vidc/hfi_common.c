@@ -3790,7 +3790,16 @@ void __disable_unprepare_clks(struct venus_hfi_device *device)
 				"Failed set flag NORETAIN_MEM %s\n",
 					cl->name);
 		}
+
+		if (!__clk_is_enabled(cl->clk))
+			dprintk(VIDC_ERR, "%s: clock %s already disabled\n",
+				__func__, cl->name);
+
 		clk_disable_unprepare(cl->clk);
+
+		if (__clk_is_enabled(cl->clk))
+			dprintk(VIDC_ERR, "%s: clock %s not disabled\n",
+				__func__, cl->name);
 	}
 }
 
@@ -3860,12 +3869,21 @@ static inline int __prepare_enable_clks(struct venus_hfi_device *device)
 				"Failed set flag RETAIN_MEM %s\n",
 					cl->name);
 		}
+
+		if (__clk_is_enabled(cl->clk))
+			dprintk(VIDC_ERR, "%s: clock %s already enabled\n",
+				__func__, cl->name);
+
 		rc = clk_prepare_enable(cl->clk);
 		if (rc) {
 			dprintk(VIDC_ERR, "Failed to enable clocks\n");
 			cl_fail = cl;
 			goto fail_clk_enable;
 		}
+
+		if (!__clk_is_enabled(cl->clk))
+			dprintk(VIDC_ERR, "%s: clock %s not enabled\n",
+				__func__, cl->name);
 
 		c++;
 		dprintk(VIDC_HIGH,
@@ -4184,6 +4202,10 @@ static int __disable_regulator(struct regulator_info *rinfo,
 		goto disable_regulator_failed;
 	}
 
+	if (!regulator_is_enabled(rinfo->regulator))
+		dprintk(VIDC_ERR, "%s: regulator %s already disabled\n",
+			__func__, rinfo->name);
+
 	rc = regulator_disable(rinfo->regulator);
 	if (rc) {
 		dprintk(VIDC_ERR,
@@ -4191,6 +4213,10 @@ static int __disable_regulator(struct regulator_info *rinfo,
 			rinfo->name, rc);
 		goto disable_regulator_failed;
 	}
+
+	if (regulator_is_enabled(rinfo->regulator))
+		dprintk(VIDC_ERR, "%s: regulator %s not disabled\n",
+			__func__, rinfo->name);
 
 	return 0;
 disable_regulator_failed:
@@ -4220,6 +4246,10 @@ static int __enable_regulators(struct venus_hfi_device *device)
 	dprintk(VIDC_HIGH, "Enabling regulators\n");
 
 	venus_hfi_for_each_regulator(device, rinfo) {
+		if (regulator_is_enabled(rinfo->regulator))
+			dprintk(VIDC_ERR, "%s: regulator %s already enabled\n",
+				__func__, rinfo->name);
+
 		rc = regulator_enable(rinfo->regulator);
 		if (rc) {
 			dprintk(VIDC_ERR,
@@ -4227,6 +4257,10 @@ static int __enable_regulators(struct venus_hfi_device *device)
 					rinfo->name, rc);
 			goto err_reg_enable_failed;
 		}
+
+		if (!regulator_is_enabled(rinfo->regulator))
+			dprintk(VIDC_ERR, "%s: regulator %s not enabled\n",
+				__func__, rinfo->name);
 
 		dprintk(VIDC_HIGH, "Enabled regulator %s\n",
 				rinfo->name);
