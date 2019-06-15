@@ -226,7 +226,6 @@ struct vidc_bus_vote_data {
 	int input_cr;
 	u32 ddr_bw;
 	u32 sys_cache_bw;
-	bool use_dpb_read;
 	unsigned int lcu_size;
 	unsigned int fps;
 	enum msm_vidc_power_mode power_mode;
