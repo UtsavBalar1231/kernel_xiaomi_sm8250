@@ -677,6 +677,7 @@ static void configure_phy_rx_tx_delay(struct DWC_ETH_QOS_prv_data *pdata)
 					pdata->emac_hw_version_type != EMAC_HW_v2_1_2)
 					set_phy_rx_tx_delay(pdata, DISABLE_RX_DELAY, DISABLE_TX_DELAY);
 			}
+		}
 		break;
 	}
 	EMACDBG("Exit\n");

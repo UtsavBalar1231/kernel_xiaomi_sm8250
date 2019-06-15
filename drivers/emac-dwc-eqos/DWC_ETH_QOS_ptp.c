@@ -283,8 +283,8 @@ static struct ptp_clock_info DWC_ETH_QOS_ptp_clock_ops = {
 int DWC_ETH_QOS_ptp_init(struct DWC_ETH_QOS_prv_data *pdata)
 {
 	int ret = 0;
-	struct ifr_data_struct req = {0};
 #ifdef CONFIG_PPS_OUTPUT
+	struct ifr_data_struct req = {0};
 	struct ETH_PPS_Config eth_pps_cfg = {0};
 #endif
 
