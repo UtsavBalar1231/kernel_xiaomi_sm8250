@@ -371,7 +371,7 @@ summit	Summit microelectronics
 sunchip	Shenzhen Sunchip Technology Co., Ltd
 SUNW	Sun Microsystems, Inc
 swir	Sierra Wireless
-syna	Synaptics Inc.
+synaptics	Synaptics Inc.
 synology	Synology, Inc.
 tbs	TBS Technologies
 tbs-biometrics	Touchless Biometric Systems AG
