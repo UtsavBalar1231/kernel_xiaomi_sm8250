@@ -1638,8 +1638,8 @@
 		reg = <0x7c4000 0x1000>, <0x7c5000 0x1000>;
 		reg-names = "hc_mem", "cqhci_mem";
 
-		interrupts = <GIC_SPI 202 IRQ_TYPE_NONE>,
-					<GIC_SPI 204 IRQ_TYPE_NONE>;
+		interrupts = <GIC_SPI 202 IRQ_TYPE_LEVEL_HIGH>,
+				<GIC_SPI 204 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "hc_irq", "pwr_irq";
 		sdhc-msm-crypto = <&sdcc1_ice>;
 
@@ -1673,8 +1673,8 @@
 		reg = <0x8804000 0x1000>;
 		reg-names = "hc_mem";
 
-		interrupts = <GIC_SPI 207 IRQ_TYPE_NONE>,
-					<GIC_SPI 223 IRQ_TYPE_NONE>;
+		interrupts = <GIC_SPI 207 IRQ_TYPE_LEVEL_HIGH>,
+				<GIC_SPI 223 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "hc_irq", "pwr_irq";
 
 		qcom,bus-width = <4>;
