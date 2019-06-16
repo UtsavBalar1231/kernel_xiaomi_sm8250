@@ -4953,6 +4953,7 @@
 #include "kona-coresight.dtsi"
 #include "kona-sde.dtsi"
 #include "kona-sde-pll.dtsi"
+#include "msm-rdbg.dtsi"
 
 #include "kona-pm.dtsi"
 #include "kona-camera.dtsi"
