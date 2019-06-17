@@ -34,6 +34,11 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&usb_eldo13>;
 	};
+
+	mtp_batterydata: qcom,battery-data {
+		qcom,batt-id-range-pct = <15>;
+		#include "qg-batterydata-alium-3600mah.dtsi"
+	};
 };
 
 &usb_qmp_dp_phy {
@@ -42,13 +47,6 @@
 
 &sde_dp {
 	vdda-0p9-supply = <&qmp_dp_phy_core_supply>;
-};
-
-/ {
-	mtp_batterydata: qcom,battery-data {
-		qcom,batt-id-range-pct = <15>;
-		#include "qg-batterydata-alium-3600mah.dtsi"
-	};
 };
 
 &ufsphy_mem {
