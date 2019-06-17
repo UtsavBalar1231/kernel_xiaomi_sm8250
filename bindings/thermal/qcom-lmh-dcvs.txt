@@ -57,6 +57,12 @@ Properties:
 			register space in index 0 should be LLM and index 1
 			should be OSM.
 
+- qcom,no-cooling-device-register:
+	Usage: optional
+	Value type: <none>
+	Definition: Should define this property if this driver doesn't need
+			to register CPU cooling devices with thermal framework.
+
 Example:
 
 	lmh_dcvs0: qcom,limits-dcvs@18350800 {
