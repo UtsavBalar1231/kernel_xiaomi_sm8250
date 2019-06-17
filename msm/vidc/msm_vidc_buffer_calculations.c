@@ -869,11 +869,15 @@ u32 msm_vidc_calculate_enc_output_frame_size(struct msm_vidc_inst *inst)
 	if (inst->rc_type == RATE_CONTROL_LOSSLESS)
 		frame_size = (width * height * 6);
 
-	/* For 10-bit cases size = size * 1.25 */
-	if (inst->bit_depth == MSM_VIDC_BIT_DEPTH_10) {
+	/*
+	 * In case of opaque color format bitdepth will be known
+	 * with first ETB, buffers allocated already with 8 bit
+	 * won't be sufficient for 10 bit
+	 * calculate size considering 10-bit by default
+	 * For 10-bit cases size = size * 1.25
+	*/
 		frame_size *= 5;
 		frame_size /= 4;
-	}
 
 	return ALIGN(frame_size, SZ_4K);
 }
