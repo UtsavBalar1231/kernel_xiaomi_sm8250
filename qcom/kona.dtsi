@@ -4762,6 +4762,7 @@
 
 		mhi,max-channels = <30>;
 		mhi,timeout = <10000>;
+		mhi,buffer-len = <0x8000>;
 		mhi,m2-no-db-access;
 
 		mhi_channels {
