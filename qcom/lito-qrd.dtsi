@@ -23,6 +23,11 @@
 			linux,can-disable;
 		};
 	};
+
+	qrd_batterydata: qcom,battery-data {
+		qcom,batt-id-range-pct = <15>;
+		#include "qg-batterydata-atl466271_3300mAh.dtsi"
+	};
 };
 
 &qupv3_se7_i2c {
@@ -182,6 +187,7 @@
 			   "conn_temp",
 			   "sbux_res",
 			   "vph_voltage";
+	qcom,battery-data = <&qrd_batterydata>;
 	qcom,sec-charger-config = <1>;
 	qcom,auto-recharge-soc = <98>;
 	qcom,step-charging-enable;
