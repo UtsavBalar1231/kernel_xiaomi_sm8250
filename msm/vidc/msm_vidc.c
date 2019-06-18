@@ -340,6 +340,12 @@ int msm_vidc_qbuf(void *instance, struct v4l2_buffer *b)
 		return -EINVAL;
 	}
 
+	if (inst->in_flush && is_decode_session(inst) &&
+		b->type == OUTPUT_MPLANE) {
+		dprintk(VIDC_ERR, "%s: in flush, discarding qbuf\n", __func__);
+		return -EINVAL;
+	}
+
 	for (i = 0; i < b->length; i++) {
 		b->m.planes[i].m.fd = b->m.planes[i].reserved[0];
 		b->m.planes[i].data_offset = b->m.planes[i].reserved[1];
