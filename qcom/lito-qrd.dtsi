@@ -28,6 +28,20 @@
 		qcom,batt-id-range-pct = <15>;
 		#include "qg-batterydata-atl466271_3300mAh.dtsi"
 	};
+	vdda_usb_ss_dp_core: vdda_usb_ss_dp_core {
+		compatible = "regulator-fixed";
+		regulator-name = "vdd_supply";
+		regulator-min-microvolt = <880000>;
+		regulator-max-microvolt = <880000>;
+		enable-active-high;
+		gpio = <&pm8150l_gpios 12 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&usb_eldo13>;
+	};
+};
+
+&usb_qmp_dp_phy {
+	vdd-supply = <&vdda_usb_ss_dp_core>;
 };
 
 &qupv3_se7_i2c {
