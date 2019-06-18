@@ -44,6 +44,10 @@
 	vdd-supply = <&vdda_usb_ss_dp_core>;
 };
 
+&sde_dp {
+	vdda-0p9-supply = <&vdda_usb_ss_dp_core>;
+};
+
 &qupv3_se7_i2c {
 	#address-cells = <1>;
 	#size-cells = <0>;
