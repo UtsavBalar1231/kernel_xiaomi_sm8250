@@ -11,5 +11,5 @@
 / {
 	model = "Qualcomm Technologies, Inc. kona RUMI";
 	compatible = "qcom,kona-rumi", "qcom,kona", "qcom,rumi";
-	qcom,board-id = <15 0>;
+	qcom,board-id = <0x1000F 0>;
 };
