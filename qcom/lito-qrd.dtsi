@@ -189,6 +189,7 @@
 	qcom,charger-temp-max = <800>;
 	qcom,smb-temp-max = <800>;
 	qcom,suspend-input-on-debug-batt;
+	qcom,fcc-stepping-enable;
 };
 
 &pm7250b_qg {
