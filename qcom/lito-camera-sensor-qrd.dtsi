@@ -46,6 +46,16 @@
 		switch-source = <&pm8150l_switch2>;
 	};
 
+	vreg_tof: regulator-dbb1 {
+		compatible = "regulator-fixed";
+		regulator-name = "vdd_tof";
+		regulator-min-microvolt = <3600000>;
+		regulator-max-microvolt = <3600000>;
+		gpio = <&pm8150l_gpios 2 GPIO_ACTIVE_HIGH>;
+		startup-delay-us = <1000>;
+		enable-active-high;
+	};
+
 	qcom,cam-res-mgr {
 		compatible = "qcom,cam-res-mgr";
 		status = "ok";
@@ -617,6 +627,44 @@
 		cci-master = <0>;
 		status = "ok";
 		clocks = <&camcc CAM_CC_MCLK2_CLK>;
+		clock-names = "cam_clk";
+		clock-cntl-level = "turbo";
+		clock-rates = <24000000>;
+	};
+
+	qcom,cam-sensor@3 {
+		cell-index = <3>;
+		compatible = "qcom,cam-sensor";
+		csiphy-sd-index = <3>;
+		sensor-position-roll = <270>;
+		sensor-position-pitch = <0>;
+		sensor-position-yaw = <0>;
+		cam_vio-supply = <&L7P>;
+		cam_vdig-supply = <&vreg_tof>;
+		cam_clk-supply = <&titan_top_gdsc>;
+		regulator-names = "cam_vio", "cam_vdig",
+			"cam_clk";
+		rgltr-cntrl-support;
+		rgltr-min-voltage = <1800000 3600000 0>;
+		rgltr-max-voltage = <1800000 3600000 0>;
+		rgltr-load-current = <0 120000 0>;
+		gpio-no-mux = <0>;
+		pinctrl-names = "cam_default", "cam_suspend";
+		pinctrl-0 = <&cam_sensor_mclk3_active
+				 &cam_sensor_active_3>;
+		pinctrl-1 = <&cam_sensor_mclk3_suspend
+				 &cam_sensor_suspend_3>;
+		gpios = <&tlmm 16 0>,
+			<&tlmm 23 0>;
+		gpio-reset = <1>;
+		gpio-req-tbl-num = <0 1>;
+		gpio-req-tbl-flags = <1 0>;
+		gpio-req-tbl-label = "CAMIF_MCLK3",
+					"CAM_RESET3";
+		sensor-mode = <0>;
+		cci-master = <0>;
+		status = "ok";
+		clocks = <&camcc CAM_CC_MCLK3_CLK>;
 		clock-names = "cam_clk";
 		clock-cntl-level = "turbo";
 		clock-rates = <24000000>;
