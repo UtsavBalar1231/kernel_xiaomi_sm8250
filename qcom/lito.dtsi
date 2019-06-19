@@ -3028,6 +3028,7 @@
 		qcom,max-num-gpii = <10>;
 		qcom,gpii-mask = <0x1f>;
 		qcom,ev-factor = <2>;
+		qcom,gpi-ee-offset = <0x10000>;
 		iommus = <&apps_smmu 0x4f6 0x0>;
 		qcom,smmu-cfg = <0x1>;
 		qcom,iommu-dma-addr-pool = <0x100000 0x100000>;
@@ -3052,6 +3053,7 @@
 		qcom,max-num-gpii = <10>;
 		qcom,gpii-mask = <0x3f>;
 		qcom,ev-factor = <2>;
+		qcom,gpi-ee-offset = <0x10000>;
 		iommus = <&apps_smmu 0x36 0x0>;
 		qcom,smmu-cfg = <0x1>;
 		qcom,iommu-dma-addr-pool = <0x100000 0x100000>;
