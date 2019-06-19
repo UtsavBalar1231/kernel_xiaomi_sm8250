@@ -54,7 +54,7 @@
 			qcom,bus-master = <MSM_BUS_MASTER_LLCC>;
 			qcom,bus-slave = <MSM_BUS_SLAVE_EBI_CH0>;
 			qcom,mode = "venus-ddr";
-			qcom,bus-range-kbps = <762 6533000>;
+			qcom,bus-range-kbps = <762 15000000>;
 		};
 
 		venus_bus_llcc {
@@ -63,7 +63,7 @@
 			qcom,bus-master = <MSM_BUS_MASTER_VIDEO_P0>;
 			qcom,bus-slave = <MSM_BUS_SLAVE_LLCC>;
 			qcom,mode = "venuc-llcc";
-			qcom,bus-range-kbps = <2288 6533000>;
+			qcom,bus-range-kbps = <2288 15000000>;
 		};
 
 		/* MMUs */
