@@ -8,6 +8,7 @@
 	msm_bus: qcom,kgsl-busmon {
 		label = "kgsl-busmon";
 		compatible = "qcom,kgsl-busmon";
+		operating-points-v2 = <&gpu_opp_table>;
 	};
 
 	gpubw: qcom,gpubw {
