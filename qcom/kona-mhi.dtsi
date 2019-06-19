@@ -101,7 +101,7 @@
 			mhi_chan@9 {
 				reg = <9>;
 				label = "QDSS";
-				mhi,num-elements = <64>;
+				mhi,num-elements = <128>;
 				mhi,event-ring = <1>;
 				mhi,chan-dir = <2>;
 				mhi,data-type = <0>;
