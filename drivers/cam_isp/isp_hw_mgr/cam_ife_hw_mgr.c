@@ -6038,8 +6038,9 @@ static int cam_ife_hw_mgr_handle_hw_err(
 
 	if (g_ife_hw_mgr.debug_cfg.enable_recovery)
 		error_event_data.recovery_enabled = true;
-	else
-		error_event_data.recovery_enabled = false;
+
+	if (g_ife_hw_mgr.debug_cfg.enable_req_dump)
+		error_event_data.enable_req_dump = true;
 
 	rc = cam_ife_hw_mgr_find_affected_ctx(&error_event_data,
 		core_idx, &recovery_data);
@@ -6499,6 +6500,14 @@ static int cam_ife_hw_mgr_debug_register(void)
 		g_ife_hw_mgr.debug_cfg.dentry,
 		&g_ife_hw_mgr.debug_cfg.enable_recovery)) {
 		CAM_ERR(CAM_ISP, "failed to create enable_recovery");
+		goto err;
+	}
+
+	if (!debugfs_create_bool("enable_req_dump",
+		0644,
+		g_ife_hw_mgr.debug_cfg.dentry,
+		&g_ife_hw_mgr.debug_cfg.enable_req_dump)) {
+		CAM_ERR(CAM_ISP, "failed to create enable_req_dump");
 		goto err;
 	}
 
