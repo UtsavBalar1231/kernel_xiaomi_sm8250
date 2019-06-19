@@ -99,7 +99,6 @@ static const char *bit_mask_string[] = {
 void DWC_ETH_QOS_ipa_offload_event_handler(
    struct DWC_ETH_QOS_prv_data *pdata, IPA_OFFLOAD_EVENT ev)
 {
-	struct hw_if_struct *hw_if = &(pdata->hw_if);
 
 
 	IPA_LOCK();
@@ -554,7 +553,6 @@ static int DWC_ETH_QOS_ipa_ready(struct DWC_ETH_QOS_prv_data *pdata)
 static int DWC_ETH_QOS_ipa_uc_ready(struct DWC_ETH_QOS_prv_data *pdata)
 {
 	struct ipa_uc_ready_params param;
-	unsigned long flags;
 	int ret;
 
 	EMACDBG("Enter \n");

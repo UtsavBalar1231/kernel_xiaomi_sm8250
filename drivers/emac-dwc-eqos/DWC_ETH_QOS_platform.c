@@ -101,7 +101,6 @@ void DWC_ETH_QOS_extract_macid(char *mac_addr)
 	char *input = NULL;
 	int i = 0;
 	UCHAR mac_id = 0;
-	int ret;
 
 	if (!mac_addr)
 		return;
@@ -1498,7 +1497,7 @@ void is_ipv6_NW_stack_ready(struct work_struct *work)
 
 int DWC_ETH_QOS_add_ipv6addr(struct DWC_ETH_QOS_prv_data *pdata)
 {
-	int ret = -EFAULT;;
+	int ret;
 #ifdef DWC_ETH_QOS_BUILTIN
 	struct in6_ifreq ir6;
 	char* prefix;
@@ -1512,7 +1511,7 @@ int DWC_ETH_QOS_add_ipv6addr(struct DWC_ETH_QOS_prv_data *pdata)
 	if (!net->ipv6.devconf_dflt) {
 		EMACDBG("ipv6.devconf_dflt is null, schedule wq\n");
 		schedule_delayed_work(&pdata->ipv6_addr_assign_wq, msecs_to_jiffies(1000));
-		return ret;
+		return -EFAULT;
 	}
 
 	/*For valid IPv6 address*/
@@ -1533,6 +1532,8 @@ int DWC_ETH_QOS_add_ipv6addr(struct DWC_ETH_QOS_prv_data *pdata)
 		EMACERR("Can't setup IPv6 address!\r\n");
 	else
 		EMACDBG("Assigned IPv6 address: %s\r\n", ip_info->ipv6_addr_str);
+#else
+	ret = -EFAULT;
 #endif
 	return ret;
 }
