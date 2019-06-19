@@ -1442,22 +1442,12 @@ static int try_get_ctrl_for_instance(struct msm_vidc_inst *inst,
 			inst->level);
 		break;
 	case V4L2_CID_MIN_BUFFERS_FOR_CAPTURE:
-		rc = msm_vidc_calculate_output_buffer_count(inst);
-		if (rc) {
-			dprintk(VIDC_ERR, "g_min: input failed\n", __func__);
-			break;
-		}
 		ctrl->val = inst->fmts[OUTPUT_PORT].count_min_host;
 		dprintk(VIDC_HIGH, "g_min: %x : hal_buffer %d min buffers %d\n",
 			hash32_ptr(inst->session), HAL_BUFFER_OUTPUT,
 			ctrl->val);
 		break;
 	case V4L2_CID_MIN_BUFFERS_FOR_OUTPUT:
-		rc = msm_vidc_calculate_input_buffer_count(inst);
-		if (rc) {
-			dprintk(VIDC_ERR, "g_min: output failed\n", __func__);
-			break;
-		}
 		ctrl->val = inst->fmts[INPUT_PORT].count_min_host;
 		dprintk(VIDC_HIGH, "g_min: %x : hal_buffer %d min buffers %d\n",
 			hash32_ptr(inst->session), HAL_BUFFER_INPUT, ctrl->val);
