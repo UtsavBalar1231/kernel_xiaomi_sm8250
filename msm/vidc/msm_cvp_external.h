@@ -40,6 +40,8 @@
 #define CVP_KMD_HFI_VERSION_PROP_TYPE           (1)
 #define CVP_KMD_HFI_VERSION_PROP_NUMBER	        (1)
 
+#define CVP_FRAME_RATE_MAX                      (60)
+
 static inline bool is_vidc_cvp_enabled(struct msm_vidc_inst *inst)
 {
 	return !!inst->cvp;
