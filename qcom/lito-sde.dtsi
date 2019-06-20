@@ -110,6 +110,10 @@
 						 4700000 4700000
 						 4700000>;
 
+		qcom,sde-max-per-pipe-bw-high-kbps = <4700000 4700000
+						      4700000 4700000
+						      4700000>;
+
 		/* offsets are relative to "mdp_phys + qcom,sde-off */
 		qcom,sde-sspp-clk-ctrl = <0x2ac 0>, <0x2b4 0>,
 					 <0x2ac 8>, <0x2b4 8>, <0x2c4 8>;
@@ -139,7 +143,7 @@
 		qcom,sde-max-dest-scaler-input-linewidth = <2048>;
 		qcom,sde-max-dest-scaler-output-linewidth = <2560>;
 		qcom,sde-max-bw-low-kbps = <5800000>;
-		qcom,sde-max-bw-high-kbps = <5800000>;
+		qcom,sde-max-bw-high-kbps = <8600000>;
 		qcom,sde-min-core-ib-kbps = <2400000>;
 		qcom,sde-min-llcc-ib-kbps = <800000>;
 		qcom,sde-min-dram-ib-kbps = <800000>;
