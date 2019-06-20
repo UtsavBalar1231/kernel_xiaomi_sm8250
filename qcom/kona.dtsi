@@ -4772,9 +4772,6 @@
 		vdd-wlan-rfa2-supply = <&pm8150a_s8>;
 		wlan-ant-switch-supply = <&pm8150a_l5>;
 
-		clocks = <&clock_rpmh RPMH_RF_CLKD3>;
-		clock-names = "rf_clk";
-
 		mhi,max-channels = <30>;
 		mhi,timeout = <10000>;
 		mhi,m2-no-db-access;
