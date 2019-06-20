@@ -52,7 +52,7 @@ MODULE_PARM_DESC(rmnet_perf_core_num_skbs_max, "Num skbs max held from HW");
 /* Toggle to flush all coalesced packets when physical device is out of
  * packets
  */
-unsigned long int rmnet_perf_core_bm_flush_on = 0;
+unsigned long int rmnet_perf_core_bm_flush_on = 1;
 module_param(rmnet_perf_core_bm_flush_on, ulong, 0644);
 MODULE_PARM_DESC(rmnet_perf_core_bm_flush_on, "turn on bm flushing");
 
@@ -455,7 +455,7 @@ void rmnet_perf_core_ps_on(void *port)
 /* DL marker on, we can try to coalesce more packets */
 void rmnet_perf_core_ps_off(void *port)
 {
-	rmnet_perf_core_bm_flush_on = 0;
+	rmnet_perf_core_bm_flush_on = 1;
 }
 
 void
@@ -912,7 +912,8 @@ void rmnet_perf_core_deaggregate(struct sk_buff *skb,
 	/* if we ran out of data and should have gotten an end marker,
 	 * then we can flush everything
 	 */
-	if (!rmnet_perf_core_bm_flush_on ||
+	if (port->data_format == RMNET_INGRESS_FORMAT_DL_MARKER_V2 ||
+	    !rmnet_perf_core_bm_flush_on ||
 	    (int) perf->core_meta->bm_state->expect_packets <= 0) {
 		rmnet_perf_opt_flush_all_flow_nodes();
 		rmnet_perf_core_free_held_skbs();
