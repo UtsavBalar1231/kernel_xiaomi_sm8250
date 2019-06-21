@@ -366,6 +366,7 @@
 	qcom,linearize-soc;
 	qcom,five-pin-battery;
 	qcom,cl-wt-enable;
+	qcom,soc-scale-mode-en;
 	/* ESR fast calibration */
 	qcom,fg-esr-timer-chg-fast = <0 7>;
 	qcom,fg-esr-timer-dischg-fast = <0 7>;
