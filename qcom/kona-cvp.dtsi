@@ -35,26 +35,26 @@
 		qcom,reg-presets = <0xB0088 0x0>;
 
 		/* Buses */
-		bus_cnoc {
+		cvp_cnoc {
 			compatible = "qcom,msm-cvp,bus";
-			label = "cnoc";
+			label = "cvp-cnoc";
 			qcom,bus-master = <MSM_BUS_MASTER_AMPSS_M0>;
 			qcom,bus-slave = <MSM_BUS_SLAVE_VENUS_CFG>;
 			qcom,bus-governor = "performance";
 			qcom,bus-range-kbps = <1000 1000>;
 		};
 
-		venus_bus_ddr {
+		cvp_bus_ddr {
 			compatible = "qcom,msm-cvp,bus";
-			label = "venus-ddr";
-			qcom,bus-master = <MSM_BUS_MASTER_VIDEO_P0>;
+			label = "cvp-ddr";
+			qcom,bus-master = <MSM_BUS_MASTER_VIDEO_PROC>;
 			qcom,bus-slave = <MSM_BUS_SLAVE_EBI_CH0>;
 			qcom,bus-governor = "performance";
 			qcom,bus-range-kbps = <1000 6533000>;
 		};
 
 		/* MMUs */
-		non_secure_cb {
+		cvp_non_secure_cb {
 			compatible = "qcom,msm-cvp,context-bank";
 			label = "cvp_hlos";
 			iommus =
@@ -65,7 +65,7 @@
 		};
 
 
-		secure_nonpixel_cb {
+		cvp_secure_nonpixel_cb {
 			compatible = "qcom,msm-cvp,context-bank";
 			label = "cvp_sec_nonpixel";
 			iommus =
@@ -76,7 +76,7 @@
 			qcom,secure-context-bank;
 		};
 
-		secure_pixel_cb {
+		cvp_secure_pixel_cb {
 			compatible = "qcom,msm-cvp,context-bank";
 			label = "cvp_sec_pixel";
 			iommus =
