@@ -132,6 +132,12 @@ Main node
 	Definition: List of max/min voltage(uV) and optimal current(uA) tuple
 		for power supply
 
+- qcom,bw-scale:
+	Usage: optional
+	Value type: <prop-encoded-array>
+	Definition: List of CX voltage corner and rate change clock frequency
+		pair for each PCIe GEN speed
+
 - qcom,msm-bus,<bus-field>:
 	Usage: required
 	Value type: <prop-encoded>
@@ -424,6 +430,9 @@ Example
 		qcom,vreg-0.9-voltage-level = <950000 950000 24000>;
 		qcom,vreg-cx-voltage-level = <RPMH_REGULATOR_LEVEL_MAX
 						RPMH_REGULATOR_LEVEL_NOM 0>;
+		qcom,bw-scale = <RPMH_REGULATOR_LEVEL_LOW_SVS 19200000 /* Gen1 */
+				<RPMH_REGULATOR_LEVEL_LOW_SVS 19200000 /* Gen2 */
+				<RPMH_REGULATOR_LEVEL_NOM 100000000>; /* Gen3 */
 
 		qcom,msm-bus,name = "pcie0";
 		qcom,msm-bus,num-cases = <2>;
