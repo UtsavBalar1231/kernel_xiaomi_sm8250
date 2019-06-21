@@ -131,6 +131,9 @@ enum rmnet_perf_trace_evt {
 	RMNET_PERF_DEAG_PKT,
 };
 
+
+void rmnet_perf_core_grab_lock(void);
+void rmnet_perf_core_release_lock(void);
 void rmnet_perf_core_ps_on(void *port);
 void rmnet_perf_core_ps_off(void *port);
 bool rmnet_perf_core_is_deag_mode(void);
