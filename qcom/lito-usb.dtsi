@@ -120,7 +120,7 @@
 		reg = <0x88e8000 0x3000>;
 		reg-names = "qmp_phy_base";
 
-		vdd-supply = <&pm8150_l5>;
+		core-supply = <&pm8150_l9>;
 		qcom,vdd-voltage-level = <0 880000 880000>;
 		qcom,vdd-max-load-uA = <47000>;
 		qcom,vbus-valid-override;
