@@ -237,7 +237,7 @@
 			<&gcc GCC_GPU_SNOC_DVM_GFX_CLK>,
 			<&gpucc GPU_CC_AHB_CLK>;
 
-		clock-names = "igcc_gpu_memnoc_gfx",
+		clock-names = "gcc_gpu_memnoc_gfx",
 			"gcc_gpu_snoc_dvm_gfx",
 			"gpu_cc_ahb";
 
