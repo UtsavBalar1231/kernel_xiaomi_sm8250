@@ -2153,6 +2153,7 @@
 		coresight-name = "coresight-tpda-olc";
 
 		qcom,tpda-atid = <69>;
+		qcom,cmb-elem-size = <0 64>;
 
 		clocks = <&aopcc QDSS_CLK>;
 		clock-names = "apb_pclk";
@@ -2169,7 +2170,7 @@
 			};
 
 			port@1 {
-				reg = <2>;
+				reg = <0>;
 				tpda_olc_in_tpdm_olc: endpoint {
 					slave-mode;
 					remote-endpoint =
