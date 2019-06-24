@@ -18,6 +18,10 @@
 /* extra o/p buffers in case of decoder dcvs */
 #define DCVS_DEC_EXTRA_OUTPUT_BUFFERS 4
 
+/* extra buffers for encoder HFR usecase */
+#define HFR_EXTRA_INPUT_BUFFERS 4
+#define HFR_EXTRA_OUTPUT_BUFFERS 12
+
 #define HFI_COLOR_FORMAT_YUV420_NV12_UBWC_Y_TILE_WIDTH 32
 #define HFI_COLOR_FORMAT_YUV420_NV12_UBWC_Y_TILE_HEIGHT 8
 #define HFI_COLOR_FORMAT_YUV420_NV12_UBWC_UV_TILE_WIDTH 16
@@ -724,6 +728,7 @@ int msm_vidc_get_extra_buff_count(struct msm_vidc_inst *inst,
 	enum hal_buffer buffer_type)
 {
 	unsigned int count = 0;
+	struct v4l2_format *f;
 
 	if (!inst || !inst->core) {
 		dprintk(VIDC_ERR, "%s Invalid args\n", __func__);
@@ -756,6 +761,19 @@ int msm_vidc_get_extra_buff_count(struct msm_vidc_inst *inst,
 			is_decode_session(inst) &&
 			count < inst->batch.size)
 			count = inst->batch.size;
+	}
+
+	/* increase both input and output counts for HFR/HSR encode case */
+	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
+	if (is_encode_session(inst) && msm_vidc_get_fps(inst) >= 120 &&
+		!res_is_greater_than(f->fmt.pix_mp.width,
+		f->fmt.pix_mp.height, 1920, 1088)) {
+		if (buffer_type == HAL_BUFFER_INPUT &&
+			count < HFR_EXTRA_INPUT_BUFFERS)
+			count = HFR_EXTRA_INPUT_BUFFERS;
+		if (buffer_type == HAL_BUFFER_OUTPUT &&
+			count < HFR_EXTRA_OUTPUT_BUFFERS)
+			count = HFR_EXTRA_OUTPUT_BUFFERS;
 	}
 
 	return count;

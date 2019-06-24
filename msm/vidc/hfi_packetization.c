@@ -876,6 +876,7 @@ static struct hfi_packetization_ops hfi_default = {
 	.session_get_buf_req = create_pkt_cmd_session_get_buf_req,
 	.session_flush = create_pkt_cmd_session_flush,
 	.session_set_property = create_pkt_cmd_session_set_property,
+	.session_sync_process = create_pkt_cmd_session_sync_process,
 };
 
 struct hfi_packetization_ops *hfi_get_pkt_ops_handle(

@@ -119,6 +119,16 @@ static inline bool in_port_reconfig(struct msm_vidc_inst *inst)
 	return inst->in_reconfig && inst->bufq[INPUT_PORT].vb2_bufq.streaming;
 }
 
+static inline bool is_input_buffer(struct msm_vidc_buffer *mbuf)
+{
+	return mbuf->vvb.vb2_buf.type == INPUT_MPLANE;
+}
+
+static inline bool is_output_buffer(struct msm_vidc_buffer *mbuf)
+{
+	return mbuf->vvb.vb2_buf.type == OUTPUT_MPLANE;
+}
+
 static inline int msm_comm_g_ctrl(struct msm_vidc_inst *inst,
 		struct v4l2_control *ctrl)
 {
