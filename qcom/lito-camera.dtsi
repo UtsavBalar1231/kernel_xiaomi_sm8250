@@ -116,9 +116,9 @@
 		mipi-csi-vdd-supply = <&L5A>;
 		clocks = <&camcc CAM_CC_CPHY_RX_CLK_SRC>,
 			<&camcc CAM_CC_CSIPHY0_CLK>,
-			<&camcc CAM_CC_CSIPHY2_CLK>,
-			<&camcc CAM_CC_CSI2PHYTIMER_CLK_SRC>,
-			<&camcc CAM_CC_CSI2PHYTIMER_CLK>;
+			<&camcc CAM_CC_CSIPHY3_CLK>,
+			<&camcc CAM_CC_CSI3PHYTIMER_CLK_SRC>,
+			<&camcc CAM_CC_CSI3PHYTIMER_CLK>;
 		clock-names = "cphy_rx_clk_src",
 			"csiphy0_clk",
 			"csiphy3_clk",
