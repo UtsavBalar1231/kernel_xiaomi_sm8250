@@ -205,6 +205,59 @@ error:
 	return rc;
 }
 
+static int msm_cvp_set_clocks_and_bus(struct msm_vidc_inst *inst)
+{
+	int rc = 0;
+	struct msm_cvp_external *cvp;
+	struct cvp_kmd_arg *arg;
+	struct cvp_kmd_usecase_desc desc;
+	struct cvp_kmd_request_power power;
+	const u32 fps_max = CVP_FRAME_RATE_MAX;
+	u32 fps;
+
+	if (!inst || !inst->cvp) {
+		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		return -EINVAL;
+	}
+	cvp = inst->cvp;
+	arg = cvp->arg;
+	memset(&desc, 0, sizeof(struct cvp_kmd_usecase_desc));
+	memset(&power, 0, sizeof(struct cvp_kmd_request_power));
+
+	fps = max(inst->clk_data.operating_rate,
+			inst->clk_data.frame_rate) >> 16;
+
+	desc.fullres_width = cvp->width;
+	desc.fullres_height = cvp->height;
+	desc.downscale_width = cvp->ds_width;
+	desc.downscale_height = cvp->ds_height;
+	desc.is_downscale = cvp->downscale;
+	desc.fps = min(fps, fps_max);
+	desc.op_rate = min(fps, fps_max);
+	rc = msm_cvp_est_cycles(&desc, &power);
+	if (rc) {
+		dprintk(VIDC_ERR, "%s: estimate failed\n", __func__);
+		return rc;
+	}
+	dprintk(VIDC_HIGH,
+		"%s: core %d controller %d ddr bw %d\n",
+		__func__, power.clock_cycles_a, power.clock_cycles_b,
+		power.ddr_bw);
+
+	memset(arg, 0, sizeof(struct cvp_kmd_arg));
+	arg->type = CVP_KMD_REQUEST_POWER;
+	memcpy(&arg->data.req_power, &power,
+		sizeof(struct cvp_kmd_request_power));
+	rc = msm_cvp_private(cvp->priv, CVP_KMD_REQUEST_POWER, arg);
+	if (rc) {
+		dprintk(VIDC_ERR,
+			"%s: request_power failed with %d\n", __func__, rc);
+		return rc;
+	}
+
+	return rc;
+}
+
 static int msm_cvp_init_downscale_resolution(struct msm_vidc_inst *inst)
 {
 	struct msm_cvp_external *cvp;
@@ -723,7 +776,7 @@ static int msm_cvp_frame_process(struct msm_vidc_inst *inst,
 	struct vb2_buffer *vb;
 	struct cvp_kmd_arg *arg;
 	struct msm_cvp_dme_frame_packet *frame;
-	const u32 fps_max = 60;
+	const u32 fps_max = CVP_FRAME_RATE_MAX;
 	u32 fps, skip_framecount;
 	bool skipframe = false;
 
@@ -954,10 +1007,16 @@ static int msm_vidc_cvp_init(struct msm_vidc_inst *inst)
 		goto error;
 
 	dprintk(VIDC_HIGH,
-		"%s: pixelformat %#x, wxh %dx%d downscale %d ds_wxh %dx%d\n",
+		"%s: pixelformat %#x, wxh %dx%d downscale %d ds_wxh %dx%d fps %d op_rate %d\n",
 		__func__, f->fmt.pix_mp.pixelformat,
 		cvp->width, cvp->height, cvp->downscale,
-		cvp->ds_width, cvp->ds_height);
+		cvp->ds_width, cvp->ds_height,
+		inst->clk_data.frame_rate >> 16,
+		inst->clk_data.operating_rate >> 16);
+
+	rc = msm_cvp_set_clocks_and_bus(inst);
+	if (rc)
+		goto error;
 
 	memset(arg, 0, sizeof(struct cvp_kmd_arg));
 	arg->type = CVP_KMD_SEND_CMD_PKT;
