@@ -650,9 +650,9 @@
 		qca,bt-vdd-xtal-supply = <&pm8150_l14>;
 
 		qca,bt-vdd-io-voltage-level = <1800000 1800000>; /* IO */
-		qca,bt-vdd-core-voltage-level = <1245000 1328000>; /* RFA */
+		qca,bt-vdd-core-voltage-level = <1304000 1304000>; /* RFA */
 		qca,bt-vdd-pa-voltage-level =  <3000000 3312000>;  /*chain0 */
-		qca,bt-vdd-xtal-voltage-level = <1700000 1900000>; /* XO */
+		qca,bt-vdd-xtal-voltage-level = <1800000 1800000>; /* XO */
 
 		qca,bt-vdd-io-current-level = <1>; /* LPM/PFM */
 		qca,bt-vdd-core-current-level = <1>; /* LPM/PFM */
