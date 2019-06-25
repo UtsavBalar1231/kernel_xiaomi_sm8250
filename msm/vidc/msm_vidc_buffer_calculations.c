@@ -509,7 +509,7 @@ int msm_vidc_get_encoder_internal_buffer_sizes(struct msm_vidc_inst *inst)
 		return -EINVAL;
 	}
 
-	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
+	f = &inst->fmts[OUTPUT_PORT].v4l2_fmt;
 	width = f->fmt.pix_mp.width;
 	height = f->fmt.pix_mp.height;
 	bframe = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_B_FRAMES);
@@ -1512,10 +1512,10 @@ static inline u32 calculate_enc_scratch1_size(struct msm_vidc_inst *inst,
 		(VENUS_DMA_ALIGNMENT + 16 * (width_coded >> 4));
 	topline_buf_ctrl_size_FE = ALIGN(topline_buf_ctrl_size_FE,
 		VENUS_DMA_ALIGNMENT);
-	leftline_buf_ctrl_size_FE = ((VENUS_DMA_ALIGNMENT + 64 *
+	leftline_buf_ctrl_size_FE = (((VENUS_DMA_ALIGNMENT + 64 *
 		(height_coded >> 4)) +
 		(VENUS_DMA_ALIGNMENT << (num_vpp_pipes - 1)) - 1) &
-		(~((VENUS_DMA_ALIGNMENT << (num_vpp_pipes - 1)) - 1)) *
+		(~((VENUS_DMA_ALIGNMENT << (num_vpp_pipes - 1)) - 1)) * 1) *
 		num_vpp_pipes;
 	leftline_buf_meta_recony = ((VENUS_DMA_ALIGNMENT + 64 *
 		((height_coded) / (8 * (ten_bit ? 4 : 8)))) * num_vpp_pipes);
