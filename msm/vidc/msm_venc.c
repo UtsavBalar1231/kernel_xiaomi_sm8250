@@ -2902,7 +2902,7 @@ int msm_venc_set_slice_control_mode(struct msm_vidc_inst *inst)
 		goto set_and_exit;
 	}
 
-	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
+	f = &inst->fmts[OUTPUT_PORT].v4l2_fmt;
 	output_width = f->fmt.pix_mp.width;
 	output_height = f->fmt.pix_mp.height;
 	if ((codec == V4L2_PIX_FMT_HEVC) &&

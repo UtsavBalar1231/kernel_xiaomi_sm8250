@@ -3532,6 +3532,8 @@ u32 msm_comm_convert_color_fmt(u32 v4l2_fmt)
 	switch (v4l2_fmt) {
 	case V4L2_PIX_FMT_NV12:
 		return COLOR_FMT_NV12;
+	case V4L2_PIX_FMT_NV21:
+		return COLOR_FMT_NV21;
 	case V4L2_PIX_FMT_NV12_512:
 		return COLOR_FMT_NV12_512;
 	case V4L2_PIX_FMT_SDE_Y_CBCR_H2V2_P010_VENUS:
