@@ -1127,11 +1127,13 @@ static inline u32 size_h265d_bse_cmd_buf(u32 width, u32 height)
 {
 	u32 size;
 
-	size = ALIGN(((ALIGN(width, LCU_MAX_SIZE_PELS) / LCU_MIN_SIZE_PELS) +
-		(ALIGN(height, LCU_MAX_SIZE_PELS) / LCU_MIN_SIZE_PELS)) *
-		NUM_HW_PIC_BUF, VENUS_DMA_ALIGNMENT);
+	size = (ALIGN(width, LCU_MAX_SIZE_PELS) / LCU_MIN_SIZE_PELS) +
+		(ALIGN(height, LCU_MAX_SIZE_PELS) / LCU_MIN_SIZE_PELS) *
+		NUM_HW_PIC_BUF;
 	size = min_t(u32, size, H265D_MAX_SLICE + 1);
 	size = 2 * size * SIZE_H265D_BSE_CMD_PER_BUF;
+	size = ALIGN(size, VENUS_DMA_ALIGNMENT);
+
 	return size;
 }
 
@@ -1139,13 +1141,13 @@ static inline u32 size_h265d_vpp_cmd_buf(u32 width, u32 height)
 {
 	u32 size = 0;
 
-	size = ALIGN((
-		(ALIGN(width, LCU_MAX_SIZE_PELS) / LCU_MIN_SIZE_PELS) +
-		(ALIGN(height, LCU_MAX_SIZE_PELS) / LCU_MIN_SIZE_PELS)) *
-		NUM_HW_PIC_BUF, VENUS_DMA_ALIGNMENT);
+	size = (ALIGN(width, LCU_MAX_SIZE_PELS) / LCU_MIN_SIZE_PELS) +
+		(ALIGN(height, LCU_MAX_SIZE_PELS) / LCU_MIN_SIZE_PELS) *
+		NUM_HW_PIC_BUF;
 	size = min_t(u32, size, H265D_MAX_SLICE + 1);
 	size = ALIGN(size, 4);
 	size = 2 * size * SIZE_H265D_VPP_CMD_PER_BUF;
+	size = ALIGN(size, VENUS_DMA_ALIGNMENT);
 
 	return size;
 }
