@@ -1552,6 +1552,26 @@ static void handle_session_init_done(enum hal_command_response cmd, void *data)
 	print_cap("b_qp", &inst->capability.cap[CAP_B_FRAME_QP]);
 	print_cap("slice_bytes", &inst->capability.cap[CAP_SLICE_BYTE]);
 	print_cap("slice_mbs", &inst->capability.cap[CAP_SLICE_MB]);
+	print_cap("max_videocores", &inst->capability.cap[CAP_MAX_VIDEOCORES]);
+	/* Secure usecase specific */
+	print_cap("secure_width",
+		&inst->capability.cap[CAP_SECURE_FRAME_WIDTH]);
+	print_cap("secure_height",
+		&inst->capability.cap[CAP_SECURE_FRAME_HEIGHT]);
+	print_cap("secure_mbs_per_frame",
+		&inst->capability.cap[CAP_SECURE_MBS_PER_FRAME]);
+	print_cap("secure_bitrate", &inst->capability.cap[CAP_SECURE_BITRATE]);
+	/* Batch Mode Decode */
+	print_cap("batch_mbs_per_frame",
+		&inst->capability.cap[CAP_BATCH_MAX_MB_PER_FRAME]);
+	print_cap("batch_frame_rate", &inst->capability.cap[CAP_BATCH_MAX_FPS]);
+	/* Lossless encoding usecase specific */
+	print_cap("lossless_width",
+		&inst->capability.cap[CAP_LOSSLESS_FRAME_WIDTH]);
+	print_cap("lossless_height",
+		&inst->capability.cap[CAP_LOSSLESS_FRAME_HEIGHT]);
+	print_cap("lossless_mbs_per_frame",
+		&inst->capability.cap[CAP_LOSSLESS_MBS_PER_FRAME]);
 
 	msm_vidc_comm_update_ctrl_limits(inst);
 
@@ -5654,6 +5674,15 @@ int msm_vidc_check_session_supported(struct msm_vidc_inst *inst)
 		height_min = capability->cap[CAP_FRAME_HEIGHT].min;
 		height_max = capability->cap[CAP_FRAME_HEIGHT].max;
 		mbpf_max = capability->cap[CAP_MBS_PER_FRAME].max;
+	}
+
+	if (inst->session_type == MSM_VIDC_ENCODER &&
+		inst->rc_type == RATE_CONTROL_LOSSLESS) {
+		width_min = capability->cap[CAP_LOSSLESS_FRAME_WIDTH].min;
+		width_max = capability->cap[CAP_LOSSLESS_FRAME_WIDTH].max;
+		height_min = capability->cap[CAP_LOSSLESS_FRAME_HEIGHT].min;
+		height_max = capability->cap[CAP_LOSSLESS_FRAME_HEIGHT].max;
+		mbpf_max = capability->cap[CAP_LOSSLESS_MBS_PER_FRAME].max;
 	}
 
 	f = &inst->fmts[OUTPUT_PORT].v4l2_fmt;
