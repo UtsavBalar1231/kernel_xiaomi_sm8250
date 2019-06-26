@@ -326,24 +326,6 @@
 		mboxes = <&qmp_aop 0>;
 		mbox-names = "aop";
 
-		qcom,gmu-pwrlevels {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			compatible = "qcom,gmu-pwrlevels";
-
-			/* GMU power levels must go from lowest to highest */
-			qcom,gmu-pwrlevel@0 {
-				reg = <0>;
-				qcom,gmu-freq = <0>;
-			};
-
-			qcom,gmu-pwrlevel@1 {
-				reg = <1>;
-				qcom,gmu-freq = <200000000>;
-			};
-		};
-
 		gmu_user: gmu_user {
 			compatible = "qcom,smmu-gmu-user-cb";
 			iommus = <&kgsl_smmu 0x4 0x400>;

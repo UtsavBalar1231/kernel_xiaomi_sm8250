@@ -41,15 +41,6 @@ GMU GDSC/regulators:
 			"gmu_clk", "ahb_clk", "cxo_clk", "axi_clk", "memnoc_clk",
 			"rbcpr_clk"
 
-- qcom,gmu-pwrlevels: device node defines a set of GMU power levels. It has
-		following required properties:
-
-		- compatible : "qcom,gmu-pwrlevels"
-		- qcom,gmu-pwrlevel: a single power level. Each power level has
-		  below properties:
-			- reg: index of the powerlevel (0 = highest perf)
-			- qcom, gmu-freq: GMU frequency for the power level in Hz.
-
 - List of sub nodes, one for each of the translation context banks needed
 		for GMU to access system memory in different operating mode. Currently
 		supported names are:
@@ -97,25 +88,6 @@ gmu: qcom,gmu@2c6a000 {
 
 	clock-names = "gmu_clk", "ahb_clk", "cxo_clk",
 				"axi_clk", "memnoc_clk", "rbcpr_clk";
-
-	qcom,gmu-pwrlevels {
-
-	      compatible = "qcom,gmu-pwrlevels";
-	      qcom,gpu-pwrlevel@0 {
-	          reg = <0>;
-	          qcom,gmu-freq = <500000000>;
-	      };
-
-	      qcom,gpu-pwrlevel@1 {
-	          reg = <1>;
-	          qcom,gmu-freq = <200000000>;
-	      };
-
-	      qcom,gpu-pwrlevel@2 {
-	          reg = <2>;
-	          qcom,gmu-freq = <0>;
-	      };
-	};
 
 	gmu_user: gmu_user {
 	      compatible = "qcom,smmu-gmu-user-cb";
