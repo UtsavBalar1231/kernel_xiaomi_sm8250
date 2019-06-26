@@ -624,6 +624,9 @@ int msm_vidc_calculate_input_buffer_count(struct msm_vidc_inst *inst)
 	 * Update input buff counts
 	 * Extradata uses same count as input port
 	 */
+	if (is_decode_session(inst) && !is_secure_session(inst))
+		input_min_count += 2;
+
 	extra_buff_count = msm_vidc_get_extra_buff_count(inst,
 				HAL_BUFFER_INPUT);
 	fmt->count_min = input_min_count;
