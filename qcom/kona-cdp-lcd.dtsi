@@ -40,6 +40,18 @@
 	/delete-property/ qcom,platform-en-gpio;
 };
 
+&dsi_sharp_qsync_wqhd_cmd {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_lab_ibb>;
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_wled";
+	/delete-property/ qcom,platform-en-gpio;
+};
+
+&dsi_sharp_qsync_wqhd_video {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_lab_ibb>;
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_wled";
+	/delete-property/ qcom,platform-en-gpio;
+};
+
 &dsi_sharp_1080_cmd {
 	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_lab_ibb>;
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_wled";
