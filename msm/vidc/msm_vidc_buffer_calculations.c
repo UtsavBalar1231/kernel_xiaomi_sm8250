@@ -1127,7 +1127,7 @@ static inline u32 size_h265d_bse_cmd_buf(u32 width, u32 height)
 {
 	u32 size;
 
-	size = (ALIGN(width, LCU_MAX_SIZE_PELS) / LCU_MIN_SIZE_PELS) +
+	size = (ALIGN(width, LCU_MAX_SIZE_PELS) / LCU_MIN_SIZE_PELS) *
 		(ALIGN(height, LCU_MAX_SIZE_PELS) / LCU_MIN_SIZE_PELS) *
 		NUM_HW_PIC_BUF;
 	size = min_t(u32, size, H265D_MAX_SLICE + 1);
@@ -1141,7 +1141,7 @@ static inline u32 size_h265d_vpp_cmd_buf(u32 width, u32 height)
 {
 	u32 size = 0;
 
-	size = (ALIGN(width, LCU_MAX_SIZE_PELS) / LCU_MIN_SIZE_PELS) +
+	size = (ALIGN(width, LCU_MAX_SIZE_PELS) / LCU_MIN_SIZE_PELS) *
 		(ALIGN(height, LCU_MAX_SIZE_PELS) / LCU_MIN_SIZE_PELS) *
 		NUM_HW_PIC_BUF;
 	size = min_t(u32, size, H265D_MAX_SLICE + 1);
