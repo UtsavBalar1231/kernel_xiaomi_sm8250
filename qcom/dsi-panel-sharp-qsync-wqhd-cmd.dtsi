@@ -48,7 +48,7 @@
 				qcom,mdss-dsi-v-front-porch = <16>;
 				qcom,mdss-dsi-v-pulse-width = <2>;
 				qcom,mdss-dsi-panel-framerate = <60>;
-				qcom,mdss-dsi-panel-jitter = <0x4 0x1>;
+				qcom,mdss-dsi-panel-jitter = <0x3 0x1>;
 				qcom,mdss-dsi-timing-switch-command = [
 					39 01 00 00 00 00 02 ff 10
 					39 01 00 00 00 00 02 fb 01
@@ -153,7 +153,7 @@
 				qcom,mdss-dsi-v-front-porch = <16>;
 				qcom,mdss-dsi-v-pulse-width = <2>;
 				qcom,mdss-dsi-panel-framerate = <60>;
-				qcom,mdss-dsi-panel-jitter = <0x4 0x1>;
+				qcom,mdss-dsi-panel-jitter = <0x3 0x1>;
 				qcom,mdss-dsi-timing-switch-command = [
 					39 01 00 00 00 00 02 ff 10
 					39 01 00 00 00 00 02 fb 01
@@ -259,7 +259,7 @@
 				qcom,mdss-dsi-v-front-porch = <16>;
 				qcom,mdss-dsi-v-pulse-width = <2>;
 				qcom,mdss-dsi-panel-framerate = <90>;
-				qcom,mdss-dsi-panel-jitter = <0x4 0x1>;
+				qcom,mdss-dsi-panel-jitter = <0x3 0x1>;
 				qcom,mdss-dsi-timing-switch-command = [
 					39 01 00 00 00 00 02 ff 10
 					39 01 00 00 00 00 02 fb 01
@@ -364,7 +364,7 @@
 				qcom,mdss-dsi-v-front-porch = <16>;
 				qcom,mdss-dsi-v-pulse-width = <2>;
 				qcom,mdss-dsi-panel-framerate = <120>;
-				qcom,mdss-dsi-panel-jitter = <0x4 0x1>;
+				qcom,mdss-dsi-panel-jitter = <0x3 0x1>;
 				qcom,mdss-dsi-timing-switch-command = [
 					39 01 00 00 00 00 02 ff 10
 					39 01 00 00 00 00 02 fb 01
