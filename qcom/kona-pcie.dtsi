@@ -93,6 +93,8 @@
 		qcom,drv-supported;
 		qcom,use-19p2mhz-aux-clk;
 		qcom,no-l0s-supported;
+		qcom,l1-2-th-scale = <2>; /* 1us */
+		qcom,l1-2-th-value = <70>;
 		qcom,slv-addr-space-size = <0x4000000>;
 		qcom,ep-latency = <10>;
 
