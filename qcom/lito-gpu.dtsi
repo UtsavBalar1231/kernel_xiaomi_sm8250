@@ -95,11 +95,12 @@
 			<&gcc GCC_DDRSS_GPU_AXI_CLK>,
 			<&gcc GCC_GPU_MEMNOC_GFX_CLK>,
 			<&gpucc GPU_CC_CX_GMU_CLK>,
-			<&gpucc GPU_CC_AHB_CLK>;
+			<&gpucc GPU_CC_AHB_CLK>,
+			<&gpucc GPU_CC_HLOS1_VOTE_GPU_SMMU_CLK>;
 
 		clock-names = "rbbmtimer_clk", "mem_clk",
 				"mem_iface_clk", "gmu_clk",
-				"gpu_cc_ahb";
+				"gpu_cc_ahb", "smmu_vote";
 
 		qcom,isense-clk-on-level = <1>;
 
@@ -366,11 +367,12 @@
 
 		clocks =<&gcc GCC_GPU_MEMNOC_GFX_CLK>,
 			<&gcc GCC_GPU_SNOC_DVM_GFX_CLK>,
-			<&gpucc GPU_CC_AHB_CLK>;
+			<&gpucc GPU_CC_AHB_CLK>,
+			<&gpucc GPU_CC_HLOS1_VOTE_GPU_SMMU_CLK>;
 
 		clock-names = "gcc_gpu_memnoc_gfx",
 			"gcc_gpu_snoc_dvm_gfx",
-			"gpu_cc_ahb";
+			"gpu_cc_ahb", "smmu_vote";
 
 		qcom,secure_align_mask = <0xfff>;
 		qcom,retention;
@@ -422,10 +424,11 @@
 				<&gpucc GPU_CC_CXO_CLK>,
 				<&gcc GCC_DDRSS_GPU_AXI_CLK>,
 				<&gcc GCC_GPU_MEMNOC_GFX_CLK>,
-				<&gpucc GPU_CC_AHB_CLK>;
+				<&gpucc GPU_CC_AHB_CLK>,
+				<&gpucc GPU_CC_HLOS1_VOTE_GPU_SMMU_CLK>;
 
 		clock-names = "gmu_clk", "cxo_clk", "axi_clk",
-				"memnoc_clk", "gpu_cc_ahb";
+				"memnoc_clk", "gpu_cc_ahb", "smmu_vote";
 
 		/* AOP mailbox for sending ACD enable and disable messages */
 		mboxes = <&qmp_aop 0>;
