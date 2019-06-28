@@ -1112,9 +1112,9 @@
 		operating-points-v2 = <&suspendable_ddr_bw_opp_table>;
 	};
 
-	npu_llcc_ddr_bwmon: qcom,npu-llcc-ddr-bwmon@0x9092000 {
+	npu_llcc_ddr_bwmon: qcom,npu-llcc-ddr-bwmon@0x9093000 {
 		compatible = "qcom,bimc-bwmon5";
-		reg = <0x9092000 0x1000>;
+		reg = <0x9093000 0x1000>;
 		reg-names = "base";
 		interrupts = <GIC_SPI 81 IRQ_TYPE_LEVEL_HIGH>;
 		qcom,hw-timer-hz = <19200000>;
