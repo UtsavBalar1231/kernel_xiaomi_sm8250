@@ -894,7 +894,7 @@ u32 msm_vidc_calculate_enc_output_frame_size(struct msm_vidc_inst *inst)
 		frame_size = frame_size << 1;
 
 	if (inst->rc_type == RATE_CONTROL_LOSSLESS)
-		frame_size = (width * height * 6);
+		frame_size = (width * height * 9) >> 2;
 
 	/*
 	 * In case of opaque color format bitdepth will be known
@@ -1303,6 +1303,8 @@ static inline u32 calculate_enc_scratch_size(struct msm_vidc_inst *inst,
 		bitbin_size = ALIGN(bitstream_size, VENUS_DMA_ALIGNMENT);
 	}
 	size_singlePipe = bitbin_size / 2;
+	if (inst->rc_type == RATE_CONTROL_LOSSLESS)
+		size_singlePipe <<= 1;
 	size_singlePipe = ALIGN(size_singlePipe, VENUS_DMA_ALIGNMENT);
 	sao_bin_buffer_size = (64 * (((width + BUFFER_ALIGNMENT_SIZE(32)) *
 		(height + BUFFER_ALIGNMENT_SIZE(32))) >> 10)) + 384;
