@@ -52,7 +52,7 @@ MODULE_PARM_DESC(rmnet_perf_core_num_skbs_max, "Num skbs max held from HW");
 /* Toggle to flush all coalesced packets when physical device is out of
  * packets
  */
-unsigned long int rmnet_perf_core_bm_flush_on = 1;
+unsigned long int rmnet_perf_core_bm_flush_on = 0;
 module_param(rmnet_perf_core_bm_flush_on, ulong, 0644);
 MODULE_PARM_DESC(rmnet_perf_core_bm_flush_on, "turn on bm flushing");
 
@@ -455,7 +455,14 @@ void rmnet_perf_core_ps_on(void *port)
 /* DL marker on, we can try to coalesce more packets */
 void rmnet_perf_core_ps_off(void *port)
 {
-	rmnet_perf_core_bm_flush_on = 1;
+	rmnet_perf_core_bm_flush_on = 0;
+}
+
+void
+rmnet_perf_core_handle_map_control_start_v2(struct rmnet_map_dl_ind_hdr *dlhdr,
+				struct rmnet_map_control_command_header *qcmd)
+{
+	rmnet_perf_core_handle_map_control_start(dlhdr);
 }
 
 void
@@ -482,6 +489,12 @@ rmnet_perf_core_handle_map_control_start(struct rmnet_map_dl_ind_hdr *dlhdr)
 	trace_rmnet_perf_low(RMNET_PERF_MODULE, RMNET_PERF_START_DL_MRK,
 			     bm_state->expect_packets, 0xDEF, 0xDEF, 0xDEF,
 			     NULL, NULL);
+}
+
+void rmnet_perf_core_handle_map_control_end_v2(struct rmnet_map_dl_ind_trl *dltrl,
+				struct rmnet_map_control_command_header *qcmd)
+{
+	rmnet_perf_core_handle_map_control_end(dltrl);
 }
 
 void rmnet_perf_core_handle_map_control_end(struct rmnet_map_dl_ind_trl *dltrl)
