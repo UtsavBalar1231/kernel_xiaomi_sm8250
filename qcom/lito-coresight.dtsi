@@ -3276,7 +3276,7 @@
 		clock-names = "apb_pclk";
 	};
 
-	tpdm_lpass_lpi: dummy_source {
+	tpdm_lpass_lpi: tpdm@6b26000 {
 		compatible = "qcom,coresight-dummy";
 
 		coresight-name = "coresight-tpdm-lpass-lpi";
