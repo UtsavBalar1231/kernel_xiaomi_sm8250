@@ -521,7 +521,7 @@
 		modem_wlan_mem: modem_wlan_region@8c000000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0x0 0x8c000000 0x0 0xc900000>;
+			reg = <0x0 0x8c000000 0x0 0xf800000>;
 		};
 
 		qseecom_mem: qseecom_region {
