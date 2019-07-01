@@ -954,7 +954,7 @@
 		cooling-maps {
 			cpu11_cdev {
 				trip = <&cpu11_config>;
-				cooling-device = <&cpu6_isolate 1 1>;
+				cooling-device = <&cpu7_isolate 1 1>;
 			};
 		};
 	};
@@ -976,7 +976,7 @@
 		cooling-maps {
 			cpu12_cdev {
 				trip = <&cpu12_config>;
-				cooling-device = <&cpu7_isolate 1 1>;
+				cooling-device = <&cpu6_isolate 1 1>;
 			};
 		};
 	};
