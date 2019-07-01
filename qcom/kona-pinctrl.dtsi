@@ -345,6 +345,21 @@
 			};
 		};
 
+		pmx_ts_release {
+			pmx_ts_release: pmx_ts_release {
+				mux {
+					pins = "gpio38", "gpio39";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio38", "gpio39";
+					drive-strength = <2>;
+					bias-disable;
+				};
+			};
+		};
+
 		ufs_dev_reset_assert: ufs_dev_reset_assert {
 			config {
 				pins = "ufs_reset";
