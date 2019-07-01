@@ -20,6 +20,11 @@ qcom,ATL466271_3300mAh {
 				201 450  4400000
 				451 550  4050000>;
 
+	qcom,step-chg-ranges = <3500000  4000000  8000000
+				4001000  4200000  6000000
+				4201000  4400000  4000000>;
+	qcom,ocv-based-step-chg;
+
 	/* COOL = 10 degc, WARM = 45 degC */
 	qcom,jeita-soft-thresholds = <0x4ccc 0x20b8>;
 	/* COLD = 0 degC, HOT = 55 degC*/
