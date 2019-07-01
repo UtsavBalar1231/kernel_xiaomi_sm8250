@@ -116,15 +116,16 @@ rmnet_perf_config_free_resources(struct rmnet_perf *perf)
 	}
 
 	/* Free everything flow nodes currently hold */
-	rmnet_perf_opt_flush_all_flow_nodes();
+	rmnet_perf_opt_flush_all_flow_nodes(perf);
 
 	/* Get rid of 64k sk_buff cache */
 	rmnet_perf_config_free_64k_buffs(perf);
 	/* Before we free tcp_opt's structures, make sure we arent holding
 	 * any SKB's hostage
 	 */
-	rmnet_perf_core_free_held_skbs();
+	rmnet_perf_core_free_held_skbs(perf);
 
+	//rmnet_perf_core_timer_exit(perf->core_meta);
 	/* Since we allocated in one chunk, we will also free in one chunk */
 	kfree(perf);
 
@@ -192,11 +193,11 @@ static int rmnet_perf_config_allocate_resources(struct rmnet_perf **perf)
 		*flow_node = buffer_head;
 		buffer_head += flow_node_size;
 		(*flow_node)->num_pkts_held = 0;
-		(*flow_node)->len = 0;
 	}
 
 	local_perf->core_meta = buffer_head;
 	core_meta = local_perf->core_meta;
+	//rmnet_perf_core_timer_init(core_meta);
 	buffer_head += core_meta_size;
 
 	/* Assign common (not specific to something like opt) structures */
@@ -344,18 +345,6 @@ rmnet_perf_dereg_callbacks(struct net_device *dev,
 	return return_val_final;
 }
 
-static bool rmnet_perf_config_hook_registered(void)
-{
-	int (*deag_entry)(struct sk_buff *skb);
-	void (*frag_entry)(struct rmnet_frag_descriptor *frag_desc,
-			   struct rmnet_port *port);
-
-	deag_entry = rcu_dereference(rmnet_perf_deag_entry);
-	frag_entry = rcu_dereference(rmnet_perf_desc_entry);
-
-	return deag_entry || frag_entry;
-}
-
 /* TODO Needs modifying*/
 static int rmnet_perf_config_notify_cb(struct notifier_block *nb,
 				       unsigned long event, void *data)
@@ -371,36 +360,32 @@ static int rmnet_perf_config_notify_cb(struct notifier_block *nb,
 	switch (event) {
 	case NETDEV_UNREGISTER:
 		if (rmnet_is_real_dev_registered(dev) &&
-		    rmnet_perf_config_hook_registered() &&
-		    (!strncmp(dev->name, "rmnet_ipa0", 10) ||
-		     !strncmp(dev->name, "rmnet_mhi0", 10))) {
+		    rmnet_perf_deag_entry &&
+		    !strncmp(dev->name, "rmnet_ipa0", 10)) {
 			struct rmnet_perf_core_meta *core_meta =
 				perf->core_meta;
-			pr_info("%s(): rmnet_perf netdevice unregister\n",
-				__func__);
+			pr_err("%s(): rmnet_perf netdevice unregister\n",
+			       __func__);
 			return_val = rmnet_perf_dereg_callbacks(dev, core_meta);
 			return_val |= rmnet_perf_netdev_down();
 			if (return_val)
 				pr_err("%s(): Error on netdev down event\n",
 				       __func__);
 			RCU_INIT_POINTER(rmnet_perf_deag_entry, NULL);
-			RCU_INIT_POINTER(rmnet_perf_desc_entry, NULL);
-			RCU_INIT_POINTER(rmnet_perf_chain_end, NULL);
 		}
 		break;
 	case NETDEV_REGISTER:
-		pr_info("%s(): rmnet_perf netdevice register, name = %s\n",
-			__func__, dev->name);
+		pr_err("%s(): rmnet_perf netdevice register, name = %s\n",
+		       __func__, dev->name);
 		/* Check prevents us from allocating resources for every
 		 * interface
 		 */
-		if (!rmnet_perf_config_hook_registered() &&
+		if (!rmnet_perf_deag_entry &&
 		    strncmp(dev->name, "rmnet_data", 10) == 0) {
 			struct rmnet_priv *priv = netdev_priv(dev);
-
 			port = rmnet_get_port(priv->real_dev);
-			return_val = rmnet_perf_netdev_up(priv->real_dev,
-							  port);
+			return_val |= rmnet_perf_netdev_up(priv->real_dev,
+							   port);
 			if (return_val == RMNET_PERF_RESOURCE_MGMT_FAIL) {
 				pr_err("%s(): rmnet_perf allocation "
 				       "failed. Falling back on legacy path\n",
@@ -413,9 +398,10 @@ static int rmnet_perf_config_notify_cb(struct notifier_block *nb,
 				       "failed. Continue without them\n",
 					__func__);
 			}
-			rmnet_perf_core_set_ingress_hook();
-			pr_info("%s(): rmnet_perf registered on name = %s\n",
-				__func__, dev->name);
+			RCU_INIT_POINTER(rmnet_perf_deag_entry,
+					 rmnet_perf_core_deaggregate);
+			pr_err("%s(): rmnet_perf registered on "
+			       "name = %s\n", __func__, dev->name);
 		}
 		break;
 	default:
@@ -431,13 +417,13 @@ static struct notifier_block rmnet_perf_dev_notifier __read_mostly = {
 
 int __init rmnet_perf_init(void)
 {
-	pr_info("%s(): initializing rmnet_perf\n", __func__);
+	pr_err("%s(): initializing rmnet_perf\n", __func__);
 	return register_netdevice_notifier(&rmnet_perf_dev_notifier);
 }
 
 void __exit rmnet_perf_exit(void)
 {
-	pr_info("%s(): exiting rmnet_perf\n", __func__);
+	pr_err("%s(): exiting rmnet_perf\n", __func__);
 	unregister_netdevice_notifier(&rmnet_perf_dev_notifier);
 }
 
