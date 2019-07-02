@@ -1393,6 +1393,7 @@
 
 #include "msm-arm-smmu-bengal.dtsi"
 #include "bengal-regulator.dtsi"
+#include "bengal-pm.dtsi"
 #include "bengal-pinctrl.dtsi"
 #include "bengal-qupv3.dtsi"
 
