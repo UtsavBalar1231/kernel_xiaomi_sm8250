@@ -56,6 +56,42 @@ static int msm_cvp_get_version_info(struct msm_vidc_inst *inst)
 	return 0;
 }
 
+static int msm_cvp_set_priority(struct msm_vidc_inst *inst)
+{
+	int rc;
+	struct msm_cvp_external *cvp;
+	struct cvp_kmd_arg *arg;
+	struct cvp_kmd_sys_properties *props;
+	struct cvp_kmd_sys_property *prop_array;
+
+	if (!inst || !inst->cvp) {
+		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		return -EINVAL;
+	}
+	cvp = inst->cvp;
+	arg = cvp->arg;
+	props = (struct cvp_kmd_sys_properties *)&arg->data.sys_properties;
+	prop_array = (struct cvp_kmd_sys_property *)
+			&arg->data.sys_properties.prop_data;
+
+	memset(arg, 0, sizeof(struct cvp_kmd_arg));
+	arg->type = CVP_KMD_SET_SYS_PROPERTY;
+	props->prop_num = 1;
+	prop_array[0].prop_type = CVP_KMD_PROP_SESSION_PRIORITY;
+	if (is_realtime_session(inst))
+		prop_array[0].data = VIDEO_REALTIME;
+	else
+		prop_array[0].data = VIDEO_NONREALTIME;
+	dprintk(VIDC_HIGH, "%s: %d\n", __func__, prop_array[0].data);
+	rc = msm_cvp_private(cvp->priv, CVP_KMD_SET_SYS_PROPERTY, arg);
+	if (rc) {
+		dprintk(VIDC_ERR, "%s: failed, rc %d\n", __func__, rc);
+		return rc;
+	}
+
+	return 0;
+}
+
 static int msm_cvp_fill_planeinfo(struct msm_cvp_color_plane_info *plane_info,
 		u32 color_fmt, u32 width, u32 height)
 {
@@ -210,6 +246,7 @@ static int msm_cvp_set_clocks_and_bus(struct msm_vidc_inst *inst)
 	int rc = 0;
 	struct msm_cvp_external *cvp;
 	struct cvp_kmd_arg *arg;
+	struct v4l2_format *f;
 	struct cvp_kmd_usecase_desc desc;
 	struct cvp_kmd_request_power power;
 	const u32 fps_max = CVP_FRAME_RATE_MAX;
@@ -224,6 +261,7 @@ static int msm_cvp_set_clocks_and_bus(struct msm_vidc_inst *inst)
 	memset(&desc, 0, sizeof(struct cvp_kmd_usecase_desc));
 	memset(&power, 0, sizeof(struct cvp_kmd_request_power));
 
+	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
 	fps = max(inst->clk_data.operating_rate,
 			inst->clk_data.frame_rate) >> 16;
 
@@ -234,6 +272,7 @@ static int msm_cvp_set_clocks_and_bus(struct msm_vidc_inst *inst)
 	desc.is_downscale = cvp->downscale;
 	desc.fps = min(fps, fps_max);
 	desc.op_rate = min(fps, fps_max);
+	desc.colorfmt = msm_comm_convert_color_fmt(f->fmt.pix_mp.pixelformat);
 	rc = msm_cvp_est_cycles(&desc, &power);
 	if (rc) {
 		dprintk(VIDC_ERR, "%s: estimate failed\n", __func__);
@@ -1013,6 +1052,10 @@ static int msm_vidc_cvp_init(struct msm_vidc_inst *inst)
 		cvp->ds_width, cvp->ds_height,
 		inst->clk_data.frame_rate >> 16,
 		inst->clk_data.operating_rate >> 16);
+
+	rc = msm_cvp_set_priority(inst);
+	if (rc)
+		goto error;
 
 	rc = msm_cvp_set_clocks_and_bus(inst);
 	if (rc)
