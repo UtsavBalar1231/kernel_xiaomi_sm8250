@@ -67,7 +67,7 @@ MODULE_PARM_DESC(rmnet_perf_tcp_opt_pkt_seq, "incoming pkt seq");
 static bool
 rmnet_perf_tcp_opt_tcp_flag_flush(struct rmnet_perf_pkt_info *pkt_info)
 {
-	struct tcphdr *tp = pkt_info->trns_hdr.tp;
+	struct tcphdr *tp = pkt_info->trans_hdr.tp;
 
 	if ((pkt_info->payload_len == 0 && tp->ack) || tp->cwr || tp->syn ||
 	    tp->fin || tp->rst || tp->urg || tp->psh)
@@ -77,7 +77,6 @@ rmnet_perf_tcp_opt_tcp_flag_flush(struct rmnet_perf_pkt_info *pkt_info)
 }
 
 /* rmnet_perf_tcp_opt_pkt_can_be_merged() - Check if packet can be merged
- * @skb:        Source socket buffer containing current MAP frames
  * @flow_node:  flow node meta data for checking condition
  * @pkt_info: characteristics of the current packet
  *
@@ -89,56 +88,39 @@ rmnet_perf_tcp_opt_tcp_flag_flush(struct rmnet_perf_pkt_info *pkt_info)
  *    - false if not
  **/
 static enum rmnet_perf_tcp_opt_merge_check_rc
-rmnet_perf_tcp_opt_pkt_can_be_merged(struct sk_buff *skb,
+rmnet_perf_tcp_opt_pkt_can_be_merged(
 				struct rmnet_perf_opt_flow_node *flow_node,
 				struct rmnet_perf_pkt_info *pkt_info)
 {
-	struct iphdr *ip4h;
-	struct ipv6hdr *ip6h;
-	u16 payload_len = pkt_info->payload_len;
-	struct tcphdr *tp = pkt_info->trns_hdr.tp;
+	struct tcphdr *tp = pkt_info->trans_hdr.tp;
+	u16 gso_len;
 
-	/* cast iph to right ip header struct for ip_version */
-	switch (pkt_info->ip_proto) {
-	case 0x04:
-		ip4h = pkt_info->iphdr.v4hdr;
-		if (((__force u32)flow_node->next_seq ^
-		    (__force u32) ntohl(tp->seq))) {
-			rmnet_perf_tcp_opt_fn_seq = flow_node->next_seq;
-			rmnet_perf_tcp_opt_pkt_seq = ntohl(tp->seq);
-			rmnet_perf_tcp_opt_flush_reason_cnt[
-				RMNET_PERF_TCP_OPT_OUT_OF_ORDER_SEQ]++;
-			return RMNET_PERF_TCP_OPT_FLUSH_ALL;
-		}
-		break;
-	case 0x06:
-		ip6h = (struct ipv6hdr *) pkt_info->iphdr.v6hdr;
-		if (((__force u32)flow_node->next_seq ^
-		    (__force u32) ntohl(tp->seq))) {
-			rmnet_perf_tcp_opt_fn_seq = flow_node->next_seq;
-			rmnet_perf_tcp_opt_pkt_seq = ntohl(tp->seq);
-			rmnet_perf_tcp_opt_flush_reason_cnt[
-				RMNET_PERF_TCP_OPT_OUT_OF_ORDER_SEQ]++;
-			return RMNET_PERF_TCP_OPT_FLUSH_ALL;
-		}
-		break;
-	default:
-		pr_err("Unsupported ip version %d", pkt_info->ip_proto);
+	/* Use any previous GRO information, if present */
+	if (pkt_info->frag_desc && pkt_info->frag_desc->gso_size)
+		gso_len = pkt_info->frag_desc->gso_size;
+	else
+		gso_len = pkt_info->payload_len;
+
+	/* 1. check ordering */
+	if (flow_node->next_seq ^ ntohl(tp->seq)) {
+		rmnet_perf_tcp_opt_fn_seq = flow_node->next_seq;
+		rmnet_perf_tcp_opt_pkt_seq = ntohl(tp->seq);
 		rmnet_perf_tcp_opt_flush_reason_cnt[
-				RMNET_PERF_TCP_OPT_PACKET_CORRUPT_ERROR]++;
-		return RMNET_PERF_TCP_OPT_FLUSH_SOME;
+				RMNET_PERF_TCP_OPT_OUT_OF_ORDER_SEQ]++;
+		return RMNET_PERF_TCP_OPT_FLUSH_ALL;
 	}
 
 	/* 2. check if size overflow */
-	if ((payload_len + flow_node->len >= rmnet_perf_tcp_opt_flush_limit)) {
+	if (pkt_info->payload_len + flow_node->len >=
+	    rmnet_perf_tcp_opt_flush_limit) {
 		rmnet_perf_tcp_opt_flush_reason_cnt[
 						RMNET_PERF_TCP_OPT_64K_LIMIT]++;
 		return RMNET_PERF_TCP_OPT_FLUSH_SOME;
-	} else if ((flow_node->num_pkts_held >= 50)) {
+	} else if (flow_node->num_pkts_held >= 50) {
 		rmnet_perf_tcp_opt_flush_reason_cnt[
 					RMNET_PERF_TCP_OPT_NO_SPACE_IN_NODE]++;
 		return RMNET_PERF_TCP_OPT_FLUSH_SOME;
-	} else if (flow_node->gso_len != payload_len) {
+	} else if (flow_node->gso_len != gso_len) {
 		rmnet_perf_tcp_opt_flush_reason_cnt[
 					RMNET_PERF_TCP_OPT_LENGTH_MISMATCH]++;
 		return RMNET_PERF_TCP_OPT_FLUSH_SOME;
@@ -146,57 +128,42 @@ rmnet_perf_tcp_opt_pkt_can_be_merged(struct sk_buff *skb,
 	return RMNET_PERF_TCP_OPT_MERGE_SUCCESS;
 }
 
-/* rmnet_perf_tcp_opt_check_timestamp() -Check timestamp of incoming packet
- * @skb: incoming packet to check
- * @tp: pointer to tcp header of incoming packet
- *
- * If the tcp segment has extended headers then parse them to check to see
- * if timestamps are included. If so, return the value
+/* rmnet_perf_tcp_opt_cmp_options() - Compare the TCP options of the packets
+ *		in a given flow node with an incoming packet in the flow
+ * @flow_node: The flow node representing the current flow
+ * @pkt_info: The characteristics of the incoming packet
  *
  * Return:
- *		- timestamp: if a timestamp is valid
- *		- 0: if there is no timestamp extended header
+ *    - true: The TCP headers have differing option fields
+ *    - false: The TCP headers have the same options
  **/
-static u32 rmnet_perf_tcp_opt_check_timestamp(struct sk_buff *skb,
-					      struct tcphdr *tp,
-					      struct net_device *dev)
+static bool
+rmnet_perf_tcp_opt_cmp_options(struct rmnet_perf_opt_flow_node *flow_node,
+			       struct rmnet_perf_pkt_info *pkt_info)
 {
-	int length = tp->doff * 4 - sizeof(*tp);
-	unsigned char *ptr = (unsigned char *)(tp + 1);
+	struct tcphdr *flow_header;
+	struct tcphdr *new_header;
+	u32 optlen, i;
 
-	while (length > 0) {
-		int code = *ptr++;
-		int size = *ptr++;
+	flow_header = (struct tcphdr *)
+		      (flow_node->pkt_list[0].header_start +
+		       flow_node->ip_len);
+	new_header = pkt_info->trans_hdr.tp;
+	optlen = flow_header->doff * 4;
+	if (new_header->doff * 4 != optlen)
+		return true;
 
-		/* Partial or malformed options */
-		if (size < 2 || size > length)
-			return 0;
-
-		switch (code) {
-		case TCPOPT_EOL:
-			/* No more options */
-			return 0;
-		case TCPOPT_NOP:
-			/* Empty option */
-			length--;
-			continue;
-		case TCPOPT_TIMESTAMP:
-			if (size == TCPOLEN_TIMESTAMP &&
-			    dev_net(dev)->ipv4.sysctl_tcp_timestamps)
-				return get_unaligned_be32(ptr);
-		}
-
-		ptr += size - 2;
-		length -= size;
+	/* Compare the bytes of the options */
+	for (i = sizeof(*flow_header); i < optlen; i += 4) {
+		if (*(u32 *)((u8 *)flow_header + i) ^
+		    *(u32 *)((u8 *)new_header + i))
+			return true;
 	}
 
-	/* No timestamp in the options */
-	return 0;
+	return false;
 }
 
 /* rmnet_perf_tcp_opt_ingress() - Core business logic of tcp_opt
- * @perf: allows access to our required global structures
- * @skb: the incoming ip packet
  * @pkt_info: characteristics of the current packet
  * @flush: IP flag mismatch detected
  *
@@ -208,24 +175,24 @@ static u32 rmnet_perf_tcp_opt_check_timestamp(struct sk_buff *skb,
  * Return:
  *		- void
  **/
-void rmnet_perf_tcp_opt_ingress(struct rmnet_perf *perf, struct sk_buff *skb,
-				struct rmnet_perf_opt_flow_node *flow_node,
+void rmnet_perf_tcp_opt_ingress(struct rmnet_perf_opt_flow_node *flow_node,
 				struct rmnet_perf_pkt_info *pkt_info,
 				bool flush)
 {
-	bool timestamp_mismatch;
+	struct napi_struct *napi;
+	bool option_mismatch;
 	enum rmnet_perf_tcp_opt_merge_check_rc rc;
-	struct napi_struct *napi = NULL;
+	u16 pkt_len;
+
+	pkt_len = pkt_info->ip_len + pkt_info->trans_len +
+		  pkt_info->payload_len;
 
 	if (flush || rmnet_perf_tcp_opt_tcp_flag_flush(pkt_info)) {
 		rmnet_perf_opt_update_flow(flow_node, pkt_info);
-		rmnet_perf_opt_flush_single_flow_node(perf, flow_node);
+		rmnet_perf_opt_flush_single_flow_node(flow_node);
 		napi = get_current_napi_context();
 		napi_gro_flush(napi, false);
-		rmnet_perf_core_flush_curr_pkt(perf, skb, pkt_info,
-					       pkt_info->header_len +
-					       pkt_info->payload_len, true,
-					       false);
+		rmnet_perf_core_flush_curr_pkt(pkt_info, pkt_len, true, false);
 		napi_gro_flush(napi, false);
 		rmnet_perf_tcp_opt_flush_reason_cnt[
 			RMNET_PERF_TCP_OPT_TCP_FLUSH_FORCE]++;
@@ -236,33 +203,27 @@ void rmnet_perf_tcp_opt_ingress(struct rmnet_perf *perf, struct sk_buff *skb,
 	 * We know at this point that it's a normal packet in the flow
 	 */
 	if (!flow_node->num_pkts_held) {
-		rmnet_perf_opt_insert_pkt_in_flow(skb, flow_node, pkt_info);
+		rmnet_perf_opt_insert_pkt_in_flow(flow_node, pkt_info);
 		return;
 	}
 
-	pkt_info->curr_timestamp =
-		rmnet_perf_tcp_opt_check_timestamp(skb,
-						   pkt_info->trns_hdr.tp,
-						   perf->core_meta->dev);
-	timestamp_mismatch = flow_node->timestamp != pkt_info->curr_timestamp;
+	option_mismatch = rmnet_perf_tcp_opt_cmp_options(flow_node, pkt_info);
 
-	rc = rmnet_perf_tcp_opt_pkt_can_be_merged(skb, flow_node, pkt_info);
+	rc = rmnet_perf_tcp_opt_pkt_can_be_merged(flow_node, pkt_info);
 	if (rc == RMNET_PERF_TCP_OPT_FLUSH_ALL) {
-		rmnet_perf_opt_flush_single_flow_node(perf, flow_node);
-		rmnet_perf_core_flush_curr_pkt(perf, skb, pkt_info,
-					       pkt_info->header_len +
-					       pkt_info->payload_len, false,
+		rmnet_perf_opt_flush_single_flow_node(flow_node);
+		rmnet_perf_core_flush_curr_pkt(pkt_info, pkt_len, false,
 					       false);
 	} else if (rc == RMNET_PERF_TCP_OPT_FLUSH_SOME) {
-		rmnet_perf_opt_flush_single_flow_node(perf, flow_node);
-		rmnet_perf_opt_insert_pkt_in_flow(skb, flow_node, pkt_info);
-	} else if (timestamp_mismatch) {
-		rmnet_perf_opt_flush_single_flow_node(perf, flow_node);
-		rmnet_perf_opt_insert_pkt_in_flow(skb, flow_node, pkt_info);
+		rmnet_perf_opt_flush_single_flow_node(flow_node);
+		rmnet_perf_opt_insert_pkt_in_flow(flow_node, pkt_info);
+	} else if (option_mismatch) {
+		rmnet_perf_opt_flush_single_flow_node(flow_node);
+		rmnet_perf_opt_insert_pkt_in_flow(flow_node, pkt_info);
 		rmnet_perf_tcp_opt_flush_reason_cnt[
-			RMNET_PERF_TCP_OPT_TIMESTAMP_MISMATCH]++;
+			RMNET_PERF_TCP_OPT_OPTION_MISMATCH]++;
 	} else if (rc == RMNET_PERF_TCP_OPT_MERGE_SUCCESS) {
 		pkt_info->first_packet = false;
-		rmnet_perf_opt_insert_pkt_in_flow(skb, flow_node, pkt_info);
+		rmnet_perf_opt_insert_pkt_in_flow(flow_node, pkt_info);
 	}
 }

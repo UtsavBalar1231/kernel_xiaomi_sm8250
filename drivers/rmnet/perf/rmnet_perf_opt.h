@@ -20,9 +20,10 @@
 #define RMNET_PERF_NUM_FLOW_NODES              8
 
 struct rmnet_perf_opt_pkt_node {
-	unsigned char *ip_start; /* This is simply used for debug purposes */
+	unsigned char *header_start;
 	unsigned char *data_start;
-	unsigned char *data_end;
+	struct rmnet_frag_descriptor *frag_desc;
+	u16 data_len;
 };
 
 struct rmnet_perf_opt_ip_flags {
@@ -32,21 +33,19 @@ struct rmnet_perf_opt_ip_flags {
 };
 
 struct rmnet_perf_opt_flow_node {
-	u8 mux_id;
-	u8 protocol;
-	u8 num_pkts_held;
-	union {
-		struct rmnet_perf_opt_ip_flags ip4_flags;
-		__be32 first_word;
-	} ip_flags;
-	u32 timestamp;
-	__be32 next_seq;
-	u32 gso_len;
-	u32 len;
-	u32 hash_value;
+	/* Header lengths */
+	u8 ip_len;
+	u8 trans_len;
 
+	/* Header protocols */
+	u8 ip_proto;
+	u8 trans_proto;
+
+	/* Ports */
 	__be16	src_port;
 	__be16	dest_port;
+
+	/* IP addresses */
 	union {
 		__be32	saddr4;
 		struct in6_addr saddr6;
@@ -56,7 +55,26 @@ struct rmnet_perf_opt_flow_node {
 		struct in6_addr daddr6;
 	} daddr;
 
+	/* IP flags */
+	union {
+		struct rmnet_perf_opt_ip_flags ip4_flags;
+		__be32 first_word;
+	} ip_flags;
+
+	/* TCP metadata */
+	__be32 next_seq;
+
+	/* GSO metadata */
+	u32 gso_len;
+
+	/* Perf metadata */
+	u8 num_pkts_held;
+	u32 len;
+	u32 hash_value;
+	struct rmnet_endpoint *ep;
 	struct hlist_node list;
+
+	/* The packets we're holding */
 	struct rmnet_perf_opt_pkt_node pkt_list[50];
 };
 
@@ -73,19 +91,20 @@ struct rmnet_perf_opt_meta {
 
 enum rmnet_perf_opt_flush_reasons {
 	RMNET_PERF_OPT_PACKET_CORRUPT_ERROR,
+	RMNET_PERF_OPT_CHAIN_END,
 	RMNET_PERF_OPT_NUM_CONDITIONS
 };
 
 void
 rmnet_perf_opt_update_flow(struct rmnet_perf_opt_flow_node *flow_node,
 			   struct rmnet_perf_pkt_info *pkt_info);
-void rmnet_perf_opt_flush_single_flow_node(struct rmnet_perf *perf,
+void rmnet_perf_opt_flush_single_flow_node(
 				struct rmnet_perf_opt_flow_node *flow_node);
-void rmnet_perf_opt_flush_all_flow_nodes(struct rmnet_perf *perf);
-void rmnet_perf_opt_insert_pkt_in_flow(struct sk_buff *skb,
+void rmnet_perf_opt_flush_all_flow_nodes(void);
+void rmnet_perf_opt_chain_end(void);
+void rmnet_perf_opt_insert_pkt_in_flow(
 			struct rmnet_perf_opt_flow_node *flow_node,
 			struct rmnet_perf_pkt_info *pkt_info);
-bool rmnet_perf_opt_ingress(struct rmnet_perf *perf, struct sk_buff *skb,
-			    struct rmnet_perf_pkt_info *pkt_info);
+bool rmnet_perf_opt_ingress(struct rmnet_perf_pkt_info *pkt_info);
 
 #endif /* _RMNET_PERF_OPT_H_ */

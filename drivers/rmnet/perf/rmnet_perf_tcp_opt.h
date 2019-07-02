@@ -28,7 +28,7 @@ enum rmnet_perf_tcp_opt_merge_check_rc {
 
 enum rmnet_perf_tcp_opt_flush_reasons {
 	RMNET_PERF_TCP_OPT_TCP_FLUSH_FORCE,
-	RMNET_PERF_TCP_OPT_TIMESTAMP_MISMATCH,
+	RMNET_PERF_TCP_OPT_OPTION_MISMATCH,
 	RMNET_PERF_TCP_OPT_64K_LIMIT,
 	RMNET_PERF_TCP_OPT_NO_SPACE_IN_NODE,
 	RMNET_PERF_TCP_OPT_FLOW_NODE_SHORTAGE,
@@ -38,8 +38,7 @@ enum rmnet_perf_tcp_opt_flush_reasons {
 	RMNET_PERF_TCP_OPT_NUM_CONDITIONS
 };
 
-void rmnet_perf_tcp_opt_ingress(struct rmnet_perf *perf, struct sk_buff *skb,
-				struct rmnet_perf_opt_flow_node *flow_node,
+void rmnet_perf_tcp_opt_ingress(struct rmnet_perf_opt_flow_node *flow_node,
 				struct rmnet_perf_pkt_info *pkt_info,
 				bool flush);
 #endif /* _RMNET_PERF_TCP_OPT_H_ */
