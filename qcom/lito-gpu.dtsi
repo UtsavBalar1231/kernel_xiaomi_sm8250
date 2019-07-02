@@ -17,18 +17,6 @@
 		operating-points-v2 = <&suspendable_ddr_bw_opp_table>;
 	};
 
-	qfprom: qfprom@780000 {
-		compatible = "qcom,qfprom";
-		reg = <0x780000 0x6000>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		gpu_speed_bin: gpu_speed_bin@1ea {
-			reg = <0x1ea 0x2>;
-			bits = <5 8>;
-		};
-	};
-
 	gpu_opp_table: gpu-opp-table {
 		compatible = "operating-points-v2";
 

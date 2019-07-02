@@ -3569,6 +3569,19 @@
 		qcom,firmware-name = "npu";
 		memory-region = <&pil_npu_mem>;
 	};
+
+	qfprom: qfprom@0x780000 {
+		compatible = "qcom,qfprom";
+		reg = <0x00780000 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		gpu_speed_bin: gpu_speed_bin@1ea {
+			reg = <0x1ea 0x2>;
+			bits = <5 8>;
+		};
+	};
 };
 
 #include "lito-pinctrl.dtsi"
