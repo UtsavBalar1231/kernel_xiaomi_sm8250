@@ -151,8 +151,8 @@ int pps_release(struct inode *inode, struct file *file)
 	.poll = pps_fops_poll,
 };
 
-int create_pps_interrupt_info_device_node(dev_t *pps_dev_t, struct cdev* pps_cdev,
-	struct class* pps_class, char *pps_dev_node_name)
+int create_pps_interrupt_info_device_node(dev_t *pps_dev_t, struct cdev** pps_cdev,
+	struct class** pps_class, char *pps_dev_node_name)
 {
 	int ret;
 	EMACDBG("create_pps_interrupt_info_device_node enter \n");
@@ -164,28 +164,28 @@ int create_pps_interrupt_info_device_node(dev_t *pps_dev_t, struct cdev* pps_cde
 		goto alloc_chrdev1_region_fail;
 	}
 
-	pps_cdev = cdev_alloc();
-	if(!pps_cdev) {
+	*pps_cdev = cdev_alloc();
+	if(!*pps_cdev) {
 		ret = -ENOMEM;
 		EMACERR("failed to alloc cdev\n");
 		goto fail_alloc_cdev;
 	}
-	cdev_init(pps_cdev, &pps_fops);
+	cdev_init(*pps_cdev, &pps_fops);
 
-	ret = cdev_add(pps_cdev, *pps_dev_t, 1);
+	ret = cdev_add(*pps_cdev, *pps_dev_t, 1);
 	if (ret < 0) {
 		EMACERR(":cdev_add err=%d\n", -ret);
 		goto cdev1_add_fail;
 	}
 
-	pps_class = class_create(THIS_MODULE, pps_dev_node_name);
-	if(!pps_class) {
+	*pps_class = class_create(THIS_MODULE, pps_dev_node_name);
+	if(!*pps_class) {
 		ret = -ENODEV;
 		EMACERR("failed to create class\n");
 		goto fail_create_class;
 	}
 
-	if (!device_create(pps_class, NULL,
+	if (!device_create(*pps_class, NULL,
 		*pps_dev_t, NULL, pps_dev_node_name)) {
 		ret = -EINVAL;
 		EMACERR("failed to create device_create\n");
@@ -197,9 +197,9 @@ int create_pps_interrupt_info_device_node(dev_t *pps_dev_t, struct cdev* pps_cde
 	return 0;
 
 	fail_create_device:
-		class_destroy(pps_class);
+		class_destroy(*pps_class);
 	fail_create_class:
-		cdev_del(pps_cdev);
+		cdev_del(*pps_cdev);
 	cdev1_add_fail:
 	fail_alloc_cdev:
 		unregister_chrdev_region(*pps_dev_t, 1);
@@ -210,15 +210,19 @@ int create_pps_interrupt_info_device_node(dev_t *pps_dev_t, struct cdev* pps_cde
 
 int remove_pps_interrupt_info_device_node(struct DWC_ETH_QOS_prv_data *pdata)
 {
+	cdev_del(pdata->avb_class_a_cdev);
 	device_destroy(pdata->avb_class_a_class, pdata->avb_class_a_dev_t);
 	class_destroy(pdata->avb_class_a_class);
-	cdev_del(pdata->avb_class_a_cdev);
 	unregister_chrdev_region(pdata->avb_class_a_dev_t, 1);
+	pdata->avb_class_a_cdev = NULL;
+	pdata->avb_class_a_class = NULL;
 
+	cdev_del(pdata->avb_class_b_cdev);
 	device_destroy(pdata->avb_class_b_class, pdata->avb_class_b_dev_t);
 	class_destroy(pdata->avb_class_b_class);
-	cdev_del(pdata->avb_class_b_cdev);
 	unregister_chrdev_region(pdata->avb_class_b_dev_t, 1);
+	pdata->avb_class_b_cdev = NULL;
+	pdata->avb_class_b_class = NULL;
 	return 0;
 }
 

@@ -62,7 +62,7 @@ struct emac_emb_smmu_cb_ctx emac_emb_smmu_ctx = {0};
 static struct qmp_pkt pkt;
 static char qmp_buf[MAX_QMP_MSG_SIZE + 1] = {0};
 extern int create_pps_interrupt_info_device_node(dev_t *pps_dev_t,
-	struct cdev* pps_cdev, struct class* pps_class,
+	struct cdev** pps_cdev, struct class** pps_class,
 	char *pps_dev_node_name);
 extern int remove_pps_interrupt_info_device_node(struct DWC_ETH_QOS_prv_data *pdata);
 
@@ -1580,10 +1580,10 @@ static int DWC_ETH_QOS_configure_netdevice(struct platform_device *pdev)
 
 	if (pdata->emac_hw_version_type == EMAC_HW_v2_3_1) {
 		create_pps_interrupt_info_device_node(&pdata->avb_class_a_dev_t,
-			pdata->avb_class_a_cdev, pdata->avb_class_a_class, AVB_CLASS_A_POLL_DEV_NODE_NAME);
+			&pdata->avb_class_a_cdev, &pdata->avb_class_a_class, AVB_CLASS_A_POLL_DEV_NODE_NAME);
 
 		create_pps_interrupt_info_device_node(&pdata->avb_class_b_dev_t,
-			pdata->avb_class_b_cdev ,pdata->avb_class_b_class, AVB_CLASS_B_POLL_DEV_NODE_NAME);
+			&pdata->avb_class_b_cdev ,&pdata->avb_class_b_class, AVB_CLASS_B_POLL_DEV_NODE_NAME);
 	}
 
 	DWC_ETH_QOS_create_debugfs(pdata);
