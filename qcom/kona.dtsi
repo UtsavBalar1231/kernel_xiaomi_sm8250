@@ -4772,11 +4772,17 @@
 		qcom,smmu-s1-enable;
 
 		vdd-wlan-aon-supply = <&pm8150_s6>;
+		qcom,vdd-wlan-aon-config = <950000 950000 0 0 1>;
 		vdd-wlan-dig-supply = <&pm8009_s2>;
+		qcom,vdd-wlan-dig-config = <950000 952000 0 0 1>;
 		vdd-wlan-io-supply = <&pm8150_s4>;
+		qcom,vdd-wlan-io-config = <1800000 1800000 0 0 1>;
 		vdd-wlan-rfa1-supply = <&pm8150_s5>;
+		qcom,vdd-wlan-rfa1-config = <1900000 1900000 0 0 1>;
 		vdd-wlan-rfa2-supply = <&pm8150a_s8>;
+		qcom,vdd-wlan-rfa2-config = <1350000 1350000 0 0 1>;
 		wlan-ant-switch-supply = <&pm8150a_l5>;
+		qcom,wlan-ant-switch-config = <1800000 1800000 0 0 0>;
 
 		mhi,max-channels = <30>;
 		mhi,timeout = <10000>;
