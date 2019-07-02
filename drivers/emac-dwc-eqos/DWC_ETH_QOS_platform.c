@@ -970,6 +970,11 @@ void DWC_ETH_QOS_resume_clks(struct DWC_ETH_QOS_prv_data *pdata)
 	else
 		DWC_ETH_QOS_set_clk_and_bus_config(pdata, SPEED_10);
 
+#ifdef DWC_ETH_QOS_CONFIG_PTP
+	if (dwc_eth_qos_res_data.ptp_clk)
+		clk_prepare_enable(dwc_eth_qos_res_data.ptp_clk);
+#endif
+
 	pdata->clks_suspended = 0;
 	complete_all(&pdata->clk_enable_done);
 
@@ -993,6 +998,11 @@ void DWC_ETH_QOS_suspend_clks(struct DWC_ETH_QOS_prv_data *pdata)
 
 	if (dwc_eth_qos_res_data.rgmii_clk)
 		clk_disable_unprepare(dwc_eth_qos_res_data.rgmii_clk);
+
+#ifdef DWC_ETH_QOS_CONFIG_PTP
+	if (dwc_eth_qos_res_data.ptp_clk)
+		clk_disable_unprepare(dwc_eth_qos_res_data.ptp_clk);
+#endif
 
 	EMACDBG("Exit\n");
 }
