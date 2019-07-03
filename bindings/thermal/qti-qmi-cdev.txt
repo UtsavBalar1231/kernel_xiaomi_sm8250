@@ -51,6 +51,7 @@ Subsystem properties:
 			"modem_skin2" -> Modem skin mitigation device2,
 			"modem_skin3" -> Modem skin mitigation device3,
 			"cpr_cold" -> for cpr restriction.
+			"wlan" -> for modem wlan mitigation device.
 
 	-#cooling-cells:
 		Usage: required
