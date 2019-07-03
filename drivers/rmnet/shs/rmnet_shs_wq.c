@@ -1277,8 +1277,10 @@ void rmnet_shs_wq_reset_ep_active(struct net_device *dev)
 		if (!ep)
 			continue;
 
-		if (ep->ep->egress_dev == dev)
+		if (ep->netdev == dev){
 			ep->is_ep_active = 0;
+			ep->netdev = NULL;
+		}
 	}
 
 }
@@ -1291,8 +1293,11 @@ void rmnet_shs_wq_set_ep_active(struct net_device *dev)
 		if (!ep)
 			continue;
 
-		if (ep->ep->egress_dev == dev)
+		if (ep->ep->egress_dev == dev){
 			ep->is_ep_active = 1;
+			ep->netdev = dev;
+
+		}
 	}
 
 }

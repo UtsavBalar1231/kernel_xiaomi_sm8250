@@ -33,6 +33,7 @@
 struct rmnet_shs_wq_ep_s {
 	struct list_head ep_list_id;
 	struct rmnet_endpoint *ep;
+	struct net_device *netdev;
 	int  new_lo_core[MAX_CPUS];
 	int  new_hi_core[MAX_CPUS];
 	u16 default_core_msk;
