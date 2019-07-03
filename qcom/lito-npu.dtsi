@@ -71,6 +71,10 @@
 		qcom,vdd_cx-uV-uA = <RPMH_REGULATOR_LEVEL_TURBO 100000>;
 		mboxes = <&qmp_aop 0>;
 		mbox-names = "aop";
+		resets = <&npucc NPU_CC_DPM_TEMP_CLK_ARES>,
+				<&npucc NPU_CC_LLM_CURR_CLK_ARES>,
+				<&npucc NPU_CC_LLM_TEMP_CLK_ARES>;
+		reset-names = "dpm_temp_clk", "llm_curr_clk", "llm_temp_clk";
 		#cooling-cells = <2>;
 		qcom,src-dst-ports = <MSM_BUS_MASTER_NPU MSM_BUS_SLAVE_EBI_CH0>;
 		qcom,npu-pwrlevels {

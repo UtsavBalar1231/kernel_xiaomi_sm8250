@@ -80,6 +80,10 @@
 		vdd_cx-supply = <&VDD_CX_LEVEL>;
 		qcom,proxy-reg-names ="vdd", "vdd_cx";
 		qcom,vdd_cx-uV-uA = <RPMH_REGULATOR_LEVEL_TURBO 100000>;
+		resets = <&clock_npucc NPU_CC_DPM_TEMP_CLK_ARES>,
+				<&clock_npucc NPU_CC_LLM_CURR_CLK_ARES>,
+				<&clock_npucc NPU_CC_LLM_TEMP_CLK_ARES>;
+		reset-names = "dpm_temp_clk", "llm_curr_clk", "llm_temp_clk";
 		#cooling-cells = <2>;
 		mboxes = <&ipcc_mproc IPCC_CLIENT_NPU
 				IPCC_MPROC_SIGNAL_GLINK_QMP>,
