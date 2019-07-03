@@ -80,10 +80,10 @@ Main node properties:
   Definition: Pair of values describing iova base and size to allocate.
 
 Optional property:
-- qcom,gpii_offset
+- qcom,gpi-ee-offset
   Usage: optional
-  Value type: boolean
-  Definition: Flag to enable support for variable gpii register offsets among QUPs.
+  Value type: u64
+  Definition: Specifies the gsi ee register offset for the QUP.
 
 ========
 Example:
