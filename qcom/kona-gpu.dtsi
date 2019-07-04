@@ -12,7 +12,7 @@
 	};
 
 	gpubw: qcom,gpubw {
-		compatible = "qcom,devbw";
+		compatible = "qcom,devbw-ddr";
 		governor = "bw_vbif";
 		qcom,src-dst-ports = <26 512>;
 		operating-points-v2 = <&suspendable_ddr_bw_opp_table>;
