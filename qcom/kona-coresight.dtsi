@@ -187,6 +187,15 @@
 						<&funnel_merg_out_funnel_swao>;
 				};
 			};
+
+			port@5 {
+				reg = <5>;
+				funnel_swao_in_lpass_lpi: endpoint {
+					slave-mode;
+					remote-endpoint=
+						<&lpass_lpi_out_funnel_swao>;
+				};
+			};
 		};
 	};
 
@@ -967,6 +976,20 @@
 			tpdm_dl_north_out_tpda_dl_north: endpoint {
 				remote-endpoint =
 					<&tpda_dl_north_in_tpdm_dl_north>;
+			};
+		};
+	};
+
+	tpdm_lpass_lpi: tpdm@6b26000 {
+		compatible = "qcom,coresight-dummy";
+
+		coresight-name = "coresight-tpdm-lpass-lpi";
+		qcom,dummy-source;
+
+		port {
+			lpass_lpi_out_funnel_swao: endpoint {
+				remote-endpoint =
+					<&funnel_swao_in_lpass_lpi>;
 			};
 		};
 	};
