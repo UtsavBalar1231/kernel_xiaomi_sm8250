@@ -143,10 +143,11 @@
 
 &thermal_zones {
 	pm8150_temp_alarm: pm8150_tz {
-		polling-delay-passive = <0>;
+		polling-delay-passive = <100>;
 		polling-delay = <0>;
 		thermal-governor = "step_wise";
 		thermal-sensors = <&pm8150_tz>;
+		wake-capable-sensor;
 
 		trips {
 			pm8150_trip0: trip0 {
