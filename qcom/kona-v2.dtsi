@@ -29,3 +29,9 @@
 &clock_videocc {
 	compatible = "qcom,videocc-kona-v2", "syscon";
 };
+
+&spss_utils {
+	qcom,spss-dev-firmware-name  = "spss2d";	/* 8 chars max */
+	qcom,spss-test-firmware-name = "spss2t";	/* 8 chars max */
+	qcom,spss-prod-firmware-name = "spss2p";	/* 8 chars max */
+};
