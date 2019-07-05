@@ -43,7 +43,8 @@
 #define CBR_PLUS_BUF_SIZE 1000
 #define MAX_GOP 0xFFFFFFF
 
-#define L_MODE V4L2_MPEG_VIDEO_H264_LOOP_FILTER_MODE_DISABLED_AT_SLICE_BOUNDARY
+#define DB_DISABLE_SLICE_BOUNDARY \
+	V4L2_MPEG_VIDEO_H264_LOOP_FILTER_MODE_DISABLED_AT_SLICE_BOUNDARY
 #define MIN_NUM_ENC_OUTPUT_BUFFERS 4
 #define MIN_NUM_ENC_CAPTURE_BUFFERS 5
 
@@ -471,12 +472,12 @@ static struct msm_vidc_ctrl msm_venc_ctrls[] = {
 		.name = "H.264 Loop Filter Mode",
 		.type = V4L2_CTRL_TYPE_MENU,
 		.minimum = V4L2_MPEG_VIDEO_H264_LOOP_FILTER_MODE_ENABLED,
-		.maximum = L_MODE,
-		.default_value = V4L2_MPEG_VIDEO_H264_LOOP_FILTER_MODE_DISABLED,
+		.maximum = DB_DISABLE_SLICE_BOUNDARY,
+		.default_value = V4L2_MPEG_VIDEO_H264_LOOP_FILTER_MODE_ENABLED,
 		.menu_skip_mask = ~(
 		(1 << V4L2_MPEG_VIDEO_H264_LOOP_FILTER_MODE_ENABLED) |
 		(1 << V4L2_MPEG_VIDEO_H264_LOOP_FILTER_MODE_DISABLED) |
-		(1 << L_MODE)
+		(1 << DB_DISABLE_SLICE_BOUNDARY)
 		),
 	},
 	{
@@ -3069,6 +3070,7 @@ int msm_venc_set_loop_filter_mode(struct msm_vidc_inst *inst)
 	struct v4l2_ctrl *ctrl_a;
 	struct v4l2_ctrl *ctrl_b;
 	struct hfi_h264_db_control h264_db_control;
+	u32 codec;
 
 	if (!inst || !inst->core) {
 		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
@@ -3076,7 +3078,8 @@ int msm_venc_set_loop_filter_mode(struct msm_vidc_inst *inst)
 	}
 	hdev = inst->core->device;
 
-	if (get_v4l2_codec(inst) != V4L2_PIX_FMT_H264)
+	codec = get_v4l2_codec(inst);
+	if (codec != V4L2_PIX_FMT_H264 && codec != V4L2_PIX_FMT_HEVC)
 		return 0;
 
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_H264_LOOP_FILTER_MODE);
