@@ -4268,13 +4268,19 @@
 		qcom_cedev_ns_cb {
 			compatible = "qcom,qcedev,context-bank";
 			label = "ns_context";
-			iommus = <&apps_smmu 0x592 0>;
+			iommus = <&apps_smmu 0x592 0>,
+				 <&apps_smmu 0x598 0>,
+				 <&apps_smmu 0x599 0>,
+				 <&apps_smmu 0x59F 0>;
 		};
 
 		qcom_cedev_s_cb {
 			compatible = "qcom,qcedev,context-bank";
 			label = "secure_context";
-			iommus = <&apps_smmu 0x593 0>;
+			iommus = <&apps_smmu 0x593 0>,
+				 <&apps_smmu 0x59C 0>,
+				 <&apps_smmu 0x59D 0>,
+				 <&apps_smmu 0x59E 0>;
 			qcom,iommu-vmid = <0x9>; /* VMID_CP_BITSTREAM */
 			qcom,secure-context-bank;
 		};
