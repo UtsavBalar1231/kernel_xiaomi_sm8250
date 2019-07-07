@@ -322,9 +322,12 @@
 
 		clocks = <&clock_gcc GCC_USB3_PRIM_PHY_AUX_CLK>,
 			<&clock_gcc GCC_USB3_PRIM_PHY_PIPE_CLK>,
+			<&clock_gcc GCC_USB3_PRIM_PHY_PIPE_CLK_SRC>,
+			<&clock_gcc USB3_PHY_WRAPPER_GCC_USB30_PIPE_CLK>,
 			<&clock_rpmh RPMH_CXO_CLK>,
 			<&clock_gcc GCC_USB3_PRIM_PHY_COM_AUX_CLK>;
-		clock-names = "aux_clk", "pipe_clk", "ref_clk_src",
+		clock-names = "aux_clk", "pipe_clk", "pipe_clk_mux",
+				"pipe_clk_ext_src", "ref_clk_src",
 				"com_aux_clk";
 
 		resets = <&clock_gcc GCC_USB3_DP_PHY_PRIM_BCR>,
@@ -573,10 +576,13 @@
 
 		clocks = <&clock_gcc GCC_USB3_SEC_PHY_AUX_CLK>,
 			 <&clock_gcc GCC_USB3_SEC_PHY_PIPE_CLK>,
+			 <&clock_gcc GCC_USB3_SEC_PHY_PIPE_CLK_SRC>,
+			 <&clock_gcc USB3_UNI_PHY_SEC_GCC_USB30_PIPE_CLK>,
 			 <&clock_rpmh RPMH_CXO_CLK>,
 			 <&clock_gcc GCC_USB3_SEC_CLKREF_EN>,
 			 <&clock_gcc GCC_USB3_SEC_PHY_COM_AUX_CLK>;
-		clock-names = "aux_clk", "pipe_clk", "ref_clk_src",
+		clock-names = "aux_clk", "pipe_clk", "pipe_clk_mux",
+				"pipe_clk_ext_src", "ref_clk_src",
 				"ref_clk", "com_aux_clk";
 
 		resets = <&clock_gcc GCC_USB3_PHY_SEC_BCR>,
