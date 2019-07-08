@@ -22,8 +22,8 @@ pm8008_8: qcom,pm8008@8 {
 	pm8008_gpios: pinctrl@c000 {
 		compatible = "qcom,spmi-gpio";
 		reg = <0xc000 0x200>;
-		interrupts = <0x0 0xc0 0 IRQ_TYPE_NONE>,
-				<0x0 0xc1 0 IRQ_TYPE_NONE>;
+		interrupts = <0x0 0xc0 0 IRQ_TYPE_LEVEL_LOW>,
+				<0x0 0xc1 0 IRQ_TYPE_LEVEL_LOW>;
 		interrupt-names = "pm8008_gpio1", "pm8008_gpio2";
 		gpio-controller;
 		#gpio-cells = <2>;
