@@ -69,6 +69,9 @@
 
 #define MAX_NAME_LENGTH 64
 
+#define DB_DISABLE_SLICE_BOUNDARY \
+	V4L2_MPEG_VIDEO_H264_LOOP_FILTER_MODE_DISABLED_AT_SLICE_BOUNDARY
+
 #define NUM_MBS_PER_SEC(__height, __width, __fps) \
 	(NUM_MBS_PER_FRAME(__height, __width) * __fps)
 
