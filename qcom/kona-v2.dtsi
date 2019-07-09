@@ -35,3 +35,5 @@
 	qcom,spss-test-firmware-name = "spss2t";	/* 8 chars max */
 	qcom,spss-prod-firmware-name = "spss2p";	/* 8 chars max */
 };
+
+#include "kona-v2-gpu.dtsi"
