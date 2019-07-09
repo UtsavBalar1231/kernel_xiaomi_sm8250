@@ -78,6 +78,10 @@ struct rmnet_perf_core_64k_buff_pool {
 
 struct rmnet_perf_core_burst_marker_state {
 	bool wait_for_start;
+	/* If the callbacks fail to register, then we want to flush at the
+	 * end of every chain
+	 */
+	bool callbacks_valid;
 	u32 curr_seq;
 	u32 expect_packets;
 };
