@@ -1194,6 +1194,24 @@
 		operating-points-v2 = <&ddr_bw_opp_table>;
 	};
 
+	qoslat_opp_table: qoslat-opp-table {
+		compatible = "operating-points-v2";
+		opp-0 {
+			opp-hz = /bits/ 64 < 0 >;
+		};
+
+		opp-1 {
+			opp-hz = /bits/ 64 < 1 >;
+		};
+	};
+
+	cpu4_cpu_ddr_qoslat: qcom,cpu4-cpu-ddr-qoslat {
+		compatible = "qcom,devfreq-qoslat";
+		governor = "powersave";
+		operating-points-v2 = <&qoslat_opp_table>;
+		mboxes = <&qmp_aop 0>;
+	};
+
 	cpu0_memlat_cpugrp: qcom,cpu0-cpugrp {
 		compatible = "qcom,arm-memlat-cpugrp";
 		qcom,cpulist = <&CPU0 &CPU1 &CPU2 &CPU3>;
@@ -1356,6 +1374,15 @@
 					< 2380800 MHZ_TO_MBPS(1017, 4) >,
 					< 2500000 MHZ_TO_MBPS(2736, 4) >;
 			};
+		};
+
+		cpu4_qoslatmon: qcom,cpu4-qoslatmon {
+			compatible = "qcom,arm-memlat-mon";
+			qcom,target-dev = <&cpu4_cpu_ddr_qoslat>;
+			qcom,cachemiss-ev = <0x2A>;
+			qcom,core-dev-table =
+				<  300000 0 >,
+				< 3000000 1 >;
 		};
 	};
 
