@@ -452,3 +452,8 @@
 &va_cdc_dma_0_tx {
 	qcom,msm-dai-is-island-supported = <1>;
 };
+
+&adsp_loader {
+	nvmem-cells = <&adsp_variant>;
+	nvmem-cell-names = "adsp_variant";
+};

@@ -3583,6 +3583,11 @@
 			reg = <0x1ea 0x2>;
 			bits = <5 8>;
 		};
+
+		adsp_variant: adsp_variant@0x780210 {
+			reg = <0x210 0x4>;
+			bits = <0x0 0x20>;
+		};
 	};
 };
 
