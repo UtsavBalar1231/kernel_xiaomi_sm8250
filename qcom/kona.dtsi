@@ -2418,9 +2418,9 @@
 
 	};
 
-	qcom_seecom: qseecom@82200000 {
+	qcom_seecom: qseecom@82400000 {
 		compatible = "qcom,qseecom";
-		reg = <0x82200000 0x2200000>;
+		reg = <0x82400000 0x3A00000>;
 		reg-names = "secapp-region";
 		memory-region = <&qseecom_mem>;
 		qcom,hlos-num-ce-hw-instances = <1>;
