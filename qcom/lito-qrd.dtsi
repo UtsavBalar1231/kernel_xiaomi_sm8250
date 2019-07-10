@@ -44,6 +44,12 @@
 	vdd-supply = <&vdda_usb_ss_dp_core>;
 };
 
+&usb2_phy0 {
+	qcom,param-override-seq =
+		<0x0d 0x70
+		0x27 0x74>;
+};
+
 &sde_dp {
 	vdda-0p9-supply = <&vdda_usb_ss_dp_core>;
 };
