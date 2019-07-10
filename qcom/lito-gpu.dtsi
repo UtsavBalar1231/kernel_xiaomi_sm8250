@@ -25,6 +25,11 @@
 			opp-microvolt = <RPMH_REGULATOR_LEVEL_NOM>;
 		};
 
+		opp-540000000 {
+			opp-hz = /bits/ 64 <540000000>;
+			opp-microvolt = <RPMH_REGULATOR_LEVEL_NOM>;
+		};
+
 		opp-500000000 {
 			opp-hz = /bits/ 64 <500000000>;
 			opp-microvolt = <RPMH_REGULATOR_LEVEL_SVS_L1>;
@@ -311,7 +316,7 @@
 				/* SVS L1 */
 				qcom,gpu-pwrlevel@0 {
 					reg = <0>;
-					qcom,gpu-freq = <500000000>;
+					qcom,gpu-freq = <540000000>;
 					qcom,bus-freq = <9>;
 					qcom,bus-min = <8>;
 					qcom,bus-max = <12>;
