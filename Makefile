@@ -5,19 +5,31 @@ ifeq ($(CONFIG_ARCH_KONA), y)
 include $(srctree)/techpack/camera/config/konacamera.conf
 endif
 
-# Use USERINCLUDE when you must reference the UAPI directories only.
-USERINCLUDE     += \
-               -I$(srctree)/techpack/camera/include/uapi
-
-# Use LINUXINCLUDE when you must reference the include/ directory.
-# Needed to be compatible with the O= option
-LINUXINCLUDE    += \
-                -I$(srctree)/techpack/camera/include/uapi \
-                -I$(srctree)/techpack/camera/include
+ifeq ($(CONFIG_ARCH_LITO), y)
+include $(srctree)/techpack/camera/config/litocamera.conf
+endif
 
 ifeq ($(CONFIG_ARCH_KONA), y)
 LINUXINCLUDE    += \
 		-include $(srctree)/techpack/camera/config/konacameraconf.h
 endif
 
+ifeq ($(CONFIG_ARCH_LITO), y)
+LINUXINCLUDE    += \
+		-include $(srctree)/techpack/camera/config/litocameraconf.h
+endif
+
+ifdef CONFIG_SPECTRA_CAMERA
+# Use USERINCLUDE when you must reference the UAPI directories only.
+USERINCLUDE     += \
+                -I$(srctree)/techpack/camera/include/uapi
+
+# Use LINUXINCLUDE when you must reference the include/ directory.
+# Needed to be compatible with the O= option
+LINUXINCLUDE    += \
+                -I$(srctree)/techpack/camera/include/uapi \
+                -I$(srctree)/techpack/camera/include
 obj-y += drivers/
+else
+$(info Target not found)
+endif
