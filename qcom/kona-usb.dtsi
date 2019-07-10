@@ -129,8 +129,10 @@
 	/* Primary USB port related High Speed PHY */
 	usb2_phy0: hsphy@88e3000 {
 		compatible = "qcom,usb-hsphy-snps-femto";
-		reg = <0x88e3000 0x110>;
-		reg-names = "hsusb_phy_base";
+		reg = <0x88e3000 0x110>,
+			<0x088e2000 0x4>;
+		reg-names = "hsusb_phy_base",
+			"eud_enable_reg";
 
 		vdd-supply = <&pm8150_l5>;
 		vdda18-supply = <&pm8150_l12>;
