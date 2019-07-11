@@ -1514,6 +1514,10 @@ int msm_vidc_decide_work_mode_iris2(struct msm_vidc_inst *inst)
 			/* For WORK_MODE_1, set Low Latency mode by default */
 			latency.enable = true;
 		}
+		if (inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_CQ) {
+			pdata.video_work_mode = HFI_WORKMODE_1;
+			latency.enable = true;
+		}
 		if (inst->rc_type == RATE_CONTROL_LOSSLESS) {
 			pdata.video_work_mode = HFI_WORKMODE_2;
 			latency.enable = false;
