@@ -565,6 +565,8 @@ bool rmnet_perf_core_dissect_pkt(unsigned char *payload,
 				 struct rmnet_perf_pkt_info *pkt_info,
 				 int offset, u16 pkt_len)
 {
+	bool flush = true;
+
 	payload += offset;
 	pkt_info->ip_proto = (*payload & 0xF0) >> 4;
 	if (pkt_info->ip_proto == 4) {
@@ -576,7 +578,7 @@ bool rmnet_perf_core_dissect_pkt(unsigned char *payload,
 		/* Pass off frags immediately */
 		if (iph->frag_off & htons(IP_MF | IP_OFFSET)) {
 			rmnet_perf_frag_flush++;
-			return true;
+			goto done;
 		}
 
 		pkt_info->ip_len = iph->ihl * 4;
@@ -613,7 +615,7 @@ bool rmnet_perf_core_dissect_pkt(unsigned char *payload,
 			/* Something somewhere has gone horribly wrong...
 			 * Let the stack deal with it.
 			 */
-			return true;
+			goto done;
 		}
 
 		/* Returned length will include the offset value */
@@ -628,7 +630,7 @@ bool rmnet_perf_core_dissect_pkt(unsigned char *payload,
 				len += sizeof(struct frag_hdr);
 			pkt_info->ip_len = (u16)len;
 			rmnet_perf_frag_flush++;
-			return true;
+			goto done;
 		}
 
 		pkt_info->ip_len = (u16)len;
@@ -643,7 +645,7 @@ bool rmnet_perf_core_dissect_pkt(unsigned char *payload,
 		}
 	} else {
 		/* Not a valid IP packet */
-		return true;
+		goto done;
 	}
 
 	if (pkt_info->trans_proto == IPPROTO_TCP) {
@@ -666,14 +668,17 @@ bool rmnet_perf_core_dissect_pkt(unsigned char *payload,
 			pkt_info->frag_desc->trans_len = pkt_info->trans_len;
 	} else {
 		/* Not a protocol we can optimize */
-		return true;
+		goto done;
 	}
 
-	pkt_info->payload_len = pkt_len - pkt_info->ip_len -
-				pkt_info->trans_len;
+	flush = false;
 	pkt_info->hash_key = rmnet_perf_core_compute_flow_hash(pkt_info);
 
-	return false;
+done:
+	pkt_info->payload_len = pkt_len - pkt_info->ip_len -
+				pkt_info->trans_len;
+
+	return flush;
 }
 
 /* rmnet_perf_core_dissect_skb() - Extract packet header metadata for easier
