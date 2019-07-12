@@ -9,6 +9,7 @@ Required properties:
 - interrupts: the interrupt line connected to this I3C master.
 - reg: I3C master registers.
 - qcom,wrapper-core: Wrapper QUPv3 core containing this I3C controller.
+- qcom,ibi-ctrl-id: IBI controller instance number.
 
 Optional properties:
 - se-clock-frequency: Source serial clock frequency to use.
@@ -45,4 +46,5 @@ Example:
 		#address-cells = <3>;
 		#size-cells = <0>;
 		qcom,wrapper-core = <&qupv3_0>;
+		qcom,ibi-ctrl-id = <0>;
 	};

@@ -24,10 +24,37 @@
 		pinctrl-names = "default", "sleep";
 		pinctrl-0 = <&qupv3_se0_i3c_active>;
 		pinctrl-1 = <&qupv3_se0_i3c_sleep>;
-		interrupts = <GIC_SPI 601 IRQ_TYPE_LEVEL_HIGH>;
+		interrupts-extended = <&intc GIC_SPI 601 IRQ_TYPE_LEVEL_HIGH>,
+				<&pdc 31 IRQ_TYPE_LEVEL_HIGH>,
+				<&pdc 30 IRQ_TYPE_LEVEL_HIGH>;
+
 		#address-cells = <3>;
 		#size-cells = <0>;
 		qcom,wrapper-core = <&qupv3_0>;
+		qcom,ibi-ctrl-id = <0>;
+		status = "disabled";
+	};
+
+       /* QUPV3_0_SE1 */
+       i3c1: i3c-master@984000 {
+		compatible = "qcom,geni-i3c";
+		reg = <0x984000 0x4000>,
+			<0xEC40000 0x10000>;
+		clock-names = "se-clk", "m-ahb", "s-ahb";
+		clocks = <&clock_gcc GCC_QUPV3_WRAP0_S1_CLK>,
+			<&clock_gcc GCC_QUPV3_WRAP_0_M_AHB_CLK>,
+			<&clock_gcc GCC_QUPV3_WRAP_0_S_AHB_CLK>;
+		pinctrl-names = "default", "sleep";
+		pinctrl-0 = <&qupv3_se1_i3c_active>;
+		pinctrl-1 = <&qupv3_se1_i3c_sleep>;
+		interrupts-extended = <&intc GIC_SPI 602 IRQ_TYPE_LEVEL_HIGH>,
+				<&pdc 33 IRQ_TYPE_LEVEL_HIGH>,
+				<&pdc 32 IRQ_TYPE_LEVEL_HIGH>;
+
+		#address-cells = <3>;
+		#size-cells = <0>;
+		qcom,wrapper-core = <&qupv3_0>;
+		qcom,ibi-ctrl-id = <1>;
 		status = "disabled";
 	};
 
