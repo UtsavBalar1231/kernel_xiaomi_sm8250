@@ -253,7 +253,7 @@ static int msm_cvp_init_downscale_resolution(struct msm_vidc_inst *inst)
 		ds_height = height;
 
 	/* Step 4) switch width and height if already switched */
-	if (height > width) {
+	if (cvp->height > cvp->width) {
 		temp = ds_height;
 		ds_height = ds_width;
 		ds_width = temp;
