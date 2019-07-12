@@ -718,6 +718,19 @@
 					bias-pull-up;
 				};
 			};
+
+			pcie0_clkreq_sleep: pcie0_clkreq_sleep {
+				mux {
+					pins = "gpio80";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio80";
+					drive-strength = <2>;
+					bias-pull-up;
+				};
+			};
 		};
 
 		pcie1 {
