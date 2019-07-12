@@ -143,29 +143,25 @@
 	};
 };
 
-&spmi_bus {
-	qcom,pm7250b@2 {
-		pm7250b_adc_tm_iio: adc_tm@3400 {
-			compatible = "qcom,adc-tm5-iio";
-			reg = <0x3400 0x100>;
-			#thermal-sensor-cells = <1>;
-			io-channels = <&pm7250b_vadc ADC_GPIO3_PU2>;
+&pm7250b_adc_tm {
+	io-channels = <&pm7250b_vadc ADC_AMUX_THM1_PU2>,
+			<&pm7250b_vadc ADC_GPIO2_PU2>,
+			<&pm7250b_vadc ADC_GPIO3_PU2>,
+			<&pm7250b_vadc ADC_GPIO4_PU2>;
 
-			bmr_s_therm {
-				reg = <ADC_GPIO3_PU2>;
-				qcom,ratiometric;
-				qcom,hw-settle-time = <200>;
-			};
-		};
+	bmr_s_therm@54 {
+		reg = <ADC_GPIO3_PU2>;
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
 	};
 };
 
 &thermal_zones {
 	mmw-pa4-usr {
 		polling-delay-passive = <0>;
-		polling-delay = <5000>;
+		polling-delay = <0>;
 		thermal-governor = "user_space";
-		thermal-sensors = <&pm7250b_adc_tm_iio ADC_GPIO3_PU2>;
+		thermal-sensors = <&pm7250b_adc_tm ADC_GPIO3_PU2>;
 		trips {
 			active-config0 {
 				temperature = <125000>;
