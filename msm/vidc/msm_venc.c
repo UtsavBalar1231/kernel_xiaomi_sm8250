@@ -3189,7 +3189,7 @@ int msm_venc_enable_hybrid_hp(struct msm_vidc_inst *inst)
 	ctrl = get_ctrl(inst,
 		V4L2_CID_MPEG_VIDC_VIDEO_HEVC_MAX_HIER_CODING_LAYER);
 	layer = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_HEVC_HIER_CODING_LAYER);
-	if (ctrl->val != layer->val)
+	if (ctrl->val == 0 || ctrl->val != layer->val)
 		return 0;
 
 	/*
