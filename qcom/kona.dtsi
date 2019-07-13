@@ -4805,19 +4805,21 @@
 		qcom,smmu-s1-enable;
 
 		qcom,msm-bus,name = "msm-cnss";
-		qcom,msm-bus,num-cases = <5>;
+		qcom,msm-bus,num-cases = <6>;
 		qcom,msm-bus,num-paths = <1>;
 		qcom,msm-bus,vectors-KBps =
 		/* no vote */
 		<MSM_BUS_MASTER_PCIE MSM_BUS_SLAVE_FIRST 0 0>,
-		/* idle: 0-18 Mbps */
-		<MSM_BUS_MASTER_PCIE MSM_BUS_SLAVE_FIRST 2250 240000>,
-		/* low: 18-60 Mbps*/
-		<MSM_BUS_MASTER_PCIE MSM_BUS_SLAVE_FIRST 7500 960000>,
-		/* medium: 60-240 Mbps */
-		<MSM_BUS_MASTER_PCIE MSM_BUS_SLAVE_FIRST 30000 5600000>,
-		/* high: 240 - 1400 Mbps */
-		<MSM_BUS_MASTER_PCIE MSM_BUS_SLAVE_FIRST 175000 9600000>;
+		/* idle: 0-18 Mbps, ddr freq: 100 MHz */
+		<MSM_BUS_MASTER_PCIE MSM_BUS_SLAVE_FIRST 2250 400000>,
+		/* low: 18-60 Mbps, ddr freq: 200 MHz*/
+		<MSM_BUS_MASTER_PCIE MSM_BUS_SLAVE_FIRST 7500 800000>,
+		/* medium: 60-240 Mbps, ddr freq: 451.2 MHz */
+		<MSM_BUS_MASTER_PCIE MSM_BUS_SLAVE_FIRST 30000 1804800>,
+		/* high: 240 - 800 Mbps, ddr freq: 451.2 MHz */
+		<MSM_BUS_MASTER_PCIE MSM_BUS_SLAVE_FIRST 100000 1804800>,
+		/* very high: 800 - 1400 Mbps, ddr freq: 1555.2 MHz */
+		<MSM_BUS_MASTER_PCIE MSM_BUS_SLAVE_FIRST 175000 6220800>;
 
 		vdd-wlan-aon-supply = <&pm8150_s6>;
 		qcom,vdd-wlan-aon-config = <950000 950000 0 0 1>;
