@@ -125,8 +125,8 @@
 		vddcx-supply = <&gpu_cx_gdsc>;
 		vdd-supply = <&gpu_gx_gdsc>;
 
-		nvmem-cells = <&gpu_speed_bin>;
-		nvmem-cell-names = "speed_bin";
+		nvmem-cells = <&gpu_speed_bin>, <&gpu_gaming_bin>;
+		nvmem-cell-names = "speed_bin", "gaming_bin";
 
 		/* GPU OPP data */
 		operating-points-v2 = <&gpu_opp_table>;
