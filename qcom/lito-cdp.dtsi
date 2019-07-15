@@ -337,6 +337,11 @@
 	};
 };
 
+&qupv3_se9_i2c {
+	/* Override sleep state of pins */
+	pinctrl-1 = <&qupv3_se9_i2c_active>;
+};
+
 &dsi_sw43404_amoled_video {
 	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
