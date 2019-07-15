@@ -113,6 +113,8 @@ memory allocation over a PCIe bridge
 				2 (override scm call as though it returned false)
 - qcom,ram-collection-on-crash: Boolean that controls IPA/GSI memory
 				collection upon system crash
+- qcom,skip-ieob-mask-wa: Boolean context flag to indicate ieob mask workaround
+				supported or not.
 
 Optional properties:
 -qcom,ipa-pipe-mem: Specifies the base physical address and the
