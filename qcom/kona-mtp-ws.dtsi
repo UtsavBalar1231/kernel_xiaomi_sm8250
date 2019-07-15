@@ -1,1 +1,7 @@
 #include "kona-mtp.dtsi"
+
+&wlan {
+	vdd-wlan-dig-supply = <&pm8150_s6>;
+	qcom,vdd-wlan-dig-config = <950000 950000 0 0 1>;
+	qcom,cmd_db_name = "smpa6";
+};

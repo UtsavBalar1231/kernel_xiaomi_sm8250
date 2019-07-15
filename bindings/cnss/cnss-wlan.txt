@@ -54,6 +54,8 @@ Optional properties:
                                  between WLAN/PCIe and SMMU
   - qcom,wlan-ramdump-dynamic: To enable CNSS RAMDUMP collection
                                by providing the size of CNSS DUMP
+  - qcom,cmd_db_name: CommandDB name indicating the PMIC rail used for open
+                      loop CPR
   - reg: Memory regions defined as starting address and size
   - reg-names: Names of the memory regions defined in reg entry
   - wlan-bootstrap-gpio: WLAN_BOOTSTRAP GPIO signal specified by QCA6174
