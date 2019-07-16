@@ -520,8 +520,6 @@ struct msm_vidc_inst {
 	u32 colour_space;
 	u32 profile;
 	u32 level;
-	u32 grid_enable;
-	u32 frame_quality;
 	u32 rc_type;
 	u32 hybrid_hp;
 	u32 layer_bitrate;
@@ -560,7 +558,6 @@ void handle_cmd_response(enum hal_command_response cmd, void *data);
 int msm_vidc_trigger_ssr(struct msm_vidc_core *core,
 	enum hal_ssr_trigger_type type);
 int msm_vidc_noc_error_info(struct msm_vidc_core *core);
-bool heic_encode_session_supported(struct msm_vidc_inst *inst);
 int msm_vidc_check_session_supported(struct msm_vidc_inst *inst);
 int msm_vidc_check_scaling_supported(struct msm_vidc_inst *inst);
 void msm_vidc_queue_v4l2_event(struct msm_vidc_inst *inst, int event_type);

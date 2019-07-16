@@ -826,15 +826,6 @@ static inline int start_streaming(struct msm_vidc_inst *inst)
 		is_secondary_output_mode(inst))
 		b.buffer_type = HFI_BUFFER_OUTPUT2;
 
-	/* HEIC HW/FWK tiling encode is supported only for CQ RC mode */
-	if (inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_CQ) {
-		if (!heic_encode_session_supported(inst)) {
-			dprintk(VIDC_ERR,
-				"HEIC Encode session not supported\n");
-			return -ENOTSUPP;
-		}
-	}
-
 	/* Check if current session is under HW capability */
 	rc = msm_vidc_check_session_supported(inst);
 	if (rc) {
@@ -1439,9 +1430,6 @@ static int try_get_ctrl_for_instance(struct msm_vidc_inst *inst,
 		ctrl->val = msm_comm_hfi_to_v4l2(
 			V4L2_CID_MPEG_VIDEO_HEVC_PROFILE,
 			inst->profile);
-		break;
-	case V4L2_CID_MPEG_VIDC_IMG_GRID_SIZE:
-		ctrl->val = inst->grid_enable;
 		break;
 	case V4L2_CID_MPEG_VIDEO_H264_LEVEL:
 		ctrl->val = msm_comm_hfi_to_v4l2(
