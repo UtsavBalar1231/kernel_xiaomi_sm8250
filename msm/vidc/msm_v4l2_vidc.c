@@ -555,6 +555,12 @@ static int msm_vidc_probe_vidc_device(struct platform_device *pdev)
 		goto err_cores_exceeded;
 	}
 
+	core->vidc_core_workq = create_singlethread_workqueue(
+			"vidc_core_workq");
+	if (!core->vidc_core_workq) {
+		dprintk(VIDC_ERR, "%s: create core workq failed\n", __func__);
+		goto err_core_workq;
+	}
 	mutex_lock(&vidc_driver->lock);
 	list_add_tail(&core->list, &vidc_driver->cores);
 	mutex_unlock(&vidc_driver->lock);
@@ -581,6 +587,9 @@ static int msm_vidc_probe_vidc_device(struct platform_device *pdev)
 	return rc;
 
 err_fail_sub_device_probe:
+	if (core->vidc_core_workq)
+		destroy_workqueue(core->vidc_core_workq);
+err_core_workq:
 	vidc_hfi_deinitialize(core->hfi_type, core->device);
 err_cores_exceeded:
 	if (core->resources.cvp_internal) {
@@ -662,6 +671,8 @@ static int msm_vidc_remove(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
+	if (core->vidc_core_workq)
+		destroy_workqueue(core->vidc_core_workq);
 	vidc_hfi_deinitialize(core->hfi_type, core->device);
 	if (core->resources.cvp_internal) {
 		device_remove_file(&core->vdev[MSM_VIDC_CVP].vdev.dev,

@@ -442,6 +442,7 @@ struct msm_vidc_core {
 	struct msm_vidc_capability *capabilities;
 	struct delayed_work fw_unload_work;
 	struct work_struct ssr_work;
+	struct workqueue_struct *vidc_core_workq;
 	enum hal_ssr_trigger_type ssr_type;
 	bool smmu_fault_handled;
 	bool trigger_ssr;
@@ -518,6 +519,7 @@ struct msm_vidc_inst {
 	struct msm_vidc_codec_data *codec_data;
 	struct hal_hdr10_pq_sei hdr10_sei_params;
 	struct batch_mode batch;
+	struct delayed_work batch_work;
 	struct msm_vidc_inst_smem_ops *smem_ops;
 	int (*buffer_size_calculators)(struct msm_vidc_inst *inst);
 };
