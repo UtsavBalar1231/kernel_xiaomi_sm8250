@@ -56,9 +56,9 @@ static unsigned long __calculate_decoder(struct vidc_bus_vote_data *d,
 	unsigned long bitrate;
 
 	fp_t bins_to_bit_factor, vsp_read_factor, vsp_write_factor,
-		dpb_factor, dpb_write_factor,
-		y_bw_no_ubwc_8bpp, y_bw_no_ubwc_10bpp, y_bw_10bpp_p010,
-		motion_vector_complexity = 0;
+		dpb_factor, dpb_write_factor, y_bw_no_ubwc_8bpp;
+	fp_t y_bw_no_ubwc_10bpp = 0, y_bw_10bpp_p010 = 0,
+	     motion_vector_complexity = 0;
 	fp_t	dpb_total = 0;
 
 	/* Output parameters */
@@ -304,7 +304,7 @@ static unsigned long __calculate_encoder(struct vidc_bus_vote_data *d,
 	fp_t dpb_compression_factor,
 		original_compression_factor,
 		original_compression_factor_y,
-		y_bw_no_ubwc_8bpp, y_bw_no_ubwc_10bpp, y_bw_10bpp_p010,
+		y_bw_no_ubwc_8bpp, y_bw_no_ubwc_10bpp = 0, y_bw_10bpp_p010 = 0,
 		input_compression_factor,
 		downscaling_ratio,
 		ref_y_read_bw_factor, ref_cbcr_read_bw_factor,
