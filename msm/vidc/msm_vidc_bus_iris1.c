@@ -68,34 +68,22 @@ void __dump(struct dump dump[], int len)
 	}
 }
 
-static unsigned long __calculate_vpe(struct vidc_bus_vote_data *d,
-		enum vidc_bus_type type)
+static unsigned long __calculate_vpe(struct vidc_bus_vote_data *d)
 {
 	return 0;
 }
 
-static unsigned long __calculate_cvp(struct vidc_bus_vote_data *d,
-		enum vidc_bus_type type)
+static unsigned long __calculate_cvp(struct vidc_bus_vote_data *d)
 {
 	unsigned long ret = 0;
 
-	switch (type) {
-	case DDR:
-		ret = d->ddr_bw;
-		break;
-	case LLCC:
-		ret = d->sys_cache_bw;
-		break;
-	default:
-		dprintk(VIDC_ERR, "%s - Unknown type\n", __func__);
-		break;
-	}
+	d->calc_bw_ddr = d->ddr_bw;
+	d->calc_bw_llcc = d->sys_cache_bw;
 
 	return ret;
 }
 
-static unsigned long __calculate_decoder(struct vidc_bus_vote_data *d,
-		enum vidc_bus_type type)
+static unsigned long __calculate_decoder(struct vidc_bus_vote_data *d)
 {
 	/*
 	 * XXX: Don't fool around with any of the hardcoded numbers unless you
@@ -335,22 +323,13 @@ static unsigned long __calculate_decoder(struct vidc_bus_vote_data *d,
 		__dump(dump, ARRAY_SIZE(dump));
 	}
 
-	switch (type) {
-	case DDR:
-		ret = kbps(fp_round(ddr.total));
-		break;
-	case LLCC:
-		ret = kbps(fp_round(llc.total));
-		break;
-	default:
-		dprintk(VIDC_ERR, "%s - Unknown type\n", __func__);
-	}
+	d->calc_bw_ddr = kbps(fp_round(ddr.total));
+	d->calc_bw_llcc = kbps(fp_round(llc.total));
 
 	return ret;
 }
 
-static unsigned long __calculate_encoder(struct vidc_bus_vote_data *d,
-		enum vidc_bus_type type)
+static unsigned long __calculate_encoder(struct vidc_bus_vote_data *d)
 {
 	/*
 	 * XXX: Don't fool around with any of the hardcoded numbers unless you
@@ -632,37 +611,28 @@ static unsigned long __calculate_encoder(struct vidc_bus_vote_data *d,
 		__dump(dump, ARRAY_SIZE(dump));
 	}
 
-	switch (type) {
-	case DDR:
-		ret = kbps(fp_round(ddr.total));
-		break;
-	case LLCC:
-		ret = kbps(fp_round(llc.total));
-		break;
-	default:
-		dprintk(VIDC_ERR, "%s - Unknown type\n", __func__);
-	}
+	d->calc_bw_ddr = kbps(fp_round(ddr.total));
+	d->calc_bw_llcc = kbps(fp_round(llc.total));
 
 	return ret;
 }
 
-static unsigned long __calculate(struct vidc_bus_vote_data *d,
-		enum vidc_bus_type type)
+static unsigned long __calculate(struct vidc_bus_vote_data *d)
 {
 	unsigned long value = 0;
 
 	switch (d->domain) {
 	case HAL_VIDEO_DOMAIN_VPE:
-		value = __calculate_vpe(d, type);
+		value = __calculate_vpe(d);
 		break;
 	case HAL_VIDEO_DOMAIN_ENCODER:
-		value = __calculate_encoder(d, type);
+		value = __calculate_encoder(d);
 		break;
 	case HAL_VIDEO_DOMAIN_DECODER:
-		value = __calculate_decoder(d, type);
+		value = __calculate_decoder(d);
 		break;
 	case HAL_VIDEO_DOMAIN_CVP:
-		value = __calculate_cvp(d, type);
+		value = __calculate_cvp(d);
 		break;
 	default:
 		dprintk(VIDC_ERR, "Unknown Domain");
@@ -671,29 +641,31 @@ static unsigned long __calculate(struct vidc_bus_vote_data *d,
 	return value;
 }
 
-unsigned long calc_bw_iris1(struct bus_info *bus,
-				struct msm_vidc_bus_data *vidc_data)
+int calc_bw_iris1(struct msm_vidc_bus_data *vidc_data)
 {
-	unsigned long ab_kbps = 0, c = 0;
-	enum vidc_bus_type type;
+	int ret = 0, c = 0;
 
 	if (!vidc_data || !vidc_data->data_count || !vidc_data->data)
 		goto exit;
 
+	vidc_data->total_bw_ddr = 0;
+	vidc_data->total_bw_llcc = 0;
+
 	for (c = 0; c < vidc_data->data_count; ++c) {
 		if (vidc_data->data->power_mode == VIDC_POWER_TURBO) {
-			ab_kbps = INT_MAX;
+			vidc_data->total_bw_ddr = INT_MAX;
+			vidc_data->total_bw_llcc = INT_MAX;
 			goto exit;
 		}
 	}
 
-	type = get_type_frm_name(bus->name);
-
-	for (c = 0; c < vidc_data->data_count; ++c)
-		ab_kbps += __calculate(&vidc_data->data[c], type);
+	for (c = 0; c < vidc_data->data_count; ++c) {
+		__calculate(&vidc_data->data[c]);
+		vidc_data->total_bw_ddr += vidc_data->data[c].calc_bw_ddr;
+		vidc_data->total_bw_llcc += vidc_data->data[c].calc_bw_llcc;
+	}
 
 exit:
-	trace_msm_vidc_perf_bus_vote(bus->name, ab_kbps);
-	return ab_kbps;
+	return ret;
 }
 

@@ -232,20 +232,21 @@ struct vidc_bus_vote_data {
 	u32 work_mode;
 	bool use_sys_cache;
 	bool b_frames_enabled;
+	unsigned long calc_bw_ddr;
+	unsigned long calc_bw_llcc;
 };
 
 struct msm_vidc_bus_data {
 	struct vidc_bus_vote_data *data;
 	u32 data_count;
-	unsigned long (*calc_bw)(struct bus_info *bus,
-				struct msm_vidc_bus_data *data);
+	unsigned long total_bw_ddr;
+	unsigned long total_bw_llcc;
+	int (*calc_bw)(struct msm_vidc_bus_data *data);
 };
 
-unsigned long calc_bw_iris1(struct bus_info *bus,
-				struct msm_vidc_bus_data *vidc_data);
+int calc_bw_iris1(struct msm_vidc_bus_data *vidc_data);
 
-unsigned long calc_bw_iris2(struct bus_info *bus,
-				struct msm_vidc_bus_data *vidc_data);
+int calc_bw_iris2(struct msm_vidc_bus_data *vidc_data);
 
 struct lut const *__lut(int width, int height, int fps);
 fp_t __compression_ratio(struct lut const *entry, int bpp);
