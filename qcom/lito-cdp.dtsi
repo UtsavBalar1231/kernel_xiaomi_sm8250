@@ -92,6 +92,7 @@
 		polling-delay = <5000>;
 		thermal-governor = "user_space";
 		thermal-sensors = <&pm7250b_adc_tm_iio ADC_GPIO3_PU2>;
+		wake-capable-sensor;
 		trips {
 			active-config0 {
 				temperature = <125000>;
