@@ -2819,7 +2819,7 @@
 		reg-names = "cti-base";
 
 		coresight-name = "coresight-cti-gpu_cortex_m3";
-
+		status = "disabled";
 		clocks =  <&clock_aop QDSS_CLK>,
 			<&clock_gpucc GPU_CC_CXO_CLK>,
 			<&clock_gcc GCC_DDRSS_GPU_AXI_CLK>,
@@ -2856,7 +2856,7 @@
 		reg-names = "cti-base";
 
 		coresight-name = "coresight-cti-gpu_isdb_cti";
-
+		status = "disabled";
 		clocks =  <&clock_aop QDSS_CLK>,
 			<&clock_gpucc GPU_CC_CXO_CLK>,
 			<&clock_gcc GCC_DDRSS_GPU_AXI_CLK>,
