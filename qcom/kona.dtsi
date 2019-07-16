@@ -3528,11 +3528,17 @@
 		qcom,spss-fuse1-bit = <27>;
 		qcom,spss-fuse2-addr = <0x00780234>;
 		qcom,spss-fuse2-bit = <26>;
+		qcom,spss-fuse3-addr = <0x007801E8>; // IAR_FEATURE_ENABLED fuse
+		qcom,spss-fuse3-bit = <10>;
+		qcom,spss-fuse4-addr = <0x00780218>; // IAR_STATE fuse
+		qcom,spss-fuse4-bit = <1>; // 0x00780214 bits 33-35
 		qcom,spss-dev-firmware-name  = "spss1d";  /* 8 chars max */
 		qcom,spss-test-firmware-name = "spss1t";  /* 8 chars max */
 		qcom,spss-prod-firmware-name = "spss1p";  /* 8 chars max */
 		qcom,spss-debug-reg-addr = <0x01886020>;
 		qcom,spss-emul-type-reg-addr = <0x01fc8004>;
+		qcom,pil-addr = <0x8bd00000>; // see pil_spss_mem
+		qcom,pil-size = <0x080000>; // padding to 512 KB
 		status = "ok";
 	};
 
