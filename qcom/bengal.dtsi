@@ -788,7 +788,7 @@
 	bi_tcxo: bi_tcxo {
 		compatible = "fixed-factor-clock";
 		clocks = <&xo_board>;
-		clock-mul = <1>;
+		clock-mult = <1>;
 		clock-div = <1>;
 		#clock-cells = <0>;
 	};
@@ -796,7 +796,7 @@
 	bi_tcxo_ao: bi_tcxo_ao {
 		compatible = "fixed-factor-clock";
 		clocks = <&xo_board>;
-		clock-mul = <1>;
+		clock-mult = <1>;
 		clock-div = <1>;
 		#clock-cells = <0>;
 	};
@@ -809,8 +809,12 @@
 	};
 
 	gcc: qcom,gcc@1400000 {
-		compatible = "qcom,dummycc";
-		clock-output-names = "gcc_clocks";
+		compatible = "qcom,bengal-gcc", "syscon";
+		reg = <0x1400000 0x1f0000>;
+		reg-names = "cc_base";
+		vdd_cx-supply = <&VDD_CX_LEVEL>;
+		vdd_cx_ao-supply = <&VDD_CX_LEVEL_AO>;
+		vdd_mx-supply = <&VDD_MX_LEVEL>;
 		#clock-cells = <1>;
 		#reset-cells = <1>;
 	};
