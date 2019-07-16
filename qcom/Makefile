@@ -3,22 +3,26 @@ ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
                 kona-cdp-overlay.dtbo \
                 kona-cdp-lcd-overlay.dtbo \
                 kona-mtp-overlay.dtbo \
+                kona-mtp-ws-overlay.dtbo \
                 kona-rumi-overlay.dtbo \
                 kona-qrd-overlay.dtbo
 
 kona-cdp-overlay.dtbo-base := kona.dtb kona-v2.dtb
 kona-cdp-lcd-overlay.dtbo-base := kona.dtb kona-v2.dtb
 kona-mtp-overlay.dtbo-base := kona.dtb kona-v2.dtb
+kona-mtp-ws-overlay.dtbo-base := kona.dtb kona-v2.dtb
 kona-rumi-overlay.dtbo-base := kona.dtb kona-v2.dtb
 kona-qrd-overlay.dtbo-base := kona.dtb kona-v2.dtb
 else
 dtb-$(CONFIG_ARCH_KONA) += kona-rumi.dtb \
         kona-mtp.dtb \
+        kona-mtp-ws.dtb \
         kona-cdp.dtb \
         kona-cdp-lcd.dtb \
         kona-qrd.dtb \
         kona-v2-rumi.dtb \
         kona-v2-mtp.dtb \
+        kona-v2-mtp-ws.dtb \
         kona-v2-cdp.dtb \
         kona-v2-qrd.dtb
 endif
