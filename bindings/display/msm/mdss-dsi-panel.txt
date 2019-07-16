@@ -528,6 +528,8 @@ Optional properties:
 - qcom,mdss-dsc-block-prediction-enable: A boolean value to enable/disable the block prediction at decoder.
 - qcom,mdss-dsc-config-by-manufacture-cmd: A boolean to indicates panel use manufacture command to setup pps
 					instead of standard dcs type 0x0A.
+- qcom,mdss-pps-delay-ms:		An u32 value that indicates post PPS command
+								delay in milliseconds. If no value is specified, it chooses zero by default.
 - qcom,display-topology:  		Array of u32 values which specifies the	list of topologies available
 					for the display. A display topology is defined by a
 					set of 3 values in the order:
