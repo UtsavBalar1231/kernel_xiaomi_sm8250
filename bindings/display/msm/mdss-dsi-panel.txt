@@ -310,6 +310,7 @@ Optional properties:
 					to the physical width in the framebuffer information.
 - qcom,mdss-pan-physical-height-dimension:	Specifies panel physical height in mm which corresponds
 					to the physical height in the framebuffer information.
+- qcom,mdss-dsi-panel-test-pin:	Specifies the panel test gpio.
 - qcom,mdss-dsi-mode-sel-gpio-state:	String that specifies the lcd mode for panel
 					(such as single-port/dual-port), if qcom,panel-mode-gpio
 					binding is defined in dsi controller.
