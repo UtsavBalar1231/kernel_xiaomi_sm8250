@@ -178,6 +178,34 @@
 		st,reset-gpio = <&tlmm 38 0x00>;
 		st,regulator_dvdd = "vdd";
 		st,regulator_avdd = "avdd";
+		panel = <&dsi_sw43404_amoled_cmd &dsi_sw43404_amoled_video>;
+	};
+
+	synaptics_dsx@22 {
+		compatible = "synaptics,dsx-i2c";
+		reg = <0x22>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <39 0x2008>;
+		vdd-supply = <&pm8150a_l1>;
+		avdd-supply = <&pm8150_l13>;
+		pinctrl-names = "pmx_ts_active", "pmx_ts_suspend",
+				"pmx_ts_release";
+		pinctrl-0 = <&ts_active>;
+		pinctrl-1 = <&ts_int_suspend &ts_reset_suspend>;
+		pinctrl-2 = <&pmx_ts_release>;
+		synaptics,pwr-reg-name = "avdd";
+		synaptics,bus-reg-name = "vdd";
+		synaptics,ub-i2c-addr = <0x22>;
+		synaptics,max-y-for-2d = <2559>;
+		synaptics,irq-gpio = <&tlmm 39 0x2008>;
+		synaptics,reset-gpio = <&tlmm 38 0x0>;
+		synaptics,irq-on-state = <0>;
+		synaptics,power-delay-ms = <200>;
+		synaptics,reset-delay-ms = <200>;
+		synaptics,reset-on-state = <0>;
+		synaptics,reset-active-ms = <20>;
+
+		panel = <&dsi_sharp_qsync_wqhd_cmd &dsi_sharp_qsync_wqhd_video>;
 	};
 };
 
