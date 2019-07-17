@@ -1869,12 +1869,13 @@
 
 	videocc: qcom,videocc@ab00000 {
 		compatible = "qcom,lito-videocc", "syscon";
-		reg = <0x0ab00000 0x10000>,
-			<0x786008 0x4>;
-		reg-names = "cc_base", "efuse";
+		reg = <0x0ab00000 0x10000>;
+		reg-names = "cc_base";
 		vdd_cx-supply = <&VDD_CX_LEVEL>;
 		clock-names = "cfg_ahb_clk";
 		clocks = <&gcc GCC_VIDEO_AHB_CLK>;
+		nvmem-cells = <&iris_efuse>;
+		nvmem-cell-names = "iris-bin";
 		#clock-cells = <1>;
 		#reset-cells = <1>;
 	};
@@ -3572,9 +3573,9 @@
 		memory-region = <&pil_npu_mem>;
 	};
 
-	qfprom: qfprom@0x780000 {
+	qfprom: qfprom@780000 {
 		compatible = "qcom,qfprom";
-		reg = <0x00780000 0x1000>;
+		reg = <0x00780000 0x7000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges;
@@ -3589,9 +3590,13 @@
 			bits = <0 1>;
 		};
 
-		adsp_variant: adsp_variant@0x780210 {
+		adsp_variant: adsp_variant@210 {
 			reg = <0x210 0x4>;
 			bits = <0x0 0x20>;
+		};
+
+		iris_efuse: iris@6008 {
+			reg = <0x6008 0x4>;
 		};
 	};
 };

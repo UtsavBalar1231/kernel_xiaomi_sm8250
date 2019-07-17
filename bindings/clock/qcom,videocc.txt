@@ -17,6 +17,8 @@ Required properties (kona only):
 
 Optional properties :
 - #reset-cells : from common reset binding, shall contain 1.
+- nvmem-cells: list of phandle to the nvmem data cells.
+- nvmem-cell-names: names for the each nvmem-cells specified.
 
 Example:
 	videocc: clock-controller@ab00000 {
