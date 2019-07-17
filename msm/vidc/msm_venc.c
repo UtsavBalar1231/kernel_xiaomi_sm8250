@@ -2249,7 +2249,7 @@ void msm_venc_adjust_gop_size(struct msm_vidc_inst *inst)
 	 * Layer encoding needs GOP size to be multiple of subgop size
 	 * And subgop size is 2 ^ number of enhancement layers
 	 */
-	hier_ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_HEVC_HIER_CODING_LAYER);
+	hier_ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_HEVC_MAX_HIER_CODING_LAYER);
 	if (hier_ctrl->val > 1) {
 		u32 min_gop_size;
 		u32 num_subgops;
