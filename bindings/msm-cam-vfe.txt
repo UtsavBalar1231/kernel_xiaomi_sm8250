@@ -107,6 +107,12 @@ Optional properties:
 	frequencies to limit CX peak current.
 	driver in the relevant register.
 
+- scl-clk-names:
+  Usage: optional
+  Value type: <string>
+  Definition: Scalable clock names to identify which clocks needs to update
+	along with source clock.
+
 Example:
 	qcom,vfe0@acaf000 {
 		cell-index = <0>;
@@ -141,6 +147,8 @@ Example:
 		clock-names-option = "ife_dsp_clk";
 		clocks-option = <&clock_camcc CAM_CC_IFE_0_DSP_CLK>;
 		clock-rates-option = <600000000>;
+		scl-clk-en;
+		scl-clk-names = "ife_axi_clk";
 		qcom,cam-cx-ipeak = <&cx_ipeak_lm 2>;
 		status = "ok";
 	};
