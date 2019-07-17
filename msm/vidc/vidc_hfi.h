@@ -589,6 +589,7 @@ struct hfi_msg_session_empty_buffer_done_packet {
 	u32 extra_data_buffer;
 	u32 flags;
 	struct hfi_frame_cr_stats_type ubwc_cr_stats;
+	/* no usage of sync_frame flag in EBD, rgData[1] is not used */
 	u32 rgData[1];
 };
 

@@ -767,8 +767,6 @@ static int hfi_process_session_etb_done(u32 device_id,
 {
 	struct hfi_msg_session_empty_buffer_done_packet *pkt = _pkt;
 	struct msm_vidc_cb_data_done data_done = {0};
-	struct hfi_picture_type *hfi_picture_type = NULL;
-	u32 is_sync_frame;
 
 	dprintk(VIDC_LOW, "RECEIVED: SESSION_ETB_DONE[%#x]\n", pkt->session_id);
 
@@ -790,24 +788,11 @@ static int hfi_process_session_etb_done(u32 device_id,
 		pkt->ubwc_cr_stats.complexity_number;
 	data_done.input_done.offset = pkt->offset;
 	data_done.input_done.filled_len = pkt->filled_len;
+	data_done.input_done.flags = pkt->flags;
 	data_done.input_done.packet_buffer = pkt->packet_buffer;
 	data_done.input_done.extra_data_buffer = pkt->extra_data_buffer;
 	data_done.input_done.status =
 		hfi_map_err_status(pkt->error_type);
-	is_sync_frame = pkt->rgData[0];
-	if (is_sync_frame) {
-		if (pkt->size <
-			sizeof(struct hfi_msg_session_empty_buffer_done_packet)
-			+ sizeof(struct hfi_picture_type))
-			goto bad_packet_size;
-		hfi_picture_type = (struct hfi_picture_type *)&pkt->rgData[1];
-		if (hfi_picture_type->picture_type)
-			data_done.input_done.flags =
-				hfi_picture_type->picture_type;
-		else
-			dprintk(VIDC_LOW,
-				"Non-Sync frame sent for H264/HEVC\n");
-	}
 
 	trace_msm_v4l2_vidc_buffer_event_end("ETB",
 		(u32)pkt->packet_buffer, -1, -1,

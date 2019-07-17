@@ -2521,8 +2521,6 @@ static void handle_ebd(enum hal_command_response cmd, void *data)
 		dprintk(VIDC_LOW, "Failed : Corrupted input stream\n");
 		mbuf->vvb.flags |= V4L2_BUF_FLAG_DATA_CORRUPT;
 	}
-	if (empty_buf_done->flags & HAL_BUFFERFLAG_SYNCFRAME)
-		mbuf->vvb.flags |= V4L2_BUF_FLAG_KEYFRAME;
 
 	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
 	if (f->fmt.pix_mp.num_planes > 1)
