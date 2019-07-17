@@ -149,19 +149,17 @@ static unsigned long __calculate_decoder(struct vidc_bus_vote_data *d)
 	ddr.dpb_read = fp_div(fp_mult(ddr.dpb_read,
 			fp_mult(dpb_factor, motion_vector_complexity)),
 			dpb_read_compression_factor);
-	ddr.dpb_read += fp_div(ddr.dpb_read, FP_INT(2));
 
 	ddr.dpb_write = dpb_bpp == 8 ? y_bw_no_ubwc_8bpp : y_bw_no_ubwc_10bpp;
 	ddr.dpb_write = fp_div(fp_mult(ddr.dpb_write,
 			fp_mult(dpb_factor, dpb_write_factor)),
 			dpb_write_compression_factor);
-	ddr.dpb_write += fp_div(ddr.dpb_write, FP_INT(2));
 
 	dpb_total = ddr.dpb_read + ddr.dpb_write;
 
 	if (llc_ref_read_l2_cache_enabled) {
 		ddr.dpb_read = fp_div(ddr.dpb_read, is_h264_category ?
-					FP(1, 15, 100) : FP(1, 30, 100));
+					FP(1, 30, 100) : FP(1, 14, 100));
 		llc.dpb_read = dpb_total - ddr.dpb_write - ddr.dpb_read;
 	}
 
@@ -310,6 +308,13 @@ static unsigned long __calculate_encoder(struct vidc_bus_vote_data *d)
 	rotation = d->rotation;
 	cropping_or_scaling = false;
 	vertical_tile_width = 960;
+	/*
+	 * recon_write_bw_factor varies according to resolution and bit-depth,
+	 * here use 1.08(1.075) for worst case.
+	 * Similar for ref_y_read_bw_factor, it can reach 1.375 for worst case,
+	 * here use 1.3 for average case, and can somewhat balance the
+	 * worst case assumption for UBWC CR factors.
+	 */
 	recon_write_bw_factor = FP(1, 8, 100);
 	ref_y_read_bw_factor = FP(1, 30, 100);
 	ref_cbcr_read_bw_factor = FP(1, 50, 100);
@@ -393,19 +398,17 @@ static unsigned long __calculate_encoder(struct vidc_bus_vote_data *d)
 
 	ddr.ref_read_y = dpb_bpp == 8 ?
 		y_bw_no_ubwc_8bpp : y_bw_no_ubwc_10bpp;
-
 	if (b_frames_enabled)
 		ddr.ref_read_y = ddr.ref_read_y * 2;
 	ddr.ref_read_y = fp_div(ddr.ref_read_y, dpb_compression_factor);
 
-	ddr.ref_read_crcb = ddr.ref_read_y;
+	ddr.ref_read_crcb = fp_mult((ddr.ref_read_y / 2),
+		ref_cbcr_read_bw_factor);
 
-	if (width != vertical_tile_width) {
+	if (width > vertical_tile_width) {
 		ddr.ref_read_y = fp_mult(ddr.ref_read_y,
 			ref_y_read_bw_factor);
 	}
-
-	ddr.ref_read_crcb = fp_mult(ddr.ref_read_crcb, FP(0, 50, 100));
 
 	if (llc_ref_chroma_cache_enabled) {
 		total_ref_read_crcb = ddr.ref_read_crcb;
@@ -415,12 +418,14 @@ static unsigned long __calculate_encoder(struct vidc_bus_vote_data *d)
 	}
 
 	ddr.ref_write = dpb_bpp == 8 ? y_bw_no_ubwc_8bpp : y_bw_no_ubwc_10bpp;
-	ddr.ref_write = fp_mult(ddr.ref_write,
-		(fp_div(FP(1, 50, 100), dpb_compression_factor)));
+	ddr.ref_write = fp_div(fp_mult(ddr.ref_write, FP(1, 50, 100)),
+			dpb_compression_factor);
 
-	ddr.ref_write_overlap = fp_div(fp_mult(ddr.ref_write,
-		(recon_write_bw_factor - FP_ONE)),
-		recon_write_bw_factor);
+	if (width > vertical_tile_width) {
+		ddr.ref_write_overlap = fp_mult(ddr.ref_write,
+			(recon_write_bw_factor - FP_ONE));
+		ddr.ref_write = fp_mult(ddr.ref_write, recon_write_bw_factor);
+	}
 
 	ddr.orig_read = dpb_bpp == 8 ? y_bw_no_ubwc_8bpp :
 		(original_compression_enabled ? y_bw_no_ubwc_10bpp :

@@ -230,7 +230,7 @@ static unsigned long __calculate_decoder(struct vidc_bus_vote_data *d)
 
 	if (llc_ref_read_l2_cache_enabled) {
 		ddr.dpb_read = fp_div(ddr.dpb_read, is_h264_category ?
-					FP(1, 15, 100) : FP(1, 30, 100));
+					FP(1, 30, 100) : FP(1, 15, 100));
 		llc.dpb_read = dpb_total - ddr.dpb_write - ddr.dpb_read;
 	}
 
