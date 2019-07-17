@@ -3715,7 +3715,7 @@ int msm_venc_set_ltr_useframe(struct msm_vidc_inst *inst)
 
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_USELTRFRAME);
 	use_ltr.ref_ltr = ctrl->val;
-	use_ltr.use_constrnt = false;
+	use_ltr.use_constrnt = true;
 	use_ltr.frames = 0;
 	dprintk(VIDC_HIGH, "%s: %d\n", __func__, use_ltr.ref_ltr);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
