@@ -542,6 +542,7 @@
 	qcom,mdss-brightness-max-level = <255>;
 	qcom,platform-te-gpio = <&tlmm 66 0>;
 	qcom,platform-reset-gpio = <&tlmm 75 0>;
+	qcom,mdss-dsi-panel-test-pin = <&tlmm 46 0>;
 };
 
 &dsi_sw43404_amoled_video {
@@ -551,6 +552,7 @@
 	qcom,mdss-dsi-bl-max-level = <1023>;
 	qcom,mdss-brightness-max-level = <255>;
 	qcom,platform-reset-gpio = <&tlmm 75 0>;
+	qcom,mdss-dsi-panel-test-pin = <&tlmm 46 0>;
 };
 
 &dsi_sw43404_amoled_fhd_plus_cmd {
@@ -561,6 +563,7 @@
 	qcom,mdss-brightness-max-level = <255>;
 	qcom,platform-te-gpio = <&tlmm 66 0>;
 	qcom,platform-reset-gpio = <&tlmm 75 0>;
+	qcom,mdss-dsi-panel-test-pin = <&tlmm 46 0>;
 };
 
 &dsi_sim_cmd {
