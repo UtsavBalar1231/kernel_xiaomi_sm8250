@@ -258,7 +258,7 @@ static long cam_private_ioctl(struct file *file, void *fh,
 			return -EFAULT;
 		}
 
-		rc = cam_req_mgr_destroy_session(&ses_info);
+		rc = cam_req_mgr_destroy_session(&ses_info, false);
 		}
 		break;
 

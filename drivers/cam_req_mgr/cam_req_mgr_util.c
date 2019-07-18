@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
  */
 
 #define pr_fmt(fmt) "CAM-REQ-MGR_UTIL %s:%d " fmt, __func__, __LINE__
@@ -94,7 +94,7 @@ int cam_req_mgr_util_free_hdls(void)
 
 	for (i = 0; i < CAM_REQ_MGR_MAX_HANDLES; i++) {
 		if (hdl_tbl->hdl[i].state == HDL_ACTIVE) {
-			CAM_ERR(CAM_CRM, "Dev handle = %x session_handle = %x",
+			CAM_WARN(CAM_CRM, "Dev handle = %x session_handle = %x",
 				hdl_tbl->hdl[i].hdl_value,
 				hdl_tbl->hdl[i].session_hdl);
 			hdl_tbl->hdl[i].state = HDL_FREE;
