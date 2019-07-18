@@ -571,6 +571,7 @@
 		polling-delay = <0>;
 		thermal-governor = "step_wise";
 		thermal-sensors = <&pm7250b_bcl 5>;
+		wake-capable-sensor;
 
 		trips {
 			b_bcl_lvl0: b-bcl-lvl0 {
@@ -586,6 +587,7 @@
 		polling-delay = <0>;
 		thermal-governor = "step_wise";
 		thermal-sensors = <&pm7250b_bcl 6>;
+		wake-capable-sensor;
 
 		trips {
 			b_bcl_lvl1: b-bcl-lvl1 {
@@ -601,6 +603,7 @@
 		polling-delay = <0>;
 		thermal-governor = "step_wise";
 		thermal-sensors = <&pm7250b_bcl 7>;
+		wake-capable-sensor;
 
 		trips {
 			b_bcl_lvl2: b-bcl-lvl2 {

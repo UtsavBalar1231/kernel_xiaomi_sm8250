@@ -235,6 +235,82 @@
 	qcom,cl-feedback-on;
 };
 
+&thermal_zones {
+	xo-therm-step {
+		polling-delay-passive = <2000>;
+		polling-delay = <0>;
+		thermal-governor = "step_wise";
+		thermal-sensors = <&pm8150_adc_tm ADC_XO_THERM_PU2>;
+		wake-capable-sensor;
+		trips {
+			gold_plus_trip: gold-plus-trip {
+				temperature = <46000>;
+				hysteresis = <0>;
+				type = "passive";
+			};
+
+			gold_trip: gold-trip {
+				temperature = <48000>;
+				hysteresis = <0>;
+				type = "passive";
+			};
+
+			silver_trip: silver-trip {
+				temperature = <52000>;
+				hysteresis = <0>;
+				type = "passive";
+			};
+
+			cx_emer_trip: cx-emer-trip {
+				temperature = <52000>;
+				hysteresis = <4000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			skin_cpu7 {
+				trip = <&gold_plus_trip>;
+					/* throttle from fmax to 1516800KHz */
+				cooling-device =
+					<&CPU7 THERMAL_NO_LIMIT
+						(THERMAL_MAX_LIMIT-3)>;
+			};
+
+			skin_cpu6 {
+				trip = <&gold_trip>;
+					/* throttle from fmax to 1478400KHz */
+				cooling-device =
+					<&CPU6 THERMAL_NO_LIMIT
+						(THERMAL_MAX_LIMIT-3)>;
+			};
+
+			skin_cpu0 {
+				trip = <&silver_trip>;
+					/* throttle from fmax to 1459200KHz */
+				cooling-device = <&CPU0 THERMAL_NO_LIMIT
+						(THERMAL_MAX_LIMIT-5)>;
+			};
+
+			skin_gpu {
+				trip = <&cx_emer_trip>;
+				cooling-device = <&msm_gpu (THERMAL_MAX_LIMIT-1)
+						(THERMAL_MAX_LIMIT-1)>;
+			};
+
+			skin_modem {
+				trip = <&cx_emer_trip>;
+				cooling-device = <&modem_pa 3 3>;
+			};
+
+			skin_cdsp {
+				trip = <&cx_emer_trip>;
+				cooling-device = <&msm_cdsp_rm 5 5>;
+			};
+		};
+	};
+};
+
 &wsa881x_0212 {
 	compatible = "qcom,wsa881x";
 	reg = <0x10 0x20170212>;

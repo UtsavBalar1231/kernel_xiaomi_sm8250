@@ -2,6 +2,7 @@
 #include "lito-audio-overlay.dtsi"
 #include "lito-pmic-overlay.dtsi"
 #include "lito-sde-display.dtsi"
+#include "lito-thermal-overlay.dtsi"
 
 &soc {
 	gpio_keys {
