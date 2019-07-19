@@ -250,7 +250,6 @@ static int msm_cvp_set_clocks_and_bus(struct msm_vidc_inst *inst)
 	struct cvp_kmd_usecase_desc desc;
 	struct cvp_kmd_request_power power;
 	const u32 fps_max = CVP_FRAME_RATE_MAX;
-	u32 fps;
 
 	if (!inst || !inst->cvp) {
 		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
@@ -262,16 +261,13 @@ static int msm_cvp_set_clocks_and_bus(struct msm_vidc_inst *inst)
 	memset(&power, 0, sizeof(struct cvp_kmd_request_power));
 
 	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
-	fps = max(inst->clk_data.operating_rate,
-			inst->clk_data.frame_rate) >> 16;
-
 	desc.fullres_width = cvp->width;
 	desc.fullres_height = cvp->height;
 	desc.downscale_width = cvp->ds_width;
 	desc.downscale_height = cvp->ds_height;
 	desc.is_downscale = cvp->downscale;
-	desc.fps = min(fps, fps_max);
-	desc.op_rate = min(fps, fps_max);
+	desc.fps = min(cvp->frame_rate >> 16, fps_max);
+	desc.op_rate = cvp->operating_rate >> 16;
 	desc.colorfmt = msm_comm_convert_color_fmt(f->fmt.pix_mp.pixelformat);
 	rc = msm_cvp_est_cycles(&desc, &power);
 	if (rc) {
@@ -816,7 +812,7 @@ static int msm_cvp_frame_process(struct msm_vidc_inst *inst,
 	struct cvp_kmd_arg *arg;
 	struct msm_cvp_dme_frame_packet *frame;
 	const u32 fps_max = CVP_FRAME_RATE_MAX;
-	u32 fps, skip_framecount;
+	u32 fps, operating_rate, skip_framecount;
 	bool skipframe = false;
 
 	if (!inst || !inst->cvp || !inst->cvp->arg || !mbuf) {
@@ -832,9 +828,34 @@ static int msm_cvp_frame_process(struct msm_vidc_inst *inst,
 	cvp->fullres_buffer.size = vb->planes[0].length;
 	cvp->fullres_buffer.offset = vb->planes[0].data_offset;
 
+	/* handle framerate or operarating rate changes dynamically */
+	if (cvp->frame_rate != inst->clk_data.frame_rate ||
+		cvp->operating_rate != inst->clk_data.operating_rate) {
+		/* update cvp parameters */
+		cvp->frame_rate = inst->clk_data.frame_rate;
+		cvp->operating_rate = inst->clk_data.operating_rate;
+		rc = msm_cvp_set_clocks_and_bus(inst);
+		if (rc) {
+			dprintk(VIDC_ERR,
+				"%s: unsupported dynamic changes %#x %#x\n",
+				__func__, cvp->frame_rate, cvp->operating_rate);
+			goto error;
+		}
+	}
+
+	/*
+	 * Special handling for operating rate 0xFFFFFFFF,
+	 * client's intention is not to skip cvp preprocess
+	 * based on operating rate, skip logic can still be
+	 * executed based on framerate though.
+	 */
+	if (cvp->operating_rate == 0xFFFFFFFF)
+		operating_rate = fps_max << 16;
+	else
+		operating_rate = cvp->operating_rate;
+
 	/* frame skip logic */
-	fps = max(inst->clk_data.operating_rate,
-			inst->clk_data.frame_rate) >> 16;
+	fps = max(cvp->frame_rate, operating_rate) >> 16;
 	if (fps > fps_max) {
 		/*
 		 * fps <= 120: 0, 2, 4, 6 .. are not skipped
@@ -842,9 +863,9 @@ static int msm_cvp_frame_process(struct msm_vidc_inst *inst,
 		 * fps <= 240: 0, 4, 8, 12 .. are not skipped
 		 * fps <= 960: 0, 16, 32, 48 .. are not skipped
 		 */
-		fps = ALIGN(fps, fps_max);
+		fps = roundup(fps, fps_max);
 		skip_framecount = fps / fps_max;
-		skipframe = !(cvp->framecount % skip_framecount);
+		skipframe = cvp->framecount % skip_framecount;
 	}
 	if (skipframe) {
 		print_cvp_buffer(VIDC_LOW, "input frame skipped",
@@ -1037,6 +1058,8 @@ static int msm_vidc_cvp_init(struct msm_vidc_inst *inst)
 	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
 	cvp->width = f->fmt.pix_mp.width;
 	cvp->height = f->fmt.pix_mp.height;
+	cvp->frame_rate = inst->clk_data.frame_rate;
+	cvp->operating_rate = inst->clk_data.operating_rate;
 	color_fmt = msm_comm_convert_color_fmt(f->fmt.pix_mp.pixelformat);
 
 	/* enable downscale always */
@@ -1050,8 +1073,7 @@ static int msm_vidc_cvp_init(struct msm_vidc_inst *inst)
 		__func__, f->fmt.pix_mp.pixelformat,
 		cvp->width, cvp->height, cvp->downscale,
 		cvp->ds_width, cvp->ds_height,
-		inst->clk_data.frame_rate >> 16,
-		inst->clk_data.operating_rate >> 16);
+		cvp->frame_rate >> 16, cvp->operating_rate >> 16);
 
 	rc = msm_cvp_set_priority(inst);
 	if (rc)
