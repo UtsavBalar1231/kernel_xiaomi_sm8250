@@ -533,6 +533,7 @@ struct msm_vidc_inst {
 	struct delayed_work batch_work;
 	struct msm_vidc_inst_smem_ops *smem_ops;
 	int (*buffer_size_calculators)(struct msm_vidc_inst *inst);
+	bool all_intra;
 };
 
 extern struct msm_vidc_drv *vidc_driver;

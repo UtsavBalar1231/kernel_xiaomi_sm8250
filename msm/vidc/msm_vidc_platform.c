@@ -356,6 +356,9 @@ static struct msm_vidc_codec_capability kona_capabilities[] = {
 	{CAP_LOSSLESS_FRAME_HEIGHT, ENC, H264|HEVC, 128, 4096, 1, 1080},
 	/* (4096 * 2304) / 256 */
 	{CAP_LOSSLESS_MBS_PER_FRAME, ENC, H264|HEVC, 64, 36864, 1, 36864},
+
+	/* All intra encoding usecase specific */
+	{CAP_ALLINTRA_MAX_FPS, ENC, H264|HEVC, 1, 240, 1, 30},
 };
 
 /*

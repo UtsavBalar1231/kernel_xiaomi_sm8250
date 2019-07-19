@@ -1477,6 +1477,12 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 	switch (ctrl->id) {
 	case V4L2_CID_MPEG_VIDEO_GOP_SIZE:
 		if (inst->state == MSM_VIDC_START_DONE) {
+			if (inst->all_intra) {
+				dprintk(VIDC_HIGH,
+					"%s: ignore dynamic gop size for all intra\n",
+					__func__);
+				break;
+			}
 			rc = msm_venc_set_intra_period(inst);
 			if (rc)
 				dprintk(VIDC_ERR,
@@ -1869,12 +1875,27 @@ int msm_venc_set_frame_rate(struct msm_vidc_inst *inst)
 	int rc = 0;
 	struct hfi_device *hdev;
 	struct hfi_frame_rate frame_rate;
+	struct msm_vidc_capability *capability;
+	u32 fps_max;
 
 	if (!inst || !inst->core) {
 		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
 		return -EINVAL;
 	}
 	hdev = inst->core->device;
+	capability = &inst->capability;
+
+	/* Check frame rate */
+	if (inst->all_intra)
+		fps_max = capability->cap[CAP_ALLINTRA_MAX_FPS].max;
+	else
+		fps_max = capability->cap[CAP_FRAMERATE].max;
+
+	if (inst->clk_data.frame_rate >> 16 > fps_max) {
+		dprintk(VIDC_ERR, "%s: Unsupported frame rate\n",
+			__func__);
+		return -ENOTSUPP;
+	}
 
 	frame_rate.buffer_type = HFI_BUFFER_OUTPUT;
 	frame_rate.frame_rate = inst->clk_data.frame_rate;
@@ -2288,6 +2309,14 @@ int msm_venc_set_intra_period(struct msm_vidc_inst *inst)
 	 */
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_B_FRAMES);
 	intra_period.bframes = ctrl->val;
+
+	if (inst->state == MSM_VIDC_START_DONE &&
+		!intra_period.pframes && !intra_period.bframes) {
+		dprintk(VIDC_HIGH,
+			"%s: Switch from IPPP to All Intra is not allowed\n",
+			__func__);
+		return rc;
+	}
 
 	dprintk(VIDC_HIGH, "%s: %d %d\n", __func__, intra_period.pframes,
 		intra_period.bframes);
@@ -3989,10 +4018,102 @@ int msm_venc_set_lossless(struct msm_vidc_inst *inst)
 	return rc;
 }
 
+int handle_all_intra_restrictions(struct msm_vidc_inst *inst)
+{
+	struct v4l2_ctrl *ctrl, *ctrl_t;
+	u32 n_fps, fps_max;
+	struct msm_vidc_capability *capability;
+	struct v4l2_format *f;
+	enum hal_video_codec codec;
+	struct hfi_intra_period intra_period;
+
+	if (!inst || !inst->core) {
+		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		return -EINVAL;
+	}
+
+	if (inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_CQ)
+		return 0;
+
+	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_GOP_SIZE);
+	intra_period.pframes = ctrl->val;
+	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_B_FRAMES);
+	intra_period.bframes = ctrl->val;
+
+	if (!intra_period.pframes && !intra_period.bframes)
+		inst->all_intra = true;
+	else
+		return 0;
+
+	dprintk(VIDC_HIGH, "All Intra(IDRs) Encoding\n");
+	/* check codec and profile */
+	f = &inst->fmts[OUTPUT_PORT].v4l2_fmt;
+	codec = get_hal_codec(f->fmt.pix_mp.pixelformat);
+	if (codec != HAL_VIDEO_CODEC_HEVC && codec != HAL_VIDEO_CODEC_H264) {
+		dprintk(VIDC_ERR, "Unsupported codec for all intra\n");
+		return -ENOTSUPP;
+	}
+	if (codec == HAL_VIDEO_CODEC_HEVC &&
+		inst->profile == HFI_HEVC_PROFILE_MAIN10) {
+		dprintk(VIDC_ERR, "Unsupported HEVC profile for all intra\n");
+		return -ENOTSUPP;
+	}
+
+	/* check supported bit rate mode and frame rate */
+	capability = &inst->capability;
+	n_fps = inst->clk_data.frame_rate >> 16;
+	fps_max = capability->cap[CAP_ALLINTRA_MAX_FPS].max;
+	if ((inst->rc_type != V4L2_MPEG_VIDEO_BITRATE_MODE_VBR &&
+		inst->rc_type != RATE_CONTROL_OFF &&
+		inst->rc_type != RATE_CONTROL_LOSSLESS) ||
+		n_fps > fps_max) {
+		dprintk(VIDC_ERR, "Unsupported bitrate mode or frame rate\n");
+		return -ENOTSUPP;
+	}
+
+	/* Disable multi slice */
+	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_MULTI_SLICE_MODE);
+	if (ctrl->val) {
+		dprintk(VIDC_HIGH, "Disable multi slice for all intra\n");
+		ctrl->val = V4L2_MPEG_VIDEO_MULTI_SLICE_MODE_SINGLE;
+	}
+
+	/* Disable LTR */
+	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_LTRCOUNT);
+	if (ctrl->val) {
+		dprintk(VIDC_HIGH, "Disable LTR for all intra\n");
+		ctrl->val = 0;
+	}
+
+	/* Disable Layer encoding */
+	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_HEVC_HIER_CODING_LAYER);
+	ctrl_t = get_ctrl(inst,
+		V4L2_CID_MPEG_VIDC_VIDEO_HEVC_MAX_HIER_CODING_LAYER);
+	if (ctrl->val || ctrl_t->val) {
+		dprintk(VIDC_HIGH, "Disable layer encoding for all intra\n");
+		ctrl->val = 0;
+		ctrl_t->val = 0;
+	}
+
+	/* Disable IR */
+	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_INTRA_REFRESH_RANDOM);
+	ctrl_t = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_CYCLIC_INTRA_REFRESH_MB);
+	if (ctrl->val || ctrl_t->val) {
+		dprintk(VIDC_HIGH, "Disable IR for all intra\n");
+		ctrl->val = 0;
+		ctrl_t->val = 0;
+	}
+
+	return 0;
+}
+
 int msm_venc_set_properties(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
 
+	rc = handle_all_intra_restrictions(inst);
+	if (rc)
+		goto exit;
 	rc = msm_venc_set_frame_size(inst);
 	if (rc)
 		goto exit;

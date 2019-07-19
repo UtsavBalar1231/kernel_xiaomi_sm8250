@@ -1518,7 +1518,7 @@ int msm_vidc_decide_work_mode_iris2(struct msm_vidc_inst *inst)
 			pdata.video_work_mode = HFI_WORKMODE_1;
 			latency.enable = true;
 		}
-		if (inst->rc_type == RATE_CONTROL_LOSSLESS) {
+		if (inst->rc_type == RATE_CONTROL_LOSSLESS || inst->all_intra) {
 			pdata.video_work_mode = HFI_WORKMODE_2;
 			latency.enable = false;
 		}
@@ -1738,6 +1738,7 @@ int msm_vidc_decide_core_and_power_mode_iris2(struct msm_vidc_inst *inst)
 
 	if (inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_CQ ||
 		inst->rc_type == RATE_CONTROL_LOSSLESS ||
+		inst->all_intra ||
 		(mbpf <= max_hq_mbpf && mbps <= max_hq_mbps))
 		enable = false;
 

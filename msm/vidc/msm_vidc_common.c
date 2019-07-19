@@ -1571,6 +1571,9 @@ static void handle_session_init_done(enum hal_command_response cmd, void *data)
 		&inst->capability.cap[CAP_LOSSLESS_FRAME_HEIGHT]);
 	print_cap("lossless_mbs_per_frame",
 		&inst->capability.cap[CAP_LOSSLESS_MBS_PER_FRAME]);
+	/* All intra encoding usecase specific */
+	print_cap("all_intra_frame_rate",
+		&inst->capability.cap[CAP_ALLINTRA_MAX_FPS]);
 
 	msm_vidc_comm_update_ctrl_limits(inst);
 
