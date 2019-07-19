@@ -7222,7 +7222,6 @@ static struct snd_soc_dai_link msm_wsa_cdc_dma_be_dai_links[] = {
 		.codec_dai_name = "wsa_macro_rx1",
 		.no_pcm = 1,
 		.dpcm_playback = 1,
-		.init = &msm_int_audrx_init,
 		.id = MSM_BACKEND_DAI_WSA_CDC_DMA_RX_0,
 		.be_hw_params_fixup = msm_be_hw_params_fixup,
 		.ignore_pmdown_time = 1,
@@ -7367,6 +7366,7 @@ static struct snd_soc_dai_link msm_va_cdc_dma_be_dai_links[] = {
 		.codec_dai_name = "va_macro_tx1",
 		.no_pcm = 1,
 		.dpcm_capture = 1,
+		.init = &msm_int_audrx_init,
 		.id = MSM_BACKEND_DAI_VA_CDC_DMA_TX_0,
 		.be_hw_params_fixup = msm_be_hw_params_fixup,
 		.ignore_suspend = 1,
@@ -7637,6 +7637,7 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 	u32 auxpcm_audio_intf = 0;
 	u32 val = 0;
 	u32 wcn_btfm_intf = 0;
+	u32 wsa_bolero_codec = 0;
 	const struct of_device_id *match;
 
 	match = of_match_node(kona_asoc_machine_of_match, dev->of_node);
@@ -7654,11 +7655,23 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 		       sizeof(msm_common_dai_links));
 		total_links += ARRAY_SIZE(msm_common_dai_links);
 
-		memcpy(msm_kona_dai_links + total_links,
-		       msm_bolero_fe_dai_links,
-		       sizeof(msm_bolero_fe_dai_links));
-		total_links +=
-			ARRAY_SIZE(msm_bolero_fe_dai_links);
+		rc = of_property_read_u32(dev->of_node, "qcom,wsa-bolero-codec",
+					  &wsa_bolero_codec);
+		if (rc) {
+			dev_dbg(dev, "%s: No DT match WSA Macro codec\n",
+				__func__);
+		} else {
+			if (wsa_bolero_codec) {
+				dev_dbg(dev, "%s(): WSA macro in bolero codec present\n",
+					__func__);
+
+				memcpy(msm_kona_dai_links + total_links,
+				       msm_bolero_fe_dai_links,
+				       sizeof(msm_bolero_fe_dai_links));
+				total_links +=
+					ARRAY_SIZE(msm_bolero_fe_dai_links);
+			}
+		}
 
 		memcpy(msm_kona_dai_links + total_links,
 		       msm_common_misc_fe_dai_links,
@@ -7670,11 +7683,15 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 		       sizeof(msm_common_be_dai_links));
 		total_links += ARRAY_SIZE(msm_common_be_dai_links);
 
-		memcpy(msm_kona_dai_links + total_links,
-		       msm_wsa_cdc_dma_be_dai_links,
-		       sizeof(msm_wsa_cdc_dma_be_dai_links));
-		total_links +=
-			ARRAY_SIZE(msm_wsa_cdc_dma_be_dai_links);
+		if (wsa_bolero_codec) {
+			dev_dbg(dev, "%s(): WSAmacro in bolero codec present\n",
+				__func__);
+			memcpy(msm_kona_dai_links + total_links,
+			       msm_wsa_cdc_dma_be_dai_links,
+			       sizeof(msm_wsa_cdc_dma_be_dai_links));
+			total_links +=
+				ARRAY_SIZE(msm_wsa_cdc_dma_be_dai_links);
+		}
 
 		memcpy(msm_kona_dai_links + total_links,
 		       msm_rx_tx_cdc_dma_be_dai_links,
