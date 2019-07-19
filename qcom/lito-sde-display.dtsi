@@ -203,6 +203,10 @@
 	qcom,mdss-dsi-panel-status-command-state = "dsi_lp_mode";
 	qcom,mdss-dsi-panel-status-value = <0x9c>;
 	qcom,mdss-dsi-panel-status-read-length = <1>;
+
+	qcom,dsi-dyn-clk-enable;
+	qcom,dsi-dyn-clk-list = <606979440 604450359 601921278>;
+
 	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0",
 				"src_byte_clk0", "src_pixel_clk0",
 				"shadow_byte_clk0", "shadow_pixel_clk0";
@@ -230,6 +234,11 @@
 	qcom,mdss-dsi-panel-status-command-state = "dsi_lp_mode";
 	qcom,mdss-dsi-panel-status-value = <0x9c>;
 	qcom,mdss-dsi-panel-status-read-length = <1>;
+
+	qcom,dsi-dyn-clk-enable;
+	qcom,dsi-dyn-clk-list =
+		<534712320 532484352 530256384>;
+
 	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0",
 				"src_byte_clk0", "src_pixel_clk0",
 				"shadow_byte_clk0", "shadow_pixel_clk0";
@@ -485,6 +494,15 @@
 
 &dsi_nt35695b_truly_fhd_cmd {
 	qcom,ulps-enabled;
+
+	qcom,dsi-ctrl-num = <0>;
+	qcom,dsi-phy-num = <0>;
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
+
+	qcom,dsi-sec-ctrl-num = <1>;
+	qcom,dsi-sec-phy-num = <1>;
+	qcom,dsi-select-sec-clocks = "mux_byte_clk1", "mux_pixel_clk1";
+
 	qcom,esd-check-enabled;
 	qcom,mdss-dsi-panel-status-check-mode = "reg_read";
 	qcom,mdss-dsi-panel-status-command = [06 01 00 01 00 00 01 0a];
@@ -505,6 +523,15 @@
 
 &dsi_nt35695b_truly_fhd_video {
 	qcom,esd-check-enabled;
+
+	qcom,dsi-ctrl-num = <0>;
+	qcom,dsi-phy-num = <0>;
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
+
+	qcom,dsi-sec-ctrl-num = <1>;
+	qcom,dsi-sec-phy-num = <1>;
+	qcom,dsi-select-sec-clocks = "mux_byte_clk1", "mux_pixel_clk1";
+
 	qcom,mdss-dsi-panel-status-check-mode = "reg_read";
 	qcom,mdss-dsi-panel-status-command = [06 01 00 01 00 00 01 0a];
 	qcom,mdss-dsi-panel-status-command-state = "dsi_hs_mode";

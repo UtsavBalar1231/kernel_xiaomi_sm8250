@@ -579,8 +579,13 @@
 		};
 
 		cont_splash_memory: cont_splash_region {
-			reg = <0x0 0xA0000000 0x0 0x02400000>;
+			reg = <0x0 0xA0000000 0x0 0x02300000>;
 			label = "cont_splash_region";
+		};
+
+		dfps_data_memory: dfps_data_region@a2300000 {
+			reg = <0x0 0xa2300000 0x0 0x0100000>;
+			label = "dfps_data_region";
 		};
 
 		dump_mem: mem_dump_region {
