@@ -39,4 +39,5 @@ int msm_venc_set_hp_layer(struct msm_vidc_inst *inst);
 int msm_venc_set_base_layer_priority_id(struct msm_vidc_inst *inst);
 int msm_venc_set_lossless(struct msm_vidc_inst *inst);
 int msm_venc_set_blur_resolution(struct msm_vidc_inst *inst);
+int handle_all_intra_restrictions(struct msm_vidc_inst *inst);
 #endif

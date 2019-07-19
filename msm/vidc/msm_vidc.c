@@ -1105,6 +1105,7 @@ static inline int stop_streaming(struct msm_vidc_inst *inst)
 			dprintk(VIDC_ERR,
 				"%s: failed to unprepare preprocess\n",
 				__func__);
+		inst->all_intra = false;
 	}
 
 	msm_clock_data_reset(inst);
@@ -1551,6 +1552,7 @@ void *msm_vidc_open(int core_id, int session_type)
 	inst->smem_ops = &msm_vidc_smem_ops;
 	inst->rc_type = RATE_CONTROL_OFF;
 	inst->dpb_extra_binfo = NULL;
+	inst->all_intra = false;
 
 	for (i = SESSION_MSG_INDEX(SESSION_MSG_START);
 		i <= SESSION_MSG_INDEX(SESSION_MSG_END); i++) {
