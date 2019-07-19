@@ -137,6 +137,7 @@
 				mhi,data-type = <0>;
 				mhi,doorbell-mode = <2>;
 				mhi,ee = <0x4>;
+				mhi,wake-capable;
 			};
 
 			mhi_chan@14 {
