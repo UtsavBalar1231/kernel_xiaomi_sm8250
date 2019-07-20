@@ -780,7 +780,7 @@ static int hfi_process_session_etb_done(u32 device_id,
 	data_done.session_id = (void *)(uintptr_t)pkt->session_id;
 	data_done.status = hfi_map_err_status(pkt->error_type);
 	data_done.size = sizeof(struct msm_vidc_cb_data_done);
-	data_done.clnt_data = pkt->input_tag;
+	data_done.input_done.input_tag = pkt->input_tag;
 	data_done.input_done.recon_stats.buffer_index =
 		pkt->ubwc_cr_stats.frame_index;
 	memcpy(&data_done.input_done.recon_stats.ubwc_stats_info,
@@ -857,13 +857,11 @@ static int hfi_process_session_ftb_done(
 		data_done.session_id = (void *)(uintptr_t)pkt->session_id;
 		data_done.status = hfi_map_err_status(pkt->error_type);
 		data_done.size = sizeof(struct msm_vidc_cb_data_done);
-		data_done.clnt_data = 0;
 
+		data_done.output_done.input_tag = pkt->input_tag;
 		data_done.output_done.timestamp_hi = pkt->time_stamp_hi;
 		data_done.output_done.timestamp_lo = pkt->time_stamp_lo;
 		data_done.output_done.flags1 = pkt->flags;
-		data_done.output_done.mark_target = pkt->mark_target;
-		data_done.output_done.mark_data = pkt->mark_data;
 		data_done.output_done.stats = pkt->stats;
 		data_done.output_done.offset1 = pkt->offset;
 		data_done.output_done.alloc_len1 = pkt->alloc_len;
@@ -892,15 +890,12 @@ static int hfi_process_session_ftb_done(
 		data_done.session_id = (void *)(uintptr_t)pkt->session_id;
 		data_done.status = hfi_map_err_status(pkt->error_type);
 		data_done.size = sizeof(struct msm_vidc_cb_data_done);
-		data_done.clnt_data = 0;
 
 		data_done.output_done.stream_id = pkt->stream_id;
 		data_done.output_done.view_id = pkt->view_id;
 		data_done.output_done.timestamp_hi = pkt->time_stamp_hi;
 		data_done.output_done.timestamp_lo = pkt->time_stamp_lo;
 		data_done.output_done.flags1 = pkt->flags;
-		data_done.output_done.mark_target = pkt->mark_target;
-		data_done.output_done.mark_data = pkt->mark_data;
 		data_done.output_done.stats = pkt->stats;
 		data_done.output_done.alloc_len1 = pkt->alloc_len;
 		data_done.output_done.filled_len1 = pkt->filled_len;
@@ -909,7 +904,8 @@ static int hfi_process_session_ftb_done(
 		data_done.output_done.frame_height = pkt->frame_height;
 		data_done.output_done.start_x_coord = pkt->start_x_coord;
 		data_done.output_done.start_y_coord = pkt->start_y_coord;
-		data_done.output_done.input_tag1 = pkt->input_tag;
+		data_done.output_done.input_tag = pkt->input_tag;
+		data_done.output_done.input_tag2 = pkt->input_tag2;
 		data_done.output_done.picture_type = pkt->picture_type;
 		data_done.output_done.packet_buffer1 = pkt->packet_buffer;
 		data_done.output_done.extra_data_buffer =
