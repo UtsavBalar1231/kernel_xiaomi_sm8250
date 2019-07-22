@@ -102,6 +102,18 @@ static struct msm_vidc_codec_data sm6150_codec_data[] =  {
 	CODEC_ENTRY(V4L2_PIX_FMT_VP9, MSM_VIDC_DECODER, 50, 200, 200),
 };
 
+static struct msm_vidc_codec_data bengal_codec_data[] =  {
+	CODEC_ENTRY(V4L2_PIX_FMT_H264, MSM_VIDC_ENCODER, 125, 675, 320),
+	CODEC_ENTRY(V4L2_PIX_FMT_HEVC, MSM_VIDC_ENCODER, 125, 675, 320),
+	CODEC_ENTRY(V4L2_PIX_FMT_VP8, MSM_VIDC_ENCODER, 125, 675, 320),
+	CODEC_ENTRY(V4L2_PIX_FMT_TME, MSM_VIDC_ENCODER, 0, 540, 540),
+	CODEC_ENTRY(V4L2_PIX_FMT_MPEG2, MSM_VIDC_DECODER, 50, 200, 200),
+	CODEC_ENTRY(V4L2_PIX_FMT_H264, MSM_VIDC_DECODER, 50, 200, 200),
+	CODEC_ENTRY(V4L2_PIX_FMT_HEVC, MSM_VIDC_DECODER, 50, 200, 200),
+	CODEC_ENTRY(V4L2_PIX_FMT_VP8, MSM_VIDC_DECODER, 50, 200, 200),
+	CODEC_ENTRY(V4L2_PIX_FMT_VP9, MSM_VIDC_DECODER, 50, 200, 200),
+};
+
 /* Update with 855 data */
 static struct msm_vidc_codec_data sm8150_codec_data[] =  {
 	CODEC_ENTRY(V4L2_PIX_FMT_H264, MSM_VIDC_ENCODER, 0, 675, 320),
@@ -150,6 +162,12 @@ static struct msm_vidc_codec_data sdm670_codec_data[] =  {
 #define CODECS_ALL     (HAL_VIDEO_CODEC_H264 | HAL_VIDEO_CODEC_HEVC | \
 			HAL_VIDEO_CODEC_VP8 | HAL_VIDEO_CODEC_VP9 | \
 			HAL_VIDEO_CODEC_MPEG2)
+
+static struct msm_vidc_codec bengal_codecs[] = {
+	/* {domain, codec} */
+	{DEC, H264}, {DEC, HEVC}, {DEC, VP9},
+	{ENC, H264}, {ENC, HEVC},
+};
 
 static struct msm_vidc_codec default_codecs[] = {
 	/* {domain, codec} */
@@ -303,6 +321,39 @@ static struct msm_vidc_codec_capability lito_capabilities_v1[] = {
 	{CAP_HEVC_IMAGE_FRAME_HEIGHT, ENC, HEVC, 128, 512, 1, 512},
 	{CAP_HEIC_IMAGE_FRAME_WIDTH, ENC, HEVC, 512, 8192, 1, 8192},
 	{CAP_HEIC_IMAGE_FRAME_HEIGHT, ENC, HEVC, 512, 8192, 1, 8192},
+};
+
+static struct msm_vidc_codec_capability bengal_capabilities[] = {
+	/* {cap_type, domains, codecs, min, max, step_size, default_value} */
+	{CAP_FRAME_WIDTH, DOMAINS_ALL, CODECS_ALL, 96, 1920, 1, 1920},
+	{CAP_FRAME_HEIGHT, DOMAINS_ALL, CODECS_ALL, 96, 1920, 1, 1080},
+	/*  ((1920 * 1080) / 256) */
+	{CAP_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 36, 8160, 1, 34560},
+	/* 1080@30 decode + 1080@30 encode */
+	{CAP_MBS_PER_SECOND, DOMAINS_ALL, CODECS_ALL, 36, 486000, 1, 243000},
+	{CAP_FRAMERATE, DOMAINS_ALL, CODECS_ALL, 1, 120, 1, 30},
+	{CAP_BITRATE, DOMAINS_ALL, CODECS_ALL, 1, 40000000, 1, 20000000},
+	{CAP_BFRAME, ENC, H264|HEVC, 0, 1, 1, 0},
+	{CAP_HIER_P_NUM_ENH_LAYERS, ENC, H264|HEVC, 0, 6, 1, 0},
+	{CAP_LTR_COUNT, ENC, H264|HEVC, 0, 4, 1, 0},
+	/* ((1920 * 1088) / 256) * 30 fps */
+	{CAP_MBS_PER_SECOND_POWER_SAVE, ENC, CODECS_ALL,
+		0, 244800, 1, 244800},
+	{CAP_I_FRAME_QP, ENC, H264|HEVC, 0, 51, 1, 10},
+	{CAP_P_FRAME_QP, ENC, H264|HEVC, 0, 51, 1, 20},
+	{CAP_B_FRAME_QP, ENC, H264|HEVC, 0, 51, 1, 20},
+
+	/* 10 slices */
+	{CAP_SLICE_BYTE, ENC, H264|HEVC, 1, 10, 1, 10},
+	{CAP_SLICE_MB, ENC, H264|HEVC, 1, 10, 1, 10},
+	{CAP_MAX_VIDEOCORES, DOMAINS_ALL, CODECS_ALL, 0, 1, 1, 1},
+
+	/* Secure usecase specific */
+	{CAP_SECURE_FRAME_WIDTH, DOMAINS_ALL, CODECS_ALL, 96, 1920, 1, 1920},
+	{CAP_SECURE_FRAME_HEIGHT, DOMAINS_ALL, CODECS_ALL, 96, 1920, 1, 1080},
+	/* (1920 * 1088) / 256 */
+	{CAP_SECURE_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 36, 8160, 1, 34560},
+	{CAP_SECURE_BITRATE, DOMAINS_ALL, CODECS_ALL, 1, 40000000, 1, 20000000},
 };
 
 static struct msm_vidc_codec_capability kona_capabilities[] = {
@@ -712,6 +763,65 @@ static struct msm_vidc_common_data sm6150_common_data[] = {
 	},
 };
 
+static struct msm_vidc_common_data bengal_common_data[] = {
+	{
+		.key = "qcom,never-unload-fw",
+		.value = 1,
+	},
+	{
+		.key = "qcom,sw-power-collapse",
+		.value = 1,
+	},
+	{
+		.key = "qcom,domain-attr-non-fatal-faults",
+		.value = 1,
+	},
+	{
+		.key = "qcom,max-secure-instances",
+		.value = 5,
+	},
+	{
+		.key = "qcom,max-hw-load",
+		.value = 1216800,
+	},
+	{
+		.key = "qcom,max-hq-mbs-per-frame",
+		.value = 8160,
+	},
+	{
+		.key = "qcom,max-hq-mbs-per-sec",
+		.value = 244800,  /* 1920 x 1088 @ 30 fps */
+	},
+	{
+		.key = "qcom,max-b-frame-mbs-per-frame",
+		.value = 8160,
+	},
+	{
+		.key = "qcom,max-b-frame-mbs-per-sec",
+		.value = 489600,
+	},
+	{
+		.key = "qcom,power-collapse-delay",
+		.value = 1500,
+	},
+	{
+		.key = "qcom,hw-resp-timeout",
+		.value = 1000,
+	},
+	{
+		.key = "qcom,dcvs",
+		.value = 1,
+	},
+	{
+		.key = "qcom,fw-cycles",
+		.value = 733003,
+	},
+	{
+		.key = "qcom,fw-vpp-cycles",
+		.value = 225975,
+	},
+};
+
 static struct msm_vidc_common_data sm8150_common_data[] = {
 	{
 		.key = "qcom,never-unload-fw",
@@ -1041,6 +1151,25 @@ static struct msm_vidc_platform_data sm6150_data = {
 	.ubwc_config = 0x0,
 };
 
+static struct msm_vidc_platform_data bengal_data = {
+	.codec_data = bengal_codec_data,
+	.codec_data_length =  ARRAY_SIZE(bengal_codec_data),
+	.common_data = bengal_common_data,
+	.common_data_length =  ARRAY_SIZE(bengal_common_data),
+	.csc_data.vpe_csc_custom_bias_coeff = vpe_csc_custom_bias_coeff,
+	.csc_data.vpe_csc_custom_matrix_coeff = vpe_csc_custom_matrix_coeff,
+	.csc_data.vpe_csc_custom_limit_coeff = vpe_csc_custom_limit_coeff,
+	.efuse_data = NULL,
+	.efuse_data_length = 0,
+	.sku_version = 0,
+	.vpu_ver = VPU_VERSION_AR50_LITE,  // VPU VERSION?
+	.ubwc_config = 0x0,
+	.codecs = bengal_codecs,
+	.codecs_count = ARRAY_SIZE(bengal_codecs),
+	.codec_caps = bengal_capabilities,
+	.codec_caps_count = ARRAY_SIZE(bengal_capabilities),
+};
+
 static struct msm_vidc_platform_data sm8150_data = {
 	.codec_data = sm8150_codec_data,
 	.codec_data_length =  ARRAY_SIZE(sm8150_codec_data),
@@ -1110,6 +1239,10 @@ static const struct of_device_id msm_vidc_dt_match[] = {
 	{
 		.compatible = "qcom,sdm670-vidc",
 		.data = &sdm670_data,
+	},
+	{
+		.compatible = "qcom,bengal-vidc",
+		.data = &bengal_data,
 	},
 	{},
 };
