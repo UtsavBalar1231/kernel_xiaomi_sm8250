@@ -256,7 +256,7 @@
 		timing@0 {
 			qcom,mdss-dsi-panel-phy-timings = [00 12 04 04 1e 1e 04
 				05 02 03 04 00 11 14];
-			qcom,display-topology = <2 2 1>;
+			qcom,display-topology = <1 1 1>;
 			qcom,default-topology-index = <0>;
 			qcom,partial-update-enabled = "single_roi";
 			qcom,panel-roi-alignment = <540 270 270 270 1080 270>;
