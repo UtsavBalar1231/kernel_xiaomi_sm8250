@@ -65,6 +65,12 @@ First Level Node - CAM CPAS device
   Definition: Offset of the register space compared to
 	to Camera base register space.
 
+- cam_hw_fuse
+  Usage: optional
+  Value type: <u32>
+  Definition: List of fuse based features and respective
+	fuse info.
+
 - interrupt-names
   Usage: optional
   Value type: <string>
@@ -283,6 +289,8 @@ Example:
 		reg = <0xac40000 0x1000>,
 			<0xac42000 0x5000>;
 		reg-cam-base = <0x40000 0x42000>;
+		cam_hw_fuse = <CAM_CPAS_QCFA_BINNING_ENABLE 0x00780210 29>,
+			<CAM_CPAS_SECURE_CAMERA_ENABLE 0x00780210 18>;
 		interrupt-names = "cpas_camnoc";
 		interrupts = <0 459 0>;
 		qcom,cpas-hw-ver = <0x170100>; /* Titan v170 v1.0.0 */
