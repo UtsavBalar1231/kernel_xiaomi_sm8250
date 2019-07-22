@@ -1943,10 +1943,20 @@ static int cam_icp_mgr_handle_frame_process(uint32_t *msg_ptr, int flag)
 	}
 	idx = i;
 
-	if (flag == ICP_FRAME_PROCESS_FAILURE)
-		CAM_ERR(CAM_ICP, "Done with error: ctx_id %d req %llu dev %d",
-			ctx_data->ctx_id, request_id,
-			ctx_data->icp_dev_acquire_info->dev_type);
+	if (flag == ICP_FRAME_PROCESS_FAILURE) {
+		if (ioconfig_ack->err_type == CAMERAICP_EABORTED)
+			CAM_WARN(CAM_ICP,
+				"ctx_id %d req %llu dev %d has been aborted[flushed]",
+				ctx_data->ctx_id, request_id,
+				ctx_data->icp_dev_acquire_info->dev_type);
+		else
+			CAM_ERR(CAM_ICP,
+				"Done with error: %u on ctx_id %d dev %d for req %llu",
+				ioconfig_ack->err_type,
+				ctx_data->ctx_id,
+				ctx_data->icp_dev_acquire_info->dev_type,
+				request_id);
+	}
 
 	buf_data.request_id = hfi_frame_process->request_id[idx];
 	ctx_data->ctxt_event_cb(ctx_data->context_priv, flag, &buf_data);
@@ -1975,9 +1985,7 @@ static int cam_icp_mgr_process_msg_frame_process(uint32_t *msg_ptr)
 	}
 
 	ioconfig_ack = (struct hfi_msg_ipebps_async_ack *)msg_ptr;
-	if (ioconfig_ack->err_type != HFI_ERR_SYS_NONE) {
-		CAM_ERR(CAM_ICP, "failed with error : %u",
-			ioconfig_ack->err_type);
+	if (ioconfig_ack->err_type != CAMERAICP_SUCCESS) {
 		cam_icp_mgr_handle_frame_process(msg_ptr,
 			ICP_FRAME_PROCESS_FAILURE);
 		return -EIO;
