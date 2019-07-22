@@ -21,6 +21,16 @@
 	gpu_opp_table: gpu-opp-table {
 		compatible = "operating-points-v2";
 
+		opp-750000000 {
+			opp-hz = /bits/ 64 <750000000>;
+			opp-microvolt = <RPMH_REGULATOR_LEVEL_TURBO>;
+		};
+
+		opp-700000000 {
+			opp-hz = /bits/ 64 <700000000>;
+			opp-microvolt = <RPMH_REGULATOR_LEVEL_NOM_L1>;
+		};
+
 		opp-625000000 {
 			opp-hz = /bits/ 64 <625000000>;
 			opp-microvolt = <RPMH_REGULATOR_LEVEL_NOM>;
