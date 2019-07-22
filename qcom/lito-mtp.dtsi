@@ -234,6 +234,7 @@
 		st,regulator_avdd = "avdd";
 		st,x-flip = <1>;
 		st,y-flip = <1>;
+		st,power_on_suspend;
 		panel = <&dsi_sw43404_amoled_cmd &dsi_sw43404_amoled_video>;
 	};
 };
