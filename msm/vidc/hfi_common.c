@@ -71,6 +71,9 @@ struct tzbsp_video_set_state_req {
 const struct msm_vidc_bus_data DEFAULT_BUS_VOTE = {
 	.data = NULL,
 	.data_count = 0,
+	.total_bw_ddr = 0,
+	.total_bw_llcc = 0,
+	.calc_bw = NULL,
 };
 
 const int max_packets = 1000;
@@ -1041,7 +1044,8 @@ no_data_count:
 	device->bus_vote.data = new_data;
 	device->bus_vote.data_count = num_data;
 
-	device->bus_vote.calc_bw(&device->bus_vote);
+	if (device->bus_vote.calc_bw)
+		device->bus_vote.calc_bw(&device->bus_vote);
 
 	venus_hfi_for_each_bus(device, bus) {
 		if (bus && bus->client) {
