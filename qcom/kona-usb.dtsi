@@ -155,7 +155,6 @@
 		qcom,vdd-max-load-uA = <47000>;
 		core-supply = <&pm8150_l9>;
 		qcom,vbus-valid-override;
-		qcom,link-training-reset;
 		qcom,qmp-phy-init-seq =
 			/* <reg_offset, value, delay> */
 			<USB3_DP_QSERDES_COM_SSC_EN_CENTER 0x01 0
@@ -315,10 +314,7 @@
 			 USB3_DP_COM_PHY_MODE_CTRL
 			 USB3_DP_COM_TYPEC_CTRL
 			 USB3_DP_COM_SWI_CTRL
-			 USB3_DP_PCS_CLAMP_ENABLE
-			 USB3_DP_PCS_PCS_STATUS2
-			 USB3_DP_PCS_INSIG_SW_CTRL3
-			 USB3_DP_PCS_INSIG_MX_CTRL3>;
+			 USB3_DP_PCS_CLAMP_ENABLE>;
 
 		clocks = <&clock_gcc GCC_USB3_PRIM_PHY_AUX_CLK>,
 			<&clock_gcc GCC_USB3_PRIM_PHY_PIPE_CLK>,
