@@ -3578,6 +3578,7 @@
 		reg = <0x00780000 0x7000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		read-only;
 		ranges;
 
 		gpu_speed_bin: gpu_speed_bin@1ea {
@@ -3597,6 +3598,11 @@
 
 		iris_efuse: iris@6008 {
 			reg = <0x6008 0x4>;
+		};
+
+		feat_conf10: feat_conf10@602c {
+			reg = <0x602c 0x4>;
+
 		};
 	};
 };
