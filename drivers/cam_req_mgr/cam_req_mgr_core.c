@@ -625,9 +625,6 @@ static int __cam_req_mgr_send_req(struct cam_req_mgr_core_link *link,
 					*failed_dev = dev;
 					break;
 				}
-
-				if (pd == link->max_delay)
-					link->open_req_cnt--;
 			}
 			trace_cam_req_mgr_apply_request(link, &apply_req, dev);
 		}
@@ -1260,6 +1257,7 @@ static int __cam_req_mgr_process_req(struct cam_req_mgr_core_link *link,
 				&idx, reset_step + 1,
 				in_q->num_slots);
 			__cam_req_mgr_reset_req_slot(link, idx);
+			link->open_req_cnt--;
 		}
 	}
 

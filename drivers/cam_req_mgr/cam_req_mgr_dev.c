@@ -151,6 +151,8 @@ static int cam_req_mgr_close(struct file *filep)
 	struct v4l2_fh *vfh = filep->private_data;
 	struct v4l2_subdev_fh *subdev_fh = to_v4l2_subdev_fh(vfh);
 
+	CAM_WARN(CAM_CRM,
+		"release invoked associated userspace process has died");
 	mutex_lock(&g_dev.cam_lock);
 
 	if (g_dev.open_cnt <= 0) {
