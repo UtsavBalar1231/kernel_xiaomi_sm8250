@@ -59,9 +59,8 @@
 			label = "cvp_hlos";
 			iommus =
 				<&apps_smmu 0x2120 0x400>;
-			qcom,iommu-dma = "disabled";
 			buffer-types = <0xfff>;
-			virtual-addr-pool = <0x4b000000 0x90000000>;
+			qcom,iommu-dma-addr-pool = <0x4b000000 0x90000000>;
 		};
 
 
@@ -70,10 +69,9 @@
 			label = "cvp_sec_nonpixel";
 			iommus =
 				<&apps_smmu 0x2124 0x400>;
-			qcom,iommu-dma = "disabled";
 			buffer-types = <0x741>;
-			virtual-addr-pool = <0x01000000 0x25800000>;
-			qcom,secure-context-bank;
+			qcom,iommu-dma-addr-pool = <0x01000000 0x25800000>;
+			qcom,iommu-vmid = <0xB>;
 		};
 
 		cvp_secure_pixel_cb {
@@ -81,10 +79,9 @@
 			label = "cvp_sec_pixel";
 			iommus =
 				<&apps_smmu 0x2123 0x400>;
-			qcom,iommu-dma = "disabled";
 			buffer-types = <0x106>;
-			virtual-addr-pool = <0x26800000 0x24800000>;
-			qcom,secure-context-bank;
+			qcom,iommu-dma-addr-pool = <0x26800000 0x24800000>;
+			qcom,iommu-vmid = <0xA>;
 		};
 
 		/* Memory Heaps */
