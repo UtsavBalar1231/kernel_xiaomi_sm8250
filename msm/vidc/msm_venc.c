@@ -1046,6 +1046,45 @@ struct msm_vidc_format_constraint enc_pix_format_constraints[] = {
 	},
 };
 
+u32 v4l2_to_hfi_flip(struct msm_vidc_inst *inst)
+{
+	struct v4l2_ctrl *hflip = NULL;
+	struct v4l2_ctrl *vflip = NULL;
+	u32 flip = HFI_FLIP_NONE;
+
+	hflip = get_ctrl(inst, V4L2_CID_HFLIP);
+	vflip = get_ctrl(inst, V4L2_CID_VFLIP);
+
+	if ((hflip->val == V4L2_MPEG_MSM_VIDC_ENABLE) &&
+		(vflip->val == V4L2_MPEG_MSM_VIDC_ENABLE))
+		flip = HFI_FLIP_HORIZONTAL | HFI_FLIP_VERTICAL;
+	else if (hflip->val == V4L2_MPEG_MSM_VIDC_ENABLE)
+		flip = HFI_FLIP_HORIZONTAL;
+	else if (vflip->val == V4L2_MPEG_MSM_VIDC_ENABLE)
+		flip = HFI_FLIP_VERTICAL;
+
+	return flip;
+}
+
+inline bool vidc_scalar_enabled(struct msm_vidc_inst *inst)
+{
+	struct v4l2_format *f;
+	u32 output_height, output_width, input_height, input_width;
+	bool scalar_enable = false;
+
+	f = &inst->fmts[OUTPUT_PORT].v4l2_fmt;
+	output_height = f->fmt.pix_mp.height;
+	output_width = f->fmt.pix_mp.width;
+	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
+	input_height = f->fmt.pix_mp.height;
+	input_width = f->fmt.pix_mp.width;
+
+	if (output_height != input_height || output_width != input_width)
+		scalar_enable = true;
+
+	return scalar_enable;
+}
+
 
 static int msm_venc_set_csc(struct msm_vidc_inst *inst,
 					u32 color_primaries, u32 custom_matrix);
@@ -1134,7 +1173,7 @@ int msm_venc_inst_init(struct msm_vidc_inst *inst)
 	inst->buff_req.buffer[12].buffer_type = HAL_BUFFER_INTERNAL_CMD_QUEUE;
 	inst->buff_req.buffer[13].buffer_type = HAL_BUFFER_INTERNAL_RECON;
 	msm_vidc_init_buffer_size_calculators(inst);
-
+	inst->static_rotation_flip_enabled = false;
 	return rc;
 }
 
@@ -1768,6 +1807,16 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 					__func__);
 		}
 		break;
+	case V4L2_CID_HFLIP:
+	case V4L2_CID_VFLIP:
+		if (inst->state == MSM_VIDC_START_DONE) {
+			rc = msm_venc_set_dynamic_flip(inst);
+			if (rc)
+				dprintk(VIDC_ERR,
+				"%s: set flip failed\n",
+					__func__);
+		}
+		break;
 	case V4L2_CID_MPEG_VIDC_COMPRESSION_QUALITY:
 	case V4L2_CID_MPEG_VIDC_IMG_GRID_SIZE:
 	case V4L2_CID_MPEG_VIDC_VIDEO_HEVC_MAX_HIER_CODING_LAYER:
@@ -1775,8 +1824,6 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 	case V4L2_CID_ROTATE:
 	case V4L2_CID_MPEG_VIDC_VIDEO_LTRCOUNT:
 	case V4L2_CID_MPEG_VIDEO_H264_ENTROPY_MODE:
-	case V4L2_CID_HFLIP:
-	case V4L2_CID_VFLIP:
 	case V4L2_CID_MPEG_VIDEO_H264_LOOP_FILTER_MODE:
 	case V4L2_CID_MPEG_VIDEO_H264_LOOP_FILTER_ALPHA:
 	case V4L2_CID_MPEG_VIDEO_H264_LOOP_FILTER_BETA:
@@ -3507,8 +3554,6 @@ int msm_venc_set_rotation(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
 	struct v4l2_ctrl *rotation = NULL;
-	struct v4l2_ctrl *hflip = NULL;
-	struct v4l2_ctrl *vflip = NULL;
 	struct hfi_device *hdev;
 	struct hfi_vpe_rotation_type vpe_rotation;
 
@@ -3524,17 +3569,7 @@ int msm_venc_set_rotation(struct msm_vidc_inst *inst)
 	else if (rotation->val ==  270)
 		vpe_rotation.rotation = HFI_ROTATE_270;
 
-	hflip = get_ctrl(inst, V4L2_CID_HFLIP);
-	vflip = get_ctrl(inst, V4L2_CID_VFLIP);
-
-	vpe_rotation.flip = HFI_FLIP_NONE;
-	if ((hflip->val == V4L2_MPEG_MSM_VIDC_ENABLE) &&
-		(vflip->val == V4L2_MPEG_MSM_VIDC_ENABLE))
-		vpe_rotation.flip = HFI_FLIP_HORIZONTAL | HFI_FLIP_VERTICAL;
-	else if (hflip->val == V4L2_MPEG_MSM_VIDC_ENABLE)
-		vpe_rotation.flip = HFI_FLIP_HORIZONTAL;
-	else if (vflip->val == V4L2_MPEG_MSM_VIDC_ENABLE)
-		vpe_rotation.flip = HFI_FLIP_VERTICAL;
+	vpe_rotation.flip = v4l2_to_hfi_flip(inst);
 
 	dprintk(VIDC_HIGH, "Set rotation = %d, flip = %d\n",
 			vpe_rotation.rotation, vpe_rotation.flip);
@@ -3544,6 +3579,95 @@ int msm_venc_set_rotation(struct msm_vidc_inst *inst)
 				&vpe_rotation, sizeof(vpe_rotation));
 	if (rc) {
 		dprintk(VIDC_ERR, "Set rotation/flip failed\n");
+		return rc;
+	}
+
+	/* Mark static rotation/flip set */
+	inst->static_rotation_flip_enabled = false;
+	if ((vpe_rotation.rotation != HFI_ROTATE_NONE ||
+		vpe_rotation.flip != HFI_FLIP_NONE) &&
+		inst->state < MSM_VIDC_START_DONE)
+		inst->static_rotation_flip_enabled = true;
+
+	return rc;
+}
+
+int msm_venc_check_dynamic_flip_constraints(struct msm_vidc_inst *inst)
+{
+	int rc = 0;
+	struct v4l2_ctrl *blur = NULL;
+	struct v4l2_format *f = NULL;
+	bool scalar_enable = false;
+	bool blur_enable = false;
+	u32 input_height, input_width;
+
+	/* Dynamic flip is not allowed with scalar when static
+	 * rotation/flip is disabled
+	 */
+	scalar_enable = vidc_scalar_enabled(inst);
+
+	/* Check blur configs
+	 * blur value = 0 -> enable auto blur
+	 * blur value  = 2 or input resolution -> disable all blur
+	 * For other values -> enable external blur
+	 * Dynamic flip is not allowed with external blur enabled
+	 */
+	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
+	input_height = f->fmt.pix_mp.height;
+	input_width = f->fmt.pix_mp.width;
+
+	blur = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_BLUR_DIMENSIONS);
+	if (blur->val != 0 && blur->val != 2 &&
+		((blur->val & 0xFFFF) != input_height ||
+		(blur->val & 0x7FFF0000) >> 16 != input_width))
+		blur_enable = true;
+
+	if (blur_enable) {
+		/* Reject dynamic flip with external blur enabled */
+		dprintk(VIDC_ERR,
+			"Unsupported dynamic flip with external blur\n");
+		rc = -EINVAL;
+	} else if (scalar_enable && !inst->static_rotation_flip_enabled) {
+		/* Reject dynamic flip with scalar enabled */
+		dprintk(VIDC_ERR, "Unsupported dynamic flip with scalar\n");
+		rc = -EINVAL;
+	}
+
+	return rc;
+}
+
+int msm_venc_set_dynamic_flip(struct msm_vidc_inst *inst)
+{
+	int rc = 0;
+	struct hfi_device *hdev;
+	u32 dynamic_flip;
+
+	hdev = inst->core->device;
+
+	rc = msm_venc_check_dynamic_flip_constraints(inst);
+	if (rc) {
+		dprintk(VIDC_ERR,
+			"%s: Dynamic flip unsupported\n", __func__);
+		return rc;
+	}
+
+	/* Require IDR frame first */
+	dprintk(VIDC_HIGH, "Set dynamic IDR frame\n");
+	rc = msm_venc_set_request_keyframe(inst);
+	if (rc) {
+		dprintk(VIDC_ERR,
+			"%s: Dynamic IDR failed\n", __func__);
+		return rc;
+	}
+
+	dynamic_flip = v4l2_to_hfi_flip(inst);
+	dprintk(VIDC_HIGH, "Dynamic flip = %d\n", dynamic_flip);
+	rc = call_hfi_op(hdev, session_set_property,
+				(void *)inst->session,
+				HFI_PROPERTY_CONFIG_VPE_FLIP,
+				&dynamic_flip, sizeof(dynamic_flip));
+	if (rc) {
+		dprintk(VIDC_ERR, "Set dynamic flip failed\n");
 		return rc;
 	}
 

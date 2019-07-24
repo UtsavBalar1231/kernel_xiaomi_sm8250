@@ -532,6 +532,7 @@ struct msm_vidc_inst {
 	u32 hybrid_hp;
 	u32 layer_bitrate;
 	u32 client_set_ctrls;
+	bool static_rotation_flip_enabled;
 	struct internal_buf *dpb_extra_binfo;
 	struct msm_vidc_codec_data *codec_data;
 	struct hal_hdr10_pq_sei hdr10_sei_params;
