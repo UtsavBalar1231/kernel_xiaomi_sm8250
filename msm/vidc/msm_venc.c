@@ -3901,6 +3901,13 @@ int msm_venc_set_blur_resolution(struct msm_vidc_inst *inst)
 		frame_sz.width = f->fmt.pix_mp.width;
 		frame_sz.height = f->fmt.pix_mp.height;
 		dprintk(VIDC_HIGH, "Disable both auto and external blur\n");
+	} else if (ctrl->val != 0){
+		if (check_blur_restrictions(inst)) {
+			/* reject external blur */
+			dprintk(VIDC_ERR,
+			"External blur is unsupported with rotation/flip/scalar\n");
+			return -EINVAL;
+		}
 	}
 
 	dprintk(VIDC_HIGH, "%s: type %u, height %u, width %u\n", __func__,
@@ -4105,6 +4112,47 @@ int handle_all_intra_restrictions(struct msm_vidc_inst *inst)
 	}
 
 	return 0;
+}
+
+int check_blur_restrictions(struct msm_vidc_inst *inst)
+{
+	struct v4l2_ctrl *rotation = NULL;
+	struct v4l2_ctrl *hflip = NULL;
+	struct v4l2_ctrl *vflip = NULL;
+	struct v4l2_format *f;
+	u32 output_height, output_width, input_height, input_width;
+	bool scalar_enable = false;
+	bool rotation_enable = false;
+	bool flip_enable = false;
+
+	/* Only need to check static VPSS conditions */
+	if (inst->state == MSM_VIDC_START_DONE)
+		return 0;
+
+	f = &inst->fmts[OUTPUT_PORT].v4l2_fmt;
+	output_height = f->fmt.pix_mp.height;
+	output_width = f->fmt.pix_mp.width;
+	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
+	input_height = f->fmt.pix_mp.height;
+	input_width = f->fmt.pix_mp.width;
+
+	if (output_height != input_height || output_width != input_width)
+		scalar_enable = true;
+
+	rotation = get_ctrl(inst, V4L2_CID_ROTATE);
+	if (rotation->val != 0)
+		rotation_enable = true;
+
+	hflip = get_ctrl(inst, V4L2_CID_HFLIP);
+	vflip = get_ctrl(inst, V4L2_CID_VFLIP);
+	if ((hflip->val == V4L2_MPEG_MSM_VIDC_ENABLE) ||
+		(vflip->val == V4L2_MPEG_MSM_VIDC_ENABLE))
+		flip_enable = true;
+
+	if (scalar_enable || rotation_enable || flip_enable)
+		return -ENOTSUPP;
+	else
+		return 0;
 }
 
 int msm_venc_set_properties(struct msm_vidc_inst *inst)
