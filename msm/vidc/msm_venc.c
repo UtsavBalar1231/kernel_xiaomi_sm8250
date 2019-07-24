@@ -3726,6 +3726,7 @@ int msm_venc_set_nal_stream_format(struct msm_vidc_inst *inst)
 int msm_venc_set_ltr_mode(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
+	bool is_ltr = true;
 	struct hfi_device *hdev;
 	struct v4l2_ctrl *ctrl;
 	struct hfi_ltr_mode ltr;
@@ -3738,13 +3739,17 @@ int msm_venc_set_ltr_mode(struct msm_vidc_inst *inst)
 	hdev = inst->core->device;
 
 	codec = get_v4l2_codec(inst);
-	if (!(codec == V4L2_PIX_FMT_HEVC || codec == V4L2_PIX_FMT_H264))
-		return 0;
+	if (!(codec == V4L2_PIX_FMT_HEVC || codec == V4L2_PIX_FMT_H264)) {
+		is_ltr = false;
+		goto disable_ltr;
+	}
 
 	if (!(inst->rc_type == RATE_CONTROL_OFF ||
 		inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_CBR ||
-		inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_CBR_VFR))
-		return 0;
+		inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_CBR_VFR)) {
+			is_ltr = false;
+			goto disable_ltr;
+		}
 
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_LTRCOUNT);
 	if (!ctrl->val)
@@ -3765,6 +3770,15 @@ int msm_venc_set_ltr_mode(struct msm_vidc_inst *inst)
 	if (rc)
 		dprintk(VIDC_ERR, "%s: set property failed\n", __func__);
 
+disable_ltr:
+	/*
+	 * Forcefully setting LTR count to zero when
+	 * client sets unsupported codec/rate control.
+	 */
+	if (!is_ltr) {
+		ctrl->val = 0;
+		dprintk(VIDC_HIGH, "LTR is forcefully disabled!\n");
+	}
 	return rc;
 }
 
@@ -3781,6 +3795,10 @@ int msm_venc_set_ltr_useframe(struct msm_vidc_inst *inst)
 		return -EINVAL;
 	}
 	hdev = inst->core->device;
+
+	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_LTRCOUNT);
+	if (!ctrl->val)
+		return 0;
 
 	codec = get_v4l2_codec(inst);
 	if (!(codec == V4L2_PIX_FMT_HEVC || codec == V4L2_PIX_FMT_H264))
@@ -3813,6 +3831,10 @@ int msm_venc_set_ltr_markframe(struct msm_vidc_inst *inst)
 		return -EINVAL;
 	}
 	hdev = inst->core->device;
+
+	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_LTRCOUNT);
+	if (!ctrl->val)
+		return 0;
 
 	codec = get_v4l2_codec(inst);
 	if (!(codec == V4L2_PIX_FMT_HEVC || codec == V4L2_PIX_FMT_H264))
