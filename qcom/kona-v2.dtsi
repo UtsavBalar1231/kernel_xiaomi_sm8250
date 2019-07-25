@@ -37,3 +37,11 @@
 };
 
 #include "kona-v2-gpu.dtsi"
+
+&cpu0_llcc_ddr_latmon {
+	qcom,cachemiss-ev = <0x1000>;
+};
+
+&cpu4_llcc_ddr_latmon {
+	qcom,cachemiss-ev = <0x1000>;
+};
