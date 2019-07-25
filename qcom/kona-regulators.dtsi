@@ -789,9 +789,9 @@
 		S2F: pm8009_s2: regulator-pm8009-s2 {
 			regulator-name = "pm8009_s2";
 			qcom,set = <RPMH_REGULATOR_SET_ALL>;
-			regulator-min-microvolt = <952000>;
-			regulator-max-microvolt = <952000>;
-			qcom,init-voltage = <952000>;
+			regulator-min-microvolt = <512000>;
+			regulator-max-microvolt = <1100000>;
+			qcom,init-voltage = <512000>;
 		};
 	};
 
