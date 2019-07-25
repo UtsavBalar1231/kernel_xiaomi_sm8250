@@ -438,6 +438,21 @@
 		mboxes = <&qmp_aop 0>;
 		mbox-names = "aop";
 
+		qcom,gpu-acd-table {
+			/* Corresponds to levels in the GPU perf table */
+			qcom,acd-enable-by-level = <0x7e>;
+			qcom,acd-stride = <0x1>;
+			qcom,acd-num-levels = <0x6>;
+
+			/* ACDCR */
+			qcom,acd-data = <0x802F5FFD	/* LowSVS*/
+					0x802F5FFD	/* SVS */
+					0x802F5FFD	/* SVS_L1 */
+					0x802F5FFD	/* NOM */
+					0x802F5FFD	/* NOM_L1 */
+					0x802F5FFD>;	/* TURBO */
+		};
+
 		gmu_user: gmu_user {
 			compatible = "qcom,smmu-gmu-user-cb";
 			iommus = <&kgsl_smmu 0x4 0x400>;
