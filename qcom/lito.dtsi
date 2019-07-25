@@ -3597,8 +3597,8 @@
 		};
 
 		adsp_variant: adsp_variant@210 {
-			reg = <0x210 0x4>;
-			bits = <0x0 0x20>;
+			reg = <0x213 0x1>;
+			bits = <1 2>;
 		};
 
 		iris_efuse: iris@6008 {
