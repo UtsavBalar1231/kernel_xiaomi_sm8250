@@ -108,6 +108,7 @@ extern int scm_get_feat_version(u32 feat);
 extern bool is_scm_armv8(void);
 
 extern struct mutex scm_lmh_lock;
+extern bool under_scm_call(void);
 
 #else
 
@@ -166,5 +167,9 @@ static inline bool scm_is_secure_device(void)
 	return false;
 }
 
+extern bool under_scm_call(void)
+{
+	return false;
+}
 #endif
 #endif
