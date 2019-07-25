@@ -127,7 +127,7 @@
 		interrupt-parent = <&ipcc_mproc>;
 		interrupts = <IPCC_CLIENT_NPU IPCC_MPROC_SIGNAL_SMP2P
 			      IRQ_TYPE_EDGE_RISING>;
-		mboxes = <&ipcc_mproc IPCC_CLIENT_NPU IPCC_MPROC_SIGNAL_SMP2P>;
+		mboxes = <&msm_npu IPCC_CLIENT_NPU IPCC_MPROC_SIGNAL_SMP2P>;
 		qcom,local-pid = <0>;
 		qcom,remote-pid = <10>;
 
