@@ -2387,7 +2387,7 @@ static int venus_hfi_session_init(void *device, void *session_id,
 	s->device = dev;
 	s->codec = codec_type;
 	s->domain = session_type;
-	dprintk(VIDC_HIGH,
+	dprintk(VIDC_HIGH|VIDC_PERF,
 		"%s: inst %pK, session %pK, codec 0x%x, domain 0x%x\n",
 		__func__, session_id, s, s->codec, s->domain);
 

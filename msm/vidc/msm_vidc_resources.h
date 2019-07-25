@@ -208,6 +208,7 @@ struct msm_vidc_platform_resources {
 	uint32_t vpu_ver;
 	uint32_t fw_cycles;
 	uint32_t fw_vpp_cycles;
+	uint32_t avsync_window_size;
 	struct msm_vidc_ubwc_config_data *ubwc_config;
 	uint32_t clk_freq_threshold;
 	struct cx_ipeak_client *cx_ipeak_context;

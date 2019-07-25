@@ -627,6 +627,10 @@ static struct msm_vidc_common_data kona_common_data[] = {
 		.key = "qcom,fw-vpp-cycles",
 		.value = 44156,
 	},
+	{
+		.key = "qcom,avsync-window-size",
+		.value = 40,
+	},
 };
 
 static struct msm_vidc_common_data sm6150_common_data[] = {
