@@ -84,6 +84,14 @@ static inline u32 get_v4l2_codec(struct msm_vidc_inst *inst)
 	return f->fmt.pix_mp.pixelformat;
 }
 
+static inline bool is_image_session(struct msm_vidc_inst *inst)
+{
+	/* Grid may or may not be enabled for an image encode session */
+	return inst->session_type == MSM_VIDC_ENCODER &&
+		get_v4l2_codec(inst) == V4L2_PIX_FMT_HEVC &&
+		inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_CQ;
+}
+
 static inline bool is_realtime_session(struct msm_vidc_inst *inst)
 {
 	return !!(inst->flags & VIDC_REALTIME);

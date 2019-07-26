@@ -1069,8 +1069,7 @@ int msm_dcvs_try_enable(struct msm_vidc_inst *inst)
 			inst->flags & VIDC_THUMBNAIL ||
 			inst->clk_data.low_latency_mode ||
 			inst->batch.enable ||
-			inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_CQ ||
-			inst->grid_enable) {
+			inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_CQ) {
 		dprintk(VIDC_HIGH, "DCVS disabled: %pK\n", inst);
 		inst->clk_data.dcvs_mode = false;
 		return false;

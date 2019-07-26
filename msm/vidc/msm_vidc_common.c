@@ -2387,48 +2387,6 @@ int msm_comm_vb2_buffer_done(struct msm_vidc_inst *inst,
 	return 0;
 }
 
-bool heic_encode_session_supported(struct msm_vidc_inst *inst)
-{
-	u32 slice_mode;
-	u32 idr_period = IDR_PERIOD;
-	u32 n_bframes;
-	u32 n_pframes;
-	struct v4l2_format *f;
-
-	slice_mode =  msm_comm_g_ctrl_for_id(inst,
-		V4L2_CID_MPEG_VIDEO_MULTI_SLICE_MODE);
-	n_bframes =  msm_comm_g_ctrl_for_id(inst,
-		V4L2_CID_MPEG_VIDEO_B_FRAMES);
-	n_pframes =  msm_comm_g_ctrl_for_id(inst,
-		V4L2_CID_MPEG_VIDEO_GOP_SIZE);
-
-	/*
-	 * HEIC Encode is supported for Constant Quality RC mode only.
-	 * All configurations below except grid_enable are required for any
-	 * HEIC session including FWK tiled HEIC encode.
-	 * grid_enable flag along with dimension check enables HW tiling.
-	 */
-	f = &inst->fmts[OUTPUT_PORT].v4l2_fmt;
-	if (inst->session_type == MSM_VIDC_ENCODER &&
-		get_hal_codec(f->fmt.pix_mp.pixelformat) ==
-			HAL_VIDEO_CODEC_HEVC &&
-		inst->frame_quality >= MIN_FRAME_QUALITY &&
-		inst->frame_quality <= MAX_FRAME_QUALITY &&
-		slice_mode == V4L2_MPEG_VIDEO_MULTI_SLICE_MODE_SINGLE &&
-		idr_period == 1 &&
-		n_bframes == 0 &&
-		n_pframes == 0) {
-		if (inst->grid_enable > 0) {
-			if (f->fmt.pix_mp.width < HEIC_GRID_DIMENSION ||
-				f->fmt.pix_mp.height < HEIC_GRID_DIMENSION)
-				return false;
-			}
-		return true;
-	} else {
-		return false;
-	}
-}
-
 static bool is_eos_buffer(struct msm_vidc_inst *inst, u32 device_addr)
 {
 	struct eos_buf *temp, *next;
@@ -5585,6 +5543,9 @@ static int msm_vidc_check_mbpf_supported(struct msm_vidc_inst *inst)
 		/* ignore thumbnail session */
 		if (is_thumbnail_session(temp))
 			continue;
+		/* ignore HEIF sessions */
+		if (is_image_session(temp))
+			continue;
 		mbpf += NUM_MBS_PER_FRAME(
 			temp->fmts[INPUT_PORT].v4l2_fmt.fmt.pix_mp.height,
 			temp->fmts[INPUT_PORT].v4l2_fmt.fmt.pix_mp.width);
@@ -5629,10 +5590,15 @@ int msm_vidc_check_scaling_supported(struct msm_vidc_inst *inst)
 	u32 x_min, x_max, y_min, y_max;
 	u32 input_height, input_width, output_height, output_width;
 	struct v4l2_format *f;
+	struct v4l2_ctrl *ctrl = NULL;
 
-	if (inst->grid_enable > 0) {
-		dprintk(VIDC_HIGH, "Skip scaling check for HEIC\n");
-		return 0;
+	/* Grid get_ctrl allowed for encode session only */
+	if (is_image_session(inst)) {
+		ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_IMG_GRID_SIZE);
+		if (ctrl->val > 0) {
+			dprintk(VIDC_HIGH, "Skip scaling check for HEIC\n");
+			return 0;
+		}
 	}
 
 	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
@@ -5719,6 +5685,7 @@ int msm_vidc_check_session_supported(struct msm_vidc_inst *inst)
 	u32 width_min, width_max, height_min, height_max;
 	u32 mbpf_max;
 	struct v4l2_format *f;
+	struct v4l2_ctrl *ctrl = NULL;
 
 	if (!inst || !inst->core || !inst->core->device) {
 		dprintk(VIDC_ERR, "%s: Invalid parameter\n", __func__);
@@ -5773,6 +5740,48 @@ int msm_vidc_check_session_supported(struct msm_vidc_inst *inst)
 	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
 	input_height = f->fmt.pix_mp.height;
 	input_width = f->fmt.pix_mp.width;
+
+	if (is_image_session(inst)) {
+		if (is_secure_session(inst)) {
+			dprintk(VIDC_ERR,
+				"Secure image encode isn't supported!\n");
+			return -ENOTSUPP;
+		}
+
+		ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_IMG_GRID_SIZE);
+		if (ctrl->val > 0) {
+			if (inst->fmts[INPUT_PORT].v4l2_fmt.fmt.pix_mp.pixelformat !=
+				V4L2_PIX_FMT_NV12 &&
+				inst->fmts[INPUT_PORT].v4l2_fmt.fmt.pix_mp.pixelformat !=
+				V4L2_PIX_FMT_NV12_512)
+				return -ENOTSUPP;
+
+			width_min =
+				capability->cap[CAP_HEIC_IMAGE_FRAME_WIDTH].min;
+			width_max =
+				capability->cap[CAP_HEIC_IMAGE_FRAME_WIDTH].max;
+			height_min =
+				capability->cap[CAP_HEIC_IMAGE_FRAME_HEIGHT].min;
+			height_max =
+				capability->cap[CAP_HEIC_IMAGE_FRAME_HEIGHT].max;
+			mbpf_max = capability->cap[CAP_MBS_PER_FRAME].max;
+
+			input_height = ALIGN(input_height, 512);
+			input_width = ALIGN(input_width, 512);
+			output_height = input_height;
+			output_width = input_width;
+		} else {
+			width_min =
+				capability->cap[CAP_HEVC_IMAGE_FRAME_WIDTH].min;
+			width_max =
+				capability->cap[CAP_HEVC_IMAGE_FRAME_WIDTH].max;
+			height_min =
+				capability->cap[CAP_HEVC_IMAGE_FRAME_HEIGHT].min;
+			height_max =
+				capability->cap[CAP_HEVC_IMAGE_FRAME_HEIGHT].max;
+			mbpf_max = capability->cap[CAP_MBS_PER_FRAME].max;
+		}
+	}
 
 	if (inst->session_type == MSM_VIDC_ENCODER && (input_width % 2 != 0 ||
 			input_height % 2 != 0 || output_width % 2 != 0 ||
