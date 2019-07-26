@@ -21,6 +21,16 @@
 	gpu_opp_table: gpu-opp-table {
 		compatible = "operating-points-v2";
 
+		opp-750000000 {
+			opp-hz = /bits/ 64 <750000000>;
+			opp-microvolt = <RPMH_REGULATOR_LEVEL_TURBO>;
+		};
+
+		opp-700000000 {
+			opp-hz = /bits/ 64 <700000000>;
+			opp-microvolt = <RPMH_REGULATOR_LEVEL_NOM_L1>;
+		};
+
 		opp-625000000 {
 			opp-hz = /bits/ 64 <625000000>;
 			opp-microvolt = <RPMH_REGULATOR_LEVEL_NOM>;
@@ -427,6 +437,21 @@
 		/* AOP mailbox for sending ACD enable and disable messages */
 		mboxes = <&qmp_aop 0>;
 		mbox-names = "aop";
+
+		qcom,gpu-acd-table {
+			/* Corresponds to levels in the GPU perf table */
+			qcom,acd-enable-by-level = <0x7e>;
+			qcom,acd-stride = <0x1>;
+			qcom,acd-num-levels = <0x6>;
+
+			/* ACDCR */
+			qcom,acd-data = <0x802F5FFD	/* LowSVS*/
+					0x802F5FFD	/* SVS */
+					0x802F5FFD	/* SVS_L1 */
+					0x802F5FFD	/* NOM */
+					0x802F5FFD	/* NOM_L1 */
+					0x802F5FFD>;	/* TURBO */
+		};
 
 		gmu_user: gmu_user {
 			compatible = "qcom,smmu-gmu-user-cb";
