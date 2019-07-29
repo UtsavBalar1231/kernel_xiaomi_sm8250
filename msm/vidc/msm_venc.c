@@ -95,6 +95,7 @@ static struct msm_vidc_ctrl msm_venc_ctrls[] = {
 		.default_value = 2*DEFAULT_FPS-1,
 		.step = 1,
 		.qmenu = NULL,
+		.flags = V4L2_CTRL_FLAG_VOLATILE,
 	},
 	{
 		.id = V4L2_CID_MPEG_VIDEO_HEVC_I_FRAME_QP,
@@ -155,6 +156,7 @@ static struct msm_vidc_ctrl msm_venc_ctrls[] = {
 		.default_value = 0,
 		.step = 1,
 		.qmenu = NULL,
+		.flags = V4L2_CTRL_FLAG_VOLATILE,
 	},
 	{
 		.id = V4L2_CID_MIN_BUFFERS_FOR_CAPTURE,
@@ -545,6 +547,7 @@ static struct msm_vidc_ctrl msm_venc_ctrls[] = {
 		.default_value = 0,
 		.step = 1,
 		.qmenu = NULL,
+		.flags = V4L2_CTRL_FLAG_VOLATILE,
 	},
 	{
 		.id = V4L2_CID_MPEG_VIDC_VIDEO_MARKLTRFRAME,
@@ -576,6 +579,7 @@ static struct msm_vidc_ctrl msm_venc_ctrls[] = {
 			V4L2_MPEG_VIDC_VIDEO_HEVC_MAX_HIER_CODING_LAYER_0,
 		.step = 1,
 		.menu_skip_mask = 0,
+		.flags = V4L2_CTRL_FLAG_VOLATILE,
 	},
 	{
 		.id = V4L2_CID_MPEG_VIDEO_HEVC_HIER_CODING_TYPE,
