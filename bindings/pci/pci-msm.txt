@@ -260,6 +260,23 @@ Main node
 	Definition: The AUX clock is not synchronous to the Core clock to
 		support L1ss
 
+- qcom,l1-2-th-scale:
+	Usage: optional
+	Value type: <u32>
+	Definition: Determines the multiplier for L1.2 LTR threshold value
+		- 0	1ns
+		- 1	32ns
+		- 2	1us
+		- 3	32us
+		- 4	1ms
+		- 5	32ms
+
+- qcom,l1-2-th-value:
+	Usage: optional
+	Value type: <u32>
+	Definition: L1.2 LTR threshold value to be multipled with scale to
+		define L1.2 latency tolerance reporting (LTR)
+
 - qcom,slv-addr-space-size:
 	Usage: required
 	Value type: <u32>
