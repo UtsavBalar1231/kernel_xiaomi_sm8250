@@ -4220,6 +4220,9 @@ static void populate_frame_data(struct vidc_frame_data *data,
 		if (vbuf->flags & V4L2_BUF_FLAG_CODECCONFIG)
 			data->flags |= HAL_BUFFERFLAG_CODECCONFIG;
 
+		if(vbuf->flags & V4L2_BUF_FLAG_CVPMETADATA_SKIP)
+			data->flags |= HAL_BUFFERFLAG_CVPMETADATA_SKIP;
+
 		msm_comm_fetch_input_tag(&inst->etb_data, vb->index,
 			&itag, &itag2);
 		data->input_tag = itag;
@@ -4385,6 +4388,7 @@ static int msm_comm_qbuf_superframe_to_hfi(struct msm_vidc_inst *inst,
 	u64 ts_delta_us;
 	struct vidc_frame_data *frames;
 	u32 num_etbs, superframe_count, frame_size, hfi_fmt;
+	bool skip_allowed = false;
 
 	if (!inst || !inst->core || !inst->core->device || !mbuf) {
 		dprintk(VIDC_ERR, "%s: Invalid arguments\n", __func__);
@@ -4425,15 +4429,22 @@ static int msm_comm_qbuf_superframe_to_hfi(struct msm_vidc_inst *inst,
 	/* prepare superframe buffers */
 	frames[0].filled_len = frame_size;
 	/*
-	 * superframe logic updates extradata and eos flags only, so
-	 * ensure no other flags are populated in populate_frame_data()
+	 * superframe logic updates extradata, cvpmetadata_skip and eos flags only,
+	 * so ensure no other flags are populated in populate_frame_data()
 	 */
 	frames[0].flags &= ~HAL_BUFFERFLAG_EXTRADATA;
 	frames[0].flags &= ~HAL_BUFFERFLAG_EOS;
+	frames[0].flags &= ~HAL_BUFFERFLAG_CVPMETADATA_SKIP;
 	if (frames[0].flags)
 		dprintk(VIDC_ERR, "%s: invalid flags %#x\n",
 			__func__, frames[0].flags);
 	frames[0].flags = 0;
+
+	/* Add skip flag only if CVP metadata is enabled */
+	if (inst->prop.extradata_ctrls & EXTRADATA_ENC_INPUT_CVP) {
+		skip_allowed = true;
+		frames[0].flags |= HAL_BUFFERFLAG_CVPMETADATA_SKIP;
+	}
 
 	for (i = 0; i < superframe_count; i++) {
 		if (i)
@@ -4443,8 +4454,8 @@ static int msm_comm_qbuf_superframe_to_hfi(struct msm_vidc_inst *inst,
 		frames[i].timestamp += i * ts_delta_us;
 		if (!i) {
 			/* first frame */
-			if (frames[i].extradata_addr)
-				frames[i].flags |= HAL_BUFFERFLAG_EXTRADATA;
+			if (frames[0].extradata_addr)
+				frames[0].flags |= HAL_BUFFERFLAG_EXTRADATA;
 		} else if (i == superframe_count - 1) {
 			/* last frame */
 			if (mbuf->vvb.flags & V4L2_BUF_FLAG_EOS)
@@ -4452,6 +4463,11 @@ static int msm_comm_qbuf_superframe_to_hfi(struct msm_vidc_inst *inst,
 		}
 		num_etbs++;
 	}
+
+	/* If cvp metadata is enabled and metadata is available,
+	 * do not add skip flag for only first frame */
+	if (skip_allowed && !(mbuf->vvb.flags & V4L2_BUF_FLAG_CVPMETADATA_SKIP))
+		frames[0].flags &= ~HAL_BUFFERFLAG_CVPMETADATA_SKIP;
 
 	rc = call_hfi_op(hdev, session_process_batch, inst->session,
 			num_etbs, frames, 0, NULL);

@@ -864,6 +864,7 @@ static int msm_cvp_frame_process(struct msm_vidc_inst *inst,
 	else
 		operating_rate = cvp->operating_rate;
 
+	mbuf->vvb.flags &= ~V4L2_BUF_FLAG_CVPMETADATA_SKIP;
 	/* frame skip logic */
 	fps = max(cvp->frame_rate, operating_rate) >> 16;
 	if (fps > fps_max) {
@@ -878,10 +879,11 @@ static int msm_cvp_frame_process(struct msm_vidc_inst *inst,
 		skipframe = cvp->framecount % skip_framecount;
 	}
 	if (skipframe) {
-		print_cvp_buffer(VIDC_LOW, "input frame skipped",
+		print_cvp_buffer(VIDC_LOW, "input frame with skipflag",
 			inst, &cvp->fullres_buffer);
 		cvp->framecount++;
 		cvp->metadata_available = false;
+		mbuf->vvb.flags |= V4L2_BUF_FLAG_CVPMETADATA_SKIP;
 		return 0;
 	}
 
