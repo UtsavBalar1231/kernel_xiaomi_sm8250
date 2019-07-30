@@ -137,6 +137,7 @@ static inline char *get_debug_level_str(int level)
 	switch (level) {
 	case VIDC_ERR:
 		return "err";
+	case VIDC_HIGH|VIDC_PERF:
 	case VIDC_HIGH:
 		return "high";
 	case VIDC_LOW:

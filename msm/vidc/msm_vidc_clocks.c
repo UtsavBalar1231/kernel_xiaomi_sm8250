@@ -1780,7 +1780,7 @@ void msm_print_core_status(struct msm_vidc_core *core, u32 core_id)
 		out_f = &inst->fmts[OUTPUT_PORT].v4l2_fmt;
 		inp_f = &inst->fmts[INPUT_PORT].v4l2_fmt;
 		dprintk(VIDC_PERF,
-			"inst %pK (%4ux%4u) to (%4ux%4u) %3u %s %s %s %s %lu\n",
+			"inst %pK (%4ux%4u) to (%4ux%4u) %3u %s %s %u %s %s %lu\n",
 			inst,
 			inp_f->fmt.pix_mp.width,
 			inp_f->fmt.pix_mp.height,
@@ -1790,6 +1790,7 @@ void msm_print_core_status(struct msm_vidc_core *core, u32 core_id)
 			inst->session_type == MSM_VIDC_ENCODER ? "ENC" : "DEC",
 			inst->clk_data.work_mode == HFI_WORKMODE_1 ?
 				"WORK_MODE_1" : "WORK_MODE_2",
+			inst->clk_data.work_route,
 			inst->flags & VIDC_LOW_POWER ? "LP" : "HQ",
 			inst->flags & VIDC_REALTIME ? "RealTime" : "NonRTime",
 			inst->clk_data.min_freq);

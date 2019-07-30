@@ -18,6 +18,9 @@
 #define CBR_MB_LIMIT                           (((1280+15)/16)*((720+15)/16)*30)
 #define CBR_VFR_MB_LIMIT                       (((640+15)/16)*((480+15)/16)*30)
 #define V4L2_CID_MPEG_VIDEO_UNKNOWN (V4L2_CID_MPEG_MSM_VIDC_BASE + 0xFFF)
+#define MAX_BITRATE_DECODER_CAVLC              220000000
+#define MAX_BITRATE_DECODER_2STAGE_CABAC       200000000
+#define MAX_BITRATE_DECODER_1STAGE_CABAC        70000000
 
 struct vb2_buf_entry {
 	struct list_head list;
@@ -307,4 +310,7 @@ int msm_comm_set_extradata(struct msm_vidc_inst *inst, uint32_t extradata_id,
 		uint32_t value);
 bool msm_comm_check_for_inst_overload(struct msm_vidc_core *core);
 void msm_vidc_batch_handler(struct work_struct *work);
+int msm_comm_check_window_bitrate(struct msm_vidc_inst *inst,
+		struct vidc_frame_data *frame_data);
+void msm_comm_release_window_data(struct msm_vidc_inst *inst);
 #endif

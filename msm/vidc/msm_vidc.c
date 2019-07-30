@@ -920,7 +920,7 @@ static inline int start_streaming(struct msm_vidc_inst *inst)
 	 */
 	if (inst->batch.enable)
 		inst->batch.enable = is_batching_allowed(inst);
-	dprintk(VIDC_HIGH, "%s: batching %s for inst %pK (%#x)\n",
+	dprintk(VIDC_HIGH|VIDC_PERF, "%s: batching %s for inst %pK (%#x)\n",
 		__func__, inst->batch.enable ? "enabled" : "disabled",
 		inst, hash32_ptr(inst->session));
 
@@ -1524,6 +1524,7 @@ void *msm_vidc_open(int core_id, int session_type)
 	INIT_MSM_VIDC_LIST(&inst->eosbufs);
 	INIT_MSM_VIDC_LIST(&inst->etb_data);
 	INIT_MSM_VIDC_LIST(&inst->fbd_data);
+	INIT_MSM_VIDC_LIST(&inst->window_data);
 
 	INIT_DELAYED_WORK(&inst->batch_work, msm_vidc_batch_handler);
 	kref_init(&inst->kref);
@@ -1638,6 +1639,7 @@ fail_bufq_capture:
 	DEINIT_MSM_VIDC_LIST(&inst->input_crs);
 	DEINIT_MSM_VIDC_LIST(&inst->etb_data);
 	DEINIT_MSM_VIDC_LIST(&inst->fbd_data);
+	DEINIT_MSM_VIDC_LIST(&inst->window_data);
 
 	kfree(inst);
 	inst = NULL;
@@ -1709,6 +1711,8 @@ static void msm_vidc_cleanup_instance(struct msm_vidc_inst *inst)
 		dprintk(VIDC_ERR,
 			"Failed to release mark_data buffers\n");
 
+	msm_comm_release_window_data(inst);
+
 	msm_comm_release_eos_buffers(inst);
 
 	if (msm_comm_release_dpb_only_buffers(inst, true))
@@ -1769,6 +1773,7 @@ int msm_vidc_destroy(struct msm_vidc_inst *inst)
 	DEINIT_MSM_VIDC_LIST(&inst->input_crs);
 	DEINIT_MSM_VIDC_LIST(&inst->etb_data);
 	DEINIT_MSM_VIDC_LIST(&inst->fbd_data);
+	DEINIT_MSM_VIDC_LIST(&inst->window_data);
 
 	mutex_destroy(&inst->sync_lock);
 	mutex_destroy(&inst->bufq[OUTPUT_PORT].lock);

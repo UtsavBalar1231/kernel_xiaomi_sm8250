@@ -1729,6 +1729,7 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 
 	inst->profile = event_notify->profile;
 	inst->level = event_notify->level;
+	inst->entropy_mode = event_notify->entropy_mode;
 	inst->prop.crop_info.left =
 		event_notify->crop_data.left;
 	inst->prop.crop_info.top =
@@ -1795,7 +1796,7 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 		/* decide batching as configuration changed */
 		if (inst->batch.enable)
 			inst->batch.enable = is_batching_allowed(inst);
-		dprintk(VIDC_HIGH, "%s: %x : batching %s\n",
+		dprintk(VIDC_HIGH|VIDC_PERF, "%s: %x : batching %s\n",
 			__func__, hash32_ptr(inst->session),
 			inst->batch.enable ? "enabled" : "disabled");
 
@@ -2094,6 +2095,9 @@ static void handle_session_flush(enum hal_command_response cmd, void *data)
 		dprintk(VIDC_ERR, "Invalid flush type received!");
 		goto exit;
 	}
+
+	if (flush_type == HAL_FLUSH_ALL)
+		msm_comm_release_window_data(inst);
 
 	dprintk(VIDC_HIGH,
 		"Notify flush complete, flush_type: %x\n", flush_type);
@@ -4306,6 +4310,10 @@ static int msm_comm_qbuf_to_hfi(struct msm_vidc_inst *inst,
 	mbuf->flags |= MSM_VIDC_FLAG_QUEUED;
 	msm_vidc_debugfs_update(inst, e);
 
+	if (mbuf->vvb.vb2_buf.type == INPUT_MPLANE &&
+			is_decode_session(inst))
+		rc = msm_comm_check_window_bitrate(inst, &frame_data);
+
 err_bad_input:
 	return rc;
 }
@@ -4450,7 +4458,7 @@ static int msm_comm_qbuf_in_rbr(struct msm_vidc_inst *inst,
 	if (rc)
 		dprintk(VIDC_ERR, "%s: scale clocks failed\n", __func__);
 
-	print_vidc_buffer(VIDC_HIGH, "qbuf in rbr", inst, mbuf);
+	print_vidc_buffer(VIDC_HIGH|VIDC_PERF, "qbuf in rbr", inst, mbuf);
 	rc = msm_comm_qbuf_to_hfi(inst, mbuf);
 	if (rc)
 		dprintk(VIDC_ERR, "%s: Failed qbuf to hfi: %d\n", __func__, rc);
@@ -4487,7 +4495,7 @@ int msm_comm_qbuf(struct msm_vidc_inst *inst, struct msm_vidc_buffer *mbuf)
 	if (rc)
 		dprintk(VIDC_ERR, "%s: scale clocks failed\n", __func__);
 
-	print_vidc_buffer(VIDC_HIGH, "qbuf", inst, mbuf);
+	print_vidc_buffer(VIDC_HIGH|VIDC_PERF, "qbuf", inst, mbuf);
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_SUPERFRAME);
 	if (ctrl->val)
 		rc = msm_comm_qbuf_superframe_to_hfi(inst, mbuf);
@@ -4572,7 +4580,7 @@ int msm_comm_qbufs_batch(struct msm_vidc_inst *inst,
 		if (buf->flags & MSM_VIDC_FLAG_RBR_PENDING)
 			goto loop_end;
 
-		print_vidc_buffer(VIDC_HIGH, "batch-qbuf", inst, buf);
+		print_vidc_buffer(VIDC_HIGH|VIDC_PERF, "batch-qbuf", inst, buf);
 		rc = msm_comm_qbuf_to_hfi(inst, buf);
 		if (rc) {
 			dprintk(VIDC_ERR, "%s: Failed batch qbuf to hfi: %d\n",
@@ -4614,7 +4622,8 @@ int msm_comm_qbuf_decode_batch(struct msm_vidc_inst *inst,
 
 	if (inst->state != MSM_VIDC_START_DONE) {
 		mbuf->flags |= MSM_VIDC_FLAG_DEFERRED;
-		print_vidc_buffer(VIDC_HIGH, "qbuf deferred", inst, mbuf);
+		print_vidc_buffer(VIDC_HIGH|VIDC_PERF,
+					"qbuf deferred", inst, mbuf);
 		return 0;
 	}
 
@@ -6170,6 +6179,10 @@ void print_vb2_buffer(u32 tag, const char *str, struct msm_vidc_inst *inst,
 {
 	if (!(tag & msm_vidc_debug) || !inst || !vb2)
 		return;
+	if ((tag & VIDC_PERF) &&
+		!(tag & VIDC_HIGH) &&
+		(inst->session_type != MSM_VIDC_DECODER))
+		return;
 
 	if (vb2->num_planes == 1)
 		dprintk(tag,
@@ -7194,4 +7207,81 @@ bool msm_comm_check_for_inst_overload(struct msm_vidc_core *core)
 			core->resources.max_secure_inst_count);
 	}
 	return overload;
+}
+
+int msm_comm_check_window_bitrate(struct msm_vidc_inst *inst,
+	struct vidc_frame_data *frame_data)
+{
+	struct msm_vidc_window_data *pdata, *next;
+	u32 bitrate, max_br, window_size;
+	int buf_cnt = 1, fps, window_start;
+
+	if (!inst || !inst->core || !frame_data) {
+		dprintk(VIDC_ERR, "%s: Invalid arguments\n", __func__);
+		return -EINVAL;
+	}
+
+	if (!inst->core->resources.avsync_window_size)
+		return 0;
+
+	fps = inst->clk_data.frame_rate >> 16;
+	max_br = MAX_BITRATE_DECODER_CAVLC;
+	if (inst->entropy_mode == HFI_H264_ENTROPY_CABAC)
+		max_br = inst->clk_data.work_mode == HFI_WORKMODE_2 ?
+			MAX_BITRATE_DECODER_2STAGE_CABAC :
+			MAX_BITRATE_DECODER_1STAGE_CABAC;
+	window_size = inst->core->resources.avsync_window_size * fps;
+	window_size = DIV_ROUND_UP(window_size, 1000);
+
+	pdata = kzalloc(sizeof(*pdata), GFP_KERNEL);
+	if (!pdata)  {
+		dprintk(VIDC_ERR, "%s: malloc failure.\n", __func__);
+		return -ENOMEM;
+	}
+
+	bitrate = pdata->frame_size = frame_data->filled_len;
+	window_start = pdata->etb_count = inst->count.etb;
+
+	mutex_lock(&inst->window_data.lock);
+	list_add(&pdata->list, &inst->window_data.list);
+	list_for_each_entry_safe_continue(pdata, next,
+			&inst->window_data.list, list) {
+		if (buf_cnt < window_size) {
+			bitrate += pdata->frame_size;
+			window_start = pdata->etb_count;
+			buf_cnt++;
+		} else {
+			list_del(&pdata->list);
+			kfree(pdata);
+		}
+	}
+	mutex_unlock(&inst->window_data.lock);
+
+	bitrate = DIV_ROUND_UP(((u64)bitrate * 8 * fps), window_size);
+	if (bitrate > max_br) {
+		dprintk(VIDC_PERF,
+			"Unsupported bitrate %u max %u, window size %u [%u,%u]",
+			bitrate, max_br, window_size,
+			window_start, inst->count.etb);
+	}
+
+	return 0;
+}
+
+void msm_comm_release_window_data(struct msm_vidc_inst *inst)
+{
+	struct msm_vidc_window_data *pdata, *next;
+
+	if (!inst) {
+		dprintk(VIDC_ERR, "%s: invalid params %pK\n",
+			__func__, inst);
+		return;
+	}
+
+	mutex_lock(&inst->window_data.lock);
+	list_for_each_entry_safe(pdata, next, &inst->window_data.list, list) {
+		list_del(&pdata->list);
+		kfree(pdata);
+	}
+	mutex_unlock(&inst->window_data.lock);
 }

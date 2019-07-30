@@ -206,6 +206,12 @@ struct msm_vidc_buf_data {
 	u32 filled_length;
 };
 
+struct msm_vidc_window_data {
+	struct list_head list;
+	u32 frame_size;
+	u32 etb_count;
+};
+
 struct msm_vidc_common_data {
 	char key[128];
 	int value;
@@ -493,6 +499,7 @@ struct msm_vidc_inst {
 	struct msm_vidc_list cvpbufs;
 	struct msm_vidc_list etb_data;
 	struct msm_vidc_list fbd_data;
+	struct msm_vidc_list window_data;
 	struct buffer_requirements buff_req;
 	struct vidc_frame_data superframe_data[VIDC_SUPERFRAME_MAX];
 	struct v4l2_ctrl_handler ctrl_handler;
@@ -520,6 +527,7 @@ struct msm_vidc_inst {
 	u32 colour_space;
 	u32 profile;
 	u32 level;
+	u32 entropy_mode;
 	u32 rc_type;
 	u32 hybrid_hp;
 	u32 layer_bitrate;
