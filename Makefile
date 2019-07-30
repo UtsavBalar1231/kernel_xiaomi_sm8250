@@ -18,4 +18,13 @@ ifeq ($(CONFIG_ARCH_LITO), y)
 LINUXINCLUDE    += -include $(srctree)/techpack/video/config/litovidconf.h
 endif
 
+# auto-detect subdirs
+ifeq ($(CONFIG_ARCH_BENGAL), y)
+include $(srctree)/techpack/video/config/bengalvid.conf
+endif
+
+ifeq ($(CONFIG_ARCH_BENGAL), y)
+LINUXINCLUDE    += -include $(srctree)/techpack/video/config/bengalvidconf.h
+endif
+
 obj-y +=msm/
