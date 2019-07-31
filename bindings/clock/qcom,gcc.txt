@@ -22,6 +22,7 @@ Required properties :
 			"qcom,gcc-sdm845"
 			"qcom,gcc-kona"
 			"qcom,gcc-lito"
+			"qcom,bengal-gcc"
 
 - reg : shall contain base register location and length
 - #clock-cells : shall contain 1
