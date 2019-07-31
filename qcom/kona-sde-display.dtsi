@@ -260,6 +260,24 @@
 			qcom,partial-update-enabled = "single_roi";
 			qcom,panel-roi-alignment = <720 180 180 180 1440 180>;
 		};
+
+		timing@1 {
+			qcom,mdss-dsi-panel-phy-timings = [00 13 04 04 1f 1e 05
+				05 03 02 04 00 12 14];
+			qcom,display-topology = <2 2 1>;
+			qcom,default-topology-index = <0>;
+			qcom,partial-update-enabled = "single_roi";
+			qcom,panel-roi-alignment = <720 180 180 180 1440 180>;
+		};
+
+		timing@2 {
+			qcom,mdss-dsi-panel-phy-timings = [00 11 03 04 1e 1e 04
+				04 02 02 04 00 10 14];
+			qcom,display-topology = <2 2 1>;
+			qcom,default-topology-index = <0>;
+			qcom,partial-update-enabled = "single_roi";
+			qcom,panel-roi-alignment = <720 180 180 180 1440 180>;
+		};
 	};
 };
 
