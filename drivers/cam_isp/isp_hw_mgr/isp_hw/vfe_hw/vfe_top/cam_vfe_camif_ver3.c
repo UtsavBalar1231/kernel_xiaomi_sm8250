@@ -34,6 +34,7 @@ struct cam_vfe_mux_camif_ver3_data {
 	void                                *priv;
 	int                                  irq_err_handle;
 	int                                  irq_handle;
+	int                                  sof_irq_handle;
 	void                                *vfe_irq_controller;
 	struct cam_vfe_top_irq_evt_payload   evt_payload[CAM_VFE_CAMIF_EVT_MAX];
 	struct list_head                     free_payload_list;
@@ -364,12 +365,6 @@ static int cam_vfe_camif_ver3_resource_start(
 	memset(irq_mask, 0, sizeof(irq_mask));
 
 	rsrc_data = (struct cam_vfe_mux_camif_ver3_data *)camif_res->res_priv;
-	err_irq_mask[CAM_IFE_IRQ_CAMIF_REG_STATUS0] =
-		rsrc_data->reg_data->error_irq_mask0;
-	err_irq_mask[CAM_IFE_IRQ_CAMIF_REG_STATUS2] =
-		rsrc_data->reg_data->error_irq_mask2;
-	irq_mask[CAM_IFE_IRQ_CAMIF_REG_STATUS1] =
-		rsrc_data->reg_data->subscribe_irq_mask1;
 
 	soc_private = rsrc_data->soc_info->soc_private;
 
@@ -488,16 +483,26 @@ static int cam_vfe_camif_ver3_resource_start(
 			rsrc_data->common_reg->diag_config);
 	}
 
+	err_irq_mask[CAM_IFE_IRQ_CAMIF_REG_STATUS0] =
+		rsrc_data->reg_data->error_irq_mask0;
+	err_irq_mask[CAM_IFE_IRQ_CAMIF_REG_STATUS2] =
+		rsrc_data->reg_data->error_irq_mask2;
+
+	irq_mask[CAM_IFE_IRQ_CAMIF_REG_STATUS1] =
+		rsrc_data->reg_data->epoch0_irq_mask |
+		rsrc_data->reg_data->eof_irq_mask;
+
 	if (!rsrc_data->irq_handle) {
 		rsrc_data->irq_handle = cam_irq_controller_subscribe_irq(
 			rsrc_data->vfe_irq_controller,
-			CAM_IRQ_PRIORITY_0,
+			CAM_IRQ_PRIORITY_3,
 			irq_mask,
 			camif_res,
 			camif_res->top_half_handler,
 			camif_res->bottom_half_handler,
 			camif_res->tasklet_info,
 			&tasklet_bh_api);
+
 		if (rsrc_data->irq_handle < 1) {
 			CAM_ERR(CAM_ISP, "IRQ handle subscribe failure");
 			rc = -ENOMEM;
@@ -505,16 +510,38 @@ static int cam_vfe_camif_ver3_resource_start(
 		}
 	}
 
+	irq_mask[CAM_IFE_IRQ_CAMIF_REG_STATUS1] =
+		rsrc_data->reg_data->sof_irq_mask;
+
+	if (!rsrc_data->sof_irq_handle) {
+		rsrc_data->sof_irq_handle = cam_irq_controller_subscribe_irq(
+			rsrc_data->vfe_irq_controller,
+			CAM_IRQ_PRIORITY_1,
+			irq_mask,
+			camif_res,
+			camif_res->top_half_handler,
+			camif_res->bottom_half_handler,
+			camif_res->tasklet_info,
+			&tasklet_bh_api);
+
+		if (rsrc_data->sof_irq_handle < 1) {
+			CAM_ERR(CAM_ISP, "SOF IRQ handle subscribe failure");
+			rc = -ENOMEM;
+			rsrc_data->sof_irq_handle = 0;
+		}
+	}
+
 	if (!rsrc_data->irq_err_handle) {
 		rsrc_data->irq_err_handle = cam_irq_controller_subscribe_irq(
 			rsrc_data->vfe_irq_controller,
-			CAM_IRQ_PRIORITY_1,
+			CAM_IRQ_PRIORITY_0,
 			err_irq_mask,
 			camif_res,
 			cam_vfe_camif_ver3_err_irq_top_half,
 			camif_res->bottom_half_handler,
 			camif_res->tasklet_info,
 			&tasklet_bh_api);
+
 		if (rsrc_data->irq_err_handle < 1) {
 			CAM_ERR(CAM_ISP, "Error IRQ handle subscribe failure");
 			rc = -ENOMEM;
@@ -643,6 +670,13 @@ static int cam_vfe_camif_ver3_resource_stop(
 		cam_irq_controller_unsubscribe_irq(
 			camif_priv->vfe_irq_controller, camif_priv->irq_handle);
 		camif_priv->irq_handle = 0;
+	}
+
+	if (camif_priv->sof_irq_handle) {
+		cam_irq_controller_unsubscribe_irq(
+			camif_priv->vfe_irq_controller,
+			camif_priv->sof_irq_handle);
+		camif_priv->sof_irq_handle = 0;
 	}
 
 	if (camif_priv->irq_err_handle) {

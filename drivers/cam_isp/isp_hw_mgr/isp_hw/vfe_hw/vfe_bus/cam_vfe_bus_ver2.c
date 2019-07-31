@@ -3622,7 +3622,7 @@ int cam_vfe_bus_ver2_init(
 
 	rc = cam_irq_controller_init(drv_name, bus_priv->common_data.mem_base,
 		&ver2_hw_info->common_reg.irq_reg_info,
-		&bus_priv->common_data.bus_irq_controller);
+		&bus_priv->common_data.bus_irq_controller, true);
 	if (rc) {
 		CAM_ERR(CAM_ISP, "cam_irq_controller_init failed");
 		goto free_bus_priv;

@@ -669,7 +669,8 @@ int cam_vfe_core_init(struct cam_vfe_hw_core_info  *core_info,
 
 	rc = cam_irq_controller_init(drv_name,
 		CAM_SOC_GET_REG_MAP_START(soc_info, VFE_CORE_BASE_IDX),
-		vfe_hw_info->irq_reg_info, &core_info->vfe_irq_controller);
+		vfe_hw_info->irq_reg_info, &core_info->vfe_irq_controller,
+		true);
 	if (rc) {
 		CAM_ERR(CAM_ISP,
 			"Error, cam_irq_controller_init failed rc = %d", rc);

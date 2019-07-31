@@ -287,7 +287,7 @@ static int cam_vfe_camif_lite_resource_start(
 	if (!rsrc_data->irq_err_handle) {
 		rsrc_data->irq_err_handle = cam_irq_controller_subscribe_irq(
 			rsrc_data->vfe_irq_controller,
-			CAM_IRQ_PRIORITY_1,
+			CAM_IRQ_PRIORITY_0,
 			err_irq_mask,
 			camif_lite_res,
 			cam_vfe_camif_lite_err_irq_top_half,
@@ -448,13 +448,13 @@ static int cam_vfe_camif_lite_handle_irq_bottom_half(
 	}
 
 	if (irq_status0 & camif_lite_priv->reg_data->dual_pd_reg_upd_irq_mask) {
-		CAM_DBG(CAM_ISP, "VFE:%d CAMIF Lite hReceived REG_UPDATE_ACK",
+		CAM_DBG(CAM_ISP, "VFE:%d CAMIF Lite Received REG_UPDATE_ACK",
 			evt_info.hw_idx);
 		ret = CAM_VFE_IRQ_STATUS_SUCCESS;
 	}
 
 	if (irq_status0 & camif_lite_priv->reg_data->lite_eof_irq_mask) {
-		CAM_DBG(CAM_ISP, "VF:%d CAMIF Lite Received EOF",
+		CAM_DBG(CAM_ISP, "VFE:%d CAMIF Lite Received EOF",
 			evt_info.hw_idx);
 		ret = CAM_VFE_IRQ_STATUS_SUCCESS;
 	}

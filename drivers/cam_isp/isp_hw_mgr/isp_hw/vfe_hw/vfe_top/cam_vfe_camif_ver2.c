@@ -436,7 +436,7 @@ static int cam_vfe_camif_resource_start(
 	if (!rsrc_data->irq_handle) {
 		rsrc_data->irq_handle = cam_irq_controller_subscribe_irq(
 			rsrc_data->vfe_irq_controller,
-			CAM_IRQ_PRIORITY_0,
+			CAM_IRQ_PRIORITY_1,
 			irq_mask,
 			camif_res,
 			camif_res->top_half_handler,
@@ -453,7 +453,7 @@ static int cam_vfe_camif_resource_start(
 	if (!rsrc_data->irq_err_handle) {
 		rsrc_data->irq_err_handle = cam_irq_controller_subscribe_irq(
 			rsrc_data->vfe_irq_controller,
-			CAM_IRQ_PRIORITY_1,
+			CAM_IRQ_PRIORITY_0,
 			err_irq_mask,
 			camif_res,
 			cam_vfe_camif_err_irq_top_half,
