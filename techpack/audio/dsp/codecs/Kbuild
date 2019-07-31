@@ -161,6 +161,3 @@ endif
 # Module information used by KBuild framework
 obj-$(CONFIG_MSM_QDSP6V2_CODECS) += native_dlkm.o
 native_dlkm-y := $(NATIVE_OBJS)
-
-# inject some build related information
-DEFINES += -DBUILD_TIMESTAMP=\"$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')\"

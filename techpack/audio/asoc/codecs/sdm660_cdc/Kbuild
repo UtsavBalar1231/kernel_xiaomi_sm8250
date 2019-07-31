@@ -110,6 +110,3 @@ analog_cdc_dlkm-y := $(ANALOG_CDC_OBJS)
 
 obj-$(CONFIG_SND_SOC_DIGITAL_CDC) += digital_cdc_dlkm.o
 digital_cdc_dlkm-y := $(DIGITAL_CDC_OBJS)
-
-# inject some build related information
-DEFINES += -DBUILD_TIMESTAMP=\"$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')\"
