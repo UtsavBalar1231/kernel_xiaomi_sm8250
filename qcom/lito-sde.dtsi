@@ -488,7 +488,7 @@
 		cell-index = <0>;
 		compatible = "qcom,dp-display";
 
-		vdda-lp2-supply = <&L9A>;
+		vdda-1p2-supply = <&L9A>;
 		reg =	<0xae90000 0x0dc>,
 			<0xae90200 0x0c0>,
 			<0xae90400 0x508>,
