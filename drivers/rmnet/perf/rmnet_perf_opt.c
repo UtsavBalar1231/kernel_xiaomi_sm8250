@@ -547,6 +547,7 @@ void rmnet_perf_opt_flush_single_flow_node(
 
 			rmnet_perf_opt_add_flow_subfrags(flow_node);
 			frag_desc = flow_node->pkt_list[0].frag_desc;
+			frag_desc->hash = flow_node->hash_value;
 			rmnet_perf_core_send_desc(frag_desc);
 		} else {
 			struct sk_buff *skb;
