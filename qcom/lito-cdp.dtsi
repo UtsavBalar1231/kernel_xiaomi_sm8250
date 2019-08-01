@@ -375,7 +375,8 @@
 		synaptics,reset-on-state = <0>;
 		synaptics,reset-active-ms = <20>;
 
-		panel = <&dsi_sharp_qsync_wqhd_cmd &dsi_sharp_qsync_wqhd_video>;
+		panel = <&dsi_sharp_qsync_wqhd_cmd &dsi_sharp_qsync_wqhd_video
+			&dsi_sharp_qsync_fhd_video &dsi_sharp_qsync_fhd_cmd>;
 	};
 
 };
@@ -493,6 +494,27 @@
 };
 
 &dsi_sharp_qsync_wqhd_cmd {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_no_labibb>;
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_external";
+	qcom,mdss-dsi-bl-min-level = <1>;
+	qcom,mdss-dsi-bl-max-level = <4095>;
+	qcom,platform-te-gpio = <&tlmm 10 0>;
+	qcom,platform-reset-gpio = <&pm8150l_gpios 3 0>;
+	qcom,platform-en-gpio = <&pm8150l_gpios 9 0>;
+	qcom,platform-bklight-en-gpio = <&pm8150l_gpios 10 0>;
+};
+
+&dsi_sharp_qsync_fhd_video {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_no_labibb>;
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_external";
+	qcom,mdss-dsi-bl-min-level = <1>;
+	qcom,mdss-dsi-bl-max-level = <4095>;
+	qcom,platform-reset-gpio = <&pm8150l_gpios 3 0>;
+	qcom,platform-en-gpio = <&pm8150l_gpios 9 0>;
+	qcom,platform-bklight-en-gpio = <&pm8150l_gpios 10 0>;
+};
+
+&dsi_sharp_qsync_fhd_cmd {
 	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_no_labibb>;
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_external";
 	qcom,mdss-dsi-bl-min-level = <1>;
