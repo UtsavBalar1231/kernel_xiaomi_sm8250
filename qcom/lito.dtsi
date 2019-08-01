@@ -3614,7 +3614,10 @@
 
 		feat_conf10: feat_conf10@602c {
 			reg = <0x602c 0x4>;
+		};
 
+		stm_debug_fuse: stm@20f0 {
+			reg = <0x20f0 0x4>;
 		};
 	};
 };
