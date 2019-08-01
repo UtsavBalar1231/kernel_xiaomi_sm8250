@@ -172,6 +172,8 @@ struct msm_cvp_external {
 	u32 height;
 	u32 ds_width;
 	u32 ds_height;
+	u32 frame_rate;
+	u32 operating_rate;
 	bool downscale;
 	u32 framecount;
 	u32 buffer_idx;
