@@ -604,10 +604,10 @@ static int msm_vidc_queue_setup(struct vb2_queue *q,
 		}
 		f = &fmt->v4l2_fmt;
 		*num_planes = f->fmt.pix_mp.num_planes;
-		if (*num_buffers < MIN_NUM_INPUT_BUFFERS ||
+		if (*num_buffers < SINGLE_INPUT_BUFFER ||
 			*num_buffers > MAX_NUM_INPUT_BUFFERS)
 			fmt->count_actual = *num_buffers =
-				MIN_NUM_INPUT_BUFFERS;
+				SINGLE_INPUT_BUFFER;
 		for (i = 0; i < *num_planes; i++)
 			sizes[i] = f->fmt.pix_mp.plane_fmt[i].sizeimage;
 
@@ -627,10 +627,10 @@ static int msm_vidc_queue_setup(struct vb2_queue *q,
 		}
 		f = &fmt->v4l2_fmt;
 		*num_planes = f->fmt.pix_mp.num_planes;
-		if (*num_buffers < MIN_NUM_OUTPUT_BUFFERS ||
+		if (*num_buffers < SINGLE_OUTPUT_BUFFER ||
 			*num_buffers > MAX_NUM_OUTPUT_BUFFERS)
 			fmt->count_actual = *num_buffers =
-				MIN_NUM_OUTPUT_BUFFERS;
+				SINGLE_OUTPUT_BUFFER;
 
 		for (i = 0; i < *num_planes; i++)
 			sizes[i] = f->fmt.pix_mp.plane_fmt[i].sizeimage;
