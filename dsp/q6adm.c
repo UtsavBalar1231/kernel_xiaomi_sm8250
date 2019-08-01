@@ -870,6 +870,88 @@ exit:
 }
 EXPORT_SYMBOL(adm_set_custom_chmix_cfg);
 
+#ifdef CONFIG_MSM_CSPL
+int crus_adm_set_params(int port_id, int copp_idx, uint32_t module_id,
+			 uint32_t param_id, char *params,
+			 uint32_t params_length)
+{
+	struct param_hdr_v3 param_hdr;
+	int port_idx;
+	int rc  = 0;
+
+	pr_info("[CSPL] %s: config: port_idx %d copp_idx  %d module 0x%d, len=%d\n",
+			__func__, port_idx, copp_idx,module_id, params_length);
+
+	port_id = q6audio_convert_virtual_to_portid(port_id);
+	port_idx = adm_validate_and_get_port_index(port_id);
+
+	if (port_idx < 0) {
+		pr_err("[CSPL] %s: Invalid port_id %#x\n", __func__, port_id);
+		goto fail_cmd;
+	}
+
+	if (copp_idx < 0 || copp_idx >= MAX_COPPS_PER_PORT) {
+		pr_err("[CSPL] %s: Invalid copp_num: %d\n", __func__, copp_idx);
+		goto fail_cmd;
+	}
+
+	memset(&param_hdr, 0, sizeof(param_hdr));
+
+	param_hdr.module_id = module_id;
+	param_hdr.instance_id = INSTANCE_ID_0;
+	param_hdr.param_id = param_id;
+	param_hdr.param_size = params_length;
+
+	atomic_set(&this_adm.copp.stat[port_idx][copp_idx], -1);
+
+	pr_info("[CSPL] %s: config: port_idx %d copp_idx  %d copp SR %d, len=%d\n",
+			__func__, port_idx, copp_idx,
+			atomic_read(&this_adm.copp.rate[port_idx][copp_idx]),
+			params_length);
+
+	rc = adm_pack_and_set_one_pp_param(port_id, copp_idx, param_hdr,
+					   (uint8_t *) params);
+	if (rc)
+		pr_err("%s: Failed to set media format configuration data, err %d\n",
+		       __func__, rc);
+
+fail_cmd:
+	return 0;
+}
+EXPORT_SYMBOL(crus_adm_set_params);
+
+int crus_adm_get_params(int port_id, int copp_idx, uint32_t module_id,
+			uint32_t param_id, char *params,
+			uint32_t params_length, uint32_t client_id)
+{
+	int ret = 0;
+	struct param_hdr_v3 param_hdr;
+
+	pr_info("[CSPL] %s: Enter, port_id %d, copp_idx %d, len= %d\n",
+		__func__, port_id, copp_idx, params_length);
+
+	memset(&param_hdr, 0, sizeof(param_hdr));
+	param_hdr.module_id = module_id;
+	param_hdr.instance_id = INSTANCE_ID_0;
+	param_hdr.param_id = param_id;
+	param_hdr.param_size = params_length;
+	ret = adm_get_pp_params(port_id, copp_idx,
+				client_id, NULL, &param_hdr,
+				params);
+	if (ret) {
+		pr_err("%s: get parameters failed ret:%d\n", __func__, ret);
+		ret = -EINVAL;
+		goto done;
+	}
+
+done:
+	pr_debug("%s: Exit, ret = %d\n", __func__, ret);
+
+	return ret;
+}
+EXPORT_SYMBOL(crus_adm_get_params);
+#endif
+
 /*
  * adm_apr_send_pkt : returns 0 on success, negative otherwise.
  */

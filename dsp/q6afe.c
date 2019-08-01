@@ -23,6 +23,9 @@
 #include <ipc/apr_tal.h>
 #include "adsp_err.h"
 #include "q6afecal-hwdep.h"
+#ifdef CONFIG_MSM_CSPL
+#include <dsp/msm-cirrus-playback.h>
+#endif
 
 #define WAKELOCK_TIMEOUT	5000
 #define AFE_CLK_TOKEN	1024
@@ -430,6 +433,16 @@ static int afe_get_cal_hw_delay(int32_t path,
 				struct audio_cal_hw_delay_entry *entry);
 static int remap_cal_data(struct cal_block_data *cal_block, int cal_index);
 
+#ifdef CONFIG_MSM_CSPL
+struct afe_cspl_state cspl_afe = {
+	.apr= &this_afe.apr,
+	.status= &this_afe.status,
+	.state= &this_afe.state,
+	.wait= this_afe.wait,
+	.timeout_ms= TIMEOUT_MS,
+};
+EXPORT_SYMBOL(cspl_afe);
+#endif
 int afe_get_spk_initial_cal(void)
 {
 	return this_afe.initial_cal;
@@ -914,6 +927,10 @@ static int32_t afe_callback(struct apr_client_data *data, void *priv)
 		uint32_t *payload = data->payload;
 		uint32_t param_id;
 		uint32_t param_id_pos = 0;
+#ifdef CONFIG_MSM_CSPL
+		if (crus_afe_callback(data->payload, data->payload_size) == 0)
+			return 0;
+#endif
 
 		if (!payload || (data->token >= AFE_MAX_PORTS)) {
 			pr_err("%s: Error: size %d payload %pK token %d\n",
@@ -1453,6 +1470,20 @@ static int afe_apr_send_clk_pkt(void *data, wait_queue_head_t *wait)
 	return ret;
 }
 
+#ifdef CONFIG_MSM_CSPL
+int afe_apr_send_pkt_crus(void *data, int index, int set)
+{
+	pr_info("[CSPL] %s: index = %d, set=%d, data = %p\n",
+		__func__, index, set, data);
+
+	if (set)
+		return afe_apr_send_pkt(data, &this_afe.wait[index]);
+	else /* get */
+		return afe_apr_send_pkt(data, 0);
+}
+
+EXPORT_SYMBOL(afe_apr_send_pkt_crus);
+#endif
 /* This function shouldn't be called directly. Instead call q6afe_set_params. */
 static int q6afe_set_params_v2(u16 port_id, int index,
 			       struct mem_mapping_hdr *mem_hdr,
@@ -5662,6 +5693,11 @@ static int __afe_port_start(u16 port_id, union afe_port_config *afe_config,
 		goto fail_cmd;
 	}
 	ret = afe_send_cmd_port_start(port_id);
+#if CONFIG_MSM_CSPL
+	if (ret == 0)
+		crus_afe_port_start(port_id);
+#endif
+
 
 fail_cmd:
 	mutex_unlock(&this_afe.afe_cmd_lock);
@@ -8532,6 +8568,10 @@ int afe_close(int port_id)
 	ret = afe_apr_send_pkt(&stop, &this_afe.wait[index]);
 	if (ret)
 		pr_err("%s: AFE close failed %d\n", __func__, ret);
+
+#if CONFIG_MSM_CSPL
+    crus_afe_port_close(port_id);
+#endif
 
 fail_cmd:
 	if ((q6core_get_avcs_api_version_per_service(

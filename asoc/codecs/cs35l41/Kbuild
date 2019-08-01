@@ -6,6 +6,8 @@ else
 	KERNEL_BUILD := 0
 endif
 
+
+
 ifeq ($(KERNEL_BUILD), 1)
 	# These are configurable via Kconfig for kernel-based builds
 	# Need to explicitly configure for Android-based builds
@@ -14,13 +16,32 @@ ifeq ($(KERNEL_BUILD), 1)
 endif
 
 ifeq ($(KERNEL_BUILD), 0)
-	ifeq ($(CONFIG_ARCH_LAHAINA), y)
-		include $(AUDIO_ROOT)/config/lahainaauto.conf
-		INCS    +=  -include $(AUDIO_ROOT)/config/lahainaautoconf.h
+	ifeq ($(CONFIG_ARCH_SM8150), y)
+		include $(AUDIO_ROOT)/config/sm8150auto.conf
+		export
+		INCS    +=  -include $(AUDIO_ROOT)/config/sm8150autoconf.h
 	endif
+	ifeq ($(CONFIG_ARCH_SM6150), y)
+		include $(AUDIO_ROOT)/config/sm8150auto.conf
+		export
+		INCS    +=  -include $(AUDIO_ROOT)/config/sm8150autoconf.h
+	endif
+
+	ifeq ($(CONFIG_ARCH_KONA), y)
+		include $(AUDIO_ROOT)/config/konaauto.conf
+		INCS    +=  -include $(AUDIO_ROOT)/config/konaautoconf.h
+	endif
+
 	ifeq ($(CONFIG_ARCH_LITO), y)
 		include $(AUDIO_ROOT)/config/litoauto.conf
+		export
 		INCS    +=  -include $(AUDIO_ROOT)/config/litoautoconf.h
+	endif
+
+	ifeq ($(CONFIG_ARCH_SDMSHRIKE), y)
+		include $(AUDIO_ROOT)/config/sm8150auto.conf
+		export
+		INCS    +=  -include $(AUDIO_ROOT)/config/sm8150autoconf.h
 	endif
 endif
 
@@ -48,14 +69,14 @@ UAPI_INC :=	-I$(AUDIO_ROOT)/include/$(UAPI_DIR)
 COMMON_DIR :=	include
 COMMON_INC :=	-I$(AUDIO_ROOT)/$(COMMON_DIR)
 
-############ WSA883X ############
+############ CS35L41 ############
 
-# for WSA883X Codec
-ifdef CONFIG_SND_SOC_WSA883X
-	WSA883X_OBJS += wsa883x.o
-	WSA883X_OBJS += wsa883x-regmap.o
-	WSA883X_OBJS += wsa883x-tables.o
-	WSA883X_OBJS += wsa883x-temp-sensor.o
+# for CS35L41 Codec
+ifdef CONFIG_SND_SOC_CS35L41
+	CS35L41_OBJS += cs35l41.o
+	CS35L41_OBJS += cs35l41-i2c.o
+	CS35L41_OBJS += cs35l41-tables.o
+	CS35L41_OBJS += wm_adsp.o
 endif
 
 LINUX_INC +=	-Iinclude/linux
@@ -65,13 +86,12 @@ INCS +=		$(COMMON_INC) \
 
 EXTRA_CFLAGS += $(INCS)
 
-
-ifeq ($(TARGET_PRODUCT), cmi)
-	CDEFINES += -DCONFIG_TARGET_PRODUCT_UMI
+ifneq (,$(filter $(TARGET_PRODUCT), draco))
+	CDEFINES += -DCONFIG_TARGET_PRODUCT_DRACO
 endif
 
-ifeq ($(TARGET_PRODUCT), umi)
-	CDEFINES += -DCONFIG_TARGET_PRODUCT_CMI
+ifeq ($(TARGET_PRODUCT), $(filter $(TARGET_PRODUCT), umi cmi urd skuld cas))
+	CDEFINES += -DCONFIG_AUDIO_SMARTPA_STEREO
 endif
 
 CDEFINES +=	-DANI_LITTLE_BYTE_ENDIAN \
@@ -108,8 +128,8 @@ KBUILD_EXTRA_SYMBOLS +=$(OUT)/obj/vendor/qcom/opensource/audio-kernel/soc/Module
 endif
 
 # Module information used by KBuild framework
-obj-$(CONFIG_SND_SOC_WSA883X) += wsa883x_dlkm.o
-wsa883x_dlkm-y := $(WSA883X_OBJS)
+obj-$(CONFIG_SND_SOC_CS35L41) += cs35l41_dlkm.o
+cs35l41_dlkm-y := $(CS35L41_OBJS)
 
 # inject some build related information
 DEFINES += -DBUILD_TIMESTAMP=\"$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')\"

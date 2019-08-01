@@ -16,6 +16,11 @@ int core_init(void);
 int rtac_init(void);
 int msm_audio_ion_init(void);
 int avtimer_init(void);
+
+#ifdef CONFIG_MSM_CSPL
+int crus_sp_init(void);
+#endif
+
 #ifdef CONFIG_MSM_MDF
 int msm_mdf_init(void);
 void msm_mdf_exit(void);
@@ -42,6 +47,10 @@ static inline int spk_params_init(void)
 static inline void spk_params_exit(void)
 {
 }
+#endif
+
+#ifdef CONFIG_MSM_CSPL
+void crus_sp_exit(void);
 #endif
 
 void avtimer_exit(void);
