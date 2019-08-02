@@ -896,7 +896,7 @@
 			qcom,bus-dev = <&fab_gem_noc>;
 			qcom,bcms = <&bcm_sh2>;
 			qcom,ap-owned;
-			qcom,prio = <6>;
+			qcom,prio = <1>;
 		};
 
 		mas_alm_sys_tcu: mas-alm-sys-tcu {
@@ -1004,6 +1004,7 @@
 			qcom,bus-dev = <&fab_gem_noc>;
 			qcom,ap-owned;
 			qcom,prio = <0>;
+			qcom,forwarding;
 		};
 
 		mas_qnm_snoc_gc: mas-qnm-snoc-gc {
@@ -1085,7 +1086,7 @@
 			qcom,bus-dev = <&fab_mmss_noc>;
 			qcom,bcms = <&bcm_mm3>;
 			qcom,ap-owned;
-			qcom,prio = <0>;
+			qcom,prio = <5>;
 			qcom,forwarding;
 			qcom,node-qos-bcms = <7012 0 1>;
 		};
