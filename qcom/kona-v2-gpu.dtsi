@@ -13,6 +13,11 @@
 			opp-microvolt = <RPMH_REGULATOR_LEVEL_SVS_L1>;
 		};
 
+		opp-441600000 {
+			opp-hz = /bits/ 64 <441600000>;
+			opp-microvolt = <RPMH_REGULATOR_LEVEL_SVS_L0>;
+		};
+
 		opp-400000000 {
 			opp-hz = /bits/ 64 <400000000>;
 			opp-microvolt = <RPMH_REGULATOR_LEVEL_SVS>;
@@ -30,6 +35,8 @@
 
 	/* GPU OPP data */
 	operating-points-v2 = <&gpu_opp_table_v2>;
+
+	qcom,initial-pwrlevel = <3>;
 
 	/* Power levels */
 	qcom,gpu-pwrlevels {
@@ -52,18 +59,30 @@
 
 		qcom,gpu-pwrlevel@1 {
 			reg = <1>;
-			qcom,gpu-freq = <400000000>;
+			qcom,gpu-freq = <441600000>;
 			qcom,bus-freq-ddr7 = <10>;
 			qcom,bus-min-ddr7 = <8>;
 			qcom,bus-max-ddr7 = <10>;
 
-			qcom,bus-freq-ddr8 = <9>;
-			qcom,bus-min-ddr8 = <8>;
+			qcom,bus-freq-ddr8 = <8>;
+			qcom,bus-min-ddr8 = <7>;
 			qcom,bus-max-ddr8 = <9>;
 		};
 
 		qcom,gpu-pwrlevel@2 {
 			reg = <2>;
+			qcom,gpu-freq = <400000000>;
+			qcom,bus-freq-ddr7 = <10>;
+			qcom,bus-min-ddr7 = <8>;
+			qcom,bus-max-ddr7 = <10>;
+
+			qcom,bus-freq-ddr8 = <8>;
+			qcom,bus-min-ddr8 = <6>;
+			qcom,bus-max-ddr8 = <9>;
+		};
+
+		qcom,gpu-pwrlevel@3 {
+			reg = <3>;
 			qcom,gpu-freq = <305000000>;
 			qcom,bus-freq-ddr7 = <3>;
 			qcom,bus-min-ddr7 = <2>;
@@ -74,8 +93,8 @@
 			qcom,bus-max-ddr8 = <9>;
 		};
 
-		qcom,gpu-pwrlevel@3 {
-			reg = <3>;
+		qcom,gpu-pwrlevel@4 {
+			reg = <4>;
 			qcom,gpu-freq = <0>;
 			qcom,bus-freq = <0>;
 			qcom,bus-min = <0>;
