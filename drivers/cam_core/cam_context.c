@@ -493,6 +493,31 @@ int cam_context_handle_stop_dev(struct cam_context *ctx,
 	return rc;
 }
 
+int cam_context_handle_info_dump(void *context,
+	enum cam_context_dump_id id)
+{
+	int rc = 0;
+	struct cam_context *ctx = (struct cam_context *)context;
+
+	if (!ctx || !ctx->state_machine) {
+		CAM_ERR(CAM_CORE, "Context is not ready");
+		return -EINVAL;
+	}
+
+	mutex_lock(&ctx->ctx_mutex);
+	if (ctx->state_machine[ctx->state].dumpinfo_ops)
+		rc = ctx->state_machine[ctx->state].dumpinfo_ops(ctx,
+			id);
+	mutex_unlock(&ctx->ctx_mutex);
+
+	if (rc)
+		CAM_WARN(CAM_CORE,
+			"Dump for id %u failed on ctx_id %u name %s state %d",
+			id, ctx->ctx_id, ctx->dev_name, ctx->state);
+
+	return rc;
+}
+
 int cam_context_init(struct cam_context *ctx,
 	const char *dev_name,
 	uint64_t dev_id,

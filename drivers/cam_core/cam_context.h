@@ -138,6 +138,8 @@ struct cam_ctx_crm_ops {
  * @crm_ops:               CRM to context interface function table
  * @irq_ops:               Hardware event handle function
  * @pagefault_ops:         Function to be called on page fault
+ * @dumpinfo_ops:          Function to be invoked for dumping any
+ *                         context info
  *
  */
 struct cam_ctx_ops {
@@ -145,6 +147,7 @@ struct cam_ctx_ops {
 	struct cam_ctx_crm_ops       crm_ops;
 	cam_hw_event_cb_func         irq_ops;
 	cam_hw_pagefault_cb_func     pagefault_ops;
+	cam_ctx_info_dump_cb_func    dumpinfo_ops;
 };
 
 /**
@@ -405,6 +408,19 @@ int cam_context_handle_start_dev(struct cam_context *ctx,
  */
 int cam_context_handle_stop_dev(struct cam_context *ctx,
 		struct cam_start_stop_dev_cmd *cmd);
+
+/**
+ * cam_context_handle_info_dump()
+ *
+ * @brief:        Handle any dump info for the context
+ *
+ * @ctx:          Object pointer for cam_context
+ * @id:           To indicate which info pertaining
+ *                to that ctx needs to be dumped
+ *
+ */
+int cam_context_handle_info_dump(void *context,
+	enum cam_context_dump_id id);
 
 /**
  * cam_context_deinit()

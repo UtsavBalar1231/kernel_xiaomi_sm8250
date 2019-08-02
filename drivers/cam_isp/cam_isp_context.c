@@ -139,6 +139,24 @@ static void __cam_isp_ctx_dump_state_monitor_array(
 	}
 }
 
+static int cam_isp_context_info_dump(void *context,
+	enum cam_context_dump_id id)
+{
+	struct cam_context *ctx = (struct cam_context *)context;
+
+	switch (id) {
+	case CAM_CTX_DUMP_ACQ_INFO: {
+		cam_context_dump_hw_acq_info(ctx);
+		break;
+	}
+	default:
+		CAM_DBG(CAM_ISP, "DUMP id not valid %u", id);
+		break;
+	}
+
+	return 0;
+}
+
 static void cam_isp_ctx_dump_req(struct cam_isp_ctx_req *req_isp)
 {
 	int i = 0, rc = 0;
@@ -3365,7 +3383,6 @@ end:
 	return rc;
 }
 
-
 static int __cam_isp_ctx_acquire_hw_in_acquired(struct cam_context *ctx,
 	void *args)
 {
@@ -3904,6 +3921,7 @@ static struct cam_ctx_ops
 		},
 		.irq_ops = NULL,
 		.pagefault_ops = cam_isp_context_dump_active_request,
+		.dumpinfo_ops = cam_isp_context_info_dump,
 	},
 	/* Ready */
 	{
@@ -3919,6 +3937,7 @@ static struct cam_ctx_ops
 		},
 		.irq_ops = NULL,
 		.pagefault_ops = cam_isp_context_dump_active_request,
+		.dumpinfo_ops = cam_isp_context_info_dump,
 	},
 	/* Activated */
 	{
@@ -3936,6 +3955,7 @@ static struct cam_ctx_ops
 		},
 		.irq_ops = __cam_isp_ctx_handle_irq_in_activated,
 		.pagefault_ops = cam_isp_context_dump_active_request,
+		.dumpinfo_ops = cam_isp_context_info_dump,
 	},
 };
 
