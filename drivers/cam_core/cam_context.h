@@ -32,8 +32,9 @@ enum cam_context_state {
 	CAM_CTX_AVAILABLE            = 1,
 	CAM_CTX_ACQUIRED             = 2,
 	CAM_CTX_READY                = 3,
-	CAM_CTX_ACTIVATED            = 4,
-	CAM_CTX_STATE_MAX            = 5,
+	CAM_CTX_FLUSHED              = 4,
+	CAM_CTX_ACTIVATED            = 5,
+	CAM_CTX_STATE_MAX            = 6,
 };
 
 /**

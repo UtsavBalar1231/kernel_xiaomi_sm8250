@@ -250,6 +250,8 @@ static struct cam_ctx_ops
 		.irq_ops = __cam_icp_handle_buf_done_in_ready,
 		.pagefault_ops = cam_icp_context_dump_active_request,
 	},
+	/* Flushed */
+	{},
 	/* Activated */
 	{
 		.ioctl_ops = {},
