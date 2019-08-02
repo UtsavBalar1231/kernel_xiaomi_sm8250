@@ -3562,8 +3562,8 @@
 		qcom,spss-prod-firmware-name = "spss1p";  /* 8 chars max */
 		qcom,spss-debug-reg-addr = <0x01886020>;
 		qcom,spss-emul-type-reg-addr = <0x01fc8004>;
-		qcom,pil-addr = <0x8bd00000>; // see pil_spss_mem
-		qcom,pil-size = <0x080000>; // padding to 512 KB
+		qcom,pil-addr = <0x8BE00000>; // see pil_spss_mem
+		qcom,pil-size = <0x0F0000>; // padding to 960 KB
 		status = "ok";
 	};
 
