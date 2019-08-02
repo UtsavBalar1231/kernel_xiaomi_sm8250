@@ -44,3 +44,17 @@ smb1390: qcom,smb1390@10 {
 		};
 	};
 };
+
+smb1390_slave: qcom,smb1390_slave@18 {
+	compatible = "qcom,i2c-pmic";
+	reg = <0x18>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	qcom,periph-map = <0x10>;
+	status = "disabled";
+
+	smb1390_slave_charger: qcom,charge_pump_slave {
+		compatible = "qcom,smb1390-slave";
+		status = "disabled";
+	};
+};
