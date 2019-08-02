@@ -2096,19 +2096,22 @@ static void handle_session_flush(enum hal_command_response cmd, void *data)
 			}
 		}
 	}
-	inst->in_flush = false;
 	flush_event.type = V4L2_EVENT_MSM_VIDC_FLUSH_DONE;
 	ptr = (u32 *)flush_event.u.data;
 
 	flush_type = response->data.flush_type;
 	switch (flush_type) {
 	case HAL_FLUSH_INPUT:
+		inst->in_flush = false;
 		ptr[0] = V4L2_CMD_FLUSH_OUTPUT;
 		break;
 	case HAL_FLUSH_OUTPUT:
+		inst->out_flush = false;
 		ptr[0] = V4L2_CMD_FLUSH_CAPTURE;
 		break;
 	case HAL_FLUSH_ALL:
+		inst->in_flush = false;
+		inst->out_flush = false;
 		ptr[0] |= V4L2_CMD_FLUSH_CAPTURE;
 		ptr[0] |= V4L2_CMD_FLUSH_OUTPUT;
 		break;
@@ -5391,14 +5394,20 @@ int msm_comm_flush(struct msm_vidc_inst *inst, u32 flags)
 	core = inst->core;
 	hdev = core->device;
 
-	ip_flush = flags & V4L2_CMD_FLUSH_OUTPUT;
-	op_flush = flags & V4L2_CMD_FLUSH_CAPTURE;
+	ip_flush = !!(flags & V4L2_CMD_FLUSH_OUTPUT);
+	op_flush = !!(flags & V4L2_CMD_FLUSH_CAPTURE);
 
 	if (ip_flush && !op_flush) {
 		dprintk(VIDC_ERR,
 			"Input only flush not supported, making it flush all\n");
 		op_flush = true;
-		return 0;
+		goto exit;
+	}
+
+	if ((inst->in_flush && ip_flush) || (inst->out_flush && op_flush)) {
+		dprintk(VIDC_ERR, "%s: %x : Already in flush\n",
+			__func__, hash32_ptr(inst->session));
+		goto exit;
 	}
 
 	msm_clock_data_reset(inst);
@@ -5409,12 +5418,13 @@ int msm_comm_flush(struct msm_vidc_inst *inst, u32 flags)
 				"Core %pK and inst %pK are in bad state\n",
 					core, inst);
 		msm_comm_flush_in_invalid_state(inst);
-		return 0;
+		goto exit;
 	}
 
 	mutex_lock(&inst->flush_lock);
 	/* enable in flush */
-	inst->in_flush = true;
+	inst->in_flush = ip_flush;
+	inst->out_flush = op_flush;
 
 	mutex_lock(&inst->registeredbufs.lock);
 	list_for_each_entry_safe(mbuf, next, &inst->registeredbufs.list, list) {
@@ -5472,10 +5482,12 @@ int msm_comm_flush(struct msm_vidc_inst *inst, u32 flags)
 		dprintk(VIDC_ERR,
 			"Sending flush to firmware failed, flush out all buffers\n");
 		msm_comm_flush_in_invalid_state(inst);
-		/* disable in_flush */
+		/* disable in_flush & out_flush */
 		inst->in_flush = false;
+		inst->out_flush = false;
 	}
 
+exit:
 	return rc;
 }
 
@@ -6850,7 +6862,7 @@ void handle_release_buffer_reference(struct msm_vidc_inst *inst,
 		goto unlock;
 
 	/* buffer found means client queued the buffer already */
-	if (inst->in_reconfig || inst->in_flush) {
+	if (inst->in_reconfig || inst->out_flush) {
 		print_vidc_buffer(VIDC_HIGH, "rbr flush buf", inst, mbuf);
 		msm_comm_flush_vidc_buffer(inst, mbuf);
 		msm_comm_unmap_vidc_buffer(inst, mbuf);

@@ -526,6 +526,7 @@ struct msm_vidc_inst {
 	int bit_depth;
 	struct kref kref;
 	bool in_flush;
+	bool out_flush;
 	u32 pic_struct;
 	u32 colour_space;
 	u32 profile;
