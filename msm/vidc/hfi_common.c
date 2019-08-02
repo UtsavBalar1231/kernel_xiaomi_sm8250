@@ -1326,6 +1326,10 @@ static int __set_clocks(struct venus_hfi_device *device, u32 freq)
 	struct clock_info *cl;
 	int rc = 0;
 
+	/* bail early if requested clk_freq is not changed */
+	if (freq == device->clk_freq)
+		return 0;
+
 	venus_hfi_for_each_clock(device, cl) {
 		if (cl->has_scaling) {/* has_scaling */
 			rc = __set_clk_rate(device, cl, freq);
