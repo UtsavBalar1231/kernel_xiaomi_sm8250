@@ -668,6 +668,9 @@ bool rmnet_perf_core_dissect_pkt(unsigned char *payload,
 			pkt_info->frag_desc->trans_len = pkt_info->trans_len;
 	} else {
 		/* Not a protocol we can optimize */
+		if (!rmnet_perf_core_is_deag_mode())
+			pkt_info->frag_desc->hdrs_valid = 0;
+
 		goto done;
 	}
 
