@@ -309,7 +309,7 @@
 
 			skin_cdsp {
 				trip = <&cx_emer_trip>;
-				cooling-device = <&msm_cdsp_rm 5 5>;
+				cooling-device = <&msm_cdsp_rm 7 7>;
 			};
 		};
 	};

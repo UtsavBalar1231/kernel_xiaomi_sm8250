@@ -1319,12 +1319,12 @@
 			cdsp-cdev0 {
 				trip = <&q6_hvx_trip0>;
 				cooling-device = <&msm_cdsp_rm
-						THERMAL_NO_LIMIT 5>;
+						THERMAL_NO_LIMIT 7>;
 			};
 
 			cdsp-cdev1 {
 				trip = <&q6_hvx_trip1>;
-				cooling-device = <&msm_cdsp_rm 5 5>;
+				cooling-device = <&msm_cdsp_rm 7 7>;
 			};
 
 			gpu-cdev {
