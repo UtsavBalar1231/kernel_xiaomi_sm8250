@@ -658,6 +658,13 @@
 		qcom,scandump-sizes = <0x40000>;
 	};
 
+	rpm_bus: qcom,rpm-smd {
+		compatible = "qcom,rpm-smd";
+		rpm-channel-name = "rpm_requests";
+		interrupts = <GIC_SPI 194 IRQ_TYPE_EDGE_RISING>;
+		rpm-channel-type = <15>; /* SMD_APPS_RPM */
+	};
+
 	qcom,chd_silver {
 		compatible = "qcom,core-hang-detect";
 		label = "silver";
