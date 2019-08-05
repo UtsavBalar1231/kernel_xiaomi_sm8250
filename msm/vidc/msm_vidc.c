@@ -711,6 +711,7 @@ bool is_vidc_cvp_allowed(struct msm_vidc_inst *inst)
 	bool allowed = false;
 	struct msm_vidc_core *core;
 	struct v4l2_ctrl *cvp_disable;
+	struct v4l2_ctrl *superframe_enable;
 
 	if (!inst || !inst->core) {
 		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
@@ -730,15 +731,18 @@ bool is_vidc_cvp_allowed(struct msm_vidc_inst *inst)
 	 *      - V4L2_MPEG_VIDEO_BITRATE_MODE_CQ
 	 *      - V4L2_MPEG_VIDEO_BITRATE_MODE_CBR
 	 * - not secure session
+	 * - not superframe enabled
 	 */
 	cvp_disable = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VENC_CVP_DISABLE);
+	superframe_enable = get_ctrl(inst, V4L2_CID_MPEG_VIDC_SUPERFRAME);
 
 	if (core->resources.cvp_external && !cvp_disable->val &&
 		!(inst->prop.extradata_ctrls & EXTRADATA_ENC_INPUT_CVP) &&
 		inst->rc_type != RATE_CONTROL_OFF &&
 		inst->rc_type != V4L2_MPEG_VIDEO_BITRATE_MODE_CQ &&
 		!inst->clk_data.is_legacy_cbr &&
-		!is_secure_session(inst)) {
+		!is_secure_session(inst) &&
+		!superframe_enable->val) {
 		dprintk(VIDC_HIGH, "%s: cvp allowed\n", __func__);
 		allowed = true;
 	} else {
@@ -778,20 +782,38 @@ static int msm_vidc_prepare_preprocess(struct msm_vidc_inst *inst)
 		dprintk(VIDC_ERR, "%s: no cvp preprocessing\n", __func__);
 		goto exit;
 	}
-	dprintk(VIDC_HIGH, "%s: cvp enabled\n", __func__);
-
-	dprintk(VIDC_HIGH, "%s: set CVP extradata\n", __func__);
-	rc = msm_comm_set_extradata(inst,
-		HFI_PROPERTY_PARAM_VENC_CVP_METADATA_EXTRADATA, 1);
-	if (rc) {
-		dprintk(VIDC_ERR, "%s: set CVP extradata failed\n", __func__);
-		goto exit;
-	}
+	dprintk(VIDC_HIGH, "%s: kernel to kernel cvp enabled\n", __func__);
+	inst->prop.extradata_ctrls |= EXTRADATA_ENC_INPUT_KK_CVP;
 
 exit:
 	if (rc)
 		msm_vidc_cvp_unprepare_preprocess(inst);
 	return rc;
+}
+
+static bool msm_vidc_set_cvp_metadata(struct msm_vidc_inst *inst) {
+
+	int rc = 0;
+	u32 value = 0x0;
+
+	if (!inst) {
+		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		return false;
+	}
+
+	if ((inst->prop.extradata_ctrls & EXTRADATA_ENC_INPUT_CVP) ||
+	    (inst->prop.extradata_ctrls & EXTRADATA_ENC_INPUT_KK_CVP))
+	    value = 0x1;
+
+	dprintk(VIDC_HIGH, "%s: CVP extradata %d\n", __func__, value);
+	rc = msm_comm_set_extradata(inst,
+		HFI_PROPERTY_PARAM_VENC_CVP_METADATA_EXTRADATA, value);
+	if (rc) {
+		dprintk(VIDC_ERR,
+			"%s: set CVP extradata failed\n", __func__);
+		return false;
+	}
+	return true;
 }
 
 static inline int start_streaming(struct msm_vidc_inst *inst)
@@ -819,6 +841,8 @@ static inline int start_streaming(struct msm_vidc_inst *inst)
 			/* ignore error */
 			rc = 0;
 		}
+		if (!(msm_vidc_set_cvp_metadata(inst)))
+			goto fail_start;
 	}
 
 	b.buffer_type = HFI_BUFFER_OUTPUT;

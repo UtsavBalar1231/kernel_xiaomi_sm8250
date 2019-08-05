@@ -4020,7 +4020,6 @@ int msm_venc_set_hdr_info(struct msm_vidc_inst *inst)
 int msm_venc_set_extradata(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
-	u32 value = 0x0;
 	u32 codec;
 
 	codec = get_v4l2_codec(inst);
@@ -4056,13 +4055,8 @@ int msm_venc_set_extradata(struct msm_vidc_inst *inst)
 		}
 	}
 
-	if (inst->prop.extradata_ctrls & EXTRADATA_ENC_INPUT_CVP)
-		value = 0x1;
-	dprintk(VIDC_HIGH, "%s: CVP extradata %d\n", __func__, value);
-	rc = msm_comm_set_extradata(inst,
-		HFI_PROPERTY_PARAM_VENC_CVP_METADATA_EXTRADATA, value);
-	if (rc)
-		dprintk(VIDC_ERR, "%s: set CVP extradata failed\n", __func__);
+	/* CVP extradata is common between user space and external CVP kernel to kernel.
+	   Hence, skipping here and will be set after msm_vidc_prepare_preprocess in start_streaming*/
 
 	return rc;
 }
