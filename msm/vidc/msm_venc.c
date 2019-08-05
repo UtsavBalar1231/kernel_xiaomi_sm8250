@@ -755,7 +755,7 @@ static struct msm_vidc_ctrl msm_venc_ctrls[] = {
 		.type = V4L2_CTRL_TYPE_BOOLEAN,
 		.minimum = V4L2_MPEG_MSM_VIDC_DISABLE,
 		.maximum = V4L2_MPEG_MSM_VIDC_ENABLE,
-		.default_value = V4L2_MPEG_MSM_VIDC_DISABLE,
+		.default_value = V4L2_MPEG_MSM_VIDC_ENABLE,
 		.step = 1,
 	},
 	{
@@ -2016,7 +2016,6 @@ int msm_venc_set_priority(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
 	struct hfi_device *hdev;
-	struct v4l2_ctrl *ctrl;
 	struct hfi_enable enable;
 
 	if (!inst || !inst->core) {
@@ -2025,8 +2024,7 @@ int msm_venc_set_priority(struct msm_vidc_inst *inst)
 	}
 	hdev = inst->core->device;
 
-	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_PRIORITY);
-	enable.enable = !!ctrl->val;
+	enable.enable = is_realtime_session(inst);
 
 	dprintk(VIDC_HIGH, "%s: %d\n", __func__, enable.enable);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,

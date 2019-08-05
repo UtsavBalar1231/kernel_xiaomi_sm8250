@@ -1628,7 +1628,7 @@ static u32 get_core_load(struct msm_vidc_core *core,
 	list_for_each_entry(inst, &core->instances, list) {
 		u32 cycles, lp_cycles;
 
-		real_time_mode = inst->flags & VIDC_REALTIME ? true : false;
+		real_time_mode = is_realtime_session(inst);
 		if (!(inst->clk_data.core_id & core_id))
 			continue;
 		if (real_time_mode != real_time)
@@ -1792,7 +1792,7 @@ void msm_print_core_status(struct msm_vidc_core *core, u32 core_id)
 				"WORK_MODE_1" : "WORK_MODE_2",
 			inst->clk_data.work_route,
 			inst->flags & VIDC_LOW_POWER ? "LP" : "HQ",
-			inst->flags & VIDC_REALTIME ? "RealTime" : "NonRTime",
+			is_realtime_session(inst) ? "RealTime" : "NonRTime",
 			inst->clk_data.min_freq);
 	}
 	mutex_unlock(&core->lock);

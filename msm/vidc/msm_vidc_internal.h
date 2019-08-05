@@ -432,7 +432,6 @@ enum msm_vidc_modes {
 	VIDC_TURBO = BIT(1),
 	VIDC_THUMBNAIL = BIT(2),
 	VIDC_LOW_POWER = BIT(3),
-	VIDC_REALTIME = BIT(4),
 };
 
 struct msm_vidc_core_ops {

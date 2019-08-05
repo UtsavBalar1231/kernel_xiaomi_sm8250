@@ -97,7 +97,9 @@ static inline bool is_image_session(struct msm_vidc_inst *inst)
 
 static inline bool is_realtime_session(struct msm_vidc_inst *inst)
 {
-	return !!(inst->flags & VIDC_REALTIME);
+	struct v4l2_ctrl *ctrl;
+	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_PRIORITY);
+	return !!ctrl->val;
 }
 
 static inline bool is_secure_session(struct msm_vidc_inst *inst)
