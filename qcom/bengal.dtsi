@@ -16,7 +16,7 @@
 	model = "Qualcomm Technologies, Inc. BENGAL";
 	compatible = "qcom,bengal";
 	qcom,msm-id = <417 0x10000>;
-	interrupt-parent = <&intc>;
+	interrupt-parent = <&wakegic>;
 
 	#address-cells = <2>;
 	#size-cells = <2>;
@@ -419,6 +419,7 @@
 		compatible = "arm,gic-v3";
 		#interrupt-cells = <3>;
 		interrupt-controller;
+		interrupt-parent = <&intc>;
 		#redistributor-regions = <1>;
 		redistributor-stride = <0x0 0x20000>;
 		reg = <0xf200000 0x10000>,     /* GICD */
@@ -554,6 +555,26 @@
 		qcom,apps-ch-pipes = <0x0>;
 		qcom,ea-pc = <0x360>;
 		status = "ok";
+	};
+
+	wakegic: wake-gic {
+		compatible = "qcom,mpm-gic-bengal", "qcom,mpm-gic";
+		interrupts-extended = <&wakegic GIC_SPI 171
+						IRQ_TYPE_EDGE_RISING>;
+		reg = <0x45f01b8 0x1000>,
+			<0xf011008 0x4>;  /* MSM_APCS_GCC_BASE 4K */
+		reg-names = "vmpm", "ipc";
+		qcom,num-mpm-irqs = <96>;
+		interrupt-controller;
+		interrupt-parent = <&intc>;
+		#interrupt-cells = <3>;
+	};
+
+	wakegpio: wake-gpio {
+		compatible = "qcom,mpm-gpio";
+		interrupt-controller;
+		interrupt-parent = <&intc>;
+		#interrupt-cells = <2>;
 	};
 
 	timer {
