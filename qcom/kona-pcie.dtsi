@@ -94,6 +94,7 @@
 
 		qcom,boot-option = <0x1>;
 		qcom,drv-supported;
+		qcom,drv-l1ss-timeout-us = <10000>; /* 10ms */
 		qcom,use-19p2mhz-aux-clk;
 		qcom,no-l0s-supported;
 		qcom,l1-2-th-scale = <2>; /* 1us */
