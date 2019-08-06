@@ -6539,21 +6539,22 @@ static void calc_load_migrate(struct rq *rq)
 		atomic_long_add(delta, &calc_load_tasks);
 }
 
-static void put_prev_task_fake(struct rq *rq, struct task_struct *prev)
+static struct task_struct *__pick_migrate_task(struct rq *rq)
 {
+	const struct sched_class *class;
+	struct task_struct *next;
+
+	for_each_class(class) {
+		next = class->pick_next_task(rq, NULL, NULL);
+		if (next) {
+			next->sched_class->put_prev_task(rq, next);
+			return next;
+		}
+	}
+
+	/* The idle class should always have a runnable task */
+	BUG();
 }
-
-static const struct sched_class fake_sched_class = {
-	.put_prev_task = put_prev_task_fake,
-};
-
-static struct task_struct fake_task = {
-	/*
-	 * Avoid pull_{rt,dl}_task()
-	 */
-	.prio = MAX_PRIO + 1,
-	.sched_class = &fake_sched_class,
-};
 
 /*
  * Remove a task from the runqueue and pretend that it's migrating. This
@@ -6633,12 +6634,7 @@ static void migrate_tasks(struct rq *dead_rq, struct rq_flags *rf,
 		if (rq->nr_running == 1)
 			break;
 
-		/*
-		 * pick_next_task() assumes pinned rq->lock:
-		 */
-		next = pick_next_task(rq, &fake_task, rf);
-		BUG_ON(!next);
-		put_prev_task(rq, next);
+		next = __pick_migrate_task(rq);
 
 		if (!migrate_pinned_tasks && next->flags & PF_KTHREAD &&
 			!cpumask_intersects(&avail_cpus, &next->cpus_allowed)) {
