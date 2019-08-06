@@ -205,7 +205,7 @@
 	qcom,mdss-dsi-panel-status-read-length = <1>;
 
 	qcom,dsi-dyn-clk-enable;
-	qcom,dsi-dyn-clk-list = <527839720 525640384 523441048>;
+	qcom,dsi-dyn-clk-list = <534578386 536805792 539033152>;
 
 	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0",
 				"src_byte_clk0", "src_pixel_clk0",
