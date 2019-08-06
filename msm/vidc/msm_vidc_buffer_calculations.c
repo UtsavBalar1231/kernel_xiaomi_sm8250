@@ -25,9 +25,6 @@
 /* extra output buffers in case of decoder batch */
 #define BATCH_DEC_EXTRA_OUTPUT_BUFFERS 6
 
-/* extra o/p buffers in case of decoder dcvs */
-#define DCVS_DEC_EXTRA_OUTPUT_BUFFERS 4
-
 /* Encoder buffer count macros */
 /* total input buffers for encoder HFR usecase */
 #define HFR_ENC_TOTAL_INPUT_BUFFERS 8

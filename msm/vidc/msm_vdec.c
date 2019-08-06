@@ -380,7 +380,7 @@ static struct msm_vidc_ctrl msm_vdec_ctrls[] = {
 	},
 	{
 		.id = V4L2_CID_MPEG_VIDC_VIDEO_OPERATING_RATE,
-		.name = "Set Decoder Operating rate",
+		.name = "Decoder Operating rate",
 		.type = V4L2_CTRL_TYPE_INTEGER,
 		.minimum = (MINIMUM_FPS << 16),
 		.maximum = INT_MAX,
@@ -670,6 +670,7 @@ int msm_vdec_s_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 	 */
 	if (inst->batch.enable)
 		inst->batch.enable = is_batching_allowed(inst);
+	msm_dcvs_try_enable(inst);
 
 err_invalid_fmt:
 	return rc;
