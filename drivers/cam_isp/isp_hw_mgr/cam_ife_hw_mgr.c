@@ -4846,7 +4846,7 @@ static int cam_isp_packet_generic_blob_handler(void *user_data,
 		}
 
 		/* Check for integer overflow */
-		if (clock_config->num_rdi != 1) {
+		if (clock_config->num_rdi > 1) {
 			if (sizeof(uint64_t) > ((UINT_MAX -
 				sizeof(struct cam_isp_clock_config)) /
 				(clock_config->num_rdi - 1))) {
@@ -4858,8 +4858,9 @@ static int cam_isp_packet_generic_blob_handler(void *user_data,
 			}
 		}
 
-		if (blob_size < (sizeof(struct cam_isp_clock_config) +
-			sizeof(uint64_t) * (clock_config->num_rdi - 1))) {
+		if ((clock_config->num_rdi != 0) && (blob_size <
+			(sizeof(struct cam_isp_clock_config) +
+			sizeof(uint64_t) * (clock_config->num_rdi - 1)))) {
 			CAM_ERR(CAM_ISP, "Invalid blob size %u expected %lu",
 				blob_size,
 				sizeof(uint32_t) * 2 + sizeof(uint64_t) *
@@ -4893,7 +4894,7 @@ static int cam_isp_packet_generic_blob_handler(void *user_data,
 		}
 
 		/* Check for integer overflow */
-		if (bw_config->num_rdi != 1) {
+		if (bw_config->num_rdi > 1) {
 			if (sizeof(struct cam_isp_bw_vote) > ((UINT_MAX -
 				sizeof(struct cam_isp_bw_config)) /
 				(bw_config->num_rdi - 1))) {
@@ -4905,9 +4906,10 @@ static int cam_isp_packet_generic_blob_handler(void *user_data,
 			}
 		}
 
-		if (blob_size < (sizeof(struct cam_isp_bw_config) +
+		if ((bw_config->num_rdi != 0) && (blob_size <
+			(sizeof(struct cam_isp_bw_config) +
 			(bw_config->num_rdi - 1) *
-			sizeof(struct cam_isp_bw_vote))) {
+			sizeof(struct cam_isp_bw_vote)))) {
 			CAM_ERR(CAM_ISP, "Invalid blob size %u expected %lu",
 				blob_size, sizeof(struct cam_isp_bw_config) +
 				(bw_config->num_rdi - 1) *
@@ -4949,7 +4951,7 @@ static int cam_isp_packet_generic_blob_handler(void *user_data,
 		}
 
 		/* Check for integer overflow */
-		if (bw_config->num_paths != 1) {
+		if (bw_config->num_paths > 1) {
 			if (sizeof(struct cam_axi_per_path_bw_vote) >
 				((UINT_MAX -
 				sizeof(struct cam_isp_bw_config_v2)) /
@@ -4963,8 +4965,9 @@ static int cam_isp_packet_generic_blob_handler(void *user_data,
 			}
 		}
 
-		if (blob_size < (sizeof(struct cam_isp_bw_config_v2) +
-			((bw_config->num_paths - 1) *
+		if ((bw_config->num_paths != 0) && (blob_size <
+			(sizeof(struct cam_isp_bw_config_v2) +
+			(bw_config->num_paths - 1) *
 			sizeof(struct cam_axi_per_path_bw_vote)))) {
 			CAM_ERR(CAM_ISP,
 				"Invalid blob size: %u, num_paths: %u, bw_config size: %lu, per_path_vote size: %lu",
