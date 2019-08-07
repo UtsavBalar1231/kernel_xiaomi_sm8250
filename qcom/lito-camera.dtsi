@@ -782,6 +782,7 @@
 			"icp_ahb_clk",
 			"icp_clk_src",
 			"icp_clk";
+		src-clock-name = "icp_clk_src";
 		clocks =
 			<&camcc CAM_CC_FAST_AHB_CLK_SRC>,
 			<&camcc CAM_CC_ICP_AHB_CLK>,
@@ -789,9 +790,13 @@
 			<&camcc CAM_CC_ICP_CLK>;
 
 		clock-rates =
-			<200000000 0 400000000 0>,
-			<300000000 0 600000000 0>;
-		clock-cntl-level = "svs", "svs_l1";
+			<100000000 0 400000000 0>,
+			<200000000 0 480000000 0>,
+			<300000000 0 600000000 0>,
+			<400000000 0 600000000 0>,
+			<400000000 0 600000000 0>;
+		clock-cntl-level = "lowsvs", "svs", "svs_l1",
+					"nominal", "turbo";
 		fw_name = "CAMERA_ICP.elf";
 		ubwc-cfg = <0x1073 0x101CF>;
 		qos-val = <0x00000A0A>;
