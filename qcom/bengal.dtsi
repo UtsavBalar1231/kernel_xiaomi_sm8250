@@ -27,6 +27,8 @@
 			device_type = "cpu";
 			compatible = "arm,armv8";
 			reg = <0x0 0x0>;
+			capacity-dmips-mhz = <1024>;
+			dynamic-power-coefficient = <100>;
 			enable-method = "psci";
 			d-cache-size = <0x8000>;
 			i-cache-size = <0x8000>;
@@ -55,6 +57,8 @@
 			device_type = "cpu";
 			compatible = "arm,armv8";
 			reg = <0x0 0x1>;
+			capacity-dmips-mhz = <1024>;
+			dynamic-power-coefficient = <100>;
 			enable-method = "psci";
 			d-cache-size = <0x8000>;
 			i-cache-size = <0x8000>;
@@ -79,6 +83,8 @@
 			device_type = "cpu";
 			compatible = "arm,armv8";
 			reg = <0x0 0x2>;
+			capacity-dmips-mhz = <1024>;
+			dynamic-power-coefficient = <100>;
 			enable-method = "psci";
 			d-cache-size = <0x8000>;
 			i-cache-size = <0x8000>;
@@ -103,6 +109,8 @@
 			device_type = "cpu";
 			compatible = "arm,armv8";
 			reg = <0x0 0x3>;
+			capacity-dmips-mhz = <1024>;
+			dynamic-power-coefficient = <100>;
 			enable-method = "psci";
 			d-cache-size = <0x8000>;
 			i-cache-size = <0x8000>;
@@ -128,6 +136,8 @@
 			compatible = "arm,armv8";
 			reg = <0x0 0x100>;
 			enable-method = "psci";
+			capacity-dmips-mhz = <1638>;
+			dynamic-power-coefficient = <282>;
 			d-cache-size = <0x10000>;
 			i-cache-size = <0x10000>;
 			next-level-cache = <&L2_1>;
@@ -155,6 +165,8 @@
 			device_type = "cpu";
 			compatible = "arm,armv8";
 			reg = <0x0 0x101>;
+			capacity-dmips-mhz = <1638>;
+			dynamic-power-coefficient = <282>;
 			enable-method = "psci";
 			d-cache-size = <0x10000>;
 			i-cache-size = <0x10000>;
@@ -179,6 +191,8 @@
 			device_type = "cpu";
 			compatible = "arm,armv8";
 			reg = <0x0 0x102>;
+			capacity-dmips-mhz = <1638>;
+			dynamic-power-coefficient = <282>;
 			enable-method = "psci";
 			d-cache-size = <0x10000>;
 			i-cache-size = <0x10000>;
@@ -203,6 +217,8 @@
 			device_type = "cpu";
 			compatible = "arm,armv8";
 			reg = <0x0 0x103>;
+			capacity-dmips-mhz = <1638>;
+			dynamic-power-coefficient = <282>;
 			enable-method = "psci";
 			d-cache-size = <0x10000>;
 			i-cache-size = <0x10000>;
