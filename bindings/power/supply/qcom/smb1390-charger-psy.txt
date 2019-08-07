@@ -45,9 +45,9 @@ Charger specific properties:
   Value type: <u32>
   Definition: Maximum die temperature to trigger temp alarm. The value
 	      must be one of the following:
-	      85, 95, 110, 125.
+	      80, 90, 105, 115.
 	      If this value is not specified or is not one of the above
-	      then default value is 110.
+	      then default value is 105.
 
 - qcom,max-cutoff-soc
   Usage:      optional
