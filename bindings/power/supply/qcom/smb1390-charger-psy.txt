@@ -55,6 +55,16 @@ Charger specific properties:
   Definition: SOC beyond which SMB1390 is kept disabled.
 	      If this value is not specified then default value is 85%.
 
+- qcom,parallel-output-mode
+  Usage:      optional
+  Value type: <u32>
+  Definition: Defines the SMB1390 output connection topology.
+		This should be one of the following:
+		0 - If SMB1390 output is not connected to anything;
+		1 - If SMB1390 output is connected to VPH_PWR;
+		2 - If SMB1390 output is connected to VBATT.
+		If this value is not specified then default value is 1.
+
 ================================================
 Second Level Nodes - SMB1390 Charger Peripherals
 ================================================
