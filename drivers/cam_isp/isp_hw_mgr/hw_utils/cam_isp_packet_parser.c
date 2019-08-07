@@ -422,6 +422,7 @@ int cam_isp_add_command_buffers(
 			break;
 		case CAM_ISP_PACKET_META_REG_DUMP_ON_FLUSH:
 		case CAM_ISP_PACKET_META_REG_DUMP_ON_ERROR:
+		case CAM_ISP_PACKET_META_REG_DUMP_PER_REQUEST:
 			if (split_id == CAM_ISP_HW_SPLIT_LEFT) {
 				if (prepare->num_reg_dump_buf >=
 					CAM_REG_DUMP_MAX_BUF_ENTRIES) {
@@ -430,6 +431,7 @@ int cam_isp_add_command_buffers(
 					prepare->num_reg_dump_buf);
 					return -EINVAL;
 				}
+
 				prepare->reg_dump_buf_desc[
 					prepare->num_reg_dump_buf] =
 					cmd_desc[i];

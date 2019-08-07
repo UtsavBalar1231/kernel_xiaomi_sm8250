@@ -58,6 +58,117 @@ static int cam_ife_hw_mgr_event_handler(
 	uint32_t                             evt_id,
 	void                                *evt_info);
 
+static int cam_ife_mgr_regspace_data_cb(uint32_t reg_base_type,
+	void *hw_mgr_ctx, struct cam_hw_soc_info **soc_info_ptr,
+	uint32_t *reg_base_idx)
+{
+	int rc = 0;
+	struct cam_ife_hw_mgr_res *hw_mgr_res;
+	struct cam_ife_hw_mgr_res *hw_mgr_res_temp;
+	struct cam_hw_soc_info    *soc_info = NULL;
+	struct cam_ife_hw_mgr_ctx *ctx =
+		(struct cam_ife_hw_mgr_ctx *) hw_mgr_ctx;
+
+	*soc_info_ptr = NULL;
+	list_for_each_entry_safe(hw_mgr_res, hw_mgr_res_temp,
+		&ctx->res_list_ife_src, list) {
+		if (hw_mgr_res->res_id != CAM_ISP_HW_VFE_IN_CAMIF)
+			continue;
+
+		switch (reg_base_type) {
+		case CAM_REG_DUMP_BASE_TYPE_CAMNOC:
+		case CAM_REG_DUMP_BASE_TYPE_ISP_LEFT:
+			if (!hw_mgr_res->hw_res[CAM_ISP_HW_SPLIT_LEFT])
+				continue;
+
+			rc = hw_mgr_res->hw_res[
+				CAM_ISP_HW_SPLIT_LEFT]->process_cmd(
+				hw_mgr_res->hw_res[CAM_ISP_HW_SPLIT_LEFT],
+				CAM_ISP_HW_CMD_QUERY_REGSPACE_DATA, &soc_info,
+				sizeof(void *));
+			if (rc) {
+				CAM_ERR(CAM_ISP,
+					"Failed in regspace data query split idx: %d rc : %d",
+					CAM_ISP_HW_SPLIT_LEFT, rc);
+				return rc;
+			}
+
+			if (reg_base_type == CAM_REG_DUMP_BASE_TYPE_ISP_LEFT)
+				*reg_base_idx = 0;
+			else
+				*reg_base_idx = 1;
+
+			*soc_info_ptr = soc_info;
+			break;
+		case CAM_REG_DUMP_BASE_TYPE_ISP_RIGHT:
+			if (!hw_mgr_res->hw_res[CAM_ISP_HW_SPLIT_RIGHT])
+				continue;
+
+			rc = hw_mgr_res->hw_res[
+				CAM_ISP_HW_SPLIT_RIGHT]->process_cmd(
+				hw_mgr_res->hw_res[CAM_ISP_HW_SPLIT_RIGHT],
+				CAM_ISP_HW_CMD_QUERY_REGSPACE_DATA, &soc_info,
+				sizeof(void *));
+			if (rc) {
+				CAM_ERR(CAM_ISP,
+					"Failed in regspace data query split idx: %d rc : %d",
+					CAM_ISP_HW_SPLIT_RIGHT, rc);
+				return rc;
+			}
+
+			*reg_base_idx = 0;
+			*soc_info_ptr = soc_info;
+			break;
+		default:
+			CAM_ERR(CAM_ISP,
+				"Unrecognized reg base type: %u",
+				reg_base_type);
+			return -EINVAL;
+		}
+
+		break;
+	}
+
+	return rc;
+}
+
+static int cam_ife_mgr_handle_reg_dump(struct cam_ife_hw_mgr_ctx *ctx,
+	struct cam_cmd_buf_desc *reg_dump_buf_desc, uint32_t num_reg_dump_buf,
+	uint32_t meta_type)
+{
+	int rc = 0, i;
+
+	if (!num_reg_dump_buf || !reg_dump_buf_desc) {
+		CAM_DBG(CAM_ISP,
+			"Invalid args for reg dump req_id: [%llu] ctx idx: [%u] meta_type: [%u]",
+			ctx->applied_req_id, ctx->ctx_index, meta_type);
+		return rc;
+	}
+
+	if (!atomic_read(&ctx->cdm_done))
+		CAM_WARN_RATE_LIMIT(CAM_ISP,
+			"Reg dump values might be from more than one request");
+
+	for (i = 0; i < num_reg_dump_buf; i++) {
+		CAM_DBG(CAM_ISP, "Reg dump cmd meta data: %u req_type: %u",
+			reg_dump_buf_desc[i].meta_data, meta_type);
+		if (reg_dump_buf_desc[i].meta_data == meta_type) {
+			rc = cam_soc_util_reg_dump_to_cmd_buf(ctx,
+				&reg_dump_buf_desc[i],
+				ctx->applied_req_id,
+				cam_ife_mgr_regspace_data_cb);
+			if (rc) {
+				CAM_ERR(CAM_ISP,
+					"Reg dump failed at idx: %d, rc: %d req_id: %llu meta type: %u",
+					i, rc, ctx->applied_req_id, meta_type);
+				return rc;
+			}
+		}
+	}
+
+	return rc;
+}
+
 static int cam_ife_notify_safe_lut_scm(bool safe_trigger)
 {
 	uint32_t camera_hw_version, rc = 0;
@@ -2289,6 +2400,7 @@ err:
 void cam_ife_cam_cdm_callback(uint32_t handle, void *userdata,
 	enum cam_cdm_cb_status status, uint64_t cookie)
 {
+	struct cam_isp_prepare_hw_update_data *hw_update_data = NULL;
 	struct cam_ife_hw_mgr_ctx *ctx = NULL;
 
 	if (!userdata) {
@@ -2296,11 +2408,18 @@ void cam_ife_cam_cdm_callback(uint32_t handle, void *userdata,
 		return;
 	}
 
-	ctx = userdata;
+	hw_update_data = (struct cam_isp_prepare_hw_update_data *)userdata;
+	ctx = (struct cam_ife_hw_mgr_ctx *)hw_update_data->ife_mgr_ctx;
 
 	if (status == CAM_CDM_CB_STATUS_BL_SUCCESS) {
 		complete_all(&ctx->config_done_complete);
 		atomic_set(&ctx->cdm_done, 1);
+		if (g_ife_hw_mgr.debug_cfg.per_req_reg_dump)
+			cam_ife_mgr_handle_reg_dump(ctx,
+				hw_update_data->reg_dump_buf_desc,
+				hw_update_data->num_reg_dump_buf,
+				CAM_ISP_PACKET_META_REG_DUMP_PER_REQUEST);
+
 		CAM_DBG(CAM_ISP,
 			"Called by CDM hdl=%x, udata=%pK, status=%d, cookie=%llu ctx_index=%d",
 			 handle, userdata, status, cookie, ctx->ctx_index);
@@ -3237,6 +3356,7 @@ static int cam_ife_mgr_config_hw(void *hw_mgr_priv,
 		return -EINVAL;
 
 	hw_update_data = (struct cam_isp_prepare_hw_update_data  *) cfg->priv;
+	hw_update_data->ife_mgr_ctx = ctx;
 
 	CAM_DBG(CAM_ISP, "Ctx[%pK][%d] : Applying Req %lld",
 		ctx, ctx->ctx_index, cfg->request_id);
@@ -3282,7 +3402,7 @@ static int cam_ife_mgr_config_hw(void *hw_mgr_priv,
 		cdm_cmd->cmd_arrary_count = cfg->num_hw_update_entries;
 		cdm_cmd->type = CAM_CDM_BL_CMD_TYPE_MEM_HANDLE;
 		cdm_cmd->flag = true;
-		cdm_cmd->userdata = ctx;
+		cdm_cmd->userdata = hw_update_data;
 		cdm_cmd->cookie = cfg->request_id;
 
 		for (i = 0 ; i <= cfg->num_hw_update_entries; i++) {
@@ -5374,8 +5494,18 @@ static int cam_ife_mgr_prepare_hw_update(void *hw_mgr_priv,
 		}
 
 		goto end;
-	} else
+	} else {
 		prepare_hw_data->packet_opcode_type = CAM_ISP_PACKET_UPDATE_DEV;
+		prepare_hw_data->num_reg_dump_buf = prepare->num_reg_dump_buf;
+		if ((prepare_hw_data->num_reg_dump_buf) &&
+			(prepare_hw_data->num_reg_dump_buf <
+			CAM_REG_DUMP_MAX_BUF_ENTRIES)) {
+			memcpy(prepare_hw_data->reg_dump_buf_desc,
+				prepare->reg_dump_buf_desc,
+				sizeof(struct cam_cmd_buf_desc) *
+				prepare_hw_data->num_reg_dump_buf);
+		}
+	}
 
 	/* add reg update commands */
 	for (i = 0; i < ctx->num_base; i++) {
@@ -5529,112 +5659,6 @@ static void cam_ife_mgr_print_io_bufs(struct cam_packet *packet,
 	}
 }
 
-static int cam_ife_mgr_regspace_data_cb(uint32_t reg_base_type,
-	void *hw_mgr_ctx, struct cam_hw_soc_info **soc_info_ptr,
-	uint32_t *reg_base_idx)
-{
-	int rc = 0;
-	struct cam_ife_hw_mgr_res *hw_mgr_res;
-	struct cam_hw_soc_info    *soc_info = NULL;
-	struct cam_ife_hw_mgr_ctx *ctx =
-		(struct cam_ife_hw_mgr_ctx *) hw_mgr_ctx;
-
-	*soc_info_ptr = NULL;
-	list_for_each_entry(hw_mgr_res, &ctx->res_list_ife_src, list) {
-		if (hw_mgr_res->res_id != CAM_ISP_HW_VFE_IN_CAMIF)
-			continue;
-
-		switch (reg_base_type) {
-		case CAM_REG_DUMP_BASE_TYPE_CAMNOC:
-		case CAM_REG_DUMP_BASE_TYPE_ISP_LEFT:
-			if (!hw_mgr_res->hw_res[CAM_ISP_HW_SPLIT_LEFT])
-				continue;
-
-			rc = hw_mgr_res->hw_res[
-				CAM_ISP_HW_SPLIT_LEFT]->process_cmd(
-				hw_mgr_res->hw_res[CAM_ISP_HW_SPLIT_LEFT],
-				CAM_ISP_HW_CMD_QUERY_REGSPACE_DATA, &soc_info,
-				sizeof(void *));
-			if (rc) {
-				CAM_ERR(CAM_ISP,
-					"Failed in regspace data query split idx: %d rc : %d",
-					CAM_ISP_HW_SPLIT_LEFT, rc);
-				return rc;
-			}
-
-			if (reg_base_type == CAM_REG_DUMP_BASE_TYPE_ISP_LEFT)
-				*reg_base_idx = 0;
-			else
-				*reg_base_idx = 1;
-
-			*soc_info_ptr = soc_info;
-			break;
-		case CAM_REG_DUMP_BASE_TYPE_ISP_RIGHT:
-			if (!hw_mgr_res->hw_res[CAM_ISP_HW_SPLIT_RIGHT])
-				continue;
-
-			rc = hw_mgr_res->hw_res[
-				CAM_ISP_HW_SPLIT_RIGHT]->process_cmd(
-				hw_mgr_res->hw_res[CAM_ISP_HW_SPLIT_RIGHT],
-				CAM_ISP_HW_CMD_QUERY_REGSPACE_DATA, &soc_info,
-				sizeof(void *));
-			if (rc) {
-				CAM_ERR(CAM_ISP,
-					"Failed in regspace data query split idx: %d rc : %d",
-					CAM_ISP_HW_SPLIT_RIGHT, rc);
-				return rc;
-			}
-
-			*reg_base_idx = 0;
-			*soc_info_ptr = soc_info;
-			break;
-		default:
-			CAM_ERR(CAM_ISP,
-				"Unrecognized reg base type: %d",
-				reg_base_type);
-			return -EINVAL;
-		}
-	}
-
-	return rc;
-}
-
-static int cam_ife_mgr_handle_reg_dump(struct cam_ife_hw_mgr_ctx *ctx,
-	uint32_t meta_type)
-{
-	int rc, i;
-
-	if (!ctx->num_reg_dump_buf) {
-		CAM_DBG(CAM_ISP,
-			"Zero command buffers for reg dump req_id: [%llu] ctx idx: [%llu] meta_type: %d",
-			ctx->applied_req_id, ctx->ctx_index, meta_type);
-		return 0;
-	}
-
-	if (!atomic_read(&ctx->cdm_done))
-		CAM_WARN_RATE_LIMIT(CAM_ISP,
-			"Reg dump values might be from more than one request");
-
-	for (i = 0; i < ctx->num_reg_dump_buf; i++) {
-		CAM_DBG(CAM_ISP, "Reg dump cmd meta data: %d req_type: %d",
-			ctx->reg_dump_buf_desc[i].meta_data, meta_type);
-		if (ctx->reg_dump_buf_desc[i].meta_data == meta_type) {
-			rc = cam_soc_util_reg_dump_to_cmd_buf(ctx,
-				&ctx->reg_dump_buf_desc[i],
-				ctx->applied_req_id,
-				cam_ife_mgr_regspace_data_cb);
-			if (rc) {
-				CAM_ERR(CAM_ISP,
-					"Reg dump failed at idx: %d, rc: %d req_id: %llu meta type: %d",
-					i, rc, ctx->applied_req_id, meta_type);
-				return -EINVAL;
-			}
-		}
-	}
-
-	return 0;
-}
-
 static int cam_ife_mgr_cmd(void *hw_mgr_priv, void *cmd_args)
 {
 	int rc = 0;
@@ -5713,7 +5737,8 @@ static int cam_ife_mgr_cmd(void *hw_mgr_priv, void *cmd_args)
 		}
 
 		ctx->last_dump_flush_req_id = ctx->applied_req_id;
-		rc = cam_ife_mgr_handle_reg_dump(ctx,
+		rc = cam_ife_mgr_handle_reg_dump(ctx, ctx->reg_dump_buf_desc,
+			ctx->num_reg_dump_buf,
 			CAM_ISP_PACKET_META_REG_DUMP_ON_FLUSH);
 		if (rc) {
 			CAM_ERR(CAM_ISP,
@@ -5728,7 +5753,8 @@ static int cam_ife_mgr_cmd(void *hw_mgr_priv, void *cmd_args)
 			return 0;
 
 		ctx->last_dump_err_req_id = ctx->applied_req_id;
-		rc = cam_ife_mgr_handle_reg_dump(ctx,
+		rc = cam_ife_mgr_handle_reg_dump(ctx, ctx->reg_dump_buf_desc,
+			ctx->num_reg_dump_buf,
 			CAM_ISP_PACKET_META_REG_DUMP_ON_ERROR);
 		if (rc) {
 			CAM_ERR(CAM_ISP,
@@ -6544,6 +6570,15 @@ static int cam_ife_hw_mgr_debug_register(void)
 		CAM_ERR(CAM_ISP, "failed to create cam_ife_camif_debug");
 		goto err;
 	}
+
+	if (!debugfs_create_bool("per_req_reg_dump",
+		0644,
+		g_ife_hw_mgr.debug_cfg.dentry,
+		&g_ife_hw_mgr.debug_cfg.per_req_reg_dump)) {
+		CAM_ERR(CAM_ISP, "failed to create per_req_reg_dump entry");
+		goto err;
+	}
+
 	g_ife_hw_mgr.debug_cfg.enable_recovery = 0;
 
 	return 0;

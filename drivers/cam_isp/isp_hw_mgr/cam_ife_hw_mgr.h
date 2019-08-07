@@ -83,6 +83,7 @@ struct ctx_base_info {
  * @enable_recovery:           enable recovery
  * @enable_diag_sensor_status: enable sensor diagnosis status
  * @enable_req_dump:           Enable request dump on HW errors
+ * @per_req_reg_dump:          Enable per request reg dump
  *
  */
 struct cam_ife_hw_mgr_debug {
@@ -91,6 +92,7 @@ struct cam_ife_hw_mgr_debug {
 	uint32_t       enable_recovery;
 	uint32_t       camif_debug;
 	bool           enable_req_dump;
+	bool           per_req_reg_dump;
 };
 
 /**

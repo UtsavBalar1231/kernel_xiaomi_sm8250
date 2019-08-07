@@ -115,6 +115,7 @@ struct cam_isp_bw_config_internal {
 /**
  * struct cam_isp_prepare_hw_update_data - hw prepare data
  *
+ * @ife_mgr_ctx:            IFE HW manager Context for current request
  * @packet_opcode_type:     Packet header opcode in the packet header
  *                          this opcode defines, packet is init packet or
  *                          update packet
@@ -123,14 +124,20 @@ struct cam_isp_bw_config_internal {
  * @bw_config_v2:           BW config info for AXI bw voting v2
  * @bw_config_valid:        Flag indicating whether the bw_config at the index
  *                          is valid or not
+ * @reg_dump_buf_desc:     cmd buffer descriptors for reg dump
+ * @num_reg_dump_buf:      Count of descriptors in reg_dump_buf_desc
  *
  */
 struct cam_isp_prepare_hw_update_data {
+	struct cam_ife_hw_mgr_ctx            *ife_mgr_ctx;
 	uint32_t                              packet_opcode_type;
 	uint32_t                              bw_config_version;
 	struct cam_isp_bw_config_internal     bw_config[CAM_IFE_HW_NUM_MAX];
 	struct cam_isp_bw_config_internal_v2  bw_config_v2[CAM_IFE_HW_NUM_MAX];
 	bool                                bw_config_valid[CAM_IFE_HW_NUM_MAX];
+	struct cam_cmd_buf_desc               reg_dump_buf_desc[
+						CAM_REG_DUMP_MAX_BUF_ENTRIES];
+	uint32_t                              num_reg_dump_buf;
 };
 
 
