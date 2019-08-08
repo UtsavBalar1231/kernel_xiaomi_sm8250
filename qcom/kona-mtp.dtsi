@@ -269,7 +269,7 @@
 
 &pm8150b_charger {
 	status = "ok";
-	qcom,sec-charger-config = <0>;
+	qcom,sec-charger-config = <1>;
 	qcom,auto-recharge-soc = <98>;
 	io-channels = <&pm8150b_vadc ADC_MID_CHG_DIV6>,
 		      <&pm8150b_vadc ADC_USB_IN_I>,
@@ -286,7 +286,6 @@
 	qcom,sw-jeita-enable;
 	qcom,wd-bark-time-secs = <16>;
 	qcom,suspend-input-on-debug-batt;
-	qcom,fcc-stepping-enable;
 };
 
 &pm8150b_fg {
@@ -327,6 +326,16 @@
 &smb1390_charger {
 	io-channels = <&pm8150b_vadc ADC_AMUX_THM2>;
 	io-channel-names = "cp_die_temp";
+	qcom,parallel-output-mode = <2>;
+	status = "ok";
+};
+
+&smb1390_slave {
+	status = "ok";
+};
+
+&smb1390_slave_charger {
+	status = "ok";
 };
 
 &pm8150_vadc {
