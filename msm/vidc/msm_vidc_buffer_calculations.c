@@ -8,19 +8,35 @@
 #include "msm_vidc_buffer_calculations.h"
 #include "msm_vidc_clocks.h"
 
-#define MIN_NUM_THUMBNAIL_MODE_INPUT_BUFFERS MIN_NUM_INPUT_BUFFERS
-#define MIN_NUM_THUMBNAIL_MODE_OUTPUT_BUFFERS MIN_NUM_OUTPUT_BUFFERS
-#define MIN_NUM_THUMBNAIL_MODE_OUTPUT_BUFFERS_VP9 8
+#define VP9_REFERENCE_COUNT 8
 
-/* extra o/p buffers in case of encoder dcvs */
-#define DCVS_ENC_EXTRA_INPUT_BUFFERS 4
+/* minimum number of input buffers */
+#define MIN_INPUT_BUFFERS 4
+/* Max number of PERF eligible sessions */
+#define MAX_PERF_ELIGIBLE_SESSIONS 4
+
+/* Decoder buffer count macros */
+/* total input buffers in case of decoder batch */
+#define BATCH_DEC_TOTAL_INPUT_BUFFERS 6
+
+/* total input buffers for decoder HFR usecase */
+#define HFR_DEC_TOTAL_INPUT_BUFFERS 12
+
+/* extra output buffers in case of decoder batch */
+#define BATCH_DEC_EXTRA_OUTPUT_BUFFERS 6
 
 /* extra o/p buffers in case of decoder dcvs */
 #define DCVS_DEC_EXTRA_OUTPUT_BUFFERS 4
 
-/* extra buffers for encoder HFR usecase */
-#define HFR_EXTRA_INPUT_BUFFERS 4
-#define HFR_EXTRA_OUTPUT_BUFFERS 12
+/* Encoder buffer count macros */
+/* total input buffers for encoder HFR usecase */
+#define HFR_ENC_TOTAL_INPUT_BUFFERS 8
+
+/* minimum number of output buffers */
+#define MIN_ENC_OUTPUT_BUFFERS 4
+
+/* extra output buffers for encoder HFR usecase */
+#define HFR_ENC_TOTAL_OUTPUT_BUFFERS 12
 
 #define HFI_COLOR_FORMAT_YUV420_NV12_UBWC_Y_TILE_WIDTH 32
 #define HFI_COLOR_FORMAT_YUV420_NV12_UBWC_Y_TILE_HEIGHT 8
@@ -261,6 +277,9 @@
 #define MB_SIZE_IN_PIXEL (16 * 16)
 #define HDR10PLUS_PAYLOAD_SIZE 1024
 #define HDR10_HIST_EXTRADATA_SIZE 4096
+
+static int msm_vidc_get_extra_input_buff_count(struct msm_vidc_inst *inst);
+static int msm_vidc_get_extra_output_buff_count(struct msm_vidc_inst *inst);
 
 static inline u32 calculate_h264d_scratch_size(struct msm_vidc_inst *inst,
 	u32 width, u32 height, bool is_interlaced);
@@ -599,7 +618,6 @@ int msm_vidc_calculate_input_buffer_count(struct msm_vidc_inst *inst)
 {
 	struct msm_vidc_format *fmt;
 	int extra_buff_count = 0;
-	u32 input_min_count = 4;
 
 	if (!inst) {
 		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
@@ -616,25 +634,13 @@ int msm_vidc_calculate_input_buffer_count(struct msm_vidc_inst *inst)
 
 	if (is_thumbnail_session(inst)) {
 		fmt->count_min = fmt->count_min_host = fmt->count_actual =
-			MIN_NUM_THUMBNAIL_MODE_INPUT_BUFFERS;
+			SINGLE_INPUT_BUFFER;
 		return 0;
 	}
 
-	/*
-	 * Update input buff counts
-	 * Extradata uses same count as input port
-	 */
-	if (is_decode_session(inst) && !is_secure_session(inst))
-		input_min_count += 2;
-
 	extra_buff_count = msm_vidc_get_extra_buff_count(inst,
 				HAL_BUFFER_INPUT);
-	fmt->count_min = input_min_count;
-	/* batching needs minimum batch size count of input buffers */
-	if (inst->batch.enable &&
-		is_decode_session(inst) &&
-		fmt->count_min < inst->batch.size)
-		fmt->count_min = inst->batch.size;
+	fmt->count_min = MIN_INPUT_BUFFERS;
 	fmt->count_min_host = fmt->count_actual =
 		fmt->count_min + extra_buff_count;
 
@@ -649,7 +655,7 @@ int msm_vidc_calculate_output_buffer_count(struct msm_vidc_inst *inst)
 {
 	struct msm_vidc_format *fmt;
 	int extra_buff_count = 0;
-	u32 codec, output_min_count = 4;
+	u32 codec, output_min_count;
 
 	if (!inst) {
 		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
@@ -666,17 +672,9 @@ int msm_vidc_calculate_output_buffer_count(struct msm_vidc_inst *inst)
 		return 0;
 
 	if (is_thumbnail_session(inst)) {
-		if (codec == V4L2_PIX_FMT_VP9) {
-			fmt->count_min =
-				MIN_NUM_THUMBNAIL_MODE_OUTPUT_BUFFERS_VP9;
-			fmt->count_min_host = fmt->count_min;
-			fmt->count_actual = fmt->count_min_host;
-		} else {
-			fmt->count_min =
-				MIN_NUM_THUMBNAIL_MODE_OUTPUT_BUFFERS;
-			fmt->count_min_host = fmt->count_min;
-			fmt->count_actual = fmt->count_min_host;
-		}
+		fmt->count_min = (codec == V4L2_PIX_FMT_VP9) ?
+			VP9_REFERENCE_COUNT : SINGLE_OUTPUT_BUFFER;
+		fmt->count_min_host = fmt->count_actual = fmt->count_min;
 		return 0;
 	}
 
@@ -684,21 +682,17 @@ int msm_vidc_calculate_output_buffer_count(struct msm_vidc_inst *inst)
 	if (is_decode_session(inst)) {
 		switch (codec) {
 		case V4L2_PIX_FMT_MPEG2:
-			output_min_count = 6;
-			break;
-		case V4L2_PIX_FMT_H264:
-			output_min_count = 8;
-			break;
-		case V4L2_PIX_FMT_HEVC:
-			output_min_count = 8;
-			break;
 		case V4L2_PIX_FMT_VP8:
 			output_min_count = 6;
 			break;
 		case V4L2_PIX_FMT_VP9:
 			output_min_count = 9;
 			break;
+		default:
+			output_min_count = 8; //H264, HEVC
 		}
+	} else {
+		output_min_count = MIN_ENC_OUTPUT_BUFFERS;
 	}
 	extra_buff_count = msm_vidc_get_extra_buff_count(inst,
 				HAL_BUFFER_OUTPUT);
@@ -730,56 +724,143 @@ int msm_vidc_calculate_buffer_counts(struct msm_vidc_inst *inst)
 int msm_vidc_get_extra_buff_count(struct msm_vidc_inst *inst,
 	enum hal_buffer buffer_type)
 {
-	unsigned int count = 0;
-	struct v4l2_format *f;
-
 	if (!inst || !inst->core) {
 		dprintk(VIDC_ERR, "%s Invalid args\n", __func__);
 		return 0;
 	}
-	/*
-	 * no extra buffers for thumbnail session because
-	 * neither dcvs nor batching will be enabled
-	 */
-	if (is_thumbnail_session(inst))
+
+	if (!is_decode_session(inst) && !is_encode_session(inst))
 		return 0;
 
-	/* Add DCVS extra buffer count */
-	if (inst->core->resources.dcvs) {
-		if (is_decode_session(inst) &&
-			buffer_type == HAL_BUFFER_OUTPUT) {
-			count += DCVS_DEC_EXTRA_OUTPUT_BUFFERS;
-		} else if ((is_encode_session(inst) &&
-			buffer_type == HAL_BUFFER_INPUT)) {
-			count += DCVS_ENC_EXTRA_INPUT_BUFFERS;
-		}
-	}
+	if (buffer_type == HAL_BUFFER_OUTPUT)
+		return msm_vidc_get_extra_output_buff_count(inst);
+	else if (buffer_type == HAL_BUFFER_INPUT)
+		return msm_vidc_get_extra_input_buff_count(inst);
+
+	return 0;
+}
+
+static int msm_vidc_get_extra_input_buff_count(struct msm_vidc_inst *inst)
+{
+	unsigned int extra_input_count = 0;
+	struct msm_vidc_core *core;
+	struct v4l2_format *f;
 
 	/*
-	 * if platform supports decode batching ensure minimum
-	 * batch size count of extra buffers added on output port
+	 * For a non-realtime session, extra buffers are not required.
+	 * For thumbnail session, extra buffers are not required as
+	 * neither dcvs nor batching will be enabled.
 	 */
-	if (buffer_type == HAL_BUFFER_OUTPUT) {
-		if (inst->batch.enable &&
-			is_decode_session(inst) &&
-			count < inst->batch.size)
-			count = inst->batch.size;
-	}
+	if (!is_realtime_session(inst) || is_thumbnail_session(inst))
+		return extra_input_count;
 
-	/* increase both input and output counts for HFR/HSR encode case */
+	/*
+	 * Batch mode and HFR not supported for resolution greater than
+	 * UHD. Hence extra buffers are not required.
+	 */
 	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
-	if (is_encode_session(inst) && msm_vidc_get_fps(inst) >= 120 &&
-		!res_is_greater_than(f->fmt.pix_mp.width,
-		f->fmt.pix_mp.height, 1920, 1088)) {
-		if (buffer_type == HAL_BUFFER_INPUT &&
-			count < HFR_EXTRA_INPUT_BUFFERS)
-			count = HFR_EXTRA_INPUT_BUFFERS;
-		if (buffer_type == HAL_BUFFER_OUTPUT &&
-			count < HFR_EXTRA_OUTPUT_BUFFERS)
-			count = HFR_EXTRA_OUTPUT_BUFFERS;
-	}
+	if (res_is_greater_than(f->fmt.pix_mp.width, f->fmt.pix_mp.height,
+		4096, 2160))
+		return extra_input_count;
 
-	return count;
+	if (is_decode_session(inst)) {
+
+		/*
+		 * Allocating 2 extra buffers, assuming current session is
+		 * always batch eligible. Cannot rely on inst->batch.enable
+		 * as it can be enabled/disabled based on clip fps etc. But
+		 * decoder input can not be reallocated at run time.
+		 */
+		if (core->resources.decode_batching)
+			extra_input_count = (BATCH_DEC_TOTAL_INPUT_BUFFERS -
+				MIN_INPUT_BUFFERS);
+
+		/*
+		 * HFR decode session needs more buffers and we do not know
+		 * whether a decode session is HFR or not until input buffers
+		 * queued but by then input buffers are already allocated and
+		 * we do not have option to increase input buffer count then.
+		 * So have more buffers for initial 4 elgible sessions (and
+		 * not for all sessions to avoid over memory usage issues).
+		 */
+		if (!is_secure_session(inst) &&
+			msm_comm_get_num_perf_sessions(inst) <
+			MAX_PERF_ELIGIBLE_SESSIONS) {
+			inst->is_perf_eligible_session = true;
+			extra_input_count = (HFR_DEC_TOTAL_INPUT_BUFFERS -
+				MIN_INPUT_BUFFERS);
+		}
+	} else if (is_encode_session(inst)) {
+		/*
+		 * Both DCVS and HFR needs extra 4 buffers. Since all sessions
+		 * are DCVS eligible, we do not need extra handling for HFR as
+		 * we are making sure initial 4 sessions have extra 4 buffers.
+		 * For the remaining non-perf sessions, no extra buffers are
+		 * allocated and total number of buffers will be 4 with best
+		 * effort performance.
+		 */
+		if (msm_comm_get_num_perf_sessions(inst) <
+			MAX_PERF_ELIGIBLE_SESSIONS) {
+			inst->is_perf_eligible_session = true;
+			extra_input_count = (HFR_ENC_TOTAL_INPUT_BUFFERS -
+				MIN_INPUT_BUFFERS);
+		}
+	}
+	return extra_input_count;
+}
+
+static int msm_vidc_get_extra_output_buff_count(struct msm_vidc_inst *inst)
+{
+	unsigned int extra_output_count = 0;
+	struct msm_vidc_core *core;
+	struct v4l2_format *f;
+
+	/*
+	 * For a non-realtime session, extra buffers are not required.
+	 * For thumbnail session, extra buffers are not required as
+	 * neither dcvs nor batching will be enabled.
+	 */
+	if (!is_realtime_session(inst) || is_thumbnail_session(inst))
+		return extra_output_count;
+
+	/*
+	 * Batch mode and HFR not supported for resolution greater than
+	 * UHD. Hence extra buffers are not required.
+	 */
+	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
+	if (res_is_greater_than(f->fmt.pix_mp.width, f->fmt.pix_mp.height,
+		4096, 2160))
+		return extra_output_count;
+
+	if (is_decode_session(inst)) {
+		/*
+		 * Minimum number of decoder output buffers is codec specific.
+		 * If platform supports decode batching ensure minimum 6 extra
+		 * output buffers. Else add 4 extra output buffers for DCVS.
+		 */
+		if (core->resources.decode_batching)
+			extra_output_count = BATCH_DEC_EXTRA_OUTPUT_BUFFERS;
+		else if (inst->core->resources.dcvs)
+			extra_output_count = DCVS_DEC_EXTRA_OUTPUT_BUFFERS;
+	} else if (is_encode_session(inst)) {
+		/*
+		 * Batching and DCVS are based on input. We assume that encoder
+		 * output buffers can be re-cycled quickly. Hence it is assumed
+		 * that output buffer count does not impact for DCVS/batching.
+		 * For HFR, we are increasing buffer count to avoid latency/perf
+		 * issue to re-cycle buffers.
+		 */
+		if (msm_vidc_get_fps(inst) >= 120 &&
+			!res_is_greater_than(f->fmt.pix_mp.width,
+			f->fmt.pix_mp.height, 1920, 1088) &&
+			msm_comm_get_num_perf_sessions(inst) <
+			MAX_PERF_ELIGIBLE_SESSIONS) {
+			inst->is_perf_eligible_session = true;
+			extra_output_count = (HFR_ENC_TOTAL_OUTPUT_BUFFERS -
+				MIN_ENC_OUTPUT_BUFFERS);
+			}
+	}
+	return extra_output_count;
 }
 
 u32 msm_vidc_calculate_dec_input_frame_size(struct msm_vidc_inst *inst)

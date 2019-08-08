@@ -754,6 +754,27 @@ bool is_single_session(struct msm_vidc_inst *inst, u32 ignore_flags)
 	return single;
 }
 
+int msm_comm_get_num_perf_sessions(struct msm_vidc_inst *inst)
+{
+	int count = 0;
+	struct msm_vidc_core *core;
+	struct msm_vidc_inst *temp;
+
+	if (!inst || !inst->core) {
+		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		goto exit;
+	}
+	core = inst->core;
+	mutex_lock(&core->lock);
+	list_for_each_entry(temp, &core->instances, list) {
+		if (temp->is_perf_eligible_session)
+			count++;
+	}
+	mutex_unlock(&core->lock);
+exit:
+	return count;
+}
+
 static int msm_comm_get_mbs_per_sec(struct msm_vidc_inst *inst)
 {
 	int input_port_mbs, output_port_mbs;
