@@ -93,6 +93,7 @@ rmnet_perf_tcp_opt_pkt_can_be_merged(
 				struct rmnet_perf_pkt_info *pkt_info)
 {
 	struct tcphdr *tp = pkt_info->trans_hdr.tp;
+	u32 tcp_seq = ntohl(tp->seq);
 	u16 gso_len;
 
 	/* Use any previous GRO information, if present */
@@ -101,8 +102,12 @@ rmnet_perf_tcp_opt_pkt_can_be_merged(
 	else
 		gso_len = pkt_info->payload_len;
 
+	/* Use stamped TCP SEQ number if we have it */
+	if (pkt_info->frag_desc && pkt_info->frag_desc->tcp_seq_set)
+		tcp_seq = ntohl(pkt_info->frag_desc->tcp_seq);
+
 	/* 1. check ordering */
-	if (flow_node->next_seq ^ ntohl(tp->seq)) {
+	if (flow_node->next_seq ^ tcp_seq) {
 		rmnet_perf_tcp_opt_fn_seq = flow_node->next_seq;
 		rmnet_perf_tcp_opt_pkt_seq = ntohl(tp->seq);
 		rmnet_perf_tcp_opt_flush_reason_cnt[

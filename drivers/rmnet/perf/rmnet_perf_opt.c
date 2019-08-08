@@ -317,8 +317,12 @@ rmnet_perf_opt_add_flow_subfrags(struct rmnet_perf_opt_flow_node *flow_node)
 		struct rmnet_frag_descriptor *new_frag;
 
 		new_frag = pkt_list[i].frag_desc;
-		rmnet_frag_pull(new_frag, perf->rmnet_port,
-				flow_node->ip_len + flow_node->trans_len);
+		/* Pull headers if they're there */
+		if (new_frag->hdr_ptr == rmnet_frag_data_ptr(new_frag))
+			rmnet_frag_pull(new_frag, perf->rmnet_port,
+					flow_node->ip_len +
+					flow_node->trans_len);
+
 		/* Move the fragment onto the subfrags list */
 		list_move_tail(&new_frag->list, &head_frag->sub_frags);
 		head_frag->gso_segs += (new_frag->gso_segs) ?: 1;
@@ -637,10 +641,6 @@ void rmnet_perf_opt_insert_pkt_in_flow(
 		pkt_node->data_start = (unsigned char *)iph + header_len;
 	}
 
-	if (pkt_info->trans_proto == IPPROTO_TCP)
-		flow_node->next_seq = ntohl(tp->seq) +
-				      (__force u32) payload_len;
-
 	if (pkt_info->first_packet) {
 		/* Copy over flow information */
 		flow_node->ep = pkt_info->ep;
@@ -673,7 +673,23 @@ void rmnet_perf_opt_insert_pkt_in_flow(
 			flow_node->trans_proto =
 				((struct ipv6hdr *)iph)->nexthdr;
 		}
+
+		/* Set initial TCP SEQ number */
+		if (pkt_info->trans_proto == IPPROTO_TCP) {
+			if (pkt_info->frag_desc &&
+			    pkt_info->frag_desc->tcp_seq_set) {
+				__be32 seq = pkt_info->frag_desc->tcp_seq;
+
+				flow_node->next_seq = ntohl(seq);
+			} else {
+				flow_node->next_seq = ntohl(tp->seq);
+			}
+		}
+
 	}
+
+	if (pkt_info->trans_proto == IPPROTO_TCP)
+		flow_node->next_seq += payload_len;
 }
 
 /* rmnet_perf_opt_ingress() - Core business logic of optimization framework
