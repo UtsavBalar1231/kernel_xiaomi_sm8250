@@ -3052,7 +3052,7 @@ core_already_inited:
 	change_inst_state(inst, MSM_VIDC_CORE_INIT);
 	mutex_unlock(&core->lock);
 
-	rc = msm_comm_scale_clocks_and_bus(inst);
+	rc = msm_comm_scale_clocks_and_bus(inst, 1);
 	return rc;
 
 fail_core_init:
@@ -3082,7 +3082,7 @@ static int msm_vidc_deinit_core(struct msm_vidc_inst *inst)
 	}
 	mutex_unlock(&core->lock);
 
-	msm_comm_scale_clocks_and_bus(inst);
+	msm_comm_scale_clocks_and_bus(inst, 1);
 
 	mutex_lock(&core->lock);
 
@@ -4454,9 +4454,9 @@ static int msm_comm_qbuf_in_rbr(struct msm_vidc_inst *inst,
 		return -EINVAL;
 	}
 
-	rc = msm_comm_scale_clocks_and_bus(inst);
+	rc = msm_comm_scale_clocks_and_bus(inst, 0);
 	if (rc)
-		dprintk(VIDC_ERR, "%s: scale clocks failed\n", __func__);
+		dprintk(VIDC_ERR, "%s: scale clock failed\n", __func__);
 
 	print_vidc_buffer(VIDC_HIGH|VIDC_PERF, "qbuf in rbr", inst, mbuf);
 	rc = msm_comm_qbuf_to_hfi(inst, mbuf);
@@ -4470,6 +4470,7 @@ int msm_comm_qbuf(struct msm_vidc_inst *inst, struct msm_vidc_buffer *mbuf)
 {
 	int rc = 0;
 	struct v4l2_ctrl *ctrl;
+	int do_bw_calc = 0;
 
 	if (!inst || !mbuf) {
 		dprintk(VIDC_ERR, "%s: Invalid arguments\n", __func__);
@@ -4491,9 +4492,10 @@ int msm_comm_qbuf(struct msm_vidc_inst *inst, struct msm_vidc_buffer *mbuf)
 	if (rc)
 		return rc;
 
-	rc = msm_comm_scale_clocks_and_bus(inst);
+	do_bw_calc = mbuf->vvb.vb2_buf.type == INPUT_MPLANE;
+	rc = msm_comm_scale_clocks_and_bus(inst, do_bw_calc);
 	if (rc)
-		dprintk(VIDC_ERR, "%s: scale clocks failed\n", __func__);
+		dprintk(VIDC_ERR, "%s: scale clock & bw failed\n", __func__);
 
 	print_vidc_buffer(VIDC_HIGH|VIDC_PERF, "qbuf", inst, mbuf);
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_SUPERFRAME);
@@ -4563,10 +4565,12 @@ int msm_comm_qbufs_batch(struct msm_vidc_inst *inst,
 {
 	int rc = 0;
 	struct msm_vidc_buffer *buf;
+	int do_bw_calc = 0;
 
-	rc = msm_comm_scale_clocks_and_bus(inst);
+	do_bw_calc = mbuf->vvb.vb2_buf.type == INPUT_MPLANE;
+	rc = msm_comm_scale_clocks_and_bus(inst, do_bw_calc);
 	if (rc)
-		dprintk(VIDC_ERR, "%s: scale clocks failed\n", __func__);
+		dprintk(VIDC_ERR, "%s: scale clock & bw failed\n", __func__);
 
 	mutex_lock(&inst->registeredbufs.lock);
 	list_for_each_entry(buf, &inst->registeredbufs.list, list) {

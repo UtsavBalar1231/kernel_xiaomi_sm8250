@@ -1034,7 +1034,7 @@ int msm_comm_scale_clocks(struct msm_vidc_inst *inst)
 	return 0;
 }
 
-int msm_comm_scale_clocks_and_bus(struct msm_vidc_inst *inst)
+int msm_comm_scale_clocks_and_bus(struct msm_vidc_inst *inst, bool do_bw_calc)
 {
 	struct msm_vidc_core *core;
 	struct hfi_device *hdev;
@@ -1048,11 +1048,14 @@ int msm_comm_scale_clocks_and_bus(struct msm_vidc_inst *inst)
 
 	if (msm_comm_scale_clocks(inst)) {
 		dprintk(VIDC_ERR,
-			"Failed to scale clocks. Performance might be impacted\n");
+			"Failed to scale clocks. May impact performance\n");
 	}
-	if (msm_comm_vote_bus(core)) {
-		dprintk(VIDC_ERR,
-			"Failed to scale DDR bus. Performance might be impacted\n");
+
+	if (do_bw_calc) {
+		if (msm_comm_vote_bus(core)) {
+			dprintk(VIDC_ERR,
+				"Failed to scale DDR bus. May impact perf\n");
+		}
 	}
 	return 0;
 }
@@ -1185,7 +1188,7 @@ void msm_clock_data_reset(struct msm_vidc_inst *inst)
 
 	msm_dcvs_print_dcvs_stats(dcvs);
 
-	rc = msm_comm_scale_clocks_and_bus(inst);
+	rc = msm_comm_scale_clocks_and_bus(inst, 1);
 
 	if (rc)
 		dprintk(VIDC_ERR, "%s Failed to scale Clocks and Bus\n",
@@ -1390,7 +1393,7 @@ decision_done:
 			(void *)&latency, sizeof(latency));
 	}
 
-	rc = msm_comm_scale_clocks_and_bus(inst);
+	rc = msm_comm_scale_clocks_and_bus(inst, 1);
 
 	return rc;
 }
@@ -1723,7 +1726,7 @@ int msm_vidc_decide_core_and_power_mode_iris1(struct msm_vidc_inst *inst)
 	}
 
 	inst->clk_data.core_id = VIDC_CORE_ID_1;
-	rc = msm_comm_scale_clocks_and_bus(inst);
+	rc = msm_comm_scale_clocks_and_bus(inst, 1);
 	msm_print_core_status(core, VIDC_CORE_ID_1);
 	return rc;
 }

@@ -946,7 +946,7 @@ static inline int start_streaming(struct msm_vidc_inst *inst)
 	if (rc)
 		goto fail_start;
 
-	msm_comm_scale_clocks_and_bus(inst);
+	msm_comm_scale_clocks_and_bus(inst, 1);
 
 	rc = msm_comm_try_state(inst, MSM_VIDC_START_DONE);
 	if (rc) {
@@ -1138,7 +1138,7 @@ static void msm_vidc_stop_streaming(struct vb2_queue *q)
 		break;
 	}
 
-	msm_comm_scale_clocks_and_bus(inst);
+	msm_comm_scale_clocks_and_bus(inst, 1);
 
 	if (rc)
 		dprintk(VIDC_ERR,
@@ -1601,7 +1601,7 @@ void *msm_vidc_open(int core_id, int session_type)
 		goto fail_init;
 	}
 
-	msm_comm_scale_clocks_and_bus(inst);
+	msm_comm_scale_clocks_and_bus(inst, 1);
 
 	inst->debugfs_root =
 		msm_vidc_debugfs_init_inst(inst, core->debugfs_root);
