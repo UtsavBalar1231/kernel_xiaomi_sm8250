@@ -746,6 +746,13 @@ static int msm_vidc_get_extra_input_buff_count(struct msm_vidc_inst *inst)
 	struct msm_vidc_core *core;
 	struct v4l2_format *f;
 
+	if (!inst || !inst->core) {
+		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		return -EINVAL;
+	}
+
+	core = inst->core;
+
 	/*
 	 * For a non-realtime session, extra buffers are not required.
 	 * For thumbnail session, extra buffers are not required as
@@ -815,6 +822,13 @@ static int msm_vidc_get_extra_output_buff_count(struct msm_vidc_inst *inst)
 	struct msm_vidc_core *core;
 	struct v4l2_format *f;
 
+	if (!inst || !inst->core) {
+		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		return -EINVAL;
+	}
+
+	core = inst->core;
+
 	/*
 	 * For a non-realtime session, extra buffers are not required.
 	 * For thumbnail session, extra buffers are not required as
@@ -840,7 +854,7 @@ static int msm_vidc_get_extra_output_buff_count(struct msm_vidc_inst *inst)
 		 */
 		if (core->resources.decode_batching)
 			extra_output_count = BATCH_DEC_EXTRA_OUTPUT_BUFFERS;
-		else if (inst->core->resources.dcvs)
+		else if (core->resources.dcvs)
 			extra_output_count = DCVS_DEC_EXTRA_OUTPUT_BUFFERS;
 	} else if (is_encode_session(inst)) {
 		/*
