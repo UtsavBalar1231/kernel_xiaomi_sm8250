@@ -1569,7 +1569,7 @@ void *msm_vidc_open(int core_id, int session_type)
 	inst->pic_struct = MSM_VIDC_PIC_STRUCT_PROGRESSIVE;
 	inst->colour_space = MSM_VIDC_BT601_6_525;
 	inst->smem_ops = &msm_vidc_smem_ops;
-	inst->rc_type = RATE_CONTROL_OFF;
+	inst->rc_type = V4L2_MPEG_VIDEO_BITRATE_MODE_VBR;
 	inst->dpb_extra_binfo = NULL;
 	inst->all_intra = false;
 
