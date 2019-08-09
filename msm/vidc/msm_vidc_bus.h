@@ -213,40 +213,14 @@ struct dump {
 	size_t val;
 };
 
-struct vidc_bus_vote_data {
-	enum hal_domain domain;
-	enum hal_video_codec codec;
-	enum hal_uncompressed_format color_formats[2];
-	int num_formats; /* 1 = DPB-OPB unified; 2 = split */
-	int input_height, input_width, bitrate;
-	int output_height, output_width;
-	int rotation;
-	int compression_ratio;
-	int complexity_factor;
-	int input_cr;
-	u32 ddr_bw;
-	u32 sys_cache_bw;
-	unsigned int lcu_size;
-	unsigned int fps;
-	enum msm_vidc_power_mode power_mode;
-	u32 work_mode;
-	bool use_sys_cache;
-	bool b_frames_enabled;
-	unsigned long calc_bw_ddr;
-	unsigned long calc_bw_llcc;
-};
-
 struct msm_vidc_bus_data {
-	struct vidc_bus_vote_data *data;
-	u32 data_count;
 	unsigned long total_bw_ddr;
 	unsigned long total_bw_llcc;
-	int (*calc_bw)(struct msm_vidc_bus_data *data);
 };
 
-int calc_bw_iris1(struct msm_vidc_bus_data *vidc_data);
+int calc_bw_iris1(struct vidc_bus_vote_data *vidc_data);
 
-int calc_bw_iris2(struct msm_vidc_bus_data *vidc_data);
+int calc_bw_iris2(struct vidc_bus_vote_data *vidc_data);
 
 struct lut const *__lut(int width, int height, int fps);
 fp_t __compression_ratio(struct lut const *entry, int bpp);

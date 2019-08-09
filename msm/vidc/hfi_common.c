@@ -69,12 +69,15 @@ struct tzbsp_video_set_state_req {
 };
 
 const struct msm_vidc_bus_data DEFAULT_BUS_VOTE = {
-	.data = NULL,
-	.data_count = 0,
 	.total_bw_ddr = 0,
 	.total_bw_llcc = 0,
-	.calc_bw = NULL,
 };
+
+/* Less than 50MBps is treated as trivial BW change */
+#define TRIVIAL_BW_THRESHOLD 50000
+#define TRIVIAL_BW_CHANGE(a, b) \
+	((a) > (b) ? (a) - (b) < TRIVIAL_BW_THRESHOLD : \
+		(b) - (a) < TRIVIAL_BW_THRESHOLD)
 
 const int max_packets = 1000;
 
@@ -1001,9 +1004,7 @@ int __unvote_buses(struct venus_hfi_device *device)
 	int rc = 0;
 	struct bus_info *bus = NULL;
 
-	kfree(device->bus_vote.data);
-	device->bus_vote.data = NULL;
-	device->bus_vote.data_count = 0;
+	device->bus_vote = DEFAULT_BUS_VOTE;
 
 	venus_hfi_for_each_bus(device, bus) {
 		rc = __vote_bandwidth(bus, 0);
@@ -1016,63 +1017,56 @@ err_unknown_device:
 }
 
 static int __vote_buses(struct venus_hfi_device *device,
-		struct vidc_bus_vote_data *data, int num_data)
+		unsigned long bw_ddr, unsigned long bw_llcc)
 {
 	int rc = 0;
 	struct bus_info *bus = NULL;
-	struct vidc_bus_vote_data *new_data = NULL;
-	unsigned long bw_kbps = 0;
+	unsigned long bw_kbps = 0, bw_prev = 0;
 	enum vidc_bus_type type;
-
-	if (!num_data) {
-		dprintk(VIDC_LOW, "No vote data available\n");
-		goto no_data_count;
-	} else if (!data) {
-		dprintk(VIDC_ERR, "Invalid voting data\n");
-		return -EINVAL;
-	}
-
-	new_data = kmemdup(data, num_data * sizeof(*new_data), GFP_KERNEL);
-	if (!new_data) {
-		dprintk(VIDC_ERR, "Can't alloc memory to cache bus votes\n");
-		rc = -ENOMEM;
-		goto err_no_mem;
-	}
-
-no_data_count:
-	kfree(device->bus_vote.data);
-	device->bus_vote.data = new_data;
-	device->bus_vote.data_count = num_data;
-
-	if (device->bus_vote.calc_bw)
-		device->bus_vote.calc_bw(&device->bus_vote);
 
 	venus_hfi_for_each_bus(device, bus) {
 		if (bus && bus->client) {
 			type = get_type_frm_name(bus->name);
 
-			if (type == DDR)
-				bw_kbps = device->bus_vote.total_bw_ddr;
-			else if (type == LLCC)
-				bw_kbps = device->bus_vote.total_bw_llcc;
-			else
+			if (type == DDR) {
+				bw_kbps = bw_ddr;
+				bw_prev = device->bus_vote.total_bw_ddr;
+			} else if (type == LLCC) {
+				bw_kbps = bw_llcc;
+				bw_prev = device->bus_vote.total_bw_llcc;
+			} else {
 				bw_kbps = bus->range[1];
+				bw_prev = device->bus_vote.total_bw_ddr ?
+						bw_kbps : 0;
+			}
 
 			/* ensure freq is within limits */
 			bw_kbps = clamp_t(typeof(bw_kbps), bw_kbps,
 				bus->range[0], bus->range[1]);
 
+			if (TRIVIAL_BW_CHANGE(bw_kbps, bw_prev) && bw_prev) {
+				dprintk(VIDC_PERF,
+					"Skip voting bus %s to %llu bps",
+					bus->name, bw_kbps * 1000);
+				continue;
+			}
+
 			rc = __vote_bandwidth(bus, bw_kbps);
+
+			if (type == DDR)
+				device->bus_vote.total_bw_ddr = bw_kbps;
+			else if (type == LLCC)
+				device->bus_vote.total_bw_llcc = bw_kbps;
 		} else {
 			dprintk(VIDC_ERR, "No BUS to Vote\n");
 		}
 	}
 
-err_no_mem:
 	return rc;
 }
 
-static int venus_hfi_vote_buses(void *dev, struct vidc_bus_vote_data *d, int n)
+static int venus_hfi_vote_buses(void *dev, unsigned long bw_ddr,
+		unsigned long bw_llcc)
 {
 	int rc = 0;
 	struct venus_hfi_device *device = dev;
@@ -1081,11 +1075,10 @@ static int venus_hfi_vote_buses(void *dev, struct vidc_bus_vote_data *d, int n)
 		return -EINVAL;
 
 	mutex_lock(&device->lock);
-	rc = __vote_buses(device, d, n);
+	rc = __vote_buses(device, bw_ddr, bw_llcc);
 	mutex_unlock(&device->lock);
 
 	return rc;
-
 }
 static int __core_set_resource(struct venus_hfi_device *device,
 		struct vidc_resource_hdr *resource_hdr, void *resource_value)
@@ -2055,16 +2048,7 @@ static int venus_hfi_core_init(void *device)
 
 	mutex_lock(&dev->lock);
 
-	dev->bus_vote.data =
-		kzalloc(sizeof(struct vidc_bus_vote_data), GFP_KERNEL);
-	if (!dev->bus_vote.data) {
-		dprintk(VIDC_ERR, "Bus vote data memory is not allocated\n");
-		rc = -ENOMEM;
-		goto err_no_mem;
-	}
-
-	dev->bus_vote.data_count = 1;
-	dev->bus_vote.data->power_mode = VIDC_POWER_TURBO;
+	dev->bus_vote = DEFAULT_BUS_VOTE;
 
 	rc = __load_fw(dev);
 	if (rc) {
@@ -2131,7 +2115,6 @@ err_core_init:
 	__set_state(dev, VENUS_STATE_DEINIT);
 	__unload_fw(dev);
 err_load_fw:
-err_no_mem:
 	dprintk(VIDC_ERR, "Core init failed\n");
 	mutex_unlock(&dev->lock);
 	return rc;
@@ -3924,7 +3907,6 @@ static void __deinit_bus(struct venus_hfi_device *device)
 	if (!device)
 		return;
 
-	kfree(device->bus_vote.data);
 	device->bus_vote = DEFAULT_BUS_VOTE;
 
 	venus_hfi_for_each_bus_reverse(device, bus) {
@@ -3961,11 +3943,6 @@ static int __init_bus(struct venus_hfi_device *device)
 			goto err_add_dev;
 		}
 	}
-
-	if (device->res->vpu_ver == VPU_VERSION_IRIS1)
-		device->bus_vote.calc_bw = calc_bw_iris1;
-	else
-		device->bus_vote.calc_bw = calc_bw_iris2;
 
 	return 0;
 
@@ -4508,8 +4485,7 @@ static int __venus_power_on(struct venus_hfi_device *device)
 
 	device->power_enabled = true;
 	/* Vote for all hardware resources */
-	rc = __vote_buses(device, device->bus_vote.data,
-			device->bus_vote.data_count);
+	rc = __vote_buses(device, INT_MAX, INT_MAX);
 	if (rc) {
 		dprintk(VIDC_ERR, "Failed to vote buses, err: %d\n", rc);
 		goto fail_vote_buses;
@@ -4774,7 +4750,6 @@ static void __unload_fw(struct venus_hfi_device *device)
 	if (device->state != VENUS_STATE_DEINIT)
 		flush_workqueue(device->venus_pm_workq);
 
-	__vote_buses(device, NULL, 0);
 	subsystem_put(device->resources.fw.cookie);
 	__interface_queues_release(device);
 	call_venus_op(device, power_off, device);

@@ -423,6 +423,27 @@ struct clock_data {
 	u32 frame_rate;
 };
 
+struct vidc_bus_vote_data {
+	enum hal_domain domain;
+	enum hal_video_codec codec;
+	enum hal_uncompressed_format color_formats[2];
+	int num_formats; /* 1 = DPB-OPB unified; 2 = split */
+	int input_height, input_width, bitrate;
+	int output_height, output_width;
+	int rotation;
+	int compression_ratio;
+	int complexity_factor;
+	int input_cr;
+	unsigned int lcu_size;
+	unsigned int fps;
+	enum msm_vidc_power_mode power_mode;
+	u32 work_mode;
+	bool use_sys_cache;
+	bool b_frames_enabled;
+	unsigned long calc_bw_ddr;
+	unsigned long calc_bw_llcc;
+};
+
 struct profile_data {
 	int start;
 	int stop;
@@ -450,6 +471,7 @@ struct msm_vidc_core_ops {
 	int (*decide_work_route)(struct msm_vidc_inst *inst);
 	int (*decide_work_mode)(struct msm_vidc_inst *inst);
 	int (*decide_core_and_power_mode)(struct msm_vidc_inst *inst);
+	int (*calc_bw)(struct vidc_bus_vote_data *vidc_data);
 };
 
 struct msm_vidc_core {
@@ -524,6 +546,7 @@ struct msm_vidc_inst {
 	struct msm_vidc_debug debug;
 	struct buf_count count;
 	struct clock_data clk_data;
+	struct vidc_bus_vote_data bus_data;
 	enum msm_vidc_modes flags;
 	struct msm_vidc_capability capability;
 	u32 buffer_size_limit;

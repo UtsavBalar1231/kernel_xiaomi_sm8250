@@ -255,8 +255,6 @@ struct venus_hfi_device {
 	u32 device_id;
 	u32 clk_freq;
 	u32 last_packet_type;
-	unsigned long clk_bitrate;
-	unsigned long scaled_rate;
 	struct msm_vidc_bus_data bus_vote;
 	bool power_enabled;
 	struct mutex lock;

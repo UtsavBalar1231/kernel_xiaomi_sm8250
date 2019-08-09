@@ -29,6 +29,7 @@ struct msm_vidc_core_ops core_ops_ar50 = {
 	.decide_work_route = NULL,
 	.decide_work_mode = msm_vidc_decide_work_mode_ar50,
 	.decide_core_and_power_mode = NULL,
+	.calc_bw = NULL,
 };
 
 struct msm_vidc_core_ops core_ops_iris1 = {
@@ -36,6 +37,7 @@ struct msm_vidc_core_ops core_ops_iris1 = {
 	.decide_work_route = msm_vidc_decide_work_route_iris1,
 	.decide_work_mode = msm_vidc_decide_work_mode_iris1,
 	.decide_core_and_power_mode = msm_vidc_decide_core_and_power_mode_iris1,
+	.calc_bw = calc_bw_iris1,
 };
 
 struct msm_vidc_core_ops core_ops_iris2 = {
@@ -43,6 +45,7 @@ struct msm_vidc_core_ops core_ops_iris2 = {
 	.decide_work_route = msm_vidc_decide_work_route_iris2,
 	.decide_work_mode = msm_vidc_decide_work_mode_iris2,
 	.decide_core_and_power_mode = msm_vidc_decide_core_and_power_mode_iris2,
+	.calc_bw = calc_bw_iris2,
 };
 
 static inline void msm_dcvs_print_dcvs_stats(struct clock_data *dcvs)
@@ -256,15 +259,12 @@ static int fill_dynamic_stats(struct msm_vidc_inst *inst,
 	return 0;
 }
 
-int msm_comm_vote_bus(struct msm_vidc_core *core)
+int msm_comm_set_buses(struct msm_vidc_core *core)
 {
-	int rc = 0, vote_data_count = 0, i = 0;
-	struct hfi_device *hdev;
+	int rc = 0;
 	struct msm_vidc_inst *inst = NULL;
-	struct vidc_bus_vote_data *vote_data = NULL;
-	bool is_turbo = false;
-	struct v4l2_format *out_f;
-	struct v4l2_format *inp_f;
+	struct hfi_device *hdev;
+	unsigned long total_bw_ddr = 0, total_bw_llcc = 0;
 
 	if (!core || !core->device) {
 		dprintk(VIDC_ERR, "%s Invalid args: %pK\n", __func__, core);
@@ -272,23 +272,8 @@ int msm_comm_vote_bus(struct msm_vidc_core *core)
 	}
 	hdev = core->device;
 
-	vote_data = kzalloc(sizeof(struct vidc_bus_vote_data) *
-			MAX_SUPPORTED_INSTANCES, GFP_ATOMIC);
-	if (!vote_data) {
-		dprintk(VIDC_LOW,
-			"vote_data allocation with GFP_ATOMIC failed\n");
-		vote_data = kzalloc(sizeof(struct vidc_bus_vote_data) *
-			MAX_SUPPORTED_INSTANCES, GFP_KERNEL);
-		if (!vote_data) {
-			dprintk(VIDC_ERR,
-				"vote_data allocation failed\n");
-			return -EINVAL;
-		}
-	}
-
 	mutex_lock(&core->lock);
 	list_for_each_entry(inst, &core->instances, list) {
-		int codec = 0;
 		struct msm_vidc_buffer *temp, *next;
 		u32 filled_len = 0;
 		u32 device_addr = 0;
@@ -301,11 +286,6 @@ int msm_comm_vote_bus(struct msm_vidc_core *core)
 					temp->vvb.vb2_buf.planes[0].bytesused);
 				device_addr = temp->smem[0].device_addr;
 			}
-			if (inst->session_type == MSM_VIDC_ENCODER &&
-				(temp->vvb.flags &
-				V4L2_BUF_FLAG_PERF_MODE)) {
-				is_turbo = true;
-			}
 		}
 		mutex_unlock(&inst->registeredbufs.lock);
 
@@ -316,8 +296,75 @@ int msm_comm_vote_bus(struct msm_vidc_core *core)
 			continue;
 		}
 
-		++vote_data_count;
+		if (inst->bus_data.power_mode == VIDC_POWER_TURBO) {
+			total_bw_ddr = total_bw_llcc = INT_MAX;
+			break;
+		}
+		total_bw_ddr += inst->bus_data.calc_bw_ddr;
+		total_bw_llcc += inst->bus_data.calc_bw_llcc;
+	}
+	mutex_unlock(&core->lock);
 
+	rc = call_hfi_op(hdev, vote_bus, hdev->hfi_device_data,
+		total_bw_ddr, total_bw_llcc);
+
+	return rc;
+}
+
+int msm_comm_vote_bus(struct msm_vidc_inst *inst)
+{
+	int rc = 0;
+	struct msm_vidc_core *core;
+	struct vidc_bus_vote_data *vote_data = NULL;
+	bool is_turbo = false;
+	struct v4l2_format *out_f;
+	struct v4l2_format *inp_f;
+	struct msm_vidc_buffer *temp, *next;
+	u32 filled_len = 0;
+	u32 device_addr = 0;
+	int codec = 0;
+
+	if (!inst || !inst->core) {
+		dprintk(VIDC_ERR, "%s Invalid args: %pK\n", __func__, inst);
+		return -EINVAL;
+	}
+	core = inst->core;
+	vote_data = &inst->bus_data;
+
+	mutex_lock(&inst->registeredbufs.lock);
+	list_for_each_entry_safe(temp, next,
+			&inst->registeredbufs.list, list) {
+		if (temp->vvb.vb2_buf.type == INPUT_MPLANE) {
+			filled_len = max(filled_len,
+				temp->vvb.vb2_buf.planes[0].bytesused);
+			device_addr = temp->smem[0].device_addr;
+		}
+		if (inst->session_type == MSM_VIDC_ENCODER &&
+			(temp->vvb.flags & V4L2_BUF_FLAG_PERF_MODE)) {
+			is_turbo = true;
+		}
+	}
+	mutex_unlock(&inst->registeredbufs.lock);
+
+	if ((!filled_len || !device_addr) &&
+		(inst->session_type != MSM_VIDC_CVP)) {
+		dprintk(VIDC_LOW, "%s: no input for session %x\n",
+			__func__, hash32_ptr(inst->session));
+		return 0;
+	}
+
+	vote_data->domain = get_hal_domain(inst->session_type);
+	vote_data->power_mode = 0;
+	if (inst->clk_data.buffer_counter < DCVS_FTB_WINDOW &&
+		inst->session_type != MSM_VIDC_CVP)
+		vote_data->power_mode = VIDC_POWER_TURBO;
+	if (msm_vidc_clock_voting || is_turbo)
+		vote_data->power_mode = VIDC_POWER_TURBO;
+
+	if (inst->session_type == MSM_VIDC_CVP) {
+		vote_data->calc_bw_ddr= inst->clk_data.ddr_bw;
+		vote_data->calc_bw_llcc= inst->clk_data.sys_cache_bw;
+	} else if (vote_data->power_mode != VIDC_POWER_TURBO) {
 		out_f = &inst->fmts[OUTPUT_PORT].v4l2_fmt;
 		inp_f = &inst->fmts[INPUT_PORT].v4l2_fmt;
 		switch (inst->session_type) {
@@ -336,81 +383,60 @@ int msm_comm_vote_bus(struct msm_vidc_core *core)
 			break;
 		}
 
-		memset(&(vote_data[i]), 0x0, sizeof(struct vidc_bus_vote_data));
-
-		vote_data[i].domain = get_hal_domain(inst->session_type);
-		vote_data[i].codec = get_hal_codec(codec);
-		vote_data[i].input_width = inp_f->fmt.pix_mp.width;
-		vote_data[i].input_height = inp_f->fmt.pix_mp.height;
-		vote_data[i].output_width = out_f->fmt.pix_mp.width;
-		vote_data[i].output_height = out_f->fmt.pix_mp.height;
-		vote_data[i].lcu_size = (codec == V4L2_PIX_FMT_HEVC ||
+		vote_data->codec = get_hal_codec(codec);
+		vote_data->input_width = inp_f->fmt.pix_mp.width;
+		vote_data->input_height = inp_f->fmt.pix_mp.height;
+		vote_data->output_width = out_f->fmt.pix_mp.width;
+		vote_data->output_height = out_f->fmt.pix_mp.height;
+		vote_data->lcu_size = (codec == V4L2_PIX_FMT_HEVC ||
 				codec == V4L2_PIX_FMT_VP9) ? 32 : 16;
 
-		vote_data[i].fps = msm_vidc_get_fps(inst);
+		vote_data->fps = msm_vidc_get_fps(inst);
 		if (inst->session_type == MSM_VIDC_ENCODER) {
-			vote_data[i].bitrate = inst->clk_data.bitrate;
-			vote_data[i].rotation =
+			vote_data->bitrate = inst->clk_data.bitrate;
+			vote_data->rotation =
 				msm_comm_g_ctrl_for_id(inst, V4L2_CID_ROTATE);
-			vote_data[i].b_frames_enabled =
+			vote_data->b_frames_enabled =
 				msm_comm_g_ctrl_for_id(inst,
 					V4L2_CID_MPEG_VIDEO_B_FRAMES) != 0;
 			/* scale bitrate if operating rate is larger than fps */
-			if (vote_data[i].fps > (inst->clk_data.frame_rate >> 16)
+			if (vote_data->fps > (inst->clk_data.frame_rate >> 16)
 				&& (inst->clk_data.frame_rate >> 16)) {
-				vote_data[i].bitrate = vote_data[i].bitrate /
+				vote_data->bitrate = vote_data->bitrate /
 				(inst->clk_data.frame_rate >> 16) *
-				vote_data[i].fps;
+				vote_data->fps;
 			}
 		} else if (inst->session_type == MSM_VIDC_DECODER) {
-			vote_data[i].bitrate =
-				filled_len * vote_data[i].fps * 8;
+			vote_data->bitrate =
+				filled_len * vote_data->fps * 8;
 		}
-
-		vote_data[i].power_mode = 0;
-		if (inst->clk_data.buffer_counter < DCVS_FTB_WINDOW &&
-			inst->session_type != MSM_VIDC_CVP)
-			vote_data[i].power_mode = VIDC_POWER_TURBO;
-		if (msm_vidc_clock_voting || is_turbo)
-			vote_data[i].power_mode = VIDC_POWER_TURBO;
 
 		if (msm_comm_get_stream_output_mode(inst) ==
 				HAL_VIDEO_DECODER_PRIMARY) {
-			vote_data[i].color_formats[0] =
+			vote_data->color_formats[0] =
 				msm_comm_get_hal_uncompressed(
 				inst->clk_data.opb_fourcc);
-			vote_data[i].num_formats = 1;
+			vote_data->num_formats = 1;
 		} else {
-			vote_data[i].color_formats[0] =
+			vote_data->color_formats[0] =
 				msm_comm_get_hal_uncompressed(
 				inst->clk_data.dpb_fourcc);
-			vote_data[i].color_formats[1] =
+			vote_data->color_formats[1] =
 				msm_comm_get_hal_uncompressed(
 				inst->clk_data.opb_fourcc);
-			vote_data[i].num_formats = 2;
+			vote_data->num_formats = 2;
 		}
-		vote_data[i].work_mode = inst->clk_data.work_mode;
-		fill_dynamic_stats(inst, &vote_data[i]);
+		vote_data->work_mode = inst->clk_data.work_mode;
+		fill_dynamic_stats(inst, vote_data);
 
 		if (core->resources.sys_cache_res_set)
-			vote_data[i].use_sys_cache = true;
+			vote_data->use_sys_cache = true;
 
-		if (inst->session_type == MSM_VIDC_CVP) {
-			vote_data[i].domain =
-				get_hal_domain(inst->session_type);
-			vote_data[i].ddr_bw = inst->clk_data.ddr_bw;
-			vote_data[i].sys_cache_bw =
-				inst->clk_data.sys_cache_bw;
-		}
-
-		i++;
+		call_core_op(core, calc_bw, vote_data);
 	}
-	mutex_unlock(&core->lock);
-	if (vote_data_count)
-		rc = call_hfi_op(hdev, vote_bus, hdev->hfi_device_data,
-			vote_data, vote_data_count);
 
-	kfree(vote_data);
+	rc = msm_comm_set_buses(core);
+
 	return rc;
 }
 
@@ -1058,7 +1084,7 @@ int msm_comm_scale_clocks_and_bus(struct msm_vidc_inst *inst, bool do_bw_calc)
 	}
 
 	if (do_bw_calc) {
-		if (msm_comm_vote_bus(core)) {
+		if (msm_comm_vote_bus(inst)) {
 			dprintk(VIDC_ERR,
 				"Failed to scale DDR bus. May impact perf\n");
 		}

@@ -239,7 +239,7 @@ static int msm_cvp_scale_clocks_and_bus(struct msm_vidc_inst *inst)
 		goto exit;
 	}
 
-	rc = msm_comm_vote_bus(inst->core);
+	rc = msm_comm_vote_bus(inst);
 	if (rc) {
 		dprintk(VIDC_ERR,
 			"%s: failed vote_bus for inst %pK (%#x)\n",

@@ -58,8 +58,6 @@
 /* 16 video sessions */
 #define VIDC_MAX_SESSIONS               16
 
-struct vidc_bus_vote_data;
-
 enum vidc_status {
 	VIDC_ERR_NONE = 0x0,
 	VIDC_ERR_FAIL = 0x80000000,
@@ -721,8 +719,8 @@ struct hfi_device {
 	int (*session_pause)(void *sess);
 	int (*session_resume)(void *sess);
 	int (*scale_clocks)(void *dev, u32 freq);
-	int (*vote_bus)(void *dev, struct vidc_bus_vote_data *data,
-			int num_data);
+	int (*vote_bus)(void *dev, unsigned long bw_ddr,
+			unsigned long bw_llcc);
 	int (*get_fw_info)(void *dev, struct hal_fw_info *fw_info);
 	int (*session_clean)(void *sess);
 	int (*get_core_capabilities)(void *dev);

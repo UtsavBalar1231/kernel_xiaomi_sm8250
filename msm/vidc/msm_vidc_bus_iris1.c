@@ -75,12 +75,7 @@ static unsigned long __calculate_vpe(struct vidc_bus_vote_data *d)
 
 static unsigned long __calculate_cvp(struct vidc_bus_vote_data *d)
 {
-	unsigned long ret = 0;
-
-	d->calc_bw_ddr = d->ddr_bw;
-	d->calc_bw_llcc = d->sys_cache_bw;
-
-	return ret;
+	return 0;
 }
 
 static unsigned long __calculate_decoder(struct vidc_bus_vote_data *d)
@@ -641,31 +636,15 @@ static unsigned long __calculate(struct vidc_bus_vote_data *d)
 	return value;
 }
 
-int calc_bw_iris1(struct msm_vidc_bus_data *vidc_data)
+int calc_bw_iris1(struct vidc_bus_vote_data *vidc_data)
 {
-	int ret = 0, c = 0;
+	int ret = 0;
 
-	if (!vidc_data || !vidc_data->data_count || !vidc_data->data)
-		goto exit;
+	if (!vidc_data)
+		return ret;
 
-	vidc_data->total_bw_ddr = 0;
-	vidc_data->total_bw_llcc = 0;
+	ret = __calculate(vidc_data);
 
-	for (c = 0; c < vidc_data->data_count; ++c) {
-		if (vidc_data->data->power_mode == VIDC_POWER_TURBO) {
-			vidc_data->total_bw_ddr = INT_MAX;
-			vidc_data->total_bw_llcc = INT_MAX;
-			goto exit;
-		}
-	}
-
-	for (c = 0; c < vidc_data->data_count; ++c) {
-		__calculate(&vidc_data->data[c]);
-		vidc_data->total_bw_ddr += vidc_data->data[c].calc_bw_ddr;
-		vidc_data->total_bw_llcc += vidc_data->data[c].calc_bw_llcc;
-	}
-
-exit:
 	return ret;
 }
 
