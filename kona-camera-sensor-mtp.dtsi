@@ -1,3 +1,5 @@
+#include <dt-bindings/clock/qcom,camcc-kona.h>
+
 &soc {
 	led_flash_rear: qcom,camera-flash0 {
 		cell-index = <0>;
