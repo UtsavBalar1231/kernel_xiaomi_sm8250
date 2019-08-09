@@ -110,6 +110,11 @@ module_param(rmnet_perf_frag_flush, ulong, 0444);
 MODULE_PARM_DESC(rmnet_perf_frag_flush,
 		 "Number of packet fragments flushed to stack");
 
+unsigned long int rmnet_perf_qmap_size_mismatch = 0;
+module_param(rmnet_perf_qmap_size_mismatch, ulong, 0444);
+MODULE_PARM_DESC(rmnet_perf_qmap_size_mismatch,
+		 "Number of mismatches b/w QMAP and IP lengths");
+
 /* Handle deag by default for legacy behavior */
 static bool rmnet_perf_ingress_deag = true;
 module_param(rmnet_perf_ingress_deag, bool, 0444);
@@ -563,6 +568,8 @@ int rmnet_perf_core_validate_pkt_csum(struct sk_buff *skb,
  * @pkt_info: struct to fill in
  * @pkt_len: length of the packet
  * @skip_hash: set to false if rmnet_perf can calculate the hash, true otherwise
+ * @len_mismatch: set to true if there is a mismatch between the IP length and
+ * the QMAP length of the packet
  *
  * Return:
  *		- true if packet needs to be dropped
@@ -570,9 +577,11 @@ int rmnet_perf_core_validate_pkt_csum(struct sk_buff *skb,
  **/
 bool rmnet_perf_core_dissect_pkt(unsigned char *payload,
 				 struct rmnet_perf_pkt_info *pkt_info,
-				 int offset, u16 pkt_len, bool *skip_hash)
+				 int offset, u16 pkt_len, bool *skip_hash,
+				 bool *len_mismatch)
 {
 	bool flush = true;
+	bool mismatch = false;
 
 	payload += offset;
 	pkt_info->ip_proto = (*payload & 0xF0) >> 4;
@@ -588,6 +597,7 @@ bool rmnet_perf_core_dissect_pkt(unsigned char *payload,
 			goto done;
 		}
 
+		mismatch = pkt_len != ntohs(iph->tot_len);
 		pkt_info->ip_len = iph->ihl * 4;
 		pkt_info->trans_proto = iph->protocol;
 
@@ -640,6 +650,7 @@ bool rmnet_perf_core_dissect_pkt(unsigned char *payload,
 			goto done;
 		}
 
+		mismatch = pkt_len != ntohs(ip6h->payload_len) + sizeof(*ip6h);
 		pkt_info->ip_len = (u16)len;
 		pkt_info->trans_proto = protocol;
 
@@ -688,6 +699,12 @@ done:
 	pkt_info->payload_len = pkt_len - pkt_info->ip_len -
 				pkt_info->trans_len;
 	*skip_hash = flush;
+	*len_mismatch = mismatch;
+	if (mismatch) {
+		rmnet_perf_qmap_size_mismatch++;
+		if (!rmnet_perf_core_is_deag_mode())
+			pkt_info->frag_desc->hdrs_valid = 0;
+	}
 
 	return false;
 }
@@ -699,6 +716,8 @@ done:
  * @offset: offset from start of skb data to the IP header
  * @pkt_len: length of the packet
  * @skip_hash: set to false if rmnet_perf can calculate the hash, true otherwise
+ * @len_mismatch: set to true if there is a mismatch between the IP length and
+ * the QMAP length of the packet
  *
  * Return:
  *		- true if packet needs to be dropped
@@ -707,11 +726,12 @@ done:
 
 bool rmnet_perf_core_dissect_skb(struct sk_buff *skb,
 				 struct rmnet_perf_pkt_info *pkt_info,
-				 int offset, u16 pkt_len, bool *skip_hash)
+				 int offset, u16 pkt_len, bool *skip_hash,
+				 bool *len_mismatch)
 {
 	pkt_info->skb = skb;
 	return rmnet_perf_core_dissect_pkt(skb->data, pkt_info, offset,
-					   pkt_len, skip_hash);
+					   pkt_len, skip_hash, len_mismatch);
 }
 
 /* rmnet_perf_core_dissect_desc() - Extract packet header metadata for easier
@@ -721,6 +741,8 @@ bool rmnet_perf_core_dissect_skb(struct sk_buff *skb,
  * @offset: offset from start of descriptor payload to the IP header
  * @pkt_len: length of the packet
  * @skip_hash: set to false if rmnet_perf can calculate the hash, true otherwise
+ * @len_mismatch: set tp true if there is a mismatch between the IP length and
+ * the QMAP length of the packet
  *
  * Return:
  *		- true if packet needs to be flushed out immediately
@@ -729,7 +751,8 @@ bool rmnet_perf_core_dissect_skb(struct sk_buff *skb,
 
 bool rmnet_perf_core_dissect_desc(struct rmnet_frag_descriptor *frag_desc,
 				  struct rmnet_perf_pkt_info *pkt_info,
-				  int offset, u16 pkt_len, bool *skip_hash)
+				  int offset, u16 pkt_len, bool *skip_hash,
+				  bool *len_mismatch)
 {
 	u8 *payload = frag_desc->hdr_ptr;
 
@@ -741,7 +764,7 @@ bool rmnet_perf_core_dissect_desc(struct rmnet_frag_descriptor *frag_desc,
 
 	pkt_info->frag_desc = frag_desc;
 	return rmnet_perf_core_dissect_pkt(payload, pkt_info, offset, pkt_len,
-					   skip_hash);
+					   skip_hash, len_mismatch);
 }
 
 void rmnet_perf_core_handle_packet_ingress(struct sk_buff *skb,
@@ -752,13 +775,14 @@ void rmnet_perf_core_handle_packet_ingress(struct sk_buff *skb,
 	unsigned int offset = sizeof(struct rmnet_map_header);
 	u16 pkt_len;
 	bool skip_hash = false;
+	bool len_mismatch = false;
 
 	pkt_len = frame_len - offset - trailer_len;
 	memset(pkt_info, 0, sizeof(*pkt_info));
 	pkt_info->ep = ep;
 
 	if (rmnet_perf_core_dissect_skb(skb, pkt_info, offset, pkt_len,
-					&skip_hash)) {
+					&skip_hash, &len_mismatch)) {
 		rmnet_perf_core_non_ip_count++;
 		/* account for the bulk add in rmnet_perf_core_deaggregate() */
 		rmnet_perf_core_pre_ip_count--;
@@ -768,6 +792,12 @@ void rmnet_perf_core_handle_packet_ingress(struct sk_buff *skb,
 	if (skip_hash) {
 		/* We're flushing anyway, so no need to check result */
 		rmnet_perf_core_validate_pkt_csum(skb, pkt_info);
+		goto flush;
+	} else if (len_mismatch) {
+		/* We're flushing anyway, so no need to check result */
+		rmnet_perf_core_validate_pkt_csum(skb, pkt_info);
+		/* Flush anything in the hash to avoid any OOO */
+		rmnet_perf_opt_flush_flow_by_hash(pkt_info->hash_key);
 		goto flush;
 	}
 
@@ -797,12 +827,13 @@ void rmnet_perf_core_desc_entry(struct rmnet_frag_descriptor *frag_desc,
 	struct rmnet_perf *perf = rmnet_perf_config_get_perf();
 	u16 pkt_len = skb_frag_size(&frag_desc->frag);
 	bool skip_hash = true;
+	bool len_mismatch = false;
 
 	rmnet_perf_core_grab_lock();
 	perf->rmnet_port = port;
 	memset(&pkt_info, 0, sizeof(pkt_info));
 	if (rmnet_perf_core_dissect_desc(frag_desc, &pkt_info, 0, pkt_len,
-					 &skip_hash)) {
+					 &skip_hash, &len_mismatch)) {
 		rmnet_perf_core_non_ip_count++;
 		rmnet_recycle_frag_descriptor(frag_desc, port);
 		rmnet_perf_core_release_lock();
@@ -811,13 +842,18 @@ void rmnet_perf_core_desc_entry(struct rmnet_frag_descriptor *frag_desc,
 
 	/* We know the packet is an IP packet now */
 	rmnet_perf_core_pre_ip_count++;
-	if (skip_hash)
+	if (skip_hash) {
 		goto flush;
+	} else if (len_mismatch) {
+		/* Flush everything in the hash to avoid OOO */
+		rmnet_perf_opt_flush_flow_by_hash(pkt_info.hash_key);
+		goto flush;
+	}
 
 	/* Skip packets with bad checksums.
 	 * This check is delayed here to allow packets that won't be
-	 * checksummed by hardware (i.e. non-TCP/UDP data, fragments) to be
-	 * flushed by the above check. This ensures that we report statistics
+	 * checksummed by hardware (non-TCP/UDP data, fragments, padding) to be
+	 * flushed by the above checks. This ensures that we report statistics
 	 * correctly (i.e. rmnet_perf_frag_flush increases for each fragment),
 	 * and don't report packets with valid checksums that weren't offloaded
 	 * as "bad checksum" packets.
