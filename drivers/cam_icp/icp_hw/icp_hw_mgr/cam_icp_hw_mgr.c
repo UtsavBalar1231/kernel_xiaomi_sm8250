@@ -16,9 +16,9 @@
 #include <linux/bitops.h>
 #include <linux/delay.h>
 #include <linux/debugfs.h>
-#include <cam_defs.h>
-#include <cam_icp.h>
-#include <cam_cpas.h>
+#include <media/cam_defs.h>
+#include <media/cam_icp.h>
+#include <media/cam_cpas.h>
 
 #include "cam_sync_api.h"
 #include "cam_packet_util.h"

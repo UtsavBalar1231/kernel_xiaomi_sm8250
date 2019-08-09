@@ -10,7 +10,7 @@
 #include <linux/types.h>
 #include <linux/ioctl.h>
 #include <linux/media.h>
-#include "cam_defs.h"
+#include <media/cam_defs.h>
 
 #define CAM_REQ_MGR_VNODE_NAME "cam-req-mgr-devnode"
 

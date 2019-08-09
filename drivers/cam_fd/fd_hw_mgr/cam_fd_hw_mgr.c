@@ -5,8 +5,8 @@
 
 #include <linux/module.h>
 #include <linux/kernel.h>
-#include <cam_cpas.h>
-#include <cam_req_mgr.h>
+#include <media/cam_cpas.h>
+#include <media/cam_req_mgr.h>
 
 #include "cam_io_util.h"
 #include "cam_soc_util.h"

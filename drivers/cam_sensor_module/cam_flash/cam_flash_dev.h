@@ -17,8 +17,8 @@
 #include <media/v4l2-subdev.h>
 #include <media/v4l2-ioctl.h>
 #include <media/v4l2-event.h>
-#include <cam_sensor.h>
-#include <cam_req_mgr.h>
+#include <media/cam_sensor.h>
+#include <media/cam_req_mgr.h>
 #include "cam_req_mgr_util.h"
 #include "cam_req_mgr_interface.h"
 #include "cam_subdev.h"

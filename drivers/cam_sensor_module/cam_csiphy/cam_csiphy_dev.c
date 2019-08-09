@@ -7,7 +7,7 @@
 #include "cam_req_mgr_dev.h"
 #include "cam_csiphy_soc.h"
 #include "cam_csiphy_core.h"
-#include <cam_sensor.h>
+#include <media/cam_sensor.h>
 
 static long cam_csiphy_subdev_ioctl(struct v4l2_subdev *sd,
 	unsigned int cmd, void *arg)

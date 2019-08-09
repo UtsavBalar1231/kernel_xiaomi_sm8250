@@ -8,7 +8,7 @@
 
 #include <linux/types.h>
 #include <linux/completion.h>
-#include <cam_icp.h>
+#include <media/cam_icp.h>
 #include "cam_icp_hw_intf.h"
 #include "cam_hw_mgr_intf.h"
 #include "cam_hw_intf.h"

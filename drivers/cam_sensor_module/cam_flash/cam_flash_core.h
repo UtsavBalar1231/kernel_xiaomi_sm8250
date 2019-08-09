@@ -6,7 +6,7 @@
 #ifndef _CAM_FLASH_CORE_H_
 #define _CAM_FLASH_CORE_H_
 
-#include <cam_sensor.h>
+#include <media/cam_sensor.h>
 #include "cam_flash_dev.h"
 
 int cam_flash_publish_dev_info(struct cam_req_mgr_device_info *info);

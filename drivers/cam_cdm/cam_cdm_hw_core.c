@@ -10,7 +10,7 @@
 #include <linux/timer.h>
 #include <linux/kernel.h>
 
-#include <cam_req_mgr.h>
+#include <media/cam_req_mgr.h>
 #include "cam_soc_util.h"
 #include "cam_smmu_api.h"
 #include "cam_cdm_intf_api.h"

@@ -7,9 +7,9 @@
 #include <linux/videodev2.h>
 #include <linux/slab.h>
 #include <linux/uaccess.h>
-#include <cam_sync.h>
-#include <cam_defs.h>
-#include <cam_icp.h>
+#include <media/cam_sync.h>
+#include <media/cam_defs.h>
+#include <media/cam_icp.h>
 #include "cam_node.h"
 #include "cam_context.h"
 #include "cam_context_utils.h"

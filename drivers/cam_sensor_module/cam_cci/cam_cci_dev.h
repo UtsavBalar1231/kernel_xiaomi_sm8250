@@ -18,14 +18,14 @@
 #include <linux/kernel.h>
 #include <linux/platform_device.h>
 #include <linux/semaphore.h>
-#include <cam_sensor.h>
+#include <media/cam_sensor.h>
 #include <media/v4l2-event.h>
 #include <media/v4l2-ioctl.h>
 #include <media/v4l2-subdev.h>
 #include <cam_sensor_cmn_header.h>
 #include <cam_io_util.h>
 #include <cam_sensor_util.h>
-#include "../../cam_req_mgr/cam_subdev.h"
+#include "cam_subdev.h"
 #include <cam_cpas_api.h>
 #include "cam_cci_hwreg.h"
 #include "cam_soc_util.h"
