@@ -7,8 +7,8 @@
 #define CAM_A5_HW_INTF_H
 
 #include <linux/timer.h>
-#include <cam_defs.h>
-#include <cam_icp.h>
+#include <media/cam_defs.h>
+#include <media/cam_icp.h>
 #include "cam_hw_mgr_intf.h"
 #include "cam_icp_hw_intf.h"
 

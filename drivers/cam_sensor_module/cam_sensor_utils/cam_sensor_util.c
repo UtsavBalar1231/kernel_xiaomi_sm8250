@@ -5,7 +5,7 @@
 
 #include <linux/kernel.h>
 #include "cam_sensor_util.h"
-#include <cam_mem_mgr.h>
+#include "cam_mem_mgr.h"
 #include "cam_res_mgr_api.h"
 
 #define CAM_SENSOR_PINCTRL_STATE_SLEEP "cam_suspend"

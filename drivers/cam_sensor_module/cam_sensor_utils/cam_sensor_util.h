@@ -12,9 +12,9 @@
 #include <linux/of_gpio.h>
 #include <linux/of.h>
 #include "cam_sensor_cmn_header.h"
-#include "../../cam_req_mgr/cam_req_mgr_util.h"
-#include "../../cam_req_mgr/cam_req_mgr_interface.h"
-#include "../../cam_req_mgr/cam_mem_mgr.h"
+#include "cam_req_mgr_util.h"
+#include "cam_req_mgr_interface.h"
+#include <cam_mem_mgr.h>
 #include "cam_soc_util.h"
 #include "cam_debug_util.h"
 #include "cam_sensor_io.h"

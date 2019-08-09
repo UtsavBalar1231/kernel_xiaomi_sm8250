@@ -7,8 +7,8 @@
 #define CAM_ICP_HW_MGR_INTF_H
 
 #include <linux/of.h>
-#include <cam_icp.h>
-#include <cam_defs.h>
+#include <media/cam_icp.h>
+#include <media/cam_defs.h>
 #include "cam_cpas_api.h"
 
 #define ICP_CLK_TURBO_HZ         600000000

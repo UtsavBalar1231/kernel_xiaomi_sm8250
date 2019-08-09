@@ -6,10 +6,10 @@
 #ifndef __UAPI_CAM_ISP_H__
 #define __UAPI_CAM_ISP_H__
 
-#include "cam_defs.h"
-#include "cam_isp_vfe.h"
-#include "cam_isp_ife.h"
-#include "cam_cpas.h"
+#include <media/cam_defs.h>
+#include <media/cam_isp_vfe.h>
+#include <media/cam_isp_ife.h>
+#include <media/cam_cpas.h>
 
 /* ISP driver name */
 #define CAM_ISP_DEV_NAME                        "cam-isp"

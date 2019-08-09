@@ -10,7 +10,7 @@
 #include <media/v4l2-event.h>
 #include <media/v4l2-subdev.h>
 #include <media/v4l2-ioctl.h>
-#include <cam_sensor.h>
+#include <media/cam_sensor.h>
 #include <cam_sensor_i2c.h>
 #include <cam_sensor_spi.h>
 #include <cam_sensor_io.h>

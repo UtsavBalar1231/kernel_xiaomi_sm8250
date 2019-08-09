@@ -13,7 +13,7 @@
 #include <linux/delay.h>
 #include <linux/timer.h>
 #include <linux/elf.h>
-#include <cam_icp.h>
+#include <media/cam_icp.h>
 #include "cam_io_util.h"
 #include "cam_a5_hw_intf.h"
 #include "cam_hw.h"

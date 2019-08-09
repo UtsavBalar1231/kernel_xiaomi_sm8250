@@ -20,7 +20,7 @@
 #include <cam_req_mgr_interface.h>
 #include <cam_mem_mgr.h>
 #include <cam_subdev.h>
-#include <cam_sensor.h>
+#include <media/cam_sensor.h>
 #include "cam_soc_util.h"
 #include "cam_context.h"
 

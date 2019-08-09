@@ -9,8 +9,8 @@
 #include <linux/slab.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
-#include <cam_defs.h>
-#include <cam_fd.h>
+#include <media/cam_defs.h>
+#include <media/cam_fd.h>
 
 #include "cam_common_util.h"
 #include "cam_debug_util.h"

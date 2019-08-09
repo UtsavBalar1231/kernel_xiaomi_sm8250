@@ -6,8 +6,8 @@
 #ifndef CAM_IPE_HW_INTF_H
 #define CAM_IPE_HW_INTF_H
 
-#include <cam_defs.h>
-#include <cam_icp.h>
+#include <media/cam_defs.h>
+#include <media/cam_icp.h>
 #include "cam_hw_mgr_intf.h"
 #include "cam_icp_hw_intf.h"
 

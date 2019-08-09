@@ -6,7 +6,7 @@
 #ifndef _CAM_JPEG_CONTEXT_H_
 #define _CAM_JPEG_CONTEXT_H_
 
-#include <cam_jpeg.h>
+#include <media/cam_jpeg.h>
 
 #include "cam_context.h"
 #include "cam_jpeg_hw_mgr_intf.h"

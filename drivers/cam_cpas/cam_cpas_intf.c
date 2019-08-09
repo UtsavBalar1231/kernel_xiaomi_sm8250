@@ -10,8 +10,8 @@
 #include <media/v4l2-event.h>
 #include <media/v4l2-ioctl.h>
 #include <media/v4l2-subdev.h>
-#include <cam_cpas.h>
-#include <cam_req_mgr.h>
+#include <media/cam_cpas.h>
+#include <media/cam_req_mgr.h>
 #include <dt-bindings/msm/msm-camera.h>
 
 #include "cam_subdev.h"

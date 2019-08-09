@@ -10,8 +10,8 @@
 #include <media/v4l2-device.h>
 #include <media/v4l2-event.h>
 #include <media/v4l2-ioctl.h>
-#include <cam_req_mgr.h>
-#include <cam_defs.h>
+#include <media/cam_req_mgr.h>
+#include <media/cam_defs.h>
 #include "cam_req_mgr_dev.h"
 #include "cam_req_mgr_util.h"
 #include "cam_req_mgr_core.h"

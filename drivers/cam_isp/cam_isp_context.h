@@ -8,8 +8,8 @@
 
 
 #include <linux/spinlock.h>
-#include <cam_isp.h>
-#include <cam_defs.h>
+#include <media/cam_isp.h>
+#include <media/cam_defs.h>
 
 #include "cam_context.h"
 #include "cam_isp_hw_mgr_intf.h"

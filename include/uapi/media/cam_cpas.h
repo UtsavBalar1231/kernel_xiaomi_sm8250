@@ -6,7 +6,7 @@
 #ifndef __UAPI_CAM_CPAS_H__
 #define __UAPI_CAM_CPAS_H__
 
-#include "cam_defs.h"
+#include <media/cam_defs.h>
 
 #define CAM_FAMILY_CAMERA_SS     1
 #define CAM_FAMILY_CPAS_SS       2

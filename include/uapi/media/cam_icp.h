@@ -6,8 +6,8 @@
 #ifndef __UAPI_CAM_ICP_H__
 #define __UAPI_CAM_ICP_H__
 
-#include "cam_defs.h"
-#include "cam_cpas.h"
+#include <media/cam_defs.h>
+#include <media/cam_cpas.h>
 
 /* icp, ipe, bps, cdm(ipe/bps) are used in querycap */
 #define CAM_ICP_DEV_TYPE_A5      1

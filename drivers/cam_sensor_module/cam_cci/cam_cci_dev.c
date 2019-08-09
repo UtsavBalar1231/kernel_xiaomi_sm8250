@@ -4,7 +4,7 @@
  */
 
 #include "cam_cci_dev.h"
-#include "../../cam_req_mgr/cam_req_mgr_dev.h"
+#include "cam_req_mgr_dev.h"
 #include "cam_cci_soc.h"
 #include "cam_cci_core.h"
 

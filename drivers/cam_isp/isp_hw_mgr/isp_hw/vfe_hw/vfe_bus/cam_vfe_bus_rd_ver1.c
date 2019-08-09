@@ -10,7 +10,7 @@
 #include "cam_debug_util.h"
 #include "cam_cdm_util.h"
 #include "cam_hw_intf.h"
-#include "../../cam_ife_hw_mgr.h"
+#include "cam_ife_hw_mgr.h"
 #include "cam_vfe_hw_intf.h"
 #include "cam_irq_controller.h"
 #include "cam_tasklet_util.h"

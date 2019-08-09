@@ -17,9 +17,9 @@
 #include <media/v4l2-event.h>
 #include <media/v4l2-ioctl.h>
 #include <media/v4l2-subdev.h>
-#include <cam_req_mgr.h>
-#include <cam_defs.h>
-#include <cam_icp.h>
+#include <media/cam_req_mgr.h>
+#include <media/cam_defs.h>
+#include <media/cam_icp.h>
 #include "cam_req_mgr_dev.h"
 #include "cam_subdev.h"
 #include "cam_node.h"
