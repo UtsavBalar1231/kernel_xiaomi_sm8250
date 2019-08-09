@@ -20,7 +20,6 @@ RMNET_SHS_BLD_DIR := ../../vendor/qcom/opensource/data-kernel/drivers/rmnet/shs
 DLKM_DIR := ./device/qcom/common/dlkm
 
 KBUILD_OPTIONS := $(RMNET_SHS_BLD_DIR)
-LOCAL_MODULE_TAGS := debug
 
 $(warning $(DLKM_DIR))
 include $(DLKM_DIR)/AndroidKernelModule.mk
