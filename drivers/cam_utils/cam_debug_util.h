@@ -75,7 +75,7 @@ const char *cam_get_module_name(unsigned int module_id);
  * @args     :  Arguments which needs to be print in log
  */
 #define CAM_ERR(__module, fmt, args...)                            \
-	pr_err("CAM_ERR: %s: %s: %d " fmt "\n",                     \
+	pr_info("CAM_ERR: %s: %s: %d " fmt "\n",                   \
 		cam_get_module_name(__module), __func__,  __LINE__, ##args)
 /*
  * CAM_WARN
@@ -86,7 +86,7 @@ const char *cam_get_module_name(unsigned int module_id);
  * @args     :  Arguments which needs to be print in log
  */
 #define CAM_WARN(__module, fmt, args...)                           \
-	pr_warn("CAM_WARN: %s: %s: %d " fmt "\n",                     \
+	pr_info("CAM_WARN: %s: %s: %d " fmt "\n",                  \
 		cam_get_module_name(__module), __func__,  __LINE__, ##args)
 /*
  * CAM_INFO
@@ -128,7 +128,7 @@ const char *cam_get_module_name(unsigned int module_id);
  * @brief    :  This Macro will print error print logs with ratelimit
  */
 #define CAM_ERR_RATE_LIMIT(__module, fmt, args...)                 \
-	pr_err_ratelimited("CAM_ERR: %s: %s: %d " fmt "\n",            \
+	pr_info_ratelimited("CAM_ERR: %s: %s: %d " fmt "\n",       \
 		cam_get_module_name(__module), __func__,  __LINE__, ##args)
 /*
  * CAM_WARN_RATE_LIMIT
@@ -139,7 +139,7 @@ const char *cam_get_module_name(unsigned int module_id);
  * @args     :  Arguments which needs to be print in log
  */
 #define CAM_WARN_RATE_LIMIT(__module, fmt, args...)                 \
-	pr_warn_ratelimited("CAM_WARN: %s: %s: %d " fmt "\n",           \
+	pr_info_ratelimited("CAM_WARN: %s: %s: %d " fmt "\n",       \
 		cam_get_module_name(__module), __func__,  __LINE__, ##args)
 
 /*
@@ -158,7 +158,7 @@ const char *cam_get_module_name(unsigned int module_id);
 			(interval * HZ),                                    \
 			burst);                                             \
 		if (__ratelimit(&_rs))                                      \
-			pr_warn(                                            \
+			pr_info(                                            \
 				"CAM_WARN: %s: %s: %d " fmt "\n",           \
 				cam_get_module_name(__module), __func__,    \
 				__LINE__, ##args);                          \
@@ -202,7 +202,7 @@ const char *cam_get_module_name(unsigned int module_id);
 			(interval * HZ),                                   \
 			burst);                                            \
 		if (__ratelimit(&_rs))                                     \
-			pr_err(                                            \
+			pr_info(                                           \
 				"CAM_ERR: %s: %s: %d " fmt "\n",           \
 				cam_get_module_name(__module), __func__,   \
 				__LINE__, ##args);                         \
