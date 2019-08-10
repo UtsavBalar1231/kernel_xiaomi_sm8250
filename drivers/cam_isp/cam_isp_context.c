@@ -456,48 +456,49 @@ static void __cam_isp_ctx_handle_buf_done_fail_log(
 		return;
 	}
 
-	CAM_ERR(CAM_ISP,
+	CAM_WARN(CAM_ISP,
 		"Prev Req[%lld] : num_out=%d, num_acked=%d, bubble : report=%d, detected=%d",
 		request_id, req_isp->num_fence_map_out, req_isp->num_acked,
 		req_isp->bubble_report, req_isp->bubble_detected);
-	CAM_ERR(CAM_ISP,
+	CAM_WARN(CAM_ISP,
 		"Resource Handles that fail to generate buf_done in prev frame");
 	for (i = 0; i < req_isp->num_fence_map_out; i++) {
-		if (req_isp->fence_map_out[i].sync_id != -1)
-			CAM_ERR(CAM_ISP,
+		if (req_isp->fence_map_out[i].sync_id != -1) {
+			CAM_WARN(CAM_ISP,
 			"Resource_Handle: [%s][0x%x] Sync_ID: [0x%x]",
 			__cam_isp_resource_handle_id_to_type(
 			req_isp->fence_map_out[i].resource_handle),
 			req_isp->fence_map_out[i].resource_handle,
 			req_isp->fence_map_out[i].sync_id);
+		}
 	}
 }
 
-static int __cam_isp_ctx_handle_buf_done_in_activated_state(
+static int __cam_isp_ctx_handle_buf_done_for_request(
 	struct cam_isp_context *ctx_isp,
+	struct cam_ctx_request  *req,
 	struct cam_isp_hw_done_event_data *done,
-	uint32_t bubble_state)
+	uint32_t bubble_state,
+	struct cam_isp_hw_done_event_data *done_next_req)
 {
 	int rc = 0;
 	int i, j;
-	struct cam_ctx_request  *req;
 	struct cam_isp_ctx_req  *req_isp;
 	struct cam_context *ctx = ctx_isp->base;
 	uint64_t buf_done_req_id;
 
-	if (list_empty(&ctx->active_req_list)) {
-		CAM_DBG(CAM_ISP, "Buf done with no active request!");
-		goto end;
-	}
-
-	CAM_DBG(CAM_ISP, "Enter with bubble_state %d", bubble_state);
-
-	req = list_first_entry(&ctx->active_req_list,
-			struct cam_ctx_request, list);
-
 	trace_cam_buf_done("ISP", ctx, req);
 
 	req_isp = (struct cam_isp_ctx_req *) req->req_priv;
+
+	CAM_DBG(CAM_ISP, "Enter with bubble_state %d, req_bubble_detected %d",
+		bubble_state, req_isp->bubble_detected);
+
+	if (done_next_req) {
+		done_next_req->num_handles = 0;
+		done_next_req->timestamp = done->timestamp;
+	}
+
 	for (i = 0; i < done->num_handles; i++) {
 		for (j = 0; j < req_isp->num_fence_map_out; j++) {
 			if (done->resource_handle[i] ==
@@ -514,8 +515,18 @@ static int __cam_isp_ctx_handle_buf_done_in_activated_state(
 		}
 
 		if (req_isp->fence_map_out[j].sync_id == -1) {
-			__cam_isp_ctx_handle_buf_done_fail_log(
-				req->request_id, req_isp);
+			CAM_WARN(CAM_ISP,
+				"Duplicate BUF_DONE for req %lld : i=%d, j=%d, res=%s",
+				req->request_id, i, j,
+				__cam_isp_resource_handle_id_to_type(
+				done->resource_handle[i]));
+
+			if (done_next_req) {
+				done_next_req->resource_handle
+					[done_next_req->num_handles++] =
+					done->resource_handle[i];
+			}
+
 			continue;
 		}
 
@@ -609,7 +620,66 @@ static int __cam_isp_ctx_handle_buf_done_in_activated_state(
 
 	__cam_isp_ctx_update_state_monitor_array(ctx_isp,
 		CAM_ISP_STATE_CHANGE_TRIGGER_DONE, buf_done_req_id);
-end:
+
+	return rc;
+}
+
+static int __cam_isp_ctx_handle_buf_done_in_activated_state(
+	struct cam_isp_context *ctx_isp,
+	struct cam_isp_hw_done_event_data *done,
+	uint32_t bubble_state)
+{
+	int rc = 0;
+	struct cam_ctx_request  *req;
+	struct cam_context *ctx = ctx_isp->base;
+	struct cam_isp_hw_done_event_data done_next_req;
+
+	if (list_empty(&ctx->active_req_list)) {
+		CAM_DBG(CAM_ISP, "Buf done with no active request");
+		return 0;
+	}
+
+	req = list_first_entry(&ctx->active_req_list,
+			struct cam_ctx_request, list);
+
+	rc = __cam_isp_ctx_handle_buf_done_for_request(ctx_isp, req, done,
+		bubble_state, &done_next_req);
+
+	if (done_next_req.num_handles) {
+		struct cam_isp_hw_done_event_data unhandled_res;
+		struct cam_ctx_request  *next_req = list_next_entry(req, list);
+
+		if (next_req) {
+			/*
+			 * Few resource handles are already signalled in the
+			 * current request, lets check if there is another
+			 * request waiting for these resources. This can
+			 * happen if handling some of next request's buf done
+			 * events are happening first before handling current
+			 * request's remaining buf dones due to IRQ scheduling.
+			 * Lets check only one more request as we will have
+			 * maximum of 2 requests in active_list at any time.
+			 */
+
+			CAM_WARN(CAM_ISP,
+				"Unhandled buf done resources for req %lld, trying next request %lld in active_list",
+				req->request_id, next_req->request_id);
+
+			__cam_isp_ctx_handle_buf_done_for_request(ctx_isp,
+				next_req, &done_next_req,
+				bubble_state, &unhandled_res);
+
+			if (unhandled_res.num_handles == 0)
+				CAM_INFO(CAM_ISP,
+					"BUF Done event handed for next request %lld",
+					next_req->request_id);
+			else
+				CAM_ERR(CAM_ISP,
+					"BUF Done not handled for next request %lld",
+					next_req->request_id);
+		}
+	}
+
 	return rc;
 }
 
@@ -625,7 +695,7 @@ static int __cam_isp_ctx_reg_upd_in_epoch_state(
 	return 0;
 }
 
-static int __cam_isp_ctx_reg_upd_in_activated_state(
+static int __cam_isp_ctx_reg_upd_in_applied_state(
 	struct cam_isp_context *ctx_isp, void *evt_data)
 {
 	int rc = 0;
@@ -888,10 +958,11 @@ static int __cam_isp_ctx_epoch_in_applied(struct cam_isp_context *ctx_isp,
 		notify.dev_hdl = ctx->dev_hdl;
 		notify.req_id = req->request_id;
 		notify.error = CRM_KMD_ERR_BUBBLE;
+		CAM_WARN(CAM_ISP,
+			"Notify CRM about Bubble req %lld frame %lld, ctx %u",
+			req->request_id, ctx_isp->frame_id, ctx->ctx_id);
 		ctx->ctx_crm_intf->notify_err(&notify);
 		atomic_set(&ctx_isp->process_bubble, 1);
-		CAM_DBG(CAM_ISP, "Notify CRM about Bubble frame %lld, ctx %u",
-			ctx_isp->frame_id, ctx->ctx_id);
 	} else {
 		req_isp->bubble_report = 0;
 	}
@@ -1038,11 +1109,11 @@ static int __cam_isp_ctx_epoch_in_bubble_applied(
 		notify.dev_hdl = ctx->dev_hdl;
 		notify.req_id = req->request_id;
 		notify.error = CRM_KMD_ERR_BUBBLE;
-		ctx->ctx_crm_intf->notify_err(&notify);
-		atomic_set(&ctx_isp->process_bubble, 1);
-		CAM_DBG(CAM_REQ,
+		CAM_WARN(CAM_REQ,
 			"Notify CRM about Bubble req_id %llu frame %lld, ctx %u",
 			req->request_id, ctx_isp->frame_id, ctx->ctx_id);
+		ctx->ctx_crm_intf->notify_err(&notify);
+		atomic_set(&ctx_isp->process_bubble, 1);
 	} else {
 		req_isp->bubble_report = 0;
 	}
@@ -1105,7 +1176,7 @@ static int __cam_isp_ctx_handle_error(struct cam_isp_context *ctx_isp,
 	struct cam_ctx_request          *req_temp;
 	struct cam_isp_ctx_req          *req_isp = NULL;
 	struct cam_isp_ctx_req          *req_isp_to_report = NULL;
-	struct cam_req_mgr_error_notify  notify;
+	struct cam_req_mgr_error_notify  notify = {};
 	uint64_t                         error_request_id;
 	struct cam_hw_fence_map_entry   *fence_map_out = NULL;
 	struct cam_req_mgr_message       req_msg;
@@ -1295,8 +1366,10 @@ end:
 			notify.error = CRM_KMD_ERR_FATAL;
 		}
 
-		CAM_WARN(CAM_ISP, "Notify CRM: req %lld, frame %lld ctx %u",
-			error_request_id, ctx_isp->frame_id, ctx->ctx_id);
+		CAM_WARN(CAM_ISP,
+			"Notify CRM: req %lld, frame %lld ctx %u, error %d",
+			error_request_id, ctx_isp->frame_id, ctx->ctx_id,
+			notify.error);
 
 		ctx->ctx_crm_intf->notify_err(&notify);
 
@@ -1582,7 +1655,7 @@ static struct cam_isp_ctx_irq_ops
 		.irq_ops = {
 			__cam_isp_ctx_handle_error,
 			__cam_isp_ctx_sof_in_activated_state,
-			__cam_isp_ctx_reg_upd_in_activated_state,
+			__cam_isp_ctx_reg_upd_in_applied_state,
 			__cam_isp_ctx_epoch_in_applied,
 			__cam_isp_ctx_notify_eof_in_activated_state,
 			__cam_isp_ctx_buf_done_in_applied,
@@ -1615,7 +1688,7 @@ static struct cam_isp_ctx_irq_ops
 		.irq_ops = {
 			__cam_isp_ctx_handle_error,
 			__cam_isp_ctx_sof_in_activated_state,
-			__cam_isp_ctx_reg_upd_in_activated_state,
+			__cam_isp_ctx_reg_upd_in_applied_state,
 			__cam_isp_ctx_epoch_in_bubble_applied,
 			NULL,
 			__cam_isp_ctx_buf_done_in_bubble_applied,
@@ -1688,7 +1761,7 @@ static struct cam_isp_ctx_irq_ops
 		.irq_ops = {
 			__cam_isp_ctx_handle_error,
 			__cam_isp_ctx_sof_in_activated_state,
-			__cam_isp_ctx_reg_upd_in_activated_state,
+			__cam_isp_ctx_reg_upd_in_applied_state,
 			__cam_isp_ctx_epoch_in_bubble_applied,
 			NULL,
 			__cam_isp_ctx_buf_done_in_bubble_applied,
@@ -1738,7 +1811,7 @@ static int __cam_isp_ctx_apply_req_in_activated_state(
 	ctx_isp = (struct cam_isp_context *) ctx->ctx_priv;
 
 	if (atomic_read(&ctx_isp->process_bubble)) {
-		CAM_DBG(CAM_ISP,
+		CAM_INFO(CAM_ISP,
 			"Processing bubble cannot apply Request Id %llu",
 			apply->request_id);
 		rc = -EAGAIN;
@@ -1767,7 +1840,7 @@ static int __cam_isp_ctx_apply_req_in_activated_state(
 	req_isp = (struct cam_isp_ctx_req *) req->req_priv;
 
 	if (ctx_isp->active_req_cnt >=  2) {
-		CAM_ERR(CAM_ISP,
+		CAM_WARN(CAM_ISP,
 			"Reject apply request (id %lld) due to congestion(cnt = %d) ctx %u",
 			req->request_id,
 			ctx_isp->active_req_cnt,
@@ -1836,6 +1909,10 @@ static int __cam_isp_ctx_apply_req_in_sof(
 		CAM_ISP_CTX_ACTIVATED_APPLIED);
 	CAM_DBG(CAM_ISP, "new substate %d", ctx_isp->substate_activated);
 
+	if (rc)
+		CAM_DBG(CAM_ISP, "Apply failed in state %d, rc %d",
+			ctx_isp->substate_activated, rc);
+
 	return rc;
 }
 
@@ -1852,6 +1929,10 @@ static int __cam_isp_ctx_apply_req_in_epoch(
 		CAM_ISP_CTX_ACTIVATED_APPLIED);
 	CAM_DBG(CAM_ISP, "new substate %d", ctx_isp->substate_activated);
 
+	if (rc)
+		CAM_DBG(CAM_ISP, "Apply failed in state %d, rc %d",
+			ctx_isp->substate_activated, rc);
+
 	return rc;
 }
 
@@ -1867,6 +1948,10 @@ static int __cam_isp_ctx_apply_req_in_bubble(
 	rc = __cam_isp_ctx_apply_req_in_activated_state(ctx, apply,
 		CAM_ISP_CTX_ACTIVATED_BUBBLE_APPLIED);
 	CAM_DBG(CAM_ISP, "new substate %d", ctx_isp->substate_activated);
+
+	if (rc)
+		CAM_DBG(CAM_ISP, "Apply failed in state %d, rc %d",
+			ctx_isp->substate_activated, rc);
 
 	return rc;
 }
@@ -2244,9 +2329,12 @@ static int __cam_isp_ctx_rdi_only_sof_in_bubble_applied(
 		notify.dev_hdl = ctx->dev_hdl;
 		notify.req_id = req->request_id;
 		notify.error = CRM_KMD_ERR_BUBBLE;
+		CAM_WARN(CAM_ISP,
+			"Notify CRM about Bubble req %lld frame %lld ctx %u",
+			req->request_id,
+			ctx_isp->frame_id,
+			ctx->ctx_id);
 		ctx->ctx_crm_intf->notify_err(&notify);
-		CAM_DBG(CAM_ISP, "Notify CRM about Bubble frame %lld",
-			ctx_isp->frame_id);
 	} else {
 		req_isp->bubble_report = 0;
 	}
@@ -2506,6 +2594,10 @@ static int __cam_isp_ctx_rdi_only_apply_req_top_state(
 	rc = __cam_isp_ctx_apply_req_in_activated_state(ctx, apply,
 		CAM_ISP_CTX_ACTIVATED_APPLIED);
 	CAM_DBG(CAM_ISP, "new substate %d", ctx_isp->substate_activated);
+
+	if (rc)
+		CAM_ERR(CAM_ISP, "Apply failed in state %d, rc %d",
+			ctx_isp->substate_activated, rc);
 
 	return rc;
 }
@@ -3740,8 +3832,8 @@ static int __cam_isp_ctx_apply_req(struct cam_context *ctx,
 
 	if (rc)
 		CAM_ERR_RATE_LIMIT(CAM_ISP,
-			"Apply failed in active substate %d",
-			ctx_isp->substate_activated);
+			"Apply failed in active substate %d rc %d",
+			ctx_isp->substate_activated, rc);
 	return rc;
 }
 
