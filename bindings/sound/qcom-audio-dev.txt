@@ -1839,6 +1839,7 @@ Optional properties:
 - qcom,cdc-dmic-gpios : phandle for Digital mic clk and data gpios.
 - qcom,msm_audio_ssr_devs: List the snd event framework clients
 - qcom,afe-rxtx-lb: AFE RX to TX loopback.
+- qcom,tlmm-gpio: TLMM gpio number for corresponding LPASS gpio
 
 Example:
 	kona_snd: sound {
