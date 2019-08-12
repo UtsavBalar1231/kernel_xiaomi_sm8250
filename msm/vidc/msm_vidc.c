@@ -837,6 +837,35 @@ static bool msm_vidc_set_cvp_metadata(struct msm_vidc_inst *inst) {
 		s_vpr_e(inst->sid, "%s: set CVP extradata failed\n", __func__);
 		return false;
 	}
+
+	if (inst->prop.extradata_ctrls & EXTRADATA_ENC_INPUT_KK_CVP) {
+		u32 cap_rate = 0;
+		u32 cvp_rate = 0;
+		u32 oprate = 0;
+		u32 fps_max = CVP_FRAME_RATE_MAX << 16;
+
+		if (inst->clk_data.operating_rate == INT_MAX)
+			oprate = fps_max;
+		else
+			oprate = inst->clk_data.operating_rate;
+
+		cap_rate = max(inst->clk_data.frame_rate, oprate);
+		if (cap_rate > fps_max) {
+			cap_rate = roundup(cap_rate, fps_max);
+			cvp_rate = fps_max;
+		}
+		else
+			cvp_rate = cap_rate;
+		rc = msm_comm_set_cvp_skip_ratio(inst, cap_rate, cvp_rate);
+	}
+	else if(inst->prop.extradata_ctrls & EXTRADATA_ENC_INPUT_CVP)
+		rc = msm_venc_set_cvp_skipratio(inst);
+
+	if (rc) {
+		s_vpr_e(inst->sid,
+			"%s: set CVP skip ratio controls failed\n", __func__);
+		return false;
+	}
 	return true;
 }
 

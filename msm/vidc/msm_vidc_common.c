@@ -7176,6 +7176,35 @@ int msm_comm_set_extradata(struct msm_vidc_inst *inst,
 	return rc;
 }
 
+int msm_comm_set_cvp_skip_ratio(struct msm_vidc_inst *inst,
+	uint32_t capture_rate, uint32_t cvp_rate)
+{
+	int rc = 0;
+	struct hfi_cvp_skip_ratio cvp_data;
+	struct hfi_device *hdev;
+	u32 integral_part, fractional_part, skip_ratio;
+
+	hdev = inst->core->device;
+
+	skip_ratio = 0;
+	integral_part = ((capture_rate / cvp_rate) << 16);
+	fractional_part = capture_rate % cvp_rate;
+	if (fractional_part) {
+		fractional_part = (fractional_part * 100) / cvp_rate;
+		skip_ratio = integral_part | ((fractional_part << 16)/100) ;
+	}
+	else
+		skip_ratio = integral_part;
+
+	cvp_data.cvp_skip_ratio = skip_ratio;
+	rc = call_hfi_op(hdev, session_set_property, (void *)
+			inst->session, HFI_PROPERTY_CONFIG_CVP_SKIP_RATIO, &cvp_data,
+			sizeof(cvp_data));
+
+	return rc;
+}
+
+
 bool msm_comm_check_for_inst_overload(struct msm_vidc_core *core)
 {
 	u32 instance_count = 0;

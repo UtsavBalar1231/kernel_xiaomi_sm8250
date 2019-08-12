@@ -956,6 +956,24 @@ static struct msm_vidc_ctrl msm_venc_ctrls[] = {
 		.default_value = 0,
 		.step = 1,
 	},
+	{
+		.id = V4L2_CID_MPEG_VIDC_CAPTURE_FRAME_RATE,
+		.name = "Capture Frame Rate",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.minimum = (MINIMUM_FPS << 16),
+		.maximum = (MAXIMUM_FPS << 16),
+		.default_value = (DEFAULT_FPS << 16),
+		.step = 1,
+	},
+	{
+		.id = V4L2_CID_MPEG_VIDC_CVP_FRAME_RATE,
+		.name = "CVP Frame Rate",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.minimum = (MINIMUM_FPS << 16),
+		.maximum = (MAXIMUM_FPS << 16),
+		.default_value = (DEFAULT_FPS << 16),
+		.step = 1,
+	},
 };
 
 #define NUM_CTRLS ARRAY_SIZE(msm_venc_ctrls)
@@ -1810,6 +1828,16 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 				s_vpr_e(sid, "%s: set flip failed\n", __func__);
 		}
 		break;
+	case V4L2_CID_MPEG_VIDC_CVP_FRAME_RATE:
+		if (inst->state == MSM_VIDC_START_DONE) {
+			rc = msm_venc_set_cvp_skipratio(inst);
+			if (rc)
+				s_vpr_e(sid,
+				"%s: set cvp skip ratio failed\n",
+					__func__);
+		}
+		break;
+	case V4L2_CID_MPEG_VIDC_CAPTURE_FRAME_RATE:
 	case V4L2_CID_MPEG_VIDC_COMPRESSION_QUALITY:
 	case V4L2_CID_MPEG_VIDC_IMG_GRID_SIZE:
 	case V4L2_CID_MPEG_VIDC_VIDEO_HEVC_MAX_HIER_CODING_LAYER:
@@ -2087,6 +2115,9 @@ int msm_venc_set_operating_rate(struct msm_vidc_inst *inst)
 		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
 		return -EINVAL;
 	}
+	if (!inst->core->resources.cvp_internal)
+		return 0;
+
 	hdev = inst->core->device;
 
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_OPERATING_RATE);
@@ -4209,6 +4240,29 @@ int msm_venc_set_lossless(struct msm_vidc_inst *inst)
 
 	if (rc)
 		s_vpr_e(inst->sid, "Failed to set lossless mode\n");
+
+	return rc;
+}
+int msm_venc_set_cvp_skipratio(struct msm_vidc_inst *inst)
+{
+	int rc = 0;
+	struct v4l2_ctrl *capture_rate_ctrl;
+	struct v4l2_ctrl *cvp_rate_ctrl;
+
+	if (!inst || !inst->core) {
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
+		return -EINVAL;
+	}
+	if (!msm_vidc_cvp_usage || !inst->core->resources.cvp_external)
+		return 0;
+
+	capture_rate_ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_CAPTURE_FRAME_RATE);
+	cvp_rate_ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_CVP_FRAME_RATE);
+
+	rc = msm_comm_set_cvp_skip_ratio(inst,
+			capture_rate_ctrl->val, cvp_rate_ctrl->val);
+	if (rc)
+		s_vpr_e(inst->sid, "Failed to set cvp skip ratio\n");
 
 	return rc;
 }

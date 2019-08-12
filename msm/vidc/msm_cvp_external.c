@@ -869,9 +869,10 @@ static int msm_cvp_frame_process(struct msm_vidc_inst *inst,
 	struct cvp_kmd_arg *arg;
 	struct msm_cvp_dme_frame_packet *frame;
 	const u32 fps_max = CVP_FRAME_RATE_MAX;
-	u32 fps, operating_rate, skip_framecount;
+	u32 fps, operating_rate, skip_framecount, capture_rate, cvp_rate;
 	bool skipframe = false;
 	bool first_frame = false;
+	bool fps_data_changed = false;
 
 	if (!inst || !inst->cvp || !inst->cvp->arg || !mbuf) {
 		d_vpr_e("%s: invalid params %pK %pK\n",
@@ -896,6 +897,7 @@ static int msm_cvp_frame_process(struct msm_vidc_inst *inst,
 		cvp->operating_rate != inst->clk_data.operating_rate) {
 		/* update cvp parameters */
 		cvp->framecount = 0;
+		fps_data_changed = true;
 		cvp->frame_rate = inst->clk_data.frame_rate;
 		cvp->operating_rate = inst->clk_data.operating_rate;
 		rc = msm_cvp_set_clocks_and_bus(inst);
@@ -929,9 +931,12 @@ static int msm_cvp_frame_process(struct msm_vidc_inst *inst,
 		 * fps <= 960: 0, 16, 32, 48 .. are not skipped
 		 */
 		fps = roundup(fps, fps_max);
+		cvp_rate = fps_max << 16;
 		skip_framecount = fps / fps_max;
 		skipframe = cvp->framecount % skip_framecount;
-	}
+	} else
+		cvp_rate = fps << 16;
+
 	if (skipframe) {
 		print_cvp_buffer(VIDC_LOW, "input frame with skipflag",
 			inst, &cvp->fullres_buffer);
@@ -939,6 +944,14 @@ static int msm_cvp_frame_process(struct msm_vidc_inst *inst,
 		cvp->metadata_available = false;
 		mbuf->vvb.flags |= V4L2_BUF_FLAG_CVPMETADATA_SKIP;
 		return 0;
+	}
+	capture_rate = fps << 16;
+	if (fps_data_changed) {
+		rc = msm_comm_set_cvp_skip_ratio(inst, capture_rate, cvp_rate);
+		if (rc) {
+			s_vpr_e(inst->sid,"Setting CVP skip ratio failed");
+			goto error;
+		}
 	}
 
 	memset(arg, 0, sizeof(struct cvp_kmd_arg));

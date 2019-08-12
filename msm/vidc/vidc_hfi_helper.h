@@ -387,6 +387,8 @@ struct hfi_buffer_info {
 	(HFI_PROPERTY_CONFIG_VENC_COMMON_START + 0x014)
 #define HFI_PROPERTY_CONFIG_HEIC_GRID_ENABLE			\
 	(HFI_PROPERTY_CONFIG_VENC_COMMON_START + 0x015)
+#define HFI_PROPERTY_CONFIG_CVP_SKIP_RATIO			\
+	(HFI_PROPERTY_CONFIG_VENC_COMMON_START + 0x016)
 
 #define HFI_PROPERTY_PARAM_VPE_COMMON_START				\
 	(HFI_DOMAIN_BASE_VPE + HFI_ARCH_COMMON_OFFSET + 0x7000)
@@ -400,6 +402,10 @@ struct hfi_buffer_info {
 
 #define HFI_PROPERTY_CONFIG_VPE_FLIP			\
 	(HFI_PROPERTY_CONFIG_VPE_COMMON_START + 0x001)
+
+struct hfi_cvp_skip_ratio {
+	u32 cvp_skip_ratio;
+};
 
 struct hfi_pic_struct {
 	u32 progressive_only;
