@@ -387,6 +387,63 @@ static uint64_t __cam_isp_ctx_get_event_ts(uint32_t evt_id, void *evt_data)
 	return ts;
 }
 
+static void __cam_isp_ctx_send_sof_boot_timestamp(
+	struct cam_isp_context *ctx_isp, uint64_t request_id,
+	uint32_t sof_event_status)
+{
+	struct cam_req_mgr_message   req_msg;
+
+	req_msg.session_hdl = ctx_isp->base->session_hdl;
+	req_msg.u.frame_msg.frame_id = ctx_isp->frame_id;
+	req_msg.u.frame_msg.request_id = request_id;
+	req_msg.u.frame_msg.timestamp = ctx_isp->boot_timestamp;
+	req_msg.u.frame_msg.link_hdl = ctx_isp->base->link_hdl;
+	req_msg.u.frame_msg.sof_status = sof_event_status;
+
+	CAM_DBG(CAM_ISP,
+		"request id:%lld frame number:%lld boot time stamp:0x%llx",
+		 request_id, ctx_isp->frame_id,
+		 ctx_isp->boot_timestamp);
+
+	if (cam_req_mgr_notify_message(&req_msg,
+		V4L_EVENT_CAM_REQ_MGR_SOF_BOOT_TS,
+		V4L_EVENT_CAM_REQ_MGR_EVENT))
+		CAM_ERR(CAM_ISP,
+			"Error in notifying the boot time for req id:%lld",
+			request_id);
+}
+
+
+static void __cam_isp_ctx_send_sof_timestamp(
+	struct cam_isp_context *ctx_isp, uint64_t request_id,
+	uint32_t sof_event_status)
+{
+	struct cam_req_mgr_message   req_msg;
+
+	req_msg.session_hdl = ctx_isp->base->session_hdl;
+	req_msg.u.frame_msg.frame_id = ctx_isp->frame_id;
+	req_msg.u.frame_msg.request_id = request_id;
+	req_msg.u.frame_msg.timestamp = ctx_isp->sof_timestamp_val;
+	req_msg.u.frame_msg.link_hdl = ctx_isp->base->link_hdl;
+	req_msg.u.frame_msg.sof_status = sof_event_status;
+
+	CAM_DBG(CAM_ISP,
+		"request id:%lld frame number:%lld SOF time stamp:0x%llx",
+		 request_id, ctx_isp->frame_id,
+		ctx_isp->sof_timestamp_val);
+	CAM_DBG(CAM_ISP, "sof status:%d", sof_event_status);
+
+	if (cam_req_mgr_notify_message(&req_msg,
+		V4L_EVENT_CAM_REQ_MGR_SOF, V4L_EVENT_CAM_REQ_MGR_EVENT))
+		CAM_ERR(CAM_ISP,
+			"Error in notifying the sof time for req id:%lld",
+			request_id);
+
+	__cam_isp_ctx_send_sof_boot_timestamp(ctx_isp,
+		request_id, sof_event_status);
+
+}
+
 static void __cam_isp_ctx_handle_buf_done_fail_log(
 	uint64_t request_id, struct cam_isp_ctx_req *req_isp)
 {
@@ -537,6 +594,11 @@ static int __cam_isp_ctx_handle_buf_done_in_activated_state(
 			"Move active request %lld to pending list(cnt = %d) [bubble recovery], ctx %u",
 			 req->request_id, ctx_isp->active_req_cnt, ctx->ctx_id);
 	} else {
+		if (ctx_isp->reported_req_id < buf_done_req_id) {
+			ctx_isp->reported_req_id = buf_done_req_id;
+			__cam_isp_ctx_send_sof_timestamp(ctx_isp,
+				buf_done_req_id, CAM_REQ_MGR_SOF_EVENT_SUCCESS);
+		}
 		list_del_init(&req->list);
 		list_add_tail(&req->list, &ctx->free_req_list);
 
@@ -549,63 +611,6 @@ static int __cam_isp_ctx_handle_buf_done_in_activated_state(
 		CAM_ISP_STATE_CHANGE_TRIGGER_DONE, buf_done_req_id);
 end:
 	return rc;
-}
-
-static void __cam_isp_ctx_send_sof_boot_timestamp(
-	struct cam_isp_context *ctx_isp, uint64_t request_id,
-	uint32_t sof_event_status)
-{
-	struct cam_req_mgr_message   req_msg;
-
-	req_msg.session_hdl = ctx_isp->base->session_hdl;
-	req_msg.u.frame_msg.frame_id = ctx_isp->frame_id;
-	req_msg.u.frame_msg.request_id = request_id;
-	req_msg.u.frame_msg.timestamp = ctx_isp->boot_timestamp;
-	req_msg.u.frame_msg.link_hdl = ctx_isp->base->link_hdl;
-	req_msg.u.frame_msg.sof_status = sof_event_status;
-
-	CAM_DBG(CAM_ISP,
-		"request id:%lld frame number:%lld boot time stamp:0x%llx",
-		 request_id, ctx_isp->frame_id,
-		 ctx_isp->boot_timestamp);
-
-	if (cam_req_mgr_notify_message(&req_msg,
-		V4L_EVENT_CAM_REQ_MGR_SOF_BOOT_TS,
-		V4L_EVENT_CAM_REQ_MGR_EVENT))
-		CAM_ERR(CAM_ISP,
-			"Error in notifying the boot time for req id:%lld",
-			request_id);
-}
-
-
-static void __cam_isp_ctx_send_sof_timestamp(
-	struct cam_isp_context *ctx_isp, uint64_t request_id,
-	uint32_t sof_event_status)
-{
-	struct cam_req_mgr_message   req_msg;
-
-	req_msg.session_hdl = ctx_isp->base->session_hdl;
-	req_msg.u.frame_msg.frame_id = ctx_isp->frame_id;
-	req_msg.u.frame_msg.request_id = request_id;
-	req_msg.u.frame_msg.timestamp = ctx_isp->sof_timestamp_val;
-	req_msg.u.frame_msg.link_hdl = ctx_isp->base->link_hdl;
-	req_msg.u.frame_msg.sof_status = sof_event_status;
-
-	CAM_DBG(CAM_ISP,
-		"request id:%lld frame number:%lld SOF time stamp:0x%llx",
-		 request_id, ctx_isp->frame_id,
-		ctx_isp->sof_timestamp_val);
-	CAM_DBG(CAM_ISP, "sof status:%d", sof_event_status);
-
-	if (cam_req_mgr_notify_message(&req_msg,
-		V4L_EVENT_CAM_REQ_MGR_SOF, V4L_EVENT_CAM_REQ_MGR_EVENT))
-		CAM_ERR(CAM_ISP,
-			"Error in notifying the sof time for req id:%lld",
-			request_id);
-
-	__cam_isp_ctx_send_sof_boot_timestamp(ctx_isp,
-		request_id, sof_event_status);
-
 }
 
 static int __cam_isp_ctx_reg_upd_in_epoch_state(
