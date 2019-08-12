@@ -76,6 +76,19 @@ static inline struct v4l2_ctrl *get_ctrl(struct msm_vidc_inst *inst,
 	return inst->ctrls[0];
 }
 
+static inline void update_ctrl(struct v4l2_ctrl *ctrl, s32 val)
+{
+	switch (ctrl->type) {
+	case V4L2_CTRL_TYPE_INTEGER:
+		*ctrl->p_cur.p_s32 = val;
+		memcpy(ctrl->p_new.p, ctrl->p_cur.p,
+			ctrl->elems * ctrl->elem_size);
+		break;
+	default:
+		dprintk(VIDC_ERR, "unhandled control type");
+	}
+}
+
 static inline u32 get_v4l2_codec(struct msm_vidc_inst *inst)
 {
 	struct v4l2_format *f;
