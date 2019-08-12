@@ -210,7 +210,7 @@ void cam_tasklet_enqueue_cmd(
 	list_add_tail(&tasklet_cmd->list,
 		&tasklet->used_cmd_list);
 	spin_unlock_irqrestore(&tasklet->tasklet_lock, flags);
-	tasklet_schedule(&tasklet->tasklet);
+	tasklet_hi_schedule(&tasklet->tasklet);
 }
 
 int cam_tasklet_init(
