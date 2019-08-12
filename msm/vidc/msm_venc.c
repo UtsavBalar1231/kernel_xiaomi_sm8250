@@ -850,7 +850,7 @@ static struct msm_vidc_ctrl msm_venc_ctrls[] = {
 		.type = V4L2_CTRL_TYPE_BOOLEAN,
 		.minimum = 0,
 		.maximum = 1,
-		.default_value = 0,
+		.default_value = 1,
 		.step = 1,
 	},
 	{
