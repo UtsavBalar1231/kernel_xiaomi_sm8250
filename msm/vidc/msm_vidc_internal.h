@@ -399,9 +399,10 @@ struct clock_data {
 	u64 load_norm;
 	u64 load_high;
 	int min_threshold;
+	int nom_threshold;
 	int max_threshold;
-	enum hal_buffer buffer_type;
 	bool dcvs_mode;
+	u32 dcvs_window;
 	unsigned long bitrate;
 	unsigned long min_freq;
 	unsigned long curr_freq;

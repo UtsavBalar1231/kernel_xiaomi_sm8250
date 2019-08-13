@@ -6,6 +6,9 @@
 #ifndef __H_MSM_VIDC_BUFFER_MEM_DEFS_H__
 #define __H_MSM_VIDC_BUFFER_MEM_DEFS_H__
 
+/* extra o/p buffers in case of decoder dcvs */
+#define DCVS_DEC_EXTRA_OUTPUT_BUFFERS 4
+
 struct msm_vidc_dec_buff_size_calculators {
 	u32 (*calculate_scratch_size)(struct msm_vidc_inst *inst, u32 width,
 		u32 height, bool is_interlaced);

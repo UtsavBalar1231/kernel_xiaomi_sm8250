@@ -760,7 +760,7 @@ static struct msm_vidc_ctrl msm_venc_ctrls[] = {
 	},
 	{
 		.id = V4L2_CID_MPEG_VIDC_VIDEO_OPERATING_RATE,
-		.name = "Set Encoder Operating rate",
+		.name = "Encoder Operating rate",
 		.type = V4L2_CTRL_TYPE_INTEGER,
 		.minimum = (MINIMUM_FPS << 16),
 		.maximum = INT_MAX,

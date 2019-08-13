@@ -1820,7 +1820,7 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 		dprintk(VIDC_HIGH|VIDC_PERF, "%s: %x : batching %s\n",
 			__func__, hash32_ptr(inst->session),
 			inst->batch.enable ? "enabled" : "disabled");
-
+		msm_dcvs_try_enable(inst);
 		extra_buff_count = msm_vidc_get_extra_buff_count(inst,
 				HAL_BUFFER_OUTPUT);
 		fmt->count_min = event_notify->capture_buf_count;

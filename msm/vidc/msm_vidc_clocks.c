@@ -48,14 +48,10 @@ struct msm_vidc_core_ops core_ops_iris2 = {
 static inline void msm_dcvs_print_dcvs_stats(struct clock_data *dcvs)
 {
 	dprintk(VIDC_PERF,
-		"DCVS: Load_Low %lld, Load Norm %lld, Load High %lld\n",
-		dcvs->load_low,
-		dcvs->load_norm,
-		dcvs->load_high);
-
-	dprintk(VIDC_PERF,
-		"DCVS: min_threshold %d, max_threshold %d\n",
-		dcvs->min_threshold, dcvs->max_threshold);
+		"DCVS: Loads %lld %lld %lld, Thresholds %d %d %d\n",
+		dcvs->load_low, dcvs->load_norm, dcvs->load_high,
+		dcvs->min_threshold, dcvs->nom_threshold,
+		dcvs->max_threshold);
 }
 
 static inline unsigned long get_ubwc_compression_ratio(
@@ -423,7 +419,6 @@ static int msm_dcvs_scale_clocks(struct msm_vidc_inst *inst,
 {
 	int rc = 0;
 	int bufs_with_fw = 0;
-	int bufs_with_client = 0;
 	struct msm_vidc_format *fmt;
 	struct clock_data *dcvs;
 
@@ -432,13 +427,9 @@ static int msm_dcvs_scale_clocks(struct msm_vidc_inst *inst,
 		return -EINVAL;
 	}
 
-	/* assume no increment or decrement is required initially */
-	inst->clk_data.dcvs_flags = 0;
-
 	if (!inst->clk_data.dcvs_mode || inst->batch.enable) {
 		dprintk(VIDC_LOW, "Skip DCVS (dcvs %d, batching %d)\n",
 			inst->clk_data.dcvs_mode, inst->batch.enable);
-		/* update load (freq) with normal value */
 		inst->clk_data.load = inst->clk_data.load_norm;
 		return 0;
 	}
@@ -452,44 +443,46 @@ static int msm_dcvs_scale_clocks(struct msm_vidc_inst *inst,
 		bufs_with_fw = msm_comm_num_queued_bufs(inst, INPUT_MPLANE);
 		fmt = &inst->fmts[INPUT_PORT];
 	}
+
 	/* +1 as one buffer is going to be queued after the function */
 	bufs_with_fw += 1;
-	bufs_with_client = fmt->count_actual - bufs_with_fw;
 
 	/*
-	 * PMS decides clock level based on below algo
+	 * DCVS decides clock level based on below algo
 
 	 * Limits :
-	 * max_threshold : Client extra allocated buffers. Client
-	 * reserves these buffers for it's smooth flow.
-	 * min_output_buf : HW requested buffers for it's smooth
-	 * flow of buffers.
-	 * min_threshold : Driver requested extra buffers for PMS.
+	 * min_threshold : Buffers required for reference by FW.
+	 * nom_threshold : Midpoint of Min and Max thresholds
+	 * max_threshold : Total - Client extra buffers, allocated
+	 *				   for it's smooth flow.
 
 	 * 1) When buffers outside FW are reaching client's extra buffers,
 	 *    FW is slow and will impact pipeline, Increase clock.
 	 * 2) When pending buffers with FW are same as FW requested,
 	 *    pipeline has cushion to absorb FW slowness, Decrease clocks.
-	 * 3) When none of 1) or 2) FW is just fast enough to maintain
-	 *    pipeline, request Right Clocks.
+	 * 3) When buffers are equally distributed between FW and Client
+	 *    switch to NOM as this is the ideal steady state.
+	 * 4) Otherwise maintain previous Load config.
 	 */
 
-	if (bufs_with_client <= dcvs->max_threshold) {
-		dcvs->load = dcvs->load_high;
-		dcvs->dcvs_flags |= MSM_VIDC_DCVS_INCR;
-	} else if (bufs_with_fw < (int) fmt->count_min) {
-		dcvs->load = dcvs->load_low;
-		dcvs->dcvs_flags |= MSM_VIDC_DCVS_DECR;
-	} else {
+	if (dcvs->dcvs_window < DCVS_DEC_EXTRA_OUTPUT_BUFFERS ||
+		bufs_with_fw == dcvs->nom_threshold) {
 		dcvs->load = dcvs->load_norm;
 		dcvs->dcvs_flags = 0;
+	} else if (bufs_with_fw >= dcvs->max_threshold) {
+		dcvs->load = dcvs->load_high;
+		dcvs->dcvs_flags |= MSM_VIDC_DCVS_INCR;
+	} else if (bufs_with_fw < dcvs->min_threshold) {
+		dcvs->load = dcvs->load_low;
+		dcvs->dcvs_flags |= MSM_VIDC_DCVS_DECR;
 	}
 
 	dprintk(VIDC_PERF,
-		"DCVS: %x : total bufs %d outside fw %d max threshold %d with fw %d min bufs %d flags %#x\n",
-		hash32_ptr(inst->session), fmt->count_actual,
-		bufs_with_client, dcvs->max_threshold, bufs_with_fw,
-		fmt->count_min, dcvs->dcvs_flags);
+		"DCVS: %x: bufs_with_fw %d Th[%d %d %d] Flag %#x Load %llu\n",
+		hash32_ptr(inst->session), bufs_with_fw,
+		dcvs->min_threshold, dcvs->nom_threshold, dcvs->max_threshold,
+		dcvs->dcvs_flags, dcvs->load);
+
 	return rc;
 }
 
@@ -672,6 +665,9 @@ static unsigned long msm_vidc_calc_freq_ar50(struct msm_vidc_inst *inst,
 			break;
 	}
 
+	if (i < 0)
+		i = 0;
+
 	dcvs->load_norm = rate;
 	dcvs->load_low = i < (int) (core->resources.allowed_clks_tbl_size - 1) ?
 		allowed_clks_tbl[i+1].clock_rate : dcvs->load_norm;
@@ -764,6 +760,9 @@ static unsigned long msm_vidc_calc_freq_iris1(struct msm_vidc_inst *inst,
 		if (rate >= freq)
 			break;
 	}
+
+	if (i < 0)
+		i = 0;
 
 	dcvs->load_norm = rate;
 	dcvs->load_low = i < (int) (core->resources.allowed_clks_tbl_size - 1) ?
@@ -865,6 +864,9 @@ static unsigned long msm_vidc_calc_freq_iris2(struct msm_vidc_inst *inst,
 			break;
 	}
 
+	if (i < 0)
+		i = 0;
+
 	dcvs->load_norm = rate;
 	dcvs->load_low = i < (int) (core->resources.allowed_clks_tbl_size - 1) ?
 		allowed_clks_tbl[i+1].clock_rate : dcvs->load_norm;
@@ -959,6 +961,10 @@ int msm_vidc_set_clocks(struct msm_vidc_core *core)
 		if (rate >= freq_core_max)
 			break;
 	}
+
+	if (i < 0)
+		i = 0;
+
 	if (increment) {
 		if (i > 0)
 			rate = allowed_clks_tbl[i-1].clock_rate;
@@ -1016,15 +1022,15 @@ int msm_comm_scale_clocks(struct msm_vidc_inst *inst)
 		return 0;
 	}
 
-	freq = call_core_op(inst->core, calc_freq, inst, filled_len);
-	inst->clk_data.min_freq = freq;
-	/* update dcvs flags */
-	msm_dcvs_scale_clocks(inst, freq);
-
 	if (inst->clk_data.buffer_counter < DCVS_FTB_WINDOW || is_turbo ||
 		msm_vidc_clock_voting) {
 		inst->clk_data.min_freq = msm_vidc_max_freq(inst->core);
 		inst->clk_data.dcvs_flags = 0;
+	} else {
+		freq = call_core_op(inst->core, calc_freq, inst, filled_len);
+		inst->clk_data.min_freq = freq;
+		/* update dcvs flags */
+		msm_dcvs_scale_clocks(inst, freq);
 	}
 
 	msm_vidc_update_freq_entry(inst, freq, device_addr, is_turbo);
@@ -1067,20 +1073,18 @@ int msm_dcvs_try_enable(struct msm_vidc_inst *inst)
 		return -EINVAL;
 	}
 
-	if (msm_vidc_clock_voting ||
+	inst->clk_data.dcvs_mode =
+		!(msm_vidc_clock_voting ||
 			!inst->core->resources.dcvs ||
 			inst->flags & VIDC_THUMBNAIL ||
 			inst->clk_data.low_latency_mode ||
 			inst->batch.enable ||
-			inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_CQ) {
-		dprintk(VIDC_HIGH, "DCVS disabled: %pK\n", inst);
-		inst->clk_data.dcvs_mode = false;
-		return false;
-	}
-	inst->clk_data.dcvs_mode = true;
-	dprintk(VIDC_HIGH, "DCVS enabled: %pK\n", inst);
+		  inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_CQ);
 
-	return true;
+	dprintk(VIDC_HIGH|VIDC_PERF, "DCVS %s: %pK\n",
+		inst->clk_data.dcvs_mode ? "enabled" : "disabled", inst);
+
+	return 0;
 }
 
 int msm_comm_init_clocks_and_bus_data(struct msm_vidc_inst *inst)
@@ -1149,25 +1153,25 @@ void msm_clock_data_reset(struct msm_vidc_inst *inst)
 			inst->clk_data.entry->low_power_cycles :
 			cycles;
 
-		dcvs->buffer_type = HAL_BUFFER_INPUT;
-		dcvs->min_threshold =
-			msm_vidc_get_extra_buff_count(inst, HAL_BUFFER_INPUT);
 		fmt = &inst->fmts[INPUT_PORT];
-		dcvs->max_threshold =
-			fmt->count_actual - fmt->count_min_host + 2;
 	} else if (inst->session_type == MSM_VIDC_DECODER) {
-		dcvs->buffer_type = HAL_BUFFER_OUTPUT;
 		fmt = &inst->fmts[OUTPUT_PORT];
-		dcvs->max_threshold =
-			fmt->count_actual - fmt->count_min_host + 2;
-
-		dcvs->min_threshold =
-			msm_vidc_get_extra_buff_count(inst, dcvs->buffer_type);
 	} else {
 		dprintk(VIDC_ERR, "%s: invalid session type %#x\n",
 			__func__, inst->session_type);
 		return;
 	}
+
+	dcvs->min_threshold = fmt->count_min;
+	dcvs->max_threshold =
+		max(fmt->count_min,
+			(fmt->count_actual - DCVS_DEC_EXTRA_OUTPUT_BUFFERS));
+
+	dcvs->dcvs_window =
+		dcvs->max_threshold - dcvs->min_threshold;
+	dcvs->nom_threshold = dcvs->min_threshold +
+				(dcvs->dcvs_window ?
+				 (dcvs->dcvs_window / 2) : 0);
 
 	total_freq = cycles * load;
 
@@ -1177,12 +1181,14 @@ void msm_clock_data_reset(struct msm_vidc_inst *inst)
 			break;
 	}
 
-	dcvs->load = dcvs->load_norm = rate;
+	if (i < 0)
+		i = 0;
 
+	dcvs->load = dcvs->load_norm = rate;
 	dcvs->load_low = i < (core->resources.allowed_clks_tbl_size - 1) ?
 		allowed_clks_tbl[i+1].clock_rate : dcvs->load_norm;
-	dcvs->load_high = i > 0 ? allowed_clks_tbl[i-1].clock_rate :
-		dcvs->load_norm;
+	dcvs->load_high = i > 0 ?
+		allowed_clks_tbl[i-1].clock_rate : dcvs->load_norm;
 
 	inst->clk_data.buffer_counter = 0;
 
