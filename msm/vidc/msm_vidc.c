@@ -346,9 +346,10 @@ int msm_vidc_qbuf(void *instance, struct v4l2_buffer *b)
 		return -EINVAL;
 	}
 
-	if (inst->in_flush && is_decode_session(inst) &&
-		b->type == OUTPUT_MPLANE) {
-		dprintk(VIDC_ERR, "%s: in flush, discarding qbuf\n", __func__);
+	if ((inst->out_flush && b->type == OUTPUT_MPLANE) || inst->in_flush) {
+		dprintk(VIDC_ERR,
+			"%s: %x: in flush, discarding qbuf, type %u, index %u\n",
+			__func__, hash32_ptr(inst->session), b->type, b->index);
 		return -EINVAL;
 	}
 
