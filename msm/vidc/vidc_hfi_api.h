@@ -399,9 +399,7 @@ struct vidc_frame_data {
 	u32 offset;
 	u32 alloc_len;
 	u32 filled_len;
-	u32 mark_target;
-	u32 mark_data;
-	u32 clnt_data;
+	u32 input_tag;
 	u32 extradata_size;
 };
 
@@ -524,8 +522,7 @@ struct vidc_hal_ebd {
 	u32 timestamp_lo;
 	u32 flags;
 	enum vidc_status status;
-	u32 mark_target;
-	u32 mark_data;
+	u32 input_tag;
 	u32 stats;
 	u32 offset;
 	u32 alloc_len;
@@ -542,8 +539,6 @@ struct vidc_hal_fbd {
 	u32 timestamp_hi;
 	u32 timestamp_lo;
 	u32 flags1;
-	u32 mark_target;
-	u32 mark_data;
 	u32 stats;
 	u32 alloc_len1;
 	u32 filled_len1;
@@ -553,7 +548,7 @@ struct vidc_hal_fbd {
 	u32 start_x_coord;
 	u32 start_y_coord;
 	u32 input_tag;
-	u32 input_tag1;
+	u32 input_tag2;
 	u32 picture_type;
 	u32 packet_buffer1;
 	u32 extra_data_buffer;
@@ -638,7 +633,6 @@ struct msm_vidc_cb_data_done {
 	void *session_id;
 	enum vidc_status status;
 	u32 size;
-	u32 clnt_data;
 	union {
 		struct vidc_hal_ebd input_done;
 		struct vidc_hal_fbd output_done;

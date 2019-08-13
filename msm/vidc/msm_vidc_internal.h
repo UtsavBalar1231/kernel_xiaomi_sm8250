@@ -205,8 +205,8 @@ struct msm_vidc_csc_coeff {
 struct msm_vidc_buf_data {
 	struct list_head list;
 	u32 index;
-	u32 mark_data;
-	u32 mark_target;
+	u32 input_tag;
+	u32 input_tag2;
 	u32 filled_length;
 };
 
@@ -214,6 +214,12 @@ struct msm_vidc_window_data {
 	struct list_head list;
 	u32 frame_size;
 	u32 etb_count;
+};
+
+struct msm_vidc_client_data {
+	struct list_head list;
+	u32 id;
+	u32 input_tag;
 };
 
 struct msm_vidc_common_data {
@@ -503,6 +509,7 @@ struct msm_vidc_inst {
 	struct msm_vidc_list etb_data;
 	struct msm_vidc_list fbd_data;
 	struct msm_vidc_list window_data;
+	struct msm_vidc_list client_data;
 	struct buffer_requirements buff_req;
 	struct vidc_frame_data superframe_data[VIDC_SUPERFRAME_MAX];
 	struct v4l2_ctrl_handler ctrl_handler;
@@ -523,6 +530,7 @@ struct msm_vidc_inst {
 	enum multi_stream stream_output_mode;
 	struct v4l2_ctrl **ctrls;
 	u32 num_ctrls;
+	u32 etb_counter;
 	int bit_depth;
 	struct kref kref;
 	bool in_flush;

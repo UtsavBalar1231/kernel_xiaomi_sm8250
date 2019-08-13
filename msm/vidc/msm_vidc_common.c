@@ -2120,8 +2120,10 @@ static void handle_session_flush(enum hal_command_response cmd, void *data)
 		goto exit;
 	}
 
-	if (flush_type == HAL_FLUSH_ALL)
+	if (flush_type == HAL_FLUSH_ALL) {
 		msm_comm_release_window_data(inst);
+		msm_comm_release_client_data(inst);
+	}
 
 	dprintk(VIDC_HIGH,
 		"Notify flush complete, flush_type: %x\n", flush_type);
@@ -2653,10 +2655,9 @@ static void handle_fbd(enum hal_command_response cmd, void *data)
 
 	vb->timestamp = (time_usec * NSEC_PER_USEC);
 
-	if (inst->session_type == MSM_VIDC_DECODER) {
-		msm_comm_store_mark_data(&inst->fbd_data, vb->index,
-			fill_buf_done->mark_data, fill_buf_done->mark_target);
-	}
+	msm_comm_store_input_tag(&inst->fbd_data, vb->index,
+		fill_buf_done->input_tag, fill_buf_done->input_tag2);
+
 	if (inst->session_type == MSM_VIDC_ENCODER) {
 		msm_comm_store_filled_length(&inst->fbd_data, vb->index,
 			fill_buf_done->filled_len1);
@@ -2677,6 +2678,8 @@ static void handle_fbd(enum hal_command_response cmd, void *data)
 		mbuf->vvb.flags |= V4L2_BUF_FLAG_KEYFRAME;
 	if (fill_buf_done->flags1 & HAL_BUFFERFLAG_DATACORRUPT)
 		mbuf->vvb.flags |= V4L2_BUF_FLAG_DATA_CORRUPT;
+	if (fill_buf_done->flags1 & HAL_BUFFERFLAG_ENDOFSUBFRAME)
+		mbuf->vvb.flags |= V4L2_BUF_FLAG_END_OF_SUBFRAME;
 	switch (fill_buf_done->picture_type) {
 	case HFI_PICTURE_TYPE_P:
 		mbuf->vvb.flags |= V4L2_BUF_FLAG_PFRAME;
@@ -4039,7 +4042,7 @@ int msm_vidc_send_pending_eos_buffers(struct msm_vidc_inst *inst)
 	list_for_each_entry_safe(binfo, temp, &inst->eosbufs.list, list) {
 		data.alloc_len = binfo->smem.size;
 		data.device_addr = binfo->smem.device_addr;
-		data.clnt_data = data.device_addr;
+		data.input_tag = 0;
 		data.buffer_type = HAL_BUFFER_INPUT;
 		data.filled_len = 0;
 		data.offset = 0;
@@ -4186,6 +4189,7 @@ static void populate_frame_data(struct vidc_frame_data *data,
 	struct v4l2_format *f = NULL;
 	struct vb2_buffer *vb;
 	struct vb2_v4l2_buffer *vbuf;
+	u32 itag = 0, itag2 = 0;
 
 	if (!inst || !mbuf || !data) {
 		dprintk(VIDC_ERR, "%s: invalid params %pK %pK %pK\n",
@@ -4203,7 +4207,7 @@ static void populate_frame_data(struct vidc_frame_data *data,
 	data->device_addr = mbuf->smem[0].device_addr;
 	data->timestamp = time_usec;
 	data->flags = 0;
-	data->clnt_data = data->device_addr;
+	data->input_tag = 0;
 
 	if (vb->type == INPUT_MPLANE) {
 		data->buffer_type = HAL_BUFFER_INPUT;
@@ -4216,10 +4220,10 @@ static void populate_frame_data(struct vidc_frame_data *data,
 		if (vbuf->flags & V4L2_BUF_FLAG_CODECCONFIG)
 			data->flags |= HAL_BUFFERFLAG_CODECCONFIG;
 
-		if (inst->session_type == MSM_VIDC_DECODER) {
-			msm_comm_fetch_mark_data(&inst->etb_data, vb->index,
-				&data->mark_data, &data->mark_target);
-		}
+		msm_comm_fetch_input_tag(&inst->etb_data, vb->index,
+			&itag, &itag2);
+		data->input_tag = itag;
+
 		f = &inst->fmts[INPUT_PORT].v4l2_fmt;
 	} else if (vb->type == OUTPUT_MPLANE) {
 		data->buffer_type = msm_comm_get_hal_output_buffer(inst);
@@ -6961,6 +6965,110 @@ bool kref_get_mbuf(struct msm_vidc_inst *inst, struct msm_vidc_buffer *mbuf)
 	return ret;
 }
 
+struct msm_vidc_client_data *msm_comm_store_client_data(
+	struct msm_vidc_inst *inst, u32 itag)
+{
+	struct msm_vidc_client_data *data = NULL;
+
+	if (!inst) {
+		dprintk(VIDC_ERR, "%s: invalid params %pK %un",
+			__func__, inst, itag);
+		return NULL;
+	}
+
+	mutex_lock(&inst->client_data.lock);
+	data = kzalloc(sizeof(*data), GFP_KERNEL);
+	if (!data) {
+		dprintk(VIDC_ERR, "No memory left to allocate tag data");
+		goto exit;
+	}
+
+	/**
+	 * Special handling, if etb_counter reaches to 2^32 - 1,
+	 * then start next value from 1 not 0.
+	 */
+	if (!inst->etb_counter)
+		inst->etb_counter = 1;
+
+	INIT_LIST_HEAD(&data->list);
+	data->id =  inst->etb_counter++;
+	data->input_tag = itag;
+	list_add_tail(&data->list, &inst->client_data.list);
+
+exit:
+	mutex_unlock(&inst->client_data.lock);
+
+	return data;
+}
+
+void msm_comm_fetch_client_data(struct msm_vidc_inst *inst, bool remove,
+	u32 itag, u32 itag2, u32 *otag, u32 *otag2)
+{
+	struct msm_vidc_client_data *temp, *next;
+	bool found_itag = false, found_itag2 = false;
+
+	if (!inst || !otag || !otag2) {
+		dprintk(VIDC_ERR, "%s: invalid params %pK %x %x\n",
+			__func__, inst, otag, otag2);
+		return;
+	}
+
+	mutex_lock(&inst->client_data.lock);
+	list_for_each_entry_safe(temp, next, &inst->client_data.list, list) {
+		if (temp->id == itag) {
+			*otag = temp->input_tag;
+			if (remove) {
+				list_del(&temp->list);
+				kfree(temp);
+			}
+			found_itag = true;
+			/**
+			 * Some interlace clips, both BF & TP is available in
+			 * single ETB buffer. In that case, firmware copies
+			 * same input_tag value to both input_tag and
+			 * input_tag2 at FBD.
+			 */
+			if (!itag2 || itag == itag2) {
+				found_itag2 = true;
+				break;
+			}
+		} else if (temp->id == itag2) {
+			*otag2 = temp->input_tag;
+			found_itag2 = true;
+			if (remove) {
+				list_del(&temp->list);
+				kfree(temp);
+			}
+		}
+		if (found_itag && found_itag2)
+			break;
+	}
+	mutex_unlock(&inst->client_data.lock);
+
+	if (!found_itag || !found_itag2) {
+		dprintk(VIDC_ERR, "%s: %x: client data not found - %u, %u\n",
+			__func__, hash32_ptr(inst->session), itag, itag2);
+	}
+}
+
+void msm_comm_release_client_data(struct msm_vidc_inst *inst)
+{
+	struct msm_vidc_client_data *temp, *next;
+
+	if (!inst) {
+		dprintk(VIDC_ERR, "%s: invalid params %pK\n",
+			__func__, inst);
+		return;
+	}
+
+	mutex_lock(&inst->client_data.lock);
+	list_for_each_entry_safe(temp, next, &inst->client_data.list, list) {
+		list_del(&temp->list);
+		kfree(temp);
+	}
+	mutex_unlock(&inst->client_data.lock);
+}
+
 void msm_comm_store_filled_length(struct msm_vidc_list *data_list,
 		u32 index, u32 filled_length)
 {
@@ -7018,8 +7126,8 @@ void msm_comm_fetch_filled_length(struct msm_vidc_list *data_list,
 	mutex_unlock(&data_list->lock);
 }
 
-void msm_comm_store_mark_data(struct msm_vidc_list *data_list,
-		u32 index, u32 mark_data, u32 mark_target)
+void msm_comm_store_input_tag(struct msm_vidc_list *data_list,
+		u32 index, u32 itag, u32 itag2)
 {
 	struct msm_vidc_buf_data *pdata = NULL;
 	bool found = false;
@@ -7033,8 +7141,8 @@ void msm_comm_store_mark_data(struct msm_vidc_list *data_list,
 	mutex_lock(&data_list->lock);
 	list_for_each_entry(pdata, &data_list->list, list) {
 		if (pdata->index == index) {
-			pdata->mark_data = mark_data;
-			pdata->mark_target = mark_target;
+			pdata->input_tag = itag;
+			pdata->input_tag2 = itag2;
 			found = true;
 			break;
 		}
@@ -7047,8 +7155,8 @@ void msm_comm_store_mark_data(struct msm_vidc_list *data_list,
 			goto exit;
 		}
 		pdata->index = index;
-		pdata->mark_data = mark_data;
-		pdata->mark_target = mark_target;
+		pdata->input_tag = itag;
+		pdata->input_tag2 = itag2;
 		list_add_tail(&pdata->list, &data_list->list);
 	}
 
@@ -7056,32 +7164,35 @@ exit:
 	mutex_unlock(&data_list->lock);
 }
 
-void msm_comm_fetch_mark_data(struct msm_vidc_list *data_list,
-		u32 index, u32 *mark_data, u32 *mark_target)
+int msm_comm_fetch_input_tag(struct msm_vidc_list *data_list,
+		u32 index, u32 *itag, u32 *itag2)
 {
 	struct msm_vidc_buf_data *pdata = NULL;
+	int rc = 0;
 
-	if (!data_list || !mark_data || !mark_target) {
+	if (!data_list || !itag || !itag2) {
 		dprintk(VIDC_ERR, "%s: invalid params %pK %pK %pK\n",
-			__func__, data_list, mark_data, mark_target);
-		return;
+			__func__, data_list, itag, itag2);
+		return -EINVAL;
 	}
 
-	*mark_data = *mark_target = 0;
+	*itag = *itag2 = 0;
 	mutex_lock(&data_list->lock);
 	list_for_each_entry(pdata, &data_list->list, list) {
 		if (pdata->index == index) {
-			*mark_data = pdata->mark_data;
-			*mark_target = pdata->mark_target;
+			*itag = pdata->input_tag;
+			*itag2 = pdata->input_tag2;
 			/* clear after fetch */
-			pdata->mark_data = pdata->mark_target = 0;
+			pdata->input_tag = pdata->input_tag2 = 0;
 			break;
 		}
 	}
 	mutex_unlock(&data_list->lock);
+
+	return rc;
 }
 
-int msm_comm_release_mark_data(struct msm_vidc_inst *inst)
+int msm_comm_release_input_tag(struct msm_vidc_inst *inst)
 {
 	struct msm_vidc_buf_data *pdata, *next;
 
