@@ -289,7 +289,7 @@
 			qcom,default-topology-index = <0>;
 			qcom,partial-update-enabled = "single_roi";
 			qcom,panel-roi-alignment = <540 270 270 270 1080 270>;
-			qcom,mdss-dsi-panel-clockrate = <400000000>;
+			qcom,mdss-dsi-panel-clockrate = <380000000>;
 		};
 	};
 };
