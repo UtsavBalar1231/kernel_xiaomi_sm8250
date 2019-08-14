@@ -638,3 +638,5 @@
 		};
 	};
 };
+
+#include "lagoon-pinctrl.dtsi"
