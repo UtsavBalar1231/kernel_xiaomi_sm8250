@@ -1776,7 +1776,7 @@ static void msm_vidc_cleanup_instance(struct msm_vidc_inst *inst)
 		dprintk(VIDC_ERR,
 			"Failed to release input_tag buffers\n");
 
-	msm_comm_release_client_data(inst);
+	msm_comm_release_client_data(inst, true);
 
 	msm_comm_release_window_data(inst);
 

@@ -2115,7 +2115,8 @@ static void handle_session_flush(enum hal_command_response cmd, void *data)
 
 	if (flush_type == HAL_FLUSH_ALL) {
 		msm_comm_clear_window_data(inst);
-		msm_comm_release_client_data(inst);
+		msm_comm_release_client_data(inst, false);
+		inst->clk_data.buffer_counter = 0;
 	}
 
 	dprintk(VIDC_HIGH,
@@ -6973,7 +6974,7 @@ bool kref_get_mbuf(struct msm_vidc_inst *inst, struct msm_vidc_buffer *mbuf)
 struct msm_vidc_client_data *msm_comm_store_client_data(
 	struct msm_vidc_inst *inst, u32 itag)
 {
-	struct msm_vidc_client_data *data = NULL;
+	struct msm_vidc_client_data *data = NULL, *temp = NULL;
 
 	if (!inst) {
 		dprintk(VIDC_ERR, "%s: invalid params %pK %un",
@@ -6982,10 +6983,20 @@ struct msm_vidc_client_data *msm_comm_store_client_data(
 	}
 
 	mutex_lock(&inst->client_data.lock);
-	data = kzalloc(sizeof(*data), GFP_KERNEL);
+	list_for_each_entry(temp, &inst->client_data.list, list) {
+		if (!temp->id) {
+			data = temp;
+			break;
+		}
+	}
 	if (!data) {
-		dprintk(VIDC_ERR, "No memory left to allocate tag data");
-		goto exit;
+		data = kzalloc(sizeof(*data), GFP_KERNEL);
+		if (!data) {
+			dprintk(VIDC_ERR, "No memory avilable - tag data");
+			goto exit;
+		}
+		INIT_LIST_HEAD(&data->list);
+		list_add_tail(&data->list, &inst->client_data.list);
 	}
 
 	/**
@@ -6995,10 +7006,8 @@ struct msm_vidc_client_data *msm_comm_store_client_data(
 	if (!inst->etb_counter)
 		inst->etb_counter = 1;
 
-	INIT_LIST_HEAD(&data->list);
 	data->id =  inst->etb_counter++;
 	data->input_tag = itag;
-	list_add_tail(&data->list, &inst->client_data.list);
 
 exit:
 	mutex_unlock(&inst->client_data.lock);
@@ -7017,33 +7026,25 @@ void msm_comm_fetch_client_data(struct msm_vidc_inst *inst, bool remove,
 			__func__, inst, otag, otag2);
 		return;
 	}
-
+	/**
+	 * Some interlace clips, both BF & TF is available in single ETB buffer.
+	 * In that case, firmware copies same input_tag value to both input_tag
+	 * and input_tag2 at FBD.
+	 */
+	if (!itag2 || itag == itag2)
+		found_itag2 = true;
 	mutex_lock(&inst->client_data.lock);
 	list_for_each_entry_safe(temp, next, &inst->client_data.list, list) {
 		if (temp->id == itag) {
 			*otag = temp->input_tag;
-			if (remove) {
-				list_del(&temp->list);
-				kfree(temp);
-			}
 			found_itag = true;
-			/**
-			 * Some interlace clips, both BF & TP is available in
-			 * single ETB buffer. In that case, firmware copies
-			 * same input_tag value to both input_tag and
-			 * input_tag2 at FBD.
-			 */
-			if (!itag2 || itag == itag2) {
-				found_itag2 = true;
-				break;
-			}
-		} else if (temp->id == itag2) {
+			if (remove)
+				temp->id = 0;
+		} else if (!found_itag2 && temp->id == itag2) {
 			*otag2 = temp->input_tag;
 			found_itag2 = true;
-			if (remove) {
-				list_del(&temp->list);
-				kfree(temp);
-			}
+			if (remove)
+				temp->id = 0;
 		}
 		if (found_itag && found_itag2)
 			break;
@@ -7056,7 +7057,7 @@ void msm_comm_fetch_client_data(struct msm_vidc_inst *inst, bool remove,
 	}
 }
 
-void msm_comm_release_client_data(struct msm_vidc_inst *inst)
+void msm_comm_release_client_data(struct msm_vidc_inst *inst, bool remove)
 {
 	struct msm_vidc_client_data *temp, *next;
 
@@ -7068,8 +7069,11 @@ void msm_comm_release_client_data(struct msm_vidc_inst *inst)
 
 	mutex_lock(&inst->client_data.lock);
 	list_for_each_entry_safe(temp, next, &inst->client_data.list, list) {
-		list_del(&temp->list);
-		kfree(temp);
+		temp->id = 0;
+		if (remove) {
+			list_del(&temp->list);
+			kfree(temp);
+		}
 	}
 	mutex_unlock(&inst->client_data.lock);
 }
