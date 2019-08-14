@@ -2231,7 +2231,7 @@ void msm_venc_decide_bframe(struct msm_vidc_inst *inst)
 			 * Hence, forcefully enable bframe
 			 */
 			inst->prop.bframe_changed = true;
-			bframe_ctrl->val = MAX_NUM_B_FRAMES;
+			update_ctrl(bframe_ctrl, MAX_NUM_B_FRAMES);
 			dprintk(VIDC_HIGH, "Bframe is forcefully enabled\n");
 		} else {
 			/*
@@ -2258,7 +2258,7 @@ disable_bframe:
 		 * Hence, forcefully disable bframe
 		 */
 		inst->prop.bframe_changed = true;
-		bframe_ctrl->val = 0;
+		update_ctrl(bframe_ctrl, 0);
 		dprintk(VIDC_HIGH, "Bframe is forcefully disabled!\n");
 	} else {
 		dprintk(VIDC_HIGH, "Bframe is disabled\n");
@@ -2293,6 +2293,7 @@ void msm_venc_adjust_gop_size(struct msm_vidc_inst *inst)
 	struct v4l2_ctrl *hier_ctrl;
 	struct v4l2_ctrl *bframe_ctrl;
 	struct v4l2_ctrl *gop_size_ctrl;
+	s32 val;
 
 	gop_size_ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_GOP_SIZE);
 	if (inst->prop.bframe_changed) {
@@ -2303,12 +2304,12 @@ void msm_venc_adjust_gop_size(struct msm_vidc_inst *inst)
 		bframe_ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_B_FRAMES);
 		if (!bframe_ctrl->val)
 			/* Forcefully disabled */
-			gop_size_ctrl->val = gop_size_ctrl->val *
-					(1 + MAX_NUM_B_FRAMES);
+			val = gop_size_ctrl->val * (1 + MAX_NUM_B_FRAMES);
 		else
 			/* Forcefully enabled */
-			gop_size_ctrl->val = gop_size_ctrl->val /
-					(1 + MAX_NUM_B_FRAMES);
+			val = gop_size_ctrl->val / (1 + MAX_NUM_B_FRAMES);
+
+		update_ctrl(gop_size_ctrl, val);
 	}
 
 	/*
@@ -2324,9 +2325,11 @@ void msm_venc_adjust_gop_size(struct msm_vidc_inst *inst)
 		num_subgops = (gop_size_ctrl->val + (min_gop_size >> 1)) /
 				min_gop_size;
 		if (num_subgops)
-			gop_size_ctrl->val = num_subgops * min_gop_size;
+			val = num_subgops * min_gop_size;
 		else
-			gop_size_ctrl->val = min_gop_size;
+			val = min_gop_size;
+
+		update_ctrl(gop_size_ctrl, val);
 	}
 }
 
@@ -2853,14 +2856,14 @@ static void set_all_intra_preconditions(struct msm_vidc_inst *inst)
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_MULTI_SLICE_MODE);
 	if (ctrl->val) {
 		dprintk(VIDC_HIGH, "Disable multi slice for all intra\n");
-		ctrl->val = V4L2_MPEG_VIDEO_MULTI_SLICE_MODE_SINGLE;
+		update_ctrl(ctrl, V4L2_MPEG_VIDEO_MULTI_SLICE_MODE_SINGLE);
 	}
 
 	/* Disable LTR */
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_LTRCOUNT);
 	if (ctrl->val) {
 		dprintk(VIDC_HIGH, "Disable LTR for all intra\n");
-		ctrl->val = 0;
+		update_ctrl(ctrl, 0);
 	}
 
 	/* Disable Layer encoding */
@@ -2869,8 +2872,8 @@ static void set_all_intra_preconditions(struct msm_vidc_inst *inst)
 		V4L2_CID_MPEG_VIDC_VIDEO_HEVC_MAX_HIER_CODING_LAYER);
 	if (ctrl->val || ctrl_t->val) {
 		dprintk(VIDC_HIGH, "Disable layer encoding for all intra\n");
-		ctrl->val = 0;
-		ctrl_t->val = 0;
+		update_ctrl(ctrl, 0);
+		update_ctrl(ctrl_t, 0);
 	}
 
 	/* Disable IR */
@@ -2878,8 +2881,8 @@ static void set_all_intra_preconditions(struct msm_vidc_inst *inst)
 	ctrl_t = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_CYCLIC_INTRA_REFRESH_MB);
 	if (ctrl->val || ctrl_t->val) {
 		dprintk(VIDC_HIGH, "Disable IR for all intra\n");
-		ctrl->val = 0;
-		ctrl_t->val = 0;
+		update_ctrl(ctrl, 0);
+		update_ctrl(ctrl_t, 0);
 	}
 
 	return;
@@ -2893,14 +2896,14 @@ static void set_heif_preconditions(struct msm_vidc_inst *inst)
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_GOP_SIZE);
 	if (ctrl->val) {
 		dprintk(VIDC_HIGH, "Reset P-frame count for HEIF\n");
-		ctrl->val = 0;
+		update_ctrl(ctrl, 0);
 	}
 
 	/* Reset BFrames */
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_B_FRAMES);
 	if (ctrl->val) {
 		dprintk(VIDC_HIGH, "Reset B-frame count for HEIF\n");
-		ctrl->val = 0;
+		update_ctrl(ctrl, 0);
 	}
 
 	return;
@@ -3075,8 +3078,8 @@ int msm_venc_set_slice_control_mode(struct msm_vidc_inst *inst)
 	}
 
 	if (slice_mode == HFI_MULTI_SLICE_OFF) {
-		ctrl->val = V4L2_MPEG_VIDEO_MULTI_SLICE_MODE_SINGLE;
-		ctrl_t->val = 0;
+		update_ctrl(ctrl, V4L2_MPEG_VIDEO_MULTI_SLICE_MODE_SINGLE);
+		update_ctrl(ctrl_t, 0);
 	}
 
 set_and_exit:
@@ -3902,7 +3905,7 @@ disable_ltr:
 	 * client sets unsupported codec/rate control.
 	 */
 	if (!is_ltr) {
-		ctrl->val = 0;
+		update_ctrl(ctrl, 0);
 		dprintk(VIDC_HIGH, "LTR is forcefully disabled!\n");
 	}
 	return rc;
