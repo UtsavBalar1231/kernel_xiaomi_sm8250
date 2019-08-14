@@ -424,6 +424,13 @@
 		clock-frequency = <19200000>;
 	};
 
+	dcc: dcc_v2@1be2000 {
+		compatible = "qcom,dcc-v2";
+		reg = <0x1be2000 0x1000>,
+			<0x1bee000 0x2000>;
+		reg-names = "dcc-base", "dcc-ram-base";
+		dcc-ram-offset = <0x2000>;
+	};
 
 	timer@f120000 {
 		#address-cells = <1>;
