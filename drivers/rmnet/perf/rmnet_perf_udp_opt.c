@@ -26,7 +26,7 @@
 #include "rmnet_perf_config.h"
 
 /* Max number of bytes we allow udp_opt to aggregate per flow */
-unsigned int rmnet_perf_udp_opt_flush_limit __read_mostly = 65536;
+unsigned int rmnet_perf_udp_opt_flush_limit __read_mostly = 65000;
 module_param(rmnet_perf_udp_opt_flush_limit, uint, 0644);
 MODULE_PARM_DESC(rmnet_perf_udp_opt_flush_limit,
 		 "Max flush limiit for udp_opt");
