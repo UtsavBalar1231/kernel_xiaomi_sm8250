@@ -21,7 +21,9 @@ Optional properties:
 - qcom,byte-mid-match:  Byte count MID match value
 - qcom,byte-mid-mask:   Byte count MID mask value
 - qcom,count-unit:     Number of bytes monitor counts in
-
+- qcom,msm_bus:		A list of tuples where each tuple consists of a bus
+			master port number and a bus slave port number.
+- qcom,msm_bus_name:	Name of the DT device voting for the bus.
 Example:
 	qcom,cpu-bwmon {
 		compatible = "qcom,bimc-bwmon";
