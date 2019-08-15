@@ -377,15 +377,6 @@ static int cam_vfe_camif_ver3_resource_start(
 	cam_io_w_mb(rsrc_data->reg_data->top_debug_cfg_en, rsrc_data->mem_base +
 		rsrc_data->common_reg->top_debug_cfg);
 
-	/*config vfe core*/
-	val = (rsrc_data->pix_pattern <<
-		rsrc_data->reg_data->pixel_pattern_shift);
-	val |= (1 << rsrc_data->reg_data->pp_camif_cfg_en_shift);
-	val |= (1 << rsrc_data->reg_data->pp_camif_cfg_ife_out_en_shift);
-	cam_io_w_mb(val,
-		rsrc_data->mem_base + rsrc_data->camif_reg->module_cfg);
-	CAM_DBG(CAM_ISP, "write module_cfg val = 0x%X", val);
-
 	val = cam_io_r_mb(rsrc_data->mem_base +
 		rsrc_data->common_reg->core_cfg_0);
 

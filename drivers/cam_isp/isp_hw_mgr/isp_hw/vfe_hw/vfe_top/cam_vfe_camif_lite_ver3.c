@@ -294,10 +294,6 @@ static int cam_vfe_camif_lite_resource_start(
 		rsrc_data->camif_lite_reg->lite_epoch_irq);
 
 skip_core_cfg:
-	/* Enable Camif */
-	cam_io_w_mb(0x1,
-		rsrc_data->mem_base +
-		rsrc_data->camif_lite_reg->lite_module_config);
 
 	camif_lite_res->res_state = CAM_ISP_RESOURCE_STATE_STREAMING;
 
