@@ -731,9 +731,16 @@ bool rmnet_perf_core_dissect_desc(struct rmnet_frag_descriptor *frag_desc,
 				  struct rmnet_perf_pkt_info *pkt_info,
 				  int offset, u16 pkt_len, bool *skip_hash)
 {
+	u8 *payload = frag_desc->hdr_ptr;
+
+	/* If this was segmented, the headers aren't in the pkt_len. Add them
+	 * back for consistency.
+	 */
+	if (payload != rmnet_frag_data_ptr(frag_desc))
+		pkt_len += frag_desc->ip_len + frag_desc->trans_len;
+
 	pkt_info->frag_desc = frag_desc;
-	return rmnet_perf_core_dissect_pkt(rmnet_frag_data_ptr(frag_desc),
-					   pkt_info, offset, pkt_len,
+	return rmnet_perf_core_dissect_pkt(payload, pkt_info, offset, pkt_len,
 					   skip_hash);
 }
 
