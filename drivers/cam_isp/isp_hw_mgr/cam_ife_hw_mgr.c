@@ -2078,6 +2078,7 @@ void cam_ife_cam_cdm_callback(uint32_t handle, void *userdata,
 
 	if (status == CAM_CDM_CB_STATUS_BL_SUCCESS) {
 		complete_all(&ctx->config_done_complete);
+		atomic_set(&ctx->cdm_done, 1);
 		CAM_DBG(CAM_ISP,
 			"Called by CDM hdl=%x, udata=%pK, status=%d, cookie=%llu ctx_index=%d",
 			 handle, userdata, status, cookie, ctx->ctx_index);
@@ -3063,6 +3064,7 @@ static int cam_ife_mgr_config_hw(void *hw_mgr_priv,
 		ctx->applied_req_id = cfg->request_id;
 
 		CAM_DBG(CAM_ISP, "Submit to CDM");
+		atomic_set(&ctx->cdm_done, 0);
 		rc = cam_cdm_submit_bls(ctx->cdm_handle, cdm_cmd);
 		if (rc) {
 			CAM_ERR(CAM_ISP, "Failed to apply the configs");
@@ -5371,15 +5373,9 @@ static int cam_ife_mgr_handle_reg_dump(struct cam_ife_hw_mgr_ctx *ctx,
 		return 0;
 	}
 
-	rc = wait_for_completion_timeout(
-		&ctx->config_done_complete,
-		msecs_to_jiffies(30));
-	if (rc <= 0) {
-		CAM_ERR(CAM_ISP,
-			"config done completion timeout rc=%d ctx_index %d",
-			rc, ctx->ctx_index);
-		rc = 0;
-	}
+	if (!atomic_read(&ctx->cdm_done))
+		CAM_WARN_RATE_LIMIT(CAM_ISP,
+			"Reg dump values might be from more than one request");
 
 	for (i = 0; i < ctx->num_reg_dump_buf; i++) {
 		CAM_DBG(CAM_ISP, "Reg dump cmd meta data: %d req_type: %d",
@@ -5468,8 +5464,17 @@ static int cam_ife_mgr_cmd(void *hw_mgr_priv, void *cmd_args)
 		if (ctx->last_dump_flush_req_id == ctx->applied_req_id)
 			return 0;
 
-		ctx->last_dump_flush_req_id = ctx->applied_req_id;
+		rc = wait_for_completion_timeout(
+			&ctx->config_done_complete,
+			msecs_to_jiffies(30));
+		if (rc <= 0) {
+			CAM_ERR(CAM_ISP,
+				"config done completion timeout, Reg dump will be unreliable rc=%d ctx_index %d",
+				rc, ctx->ctx_index);
+			rc = 0;
+		}
 
+		ctx->last_dump_flush_req_id = ctx->applied_req_id;
 		rc = cam_ife_mgr_handle_reg_dump(ctx,
 			CAM_ISP_PACKET_META_REG_DUMP_ON_FLUSH);
 		if (rc) {
