@@ -3741,7 +3741,7 @@
 
 #include "lito-qupv3.dtsi"
 #include "lito-coresight.dtsi"
-#include "lito-camera.dtsi"
+#include "camera/lito-camera.dtsi"
 #include "lito-audio.dtsi"
 
 &qupv3_se9_i2c {

@@ -5112,7 +5112,7 @@
 #include "msm-rdbg.dtsi"
 
 #include "kona-pm.dtsi"
-#include "kona-camera.dtsi"
+#include "camera/kona-camera.dtsi"
 #include "kona-qupv3.dtsi"
 #include "kona-audio.dtsi"
 #include "kona-thermal.dtsi"
