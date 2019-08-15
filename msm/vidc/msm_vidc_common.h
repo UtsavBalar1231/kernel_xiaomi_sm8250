@@ -33,10 +33,8 @@ struct getprop_buf {
 };
 
 enum load_calc_quirks {
-	LOAD_CALC_NO_QUIRKS = 0,
-	LOAD_CALC_IGNORE_TURBO_LOAD = 1 << 0,
-	LOAD_CALC_IGNORE_THUMBNAIL_LOAD = 1 << 1,
-	LOAD_CALC_IGNORE_NON_REALTIME_LOAD = 1 << 2,
+	LOAD_POWER = 0,
+	LOAD_ADMISSION_CONTROL = 1,
 };
 
 enum client_set_controls {
@@ -241,7 +239,7 @@ int msm_comm_get_inst_load(struct msm_vidc_inst *inst,
 			enum load_calc_quirks quirks);
 int msm_comm_get_inst_load_per_core(struct msm_vidc_inst *inst,
 			enum load_calc_quirks quirks);
-int msm_comm_get_load(struct msm_vidc_core *core,
+int msm_comm_get_device_load(struct msm_vidc_core *core,
 			enum session_type type, enum load_calc_quirks quirks);
 int msm_comm_set_color_format(struct msm_vidc_inst *inst,
 		enum hal_buffer buffer_type, int fourcc);

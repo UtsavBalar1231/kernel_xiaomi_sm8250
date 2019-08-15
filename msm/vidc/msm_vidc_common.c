@@ -775,7 +775,8 @@ exit:
 	return count;
 }
 
-static int msm_comm_get_mbs_per_sec(struct msm_vidc_inst *inst)
+static int msm_comm_get_mbs_per_sec(struct msm_vidc_inst *inst,
+					enum load_calc_quirks quirks)
 {
 	int input_port_mbs, output_port_mbs;
 	int fps;
@@ -789,11 +790,15 @@ static int msm_comm_get_mbs_per_sec(struct msm_vidc_inst *inst)
 	output_port_mbs = NUM_MBS_PER_FRAME(f->fmt.pix_mp.width,
 		f->fmt.pix_mp.height);
 
-	if (inst->clk_data.operating_rate > inst->clk_data.frame_rate)
-		fps = (inst->clk_data.operating_rate >> 16) ?
-			inst->clk_data.operating_rate >> 16 : 1;
-	else
-		fps = inst->clk_data.frame_rate >> 16;
+	fps = inst->clk_data.frame_rate;
+
+	/* For admission control operating rate is ignored */
+	if (quirks == LOAD_POWER)
+		fps = max(inst->clk_data.operating_rate,
+				  inst->clk_data.frame_rate);
+
+	/* In case of fps < 1 we assume 1 */
+	fps = max(fps >> 16, 1);
 
 	return max(input_port_mbs, output_port_mbs) * fps;
 }
@@ -809,40 +814,28 @@ int msm_comm_get_inst_load(struct msm_vidc_inst *inst,
 		inst->state < MSM_VIDC_STOP_DONE))
 		goto exit;
 
-	load = msm_comm_get_mbs_per_sec(inst);
-
-	if (is_thumbnail_session(inst)) {
-		if (quirks & LOAD_CALC_IGNORE_THUMBNAIL_LOAD)
-			load = 0;
-	}
-
-	if (is_turbo_session(inst)) {
-		if (!(quirks & LOAD_CALC_IGNORE_TURBO_LOAD))
-			load = inst->core->resources.max_load;
-	}
-
 	/*  Clock and Load calculations for REALTIME/NON-REALTIME
-	 *                        OPERATING RATE SET/NO OPERATING RATE SET
-	 *
-	 *                 | OPERATING RATE SET   | OPERATING RATE NOT SET |
-	 * ----------------|--------------------- |------------------------|
-	 * REALTIME        | load = res * op_rate |  load = res * fps      |
-	 *                 | clk  = res * op_rate |  clk  = res * fps      |
-	 * ----------------|----------------------|------------------------|
-	 * NON-REALTIME    | load = res * 1 fps   |  load = res * 1 fps    |
-	 *                 | clk  = res * op_rate |  clk  = res * fps      |
-	 * ----------------|----------------------|------------------------|
+	 *  Operating rate will either Default or Client value.
+	 *  Session admission control will be based on Load.
+	 *  Power requests based of calculated Clock/Freq.
+	 * ----------------|----------------------------|
+	 * REALTIME        | Admission Control Load =   |
+	 *                 |          res * fps         |
+	 *                 | Power Request Load =       |
+	 *                 |          res * max(op, fps)|
+	 * ----------------|----------------------------|
+	 * NON-REALTIME/   | Admission Control Load = 0	|
+	 *  THUMBNAIL      | Power Request Load =       |
+	 *                 |          res * max(op, fps)|
+	 * ----------------|----------------------------|
 	 */
 
-	if (!is_realtime_session(inst) &&
-		(quirks & LOAD_CALC_IGNORE_NON_REALTIME_LOAD)) {
-		if (!(inst->clk_data.frame_rate >> 16)) {
-			dprintk(VIDC_LOW, "instance:%pK fps = 0\n", inst);
-			load = 0;
-		} else {
-			load = msm_comm_get_mbs_per_sec(inst) /
-				(inst->clk_data.frame_rate >> 16);
-		}
+	if ((is_thumbnail_session(inst) ||
+		 !is_realtime_session(inst)) &&
+		quirks == LOAD_ADMISSION_CONTROL) {
+		load = 0;
+	} else {
+		load = msm_comm_get_mbs_per_sec(inst, quirks);
 	}
 
 exit:
@@ -861,7 +854,7 @@ int msm_comm_get_inst_load_per_core(struct msm_vidc_inst *inst,
 	return load;
 }
 
-int msm_comm_get_load(struct msm_vidc_core *core,
+int msm_comm_get_device_load(struct msm_vidc_core *core,
 	enum session_type type, enum load_calc_quirks quirks)
 {
 	struct msm_vidc_inst *inst = NULL;
@@ -3277,9 +3270,7 @@ static int msm_vidc_load_resources(int flipped_state,
 	struct hfi_device *hdev;
 	int num_mbs_per_sec = 0, max_load_adj = 0;
 	struct msm_vidc_core *core;
-	enum load_calc_quirks quirks = LOAD_CALC_IGNORE_TURBO_LOAD |
-		LOAD_CALC_IGNORE_THUMBNAIL_LOAD |
-		LOAD_CALC_IGNORE_NON_REALTIME_LOAD;
+	enum load_calc_quirks quirks = LOAD_ADMISSION_CONTROL;
 
 	if (!inst || !inst->core || !inst->core->device) {
 		dprintk(VIDC_ERR, "%s invalid parameters\n", __func__);
@@ -3298,8 +3289,8 @@ static int msm_vidc_load_resources(int flipped_state,
 	core = inst->core;
 
 	num_mbs_per_sec =
-		msm_comm_get_load(core, MSM_VIDC_DECODER, quirks) +
-		msm_comm_get_load(core, MSM_VIDC_ENCODER, quirks);
+		msm_comm_get_device_load(core, MSM_VIDC_DECODER, quirks) +
+		msm_comm_get_device_load(core, MSM_VIDC_ENCODER, quirks);
 
 	max_load_adj = core->resources.max_load +
 		inst->capability.cap[CAP_MBS_PER_FRAME].max;
@@ -5629,15 +5620,13 @@ static int msm_vidc_check_mbpf_supported(struct msm_vidc_inst *inst)
 static int msm_vidc_check_mbps_supported(struct msm_vidc_inst *inst)
 {
 	int num_mbs_per_sec = 0, max_load_adj = 0;
-	enum load_calc_quirks quirks = LOAD_CALC_IGNORE_TURBO_LOAD |
-		LOAD_CALC_IGNORE_THUMBNAIL_LOAD |
-		LOAD_CALC_IGNORE_NON_REALTIME_LOAD;
+	enum load_calc_quirks quirks = LOAD_ADMISSION_CONTROL;
 
 	if (inst->state == MSM_VIDC_OPEN_DONE) {
 		max_load_adj = inst->core->resources.max_load;
-		num_mbs_per_sec = msm_comm_get_load(inst->core,
+		num_mbs_per_sec = msm_comm_get_device_load(inst->core,
 					MSM_VIDC_DECODER, quirks);
-		num_mbs_per_sec += msm_comm_get_load(inst->core,
+		num_mbs_per_sec += msm_comm_get_device_load(inst->core,
 					MSM_VIDC_ENCODER, quirks);
 		if (num_mbs_per_sec > max_load_adj) {
 			dprintk(VIDC_ERR,

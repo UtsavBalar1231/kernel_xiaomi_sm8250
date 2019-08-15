@@ -358,7 +358,7 @@ int msm_comm_vote_bus(struct msm_vidc_inst *inst)
 	if (inst->clk_data.buffer_counter < DCVS_FTB_WINDOW &&
 		inst->session_type != MSM_VIDC_CVP)
 		vote_data->power_mode = VIDC_POWER_TURBO;
-	if (msm_vidc_clock_voting || is_turbo)
+	if (msm_vidc_clock_voting || is_turbo || is_turbo_session(inst))
 		vote_data->power_mode = VIDC_POWER_TURBO;
 
 	if (inst->session_type == MSM_VIDC_CVP) {
@@ -640,7 +640,7 @@ static unsigned long msm_vidc_calc_freq_ar50(struct msm_vidc_inst *inst,
 	dcvs = &inst->clk_data;
 
 	mbs_per_second = msm_comm_get_inst_load_per_core(inst,
-		LOAD_CALC_NO_QUIRKS);
+							 LOAD_POWER);
 
 	fps = msm_vidc_get_fps(inst);
 
@@ -726,7 +726,7 @@ static unsigned long msm_vidc_calc_freq_iris1(struct msm_vidc_inst *inst,
 	dcvs = &inst->clk_data;
 
 	mbs_per_second = msm_comm_get_inst_load_per_core(inst,
-		LOAD_CALC_NO_QUIRKS);
+							 LOAD_POWER);
 
 	fps = msm_vidc_get_fps(inst);
 
@@ -822,7 +822,7 @@ static unsigned long msm_vidc_calc_freq_iris2(struct msm_vidc_inst *inst,
 	dcvs = &inst->clk_data;
 
 	mbs_per_second = msm_comm_get_inst_load_per_core(inst,
-		LOAD_CALC_NO_QUIRKS);
+							 LOAD_POWER);
 
 	fps = msm_vidc_get_fps(inst);
 
@@ -1105,6 +1105,7 @@ int msm_dcvs_try_enable(struct msm_vidc_inst *inst)
 			inst->flags & VIDC_THUMBNAIL ||
 			inst->clk_data.low_latency_mode ||
 			inst->batch.enable ||
+			is_turbo_session(inst) ||
 		  inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_CQ);
 
 	dprintk(VIDC_HIGH|VIDC_PERF, "DCVS %s: %pK\n",
@@ -1171,7 +1172,7 @@ void msm_clock_data_reset(struct msm_vidc_inst *inst)
 
 	core = inst->core;
 	dcvs = &inst->clk_data;
-	load = msm_comm_get_inst_load_per_core(inst, LOAD_CALC_NO_QUIRKS);
+	load = msm_comm_get_inst_load_per_core(inst, LOAD_POWER);
 	cycles = inst->clk_data.entry->vpp_cycles;
 	allowed_clks_tbl = core->resources.allowed_clks_tbl;
 	if (inst->session_type == MSM_VIDC_ENCODER) {
@@ -1678,7 +1679,7 @@ static u32 get_core_load(struct msm_vidc_core *core,
 			continue;
 		}
 		current_inst_mbs_per_sec = msm_comm_get_inst_load_per_core(inst,
-				LOAD_CALC_NO_QUIRKS);
+				LOAD_POWER);
 		load += current_inst_mbs_per_sec * cycles /
 			inst->clk_data.work_route;
 	}
@@ -1715,11 +1716,11 @@ int msm_vidc_decide_core_and_power_mode_iris1(struct msm_vidc_inst *inst)
 			inst->clk_data.entry->low_power_cycles :
 			inst->clk_data.entry->vpp_cycles;
 
-	cur_inst_load = (msm_comm_get_inst_load(inst, LOAD_CALC_NO_QUIRKS) *
+	cur_inst_load = (msm_comm_get_inst_load(inst, LOAD_POWER) *
 		inst->clk_data.entry->vpp_cycles)/inst->clk_data.work_route;
 
 	cur_inst_lp_load = (msm_comm_get_inst_load(inst,
-		LOAD_CALC_NO_QUIRKS) * lp_cycles)/inst->clk_data.work_route;
+		LOAD_POWER) * lp_cycles)/inst->clk_data.work_route;
 
 	mbpf = msm_vidc_get_mbs_per_frame(inst);
 	mbps = mbpf * msm_vidc_get_fps(inst);
