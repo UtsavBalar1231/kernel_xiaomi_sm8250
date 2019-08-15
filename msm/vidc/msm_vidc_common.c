@@ -2121,7 +2121,7 @@ static void handle_session_flush(enum hal_command_response cmd, void *data)
 	}
 
 	if (flush_type == HAL_FLUSH_ALL) {
-		msm_comm_release_window_data(inst);
+		msm_comm_clear_window_data(inst);
 		msm_comm_release_client_data(inst);
 	}
 
@@ -7376,7 +7376,7 @@ bool msm_comm_check_for_inst_overload(struct msm_vidc_core *core)
 int msm_comm_check_window_bitrate(struct msm_vidc_inst *inst,
 	struct vidc_frame_data *frame_data)
 {
-	struct msm_vidc_window_data *pdata, *next;
+	struct msm_vidc_window_data *pdata, *temp = NULL;
 	u32 bitrate, max_br, window_size;
 	int buf_cnt = 1, fps, window_start;
 
@@ -7385,7 +7385,8 @@ int msm_comm_check_window_bitrate(struct msm_vidc_inst *inst,
 		return -EINVAL;
 	}
 
-	if (!inst->core->resources.avsync_window_size)
+	if (!inst->core->resources.avsync_window_size ||
+		!frame_data->filled_len)
 		return 0;
 
 	fps = inst->clk_data.frame_rate >> 16;
@@ -7397,28 +7398,36 @@ int msm_comm_check_window_bitrate(struct msm_vidc_inst *inst,
 	window_size = inst->core->resources.avsync_window_size * fps;
 	window_size = DIV_ROUND_UP(window_size, 1000);
 
-	pdata = kzalloc(sizeof(*pdata), GFP_KERNEL);
-	if (!pdata)  {
-		dprintk(VIDC_ERR, "%s: malloc failure.\n", __func__);
-		return -ENOMEM;
-	}
-
-	bitrate = pdata->frame_size = frame_data->filled_len;
-	window_start = pdata->etb_count = inst->count.etb;
+	bitrate = frame_data->filled_len;
+	window_start = inst->count.etb;
 
 	mutex_lock(&inst->window_data.lock);
-	list_add(&pdata->list, &inst->window_data.list);
-	list_for_each_entry_safe_continue(pdata, next,
-			&inst->window_data.list, list) {
-		if (buf_cnt < window_size) {
+	list_for_each_entry(pdata, &inst->window_data.list, list) {
+		if (buf_cnt < window_size && pdata->frame_size) {
 			bitrate += pdata->frame_size;
 			window_start = pdata->etb_count;
 			buf_cnt++;
 		} else {
-			list_del(&pdata->list);
-			kfree(pdata);
+			pdata->frame_size = 0;
+			temp = pdata;
 		}
 	}
+
+	pdata = NULL;
+	if(!temp) {
+		pdata = kzalloc(sizeof(*pdata), GFP_KERNEL);
+		if (!pdata)  {
+			dprintk(VIDC_ERR, "%s: malloc failure.\n", __func__);
+			mutex_unlock(&inst->window_data.lock);
+			return -ENOMEM;
+		}
+	} else {
+		pdata = temp;
+		list_del(&pdata->list);
+	}
+	pdata->frame_size = frame_data->filled_len;
+	pdata->etb_count = inst->count.etb;
+	list_add(&pdata->list, &inst->window_data.list);
 	mutex_unlock(&inst->window_data.lock);
 
 	bitrate = DIV_ROUND_UP(((u64)bitrate * 8 * fps), window_size);
@@ -7430,6 +7439,23 @@ int msm_comm_check_window_bitrate(struct msm_vidc_inst *inst,
 	}
 
 	return 0;
+}
+
+void msm_comm_clear_window_data(struct msm_vidc_inst *inst)
+{
+	struct msm_vidc_window_data *pdata;
+
+	if (!inst) {
+		dprintk(VIDC_ERR, "%s: invalid params %pK\n",
+			__func__, inst);
+		return;
+	}
+
+	mutex_lock(&inst->window_data.lock);
+	list_for_each_entry(pdata, &inst->window_data.list, list) {
+		pdata->frame_size = 0;
+	}
+	mutex_unlock(&inst->window_data.lock);
 }
 
 void msm_comm_release_window_data(struct msm_vidc_inst *inst)
