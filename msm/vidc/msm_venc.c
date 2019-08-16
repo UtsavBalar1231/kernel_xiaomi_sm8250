@@ -4184,6 +4184,9 @@ int msm_venc_set_extradata(struct msm_vidc_inst *inst)
 		}
 	}
 
+	if(!msm_vidc_cvp_usage)
+		inst->prop.extradata_ctrls &= ~EXTRADATA_ENC_INPUT_CVP;
+
 	/* CVP extradata is common between user space and external CVP kernel to kernel.
 	   Hence, skipping here and will be set after msm_vidc_prepare_preprocess in start_streaming*/
 
