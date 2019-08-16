@@ -820,7 +820,6 @@ struct hal_session {
 	enum hal_video_codec codec;
 	enum hal_domain domain;
 	u32 flags;
-	void *device;
 };
 
 struct hal_device_data {
