@@ -3823,6 +3823,19 @@ int msm_venc_set_nal_stream_format(struct msm_vidc_inst *inst)
 
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_HEVC_SIZE_OF_LENGTH_FIELD);
 	stream_format.nal_stream_format_select = BIT(ctrl->val);
+
+	/*
+	 * Secure encode session supports 0x00000001 satrtcode based
+	 * encoding only
+	 */
+	if (is_secure_session(inst) &&
+		ctrl->val != V4L2_MPEG_VIDEO_HEVC_SIZE_0) {
+		dprintk(VIDC_ERR,
+			"%s: Invalid stream format setting for secure session\n",
+			__func__);
+		return -EINVAL;
+	}
+
 	switch (ctrl->val) {
 	case V4L2_MPEG_VIDEO_HEVC_SIZE_0:
 		stream_format.nal_stream_format_select =
