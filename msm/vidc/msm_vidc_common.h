@@ -333,5 +333,6 @@ bool msm_comm_check_for_inst_overload(struct msm_vidc_core *core);
 void msm_vidc_batch_handler(struct work_struct *work);
 int msm_comm_check_window_bitrate(struct msm_vidc_inst *inst,
 		struct vidc_frame_data *frame_data);
+void msm_comm_clear_window_data(struct msm_vidc_inst *inst);
 void msm_comm_release_window_data(struct msm_vidc_inst *inst);
 #endif
