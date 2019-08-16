@@ -659,6 +659,12 @@
 		qcom,rtb-size = <0x100000>;
 	};
 
+	cpu_pmu: cpu-pmu {
+		compatible = "arm,armv8-pmuv3";
+		qcom,irq-is-percpu;
+		interrupts = <1 6 4>;
+	};
+
 	eud: qcom,msm-eud@1610000 {
 		compatible = "qcom,msm-eud";
 		interrupt-names = "eud_irq";
