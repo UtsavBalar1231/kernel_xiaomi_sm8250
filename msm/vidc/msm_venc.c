@@ -3057,6 +3057,8 @@ int msm_venc_set_entropy_mode(struct msm_vidc_inst *inst)
 		sizeof(entropy));
 	if (rc)
 		s_vpr_e(inst->sid, "%s: set property failed\n", __func__);
+	else
+		inst->entropy_mode = entropy.entropy_mode;
 
 	return rc;
 }
