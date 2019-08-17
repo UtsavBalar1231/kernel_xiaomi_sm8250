@@ -854,12 +854,12 @@ static int msm_cvp_frame_process(struct msm_vidc_inst *inst,
 	}
 
 	/*
-	 * Special handling for operating rate 0xFFFFFFFF,
+	 * Special handling for operating rate INT_MAX,
 	 * client's intention is not to skip cvp preprocess
 	 * based on operating rate, skip logic can still be
 	 * executed based on framerate though.
 	 */
-	if (cvp->operating_rate == 0xFFFFFFFF)
+	if (cvp->operating_rate == INT_MAX)
 		operating_rate = fps_max << 16;
 	else
 		operating_rate = cvp->operating_rate;

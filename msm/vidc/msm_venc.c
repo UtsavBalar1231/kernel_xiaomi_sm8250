@@ -762,7 +762,7 @@ static struct msm_vidc_ctrl msm_venc_ctrls[] = {
 		.id = V4L2_CID_MPEG_VIDC_VIDEO_OPERATING_RATE,
 		.name = "Encoder Operating rate",
 		.type = V4L2_CTRL_TYPE_INTEGER,
-		.minimum = (MINIMUM_FPS << 16),
+		.minimum = (DEFAULT_FPS << 16),/* Power Vote min fps */
 		.maximum = INT_MAX,
 		.default_value = (DEFAULT_FPS << 16),
 		.step = 1,
@@ -1601,6 +1601,10 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 		break;
 	case V4L2_CID_MPEG_VIDC_VIDEO_OPERATING_RATE:
 		inst->clk_data.operating_rate = ctrl->val;
+		inst->flags &= ~VIDC_TURBO;
+		if (ctrl->val == INT_MAX)
+			inst->flags |= VIDC_TURBO;
+
 		if (inst->state < MSM_VIDC_LOAD_RESOURCES)
 			msm_vidc_calculate_buffer_counts(inst);
 		if (inst->state == MSM_VIDC_START_DONE) {
