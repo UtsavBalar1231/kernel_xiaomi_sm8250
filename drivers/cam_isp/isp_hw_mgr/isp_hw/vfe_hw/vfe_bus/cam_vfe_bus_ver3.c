@@ -1127,11 +1127,8 @@ static int cam_vfe_bus_ver3_acquire_wm(
 	CAM_DBG(CAM_ISP, "WM:%d width %d height %d", rsrc_data->index,
 		rsrc_data->width, rsrc_data->height);
 
-	if (ver3_bus_priv->common_data.is_lite)
-		goto rdi_config;
-
-	if (rsrc_data->index > 22) {
-rdi_config:
+	if (ver3_bus_priv->common_data.is_lite || (rsrc_data->index > 22)) {
+		rsrc_data->pack_fmt = 0x0;
 		/* WM 23-25 refers to RDI 0/ RDI 1/RDI 2 */
 		switch (rsrc_data->format) {
 		case CAM_FORMAT_MIPI_RAW_6:
@@ -1142,31 +1139,28 @@ rdi_config:
 		case CAM_FORMAT_MIPI_RAW_16:
 		case CAM_FORMAT_MIPI_RAW_20:
 		case CAM_FORMAT_PLAIN128:
+		case CAM_FORMAT_PLAIN32_20:
 			rsrc_data->width = CAM_VFE_RDI_BUS_DEFAULT_WIDTH;
 			rsrc_data->height = 0;
 			rsrc_data->stride = CAM_VFE_RDI_BUS_DEFAULT_STRIDE;
-			rsrc_data->pack_fmt = 0x0;
 			rsrc_data->en_cfg = (0x1 << 16) | 0x1;
 			break;
 		case CAM_FORMAT_PLAIN8:
 			rsrc_data->en_cfg = 0x1;
-			rsrc_data->pack_fmt = 0x1;
 			rsrc_data->stride = rsrc_data->width * 2;
 			break;
 		case CAM_FORMAT_PLAIN16_10:
 		case CAM_FORMAT_PLAIN16_12:
 		case CAM_FORMAT_PLAIN16_14:
 		case CAM_FORMAT_PLAIN16_16:
-		case CAM_FORMAT_PLAIN32_20:
-			rsrc_data->width = CAM_VFE_RDI_BUS_DEFAULT_WIDTH;
-			rsrc_data->height = 0;
-			rsrc_data->stride = CAM_VFE_RDI_BUS_DEFAULT_STRIDE;
-			rsrc_data->pack_fmt = 0x0;
-			rsrc_data->en_cfg = (0x1 << 16) | 0x1;
+			rsrc_data->width =
+				ALIGNUP(rsrc_data->width * 2, 16) / 16;
+			rsrc_data->en_cfg = 0x1;
 			break;
 		case CAM_FORMAT_PLAIN64:
+			rsrc_data->width =
+				ALIGNUP(rsrc_data->width * 8, 16) / 16;
 			rsrc_data->en_cfg = 0x1;
-			rsrc_data->pack_fmt = 0xA;
 			break;
 		default:
 			CAM_ERR(CAM_ISP, "Unsupported RDI format %d",
@@ -1375,16 +1369,6 @@ static int cam_vfe_bus_ver3_start_wm(struct cam_isp_resource_node *wm_res)
 		common_data->mem_base + rsrc_data->hw_regs->image_cfg_0);
 	cam_io_w(rsrc_data->pack_fmt,
 		common_data->mem_base + rsrc_data->hw_regs->packer_cfg);
-
-	/* Configure stride for RDIs on full IFE */
-	if (!common_data->is_lite && rsrc_data->index > 22)
-		cam_io_w_mb(rsrc_data->stride, (common_data->mem_base +
-			rsrc_data->hw_regs->image_cfg_2));
-
-	/* Configure stride for RDIs on IFE lite */
-	if (common_data->is_lite)
-		cam_io_w_mb(rsrc_data->stride, (common_data->mem_base +
-			rsrc_data->hw_regs->image_cfg_2));
 
 	/* enable ubwc if needed*/
 	if (rsrc_data->en_ubwc) {
@@ -3076,10 +3060,7 @@ static int cam_vfe_bus_ver3_update_wm(void *priv, void *cmd_args,
 			CAM_WARN(CAM_ISP, "Warning stride %u expected %u",
 				io_cfg->planes[i].plane_stride, val);
 
-		if ((wm_data->stride != val ||
-			!wm_data->init_cfg_done) &&
-			(!bus_priv->common_data.is_lite &&
-			wm_data->index < 23)) {
+		if (wm_data->stride != val || !wm_data->init_cfg_done) {
 			CAM_VFE_ADD_REG_VAL_PAIR(reg_val_pair, j,
 				wm_data->hw_regs->image_cfg_2,
 				io_cfg->planes[i].plane_stride);
