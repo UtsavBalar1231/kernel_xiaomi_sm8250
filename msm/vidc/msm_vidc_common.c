@@ -4211,7 +4211,7 @@ static void populate_frame_data(struct vidc_frame_data *data,
 		if (vbuf->flags & V4L2_BUF_FLAG_CODECCONFIG)
 			data->flags |= HAL_BUFFERFLAG_CODECCONFIG;
 
-		if(vbuf->flags & V4L2_BUF_FLAG_CVPMETADATA_SKIP)
+		if(msm_vidc_cvp_usage && (vbuf->flags & V4L2_BUF_FLAG_CVPMETADATA_SKIP))
 			data->flags |= HAL_BUFFERFLAG_CVPMETADATA_SKIP;
 
 		msm_comm_fetch_input_tag(&inst->etb_data, vb->index,
