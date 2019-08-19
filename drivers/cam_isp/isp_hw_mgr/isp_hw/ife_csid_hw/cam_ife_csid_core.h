@@ -352,6 +352,7 @@ struct cam_ife_csid_common_reg_offset {
 	uint32_t path_rst_stb_all;
 	uint32_t path_rst_done_shift_val;
 	uint32_t path_en_shift_val;
+	uint32_t packing_fmt_shift_val;
 	uint32_t dt_id_shift_val;
 	uint32_t vc_shift_val;
 	uint32_t dt_shift_val;

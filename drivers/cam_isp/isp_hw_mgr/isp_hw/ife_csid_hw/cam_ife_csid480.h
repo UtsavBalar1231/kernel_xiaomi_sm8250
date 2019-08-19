@@ -349,6 +349,7 @@ static struct cam_ife_csid_common_reg_offset
 	.path_rst_stb_all                             = 0x7f,
 	.path_rst_done_shift_val                      = 1,
 	.path_en_shift_val                            = 31,
+	.packing_fmt_shift_val                        = 30,
 	.dt_id_shift_val                              = 27,
 	.vc_shift_val                                 = 22,
 	.dt_shift_val                                 = 16,

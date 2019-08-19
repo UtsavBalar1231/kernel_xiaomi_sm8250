@@ -2028,7 +2028,6 @@ static int cam_ife_hw_mgr_acquire_res_ife_csid_rdi(
 		csid_acquire.cid = cid_res->hw_res[0]->res_id;
 		csid_acquire.in_port = in_port;
 		csid_acquire.out_port = out_port;
-		csid_acquire.sync_mode = CAM_ISP_HW_SYNC_NONE;
 		csid_acquire.node_res = NULL;
 
 		/*
@@ -2036,12 +2035,12 @@ static int cam_ife_hw_mgr_acquire_res_ife_csid_rdi(
 		 * ver 480 HW to allow userspace to control pixel drop pattern.
 		 */
 		csid_acquire.drop_enable = true;
+		csid_acquire.crop_enable = true;
 
-		/* Enable RDI crop for single ife use case only */
 		if (in_port->usage_type)
-			csid_acquire.crop_enable = false;
+			csid_acquire.sync_mode = CAM_ISP_HW_SYNC_MASTER;
 		else
-			csid_acquire.crop_enable = true;
+			csid_acquire.sync_mode = CAM_ISP_HW_SYNC_NONE;
 
 		hw_intf = cid_res->hw_res[0]->hw_intf;
 		rc = hw_intf->hw_ops.reserve(hw_intf->hw_priv,

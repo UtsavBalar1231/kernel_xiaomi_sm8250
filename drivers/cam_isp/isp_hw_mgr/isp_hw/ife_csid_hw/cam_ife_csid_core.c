@@ -72,8 +72,8 @@ static int cam_ife_csid_is_ipp_ppp_format_supported(
 }
 
 static int cam_ife_csid_get_format_rdi(
-	uint32_t in_format, uint32_t out_format,
-	uint32_t *decode_fmt, uint32_t *plain_fmt)
+	uint32_t in_format, uint32_t out_format, uint32_t *decode_fmt,
+	uint32_t *plain_fmt, uint32_t *packing_fmt, bool rpp)
 {
 	int rc = 0;
 
@@ -82,6 +82,10 @@ static int cam_ife_csid_get_format_rdi(
 		switch (out_format) {
 		case CAM_FORMAT_MIPI_RAW_6:
 			*decode_fmt = 0xf;
+			if (rpp) {
+				*decode_fmt = 0x0;
+				*packing_fmt = 0x1;
+			}
 			break;
 		case CAM_FORMAT_PLAIN8:
 			*decode_fmt = 0x0;
@@ -97,6 +101,10 @@ static int cam_ife_csid_get_format_rdi(
 		case CAM_FORMAT_MIPI_RAW_8:
 		case CAM_FORMAT_PLAIN128:
 			*decode_fmt = 0xf;
+			if (rpp) {
+				*decode_fmt = 0x1;
+				*packing_fmt = 0x1;
+			}
 			break;
 		case CAM_FORMAT_PLAIN8:
 			*decode_fmt = 0x1;
@@ -112,6 +120,10 @@ static int cam_ife_csid_get_format_rdi(
 		case CAM_FORMAT_MIPI_RAW_10:
 		case CAM_FORMAT_PLAIN128:
 			*decode_fmt = 0xf;
+			if (rpp) {
+				*decode_fmt = 0x2;
+				*packing_fmt = 0x1;
+			}
 			break;
 		case CAM_FORMAT_PLAIN16_10:
 			*decode_fmt = 0x2;
@@ -126,6 +138,10 @@ static int cam_ife_csid_get_format_rdi(
 		switch (out_format) {
 		case CAM_FORMAT_MIPI_RAW_12:
 			*decode_fmt = 0xf;
+			if (rpp) {
+				*decode_fmt = 0x3;
+				*packing_fmt = 0x1;
+			}
 			break;
 		case CAM_FORMAT_PLAIN16_12:
 			*decode_fmt = 0x3;
@@ -140,6 +156,10 @@ static int cam_ife_csid_get_format_rdi(
 		switch (out_format) {
 		case CAM_FORMAT_MIPI_RAW_14:
 			*decode_fmt = 0xf;
+			if (rpp) {
+				*decode_fmt = 0x4;
+				*packing_fmt = 0x1;
+			}
 			break;
 		case CAM_FORMAT_PLAIN16_14:
 			*decode_fmt = 0x4;
@@ -154,6 +174,10 @@ static int cam_ife_csid_get_format_rdi(
 		switch (out_format) {
 		case CAM_FORMAT_MIPI_RAW_16:
 			*decode_fmt = 0xf;
+			if (rpp) {
+				*decode_fmt = 0x5;
+				*packing_fmt = 0x1;
+			}
 			break;
 		case CAM_FORMAT_PLAIN16_16:
 			*decode_fmt = 0x5;
@@ -168,6 +192,10 @@ static int cam_ife_csid_get_format_rdi(
 		switch (out_format) {
 		case CAM_FORMAT_MIPI_RAW_20:
 			*decode_fmt = 0xf;
+			if (rpp) {
+				*decode_fmt = 0x6;
+				*packing_fmt = 0x1;
+			}
 			break;
 		case CAM_FORMAT_PLAIN32_20:
 			*decode_fmt = 0x6;
@@ -947,6 +975,7 @@ int cam_ife_csid_path_reserve(struct cam_ife_csid_hw *csid_hw,
 	int rc = 0, i, id;
 	struct cam_ife_csid_path_cfg    *path_data;
 	struct cam_isp_resource_node    *res;
+	bool                             is_rdi = false;
 
 	/* CSID  CSI2 v2.0 supports 31 vc */
 	if (reserve->sync_mode >= CAM_ISP_HW_SYNC_MAX) {
@@ -1042,6 +1071,7 @@ int cam_ife_csid_path_reserve(struct cam_ife_csid_hw *csid_hw,
 				"CSID:%d RDI resource:%d acquire success",
 				csid_hw->hw_intf->hw_idx,
 				res->res_id);
+			is_rdi = true;
 		}
 
 		break;
@@ -1113,12 +1143,21 @@ int cam_ife_csid_path_reserve(struct cam_ife_csid_hw *csid_hw,
 		path_data->start_pixel = reserve->in_port->left_start;
 		path_data->end_pixel = reserve->in_port->left_stop;
 		path_data->width  = reserve->in_port->left_width;
-		CAM_DBG(CAM_ISP, "CSID:%d master:startpixel 0x%x endpixel:0x%x",
-			csid_hw->hw_intf->hw_idx, path_data->start_pixel,
-			path_data->end_pixel);
-		CAM_DBG(CAM_ISP, "CSID:%d master:line start:0x%x line end:0x%x",
-			csid_hw->hw_intf->hw_idx, path_data->start_line,
-			path_data->end_line);
+
+		if (is_rdi) {
+			path_data->end_pixel = reserve->in_port->right_stop;
+			path_data->width = path_data->end_pixel -
+				path_data->start_pixel + 1;
+		}
+
+		CAM_DBG(CAM_ISP,
+			"CSID:%d res:%d master:startpixel 0x%x endpixel:0x%x",
+			csid_hw->hw_intf->hw_idx, reserve->res_id,
+			path_data->start_pixel, path_data->end_pixel);
+		CAM_DBG(CAM_ISP,
+			"CSID:%d res:%d master:line start:0x%x line end:0x%x",
+			csid_hw->hw_intf->hw_idx, reserve->res_id,
+			path_data->start_line, path_data->end_line);
 	} else if (reserve->sync_mode == CAM_ISP_HW_SYNC_SLAVE) {
 		path_data->master_idx = reserve->master_idx;
 		CAM_DBG(CAM_ISP, "CSID:%d master_idx=%d",
@@ -1126,23 +1165,29 @@ int cam_ife_csid_path_reserve(struct cam_ife_csid_hw *csid_hw,
 		path_data->start_pixel = reserve->in_port->right_start;
 		path_data->end_pixel = reserve->in_port->right_stop;
 		path_data->width  = reserve->in_port->right_width;
-		CAM_DBG(CAM_ISP, "CSID:%d slave:start:0x%x end:0x%x width 0x%x",
-			csid_hw->hw_intf->hw_idx, path_data->start_pixel,
-			path_data->end_pixel, path_data->width);
-		CAM_DBG(CAM_ISP, "CSID:%d slave:line start:0x%x line end:0x%x",
-			csid_hw->hw_intf->hw_idx, path_data->start_line,
-			path_data->end_line);
+		CAM_DBG(CAM_ISP,
+			"CSID:%d res:%d slave:start:0x%x end:0x%x width 0x%x",
+			csid_hw->hw_intf->hw_idx, reserve->res_id,
+			path_data->start_pixel, path_data->end_pixel,
+			path_data->width);
+		CAM_DBG(CAM_ISP,
+			"CSID:%d res:%d slave:line start:0x%x line end:0x%x",
+			csid_hw->hw_intf->hw_idx, reserve->res_id,
+			path_data->start_line, path_data->end_line);
 	} else {
 		path_data->width  = reserve->in_port->left_width;
 		path_data->start_pixel = reserve->in_port->left_start;
 		path_data->end_pixel = reserve->in_port->left_stop;
-		CAM_DBG(CAM_ISP, "Res id: %d left width %d start: %d stop:%d",
-			reserve->res_id, reserve->in_port->left_width,
+		CAM_DBG(CAM_ISP,
+			"CSID:%d res:%d left width %d start: %d stop:%d",
+			csid_hw->hw_intf->hw_idx, reserve->res_id,
+			reserve->in_port->left_width,
 			reserve->in_port->left_start,
 			reserve->in_port->left_stop);
 	}
 
-	CAM_DBG(CAM_ISP, "Res %d width %d height %d", reserve->res_id,
+	CAM_DBG(CAM_ISP, "CSID:%d res:%d width %d height %d",
+		csid_hw->hw_intf->hw_idx, reserve->res_id,
 		path_data->width, path_data->height);
 	reserve->node_res = res;
 
@@ -2077,8 +2122,7 @@ static int cam_ife_csid_init_config_rdi_path(
 	const struct cam_ife_csid_reg_offset   *csid_reg;
 	struct cam_hw_soc_info                 *soc_info;
 	uint32_t path_format = 0, plain_fmt = 0, val = 0, id;
-	uint32_t format_measure_addr;
-	uint32_t camera_hw_version;
+	uint32_t format_measure_addr, camera_hw_version, packing_fmt = 0;
 
 	path_data = (struct cam_ife_csid_path_cfg   *) res->res_priv;
 	csid_reg = csid_hw->csid_info->csid_reg;
@@ -2092,13 +2136,10 @@ static int cam_ife_csid_init_config_rdi_path(
 	}
 
 	rc = cam_ife_csid_get_format_rdi(path_data->in_format,
-		path_data->out_format, &path_format, &plain_fmt);
+		path_data->out_format, &path_format, &plain_fmt, &packing_fmt,
+		path_data->crop_enable || path_data->drop_enable);
 	if (rc)
 		return rc;
-
-	/* if path decode format is payload only then RDI crop is not applied */
-	if (path_format == 0xF)
-		path_data->crop_enable = 0;
 
 	/*
 	 * RDI path config and enable the time stamp capture
@@ -2122,11 +2163,15 @@ static int cam_ife_csid_init_config_rdi_path(
 	}
 	CAM_DBG(CAM_ISP, "HW version: %x", camera_hw_version);
 
-	if (camera_hw_version == CAM_CPAS_TITAN_480_V100)
+	if (camera_hw_version == CAM_CPAS_TITAN_480_V100 ||
+		camera_hw_version == CAM_CPAS_TITAN_175_V130) {
 		val |= (path_data->drop_enable <<
 			csid_reg->cmn_reg->drop_h_en_shift_val) |
 			(path_data->drop_enable <<
-			csid_reg->cmn_reg->drop_v_en_shift_val);
+			csid_reg->cmn_reg->drop_v_en_shift_val) |
+			(packing_fmt <<
+			csid_reg->cmn_reg->packing_fmt_shift_val);
+	}
 
 	cam_io_w_mb(val, soc_info->reg_map[0].mem_base +
 			csid_reg->rdi_reg[id]->csid_rdi_cfg0_addr);
@@ -2268,7 +2313,7 @@ static int cam_ife_csid_init_config_udi_path(
 	const struct cam_ife_csid_reg_offset   *csid_reg;
 	struct cam_hw_soc_info                 *soc_info;
 	uint32_t path_format = 0, plain_fmt = 0, val = 0, val1, id;
-	uint32_t format_measure_addr;
+	uint32_t format_measure_addr, packing_fmt = 0;
 
 	path_data = (struct cam_ife_csid_path_cfg *)res->res_priv;
 	csid_reg = csid_hw->csid_info->csid_reg;
@@ -2282,17 +2327,14 @@ static int cam_ife_csid_init_config_udi_path(
 	}
 
 	rc = cam_ife_csid_get_format_rdi(path_data->in_format,
-		path_data->out_format, &path_format, &plain_fmt);
+		path_data->out_format, &path_format, &plain_fmt, &packing_fmt,
+		path_data->crop_enable || path_data->drop_enable);
 	if (rc) {
 		CAM_ERR(CAM_ISP,
 			"Failed to get format in_format: %u out_format: %u rc: %d",
 			path_data->in_format, path_data->out_format, rc);
 		return rc;
 	}
-
-	/* if path decode format is payload only then UDI crop is not applied */
-	if (path_format == 0xF)
-		path_data->crop_enable = false;
 
 	/*
 	 * UDI path config and enable the time stamp capture
@@ -2308,6 +2350,8 @@ static int cam_ife_csid_init_config_udi_path(
 		(path_data->crop_enable  <<
 		csid_reg->cmn_reg->crop_v_en_shift_val) |
 		(1 << 2) | 3;
+
+	val |= (packing_fmt << csid_reg->cmn_reg->packing_fmt_shift_val);
 
 	cam_io_w_mb(val, soc_info->reg_map[0].mem_base +
 			csid_reg->udi_reg[id]->csid_udi_cfg0_addr);
