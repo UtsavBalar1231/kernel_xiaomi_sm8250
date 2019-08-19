@@ -1327,34 +1327,56 @@ err:
 
 static int cam_convert_hw_idx_to_ife_hw_num(int hw_idx)
 {
-	if (hw_idx == 0)
-		return CAM_ISP_IFE0_HW;
-	else if (hw_idx == 1)
-		return CAM_ISP_IFE1_HW;
-	else if (hw_idx == 2)
-		return CAM_ISP_IFE0_LITE_HW;
-	else if (hw_idx == 3)
-		return CAM_ISP_IFE1_LITE_HW;
-	else if (hw_idx == 4)
-		return CAM_ISP_IFE2_LITE_HW;
-	return 0;
+	uint32_t hw_version, rc = 0;
+
+	rc = cam_cpas_get_cpas_hw_version(&hw_version);
+	if (!rc) {
+		switch (hw_version) {
+		case CAM_CPAS_TITAN_170_V100:
+		case CAM_CPAS_TITAN_170_V110:
+		case CAM_CPAS_TITAN_170_V120:
+		case CAM_CPAS_TITAN_175_V100:
+		case CAM_CPAS_TITAN_175_V101:
+		case CAM_CPAS_TITAN_175_V120:
+		case CAM_CPAS_TITAN_175_V130:
+		case CAM_CPAS_TITAN_480_V100:
+			if (hw_idx == 0)
+				return CAM_ISP_IFE0_HW;
+			else if (hw_idx == 1)
+				return CAM_ISP_IFE1_HW;
+			else if (hw_idx == 2)
+				return CAM_ISP_IFE0_LITE_HW;
+			else if (hw_idx == 3)
+				return CAM_ISP_IFE1_LITE_HW;
+			else if (hw_idx == 4)
+				return CAM_ISP_IFE2_LITE_HW;
+			break;
+		default:
+			CAM_ERR(CAM_ISP, "Invalid hw_version: 0x%X",
+				hw_version);
+			rc = -EINVAL;
+			break;
+		}
+	}
+
+	return rc;
 }
 
-static int cam_convert_res_id_to_hw_path(int path, bool acquire_lcr)
+static int cam_convert_res_id_to_hw_path(int res_id)
 {
-	if (path == CAM_IFE_PIX_PATH_RES_IPP && acquire_lcr)
+	if (res_id == CAM_ISP_HW_VFE_IN_LCR)
 		return CAM_ISP_LCR_PATH;
-	else if (path == CAM_IFE_PIX_PATH_RES_PPP)
+	else if (res_id == CAM_ISP_HW_VFE_IN_PDLIB)
 		return CAM_ISP_PPP_PATH;
-	else if (path == CAM_IFE_PIX_PATH_RES_IPP)
+	else if (res_id == CAM_ISP_HW_VFE_IN_CAMIF)
 		return CAM_ISP_PXL_PATH;
-	else if (path == CAM_IFE_PIX_PATH_RES_RDI_0)
+	else if (res_id == CAM_ISP_HW_VFE_IN_RDI0)
 		return CAM_ISP_RDI0_PATH;
-	else if (path == CAM_IFE_PIX_PATH_RES_RDI_1)
+	else if (res_id == CAM_ISP_HW_VFE_IN_RDI1)
 		return CAM_ISP_RDI1_PATH;
-	else if (path == CAM_IFE_PIX_PATH_RES_RDI_2)
+	else if (res_id == CAM_ISP_HW_VFE_IN_RDI2)
 		return CAM_ISP_RDI2_PATH;
-	else if (path == CAM_IFE_PIX_PATH_RES_RDI_3)
+	else if (res_id == CAM_ISP_HW_VFE_IN_RDI3)
 		return CAM_ISP_RDI3_PATH;
 	return 0;
 }
@@ -1480,7 +1502,7 @@ static int cam_ife_hw_mgr_acquire_res_ife_src(
 			}
 
 			acquired_hw_path[i] |= cam_convert_res_id_to_hw_path(
-				ife_src_res->hw_res[i]->res_id, acquire_lcr);
+				ife_src_res->hw_res[i]->res_id);
 
 			CAM_DBG(CAM_ISP,
 				"acquire success IFE:%d  res type :0x%x res id:0x%x",
