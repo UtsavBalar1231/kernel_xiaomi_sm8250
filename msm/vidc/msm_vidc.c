@@ -786,11 +786,11 @@ bool is_vidc_cvp_allowed(struct msm_vidc_inst *inst)
 		allowed = true;
 	} else {
 		dprintk(VIDC_HIGH,
-			"%s: cvp not allowed, cvp_external %d cvp_disable %d extradata %#x rc_type %d legacy_cbr %d secure %d\n",
+			"%s: cvp not allowed, cvp_external %d cvp_disable %d extradata %#x rc_type %d legacy_cbr %d secure %d superframe %d\n",
 			__func__, core->resources.cvp_external,
 			cvp_disable->val, inst->prop.extradata_ctrls,
 			inst->rc_type, inst->clk_data.is_legacy_cbr,
-			is_secure_session(inst));
+			is_secure_session(inst), superframe_enable->val);
 		allowed = false;
 	}
 exit:

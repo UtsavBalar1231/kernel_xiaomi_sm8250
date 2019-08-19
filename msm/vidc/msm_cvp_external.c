@@ -257,7 +257,7 @@ static int msm_cvp_set_clocks_and_bus(struct msm_vidc_inst *inst)
 	int rc = 0;
 	struct msm_cvp_external *cvp;
 	struct cvp_kmd_arg *arg;
-	struct v4l2_format *f;
+	struct v4l2_format *fmt;
 	struct cvp_kmd_usecase_desc desc;
 	struct cvp_kmd_request_power power;
 	const u32 fps_max = CVP_FRAME_RATE_MAX;
@@ -271,7 +271,7 @@ static int msm_cvp_set_clocks_and_bus(struct msm_vidc_inst *inst)
 	memset(&desc, 0, sizeof(struct cvp_kmd_usecase_desc));
 	memset(&power, 0, sizeof(struct cvp_kmd_request_power));
 
-	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
+	fmt = &inst->fmts[INPUT_PORT].v4l2_fmt;
 	desc.fullres_width = cvp->width;
 	desc.fullres_height = cvp->height;
 	desc.downscale_width = cvp->ds_width;
@@ -279,7 +279,7 @@ static int msm_cvp_set_clocks_and_bus(struct msm_vidc_inst *inst)
 	desc.is_downscale = cvp->downscale;
 	desc.fps = min(cvp->frame_rate >> 16, fps_max);
 	desc.op_rate = cvp->operating_rate >> 16;
-	desc.colorfmt = msm_comm_convert_color_fmt(f->fmt.pix_mp.pixelformat);
+	desc.colorfmt = msm_comm_convert_color_fmt(fmt->fmt.pix_mp.pixelformat);
 	rc = msm_cvp_est_cycles(&desc, &power);
 	if (rc) {
 		dprintk(VIDC_ERR, "%s: estimate failed\n", __func__);
@@ -514,8 +514,6 @@ static void msm_cvp_deinit_internal_buffers(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
 	struct msm_cvp_external *cvp;
-	struct cvp_kmd_arg *arg;
-	struct msm_cvp_session_release_persist_buffers_packet persist2_packet;
 
 	if (!inst || !inst->cvp) {
 		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
@@ -538,41 +536,6 @@ static void msm_cvp_deinit_internal_buffers(struct msm_vidc_inst *inst)
 	if (cvp->persist2_buffer.dbuf) {
 		print_cvp_buffer(VIDC_HIGH, "free: persist2_buffer",
 			inst, &cvp->persist2_buffer);
-		memset(&persist2_packet, 0, sizeof(struct
-			msm_cvp_session_release_persist_buffers_packet));
-		persist2_packet.size = sizeof(struct
-			msm_cvp_session_release_persist_buffers_packet);
-		persist2_packet.packet_type =
-			HFI_CMD_SESSION_CVP_RELEASE_PERSIST_BUFFERS;
-		persist2_packet.session_id = cvp->session_id;
-		persist2_packet.cvp_op = CVP_DME;
-		fill_cvp_buffer(&persist2_packet.persist2_buffer,
-				&cvp->persist2_buffer);
-
-		arg = kzalloc(sizeof(struct cvp_kmd_arg), GFP_KERNEL);
-		if (arg) {
-			arg->type = CVP_KMD_HFI_PERSIST_CMD;
-			arg->buf_offset = offsetof(struct
-			msm_cvp_session_release_persist_buffers_packet,
-				persist1_buffer) / sizeof(u32);
-			arg->buf_num = (sizeof(struct
-			msm_cvp_session_release_persist_buffers_packet) -
-				(arg->buf_offset * sizeof(u32))) /
-				sizeof(struct msm_cvp_buffer_type);
-			memcpy(&(arg->data.pbuf_cmd), &persist2_packet,
-			sizeof(struct
-			msm_cvp_session_release_persist_buffers_packet));
-			rc = msm_cvp_private(cvp->priv,
-				CVP_KMD_HFI_PERSIST_CMD, arg);
-			if (rc)
-				print_cvp_buffer(VIDC_ERR,
-					"release failed: persist2_buffer",
-					inst, &cvp->persist2_buffer);
-			kfree(arg);
-		} else {
-			dprintk(VIDC_ERR, "%s: alloc failed\n", __func__);
-		}
-
 		rc = msm_cvp_free_buffer(inst, &cvp->persist2_buffer);
 		if (rc)
 			print_cvp_buffer(VIDC_ERR,
@@ -581,12 +544,12 @@ static void msm_cvp_deinit_internal_buffers(struct msm_vidc_inst *inst)
 	}
 }
 
-static int msm_cvp_init_internal_buffers(struct msm_vidc_inst *inst)
+static int msm_cvp_set_persist_buffer(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
 	struct msm_cvp_external *cvp;
 	struct cvp_kmd_arg *arg;
-	struct msm_cvp_session_set_persist_buffers_packet persist2_packet;
+	struct msm_cvp_session_set_persist_buffers_packet persist2_packet = {0};
 
 	if (!inst || !inst->cvp || !inst->cvp->arg) {
 		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
@@ -594,22 +557,7 @@ static int msm_cvp_init_internal_buffers(struct msm_vidc_inst *inst)
 	}
 	cvp = inst->cvp;
 	arg = cvp->arg;
-	dprintk(VIDC_HIGH, "%s:\n", __func__);
 
-	cvp->persist2_buffer.size = HFI_DME_INTERNAL_PERSIST_2_BUFFER_SIZE;
-	rc = msm_cvp_allocate_buffer(inst, &cvp->persist2_buffer, false);
-	if (rc) {
-		print_cvp_buffer(VIDC_ERR,
-			"allocate failed: persist2_buffer",
-			inst, &cvp->persist2_buffer);
-		goto error;
-	}
-	print_cvp_buffer(VIDC_HIGH, "alloc: persist2_buffer",
-			inst, &cvp->persist2_buffer);
-
-	/* set buffer */
-	memset(&persist2_packet, 0,
-		sizeof(struct msm_cvp_session_set_persist_buffers_packet));
 	persist2_packet.size =
 		sizeof(struct msm_cvp_session_set_persist_buffers_packet);
 	persist2_packet.packet_type = HFI_CMD_SESSION_CVP_SET_PERSIST_BUFFERS;
@@ -634,8 +582,32 @@ static int msm_cvp_init_internal_buffers(struct msm_vidc_inst *inst)
 		print_cvp_buffer(VIDC_ERR,
 			"set failed: persist2_buffer",
 			inst, &cvp->persist2_buffer);
+	}
+
+	return rc;
+}
+
+static int msm_cvp_init_internal_buffers(struct msm_vidc_inst *inst)
+{
+	int rc = 0;
+	struct msm_cvp_external *cvp;
+
+	if (!inst || !inst->cvp) {
+		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		return -EINVAL;
+	}
+	cvp = inst->cvp;
+
+	cvp->persist2_buffer.size = HFI_DME_INTERNAL_PERSIST_2_BUFFER_SIZE;
+	rc = msm_cvp_allocate_buffer(inst, &cvp->persist2_buffer, false);
+	if (rc) {
+		print_cvp_buffer(VIDC_ERR,
+			"allocate failed: persist2_buffer",
+			inst, &cvp->persist2_buffer);
 		goto error;
 	}
+	print_cvp_buffer(VIDC_HIGH, "alloc: persist2_buffer",
+			inst, &cvp->persist2_buffer);
 
 	/* allocate one output buffer for internal use */
 	cvp->output_buffer.size = HFI_DME_OUTPUT_BUFFER_SIZE;
@@ -812,6 +784,69 @@ static int msm_cvp_reference_management(struct msm_vidc_inst *inst)
 	return rc;
 }
 
+static int msm_vidc_cvp_session_start(struct msm_vidc_inst *inst)
+{
+	int rc = 0;
+	struct msm_cvp_external *cvp = NULL;
+	struct cvp_kmd_session_control *ctrl = NULL;
+	struct cvp_kmd_arg *arg = NULL;
+
+	if (!inst || !inst->cvp || !inst->cvp->arg) {
+		dprintk(VIDC_ERR, "%s: invalid param\n", __func__);
+		return -EINVAL;
+	}
+	cvp = inst->cvp;
+	arg = cvp->arg;
+
+	memset(arg, 0, sizeof(struct cvp_kmd_arg));
+	arg->type = CVP_KMD_SESSION_CONTROL;
+	ctrl = (struct cvp_kmd_session_control *)&arg->data.session_ctrl;
+	ctrl->ctrl_type = SESSION_START;
+
+	rc = msm_cvp_private(cvp->priv, CVP_KMD_SESSION_CONTROL, arg);
+	if (rc) {
+		dprintk(VIDC_ERR,
+			"%s: CVP_KMD_SESSION_CONTROL failed, rc %d\n",
+			__func__, rc);
+		return rc;
+	}
+
+	return rc;
+}
+
+static int msm_vidc_cvp_session_stop(struct msm_vidc_inst *inst)
+{
+	int rc = 0;
+	struct msm_cvp_external *cvp = NULL;
+	struct cvp_kmd_session_control *ctrl = NULL;
+	struct cvp_kmd_arg *arg = NULL;
+
+	if (!inst || !inst->cvp || !inst->cvp->arg) {
+		dprintk(VIDC_ERR, "%s: invalid param\n", __func__);
+		return -EINVAL;
+	}
+
+	cvp = inst->cvp;
+	arg = cvp->arg;
+
+	memset(arg, 0, sizeof(struct cvp_kmd_arg));
+
+	arg->type = CVP_KMD_SESSION_CONTROL;
+
+	ctrl = (struct cvp_kmd_session_control *)&arg->data.session_ctrl;
+	ctrl->ctrl_type = SESSION_STOP;
+
+	rc = msm_cvp_private(cvp->priv, CVP_KMD_SESSION_CONTROL, arg);
+	if (rc) {
+		dprintk(VIDC_ERR,
+			"%s: CVP_KMD_SESSION_CONTROL failed, rc %d\n",
+			__func__, rc);
+		return rc;
+	}
+
+	return rc;
+}
+
 static int msm_cvp_frame_process(struct msm_vidc_inst *inst,
 		struct msm_vidc_buffer *mbuf)
 {
@@ -982,7 +1017,37 @@ int msm_vidc_cvp_preprocess(struct msm_vidc_inst *inst,
 	return rc;
 }
 
-static int msm_vidc_cvp_deinit(struct msm_vidc_inst *inst)
+static int msm_vidc_cvp_session_delete(struct msm_vidc_inst *inst)
+{
+	int rc = 0;
+	struct msm_cvp_external *cvp = NULL;
+	struct cvp_kmd_session_control *ctrl = NULL;
+	struct cvp_kmd_arg *arg = NULL;
+
+	if (!inst || !inst->cvp || !inst->cvp->arg) {
+		dprintk(VIDC_ERR, "%s: invalid param\n", __func__);
+		return -EINVAL;
+	}
+	cvp = inst->cvp;
+	arg = cvp->arg;
+
+	memset(arg, 0, sizeof(struct cvp_kmd_arg));
+	arg->type = CVP_KMD_SESSION_CONTROL;
+	ctrl = (struct cvp_kmd_session_control *)&arg->data.session_ctrl;
+	ctrl->ctrl_type = SESSION_DELETE;
+
+	rc = msm_cvp_private(cvp->priv, CVP_KMD_SESSION_CONTROL, arg);
+	if (rc) {
+		dprintk(VIDC_ERR,
+			"%s: CVP_KMD_SESSION_CONTROL failed, rc %d\n",
+			__func__, rc);
+		return rc;
+	}
+
+	return rc;
+}
+
+static int msm_cvp_mem_deinit(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
 	struct msm_cvp_external *cvp;
@@ -997,6 +1062,32 @@ static int msm_vidc_cvp_deinit(struct msm_vidc_inst *inst)
 	msm_cvp_deinit_internal_buffers(inst);
 	msm_cvp_deinit_context_buffers(inst);
 	msm_cvp_deinit_downscale_buffers(inst);
+
+	cvp->priv = NULL;
+	kfree(cvp->arg);
+	cvp->arg = NULL;
+	kfree(inst->cvp);
+	inst->cvp = NULL;
+
+	return rc;
+}
+
+static int msm_vidc_cvp_deinit(struct msm_vidc_inst *inst)
+{
+	int rc = 0;
+
+	if (!inst || !inst->cvp) {
+		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		return -EINVAL;
+	}
+
+	rc = msm_vidc_cvp_session_stop(inst);
+	if (rc) {
+		dprintk(VIDC_ERR, "%s: cvp stop failed with error %d\n",
+			__func__, rc);
+	}
+
+	msm_vidc_cvp_session_delete(inst);
 
 	return rc;
 }
@@ -1014,15 +1105,10 @@ static int msm_vidc_cvp_close(struct msm_vidc_inst *inst)
 
 	dprintk(VIDC_HIGH, "%s: cvp session %#x\n", __func__, cvp->session_id);
 	rc = msm_cvp_close(cvp->priv);
-	if (rc)
+	if (rc) {
 		dprintk(VIDC_ERR,
 			"%s: cvp close failed with error %d\n", __func__, rc);
-	cvp->priv = NULL;
-
-	kfree(cvp->arg);
-	cvp->arg = NULL;
-	kfree(inst->cvp);
-	inst->cvp = NULL;
+	}
 
 	return rc;
 }
@@ -1040,17 +1126,84 @@ int msm_vidc_cvp_unprepare_preprocess(struct msm_vidc_inst *inst)
 
 	msm_vidc_cvp_deinit(inst);
 	msm_vidc_cvp_close(inst);
+	msm_cvp_mem_deinit(inst);
 
 	return 0;
 }
 
-static int msm_vidc_cvp_init(struct msm_vidc_inst *inst)
+static int msm_vidc_cvp_session_create(struct msm_vidc_inst *inst)
+{
+	int rc = 0;
+	struct msm_cvp_external *cvp = NULL;
+	struct cvp_kmd_session_control *ctrl = NULL;
+	struct cvp_kmd_arg *arg = NULL;
+
+	if (!inst || !inst->cvp || !inst->cvp->arg) {
+		dprintk(VIDC_ERR, "%s: invalid param\n", __func__);
+		return -EINVAL;
+	}
+	cvp = inst->cvp;
+	arg = cvp->arg;
+
+	memset(arg, 0, sizeof(struct cvp_kmd_arg));
+	arg->type = CVP_KMD_SESSION_CONTROL;
+	ctrl = (struct cvp_kmd_session_control *)&arg->data.session_ctrl;
+	ctrl->ctrl_type = SESSION_CREATE;
+
+	rc = msm_cvp_private(cvp->priv, CVP_KMD_SESSION_CONTROL, arg);
+	if (rc) {
+		dprintk(VIDC_ERR,
+			"%s: CVP_KMD_SESSION_CONTROL failed, rc %d\n",
+			__func__, rc);
+		return rc;
+	}
+
+	return rc;
+}
+
+static int msm_vidc_cvp_getsessioninfo(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
 	struct msm_cvp_external *cvp;
-	struct v4l2_format *f;
+	struct cvp_kmd_arg *arg;
+
+	if (!inst || !inst->cvp || !inst->cvp->arg) {
+		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		return -EINVAL;
+	}
+	cvp = inst->cvp;
+	arg = cvp->arg;
+
+	memset(arg, 0, sizeof(struct cvp_kmd_arg));
+	arg->type = CVP_KMD_GET_SESSION_INFO;
+	rc = msm_cvp_private(cvp->priv, CVP_KMD_GET_SESSION_INFO, arg);
+	if (rc) {
+		dprintk(VIDC_ERR, "%s: get_session_info failed\n", __func__);
+		goto error;
+	}
+	cvp->session_id = arg->data.session.session_id;
+	dprintk(VIDC_HIGH, "%s: cvp session id %#x\n",
+		__func__, cvp->session_id);
+
+	rc = msm_cvp_get_version_info(inst);
+	if (rc) {
+		dprintk(VIDC_ERR, "%s: get_version_info failed\n", __func__);
+		goto error;
+	}
+	return rc;
+
+error:
+	msm_vidc_cvp_deinit(inst);
+	return rc;
+}
+
+static int msm_vidc_cvp_dme_basic_config(struct msm_vidc_inst *inst)
+{
+	int rc = 0;
+	struct msm_cvp_external *cvp;
 	struct cvp_kmd_arg *arg;
 	struct msm_cvp_dme_basic_config_packet *dmecfg;
+	struct v4l2_format *fmt;
 	u32 color_fmt;
 
 	if (!inst || !inst->cvp || !inst->cvp->arg) {
@@ -1059,35 +1212,6 @@ static int msm_vidc_cvp_init(struct msm_vidc_inst *inst)
 	}
 	cvp = inst->cvp;
 	arg = cvp->arg;
-	cvp->framecount = 0;
-	cvp->metadata_available = false;
-	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
-	cvp->width = f->fmt.pix_mp.width;
-	cvp->height = f->fmt.pix_mp.height;
-	cvp->frame_rate = inst->clk_data.frame_rate;
-	cvp->operating_rate = inst->clk_data.operating_rate;
-	color_fmt = msm_comm_convert_color_fmt(f->fmt.pix_mp.pixelformat);
-
-	/* enable downscale always */
-	cvp->downscale = true;
-	rc = msm_cvp_init_downscale_resolution(inst);
-	if (rc)
-		goto error;
-
-	dprintk(VIDC_HIGH,
-		"%s: pixelformat %#x, wxh %dx%d downscale %d ds_wxh %dx%d fps %d op_rate %d\n",
-		__func__, f->fmt.pix_mp.pixelformat,
-		cvp->width, cvp->height, cvp->downscale,
-		cvp->ds_width, cvp->ds_height,
-		cvp->frame_rate >> 16, cvp->operating_rate >> 16);
-
-	rc = msm_cvp_set_priority(inst);
-	if (rc)
-		goto error;
-
-	rc = msm_cvp_set_clocks_and_bus(inst);
-	if (rc)
-		goto error;
 
 	memset(arg, 0, sizeof(struct cvp_kmd_arg));
 	arg->type = CVP_KMD_SEND_CMD_PKT;
@@ -1104,8 +1228,11 @@ static int msm_vidc_cvp_init(struct msm_vidc_inst *inst)
 		COLOR_FMT_NV12_UBWC, dmecfg->src_width, dmecfg->src_height);
 	if (rc)
 		goto error;
+
+	fmt = &inst->fmts[INPUT_PORT].v4l2_fmt;
+	color_fmt = msm_comm_convert_color_fmt(fmt->fmt.pix_mp.pixelformat);
 	dmecfg->fullresbuffer_format = msm_comm_get_hfi_uncompressed(
-			f->fmt.pix_mp.pixelformat);
+			fmt->fmt.pix_mp.pixelformat);
 	dmecfg->fullres_width = cvp->width;
 	dmecfg->fullres_height = cvp->height;
 	rc = msm_cvp_fill_planeinfo(&dmecfg->fullresbuffer_planeinfo,
@@ -1121,28 +1248,15 @@ static int msm_vidc_cvp_init(struct msm_vidc_inst *inst)
 		goto error;
 	}
 
-	rc = msm_cvp_init_downscale_buffers(inst);
-	if (rc)
-		goto error;
-	rc = msm_cvp_init_internal_buffers(inst);
-	if (rc)
-		goto error;
-	rc = msm_cvp_init_context_buffers(inst);
-	if (rc)
-		goto error;
-
-	return rc;
-
 error:
-	msm_vidc_cvp_deinit(inst);
 	return rc;
 }
 
-static int msm_vidc_cvp_open(struct msm_vidc_inst *inst)
+static int msm_cvp_mem_init(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
 	struct msm_cvp_external *cvp;
-	struct cvp_kmd_arg *arg;
+	struct v4l2_format *fmt;
 
 	if (!inst) {
 		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
@@ -1162,37 +1276,102 @@ static int msm_vidc_cvp_open(struct msm_vidc_inst *inst)
 		inst->cvp = NULL;
 		return -ENOMEM;
 	}
-	arg = cvp->arg;
+
+	cvp->framecount = 0;
+	cvp->metadata_available = false;
+	fmt = &inst->fmts[INPUT_PORT].v4l2_fmt;
+	cvp->width = fmt->fmt.pix_mp.width;
+	cvp->height = fmt->fmt.pix_mp.height;
+	cvp->frame_rate = inst->clk_data.frame_rate;
+	cvp->operating_rate = inst->clk_data.operating_rate;
+
+	/* enable downscale always */
+	cvp->downscale = true;
+	rc = msm_cvp_init_downscale_resolution(inst);
+	if (rc)
+		goto error;
+
+	dprintk(VIDC_HIGH,
+		"%s: pixelformat %#x, wxh %dx%d downscale %d ds_wxh %dx%d fps %d op_rate %d\n",
+		__func__, fmt->fmt.pix_mp.pixelformat,
+		cvp->width, cvp->height, cvp->downscale,
+		cvp->ds_width, cvp->ds_height,
+		cvp->frame_rate >> 16, cvp->operating_rate >> 16);
+
+	rc = msm_cvp_init_downscale_buffers(inst);
+	if (rc)
+		goto error;
+	rc = msm_cvp_init_internal_buffers(inst);
+	if (rc)
+		goto error;
+	rc = msm_cvp_init_context_buffers(inst);
+	if (rc)
+		goto error;
+
+	return rc;
+
+error:
+	msm_cvp_mem_deinit(inst);
+	return rc;
+}
+
+static int msm_vidc_cvp_open(struct msm_vidc_inst *inst)
+{
+	int rc = 0;
+	struct msm_cvp_external *cvp;
+
+	if (!inst || !inst->cvp) {
+		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		return -EINVAL;
+	}
+	cvp = inst->cvp;
 
 	dprintk(VIDC_HIGH, "%s: opening cvp\n", __func__);
 	cvp->priv = msm_cvp_open(0, MSM_VIDC_CVP);
 	if (!cvp->priv) {
 		dprintk(VIDC_ERR, "%s: failed to open cvp session\n", __func__);
 		rc = -EINVAL;
-		goto error;
 	}
 
-	memset(arg, 0, sizeof(struct cvp_kmd_arg));
-	arg->type = CVP_KMD_GET_SESSION_INFO;
-	rc = msm_cvp_private(cvp->priv, CVP_KMD_GET_SESSION_INFO, arg);
-	if (rc) {
-		dprintk(VIDC_ERR, "%s: get_session_info failed\n", __func__);
-		goto error;
-	}
-	cvp->session_id = arg->data.session.session_id;
-	dprintk(VIDC_HIGH, "%s: cvp session id %#x\n",
-		__func__, cvp->session_id);
+	return rc;
+}
 
-	rc = msm_cvp_get_version_info(inst);
-	if (rc) {
-		dprintk(VIDC_ERR, "%s: get_version_info failed\n", __func__);
+static int msm_vidc_cvp_init(struct msm_vidc_inst *inst)
+{
+	int rc;
+
+	rc = msm_cvp_set_priority(inst);
+	if (rc)
 		goto error;
-	}
+
+	rc = msm_vidc_cvp_session_create(inst);
+	if (rc)
+		return rc;
+
+	rc = msm_vidc_cvp_getsessioninfo(inst);
+	if (rc)
+		return rc;
+
+	rc = msm_cvp_set_clocks_and_bus(inst);
+	if (rc)
+		goto error;
+
+	rc = msm_vidc_cvp_dme_basic_config(inst);
+	if (rc)
+		goto error;
+
+	rc = msm_cvp_set_persist_buffer(inst);
+	if (rc)
+		goto error;
+
+	rc = msm_vidc_cvp_session_start(inst);
+	if (rc)
+		goto error;
 
 	return 0;
 
 error:
-	msm_vidc_cvp_close(inst);
+	msm_vidc_cvp_deinit(inst);
 	return rc;
 }
 
@@ -1204,6 +1383,10 @@ int msm_vidc_cvp_prepare_preprocess(struct msm_vidc_inst *inst)
 		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
 		return -EINVAL;
 	}
+
+	rc = msm_cvp_mem_init(inst);
+	if (rc)
+		return rc;
 
 	rc = msm_vidc_cvp_open(inst);
 	if (rc)
