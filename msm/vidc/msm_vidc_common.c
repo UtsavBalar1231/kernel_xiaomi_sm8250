@@ -4039,7 +4039,7 @@ int msm_vidc_send_pending_eos_buffers(struct msm_vidc_inst *inst)
 		data.offset = 0;
 		data.flags = HAL_BUFFERFLAG_EOS;
 		data.timestamp = 0;
-		data.extradata_addr = data.device_addr;
+		data.extradata_addr = 0;
 		data.extradata_size = 0;
 		dprintk(VIDC_HIGH, "Queueing EOS buffer 0x%x\n",
 				data.device_addr);
