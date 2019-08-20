@@ -1645,6 +1645,7 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 		goto err_bad_event;
 	}
 	hdev = inst->core->device;
+	codec = get_v4l2_codec(inst);
 
 	switch (event_notify->hal_event_type) {
 	case HAL_EVENT_SEQ_CHANGED_SUFFICIENT_RESOURCES:
@@ -1661,13 +1662,15 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 				"event_notify->height = %d event_notify->width = %d\n",
 				event_notify->height,
 				event_notify->width);
-		event_fields_changed |= (inst->bit_depth !=
-			event_notify->bit_depth);
+		if (codec == V4L2_PIX_FMT_HEVC || codec == V4L2_PIX_FMT_VP9)
+			event_fields_changed |= (inst->bit_depth !=
+				event_notify->bit_depth);
 		/* Check for change from hdr->non-hdr and vice versa */
-		if ((event_notify->colour_space == MSM_VIDC_BT2020 &&
-			inst->colour_space != MSM_VIDC_BT2020) ||
+		if (codec == V4L2_PIX_FMT_HEVC &&
+			((event_notify->colour_space == MSM_VIDC_BT2020 &&
+				inst->colour_space != MSM_VIDC_BT2020) ||
 			(event_notify->colour_space != MSM_VIDC_BT2020 &&
-			inst->colour_space == MSM_VIDC_BT2020))
+				inst->colour_space == MSM_VIDC_BT2020)))
 			event_fields_changed = true;
 
 		f = &inst->fmts[OUTPUT_PORT].v4l2_fmt;
@@ -1769,7 +1772,6 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 	ptr[6] = event_notify->crop_data.left;
 	ptr[7] = event_notify->crop_data.height;
 	ptr[8] = event_notify->crop_data.width;
-	codec = get_v4l2_codec(inst);
 	ptr[9] = msm_comm_get_v4l2_profile(codec,
 		event_notify->profile);
 	ptr[10] = msm_comm_get_v4l2_level(codec,
