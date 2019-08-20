@@ -215,6 +215,11 @@ Optional Properties:
 				samples the GPU powerstats if the cmdbatch expiry takes longer than
 				the threshold set by KGSL_GOVERNOR_CALL_INTERVAL. Enable only if
 				target has NAP state enabled.
+ nvmem-cells:
+				A phandle to the configuration data such as gpu speed bin, gpu gaming mode
+				provided by a nvmem device. If unspecified default values shall be used.
+ nvmem-cell-names:
+				Should be "speed_bin", "gaming_bin"
 
 GPU Quirks:
 - qcom,gpu-quirk-two-pass-use-wfi:
@@ -358,6 +363,9 @@ Example of A330 GPU in MSM8916:
 
 		/* GDSC oxili regulators */
 		vdd-supply = <&gdsc_oxili_gx>;
+
+		nvmem-cells = <&gpu_speed_bin>, <&gpu_gaming_bin>;
+		nvmem-cell-names = "speed_bin", "gaming_bin";
 
 		/* IOMMU Data */
 		iommu = <&gfx_iommu>;
