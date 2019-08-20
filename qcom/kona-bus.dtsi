@@ -616,7 +616,6 @@
 			qcom,qport = <0>;
 			qcom,connections = <&slv_qns_a1noc_snoc>;
 			qcom,bus-dev = <&fab_aggre1_noc>;
-			qcom,blacklist = <&slv_qns_cnoc>;
 			qcom,ap-owned;
 			qcom,prio = <2>;
 			qcom,node-qos-clks {
@@ -635,7 +634,6 @@
 			qcom,qport = <1>;
 			qcom,connections = <&slv_qns_a1noc_snoc>;
 			qcom,bus-dev = <&fab_aggre1_noc>;
-			qcom,blacklist = <&slv_qns_cnoc>;
 			qcom,ap-owned;
 			qcom,prio = <2>;
 			qcom,node-qos-clks {
@@ -677,7 +675,6 @@
 			qcom,connections = <&slv_qns_a2noc_snoc>;
 			qcom,bus-dev = <&fab_aggre2_noc>;
 			qcom,bcms = <&bcm_qup0>;
-			qcom,blacklist = <&slv_qns_cnoc>;
 			qcom,ap-owned;
 			qcom,prio = <2>;
 		};
@@ -971,7 +968,6 @@
 			qcom,qport = <2 66>;
 			qcom,connections = <&slv_qns_llcc>;
 			qcom,bus-dev = <&fab_gem_noc>;
-			qcom,blacklist = <&slv_qns_cnoc>;
 			qcom,ap-owned;
 			qcom,prio = <0>;
 			qcom,forwarding;
