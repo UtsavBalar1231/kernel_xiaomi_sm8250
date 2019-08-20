@@ -3518,11 +3518,11 @@ static int __cam_isp_ctx_start_dev_in_ready(struct cam_context *ctx,
 	 */
 	list_del_init(&req->list);
 
-	if (req_isp->num_fence_map_out) {
+	if (ctx_isp->rdi_only_context || !req_isp->num_fence_map_out) {
+		list_add_tail(&req->list, &ctx->wait_req_list);
+	} else {
 		list_add_tail(&req->list, &ctx->active_req_list);
 		ctx_isp->active_req_cnt++;
-	} else {
-		list_add_tail(&req->list, &ctx->wait_req_list);
 	}
 
 	start_isp.hw_config.ctxt_to_hw_map = ctx_isp->hw_ctx;
