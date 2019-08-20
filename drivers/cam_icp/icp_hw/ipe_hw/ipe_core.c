@@ -68,7 +68,7 @@ int cam_ipe_init_hw(void *device_priv,
 	}
 
 	cpas_vote.ahb_vote.type = CAM_VOTE_ABSOLUTE;
-	cpas_vote.ahb_vote.vote.level = CAM_SVS_VOTE;
+	cpas_vote.ahb_vote.vote.level = CAM_LOWSVS_VOTE;
 	cpas_vote.axi_vote.num_paths = 1;
 	cpas_vote.axi_vote.axi_path[0].path_data_type =
 		CAM_IPE_DEFAULT_AXI_PATH;
@@ -360,6 +360,7 @@ int cam_ipe_process_cmd(void *device_priv, uint32_t cmd_type,
 	case CAM_ICP_IPE_CMD_UPDATE_CLK: {
 		struct cam_a5_clk_update_cmd *clk_upd_cmd =
 			(struct cam_a5_clk_update_cmd *)cmd_args;
+		struct cam_ahb_vote ahb_vote;
 		uint32_t clk_rate = clk_upd_cmd->curr_clk_rate;
 		int32_t clk_level  = 0, err = 0;
 
@@ -389,11 +390,17 @@ int cam_ipe_process_cmd(void *device_priv, uint32_t cmd_type,
 			CAM_ERR(CAM_ICP, "Failed to update clk");
 
 		err = cam_soc_util_get_clk_level(soc_info,
-				clk_rate, soc_info->src_clk_idx,
-				&clk_level);
-		if (err == 0)
-			clk_upd_cmd->clk_level = clk_level;
+			clk_rate, soc_info->src_clk_idx,
+			&clk_level);
 
+		if (!err) {
+			clk_upd_cmd->clk_level = clk_level;
+			ahb_vote.type = CAM_VOTE_ABSOLUTE;
+			ahb_vote.vote.level = clk_level;
+			cam_cpas_update_ahb_vote(
+				core_info->cpas_handle,
+				&ahb_vote);
+		}
 		break;
 	}
 	case CAM_ICP_IPE_CMD_DISABLE_CLK:

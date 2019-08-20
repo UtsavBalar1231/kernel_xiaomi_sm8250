@@ -181,7 +181,10 @@ struct cam_cpas_axi_port {
  * @axi_port: AXI port info for a specific axi index
  * @internal_ops: CPAS HW internal ops
  * @work_queue: Work queue handle
- *
+ * @irq_count: atomic irq count
+ * @irq_count_wq: wait variable to ensure all irq's are handled
+ * @dentry: debugfs file entry
+ * @ahb_bus_scaling_enable: ahb scaling based on src clk corner for bus
  */
 struct cam_cpas {
 	struct cam_cpas_hw_caps hw_caps;
@@ -199,6 +202,8 @@ struct cam_cpas {
 	struct workqueue_struct *work_queue;
 	atomic_t irq_count;
 	wait_queue_head_t irq_count_wq;
+	struct dentry *dentry;
+	bool ahb_bus_scaling_enable;
 };
 
 int cam_camsstop_get_internal_ops(struct cam_cpas_internal_ops *internal_ops);

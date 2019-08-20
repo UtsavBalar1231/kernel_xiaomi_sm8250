@@ -942,7 +942,7 @@ int cam_hw_cdm_probe(struct platform_device *pdev)
 	cdm_core->cpas_handle = cpas_parms.client_handle;
 
 	ahb_vote.type = CAM_VOTE_ABSOLUTE;
-	ahb_vote.vote.level = CAM_SVS_VOTE;
+	ahb_vote.vote.level = CAM_LOWSVS_VOTE;
 	axi_vote.num_paths = 1;
 	axi_vote.axi_path[0].path_data_type = CAM_AXI_PATH_DATA_ALL;
 	axi_vote.axi_path[0].transac_type = CAM_AXI_TRANSACTION_READ;

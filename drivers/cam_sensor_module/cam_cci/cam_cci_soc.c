@@ -73,7 +73,7 @@ int cam_cci_init(struct v4l2_subdev *sd,
 	}
 
 	ahb_vote.type = CAM_VOTE_ABSOLUTE;
-	ahb_vote.vote.level = CAM_SVS_VOTE;
+	ahb_vote.vote.level = CAM_LOWSVS_VOTE;
 	axi_vote.num_paths = 1;
 	axi_vote.axi_path[0].path_data_type =
 		CAM_AXI_PATH_DATA_ALL;
