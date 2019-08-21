@@ -87,7 +87,7 @@ module_param(phy_interrupt_en, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 MODULE_PARM_DESC(phy_interrupt_en,
 		"Enable PHY interrupt [0-DISABLE, 1-ENABLE]");
 
-struct ip_params pparams = {0};
+struct ip_params pparams = {};
 #ifdef DWC_ETH_QOS_BUILTIN
 /*!
  * \brief API to extract MAC Address from given string

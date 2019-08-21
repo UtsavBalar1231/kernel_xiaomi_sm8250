@@ -3061,7 +3061,10 @@ static void DWC_ETH_QOS_receive_skb(struct DWC_ETH_QOS_prv_data *pdata,
 				    struct net_device *dev, struct sk_buff *skb,
 				    UINT qinx)
 {
+#ifdef DWC_ETH_QOS_BUILTIN
 	static int cnt_ipv4 = 0, cnt_ipv6 = 0;
+#endif
+
 	struct DWC_ETH_QOS_rx_queue *rx_queue = GET_RX_QUEUE_PTR(qinx);
 
 	skb_record_rx_queue(skb, qinx);
