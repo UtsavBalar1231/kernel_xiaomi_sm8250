@@ -1719,30 +1719,17 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 	 * codecs except HEVC
 	 * event data is now as follows:
 	 * u32 *ptr = seq_changed_event.u.data;
-	 * ptr[0] = height
-	 * ptr[1] = width
-	 * ptr[2] = bit depth
-	 * ptr[3] = pic struct (progressive or interlaced)
-	 * ptr[4] = colour space
-	 * ptr[5] = crop_data(top)
-	 * ptr[6] = crop_data(left)
-	 * ptr[7] = crop_data(height)
-	 * ptr[8] = crop_data(width)
-	 * ptr[9] = profile
-	 * ptr[10] = level
+	 * ptr[MSM_VIDC_HEIGHT] = height
+	 * ptr[MSM_VIDC_WIDTH] = width
+	 * ptr[MSM_VIDC_BIT_DEPTH] = bit depth
+	 * ptr[MSM_VIDC_PIC_STRUCT] = pic struct (progressive or interlaced)
+	 * ptr[MSM_VIDC_COLOR_SPACE] = colour space
+	 * ptr[MSM_VIDC_FW_MIN_COUNT] = fw min count
 	 */
 
 	inst->profile = event_notify->profile;
 	inst->level = event_notify->level;
 	inst->entropy_mode = event_notify->entropy_mode;
-	inst->prop.crop_info.left =
-		event_notify->crop_data.left;
-	inst->prop.crop_info.top =
-		event_notify->crop_data.top;
-	inst->prop.crop_info.height =
-		event_notify->crop_data.height;
-	inst->prop.crop_info.width =
-		event_notify->crop_data.width;
 	/* HW returns progressive_only flag in pic_struct. */
 	inst->pic_struct =
 		event_notify->pic_struct ?
@@ -1751,34 +1738,23 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 	inst->colour_space = event_notify->colour_space;
 
 	ptr = (u32 *)seq_changed_event.u.data;
-	ptr[0] = event_notify->height;
-	ptr[1] = event_notify->width;
-	ptr[2] = event_notify->bit_depth;
-	ptr[3] = event_notify->pic_struct;
-	ptr[4] = event_notify->colour_space;
-	ptr[5] = event_notify->crop_data.top;
-	ptr[6] = event_notify->crop_data.left;
-	ptr[7] = event_notify->crop_data.height;
-	ptr[8] = event_notify->crop_data.width;
-	ptr[9] = msm_comm_get_v4l2_profile(codec,
-		event_notify->profile, inst->sid);
-	ptr[10] = msm_comm_get_v4l2_level(codec,
-		event_notify->level, inst->sid);
-	ptr[11] = event_notify->fw_min_cnt;
+	ptr[MSM_VIDC_HEIGHT] = event_notify->height;
+	ptr[MSM_VIDC_WIDTH] = event_notify->width;
+	ptr[MSM_VIDC_BIT_DEPTH] = event_notify->bit_depth;
+	ptr[MSM_VIDC_PIC_STRUCT] = event_notify->pic_struct;
+	ptr[MSM_VIDC_COLOR_SPACE] = event_notify->colour_space;
+	ptr[MSM_VIDC_FW_MIN_COUNT] = event_notify->fw_min_cnt;
 
-	s_vpr_h(inst->sid,
-		"seq: height = %u width = %u profile = %u level = %u\n",
-		event_notify->height, event_notify->width, ptr[9], ptr[10]);
+	s_vpr_h(inst->sid, "seq: height = %u width = %u\n",
+		event_notify->height, event_notify->width);
 
 	s_vpr_h(inst->sid,
 		"seq: bit_depth = %u pic_struct = %u colour_space = %u\n",
 		event_notify->bit_depth, event_notify->pic_struct,
 		event_notify->colour_space);
 
-	s_vpr_h(inst->sid,
-		"seq: CROP top = %u left = %u Height = %u Width = %u\n",
-		event_notify->crop_data.top, event_notify->crop_data.left,
-		event_notify->crop_data.height, event_notify->crop_data.width);
+	s_vpr_h(inst->sid, "seq: fw_min_count = %u\n",
+		event_notify->fw_min_cnt);
 
 	mutex_lock(&inst->lock);
 	inst->in_reconfig = true;

@@ -352,20 +352,22 @@ int msm_vidc_qbuf(void *instance, struct v4l2_buffer *b)
 	}
 
 	for (i = 0; i < b->length; i++) {
-		b->m.planes[i].m.fd = b->m.planes[i].reserved[0];
-		b->m.planes[i].data_offset = b->m.planes[i].reserved[1];
+		b->m.planes[i].m.fd =
+				b->m.planes[i].reserved[MSM_VIDC_BUFFER_FD];
+		b->m.planes[i].data_offset =
+				b->m.planes[i].reserved[MSM_VIDC_DATA_OFFSET];
 	}
 
 	/* Compression ratio is valid only for Encoder YUV buffers. */
 	if (inst->session_type == MSM_VIDC_ENCODER &&
 			b->type == INPUT_MPLANE) {
-		cr = b->m.planes[0].reserved[2];
+		cr = b->m.planes[0].reserved[MSM_VIDC_COMP_RATIO];
 		msm_comm_update_input_cr(inst, b->index, cr);
 	}
 
 	if (b->type == INPUT_MPLANE) {
 		client_data = msm_comm_store_client_data(inst,
-			b->m.planes[0].reserved[3]);
+			b->m.planes[0].reserved[MSM_VIDC_INPUT_TAG_1]);
 		if (!client_data) {
 			s_vpr_e(inst->sid,
 				"%s: failed to store client data\n", __func__);
@@ -425,8 +427,10 @@ int msm_vidc_dqbuf(void *instance, struct v4l2_buffer *b)
 	}
 
 	for (i = 0; i < b->length; i++) {
-		b->m.planes[i].reserved[0] = b->m.planes[i].m.fd;
-		b->m.planes[i].reserved[1] = b->m.planes[i].data_offset;
+		b->m.planes[i].reserved[MSM_VIDC_BUFFER_FD] =
+					b->m.planes[i].m.fd;
+		b->m.planes[i].reserved[MSM_VIDC_DATA_OFFSET] =
+					b->m.planes[i].data_offset;
 	}
 	/**
 	 * Flush handling:
@@ -453,8 +457,8 @@ int msm_vidc_dqbuf(void *instance, struct v4l2_buffer *b)
 					!(b->flags & V4L2_BUF_FLAG_CODECCONFIG);
 			msm_comm_fetch_client_data(inst, remove,
 				input_tag, input_tag2,
-				&b->m.planes[0].reserved[3],
-				&b->m.planes[0].reserved[4]);
+				&b->m.planes[0].reserved[MSM_VIDC_INPUT_TAG_1],
+				&b->m.planes[0].reserved[MSM_VIDC_INPUT_TAG_2]);
 		}
 	}
 
