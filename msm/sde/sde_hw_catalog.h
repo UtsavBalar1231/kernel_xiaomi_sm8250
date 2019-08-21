@@ -315,6 +315,7 @@ enum {
  * @SDE_DSPP_VLUT            PA VLUT block
  * @SDE_DSPP_AD              AD block
  * @SDE_DSPP_LTM             LTM block
+ * @SDE_DSPP_RC              RC block
  * @SDE_DSPP_MAX             maximum value
  */
 enum {
@@ -330,6 +331,7 @@ enum {
 	SDE_DSPP_VLUT,
 	SDE_DSPP_AD,
 	SDE_DSPP_LTM,
+	SDE_DSPP_RC,
 	SDE_DSPP_MAX
 };
 
@@ -664,6 +666,20 @@ struct sde_lm_sub_blks {
 	struct sde_pp_blk gc;
 };
 
+/**
+ * struct sde_dspp_rc: Pixel processing rounded corner sub-blk information
+ * @info: HW register and features supported by this sub-blk.
+ * @version: HW Algorithm version.
+ * @idx: HW block instance id.
+ * @mem_total_size: data memory size.
+ */
+struct sde_dspp_rc {
+	SDE_HW_SUBBLK_INFO;
+	u32 version;
+	u32 idx;
+	u32 mem_total_size;
+};
+
 struct sde_dspp_sub_blks {
 	struct sde_pp_blk igc;
 	struct sde_pp_blk pcc;
@@ -677,6 +693,7 @@ struct sde_dspp_sub_blks {
 	struct sde_pp_blk ad;
 	struct sde_pp_blk ltm;
 	struct sde_pp_blk vlut;
+	struct sde_dspp_rc rc;
 };
 
 struct sde_pingpong_sub_blks {
@@ -1271,6 +1288,7 @@ struct sde_limit_cfg {
  * @has_base_layer     Supports staging layer as base layer
  * @allow_gdsc_toggle  Flag to check if gdsc toggle is needed after crtc is
  *                           disabled when external vote is present
+ * @rc_lm_flush_override        Support Rounded Corner using layer mixer flush
  * @sc_cfg: system cache configuration
  * @uidle_cfg		Settings for uidle feature
  * @sui_misr_supported  indicate if secure-ui-misr is supported
@@ -1287,6 +1305,7 @@ struct sde_limit_cfg {
  * @has_vig_p010  indicates if vig pipe supports p010 format
  * @inline_rot_formats	formats supported by the inline rotator feature
  * @mdss_irqs	  bitmap with the irqs supported by the target
+ * @rc_count	number of rounded corner hardware instances
  */
 struct sde_mdss_cfg {
 	u32 hwversion;
@@ -1329,6 +1348,7 @@ struct sde_mdss_cfg {
 	bool update_tcsr_disp_glitch;
 	bool has_base_layer;
 	bool allow_gdsc_toggle;
+	bool rc_lm_flush_override;
 
 	struct sde_sc_cfg sc_cfg;
 
@@ -1394,6 +1414,7 @@ struct sde_mdss_cfg {
 
 	u32 ad_count;
 	u32 ltm_count;
+	u32 rc_count;
 
 	u32 merge_3d_count;
 	struct sde_merge_3d_cfg merge_3d[MAX_BLOCKS];
@@ -1441,6 +1462,7 @@ struct sde_mdss_hw_cfg_handler {
 #define BLK_WB(s) ((s)->wb)
 #define BLK_AD(s) ((s)->ad)
 #define BLK_LTM(s) ((s)->ltm)
+#define BLK_RC(s) ((s)->rc)
 
 /**
  * sde_hw_set_preference: populate the individual hw lm preferences,

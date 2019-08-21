@@ -70,6 +70,7 @@ msm_drm-$(CONFIG_DRM_MSM_SDE) += sde/sde_crtc.o \
 	sde/sde_hw_qdss.o \
 	sde_dbg.o \
 	sde_dbg_evtlog.o \
+	sde/sde_hw_rc.o \
 
 msm_drm-$(CONFIG_DRM_SDE_WB) += sde/sde_wb.o \
 	sde/sde_encoder_phys_wb.o \
