@@ -1482,8 +1482,8 @@ void rmnet_shs_assign(struct sk_buff *skb, struct rmnet_port *port)
 	spin_lock_irqsave(&rmnet_shs_ht_splock, ht_flags);
 	do {
 		hash_for_each_possible_safe(RMNET_SHS_HT, node_p, tmp, list,
-					    skb->hash) {
-			if (skb->hash != node_p->hash)
+					    hash) {
+			if (hash != node_p->hash)
 				continue;
 
 
@@ -1496,6 +1496,7 @@ void rmnet_shs_assign(struct sk_buff *skb, struct rmnet_port *port)
 			rmnet_shs_chain_to_skb_list(skb, node_p);
 			is_match_found = 1;
 			is_shs_reqd = 1;
+			break;
 
 		}
 		if (is_match_found)
