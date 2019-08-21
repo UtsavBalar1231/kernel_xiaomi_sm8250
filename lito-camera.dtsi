@@ -1068,14 +1068,15 @@
 			<0 0 0 80000000 0 240000000 0>,
 			<0 0 0 80000000 0 320000000 0>,
 			<0 0 0 80000000 0 400000000 0>,
+			<0 0 0 80000000 0 400000000 0>,
 			<0 0 0 80000000 0 480000000 0>;
 		clock-cntl-level = "suspend", "lowsvs", "svs",
-			"svs_l1", "nominal", "turbo";
+			"svs_l1", "nominal", "nominal_l1", "turbo";
 		control-camnoc-axi-clk;
 		camnoc-bus-width = <32>;
 		camnoc-axi-clk-bw-margin-perc = <20>;
 		qcom,msm-bus,name = "cam_ahb";
-		qcom,msm-bus,num-cases = <7>;
+		qcom,msm-bus,num-cases = <8>;
 		qcom,msm-bus,num-paths = <1>;
 		qcom,msm-bus,vectors-KBps =
 			<MSM_BUS_MASTER_AMPSS_M0
@@ -1086,6 +1087,8 @@
 			MSM_BUS_SLAVE_CAMERA_CFG 0 125000>,
 			<MSM_BUS_MASTER_AMPSS_M0
 			MSM_BUS_SLAVE_CAMERA_CFG 0 125000>,
+			<MSM_BUS_MASTER_AMPSS_M0
+			MSM_BUS_SLAVE_CAMERA_CFG 0 250000>,
 			<MSM_BUS_MASTER_AMPSS_M0
 			MSM_BUS_SLAVE_CAMERA_CFG 0 250000>,
 			<MSM_BUS_MASTER_AMPSS_M0
