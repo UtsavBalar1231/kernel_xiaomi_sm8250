@@ -407,6 +407,7 @@ static struct cam_vfe_bus_rd_ver1_hw_info vfe175_130_bus_rd_hw_info = {
 			.max_height    = -1,
 		},
 	},
+	.top_irq_shift = 23,
 };
 
 static struct cam_vfe_bus_ver2_hw_info vfe175_130_bus_hw_info = {

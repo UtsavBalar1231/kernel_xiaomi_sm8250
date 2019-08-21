@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_VFE_BUS_R_VER1_H_
@@ -88,6 +88,7 @@ struct cam_vfe_bus_rd_ver1_hw_info {
 	uint32_t num_bus_rd_resc;
 	struct cam_vfe_bus_rd_ver1_vfe_bus_hw_info
 		vfe_bus_rd_hw_info[CAM_VFE_BUS_RD_VER1_VFE_BUSRD_MAX];
+	uint32_t top_irq_shift;
 };
 
 /*

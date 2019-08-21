@@ -97,6 +97,7 @@ struct cam_isp_in_port_generic_info {
 	uint32_t                        batch_size;
 	uint32_t                        dsp_mode;
 	uint32_t                        hbi_cnt;
+	uint32_t                        fe_unpacker_fmt;
 	uint32_t                        cust_node;
 	uint32_t                        num_out_res;
 	uint32_t                        horizontal_bin;

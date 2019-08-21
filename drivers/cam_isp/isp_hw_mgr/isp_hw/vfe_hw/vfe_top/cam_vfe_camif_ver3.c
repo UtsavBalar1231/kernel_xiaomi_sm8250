@@ -52,6 +52,8 @@ struct cam_vfe_mux_camif_ver3_data {
 	uint32_t                           camif_debug;
 	uint32_t                           horizontal_bin;
 	uint32_t                           qcfa_bin;
+	bool                               is_fe_enabled;
+	bool                               is_offline;
 };
 
 static int cam_vfe_camif_ver3_get_evt_payload(
@@ -246,18 +248,20 @@ int cam_vfe_camif_ver3_acquire_resource(
 		return rc;
 	}
 
-	camif_data->sync_mode   = acquire_data->vfe_in.sync_mode;
-	camif_data->pix_pattern = acquire_data->vfe_in.in_port->test_pattern;
-	camif_data->dsp_mode    = acquire_data->vfe_in.in_port->dsp_mode;
-	camif_data->first_pixel = acquire_data->vfe_in.in_port->left_start;
-	camif_data->last_pixel  = acquire_data->vfe_in.in_port->left_stop;
-	camif_data->first_line  = acquire_data->vfe_in.in_port->line_start;
-	camif_data->last_line   = acquire_data->vfe_in.in_port->line_stop;
+	camif_data->sync_mode      = acquire_data->vfe_in.sync_mode;
+	camif_data->pix_pattern    = acquire_data->vfe_in.in_port->test_pattern;
+	camif_data->dsp_mode       = acquire_data->vfe_in.in_port->dsp_mode;
+	camif_data->first_pixel    = acquire_data->vfe_in.in_port->left_start;
+	camif_data->last_pixel     = acquire_data->vfe_in.in_port->left_stop;
+	camif_data->first_line     = acquire_data->vfe_in.in_port->line_start;
+	camif_data->last_line      = acquire_data->vfe_in.in_port->line_stop;
+	camif_data->is_fe_enabled  = acquire_data->vfe_in.is_fe_enabled;
+	camif_data->is_offline     = acquire_data->vfe_in.is_offline;
+	camif_data->event_cb       = acquire_data->event_cb;
+	camif_data->priv           = acquire_data->priv;
+	camif_data->qcfa_bin       = acquire_data->vfe_in.in_port->qcfa_bin;
 	camif_data->horizontal_bin =
 		acquire_data->vfe_in.in_port->horizontal_bin;
-	camif_data->qcfa_bin    = acquire_data->vfe_in.in_port->qcfa_bin;
-	camif_data->event_cb    = acquire_data->event_cb;
-	camif_data->priv        = acquire_data->priv;
 
 	CAM_DBG(CAM_ISP, "VFE:%d CAMIF pix_pattern:%d dsp_mode=%d",
 		camif_res->hw_intf->hw_idx,
@@ -419,6 +423,14 @@ static int cam_vfe_camif_ver3_resource_start(
 	val |= (rsrc_data->cam_common_cfg.input_mux_sel_pp & 0x3) <<
 		CAM_SHIFT_TOP_CORE_CFG_INPUTMUX_PP;
 
+	if (rsrc_data->is_fe_enabled && !rsrc_data->is_offline)
+		val |= 0x2 << rsrc_data->reg_data->operating_mode_shift;
+	else
+		val |= 0x1 << rsrc_data->reg_data->operating_mode_shift;
+
+	CAM_DBG(CAM_ISP, "VFE:%d TOP core_cfg: 0x%X",
+		camif_res->hw_intf->hw_idx, val);
+
 	cam_io_w_mb(val, rsrc_data->mem_base +
 		rsrc_data->common_reg->core_cfg_0);
 
@@ -454,11 +466,14 @@ static int cam_vfe_camif_ver3_resource_start(
 	camif_res->res_state = CAM_ISP_RESOURCE_STATE_STREAMING;
 
 	/* Reg Update */
-	cam_io_w_mb(rsrc_data->reg_data->reg_update_cmd_data,
-		rsrc_data->mem_base + rsrc_data->camif_reg->reg_update_cmd);
-	CAM_DBG(CAM_ISP, "VFE:%d CAMIF RUP val:0x%X",
-		camif_res->hw_intf->hw_idx,
-		rsrc_data->reg_data->reg_update_cmd_data);
+	if (!rsrc_data->is_offline) {
+		cam_io_w_mb(rsrc_data->reg_data->reg_update_cmd_data,
+			rsrc_data->mem_base +
+			rsrc_data->camif_reg->reg_update_cmd);
+		CAM_DBG(CAM_ISP, "VFE:%d CAMIF RUP val:0x%X",
+			camif_res->hw_intf->hw_idx,
+			rsrc_data->reg_data->reg_update_cmd_data);
+	}
 
 	/* disable sof irq debug flag */
 	rsrc_data->enable_sof_irq_debug = false;
@@ -599,6 +614,18 @@ static int cam_vfe_camif_ver3_reg_dump(
 	for (offset = 0x2800; offset <= 0x8FFC; offset += 0x4) {
 		val = cam_soc_util_r(camif_priv->soc_info, 0, offset);
 		CAM_INFO(CAM_ISP, "offset 0x%X value 0x%X", offset, val);
+	}
+
+	CAM_INFO(CAM_ISP, "IFE:%d BUS RD", camif_res->hw_intf->hw_idx);
+	for (offset = 0xA800; offset <= 0xA89C; offset += 0x4) {
+		val = cam_soc_util_r(camif_priv->soc_info, 0, offset);
+		CAM_INFO(CAM_ISP, "offset 0x%X value 0x%X", offset, val);
+		if (offset == 0xA838)
+			offset = 0xA844;
+		if (offset == 0xA864)
+			offset = 0xA874;
+		if (offset == 0xA878)
+			offset = 0xA87C;
 	}
 
 	CAM_INFO(CAM_ISP, "IFE:%d BUS WR", camif_res->hw_intf->hw_idx);

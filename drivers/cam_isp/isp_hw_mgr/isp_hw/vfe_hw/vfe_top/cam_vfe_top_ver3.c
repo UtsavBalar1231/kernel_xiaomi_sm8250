@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/slab.h>
@@ -12,7 +12,7 @@
 #include "cam_debug_util.h"
 #include "cam_vfe_soc.h"
 
-#define CAM_VFE_HW_RESET_HW_AND_REG_VAL       0x00000003
+#define CAM_VFE_HW_RESET_HW_AND_REG_VAL       0x00000007
 #define CAM_VFE_HW_RESET_HW_VAL               0x007F0000
 #define CAM_VFE_LITE_HW_RESET_AND_REG_VAL     0x00000002
 #define CAM_VFE_LITE_HW_RESET_HW_VAL          0x0000003D

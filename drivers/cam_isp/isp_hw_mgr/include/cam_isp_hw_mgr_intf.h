@@ -237,6 +237,7 @@ enum cam_isp_ctx_type {
 	CAM_ISP_CTX_FS2 = 1,
 	CAM_ISP_CTX_RDI,
 	CAM_ISP_CTX_PIX,
+	CAM_ISP_CTX_OFFLINE,
 	CAM_ISP_CTX_MAX,
 };
 /**
