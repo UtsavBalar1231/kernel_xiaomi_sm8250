@@ -113,14 +113,6 @@
 				qcom,pre-scaling = <1 1>;
 			};
 
-			xo_therm {
-				reg = <ADC_XO_THERM_PU2>;
-				label = "xo_therm";
-				qcom,ratiometric;
-				qcom,hw-settle-time = <200>;
-				qcom,pre-scaling = <1 1>;
-			};
-
 			v_i_int_ext {
 				reg = <ADC_INT_EXT_ISENSE_VBAT_VDATA>;
 				label = "v_i_int_vbat_vdata";
