@@ -110,6 +110,7 @@ static int hfi_process_sess_evt_seq_changed(u32 device_id,
 	struct hfi_bit_depth *pixel_depth;
 	struct hfi_pic_struct *pic_struct;
 	struct hfi_buffer_requirements *buf_req;
+	struct hfi_dpb_counts *dpb_counts;
 	struct hfi_index_extradata_input_crop_payload *crop_info;
 	u32 rem_size,entropy_mode = 0;
 	u8 *data_ptr;
@@ -266,10 +267,10 @@ static int hfi_process_sess_evt_seq_changed(u32 device_id,
 				buf_req =
 					(struct hfi_buffer_requirements *)
 						data_ptr;
-				event_notify.capture_buf_count =
+				event_notify.fw_min_cnt =
 					buf_req->buffer_count_min;
 				s_vpr_hp(sid, "Capture Count : 0x%x\n",
-						event_notify.capture_buf_count);
+						event_notify.fw_min_cnt);
 				data_ptr +=
 					sizeof(struct hfi_buffer_requirements);
 				rem_size -=
@@ -299,6 +300,33 @@ static int hfi_process_sess_evt_seq_changed(u32 device_id,
 					hfi_index_extradata_input_crop_payload);
 				rem_size -= sizeof(struct
 					hfi_index_extradata_input_crop_payload);
+				break;
+			case HFI_PROPERTY_PARAM_VDEC_DPB_COUNTS:
+				if (!validate_pkt_size(rem_size, sizeof(struct
+					hfi_dpb_counts)))
+					return -E2BIG;
+				data_ptr = data_ptr + sizeof(u32);
+				dpb_counts = (struct hfi_dpb_counts *) data_ptr;
+				event_notify.max_dpb_count =
+					dpb_counts->max_dpb_count;
+				event_notify.max_ref_frames =
+					dpb_counts->max_ref_frames;
+				event_notify.max_dec_buffering =
+					dpb_counts->max_dec_buffering;
+				event_notify.max_reorder_frames =
+					dpb_counts->max_reorder_frames;
+				event_notify.fw_min_cnt =
+					dpb_counts->fw_min_cnt;
+				s_vpr_h(sid,
+					"FW DPB counts: dpb %d ref %d buff %d reorder %d fw_min_cnt %d\n",
+						dpb_counts->max_dpb_count,
+						dpb_counts->max_ref_frames,
+						dpb_counts->max_dec_buffering,
+						dpb_counts->max_reorder_frames,
+						dpb_counts->fw_min_cnt);
+				data_ptr +=
+					sizeof(struct hfi_dpb_counts);
+				rem_size -= sizeof(struct hfi_dpb_counts);
 				break;
 			default:
 				s_vpr_e(sid, "%s: cmd: %#x not supported\n",
