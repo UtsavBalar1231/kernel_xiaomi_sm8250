@@ -5849,7 +5849,11 @@ int msm_vidc_check_session_supported(struct msm_vidc_inst *inst)
 			width_max, height_max);
 			rc = -ENOTSUPP;
 		}
-		if (!rc && NUM_MBS_PER_FRAME(input_width, input_height) >
+		/* Image size max capability has equal width and height,
+		 * hence, don't check mbpf for image sessions.
+		 */
+		if (!rc && !is_image_session(inst) &&
+			NUM_MBS_PER_FRAME(input_width, input_height) >
 			mbpf_max) {
 			dprintk(VIDC_ERR, "Unsupported mbpf %d, max %d\n",
 				NUM_MBS_PER_FRAME(input_width, input_height),
