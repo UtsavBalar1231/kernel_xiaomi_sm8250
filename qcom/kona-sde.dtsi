@@ -322,7 +322,6 @@
 			<0x88ea200 0x200>,
 			<0x88ea600 0x200>,
 			<0xaf02000 0x1a0>,
-			<0x780000 0x621c>,
 			<0x88ea040 0x10>,
 			<0x88e8000 0x20>,
 			<0x0aee1000 0x034>,
@@ -330,7 +329,7 @@
 		/* dp_ctrl: dp_ahb, dp_aux, dp_link, dp_p0 */
 		reg-names = "dp_ahb", "dp_aux", "dp_link",
 			"dp_p0", "dp_phy", "dp_ln_tx0", "dp_ln_tx1",
-			"dp_mmss_cc", "qfprom_physical", "dp_pll",
+			"dp_mmss_cc", "dp_pll",
 			"usb3_dp_com", "hdcp_physical", "dp_p1";
 
 		interrupt-parent = <&mdss_mdp>;

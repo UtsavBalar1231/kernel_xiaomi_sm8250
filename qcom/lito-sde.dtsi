@@ -491,7 +491,7 @@
 		cell-index = <0>;
 		compatible = "qcom,dp-display";
 
-		vdda-lp2-supply = <&L9A>;
+		vdda-1p2-supply = <&L9A>;
 		reg =	<0xae90000 0x0dc>,
 			<0xae90200 0x0c0>,
 			<0xae90400 0x508>,
@@ -500,14 +500,13 @@
 			<0x88ea200 0x150>,
 			<0x88ea600 0x150>,
 			<0xaf02000 0x2c4>,
-			<0x780000 0x6228>,
 			<0x88ea040 0x10>,
 			<0x88e8000 0x20>,
 			<0x0aee1000 0x2a>,
 			<0xae91400 0x095>;
 		reg-names =	"dp_ahb", "dp_aux", "dp_link",
 				"dp_p0", "dp_phy", "dp_ln_tx0", "dp_ln_tx1",
-				"dp_mmss_cc", "qfprom_physical", "dp_pll",
+				"dp_mmss_cc", "dp_pll",
 				"usb3_dp_com", "hdcp_physical", "dp_p1";
 
 		interrupt-parent = <&mdss_mdp>;
