@@ -1443,7 +1443,6 @@ static int msm_vidc_op_s_ctrl(struct v4l2_ctrl *ctrl)
 {
 
 	int rc = 0;
-	unsigned int c = 0;
 	struct msm_vidc_inst *inst;
 	const char *ctrl_name = NULL;
 
@@ -1459,17 +1458,9 @@ static int msm_vidc_op_s_ctrl(struct v4l2_ctrl *ctrl)
 		return -EINVAL;
 	}
 
-	for (c = 0; c < ctrl->ncontrols; ++c) {
-		if (ctrl->cluster[c]->is_new) {
-			rc = msm_vidc_try_set_ctrl(inst, ctrl->cluster[c]);
-			if (rc) {
-				dprintk(VIDC_ERR, "Failed setting %x\n",
-					ctrl->cluster[c]->id);
-				break;
-			}
-		}
-	}
+	rc = msm_vidc_try_set_ctrl(inst, ctrl);
 	if (rc) {
+		dprintk(VIDC_ERR, "Failed setting %x\n", ctrl->id);
 		ctrl_name = v4l2_ctrl_get_name(ctrl->id);
 		dprintk(VIDC_ERR, "Failed setting control: Inst = %pK (%s)\n",
 			inst, ctrl_name ? ctrl_name : "Invalid ctrl");

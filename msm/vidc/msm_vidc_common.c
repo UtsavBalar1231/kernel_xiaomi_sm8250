@@ -43,24 +43,6 @@ int msm_comm_g_ctrl_for_id(struct msm_vidc_inst *inst, int id)
 	return ctrl->val;
 }
 
-static struct v4l2_ctrl **get_super_cluster(struct msm_vidc_inst *inst,
-				int num_ctrls)
-{
-	int c = 0;
-	struct v4l2_ctrl **cluster = kmalloc(sizeof(struct v4l2_ctrl *) *
-			num_ctrls, GFP_KERNEL);
-
-	if (!cluster || !inst) {
-		kfree(cluster);
-		return NULL;
-	}
-
-	for (c = 0; c < num_ctrls; c++)
-		cluster[c] =  inst->ctrls[c];
-
-	return cluster;
-}
-
 int msm_comm_hfi_to_v4l2(int id, int value)
 {
 	switch (id) {
@@ -658,16 +640,6 @@ int msm_comm_ctrl_init(struct msm_vidc_inst *inst,
 	}
 	inst->num_ctrls = num_ctrls;
 
-	/* Construct a super cluster of all controls */
-	inst->cluster = get_super_cluster(inst, num_ctrls);
-	if (!inst->cluster) {
-		dprintk(VIDC_ERR,
-			"Failed to setup super cluster\n");
-		return -EINVAL;
-	}
-
-	v4l2_ctrl_cluster(num_ctrls, inst->cluster);
-
 	return ret_val;
 }
 
@@ -679,7 +651,6 @@ int msm_comm_ctrl_deinit(struct msm_vidc_inst *inst)
 	}
 
 	kfree(inst->ctrls);
-	kfree(inst->cluster);
 	v4l2_ctrl_handler_free(&inst->ctrl_handler);
 
 	return 0;
