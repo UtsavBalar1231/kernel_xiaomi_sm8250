@@ -1152,6 +1152,29 @@
 		qcom,count-unit = <0x10000>;
 	};
 
+	npu_npu_ddr_latfloor: qcom,npu-npu-ddr-latfloor {
+		compatible = "qcom,devbw-ddr";
+		governor = "powersave";
+		qcom,src-dst-ports = <MSM_BUS_MASTER_NPU MSM_BUS_SLAVE_EBI_CH0>;
+		operating-points-v2 = <&suspendable_ddr_bw_opp_table>;
+	};
+
+	npu_staticmap_mon: qcom,npu-staticmap-mon {
+		compatible = "qcom,static-map";
+		qcom,target-dev = <&npu_npu_ddr_latfloor>;
+		clocks = <&clock_npucc NPU_CC_CAL_HM0_CLK>;
+		clock-names = "cal_hm0_clk";
+		qcom,dev_clk = "cal_hm0_clk";
+		qcom,core-dev-table =
+				<       0 MHZ_TO_MBPS(    0, 4) >,
+				<  300000 MHZ_TO_MBPS(  451, 4) >,
+				<  406000 MHZ_TO_MBPS(  768, 4) >,
+				<  533000 MHZ_TO_MBPS( 1555, 4) >,
+				<  730000 MHZ_TO_MBPS( 1804, 4) >,
+				<  920000 MHZ_TO_MBPS( 2092, 4) >,
+				< 1000000 MHZ_TO_MBPS( 2736, 4) >;
+	};
+
 	cpu0_cpu_llcc_lat: qcom,cpu0-cpu-llcc-lat {
 		compatible = "qcom,devbw";
 		governor = "performance";
