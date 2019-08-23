@@ -1597,6 +1597,7 @@ void *msm_vidc_open(int core_id, int session_type)
 	inst->rc_type = V4L2_MPEG_VIDEO_BITRATE_MODE_VBR;
 	inst->dpb_extra_binfo = NULL;
 	inst->all_intra = false;
+	inst->max_filled_len = 0;
 
 	for (i = SESSION_MSG_INDEX(SESSION_MSG_START);
 		i <= SESSION_MSG_INDEX(SESSION_MSG_END); i++) {

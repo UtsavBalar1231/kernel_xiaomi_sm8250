@@ -207,7 +207,6 @@ struct msm_vidc_buf_data {
 	u32 index;
 	u32 input_tag;
 	u32 input_tag2;
-	u32 filled_length;
 };
 
 struct msm_vidc_window_data {
@@ -577,6 +576,7 @@ struct msm_vidc_inst {
 	int (*buffer_size_calculators)(struct msm_vidc_inst *inst);
 	bool all_intra;
 	bool is_perf_eligible_session;
+	u32 max_filled_len;
 };
 
 extern struct msm_vidc_drv *vidc_driver;
