@@ -13,6 +13,7 @@
 #include <linux/msm_dma_iommu_mapping.h>
 #include <linux/workqueue.h>
 #include <linux/genalloc.h>
+#include <linux/debugfs.h>
 #include <soc/qcom/scm.h>
 #include <soc/qcom/secure_buffer.h>
 #include <media/cam_req_mgr.h>
@@ -130,6 +131,9 @@ struct cam_context_bank_info {
 	int cb_count;
 	int secure_count;
 	int pf_count;
+
+	size_t io_mapping_size;
+	size_t shared_mapping_size;
 };
 
 struct cam_iommu_cb_set {
@@ -140,6 +144,8 @@ struct cam_iommu_cb_set {
 	struct mutex payload_list_lock;
 	struct list_head payload_list;
 	u32 non_fatal_fault;
+	struct dentry *dentry;
+	bool cb_dump_enable;
 };
 
 static const struct of_device_id msm_cam_smmu_dt_match[] = {
@@ -237,6 +243,8 @@ static void cam_smmu_clean_user_buffer_list(int idx);
 
 static void cam_smmu_clean_kernel_buffer_list(int idx);
 
+static void cam_smmu_dump_cb_info(int idx);
+
 static void cam_smmu_print_user_list(int idx);
 
 static void cam_smmu_print_kernel_list(int idx);
@@ -285,6 +293,50 @@ static void cam_smmu_page_fault_work(struct work_struct *work)
 		}
 	}
 	kfree(payload);
+}
+
+static void cam_smmu_dump_cb_info(int idx)
+{
+	struct cam_dma_buff_info *mapping, *mapping_temp;
+	size_t shared_reg_len = 0, io_reg_len = 0;
+	size_t shared_free_len = 0, io_free_len = 0;
+	uint32_t i = 0;
+	struct cam_context_bank_info *cb_info =
+		&iommu_cb_set.cb_info[idx];
+
+	if (cb_info->shared_support) {
+		shared_reg_len = cb_info->shared_info.iova_len;
+		shared_free_len = shared_reg_len - cb_info->shared_mapping_size;
+	}
+
+	if (cb_info->io_support) {
+		io_reg_len = cb_info->io_info.iova_len;
+		io_free_len = io_reg_len - cb_info->io_mapping_size;
+	}
+
+	CAM_ERR(CAM_SMMU,
+		"********** Context bank dump for %s **********",
+		cb_info->name);
+	CAM_ERR(CAM_SMMU,
+		"Usage: shared_usage=%u io_usage=%u shared_free=%u io_free=%u",
+		(unsigned int)cb_info->shared_mapping_size,
+		(unsigned int)cb_info->io_mapping_size,
+		(unsigned int)shared_free_len,
+		(unsigned int)io_free_len);
+
+	if (iommu_cb_set.cb_dump_enable) {
+		list_for_each_entry_safe(mapping, mapping_temp,
+			&iommu_cb_set.cb_info[idx].smmu_buf_list, list) {
+			i++;
+			CAM_ERR(CAM_SMMU,
+				"%u. ion_fd=%d start=0x%x end=0x%x len=%u region=%d",
+				i, mapping->ion_fd, (void *)mapping->paddr,
+				((uint64_t)mapping->paddr +
+				(uint64_t)mapping->len),
+				(unsigned int)mapping->len,
+				mapping->region_id);
+		}
+	}
 }
 
 static void cam_smmu_print_user_list(int idx)
@@ -1712,6 +1764,7 @@ static int cam_smmu_map_buffer_validate(struct dma_buf *buf,
 			*paddr_ptr = iova;
 			*len_ptr = size;
 		}
+		iommu_cb_set.cb_info[idx].shared_mapping_size += *len_ptr;
 	} else if (region_id == CAM_SMMU_REGION_IO) {
 		attach->dma_map_attrs |= DMA_ATTR_DELAYED_UNMAP;
 
@@ -1724,6 +1777,7 @@ static int cam_smmu_map_buffer_validate(struct dma_buf *buf,
 
 		*paddr_ptr = sg_dma_address(table->sgl);
 		*len_ptr = (size_t)buf->size;
+		iommu_cb_set.cb_info[idx].io_mapping_size += *len_ptr;
 	} else {
 		CAM_ERR(CAM_SMMU, "Error: Wrong region id passed");
 		rc = -EINVAL;
@@ -1896,8 +1950,11 @@ static int cam_smmu_unmap_buf_and_remove_from_list(
 		if (rc)
 			CAM_ERR(CAM_SMMU, "IOVA free failed");
 
+		iommu_cb_set.cb_info[idx].shared_mapping_size -=
+			mapping_info->len;
 	} else if (mapping_info->region_id == CAM_SMMU_REGION_IO) {
 		mapping_info->attach->dma_map_attrs |= DMA_ATTR_DELAYED_UNMAP;
+		iommu_cb_set.cb_info[idx].io_mapping_size -= mapping_info->len;
 	}
 
 	dma_buf_unmap_attachment(mapping_info->attach,
@@ -2702,10 +2759,12 @@ int cam_smmu_map_user_iova(int handle, int ion_fd,
 
 	rc = cam_smmu_map_buffer_and_add_to_list(idx, ion_fd, dma_dir,
 			paddr_ptr, len_ptr, region_id);
-	if (rc < 0)
+	if (rc < 0) {
 		CAM_ERR(CAM_SMMU,
 			"mapping or add list fail, idx=%d, fd=%d, region=%d, rc=%d",
 			idx, ion_fd, region_id, rc);
+		cam_smmu_dump_cb_info(idx);
+	}
 
 get_addr_end:
 	mutex_unlock(&iommu_cb_set.cb_info[idx].lock);
@@ -3498,6 +3557,31 @@ cb_init_fail:
 	return rc;
 }
 
+static int cam_smmu_create_debug_fs(void)
+{
+	iommu_cb_set.dentry = debugfs_create_dir("camera_smmu",
+		NULL);
+
+	if (!iommu_cb_set.dentry) {
+		CAM_ERR(CAM_SMMU, "failed to create dentry");
+		return -ENOMEM;
+	}
+
+	if (!debugfs_create_bool("cb_dump_enable",
+		0644,
+		iommu_cb_set.dentry,
+		&iommu_cb_set.cb_dump_enable)) {
+		CAM_ERR(CAM_SMMU,
+			"failed to create dump_enable_debug");
+		goto err;
+	}
+
+	return 0;
+err:
+	debugfs_remove_recursive(iommu_cb_set.dentry);
+	return -ENOMEM;
+}
+
 static int cam_smmu_probe(struct platform_device *pdev)
 {
 	int rc = 0;
@@ -3547,6 +3631,7 @@ static int cam_smmu_probe(struct platform_device *pdev)
 		INIT_LIST_HEAD(&iommu_cb_set.payload_list);
 	}
 
+	cam_smmu_create_debug_fs();
 	return rc;
 }
 
@@ -3563,6 +3648,9 @@ static int cam_smmu_remove(struct platform_device *pdev)
 
 	if (of_device_is_compatible(pdev->dev.of_node, "qcom,msm-cam-smmu"))
 		cam_smmu_release_cb(pdev);
+
+	debugfs_remove_recursive(iommu_cb_set.dentry);
+	iommu_cb_set.dentry = NULL;
 	return 0;
 }
 
