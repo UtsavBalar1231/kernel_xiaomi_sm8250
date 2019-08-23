@@ -67,6 +67,21 @@
 #define HFI_CMD_SYS_PING               (HFI_CMD_COMMON_START + 0x5)
 #define HFI_CMD_SYS_RESET              (HFI_CMD_COMMON_START + 0x6)
 
+/* General Frame process errors */
+#define CAMERAICP_SUCCESS              0
+#define CAMERAICP_EFAILED              1
+#define CAMERAICP_ENOMEMORY            2
+#define CAMERAICP_EBADSTATE            3
+#define CAMERAICP_EBADPARM             4
+#define CAMERAICP_EBADITEM             5
+#define CAMERAICP_EINVALIDFORMAT       6
+#define CAMERAICP_EUNSUPPORTED         7
+#define CAMERAICP_EOUTOFBOUND          8
+#define CAMERAICP_ETIMEDOUT            9
+#define CAMERAICP_EABORTED             10
+#define CAMERAICP_EHWVIOLATION         11
+#define CAMERAICP_ECDMERROR            12
+
 /* Core level commands */
 /* IPE/BPS core Commands */
 #define HFI_CMD_IPE_BPS_COMMON_START \
