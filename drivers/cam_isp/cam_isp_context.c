@@ -3841,14 +3841,14 @@ static int __cam_isp_ctx_apply_req(struct cam_context *ctx,
 	if (ctx_ops->crm_ops.apply_req) {
 		rc = ctx_ops->crm_ops.apply_req(ctx, apply);
 	} else {
-		CAM_ERR_RATE_LIMIT(CAM_ISP,
+		CAM_WARN_RATE_LIMIT(CAM_ISP,
 			"No handle function in activated substate %d",
 			ctx_isp->substate_activated);
 		rc = -EFAULT;
 	}
 
 	if (rc)
-		CAM_ERR_RATE_LIMIT(CAM_ISP,
+		CAM_WARN_RATE_LIMIT(CAM_ISP,
 			"Apply failed in active substate %d rc %d",
 			ctx_isp->substate_activated, rc);
 	return rc;
