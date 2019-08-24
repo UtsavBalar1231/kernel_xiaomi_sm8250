@@ -39,7 +39,6 @@
 				<&clock_npucc NPU_CC_DPM_TEMP_CLK>,
 				<&clock_npucc NPU_CC_CAL_HM0_DPM_IP_CLK>,
 				<&clock_npucc NPU_CC_CAL_HM1_DPM_IP_CLK>,
-				<&clock_npucc NPU_CC_ATB_CLK>,
 				<&clock_npucc NPU_CC_S2P_CLK>,
 				<&clock_npucc NPU_CC_BWMON_CLK>,
 				<&clock_npucc NPU_CC_CAL_HM0_PERF_CNT_CLK>,
@@ -68,7 +67,6 @@
 				"dpm_temp_clk",
 				"cal_hm0_dpm_ip_clk",
 				"cal_hm1_dpm_ip_clk",
-				"atb_clk",
 				"s2p_clk",
 				"bwmon_clk",
 				"cal_hm0_perf_cnt_clk",
@@ -127,7 +125,6 @@
 					50000000
 					200000000
 					200000000
-					60000000
 					50000000
 					19200000
 					300000000
@@ -161,7 +158,6 @@
 					50000000
 					466000000
 					466000000
-					120000000
 					50000000
 					19200000
 					466000000
@@ -195,7 +191,6 @@
 					50000000
 					533000000
 					533000000
-					240000000
 					50000000
 					19200000
 					533000000
@@ -229,7 +224,6 @@
 					100000000
 					850000000
 					850000000
-					240000000
 					100000000
 					19200000
 					850000000
@@ -263,7 +257,6 @@
 					100000000
 					1000000000
 					1000000000
-					30000000
 					100000000
 					19200000
 					1000000000
