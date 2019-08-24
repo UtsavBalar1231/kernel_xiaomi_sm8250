@@ -1072,13 +1072,6 @@ static int fg_gen4_get_prop_capacity_raw(struct fg_gen4_chip *chip, int *val)
 		return rc;
 	}
 
-	if (!is_input_present(fg)) {
-		rc = fg_gen4_get_prop_capacity(fg, val);
-		if (!rc)
-			*val = *val * 100;
-		return rc;
-	}
-
 	rc = fg_get_sram_prop(&chip->fg, FG_SRAM_MONOTONIC_SOC, val);
 	if (rc < 0) {
 		pr_err("Error in getting MONOTONIC_SOC, rc=%d\n", rc);
