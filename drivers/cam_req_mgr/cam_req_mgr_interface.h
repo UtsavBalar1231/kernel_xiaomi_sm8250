@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_REQ_MGR_INTERFACE_H
@@ -151,6 +151,7 @@ enum cam_req_mgr_device_error {
  * @FLASH       : LED flash or dual LED device
  * @ACTUATOR    : lens mover
  * @IFE         : Image processing device
+ * @CUSTOM      : Custom HW block
  * @EXTERNAL_1  : third party device
  * @EXTERNAL_2  : third party device
  * @EXTERNAL_3  : third party device
@@ -162,6 +163,7 @@ enum cam_req_mgr_device_id {
 	CAM_REQ_MGR_DEVICE_FLASH,
 	CAM_REQ_MGR_DEVICE_ACTUATOR,
 	CAM_REQ_MGR_DEVICE_IFE,
+	CAM_REQ_MGR_DEVICE_CUSTOM_HW,
 	CAM_REQ_MGR_DEVICE_EXTERNAL_1,
 	CAM_REQ_MGR_DEVICE_EXTERNAL_2,
 	CAM_REQ_MGR_DEVICE_EXTERNAL_3,

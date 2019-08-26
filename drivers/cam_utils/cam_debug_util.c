@@ -91,6 +91,9 @@ const char *cam_get_module_name(unsigned int module_id)
 	case CAM_REQ:
 		name = "CAM-REQ";
 		break;
+	case CAM_CUSTOM:
+		name = "CAM-CUSTOM";
+		break;
 	default:
 		name = "CAM";
 		break;
