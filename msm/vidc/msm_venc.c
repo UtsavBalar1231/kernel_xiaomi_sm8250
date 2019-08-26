@@ -3884,6 +3884,8 @@ int msm_venc_set_ltr_mode(struct msm_vidc_inst *inst)
 	}
 	hdev = inst->core->device;
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_LTRCOUNT);
+	if (!ctrl->val)
+		return 0;
 
 	codec = get_v4l2_codec(inst);
 	if (!(codec == V4L2_PIX_FMT_HEVC || codec == V4L2_PIX_FMT_H264)) {
@@ -3898,8 +3900,6 @@ int msm_venc_set_ltr_mode(struct msm_vidc_inst *inst)
 			goto disable_ltr;
 		}
 
-	if (!ctrl->val)
-		return 0;
 	if (ctrl->val > inst->capability.cap[CAP_LTR_COUNT].max) {
 		dprintk(VIDC_ERR, "%s: invalid ltr count %d, max %d\n",
 			__func__, ctrl->val,
