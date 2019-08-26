@@ -7,6 +7,7 @@
 #define _CAM_IFE_HW_MGR_H_
 
 #include <linux/completion.h>
+#include <linux/time.h>
 #include "cam_isp_hw_mgr.h"
 #include "cam_vfe_hw_intf.h"
 #include "cam_ife_csid_hw_intf.h"
@@ -134,6 +135,7 @@ struct cam_ife_hw_mgr_debug {
  * @init_done               indicate whether init hw is done
  * @is_fe_enable            indicate whether fetch engine\read path is enabled
  * @is_dual                 indicate whether context is in dual VFE mode
+ * @ts                      captured timestamp when the ctx is acquired
  */
 struct cam_ife_hw_mgr_ctx {
 	struct list_head                list;
@@ -178,6 +180,7 @@ struct cam_ife_hw_mgr_ctx {
 	bool                            init_done;
 	bool                            is_fe_enable;
 	bool                            is_dual;
+	struct timespec64               ts;
 };
 
 /**
