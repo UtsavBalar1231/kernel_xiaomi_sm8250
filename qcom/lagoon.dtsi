@@ -943,4 +943,5 @@
 };
 
 #include "lagoon-pinctrl.dtsi"
+#include "lagoon-pm.dtsi"
 #include "lagoon-stub-regulator.dtsi"
