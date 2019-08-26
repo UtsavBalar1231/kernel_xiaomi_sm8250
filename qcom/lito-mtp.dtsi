@@ -42,6 +42,11 @@
 	};
 };
 
+&usb2_phy0 {
+	qcom,param-override-seq = <0xa1 0x6c
+				0x43 0x70>;
+};
+
 &usb_qmp_dp_phy {
 	vdd-supply = <&vdda_usb_ss_dp_core>;
 };
