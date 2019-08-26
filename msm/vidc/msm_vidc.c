@@ -131,13 +131,14 @@ int msm_vidc_query_ctrl(void *instance, struct v4l2_queryctrl *q_ctrl)
 	struct v4l2_ctrl *ctrl;
 
 	if (!inst || !q_ctrl) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK %pK\n",
+			__func__, inst, q_ctrl);
 		return -EINVAL;
 	}
 
 	ctrl = v4l2_ctrl_find(&inst->ctrl_handler, q_ctrl->id);
 	if (!ctrl) {
-		dprintk(VIDC_ERR, "%s: get_ctrl failed for id %d\n",
+		s_vpr_e(inst->sid, "%s: get_ctrl failed for id %d\n",
 			__func__, q_ctrl->id);
 		return -EINVAL;
 	}
@@ -153,7 +154,7 @@ int msm_vidc_query_ctrl(void *instance, struct v4l2_queryctrl *q_ctrl)
 	else
 		q_ctrl->flags = 0;
 
-	dprintk(VIDC_HIGH, "query ctrl: %s: min %d, max %d, flags %#x\n",
+	s_vpr_h(inst->sid, "query ctrl: %s: min %d, max %d, flags %#x\n",
 		ctrl->name, q_ctrl->minimum, q_ctrl->maximum, q_ctrl->flags);
 	return rc;
 }
@@ -172,10 +173,9 @@ int msm_vidc_s_fmt(void *instance, struct v4l2_format *f)
 	if (inst->session_type == MSM_VIDC_ENCODER)
 		rc = msm_venc_s_fmt(instance, f);
 
-	dprintk(VIDC_HIGH,
-		"s_fmt: %x : type %d wxh %dx%d pixelfmt %#x num_planes %d size[0] %d size[1] %d in_reconfig %d\n",
-		hash32_ptr(inst->session), f->type,
-		f->fmt.pix_mp.width, f->fmt.pix_mp.height,
+	s_vpr_h(inst->sid,
+		"s_fmt: type %d wxh %dx%d pixelfmt %#x num_planes %d size[0] %d size[1] %d in_reconfig %d\n",
+		f->type, f->fmt.pix_mp.width, f->fmt.pix_mp.height,
 		f->fmt.pix_mp.pixelformat, f->fmt.pix_mp.num_planes,
 		f->fmt.pix_mp.plane_fmt[0].sizeimage,
 		f->fmt.pix_mp.plane_fmt[1].sizeimage, inst->in_reconfig);
@@ -196,10 +196,9 @@ int msm_vidc_g_fmt(void *instance, struct v4l2_format *f)
 	if (inst->session_type == MSM_VIDC_ENCODER)
 		rc = msm_venc_g_fmt(instance, f);
 
-	dprintk(VIDC_HIGH,
-		"g_fmt: %x : type %d wxh %dx%d pixelfmt %#x num_planes %d size[0] %d size[1] %d in_reconfig %d\n",
-		hash32_ptr(inst->session), f->type,
-		f->fmt.pix_mp.width, f->fmt.pix_mp.height,
+	s_vpr_h(inst->sid,
+		"g_fmt: type %d wxh %dx%d pixelfmt %#x num_planes %d size[0] %d size[1] %d in_reconfig %d\n",
+		f->type, f->fmt.pix_mp.width, f->fmt.pix_mp.height,
 		f->fmt.pix_mp.pixelformat, f->fmt.pix_mp.num_planes,
 		f->fmt.pix_mp.plane_fmt[0].sizeimage,
 		f->fmt.pix_mp.plane_fmt[1].sizeimage, inst->in_reconfig);
@@ -248,9 +247,8 @@ int msm_vidc_reqbufs(void *instance, struct v4l2_requestbuffers *b)
 		return -EINVAL;
 	q = msm_comm_get_vb2q(inst, b->type);
 	if (!q) {
-		dprintk(VIDC_ERR,
-			"Failed to find buffer queue for type = %d\n",
-				b->type);
+		s_vpr_e(inst->sid,
+			"Failed to find buffer queue. type %d\n", b->type);
 		return -EINVAL;
 	}
 
@@ -259,7 +257,7 @@ int msm_vidc_reqbufs(void *instance, struct v4l2_requestbuffers *b)
 	mutex_unlock(&q->lock);
 
 	if (rc)
-		dprintk(VIDC_ERR, "Failed to get reqbufs, %d\n", rc);
+		s_vpr_e(inst->sid, "Failed to get reqbufs, %d\n", rc);
 	return rc;
 }
 EXPORT_SYMBOL(msm_vidc_reqbufs);
@@ -286,7 +284,7 @@ int msm_vidc_release_buffer(void *instance, int type, unsigned int index)
 	struct msm_vidc_buffer *mbuf, *dummy;
 
 	if (!inst) {
-		dprintk(VIDC_ERR, "%s: invalid inst\n", __func__);
+		d_vpr_e("%s: invalid inst\n", __func__);
 		return -EINVAL;
 	}
 
@@ -295,9 +293,9 @@ int msm_vidc_release_buffer(void *instance, int type, unsigned int index)
 		inst->state < MSM_VIDC_RELEASE_RESOURCES_DONE) {
 		rc = msm_comm_try_state(inst, MSM_VIDC_RELEASE_RESOURCES_DONE);
 		if (rc) {
-			dprintk(VIDC_ERR,
+			s_vpr_e(inst->sid,
 				"%s: Failed to move inst: %pK to rel res done\n",
-					__func__, inst);
+				__func__, inst);
 		}
 	}
 
@@ -336,21 +334,20 @@ int msm_vidc_qbuf(void *instance, struct v4l2_buffer *b)
 	u32 cr = 0;
 
 	if (!inst || !inst->core || !b || !valid_v4l2_buffer(b, inst)) {
-		dprintk(VIDC_ERR, "%s: invalid params, inst %pK\n",
-			__func__, inst);
+		d_vpr_e("%s: invalid params %pK %pK\n", __func__, inst, b);
 		return -EINVAL;
 	}
 
 	if (!IS_ALIGNED(b->m.planes[0].length, SZ_4K)) {
-		dprintk(VIDC_ERR, "qbuf: %x: buffer size not 4K aligned - %u\n",
-			hash32_ptr(inst->session), b->m.planes[0].length);
+		s_vpr_e(inst->sid, "qbuf: buffer size not 4K aligned - %u\n",
+			b->m.planes[0].length);
 		return -EINVAL;
 	}
 
 	if ((inst->out_flush && b->type == OUTPUT_MPLANE) || inst->in_flush) {
-		dprintk(VIDC_ERR,
-			"%s: %x: in flush, discarding qbuf, type %u, index %u\n",
-			__func__, hash32_ptr(inst->session), b->type, b->index);
+		s_vpr_e(inst->sid,
+			"%s: in flush, discarding qbuf, type %u, index %u\n",
+			__func__, b->type, b->index);
 		return -EINVAL;
 	}
 
@@ -370,19 +367,18 @@ int msm_vidc_qbuf(void *instance, struct v4l2_buffer *b)
 		client_data = msm_comm_store_client_data(inst,
 			b->m.planes[0].reserved[3]);
 		if (!client_data) {
-			dprintk(VIDC_ERR,
-				"%s: %x: failed to store client data\n",
-				__func__, hash32_ptr(inst->session));
+			s_vpr_e(inst->sid,
+				"%s: failed to store client data\n", __func__);
 			return -EINVAL;
 		}
 		msm_comm_store_input_tag(&inst->etb_data, b->index,
-			client_data->id, 0);
+			client_data->id, 0, inst->sid);
 	}
 
 	q = msm_comm_get_vb2q(inst, b->type);
 	if (!q) {
-		dprintk(VIDC_ERR,
-			"Failed to find buffer queue for type = %d\n", b->type);
+		s_vpr_e(inst->sid,
+			"Failed to find buffer queue. type %d\n", b->type);
 		return -EINVAL;
 	}
 
@@ -390,7 +386,7 @@ int msm_vidc_qbuf(void *instance, struct v4l2_buffer *b)
 	rc = vb2_qbuf(&q->vb2_bufq, b);
 	mutex_unlock(&q->lock);
 	if (rc)
-		dprintk(VIDC_ERR, "Failed to qbuf, %d\n", rc);
+		s_vpr_e(inst->sid, "Failed to qbuf, %d\n", rc);
 
 	return rc;
 }
@@ -406,15 +402,15 @@ int msm_vidc_dqbuf(void *instance, struct v4l2_buffer *b)
 	bool remove;
 
 	if (!inst || !b || !valid_v4l2_buffer(b, inst)) {
-		dprintk(VIDC_ERR, "%s: invalid params, inst %pK\n",
-			__func__, inst);
+		d_vpr_e("%s: invalid params, %pK %pK\n",
+			__func__, inst, b);
 		return -EINVAL;
 	}
 
 	q = msm_comm_get_vb2q(inst, b->type);
 	if (!q) {
-		dprintk(VIDC_ERR,
-			"Failed to find buffer queue for type = %d\n", b->type);
+		s_vpr_e(inst->sid, "Failed to find buffer queue. type %d\n",
+			b->type);
 		return -EINVAL;
 	}
 
@@ -424,7 +420,7 @@ int msm_vidc_dqbuf(void *instance, struct v4l2_buffer *b)
 	if (rc == -EAGAIN) {
 		return rc;
 	} else if (rc) {
-		dprintk(VIDC_ERR, "Failed to dqbuf, %d\n", rc);
+		s_vpr_e(inst->sid, "Failed to dqbuf, %d\n", rc);
 		return rc;
 	}
 
@@ -443,9 +439,9 @@ int msm_vidc_dqbuf(void *instance, struct v4l2_buffer *b)
 	if (b->type == OUTPUT_MPLANE && !inst->in_flush &&
 			!inst->out_flush && inst->clk_data.buffer_counter) {
 		rc = msm_comm_fetch_input_tag(&inst->fbd_data, b->index,
-				&input_tag, &input_tag2);
+				&input_tag, &input_tag2, inst->sid);
 		if (rc) {
-			dprintk(VIDC_ERR, "Failed to fetch input tag");
+			s_vpr_e(inst->sid, "Failed to fetch input tag");
 			return -EINVAL;
 		}
 		/**
@@ -477,16 +473,15 @@ int msm_vidc_streamon(void *instance, enum v4l2_buf_type i)
 
 	q = msm_comm_get_vb2q(inst, i);
 	if (!q) {
-		dprintk(VIDC_ERR,
-			"Failed to find buffer queue for type = %d\n", i);
+		d_vpr_e("Failed to find buffer queue. type %d\n", i);
 		return -EINVAL;
 	}
-	dprintk(VIDC_HIGH, "Calling streamon\n");
+	s_vpr_h(inst->sid, "Calling streamon\n");
 	mutex_lock(&q->lock);
 	rc = vb2_streamon(&q->vb2_bufq, i);
 	mutex_unlock(&q->lock);
 	if (rc) {
-		dprintk(VIDC_ERR, "streamon failed on port: %d\n", i);
+		s_vpr_e(inst->sid, "streamon failed on port: %d\n", i);
 		msm_comm_kill_session(inst);
 	}
 	return rc;
@@ -504,27 +499,26 @@ int msm_vidc_streamoff(void *instance, enum v4l2_buf_type i)
 
 	q = msm_comm_get_vb2q(inst, i);
 	if (!q) {
-		dprintk(VIDC_ERR,
-			"Failed to find buffer queue for type = %d\n", i);
+		s_vpr_e(inst->sid, "Failed to find buffer queue. type %d\n", i);
 		return -EINVAL;
 	}
 
 	if (!inst->in_reconfig) {
-		dprintk(VIDC_HIGH, "%s: inst %pK release resources\n",
+		s_vpr_h(inst->sid, "%s: inst %pK release resources\n",
 			__func__, inst);
 		rc = msm_comm_try_state(inst, MSM_VIDC_RELEASE_RESOURCES_DONE);
 		if (rc)
-			dprintk(VIDC_ERR,
+			s_vpr_e(inst->sid,
 				"%s: inst %pK move to rel res done failed\n",
 				__func__, inst);
 	}
 
-	dprintk(VIDC_HIGH, "Calling streamoff\n");
+	s_vpr_h(inst->sid, "Calling streamoff\n");
 	mutex_lock(&q->lock);
 	rc = vb2_streamoff(&q->vb2_bufq, i);
 	mutex_unlock(&q->lock);
 	if (rc)
-		dprintk(VIDC_ERR, "streamoff failed on port: %d\n", i);
+		s_vpr_e(inst->sid, "streamoff failed on port: %d\n", i);
 	return rc;
 }
 EXPORT_SYMBOL(msm_vidc_streamoff);
@@ -535,7 +529,7 @@ int msm_vidc_enum_framesizes(void *instance, struct v4l2_frmsizeenum *fsize)
 	struct msm_vidc_capability *capability = NULL;
 
 	if (!inst || !fsize) {
-		dprintk(VIDC_ERR, "%s: invalid parameter: %pK %pK\n",
+		d_vpr_e("%s: invalid parameter: %pK %pK\n",
 				__func__, inst, fsize);
 		return -EINVAL;
 	}
@@ -578,35 +572,33 @@ static void msm_vidc_cleanup_buffer(struct vb2_buffer *vb)
 	struct msm_vidc_inst *inst = NULL;
 
 	if (!vb) {
-		dprintk(VIDC_ERR, "%s : Invalid vb pointer %pK",
-			__func__, vb);
+		d_vpr_e("%s: Invalid vb pointer", __func__);
 		return;
 	}
 
 	inst = vb2_get_drv_priv(vb->vb2_queue);
 	if (!inst) {
-		dprintk(VIDC_ERR, "%s : Invalid inst pointer",
-			__func__);
+		d_vpr_e("%s: Invalid inst pointer", __func__);
 		return;
 	}
 
 	q = msm_comm_get_vb2q(inst, vb->type);
 	if (!q) {
-		dprintk(VIDC_ERR,
-			"%s : Failed to find buffer queue for type = %d\n",
+		s_vpr_e(inst->sid,
+			"%s: Failed to find buffer queue. type %d\n",
 			__func__, vb->type);
 		return;
 	}
 
 	if (q->vb2_bufq.streaming) {
-		dprintk(VIDC_HIGH, "%d PORT is streaming\n",
+		s_vpr_h(inst->sid, "%d PORT is streaming\n",
 			vb->type);
 		return;
 	}
 
 	rc = msm_vidc_release_buffer(inst, vb->type, vb->index);
 	if (rc)
-		dprintk(VIDC_ERR, "%s : Failed to release buffers : %d\n",
+		s_vpr_e(inst->sid, "%s: Failed to release buffers: %d\n",
 			__func__, rc);
 }
 
@@ -622,14 +614,13 @@ static int msm_vidc_queue_setup(struct vb2_queue *q,
 
 	if (!q || !num_buffers || !num_planes
 		|| !sizes || !q->drv_priv) {
-		dprintk(VIDC_ERR, "Invalid input, q = %pK, %pK, %pK\n",
+		d_vpr_e("Invalid input, q = %pK, %pK, %pK\n",
 			q, num_buffers, num_planes);
 		return -EINVAL;
 	}
 	inst = q->drv_priv;
-
 	if (!inst || !inst->core || !inst->core->device) {
-		dprintk(VIDC_ERR, "%s invalid parameters\n", __func__);
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
 		return -EINVAL;
 	}
 
@@ -637,7 +628,7 @@ static int msm_vidc_queue_setup(struct vb2_queue *q,
 	case INPUT_MPLANE: {
 		fmt = &inst->fmts[INPUT_PORT];
 		if (*num_buffers < fmt->count_min_host) {
-			dprintk(VIDC_HIGH,
+			s_vpr_h(inst->sid,
 				"Client passed num buffers %d less than the min_host count %d\n",
 				*num_buffers, fmt->count_min_host);
 		}
@@ -658,7 +649,7 @@ static int msm_vidc_queue_setup(struct vb2_queue *q,
 		if (inst->session_type != MSM_VIDC_DECODER &&
 			inst->state > MSM_VIDC_LOAD_RESOURCES_DONE) {
 			if (*num_buffers < fmt->count_min_host) {
-				dprintk(VIDC_HIGH,
+				s_vpr_h(inst->sid,
 					"Client passed num buffers %d less than the min_host count %d\n",
 						*num_buffers,
 						fmt->count_min_host);
@@ -678,15 +669,14 @@ static int msm_vidc_queue_setup(struct vb2_queue *q,
 		}
 		break;
 	default:
-		dprintk(VIDC_ERR, "Invalid q type = %d\n", q->type);
+		s_vpr_e(inst->sid, "Invalid q type = %d\n", q->type);
 		rc = -EINVAL;
 		break;
 	}
 
-	dprintk(VIDC_HIGH,
-		"queue_setup: %x : type %d num_buffers %d num_planes %d sizes[0] %d sizes[1] %d\n",
-		hash32_ptr(inst->session), q->type, *num_buffers,
-		*num_planes, sizes[0], sizes[1]);
+	s_vpr_h(inst->sid,
+		"queue_setup:type %d num_buffers %d num_planes %d sizes[0] %d sizes[1] %d\n",
+		q->type, *num_buffers, *num_planes, sizes[0], sizes[1]);
 	return rc;
 }
 
@@ -698,8 +688,7 @@ static inline int msm_vidc_verify_buffer_counts(struct msm_vidc_inst *inst)
 	if (inst->session_type == MSM_VIDC_DECODER &&
 			(inst->state < MSM_VIDC_LOAD_RESOURCES_DONE ||
 			inst->state >= MSM_VIDC_RELEASE_RESOURCES_DONE)) {
-		dprintk(VIDC_HIGH,
-			"No need to verify buffer counts : %pK\n", inst);
+		s_vpr_h(inst->sid, "No need to verify buffer counts\n");
 		return 0;
 	}
 
@@ -707,23 +696,20 @@ static inline int msm_vidc_verify_buffer_counts(struct msm_vidc_inst *inst)
 		struct hal_buffer_requirements *req = &inst->buff_req.buffer[i];
 
 		if (req && (req->buffer_type == HAL_BUFFER_OUTPUT)) {
-			dprintk(VIDC_HIGH, "Verifying Buffer : %d\n",
+			s_vpr_h(inst->sid, "Verifying Buffer : %d\n",
 				req->buffer_type);
 			if (req->buffer_count_actual <
 					req->buffer_count_min_host ||
 				req->buffer_count_min_host <
 					req->buffer_count_min) {
 
-				dprintk(VIDC_ERR,
-					"Invalid data : Counts mismatch\n");
-				dprintk(VIDC_ERR,
-					"Min Count = %d ",
+				s_vpr_e(inst->sid,
+						"Invalid data : Counts mismatch\n");
+				s_vpr_e(inst->sid, "Min Count = %d ",
 						req->buffer_count_min);
-				dprintk(VIDC_ERR,
-					"Min Host Count = %d ",
+				s_vpr_e(inst->sid, "Min Host Count = %d ",
 						req->buffer_count_min_host);
-				dprintk(VIDC_ERR,
-					"Min Actual Count = %d\n",
+				s_vpr_e(inst->sid, "Min Actual Count = %d\n",
 						req->buffer_count_actual);
 				rc = -EINVAL;
 				break;
@@ -753,7 +739,7 @@ bool is_vidc_cvp_allowed(struct msm_vidc_inst *inst)
 	struct v4l2_ctrl *superframe_enable;
 
 	if (!inst || !inst->core) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
 		goto exit;
 	}
 	core = inst->core;
@@ -782,10 +768,10 @@ bool is_vidc_cvp_allowed(struct msm_vidc_inst *inst)
 		!inst->clk_data.is_legacy_cbr &&
 		!is_secure_session(inst) &&
 		!superframe_enable->val) {
-		dprintk(VIDC_HIGH, "%s: cvp allowed\n", __func__);
+		s_vpr_h(inst->sid, "%s: cvp allowed\n", __func__);
 		allowed = true;
 	} else {
-		dprintk(VIDC_HIGH,
+		s_vpr_h(inst->sid,
 			"%s: cvp not allowed, cvp_external %d cvp_disable %d extradata %#x rc_type %d legacy_cbr %d secure %d superframe %d\n",
 			__func__, core->resources.cvp_external,
 			cvp_disable->val, inst->prop.extradata_ctrls,
@@ -802,26 +788,26 @@ static int msm_vidc_prepare_preprocess(struct msm_vidc_inst *inst)
 	int rc = 0;
 
 	if (!inst) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params\n", __func__);
 		return -EINVAL;
 	}
 
 	if (!msm_vidc_cvp_usage) {
-		dprintk(VIDC_HIGH, "%s: cvp usage disabled\n", __func__);
+		s_vpr_h(inst->sid, "%s: cvp usage disabled\n", __func__);
 		return 0;
 	}
 
 	if (!is_vidc_cvp_allowed(inst)) {
-		dprintk(VIDC_HIGH, "%s: cvp not allowed\n", __func__);
+		s_vpr_h(inst->sid, "%s: cvp not allowed\n", __func__);
 		return 0;
 	}
 
 	rc = msm_vidc_cvp_prepare_preprocess(inst);
 	if (rc) {
-		dprintk(VIDC_ERR, "%s: no cvp preprocessing\n", __func__);
+		s_vpr_e(inst->sid, "%s: no cvp preprocessing\n", __func__);
 		goto exit;
 	}
-	dprintk(VIDC_HIGH, "%s: kernel to kernel cvp enabled\n", __func__);
+	s_vpr_h(inst->sid, "%s: kernel to kernel cvp enabled\n", __func__);
 	inst->prop.extradata_ctrls |= EXTRADATA_ENC_INPUT_KK_CVP;
 
 exit:
@@ -836,7 +822,7 @@ static bool msm_vidc_set_cvp_metadata(struct msm_vidc_inst *inst) {
 	u32 value = 0x0;
 
 	if (!inst) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params\n", __func__);
 		return false;
 	}
 
@@ -844,12 +830,11 @@ static bool msm_vidc_set_cvp_metadata(struct msm_vidc_inst *inst) {
 	    (inst->prop.extradata_ctrls & EXTRADATA_ENC_INPUT_KK_CVP))
 	    value = 0x1;
 
-	dprintk(VIDC_HIGH, "%s: CVP extradata %d\n", __func__, value);
+	s_vpr_h(inst->sid, "%s: CVP extradata %d\n", __func__, value);
 	rc = msm_comm_set_extradata(inst,
 		HFI_PROPERTY_PARAM_VENC_CVP_METADATA_EXTRADATA, value);
 	if (rc) {
-		dprintk(VIDC_ERR,
-			"%s: set CVP extradata failed\n", __func__);
+		s_vpr_e(inst->sid, "%s: set CVP extradata failed\n", __func__);
 		return false;
 	}
 	return true;
@@ -862,21 +847,19 @@ static inline int start_streaming(struct msm_vidc_inst *inst)
 	struct hfi_buffer_size_minimum b;
 	struct v4l2_format *f;
 
-	dprintk(VIDC_HIGH, "%s: %x : inst %pK\n", __func__,
-		hash32_ptr(inst->session), inst);
+	s_vpr_h(inst->sid, "%s: inst %pK\n", __func__, inst);
 	hdev = inst->core->device;
 
 	rc = msm_vidc_set_properties(inst);
 	if (rc) {
-		dprintk(VIDC_ERR, "%s: %x: set props failed\n",
-			__func__, hash32_ptr(inst->session));
+		s_vpr_e(inst->sid, "%s: set props failed\n", __func__);
 		goto fail_start;
 	}
 
 	if (is_encode_session(inst)) {
 		rc = msm_vidc_prepare_preprocess(inst);
 		if (rc) {
-			dprintk(VIDC_ERR, "%s: no preprocessing\n", __func__);
+			s_vpr_e(inst->sid, "%s: no preprocessing\n", __func__);
 			/* ignore error */
 			rc = 0;
 		}
@@ -892,38 +875,34 @@ static inline int start_streaming(struct msm_vidc_inst *inst)
 	/* Check if current session is under HW capability */
 	rc = msm_vidc_check_session_supported(inst);
 	if (rc) {
-		dprintk(VIDC_ERR,
-			"This session is not supported %pK\n", inst);
+		s_vpr_e(inst->sid, "This session is not supported\n");
 		goto fail_start;
 	}
 
 	rc = msm_vidc_check_scaling_supported(inst);
 	if (rc) {
-		dprintk(VIDC_ERR,
-			"This session scaling is not supported %pK\n", inst);
+		s_vpr_e(inst->sid, "scaling is not supported\n");
 		goto fail_start;
 	}
 
 	/* Decide work mode for current session */
 	rc = call_core_op(inst->core, decide_work_mode, inst);
 	if (rc) {
-		dprintk(VIDC_ERR,
-			"Failed to decide work mode for session %pK\n", inst);
+		s_vpr_e(inst->sid, "Failed to decide work mode\n");
 		goto fail_start;
 	}
 
 	/* Decide work route for current session */
 	rc = call_core_op(inst->core, decide_work_route, inst);
 	if (rc) {
-		dprintk(VIDC_ERR,
-			"Failed to decide work route for session %pK\n", inst);
+		s_vpr_e(inst->sid, "Failed to decide work route\n");
 		goto fail_start;
 	}
 
 	/* Assign Core and LP mode for current session */
 	rc = call_core_op(inst->core, decide_core_and_power_mode, inst);
 	if (rc) {
-		dprintk(VIDC_ERR,
+		s_vpr_e(inst->sid,
 			"This session can't be submitted to HW %pK\n", inst);
 		goto fail_start;
 	}
@@ -939,28 +918,25 @@ static inline int start_streaming(struct msm_vidc_inst *inst)
 	/* Verify if buffer counts are correct */
 	rc = msm_vidc_verify_buffer_counts(inst);
 	if (rc) {
-		dprintk(VIDC_ERR,
+		s_vpr_e(inst->sid,
 			"This session has mis-match buffer counts%pK\n", inst);
 		goto fail_start;
 	}
 
 	rc = msm_comm_set_scratch_buffers(inst);
 	if (rc) {
-		dprintk(VIDC_ERR,
-				"Failed to set scratch buffers: %d\n", rc);
+		s_vpr_e(inst->sid, "Failed to set scratch buffers: %d\n", rc);
 		goto fail_start;
 	}
 	rc = msm_comm_set_persist_buffers(inst);
 	if (rc) {
-		dprintk(VIDC_ERR,
-				"Failed to set persist buffers: %d\n", rc);
+		s_vpr_e(inst->sid, "Failed to set persist buffers: %d\n", rc);
 		goto fail_start;
 	}
 
 	rc = msm_comm_set_recon_buffers(inst);
 	if (rc) {
-		dprintk(VIDC_ERR,
-				"Failed to set recon buffers: %d\n", rc);
+		s_vpr_e(inst->sid, "Failed to set recon buffers: %d\n", rc);
 		goto fail_start;
 	}
 
@@ -968,7 +944,7 @@ static inline int start_streaming(struct msm_vidc_inst *inst)
 			HAL_VIDEO_DECODER_SECONDARY) {
 		rc = msm_comm_set_dpb_only_buffers(inst);
 		if (rc) {
-			dprintk(VIDC_ERR,
+			s_vpr_e(inst->sid,
 				"Failed to set output buffers: %d\n", rc);
 			goto fail_start;
 		}
@@ -983,9 +959,8 @@ static inline int start_streaming(struct msm_vidc_inst *inst)
 	 */
 	if (inst->batch.enable)
 		inst->batch.enable = is_batching_allowed(inst);
-	dprintk(VIDC_HIGH|VIDC_PERF, "%s: batching %s for inst %pK (%#x)\n",
-		__func__, inst->batch.enable ? "enabled" : "disabled",
-		inst, hash32_ptr(inst->session));
+	s_vpr_hp(inst->sid, "%s: batching %s for inst %pK\n",
+		__func__, inst->batch.enable ? "enabled" : "disabled", inst);
 
 	msm_dcvs_try_enable(inst);
 
@@ -1007,7 +982,7 @@ static inline int start_streaming(struct msm_vidc_inst *inst)
 
 	rc = msm_comm_try_state(inst, MSM_VIDC_START_DONE);
 	if (rc) {
-		dprintk(VIDC_ERR,
+		s_vpr_e(inst->sid,
 			"Failed to move inst: %pK to start done state\n", inst);
 		goto fail_start;
 	}
@@ -1018,7 +993,7 @@ static inline int start_streaming(struct msm_vidc_inst *inst)
 			HAL_VIDEO_DECODER_SECONDARY) {
 		rc = msm_comm_queue_dpb_only_buffers(inst);
 		if (rc) {
-			dprintk(VIDC_ERR,
+			s_vpr_e(inst->sid,
 				"Failed to queue output buffers: %d\n", rc);
 			goto fail_start;
 		}
@@ -1026,8 +1001,8 @@ static inline int start_streaming(struct msm_vidc_inst *inst)
 
 fail_start:
 	if (rc)
-		dprintk(VIDC_ERR, "%s: inst %pK session %x failed to start\n",
-			__func__, inst, hash32_ptr(inst->session));
+		s_vpr_e(inst->sid, "%s: inst %pK failed to start\n",
+			__func__, inst);
 	return rc;
 }
 
@@ -1038,16 +1013,16 @@ static int msm_vidc_start_streaming(struct vb2_queue *q, unsigned int count)
 	struct hfi_device *hdev;
 
 	if (!q || !q->drv_priv) {
-		dprintk(VIDC_ERR, "Invalid input, q = %pK\n", q);
+		d_vpr_e("Invalid input, q = %pK\n", q);
 		return -EINVAL;
 	}
 	inst = q->drv_priv;
 	if (!inst || !inst->core || !inst->core->device) {
-		dprintk(VIDC_ERR, "%s invalid parameters\n", __func__);
+		d_vpr_e("%s: invalid parameters\n", __func__);
 		return -EINVAL;
 	}
 	hdev = inst->core->device;
-	dprintk(VIDC_HIGH, "Streamon called on: %d capability for inst: %pK\n",
+	s_vpr_h(inst->sid, "Streamon called on: %d capability for inst: %pK\n",
 		q->type, inst);
 	switch (q->type) {
 	case INPUT_MPLANE:
@@ -1059,30 +1034,28 @@ static int msm_vidc_start_streaming(struct vb2_queue *q, unsigned int count)
 			rc = start_streaming(inst);
 		break;
 	default:
-		dprintk(VIDC_ERR, "Queue type is not supported: %d\n", q->type);
+		s_vpr_e(inst->sid,
+			"Queue type is not supported: %d\n", q->type);
 		rc = -EINVAL;
 		goto stream_start_failed;
 	}
 	if (rc) {
-		dprintk(VIDC_ERR,
-			"Streamon failed on: %d capability for inst: %pK\n",
+		s_vpr_e(inst->sid, "Streamon failed: %d, inst: %pK\n",
 			q->type, inst);
 		goto stream_start_failed;
 	}
 
 	rc = msm_comm_qbufs(inst);
 	if (rc) {
-		dprintk(VIDC_ERR,
-				"Failed to commit buffers queued before STREAM_ON to hardware: %d\n",
-				rc);
+		s_vpr_e(inst->sid,
+			"Failed to commit buffers queued before STREAM_ON: %d\n",
+			rc);
 		goto stream_start_failed;
 	}
 
 	rc = msm_vidc_send_pending_eos_buffers(inst);
 	if (rc) {
-		dprintk(VIDC_ERR,
-			"Failed : Send pending EOS buffs for Inst = %pK, %d\n",
-				inst, rc);
+		s_vpr_e(inst->sid, "Failed : Send pending EOS: %d\n", rc);
 		goto stream_start_failed;
 	}
 
@@ -1103,8 +1076,7 @@ stream_start_failed:
 			list_for_each_entry(vb, &q->queued_list, queued_entry) {
 				if (msm_comm_compare_vb2_planes(inst, temp,
 						vb)) {
-					print_vb2_buffer(VIDC_ERR, "return vb",
-						inst, vb);
+					print_vb2_buffer("return vb", inst, vb);
 					vb2_buffer_done(vb,
 						VB2_BUF_STATE_QUEUED);
 					break;
@@ -1124,7 +1096,7 @@ static int msm_vidc_unprepare_preprocess(struct msm_vidc_inst *inst)
 	int rc = 0;
 
 	if (!inst) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params\n", __func__);
 		return -EINVAL;
 	}
 
@@ -1133,9 +1105,7 @@ static int msm_vidc_unprepare_preprocess(struct msm_vidc_inst *inst)
 
 	rc = msm_vidc_cvp_unprepare_preprocess(inst);
 	if (rc)
-		dprintk(VIDC_ERR,
-			"%s: cvp unprepare preprocess failed with rc %d\n",
-			__func__, rc);
+		s_vpr_e(inst->sid, "%s: failed rc %d\n", __func__, rc);
 
 	return rc;
 }
@@ -1144,19 +1114,21 @@ static inline int stop_streaming(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
 
-	dprintk(VIDC_HIGH, "%s: %x : inst %pK\n", __func__,
-		hash32_ptr(inst->session), inst);
+	if (!inst) {
+		d_vpr_e("%s: invalid params\n", __func__);
+		return -EINVAL;
+	}
+	s_vpr_h(inst->sid, "%s: inst %pK\n", __func__, inst);
 
 	rc = msm_comm_try_state(inst, MSM_VIDC_RELEASE_RESOURCES_DONE);
 	if (rc)
-		dprintk(VIDC_ERR,
-			"Failed to move inst: %pK to state %d\n",
+		s_vpr_e(inst->sid, "Failed to move inst: %pK to state %d\n",
 				inst, MSM_VIDC_RELEASE_RESOURCES_DONE);
 
 	if (is_encode_session(inst)) {
 		rc = msm_vidc_unprepare_preprocess(inst);
 		if (rc)
-			dprintk(VIDC_ERR,
+			s_vpr_e(inst->sid,
 				"%s: failed to unprepare preprocess\n",
 				__func__);
 		inst->all_intra = false;
@@ -1173,12 +1145,12 @@ static void msm_vidc_stop_streaming(struct vb2_queue *q)
 	int rc = 0;
 
 	if (!q || !q->drv_priv) {
-		dprintk(VIDC_ERR, "Invalid input, q = %pK\n", q);
+		d_vpr_e("Invalid input, q = %pK\n", q);
 		return;
 	}
 
 	inst = q->drv_priv;
-	dprintk(VIDC_HIGH, "Streamoff called on: %d capability\n", q->type);
+	s_vpr_h(inst->sid, "Streamoff called on: %d capability\n", q->type);
 	switch (q->type) {
 	case INPUT_MPLANE:
 		if (!inst->bufq[OUTPUT_PORT].vb2_bufq.streaming)
@@ -1189,8 +1161,7 @@ static void msm_vidc_stop_streaming(struct vb2_queue *q)
 			rc = stop_streaming(inst);
 		break;
 	default:
-		dprintk(VIDC_ERR,
-			"Q-type is not supported: %d\n", q->type);
+		s_vpr_e(inst->sid, "Q-type is not supported: %d\n", q->type);
 		rc = -EINVAL;
 		break;
 	}
@@ -1198,7 +1169,7 @@ static void msm_vidc_stop_streaming(struct vb2_queue *q)
 	msm_comm_scale_clocks_and_bus(inst, 1);
 
 	if (rc)
-		dprintk(VIDC_ERR,
+		s_vpr_e(inst->sid,
 			"Failed STOP Streaming inst = %pK on cap = %d\n",
 			inst, q->type);
 }
@@ -1210,7 +1181,8 @@ static int msm_vidc_queue_buf(struct msm_vidc_inst *inst,
 	struct msm_vidc_buffer *mbuf;
 
 	if (!inst || !vb2) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK, %pK\n",
+			__func__, inst, vb2);
 		return -EINVAL;
 	}
 
@@ -1223,16 +1195,16 @@ static int msm_vidc_queue_buf(struct msm_vidc_inst *inst,
 		 */
 		if (PTR_ERR(mbuf) == -EEXIST)
 			return 0;
-		dprintk(VIDC_ERR, "%s: failed to get vidc-buf\n", __func__);
+		s_vpr_e(inst->sid, "%s: failed to get vidc-buf\n", __func__);
 		return -EINVAL;
 	}
 	if (!kref_get_mbuf(inst, mbuf)) {
-		dprintk(VIDC_ERR, "%s: mbuf not found\n", __func__);
+		s_vpr_e(inst->sid, "%s: mbuf not found\n", __func__);
 		return -EINVAL;
 	}
 	rc = msm_comm_qbuf(inst, mbuf);
 	if (rc)
-		dprintk(VIDC_ERR, "%s: failed qbuf\n", __func__);
+		s_vpr_e(inst->sid, "%s: failed qbuf\n", __func__);
 	kref_put_mbuf(mbuf);
 
 	return rc;
@@ -1245,17 +1217,18 @@ static int msm_vidc_queue_buf_decode_batch(struct msm_vidc_inst *inst,
 	struct msm_vidc_buffer *mbuf;
 
 	if (!inst || !vb2) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK, %pK\n",
+			__func__, inst, vb2);
 		return -EINVAL;
 	}
 
 	mbuf = msm_comm_get_vidc_buffer(inst, vb2);
 	if (IS_ERR_OR_NULL(mbuf)) {
-		dprintk(VIDC_ERR, "%s: failed to get vidc-buf\n", __func__);
+		s_vpr_e(inst->sid, "%s: failed to get vidc-buf\n", __func__);
 		return -EINVAL;
 	}
 	if (!kref_get_mbuf(inst, mbuf)) {
-		dprintk(VIDC_ERR, "%s: mbuf not found\n", __func__);
+		s_vpr_e(inst->sid, "%s: mbuf not found\n", __func__);
 		return -EINVAL;
 	}
 	/*
@@ -1264,7 +1237,7 @@ static int msm_vidc_queue_buf_decode_batch(struct msm_vidc_inst *inst,
 	 */
 	rc = msm_comm_qbuf_decode_batch(inst, mbuf);
 	if (rc)
-		dprintk(VIDC_ERR, "%s: failed qbuf\n", __func__);
+		s_vpr_e(inst->sid, "%s: failed qbuf\n", __func__);
 	kref_put_mbuf(mbuf);
 
 	return rc;
@@ -1276,7 +1249,8 @@ static int msm_vidc_queue_buf_batch(struct msm_vidc_inst *inst,
 	int rc;
 
 	if (!inst || !vb2) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK, %pK\n",
+			__func__, inst, vb2);
 		return -EINVAL;
 	}
 
@@ -1296,7 +1270,7 @@ static void msm_vidc_buf_queue(struct vb2_buffer *vb2)
 
 	inst = vb2_get_drv_priv(vb2->vb2_queue);
 	if (!inst) {
-		dprintk(VIDC_ERR, "%s: invalid inst\n", __func__);
+		d_vpr_e("%s: invalid inst\n", __func__);
 		return;
 	}
 
@@ -1306,7 +1280,7 @@ static void msm_vidc_buf_queue(struct vb2_buffer *vb2)
 		rc = msm_vidc_queue_buf(inst, vb2);
 
 	if (rc) {
-		print_vb2_buffer(VIDC_ERR, "failed vb2-qbuf", inst, vb2);
+		print_vb2_buffer("failed vb2-qbuf", inst, vb2);
 		msm_comm_generate_session_error(inst);
 	}
 }
@@ -1329,7 +1303,7 @@ static inline int vb2_bufq_init(struct msm_vidc_inst *inst,
 	} else if (type == INPUT_MPLANE) {
 		q = &inst->bufq[INPUT_PORT].vb2_bufq;
 	} else {
-		dprintk(VIDC_ERR, "buf_type = %d not recognised\n", type);
+		s_vpr_e(inst->sid, "buf_type = %d not recognised\n", type);
 		return -EINVAL;
 	}
 
@@ -1404,21 +1378,20 @@ int msm_vidc_private(void *vidc_inst, unsigned int cmd,
 	int rc = 0;
 	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)vidc_inst;
 
+	if (!inst || !arg) {
+		d_vpr_e("%s: invalid args\n", __func__);
+		return -EINVAL;
+	}
 	if (cmd != VIDIOC_VIDEO_CMD) {
-		dprintk(VIDC_ERR,
+		s_vpr_e(inst->sid,
 			"%s: invalid private cmd %#x\n", __func__, cmd);
 		return -ENOIOCTLCMD;
-	}
-
-	if (!inst || !arg) {
-		dprintk(VIDC_ERR, "%s: invalid args\n", __func__);
-		return -EINVAL;
 	}
 
 	if (inst->session_type == MSM_VIDC_CVP) {
 		rc = msm_vidc_cvp(inst, arg);
 	} else {
-		dprintk(VIDC_ERR,
+		s_vpr_e(inst->sid,
 			"%s: private cmd %#x not supported for session_type %d\n",
 			__func__, cmd, inst->session_type);
 		rc = -EINVAL;
@@ -1447,22 +1420,22 @@ static int msm_vidc_op_s_ctrl(struct v4l2_ctrl *ctrl)
 	const char *ctrl_name = NULL;
 
 	if (!ctrl) {
-		dprintk(VIDC_ERR, "%s invalid parameters for ctrl\n", __func__);
+		d_vpr_e("%s: invalid parameters for ctrl\n", __func__);
 		return -EINVAL;
 	}
 
 	inst = container_of(ctrl->handler,
 		struct msm_vidc_inst, ctrl_handler);
 	if (!inst) {
-		dprintk(VIDC_ERR, "%s invalid parameters for inst\n", __func__);
+		d_vpr_e("%s: invalid parameters for inst\n", __func__);
 		return -EINVAL;
 	}
 
 	rc = msm_vidc_try_set_ctrl(inst, ctrl);
 	if (rc) {
-		dprintk(VIDC_ERR, "Failed setting %x\n", ctrl->id);
+		s_vpr_e(inst->sid, "Failed setting %x\n", ctrl->id);
 		ctrl_name = v4l2_ctrl_get_name(ctrl->id);
-		dprintk(VIDC_ERR, "Failed setting control: Inst = %pK (%s)\n",
+		s_vpr_e(inst->sid, "Failed setting control: Inst = %pK (%s)\n",
 			inst, ctrl_name ? ctrl_name : "Invalid ctrl");
 	}
 
@@ -1478,38 +1451,37 @@ static int try_get_ctrl_for_instance(struct msm_vidc_inst *inst,
 	case V4L2_CID_MPEG_VIDEO_H264_PROFILE:
 		ctrl->val = msm_comm_hfi_to_v4l2(
 			V4L2_CID_MPEG_VIDEO_H264_PROFILE,
-			inst->profile);
+			inst->profile, inst->sid);
 		break;
 	case V4L2_CID_MPEG_VIDEO_HEVC_PROFILE:
 		ctrl->val = msm_comm_hfi_to_v4l2(
 			V4L2_CID_MPEG_VIDEO_HEVC_PROFILE,
-			inst->profile);
+			inst->profile, inst->sid);
 		break;
 	case V4L2_CID_MPEG_VIDEO_H264_LEVEL:
 		ctrl->val = msm_comm_hfi_to_v4l2(
 			V4L2_CID_MPEG_VIDEO_H264_LEVEL,
-			inst->level);
+			inst->level, inst->sid);
 		break;
 	case V4L2_CID_MPEG_VIDC_VIDEO_VP8_PROFILE_LEVEL:
 		ctrl->val = msm_comm_hfi_to_v4l2(
 			V4L2_CID_MPEG_VIDC_VIDEO_VP8_PROFILE_LEVEL,
-			inst->level);
+			inst->level, inst->sid);
 		break;
 	case V4L2_CID_MPEG_VIDEO_HEVC_LEVEL:
 		ctrl->val = msm_comm_hfi_to_v4l2(
 			V4L2_CID_MPEG_VIDEO_HEVC_LEVEL,
-			inst->level);
+			inst->level, inst->sid);
 		break;
 	case V4L2_CID_MIN_BUFFERS_FOR_CAPTURE:
 		ctrl->val = inst->fmts[OUTPUT_PORT].count_min_host;
-		dprintk(VIDC_HIGH, "g_min: %x : hal_buffer %d min buffers %d\n",
-			hash32_ptr(inst->session), HAL_BUFFER_OUTPUT,
-			ctrl->val);
+		s_vpr_h(inst->sid, "g_min: hal_buffer %d min buffers %d\n",
+			HAL_BUFFER_OUTPUT, ctrl->val);
 		break;
 	case V4L2_CID_MIN_BUFFERS_FOR_OUTPUT:
 		ctrl->val = inst->fmts[INPUT_PORT].count_min_host;
-		dprintk(VIDC_HIGH, "g_min: %x : hal_buffer %d min buffers %d\n",
-			hash32_ptr(inst->session), HAL_BUFFER_INPUT, ctrl->val);
+		s_vpr_h(inst->sid, "g_min: hal_buffer %d min buffers %d\n",
+			HAL_BUFFER_INPUT, ctrl->val);
 		break;
 	case V4L2_CID_MPEG_VIDC_VIDEO_EXTRADATA:
 		ctrl->val = inst->prop.extradata_ctrls;
@@ -1540,26 +1512,26 @@ void *msm_vidc_open(int core_id, int session_type)
 
 	if (core_id >= MSM_VIDC_CORES_MAX ||
 			session_type >= MSM_VIDC_MAX_DEVICES) {
-		dprintk(VIDC_ERR, "Invalid input, core_id = %d, session = %d\n",
+		d_vpr_e("Invalid input, core_id = %d, session = %d\n",
 			core_id, session_type);
 		goto err_invalid_core;
 	}
 	core = get_vidc_core(core_id);
 	if (!core) {
-		dprintk(VIDC_ERR,
-			"Failed to find core for core_id = %d\n", core_id);
+		d_vpr_e("Failed to find core for core_id = %d\n", core_id);
 		goto err_invalid_core;
 	}
 
 	inst = kzalloc(sizeof(*inst), GFP_KERNEL);
 	if (!inst) {
-		dprintk(VIDC_ERR, "Failed to allocate memory\n");
+		d_vpr_e("Failed to allocate memory\n");
 		rc = -ENOMEM;
 		goto err_invalid_core;
 	}
+	inst->sid = hash32_ptr(inst);
 
 	pr_info(VIDC_DBG_TAG "Opening video instance: %pK, %d\n",
-		"high", inst, session_type);
+		"high", inst->sid, inst, session_type);
 	mutex_init(&inst->sync_lock);
 	mutex_init(&inst->bufq[OUTPUT_PORT].lock);
 	mutex_init(&inst->bufq[INPUT_PORT].lock);
@@ -1614,19 +1586,19 @@ void *msm_vidc_open(int core_id, int session_type)
 		rc = msm_cvp_ctrl_init(inst, &msm_vidc_ctrl_ops);
 	}
 	if (rc) {
-		dprintk(VIDC_ERR, "Failed control initialization\n");
+		s_vpr_e(inst->sid, "Failed control initialization\n");
 		goto fail_bufq_capture;
 	}
 
 	rc = vb2_bufq_init(inst, OUTPUT_MPLANE, session_type);
 	if (rc) {
-		dprintk(VIDC_ERR,
+		s_vpr_e(inst->sid,
 			"Failed to initialize vb2 queue on capture port\n");
 		goto fail_bufq_capture;
 	}
 	rc = vb2_bufq_init(inst, INPUT_MPLANE, session_type);
 	if (rc) {
-		dprintk(VIDC_ERR,
+		s_vpr_e(inst->sid,
 			"Failed to initialize vb2 queue on capture port\n");
 		goto fail_bufq_output;
 	}
@@ -1639,13 +1611,13 @@ void *msm_vidc_open(int core_id, int session_type)
 
 	rc = msm_comm_try_state(inst, MSM_VIDC_CORE_INIT_DONE);
 	if (rc) {
-		dprintk(VIDC_ERR,
+		s_vpr_e(inst->sid,
 			"Failed to move video instance to init state\n");
 		goto fail_init;
 	}
 
 	if (msm_comm_check_for_inst_overload(core)) {
-		dprintk(VIDC_ERR,
+		s_vpr_e(inst->sid,
 			"Instance count reached Max limit, rejecting session");
 		goto fail_init;
 	}
@@ -1658,7 +1630,7 @@ void *msm_vidc_open(int core_id, int session_type)
 	if (inst->session_type == MSM_VIDC_CVP) {
 		rc = msm_comm_try_state(inst, MSM_VIDC_OPEN_DONE);
 		if (rc) {
-			dprintk(VIDC_ERR,
+			s_vpr_e(inst->sid,
 				"Failed to move video instance to open done state\n");
 			goto fail_init;
 		}
@@ -1712,7 +1684,7 @@ static void msm_vidc_cleanup_instance(struct msm_vidc_inst *inst)
 	int c = 0;
 
 	if (!inst) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params\n", __func__);
 		return;
 	}
 
@@ -1726,8 +1698,7 @@ static void msm_vidc_cleanup_instance(struct msm_vidc_inst *inst)
 					struct vb2_buffer, queued_entry);
 			if (vb->state == VB2_BUF_STATE_ACTIVE) {
 				vb->planes[0].bytesused = 0;
-				print_vb2_buffer(VIDC_ERR, "undequeud vb2",
-					inst, vb);
+				print_vb2_buffer("undequeud vb2", inst, vb);
 				vb2_buffer_done(vb, VB2_BUF_STATE_ERROR);
 			}
 		}
@@ -1749,20 +1720,16 @@ static void msm_vidc_cleanup_instance(struct msm_vidc_inst *inst)
 	msm_comm_free_input_cr_table(inst);
 
 	if (msm_comm_release_scratch_buffers(inst, false))
-		dprintk(VIDC_ERR,
-			"Failed to release scratch buffers\n");
+		s_vpr_e(inst->sid, "Failed to release scratch buffers\n");
 
 	if (msm_comm_release_recon_buffers(inst))
-		dprintk(VIDC_ERR,
-			"Failed to release recon buffers\n");
+		s_vpr_e(inst->sid, "Failed to release recon buffers\n");
 
 	if (msm_comm_release_persist_buffers(inst))
-		dprintk(VIDC_ERR,
-			"Failed to release persist buffers\n");
+		s_vpr_e(inst->sid, "Failed to release persist buffers\n");
 
 	if (msm_comm_release_input_tag(inst))
-		dprintk(VIDC_ERR,
-			"Failed to release input_tag buffers\n");
+		s_vpr_e(inst->sid, "Failed to release input_tag buffers\n");
 
 	msm_comm_release_client_data(inst, true);
 
@@ -1771,17 +1738,14 @@ static void msm_vidc_cleanup_instance(struct msm_vidc_inst *inst)
 	msm_comm_release_eos_buffers(inst);
 
 	if (msm_comm_release_dpb_only_buffers(inst, true))
-		dprintk(VIDC_ERR,
-			"Failed to release output buffers\n");
+		s_vpr_e(inst->sid, "Failed to release output buffers\n");
 
 	if (inst->extradata_handle)
 		msm_comm_smem_free(inst, inst->extradata_handle);
 
 	mutex_lock(&inst->pending_getpropq.lock);
 	if (!list_empty(&inst->pending_getpropq.list)) {
-		dprintk(VIDC_ERR,
-			"pending_getpropq not empty for instance %pK\n",
-			inst);
+		s_vpr_e(inst->sid, "pending_getpropq not empty\n");
 		list_for_each_entry_safe(temp_prop, dummy_prop,
 			&inst->pending_getpropq.list, list) {
 			kfree(temp_prop->data);
@@ -1798,7 +1762,7 @@ int msm_vidc_destroy(struct msm_vidc_inst *inst)
 	int i = 0;
 
 	if (!inst || !inst->core) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params\n", __func__);
 		return -EINVAL;
 	}
 
@@ -1839,7 +1803,7 @@ int msm_vidc_destroy(struct msm_vidc_inst *inst)
 	msm_vidc_debugfs_deinit_inst(inst);
 
 	pr_info(VIDC_DBG_TAG "Closed video instance: %pK\n",
-			"high", inst);
+			"high", inst->sid, inst);
 	kfree(inst);
 	return 0;
 }
@@ -1858,7 +1822,7 @@ int msm_vidc_close(void *instance)
 	int rc = 0;
 
 	if (!inst || !inst->core) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params\n", __func__);
 		return -EINVAL;
 	}
 
@@ -1868,9 +1832,7 @@ int msm_vidc_close(void *instance)
 	 */
 	rc = msm_comm_try_state(inst, MSM_VIDC_RELEASE_RESOURCES_DONE);
 	if (rc)
-		dprintk(VIDC_ERR,
-			"Failed to move inst %pK to rel resource done state\n",
-			inst);
+		s_vpr_e(inst->sid, "Failed: move to rel resource done state\n");
 
 	/*
 	 * deinit instance after REL_RES_DONE to ensure hardware
@@ -1887,7 +1849,7 @@ int msm_vidc_close(void *instance)
 
 	rc = msm_comm_try_state(inst, MSM_VIDC_CORE_UNINIT);
 	if (rc) {
-		dprintk(VIDC_ERR,
+		s_vpr_e(inst->sid,
 			"Failed to move inst %pK to uninit state\n", inst);
 		rc = msm_comm_force_cleanup(inst);
 	}

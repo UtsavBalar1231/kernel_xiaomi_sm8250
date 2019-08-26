@@ -224,7 +224,7 @@ int calc_bw_iris2(struct vidc_bus_vote_data *vidc_data);
 
 struct lut const *__lut(int width, int height, int fps);
 fp_t __compression_ratio(struct lut const *entry, int bpp);
-void __dump(struct dump dump[], int len);
+void __dump(struct dump dump[], int len, u32 sid);
 
 static inline bool __ubwc(enum hal_uncompressed_format f)
 {
@@ -237,7 +237,7 @@ static inline bool __ubwc(enum hal_uncompressed_format f)
 	}
 }
 
-static inline int __bpp(enum hal_uncompressed_format f)
+static inline int __bpp(enum hal_uncompressed_format f, u32 sid)
 {
 	switch (f) {
 	case HAL_COLOR_FORMAT_NV12:
@@ -248,8 +248,7 @@ static inline int __bpp(enum hal_uncompressed_format f)
 	case HAL_COLOR_FORMAT_P010:
 		return 10;
 	default:
-		dprintk(VIDC_ERR,
-				"Unsupported colorformat (%x)", f);
+		s_vpr_e(sid, "Unsupported colorformat (%x)", f);
 		return INT_MAX;
 	}
 }

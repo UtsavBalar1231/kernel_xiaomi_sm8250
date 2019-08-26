@@ -16,7 +16,7 @@ struct hfi_device *vidc_hfi_initialize(enum msm_vidc_hfi_type hfi_type,
 
 	hdev = kzalloc(sizeof(struct hfi_device), GFP_KERNEL);
 	if (!hdev) {
-		dprintk(VIDC_ERR, "%s: failed to allocate hdev\n", __func__);
+		d_vpr_e("%s: failed to allocate hdev\n", __func__);
 		return NULL;
 	}
 
@@ -25,13 +25,13 @@ struct hfi_device *vidc_hfi_initialize(enum msm_vidc_hfi_type hfi_type,
 		rc = venus_hfi_initialize(hdev, device_id, res, callback);
 		break;
 	default:
-		dprintk(VIDC_ERR, "Unsupported host-firmware interface\n");
+		d_vpr_e("Unsupported host-firmware interface\n");
 		goto err_hfi_init;
 	}
 
 	if (rc) {
 		if (rc != -EPROBE_DEFER)
-			dprintk(VIDC_ERR, "%s device init failed rc = %d",
+			d_vpr_e("%s: device init failed rc = %d",
 				__func__, rc);
 		goto err_hfi_init;
 	}
@@ -47,7 +47,7 @@ void vidc_hfi_deinitialize(enum msm_vidc_hfi_type hfi_type,
 			struct hfi_device *hdev)
 {
 	if (!hdev) {
-		dprintk(VIDC_ERR, "%s invalid device %pK", __func__, hdev);
+		d_vpr_e("%s: invalid device %pK", __func__, hdev);
 		return;
 	}
 
@@ -56,7 +56,7 @@ void vidc_hfi_deinitialize(enum msm_vidc_hfi_type hfi_type,
 		venus_hfi_delete_device(hdev->hfi_device_data);
 		break;
 	default:
-		dprintk(VIDC_ERR, "Unsupported host-firmware interface\n");
+		d_vpr_e("Unsupported host-firmware interface\n");
 	}
 
 	kfree(hdev);

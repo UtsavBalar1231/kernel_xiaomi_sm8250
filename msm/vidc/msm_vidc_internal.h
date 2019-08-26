@@ -419,6 +419,7 @@ struct clock_data {
 };
 
 struct vidc_bus_vote_data {
+	u32 sid;
 	enum hal_domain domain;
 	enum hal_video_codec codec;
 	enum hal_uncompressed_format color_formats[2];
@@ -509,6 +510,7 @@ struct msm_vidc_inst {
 	struct msm_vidc_core *core;
 	enum session_type session_type;
 	void *session;
+	u32 sid;
 	struct msm_cvp_external *cvp;
 	struct session_prop prop;
 	enum instance_state state;
@@ -620,18 +622,19 @@ struct msm_vidc_cvp_buffer {
 void msm_comm_handle_thermal_event(void);
 int msm_smem_alloc(size_t size, u32 align, u32 flags,
 	enum hal_buffer buffer_type, int map_kernel,
-	void  *res, u32 session_type, struct msm_smem *smem);
-int msm_smem_free(struct msm_smem *smem);
+	void  *res, u32 session_type, struct msm_smem *smem, u32 sid);
+int msm_smem_free(struct msm_smem *smem, u32 sid);
 
 struct context_bank_info *msm_smem_get_context_bank(u32 session_type,
 	bool is_secure, struct msm_vidc_platform_resources *res,
-	enum hal_buffer buffer_type);
+	enum hal_buffer buffer_type, u32 sid);
 int msm_smem_map_dma_buf(struct msm_vidc_inst *inst, struct msm_smem *smem);
 int msm_smem_unmap_dma_buf(struct msm_vidc_inst *inst, struct msm_smem *smem);
-struct dma_buf *msm_smem_get_dma_buf(int fd);
-void msm_smem_put_dma_buf(void *dma_buf);
+struct dma_buf *msm_smem_get_dma_buf(int fd, u32 sid);
+void msm_smem_put_dma_buf(void *dma_buf, u32 sid);
 int msm_smem_cache_operations(struct dma_buf *dbuf,
-	enum smem_cache_ops cache_op, unsigned long offset, unsigned long size);
+	enum smem_cache_ops cache_op, unsigned long offset,
+	unsigned long size, u32 sid);
 void msm_vidc_fw_unload_handler(struct work_struct *work);
 void msm_vidc_ssr_handler(struct work_struct *work);
 /*

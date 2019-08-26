@@ -58,13 +58,13 @@ static ssize_t core_info_read(struct file *file, char __user *buf,
 	ssize_t len = 0;
 
 	if (!core || !core->device) {
-		dprintk(VIDC_ERR, "Invalid params, core: %pK\n", core);
+		d_vpr_e("%s: invalid params %pK\n", __func__, core);
 		return 0;
 	}
 
 	dbuf = kzalloc(MAX_DBG_BUF_SIZE, GFP_KERNEL);
 	if (!dbuf) {
-		dprintk(VIDC_ERR, "%s: Allocation failed!\n", __func__);
+		d_vpr_e("%s: Allocation failed!\n", __func__);
 		return -ENOMEM;
 	}
 	cur = dbuf;
@@ -77,7 +77,7 @@ static ssize_t core_info_read(struct file *file, char __user *buf,
 	cur += write_str(cur, end - cur, "Core state: %d\n", core->state);
 	rc = call_hfi_op(hdev, get_fw_info, hdev->hfi_device_data, &fw_info);
 	if (rc) {
-		dprintk(VIDC_ERR, "Failed to read FW info\n");
+		d_vpr_e("Failed to read FW info\n");
 		goto err_fw_info;
 	}
 
@@ -130,14 +130,14 @@ static ssize_t trigger_ssr_write(struct file *filp, const char __user *buf,
 		size = count;
 
 	if (copy_from_user(kbuf, buf, size)) {
-		dprintk(VIDC_ERR, "%s User memory fault\n", __func__);
+		d_vpr_e("%s: User memory fault\n", __func__);
 		rc = -EFAULT;
 		goto exit;
 	}
 
 	rc = kstrtoul(kbuf, 0, &ssr_trigger_val);
 	if (rc) {
-		dprintk(VIDC_ERR, "returning error err %d\n", rc);
+		d_vpr_e("returning error err %d\n", rc);
 		rc = -EINVAL;
 	} else {
 		msm_vidc_trigger_ssr(core, ssr_trigger_val);
@@ -161,28 +161,27 @@ static ssize_t debug_level_write(struct file *filp, const char __user *buf,
 
 	/* filter partial writes and invalid commands */
 	if (*ppos != 0 || count >= sizeof(kbuf) || count == 0) {
-		dprintk(VIDC_ERR, "returning error - pos %d, count %d\n",
-			*ppos, count);
+		d_vpr_e("returning error - pos %d, count %d\n", *ppos, count);
 		rc = -EINVAL;
 	}
 
 	rc = simple_write_to_buffer(kbuf, sizeof(kbuf) - 1, ppos, buf, count);
 	if (rc < 0) {
-		dprintk(VIDC_ERR, "%s User memory fault\n", __func__);
+		d_vpr_e("%s: User memory fault\n", __func__);
 		rc = -EFAULT;
 		goto exit;
 	}
 
 	rc = kstrtoint(kbuf, 0, &msm_vidc_debug);
 	if (rc) {
-		dprintk(VIDC_ERR, "returning error err %d\n", rc);
+		d_vpr_e("returning error err %d\n", rc);
 		rc = -EINVAL;
 		goto exit;
 	}
 	core->resources.msm_vidc_hw_rsp_timeout =
 	((msm_vidc_debug & 0xFF) > (VIDC_ERR | VIDC_HIGH)) ? 1500 : 1000;
 	rc = count;
-	dprintk(VIDC_HIGH, "debug timeout updated to - %d\n",
+	d_vpr_h("debug timeout updated to - %d\n",
 		core->resources.msm_vidc_hw_rsp_timeout);
 
 exit:
@@ -220,7 +219,7 @@ struct dentry *msm_vidc_debugfs_init_drv(void)
 	struct dentry *f = debugfs_create_##__type(__name, 0644,	\
 		dir, __value);                                                \
 	if (IS_ERR_OR_NULL(f)) {                                              \
-		dprintk(VIDC_ERR, "Failed creating debugfs file '%pd/%s'\n",  \
+		d_vpr_e("Failed creating debugfs file '%pd/%s'\n",  \
 			dir, __name);                                         \
 		f = NULL;                                                     \
 	}                                                                     \
@@ -261,28 +260,28 @@ struct dentry *msm_vidc_debugfs_init_core(struct msm_vidc_core *core,
 	char debugfs_name[MAX_DEBUGFS_NAME];
 
 	if (!core) {
-		dprintk(VIDC_ERR, "Invalid params, core: %pK\n", core);
+		d_vpr_e("%s: invalid params\n", __func__);
 		goto failed_create_dir;
 	}
 
 	snprintf(debugfs_name, MAX_DEBUGFS_NAME, "core%d", core->id);
 	dir = debugfs_create_dir(debugfs_name, parent);
 	if (!dir) {
-		dprintk(VIDC_ERR, "Failed to create debugfs for msm_vidc\n");
+		d_vpr_e("Failed to create debugfs for msm_vidc\n");
 		goto failed_create_dir;
 	}
 	if (!debugfs_create_file("info", 0444, dir, core, &core_info_fops)) {
-		dprintk(VIDC_ERR, "debugfs_create_file: fail\n");
+		d_vpr_e("debugfs_create_file: fail\n");
 		goto failed_create_dir;
 	}
 	if (!debugfs_create_file("trigger_ssr", 0200,
 			dir, core, &ssr_fops)) {
-		dprintk(VIDC_ERR, "debugfs_create_file: fail\n");
+		d_vpr_e("debugfs_create_file: fail\n");
 		goto failed_create_dir;
 	}
 	if (!debugfs_create_file("debug_level", 0644,
 			parent, core, &debug_level_fops)) {
-		dprintk(VIDC_ERR, "debugfs_create_file: fail\n");
+		d_vpr_e("debugfs_create_file: fail\n");
 		goto failed_create_dir;
 	}
 failed_create_dir:
@@ -291,7 +290,7 @@ failed_create_dir:
 
 static int inst_info_open(struct inode *inode, struct file *file)
 {
-	dprintk(VIDC_LOW, "Open inode ptr: %pK\n", inode->i_private);
+	d_vpr_l("Open inode ptr: %pK\n", inode->i_private);
 	file->private_data = inode->i_private;
 	return 0;
 }
@@ -303,7 +302,7 @@ static int publish_unreleased_reference(struct msm_vidc_inst *inst,
 	char *cur = *dbuf;
 
 	if (!inst) {
-		dprintk(VIDC_ERR, "%s: invalid param\n", __func__);
+		d_vpr_e("%s: invalid params\n", __func__);
 		return -EINVAL;
 	}
 
@@ -350,7 +349,7 @@ static ssize_t inst_info_read(struct file *file, char __user *buf,
 	struct v4l2_format *f;
 
 	if (!idata || !idata->core || !idata->inst) {
-		dprintk(VIDC_ERR, "%s: Invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK\n", __func__, idata);
 		return 0;
 	}
 
@@ -367,13 +366,13 @@ static ssize_t inst_info_read(struct file *file, char __user *buf,
 	mutex_unlock(&core->lock);
 
 	if (!inst) {
-		dprintk(VIDC_ERR, "%s: Instance has become obsolete", __func__);
+		d_vpr_e("%s: Instance has become obsolete", __func__);
 		return 0;
 	}
 
 	dbuf = kzalloc(MAX_DBG_BUF_SIZE, GFP_KERNEL);
 	if (!dbuf) {
-		dprintk(VIDC_ERR, "%s: Allocation failed!\n", __func__);
+		s_vpr_e(inst->sid, "%s: Allocation failed!\n", __func__);
 		len = -ENOMEM;
 		goto failed_alloc;
 	}
@@ -453,7 +452,7 @@ failed_alloc:
 
 static int inst_info_release(struct inode *inode, struct file *file)
 {
-	dprintk(VIDC_LOW, "Release inode ptr: %pK\n", inode->i_private);
+	d_vpr_l("Release inode ptr: %pK\n", inode->i_private);
 	file->private_data = NULL;
 	return 0;
 }
@@ -472,14 +471,14 @@ struct dentry *msm_vidc_debugfs_init_inst(struct msm_vidc_inst *inst,
 	struct core_inst_pair *idata = NULL;
 
 	if (!inst) {
-		dprintk(VIDC_ERR, "Invalid params, inst: %pK\n", inst);
+		d_vpr_e("%s: invalid params\n", __func__);
 		goto exit;
 	}
 	snprintf(debugfs_name, MAX_DEBUGFS_NAME, "inst_%p", inst);
 
 	idata = kzalloc(sizeof(struct core_inst_pair), GFP_KERNEL);
 	if (!idata) {
-		dprintk(VIDC_ERR, "%s: Allocation failed!\n", __func__);
+		s_vpr_e(inst->sid, "%s: Allocation failed!\n", __func__);
 		goto exit;
 	}
 
@@ -488,14 +487,14 @@ struct dentry *msm_vidc_debugfs_init_inst(struct msm_vidc_inst *inst,
 
 	dir = debugfs_create_dir(debugfs_name, parent);
 	if (!dir) {
-		dprintk(VIDC_ERR, "Failed to create debugfs for msm_vidc\n");
+		s_vpr_e(inst->sid, "Failed to create debugfs for msm_vidc\n");
 		goto failed_create_dir;
 	}
 
 	info = debugfs_create_file("info", 0444, dir,
 			idata, &inst_info_fops);
 	if (!info) {
-		dprintk(VIDC_ERR, "debugfs_create_file: fail\n");
+		s_vpr_e(inst->sid, "debugfs_create_file: fail\n");
 		goto failed_create_file;
 	}
 
@@ -521,7 +520,7 @@ void msm_vidc_debugfs_deinit_inst(struct msm_vidc_inst *inst)
 
 	dentry = inst->debugfs_root;
 	if (dentry->d_inode) {
-		dprintk(VIDC_LOW, "Destroy %pK\n", dentry->d_inode->i_private);
+		s_vpr_l(inst->sid, "Destroy %pK\n", dentry->d_inode->i_private);
 		kfree(dentry->d_inode->i_private);
 		dentry->d_inode->i_private = NULL;
 	}
@@ -553,10 +552,10 @@ void msm_vidc_debugfs_update(struct msm_vidc_inst *inst,
 				inst->count.ftb, inst->count.fbd);
 		if (inst->count.ebd && inst->count.ebd == inst->count.etb) {
 			toc(inst, FRAME_PROCESSING);
-			dprintk(VIDC_PERF, "EBD: FW needs input buffers\n");
+			s_vpr_p(inst->sid, "EBD: FW needs input buffers\n");
 		}
 		if (inst->count.ftb == inst->count.fbd)
-			dprintk(VIDC_PERF, "EBD: FW needs output buffers\n");
+			s_vpr_p(inst->sid, "EBD: FW needs output buffers\n");
 	break;
 	case MSM_VIDC_DEBUGFS_EVENT_FTB: {
 		inst->count.ftb++;
@@ -578,13 +577,13 @@ void msm_vidc_debugfs_update(struct msm_vidc_inst *inst,
 		if (inst->count.fbd &&
 			inst->count.fbd == inst->count.ftb) {
 			toc(inst, FRAME_PROCESSING);
-			dprintk(VIDC_PERF, "FBD: FW needs output buffers\n");
+			s_vpr_p(inst->sid, "FBD: FW needs output buffers\n");
 		}
 		if (inst->count.etb == inst->count.ebd)
-			dprintk(VIDC_PERF, "FBD: FW needs input buffers\n");
+			s_vpr_p(inst->sid, "FBD: FW needs input buffers\n");
 		break;
 	default:
-		dprintk(VIDC_ERR, "Invalid state in debugfs: %d\n", e);
+		s_vpr_e(inst->sid, "Invalid state in debugfs: %d\n", e);
 		break;
 	}
 }

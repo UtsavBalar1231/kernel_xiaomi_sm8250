@@ -515,7 +515,7 @@ int msm_vdec_update_stream_output_mode(struct msm_vidc_inst *inst)
 	u32 fourcc;
 
 	if (!inst) {
-		dprintk(VIDC_ERR, "%s invalid parameters\n", __func__);
+		d_vpr_e("%s: invalid parameters\n", __func__);
 		return -EINVAL;
 	}
 
@@ -548,7 +548,7 @@ int msm_vdec_s_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 	u32 color_format;
 
 	if (!inst || !f) {
-		dprintk(VIDC_ERR, "%s invalid parameters\n", __func__);
+		d_vpr_e("%s: invalid parameters %pK %pK\n", __func__, inst, f);
 		return -EINVAL;
 	}
 
@@ -562,9 +562,9 @@ int msm_vdec_s_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 		fmt = &inst->fmts[OUTPUT_PORT];
 		fmt_desc = msm_comm_get_pixel_fmt_fourcc(vdec_output_formats,
 			ARRAY_SIZE(vdec_output_formats),
-			f->fmt.pix_mp.pixelformat);
+			f->fmt.pix_mp.pixelformat, inst->sid);
 		if (!fmt_desc) {
-			dprintk(VIDC_ERR, "Invalid fmt set : %x\n",
+			s_vpr_e(inst->sid, "Invalid fmt set : %x\n",
 				f->fmt.pix_mp.pixelformat);
 			return -EINVAL;
 		}
@@ -586,7 +586,7 @@ int msm_vdec_s_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 			mplane->plane_fmt[1].sizeimage =
 				msm_vidc_calculate_dec_output_extra_size(inst);
 		color_format = msm_comm_convert_color_fmt(
-			f->fmt.pix_mp.pixelformat);
+			f->fmt.pix_mp.pixelformat, inst->sid);
 		mplane->plane_fmt[0].bytesperline =
 			VENUS_Y_STRIDE(color_format, f->fmt.pix_mp.width);
 		mplane->plane_fmt[0].reserved[0] =
@@ -601,14 +601,14 @@ int msm_vdec_s_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 
 		rc = msm_vidc_check_session_supported(inst);
 		if (rc) {
-			dprintk(VIDC_ERR,
+			s_vpr_e(inst->sid,
 				"%s: session not supported\n", __func__);
 			goto err_invalid_fmt;
 		}
 
 		rc = msm_vdec_update_stream_output_mode(inst);
 		if (rc) {
-			dprintk(VIDC_ERR,
+			s_vpr_e(inst->sid,
 				"%s: failed to update output stream mode\n",
 				__func__);
 			goto err_invalid_fmt;
@@ -619,9 +619,9 @@ int msm_vdec_s_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 		fmt = &inst->fmts[INPUT_PORT];
 		fmt_desc = msm_comm_get_pixel_fmt_fourcc(vdec_input_formats,
 			ARRAY_SIZE(vdec_input_formats),
-			f->fmt.pix_mp.pixelformat);
+			f->fmt.pix_mp.pixelformat, inst->sid);
 		if (!fmt_desc) {
-			dprintk(VIDC_ERR, "Invalid fmt set : %x\n",
+			s_vpr_e(inst->sid, "Invalid fmt set : %x\n",
 				f->fmt.pix_mp.pixelformat);
 			return -EINVAL;
 		}
@@ -631,7 +631,7 @@ int msm_vdec_s_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 
 		if (f->fmt.pix_mp.pixelformat == V4L2_PIX_FMT_VP9) {
 			if (msm_vidc_check_for_vp9d_overload(inst->core)) {
-				dprintk(VIDC_ERR, "VP9 Decode overload\n");
+				s_vpr_e(inst->sid, "VP9 Decode overload\n");
 				rc = -ENOTSUPP;
 				goto err_invalid_fmt;
 			}
@@ -644,7 +644,7 @@ int msm_vdec_s_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 		mplane->pixelformat = f->fmt.pix_mp.pixelformat;
 		rc = msm_comm_try_state(inst, MSM_VIDC_OPEN_DONE);
 		if (rc) {
-			dprintk(VIDC_ERR, "Failed to open instance\n");
+			s_vpr_e(inst->sid, "Failed to open instance\n");
 			goto err_invalid_fmt;
 		}
 
@@ -653,7 +653,7 @@ int msm_vdec_s_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 
 		rc = msm_vidc_check_session_supported(inst);
 		if (rc) {
-			dprintk(VIDC_ERR,
+			s_vpr_e(inst->sid,
 				"%s: session not supported\n", __func__);
 			goto err_invalid_fmt;
 		}
@@ -694,7 +694,7 @@ int msm_vdec_g_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 			msm_vidc_calculate_dec_input_frame_size(inst);
 		memcpy(f, fmt, sizeof(struct v4l2_format));
 	} else {
-		dprintk(VIDC_ERR, "%s - Unsupported buf type: %d\n",
+		s_vpr_e(inst->sid, "%s: Unsupported buf type: %d\n",
 			__func__, f->type);
 		return -EINVAL;
 	}
@@ -708,16 +708,15 @@ int msm_vdec_enum_fmt(struct msm_vidc_inst *inst, struct v4l2_fmtdesc *f)
 	int rc = 0;
 
 	if (!inst || !f) {
-		dprintk(VIDC_ERR,
-			"Invalid input, inst = %pK, f = %pK\n", inst, f);
+		d_vpr_e("Invalid input, inst = %pK, f = %pK\n", inst, f);
 		return -EINVAL;
 	}
 	if (f->type == OUTPUT_MPLANE) {
 		fmt_desc = msm_comm_get_pixel_fmt_index(vdec_output_formats,
-			ARRAY_SIZE(vdec_output_formats), f->index);
+			ARRAY_SIZE(vdec_output_formats), f->index, inst->sid);
 	} else if (f->type == INPUT_MPLANE) {
 		fmt_desc = msm_comm_get_pixel_fmt_index(vdec_input_formats,
-			ARRAY_SIZE(vdec_input_formats), f->index);
+			ARRAY_SIZE(vdec_input_formats), f->index, inst->sid);
 		f->flags = V4L2_FMT_FLAG_COMPRESSED;
 	}
 
@@ -727,7 +726,7 @@ int msm_vdec_enum_fmt(struct msm_vidc_inst *inst, struct v4l2_fmtdesc *f)
 				sizeof(f->description));
 		f->pixelformat = fmt_desc->fourcc;
 	} else {
-		dprintk(VIDC_HIGH, "No more formats found\n");
+		s_vpr_h(inst->sid, "No more formats found\n");
 		rc = -EINVAL;
 	}
 	return rc;
@@ -741,7 +740,7 @@ int msm_vdec_inst_init(struct msm_vidc_inst *inst)
 	struct v4l2_format *f = NULL;
 
 	if (!inst || !inst->core) {
-		dprintk(VIDC_ERR, "Invalid input = %pK\n", inst);
+		d_vpr_e("Invalid input = %pK\n", inst);
 		return -EINVAL;
 	}
 	core = inst->core;
@@ -757,9 +756,10 @@ int msm_vdec_inst_init(struct msm_vidc_inst *inst)
 	f->fmt.pix_mp.plane_fmt[1].sizeimage =
 		msm_vidc_calculate_dec_output_extra_size(inst);
 	fmt_desc = msm_comm_get_pixel_fmt_fourcc(vdec_output_formats,
-		ARRAY_SIZE(vdec_output_formats), f->fmt.pix_mp.pixelformat);
+		ARRAY_SIZE(vdec_output_formats),
+		f->fmt.pix_mp.pixelformat, inst->sid);
 	if (!fmt_desc) {
-		dprintk(VIDC_ERR, "Invalid fmt set : %x\n",
+		s_vpr_e(inst->sid, "Invalid fmt set: %x\n",
 			f->fmt.pix_mp.pixelformat);
 		return -EINVAL;
 	}
@@ -775,9 +775,10 @@ int msm_vdec_inst_init(struct msm_vidc_inst *inst)
 	f->fmt.pix_mp.plane_fmt[0].sizeimage =
 		msm_vidc_calculate_dec_input_frame_size(inst);
 	fmt_desc = msm_comm_get_pixel_fmt_fourcc(vdec_input_formats,
-		ARRAY_SIZE(vdec_input_formats), f->fmt.pix_mp.pixelformat);
+		ARRAY_SIZE(vdec_input_formats), f->fmt.pix_mp.pixelformat,
+		inst->sid);
 	if (!fmt_desc) {
-		dprintk(VIDC_ERR, "Invalid fmt set : %x\n",
+		s_vpr_e(inst->sid, "Invalid fmt set: %x\n",
 			f->fmt.pix_mp.pixelformat);
 		return -EINVAL;
 	}
@@ -829,14 +830,12 @@ int msm_vdec_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 	int rc = 0;
 
 	if (!inst || !inst->core || !inst->core->device) {
-		dprintk(VIDC_ERR, "%s invalid parameters\n", __func__);
+		d_vpr_e("%s: invalid parameters\n", __func__);
 		return -EINVAL;
 	}
 
-	dprintk(VIDC_HIGH,
-		"%s: %x : control name = %s, id = 0x%x value = %d\n",
-		__func__, hash32_ptr(inst->session), ctrl->name,
-		ctrl->id, ctrl->val);
+	s_vpr_h(inst->sid, "%s: control name = %s, id = 0x%x value = %d\n",
+		__func__, ctrl->name, ctrl->id, ctrl->val);
 
 	switch (ctrl->id) {
 	case V4L2_CID_MPEG_VIDEO_H264_PROFILE:
@@ -844,18 +843,21 @@ int msm_vdec_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 	case V4L2_CID_MPEG_VIDEO_VP8_PROFILE:
 	case V4L2_CID_MPEG_VIDEO_VP9_PROFILE:
 	case V4L2_CID_MPEG_VIDC_VIDEO_MPEG2_PROFILE:
-		inst->profile = msm_comm_v4l2_to_hfi(ctrl->id, ctrl->val);
+		inst->profile = msm_comm_v4l2_to_hfi(ctrl->id, ctrl->val,
+							inst->sid);
 		break;
 	case V4L2_CID_MPEG_VIDEO_H264_LEVEL:
 	case V4L2_CID_MPEG_VIDEO_HEVC_LEVEL:
 	case V4L2_CID_MPEG_VIDC_VIDEO_VP8_PROFILE_LEVEL:
 	case V4L2_CID_MPEG_VIDC_VIDEO_VP9_LEVEL:
 	case V4L2_CID_MPEG_VIDC_VIDEO_MPEG2_LEVEL:
-		inst->level = msm_comm_v4l2_to_hfi(ctrl->id, ctrl->val);
+		inst->level = msm_comm_v4l2_to_hfi(ctrl->id, ctrl->val,
+							inst->sid);
 		break;
 	case V4L2_CID_MPEG_VIDEO_HEVC_TIER:
 		inst->level |=
-			(msm_comm_v4l2_to_hfi(ctrl->id, ctrl->val) << 28);
+			(msm_comm_v4l2_to_hfi(ctrl->id, ctrl->val,
+				inst->sid) << 28);
 		break;
 	case V4L2_CID_MPEG_VIDC_VIDEO_DECODE_ORDER:
 	case V4L2_CID_MPEG_VIDC_VIDEO_CONCEAL_COLOR_8BIT:
@@ -868,9 +870,9 @@ int msm_vdec_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 
 		rc = msm_vidc_calculate_buffer_counts(inst);
 		if (rc) {
-			dprintk(VIDC_ERR,
-				"%s: %x : failed to calculate thumbnail buffer count\n",
-				__func__, hash32_ptr(inst->session));
+			s_vpr_e(inst->sid,
+				"%s: failed to calculate thumbnail buffer count\n",
+				__func__);
 			return rc;
 		}
 		break;
@@ -879,7 +881,7 @@ int msm_vdec_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 		if (ctrl->val)
 			inst->flags |= VIDC_SECURE;
 		if (msm_comm_check_for_inst_overload(inst->core)) {
-			dprintk(VIDC_ERR,
+			s_vpr_e(inst->sid,
 				"%s: Instance count reached Max limit, rejecting session",
 				__func__);
 			return -ENOTSUPP;
@@ -914,8 +916,7 @@ int msm_vdec_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 		inst->clk_data.low_latency_mode = !!ctrl->val;
 		break;
 	default:
-		dprintk(VIDC_ERR,
-			"Unknown control %#x\n", ctrl->id);
+		s_vpr_e(inst->sid, "Unknown control %#x\n", ctrl->id);
 		break;
 	}
 
@@ -930,7 +931,7 @@ int msm_vdec_set_frame_size(struct msm_vidc_inst *inst)
 	struct v4l2_format *f;
 
 	if (!inst || !inst->core) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
 		return -EINVAL;
 	}
 	hdev = inst->core->device;
@@ -939,12 +940,12 @@ int msm_vdec_set_frame_size(struct msm_vidc_inst *inst)
 	frame_size.buffer_type = HFI_BUFFER_INPUT;
 	frame_size.width = f->fmt.pix_mp.width;
 	frame_size.height = f->fmt.pix_mp.height;
-	dprintk(VIDC_HIGH, "%s: input wxh %dx%d\n", __func__,
+	s_vpr_h(inst->sid, "%s: input wxh %dx%d\n", __func__,
 		frame_size.width, frame_size.height);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_FRAME_SIZE, &frame_size, sizeof(frame_size));
 	if (rc)
-		dprintk(VIDC_ERR, "%s: set property failed\n", __func__);
+		s_vpr_e(inst->sid, "%s: set property failed\n", __func__);
 
 	return rc;
 }
@@ -956,7 +957,7 @@ int msm_vdec_set_color_format(struct msm_vidc_inst *inst)
 	struct msm_vidc_format_constraint *fmt_constraint;
 
 	if (!inst || !inst->core) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
 		return -EINVAL;
 	}
 	hdev = inst->core->device;
@@ -965,21 +966,20 @@ int msm_vdec_set_color_format(struct msm_vidc_inst *inst)
 			msm_comm_get_hal_output_buffer(inst),
 			inst->clk_data.opb_fourcc);
 	if (rc) {
-		dprintk(VIDC_ERR,
-			"%s: set color format (%#x) failed\n",
+		s_vpr_e(inst->sid, "%s: set color format (%#x) failed\n",
 			__func__, inst->clk_data.opb_fourcc);
 		return rc;
 	}
 	fmt_constraint = msm_comm_get_pixel_fmt_constraints(
 			dec_pix_format_constraints,
 			ARRAY_SIZE(dec_pix_format_constraints),
-			inst->clk_data.opb_fourcc);
+			inst->clk_data.opb_fourcc, inst->sid);
 	if (fmt_constraint) {
 		rc = msm_comm_set_color_format_constraints(inst,
 				msm_comm_get_hal_output_buffer(inst),
 				fmt_constraint);
 		if (rc) {
-			dprintk(VIDC_ERR,
+			s_vpr_e(inst->sid,
 				"%s: Set constraints for color format %#x failed\n",
 				__func__, inst->clk_data.opb_fourcc);
 			return rc;
@@ -997,7 +997,7 @@ int msm_vdec_set_input_buffer_counts(struct msm_vidc_inst *inst)
 	enum hal_buffer buffer_type;
 
 	if (!inst || !inst->core) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
 		return -EINVAL;
 	}
 	hdev = inst->core->device;
@@ -1009,7 +1009,7 @@ int msm_vdec_set_input_buffer_counts(struct msm_vidc_inst *inst)
 			fmt->count_actual,
 			buffer_type);
 	if (rc) {
-		dprintk(VIDC_ERR, "%s: failed to set bufreqs(%#x)\n",
+		s_vpr_e(inst->sid, "%s: failed to set bufreqs(%#x)\n",
 			__func__, buffer_type);
 		return -EINVAL;
 	}
@@ -1025,7 +1025,7 @@ int msm_vdec_set_output_buffer_counts(struct msm_vidc_inst *inst)
 	enum hal_buffer buffer_type;
 
 	if (!inst || !inst->core) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
 		return -EINVAL;
 	}
 	hdev = inst->core->device;
@@ -1043,7 +1043,7 @@ int msm_vdec_set_output_buffer_counts(struct msm_vidc_inst *inst)
 			fmt->count_min,
 			HAL_BUFFER_OUTPUT);
 		if (rc) {
-			dprintk(VIDC_ERR,
+			s_vpr_e(inst->sid,
 				"%s: failed to set buffer count(%#x)\n",
 				__func__, buffer_type);
 			return -EINVAL;
@@ -1054,7 +1054,7 @@ int msm_vdec_set_output_buffer_counts(struct msm_vidc_inst *inst)
 			fmt->count_actual,
 			buffer_type);
 	if (rc) {
-		dprintk(VIDC_ERR, "%s: failed to set bufreqs(%#x)\n",
+		s_vpr_e(inst->sid, "%s: failed to set bufreqs(%#x)\n",
 			__func__, buffer_type);
 		return -EINVAL;
 	}
@@ -1069,7 +1069,7 @@ int msm_vdec_set_profile_level(struct msm_vidc_inst *inst)
 	struct hfi_profile_level profile_level;
 
 	if (!inst || !inst->core) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
 		return -EINVAL;
 	}
 	hdev = inst->core->device;
@@ -1077,13 +1077,13 @@ int msm_vdec_set_profile_level(struct msm_vidc_inst *inst)
 	profile_level.profile = inst->profile;
 	profile_level.level = inst->level;
 
-	dprintk(VIDC_HIGH, "%s: %#x %#x\n", __func__,
+	s_vpr_h(inst->sid, "%s: %#x %#x\n", __func__,
 		profile_level.profile, profile_level.level);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_PROFILE_LEVEL_CURRENT, &profile_level,
 		sizeof(profile_level));
 	if (rc)
-		dprintk(VIDC_ERR, "%s: set property failed\n", __func__);
+		s_vpr_e(inst->sid, "%s: set property failed\n", __func__);
 
 	return rc;
 }
@@ -1096,13 +1096,13 @@ int msm_vdec_set_output_order(struct msm_vidc_inst *inst)
 	u32 output_order;
 
 	if (!inst || !inst->core) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
 		return -EINVAL;
 	}
 	hdev = inst->core->device;
 
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_DECODE_ORDER);
-	dprintk(VIDC_HIGH, "%s: %d\n", __func__, ctrl->val);
+	s_vpr_h(inst->sid, "%s: %d\n", __func__, ctrl->val);
 	if (ctrl->val == V4L2_MPEG_MSM_VIDC_ENABLE)
 		output_order = HFI_OUTPUT_ORDER_DECODE;
 	else
@@ -1112,7 +1112,7 @@ int msm_vdec_set_output_order(struct msm_vidc_inst *inst)
 		HFI_PROPERTY_PARAM_VDEC_OUTPUT_ORDER, &output_order,
 		sizeof(u32));
 	if (rc)
-		dprintk(VIDC_ERR, "%s: set property failed\n", __func__);
+		s_vpr_e(inst->sid, "%s: set property failed\n", __func__);
 
 	return rc;
 }
@@ -1125,7 +1125,7 @@ int msm_vdec_set_sync_frame_mode(struct msm_vidc_inst *inst)
 	struct hfi_enable hfi_property;
 
 	if (!inst || !inst->core) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
 		return -EINVAL;
 	}
 	hdev = inst->core->device;
@@ -1133,12 +1133,12 @@ int msm_vdec_set_sync_frame_mode(struct msm_vidc_inst *inst)
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_SYNC_FRAME_DECODE);
 	hfi_property.enable = (bool)ctrl->val;
 
-	dprintk(VIDC_HIGH, "%s: %#x\n", __func__, hfi_property.enable);
+	s_vpr_h(inst->sid, "%s: %#x\n", __func__, hfi_property.enable);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_VDEC_THUMBNAIL_MODE, &hfi_property,
 		sizeof(hfi_property));
 	if (rc)
-		dprintk(VIDC_ERR, "%s: set property failed\n", __func__);
+		s_vpr_e(inst->sid, "%s: set property failed\n", __func__);
 
 	return rc;
 }
@@ -1151,7 +1151,7 @@ int msm_vdec_set_secure_mode(struct msm_vidc_inst *inst)
 	u32 codec;
 
 	if (!inst || !inst->core) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
 		return -EINVAL;
 	}
 	hdev = inst->core->device;
@@ -1164,18 +1164,18 @@ int msm_vdec_set_secure_mode(struct msm_vidc_inst *inst)
 			codec == V4L2_PIX_FMT_H264 ||
 			codec == V4L2_PIX_FMT_VP9 ||
 			codec == V4L2_PIX_FMT_MPEG2)) {
-			dprintk(VIDC_ERR,
+			s_vpr_e(inst->sid,
 				"%s: Secure allowed for HEVC/H264/VP9/MPEG2\n",
 				__func__);
 			return -EINVAL;
 		}
 	}
 
-	dprintk(VIDC_HIGH, "%s: %#x\n", __func__, ctrl->val);
+	s_vpr_h(inst->sid, "%s: %#x\n", __func__, ctrl->val);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_SECURE_SESSION, &ctrl->val, sizeof(u32));
 	if (rc)
-		dprintk(VIDC_ERR, "%s: set property failed\n", __func__);
+		s_vpr_e(inst->sid, "%s: set property failed\n", __func__);
 
 	return rc;
 }
@@ -1187,12 +1187,14 @@ int msm_vdec_set_output_stream_mode(struct msm_vidc_inst *inst)
 	struct hfi_multi_stream multi_stream;
 	struct hfi_frame_size frame_sz;
 	struct v4l2_format *f;
+	u32 sid;
 
 	if (!inst || !inst->core) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
 		return -EINVAL;
 	}
 	hdev = inst->core->device;
+	sid = inst->sid;
 
 	if (is_primary_output_mode(inst)) {
 		multi_stream.buffer_type = HFI_BUFFER_OUTPUT;
@@ -1201,8 +1203,8 @@ int msm_vdec_set_output_stream_mode(struct msm_vidc_inst *inst)
 			HFI_PROPERTY_PARAM_VDEC_MULTI_STREAM, &multi_stream,
 			sizeof(multi_stream));
 		if (rc) {
-			dprintk(VIDC_ERR,
-				"%s: set prop multistream primary failed : %d\n",
+			s_vpr_e(sid,
+				"%s: set prop multistream primary failed: %d\n",
 				__func__, rc);
 			return rc;
 		}
@@ -1212,7 +1214,7 @@ int msm_vdec_set_output_stream_mode(struct msm_vidc_inst *inst)
 			HFI_PROPERTY_PARAM_VDEC_MULTI_STREAM, &multi_stream,
 			sizeof(multi_stream));
 		if (rc) {
-			dprintk(VIDC_ERR,
+			s_vpr_e(sid,
 				"%s: set prop multistream primary2 failed : %d\n",
 				__func__, rc);
 			return rc;
@@ -1229,7 +1231,7 @@ int msm_vdec_set_output_stream_mode(struct msm_vidc_inst *inst)
 			HFI_PROPERTY_PARAM_VDEC_MULTI_STREAM, &multi_stream,
 			sizeof(multi_stream));
 		if (rc) {
-			dprintk(VIDC_ERR,
+			s_vpr_e(sid,
 				"%s: set prop multistream secondary failed : %d\n",
 				__func__, rc);
 			return rc;
@@ -1240,8 +1242,8 @@ int msm_vdec_set_output_stream_mode(struct msm_vidc_inst *inst)
 			HFI_PROPERTY_PARAM_VDEC_MULTI_STREAM, &multi_stream,
 			sizeof(multi_stream));
 		if (rc) {
-			dprintk(VIDC_ERR,
-				"%s: set prop multistream secondary2 failed : %d\n",
+			s_vpr_e(sid,
+				"%s: set prop multistream secondary2 failed: %d\n",
 				__func__, rc);
 			return rc;
 		}
@@ -1249,15 +1251,14 @@ int msm_vdec_set_output_stream_mode(struct msm_vidc_inst *inst)
 		f = &inst->fmts[OUTPUT_PORT].v4l2_fmt;
 		frame_sz.width = f->fmt.pix_mp.width;
 		frame_sz.height = f->fmt.pix_mp.height;
-		dprintk(VIDC_HIGH,
+		s_vpr_h(sid,
 			"frame_size: hal buffer type %d, width %d, height %d\n",
 			frame_sz.buffer_type, frame_sz.width, frame_sz.height);
 		rc = call_hfi_op(hdev, session_set_property, inst->session,
 			HFI_PROPERTY_PARAM_FRAME_SIZE, &frame_sz,
 			sizeof(frame_sz));
 		if (rc) {
-			dprintk(VIDC_ERR,
-				"%s: set prop frame_size failed\n",
+			s_vpr_e(sid, "%s: set prop frame_size failed\n",
 				__func__);
 			return rc;
 		}
@@ -1273,19 +1274,19 @@ int msm_vdec_set_priority(struct msm_vidc_inst *inst)
 	struct hfi_enable hfi_property;
 
 	if (!inst || !inst->core) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
 		return -EINVAL;
 	}
 	hdev = inst->core->device;
 
 	hfi_property.enable = is_realtime_session(inst);
 
-	dprintk(VIDC_HIGH, "%s: %#x\n", __func__, hfi_property.enable);
+	s_vpr_h(inst->sid, "%s: %#x\n", __func__, hfi_property.enable);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_CONFIG_REALTIME, &hfi_property,
 		sizeof(hfi_property));
 	if (rc)
-		dprintk(VIDC_ERR, "%s: set property failed\n", __func__);
+		s_vpr_e(inst->sid, "%s: set property failed\n", __func__);
 
 	return rc;
 }
@@ -1299,7 +1300,7 @@ int msm_vdec_set_conceal_color(struct msm_vidc_inst *inst)
 	struct hfi_conceal_color conceal_color;
 
 	if (!inst || !inst->core) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
 		return -EINVAL;
 	}
 	hdev = inst->core->device;
@@ -1309,14 +1310,14 @@ int msm_vdec_set_conceal_color(struct msm_vidc_inst *inst)
 	conceal_color.conceal_color_8bit = ctrl_8b->val;
 	conceal_color.conceal_color_10bit = ctrl_10b->val;
 
-	dprintk(VIDC_HIGH, "%s: %#x %#x\n", __func__,
+	s_vpr_h(inst->sid, "%s: %#x %#x\n", __func__,
 		conceal_color.conceal_color_8bit,
 		conceal_color.conceal_color_10bit);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_VDEC_CONCEAL_COLOR, &conceal_color,
 		sizeof(conceal_color));
 	if (rc)
-		dprintk(VIDC_ERR, "%s: set property failed\n", __func__);
+		s_vpr_e(inst->sid, "%s: set property failed\n", __func__);
 
 	return rc;
 }
@@ -1439,9 +1440,9 @@ int msm_vdec_set_properties(struct msm_vidc_inst *inst)
 
 exit:
 	if (rc)
-		dprintk(VIDC_ERR, "%s: failed with %d\n", __func__, rc);
+		s_vpr_e(inst->sid, "%s: failed with %d\n", __func__, rc);
 	else
-		dprintk(VIDC_HIGH, "%s: set properties successful\n", __func__);
+		s_vpr_h(inst->sid, "%s: set properties successful\n", __func__);
 
 	return rc;
 }

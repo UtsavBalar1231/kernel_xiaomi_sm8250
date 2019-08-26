@@ -577,7 +577,7 @@ struct vidc_hal_sys_init_done {
 
 struct msm_vidc_cb_cmd_done {
 	u32 device_id;
-	void *session_id;
+	void *inst_id;
 	enum vidc_status status;
 	u32 size;
 	union {
@@ -609,7 +609,7 @@ struct hal_index_extradata_input_crop_payload {
 
 struct msm_vidc_cb_event {
 	u32 device_id;
-	void *session_id;
+	void *inst_id;
 	enum vidc_status status;
 	u32 height;
 	u32 width;
@@ -628,7 +628,7 @@ struct msm_vidc_cb_event {
 
 struct msm_vidc_cb_data_done {
 	u32 device_id;
-	void *session_id;
+	void *inst_id;
 	enum vidc_status status;
 	u32 size;
 	union {
@@ -689,9 +689,9 @@ struct hfi_device {
 	int (*core_init)(void *device);
 	int (*core_release)(void *device);
 	int (*core_trigger_ssr)(void *device, enum hal_ssr_trigger_type);
-	int (*session_init)(void *device, void *session_id,
+	int (*session_init)(void *device, void *inst_id,
 		enum hal_domain session_type, enum hal_video_codec codec_type,
-		void **new_session);
+		void **new_session, u32 sid);
 	int (*session_end)(void *session);
 	int (*session_abort)(void *session);
 	int (*session_set_buffers)(void *sess,
@@ -718,9 +718,9 @@ struct hfi_device {
 			void *pdata, u32 size);
 	int (*session_pause)(void *sess);
 	int (*session_resume)(void *sess);
-	int (*scale_clocks)(void *dev, u32 freq);
+	int (*scale_clocks)(void *dev, u32 freq, u32 sid);
 	int (*vote_bus)(void *dev, unsigned long bw_ddr,
-			unsigned long bw_llcc);
+			unsigned long bw_llcc, u32 sid);
 	int (*get_fw_info)(void *dev, struct hal_fw_info *fw_info);
 	int (*session_clean)(void *sess);
 	int (*get_core_capabilities)(void *dev);
@@ -739,9 +739,6 @@ struct hfi_device *vidc_hfi_initialize(enum msm_vidc_hfi_type hfi_type,
 		hfi_cmd_response_callback callback);
 void vidc_hfi_deinitialize(enum msm_vidc_hfi_type hfi_type,
 			struct hfi_device *hdev);
-u32 vidc_get_hfi_domain(enum hal_domain hal_domain);
-u32 vidc_get_hfi_codec(enum hal_video_codec hal_codec);
-enum hal_domain vidc_get_hal_domain(u32 hfi_domain);
-enum hal_video_codec vidc_get_hal_codec(u32 hfi_codec);
-
+u32 vidc_get_hfi_domain(enum hal_domain hal_domain, u32 sid);
+u32 vidc_get_hfi_codec(enum hal_video_codec hal_codec, u32 sid);
 #endif /*__VIDC_HFI_API_H__ */

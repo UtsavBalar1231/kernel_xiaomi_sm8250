@@ -8,7 +8,7 @@
 #include "msm_vidc_internal.h"
 
 void msm_clock_data_reset(struct msm_vidc_inst *inst);
-int msm_vidc_set_clocks(struct msm_vidc_core *core);
+int msm_vidc_set_clocks(struct msm_vidc_core *core, u32 sid);
 int msm_comm_vote_bus(struct msm_vidc_inst *inst);
 int msm_dcvs_try_enable(struct msm_vidc_inst *inst);
 bool res_is_less_than(u32 width, u32 height, u32 ref_width, u32 ref_height);
@@ -27,7 +27,7 @@ int msm_vidc_decide_work_route_iris2(struct msm_vidc_inst *inst);
 int msm_vidc_decide_work_mode_iris2(struct msm_vidc_inst *inst);
 int msm_vidc_decide_core_and_power_mode_iris1(struct msm_vidc_inst *inst);
 int msm_vidc_decide_core_and_power_mode_iris2(struct msm_vidc_inst *inst);
-void msm_print_core_status(struct msm_vidc_core *core, u32 core_id);
+void msm_print_core_status(struct msm_vidc_core *core, u32 core_id, u32 sid);
 void msm_comm_free_input_cr_table(struct msm_vidc_inst *inst);
 void msm_comm_update_input_cr(struct msm_vidc_inst *inst, u32 index,
 	u32 cr);

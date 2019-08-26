@@ -69,12 +69,12 @@ static inline struct v4l2_ctrl *get_ctrl(struct msm_vidc_inst *inst,
 		if (inst->ctrls[i]->id == id)
 			return inst->ctrls[i];
 	}
-	dprintk(VIDC_ERR, "%s: control id (%#x) not found\n", __func__, id);
+	s_vpr_e(inst->sid, "%s: control id (%#x) not found\n", __func__, id);
 	MSM_VIDC_ERROR(true);
 	return inst->ctrls[0];
 }
 
-static inline void update_ctrl(struct v4l2_ctrl *ctrl, s32 val)
+static inline void update_ctrl(struct v4l2_ctrl *ctrl, s32 val, u32 sid)
 {
 	switch (ctrl->type) {
 	case V4L2_CTRL_TYPE_INTEGER:
@@ -83,7 +83,7 @@ static inline void update_ctrl(struct v4l2_ctrl *ctrl, s32 val)
 			ctrl->elems * ctrl->elem_size);
 		break;
 	default:
-		dprintk(VIDC_ERR, "unhandled control type");
+		s_vpr_e(sid, "unhandled control type");
 	}
 }
 
@@ -172,15 +172,15 @@ enum hal_buffer get_hal_buffer_type(unsigned int type,
 		unsigned int plane_num);
 void put_inst(struct msm_vidc_inst *inst);
 struct msm_vidc_inst *get_inst(struct msm_vidc_core *core,
-		void *session_id);
+		void *inst_id);
 void change_inst_state(struct msm_vidc_inst *inst, enum instance_state state);
 struct msm_vidc_core *get_vidc_core(int core_id);
 const struct msm_vidc_format_desc *msm_comm_get_pixel_fmt_index(
-	const struct msm_vidc_format_desc fmt[], int size, int index);
+	const struct msm_vidc_format_desc fmt[], int size, int index, u32 sid);
 struct msm_vidc_format_desc *msm_comm_get_pixel_fmt_fourcc(
-	struct msm_vidc_format_desc fmt[], int size, int fourcc);
+	struct msm_vidc_format_desc fmt[], int size, int fourcc, u32 sid);
 struct msm_vidc_format_constraint *msm_comm_get_pixel_fmt_constraints(
-	struct msm_vidc_format_constraint fmt[], int size, int fourcc);
+	struct msm_vidc_format_constraint fmt[], int size, int fourcc, u32 sid);
 int msm_comm_set_color_format_constraints(struct msm_vidc_inst *inst,
 		enum hal_buffer buffer_type,
 		struct msm_vidc_format_constraint *pix_constraint);
@@ -232,9 +232,9 @@ int msm_comm_smem_alloc(struct msm_vidc_inst *inst, size_t size, u32 align,
 void msm_comm_smem_free(struct msm_vidc_inst *inst, struct msm_smem *smem);
 int msm_comm_smem_cache_operations(struct msm_vidc_inst *inst,
 		struct msm_smem *mem, enum smem_cache_ops cache_ops);
-enum hal_video_codec get_hal_codec(int fourcc);
-enum hal_domain get_hal_domain(int session_type);
-int msm_comm_check_core_init(struct msm_vidc_core *core);
+enum hal_video_codec get_hal_codec(int fourcc, u32 sid);
+enum hal_domain get_hal_domain(int session_type, u32 sid);
+int msm_comm_check_core_init(struct msm_vidc_core *core, u32 sid);
 int msm_comm_get_inst_load(struct msm_vidc_inst *inst,
 			enum load_calc_quirks quirks);
 int msm_comm_get_inst_load_per_core(struct msm_vidc_inst *inst,
@@ -253,15 +253,15 @@ int msm_comm_ctrl_deinit(struct msm_vidc_inst *inst);
 void msm_comm_cleanup_internal_buffers(struct msm_vidc_inst *inst);
 bool msm_comm_turbo_session(struct msm_vidc_inst *inst);
 void msm_comm_print_inst_info(struct msm_vidc_inst *inst);
-int msm_comm_v4l2_to_hfi(int id, int value);
-int msm_comm_hfi_to_v4l2(int id, int value);
-int msm_comm_get_v4l2_profile(int fourcc, int profile);
-int msm_comm_get_v4l2_level(int fourcc, int level);
+int msm_comm_v4l2_to_hfi(int id, int value, u32 sid);
+int msm_comm_hfi_to_v4l2(int id, int value, u32 sid);
+int msm_comm_get_v4l2_profile(int fourcc, int profile, u32 sid);
+int msm_comm_get_v4l2_level(int fourcc, int level, u32 sid);
 int msm_comm_session_continue(void *instance);
 int msm_vidc_send_pending_eos_buffers(struct msm_vidc_inst *inst);
 enum hal_uncompressed_format msm_comm_get_hal_uncompressed(int fourcc);
-u32 msm_comm_get_hfi_uncompressed(int fourcc);
-u32 msm_comm_convert_color_fmt(u32 v4l2_fmt);
+u32 msm_comm_get_hfi_uncompressed(int fourcc, u32 sid);
+u32 msm_comm_convert_color_fmt(u32 v4l2_fmt, u32 sid);
 struct vb2_buffer *msm_comm_get_vb_using_vidc_buffer(
 		struct msm_vidc_inst *inst, struct msm_vidc_buffer *mbuf);
 struct msm_vidc_buffer *msm_comm_get_buffer_using_device_planes(
@@ -286,9 +286,9 @@ bool msm_comm_compare_vb2_plane(struct msm_vidc_inst *inst,
 		struct msm_vidc_buffer *mbuf, struct vb2_buffer *vb2, u32 i);
 bool msm_comm_compare_vb2_planes(struct msm_vidc_inst *inst,
 		struct msm_vidc_buffer *mbuf, struct vb2_buffer *vb2);
-bool msm_comm_compare_device_plane(struct msm_vidc_buffer *mbuf,
+bool msm_comm_compare_device_plane(u32 sid, struct msm_vidc_buffer *mbuf,
 		u32 type, u32 *planes, u32 i);
-bool msm_comm_compare_device_planes(struct msm_vidc_buffer *mbuf,
+bool msm_comm_compare_device_planes(u32 sid, struct msm_vidc_buffer *mbuf,
 		u32 type, u32 *planes);
 int msm_comm_qbuf_cache_operations(struct msm_vidc_inst *inst,
 		struct msm_vidc_buffer *mbuf);
@@ -296,16 +296,14 @@ int msm_comm_dqbuf_cache_operations(struct msm_vidc_inst *inst,
 		struct msm_vidc_buffer *mbuf);
 void print_vidc_buffer(u32 tag, const char *str, struct msm_vidc_inst *inst,
 		struct msm_vidc_buffer *mbuf);
-void print_vb2_buffer(u32 tag, const char *str, struct msm_vidc_inst *inst,
+void print_vb2_buffer(const char *str, struct msm_vidc_inst *inst,
 		struct vb2_buffer *vb2);
-void print_v4l2_buffer(u32 tag, const char *str, struct msm_vidc_inst *inst,
-		struct v4l2_buffer *v4l2);
 void kref_put_mbuf(struct msm_vidc_buffer *mbuf);
 bool kref_get_mbuf(struct msm_vidc_inst *inst, struct msm_vidc_buffer *mbuf);
 void msm_comm_store_input_tag(struct msm_vidc_list *data_list,
-		u32 index, u32 itag, u32 itag2);
+		u32 index, u32 itag, u32 itag2, u32 sid);
 int msm_comm_fetch_input_tag(struct msm_vidc_list *data_list,
-		u32 index, u32 *itag, u32 *itag2);
+		u32 index, u32 *itag, u32 *itag2, u32 sid);
 int msm_comm_release_input_tag(struct msm_vidc_inst *inst);
 struct msm_vidc_client_data *msm_comm_store_client_data(
 	struct msm_vidc_inst *inst, u32 itag);

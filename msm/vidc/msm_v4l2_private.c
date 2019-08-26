@@ -12,7 +12,7 @@ static int convert_from_user(struct msm_vidc_arg *kp, unsigned long arg)
 	struct msm_vidc_arg __user *up = compat_ptr(arg);
 
 	if (!kp || !up) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params%pK %pK\n", __func__, kp, up);
 		return -EINVAL;
 	}
 
@@ -88,7 +88,7 @@ static int convert_from_user(struct msm_vidc_arg *kp, unsigned long arg)
 		break;
 	}
 	default:
-		dprintk(VIDC_ERR, "%s: unknown cmd type 0x%x\n",
+		d_vpr_e("%s: unknown cmd type 0x%x\n",
 			__func__, kp->type);
 		rc = -EINVAL;
 		break;
@@ -104,7 +104,7 @@ static int convert_to_user(struct msm_vidc_arg *kp, unsigned long arg)
 	struct msm_vidc_arg __user *up = compat_ptr(arg);
 
 	if (!kp || !up) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK %pK\n",	__func__, kp, up);
 		return -EINVAL;
 	}
 
@@ -180,8 +180,7 @@ static int convert_to_user(struct msm_vidc_arg *kp, unsigned long arg)
 		break;
 	}
 	default:
-		dprintk(VIDC_ERR, "%s: unknown cmd type 0x%x\n",
-			__func__, kp->type);
+		d_vpr_e("%s: unknown cmd type 0x%x\n", __func__, kp->type);
 		rc = -EINVAL;
 		break;
 	}
@@ -196,7 +195,7 @@ long msm_v4l2_private(struct file *filp, unsigned int cmd, unsigned long arg)
 	struct msm_vidc_arg karg;
 
 	if (!filp || !filp->private_data) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK\n", __func__, filp);
 		return -EINVAL;
 	}
 
@@ -214,8 +213,7 @@ long msm_v4l2_private(struct file *filp, unsigned int cmd, unsigned long arg)
 
 	rc = msm_vidc_private((void *)inst, cmd, &karg);
 	if (rc) {
-		dprintk(VIDC_ERR, "%s: failed cmd type %x\n",
-			__func__, karg.type);
+		d_vpr_e("%s: failed cmd type %x\n", __func__, karg.type);
 		return -EINVAL;
 	}
 

@@ -1126,8 +1126,7 @@ static int msm_vidc_read_efuse(
 			base = devm_ioremap(dev, (efuse_data[i]).start_address,
 					(efuse_data[i]).size);
 			if (!base) {
-				dprintk(VIDC_ERR,
-					"failed efuse ioremap: res->start %#x, size %d\n",
+				d_vpr_e("failed efuse: start %#x, size %d\n",
 					(efuse_data[i]).start_address,
 					(efuse_data[i]).size);
 					return -EINVAL;
@@ -1138,8 +1137,7 @@ static int msm_vidc_read_efuse(
 				data->sku_version =
 					(efuse & (efuse_data[i]).mask) >>
 					(efuse_data[i]).shift;
-				dprintk(VIDC_HIGH,
-					"efuse 0x%x, platform version 0x%x\n",
+				d_vpr_h("efuse 0x%x, platform version 0x%x\n",
 					efuse, data->sku_version);
 
 				devm_iounmap(dev, base);
@@ -1186,10 +1184,9 @@ void *vidc_get_drv_data(struct device *dev)
 	}  else if (!strcmp(match->compatible, "qcom,kona-vidc")) {
 		ddr_type = of_fdt_get_ddrtype();
 		if (ddr_type == -ENOENT) {
-			dprintk(VIDC_ERR,
-				"Failed to get ddr type, use LPDDR5\n");
+			d_vpr_e("Failed to get ddr type, use LPDDR5\n");
 		}
-		dprintk(VIDC_HIGH, "DDR Type %x\n", ddr_type);
+		d_vpr_h("DDR Type %x\n", ddr_type);
 
 		if (driver_data->ubwc_config &&
 			(ddr_type == DDR_TYPE_LPDDR4 ||

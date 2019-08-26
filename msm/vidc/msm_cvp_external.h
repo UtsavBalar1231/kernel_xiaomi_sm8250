@@ -82,7 +82,7 @@ struct msm_cvp_buffer_type {
 struct msm_cvp_session_release_persist_buffers_packet {
 	u32 size;
 	u32 packet_type;
-	u32 session_id;
+	u32 sid;
 	struct msm_cvp_client_data client_data;
 	u32 cvp_op;
 	struct msm_cvp_buffer_type persist1_buffer;
@@ -92,7 +92,7 @@ struct msm_cvp_session_release_persist_buffers_packet {
 struct msm_cvp_session_set_persist_buffers_packet {
 	u32 size;
 	u32 packet_type;
-	u32 session_id;
+	u32 sid;
 	struct msm_cvp_client_data client_data;
 	u32 cvp_op;
 	struct msm_cvp_buffer_type persist1_buffer;
@@ -102,7 +102,7 @@ struct msm_cvp_session_set_persist_buffers_packet {
 struct msm_cvp_dme_frame_packet {
 	u32 size;
 	u32 packet_type;
-	u32 session_id;
+	u32 sid;
 	struct msm_cvp_client_data client_data;
 	u32 stream_idx;
 	u32 skip_mv_calc;
@@ -126,7 +126,7 @@ struct msm_cvp_dme_frame_packet {
 struct msm_cvp_dme_basic_config_packet {
 	u32 size;
 	u32 packet_type;
-	u32 session_id;
+	u32 sid;
 	struct msm_cvp_client_data client_data;
 	u32 stream_idx;
 	u32 srcbuffer_format;
@@ -167,7 +167,7 @@ struct msm_cvp_buf {
 struct msm_cvp_external {
 	void *priv;
 	void *arg;
-	u32 session_id;
+	u32 sid;
 	u32 width;
 	u32 height;
 	u32 ds_width;

@@ -19,9 +19,9 @@ static void print_client_buffer(u32 tag, const char *str,
 	if (!(tag & msm_vidc_debug) || !inst || !cbuf)
 		return;
 
-	dprintk(tag,
-		"%s: %x : idx %2d fd %d off %d size %d type %d flags 0x%x\n",
-		str, hash32_ptr(inst->session), cbuf->index, cbuf->fd,
+	dprintk(tag, inst->sid,
+		"%s: idx %2d fd %d off %d size %d type %d flags 0x%x\n",
+		str, cbuf->index, cbuf->fd,
 		cbuf->offset, cbuf->size, cbuf->type, cbuf->flags);
 }
 
@@ -31,14 +31,15 @@ static void print_cvp_buffer(u32 tag, const char *str,
 	if (!(tag & msm_vidc_debug) || !inst || !cbuf)
 		return;
 
-	dprintk(tag,
-		"%s: %x : idx %2d fd %d off %d daddr %x size %d type %d flags 0x%x\n",
-		str, hash32_ptr(inst->session), cbuf->buf.index, cbuf->buf.fd,
+	dprintk(tag, inst->sid,
+		"%s: idx %2d fd %d off %d daddr %x size %d type %d flags 0x%x\n",
+		str, cbuf->buf.index, cbuf->buf.fd,
 		cbuf->buf.offset, cbuf->smem.device_addr, cbuf->buf.size,
 		cbuf->buf.type, cbuf->buf.flags);
 }
 
-static enum hal_buffer get_hal_buftype(const char *str, unsigned int type)
+static enum hal_buffer get_hal_buftype(const char *str,
+	unsigned int type, u32 sid)
 {
 	enum hal_buffer buftype = HAL_BUFFER_NONE;
 
@@ -51,7 +52,7 @@ static enum hal_buffer get_hal_buftype(const char *str, unsigned int type)
 	else if (type == MSM_CVP_BUFTYPE_INTERNAL_2)
 		buftype = HAL_BUFFER_INTERNAL_SCRATCH_1;
 	else
-		dprintk(VIDC_ERR, "%s: unknown buffer type %#x\n",
+		s_vpr_e(sid, "%s: unknown buffer type %#x\n",
 			str, type);
 
 	return buftype;
@@ -68,14 +69,14 @@ void handle_session_register_buffer_done(enum hal_command_response cmd,
 	bool found;
 
 	if (!response) {
-		dprintk(VIDC_ERR, "%s: invalid response\n", __func__);
+		d_vpr_e("%s: invalid response\n", __func__);
 		return;
 	}
 	inst = get_inst(get_vidc_core(response->device_id),
-			response->session_id);
+			response->inst_id);
 	if (!inst) {
-		dprintk(VIDC_ERR, "%s: invalid session %pK\n", __func__,
-			response->session_id);
+		d_vpr_e("%s: invalid session %pK\n", __func__,
+			response->inst_id);
 		return;
 	}
 
@@ -90,7 +91,7 @@ void handle_session_register_buffer_done(enum hal_command_response cmd,
 	}
 	mutex_unlock(&inst->cvpbufs.lock);
 	if (!found) {
-		dprintk(VIDC_ERR, "%s: client_data %x not found\n",
+		s_vpr_e(inst->sid, "%s: client_data %x not found\n",
 			__func__, response->data.regbuf.client_data);
 		goto exit;
 	}
@@ -106,6 +107,7 @@ void handle_session_register_buffer_done(enum hal_command_response cmd,
 
 exit:
 	put_inst(inst);
+	s_vpr_l(inst->sid, "handled: SESSION_REGISTER_BUFFER_DONE\n");
 }
 
 void handle_session_unregister_buffer_done(enum hal_command_response cmd,
@@ -120,14 +122,14 @@ void handle_session_unregister_buffer_done(enum hal_command_response cmd,
 	bool found;
 
 	if (!response) {
-		dprintk(VIDC_ERR, "%s: invalid response\n", __func__);
+		d_vpr_e("%s: invalid response\n", __func__);
 		return;
 	}
 	inst = get_inst(get_vidc_core(response->device_id),
-			response->session_id);
+			response->inst_id);
 	if (!inst) {
-		dprintk(VIDC_ERR, "%s: invalid session %pK\n", __func__,
-			response->session_id);
+		d_vpr_e("%s: invalid session %pK\n", __func__,
+			response->inst_id);
 		return;
 	}
 
@@ -142,7 +144,7 @@ void handle_session_unregister_buffer_done(enum hal_command_response cmd,
 	}
 	mutex_unlock(&inst->cvpbufs.lock);
 	if (!found) {
-		dprintk(VIDC_ERR, "%s: client_data %x not found\n",
+		s_vpr_e(inst->sid, "%s: client_data %x not found\n",
 			__func__, response->data.unregbuf.client_data);
 		goto exit;
 	}
@@ -169,6 +171,7 @@ void handle_session_unregister_buffer_done(enum hal_command_response cmd,
 	cbuf = NULL;
 exit:
 	put_inst(inst);
+	s_vpr_l(inst->sid, "handled: SESSION_UNREGISTER_BUFFER_DONE\n");
 }
 
 static void print_cvp_cycles(struct msm_vidc_inst *inst)
@@ -183,8 +186,7 @@ static void print_cvp_cycles(struct msm_vidc_inst *inst)
 	mutex_lock(&core->lock);
 	list_for_each_entry(temp, &core->instances, list) {
 		if (temp->session_type == MSM_VIDC_CVP) {
-			dprintk(VIDC_ERR, "session %#x, vpss %d ise %d\n",
-				hash32_ptr(temp->session),
+			s_vpr_e(temp->sid, "vpss %d ise %d\n",
 				temp->clk_data.vpss_cycles,
 				temp->clk_data.ise_cycles);
 		}
@@ -201,7 +203,7 @@ static bool msm_cvp_check_session_supported(struct msm_vidc_inst *inst,
 	u32 total_ise_cycles = 0;
 
 	if (!inst || !inst->core) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
 		return false;
 	}
 	core = inst->core;
@@ -227,23 +229,21 @@ static int msm_cvp_scale_clocks_and_bus(struct msm_vidc_inst *inst)
 	int rc = 0;
 
 	if (!inst || !inst->core) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
 		return -EINVAL;
 	}
 
-	rc = msm_vidc_set_clocks(inst->core);
+	rc = msm_vidc_set_clocks(inst->core, inst->sid);
 	if (rc) {
-		dprintk(VIDC_ERR,
-			"%s: failed set_clocks for inst %pK (%#x)\n",
-			__func__, inst, hash32_ptr(inst->session));
+		s_vpr_e(inst->sid, "%s: failed set_clocks for inst %pK\n",
+			__func__, inst);
 		goto exit;
 	}
 
 	rc = msm_comm_vote_bus(inst);
 	if (rc) {
-		dprintk(VIDC_ERR,
-			"%s: failed vote_bus for inst %pK (%#x)\n",
-			__func__, inst, hash32_ptr(inst->session));
+		s_vpr_e(inst->sid,
+			"%s: failed vote_bus for inst %pK\n", __func__, inst);
 		goto exit;
 	}
 
@@ -257,12 +257,13 @@ static int msm_cvp_get_session_info(struct msm_vidc_inst *inst,
 	int rc = 0;
 
 	if (!inst || !inst->core || !session) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK %pK\n",
+			__func__, inst, session);
 		return -EINVAL;
 	}
 
-	session->session_id = hash32_ptr(inst->session);
-	dprintk(VIDC_HIGH, "%s: id 0x%x\n", __func__, session->session_id);
+	session->session_id = inst->sid;
+	s_vpr_h(inst->sid, "%s: id 0x%x\n", __func__, session->session_id);
 
 	return rc;
 }
@@ -273,11 +274,12 @@ static int msm_cvp_request_power(struct msm_vidc_inst *inst,
 	int rc = 0;
 
 	if (!inst || !power) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK %pK\n",
+			__func__, inst, power);
 		return -EINVAL;
 	}
 
-	dprintk(VIDC_HIGH,
+	s_vpr_h(inst->sid,
 		"%s: clock_cycles_a %d, clock_cycles_b %d, ddr_bw %d sys_cache_bw %d\n",
 		__func__, power->clock_cycles_a, power->clock_cycles_b,
 		power->ddr_bw, power->sys_cache_bw);
@@ -285,10 +287,8 @@ static int msm_cvp_request_power(struct msm_vidc_inst *inst,
 	rc = msm_cvp_check_session_supported(inst, power->clock_cycles_a,
 			power->clock_cycles_b);
 	if (!rc) {
-		dprintk(VIDC_ERR,
-			"%s: session %#x rejected, cycles: vpss %d, ise %d\n",
-			__func__, hash32_ptr(inst->session),
-			power->clock_cycles_a, power->clock_cycles_b);
+		s_vpr_e(inst->sid, "%s: rejected, cycles: vpss %d, ise %d\n",
+			__func__, power->clock_cycles_a, power->clock_cycles_b);
 		print_cvp_cycles(inst);
 		msm_comm_kill_session(inst);
 		return -EOVERFLOW;
@@ -301,9 +301,9 @@ static int msm_cvp_request_power(struct msm_vidc_inst *inst,
 	inst->clk_data.sys_cache_bw = power->sys_cache_bw / 1000;
 	rc = msm_cvp_scale_clocks_and_bus(inst);
 	if (rc) {
-		dprintk(VIDC_ERR,
-			"%s: failed to scale clocks and bus for inst %pK (%#x)\n",
-			__func__, inst, hash32_ptr(inst->session));
+		s_vpr_e(inst->sid,
+			"%s: failed to scale clocks and bus for inst %pK\n",
+			__func__, inst);
 		goto exit;
 	}
 
@@ -311,17 +311,13 @@ static int msm_cvp_request_power(struct msm_vidc_inst *inst,
 		!inst->clk_data.sys_cache_bw) {
 		rc = msm_cvp_inst_pause(inst);
 		if (rc) {
-			dprintk(VIDC_ERR,
-				"%s: failed to pause inst %pK (%#x)\n",
-				__func__, inst, hash32_ptr(inst->session));
+			s_vpr_e(inst->sid, "%s: failed to pause\n", __func__);
 			goto exit;
 		}
 	} else {
 		rc = msm_cvp_inst_resume(inst);
 		if (rc) {
-			dprintk(VIDC_ERR,
-				"%s: failed to resume inst %pK (%#x)\n",
-				__func__, inst, hash32_ptr(inst->session));
+			s_vpr_e(inst->sid, "%s: failed to resume\n", __func__);
 			goto exit;
 		}
 	}
@@ -340,7 +336,8 @@ static int msm_cvp_register_buffer(struct msm_vidc_inst *inst,
 	struct vidc_register_buffer vbuf;
 
 	if (!inst || !inst->core || !buf) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK %pK\n",
+			__func__, inst, buf);
 		return -EINVAL;
 	}
 	hdev = inst->core->device;
@@ -364,7 +361,7 @@ static int msm_cvp_register_buffer(struct msm_vidc_inst *inst,
 
 	cbuf = kzalloc(sizeof(struct msm_vidc_cvp_buffer), GFP_KERNEL);
 	if (!cbuf) {
-		dprintk(VIDC_ERR, "%s: cbuf alloc failed\n", __func__);
+		s_vpr_e(inst->sid, "%s: cbuf alloc failed\n", __func__);
 		return -ENOMEM;
 	}
 	mutex_lock(&inst->cvpbufs.lock);
@@ -372,7 +369,8 @@ static int msm_cvp_register_buffer(struct msm_vidc_inst *inst,
 	mutex_unlock(&inst->cvpbufs.lock);
 
 	memcpy(&cbuf->buf, buf, sizeof(struct msm_cvp_buffer));
-	cbuf->smem.buffer_type = get_hal_buftype(__func__, buf->type);
+	cbuf->smem.buffer_type = get_hal_buftype(__func__, buf->type,
+								inst->sid);
 	cbuf->smem.fd = buf->fd;
 	cbuf->smem.offset = buf->offset;
 	cbuf->smem.size = buf->size;
@@ -384,7 +382,7 @@ static int msm_cvp_register_buffer(struct msm_vidc_inst *inst,
 
 	memset(&vbuf, 0, sizeof(struct vidc_register_buffer));
 	vbuf.index = buf->index;
-	vbuf.type = get_hal_buftype(__func__, buf->type);
+	vbuf.type = get_hal_buftype(__func__, buf->type, inst->sid);
 	vbuf.size = buf->size;
 	vbuf.device_addr = cbuf->smem.device_addr;
 	vbuf.client_data = cbuf->smem.device_addr;
@@ -419,7 +417,8 @@ static int msm_cvp_unregister_buffer(struct msm_vidc_inst *inst,
 	struct vidc_unregister_buffer vbuf;
 
 	if (!inst || !inst->core || !buf) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK %pK\n",
+			__func__, inst, buf);
 		return -EINVAL;
 	}
 	hdev = inst->core->device;
@@ -443,7 +442,7 @@ static int msm_cvp_unregister_buffer(struct msm_vidc_inst *inst,
 
 	memset(&vbuf, 0, sizeof(struct vidc_unregister_buffer));
 	vbuf.index = cbuf->buf.index;
-	vbuf.type = get_hal_buftype(__func__, cbuf->buf.type);
+	vbuf.type = get_hal_buftype(__func__, cbuf->buf.type, inst->sid);
 	vbuf.size = cbuf->buf.size;
 	vbuf.device_addr = cbuf->smem.device_addr;
 	vbuf.client_data = cbuf->smem.device_addr;
@@ -461,7 +460,8 @@ int msm_vidc_cvp(struct msm_vidc_inst *inst, struct msm_vidc_arg *arg)
 	int rc = 0;
 
 	if (!inst || !arg) {
-		dprintk(VIDC_ERR, "%s: invalid args\n", __func__);
+		d_vpr_e("%s: invalid args %pK %pK\n",
+			__func__, inst, arg);
 		return -EINVAL;
 	}
 
@@ -499,7 +499,7 @@ int msm_vidc_cvp(struct msm_vidc_inst *inst, struct msm_vidc_arg *arg)
 		break;
 	}
 	default:
-		dprintk(VIDC_ERR, "%s: unknown arg type 0x%x\n",
+		s_vpr_e(inst->sid, "%s: unknown arg type 0x%x\n",
 				__func__, arg->type);
 		rc = -ENOTSUPP;
 		break;
@@ -535,15 +535,14 @@ int msm_cvp_inst_pause(struct msm_vidc_inst *inst)
 	struct hfi_device *hdev;
 
 	if (!inst || !inst->core || !inst->core->device) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
 		return -EINVAL;
 	}
 	hdev = inst->core->device;
 
 	rc = call_hfi_op(hdev, session_pause, (void *)inst->session);
 	if (rc)
-		dprintk(VIDC_ERR, "%s: failed to pause inst %pK (%#x)\n",
-			__func__, inst, hash32_ptr(inst->session));
+		s_vpr_e(inst->sid, "%s: failed to pause\n",	__func__);
 
 	return rc;
 }
@@ -554,15 +553,14 @@ int msm_cvp_inst_resume(struct msm_vidc_inst *inst)
 	struct hfi_device *hdev;
 
 	if (!inst || !inst->core || !inst->core->device) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
 		return -EINVAL;
 	}
 	hdev = inst->core->device;
 
 	rc = call_hfi_op(hdev, session_resume, (void *)inst->session);
 	if (rc)
-		dprintk(VIDC_ERR, "%s: failed to resume inst %pK (%#x)\n",
-			__func__, inst, hash32_ptr(inst->session));
+		s_vpr_e(inst->sid, "%s: failed to resume\n", __func__);
 
 	return rc;
 }
@@ -573,22 +571,21 @@ int msm_cvp_inst_deinit(struct msm_vidc_inst *inst)
 	struct msm_vidc_cvp_buffer *cbuf, *temp;
 
 	if (!inst || !inst->core) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
 		return -EINVAL;
 	}
-	dprintk(VIDC_HIGH, "%s: inst %pK (%#x)\n", __func__,
-		inst, hash32_ptr(inst->session));
+	s_vpr_h(inst->sid, "%s: inst %pK\n", __func__, inst);
 
 	rc = msm_comm_try_state(inst, MSM_VIDC_CLOSE_DONE);
 	if (rc)
-		dprintk(VIDC_ERR, "%s: close failed\n", __func__);
+		s_vpr_e(inst->sid, "%s: close failed\n", __func__);
 
 	mutex_lock(&inst->cvpbufs.lock);
 	list_for_each_entry_safe(cbuf, temp, &inst->cvpbufs.list, list) {
 		print_cvp_buffer(VIDC_ERR, "unregistered", inst, cbuf);
 		rc = inst->smem_ops->smem_unmap_dma_buf(inst, &cbuf->smem);
 		if (rc)
-			dprintk(VIDC_ERR, "%s: unmap failed\n", __func__);
+			s_vpr_e(inst->sid, "%s: unmap failed\n", __func__);
 		list_del(&cbuf->list);
 		kfree(cbuf);
 	}
@@ -599,7 +596,7 @@ int msm_cvp_inst_deinit(struct msm_vidc_inst *inst)
 	inst->clk_data.sys_cache_bw = 0;
 	rc = msm_cvp_scale_clocks_and_bus(inst);
 	if (rc)
-		dprintk(VIDC_ERR, "%s: failed to scale_clocks_and_bus\n",
+		s_vpr_e(inst->sid, "%s: failed to scale_clocks_and_bus\n",
 			__func__);
 
 	return rc;
@@ -610,12 +607,11 @@ int msm_cvp_inst_init(struct msm_vidc_inst *inst)
 	int rc = 0;
 
 	if (!inst) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params\n", __func__);
 		return -EINVAL;
 	}
 
-	dprintk(VIDC_HIGH, "%s: inst %pK (%#x)\n", __func__,
-		inst, hash32_ptr(inst->session));
+	s_vpr_h(inst->sid, "%s: inst %pK\n", __func__, inst);
 
 	/* set default frequency */
 	inst->clk_data.core_id = VIDC_CORE_ID_2;

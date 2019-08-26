@@ -383,7 +383,7 @@ int msm_vidc_get_decoder_internal_buffer_sizes(struct msm_vidc_inst *inst)
 	struct v4l2_format *f;
 
 	if (!inst) {
-		dprintk(VIDC_ERR, "Instance is null!");
+		d_vpr_e("%s: Instance is null!", __func__);
 		return -EINVAL;
 	}
 
@@ -405,8 +405,8 @@ int msm_vidc_get_decoder_internal_buffer_sizes(struct msm_vidc_inst *inst)
 		dec_calculators = &mpeg2d_calculators;
 		break;
 	default:
-		dprintk(VIDC_ERR,
-			"Invalid pix format. Internal buffer cal not defined : %x ",
+		s_vpr_e(inst->sid,
+			"Invalid pix format. Internal buffer cal not defined : %x\n",
 			f->fmt.pix_mp.pixelformat);
 		return -EINVAL;
 	}
@@ -503,7 +503,7 @@ int msm_vidc_get_encoder_internal_buffer_sizes(struct msm_vidc_inst *inst)
 	struct v4l2_format *f;
 
 	if (!inst) {
-		dprintk(VIDC_ERR, "Instance is null!");
+		d_vpr_e("%s: Instance is null!", __func__);
 		return -EINVAL;
 	}
 
@@ -519,7 +519,7 @@ int msm_vidc_get_encoder_internal_buffer_sizes(struct msm_vidc_inst *inst)
 		enc_calculators = &vp8e_calculators;
 		break;
 	default:
-		dprintk(VIDC_ERR,
+		s_vpr_e(inst->sid,
 			"Invalid pix format. Internal buffer cal not defined : %x ",
 			f->fmt.pix_mp.pixelformat);
 		return -EINVAL;
@@ -531,8 +531,7 @@ int msm_vidc_get_encoder_internal_buffer_sizes(struct msm_vidc_inst *inst)
 	bframe = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_B_FRAMES);
 	num_bframes = bframe->val;
 	if (num_bframes < 0) {
-		dprintk(VIDC_ERR,
-			"%s: get num bframe failed\n", __func__);
+		s_vpr_e(inst->sid, "%s: get num bframe failed\n", __func__);
 		return -EINVAL;
 	}
 
@@ -583,7 +582,7 @@ int msm_vidc_get_encoder_internal_buffer_sizes(struct msm_vidc_inst *inst)
 int msm_vidc_calculate_internal_buffer_sizes(struct msm_vidc_inst *inst)
 {
 	if (!inst) {
-		dprintk(VIDC_ERR, "Instance is null!");
+		d_vpr_e("%s: Instance is null!", __func__);
 		return -EINVAL;
 	}
 
@@ -617,7 +616,7 @@ int msm_vidc_calculate_input_buffer_count(struct msm_vidc_inst *inst)
 	int extra_buff_count = 0;
 
 	if (!inst) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params\n", __func__);
 		return -EINVAL;
 	}
 	fmt = &inst->fmts[INPUT_PORT];
@@ -641,9 +640,9 @@ int msm_vidc_calculate_input_buffer_count(struct msm_vidc_inst *inst)
 	fmt->count_min_host = fmt->count_actual =
 		fmt->count_min + extra_buff_count;
 
-	dprintk(VIDC_HIGH, "%s: %x : input min %d min_host %d actual %d\n",
-		__func__, hash32_ptr(inst->session),
-		fmt->count_min, fmt->count_min_host, fmt->count_actual);
+	s_vpr_h(inst->sid, "%s: input min %d min_host %d actual %d\n",
+		__func__, fmt->count_min,
+		fmt->count_min_host, fmt->count_actual);
 
 	return 0;
 }
@@ -655,7 +654,7 @@ int msm_vidc_calculate_output_buffer_count(struct msm_vidc_inst *inst)
 	u32 codec, output_min_count;
 
 	if (!inst) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params\n", __func__);
 		return -EINVAL;
 	}
 	fmt = &inst->fmts[OUTPUT_PORT];
@@ -697,9 +696,9 @@ int msm_vidc_calculate_output_buffer_count(struct msm_vidc_inst *inst)
 	fmt->count_min_host = fmt->count_actual =
 		fmt->count_min + extra_buff_count;
 
-	dprintk(VIDC_HIGH, "%s: %x : output min %d min_host %d actual %d\n",
-		__func__, hash32_ptr(inst->session),
-		fmt->count_min, fmt->count_min_host, fmt->count_actual);
+	s_vpr_h(inst->sid, "%s: output min %d min_host %d actual %d\n",
+		__func__, fmt->count_min, fmt->count_min_host,
+		fmt->count_actual);
 
 	return 0;
 }
@@ -722,7 +721,7 @@ int msm_vidc_get_extra_buff_count(struct msm_vidc_inst *inst,
 	enum hal_buffer buffer_type)
 {
 	if (!inst || !inst->core) {
-		dprintk(VIDC_ERR, "%s Invalid args\n", __func__);
+		d_vpr_e("%s: Invalid args\n", __func__);
 		return 0;
 	}
 
@@ -744,7 +743,7 @@ static int msm_vidc_get_extra_input_buff_count(struct msm_vidc_inst *inst)
 	struct v4l2_format *f;
 
 	if (!inst || !inst->core) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
 		return -EINVAL;
 	}
 
@@ -820,7 +819,7 @@ static int msm_vidc_get_extra_output_buff_count(struct msm_vidc_inst *inst)
 	struct v4l2_format *f;
 
 	if (!inst || !inst->core) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
 		return -EINVAL;
 	}
 
@@ -914,10 +913,10 @@ u32 msm_vidc_calculate_dec_input_frame_size(struct msm_vidc_inst *inst)
 	if (inst->buffer_size_limit &&
 		(inst->buffer_size_limit < frame_size)) {
 		frame_size = inst->buffer_size_limit;
-		dprintk(VIDC_HIGH, "input buffer size limited to %d\n",
+		s_vpr_h(inst->sid, "input buffer size limited to %d\n",
 			frame_size);
 	} else {
-		dprintk(VIDC_HIGH, "set input buffer size to %d\n",
+		s_vpr_h(inst->sid, "set input buffer size to %d\n",
 			frame_size);
 	}
 
@@ -930,7 +929,8 @@ u32 msm_vidc_calculate_dec_output_frame_size(struct msm_vidc_inst *inst)
 	struct v4l2_format *f;
 
 	f = &inst->fmts[OUTPUT_PORT].v4l2_fmt;
-	hfi_fmt = msm_comm_convert_color_fmt(f->fmt.pix_mp.pixelformat);
+	hfi_fmt = msm_comm_convert_color_fmt(f->fmt.pix_mp.pixelformat,
+					inst->sid);
 	return VENUS_BUFFER_SIZE(hfi_fmt, f->fmt.pix_mp.width,
 			f->fmt.pix_mp.height);
 }
@@ -949,7 +949,8 @@ u32 msm_vidc_calculate_enc_input_frame_size(struct msm_vidc_inst *inst)
 	struct v4l2_format *f;
 
 	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
-	hfi_fmt = msm_comm_convert_color_fmt(f->fmt.pix_mp.pixelformat);
+	hfi_fmt = msm_comm_convert_color_fmt(f->fmt.pix_mp.pixelformat,
+					inst->sid);
 	return VENUS_BUFFER_SIZE(hfi_fmt, f->fmt.pix_mp.width,
 			f->fmt.pix_mp.height);
 }

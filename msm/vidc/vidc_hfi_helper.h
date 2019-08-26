@@ -834,7 +834,7 @@ struct vidc_hal_msg_pkt_hdr {
 struct vidc_hal_session_cmd_pkt {
 	u32 size;
 	u32 packet_type;
-	u32 session_id;
+	u32 sid;
 };
 
 struct hfi_packet_header {
@@ -885,7 +885,7 @@ struct hfi_cmd_sys_get_property_packet {
 struct hfi_cmd_sys_session_init_packet {
 	u32 size;
 	u32 packet_type;
-	u32 session_id;
+	u32 sid;
 	u32 session_domain;
 	u32 session_codec;
 };
@@ -893,7 +893,7 @@ struct hfi_cmd_sys_session_init_packet {
 struct hfi_cmd_sys_session_end_packet {
 	u32 size;
 	u32 packet_type;
-	u32 session_id;
+	u32 sid;
 };
 
 struct hfi_cmd_sys_set_buffers_packet {
@@ -927,7 +927,7 @@ struct hfi_cmd_sys_set_ubwc_config_packet_type {
 struct hfi_cmd_session_set_property_packet {
 	u32 size;
 	u32 packet_type;
-	u32 session_id;
+	u32 sid;
 	u32 num_properties;
 	u32 rg_property_data[1];
 };
@@ -935,7 +935,7 @@ struct hfi_cmd_session_set_property_packet {
 struct hfi_cmd_session_set_buffers_packet {
 	u32 size;
 	u32 packet_type;
-	u32 session_id;
+	u32 sid;
 	u32 buffer_type;
 	u32 buffer_size;
 	u32 extra_data_size;
@@ -953,7 +953,7 @@ struct hfi_buffer_mapping_type {
 struct hfi_cmd_session_register_buffers_packet {
 	u32 size;
 	u32 packet_type;
-	u32 session_id;
+	u32 sid;
 	u32 client_data;
 	u32 response_req;
 	u32 num_buffers;
@@ -963,7 +963,7 @@ struct hfi_cmd_session_register_buffers_packet {
 struct hfi_cmd_session_unregister_buffers_packet {
 	u32 size;
 	u32 packet_type;
-	u32 session_id;
+	u32 sid;
 	u32 client_data;
 	u32 response_req;
 	u32 num_buffers;
@@ -973,7 +973,7 @@ struct hfi_cmd_session_unregister_buffers_packet {
 struct hfi_cmd_session_sync_process_packet {
 	u32 size;
 	u32 packet_type;
-	u32 session_id;
+	u32 sid;
 	u32 sync_id;
 	u32 rg_data[1];
 };
@@ -981,7 +981,7 @@ struct hfi_cmd_session_sync_process_packet {
 struct hfi_msg_event_notify_packet {
 	u32 size;
 	u32 packet_type;
-	u32 session_id;
+	u32 sid;
 	u32 event_id;
 	u32 event_data1;
 	u32 event_data2;
@@ -1018,7 +1018,7 @@ struct hfi_msg_sys_release_resource_done_packet {
 struct hfi_msg_sys_session_init_done_packet {
 	u32 size;
 	u32 packet_type;
-	u32 session_id;
+	u32 sid;
 	u32 error_type;
 	u32 num_properties;
 	u32 rg_property_data[1];
@@ -1027,7 +1027,7 @@ struct hfi_msg_sys_session_init_done_packet {
 struct hfi_msg_sys_session_end_done_packet {
 	u32 size;
 	u32 packet_type;
-	u32 session_id;
+	u32 sid;
 	u32 error_type;
 };
 

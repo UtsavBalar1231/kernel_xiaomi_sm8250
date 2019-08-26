@@ -138,43 +138,45 @@
 #define VCODEC_NOC_ERL_MAIN_ERRLOG3_LOW			0x00011238
 #define VCODEC_NOC_ERL_MAIN_ERRLOG3_HIGH		0x0001123C
 
-void __interrupt_init_iris2(struct venus_hfi_device *device)
+void __interrupt_init_iris2(struct venus_hfi_device *device, u32 sid)
 {
 	u32 mask_val = 0;
 
 	/* All interrupts should be disabled initially 0x1F6 : Reset value */
-	mask_val = __read_register(device, WRAPPER_INTR_MASK_IRIS2);
+	mask_val = __read_register(device, WRAPPER_INTR_MASK_IRIS2, sid);
 
 	/* Write 0 to unmask CPU and WD interrupts */
 	mask_val &= ~(WRAPPER_INTR_MASK_A2HWD_BMSK_IRIS2|
 			WRAPPER_INTR_MASK_A2HCPU_BMSK_IRIS2);
-	__write_register(device, WRAPPER_INTR_MASK_IRIS2, mask_val);
+	__write_register(device, WRAPPER_INTR_MASK_IRIS2, mask_val, sid);
 }
 
-void __setup_ucregion_memory_map_iris2(struct venus_hfi_device *device)
+void __setup_ucregion_memory_map_iris2(struct venus_hfi_device *device, u32 sid)
 {
 	__write_register(device, UC_REGION_ADDR_IRIS2,
-			(u32)device->iface_q_table.align_device_addr);
-	__write_register(device, UC_REGION_SIZE_IRIS2, SHARED_QSIZE);
+			(u32)device->iface_q_table.align_device_addr, sid);
+	__write_register(device, UC_REGION_SIZE_IRIS2, SHARED_QSIZE, sid);
 	__write_register(device, QTBL_ADDR_IRIS2,
-			(u32)device->iface_q_table.align_device_addr);
-	__write_register(device, QTBL_INFO_IRIS2, 0x01);
+			(u32)device->iface_q_table.align_device_addr, sid);
+	__write_register(device, QTBL_INFO_IRIS2, 0x01, sid);
 	if (device->sfr.align_device_addr)
 		__write_register(device, SFR_ADDR_IRIS2,
-				(u32)device->sfr.align_device_addr);
+				(u32)device->sfr.align_device_addr, sid);
 	if (device->qdss.align_device_addr)
 		__write_register(device, MMAP_ADDR_IRIS2,
-				(u32)device->qdss.align_device_addr);
+				(u32)device->qdss.align_device_addr, sid);
 	/* update queues vaddr for debug purpose */
 	__write_register(device, CPU_CS_VCICMDARG0_IRIS2,
-		(u32)device->iface_q_table.align_virtual_addr);
+		(u32)device->iface_q_table.align_virtual_addr, sid);
 	__write_register(device, CPU_CS_VCICMDARG1_IRIS2,
-		(u32)((u64)device->iface_q_table.align_virtual_addr >> 32));
+		(u32)((u64)device->iface_q_table.align_virtual_addr >> 32),
+		sid);
 }
 
 void __power_off_iris2(struct venus_hfi_device *device)
 {
 	u32 lpi_status, reg_status = 0, count = 0, max_count = 10;
+	u32 sid = DEFAULT_SID;
 
 	if (!device->power_enabled)
 		return;
@@ -184,78 +186,70 @@ void __power_off_iris2(struct venus_hfi_device *device)
 	device->intr_status = 0;
 
 	/* HPG 6.1.2 Step 1  */
-	__write_register(device, CPU_CS_X2RPMh_IRIS2, 0x3);
+	__write_register(device, CPU_CS_X2RPMh_IRIS2, 0x3, sid);
 
 	/* HPG 6.1.2 Step 2, noc to low power */
-	__write_register(device, AON_WRAPPER_MVP_NOC_LPI_CONTROL, 0x1);
+	__write_register(device, AON_WRAPPER_MVP_NOC_LPI_CONTROL, 0x1, sid);
 	while (!reg_status && count < max_count) {
 		lpi_status =
 			 __read_register(device,
-				AON_WRAPPER_MVP_NOC_LPI_STATUS);
+				AON_WRAPPER_MVP_NOC_LPI_STATUS, sid);
 		reg_status = lpi_status & BIT(0);
-		dprintk(VIDC_HIGH,
-			"Noc: lpi_status %d noc_status %d (count %d)\n",
+		d_vpr_h("Noc: lpi_status %d noc_status %d (count %d)\n",
 			lpi_status, reg_status, count);
 		usleep_range(50, 100);
 		count++;
 	}
 	if (count == max_count) {
-		dprintk(VIDC_ERR,
-			"NOC not in qaccept status %d\n", reg_status);
+		d_vpr_e("NOC not in qaccept status %d\n", reg_status);
 	}
 
 	/* HPG 6.1.2 Step 3, debug bridge to low power */
 	__write_register(device,
-		WRAPPER_DEBUG_BRIDGE_LPI_CONTROL_IRIS2, 0x7);
+		WRAPPER_DEBUG_BRIDGE_LPI_CONTROL_IRIS2, 0x7, sid);
 	reg_status = 0;
 	count = 0;
 	while ((reg_status != 0x7) && count < max_count) {
 		lpi_status = __read_register(device,
-				 WRAPPER_DEBUG_BRIDGE_LPI_STATUS_IRIS2);
+				 WRAPPER_DEBUG_BRIDGE_LPI_STATUS_IRIS2, sid);
 		reg_status = lpi_status & 0x7;
-		dprintk(VIDC_HIGH,
-			"DBLP Set : lpi_status %d reg_status %d (count %d)\n",
+		d_vpr_h("DBLP Set : lpi_status %d reg_status %d (count %d)\n",
 			lpi_status, reg_status, count);
 		usleep_range(50, 100);
 		count++;
 	}
-	if (count == max_count) {
-		dprintk(VIDC_ERR,
-			"DBLP Set: status %d\n", reg_status);
-	}
+	if (count == max_count)
+		d_vpr_e("DBLP Set: status %d\n", reg_status);
 
 	/* HPG 6.1.2 Step 4, debug bridge to lpi release */
 	__write_register(device,
-		WRAPPER_DEBUG_BRIDGE_LPI_CONTROL_IRIS2, 0x0);
+		WRAPPER_DEBUG_BRIDGE_LPI_CONTROL_IRIS2, 0x0, sid);
 	lpi_status = 0x1;
 	count = 0;
 	while (lpi_status && count < max_count) {
 		lpi_status = __read_register(device,
-				 WRAPPER_DEBUG_BRIDGE_LPI_STATUS_IRIS2);
-		dprintk(VIDC_HIGH,
-			"DBLP Release: lpi_status %d(count %d)\n",
+				 WRAPPER_DEBUG_BRIDGE_LPI_STATUS_IRIS2, sid);
+		d_vpr_h("DBLP Release: lpi_status %d(count %d)\n",
 			lpi_status, count);
 		usleep_range(50, 100);
 		count++;
 	}
-	if (count == max_count) {
-		dprintk(VIDC_ERR,
-			"DBLP Release: lpi_status %d\n", lpi_status);
-	}
+	if (count == max_count)
+		d_vpr_e("DBLP Release: lpi_status %d\n", lpi_status);
 
 	/* HPG 6.1.2 Step 6 */
 	__disable_unprepare_clks(device);
 
 	/* HPG 6.1.2 Step 7 & 8 */
-	if (call_venus_op(device, reset_ahb2axi_bridge, device))
-		dprintk(VIDC_ERR, "Failed to reset ahb2axi\n");
+	if (call_venus_op(device, reset_ahb2axi_bridge, device, sid))
+		d_vpr_e("%s: Failed to reset ahb2axi\n", __func__);
 
 	/* HPG 6.1.2 Step 5 */
 	if (__disable_regulators(device))
-		dprintk(VIDC_ERR, "Failed to disable regulators\n");
+		d_vpr_e("%s: Failed to disable regulators\n", __func__);
 
-	if (__unvote_buses(device))
-		dprintk(VIDC_ERR, "Failed to unvote for buses\n");
+	if (__unvote_buses(device, sid))
+		d_vpr_e("%s: Failed to unvote for buses\n", __func__);
 	device->power_enabled = false;
 }
 
@@ -267,32 +261,33 @@ int __prepare_pc_iris2(struct venus_hfi_device *device)
 	int count = 0;
 	const int max_tries = 10;
 
-	ctrl_status = __read_register(device, CTRL_STATUS_IRIS2);
+	ctrl_status = __read_register(device, CTRL_STATUS_IRIS2, DEFAULT_SID);
 	pc_ready = ctrl_status & CTRL_STATUS_PC_READY_IRIS2;
 	idle_status = ctrl_status & BIT(30);
 
 	if (pc_ready) {
-		dprintk(VIDC_HIGH, "Already in pc_ready state\n");
+		d_vpr_h("Already in pc_ready state\n");
 		return 0;
 	}
 
-	wfi_status = BIT(0) & __read_register(device,
-				WRAPPER_TZ_CPU_STATUS);
+	wfi_status = BIT(0) & __read_register(device, WRAPPER_TZ_CPU_STATUS,
+							DEFAULT_SID);
 	if (!wfi_status || !idle_status) {
-		dprintk(VIDC_ERR, "Skipping PC, wfi status not set\n");
+		d_vpr_e("Skipping PC, wfi status not set\n");
 		goto skip_power_off;
 	}
 
 	rc = __prepare_pc(device);
 	if (rc) {
-		dprintk(VIDC_ERR, "Failed __prepare_pc %d\n", rc);
+		d_vpr_e("Failed __prepare_pc %d\n", rc);
 		goto skip_power_off;
 	}
 
 	while (count < max_tries) {
 		wfi_status = BIT(0) & __read_register(device,
-					WRAPPER_TZ_CPU_STATUS);
-		ctrl_status = __read_register(device, CTRL_STATUS_IRIS2);
+				WRAPPER_TZ_CPU_STATUS, DEFAULT_SID);
+		ctrl_status = __read_register(device,
+				CTRL_STATUS_IRIS2, DEFAULT_SID);
 		if (wfi_status && (ctrl_status & CTRL_STATUS_PC_READY_IRIS2))
 			break;
 		usleep_range(150, 250);
@@ -300,22 +295,22 @@ int __prepare_pc_iris2(struct venus_hfi_device *device)
 	}
 
 	if (count == max_tries) {
-		dprintk(VIDC_ERR, "Skip PC. Core is not in right state\n");
+		d_vpr_e("Skip PC. Core is not in right state\n");
 		goto skip_power_off;
 	}
 
 	return rc;
 
 skip_power_off:
-	dprintk(VIDC_ERR, "Skip PC, wfi=%#x, idle=%#x, pcr=%#x, ctrl=%#x)\n",
+	d_vpr_e("Skip PC, wfi=%#x, idle=%#x, pcr=%#x, ctrl=%#x)\n",
 		wfi_status, idle_status, pc_ready, ctrl_status);
 	return -EAGAIN;
 }
 
-void __raise_interrupt_iris2(struct venus_hfi_device *device)
+void __raise_interrupt_iris2(struct venus_hfi_device *device, u32 sid)
 {
 	__write_register(device, CPU_IC_SOFTINT_IRIS2,
-				1 << CPU_IC_SOFTINT_H2A_SHFT_IRIS2);
+				1 << CPU_IC_SOFTINT_H2A_SHFT_IRIS2, sid);
 }
 
 bool __watchdog_iris2(u32 intr_status)
@@ -331,33 +326,34 @@ bool __watchdog_iris2(u32 intr_status)
 void __noc_error_info_iris2(struct venus_hfi_device *device)
 {
 	u32 val = 0;
+	u32 sid = DEFAULT_SID;
 
-	val = __read_register(device, VCODEC_NOC_ERL_MAIN_SWID_LOW);
-	dprintk(VIDC_ERR, "VCODEC_NOC_ERL_MAIN_SWID_LOW:     %#x\n", val);
-	val = __read_register(device, VCODEC_NOC_ERL_MAIN_SWID_HIGH);
-	dprintk(VIDC_ERR, "VCODEC_NOC_ERL_MAIN_SWID_HIGH:     %#x\n", val);
-	val = __read_register(device, VCODEC_NOC_ERL_MAIN_MAINCTL_LOW);
-	dprintk(VIDC_ERR, "VCODEC_NOC_ERL_MAIN_MAINCTL_LOW:     %#x\n", val);
-	val = __read_register(device, VCODEC_NOC_ERL_MAIN_ERRVLD_LOW);
-	dprintk(VIDC_ERR, "VCODEC_NOC_ERL_MAIN_ERRVLD_LOW:     %#x\n", val);
-	val = __read_register(device, VCODEC_NOC_ERL_MAIN_ERRCLR_LOW);
-	dprintk(VIDC_ERR, "VCODEC_NOC_ERL_MAIN_ERRCLR_LOW:     %#x\n", val);
-	val = __read_register(device, VCODEC_NOC_ERL_MAIN_ERRLOG0_LOW);
-	dprintk(VIDC_ERR, "VCODEC_NOC_ERL_MAIN_ERRLOG0_LOW:     %#x\n", val);
-	val = __read_register(device, VCODEC_NOC_ERL_MAIN_ERRLOG0_HIGH);
-	dprintk(VIDC_ERR, "VCODEC_NOC_ERL_MAIN_ERRLOG0_HIGH:     %#x\n", val);
-	val = __read_register(device, VCODEC_NOC_ERL_MAIN_ERRLOG1_LOW);
-	dprintk(VIDC_ERR, "VCODEC_NOC_ERL_MAIN_ERRLOG1_LOW:     %#x\n", val);
-	val = __read_register(device, VCODEC_NOC_ERL_MAIN_ERRLOG1_HIGH);
-	dprintk(VIDC_ERR, "VCODEC_NOC_ERL_MAIN_ERRLOG1_HIGH:     %#x\n", val);
-	val = __read_register(device, VCODEC_NOC_ERL_MAIN_ERRLOG2_LOW);
-	dprintk(VIDC_ERR, "VCODEC_NOC_ERL_MAIN_ERRLOG2_LOW:     %#x\n", val);
-	val = __read_register(device, VCODEC_NOC_ERL_MAIN_ERRLOG2_HIGH);
-	dprintk(VIDC_ERR, "VCODEC_NOC_ERL_MAIN_ERRLOG2_HIGH:     %#x\n", val);
-	val = __read_register(device, VCODEC_NOC_ERL_MAIN_ERRLOG3_LOW);
-	dprintk(VIDC_ERR, "VCODEC_NOC_ERL_MAIN_ERRLOG3_LOW:     %#x\n", val);
-	val = __read_register(device, VCODEC_NOC_ERL_MAIN_ERRLOG3_HIGH);
-	dprintk(VIDC_ERR, "VCODEC_NOC_ERL_MAIN_ERRLOG3_HIGH:     %#x\n", val);
+	val = __read_register(device, VCODEC_NOC_ERL_MAIN_SWID_LOW, sid);
+	d_vpr_e("VCODEC_NOC_ERL_MAIN_SWID_LOW:     %#x\n", val);
+	val = __read_register(device, VCODEC_NOC_ERL_MAIN_SWID_HIGH, sid);
+	d_vpr_e("VCODEC_NOC_ERL_MAIN_SWID_HIGH:     %#x\n", val);
+	val = __read_register(device, VCODEC_NOC_ERL_MAIN_MAINCTL_LOW, sid);
+	d_vpr_e("VCODEC_NOC_ERL_MAIN_MAINCTL_LOW:     %#x\n", val);
+	val = __read_register(device, VCODEC_NOC_ERL_MAIN_ERRVLD_LOW, sid);
+	d_vpr_e("VCODEC_NOC_ERL_MAIN_ERRVLD_LOW:     %#x\n", val);
+	val = __read_register(device, VCODEC_NOC_ERL_MAIN_ERRCLR_LOW, sid);
+	d_vpr_e("VCODEC_NOC_ERL_MAIN_ERRCLR_LOW:     %#x\n", val);
+	val = __read_register(device, VCODEC_NOC_ERL_MAIN_ERRLOG0_LOW, sid);
+	d_vpr_e("VCODEC_NOC_ERL_MAIN_ERRLOG0_LOW:     %#x\n", val);
+	val = __read_register(device, VCODEC_NOC_ERL_MAIN_ERRLOG0_HIGH, sid);
+	d_vpr_e("VCODEC_NOC_ERL_MAIN_ERRLOG0_HIGH:     %#x\n", val);
+	val = __read_register(device, VCODEC_NOC_ERL_MAIN_ERRLOG1_LOW, sid);
+	d_vpr_e("VCODEC_NOC_ERL_MAIN_ERRLOG1_LOW:     %#x\n", val);
+	val = __read_register(device, VCODEC_NOC_ERL_MAIN_ERRLOG1_HIGH, sid);
+	d_vpr_e("VCODEC_NOC_ERL_MAIN_ERRLOG1_HIGH:     %#x\n", val);
+	val = __read_register(device, VCODEC_NOC_ERL_MAIN_ERRLOG2_LOW, sid);
+	d_vpr_e("VCODEC_NOC_ERL_MAIN_ERRLOG2_LOW:     %#x\n", val);
+	val = __read_register(device, VCODEC_NOC_ERL_MAIN_ERRLOG2_HIGH, sid);
+	d_vpr_e("VCODEC_NOC_ERL_MAIN_ERRLOG2_HIGH:     %#x\n", val);
+	val = __read_register(device, VCODEC_NOC_ERL_MAIN_ERRLOG3_LOW, sid);
+	d_vpr_e("VCODEC_NOC_ERL_MAIN_ERRLOG3_LOW:     %#x\n", val);
+	val = __read_register(device, VCODEC_NOC_ERL_MAIN_ERRLOG3_HIGH, sid);
+	d_vpr_e("VCODEC_NOC_ERL_MAIN_ERRLOG3_HIGH:     %#x\n", val);
 }
 
 void __core_clear_interrupt_iris2(struct venus_hfi_device *device)
@@ -365,11 +361,12 @@ void __core_clear_interrupt_iris2(struct venus_hfi_device *device)
 	u32 intr_status = 0, mask = 0;
 
 	if (!device) {
-		dprintk(VIDC_ERR, "%s: NULL device\n", __func__);
+		d_vpr_e("%s: NULL device\n", __func__);
 		return;
 	}
 
-	intr_status = __read_register(device, WRAPPER_INTR_STATUS_IRIS2);
+	intr_status = __read_register(device, WRAPPER_INTR_STATUS_IRIS2,
+						DEFAULT_SID);
 	mask = (WRAPPER_INTR_STATUS_A2H_BMSK_IRIS2|
 		WRAPPER_INTR_STATUS_A2HWD_BMSK_IRIS2|
 		CTRL_INIT_IDLE_MSG_BMSK_IRIS2);
@@ -377,17 +374,16 @@ void __core_clear_interrupt_iris2(struct venus_hfi_device *device)
 	if (intr_status & mask) {
 		device->intr_status |= intr_status;
 		device->reg_count++;
-		dprintk(VIDC_LOW,
-			"INTERRUPT for device: %pK: times: %d interrupt_status: %d\n",
-			device, device->reg_count, intr_status);
+		d_vpr_l("INTERRUPT: times: %d interrupt_status: %d\n",
+			device->reg_count, intr_status);
 	} else {
 		device->spur_count++;
 	}
 
-	__write_register(device, CPU_CS_A2HSOFTINTCLR_IRIS2, 1);
+	__write_register(device, CPU_CS_A2HSOFTINTCLR_IRIS2, 1, DEFAULT_SID);
 }
 
-int __boot_firmware_iris2(struct venus_hfi_device *device)
+int __boot_firmware_iris2(struct venus_hfi_device *device, u32 sid)
 {
 	int rc = 0;
 	u32 ctrl_init_val = 0, ctrl_status = 0, count = 0, max_tries = 1000;
@@ -396,11 +392,11 @@ int __boot_firmware_iris2(struct venus_hfi_device *device)
 	if (device->res->cvp_internal)
 		ctrl_init_val |= BIT(1);
 
-	__write_register(device, CTRL_INIT_IRIS2, ctrl_init_val);
+	__write_register(device, CTRL_INIT_IRIS2, ctrl_init_val, sid);
 	while (!ctrl_status && count < max_tries) {
-		ctrl_status = __read_register(device, CTRL_STATUS_IRIS2);
+		ctrl_status = __read_register(device, CTRL_STATUS_IRIS2, sid);
 		if ((ctrl_status & CTRL_ERROR_STATUS__M_IRIS2) == 0x4) {
-			dprintk(VIDC_ERR, "invalid setting for UC_REGION\n");
+			s_vpr_e(sid, "invalid setting for UC_REGION\n");
 			break;
 		}
 
@@ -409,13 +405,13 @@ int __boot_firmware_iris2(struct venus_hfi_device *device)
 	}
 
 	if (count >= max_tries) {
-		dprintk(VIDC_ERR, "Error booting up vidc firmware\n");
+		s_vpr_e(sid, "Error booting up vidc firmware\n");
 		rc = -ETIME;
 	}
 
 	/* Enable interrupt before sending commands to venus */
-	__write_register(device, CPU_CS_H2XSOFTINTEN_IRIS2, 0x1);
-	__write_register(device, CPU_CS_X2RPMh_IRIS2, 0x0);
+	__write_register(device, CPU_CS_H2XSOFTINTEN_IRIS2, 0x1, sid);
+	__write_register(device, CPU_CS_X2RPMh_IRIS2, 0x0, sid);
 
 	return rc;
 }
