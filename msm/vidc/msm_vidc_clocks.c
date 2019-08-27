@@ -48,15 +48,6 @@ struct msm_vidc_core_ops core_ops_iris2 = {
 	.calc_bw = calc_bw_iris2,
 };
 
-static inline void msm_dcvs_print_dcvs_stats(struct clock_data *dcvs)
-{
-	dprintk(VIDC_PERF,
-		"DCVS: Loads %lld %lld %lld, Thresholds %d %d %d\n",
-		dcvs->load_low, dcvs->load_norm, dcvs->load_high,
-		dcvs->min_threshold, dcvs->nom_threshold,
-		dcvs->max_threshold);
-}
-
 static inline unsigned long get_ubwc_compression_ratio(
 	struct ubwc_cr_stats_info_type ubwc_stats_info)
 {
@@ -456,7 +447,7 @@ static int msm_dcvs_scale_clocks(struct msm_vidc_inst *inst,
 	if (!inst->clk_data.dcvs_mode || inst->batch.enable) {
 		dprintk(VIDC_LOW, "Skip DCVS (dcvs %d, batching %d)\n",
 			inst->clk_data.dcvs_mode, inst->batch.enable);
-		inst->clk_data.load = inst->clk_data.load_norm;
+		inst->clk_data.dcvs_flags = 0;
 		return 0;
 	}
 
@@ -493,68 +484,20 @@ static int msm_dcvs_scale_clocks(struct msm_vidc_inst *inst,
 
 	if (dcvs->dcvs_window < DCVS_DEC_EXTRA_OUTPUT_BUFFERS ||
 		bufs_with_fw == dcvs->nom_threshold) {
-		dcvs->load = dcvs->load_norm;
 		dcvs->dcvs_flags = 0;
 	} else if (bufs_with_fw >= dcvs->max_threshold) {
-		dcvs->load = dcvs->load_high;
 		dcvs->dcvs_flags |= MSM_VIDC_DCVS_INCR;
 	} else if (bufs_with_fw < dcvs->min_threshold) {
-		dcvs->load = dcvs->load_low;
 		dcvs->dcvs_flags |= MSM_VIDC_DCVS_DECR;
 	}
 
 	dprintk(VIDC_PERF,
-		"DCVS: %x: bufs_with_fw %d Th[%d %d %d] Flag %#x Load %llu\n",
+		"DCVS: %x: bufs_with_fw %d Th[%d %d %d] Flag %#x\n",
 		hash32_ptr(inst->session), bufs_with_fw,
 		dcvs->min_threshold, dcvs->nom_threshold, dcvs->max_threshold,
-		dcvs->dcvs_flags, dcvs->load);
+		dcvs->dcvs_flags);
 
 	return rc;
-}
-
-static void msm_vidc_update_freq_entry(struct msm_vidc_inst *inst,
-	unsigned long freq, u32 device_addr, bool is_turbo)
-{
-	struct vidc_freq_data *temp, *next;
-	bool found = false;
-
-	mutex_lock(&inst->freqs.lock);
-	list_for_each_entry_safe(temp, next, &inst->freqs.list, list) {
-		if (temp->device_addr == device_addr) {
-			temp->freq = freq;
-			found = true;
-			break;
-		}
-	}
-
-	if (!found) {
-		temp = kzalloc(sizeof(*temp), GFP_KERNEL);
-		if (!temp) {
-			dprintk(VIDC_ERR, "%s: malloc failure.\n", __func__);
-			goto exit;
-		}
-		temp->freq = freq;
-		temp->device_addr = device_addr;
-		list_add_tail(&temp->list, &inst->freqs.list);
-	}
-	temp->turbo = !!is_turbo;
-exit:
-	mutex_unlock(&inst->freqs.lock);
-}
-
-void msm_vidc_clear_freq_entry(struct msm_vidc_inst *inst,
-	u32 device_addr)
-{
-	struct vidc_freq_data *temp, *next;
-
-	mutex_lock(&inst->freqs.lock);
-	list_for_each_entry_safe(temp, next, &inst->freqs.list, list) {
-		if (temp->device_addr == device_addr)
-			temp->freq = 0;
-	}
-	mutex_unlock(&inst->freqs.lock);
-
-	inst->clk_data.buffer_counter++;
 }
 
 static unsigned long msm_vidc_max_freq(struct msm_vidc_core *core)
@@ -566,19 +509,6 @@ static unsigned long msm_vidc_max_freq(struct msm_vidc_core *core)
 	freq = allowed_clks_tbl[0].clock_rate;
 	dprintk(VIDC_PERF, "Max rate = %lu\n", freq);
 	return freq;
-}
-
-void msm_comm_free_freq_table(struct msm_vidc_inst *inst)
-{
-	struct vidc_freq_data *temp, *next;
-
-	mutex_lock(&inst->freqs.lock);
-	list_for_each_entry_safe(temp, next, &inst->freqs.list, list) {
-		list_del(&temp->list);
-		kfree(temp);
-	}
-	INIT_LIST_HEAD(&inst->freqs.list);
-	mutex_unlock(&inst->freqs.lock);
 }
 
 void msm_comm_free_input_cr_table(struct msm_vidc_inst *inst)
@@ -694,14 +624,6 @@ static unsigned long msm_vidc_calc_freq_ar50(struct msm_vidc_inst *inst,
 	if (i < 0)
 		i = 0;
 
-	dcvs->load_norm = rate;
-	dcvs->load_low = i < (int) (core->resources.allowed_clks_tbl_size - 1) ?
-		allowed_clks_tbl[i+1].clock_rate : dcvs->load_norm;
-	dcvs->load_high = i > 0 ? allowed_clks_tbl[i-1].clock_rate :
-		dcvs->load_norm;
-
-	msm_dcvs_print_dcvs_stats(dcvs);
-
 	dprintk(VIDC_PERF, "%s Inst %pK : Filled Len = %d Freq = %llu\n",
 		__func__, inst, filled_len, freq);
 
@@ -790,16 +712,10 @@ static unsigned long msm_vidc_calc_freq_iris1(struct msm_vidc_inst *inst,
 	if (i < 0)
 		i = 0;
 
-	dcvs->load_norm = rate;
-	dcvs->load_low = i < (int) (core->resources.allowed_clks_tbl_size - 1) ?
-		allowed_clks_tbl[i+1].clock_rate : dcvs->load_norm;
-	dcvs->load_high = i > 0 ? allowed_clks_tbl[i-1].clock_rate :
-		dcvs->load_norm;
-
 	dprintk(VIDC_PERF,
-		"%s: inst %pK: %x : filled len %d required freq %llu load_norm %llu\n",
+		"%s: inst %pK: %x : filled len %d required freq %llu\n",
 		__func__, inst, hash32_ptr(inst->session),
-		filled_len, freq, dcvs->load_norm);
+		filled_len, freq);
 
 	return (unsigned long) freq;
 }
@@ -893,16 +809,10 @@ static unsigned long msm_vidc_calc_freq_iris2(struct msm_vidc_inst *inst,
 	if (i < 0)
 		i = 0;
 
-	dcvs->load_norm = rate;
-	dcvs->load_low = i < (int) (core->resources.allowed_clks_tbl_size - 1) ?
-		allowed_clks_tbl[i+1].clock_rate : dcvs->load_norm;
-	dcvs->load_high = i > 0 ? allowed_clks_tbl[i-1].clock_rate :
-		dcvs->load_norm;
-
 	dprintk(VIDC_PERF,
-		"%s: inst %pK: %x : filled len %d required freq %llu load_norm %llu\n",
+		"%s: inst %pK: %x : filled len %d required freq %llu\n",
 		__func__, inst, hash32_ptr(inst->session),
-		filled_len, freq, dcvs->load_norm);
+		filled_len, freq);
 
 	return (unsigned long) freq;
 }
@@ -1059,8 +969,6 @@ int msm_comm_scale_clocks(struct msm_vidc_inst *inst)
 		msm_dcvs_scale_clocks(inst, freq);
 	}
 
-	msm_vidc_update_freq_entry(inst, freq, device_addr, is_turbo);
-
 	msm_vidc_set_clocks(inst->core);
 
 	return 0;
@@ -1211,15 +1119,7 @@ void msm_clock_data_reset(struct msm_vidc_inst *inst)
 	if (i < 0)
 		i = 0;
 
-	dcvs->load = dcvs->load_norm = rate;
-	dcvs->load_low = i < (core->resources.allowed_clks_tbl_size - 1) ?
-		allowed_clks_tbl[i+1].clock_rate : dcvs->load_norm;
-	dcvs->load_high = i > 0 ?
-		allowed_clks_tbl[i-1].clock_rate : dcvs->load_norm;
-
 	inst->clk_data.buffer_counter = 0;
-
-	msm_dcvs_print_dcvs_stats(dcvs);
 
 	rc = msm_comm_scale_clocks_and_bus(inst, 1);
 

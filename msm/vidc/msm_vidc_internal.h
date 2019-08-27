@@ -393,10 +393,6 @@ enum dcvs_flags {
 
 struct clock_data {
 	int buffer_counter;
-	u64 load;
-	u64 load_low;
-	u64 load_norm;
-	u64 load_high;
 	int min_threshold;
 	int nom_threshold;
 	int max_threshold;
@@ -518,7 +514,6 @@ struct msm_vidc_inst {
 	enum instance_state state;
 	struct msm_vidc_format fmts[MAX_PORT_NUM];
 	struct buf_queue bufq[MAX_PORT_NUM];
-	struct msm_vidc_list freqs;
 	struct msm_vidc_list input_crs;
 	struct msm_vidc_list scratchbufs;
 	struct msm_vidc_list persistbufs;

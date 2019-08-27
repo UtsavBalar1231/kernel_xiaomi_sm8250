@@ -2485,7 +2485,7 @@ static void handle_ebd(enum hal_command_response cmd, void *data)
 		vb->planes[1].bytesused = vb->planes[1].length;
 
 	update_recon_stats(inst, &empty_buf_done->recon_stats);
-	msm_vidc_clear_freq_entry(inst, mbuf->smem[0].device_addr);
+	inst->clk_data.buffer_counter++;
 	/*
 	 * dma cache operations need to be performed before dma_unmap
 	 * which is done inside msm_comm_put_vidc_buffer()

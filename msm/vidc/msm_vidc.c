@@ -1567,7 +1567,6 @@ void *msm_vidc_open(int core_id, int session_type)
 	mutex_init(&inst->flush_lock);
 
 	INIT_MSM_VIDC_LIST(&inst->scratchbufs);
-	INIT_MSM_VIDC_LIST(&inst->freqs);
 	INIT_MSM_VIDC_LIST(&inst->input_crs);
 	INIT_MSM_VIDC_LIST(&inst->persistbufs);
 	INIT_MSM_VIDC_LIST(&inst->pending_getpropq);
@@ -1691,7 +1690,6 @@ fail_bufq_capture:
 	DEINIT_MSM_VIDC_LIST(&inst->cvpbufs);
 	DEINIT_MSM_VIDC_LIST(&inst->registeredbufs);
 	DEINIT_MSM_VIDC_LIST(&inst->eosbufs);
-	DEINIT_MSM_VIDC_LIST(&inst->freqs);
 	DEINIT_MSM_VIDC_LIST(&inst->input_crs);
 	DEINIT_MSM_VIDC_LIST(&inst->client_data);
 	DEINIT_MSM_VIDC_LIST(&inst->etb_data);
@@ -1747,8 +1745,6 @@ static void msm_vidc_cleanup_instance(struct msm_vidc_inst *inst)
 	mutex_unlock(&inst->registeredbufs.lock);
 
 	cancel_batch_work(inst);
-
-	msm_comm_free_freq_table(inst);
 
 	msm_comm_free_input_cr_table(inst);
 
@@ -1828,7 +1824,6 @@ int msm_vidc_destroy(struct msm_vidc_inst *inst)
 	DEINIT_MSM_VIDC_LIST(&inst->cvpbufs);
 	DEINIT_MSM_VIDC_LIST(&inst->registeredbufs);
 	DEINIT_MSM_VIDC_LIST(&inst->eosbufs);
-	DEINIT_MSM_VIDC_LIST(&inst->freqs);
 	DEINIT_MSM_VIDC_LIST(&inst->input_crs);
 	DEINIT_MSM_VIDC_LIST(&inst->client_data);
 	DEINIT_MSM_VIDC_LIST(&inst->etb_data);
