@@ -1680,7 +1680,7 @@ static inline u32 calculate_enc_scratch1_size(struct msm_vidc_inst *inst,
 	override_buffer_size = ALIGN(override_buffer_size,
 		VENUS_DMA_ALIGNMENT) * 2;
 	ir_buffer_size = (((frame_num_lcu << 1) + 7) & (~7)) * 3;
-	vpss_line_buf = ((((width_coded + 3) >> 2) << 5) + 256) * 16;
+	vpss_line_buf = ((((max(width_coded, height_coded) + 3) >> 2) << 5) + 256) * 16;
 	topline_bufsize_fe_1stg_sao = (16 * (width_coded >> 5));
 	topline_bufsize_fe_1stg_sao = ALIGN(topline_bufsize_fe_1stg_sao,
 		VENUS_DMA_ALIGNMENT);
