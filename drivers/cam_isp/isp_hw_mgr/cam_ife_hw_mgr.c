@@ -6182,8 +6182,9 @@ static int cam_ife_hw_mgr_check_irq_for_dual_vfe(
 		(event_cnt[core_idx1] - event_cnt[core_idx0] > 1))) {
 
 		CAM_ERR_RATE_LIMIT(CAM_ISP,
-			"One of the VFE could not generate hw event %d",
-			hw_event_type);
+			"One of the VFE could not generate hw event %d core_0_cnt %d core_1_cnt %d",
+			hw_event_type, event_cnt[core_idx0],
+			event_cnt[core_idx1]);
 		rc = -1;
 		return rc;
 	}
