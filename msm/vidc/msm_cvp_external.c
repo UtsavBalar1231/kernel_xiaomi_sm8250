@@ -638,6 +638,9 @@ static int msm_cvp_prepare_extradata(struct msm_vidc_inst *inst,
 	char *kvaddr = NULL;
 	struct msm_vidc_extradata_header *e_hdr;
 	bool input_extradata, found_end;
+	char *cvpframe = NULL;
+	u32 cvp_metadata_valid_flag = 0;
+	int nIsValid_offset = 232;
 
 	if (!inst || !inst->cvp || !mbuf) {
 		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
@@ -725,6 +728,11 @@ static int msm_cvp_prepare_extradata(struct msm_vidc_inst *inst,
 			DMA_BIDIRECTIONAL);
 		memcpy(e_hdr->data, cvp->output_buffer.kvaddr,
 			sizeof(struct msm_vidc_enc_cvp_metadata_payload));
+		cvpframe = (char *) e_hdr->data;
+		cvp_metadata_valid_flag = *(u32*)(cvpframe + nIsValid_offset);
+		dprintk(VIDC_HIGH,
+			"CVP metadata nIsValid flag = %u frame: %u",
+			cvp_metadata_valid_flag, cvp->framecount);
 		dma_buf_end_cpu_access(cvp->output_buffer.dbuf,
 			DMA_BIDIRECTIONAL);
 	}
@@ -858,6 +866,7 @@ static int msm_cvp_frame_process(struct msm_vidc_inst *inst,
 	const u32 fps_max = CVP_FRAME_RATE_MAX;
 	u32 fps, operating_rate, skip_framecount;
 	bool skipframe = false;
+	bool first_frame = false;
 
 	if (!inst || !inst->cvp || !inst->cvp->arg || !mbuf) {
 		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
@@ -873,10 +882,14 @@ static int msm_cvp_frame_process(struct msm_vidc_inst *inst,
 	cvp->fullres_buffer.offset = vb->planes[0].data_offset;
 	cvp->fullres_buffer.dbuf = mbuf->smem[0].dma_buf;
 
+	if(!cvp->framecount)
+		first_frame = true;
+
 	/* handle framerate or operarating rate changes dynamically */
 	if (cvp->frame_rate != inst->clk_data.frame_rate ||
 		cvp->operating_rate != inst->clk_data.operating_rate) {
 		/* update cvp parameters */
+		cvp->framecount = 0;
 		cvp->frame_rate = inst->clk_data.frame_rate;
 		cvp->operating_rate = inst->clk_data.operating_rate;
 		rc = msm_cvp_set_clocks_and_bus(inst);
@@ -933,7 +946,7 @@ static int msm_cvp_frame_process(struct msm_vidc_inst *inst,
 	frame->size = sizeof(struct msm_cvp_dme_frame_packet);
 	frame->packet_type = HFI_CMD_SESSION_CVP_DME_FRAME;
 	frame->session_id = cvp->session_id;
-	if (!cvp->framecount)
+	if (first_frame)
 		frame->skip_mv_calc = 1;
 	else
 		frame->skip_mv_calc = 0;
