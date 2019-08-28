@@ -1206,10 +1206,6 @@ static int __cam_isp_ctx_handle_error(struct cam_isp_context *ctx_isp,
 	uint32_t error_type = error_event_data->error_type;
 
 	CAM_DBG(CAM_ISP, "Enter error_type = %d", error_type);
-	if ((error_type == CAM_ISP_HW_ERROR_OVERFLOW) ||
-		(error_type == CAM_ISP_HW_ERROR_BUSIF_OVERFLOW))
-		notify.error = CRM_KMD_ERR_OVERFLOW;
-
 
 	if ((error_type == CAM_ISP_HW_ERROR_OVERFLOW) ||
 		(error_type == CAM_ISP_HW_ERROR_BUSIF_OVERFLOW) ||
@@ -1397,7 +1393,7 @@ end:
 		 * and to dump relevant info
 		 */
 
-		if (notify.error == CRM_KMD_ERR_OVERFLOW) {
+		if (notify.error == CRM_KMD_ERR_FATAL) {
 			req_msg.session_hdl = ctx_isp->base->session_hdl;
 			req_msg.u.err_msg.device_hdl = ctx_isp->base->dev_hdl;
 			req_msg.u.err_msg.error_type =
