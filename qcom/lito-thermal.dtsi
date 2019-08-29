@@ -518,6 +518,21 @@
 		};
 	};
 
+	min-temp-0-usr {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-sensors = <&tsens0 16>;
+		thermal-governor = "low_limits_floor";
+		tracks-low;
+		trips {
+			active-config0 {
+				temperature = <5000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+		};
+	};
+
 	aoss-1-usr {
 		polling-delay-passive = <0>;
 		polling-delay = <0>;
@@ -1341,6 +1356,21 @@
 			modem-tj-cdev {
 				trip = <&q6_hvx_trip1>;
 				cooling-device = <&modem_tj 3 3>;
+			};
+		};
+	};
+
+	min-temp-1-usr {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-sensors = <&tsens1 16>;
+		thermal-governor = "low_limits_floor";
+		tracks-low;
+		trips {
+			active-config0 {
+				temperature = <5000>;
+				hysteresis = <5000>;
+				type = "passive";
 			};
 		};
 	};
