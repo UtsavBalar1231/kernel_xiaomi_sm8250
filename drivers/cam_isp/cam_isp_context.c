@@ -989,11 +989,11 @@ static int __cam_isp_ctx_epoch_in_applied(struct cam_isp_context *ctx_isp,
 	 * Always move the request to active list. Let buf done
 	 * function handles the rest.
 	 */
-	CAM_DBG(CAM_REQ, "move request %lld to active list(cnt = %d), ctx %u",
-		req->request_id, ctx_isp->active_req_cnt, ctx->ctx_id);
-	ctx_isp->active_req_cnt++;
 	list_del_init(&req->list);
 	list_add_tail(&req->list, &ctx->active_req_list);
+	ctx_isp->active_req_cnt++;
+	CAM_DBG(CAM_REQ, "move request %lld to active list(cnt = %d), ctx %u",
+		req->request_id, ctx_isp->active_req_cnt, ctx->ctx_id);
 
 	if (req->request_id > ctx_isp->reported_req_id) {
 		request_id = req->request_id;
@@ -1140,11 +1140,11 @@ static int __cam_isp_ctx_epoch_in_bubble_applied(
 	 * Always move the request to active list. Let buf done
 	 * function handles the rest.
 	 */
-	CAM_DBG(CAM_ISP, "move request %lld to active list(cnt = %d) ctx %u",
-		req->request_id, ctx_isp->active_req_cnt);
-	ctx_isp->active_req_cnt++;
 	list_del_init(&req->list);
 	list_add_tail(&req->list, &ctx->active_req_list);
+	ctx_isp->active_req_cnt++;
+	CAM_DBG(CAM_ISP, "move request %lld to active list(cnt = %d) ctx %u",
+		req->request_id, ctx_isp->active_req_cnt);
 
 	if (!req_isp->bubble_report) {
 		if (req->request_id > ctx_isp->reported_req_id) {
@@ -2361,9 +2361,9 @@ static int __cam_isp_ctx_rdi_only_sof_in_bubble_applied(
 	 * Always move the request to active list. Let buf done
 	 * function handles the rest.
 	 */
-	ctx_isp->active_req_cnt++;
 	list_del_init(&req->list);
 	list_add_tail(&req->list, &ctx->active_req_list);
+	ctx_isp->active_req_cnt++;
 	CAM_DBG(CAM_ISP, "move request %lld to active list(cnt = %d)",
 			req->request_id, ctx_isp->active_req_cnt);
 
@@ -3510,21 +3510,6 @@ static int __cam_isp_ctx_start_dev_in_ready(struct cam_context *ctx,
 		goto end;
 	}
 
-	/*
-	 * In case of CSID TPG we might receive SOF and RUP IRQs
-	 * before hw_mgr_intf->hw_start has returned. So move
-	 * req out of pending list before hw_start and add it
-	 * back to pending list if hw_start fails.
-	 */
-	list_del_init(&req->list);
-
-	if (ctx_isp->rdi_only_context || !req_isp->num_fence_map_out) {
-		list_add_tail(&req->list, &ctx->wait_req_list);
-	} else {
-		list_add_tail(&req->list, &ctx->active_req_list);
-		ctx_isp->active_req_cnt++;
-	}
-
 	start_isp.hw_config.ctxt_to_hw_map = ctx_isp->hw_ctx;
 	start_isp.hw_config.request_id = req->request_id;
 	start_isp.hw_config.hw_update_entries = req_isp->cfg;
@@ -3543,6 +3528,21 @@ static int __cam_isp_ctx_start_dev_in_ready(struct cam_context *ctx,
 		CAM_ISP_CTX_ACTIVATED_SOF;
 
 	atomic64_set(&ctx_isp->state_monitor_head, -1);
+
+	/*
+	 * In case of CSID TPG we might receive SOF and RUP IRQs
+	 * before hw_mgr_intf->hw_start has returned. So move
+	 * req out of pending list before hw_start and add it
+	 * back to pending list if hw_start fails.
+	 */
+	list_del_init(&req->list);
+
+	if (ctx_isp->rdi_only_context || !req_isp->num_fence_map_out) {
+		list_add_tail(&req->list, &ctx->wait_req_list);
+	} else {
+		list_add_tail(&req->list, &ctx->active_req_list);
+		ctx_isp->active_req_cnt++;
+	}
 
 	/*
 	 * Only place to change state before calling the hw due to
