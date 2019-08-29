@@ -3683,7 +3683,9 @@
 		qcom,bus-vector-names = "MIN", "SVS2", "SVS", "NOMINAL",
 			"TURBO";
 		qcom,throughput-threshold = <600 2500 5000>;
-		qcom,scaling-exceptions = <>;
+		qcom,scaling-exceptions = "wdi", "0", "600", "1200",
+			"USB DPL", "0", "2500", "5000", "ODL", "0",
+			"2500", "5000";
 
 		qcom,entire-ipa-block-size = <0x100000>;
 		qcom,register-collection-on-crash;
