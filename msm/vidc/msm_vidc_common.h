@@ -65,6 +65,10 @@ static inline struct v4l2_ctrl *get_ctrl(struct msm_vidc_inst *inst,
 {
 	int i;
 
+	if (inst->session_type == MSM_VIDC_CVP &&
+	    inst->core->resources.cvp_internal)
+		return inst->ctrls[0];
+
 	for (i = 0; i < inst->num_ctrls; i++) {
 		if (inst->ctrls[i]->id == id)
 			return inst->ctrls[i];
