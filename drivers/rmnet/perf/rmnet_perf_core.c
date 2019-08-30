@@ -582,9 +582,21 @@ bool rmnet_perf_core_dissect_pkt(unsigned char *payload,
 {
 	bool flush = true;
 	bool mismatch = false;
+	u16 ip_pkt_len = 0;
 
 	payload += offset;
 	pkt_info->ip_proto = (*payload & 0xF0) >> 4;
+	/* Set inital IP packet length based on descriptor size if this packet
+	 * has already been segmented for any reason, as the IP header will
+	 * no longer be correct */
+	if (!rmnet_perf_core_is_deag_mode() &&
+	    pkt_info->frag_desc->hdr_ptr !=
+	    rmnet_frag_data_ptr(pkt_info->frag_desc)) {
+		ip_pkt_len = skb_frag_size(&pkt_info->frag_desc->frag);
+		ip_pkt_len += pkt_info->frag_desc->ip_len;
+		ip_pkt_len += pkt_info->frag_desc->trans_len;
+	}
+
 	if (pkt_info->ip_proto == 4) {
 		struct iphdr *iph;
 
@@ -597,7 +609,10 @@ bool rmnet_perf_core_dissect_pkt(unsigned char *payload,
 			goto done;
 		}
 
-		mismatch = pkt_len != ntohs(iph->tot_len);
+		if (!ip_pkt_len)
+			ip_pkt_len = ntohs(iph->tot_len);
+
+		mismatch = pkt_len != ip_pkt_len;
 		pkt_info->ip_len = iph->ihl * 4;
 		pkt_info->trans_proto = iph->protocol;
 
@@ -650,7 +665,10 @@ bool rmnet_perf_core_dissect_pkt(unsigned char *payload,
 			goto done;
 		}
 
-		mismatch = pkt_len != ntohs(ip6h->payload_len) + sizeof(*ip6h);
+		if (!ip_pkt_len)
+			ip_pkt_len = ntohs(ip6h->payload_len) + sizeof(*ip6h);
+
+		mismatch = pkt_len != ip_pkt_len;
 		pkt_info->ip_len = (u16)len;
 		pkt_info->trans_proto = protocol;
 
