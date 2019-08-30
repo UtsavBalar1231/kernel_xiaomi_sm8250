@@ -1192,6 +1192,28 @@
 		#reset-cells = <1>;
 	};
 
+	mccc_debug: syscon@447d200 {
+		compatible = "syscon";
+		reg = <0x447d200 0x100>;
+	};
+
+	cpucc_debug: syscon@f11101c {
+		compatible = "syscon";
+		reg = <0xf11101c 0x4>;
+	};
+
+	debugcc: qcom,cc-debug {
+		compatible = "qcom,bengal-debugcc";
+		qcom,gcc = <&gcc>;
+		qcom,dispcc = <&dispcc>;
+		qcom,gpucc = <&gpucc>;
+		qcom,mccc = <&mccc_debug>;
+		qcom,cpucc = <&cpucc_debug>;
+		clock-names = "xo_clk_src";
+		clocks = <&rpmcc RPM_SMD_XO_CLK_SRC>;
+		#clock-cells = <1>;
+	};
+
 	tcsr_mutex_block: syscon@00340000 {
 		compatible = "syscon";
 		reg = <0x340000 0x20000>;

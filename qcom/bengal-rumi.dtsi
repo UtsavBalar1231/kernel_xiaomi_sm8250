@@ -146,3 +146,8 @@
 	#clock-cells = <1>;
 	#reset-cells = <1>;
 };
+
+&debugcc {
+	compatible = "qcom,dummycc";
+	clock-output-names = "debugcc_clocks";
+};
