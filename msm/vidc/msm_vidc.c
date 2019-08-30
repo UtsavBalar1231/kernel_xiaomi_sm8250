@@ -766,7 +766,6 @@ bool is_vidc_cvp_allowed(struct msm_vidc_inst *inst)
 		inst->rc_type != RATE_CONTROL_OFF &&
 		inst->rc_type != V4L2_MPEG_VIDEO_BITRATE_MODE_CQ &&
 		!inst->clk_data.is_legacy_cbr &&
-		!is_secure_session(inst) &&
 		!superframe_enable->val) {
 		s_vpr_h(inst->sid, "%s: cvp allowed\n", __func__);
 		allowed = true;

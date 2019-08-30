@@ -51,8 +51,7 @@ static int msm_cvp_get_version_info(struct msm_vidc_inst *inst)
 	struct cvp_kmd_sys_property *prop_data;
 	u32 version;
 
-
-	if (!inst || !inst->cvp) {
+	if (!inst || !inst->cvp || !inst->cvp->arg) {
 		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
 		return -EINVAL;
 	}
@@ -85,7 +84,7 @@ static int msm_cvp_set_priority(struct msm_vidc_inst *inst)
 	struct cvp_kmd_sys_properties *props;
 	struct cvp_kmd_sys_property *prop_array;
 
-	if (!inst || !inst->cvp) {
+	if (!inst || !inst->cvp || !inst->cvp->arg) {
 		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
 		return -EINVAL;
 	}
@@ -111,6 +110,39 @@ static int msm_cvp_set_priority(struct msm_vidc_inst *inst)
 	}
 
 	return 0;
+}
+
+static int msm_cvp_set_secure_mode(struct msm_vidc_inst *inst)
+{
+	int rc = 0;
+	struct msm_cvp_external *cvp = NULL;
+	struct cvp_kmd_arg *arg = NULL;
+	struct cvp_kmd_sys_properties *props = NULL;
+	struct cvp_kmd_sys_property *prop_array = NULL;
+
+	if (!inst || !inst->cvp || !inst->cvp->arg) {
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
+		return -EINVAL;
+	}
+	cvp = inst->cvp;
+	arg = cvp->arg;
+	props = (struct cvp_kmd_sys_properties *)&arg->data.sys_properties;
+	prop_array = (struct cvp_kmd_sys_property *)
+			&arg->data.sys_properties.prop_data;
+
+	memset(arg, 0, sizeof(struct cvp_kmd_arg));
+	arg->type = CVP_KMD_SET_SYS_PROPERTY;
+	props->prop_num = 1;
+	prop_array[0].prop_type = CVP_KMD_PROP_SESSION_SECURITY;
+	prop_array[0].data = is_secure_session(inst);
+	s_vpr_h(inst->sid, "%s: %d\n", __func__, prop_array[0].data);
+
+	rc = msm_cvp_private(cvp->priv, CVP_KMD_SET_SYS_PROPERTY, arg);
+	if (rc) {
+		s_vpr_e(inst->sid, "%s: failed, rc %d\n", __func__, rc);
+		return rc;
+	}
+	return rc;
 }
 
 static int msm_cvp_fill_planeinfo(struct msm_cvp_color_plane_info *plane_info,
@@ -180,6 +212,18 @@ static int msm_cvp_fill_planeinfo(struct msm_cvp_color_plane_info *plane_info,
 	return rc;
 }
 
+static u32 msm_cvp_get_secure_flag_for_buffer_type(u32 buf_type)
+{
+	switch (buf_type) {
+	case MSM_VIDC_CVP_INPUT_BUF:
+		return ION_FLAG_SECURE | ION_FLAG_CP_PIXEL;
+	case MSM_VIDC_CVP_OUTPUT_BUF:
+		return 0;
+	default:
+		return ION_FLAG_SECURE | ION_FLAG_CP_NON_PIXEL;
+	}
+}
+
 static int msm_cvp_free_buffer(struct msm_vidc_inst *inst,
 		struct msm_cvp_buf *buffer)
 {
@@ -221,8 +265,12 @@ static int msm_cvp_allocate_buffer(struct msm_vidc_inst *inst,
 
 	heap_mask = ION_HEAP(ION_SYSTEM_HEAP_ID);
 	if (inst->flags & VIDC_SECURE) {
-		ion_flags = ION_FLAG_SECURE | ION_FLAG_CP_NON_PIXEL;
-		heap_mask = ION_HEAP(ION_SECURE_HEAP_ID);
+		ion_flags = msm_cvp_get_secure_flag_for_buffer_type(
+							buffer->buf_type);
+		if (ion_flags & ION_FLAG_SECURE) {
+			heap_mask = ION_HEAP(ION_SECURE_HEAP_ID);
+			kernel_map = false;
+		}
 	}
 
 	dbuf = ion_alloc(buffer->size, heap_mask, ion_flags);
@@ -266,7 +314,7 @@ static int msm_cvp_set_clocks_and_bus(struct msm_vidc_inst *inst)
 	struct cvp_kmd_request_power power;
 	const u32 fps_max = CVP_FRAME_RATE_MAX;
 
-	if (!inst || !inst->cvp) {
+	if (!inst || !inst->cvp || !inst->cvp->arg) {
 		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
 		return -EINVAL;
 	}
@@ -417,6 +465,7 @@ static int msm_cvp_init_downscale_buffers(struct msm_vidc_inst *inst)
 
 	cvp->src_buffer.size = VENUS_BUFFER_SIZE(COLOR_FMT_NV12_UBWC,
 			cvp->ds_width, cvp->ds_height);
+	cvp->src_buffer.buf_type = MSM_VIDC_CVP_INPUT_BUF;
 	rc = msm_cvp_allocate_buffer(inst, &cvp->src_buffer, false);
 	if (rc) {
 		print_cvp_buffer(VIDC_ERR,
@@ -428,6 +477,7 @@ static int msm_cvp_init_downscale_buffers(struct msm_vidc_inst *inst)
 			inst, &cvp->src_buffer);
 
 	cvp->ref_buffer.size = cvp->src_buffer.size;
+	cvp->ref_buffer.buf_type = MSM_VIDC_CVP_INPUT_BUF;
 	rc = msm_cvp_allocate_buffer(inst, &cvp->ref_buffer, false);
 	if (rc) {
 		print_cvp_buffer(VIDC_ERR,
@@ -487,6 +537,7 @@ static int msm_cvp_init_context_buffers(struct msm_vidc_inst *inst)
 	s_vpr_h(inst->sid, "%s:\n", __func__);
 
 	cvp->context_buffer.size = HFI_DME_FRAME_CONTEXT_BUFFER_SIZE;
+	cvp->context_buffer.buf_type = MSM_VIDC_CVP_CONTEXT_BUF;
 	rc = msm_cvp_allocate_buffer(inst, &cvp->context_buffer, false);
 	if (rc) {
 		print_cvp_buffer(VIDC_ERR,
@@ -498,6 +549,7 @@ static int msm_cvp_init_context_buffers(struct msm_vidc_inst *inst)
 			inst, &cvp->context_buffer);
 
 	cvp->refcontext_buffer.size = cvp->context_buffer.size;
+	cvp->refcontext_buffer.buf_type = MSM_VIDC_CVP_CONTEXT_BUF;
 	rc = msm_cvp_allocate_buffer(inst, &cvp->refcontext_buffer, false);
 	if (rc) {
 		print_cvp_buffer(VIDC_ERR,
@@ -604,6 +656,7 @@ static int msm_cvp_init_internal_buffers(struct msm_vidc_inst *inst)
 	cvp = inst->cvp;
 
 	cvp->persist2_buffer.size = HFI_DME_INTERNAL_PERSIST_2_BUFFER_SIZE;
+	cvp->persist2_buffer.buf_type = MSM_VIDC_CVP_PERSIST_BUF;
 	rc = msm_cvp_allocate_buffer(inst, &cvp->persist2_buffer, false);
 	if (rc) {
 		print_cvp_buffer(VIDC_ERR,
@@ -616,6 +669,7 @@ static int msm_cvp_init_internal_buffers(struct msm_vidc_inst *inst)
 
 	/* allocate one output buffer for internal use */
 	cvp->output_buffer.size = HFI_DME_OUTPUT_BUFFER_SIZE;
+	cvp->output_buffer.buf_type = MSM_VIDC_CVP_OUTPUT_BUF;
 	rc = msm_cvp_allocate_buffer(inst, &cvp->output_buffer, true);
 	if (rc) {
 		print_cvp_buffer(VIDC_ERR,
@@ -797,7 +851,7 @@ static int msm_cvp_reference_management(struct msm_vidc_inst *inst)
 	return rc;
 }
 
-static int msm_vidc_cvp_session_start(struct msm_vidc_inst *inst)
+static int msm_cvp_session_start(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
 	struct msm_cvp_external *cvp = NULL;
@@ -827,7 +881,7 @@ static int msm_vidc_cvp_session_start(struct msm_vidc_inst *inst)
 	return rc;
 }
 
-static int msm_vidc_cvp_session_stop(struct msm_vidc_inst *inst)
+static int msm_cvp_session_stop(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
 	struct msm_cvp_external *cvp = NULL;
@@ -1039,7 +1093,7 @@ int msm_vidc_cvp_preprocess(struct msm_vidc_inst *inst,
 	return rc;
 }
 
-static int msm_vidc_cvp_session_delete(struct msm_vidc_inst *inst)
+static int msm_cvp_session_delete(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
 	struct msm_cvp_external *cvp = NULL;
@@ -1094,7 +1148,7 @@ static int msm_cvp_mem_deinit(struct msm_vidc_inst *inst)
 	return rc;
 }
 
-static int msm_vidc_cvp_deinit(struct msm_vidc_inst *inst)
+static int msm_cvp_deinit(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
 
@@ -1103,18 +1157,18 @@ static int msm_vidc_cvp_deinit(struct msm_vidc_inst *inst)
 		return -EINVAL;
 	}
 
-	rc = msm_vidc_cvp_session_stop(inst);
+	rc = msm_cvp_session_stop(inst);
 	if (rc) {
 		s_vpr_e(inst->sid, "%s: cvp stop failed with error %d\n",
 			__func__, rc);
 	}
 
-	msm_vidc_cvp_session_delete(inst);
+	msm_cvp_session_delete(inst);
 
 	return rc;
 }
 
-static int msm_vidc_cvp_close(struct msm_vidc_inst *inst)
+static int msm_cvp_session_close(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
 	struct msm_cvp_external *cvp;
@@ -1146,14 +1200,14 @@ int msm_vidc_cvp_unprepare_preprocess(struct msm_vidc_inst *inst)
 		return 0;
 	}
 
-	msm_vidc_cvp_deinit(inst);
-	msm_vidc_cvp_close(inst);
+	msm_cvp_deinit(inst);
+	msm_cvp_session_close(inst);
 	msm_cvp_mem_deinit(inst);
 
 	return 0;
 }
 
-static int msm_vidc_cvp_session_create(struct msm_vidc_inst *inst)
+static int msm_cvp_session_create(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
 	struct msm_cvp_external *cvp = NULL;
@@ -1183,7 +1237,7 @@ static int msm_vidc_cvp_session_create(struct msm_vidc_inst *inst)
 	return rc;
 }
 
-static int msm_vidc_cvp_getsessioninfo(struct msm_vidc_inst *inst)
+static int msm_cvp_get_sessioninfo(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
 	struct msm_cvp_external *cvp;
@@ -1215,11 +1269,11 @@ static int msm_vidc_cvp_getsessioninfo(struct msm_vidc_inst *inst)
 	return rc;
 
 error:
-	msm_vidc_cvp_deinit(inst);
+	msm_cvp_deinit(inst);
 	return rc;
 }
 
-static int msm_vidc_cvp_dme_basic_config(struct msm_vidc_inst *inst)
+static int msm_cvp_dme_basic_config(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
 	struct msm_cvp_external *cvp;
@@ -1341,7 +1395,7 @@ error:
 	return rc;
 }
 
-static int msm_vidc_cvp_open(struct msm_vidc_inst *inst)
+static int msm_cvp_session_open(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
 	struct msm_cvp_external *cvp;
@@ -1363,19 +1417,23 @@ static int msm_vidc_cvp_open(struct msm_vidc_inst *inst)
 	return rc;
 }
 
-static int msm_vidc_cvp_init(struct msm_vidc_inst *inst)
+static int msm_cvp_init(struct msm_vidc_inst *inst)
 {
 	int rc;
+
+	rc = msm_cvp_set_secure_mode(inst);
+	if (rc)
+		goto error;
 
 	rc = msm_cvp_set_priority(inst);
 	if (rc)
 		goto error;
 
-	rc = msm_vidc_cvp_session_create(inst);
+	rc = msm_cvp_session_create(inst);
 	if (rc)
 		return rc;
 
-	rc = msm_vidc_cvp_getsessioninfo(inst);
+	rc = msm_cvp_get_sessioninfo(inst);
 	if (rc)
 		return rc;
 
@@ -1383,7 +1441,7 @@ static int msm_vidc_cvp_init(struct msm_vidc_inst *inst)
 	if (rc)
 		goto error;
 
-	rc = msm_vidc_cvp_dme_basic_config(inst);
+	rc = msm_cvp_dme_basic_config(inst);
 	if (rc)
 		goto error;
 
@@ -1391,14 +1449,14 @@ static int msm_vidc_cvp_init(struct msm_vidc_inst *inst)
 	if (rc)
 		goto error;
 
-	rc = msm_vidc_cvp_session_start(inst);
+	rc = msm_cvp_session_start(inst);
 	if (rc)
 		goto error;
 
 	return 0;
 
 error:
-	msm_vidc_cvp_deinit(inst);
+	msm_cvp_deinit(inst);
 	return rc;
 }
 
@@ -1415,11 +1473,11 @@ int msm_vidc_cvp_prepare_preprocess(struct msm_vidc_inst *inst)
 	if (rc)
 		return rc;
 
-	rc = msm_vidc_cvp_open(inst);
+	rc = msm_cvp_session_open(inst);
 	if (rc)
 		return rc;
 
-	rc = msm_vidc_cvp_init(inst);
+	rc = msm_cvp_init(inst);
 	if (rc)
 		return rc;
 
