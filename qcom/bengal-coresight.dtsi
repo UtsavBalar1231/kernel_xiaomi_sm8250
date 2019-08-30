@@ -65,6 +65,9 @@
 		clocks = <&rpmcc RPM_SMD_QDSS_CLK>;
 		clock-names = "apb_pclk";
 
+		nvmem-cells = <&stm_debug_fuse>;
+		nvmem-cell-names = "debug_fuse";
+
 		port {
 			stm_out_funnel_in0: endpoint {
 				remote-endpoint = <&funnel_in0_in_stm>;
