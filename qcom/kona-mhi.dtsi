@@ -8,6 +8,20 @@
 		/* controller specific configuration */
 		qcom,iommu-group = <&mhi_0_iommu_group>;
 
+		/* controller ddr frequency scaling configuration */
+		qcom,msm-bus,name = "mhi0";
+		qcom,msm-bus,num-cases = <4>;
+		qcom,msm-bus,num-paths = <1>;
+		qcom,msm-bus,vectors-KBps =
+				<MSM_BUS_MASTER_PCIE_2 MSM_BUS_SLAVE_EBI_CH0
+				0 0>,
+				<MSM_BUS_MASTER_PCIE_2 MSM_BUS_SLAVE_EBI_CH0
+				0 0>,
+				<MSM_BUS_MASTER_PCIE_2 MSM_BUS_SLAVE_EBI_CH0
+				500000 0>, /* 4 Gbps */
+				<MSM_BUS_MASTER_PCIE_2 MSM_BUS_SLAVE_EBI_CH0
+				1000000 0>; /* 8 Gbps */
+
 		esoc-names = "mdm";
 		esoc-0 = <&mdm0>;
 
@@ -406,7 +420,7 @@
 				reg = <100>;
 				label = "IP_HW0";
 				mhi,num-elements = <512>;
-				mhi,event-ring = <6>;
+				mhi,event-ring = <7>;
 				mhi,chan-dir = <1>;
 				mhi,data-type = <1>;
 				mhi,doorbell-mode = <3>;
@@ -418,7 +432,7 @@
 				reg = <101>;
 				label = "IP_HW0";
 				mhi,num-elements = <512>;
-				mhi,event-ring = <7>;
+				mhi,event-ring = <8>;
 				mhi,chan-dir = <2>;
 				mhi,data-type = <4>;
 				mhi,doorbell-mode = <3>;
@@ -428,7 +442,7 @@
 			mhi_chan@102 {
 				reg = <102>;
 				label = "IP_HW_ADPL";
-				mhi,event-ring = <8>;
+				mhi,event-ring = <9>;
 				mhi,chan-dir = <2>;
 				mhi,data-type = <3>;
 				mhi,ee = <0x4>;
@@ -440,7 +454,7 @@
 				reg = <103>;
 				label = "IP_HW_QDSS";
 				mhi,num-elements = <128>;
-				mhi,event-ring = <9>;
+				mhi,event-ring = <10>;
 				mhi,chan-dir = <2>;
 				mhi,data-type = <0>;
 				mhi,doorbell-mode = <2>;
@@ -452,7 +466,7 @@
 				label = "IP_HW0_RSC";
 				mhi,num-elements = <512>;
 				mhi,local-elements = <3078>;
-				mhi,event-ring = <7>;
+				mhi,event-ring = <8>;
 				mhi,chan-dir = <2>;
 				mhi,data-type = <5>;
 				mhi,doorbell-mode = <3>;
@@ -463,7 +477,7 @@
 			mhi_chan@105 {
 				reg = <105>;
 				label = "IP_HW_MHIP_0";
-				mhi,event-ring = <10>;
+				mhi,event-ring = <11>;
 				mhi,chan-dir = <1>;
 				mhi,data-type = <3>;
 				mhi,ee = <0x4>;
@@ -473,7 +487,7 @@
 			mhi_chan@106 {
 				reg = <106>;
 				label = "IP_HW_MHIP_0";
-				mhi,event-ring = <11>;
+				mhi,event-ring = <12>;
 				mhi,chan-dir = <2>;
 				mhi,data-type = <3>;
 				mhi,ee = <0x4>;
@@ -484,7 +498,7 @@
 			mhi_chan@107 {
 				reg = <107>;
 				label = "IP_HW_MHIP_1";
-				mhi,event-ring = <12>;
+				mhi,event-ring = <13>;
 				mhi,chan-dir = <1>;
 				mhi,data-type = <3>;
 				mhi,ee = <0x4>;
@@ -494,7 +508,7 @@
 			mhi_chan@108 {
 				reg = <108>;
 				label = "IP_HW_MHIP_1";
-				mhi,event-ring = <13>;
+				mhi,event-ring = <14>;
 				mhi,chan-dir = <2>;
 				mhi,data-type = <3>;
 				mhi,ee = <0x4>;
@@ -562,6 +576,15 @@
 			};
 
 			mhi_event@6 {
+				mhi,num-elements = <32>;
+				mhi,intmod = <1>;
+				mhi,msi = <0>;
+				mhi,priority = <2>;
+				mhi,brstmode = <2>;
+				mhi,data-type = <3>;
+			};
+
+			mhi_event@7 {
 				mhi,num-elements = <1024>;
 				mhi,intmod = <5>;
 				mhi,msi = <5>;
@@ -571,7 +594,7 @@
 				mhi,hw-ev;
 			};
 
-			mhi_event@7 {
+			mhi_event@8 {
 				mhi,num-elements = <1024>;
 				mhi,intmod = <5>;
 				mhi,msi = <6>;
@@ -582,7 +605,7 @@
 				mhi,client-manage;
 			};
 
-			mhi_event@8 {
+			mhi_event@9 {
 				mhi,num-elements = <0>;
 				mhi,intmod = <0>;
 				mhi,msi = <0>;
@@ -594,7 +617,7 @@
 				mhi,offload;
 			};
 
-			mhi_event@9 {
+			mhi_event@10 {
 				mhi,num-elements = <1024>;
 				mhi,intmod = <5>;
 				mhi,msi = <7>;
@@ -604,7 +627,7 @@
 				mhi,hw-ev;
 			};
 
-			mhi_event@10 {
+			mhi_event@11 {
 				mhi,num-elements = <0>;
 				mhi,intmod = <0>;
 				mhi,msi = <0>;
@@ -616,7 +639,7 @@
 				mhi,offload;
 			};
 
-			mhi_event@11 {
+			mhi_event@12 {
 				mhi,num-elements = <0>;
 				mhi,intmod = <0>;
 				mhi,msi = <0>;
@@ -628,7 +651,7 @@
 				mhi,offload;
 			};
 
-			mhi_event@12 {
+			mhi_event@13 {
 				mhi,num-elements = <0>;
 				mhi,intmod = <0>;
 				mhi,msi = <0>;
@@ -640,7 +663,7 @@
 				mhi,offload;
 			};
 
-			mhi_event@13 {
+			mhi_event@14 {
 				mhi,num-elements = <0>;
 				mhi,intmod = <0>;
 				mhi,msi = <0>;
@@ -663,9 +686,10 @@
 				mhi,interface-name = "rmnet_mhi";
 				mhi,mru = <0x8000>;
 				mhi,chain-skb;
+				mhi,rsc-child = <&mhi_netdev_0_rsc>;
 			};
 
-			mhi_rmnet@1 {
+			mhi_netdev_0_rsc: mhi_rmnet@1 {
 				reg = <0x1>;
 				mhi,chan = "IP_HW0_RSC";
 				mhi,mru = <0x8000>;
