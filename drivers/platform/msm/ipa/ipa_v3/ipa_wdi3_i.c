@@ -70,7 +70,7 @@ static int ipa3_setup_wdi3_gsi_channel(u8 is_smmu_enabled,
 	struct gsi_evt_ring_props gsi_evt_ring_props;
 	struct gsi_chan_props gsi_channel_props;
 	union gsi_channel_scratch ch_scratch;
-	union __packed gsi_evt_scratch evt_scratch;
+	union gsi_evt_scratch evt_scratch;
 	const struct ipa_gsi_ep_config *gsi_ep_info;
 	int result, len;
 	unsigned long va;

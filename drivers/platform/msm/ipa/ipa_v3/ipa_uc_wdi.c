@@ -1065,7 +1065,7 @@ static int ipa3_wdi2_gsi_alloc_evt_ring(
 			enum ipa_client_type client,
 			unsigned long *evt_ring_hdl)
 {
-	union __packed gsi_evt_scratch evt_scratch;
+	union gsi_evt_scratch evt_scratch;
 	int result = -EFAULT;
 
 	/* GSI EVENT RING allocation */

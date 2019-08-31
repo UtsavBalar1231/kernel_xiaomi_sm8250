@@ -1148,7 +1148,7 @@ int gsi_alloc_evt_ring(struct gsi_evt_ring_props *props, unsigned long dev_hdl,
  * @Return gsi_status
  */
 int gsi_write_evt_ring_scratch(unsigned long evt_ring_hdl,
-		union __packed gsi_evt_scratch val);
+		union gsi_evt_scratch val);
 
 /**
  * gsi_dealloc_evt_ring - Peripheral should call this function to
@@ -1738,7 +1738,7 @@ static inline int gsi_alloc_evt_ring(struct gsi_evt_ring_props *props,
 }
 
 static inline int gsi_write_evt_ring_scratch(unsigned long evt_ring_hdl,
-		union __packed gsi_evt_scratch val)
+		union gsi_evt_scratch val)
 {
 	return -GSI_STATUS_UNSUPPORTED_OP;
 }

@@ -1788,7 +1788,7 @@ int gsi_alloc_evt_ring(struct gsi_evt_ring_props *props, unsigned long dev_hdl,
 EXPORT_SYMBOL(gsi_alloc_evt_ring);
 
 static void __gsi_write_evt_ring_scratch(unsigned long evt_ring_hdl,
-		union __packed gsi_evt_scratch val)
+		union gsi_evt_scratch val)
 {
 	gsi_writel(val.data.word1, gsi_ctx->base +
 		GSI_EE_n_EV_CH_k_SCRATCH_0_OFFS(evt_ring_hdl,
@@ -1799,7 +1799,7 @@ static void __gsi_write_evt_ring_scratch(unsigned long evt_ring_hdl,
 }
 
 int gsi_write_evt_ring_scratch(unsigned long evt_ring_hdl,
-		union __packed gsi_evt_scratch val)
+		union gsi_evt_scratch val)
 {
 	struct gsi_evt_ctx *ctx;
 

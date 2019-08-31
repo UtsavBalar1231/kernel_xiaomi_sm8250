@@ -650,7 +650,7 @@ static int ipa3_wigig_config_gsi(bool Rx,
 
 	/* event scratch not configured by SW for TX channels */
 	if (Rx) {
-		union __packed gsi_evt_scratch evt_scratch;
+		union gsi_evt_scratch evt_scratch;
 
 		memset(&evt_scratch, 0, sizeof(evt_scratch));
 		evt_scratch.w11ad.update_status_hwtail_mod_threshold =

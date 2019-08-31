@@ -977,7 +977,7 @@ struct ipa_request_gsi_channel_params {
 	bool skip_ep_cfg;
 	bool keep_ipa_awake;
 	struct gsi_evt_ring_props evt_ring_params;
-	union __packed gsi_evt_scratch evt_scratch;
+	union gsi_evt_scratch evt_scratch;
 	struct gsi_chan_props chan_params;
 	union gsi_channel_scratch chan_scratch;
 };
