@@ -19,6 +19,7 @@ Properties:
 	Value type: <string>
 	Definition: Should contain "qcom,<soc>-pdc"
 		    - "qcom,sdm845-pdc": For SDM845
+		    - "qcom,lagoon-pdc": For Lagoon
 
 - reg:
 	Usage: required
