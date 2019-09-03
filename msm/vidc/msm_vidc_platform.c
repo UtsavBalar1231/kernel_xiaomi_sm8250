@@ -220,6 +220,12 @@ static struct msm_vidc_codec_capability lito_capabilities_v0[] = {
 	{CAP_BATCH_MAX_MB_PER_FRAME, DEC, CODECS_ALL, 36, 8160, 1, 8160},
 	/* (1920 * 1080) / 256 */
 	{CAP_BATCH_MAX_FPS, DEC, CODECS_ALL, 1, 30, 1, 30},
+
+	/* Image specific */
+	{CAP_HEVC_IMAGE_FRAME_WIDTH, ENC, HEVC, 128, 512, 1, 512},
+	{CAP_HEVC_IMAGE_FRAME_HEIGHT, ENC, HEVC, 128, 512, 1, 512},
+	{CAP_HEIC_IMAGE_FRAME_WIDTH, ENC, HEVC, 512, 8192, 1, 8192},
+	{CAP_HEIC_IMAGE_FRAME_HEIGHT, ENC, HEVC, 512, 8192, 1, 8192},
 };
 
 static struct msm_vidc_codec_capability lito_capabilities_v1[] = {
@@ -285,6 +291,12 @@ static struct msm_vidc_codec_capability lito_capabilities_v1[] = {
 	{CAP_BATCH_MAX_MB_PER_FRAME, DEC, CODECS_ALL, 36, 8160, 1, 8160},
 	/* (1920 * 1080) / 256 */
 	{CAP_BATCH_MAX_FPS, DEC, CODECS_ALL, 1, 30, 1, 30},
+
+	/* Image specific */
+	{CAP_HEVC_IMAGE_FRAME_WIDTH, ENC, HEVC, 128, 512, 1, 512},
+	{CAP_HEVC_IMAGE_FRAME_HEIGHT, ENC, HEVC, 128, 512, 1, 512},
+	{CAP_HEIC_IMAGE_FRAME_WIDTH, ENC, HEVC, 512, 8192, 1, 8192},
+	{CAP_HEIC_IMAGE_FRAME_HEIGHT, ENC, HEVC, 512, 8192, 1, 8192},
 };
 
 static struct msm_vidc_codec_capability kona_capabilities[] = {
