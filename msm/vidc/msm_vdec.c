@@ -657,7 +657,8 @@ int msm_vdec_s_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 				"%s: session not supported\n", __func__);
 			goto err_invalid_fmt;
 		}
-
+		update_log_ctxt(inst->sid, inst->session_type,
+			mplane->pixelformat);
 		memcpy(f, &fmt->v4l2_fmt, sizeof(struct v4l2_format));
 	}
 

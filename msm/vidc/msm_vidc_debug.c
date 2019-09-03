@@ -30,6 +30,8 @@ bool msm_vidc_cvp_usage = true;
 	atomic_read(&__binfo->ref_count) >= 2 ? "video driver" : "firmware";\
 })
 
+static struct log_cookie ctxt[MAX_SUPPORTED_INSTANCES];
+
 struct core_inst_pair {
 	struct msm_vidc_core *core;
 	struct msm_vidc_inst *inst;
@@ -596,3 +598,106 @@ int msm_vidc_check_ratelimit(void)
 	return __ratelimit(&_rs);
 }
 
+/**
+ * get_sid() must be called under "&core->lock"
+ * to avoid race condition in occurring empty slot.
+ */
+int get_sid(u32 *sid, u32 session_type)
+{
+	int i;
+
+	for (i = 0; i < MAX_SUPPORTED_INSTANCES; i++) {
+		if (!ctxt[i].used) {
+			ctxt[i].used = 1;
+			*sid = i+1;
+			update_log_ctxt(*sid, session_type, 0);
+			break;
+		}
+	}
+
+	return (i == MAX_SUPPORTED_INSTANCES);
+}
+
+void put_sid(u32 sid)
+{
+	if (!sid || sid > MAX_SUPPORTED_INSTANCES) {
+		d_vpr_e("%s: invalid sid %#x\n",
+			__func__, sid);
+		return;
+	}
+	if (ctxt[sid-1].used)
+		ctxt[sid-1].used = 0;
+}
+
+inline void update_log_ctxt(u32 sid, u32 session_type, u32 fourcc)
+{
+	const char *codec;
+	char type;
+
+	if (!sid || sid > MAX_SUPPORTED_INSTANCES) {
+		d_vpr_e("%s: invalid sid %#x\n",
+			__func__, sid);
+	}
+
+	switch (fourcc) {
+	case V4L2_PIX_FMT_H264:
+	case V4L2_PIX_FMT_H264_NO_SC:
+		codec = "h264";
+		break;
+	case V4L2_PIX_FMT_H264_MVC:
+		codec = " mvc";
+		break;
+	case V4L2_PIX_FMT_MPEG1:
+		codec = "mpg1";
+		break;
+	case V4L2_PIX_FMT_MPEG2:
+		codec = "mpg2";
+		break;
+	case V4L2_PIX_FMT_VP8:
+		codec = " vp8";
+		break;
+	case V4L2_PIX_FMT_VP9:
+		codec = " vp9";
+		break;
+	case V4L2_PIX_FMT_HEVC:
+		codec = "h265";
+		break;
+	case V4L2_PIX_FMT_TME:
+		codec = " tme";
+		break;
+	case V4L2_PIX_FMT_CVP:
+		codec = " cvp";
+		break;
+	default:
+		codec = "....";
+		break;
+	}
+
+	switch (session_type) {
+	case MSM_VIDC_ENCODER:
+		type = 'e';
+		break;
+	case MSM_VIDC_DECODER:
+		type = 'd';
+		break;
+	case MSM_VIDC_CVP:
+		type = 'c';
+	default:
+		type = '.';
+		break;
+	}
+
+	ctxt[sid-1].session_type = session_type;
+	ctxt[sid-1].codec_type = fourcc;
+	memcpy(&ctxt[sid-1].name, codec, 4);
+	ctxt[sid-1].name[4] = type;
+	ctxt[sid-1].name[5] = '\0';
+}
+
+char *get_codec_name(u32 sid)
+{
+	if (!sid || sid > MAX_SUPPORTED_INSTANCES)
+		return ".....";
+
+	return ctxt[sid-1].name;
+}

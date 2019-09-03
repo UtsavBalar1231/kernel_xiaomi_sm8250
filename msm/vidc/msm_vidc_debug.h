@@ -23,7 +23,8 @@
 #define VIDC_DBG_SESSION_RATELIMIT_INTERVAL (1 * HZ)
 #define VIDC_DBG_SESSION_RATELIMIT_BURST 6
 
-#define VIDC_DBG_TAG VIDC_DBG_LABEL ": %6s: %8x: "
+#define VIDC_DBG_TAG VIDC_DBG_LABEL ": %6s: %08x: %5s: "
+#define FW_DBG_TAG VIDC_DBG_LABEL ": %6s: "
 #define DEFAULT_SID ((u32)-1)
 
 /* To enable messages OR these values and
@@ -69,6 +70,13 @@ extern bool msm_vidc_syscache_disable;
 extern bool msm_vidc_lossless_encode;
 extern bool msm_vidc_cvp_usage;
 
+struct log_cookie {
+	u32 used;
+	u32 session_type;
+	u32 codec_type;
+	char name[20];
+};
+
 #define dprintk(__level, sid, __fmt, ...)	\
 	do { \
 		if (msm_vidc_debug & __level) { \
@@ -79,6 +87,7 @@ extern bool msm_vidc_cvp_usage;
 					VIDC_DBG_TAG __fmt, \
 					get_debug_level_str(__level), \
 					sid, \
+					get_codec_name(sid), \
 					##__VA_ARGS__); \
 				trace_msm_vidc_printf(trace_logbuf, \
 					log_length); \
@@ -87,6 +96,7 @@ extern bool msm_vidc_cvp_usage;
 				pr_info(VIDC_DBG_TAG __fmt, \
 					get_debug_level_str(__level), \
 					sid, \
+					get_codec_name(sid), \
 					##__VA_ARGS__); \
 			} \
 		} \
@@ -120,14 +130,14 @@ extern bool msm_vidc_cvp_usage;
 			char trace_logbuf[MAX_TRACER_LOG_LENGTH]; \
 			int log_length = snprintf(trace_logbuf, \
 				MAX_TRACER_LOG_LENGTH, \
-				VIDC_DBG_TAG __fmt, \
+				FW_DBG_TAG __fmt, \
 				"fw", \
 				##__VA_ARGS__); \
 			trace_msm_vidc_printf(trace_logbuf, \
 				log_length); \
 		} \
 		if (__level & FW_PRINTK) { \
-			pr_info(VIDC_DBG_TAG __fmt, \
+			pr_info(FW_DBG_TAG __fmt, \
 				"fw", \
 				##__VA_ARGS__); \
 		} \
@@ -146,7 +156,6 @@ extern bool msm_vidc_cvp_usage;
 		BUG_ON(value);					\
 	} while (0)
 
-
 struct dentry *msm_vidc_debugfs_init_drv(void);
 struct dentry *msm_vidc_debugfs_init_core(struct msm_vidc_core *core,
 		struct dentry *parent);
@@ -156,6 +165,10 @@ void msm_vidc_debugfs_deinit_inst(struct msm_vidc_inst *inst);
 void msm_vidc_debugfs_update(struct msm_vidc_inst *inst,
 		enum msm_vidc_debugfs_event e);
 int msm_vidc_check_ratelimit(void);
+int get_sid(u32 *sid, u32 session_type);
+void update_log_ctxt(u32 sid, u32 session_type, u32 fourcc);
+char *get_codec_name(u32 sid);
+void put_sid(u32 sid);
 
 static inline char *get_debug_level_str(int level)
 {

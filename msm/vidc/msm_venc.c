@@ -1323,7 +1323,8 @@ int msm_venc_s_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 				"%s: session not supported\n", __func__);
 			goto exit;
 		}
-
+		update_log_ctxt(inst->sid, inst->session_type,
+			mplane->pixelformat);
 		memcpy(f, &fmt->v4l2_fmt, sizeof(struct v4l2_format));
 	} else if (f->type == INPUT_MPLANE) {
 		fmt = &inst->fmts[INPUT_PORT];
