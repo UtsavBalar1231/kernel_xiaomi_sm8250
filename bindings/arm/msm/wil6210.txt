@@ -31,6 +31,8 @@ Optional properties:
 		      order as the clocks property.
 - qcom,keep-radio-on-during-sleep: Boolean flag to indicate if to suspend to d3hot
 				   instead of turning off the device
+- qcom,use-ap-power-save: Boolean flag to indicate if AP power save feature is
+			  enabled
 
 Example:
 	wil6210: qcom,wil6210 {
@@ -53,6 +55,7 @@ Example:
 			 <&clock_gcc clk_rf_clk3_pin>;
 		clock-names = "rf_clk3_clk", "rf_clk3_pin_clk";
 		qcom,keep-radio-on-during-sleep;
+		qcom,use-ap-power-save;
 	};
 
 Wil6210 client node under PCIe RP node needed for SMMU initialization by
