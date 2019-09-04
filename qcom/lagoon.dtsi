@@ -687,6 +687,10 @@
 				  <SLEEP_TCS   3>,
 				  <WAKE_TCS    3>,
 				  <CONTROL_TCS 1>;
+
+		system_pm {
+			compatible = "qcom,system-pm";
+		};
 	};
 
 	disp_rsc: rsc@af20000 {
