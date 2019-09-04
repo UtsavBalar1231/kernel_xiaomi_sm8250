@@ -1651,6 +1651,16 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 				inst->colour_space == MSM_VIDC_BT2020)))
 			event_fields_changed = true;
 
+		/*
+		 * Check for a change from progressive to interlace
+		 * and vice versa
+		 */
+		if ((event_notify->pic_struct == MSM_VIDC_PIC_STRUCT_MAYBE_INTERLACED &&
+			inst->pic_struct == MSM_VIDC_PIC_STRUCT_PROGRESSIVE) ||
+			(event_notify->pic_struct == MSM_VIDC_PIC_STRUCT_PROGRESSIVE &&
+			inst->pic_struct == MSM_VIDC_PIC_STRUCT_MAYBE_INTERLACED))
+			event_fields_changed = true;
+
 		f = &inst->fmts[OUTPUT_PORT].v4l2_fmt;
 		event_fields_changed |=
 			(f->fmt.pix_mp.height != event_notify->height);
