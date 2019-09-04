@@ -40,6 +40,9 @@ enum vidc_msg_prio {
 	VIDC_PERF       = 0x00000008,
 	VIDC_PKT        = 0x00000010,
 	VIDC_BUS        = 0x00000020,
+	VIDC_ENCODER    = 0x00000100,
+	VIDC_DECODER    = 0x00000200,
+	VIDC_CVP        = 0x00000400,
 	VIDC_PRINTK     = 0x00001000,
 	VIDC_FTRACE     = 0x00002000,
 	FW_LOW          = 0x00010000,
@@ -79,7 +82,7 @@ struct log_cookie {
 
 #define dprintk(__level, sid, __fmt, ...)	\
 	do { \
-		if (msm_vidc_debug & __level) { \
+		if (is_print_allowed(sid, __level)) { \
 			if (msm_vidc_debug & VIDC_FTRACE) { \
 				char trace_logbuf[MAX_TRACER_LOG_LENGTH]; \
 				int log_length = snprintf(trace_logbuf, \
@@ -167,8 +170,9 @@ void msm_vidc_debugfs_update(struct msm_vidc_inst *inst,
 int msm_vidc_check_ratelimit(void);
 int get_sid(u32 *sid, u32 session_type);
 void update_log_ctxt(u32 sid, u32 session_type, u32 fourcc);
-char *get_codec_name(u32 sid);
-void put_sid(u32 sid);
+inline char *get_codec_name(u32 sid);
+inline void put_sid(u32 sid);
+inline bool is_print_allowed(u32 sid, u32 level);
 
 static inline char *get_debug_level_str(int level)
 {

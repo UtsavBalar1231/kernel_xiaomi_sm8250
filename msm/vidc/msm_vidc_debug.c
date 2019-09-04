@@ -600,7 +600,7 @@ int msm_vidc_check_ratelimit(void)
 
 /**
  * get_sid() must be called under "&core->lock"
- * to avoid race condition in occurring empty slot.
+ * to avoid race condition at occupying empty slot.
  */
 int get_sid(u32 *sid, u32 session_type)
 {
@@ -633,6 +633,7 @@ inline void update_log_ctxt(u32 sid, u32 session_type, u32 fourcc)
 {
 	const char *codec;
 	char type;
+	u32 s_type = 0;
 
 	if (!sid || sid > MAX_SUPPORTED_INSTANCES) {
 		d_vpr_e("%s: invalid sid %#x\n",
@@ -676,28 +677,54 @@ inline void update_log_ctxt(u32 sid, u32 session_type, u32 fourcc)
 	switch (session_type) {
 	case MSM_VIDC_ENCODER:
 		type = 'e';
+		s_type = VIDC_ENCODER;
 		break;
 	case MSM_VIDC_DECODER:
 		type = 'd';
+		s_type = VIDC_DECODER;
 		break;
 	case MSM_VIDC_CVP:
 		type = 'c';
+		s_type = VIDC_CVP;
 	default:
 		type = '.';
 		break;
 	}
 
-	ctxt[sid-1].session_type = session_type;
+	ctxt[sid-1].session_type = s_type;
 	ctxt[sid-1].codec_type = fourcc;
 	memcpy(&ctxt[sid-1].name, codec, 4);
 	ctxt[sid-1].name[4] = type;
 	ctxt[sid-1].name[5] = '\0';
 }
 
-char *get_codec_name(u32 sid)
+inline char *get_codec_name(u32 sid)
 {
 	if (!sid || sid > MAX_SUPPORTED_INSTANCES)
 		return ".....";
 
 	return ctxt[sid-1].name;
+}
+
+/**
+ * 0xx -> allow prints for all sessions
+ * 1xx -> allow only encoder prints
+ * 2xx -> allow only decoder prints
+ * 4xx -> allow only cvp prints
+ */
+inline bool is_print_allowed(u32 sid, u32 level)
+{
+	if (!(msm_vidc_debug & level))
+		return false;
+
+	if (!((msm_vidc_debug >> 8) & 0xF))
+		return true;
+
+	if (!sid || sid > MAX_SUPPORTED_INSTANCES)
+		return true;
+
+	if (ctxt[sid-1].session_type & msm_vidc_debug)
+		return true;
+
+	return false;
 }
