@@ -202,6 +202,7 @@
 					qcom,bus-freq = <10>;
 					qcom,bus-min = <9>;
 					qcom,bus-max = <12>;
+					qcom,acd-level = <0x802F5FFD>;
 				};
 
 				/* SVS L1 */
@@ -211,6 +212,7 @@
 					qcom,bus-freq = <8>;
 					qcom,bus-min = <7>;
 					qcom,bus-max = <10>;
+					qcom,acd-level = <0x802F5FFD>;
 				};
 
 				/* SVS */
@@ -220,6 +222,7 @@
 					qcom,bus-freq = <7>;
 					qcom,bus-min = <5>;
 					qcom,bus-max = <8>;
+					qcom,acd-level = <0x802F5FFD>;
 				};
 
 				/* Low SVS */
@@ -229,6 +232,7 @@
 					qcom,bus-freq = <5>;
 					qcom,bus-min = <5>;
 					qcom,bus-max = <7>;
+					qcom,acd-level = <0x802F5FFD>;
 				};
 
 				qcom,gpu-pwrlevel@4 {
@@ -256,6 +260,7 @@
 					qcom,bus-freq = <10>;
 					qcom,bus-min = <9>;
 					qcom,bus-max = <12>;
+					qcom,acd-level = <0x802F5FFD>;
 				};
 
 				/* SVS L1 */
@@ -265,6 +270,7 @@
 					qcom,bus-freq = <8>;
 					qcom,bus-min = <7>;
 					qcom,bus-max = <10>;
+					qcom,acd-level = <0x802F5FFD>;
 				};
 
 				/* SVS */
@@ -274,6 +280,7 @@
 					qcom,bus-freq = <7>;
 					qcom,bus-min = <5>;
 					qcom,bus-max = <8>;
+					qcom,acd-level = <0x802F5FFD>;
 				};
 
 				/* Low SVS */
@@ -283,6 +290,7 @@
 					qcom,bus-freq = <5>;
 					qcom,bus-min = <5>;
 					qcom,bus-max = <7>;
+					qcom,acd-level = <0x802F5FFD>;
 				};
 
 				qcom,gpu-pwrlevel@4 {
@@ -309,6 +317,7 @@
 					qcom,bus-freq = <8>;
 					qcom,bus-min = <7>;
 					qcom,bus-max = <12>;
+					qcom,acd-level = <0x802F5FFD>;
 				};
 
 				/* SVS */
@@ -318,6 +327,7 @@
 					qcom,bus-freq = <7>;
 					qcom,bus-min = <5>;
 					qcom,bus-max = <8>;
+					qcom,acd-level = <0x802F5FFD>;
 				};
 
 				/* Low SVS */
@@ -327,6 +337,7 @@
 					qcom,bus-freq = <5>;
 					qcom,bus-min = <5>;
 					qcom,bus-max = <7>;
+					qcom,acd-level = <0x802F5FFD>;
 				};
 
 				qcom,gpu-pwrlevel@3 {
@@ -415,21 +426,6 @@
 		/* AOP mailbox for sending ACD enable and disable messages */
 		mboxes = <&qmp_aop 0>;
 		mbox-names = "aop";
-
-		qcom,gpu-acd-table {
-			/* Corresponds to levels in the GPU perf table */
-			qcom,acd-enable-by-level = <0x7e>;
-			qcom,acd-stride = <0x1>;
-			qcom,acd-num-levels = <0x6>;
-
-			/* ACDCR */
-			qcom,acd-data = <0x802F5FFD	/* LowSVS*/
-					0x802F5FFD	/* SVS */
-					0x802F5FFD	/* SVS_L1 */
-					0x802F5FFD	/* NOM */
-					0x802F5FFD	/* NOM_L1 */
-					0x802F5FFD>;	/* TURBO */
-		};
 
 		gmu_user: gmu_user {
 			compatible = "qcom,smmu-gmu-user-cb";
