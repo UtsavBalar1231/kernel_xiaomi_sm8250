@@ -1098,6 +1098,8 @@
 		compatible = "qcom,bimc-bwmon4";
 		reg = <0x00060400 0x300>, <0x00060300 0x200>;
 		reg-names = "base", "global_base";
+		qcom,msm_bus = <154 10070>;
+		qcom,msm_bus_name = "npu_bwmon_cdsp";
 		clocks = <&clock_gcc GCC_NPU_BWMON_CFG_AHB_CLK>,
 				<&clock_gcc GCC_NPU_BWMON_AXI_CLK>;
 		clock-names = "npu_bwmon_ahb", "npu_bwmon_axi";
@@ -1137,6 +1139,8 @@
 		compatible = "qcom,bimc-bwmon4";
 		reg = <0x00070300 0x300>, <0x00070200 0x200>;
 		reg-names = "base", "global_base";
+		qcom,msm_bus = <154 10070>;
+		qcom,msm_bus_name = "npudsp_bwmon_cdsp";
 		clocks = <&clock_gcc GCC_NPU_BWMON_CFG_AHB_CLK>,
 				<&clock_gcc GCC_NPU_BWMON_AXI_CLK>;
 		clock-names = "npu_bwmon_ahb", "npu_bwmon_axi";
