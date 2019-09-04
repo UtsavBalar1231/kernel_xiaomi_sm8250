@@ -327,4 +327,6 @@ int msm_comm_check_window_bitrate(struct msm_vidc_inst *inst,
 		struct vidc_frame_data *frame_data);
 void msm_comm_clear_window_data(struct msm_vidc_inst *inst);
 void msm_comm_release_window_data(struct msm_vidc_inst *inst);
+int msm_comm_set_cvp_skip_ratio(struct msm_vidc_inst *inst,
+	uint32_t capture_rate, uint32_t cvp_rate);
 #endif
