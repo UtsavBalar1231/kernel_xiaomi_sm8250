@@ -155,11 +155,19 @@ struct msm_cvp_dme_basic_config_packet {
 	u32 ransac_threshold;
 };
 
+enum msm_vidc_cvp_buf_type {
+	MSM_VIDC_CVP_INPUT_BUF = 1,
+	MSM_VIDC_CVP_OUTPUT_BUF,
+	MSM_VIDC_CVP_PERSIST_BUF,
+	MSM_VIDC_CVP_CONTEXT_BUF
+};
+
 struct msm_cvp_buf {
 	u32 index;
-	int fd;
 	u32 size;
 	u32 offset;
+	u32 buf_type;
+	int fd;
 	struct dma_buf *dbuf;
 	void *kvaddr;
 };
