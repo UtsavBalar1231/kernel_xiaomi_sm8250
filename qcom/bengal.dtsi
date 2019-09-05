@@ -1317,6 +1317,10 @@
 		#size-cells = <1>;
 		read-only;
 		ranges;
+
+		stm_debug_fuse: stm@20f0 {
+			reg = <0x20f0 0x4>;
+		};
 	};
 };
 
