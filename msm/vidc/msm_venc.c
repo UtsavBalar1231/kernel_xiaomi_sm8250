@@ -1837,8 +1837,16 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 					__func__);
 		}
 		break;
-	case V4L2_CID_MPEG_VIDC_CAPTURE_FRAME_RATE:
 	case V4L2_CID_MPEG_VIDC_COMPRESSION_QUALITY:
+		if (inst->state == MSM_VIDC_START_DONE) {
+			rc = msm_venc_set_frame_quality(inst);
+			if (rc)
+				s_vpr_e(sid,
+				"%s: set frame quality failed\n",
+					__func__);
+		}
+		break;
+	case V4L2_CID_MPEG_VIDC_CAPTURE_FRAME_RATE:
 	case V4L2_CID_MPEG_VIDC_IMG_GRID_SIZE:
 	case V4L2_CID_MPEG_VIDC_VIDEO_HEVC_MAX_HIER_CODING_LAYER:
 	case V4L2_CID_MPEG_VIDEO_HEVC_HIER_CODING_TYPE:
@@ -2925,13 +2933,12 @@ static void set_heif_preconditions(struct msm_vidc_inst *inst)
 	return;
 }
 
-int msm_venc_set_image_properties(struct msm_vidc_inst *inst)
+int msm_venc_set_frame_quality(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
 	struct hfi_device *hdev;
 	struct v4l2_ctrl *ctrl;
 	struct hfi_heic_frame_quality frame_quality;
-	struct hfi_heic_grid_enable grid_enable;
 
 	if (!inst || !inst->core) {
 		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
@@ -2953,6 +2960,25 @@ int msm_venc_set_image_properties(struct msm_vidc_inst *inst)
 	if (rc)
 		s_vpr_e(inst->sid, "%s: set frame quality failed\n", __func__);
 
+	return rc;
+}
+
+int msm_venc_set_image_grid(struct msm_vidc_inst *inst)
+{
+	int rc = 0;
+	struct hfi_device *hdev;
+	struct v4l2_ctrl *ctrl;
+	struct hfi_heic_grid_enable grid_enable;
+
+	if (!inst || !inst->core) {
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
+		return -EINVAL;
+	}
+	hdev = inst->core->device;
+
+	if (inst->rc_type != V4L2_MPEG_VIDEO_BITRATE_MODE_CQ)
+		return 0;
+
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_IMG_GRID_SIZE);
 
 	/* Need a change in HFI if we want to pass size */
@@ -2969,9 +2995,37 @@ int msm_venc_set_image_properties(struct msm_vidc_inst *inst)
 	if (rc)
 		s_vpr_e(inst->sid, "%s: set grid enable failed\n", __func__);
 
+	return rc;
+}
+
+int msm_venc_set_image_properties(struct msm_vidc_inst *inst)
+{
+	int rc = 0;
+
+	if (!inst) {
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
+		return -EINVAL;
+	}
+
+	if (inst->rc_type != V4L2_MPEG_VIDEO_BITRATE_MODE_CQ)
+		return 0;
+
+	rc = msm_venc_set_frame_quality(inst);
+	if (rc) {
+		s_vpr_e(inst->sid,
+			"%s: set image property failed\n", __func__);
+		return rc;
+	}
+
+	rc = msm_venc_set_image_grid(inst);
+	if (rc) {
+		s_vpr_e(inst->sid,
+			"%s: set image property failed\n", __func__);
+		return rc;
+	}
+
 	set_all_intra_preconditions(inst);
 	set_heif_preconditions(inst);
-
 	return rc;
 }
 
