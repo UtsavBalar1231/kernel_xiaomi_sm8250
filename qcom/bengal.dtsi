@@ -1390,3 +1390,8 @@
 #include "msm-arm-smmu-bengal.dtsi"
 #include "bengal-regulator.dtsi"
 #include "bengal-pinctrl.dtsi"
+#include "bengal-qupv3.dtsi"
+
+&qupv3_se4_2uart {
+	status = "ok";
+};
