@@ -64,6 +64,11 @@ enum msm_vidc_debugfs_event {
 	MSM_VIDC_DEBUGFS_EVENT_FBD,
 };
 
+enum vidc_err_recovery_disable {
+	VIDC_DISABLE_NOC_ERR_RECOV     = 0x0001,
+	VIDC_DISABLE_NON_NOC_ERR_RECOV = 0x0002
+};
+
 extern int msm_vidc_debug;
 extern int msm_vidc_fw_debug_mode;
 extern bool msm_vidc_fw_coverage;
@@ -72,6 +77,7 @@ extern int msm_vidc_clock_voting;
 extern bool msm_vidc_syscache_disable;
 extern bool msm_vidc_lossless_encode;
 extern bool msm_vidc_cvp_usage;
+extern int msm_vidc_err_recovery_disable;
 
 struct log_cookie {
 	u32 used;

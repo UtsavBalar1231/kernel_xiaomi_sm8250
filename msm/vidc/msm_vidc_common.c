@@ -2231,8 +2231,12 @@ static void handle_sys_error(enum hal_command_response cmd, void *data)
 
 	/* handle the hw error before core released to get full debug info */
 	msm_vidc_handle_hw_error(core);
-	if (response->status == VIDC_ERR_NOC_ERROR) {
-		d_vpr_e("Got NOC error");
+	if ((response->status == VIDC_ERR_NOC_ERROR &&
+		(msm_vidc_err_recovery_disable &
+			VIDC_DISABLE_NOC_ERR_RECOV)) ||
+		(msm_vidc_err_recovery_disable &
+			VIDC_DISABLE_NON_NOC_ERR_RECOV)) {
+		d_vpr_e("Got unrecoverable video fw error");
 		MSM_VIDC_ERROR(true);
 	}
 
