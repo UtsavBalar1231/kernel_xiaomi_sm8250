@@ -162,7 +162,7 @@ static struct msm_vidc_codec_capability lito_capabilities_v0[] = {
 	{CAP_FRAME_WIDTH, DOMAINS_ALL, CODECS_ALL, 96, 5760, 1, 1920},
 	{CAP_FRAME_HEIGHT, DOMAINS_ALL, CODECS_ALL, 96, 5760, 1, 1080},
 	/*  ((5760 * 2880) / 256) */
-	{CAP_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 36, 64800, 1, 34560},
+	{CAP_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 36, 64800, 1, 8160},
 	/* ((4096x2160)/256)@90fps */
 	{CAP_MBS_PER_SECOND, DOMAINS_ALL, CODECS_ALL, 36, 3110400, 1, 2073600},
 	{CAP_FRAMERATE, DOMAINS_ALL, CODECS_ALL, 1, 480, 1, 30},
@@ -191,8 +191,8 @@ static struct msm_vidc_codec_capability lito_capabilities_v0[] = {
 	/* VP8 specific */
 	{CAP_FRAME_WIDTH, ENC|DEC, VP8, 96, 4096, 1, 1920},
 	{CAP_FRAME_HEIGHT, ENC|DEC, VP8, 96, 4096, 1, 1080},
-	/* (4096 * 2160) / 256 */
-	{CAP_MBS_PER_FRAME, ENC|DEC, VP8, 36, 34560, 1, 8160},
+	/* (4096 * 2304) / 256 */
+	{CAP_MBS_PER_FRAME, ENC|DEC, VP8, 36, 36864, 1, 8160},
 	/* (4096 * 2160) / 256) * 30*/
 	{CAP_MBS_PER_SECOND, ENC|DEC, VP8, 36, 1036800, 1, 244800},
 	{CAP_FRAMERATE, ENC|DEC, VP8, 1, 30, 1, 30},
@@ -212,8 +212,8 @@ static struct msm_vidc_codec_capability lito_capabilities_v0[] = {
 	/* Secure usecase specific */
 	{CAP_SECURE_FRAME_WIDTH, DOMAINS_ALL, CODECS_ALL, 96, 4096, 1, 1920},
 	{CAP_SECURE_FRAME_HEIGHT, DOMAINS_ALL, CODECS_ALL, 96, 4096, 1, 1080},
-	/* (4096 * 2160) / 256 */
-	{CAP_SECURE_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 36, 34560, 1, 34560},
+	/* (4096 * 2304) / 256 */
+	{CAP_SECURE_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 36, 36864, 1, 8160},
 	{CAP_SECURE_BITRATE, DOMAINS_ALL, CODECS_ALL, 1, 40000000, 1, 20000000},
 
 	/* Batch Mode Decode */
@@ -235,8 +235,8 @@ static struct msm_vidc_codec_capability lito_capabilities_v1[] = {
 	/* {cap_type, domains, codecs, min, max, step_size, default_value} */
 	{CAP_FRAME_WIDTH, DOMAINS_ALL, CODECS_ALL, 96, 4096, 1, 1920},
 	{CAP_FRAME_HEIGHT, DOMAINS_ALL, CODECS_ALL, 96, 4096, 1, 1080},
-	/*  ((4096 * 2160) / 256) */
-	{CAP_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 36, 34560, 1, 34560},
+	/*  ((4096 * 2304) / 256) */
+	{CAP_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 36, 36864, 1, 8160},
 	/* 4K@30 decode + 1080@30 encode */
 	{CAP_MBS_PER_SECOND, DOMAINS_ALL, CODECS_ALL, 36, 1281600, 1, 2073600},
 	{CAP_FRAMERATE, DOMAINS_ALL, CODECS_ALL, 1, 240, 1, 30},
@@ -286,8 +286,8 @@ static struct msm_vidc_codec_capability lito_capabilities_v1[] = {
 	/* Secure usecase specific */
 	{CAP_SECURE_FRAME_WIDTH, DOMAINS_ALL, CODECS_ALL, 96, 4096, 1, 1920},
 	{CAP_SECURE_FRAME_HEIGHT, DOMAINS_ALL, CODECS_ALL, 96, 4096, 1, 1080},
-	/* (4096 * 2160) / 256 */
-	{CAP_SECURE_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 36, 34560, 1, 34560},
+	/* (4096 * 2304) / 256 */
+	{CAP_SECURE_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 36, 36864, 1, 8160},
 	{CAP_SECURE_BITRATE, DOMAINS_ALL, CODECS_ALL, 1, 40000000, 1, 20000000},
 
 	/* Batch Mode Decode */
