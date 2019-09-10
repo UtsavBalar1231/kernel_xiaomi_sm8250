@@ -275,14 +275,14 @@ static void fuse_dentry_canonical_path(const struct path *path,
 	if (!path_name)
 		goto default_path;
 
-	args.in.h.opcode = FUSE_CANONICAL_PATH;
-	args.in.h.nodeid = get_node_id(inode);
-	args.in.numargs = 0;
-	args.out.numargs = 1;
-	args.out.args[0].size = PATH_MAX;
-	args.out.args[0].value = path_name;
-	args.out.argvar = 1;
-	args.out.canonical_path = canonical_path;
+	args.opcode = FUSE_CANONICAL_PATH;
+	args.nodeid = get_node_id(inode);
+	args.in_numargs = 0;
+	args.out_numargs = 1;
+	args.out_args[0].size = PATH_MAX;
+	args.out_args[0].value = path_name;
+	args.canonical_path = canonical_path;
+	args.out_argvar = 1;
 
 	err = fuse_simple_request(fc, &args);
 	free_page((unsigned long)path_name);
