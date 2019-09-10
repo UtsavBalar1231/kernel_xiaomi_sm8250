@@ -3636,6 +3636,10 @@
 			reg = <0x20f0 0x4>;
 		};
 	};
+
+	qcom,demux {
+		compatible = "qcom,demux";
+	};
 };
 
 #include "lito-pinctrl.dtsi"
