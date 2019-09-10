@@ -2071,6 +2071,8 @@
 		clocks = <&clock_aop QDSS_CLK>;
 		clock-names = "apb_pclk";
 
+		status = "disabled";
+
 		port {
 			tpdm_llm_turing_out_funnel_turing: endpoint {
 				remote-endpoint =
