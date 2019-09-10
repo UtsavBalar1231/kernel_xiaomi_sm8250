@@ -847,10 +847,25 @@ static int cam_sync_close(struct file *filep)
 	return rc;
 }
 
+static void cam_sync_event_queue_notify_error(const struct v4l2_event *old,
+	struct v4l2_event *new)
+{
+	struct cam_sync_ev_header *ev_header;
+
+	ev_header = CAM_SYNC_GET_HEADER_PTR((*old));
+	CAM_ERR(CAM_CRM, "Failed to notify event id %d fence %d statue %d",
+		old->id, ev_header->sync_obj, ev_header->status);
+}
+
+static struct v4l2_subscribed_event_ops cam_sync_v4l2_ops = {
+	.merge = cam_sync_event_queue_notify_error,
+};
+
 int cam_sync_subscribe_event(struct v4l2_fh *fh,
 		const struct v4l2_event_subscription *sub)
 {
-	return v4l2_event_subscribe(fh, sub, CAM_SYNC_MAX_V4L2_EVENTS, NULL);
+	return v4l2_event_subscribe(fh, sub, CAM_SYNC_MAX_V4L2_EVENTS,
+		&cam_sync_v4l2_ops);
 }
 
 int cam_sync_unsubscribe_event(struct v4l2_fh *fh,

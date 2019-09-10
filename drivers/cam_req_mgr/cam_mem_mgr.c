@@ -188,10 +188,10 @@ int cam_mem_get_io_buf(int32_t buf_handle, int32_t mmu_handle,
 
 	idx = CAM_MEM_MGR_GET_HDL_IDX(buf_handle);
 	if (idx >= CAM_MEM_BUFQ_MAX || idx <= 0)
-		return -EINVAL;
+		return -ENOENT;
 
 	if (!tbl.bufq[idx].active)
-		return -EINVAL;
+		return -EAGAIN;
 
 	mutex_lock(&tbl.bufq[idx].q_lock);
 	if (buf_handle != tbl.bufq[idx].buf_handle) {

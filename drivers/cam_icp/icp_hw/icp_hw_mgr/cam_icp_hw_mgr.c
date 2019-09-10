@@ -4437,7 +4437,8 @@ static void cam_icp_mgr_print_io_bufs(struct cam_packet *packet,
 			rc = cam_mem_get_io_buf(io_cfg[i].mem_handle[j],
 				mmu_hdl, &iova_addr, &src_buf_size);
 			if (rc < 0) {
-				CAM_ERR(CAM_UTIL, "get src buf address fail");
+				CAM_ERR(CAM_UTIL,
+					"get src buf address fail rc %d", rc);
 				continue;
 			}
 			if (iova_addr >> 32) {
