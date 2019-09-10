@@ -1,4 +1,3 @@
-
 /*
   FUSE: Filesystem in Userspace
   Copyright (C) 2001-2008  Miklos Szeredi <miklos@szeredi.hu>
@@ -83,6 +82,7 @@ static struct fuse_req *__fuse_request_alloc(unsigned npages, gfp_t flags)
 				kmem_cache_free(fuse_req_cachep, req);
 				return NULL;
 			}
+			__set_bit(FR_ALLOC_PAGES, &req->flags);
 		} else if (npages) {
 			pages = req->inline_pages;
 			page_descs = req->inline_page_descs;
@@ -106,7 +106,7 @@ struct fuse_req *fuse_request_alloc_nofs(unsigned npages)
 
 static void fuse_req_pages_free(struct fuse_req *req)
 {
-	if (req->pages != req->inline_pages)
+	if (test_bit(FR_ALLOC_PAGES, &req->flags))
 		kfree(req->pages);
 }
 
@@ -129,6 +129,7 @@ bool fuse_req_realloc_pages(struct fuse_conn *fc, struct fuse_req *req,
 	memcpy(page_descs, req->page_descs,
 	       sizeof(struct fuse_page_desc) * req->max_pages);
 	fuse_req_pages_free(req);
+	__set_bit(FR_ALLOC_PAGES, &req->flags);
 	req->pages = pages;
 	req->page_descs = page_descs;
 	req->max_pages = npages;
@@ -551,6 +552,34 @@ static void fuse_force_creds(struct fuse_conn *fc, struct fuse_req *req)
 	req->in.h.pid = pid_nr_ns(task_pid(current), fc->pid_ns);
 }
 
+void fuse_args_to_req(struct fuse_req *req, struct fuse_args *args)
+{
+	struct fuse_args_pages *ap = container_of(args, typeof(*ap), args);
+
+	req->in.h.opcode = args->opcode;
+	req->in.h.nodeid = args->nodeid;
+	req->in.numargs = args->in_numargs;
+	memcpy(req->in.args, args->in_args,
+	       args->in_numargs * sizeof(struct fuse_in_arg));
+	req->out.argvar = args->out_argvar;
+	req->out.numargs = args->out_numargs;
+	memcpy(req->out.args, args->out_args,
+	       args->out_numargs * sizeof(struct fuse_arg));
+	req->out.canonical_path = args->canonical_path;
+
+	if (args->in_pages || args->out_pages) {
+		req->in.argpages = args->in_pages;
+		req->out.argpages = args->out_pages;
+		req->out.page_zeroing = args->page_zeroing;
+		req->out.page_replace = args->page_replace;
+
+		req->pages = ap->pages;
+		req->page_descs = ap->descs;
+		req->num_pages = ap->num_pages;
+	}
+
+}
+
 ssize_t fuse_simple_request(struct fuse_conn *fc, struct fuse_args *args)
 {
 	struct fuse_req *req;
@@ -574,17 +603,8 @@ ssize_t fuse_simple_request(struct fuse_conn *fc, struct fuse_args *args)
 
 	/* Needs to be done after fuse_get_req() so that fc->minor is valid */
 	fuse_adjust_compat(fc, args);
+	fuse_args_to_req(req, args);
 
-	req->in.h.opcode = args->opcode;
-	req->in.h.nodeid = args->nodeid;
-	req->in.numargs = args->in_numargs;
-	memcpy(req->in.args, args->in_args,
-	       args->in_numargs * sizeof(struct fuse_in_arg));
-	req->out.argvar = args->out_argvar;
-	req->out.numargs = args->out_numargs;
-	memcpy(req->out.args, args->out_args,
-	       args->out_numargs * sizeof(struct fuse_arg));
-	req->out.canonical_path = args->canonical_path;
 	if (!args->noreply)
 		__set_bit(FR_ISREPLY, &req->flags);
 	__fuse_request_send(fc, req);
