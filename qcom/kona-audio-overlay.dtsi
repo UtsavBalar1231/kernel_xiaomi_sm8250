@@ -313,8 +313,8 @@
 				  "SpkrLeft", "SpkrRight";
 	qcom,codec-max-aux-devs = <1>;
 	qcom,codec-aux-devs = <&wcd938x_codec>;
-	qcom,msm_audio_ssr_devs = <&audio_apr>, <&q6core>, <&bolero>,
-				  <&lpi_tlmm>;
+	qcom,msm_audio_ssr_devs = <&audio_apr>, <&q6core>, <&lpi_tlmm>,
+				  <&bolero>;
 };
 
 &q6core {
