@@ -1557,6 +1557,8 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 		rc = msm_venc_resolve_rate_control(inst, ctrl);
 		if (rc)
 			s_vpr_e(sid, "%s: set bitrate mode failed\n", __func__);
+		if (inst->state < MSM_VIDC_LOAD_RESOURCES)
+			msm_vidc_calculate_buffer_counts(inst);
 		break;
 	}
 	case V4L2_CID_MPEG_VIDEO_BITRATE:
@@ -1615,7 +1617,6 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 		inst->flags &= ~VIDC_TURBO;
 		if (ctrl->val == INT_MAX)
 			inst->flags |= VIDC_TURBO;
-
 		if (inst->state < MSM_VIDC_LOAD_RESOURCES)
 			msm_vidc_calculate_buffer_counts(inst);
 		if (inst->state == MSM_VIDC_START_DONE) {
