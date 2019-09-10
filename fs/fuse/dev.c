@@ -599,7 +599,9 @@ ssize_t fuse_simple_request(struct fuse_conn *fc, struct fuse_args *args)
 	memcpy(req->out.args, args->out_args,
 	       args->out_numargs * sizeof(struct fuse_arg));
 	req->out.canonical_path = args->canonical_path;
-	fuse_request_send(fc, req);
+	if (!args->noreply)
+		__set_bit(FR_ISREPLY, &req->flags);
+	__fuse_request_send(fc, req);
 	ret = req->out.h.error;
 	if (!ret && args->out_argvar) {
 		BUG_ON(args->out_numargs != 1);
