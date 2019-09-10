@@ -425,6 +425,7 @@ static void __cam_isp_ctx_send_sof_boot_timestamp(
 	req_msg.u.frame_msg.timestamp = ctx_isp->boot_timestamp;
 	req_msg.u.frame_msg.link_hdl = ctx_isp->base->link_hdl;
 	req_msg.u.frame_msg.sof_status = sof_event_status;
+	req_msg.u.frame_msg.frame_id_meta = ctx_isp->frame_id_meta;
 
 	CAM_DBG(CAM_ISP,
 		"request id:%lld frame number:%lld boot time stamp:0x%llx",
@@ -452,6 +453,7 @@ static void __cam_isp_ctx_send_sof_timestamp(
 	req_msg.u.frame_msg.timestamp = ctx_isp->sof_timestamp_val;
 	req_msg.u.frame_msg.link_hdl = ctx_isp->base->link_hdl;
 	req_msg.u.frame_msg.sof_status = sof_event_status;
+	req_msg.u.frame_msg.frame_id_meta = ctx_isp->frame_id_meta;
 
 	CAM_DBG(CAM_ISP,
 		"request id:%lld frame number:%lld SOF time stamp:0x%llx",
@@ -800,11 +802,20 @@ static int __cam_isp_ctx_notify_sof_in_activated_state(
 	struct cam_isp_context *ctx_isp, void *evt_data)
 {
 	int rc = 0;
+	uint64_t  request_id  = 0;
 	struct cam_req_mgr_trigger_notify  notify;
 	struct cam_context *ctx = ctx_isp->base;
 	struct cam_ctx_request  *req;
 	struct cam_isp_ctx_req  *req_isp;
-	uint64_t  request_id  = 0;
+	struct cam_isp_hw_epoch_event_data *epoch_done_event_data =
+			(struct cam_isp_hw_epoch_event_data *)evt_data;
+
+	if (!evt_data) {
+		CAM_ERR(CAM_ISP, "invalid event data");
+		return -EINVAL;
+	}
+
+	ctx_isp->frame_id_meta = epoch_done_event_data->frame_id_meta;
 
 	/*
 	 * notify reqmgr with sof signal. Note, due to scheduling delay
@@ -1019,11 +1030,19 @@ end:
 static int __cam_isp_ctx_epoch_in_applied(struct cam_isp_context *ctx_isp,
 	void *evt_data)
 {
-	struct cam_ctx_request    *req;
-	struct cam_isp_ctx_req    *req_isp;
-	struct cam_context        *ctx = ctx_isp->base;
-	uint64_t  request_id = 0;
+	uint64_t request_id = 0;
+	struct cam_ctx_request             *req;
+	struct cam_isp_ctx_req             *req_isp;
+	struct cam_context                 *ctx = ctx_isp->base;
+	struct cam_isp_hw_epoch_event_data *epoch_done_event_data =
+		(struct cam_isp_hw_epoch_event_data *)evt_data;
 
+	if (!evt_data) {
+		CAM_ERR(CAM_ISP, "invalid event data");
+		return -EINVAL;
+	}
+
+	ctx_isp->frame_id_meta = epoch_done_event_data->frame_id_meta;
 	if (list_empty(&ctx->wait_req_list)) {
 		/*
 		 * If no wait req in epoch, this is an error case.
@@ -1180,10 +1199,19 @@ static int __cam_isp_ctx_buf_done_in_bubble(
 static int __cam_isp_ctx_epoch_in_bubble_applied(
 	struct cam_isp_context *ctx_isp, void *evt_data)
 {
-	struct cam_ctx_request    *req;
-	struct cam_isp_ctx_req    *req_isp;
-	struct cam_context        *ctx = ctx_isp->base;
 	uint64_t  request_id = 0;
+	struct cam_ctx_request             *req;
+	struct cam_isp_ctx_req             *req_isp;
+	struct cam_context                 *ctx = ctx_isp->base;
+	struct cam_isp_hw_epoch_event_data *epoch_done_event_data =
+		(struct cam_isp_hw_epoch_event_data *)evt_data;
+
+	if (!evt_data) {
+		CAM_ERR(CAM_ISP, "invalid event data");
+		return -EINVAL;
+	}
+
+	ctx_isp->frame_id_meta = epoch_done_event_data->frame_id_meta;
 
 	/*
 	 * This means we missed the reg upd ack. So we need to

@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_VFE_CAMIF_VER3_H_
@@ -52,6 +52,7 @@ struct cam_vfe_camif_ver3_reg_data {
 	uint32_t     error_irq_mask0;
 	uint32_t     error_irq_mask2;
 	uint32_t     subscribe_irq_mask1;
+	uint32_t     frame_id_irq_mask;
 
 	uint32_t     enable_diagnostic_hw;
 	uint32_t     pp_camif_cfg_en_shift;

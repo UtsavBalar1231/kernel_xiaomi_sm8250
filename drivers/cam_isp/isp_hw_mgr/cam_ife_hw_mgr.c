@@ -4826,29 +4826,36 @@ static int cam_isp_blob_core_cfg_update(
 	list_for_each_entry(hw_mgr_res, &ctx->res_list_ife_src, list) {
 		for (i = 0; i < CAM_ISP_HW_SPLIT_MAX; i++) {
 			clk_rate = 0;
-			if (!hw_mgr_res->hw_res[i] ||
-				hw_mgr_res->res_id != CAM_ISP_HW_VFE_IN_CAMIF)
+			if (!hw_mgr_res->hw_res[i])
 				continue;
 
-			hw_intf = hw_mgr_res->hw_res[i]->hw_intf;
-			if (hw_intf && hw_intf->hw_ops.process_cmd) {
-				vfe_core_config.node_res =
-					hw_mgr_res->hw_res[i];
+			if ((hw_mgr_res->res_id ==
+				CAM_ISP_HW_VFE_IN_CAMIF) ||
+				(hw_mgr_res->res_id ==
+				CAM_ISP_HW_VFE_IN_PDLIB)) {
+				hw_intf = hw_mgr_res->hw_res[i]->hw_intf;
+				if (hw_intf && hw_intf->hw_ops.process_cmd) {
+					vfe_core_config.node_res =
+						hw_mgr_res->hw_res[i];
 
-				memcpy(&vfe_core_config.core_config,
-					core_config,
-					sizeof(struct cam_isp_core_config));
+					memcpy(&vfe_core_config.core_config,
+						core_config,
+						sizeof(
+						struct cam_isp_core_config));
 
-				rc = hw_intf->hw_ops.process_cmd(
-					hw_intf->hw_priv,
-					CAM_ISP_HW_CMD_CORE_CONFIG,
-					&vfe_core_config,
-					sizeof(
-					struct cam_vfe_core_config_args));
-				if (rc)
-					CAM_ERR(CAM_ISP, "Core cfg parse fail");
-			} else {
-				CAM_WARN(CAM_ISP, "NULL hw_intf!");
+					rc = hw_intf->hw_ops.process_cmd(
+						hw_intf->hw_priv,
+						CAM_ISP_HW_CMD_CORE_CONFIG,
+						&vfe_core_config,
+						sizeof(
+						struct cam_vfe_core_config_args)
+						);
+					if (rc)
+						CAM_ERR(CAM_ISP,
+						"Core cfg parse fail");
+				} else {
+					CAM_WARN(CAM_ISP, "NULL hw_intf!");
+				}
 			}
 		}
 	}
@@ -6429,6 +6436,9 @@ static int cam_ife_hw_mgr_handle_hw_epoch(
 		if (!rc) {
 			if (atomic_read(&ife_hw_mgr_ctx->overflow_pending))
 				break;
+
+			epoch_done_event_data.frame_id_meta =
+				event_info->th_reg_val;
 			ife_hw_irq_epoch_cb(ife_hw_mgr_ctx->common.cb_priv,
 				CAM_ISP_HW_EVENT_EPOCH, &epoch_done_event_data);
 		}

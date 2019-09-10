@@ -168,10 +168,11 @@ struct cam_isp_hw_reg_update_event_data {
  * struct cam_isp_hw_epoch_event_data - Event payload for CAM_HW_EVENT_EPOCH
  *
  * @timestamp:     Time stamp for the epoch event
- *
+ * @frame_id_meta: Frame id value corresponding to this frame
  */
 struct cam_isp_hw_epoch_event_data {
 	uint64_t       timestamp;
+	uint32_t       frame_id_meta;
 };
 
 /**

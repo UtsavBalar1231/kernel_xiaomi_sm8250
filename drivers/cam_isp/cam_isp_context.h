@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_ISP_CONTEXT_H_
@@ -165,6 +165,8 @@ struct cam_isp_context_req_id_info {
  *
  * @base:                      Common context object pointer
  * @frame_id:                  Frame id tracking for the isp context
+ * @frame_id_meta:             Frame id read every epoch for the ctx
+ *                             meta from the sensor
  * @substate_actiavted:        Current substate for the activated state.
  * @process_bubble:            Atomic variable to check if ctx is still
  *                             processing bubble.
@@ -193,27 +195,28 @@ struct cam_isp_context_req_id_info {
  *
  */
 struct cam_isp_context {
-	struct cam_context                   *base;
+	struct cam_context              *base;
 
-	int64_t                               frame_id;
-	enum cam_isp_ctx_activated_substate   substate_activated;
-	atomic_t                              process_bubble;
-	uint32_t                              bubble_frame_cnt;
-	struct cam_ctx_ops                   *substate_machine;
-	struct cam_isp_ctx_irq_ops           *substate_machine_irq;
+	int64_t                          frame_id;
+	uint32_t                         frame_id_meta;
+	uint32_t                         substate_activated;
+	atomic_t                         process_bubble;
+	uint32_t                         bubble_frame_cnt;
+	struct cam_ctx_ops              *substate_machine;
+	struct cam_isp_ctx_irq_ops      *substate_machine_irq;
 
-	struct cam_ctx_request                req_base[CAM_CTX_REQ_MAX];
-	struct cam_isp_ctx_req                req_isp[CAM_CTX_REQ_MAX];
+	struct cam_ctx_request           req_base[CAM_CTX_REQ_MAX];
+	struct cam_isp_ctx_req           req_isp[CAM_CTX_REQ_MAX];
 
-	void                                 *hw_ctx;
-	uint64_t                              sof_timestamp_val;
-	uint64_t                              boot_timestamp;
-	int32_t                               active_req_cnt;
-	int64_t                               reported_req_id;
-	uint32_t                              subscribe_event;
-	int64_t                               last_applied_req_id;
-	atomic64_t                            state_monitor_head;
-	struct cam_isp_context_state_monitor  cam_isp_ctx_state_monitor[
+	void                            *hw_ctx;
+	uint64_t                         sof_timestamp_val;
+	uint64_t                         boot_timestamp;
+	int32_t                          active_req_cnt;
+	int64_t                          reported_req_id;
+	uint32_t                         subscribe_event;
+	int64_t                          last_applied_req_id;
+	atomic64_t                       state_monitor_head;
+	struct cam_isp_context_state_monitor cam_isp_ctx_state_monitor[
 		CAM_ISP_CTX_STATE_MONITOR_MAX_ENTRIES];
 	struct cam_isp_context_req_id_info    req_info;
 	bool                                  rdi_only_context;

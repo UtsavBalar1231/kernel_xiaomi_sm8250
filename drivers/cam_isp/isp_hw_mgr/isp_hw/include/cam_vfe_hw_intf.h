@@ -263,11 +263,15 @@ struct cam_vfe_bw_control_args {
  * @list:                    list_head node for the payload
  * @irq_reg_val:             IRQ and Error register values, read when IRQ was
  *                           handled
+ * @th_reg_val:              Value of any critical register that needs to be
+ *                           read at th to avoid any latencies in bh processing
+ *
  * @ts:                      Timestamp
  */
 struct cam_vfe_top_irq_evt_payload {
 	struct list_head            list;
 	uint32_t                    irq_reg_val[CAM_IFE_IRQ_REGISTERS_MAX];
+	uint32_t                    th_reg_val;
 	struct cam_isp_timestamp    ts;
 };
 

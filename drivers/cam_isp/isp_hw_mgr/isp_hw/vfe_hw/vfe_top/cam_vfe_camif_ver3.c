@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/slab.h>
@@ -502,6 +502,9 @@ static int cam_vfe_camif_ver3_resource_start(
 
 	irq_mask[CAM_IFE_IRQ_CAMIF_REG_STATUS1] =
 		rsrc_data->reg_data->sof_irq_mask;
+	if (rsrc_data->cam_common_cfg.input_mux_sel_pp & 0x3)
+		irq_mask[CAM_IFE_IRQ_CAMIF_REG_STATUS0] =
+			rsrc_data->reg_data->frame_id_irq_mask;
 
 	if (!rsrc_data->sof_irq_handle) {
 		rsrc_data->sof_irq_handle = cam_irq_controller_subscribe_irq(
@@ -1186,9 +1189,20 @@ static int cam_vfe_camif_ver3_handle_irq_top_half(uint32_t evt_id,
 	}
 
 	cam_isp_hw_get_timestamp(&evt_payload->ts);
+	evt_payload->th_reg_val = 0;
 
 	for (i = 0; i < th_payload->num_registers; i++)
 		evt_payload->irq_reg_val[i] = th_payload->evt_status_arr[i];
+
+	/* Read frame_id meta at every epoch if custom hw is enabled */
+	if (evt_payload->irq_reg_val[CAM_IFE_IRQ_CAMIF_REG_STATUS1]
+		& camif_priv->reg_data->epoch0_irq_mask) {
+		if ((camif_priv->common_reg->custom_frame_idx) &&
+			(camif_priv->cam_common_cfg.input_mux_sel_pp & 0x3))
+			evt_payload->th_reg_val = cam_io_r_mb(
+			camif_priv->mem_base +
+			camif_priv->common_reg->custom_frame_idx);
+	}
 
 	th_payload->evt_payload_priv = evt_payload;
 
@@ -1205,6 +1219,7 @@ static int cam_vfe_camif_ver3_handle_irq_bottom_half(void *handler_priv,
 	struct cam_vfe_top_irq_evt_payload *payload;
 	struct cam_isp_hw_event_info evt_info;
 	uint32_t irq_status[CAM_IFE_IRQ_REGISTERS_MAX] = {0};
+	uint32_t val = 0;
 	int i = 0;
 
 	if (!handler_priv || !evt_payload_priv) {
@@ -1224,6 +1239,7 @@ static int cam_vfe_camif_ver3_handle_irq_bottom_half(void *handler_priv,
 	evt_info.hw_idx   = camif_node->hw_intf->hw_idx;
 	evt_info.res_id   = camif_node->res_id;
 	evt_info.res_type = camif_node->res_type;
+	evt_info.th_reg_val = 0;
 
 	if (irq_status[CAM_IFE_IRQ_CAMIF_REG_STATUS1]
 		& camif_priv->reg_data->sof_irq_mask) {
@@ -1254,6 +1270,7 @@ static int cam_vfe_camif_ver3_handle_irq_bottom_half(void *handler_priv,
 	if (irq_status[CAM_IFE_IRQ_CAMIF_REG_STATUS1]
 		& camif_priv->reg_data->epoch0_irq_mask) {
 		CAM_DBG(CAM_ISP, "VFE:%d Received EPOCH", evt_info.hw_idx);
+		evt_info.th_reg_val = payload->th_reg_val;
 
 		if (camif_priv->event_cb)
 			camif_priv->event_cb(camif_priv->priv,
@@ -1287,6 +1304,15 @@ static int cam_vfe_camif_ver3_handle_irq_bottom_half(void *handler_priv,
 
 		if (camif_priv->camif_debug & CAMIF_DEBUG_ENABLE_REG_DUMP)
 			cam_vfe_camif_ver3_reg_dump(camif_node);
+	}
+
+	if (irq_status[CAM_IFE_IRQ_CAMIF_REG_STATUS0]
+		& camif_priv->reg_data->frame_id_irq_mask) {
+		val = cam_io_r_mb(camif_priv->mem_base +
+			camif_priv->common_reg->custom_frame_idx);
+		CAM_DBG(CAM_ISP,
+			"VFE:%d Frame id change to: %u", evt_info.hw_idx,
+			val);
 	}
 
 	if (irq_status[CAM_IFE_IRQ_CAMIF_REG_STATUS2]) {
