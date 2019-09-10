@@ -444,6 +444,9 @@ struct cam_req_mgr_error_msg {
  * @timestamp: timestamp of the frame
  * @link_hdl: link handle associated with this message
  * @sof_status: sof status success or fail
+ * @frame_id_meta: refers to the meta for
+ *                that frame in specific usecases
+ * @reserved: reserved
  */
 struct cam_req_mgr_frame_msg {
 	uint64_t request_id;
@@ -451,6 +454,8 @@ struct cam_req_mgr_frame_msg {
 	uint64_t timestamp;
 	int32_t  link_hdl;
 	uint32_t sof_status;
+	uint32_t frame_id_meta;
+	uint32_t reserved;
 };
 
 /**
