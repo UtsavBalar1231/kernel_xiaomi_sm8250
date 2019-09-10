@@ -1327,6 +1327,10 @@
 		stm_debug_fuse: stm@20f0 {
 			reg = <0x20f0 0x4>;
 		};
+
+		feat_conf5: feat_conf5@6018 {
+			reg = <0x6018 0x4>;
+		};
 	};
 };
 
