@@ -3209,7 +3209,7 @@ int cam_req_mgr_schedule_request(
 		CAM_INFO(CAM_CRM,
 			"request %lld is flushed, last_flush_id to flush %d",
 			sched_req->req_id, link->last_flush_id);
-		rc = -EINVAL;
+		rc = -EBADR;
 		goto end;
 	}
 
