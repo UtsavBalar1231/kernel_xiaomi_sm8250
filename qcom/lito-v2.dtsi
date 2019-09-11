@@ -6,6 +6,10 @@
 	qcom,msm-id = <400 0x20000>;
 };
 
+&lito_snd {
+	qcom,lito-is-v2-enabled = <1>;
+};
+
 &camcc {
 	compatible = "qcom,lito-camcc-v2";
 };
