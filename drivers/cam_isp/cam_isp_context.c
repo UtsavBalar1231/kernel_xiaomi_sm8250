@@ -619,12 +619,26 @@ static int __cam_isp_ctx_handle_buf_done_for_request(
 		req_isp->num_acked = 0;
 		req_isp->bubble_detected = false;
 		list_del_init(&req->list);
-		list_add(&req->list, &ctx->pending_req_list);
 		atomic_set(&ctx_isp->process_bubble, 0);
 
-		CAM_DBG(CAM_REQ,
-			"Move active request %lld to pending list(cnt = %d) [bubble recovery], ctx %u",
-			 req->request_id, ctx_isp->active_req_cnt, ctx->ctx_id);
+		if (buf_done_req_id <= ctx->last_flush_req) {
+			for (i = 0; i < req_isp->num_fence_map_out; i++)
+				cam_sync_signal(
+					req_isp->fence_map_out[i].sync_id,
+					CAM_SYNC_STATE_SIGNALED_ERROR);
+
+			list_add_tail(&req->list, &ctx->free_req_list);
+			CAM_DBG(CAM_REQ,
+				"Move active request %lld to free list(cnt = %d) [flushed], ctx %u",
+				buf_done_req_id, ctx_isp->active_req_cnt,
+				ctx->ctx_id);
+		} else {
+			list_add(&req->list, &ctx->pending_req_list);
+			CAM_DBG(CAM_REQ,
+				"Move active request %lld to pending list(cnt = %d) [bubble recovery], ctx %u",
+				req->request_id, ctx_isp->active_req_cnt,
+				ctx->ctx_id);
+		}
 	} else {
 		if (ctx_isp->reported_req_id < buf_done_req_id) {
 			ctx_isp->reported_req_id = buf_done_req_id;
