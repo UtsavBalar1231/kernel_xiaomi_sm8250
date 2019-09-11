@@ -778,7 +778,7 @@ static void cam_ife_hw_mgr_dump_acq_data(
 			if (hw_res && hw_res->hw_intf)
 				CAM_INFO(CAM_ISP,
 					"IFE out split_id: %d res_id: 0x%x hw_idx: %u state: %s",
-					i, hw_res->res_id,
+					j, hw_res->res_id,
 					hw_res->hw_intf->hw_idx,
 					cam_ife_hw_mgr_get_res_state
 					(hw_res->res_state));
