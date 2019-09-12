@@ -5002,6 +5002,7 @@
 		clocks = <&clock_rpmh RPMH_RF_CLK1>;
 		clock-names = "rf_clk";
 		qcom,keep-radio-on-during-sleep;
+		qcom,use-ap-power-save;
 		status = "disabled";
 	};
 
