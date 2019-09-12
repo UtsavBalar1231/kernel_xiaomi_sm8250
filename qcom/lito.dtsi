@@ -2033,24 +2033,6 @@
 		qcom,instance-type = "ufs";
 	};
 
-	ufsphy_mem: ufsphy_mem@1d87000 {
-		reg = <0x1d87000 0xe00>; /* PHY regs */
-		reg-names = "phy_mem";
-		#phy-cells = <0>;
-		ufs-qcom-crypto = <&ufs_ice>;
-
-		lanes-per-direction = <2>;
-
-		clock-names = "ref_clk_src",
-			"ref_clk",
-			"ref_aux_clk";
-		clocks = <&rpmhcc RPMH_CXO_CLK>,
-			<&gcc GCC_UFS_1X_CLKREF_CLK>,
-			<&gcc GCC_UFS_PHY_PHY_AUX_CLK>;
-
-		status = "disabled";
-	};
-
 	ufshc_mem: ufshc@1d84000 {
 		compatible = "qcom,ufshc";
 		reg = <0x1d84000 0x3000>;
@@ -2379,6 +2361,23 @@
 		msm_bus_apps_rsc {
 			compatible = "qcom,msm-bus-rsc";
 			qcom,msm-bus-id = <MSM_BUS_RSC_APPS>;
+		};
+
+		ufsphy_mem: ufsphy_mem@1d87000 {
+			reg = <0x1d87000 0xe00>; /* PHY regs */
+			reg-names = "phy_mem";
+			#phy-cells = <0>;
+			ufs-qcom-crypto = <&ufs_ice>;
+
+			lanes-per-direction = <2>;
+			qcom,rpmh-resource-name = "qphy.lvl";
+
+			clock-names = "ref_clk_src",
+				"ref_clk",
+				"ref_aux_clk";
+			clocks = <&rpmhcc RPMH_CXO_CLK>,
+				<&gcc GCC_UFS_1X_CLKREF_CLK>,
+				<&gcc GCC_UFS_PHY_PHY_AUX_CLK>;
 		};
 	};
 
