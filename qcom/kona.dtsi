@@ -536,7 +536,7 @@
 			compatible = "shared-dma-pool";
 			alloc-ranges = <0x0 0x00000000 0x0 0xffffffff>;
 			reusable;
-			size = <0 0x2400000>;
+			size = <0 0x2800000>;
 		};
 		sp_mem: sp_region {  /* SPSS-HLOS ION shared mem */
 			compatible = "shared-dma-pool";
