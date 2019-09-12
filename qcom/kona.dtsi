@@ -1405,15 +1405,6 @@
 		operating-points-v2 = <&keepalive_opp_table>;
 	};
 
-	cdsp_keepalive: qcom,cdsp_keepalive {
-		compatible = "qcom,devbw";
-		governor = "powersave";
-		qcom,src-dst-ports = <154 10070>;
-		qcom,active-only;
-		status = "ok";
-		operating-points-v2 = <&keepalive_opp_table>;
-	};
-
 	qcom,msm-imem@146bf000 {
 		compatible = "qcom,msm-imem";
 		reg = <0x146bf000 0x1000>;
