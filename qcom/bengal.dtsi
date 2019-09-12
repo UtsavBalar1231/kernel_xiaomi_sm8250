@@ -1415,6 +1415,7 @@
 #include "bengal-regulator.dtsi"
 #include "bengal-pinctrl.dtsi"
 #include "bengal-qupv3.dtsi"
+#include "bengal-gpu.dtsi"
 
 &qupv3_se4_2uart {
 	status = "ok";
