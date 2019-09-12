@@ -66,6 +66,11 @@
 				#cooling-cells = <2>;
 			};
 
+			modem_pa1: modem_pa1 {
+				qcom,qmi-dev-name = "pa_1";
+				#cooling-cells = <2>;
+			};
+
 			modem_tj: modem_tj {
 				qcom,qmi-dev-name = "modem";
 				#cooling-cells = <2>;
