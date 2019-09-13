@@ -2873,7 +2873,7 @@ int ipa3_write_qmapid_gsi_wdi_pipe(u32 clnt_hdl, u8 qmap_id)
 	int result = 0;
 	struct ipa3_ep_context *ep;
 	union gsi_wdi_channel_scratch3_reg gsi_scratch3;
-	union __packed gsi_wdi2_channel_scratch2_reg gsi_scratch2;
+	union gsi_wdi2_channel_scratch2_reg gsi_scratch2;
 
 	ep = &ipa3_ctx->ep[clnt_hdl];
 	IPA_ACTIVE_CLIENTS_INC_EP(ipa3_get_client_mapping(clnt_hdl));
