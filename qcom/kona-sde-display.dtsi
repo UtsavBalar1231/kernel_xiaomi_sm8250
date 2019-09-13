@@ -405,14 +405,21 @@
 			qcom,panel-roi-alignment = <720 8 8 8 1440 8>;
 		};
 
-		timing@5 { /* FHD 120FPS CMD */
+		timing@5 { /* WQHD 120FPS VID */
+			qcom,mdss-dsi-panel-phy-timings = [00 14 05 05 1f 1f 05
+				05 03 02 04 00 12 15];
+			qcom,display-topology = <2 2 2>;
+			qcom,default-topology-index = <0>;
+		};
+
+		timing@6 { /* FHD 120FPS CMD */
 			qcom,mdss-dsi-panel-phy-timings = [00 0e 03 03 1e 1d 04
 				04 02 02 04 00 0e 13];
 			qcom,display-topology = <2 2 2>;
 			qcom,default-topology-index = <0>;
 		};
 
-		timing@6 { /* FHD 90FPS CMD */
+		timing@7 { /* FHD 90FPS CMD */
 			qcom,mdss-dsi-panel-phy-timings = [00 0b 02 02 1c 1c 03
 				02 01 02 04 00 0c 12];
 			qcom,display-topology = <2 2 2>;
