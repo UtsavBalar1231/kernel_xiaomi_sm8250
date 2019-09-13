@@ -2567,7 +2567,7 @@ static void __gsi_write_channel_scratch(unsigned long chan_hdl,
 }
 
 int gsi_write_channel_scratch3_reg(unsigned long chan_hdl,
-		union __packed gsi_wdi_channel_scratch3_reg val)
+		union gsi_wdi_channel_scratch3_reg val)
 {
 	struct gsi_chan_ctx *ctx;
 
