@@ -603,7 +603,7 @@ static int ipa3_wigig_config_gsi(bool Rx,
 {
 	struct gsi_evt_ring_props evt_props;
 	struct gsi_chan_props channel_props;
-	union __packed gsi_channel_scratch gsi_scratch;
+	union gsi_channel_scratch gsi_scratch;
 	int gsi_res;
 	struct ipa_wigig_pipe_setup_info_smmu *pipe_smmu;
 	struct ipa_wigig_pipe_setup_info *pipe;

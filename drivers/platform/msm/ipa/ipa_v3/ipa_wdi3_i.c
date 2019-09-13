@@ -69,7 +69,7 @@ static int ipa3_setup_wdi3_gsi_channel(u8 is_smmu_enabled,
 {
 	struct gsi_evt_ring_props gsi_evt_ring_props;
 	struct gsi_chan_props gsi_channel_props;
-	union __packed gsi_channel_scratch ch_scratch;
+	union gsi_channel_scratch ch_scratch;
 	union __packed gsi_evt_scratch evt_scratch;
 	const struct ipa_gsi_ep_config *gsi_ep_info;
 	int result, len;
@@ -909,7 +909,7 @@ int ipa3_write_qmapid_wdi3_gsi_pipe(u32 clnt_hdl, u8 qmap_id)
 {
 	int result = 0;
 	struct ipa3_ep_context *ep;
-	union __packed gsi_channel_scratch ch_scratch;
+	union gsi_channel_scratch ch_scratch;
 
 	memset(&ch_scratch, 0, sizeof(ch_scratch));
 	if (clnt_hdl >= ipa3_ctx->ipa_num_pipes ||
