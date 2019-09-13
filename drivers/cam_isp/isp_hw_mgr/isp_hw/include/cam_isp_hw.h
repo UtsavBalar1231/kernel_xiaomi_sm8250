@@ -199,12 +199,16 @@ struct cam_isp_hw_cmd_buf_update {
  *
  * @ image_buf:    image buffer address array
  * @ num_buf:      Number of buffers in the image_buf array
+ * @ frame_header: frame header iova
+ * @ local_id:     local id for the wm
  * @ io_cfg:       IO buffer config information sent from UMD
  *
  */
 struct cam_isp_hw_get_wm_update {
 	dma_addr_t                     *image_buf;
 	uint32_t                        num_buf;
+	uint64_t                        frame_header;
+	uint32_t                        local_id;
 	struct cam_buf_io_cfg          *io_cfg;
 };
 

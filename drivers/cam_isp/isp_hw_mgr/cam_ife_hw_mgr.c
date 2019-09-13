@@ -2741,6 +2741,7 @@ static int cam_ife_mgr_acquire_hw(void *hw_mgr_priv, void *acquire_hw_args)
 		goto err;
 	}
 
+	ife_ctx->custom_enabled = false;
 	ife_ctx->common.cb_priv = acquire_args->context_data;
 	for (i = 0; i < CAM_ISP_HW_EVENT_MAX; i++)
 		ife_ctx->common.event_cb[i] = acquire_args->event_cb;
@@ -2793,6 +2794,12 @@ static int cam_ife_mgr_acquire_hw(void *hw_mgr_priv, void *acquire_hw_args)
 		}
 		CAM_DBG(CAM_ISP, "in_res_type %x", in_port->res_type);
 
+		if ((in_port->cust_node) && (!ife_ctx->custom_enabled)) {
+			ife_ctx->custom_enabled = true;
+			/* This can be obtained from uapi */
+			ife_ctx->use_frame_header_ts = true;
+		}
+
 		rc = cam_ife_mgr_acquire_hw_for_ctx(ife_ctx, in_port,
 			&num_pix_port_per_in, &num_rdi_port_per_in,
 			&acquire_args->acquired_hw_id[i],
@@ -2827,6 +2834,8 @@ static int cam_ife_mgr_acquire_hw(void *hw_mgr_priv, void *acquire_hw_args)
 	}
 
 	acquire_args->ctxt_to_hw_map = ife_ctx;
+	acquire_args->custom_enabled = ife_ctx->custom_enabled;
+	acquire_args->use_frame_header_ts = ife_ctx->use_frame_header_ts;
 	ife_ctx->ctx_in_use = 1;
 
 	acquire_args->valid_acquired_hw =
@@ -4239,6 +4248,8 @@ static int cam_ife_mgr_release_hw(void *hw_mgr_priv,
 	ctx->is_rdi_only_context = 0;
 	ctx->cdm_handle = 0;
 	ctx->cdm_ops = NULL;
+	ctx->custom_enabled = false;
+	ctx->use_frame_header_ts = false;
 	atomic_set(&ctx->overflow_pending, 0);
 	for (i = 0; i < CAM_IFE_HW_NUM_MAX; i++) {
 		ctx->sof_cnt[i] = 0;
@@ -5546,6 +5557,58 @@ static int cam_isp_packet_generic_blob_handler(void *user_data,
 	return rc;
 }
 
+static int cam_ife_mgr_util_insert_frame_header(
+	struct cam_kmd_buf_info *kmd_buf,
+	struct cam_isp_prepare_hw_update_data *prepare_hw_data)
+{
+	int mmu_hdl = -1, rc = 0;
+	dma_addr_t iova_addr;
+	uint32_t frame_header_iova, padded_bytes = 0;
+	size_t len;
+	struct cam_ife_hw_mgr *hw_mgr = &g_ife_hw_mgr;
+
+	mmu_hdl = cam_mem_is_secure_buf(
+			kmd_buf->handle) ?
+			hw_mgr->mgr_common.img_iommu_hdl_secure :
+			hw_mgr->mgr_common.img_iommu_hdl;
+
+	rc = cam_mem_get_io_buf(kmd_buf->handle, mmu_hdl,
+		&iova_addr, &len);
+	if (rc) {
+		CAM_ERR(CAM_ISP,
+			"Failed to get io addr for handle = %d for mmu_hdl = %u",
+			kmd_buf->handle, mmu_hdl);
+		return rc;
+	}
+
+	frame_header_iova = (uint32_t)iova_addr;
+	frame_header_iova += kmd_buf->offset;
+
+	/* frame header address needs to be 16 byte aligned */
+	if (frame_header_iova % 16) {
+		padded_bytes = (uint32_t)(16 - (frame_header_iova % 16));
+		iova_addr += padded_bytes;
+	}
+
+	prepare_hw_data->frame_header_iova = frame_header_iova;
+
+	/* update the padding if any for the cpu addr as well */
+	prepare_hw_data->frame_header_cpu_addr = kmd_buf->cpu_addr +
+			(padded_bytes / 4);
+
+	CAM_DBG(CAM_ISP,
+		"Frame Header iova_addr: %pK cpu_addr: %pK padded_bytes: %llu",
+		prepare_hw_data->frame_header_iova,
+		prepare_hw_data->frame_header_cpu_addr,
+		padded_bytes);
+
+	/* Reserve memory for frame header */
+	kmd_buf->used_bytes += 128;
+	kmd_buf->offset += kmd_buf->used_bytes;
+
+	return rc;
+}
+
 static int cam_ife_mgr_prepare_hw_update(void *hw_mgr_priv,
 	void *prepare_hw_update_args)
 {
@@ -5557,7 +5620,9 @@ static int cam_ife_mgr_prepare_hw_update(void *hw_mgr_priv,
 	struct cam_kmd_buf_info                  kmd_buf;
 	uint32_t                                 i;
 	bool                                     fill_fence = true;
+	bool                                     frame_header_enable = false;
 	struct cam_isp_prepare_hw_update_data   *prepare_hw_data;
+	struct cam_isp_frame_header_info         frame_header_info;
 
 	if (!hw_mgr_priv || !prepare_hw_update_args) {
 		CAM_ERR(CAM_ISP, "Invalid args");
@@ -5583,6 +5648,15 @@ static int cam_ife_mgr_prepare_hw_update(void *hw_mgr_priv,
 	rc = cam_packet_util_get_kmd_buffer(prepare->packet, &kmd_buf);
 	if (rc)
 		return rc;
+
+	if (ctx->use_frame_header_ts) {
+		rc = cam_ife_mgr_util_insert_frame_header(&kmd_buf,
+			prepare_hw_data);
+		if (rc)
+			return rc;
+
+		frame_header_enable = true;
+	}
 
 	rc = cam_packet_util_process_patches(prepare->packet,
 		hw_mgr->mgr_common.cmd_iommu_hdl,
@@ -5632,13 +5706,23 @@ static int cam_ife_mgr_prepare_hw_update(void *hw_mgr_priv,
 			}
 		}
 
+		memset(&frame_header_info, 0,
+			sizeof(struct cam_isp_frame_header_info));
+		if (frame_header_enable) {
+			frame_header_info.frame_header_enable = true;
+			frame_header_info.frame_header_iova_addr =
+				prepare_hw_data->frame_header_iova;
+		}
+
 		/* get IO buffers */
-		rc = cam_isp_add_io_buffers(hw_mgr->mgr_common.img_iommu_hdl,
+		rc = cam_isp_add_io_buffers(
+			hw_mgr->mgr_common.img_iommu_hdl,
 			hw_mgr->mgr_common.img_iommu_hdl_secure,
 			prepare, ctx->base[i].idx,
 			&kmd_buf, ctx->res_list_ife_out,
 			&ctx->res_list_ife_in_rd,
-			CAM_IFE_HW_OUT_RES_MAX, fill_fence);
+			CAM_IFE_HW_OUT_RES_MAX, fill_fence,
+			&frame_header_info);
 
 		if (rc) {
 			CAM_ERR(CAM_ISP,
@@ -5650,6 +5734,18 @@ static int cam_ife_mgr_prepare_hw_update(void *hw_mgr_priv,
 		/* fence map table entries need to fill only once in the loop */
 		if (fill_fence)
 			fill_fence = false;
+
+		if (frame_header_info.frame_header_res_id &&
+			frame_header_enable) {
+			frame_header_enable = false;
+			prepare_hw_data->frame_header_res_id =
+				frame_header_info.frame_header_res_id;
+
+			CAM_DBG(CAM_ISP,
+				"Frame header enabled for res_id 0x%x cpu_addr %pK",
+				prepare_hw_data->frame_header_res_id,
+				prepare_hw_data->frame_header_cpu_addr);
+		}
 	}
 
 	/*
@@ -6484,9 +6580,14 @@ static int cam_ife_hw_mgr_handle_hw_sof(
 		rc = cam_ife_hw_mgr_check_irq_for_dual_vfe(ife_hw_mgr_ctx,
 			CAM_ISP_HW_EVENT_SOF);
 		if (!rc) {
-			cam_ife_mgr_cmd_get_sof_timestamp(ife_hw_mgr_ctx,
+			cam_ife_mgr_cmd_get_sof_timestamp(
+				ife_hw_mgr_ctx,
 				&sof_done_event_data.timestamp,
 				&sof_done_event_data.boot_time);
+
+			/* if frame header is enabled reset qtimer ts */
+			if (ife_hw_mgr_ctx->use_frame_header_ts)
+				sof_done_event_data.timestamp = 0x0;
 
 			if (atomic_read(&ife_hw_mgr_ctx->overflow_pending))
 				break;
