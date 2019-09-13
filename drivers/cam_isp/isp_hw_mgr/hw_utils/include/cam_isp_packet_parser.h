@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_ISP_HW_PARSER_H_
@@ -12,6 +12,14 @@
 #include "cam_ife_hw_mgr.h"
 #include "cam_hw_intf.h"
 #include "cam_packet_util.h"
+
+/* enum cam_isp_cdm_bl_type - isp cdm packet type*/
+enum cam_isp_cdm_bl_type {
+	CAM_ISP_UNUSED_BL,
+	CAM_ISP_IQ_BL,
+	CAM_ISP_IOCFG_BL,
+	CAM_ISP_BL_MAX,
+};
 
 /*
  * struct cam_isp_generic_blob_info

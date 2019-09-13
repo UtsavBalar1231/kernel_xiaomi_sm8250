@@ -108,6 +108,7 @@ struct cam_isp_ctx_irq_ops {
  * @bubble_report:         Flag to track if bubble report is active on
  *                         current request
  * @hw_update_data:        HW update data for this request
+ * @reapply:               True if reapplying after bubble
  *
  */
 struct cam_isp_ctx_req {
@@ -124,6 +125,7 @@ struct cam_isp_ctx_req {
 	int32_t                               bubble_report;
 	struct cam_isp_prepare_hw_update_data hw_update_data;
 	bool                                  bubble_detected;
+	bool                                  reapply;
 };
 
 /**
