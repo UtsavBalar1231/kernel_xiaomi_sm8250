@@ -42,12 +42,16 @@ enum rmnet_shs_crit_err_e {
 	RMNET_SHS_CPU_PKTLEN_ERR,
 	RMNET_SHS_NULL_SKB_HEAD,
 	RMNET_SHS_RPS_MASK_CHANGE,
+	RMNET_SHS_WQ_INVALID_CPU_ERR,
+	RMNET_SHS_WQ_INVALID_PTR_ERR,
+	RMNET_SHS_WQ_NODE_MALLOC_ERR,
+	RMNET_SHS_WQ_NL_SOCKET_ERR,
 	RMNET_SHS_CRIT_ERR_MAX
 };
 
 extern unsigned int rmnet_shs_debug;
 extern unsigned int rmnet_shs_stats_enabled;
-extern unsigned long int rmnet_shs_crit_err[RMNET_SHS_CRIT_ERR_MAX];
+extern unsigned long rmnet_shs_crit_err[RMNET_SHS_CRIT_ERR_MAX];
 extern struct rmnet_shs_cfg_s rmnet_shs_cfg;
 extern int rmnet_is_real_dev_registered(const struct net_device *real_dev);
 
