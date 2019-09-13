@@ -1369,6 +1369,12 @@ static int cam_cpas_hw_register_client(struct cam_hw_info *cpas_hw,
 	struct cam_cpas_private_soc *soc_private =
 		(struct cam_cpas_private_soc *) cpas_hw->soc_info.soc_private;
 
+	if ((!register_params) ||
+		(strlen(register_params->identifier) < 1)) {
+		CAM_ERR(CAM_CPAS, "Invalid cpas client identifier");
+		return -EINVAL;
+	}
+
 	CAM_DBG(CAM_CPAS, "Register params : identifier=%s, cell_index=%d",
 		register_params->identifier, register_params->cell_index);
 

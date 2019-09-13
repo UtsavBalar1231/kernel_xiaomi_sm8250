@@ -41,16 +41,19 @@ int cam_custom_hw_sub_mod_init_soc_resources(struct cam_hw_soc_info *soc_info,
 
 	memset(&cpas_register_param, 0, sizeof(cpas_register_param));
 
+	strlcpy(cpas_register_param.identifier, "custom",
+		CAM_HW_IDENTIFIER_LENGTH);
 	cpas_register_param.cell_index = soc_info->index;
 	cpas_register_param.dev = soc_info->dev;
 	cpas_register_param.cam_cpas_client_cb = NULL;
 	cpas_register_param.userdata = soc_info;
-	soc_private->cpas_handle =
-		cpas_register_param.client_handle;
 
 	rc = cam_cpas_register_client(&cpas_register_param);
 	if (rc < 0)
 		goto release_soc;
+
+	soc_private->cpas_handle =
+		cpas_register_param.client_handle;
 
 	return rc;
 
