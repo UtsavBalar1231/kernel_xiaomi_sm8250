@@ -10,6 +10,10 @@
 	compatible = "qcom,lito-camcc-v2";
 };
 
+&pm8008_regulators {
+	vdd_l7-supply = <&BOB>;
+};
+
 &msm_gpu {
 	/delete-property/qcom,chipid;
 	qcom,chipid = <0x06020001>;
