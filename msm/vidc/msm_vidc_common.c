@@ -1252,8 +1252,8 @@ static void handle_session_release_buf_done(enum hal_command_response cmd,
 	else
 		s_vpr_e(inst->sid, "Invalid inst cmd response: %d\n", cmd);
 
-	put_inst(inst);
 	s_vpr_l(inst->sid, "handled: SESSION_RELEASE_BUFFER_DONE\n");
+	put_inst(inst);
 }
 
 static void handle_sys_release_res_done(
@@ -1893,8 +1893,8 @@ static void handle_load_resource_done(enum hal_command_response cmd, void *data)
 		msm_comm_generate_session_error(inst);
 	}
 
-	put_inst(inst);
 	s_vpr_l(inst->sid, "handled: SESSION_LOAD_RESOURCE_DONE\n");
+	put_inst(inst);
 }
 
 static void handle_start_done(enum hal_command_response cmd, void *data)
@@ -2110,8 +2110,8 @@ static void handle_session_flush(enum hal_command_response cmd, void *data)
 
 exit:
 	mutex_unlock(&inst->flush_lock);
-	put_inst(inst);
 	s_vpr_l(inst->sid, "handled: SESSION_FLUSH_DONE\n");
+	put_inst(inst);
 }
 
 static void handle_session_error(enum hal_command_response cmd, void *data)
@@ -2160,8 +2160,8 @@ static void handle_session_error(enum hal_command_response cmd, void *data)
 	/* change state before sending error to client */
 	change_inst_state(inst, MSM_VIDC_CORE_INVALID);
 	msm_vidc_queue_v4l2_event(inst, event);
-	put_inst(inst);
 	s_vpr_l(inst->sid, "handled: SESSION_ERROR\n");
+	put_inst(inst);
 }
 
 static void msm_comm_clean_notify_client(struct msm_vidc_core *core)
@@ -2511,8 +2511,8 @@ static void handle_ebd(enum hal_command_response cmd, void *data)
 	msm_vidc_debugfs_update(inst, MSM_VIDC_DEBUGFS_EVENT_EBD);
 	kref_put_mbuf(mbuf);
 exit:
-	put_inst(inst);
 	s_vpr_l(inst->sid, "handled: SESSION_ETB_DONE\n");
+	put_inst(inst);
 }
 
 static int handle_multi_stream_buffers(struct msm_vidc_inst *inst,
@@ -2688,8 +2688,8 @@ static void handle_fbd(enum hal_command_response cmd, void *data)
 	kref_put_mbuf(mbuf);
 
 exit:
-	put_inst(inst);
 	s_vpr_l(inst->sid, "handled: SESSION_FTB_DONE\n");
+	put_inst(inst);
 }
 
 void handle_cmd_response(enum hal_command_response cmd, void *data)

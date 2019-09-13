@@ -4367,7 +4367,7 @@ int handle_all_intra_restrictions(struct msm_vidc_inst *inst)
 	n_fps = inst->clk_data.frame_rate >> 16;
 	fps_max = capability->cap[CAP_ALLINTRA_MAX_FPS].max;
 	s_vpr_h(inst->sid, "%s: rc_type %u, fps %u, fps_max %u\n",
-		inst->rc_type, n_fps, fps_max);
+		__func__, inst->rc_type, n_fps, fps_max);
 	if ((inst->rc_type != V4L2_MPEG_VIDEO_BITRATE_MODE_VBR &&
 		inst->rc_type != RATE_CONTROL_OFF &&
 		inst->rc_type != RATE_CONTROL_LOSSLESS) ||
