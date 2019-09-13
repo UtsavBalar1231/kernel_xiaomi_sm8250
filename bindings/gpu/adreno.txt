@@ -96,6 +96,9 @@ Optional Properties:
 - qcom,bus-control:	   Boolean. Enables an independent bus vote from the gpu frequency
 - qcom,bus-width:	   Bus width in number of bytes. This enables dynamic AB bus voting based on
 			   bus width and actual bus transactions.
+- qcom,bus-accesses:       Parameter for tuning bus dcvs.
+- qcom,bus-accesses-ddrX:  Parameter for tuning bus dcvs for each DDR configuration where
+                           X will be the return value from of_fdt_get_ddrtype().
 - qcom,gpubw-dev:	   a phandle to a device representing bus bandwidth requirements
 			   (see devdw.txt)
 - qcom,idle-timeout:	   This property represents the time in milliseconds for idle timeout.

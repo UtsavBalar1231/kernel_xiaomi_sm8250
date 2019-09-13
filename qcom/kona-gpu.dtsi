@@ -102,6 +102,9 @@
 		/* GPU OPP data */
 		operating-points-v2 = <&gpu_opp_table>;
 
+		qcom,bus-accesses-ddr7 = <970>;
+		qcom,bus-accesses-ddr8 = <1162>;
+
 		/* bus table */
 		qcom,gpu-bus-table-0 {
 			compatible = "qcom,gpu-bus-table",
