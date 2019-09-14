@@ -271,6 +271,7 @@ enum vpu_version {
 	VPU_VERSION_AR50 = 1,
 	VPU_VERSION_IRIS1,
 	VPU_VERSION_IRIS2,
+	VPU_VERSION_AR50_LITE,
 };
 
 struct msm_vidc_ubwc_config_data {
