@@ -1604,6 +1604,7 @@ void *msm_vidc_open(int core_id, int session_type)
 	inst->dpb_extra_binfo = NULL;
 	inst->all_intra = false;
 	inst->max_filled_len = 0;
+	inst->entropy_mode = HFI_H264_ENTROPY_CABAC;
 
 	for (i = SESSION_MSG_INDEX(SESSION_MSG_START);
 		i <= SESSION_MSG_INDEX(SESSION_MSG_END); i++) {
