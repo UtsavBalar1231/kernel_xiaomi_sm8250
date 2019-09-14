@@ -755,7 +755,8 @@ static int msm_cvp_prepare_extradata(struct msm_vidc_inst *inst,
 			found_end = true;
 			break;
 		}
-		e_hdr += e_hdr->size;
+		e_hdr = (struct msm_vidc_extradata_header *)
+				((char *)e_hdr + e_hdr->size);
 	}
 	if (!found_end) {
 		s_vpr_e(inst->sid, "%s: extradata_none not found\n", __func__);
