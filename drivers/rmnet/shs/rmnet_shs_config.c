@@ -85,7 +85,7 @@ static int rmnet_shs_dev_notify_cb(struct notifier_block *nb,
 {
 
 	struct net_device *dev = netdev_notifier_info_to_dev(data);
-	static struct net_device *phy_dev;
+	static struct net_device *phy_dev = NULL;
 	struct rmnet_priv *priv;
 	struct rmnet_port *port;
 
