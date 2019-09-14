@@ -4365,6 +4365,13 @@ int handle_all_intra_restrictions(struct msm_vidc_inst *inst)
 		return -ENOTSUPP;
 	}
 
+	/* CBR_CFR is one of the advertised rc mode for HEVC encoding.
+	 * However, all-intra is intended for quality bitstream. Hence,
+	 * fallback to VBR RC mode if client needs all-intra encoding.
+	 */
+	if (inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_CBR)
+		inst->rc_type = V4L2_MPEG_VIDEO_BITRATE_MODE_VBR;
+
 	/* check supported bit rate mode and frame rate */
 	capability = &inst->capability;
 	n_fps = inst->clk_data.frame_rate >> 16;
