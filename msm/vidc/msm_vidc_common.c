@@ -1764,6 +1764,7 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 		event_notify->profile, inst->sid);
 	ptr[10] = msm_comm_get_v4l2_level(codec,
 		event_notify->level, inst->sid);
+	ptr[11] = event_notify->fw_min_cnt;
 
 	s_vpr_h(inst->sid,
 		"seq: height = %u width = %u profile = %u level = %u\n",
@@ -1803,7 +1804,7 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 		msm_dcvs_try_enable(inst);
 		extra_buff_count = msm_vidc_get_extra_buff_count(inst,
 				HAL_BUFFER_OUTPUT);
-		fmt->count_min = event_notify->capture_buf_count;
+		fmt->count_min = event_notify->fw_min_cnt;
 		fmt->count_min_host = fmt->count_min + extra_buff_count;
 		s_vpr_h(inst->sid,
 			"seq: hal buffer[%d] count: min %d min_host %d\n",
