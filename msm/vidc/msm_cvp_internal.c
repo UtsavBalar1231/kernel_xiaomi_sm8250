@@ -510,11 +510,11 @@ int msm_vidc_cvp(struct msm_vidc_inst *inst, struct msm_vidc_arg *arg)
 
 static struct msm_vidc_ctrl msm_cvp_ctrls[] = {
 	{
-		.id = V4L2_CID_MPEG_VIDC_VIDEO_SECURE,
-		.name = "Secure mode",
-		.type = V4L2_CTRL_TYPE_BUTTON,
+		.id = V4L2_CID_MPEG_VIDEO_UNKNOWN,
+		.name = "Invalid control",
+		.type = V4L2_CTRL_TYPE_INTEGER,
 		.minimum = 0,
-		.maximum = 1,
+		.maximum = 0,
 		.default_value = 0,
 		.step = 1,
 		.menu_skip_mask = 0,
