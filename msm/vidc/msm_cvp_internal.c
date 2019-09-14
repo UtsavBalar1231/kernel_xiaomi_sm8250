@@ -106,8 +106,8 @@ void handle_session_register_buffer_done(enum hal_command_response cmd,
 	v4l2_event_queue_fh(&inst->event_handler, &event);
 
 exit:
-	put_inst(inst);
 	s_vpr_l(inst->sid, "handled: SESSION_REGISTER_BUFFER_DONE\n");
+	put_inst(inst);
 }
 
 void handle_session_unregister_buffer_done(enum hal_command_response cmd,
@@ -170,8 +170,8 @@ void handle_session_unregister_buffer_done(enum hal_command_response cmd,
 	kfree(cbuf);
 	cbuf = NULL;
 exit:
-	put_inst(inst);
 	s_vpr_l(inst->sid, "handled: SESSION_UNREGISTER_BUFFER_DONE\n");
+	put_inst(inst);
 }
 
 static void print_cvp_cycles(struct msm_vidc_inst *inst)
