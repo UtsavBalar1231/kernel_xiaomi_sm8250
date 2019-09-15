@@ -3268,14 +3268,14 @@
 		BW_OPP_ENTRY(2092, 4); /* 7980 MB/s */
 	};
 
-	npu_npu_ddr_bw: qcom,npu-npu-ddr-bw {
+	npu_npu_llcc_bw: qcom,npu-npu-llcc-bw {
 		compatible = "qcom,devbw";
 		governor = "performance";
-		qcom,src-dst-ports = <MSM_BUS_MASTER_NPU MSM_BUS_SLAVE_EBI_CH0>;
+		qcom,src-dst-ports = <MSM_BUS_MASTER_NPU MSM_BUS_SLAVE_LLCC>;
 		operating-points-v2 = <&suspendable_ddr_bw_opp_table>;
 	};
 
-	npu_npu_ddr_bwmon: qcom,npu-npu-ddr-bwmon@9960300 {
+	npu_npu_llcc_bwmon: qcom,npu-npu-llcc-bwmon@9960300 {
 		compatible = "qcom,bimc-bwmon4";
 		reg = <0x00060400 0x300>, <0x00060300 0x200>;
 		reg-names = "base", "global_base";
@@ -3291,7 +3291,25 @@
 		interrupts = <GIC_SPI 121 IRQ_TYPE_LEVEL_HIGH>;
 		qcom,mport = <0>;
 		qcom,hw-timer-hz = <19200000>;
-		qcom,target-dev = <&npu_npu_ddr_bw>;
+		qcom,target-dev = <&npu_npu_llcc_bw>;
+		qcom,count-unit = <0x10000>;
+	};
+
+	npu_llcc_ddr_bw: qcom,npu-llcc-ddr-bw {
+		compatible = "qcom,devbw";
+		governor = "performance";
+		qcom,src-dst-ports = <MSM_BUS_SLAVE_LLCC MSM_BUS_SLAVE_EBI_CH0>;
+		operating-points-v2 = <&suspendable_ddr_bw_opp_table>;
+	};
+
+	npu_llcc_ddr_bwmon: qcom,npu-llcc-ddr-bwmon@90CE000 {
+		compatible = "qcom,bimc-bwmon5";
+		reg = <0x90CE000 0x1000>;
+		reg-names = "base";
+		interrupts = <GIC_SPI 263 IRQ_TYPE_LEVEL_HIGH>;
+		qcom,mport = <0>;
+		qcom,hw-timer-hz = <19200000>;
+		qcom,target-dev = <&npu_llcc_ddr_bw>;
 		qcom,count-unit = <0x10000>;
 	};
 

@@ -82,8 +82,8 @@
 				IPCC_MPROC_SIGNAL_PING>;
 		mbox-names = "ipcc-glink", "ipcc-smp2p", "ipcc-ping";
 		#mbox-cells = <2>;
-		qcom,npubw-devs = <&npu_npu_ddr_bw &npudsp_npu_ddr_bw>;
-		qcom,npubw-dev-names = "ddr_bw", "dsp_ddr_bw";
+		qcom,npubw-devs = <&npu_npu_llcc_bw &npu_llcc_ddr_bw &npudsp_npu_ddr_bw>;
+		qcom,npubw-dev-names = "npu_llcc_bw", "llcc_ddr_bw", "dsp_ddr_bw";
 		qcom,src-dst-ports = <MSM_BUS_MASTER_NPU MSM_BUS_SLAVE_EBI_CH0>;
 		qcom,npu-pwrlevels {
 			#address-cells = <1>;
