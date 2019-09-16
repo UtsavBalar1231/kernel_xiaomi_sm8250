@@ -1682,12 +1682,16 @@ int msm_vidc_decide_core_and_power_mode_iris2(struct msm_vidc_inst *inst)
 
 void msm_vidc_init_core_clk_ops(struct msm_vidc_core *core)
 {
+	uint32_t vpu;
+
 	if (!core)
 		return;
 
-	if (core->platform_data->vpu_ver == VPU_VERSION_AR50)
+	vpu = core->platform_data->vpu_ver;
+
+	if (vpu == VPU_VERSION_AR50 || vpu == VPU_VERSION_AR50_LITE)
 		core->core_ops = &core_ops_ar50;
-	else if (core->platform_data->vpu_ver == VPU_VERSION_IRIS1)
+	else if (vpu == VPU_VERSION_IRIS1)
 		core->core_ops = &core_ops_iris1;
 	else
 		core->core_ops = &core_ops_iris2;
