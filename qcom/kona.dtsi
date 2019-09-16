@@ -3409,7 +3409,7 @@
 	};
 
 	extcon_storage_cd: extcon_storage_cd {
-		compatible = "extcon-gpio";
+		compatible = "extcon-storage-cd-gpio";
 		extcon-id = <62>; /* EXTCON_MECHANICAL */
 		status = "disabled";
 	};
