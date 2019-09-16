@@ -787,7 +787,8 @@ extern int send_tfa_cal_apr(void *buf, int cmd_size, bool bRead);
 #else
 int send_tfa_cal_apr(void *buf, int cmd_size, bool bRead)
 {
-    return 0;
+	pr_info("this function is empty!!!\n");
+	return 0;
 }
 #endif
 
