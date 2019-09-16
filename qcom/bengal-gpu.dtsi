@@ -164,8 +164,8 @@
 		/* Context aware jump target power level */
 		qcom,ca-target-pwrlevel = <5>;
 
-		nvmem-cells = <&gpu_speed_bin>;
-		nvmem-cell-names = "speed_bin";
+		nvmem-cells = <&gpu_speed_bin>, <&gpu_gaming_bin>;
+		nvmem-cell-names = "speed_bin", "gaming_bin";
 
 		/* GPU Mempools */
 		qcom,gpu-mempools {
