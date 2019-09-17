@@ -110,6 +110,16 @@ static inline bool is_image_session(struct msm_vidc_inst *inst)
 		inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_CQ;
 }
 
+static inline bool is_grid_session(struct msm_vidc_inst *inst)
+{
+	struct v4l2_ctrl *ctrl = NULL;
+	if (inst->session_type == MSM_VIDC_ENCODER &&
+		get_v4l2_codec(inst) == V4L2_PIX_FMT_HEVC) {
+		ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_IMG_GRID_SIZE);
+		return (ctrl->val > 0);
+	}
+	return 0;
+}
 static inline bool is_realtime_session(struct msm_vidc_inst *inst)
 {
 	struct v4l2_ctrl *ctrl;

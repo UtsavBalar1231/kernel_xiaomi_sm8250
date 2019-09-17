@@ -5594,15 +5594,10 @@ int msm_vidc_check_scaling_supported(struct msm_vidc_inst *inst)
 	u32 x_min, x_max, y_min, y_max;
 	u32 input_height, input_width, output_height, output_width;
 	struct v4l2_format *f;
-	struct v4l2_ctrl *ctrl = NULL;
 
-	/* Grid get_ctrl allowed for encode session only */
-	if (is_image_session(inst)) {
-		ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_IMG_GRID_SIZE);
-		if (ctrl->val > 0) {
-			s_vpr_h(inst->sid, "Skip scaling check for HEIC\n");
-			return 0;
-		}
+	if (is_grid_session(inst)) {
+		s_vpr_h(inst->sid, "Skip scaling check for HEIC\n");
+		return 0;
 	}
 
 	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
@@ -5687,7 +5682,6 @@ int msm_vidc_check_session_supported(struct msm_vidc_inst *inst)
 	u32 width_min, width_max, height_min, height_max;
 	u32 mbpf_max;
 	struct v4l2_format *f;
-	struct v4l2_ctrl *ctrl = NULL;
 	u32 sid;
 
 	if (!inst || !inst->core || !inst->core->device) {
@@ -5750,8 +5744,7 @@ int msm_vidc_check_session_supported(struct msm_vidc_inst *inst)
 			return -ENOTSUPP;
 		}
 
-		ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_IMG_GRID_SIZE);
-		if (ctrl->val > 0) {
+		if (is_grid_session(inst)) {
 			if (inst->fmts[INPUT_PORT].v4l2_fmt.fmt.pix_mp.pixelformat !=
 				V4L2_PIX_FMT_NV12 &&
 				inst->fmts[INPUT_PORT].v4l2_fmt.fmt.pix_mp.pixelformat !=

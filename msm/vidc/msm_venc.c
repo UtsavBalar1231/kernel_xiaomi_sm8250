@@ -219,7 +219,7 @@ static struct msm_vidc_ctrl msm_venc_ctrls[] = {
 		.name = "Image grid size",
 		.type = V4L2_CTRL_TYPE_INTEGER,
 		.minimum = 0,
-		.maximum = 512,
+		.maximum = HEIC_GRID_DIMENSION,
 		.default_value = 0,
 		.step = 1,
 		.qmenu = NULL,
@@ -1929,6 +1929,11 @@ int msm_venc_set_frame_size(struct msm_vidc_inst *inst)
 	frame_sz.buffer_type = HFI_BUFFER_OUTPUT;
 	frame_sz.width = f->fmt.pix_mp.width;
 	frame_sz.height = f->fmt.pix_mp.height;
+	/* firmware needs grid size in output where as
+	 * client sends out full resolution in output port */
+	if (is_grid_session(inst)) {
+		frame_sz.width = frame_sz.height = HEIC_GRID_DIMENSION;
+	}
 	s_vpr_h(inst->sid, "%s: output %d %d\n", __func__,
 			frame_sz.width, frame_sz.height);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
