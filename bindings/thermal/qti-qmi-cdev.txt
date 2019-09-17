@@ -35,6 +35,7 @@ Subsystem properties:
 		Definition: Remote subsystem device identifier. Below strings
 			are the only acceptable device names,
 			"pa" -> for pa cooling device,
+			"pa_1" -> for pa cooling device,
 			"cpuv_restriction_cold" -> for vdd restriction,
 			"cx_vdd_limit" -> for vdd limit,
 			"modem" -> for processor passive cooling device,
