@@ -1039,7 +1039,7 @@ static int __vote_buses(struct venus_hfi_device *device,
 				bus->range[0], bus->range[1]);
 
 			if (TRIVIAL_BW_CHANGE(bw_kbps, bw_prev) && bw_prev) {
-				s_vpr_p(sid, "Skip voting bus %s to %llu bps",
+				s_vpr_l(sid, "Skip voting bus %s to %llu bps",
 					bus->name, bw_kbps * 1000);
 				continue;
 			}

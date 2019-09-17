@@ -1670,6 +1670,8 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 		if (event_fields_changed) {
 			event = V4L2_EVENT_SEQ_CHANGED_INSUFFICIENT;
 		} else {
+			inst->entropy_mode = event_notify->entropy_mode;
+
 			s_vpr_h(inst->sid,
 				"seq: No parameter change continue session\n");
 			rc = call_hfi_op(hdev, session_continue,
@@ -7251,7 +7253,8 @@ int msm_comm_check_window_bitrate(struct msm_vidc_inst *inst,
 	struct vidc_frame_data *frame_data)
 {
 	struct msm_vidc_window_data *pdata, *temp = NULL;
-	u32 bitrate, max_br, window_size;
+	u32 frame_size, window_size, window_buffer;
+	u32 max_avg_frame_size, max_frame_size;
 	int buf_cnt = 1, fps, window_start;
 
 	if (!inst || !inst->core || !frame_data) {
@@ -7260,25 +7263,37 @@ int msm_comm_check_window_bitrate(struct msm_vidc_inst *inst,
 	}
 
 	if (!inst->core->resources.avsync_window_size ||
+		inst->entropy_mode == HFI_H264_ENTROPY_CAVLC ||
 		!frame_data->filled_len)
 		return 0;
 
-	fps = inst->clk_data.frame_rate >> 16;
-	max_br = MAX_BITRATE_DECODER_CAVLC;
-	if (inst->entropy_mode == HFI_H264_ENTROPY_CABAC)
-		max_br = inst->clk_data.work_mode == HFI_WORKMODE_2 ?
-			MAX_BITRATE_DECODER_2STAGE_CABAC :
-			MAX_BITRATE_DECODER_1STAGE_CABAC;
-	window_size = inst->core->resources.avsync_window_size * fps;
-	window_size = DIV_ROUND_UP(window_size, 1000);
+	/*
+	 * MaxAvgFrameSize <= (1 + B/S) * (MaxClock / fps - 25*NumOfMacroBlockperFrame) / 1.35
+	 * S: Sliding window = #Frames in 40ms (av sync window) Closest point
+	 * B: Buffer Count = B(vsp-vpp) = 2 for 2Stage, 0 for 1stage
+	 */
 
-	bitrate = frame_data->filled_len;
+	fps = inst->clk_data.frame_rate >> 16;
+	window_size = inst->core->resources.avsync_window_size * fps;
+	window_size = DIV_ROUND_CLOSEST(window_size, 1000);
+	window_buffer = inst->clk_data.work_mode == HFI_WORKMODE_2 ? 2 : 0;
+
+	max_frame_size =
+		inst->core->resources.allowed_clks_tbl[0].clock_rate / fps -
+		inst->clk_data.entry->vsp_cycles *
+		msm_vidc_get_mbs_per_frame(inst);
+	max_avg_frame_size = (u64)max_frame_size * 100 *
+		(window_size + window_buffer) / (window_size * 135);
+	max_frame_size = (u64)max_frame_size * 100 *
+		(1 + window_buffer) / 135;
+
+	frame_size = frame_data->filled_len;
 	window_start = inst->count.etb;
 
 	mutex_lock(&inst->window_data.lock);
 	list_for_each_entry(pdata, &inst->window_data.list, list) {
 		if (buf_cnt < window_size && pdata->frame_size) {
-			bitrate += pdata->frame_size;
+			frame_size += pdata->frame_size;
 			window_start = pdata->etb_count;
 			buf_cnt++;
 		} else {
@@ -7304,12 +7319,18 @@ int msm_comm_check_window_bitrate(struct msm_vidc_inst *inst,
 	list_add(&pdata->list, &inst->window_data.list);
 	mutex_unlock(&inst->window_data.lock);
 
-	bitrate = DIV_ROUND_UP(((u64)bitrate * 8 * fps), window_size);
-	if (bitrate > max_br) {
+	frame_size = DIV_ROUND_UP((frame_size * 8), window_size);
+	if (frame_size > max_avg_frame_size) {
 		s_vpr_p(inst->sid,
-			"Unsupported bitrate %u max %u, window size %u [%u,%u]",
-			bitrate, max_br, window_size,
+			"Unsupported avg frame size %u max %u, window size %u [%u,%u]",
+			frame_size, max_avg_frame_size, window_size,
 			window_start, inst->count.etb);
+	}
+	if (frame_data->filled_len * 8 > max_frame_size) {
+		s_vpr_p(inst->sid,
+			"Unsupported frame size(bit) %u max %u [%u]",
+			frame_data->filled_len * 8, max_frame_size,
+			inst->count.etb);
 	}
 
 	return 0;

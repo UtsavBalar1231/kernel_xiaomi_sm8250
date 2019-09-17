@@ -505,7 +505,7 @@ static unsigned long msm_vidc_max_freq(struct msm_vidc_core *core, u32 sid)
 
 	allowed_clks_tbl = core->resources.allowed_clks_tbl;
 	freq = allowed_clks_tbl[0].clock_rate;
-	s_vpr_p(sid, "Max rate = %lu\n", freq);
+	s_vpr_l(sid, "Max rate = %lu\n", freq);
 	return freq;
 }
 
@@ -882,7 +882,7 @@ int msm_vidc_set_clocks(struct msm_vidc_core *core, u32 sid)
 		freq_core_max = max_t(unsigned long, freq_core_1, freq_core_2);
 
 		if (msm_vidc_clock_voting) {
-			s_vpr_p(sid, "msm_vidc_clock_voting %d\n",
+			s_vpr_l(sid, "msm_vidc_clock_voting %d\n",
 				 msm_vidc_clock_voting);
 			freq_core_max = msm_vidc_clock_voting;
 			decrement = false;
@@ -965,17 +965,19 @@ int msm_comm_scale_clocks(struct msm_vidc_inst *inst)
 		return 0;
 	}
 
-	if (inst->clk_data.buffer_counter < DCVS_FTB_WINDOW || is_turbo ||
-		msm_vidc_clock_voting) {
+	if (inst->clk_data.buffer_counter < DCVS_FTB_WINDOW || is_turbo) {
 		inst->clk_data.min_freq =
 				msm_vidc_max_freq(inst->core, inst->sid);
+		inst->clk_data.dcvs_flags = 0;
+	} else if (msm_vidc_clock_voting) {
+		inst->clk_data.min_freq = msm_vidc_clock_voting;
 		inst->clk_data.dcvs_flags = 0;
 	} else {
 		freq = call_core_op(inst->core, calc_freq, inst, filled_len);
 		inst->clk_data.min_freq = freq;
-		/* update dcvs flags */
 		msm_dcvs_scale_clocks(inst, freq);
 	}
+
 	msm_vidc_set_clocks(inst->core, inst->sid);
 
 	return 0;
