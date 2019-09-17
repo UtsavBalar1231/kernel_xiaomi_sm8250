@@ -5061,6 +5061,9 @@ static int cam_icp_mgr_acquire_hw(void *hw_mgr_priv, void *acquire_hw_args)
 		goto acquire_info_failed;
 
 	icp_dev_acquire_info = ctx_data->icp_dev_acquire_info;
+	dev_type = icp_dev_acquire_info->dev_type;
+	icp_dev_acquire_info->dev_type =
+		cam_icp_unify_dev_type(dev_type);
 
 	CAM_DBG(CAM_ICP, "acquire io buf handle %d",
 		icp_dev_acquire_info->io_config_cmd_handle);
@@ -5109,7 +5112,7 @@ static int cam_icp_mgr_acquire_hw(void *hw_mgr_priv, void *acquire_hw_args)
 	}
 	CAM_DBG(CAM_ICP, "ping ack received");
 
-	rc = cam_icp_mgr_create_handle(icp_dev_acquire_info->dev_type,
+	rc = cam_icp_mgr_create_handle(dev_type,
 		ctx_data);
 	if (rc) {
 		CAM_ERR(CAM_ICP, "create handle failed");
@@ -5118,7 +5121,7 @@ static int cam_icp_mgr_acquire_hw(void *hw_mgr_priv, void *acquire_hw_args)
 
 	CAM_DBG(CAM_ICP,
 		"created stream handle for dev_type %u",
-		icp_dev_acquire_info->dev_type);
+		dev_type);
 
 	cmd_mem_region.num_regions = 1;
 	cmd_mem_region.map_info_array[0].mem_handle =
@@ -5179,13 +5182,11 @@ static int cam_icp_mgr_acquire_hw(void *hw_mgr_priv, void *acquire_hw_args)
 	/* Start context timer*/
 	cam_icp_ctx_timer_start(ctx_data);
 	hw_mgr->ctxt_cnt++;
-	dev_type = cam_icp_unify_dev_type(icp_dev_acquire_info->dev_type);
-	icp_dev_acquire_info->dev_type = dev_type;
 	mutex_unlock(&hw_mgr->hw_mgr_mutex);
 
 	CAM_DBG(CAM_ICP, "Acquire Done for ctx_id %u dev type %d",
 		ctx_data->ctx_id,
-		icp_dev_acquire_info->dev_type);
+		ctx_data->icp_dev_acquire_info->dev_type);
 
 	return 0;
 
