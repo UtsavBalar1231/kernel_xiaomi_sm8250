@@ -586,6 +586,19 @@
 		};
 	};
 
+	arm64_cpu_erp {
+		compatible = "arm,arm64-cpu-erp";
+		interrupt-names = "pri-dbe-irq",
+				  "sec-dbe-irq",
+				  "pri-ext-irq",
+				  "sec-ext-irq";
+		interrupts = <0 43 4>,
+			     <0 44 4>,
+			     <0 41 4>,
+			     <0 42 4>;
+		poll-delay-ms = <5000>;
+	};
+
 	qcom,msm-imem@c125000 {
 		compatible = "qcom,msm-imem";
 		reg = <0xc125000 0x1000>;
@@ -645,6 +658,32 @@
 	qcom,msm-rtb {
 		compatible = "qcom,msm-rtb";
 		qcom,rtb-size = <0x100000>;
+	};
+
+	cpu_pmu: cpu-pmu {
+		compatible = "arm,armv8-pmuv3";
+		qcom,irq-is-percpu;
+		interrupts = <1 6 4>;
+	};
+
+	eud: qcom,msm-eud@1610000 {
+		compatible = "qcom,msm-eud";
+		interrupt-names = "eud_irq";
+		interrupts = <GIC_SPI 189 IRQ_TYPE_LEVEL_HIGH>;
+		reg = <0x1610000 0x2000>,
+		      <0x1612000 0x1000>;
+		reg-names = "eud_base", "eud_mode_mgr2";
+		qcom,secure-eud-en;
+		status = "ok";
+	};
+
+	qcom,msm-gladiator-v2@f100000 {
+		compatible = "qcom,msm-gladiator-v2";
+		reg = <0xf100000 0xdc00>;
+		reg-names = "gladiator_base";
+		interrupts = <0 22 0>;
+		clock-names = "atb_clk";
+		clocks = <&rpmcc RPM_QDSS_CLK>;
 	};
 
 	wdog: qcom,wdt@f017000 {
