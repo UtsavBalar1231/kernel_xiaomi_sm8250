@@ -161,8 +161,8 @@
 		qcom,sde-max-dest-scaler-output-linewidth = <2560>;
 		qcom,sde-max-bw-low-kbps = <13700000>;
 		qcom,sde-max-bw-high-kbps = <16600000>;
-		qcom,sde-min-core-ib-kbps = <2400000>;
-		qcom,sde-min-llcc-ib-kbps = <800000>;
+		qcom,sde-min-core-ib-kbps = <4800000>;
+		qcom,sde-min-llcc-ib-kbps = <0>;
 		qcom,sde-min-dram-ib-kbps = <800000>;
 		qcom,sde-dram-channels = <2>;
 		qcom,sde-num-nrt-paths = <0>;
