@@ -8,13 +8,13 @@ ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
                 kona-qrd-overlay.dtbo \
                 kona-hdk-overlay.dtbo
 
-kona-cdp-overlay.dtbo-base := kona.dtb kona-v2.dtb
-kona-cdp-lcd-overlay.dtbo-base := kona.dtb kona-v2.dtb
-kona-mtp-overlay.dtbo-base := kona.dtb kona-v2.dtb
-kona-mtp-ws-overlay.dtbo-base := kona.dtb kona-v2.dtb
-kona-rumi-overlay.dtbo-base := kona.dtb kona-v2.dtb
-kona-qrd-overlay.dtbo-base := kona.dtb kona-v2.dtb
-kona-hdk-overlay.dtbo-base := kona.dtb kona-v2.dtb
+kona-cdp-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
+kona-cdp-lcd-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
+kona-mtp-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
+kona-mtp-ws-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
+kona-rumi-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
+kona-qrd-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
+kona-hdk-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
 else
 dtb-$(CONFIG_ARCH_KONA) += kona-rumi.dtb \
         kona-mtp.dtb \
@@ -27,7 +27,12 @@ dtb-$(CONFIG_ARCH_KONA) += kona-rumi.dtb \
         kona-v2-mtp-ws.dtb \
         kona-v2-cdp.dtb \
         kona-v2-qrd.dtb \
-        kona-hdk.dtb
+        kona-hdk.dtb \
+        kona-v2.1-mtp.dtb \
+        kona-v2.1-mtp-ws.dtb \
+        kona-v2.1-cdp.dtb \
+        kona-v2.1-qrd.dtb \
+        kona-v2.1-hdk.dtb
 endif
 
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
