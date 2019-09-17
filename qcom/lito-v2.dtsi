@@ -11,6 +11,9 @@
 };
 
 &msm_gpu {
+	/delete-property/qcom,chipid;
+	qcom,chipid = <0x06020001>;
+
 	/delete-node/qcom,gpu-pwrlevel-bins;
 	qcom,gpu-pwrlevel-bins {
 		#address-cells = <1>;
