@@ -2869,6 +2869,7 @@
 		memory-region = <&pil_adsp_mem>;
 		qcom,signal-aop;
 		qcom,complete-ramdump;
+		qcom,minidump-as-elf32;
 
 		/* Inputs from lpass */
 		interrupts-extended = <&pdc 16 IRQ_TYPE_LEVEL_HIGH>,
@@ -2913,6 +2914,7 @@
 		memory-region = <&pil_cdsp_mem>;
 		qcom,complete-ramdump;
 		qcom,signal-aop;
+		qcom,minidump-as-elf32;
 
 		qcom,msm-bus,name = "pil-cdsp";
 		qcom,msm-bus,num-cases = <2>;
