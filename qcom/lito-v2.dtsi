@@ -5,3 +5,7 @@
 	compatible = "qcom,lito";
 	qcom,msm-id = <400 0x20000>;
 };
+
+&camcc {
+	compatible = "qcom,lito-camcc-v2";
+};
