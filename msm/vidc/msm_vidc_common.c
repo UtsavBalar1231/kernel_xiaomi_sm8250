@@ -1461,9 +1461,6 @@ static void handle_session_init_done(enum hal_command_response cmd, void *data)
 {
 	struct msm_vidc_cb_cmd_done *response = data;
 	struct msm_vidc_inst *inst = NULL;
-	struct msm_vidc_capability *capability = NULL;
-	struct msm_vidc_core *core;
-	u32 i, codec;
 
 	if (!response) {
 		d_vpr_e("Failed to get valid response for session init\n");
@@ -1490,6 +1487,32 @@ static void handle_session_init_done(enum hal_command_response cmd, void *data)
 		return;
 	}
 
+	s_vpr_l(inst->sid, "handled: SESSION_INIT_DONE\n");
+	signal_session_msg_receipt(cmd, inst);
+	put_inst(inst);
+	return;
+
+error:
+	if (response->status == VIDC_ERR_MAX_CLIENTS)
+		msm_comm_generate_max_clients_error(inst);
+	else
+		msm_comm_generate_session_error(inst);
+
+	signal_session_msg_receipt(cmd, inst);
+	put_inst(inst);
+}
+
+static int msm_comm_update_capabilities(struct msm_vidc_inst *inst)
+{
+	struct msm_vidc_core *core;
+	struct msm_vidc_capability *capability = NULL;
+	u32 i, codec;
+
+	if (!inst || !inst->core) {
+		d_vpr_e("%s: invalid parameters\n", __func__);
+		return -EINVAL;
+	}
+
 	core = inst->core;
 	codec = get_v4l2_codec(inst);
 
@@ -1507,7 +1530,7 @@ static void handle_session_init_done(enum hal_command_response cmd, void *data)
 			"%s: capabilities not found for domain %#x codec %#x\n",
 			__func__, get_hal_domain(inst->session_type, inst->sid),
 			get_hal_codec(codec, inst->sid));
-		goto error;
+		return -EINVAL;
 	}
 
 	s_vpr_h(inst->sid, "%s: capabilities for domain %#x codec %#x\n",
@@ -1569,19 +1592,7 @@ static void handle_session_init_done(enum hal_command_response cmd, void *data)
 
 	msm_vidc_comm_update_ctrl_limits(inst);
 
-	s_vpr_l(inst->sid, "handled: SESSION_INIT_DONE\n");
-	signal_session_msg_receipt(cmd, inst);
-	put_inst(inst);
-	return;
-
-error:
-	if (response->status == VIDC_ERR_MAX_CLIENTS)
-		msm_comm_generate_max_clients_error(inst);
-	else
-		msm_comm_generate_session_error(inst);
-
-	signal_session_msg_receipt(cmd, inst);
-	put_inst(inst);
+	return 0;
 }
 
 static void msm_vidc_queue_rbr_event(struct msm_vidc_inst *inst,
@@ -3182,7 +3193,6 @@ static int msm_comm_session_init(int flipped_state,
 			inst, get_hal_domain(inst->session_type, inst->sid),
 			get_hal_codec(fourcc, inst->sid),
 			&inst->session, inst->sid);
-
 	if (rc || !inst->session) {
 		s_vpr_e(inst->sid,
 			"Failed to call session init for: %pK, %pK, %d, %d\n",
@@ -3191,7 +3201,11 @@ static int msm_comm_session_init(int flipped_state,
 		rc = -EINVAL;
 		goto exit;
 	}
-
+	rc = msm_comm_update_capabilities(inst);
+	if (rc) {
+		s_vpr_e(inst->sid, "Failed to update capabilities\n");
+		goto exit;
+	}
 	rc = msm_vidc_calculate_buffer_counts(inst);
 	if (rc) {
 		s_vpr_e(inst->sid, "Failed to initialize buff counts\n");
