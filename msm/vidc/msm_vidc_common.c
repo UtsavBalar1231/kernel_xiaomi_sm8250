@@ -636,6 +636,7 @@ int msm_comm_ctrl_init(struct msm_vidc_inst *inst,
 		}
 
 		ctrl->flags |= drv_ctrls[idx].flags;
+		ctrl->flags |= V4L2_CTRL_FLAG_EXECUTE_ON_WRITE;
 		inst->ctrls[idx] = ctrl;
 	}
 	inst->num_ctrls = num_ctrls;
@@ -7256,12 +7257,6 @@ int msm_comm_check_window_bitrate(struct msm_vidc_inst *inst,
 		inst->entropy_mode == HFI_H264_ENTROPY_CAVLC ||
 		!frame_data->filled_len)
 		return 0;
-
-	/*
-	 * MaxAvgFrameSize <= (1 + B/S) * (MaxClock / fps - 25*NumOfMacroBlockperFrame) / 1.35
-	 * S: Sliding window = #Frames in 40ms (av sync window) Closest point
-	 * B: Buffer Count = B(vsp-vpp) = 2 for 2Stage, 0 for 1stage
-	 */
 
 	fps = inst->clk_data.frame_rate >> 16;
 	window_size = inst->core->resources.avsync_window_size * fps;
