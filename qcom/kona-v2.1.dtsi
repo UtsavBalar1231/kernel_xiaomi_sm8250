@@ -6,3 +6,5 @@
 	compatible = "qcom,kona";
 	qcom,msm-id = <356 0x20001>;
 };
+
+#include "kona-v2.1-gpu.dtsi"
