@@ -109,7 +109,6 @@ static int hfi_process_sess_evt_seq_changed(u32 device_id,
 	struct hfi_profile_level *profile_level;
 	struct hfi_bit_depth *pixel_depth;
 	struct hfi_pic_struct *pic_struct;
-	struct hfi_buffer_requirements *buf_req;
 	struct hfi_dpb_counts *dpb_counts;
 	struct hfi_index_extradata_input_crop_payload *crop_info;
 	u32 rem_size,entropy_mode = 0;
@@ -264,13 +263,6 @@ static int hfi_process_sess_evt_seq_changed(u32 device_id,
 					hfi_buffer_requirements)))
 					return -E2BIG;
 				data_ptr = data_ptr + sizeof(u32);
-				buf_req =
-					(struct hfi_buffer_requirements *)
-						data_ptr;
-				event_notify.fw_min_cnt =
-					buf_req->buffer_count_min;
-				s_vpr_hp(sid, "Capture Count : 0x%x\n",
-						event_notify.fw_min_cnt);
 				data_ptr +=
 					sizeof(struct hfi_buffer_requirements);
 				rem_size -=
