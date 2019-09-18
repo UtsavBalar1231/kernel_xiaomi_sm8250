@@ -110,7 +110,6 @@ static int hfi_process_sess_evt_seq_changed(u32 device_id,
 	struct hfi_bit_depth *pixel_depth;
 	struct hfi_pic_struct *pic_struct;
 	struct hfi_dpb_counts *dpb_counts;
-	struct hfi_index_extradata_input_crop_payload *crop_info;
 	u32 rem_size,entropy_mode = 0;
 	u8 *data_ptr;
 	int prop_id;
@@ -273,20 +272,6 @@ static int hfi_process_sess_evt_seq_changed(u32 device_id,
 				     hfi_index_extradata_input_crop_payload)))
 					return -E2BIG;
 				data_ptr = data_ptr + sizeof(u32);
-				crop_info = (struct
-				hfi_index_extradata_input_crop_payload *)
-						data_ptr;
-				event_notify.crop_data.left = crop_info->left;
-				event_notify.crop_data.top = crop_info->top;
-				event_notify.crop_data.width = crop_info->width;
-				event_notify.crop_data.height =
-					crop_info->height;
-				s_vpr_h(sid,
-					"CROP info : Left = %d Top = %d\n",
-					crop_info->left, crop_info->top);
-				s_vpr_h(sid,
-					"CROP info : Width = %d Height = %d\n",
-					crop_info->width, crop_info->height);
 				data_ptr +=
 					sizeof(struct
 					hfi_index_extradata_input_crop_payload);
