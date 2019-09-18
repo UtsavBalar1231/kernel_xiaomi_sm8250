@@ -77,6 +77,8 @@
 
 	qcom,vddp-ref-clk-supply = <&pm8150_l6>;
 	qcom,vddp-ref-clk-max-microamp = <100>;
+	qcom,vccq-parent-supply = <&pm8150a_s8>;
+	qcom,vccq-parent-max-microamp = <210000>;
 
 	status = "ok";
 };
