@@ -25,6 +25,9 @@
 
 #define MAX_SYNC_COUNT 65535
 
+/* Default frame rate is 30 */
+#define DEFAULT_FRAME_DURATION 33333333
+
 #define SYNC_LINK_SOF_CNT_MAX_LMT 1
 
 #define MAXIMUM_LINKS_PER_SESSION  4
@@ -334,6 +337,8 @@ struct cam_req_mgr_connected_device {
  *                         the same req
  * @is_shutdown          : Flag to indicate if link needs to be disconnected
  *                         as part of shutdown.
+ * @sof_timestamp_value  : SOF timestamp value
+ * @prev_sof_timestamp   : Previous SOF timestamp value
  */
 struct cam_req_mgr_core_link {
 	int32_t                              link_hdl;
@@ -362,6 +367,8 @@ struct cam_req_mgr_core_link {
 	int64_t                              initial_sync_req;
 	uint32_t                             retry_cnt;
 	bool                                 is_shutdown;
+	uint64_t                             sof_timestamp;
+	uint64_t                             prev_sof_timestamp;
 };
 
 /**

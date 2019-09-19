@@ -787,6 +787,7 @@ static int __cam_isp_ctx_notify_sof_in_activated_state(
 			notify.dev_hdl = ctx->dev_hdl;
 			notify.frame_id = ctx_isp->frame_id;
 			notify.trigger = CAM_TRIGGER_POINT_SOF;
+			notify.sof_timestamp_val = ctx_isp->sof_timestamp_val;
 
 			ctx->ctx_crm_intf->notify_trigger(&notify);
 			CAM_DBG(CAM_ISP, "Notify CRM  SOF frame %lld ctx %u",
@@ -1461,6 +1462,7 @@ static int __cam_isp_ctx_fs2_sof_in_sof_state(
 			notify.dev_hdl = ctx->dev_hdl;
 			notify.frame_id = ctx_isp->frame_id;
 			notify.trigger = CAM_TRIGGER_POINT_SOF;
+			notify.sof_timestamp_val = ctx_isp->sof_timestamp_val;
 
 			ctx->ctx_crm_intf->notify_trigger(&notify);
 			CAM_DBG(CAM_ISP, "Notify CRM  SOF frame %lld",
@@ -1637,6 +1639,7 @@ static int __cam_isp_ctx_fs2_reg_upd_in_applied_state(
 			notify.dev_hdl = ctx->dev_hdl;
 			notify.frame_id = ctx_isp->frame_id;
 			notify.trigger = CAM_TRIGGER_POINT_SOF;
+			notify.sof_timestamp_val = ctx_isp->sof_timestamp_val;
 
 			ctx->ctx_crm_intf->notify_trigger(&notify);
 			CAM_DBG(CAM_ISP, "Notify CRM  SOF frame %lld",
@@ -2249,6 +2252,7 @@ static int __cam_isp_ctx_rdi_only_sof_in_top_state(
 		notify.dev_hdl = ctx->dev_hdl;
 		notify.frame_id = ctx_isp->frame_id;
 		notify.trigger = CAM_TRIGGER_POINT_SOF;
+		notify.sof_timestamp_val = ctx_isp->sof_timestamp_val;
 
 		ctx->ctx_crm_intf->notify_trigger(&notify);
 		CAM_DBG(CAM_ISP, "Notify CRM  SOF frame %lld",
@@ -2440,6 +2444,7 @@ static int __cam_isp_ctx_rdi_only_sof_in_bubble_state(
 		notify.dev_hdl = ctx->dev_hdl;
 		notify.frame_id = ctx_isp->frame_id;
 		notify.trigger = CAM_TRIGGER_POINT_SOF;
+		notify.sof_timestamp_val = ctx_isp->sof_timestamp_val;
 
 		ctx->ctx_crm_intf->notify_trigger(&notify);
 		CAM_DBG(CAM_ISP, "Notify CRM  SOF frame %lld",
@@ -2510,6 +2515,7 @@ static int __cam_isp_ctx_rdi_only_reg_upd_in_bubble_applied_state(
 		notify.dev_hdl = ctx->dev_hdl;
 		notify.frame_id = ctx_isp->frame_id;
 		notify.trigger = CAM_TRIGGER_POINT_SOF;
+		notify.sof_timestamp_val = ctx_isp->sof_timestamp_val;
 
 		ctx->ctx_crm_intf->notify_trigger(&notify);
 		CAM_DBG(CAM_ISP, "Notify CRM  SOF frame %lld",
