@@ -1572,6 +1572,12 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 		break;
 	case V4L2_CID_MPEG_VIDC_VIDEO_FRAME_RATE:
 		inst->clk_data.frame_rate = ctrl->val;
+		/* For HEIC image encode, set fps to 1 */
+		if (is_grid_session(inst)) {
+			s_vpr_h(sid, "%s: set fps to 1 for HEIC\n",
+					__func__);
+			inst->clk_data.frame_rate = 1 << 16;
+		}
 		if (inst->state < MSM_VIDC_LOAD_RESOURCES)
 			msm_vidc_calculate_buffer_counts(inst);
 		if (inst->state == MSM_VIDC_START_DONE) {
@@ -1847,8 +1853,15 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 					__func__);
 		}
 		break;
-	case V4L2_CID_MPEG_VIDC_CAPTURE_FRAME_RATE:
 	case V4L2_CID_MPEG_VIDC_IMG_GRID_SIZE:
+		/* For HEIC image encode, set fps to 1 */
+		if (ctrl->val) {
+			s_vpr_h(sid, "%s: set fps to 1 for HEIC\n",
+					__func__);
+			inst->clk_data.frame_rate = 1 << 16;
+		}
+		break;
+	case V4L2_CID_MPEG_VIDC_CAPTURE_FRAME_RATE:
 	case V4L2_CID_MPEG_VIDC_VIDEO_HEVC_MAX_HIER_CODING_LAYER:
 	case V4L2_CID_MPEG_VIDEO_HEVC_HIER_CODING_TYPE:
 	case V4L2_CID_ROTATE:

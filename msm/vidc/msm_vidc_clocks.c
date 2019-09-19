@@ -1636,7 +1636,10 @@ int msm_vidc_decide_core_and_power_mode_iris1(struct msm_vidc_inst *inst)
 		return -EINVAL;
 	}
 
-	if (cur_inst_load + core_load <= max_freq) {
+	/* Power saving always disabled for HEIF image sessions */
+	if (is_image_session(inst))
+		msm_vidc_power_save_mode_enable(inst, false);
+	else if (cur_inst_load + core_load <= max_freq) {
 		if (mbpf > max_hq_mbpf || mbps > max_hq_mbps)
 			enable = true;
 		msm_vidc_power_save_mode_enable(inst, enable);
