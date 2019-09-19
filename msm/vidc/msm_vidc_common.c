@@ -1455,7 +1455,17 @@ static void msm_vidc_comm_update_ctrl_limits(struct msm_vidc_inst *inst)
 		msm_vidc_comm_update_ctrl(inst,
 				V4L2_CID_MPEG_VIDEO_B_FRAMES,
 				&inst->capability.cap[CAP_BFRAME]);
+	} else if (inst->session_type == MSM_VIDC_DECODER) {
+		msm_vidc_comm_update_ctrl(inst,
+			V4L2_CID_MPEG_VIDC_VIDEO_VP9_LEVEL,
+			&inst->capability.cap[CAP_VP9_LEVEL]);
 	}
+	msm_vidc_comm_update_ctrl(inst,
+			V4L2_CID_MPEG_VIDEO_H264_LEVEL,
+			&inst->capability.cap[CAP_H264_LEVEL]);
+	msm_vidc_comm_update_ctrl(inst,
+			V4L2_CID_MPEG_VIDEO_HEVC_LEVEL,
+			&inst->capability.cap[CAP_HEVC_LEVEL]);
 }
 
 static void handle_session_init_done(enum hal_command_response cmd, void *data)
