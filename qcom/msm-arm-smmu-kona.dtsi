@@ -7,7 +7,6 @@
 			<0x3DC2000 0x20>;
 		reg-names = "base", "tcu-base";
 		#iommu-cells = <2>;
-		qcom,dynamic;
 		qcom,skip-init;
 		qcom,use-3-lvl-tables;
 		qcom,no-dynamic-asid;
