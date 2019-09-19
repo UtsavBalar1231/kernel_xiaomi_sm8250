@@ -92,6 +92,7 @@
 		iommu-map = <0x0 &apps_smmu 0x1c00 0x1>,
 			<0x100 &apps_smmu 0x1c01 0x1>;
 
+		qcom,target-link-speed = <0x2>; /* limit to gen2 */
 		qcom,boot-option = <0x1>;
 		qcom,drv-supported;
 		qcom,drv-l1ss-timeout-us = <10000>; /* 10ms */
