@@ -8132,7 +8132,7 @@ void DWC_ETH_QOS_dma_desc_stats_read(struct DWC_ETH_QOS_prv_data *pdata)
 	pdata->xstats.dma_debug_status1 = DWC_ETH_QOS_reg_read(DMA_DSR1_RGOFFADDR);
 
 	for (qinx = 0; qinx < DWC_ETH_QOS_TX_QUEUE_CNT; qinx++) {
-		if (qinx == IPA_DMA_TX_CH)
+		if (pdata->ipa_enabled && qinx == IPA_DMA_TX_CH)
 			continue;
 		pdata->xstats.dma_ch_status[qinx] = DWC_ETH_QOS_reg_read(DMA_SR_RGOFFADDRESS(qinx));
 		pdata->xstats.dma_ch_intr_enable[qinx] = DWC_ETH_QOS_reg_read(DMA_IER_RGOFFADDRESS(qinx));
@@ -8145,7 +8145,7 @@ void DWC_ETH_QOS_dma_desc_stats_read(struct DWC_ETH_QOS_prv_data *pdata)
 	}
 
 	for (qinx = 0; qinx < DWC_ETH_QOS_RX_QUEUE_CNT; qinx++) {
-		if (qinx == IPA_DMA_RX_CH)
+		if (pdata->ipa_enabled && qinx == IPA_DMA_RX_CH)
 			continue;
 		pdata->xstats.dma_ch_rx_control[qinx] = DWC_ETH_QOS_reg_read(DMA_RCR_RGOFFADDRESS(qinx));
 		pdata->xstats.dma_ch_rxdesc_list_addr[qinx] = DWC_ETH_QOS_reg_read(DMA_RDLAR_RGOFFADDRESS(qinx));
