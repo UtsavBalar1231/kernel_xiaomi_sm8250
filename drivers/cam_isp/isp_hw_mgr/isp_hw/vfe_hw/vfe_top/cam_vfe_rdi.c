@@ -201,6 +201,7 @@ int cam_vfe_rdi_ver2_acquire_resource(
 	rdi_data->event_cb    = acquire_data->event_cb;
 	rdi_data->priv        = acquire_data->priv;
 	rdi_data->sync_mode   = acquire_data->vfe_in.sync_mode;
+	rdi_res->rdi_only_ctx = 0;
 
 	return 0;
 }
