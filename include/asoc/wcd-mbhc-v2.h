@@ -434,6 +434,7 @@ struct wcd_mbhc_config {
 	bool moisture_duty_cycle_en;
 	int uart_audio_switch_gpio;
 	struct device_node *uart_audio_switch_gpio_p; /* used by pinctrl API */
+	bool flip_switch;
 };
 
 struct wcd_mbhc_intr {
