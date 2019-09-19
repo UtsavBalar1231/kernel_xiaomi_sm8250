@@ -2084,7 +2084,7 @@
 			<&gcc GCC_UFS_PHY_RX_SYMBOL_0_CLK>,
 			<&gcc GCC_UFS_PHY_RX_SYMBOL_1_CLK>;
 		freq-table-hz =
-			<37500000 300000000>,
+			<50000000 200000000>,
 			<0 0>,
 			<0 0>,
 			<37500000 150000000>,
