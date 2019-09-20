@@ -1305,10 +1305,11 @@ static int msm_vidc_read_efuse(
 	struct msm_vidc_efuse_data *efuse_data = data->efuse_data;
 	uint32_t efuse_data_count = data->efuse_data_length;
 
+	if (!efuse_data)
+		return 0;
+
 	for (i = 0; i < efuse_data_count; i++) {
-
 		switch ((efuse_data[i]).purpose) {
-
 		case SKU_VERSION:
 			base = devm_ioremap(dev, (efuse_data[i]).start_address,
 					(efuse_data[i]).size);
@@ -1330,7 +1331,6 @@ static int msm_vidc_read_efuse(
 				devm_iounmap(dev, base);
 			}
 			break;
-
 		default:
 			break;
 		}
@@ -1346,6 +1346,7 @@ void *vidc_get_drv_data(struct device *dev)
 	int rc = 0;
 
 	if (!IS_ENABLED(CONFIG_OF) || !dev->of_node) {
+		d_vpr_e("Using default_data\n");
 		driver_data = &default_data;
 		goto exit;
 	}
@@ -1355,35 +1356,23 @@ void *vidc_get_drv_data(struct device *dev)
 	if (match)
 		driver_data = (struct msm_vidc_platform_data *)match->data;
 
-	if (!of_find_property(dev->of_node, "sku-index", NULL) ||
-			!driver_data) {
+	if (!driver_data)
 		goto exit;
-	} else if (!strcmp(match->compatible, "qcom,sdm670-vidc")) {
+
+	/* Check for sku version */
+	if (of_find_property(dev->of_node, "sku-index", NULL)) {
 		rc = msm_vidc_read_efuse(driver_data, dev);
 		if (rc)
 			goto exit;
+	}
 
+	if (!strcmp(match->compatible, "qcom,sdm670-vidc")) {
 		if (driver_data->sku_version == SKU_VERSION_1) {
 			driver_data->common_data = sdm670_common_data_v1;
 			driver_data->common_data_length =
 					ARRAY_SIZE(sdm670_common_data_v1);
 		}
-	}  else if (!strcmp(match->compatible, "qcom,kona-vidc")) {
-		ddr_type = of_fdt_get_ddrtype();
-		if (ddr_type == -ENOENT) {
-			d_vpr_e("Failed to get ddr type, use LPDDR5\n");
-		}
-		d_vpr_h("DDR Type %x\n", ddr_type);
-
-		if (driver_data->ubwc_config &&
-			(ddr_type == DDR_TYPE_LPDDR4 ||
-			 ddr_type == DDR_TYPE_LPDDR4X))
-			driver_data->ubwc_config->highest_bank_bit = 0xf;
 	} else if (!strcmp(match->compatible, "qcom,lito-vidc")) {
-		rc = msm_vidc_read_efuse(driver_data, dev);
-		if (rc)
-			goto exit;
-
 		if (driver_data->sku_version == SKU_VERSION_1) {
 			driver_data->common_data = lito_common_data_v1;
 			driver_data->common_data_length =
@@ -1391,6 +1380,18 @@ void *vidc_get_drv_data(struct device *dev)
 			driver_data->codec_caps = lito_capabilities_v1;
 			driver_data->codec_caps_count = ARRAY_SIZE(lito_capabilities_v1);
 		}
+	} else if (!strcmp(match->compatible, "qcom,kona-vidc")) {
+		ddr_type = of_fdt_get_ddrtype();
+		if (ddr_type == -ENOENT)
+			d_vpr_e("Failed to get ddr type, use LPDDR5\n");
+
+		if (driver_data->ubwc_config &&
+			(ddr_type == DDR_TYPE_LPDDR4 ||
+			 ddr_type == DDR_TYPE_LPDDR4X))
+			driver_data->ubwc_config->highest_bank_bit = 0xf;
+
+		d_vpr_h("DDR Type 0x%x hbb 0x%x\n",
+			ddr_type, driver_data->ubwc_config->highest_bank_bit);
 	}
 
 exit:
