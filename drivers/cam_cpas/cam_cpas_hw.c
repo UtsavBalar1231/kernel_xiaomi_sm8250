@@ -932,7 +932,7 @@ static int cam_cpas_util_apply_client_ahb_vote(struct cam_hw_info *cpas_hw,
 
 	CAM_DBG(CAM_CPAS, "Required highest_level[%d]", highest_level);
 
-	if (cpas_core->ahb_bus_scaling_enable) {
+	if (!cpas_core->ahb_bus_scaling_disable) {
 		rc = cam_cpas_util_vote_bus_client_level(ahb_bus_client,
 			highest_level);
 		if (rc) {
@@ -1678,12 +1678,12 @@ static int cam_cpas_util_create_debugfs(
 	if (!cpas_core->dentry)
 		return -ENOMEM;
 
-	if (!debugfs_create_bool("ahb_bus_scaling_enable",
+	if (!debugfs_create_bool("ahb_bus_scaling_disable",
 		0644,
 		cpas_core->dentry,
-		&cpas_core->ahb_bus_scaling_enable)) {
+		&cpas_core->ahb_bus_scaling_disable)) {
 		CAM_ERR(CAM_CPAS,
-			"failed to create ahb_bus_scaling_enable entry");
+			"failed to create ahb_bus_scaling_disable entry");
 		rc = -ENOMEM;
 		goto err;
 	}
@@ -1735,6 +1735,7 @@ int cam_cpas_hw_probe(struct platform_device *pdev,
 	cpas_hw->soc_info.dev = &pdev->dev;
 	cpas_hw->soc_info.dev_name = pdev->name;
 	cpas_hw->open_count = 0;
+	cpas_core->ahb_bus_scaling_disable = false;
 	mutex_init(&cpas_hw->hw_mutex);
 	spin_lock_init(&cpas_hw->hw_lock);
 	init_completion(&cpas_hw->hw_complete);
