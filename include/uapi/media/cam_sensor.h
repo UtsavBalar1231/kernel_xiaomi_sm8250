@@ -401,9 +401,10 @@ struct cam_sensor_streamon_dev {
  * @cmd_type    :    command buffer type
  */
 struct cam_flash_init {
-	uint8_t     flash_type;
-	uint16_t    reserved;
+	uint32_t    flash_type;
+	uint8_t     reserved;
 	uint8_t     cmd_type;
+	uint16_t    reserved1;
 } __attribute__((packed));
 
 /**
