@@ -1054,6 +1054,7 @@
 	status = "ok";
 };
 
+#include "msm-arm-smmu-lagoon.dtsi"
 #include "lagoon-pinctrl.dtsi"
 #include "lagoon-pm.dtsi"
 #include "lagoon-stub-regulator.dtsi"
