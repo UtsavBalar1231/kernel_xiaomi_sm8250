@@ -1088,10 +1088,8 @@
 	};
 
 	rpmcc: qcom,rpmcc {
-		compatible = "qcom,dummycc";
-		clock-output-names = "rpmcc_clocks";
+		compatible = "qcom,rpmcc-bengal";
 		#clock-cells = <1>;
-		#reset-cells = <1>;
 	};
 
 	gcc: qcom,gcc@1400000 {
