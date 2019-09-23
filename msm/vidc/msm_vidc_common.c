@@ -2402,6 +2402,7 @@ static bool is_eos_buffer(struct msm_vidc_inst *inst, u32 device_addr)
 	list_for_each_entry_safe(temp, next, &inst->eosbufs.list, list) {
 		if (temp->smem.device_addr == device_addr) {
 			found = true;
+			temp->is_queued = 0;
 			list_del(&temp->list);
 			msm_comm_smem_free(inst, &temp->smem);
 			kfree(temp);
@@ -4000,6 +4001,9 @@ int msm_vidc_send_pending_eos_buffers(struct msm_vidc_inst *inst)
 
 	mutex_lock(&inst->eosbufs.lock);
 	list_for_each_entry_safe(binfo, temp, &inst->eosbufs.list, list) {
+		if (binfo->is_queued)
+			continue;
+
 		data.alloc_len = binfo->smem.size;
 		data.device_addr = binfo->smem.device_addr;
 		data.input_tag = 0;
@@ -4016,6 +4020,7 @@ int msm_vidc_send_pending_eos_buffers(struct msm_vidc_inst *inst)
 
 		rc = call_hfi_op(hdev, session_etb, inst->session,
 				&data);
+		binfo->is_queued = 1;
 	}
 	mutex_unlock(&inst->eosbufs.lock);
 
