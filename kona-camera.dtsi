@@ -430,7 +430,7 @@
 				<&apps_smmu 0x2420 0x400>,
 				<&apps_smmu 0x2421 0x400>;
 			label = "icp";
-			qcom,iommu-dma-addr-pool = <0xda00000 0xace00000>;
+			qcom,iommu-dma-addr-pool = <0x10c00000 0xcf300000>;
 			icp_iova_mem_map: iova-mem-map {
 				iova-mem-region-firmware {
 					/* Firmware region is 5MB */
