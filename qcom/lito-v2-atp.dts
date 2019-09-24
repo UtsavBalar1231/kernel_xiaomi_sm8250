@@ -8,3 +8,9 @@
 	compatible = "qcom,lito-atp", "qcom,lito", "qcom,atp";
 	qcom,board-id = <33 0>;
 };
+
+&lpi_tlmm {
+	qcom,tx_data3_enabled = <1>;
+	qcom,tx_data3_addr = <0x0355C000>;
+	qcom,swr_tx_data3_val = <0x3>;
+};
