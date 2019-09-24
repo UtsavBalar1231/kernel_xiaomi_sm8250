@@ -689,16 +689,19 @@ static void cam_ife_hw_mgr_dump_acq_data(
 	struct cam_ife_hw_mgr_res    *hw_mgr_res_temp = NULL;
 	struct cam_isp_resource_node *hw_res = NULL;
 	struct timespec64            *ts = NULL;
-	uint64_t ms, tmp;
+	uint64_t ms, tmp, hrs, min, sec;
 	int i = 0, j = 0;
 
 	ts = &hwr_mgr_ctx->ts;
 	tmp = ts->tv_sec;
 	ms = (ts->tv_nsec) / 1000000;
+	sec = do_div(tmp, 60);
+	min = do_div(tmp, 60);
+	hrs = do_div(tmp, 24);
 
 	CAM_INFO(CAM_ISP,
 		"**** %llu:%llu:%llu.%llu ctx_idx: %u rdi_only: %s is_dual: %s acquired ****",
-		(tmp / 3600) % 24, (tmp / 60) % 60, tmp % 60, ms,
+		hrs, min, sec, ms,
 		hwr_mgr_ctx->ctx_index,
 		(hwr_mgr_ctx->is_rdi_only_context ? "true" : "false"),
 		(hwr_mgr_ctx->is_dual ? "true" : "false"));
@@ -5688,7 +5691,7 @@ static void cam_ife_mgr_print_io_bufs(struct cam_packet *packet,
 	int32_t iommu_hdl, int32_t sec_mmu_hdl, uint32_t pf_buf_info,
 	bool *mem_found)
 {
-	uint64_t   iova_addr;
+	dma_addr_t   iova_addr;
 	size_t     src_buf_size;
 	int        i;
 	int        j;

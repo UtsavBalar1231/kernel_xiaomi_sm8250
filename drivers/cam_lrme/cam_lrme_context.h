@@ -11,7 +11,7 @@
 #include "cam_hw_mgr_intf.h"
 #include "cam_req_mgr_interface.h"
 
-#define CAM_LRME_CTX_INDEX_SHIFT 32
+#define CAM_LRME_CTX_INDEX_SHIFT 16
 
 /**
  * struct cam_lrme_context

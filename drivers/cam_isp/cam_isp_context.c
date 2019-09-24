@@ -24,9 +24,9 @@ static const char isp_dev_name[] = "cam-isp";
 
 static struct cam_isp_ctx_debug isp_ctx_debug;
 
-#define INC_STATE_MONITOR_HEAD(head) \
-	(atomic64_add_return(1, head) % \
-	CAM_ISP_CTX_STATE_MONITOR_MAX_ENTRIES)
+#define INC_STATE_MONITOR_HEAD(head, ret) \
+	div_u64_rem(atomic64_add_return(1, head),\
+	CAM_ISP_CTX_STATE_MONITOR_MAX_ENTRIES, (ret))
 
 static int cam_isp_context_dump_active_request(void *data, unsigned long iova,
 	uint32_t buf_info);
@@ -39,7 +39,9 @@ static void __cam_isp_ctx_update_state_monitor_array(
 	enum cam_isp_state_change_trigger trigger_type,
 	uint64_t req_id)
 {
-	int iterator = INC_STATE_MONITOR_HEAD(&ctx_isp->state_monitor_head);
+	int iterator;
+
+	INC_STATE_MONITOR_HEAD(&ctx_isp->state_monitor_head, &iterator);
 
 	ctx_isp->cam_isp_ctx_state_monitor[iterator].curr_state =
 		ctx_isp->substate_activated;
@@ -117,8 +119,8 @@ static void __cam_isp_ctx_dump_state_monitor_array(
 		oldest_entry = 0;
 	} else {
 		num_entries = CAM_ISP_CTX_STATE_MONITOR_MAX_ENTRIES;
-		oldest_entry = (state_head + 1) %
-			CAM_ISP_CTX_STATE_MONITOR_MAX_ENTRIES;
+		div_u64_rem(state_head + 1,
+			CAM_ISP_CTX_STATE_MONITOR_MAX_ENTRIES, &oldest_entry);
 	}
 
 	CAM_ERR(CAM_ISP,

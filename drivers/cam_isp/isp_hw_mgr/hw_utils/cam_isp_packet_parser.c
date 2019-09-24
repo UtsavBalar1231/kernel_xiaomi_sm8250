@@ -465,8 +465,8 @@ int cam_isp_add_io_buffers(
 	uint32_t                              size_isp_out,
 	bool                                  fill_fence)
 {
-	int rc = 0;
-	uint64_t                            io_addr[CAM_PACKET_MAX_PLANES];
+	int                                 rc = 0;
+	dma_addr_t                          io_addr[CAM_PACKET_MAX_PLANES];
 	struct cam_buf_io_cfg              *io_cfg;
 	struct cam_isp_resource_node       *res;
 	struct cam_ife_hw_mgr_res          *hw_mgr_res;

@@ -413,7 +413,7 @@ int cam_hw_cdm_submit_bl(struct cam_hw_info *cdm_hw,
 	}
 
 	for (i = 0; i < req->data->cmd_arrary_count ; i++) {
-		uint64_t hw_vaddr_ptr = 0;
+		dma_addr_t hw_vaddr_ptr = 0;
 		size_t len = 0;
 
 		if ((!cdm_cmd->cmd[i].len) &&

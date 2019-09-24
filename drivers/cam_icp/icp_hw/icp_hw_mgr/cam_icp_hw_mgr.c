@@ -422,6 +422,7 @@ static int32_t cam_icp_ctx_timer(void *priv, void *data)
 		(struct cam_icp_hw_ctx_data *)task_data->data;
 	struct cam_icp_hw_mgr *hw_mgr = &icp_hw_mgr;
 	uint32_t id;
+	uint64_t temp;
 	struct cam_hw_intf *ipe0_dev_intf = NULL;
 	struct cam_hw_intf *ipe1_dev_intf = NULL;
 	struct cam_hw_intf *bps_dev_intf = NULL;
@@ -521,16 +522,17 @@ static int32_t cam_icp_ctx_timer(void *priv, void *data)
 		ctx_data->clk_info.base_clk = 0;
 
 		clk_update.axi_vote.num_paths = 1;
-		clk_update.axi_vote.axi_path[0].camnoc_bw =
-			clk_info->uncompressed_bw / device_share_ratio;
-		clk_update.axi_vote.axi_path[0].mnoc_ab_bw =
-			clk_info->compressed_bw / device_share_ratio;
-		clk_update.axi_vote.axi_path[0].mnoc_ib_bw =
-			clk_info->compressed_bw / device_share_ratio;
-		clk_update.axi_vote.axi_path[0].ddr_ab_bw =
-			clk_info->compressed_bw / device_share_ratio;
-		clk_update.axi_vote.axi_path[0].ddr_ib_bw =
-			clk_info->compressed_bw / device_share_ratio;
+
+		temp = clk_info->uncompressed_bw;
+		do_div(temp, device_share_ratio);
+		clk_update.axi_vote.axi_path[0].camnoc_bw = temp;
+
+		temp = clk_info->compressed_bw;
+		do_div(temp, device_share_ratio);
+		clk_update.axi_vote.axi_path[0].mnoc_ab_bw = temp;
+		clk_update.axi_vote.axi_path[0].mnoc_ib_bw = temp;
+		clk_update.axi_vote.axi_path[0].ddr_ab_bw = temp;
+		clk_update.axi_vote.axi_path[0].ddr_ib_bw = temp;
 	} else {
 		int path_index;
 
@@ -594,16 +596,21 @@ static int32_t cam_icp_ctx_timer(void *priv, void *data)
 
 		if (device_share_ratio > 1) {
 			for (i = 0; i < clk_update.axi_vote.num_paths; i++) {
-				clk_update.axi_vote.axi_path[i].camnoc_bw /=
-					device_share_ratio;
-				clk_update.axi_vote.axi_path[i].mnoc_ab_bw /=
-					device_share_ratio;
-				clk_update.axi_vote.axi_path[i].mnoc_ib_bw /=
-					device_share_ratio;
-				clk_update.axi_vote.axi_path[i].ddr_ab_bw /=
-					device_share_ratio;
-				clk_update.axi_vote.axi_path[i].ddr_ib_bw /=
-					device_share_ratio;
+				do_div(
+				clk_update.axi_vote.axi_path[i].camnoc_bw,
+					device_share_ratio);
+				do_div(
+				clk_update.axi_vote.axi_path[i].mnoc_ab_bw,
+					device_share_ratio);
+				do_div(
+				clk_update.axi_vote.axi_path[i].mnoc_ib_bw,
+					device_share_ratio);
+				do_div(
+				clk_update.axi_vote.axi_path[i].ddr_ab_bw,
+					device_share_ratio);
+				do_div(
+				clk_update.axi_vote.axi_path[i].ddr_ib_bw,
+					device_share_ratio);
 			}
 		}
 	}
@@ -780,7 +787,8 @@ static uint32_t cam_icp_mgr_calc_base_clk(uint32_t frame_cycles,
 	uint64_t base_clk;
 	uint64_t mul = 1000000000;
 
-	base_clk = (frame_cycles * mul) / budget;
+	base_clk = frame_cycles * mul;
+	do_div(base_clk, budget);
 
 	CAM_DBG(CAM_ICP, "budget = %lld fc = %d ib = %lld base_clk = %lld",
 		budget, frame_cycles,
@@ -1408,6 +1416,7 @@ static int cam_icp_update_cpas_vote(struct cam_icp_hw_mgr *hw_mgr,
 	struct cam_icp_hw_ctx_data *ctx_data)
 {
 	uint32_t id;
+	uint64_t temp;
 	int i = 0;
 	struct cam_hw_intf *ipe0_dev_intf = NULL;
 	struct cam_hw_intf *ipe1_dev_intf = NULL;
@@ -1463,16 +1472,17 @@ static int cam_icp_update_cpas_vote(struct cam_icp_hw_mgr *hw_mgr,
 			clk_update.axi_vote.axi_path[0].transac_type =
 				CAM_IPE_DEFAULT_AXI_TRANSAC;
 		}
-		clk_update.axi_vote.axi_path[0].camnoc_bw =
-			clk_info->uncompressed_bw / device_share_ratio;
-		clk_update.axi_vote.axi_path[0].mnoc_ab_bw =
-			clk_info->compressed_bw / device_share_ratio;
-		clk_update.axi_vote.axi_path[0].mnoc_ib_bw =
-			clk_info->compressed_bw / device_share_ratio;
-		clk_update.axi_vote.axi_path[0].ddr_ab_bw =
-			clk_info->compressed_bw / device_share_ratio;
-		clk_update.axi_vote.axi_path[0].ddr_ib_bw =
-			clk_info->compressed_bw / device_share_ratio;
+
+		temp = clk_info->uncompressed_bw;
+		do_div(temp, device_share_ratio);
+		clk_update.axi_vote.axi_path[0].camnoc_bw = temp;
+
+		temp = clk_info->compressed_bw;
+		do_div(temp, device_share_ratio);
+		clk_update.axi_vote.axi_path[0].mnoc_ab_bw = temp;
+		clk_update.axi_vote.axi_path[0].mnoc_ib_bw = temp;
+		clk_update.axi_vote.axi_path[0].ddr_ab_bw = temp;
+		clk_update.axi_vote.axi_path[0].ddr_ib_bw = temp;
 	} else {
 		clk_update.axi_vote.num_paths = clk_info->num_paths;
 		memcpy(&clk_update.axi_vote.axi_path[0],
@@ -1482,16 +1492,21 @@ static int cam_icp_update_cpas_vote(struct cam_icp_hw_mgr *hw_mgr,
 
 		if (device_share_ratio > 1) {
 			for (i = 0; i < clk_update.axi_vote.num_paths; i++) {
-				clk_update.axi_vote.axi_path[i].camnoc_bw /=
-					device_share_ratio;
-				clk_update.axi_vote.axi_path[i].mnoc_ab_bw /=
-					device_share_ratio;
-				clk_update.axi_vote.axi_path[i].mnoc_ib_bw /=
-					device_share_ratio;
-				clk_update.axi_vote.axi_path[i].ddr_ab_bw /=
-					device_share_ratio;
-				clk_update.axi_vote.axi_path[i].ddr_ib_bw /=
-					device_share_ratio;
+				do_div(
+				clk_update.axi_vote.axi_path[i].camnoc_bw,
+					device_share_ratio);
+				do_div(
+				clk_update.axi_vote.axi_path[i].mnoc_ab_bw,
+					device_share_ratio);
+				do_div(
+				clk_update.axi_vote.axi_path[i].mnoc_ib_bw,
+					device_share_ratio);
+				do_div(
+				clk_update.axi_vote.axi_path[i].ddr_ab_bw,
+					device_share_ratio);
+				do_div(
+				clk_update.axi_vote.axi_path[i].ddr_ib_bw,
+					device_share_ratio);
 			}
 		}
 	}
@@ -3877,7 +3892,7 @@ static int cam_icp_mgr_process_cmd_desc(struct cam_icp_hw_mgr *hw_mgr,
 	int rc = 0;
 	int i;
 	int num_cmd_buf = 0;
-	uint64_t addr;
+	dma_addr_t addr;
 	size_t len;
 	struct cam_cmd_buf_desc *cmd_desc = NULL;
 	uintptr_t cpu_addr = 0;
@@ -4020,7 +4035,7 @@ static int cam_icp_process_stream_settings(
 {
 	int rc = 0, i = 0;
 	size_t packet_size, map_cmd_size, len;
-	uint64_t iova;
+	dma_addr_t iova;
 	unsigned long rem_jiffies;
 	int timeout = 5000;
 	struct hfi_cmd_ipe_bps_map  *map_cmd;
@@ -4298,7 +4313,7 @@ static int cam_icp_process_generic_cmd_buffer(
 	struct cam_packet *packet,
 	struct cam_icp_hw_ctx_data *ctx_data,
 	int32_t index,
-	uint64_t *io_buf_addr)
+	dma_addr_t *io_buf_addr)
 {
 	int i, rc = 0;
 	struct cam_cmd_buf_desc *cmd_desc = NULL;
@@ -4394,7 +4409,7 @@ static void cam_icp_mgr_print_io_bufs(struct cam_packet *packet,
 	int32_t iommu_hdl, int32_t sec_mmu_hdl, uint32_t pf_buf_info,
 	bool *mem_found)
 {
-	uint64_t   iova_addr;
+	dma_addr_t   iova_addr;
 	size_t     src_buf_size;
 	int        i;
 	int        j;
@@ -5056,7 +5071,7 @@ static int cam_icp_mgr_acquire_hw(void *hw_mgr_priv, void *acquire_hw_args)
 {
 	int rc = 0, bitmap_size = 0;
 	uint32_t ctx_id = 0, dev_type;
-	uint64_t io_buf_addr;
+	dma_addr_t io_buf_addr;
 	size_t io_buf_size;
 	struct cam_icp_hw_mgr *hw_mgr = hw_mgr_priv;
 	struct cam_icp_hw_ctx_data *ctx_data = NULL;

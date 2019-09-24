@@ -375,6 +375,7 @@ int32_t cam_csiphy_config_dev(struct csiphy_device *csiphy_dev)
 	uint16_t     lane_mask = 0, i = 0, cfg_size = 0, temp = 0;
 	uint8_t      lane_cnt, lane_pos = 0;
 	uint16_t     settle_cnt = 0;
+	uint64_t     intermediate_var;
 	void __iomem *csiphybase;
 	struct csiphy_reg_t *csiphy_common_reg = NULL;
 	struct csiphy_reg_t (*reg_array)[MAX_SETTINGS_PER_LANE];
@@ -484,12 +485,16 @@ int32_t cam_csiphy_config_dev(struct csiphy_device *csiphy_dev)
 			continue;
 		}
 
-		settle_cnt = (csiphy_dev->csiphy_info.settle_time / 200000000);
+		intermediate_var = csiphy_dev->csiphy_info.settle_time;
+		do_div(intermediate_var, 200000000);
+		settle_cnt = intermediate_var;
 		if (csiphy_dev->csiphy_info.combo_mode == 1 &&
-			(lane_pos >= 3))
-			settle_cnt =
-			(csiphy_dev->csiphy_info.settle_time_combo_sensor /
-				200000000);
+			(lane_pos >= 3)) {
+			intermediate_var =
+			csiphy_dev->csiphy_info.settle_time_combo_sensor;
+			do_div(intermediate_var, 200000000);
+			settle_cnt = intermediate_var;
+		}
 		for (i = 0; i < cfg_size; i++) {
 			switch (reg_array[lane_pos][i].csiphy_param_type) {
 			case CSIPHY_LANE_ENABLE:
