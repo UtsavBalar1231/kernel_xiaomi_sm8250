@@ -979,6 +979,7 @@
 };
 
 #include "lagoon-gdsc.dtsi"
+#include "lagoon-usb.dtsi"
 
 &gcc_pcie_0_gdsc {
 	qcom,support-hw-trigger;
