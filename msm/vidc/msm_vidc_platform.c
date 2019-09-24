@@ -263,9 +263,6 @@ static struct msm_vidc_codec_capability lito_capabilities_v0[] = {
 	{CAP_HEVC_LEVEL, DEC, HEVC, V4L2_MPEG_VIDEO_HEVC_LEVEL_1,
 	                            V4L2_MPEG_VIDEO_HEVC_LEVEL_6_1, 1,
 	                            V4L2_MPEG_VIDEO_HEVC_LEVEL_5},
-	{CAP_VP9_LEVEL, DEC, VP9, V4L2_MPEG_VIDC_VIDEO_VP9_LEVEL_UNUSED,
-	                            V4L2_MPEG_VIDC_VIDEO_VP9_LEVEL_6, 1,
-	                            V4L2_MPEG_VIDC_VIDEO_VP9_LEVEL_6},
 };
 
 static struct msm_vidc_codec_capability lito_capabilities_v1[] = {
@@ -356,9 +353,6 @@ static struct msm_vidc_codec_capability lito_capabilities_v1[] = {
 	{CAP_HEVC_LEVEL, DEC, HEVC, V4L2_MPEG_VIDEO_HEVC_LEVEL_1,
 	                            V4L2_MPEG_VIDEO_HEVC_LEVEL_6_1, 1,
 	                            V4L2_MPEG_VIDEO_HEVC_LEVEL_5},
-	{CAP_VP9_LEVEL, DEC, VP9, V4L2_MPEG_VIDC_VIDEO_VP9_LEVEL_UNUSED,
-	                            V4L2_MPEG_VIDC_VIDEO_VP9_LEVEL_6, 1,
-	                            V4L2_MPEG_VIDC_VIDEO_VP9_LEVEL_6},
 };
 
 static struct msm_vidc_codec_capability bengal_capabilities[] = {
@@ -490,9 +484,6 @@ static struct msm_vidc_codec_capability kona_capabilities[] = {
 	{CAP_HEVC_LEVEL, DEC, HEVC, V4L2_MPEG_VIDEO_HEVC_LEVEL_1,
 	                            V4L2_MPEG_VIDEO_HEVC_LEVEL_6_1, 1,
 	                            V4L2_MPEG_VIDEO_HEVC_LEVEL_5},
-	{CAP_VP9_LEVEL, DEC, VP9, V4L2_MPEG_VIDC_VIDEO_VP9_LEVEL_UNUSED,
-	                            V4L2_MPEG_VIDC_VIDEO_VP9_LEVEL_6, 1,
-	                            V4L2_MPEG_VIDC_VIDEO_VP9_LEVEL_6},
 };
 
 /*
