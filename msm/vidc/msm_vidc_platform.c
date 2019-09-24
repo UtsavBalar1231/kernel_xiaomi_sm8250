@@ -22,8 +22,8 @@
 
 #define DDR_TYPE_LPDDR4 0x6
 #define DDR_TYPE_LPDDR4X 0x7
-#define DDR_TYPE_LPDDR4Y 0x8
-#define DDR_TYPE_LPDDR5 0x9
+#define DDR_TYPE_LPDDR5 0x8
+#define DDR_TYPE_LPDDR5X 0x9
 
 #define CODEC_ENTRY(n, p, vsp, vpp, lp) \
 {	\
@@ -1377,8 +1377,7 @@ void *vidc_get_drv_data(struct device *dev)
 
 		if (driver_data->ubwc_config &&
 			(ddr_type == DDR_TYPE_LPDDR4 ||
-			ddr_type == DDR_TYPE_LPDDR4X ||
-			ddr_type == DDR_TYPE_LPDDR4Y))
+			 ddr_type == DDR_TYPE_LPDDR4X))
 			driver_data->ubwc_config->highest_bank_bit = 0xf;
 	} else if (!strcmp(match->compatible, "qcom,lito-vidc")) {
 		rc = msm_vidc_read_efuse(driver_data, dev);
