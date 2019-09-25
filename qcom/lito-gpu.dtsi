@@ -106,8 +106,6 @@
 				"mem_iface_clk", "gmu_clk",
 				"gpu_cc_ahb", "smmu_vote";
 
-		qcom,isense-clk-on-level = <1>;
-
 		qcom,gpubw-dev = <&gpubw>;
 		qcom,bus-control;
 		qcom,msm-bus,name = "grp3d";
