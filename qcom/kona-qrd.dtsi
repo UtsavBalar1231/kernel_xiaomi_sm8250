@@ -312,7 +312,7 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "ok";
-	redriver@1c {
+	redriver: redriver@1c {
 		compatible = "onnn,redriver";
 		reg = <0x1c>;
 		extcon = <&pm8150b_pdphy>, <&pm8150b_pdphy>;
