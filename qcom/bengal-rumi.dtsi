@@ -83,3 +83,10 @@
 		dr_mode = "peripheral";
 	};
 };
+
+&rpmcc {
+	compatible = "qcom,dummycc";
+	clock-output-names = "rpmcc_clocks";
+	#clock-cells = <1>;
+	#reset-cells = <1>;
+};
