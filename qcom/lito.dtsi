@@ -3854,6 +3854,7 @@
 
 &npu_core_gdsc {
 	status = "ok";
+	qcom,retain-regs;
 };
 
 &mvsc_gdsc {
