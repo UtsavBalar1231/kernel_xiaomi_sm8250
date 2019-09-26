@@ -131,12 +131,12 @@
 		qcom,gpu-pwrlevel@5 {
 			reg = <5>;
 			qcom,gpu-freq = <305000000>;
-			qcom,bus-freq-ddr7 = <4>;
-			qcom,bus-min-ddr7 = <4>;
+			qcom,bus-freq-ddr7 = <3>;
+			qcom,bus-min-ddr7 = <2>;
 			qcom,bus-max-ddr7 = <9>;
 
-			qcom,bus-freq-ddr8 = <6>;
-			qcom,bus-min-ddr8 = <4>;
+			qcom,bus-freq-ddr8 = <3>;
+			qcom,bus-min-ddr8 = <2>;
 			qcom,bus-max-ddr8 = <9>;
 
 			qcom,acd-level = <0xa02b5ffd>;
