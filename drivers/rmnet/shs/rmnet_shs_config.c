@@ -41,10 +41,8 @@ static int rmnet_shs_dev_notify_cb(struct notifier_block *nb,
 
 static struct notifier_block rmnet_shs_dev_notifier __read_mostly = {
 	.notifier_call = rmnet_shs_dev_notify_cb,
+	.priority = 2,
 };
-
-static int rmnet_shs_dev_notify_cb(struct notifier_block *nb,
-				    unsigned long event, void *data);
 
 static int rmnet_vnd_total;
 /* Enable smart hashing capability upon call to initialize module*/
