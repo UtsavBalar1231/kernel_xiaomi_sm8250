@@ -171,6 +171,23 @@ struct cam_custom_resource {
 };
 
 /**
+ * struct cam_custom_acquire_hw_info - Custom acquire HW params
+ *
+ * @num_inputs           : Number of inputs
+ * @input_info_size      : Size of input info struct used
+ * @input_info_offset    : Offset of input info from start of data
+ * @reserved             : reserved
+ * @data                 : Start of data region
+ */
+struct cam_custom_acquire_hw_info {
+	uint32_t                num_inputs;
+	uint32_t                input_info_size;
+	uint32_t                input_info_offset;
+	uint32_t                reserved;
+	uint64_t                data;
+};
+
+/**
  * struct cam_custom_cmd_buf_type_1 - cmd buf type 1
  *
  * @custom_info:                custom info

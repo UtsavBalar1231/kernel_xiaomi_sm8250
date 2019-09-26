@@ -380,7 +380,7 @@ static int cam_custom_mgr_start_hw(void *hw_mgr_priv,
 		&ctx->res_list_custom_cid, list) {
 		rc = cam_custom_hw_mgr_init_hw_res(hw_mgr_res);
 		if (rc) {
-			CAM_ERR(CAM_ISP, "Can not INIT CID(id :%d)",
+			CAM_ERR(CAM_CUSTOM, "Can not INIT CID(id :%d)",
 				hw_mgr_res->res_id);
 			goto deinit_hw;
 		}
@@ -391,7 +391,7 @@ static int cam_custom_mgr_start_hw(void *hw_mgr_priv,
 		&ctx->res_list_custom_csid, list) {
 		rc = cam_custom_hw_mgr_init_hw_res(hw_mgr_res);
 		if (rc) {
-			CAM_ERR(CAM_ISP, "Can not INIT CSID(id :%d)",
+			CAM_ERR(CAM_CUSTOM, "Can not INIT CSID(id :%d)",
 				hw_mgr_res->res_id);
 			goto deinit_hw;
 		}
@@ -411,7 +411,7 @@ static int cam_custom_mgr_start_hw(void *hw_mgr_priv,
 		&ctx->res_list_custom_csid, list) {
 		rc = cam_custom_hw_mgr_start_hw_res(hw_mgr_res);
 		if (rc) {
-			CAM_ERR(CAM_ISP, "Can not START CSID(id :%d)",
+			CAM_ERR(CAM_CUSTOM, "Can not START CSID(id :%d)",
 				hw_mgr_res->res_id);
 			goto err;
 		}
@@ -422,7 +422,7 @@ static int cam_custom_mgr_start_hw(void *hw_mgr_priv,
 		&ctx->res_list_custom_cid, list) {
 		rc = cam_custom_hw_mgr_start_hw_res(hw_mgr_res);
 		if (rc) {
-			CAM_ERR(CAM_ISP, "Can not START CID(id :%d)",
+			CAM_ERR(CAM_CUSTOM, "Can not START CID(id :%d)",
 				hw_mgr_res->res_id);
 			goto err;
 		}
@@ -760,7 +760,7 @@ static int cam_custom_hw_mgr_release_hw_for_ctx(
 		&custom_ctx->res_list_custom_cid, list) {
 		rc = cam_custom_hw_mgr_free_hw_res(hw_mgr_res);
 		if (rc)
-			CAM_ERR(CAM_ISP, "Can not release CID(id :%d)",
+			CAM_ERR(CAM_CUSTOM, "Can not release CID(id :%d)",
 				hw_mgr_res->res_id);
 		cam_custom_hw_mgr_put_res(
 			&custom_ctx->free_res_list, &hw_mgr_res);
@@ -771,7 +771,7 @@ static int cam_custom_hw_mgr_release_hw_for_ctx(
 		&custom_ctx->res_list_custom_csid, list) {
 		rc = cam_custom_hw_mgr_free_hw_res(hw_mgr_res);
 		if (rc)
-			CAM_ERR(CAM_ISP, "Can not release CSID(id :%d)",
+			CAM_ERR(CAM_CUSTOM, "Can not release CSID(id :%d)",
 				hw_mgr_res->res_id);
 		cam_custom_hw_mgr_put_res(
 			&custom_ctx->free_res_list, &hw_mgr_res);
@@ -811,41 +811,82 @@ static int cam_custom_mgr_release_hw(void *hw_mgr_priv,
 	return rc;
 }
 
-static void cam_custom_hw_mgr_acquire_get_unified_dev_str(
-	struct cam_custom_in_port_info *in,
-	struct cam_isp_in_port_generic_info *gen_port_info)
+static int cam_custom_hw_mgr_acquire_get_unified_dev_str(
+	struct cam_custom_acquire_hw_info *acquire_hw_info,
+	uint32_t *input_size,
+	struct cam_isp_in_port_generic_info **gen_port_info)
 {
-	int i;
+	int32_t rc = 0, i;
+	uint32_t in_port_length = 0;
+	struct cam_custom_in_port_info *in = NULL;
+	struct cam_isp_in_port_generic_info *port_info = NULL;
 
-	gen_port_info->res_type        =  in->res_type +
+	in = (struct cam_custom_in_port_info *)
+		((uint8_t *)&acquire_hw_info->data +
+		 acquire_hw_info->input_info_offset + *input_size);
+
+	in_port_length = sizeof(struct cam_custom_in_port_info) +
+		(in->num_out_res - 1) *
+		sizeof(struct cam_custom_out_port_info);
+
+	*input_size += in_port_length;
+
+	if ((*input_size) > acquire_hw_info->input_info_size) {
+		CAM_ERR(CAM_CUSTOM, "Input is not proper");
+		rc = -EINVAL;
+		return rc;
+	}
+
+	port_info = kzalloc(
+		sizeof(struct cam_isp_in_port_generic_info), GFP_KERNEL);
+
+	if (!port_info)
+		return -ENOMEM;
+
+	port_info->res_type        =  in->res_type +
 		CAM_ISP_IFE_IN_RES_BASE - CAM_CUSTOM_IN_RES_BASE;
-	gen_port_info->lane_type       =  in->lane_type;
-	gen_port_info->lane_num        =  in->lane_num;
-	gen_port_info->lane_cfg        =  in->lane_cfg;
-	gen_port_info->vc[0]           =  in->vc[0];
-	gen_port_info->dt[0]           =  in->dt[0];
-	gen_port_info->num_valid_vc_dt =  in->num_valid_vc_dt;
-	gen_port_info->format          =  in->format;
-	gen_port_info->test_pattern    =  in->test_pattern;
-	gen_port_info->usage_type      =  in->usage_type;
-	gen_port_info->left_start      =  in->left_start;
-	gen_port_info->left_stop       =  in->left_stop;
-	gen_port_info->left_width      =  in->left_width;
-	gen_port_info->right_start     =  in->right_start;
-	gen_port_info->right_stop      =  in->right_stop;
-	gen_port_info->right_width     =  in->right_width;
-	gen_port_info->line_start      =  in->line_start;
-	gen_port_info->line_stop       =  in->line_stop;
-	gen_port_info->height          =  in->height;
-	gen_port_info->pixel_clk       =  in->pixel_clk;
-	gen_port_info->cust_node       =  1;
-	gen_port_info->num_out_res     =  in->num_out_res;
-	gen_port_info->num_bytes_out   =  in->num_bytes_out;
+	port_info->lane_type       =  in->lane_type;
+	port_info->lane_num        =  in->lane_num;
+	port_info->lane_cfg        =  in->lane_cfg;
+	port_info->vc[0]           =  in->vc[0];
+	port_info->dt[0]           =  in->dt[0];
+	port_info->num_valid_vc_dt =  in->num_valid_vc_dt;
+	port_info->format          =  in->format;
+	port_info->test_pattern    =  in->test_pattern;
+	port_info->usage_type      =  in->usage_type;
+	port_info->left_start      =  in->left_start;
+	port_info->left_stop       =  in->left_stop;
+	port_info->left_width      =  in->left_width;
+	port_info->right_start     =  in->right_start;
+	port_info->right_stop      =  in->right_stop;
+	port_info->right_width     =  in->right_width;
+	port_info->line_start      =  in->line_start;
+	port_info->line_stop       =  in->line_stop;
+	port_info->height          =  in->height;
+	port_info->pixel_clk       =  in->pixel_clk;
+	port_info->cust_node       =  1;
+	port_info->num_out_res     =  in->num_out_res;
+	port_info->num_bytes_out   =  in->num_bytes_out;
+
+	port_info->data = kcalloc(in->num_out_res,
+		sizeof(struct cam_isp_out_port_generic_info),
+		GFP_KERNEL);
+	if (port_info->data == NULL) {
+		rc = -ENOMEM;
+		goto release_port_mem;
+	}
 
 	for (i = 0; i < in->num_out_res; i++) {
-		gen_port_info->data[i].res_type     = in->data[i].res_type;
-		gen_port_info->data[i].format       = in->data[i].format;
+		port_info->data[i].res_type     = in->data[i].res_type;
+		port_info->data[i].format       = in->data[i].format;
 	}
+
+	*gen_port_info = port_info;
+	return 0;
+
+release_port_mem:
+	kfree(port_info);
+	return rc;
 }
 
 static int cam_custom_mgr_acquire_hw_for_ctx(
@@ -896,18 +937,16 @@ static int cam_custom_mgr_acquire_hw(
 	void *hw_mgr_priv,
 	void *acquire_hw_args)
 {
-	int rc = -1;
-	int32_t i;
-	uint32_t                             in_port_length;
+	int rc = -1, i;
+	uint32_t                             input_size = 0;
 	struct cam_custom_hw_mgr_ctx        *custom_ctx;
 	struct cam_custom_hw_mgr            *custom_hw_mgr;
-	struct cam_hw_acquire_args          *acquire_args =
-		(struct cam_hw_acquire_args *)  acquire_hw_args;
-	struct cam_custom_in_port_info      *in_port_info;
-	struct cam_custom_resource          *custom_rsrc;
+	struct cam_custom_acquire_hw_info   *acquire_hw_info = NULL;
 	struct cam_isp_in_port_generic_info *gen_port_info = NULL;
+	struct cam_hw_acquire_args          *acquire_args =
+		(struct cam_hw_acquire_args *)acquire_hw_args;
 
-	if (!hw_mgr_priv || !acquire_args || (acquire_args->num_acq <= 0)) {
+	if (!hw_mgr_priv || !acquire_args) {
 		CAM_ERR(CAM_CUSTOM, "Invalid params");
 		return -EINVAL;
 	}
@@ -923,127 +962,47 @@ static int cam_custom_mgr_acquire_hw(
 	}
 	mutex_unlock(&g_custom_hw_mgr.ctx_mutex);
 
-	/* Handle Acquire Here */
 	custom_ctx->hw_mgr = custom_hw_mgr;
 	custom_ctx->cb_priv = acquire_args->context_data;
 	custom_ctx->event_cb = acquire_args->event_cb;
 
-	custom_rsrc = kcalloc(acquire_args->num_acq,
-		sizeof(*custom_rsrc), GFP_KERNEL);
-	if (!custom_rsrc) {
-		rc = -ENOMEM;
-		goto free_ctx;
-	}
+	acquire_hw_info =
+		(struct cam_custom_acquire_hw_info *)acquire_args->acquire_info;
 
-	CAM_DBG(CAM_CUSTOM, "start copy %d resources from user",
-		acquire_args->num_acq);
+	for (i = 0; i < acquire_hw_info->num_inputs; i++) {
+		rc = cam_custom_hw_mgr_acquire_get_unified_dev_str(
+			acquire_hw_info, &input_size, &gen_port_info);
 
-	if (copy_from_user(custom_rsrc,
-		(void __user *)acquire_args->acquire_info,
-		((sizeof(*custom_rsrc)) * acquire_args->num_acq))) {
-		rc = -EFAULT;
-		goto free_ctx;
-	}
-
-	for (i = 0; i < acquire_args->num_acq; i++) {
-		if (custom_rsrc[i].resource_id != CAM_CUSTOM_RES_ID_PORT)
-			continue;
-
-		CAM_DBG(CAM_CUSTOM, "acquire no = %d total = %d", i,
-			acquire_args->num_acq);
-
-		CAM_DBG(CAM_CUSTOM,
-			"start copy from user handle %lld with len = %d",
-			custom_rsrc[i].res_hdl,
-			custom_rsrc[i].length);
-
-		in_port_length = sizeof(struct cam_custom_in_port_info);
-		if (in_port_length > custom_rsrc[i].length) {
-			CAM_ERR(CAM_CUSTOM, "buffer size is not enough");
-			rc = -EINVAL;
+		if (rc < 0) {
+			CAM_ERR(CAM_CUSTOM, "Failed in parsing: %d", rc);
 			goto free_res;
 		}
 
-		in_port_info = memdup_user(
-			u64_to_user_ptr(custom_rsrc[i].res_hdl),
-			custom_rsrc[i].length);
-
-		if (!IS_ERR(in_port_info)) {
-			if (in_port_info->num_out_res >
-				CAM_CUSTOM_HW_OUT_RES_MAX) {
-				CAM_ERR(CAM_CUSTOM, "too many output res %d",
-					in_port_info->num_out_res);
-				rc = -EINVAL;
-				kfree(in_port_info);
-				goto free_res;
-			}
-
-			in_port_length =
-				sizeof(struct cam_custom_in_port_info) +
-				(in_port_info->num_out_res - 1) *
-				sizeof(struct cam_custom_out_port_info);
-
-			if (in_port_length > custom_rsrc[i].length) {
-				CAM_ERR(CAM_CUSTOM,
-					"buffer size is not enough");
-				rc = -EINVAL;
-				kfree(in_port_info);
-				goto free_res;
-			}
-
-			gen_port_info = kzalloc(
-				sizeof(struct cam_isp_in_port_generic_info),
-				GFP_KERNEL);
-			if (gen_port_info == NULL) {
-				rc = -ENOMEM;
-				goto free_res;
-			}
-
-			gen_port_info->data = kcalloc(
-				sizeof(struct cam_isp_out_port_generic_info),
-				in_port_info->num_out_res, GFP_KERNEL);
-			if (gen_port_info->data == NULL) {
-				kfree(gen_port_info);
-				gen_port_info = NULL;
-				rc = -ENOMEM;
-				goto free_res;
-			}
-
-			cam_custom_hw_mgr_acquire_get_unified_dev_str(
-				in_port_info, gen_port_info);
-
-			rc = cam_custom_mgr_acquire_hw_for_ctx(custom_ctx,
-				gen_port_info, &acquire_args->acquired_hw_id[i],
-				acquire_args->acquired_hw_path[i]);
-
-			kfree(in_port_info);
-			if (gen_port_info != NULL) {
-				kfree(gen_port_info->data);
-				kfree(gen_port_info);
-				gen_port_info = NULL;
-			}
-
-			if (rc) {
-				CAM_ERR(CAM_CUSTOM, "can not acquire resource");
-				goto free_res;
-			}
-	} else {
-		CAM_ERR(CAM_CUSTOM,
-			"Copy from user failed with in_port = %pK",
-			in_port_info);
-			rc = -EFAULT;
-			goto free_res;
+		CAM_DBG(CAM_CUSTOM, "in_res_type %x", gen_port_info->res_type);
+		rc = cam_custom_mgr_acquire_hw_for_ctx(custom_ctx,
+			gen_port_info, &acquire_args->acquired_hw_id[i],
+			acquire_args->acquired_hw_path[i]);
+		if (rc) {
+			CAM_ERR(CAM_CUSTOM, "can not acquire resource");
+			goto free_mem;
 		}
+
+		kfree(gen_port_info->data);
+		kfree(gen_port_info);
+		gen_port_info = NULL;
 	}
 
 	custom_ctx->ctx_in_use = 1;
 	acquire_args->ctxt_to_hw_map = custom_ctx;
+	cam_custom_hw_mgr_put_ctx(&custom_hw_mgr->used_ctx_list, &custom_ctx);
 	CAM_DBG(CAM_CUSTOM, "Exit...(success)");
 	return 0;
 
+free_mem:
+	kfree(gen_port_info->data);
+	kfree(gen_port_info);
 free_res:
 	cam_custom_hw_mgr_release_hw_for_ctx(custom_ctx);
-free_ctx:
 	cam_custom_hw_mgr_put_ctx(&custom_hw_mgr->free_ctx_list, &custom_ctx);
 err:
 	CAM_DBG(CAM_CUSTOM, "Exit...(rc=%d)", rc);

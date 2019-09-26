@@ -67,6 +67,7 @@ struct cam_custom_dev_ctx_req {
  *                   custom HW will invoke CRM cb at those event.
  * @active_req_cnt: Counter for the active request
  * @frame_id: Frame id tracking for the custom context
+ * @hw_acquired: Flag to indicate if HW is acquired for this context
  * @req_base: common request structure
  * @req_custom: custom request structure
  *
@@ -80,6 +81,7 @@ struct cam_custom_context {
 	uint32_t                      subscribe_event;
 	uint32_t                      active_req_cnt;
 	int64_t                       frame_id;
+	bool                          hw_acquired;
 	struct cam_ctx_request        req_base[CAM_CTX_REQ_MAX];
 	struct cam_custom_dev_ctx_req req_custom[CAM_CTX_REQ_MAX];
 };

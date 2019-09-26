@@ -19,7 +19,7 @@
 #include "cam_custom_context.h"
 #include "cam_common_util.h"
 
-static const char custom_dev_name[] = "custom hw";
+static const char custom_dev_name[] = "cam-custom";
 
 static int __cam_custom_ctx_handle_irq_in_activated(
 	void *context, uint32_t evt_id, void *evt_data);
@@ -275,6 +275,67 @@ static int __cam_custom_stop_dev_in_activated(struct cam_context *ctx,
 	return 0;
 }
 
+static int __cam_custom_ctx_release_hw_in_top_state(
+	struct cam_context *ctx, void *cmd)
+{
+	int rc = 0;
+	struct cam_hw_release_args        rel_arg;
+	struct cam_req_mgr_flush_request  flush_req;
+	struct cam_custom_context        *custom_ctx =
+		(struct cam_custom_context *) ctx->ctx_priv;
+
+	if (custom_ctx->hw_ctx) {
+		rel_arg.ctxt_to_hw_map = custom_ctx->hw_ctx;
+		rc = ctx->hw_mgr_intf->hw_release(ctx->hw_mgr_intf->hw_mgr_priv,
+			&rel_arg);
+		custom_ctx->hw_ctx = NULL;
+		if (rc)
+			CAM_ERR(CAM_CUSTOM,
+				"Failed to release HW for ctx:%u", ctx->ctx_id);
+	} else {
+		CAM_ERR(CAM_CUSTOM, "No HW resources acquired for this ctx");
+	}
+
+	ctx->last_flush_req = 0;
+	custom_ctx->frame_id = 0;
+	custom_ctx->active_req_cnt = 0;
+	custom_ctx->hw_acquired = false;
+	custom_ctx->init_received = false;
+
+	/* check for active requests as well */
+	flush_req.type = CAM_REQ_MGR_FLUSH_TYPE_ALL;
+	flush_req.link_hdl = ctx->link_hdl;
+	flush_req.dev_hdl = ctx->dev_hdl;
+
+	CAM_DBG(CAM_CUSTOM, "try to flush pending list");
+	spin_lock_bh(&ctx->lock);
+	rc = __cam_custom_ctx_flush_req(ctx, &ctx->pending_req_list,
+		&flush_req);
+	spin_unlock_bh(&ctx->lock);
+	ctx->state = CAM_CTX_ACQUIRED;
+
+	CAM_DBG(CAM_CUSTOM, "Release HW success[%u] next state %d",
+		ctx->ctx_id, ctx->state);
+
+	return rc;
+}
+
+static int __cam_custom_ctx_release_hw_in_activated_state(
+	struct cam_context *ctx, void *cmd)
+{
+	int rc = 0;
+
+	rc = __cam_custom_stop_dev_in_activated(ctx, NULL);
+	if (rc)
+		CAM_ERR(CAM_CUSTOM, "Stop device failed rc=%d", rc);
+
+	rc = __cam_custom_ctx_release_hw_in_top_state(ctx, cmd);
+	if (rc)
+		CAM_ERR(CAM_CUSTOM, "Release hw failed rc=%d", rc);
+
+	return rc;
+}
+
 static int __cam_custom_release_dev_in_acquired(struct cam_context *ctx,
 	struct cam_release_dev_cmd *cmd)
 {
@@ -283,14 +344,16 @@ static int __cam_custom_release_dev_in_acquired(struct cam_context *ctx,
 		(struct cam_custom_context *) ctx->ctx_priv;
 	struct cam_req_mgr_flush_request flush_req;
 
-	rc = cam_context_release_dev_to_hw(ctx, cmd);
-	if (rc)
-		CAM_ERR(CAM_CUSTOM, "Unable to release device");
+	if (cmd && ctx_custom->hw_ctx) {
+		CAM_ERR(CAM_CUSTOM, "releasing hw");
+		__cam_custom_ctx_release_hw_in_top_state(ctx, NULL);
+	}
 
 	ctx->ctx_crm_intf = NULL;
 	ctx->last_flush_req = 0;
 	ctx_custom->frame_id = 0;
 	ctx_custom->active_req_cnt = 0;
+	ctx_custom->hw_acquired = false;
 	ctx_custom->init_received = false;
 
 	if (!list_empty(&ctx->active_req_list))
@@ -381,33 +444,128 @@ end:
 	return rc;
 }
 
-static int __cam_custom_ctx_acquire_dev_in_available(struct cam_context *ctx,
-	struct cam_acquire_dev_cmd *cmd)
+static int __cam_custom_ctx_acquire_hw_v1(
+	struct cam_context *ctx, void *args)
 {
-	int rc;
-	struct cam_custom_context *custom_ctx;
+	int rc = 0;
+	struct cam_acquire_hw_cmd_v1 *cmd =
+		(struct cam_acquire_hw_cmd_v1 *)args;
+	struct cam_hw_acquire_args         param;
+	struct cam_custom_context         *ctx_custom =
+		(struct cam_custom_context *)  ctx->ctx_priv;
+	struct cam_custom_acquire_hw_info *acquire_hw_info = NULL;
 
-	custom_ctx = (struct cam_custom_context *) ctx->ctx_priv;
-
-	if (cmd->num_resources > CAM_CUSTOM_DEV_CTX_RES_MAX) {
-		CAM_ERR(CAM_CUSTOM, "Too much resources in the acquire");
-		rc = -ENOMEM;
-		return rc;
+	if (!ctx->hw_mgr_intf) {
+		CAM_ERR(CAM_CUSTOM, "HW interface is not ready");
+		rc = -EFAULT;
+		goto end;
 	}
 
-	if (cmd->handle_type != 1)	{
+	CAM_DBG(CAM_CUSTOM,
+		"session_hdl 0x%x, hdl type %d, res %lld",
+		cmd->session_handle, cmd->handle_type, cmd->resource_hdl);
+
+	if (cmd->handle_type != 1)  {
 		CAM_ERR(CAM_CUSTOM, "Only user pointer is supported");
 		rc = -EINVAL;
+		goto end;
+	}
+
+	if (cmd->data_size < sizeof(*acquire_hw_info)) {
+		CAM_ERR(CAM_CUSTOM, "data_size is not a valid value");
+		goto end;
+	}
+
+	acquire_hw_info = kzalloc(cmd->data_size, GFP_KERNEL);
+	if (!acquire_hw_info) {
+		rc = -ENOMEM;
+		goto end;
+	}
+
+	CAM_DBG(CAM_CUSTOM, "start copy resources from user");
+
+	if (copy_from_user(acquire_hw_info, (void __user *)cmd->resource_hdl,
+		cmd->data_size)) {
+		rc = -EFAULT;
+		goto free_res;
+	}
+
+	memset(&param, 0, sizeof(param));
+	param.context_data = ctx;
+	param.event_cb = ctx->irq_cb_intf;
+	param.acquire_info_size = cmd->data_size;
+	param.acquire_info = (uint64_t) acquire_hw_info;
+
+	/* call HW manager to reserve the resource */
+	rc = ctx->hw_mgr_intf->hw_acquire(ctx->hw_mgr_intf->hw_mgr_priv,
+		&param);
+	if (rc != 0) {
+		CAM_ERR(CAM_CUSTOM, "Acquire HW failed");
+		goto free_res;
+	}
+
+	ctx_custom->hw_ctx = param.ctxt_to_hw_map;
+	ctx_custom->hw_acquired = true;
+	ctx->ctxt_to_hw_map = param.ctxt_to_hw_map;
+
+	CAM_DBG(CAM_CUSTOM,
+		"Acquire HW success on session_hdl 0x%xs for ctx_id %u",
+		ctx->session_hdl, ctx->ctx_id);
+
+	kfree(acquire_hw_info);
+	return rc;
+
+free_res:
+	kfree(acquire_hw_info);
+end:
+	return rc;
+}
+
+static int __cam_custom_ctx_acquire_dev_in_available(
+	struct cam_context *ctx, struct cam_acquire_dev_cmd *cmd)
+{
+	int rc = 0;
+	struct cam_create_dev_hdl  req_hdl_param;
+
+	if (!ctx->hw_mgr_intf) {
+		CAM_ERR(CAM_CUSTOM, "HW interface is not ready");
+		rc = -EFAULT;
 		return rc;
 	}
 
-	rc = cam_context_acquire_dev_to_hw(ctx, cmd);
-	if (!rc) {
-		ctx->state = CAM_CTX_ACQUIRED;
-		custom_ctx->hw_ctx = ctx->ctxt_to_hw_map;
+	CAM_DBG(CAM_CUSTOM,
+		"session_hdl 0x%x, num_resources %d, hdl type %d, res %lld",
+		cmd->session_handle, cmd->num_resources,
+		cmd->handle_type, cmd->resource_hdl);
+
+	if (cmd->num_resources != CAM_API_COMPAT_CONSTANT) {
+		CAM_ERR(CAM_CUSTOM, "Invalid num_resources 0x%x",
+			cmd->num_resources);
+		return -EINVAL;
 	}
 
-	CAM_DBG(CAM_CUSTOM, "Acquire done %d", ctx->ctx_id);
+	req_hdl_param.session_hdl = cmd->session_handle;
+	req_hdl_param.v4l2_sub_dev_flag = 0;
+	req_hdl_param.media_entity_flag = 0;
+	req_hdl_param.ops = ctx->crm_ctx_intf;
+	req_hdl_param.priv = ctx;
+
+	CAM_DBG(CAM_CUSTOM, "get device handle from bridge");
+	ctx->dev_hdl = cam_create_device_hdl(&req_hdl_param);
+	if (ctx->dev_hdl <= 0) {
+		rc = -EFAULT;
+		CAM_ERR(CAM_CUSTOM, "Can not create device handle");
+		return rc;
+	}
+
+	cmd->dev_handle = ctx->dev_hdl;
+	ctx->session_hdl = cmd->session_handle;
+	ctx->state = CAM_CTX_ACQUIRED;
+
+	CAM_DBG(CAM_CUSTOM,
+		"Acquire dev success on session_hdl 0x%x for ctx %u",
+		cmd->session_handle, ctx->ctx_id);
+
 	return rc;
 }
 
@@ -642,6 +800,13 @@ static int __cam_custom_ctx_config_dev_in_acquired(struct cam_context *ctx,
 	struct cam_config_dev_cmd *cmd)
 {
 	int rc = 0;
+	struct cam_custom_context        *ctx_custom =
+		(struct cam_custom_context *) ctx->ctx_priv;
+
+	if (!ctx_custom->hw_acquired) {
+		CAM_ERR(CAM_CUSTOM, "HW not acquired, reject config packet");
+		return -EAGAIN;
+	}
 
 	rc = __cam_custom_ctx_config_dev(ctx, cmd);
 
@@ -826,6 +991,27 @@ static int __cam_custom_ctx_handle_irq_in_activated(void *context,
 	return rc;
 }
 
+static int __cam_custom_ctx_acquire_hw_in_acquired(
+	struct cam_context *ctx, void *args)
+{
+	int rc = -EINVAL;
+	uint32_t api_version;
+
+	if (!ctx || !args) {
+		CAM_ERR(CAM_CUSTOM, "Invalid input pointer");
+		return rc;
+	}
+
+	api_version = *((uint32_t *)args);
+	if (api_version == 1)
+		rc = __cam_custom_ctx_acquire_hw_v1(ctx, args);
+	else
+		CAM_ERR(CAM_CUSTOM, "Unsupported api version %d",
+			api_version);
+
+	return rc;
+}
+
 /* top state machine */
 static struct cam_ctx_ops
 	cam_custom_dev_ctx_top_state_machine[CAM_CTX_STATE_MAX] = {
@@ -847,8 +1033,10 @@ static struct cam_ctx_ops
 	/* Acquired */
 	{
 		.ioctl_ops = {
+			.acquire_hw = __cam_custom_ctx_acquire_hw_in_acquired,
 			.release_dev = __cam_custom_release_dev_in_acquired,
 			.config_dev = __cam_custom_ctx_config_dev_in_acquired,
+			.release_hw = __cam_custom_ctx_release_hw_in_top_state,
 		},
 		.crm_ops = {
 			.link = __cam_custom_ctx_link_in_acquired,
@@ -866,6 +1054,7 @@ static struct cam_ctx_ops
 			.start_dev = __cam_custom_ctx_start_dev_in_ready,
 			.release_dev = __cam_custom_release_dev_in_acquired,
 			.config_dev = __cam_custom_ctx_config_dev,
+			.release_hw = __cam_custom_ctx_release_hw_in_top_state,
 		},
 		.crm_ops = {
 			.unlink = __cam_custom_ctx_unlink_in_ready,
@@ -883,6 +1072,8 @@ static struct cam_ctx_ops
 			.release_dev =
 				__cam_custom_ctx_release_dev_in_activated,
 			.config_dev = __cam_custom_ctx_config_dev,
+			.release_hw =
+				__cam_custom_ctx_release_hw_in_activated_state,
 		},
 		.crm_ops = {
 			.unlink = __cam_custom_ctx_unlink_in_activated,
