@@ -709,6 +709,18 @@ void rmnet_perf_opt_insert_pkt_in_flow(
 	if (pkt_info->trans_proto == IPPROTO_TCP)
 		flow_node->next_seq += payload_len;
 }
+void
+rmnet_perf_free_hash_table()
+{
+	int i;
+	struct rmnet_perf_opt_flow_node *flow_node;
+	struct hlist_node *tmp;
+
+	hash_for_each_safe(rmnet_perf_opt_fht, i, tmp, flow_node, list) {
+		hash_del(&flow_node->list);
+	}
+
+}
 
 /* rmnet_perf_opt_ingress() - Core business logic of optimization framework
  * @pkt_info: characteristics of the current packet
