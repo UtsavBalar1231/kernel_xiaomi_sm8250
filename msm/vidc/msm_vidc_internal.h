@@ -53,6 +53,7 @@
 #define DCVS_FTB_WINDOW 16
 /* Superframe can have maximum of 32 frames */
 #define VIDC_SUPERFRAME_MAX 32
+#define COLOR_RANGE_UNSPECIFIED (-1)
 
 #define V4L2_EVENT_VIDC_BASE  10
 #define INPUT_MPLANE V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE
@@ -568,6 +569,7 @@ struct msm_vidc_inst {
 	bool all_intra;
 	bool is_perf_eligible_session;
 	u32 max_filled_len;
+	int full_range;
 };
 
 extern struct msm_vidc_drv *vidc_driver;

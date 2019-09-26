@@ -1861,6 +1861,9 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 			inst->clk_data.frame_rate = 1 << 16;
 		}
 		break;
+	case V4L2_CID_MPEG_VIDC_VIDEO_FULL_RANGE:
+		inst->full_range = ctrl->val;
+		break;
 	case V4L2_CID_MPEG_VIDC_CAPTURE_FRAME_RATE:
 	case V4L2_CID_MPEG_VIDC_VIDEO_HEVC_MAX_HIER_CODING_LAYER:
 	case V4L2_CID_MPEG_VIDEO_HEVC_HIER_CODING_TYPE:
@@ -1880,7 +1883,6 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 	case V4L2_CID_MPEG_VIDEO_HEVC_HIER_CODING_L4_QP:
 	case V4L2_CID_MPEG_VIDEO_HEVC_HIER_CODING_L5_QP:
 	case V4L2_CID_MPEG_VIDC_VIDEO_COLOR_SPACE:
-	case V4L2_CID_MPEG_VIDC_VIDEO_FULL_RANGE:
 	case V4L2_CID_MPEG_VIDC_VIDEO_TRANSFER_CHARS:
 	case V4L2_CID_MPEG_VIDC_VIDEO_MATRIX_COEFFS:
 	case V4L2_CID_MPEG_VIDC_VIDEO_VPE_CSC:
@@ -3622,16 +3624,24 @@ int msm_venc_set_video_signal_info(struct msm_vidc_inst *inst)
 	ctrl_fr = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_FULL_RANGE);
 	ctrl_tr = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_TRANSFER_CHARS);
 	ctrl_mc = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_MATRIX_COEFFS);
-	if (ctrl_cs->val == MSM_VIDC_RESERVED_1)
-		return 0;
 
-	signal_info.enable = true;
-	signal_info.video_format = MSM_VIDC_NTSC;
-	signal_info.video_full_range = ctrl_fr->val;
-	signal_info.color_description = 1;
-	signal_info.color_primaries = ctrl_cs->val;
-	signal_info.transfer_characteristics = ctrl_tr->val;
-	signal_info.matrix_coeffs = ctrl_mc->val;
+	memset(&signal_info, 0, sizeof(struct hfi_video_signal_metadata));
+	if (inst->full_range == COLOR_RANGE_UNSPECIFIED &&
+		ctrl_cs->val == MSM_VIDC_RESERVED_1)
+		signal_info.enable = false;
+	else
+		signal_info.enable = true;
+
+	if (signal_info.enable) {
+		signal_info.video_format = MSM_VIDC_NTSC;
+		signal_info.video_full_range = ctrl_fr->val;
+		if (ctrl_cs->val != MSM_VIDC_RESERVED_1) {
+			signal_info.color_description = 1;
+			signal_info.color_primaries = ctrl_cs->val;
+			signal_info.transfer_characteristics = ctrl_tr->val;
+			signal_info.matrix_coeffs = ctrl_mc->val;
+		}
+	}
 
 	s_vpr_h(inst->sid, "%s: %d %d %d %d\n", __func__,
 		signal_info.color_primaries, signal_info.video_full_range,
