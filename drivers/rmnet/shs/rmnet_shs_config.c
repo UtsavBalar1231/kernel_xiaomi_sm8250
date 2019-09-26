@@ -48,13 +48,7 @@ static int rmnet_vnd_total;
 /* Enable smart hashing capability upon call to initialize module*/
 int __init rmnet_shs_module_init(void)
 {
-
-	if (unlikely(rmnet_shs_debug))
-		pr_info("%s(): Initializing rmnet SHS module\n", __func__);
-
-	if (!rmnet_shs_skb_entry)
-		RCU_INIT_POINTER(rmnet_shs_skb_entry, rmnet_shs_assign);
-
+	pr_info("%s(): Starting rmnet SHS module\n", __func__);
 	trace_rmnet_shs_high(RMNET_SHS_MODULE, RMNET_SHS_MODULE_INIT,
 			    0xDEF, 0xDEF, 0xDEF, 0xDEF, NULL, NULL);
 	return register_netdevice_notifier(&rmnet_shs_dev_notifier);
@@ -63,21 +57,10 @@ int __init rmnet_shs_module_init(void)
 /* Remove smart hashing capability upon call to initialize module */
 void __exit rmnet_shs_module_exit(void)
 {
-	RCU_INIT_POINTER(rmnet_shs_skb_entry, NULL);
-
-	if (rmnet_shs_cfg.rmnet_shs_init_complete) {
-		qmi_rmnet_ps_ind_deregister(rmnet_shs_cfg.port,
-					    &rmnet_shs_cfg.rmnet_idl_ind_cb);
-		rmnet_shs_cancel_table();
-		rmnet_shs_rx_wq_exit();
-		rmnet_shs_wq_exit();
-		rmnet_shs_exit();
-	}
-	unregister_netdevice_notifier(&rmnet_shs_dev_notifier);
-	if (unlikely(rmnet_shs_debug))
-		pr_info("Exiting rmnet_shs module");
 	trace_rmnet_shs_high(RMNET_SHS_MODULE, RMNET_SHS_MODULE_EXIT,
 			    0xDEF, 0xDEF, 0xDEF, 0xDEF, NULL, NULL);
+	unregister_netdevice_notifier(&rmnet_shs_dev_notifier);
+	pr_info("%s(): Exiting rmnet SHS module\n", __func__);
 }
 
 static int rmnet_shs_dev_notify_cb(struct notifier_block *nb,
@@ -85,7 +68,6 @@ static int rmnet_shs_dev_notify_cb(struct notifier_block *nb,
 {
 
 	struct net_device *dev = netdev_notifier_info_to_dev(data);
-	static struct net_device *phy_dev = NULL;
 	struct rmnet_priv *priv;
 	struct rmnet_port *port;
 
@@ -108,6 +90,7 @@ static int rmnet_shs_dev_notify_cb(struct notifier_block *nb,
 		    (!strcmp(dev->name, "rmnet_ipa0") ||
 		    !strcmp(dev->name, "rmnet_mhi0"))) &&
 		    rmnet_shs_cfg.rmnet_shs_init_complete) {
+			pr_info("rmnet_shs deinit %s going down ", dev->name);
 			RCU_INIT_POINTER(rmnet_shs_skb_entry, NULL);
 			qmi_rmnet_ps_ind_deregister(rmnet_shs_cfg.port,
 					    &rmnet_shs_cfg.rmnet_idl_ind_cb);
@@ -123,10 +106,6 @@ static int rmnet_shs_dev_notify_cb(struct notifier_block *nb,
 		break;
 
 	case NETDEV_UP:
-		if (strncmp(dev->name, "rmnet_ipa0", 10) == 0 ||
-		    strncmp(dev->name, "rmnet_mhi0", 10) == 0)
-			phy_dev = dev;
-
 
 		if (strncmp(dev->name, "rmnet_data", 10) == 0){
 			rmnet_vnd_total++;
@@ -137,15 +116,20 @@ static int rmnet_shs_dev_notify_cb(struct notifier_block *nb,
 			 * NULL dereferencing
 			 */
 
-			if (phy_dev && !rmnet_shs_cfg.rmnet_shs_init_complete) {
-				rmnet_shs_init(phy_dev, dev);
-				rmnet_shs_wq_init(phy_dev);
+			if (!rmnet_shs_cfg.rmnet_shs_init_complete) {
+				pr_info("rmnet_shs initializing %s", dev->name);
+				priv = netdev_priv(dev);
+				port = rmnet_get_port(priv->real_dev);
+				if (!port) {
+					pr_err("rmnet_shs: invalid rmnet_port");
+					break;
+				}
+				rmnet_shs_init(priv->real_dev, dev);
+				rmnet_shs_wq_init(priv->real_dev);
 				rmnet_shs_rx_wq_init();
 				rmnet_shs_cfg.is_timer_init = 1;
 				rmnet_shs_cfg.dl_mrk_ind_cb.priority =
 				   RMNET_SHS;
-				priv = netdev_priv(dev);
-				port = rmnet_get_port(priv->real_dev);
 				if (port->data_format & RMNET_INGRESS_FORMAT_DL_MARKER_V2) {
 					rmnet_shs_cfg.dl_mrk_ind_cb.dl_hdr_handler_v2 =
 						&rmnet_shs_dl_hdr_handler_v2;
