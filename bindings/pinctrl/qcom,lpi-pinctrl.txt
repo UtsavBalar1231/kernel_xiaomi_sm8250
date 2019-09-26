@@ -49,20 +49,11 @@ Following properties are for LPI GPIO controller device main node.
 		    position in bits in the slew register base for slew
 		    settings.
 
-- #qcom,tx_data3_enabled:
+- #qcom,lpi-slew-base-tbl:
 	Usage: optional
-	Value type: <u32>
-	Definition: Check if gpio is present for swr tx3 line.
-
-- #qcom,tx_data3_addr:
-	Usage: optional
-	Value type: <u32>
-	Definition: Used to define address for tx data3 slew rate gpio.
-
-- #qcom,swr_tx_data3_val:
-	Usage: optional
-	Value type: <u32>
-	Definition: Used to enable tx data3 slew rate if present.
+	Value type: <u32-array>
+	Definition: Table points to physical address for corresponding
+		    slew registers.
 
 Please refer to ../gpio/gpio.txt for general description of GPIO bindings.
 
