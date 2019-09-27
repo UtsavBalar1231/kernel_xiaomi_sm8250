@@ -140,8 +140,9 @@ static int cam_ife_mgr_handle_reg_dump(struct cam_ife_hw_mgr_ctx *ctx,
 
 	if (!num_reg_dump_buf || !reg_dump_buf_desc) {
 		CAM_DBG(CAM_ISP,
-			"Invalid args for reg dump req_id: [%llu] ctx idx: [%u] meta_type: [%u]",
-			ctx->applied_req_id, ctx->ctx_index, meta_type);
+			"Invalid args for reg dump req_id: [%llu] ctx idx: [%u] meta_type: [%u] num_reg_dump_buf: [%u] reg_dump_buf_desc: [%pK]",
+			ctx->applied_req_id, ctx->ctx_index, meta_type,
+			num_reg_dump_buf, reg_dump_buf_desc);
 		return rc;
 	}
 
@@ -5582,9 +5583,9 @@ static int cam_ife_mgr_prepare_hw_update(void *hw_mgr_priv,
 	if (((prepare->packet->header.op_code + 1) & 0xF) ==
 		CAM_ISP_PACKET_INIT_DEV) {
 		prepare_hw_data->packet_opcode_type = CAM_ISP_PACKET_INIT_DEV;
-		ctx->num_reg_dump_buf = prepare->num_reg_dump_buf;
-		if ((ctx->num_reg_dump_buf) && (ctx->num_reg_dump_buf <
+		if ((prepare->num_reg_dump_buf) && (prepare->num_reg_dump_buf <
 			CAM_REG_DUMP_MAX_BUF_ENTRIES)) {
+			ctx->num_reg_dump_buf = prepare->num_reg_dump_buf;
 			memcpy(ctx->reg_dump_buf_desc,
 				prepare->reg_dump_buf_desc,
 				sizeof(struct cam_cmd_buf_desc) *
