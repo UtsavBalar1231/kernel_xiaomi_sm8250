@@ -1462,6 +1462,10 @@ static void msm_vidc_comm_update_ctrl_limits(struct msm_vidc_inst *inst)
 	msm_vidc_comm_update_ctrl(inst,
 			V4L2_CID_MPEG_VIDEO_HEVC_LEVEL,
 			&inst->capability.cap[CAP_HEVC_LEVEL]);
+	/* Default value of level is unknown, but since we are not using unknown value
+	   while updating level controls, we need to reinitialize inst->level to HFI
+	   unknown value */
+	inst->level = HFI_LEVEL_UNKNOWN;
 }
 
 static void handle_session_init_done(enum hal_command_response cmd, void *data)
