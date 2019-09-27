@@ -857,6 +857,7 @@
 		reg = <0x6840000 0x1000>;
 		reg-names = "tpdm-base";
 
+		status = "disabled";
 		coresight-name = "coresight-tpdm-vsense";
 
 		clocks = <&clock_aop QDSS_CLK>;
