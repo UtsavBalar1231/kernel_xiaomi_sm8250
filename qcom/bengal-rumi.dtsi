@@ -30,6 +30,45 @@
 	};
 };
 
+&qupv3_se1_i2c {
+	status = "disabled";
+};
+
+&rpm_bus {
+	rpm-standalone;
+	/delete-node/ rpm-regulator-smpa3;
+	/delete-node/ rpm-regulator-smpa5;
+	/delete-node/ rpm-regulator-smpa6;
+	/delete-node/ rpm-regulator-smpa7;
+	/delete-node/ rpm-regulator-smpa8;
+	/delete-node/ rpm-regulator-ldoa1;
+	/delete-node/ rpm-regulator-ldoa2;
+	/delete-node/ rpm-regulator-ldoa3;
+	/delete-node/ rpm-regulator-ldoa4;
+	/delete-node/ rpm-regulator-ldoa5;
+	/delete-node/ rpm-regulator-ldoa6;
+	/delete-node/ rpm-regulator-ldoa7;
+	/delete-node/ rpm-regulator-ldoa8;
+	/delete-node/ rpm-regulator-ldoa9;
+	/delete-node/ rpm-regulator-ldoa10;
+	/delete-node/ rpm-regulator-ldoa11;
+	/delete-node/ rpm-regulator-ldoa12;
+	/delete-node/ rpm-regulator-ldoa13;
+	/delete-node/ rpm-regulator-ldoa14;
+	/delete-node/ rpm-regulator-ldoa15;
+	/delete-node/ rpm-regulator-ldoa16;
+	/delete-node/ rpm-regulator-ldoa17;
+	/delete-node/ rpm-regulator-ldoa18;
+	/delete-node/ rpm-regulator-ldoa19;
+	/delete-node/ rpm-regulator-ldoa20;
+	/delete-node/ rpm-regulator-ldoa21;
+	/delete-node/ rpm-regulator-ldoa22;
+	/delete-node/ rpm-regulator-ldoa23;
+	/delete-node/ rpm-regulator-ldoa24;
+};
+
+ #include "bengal-stub-regulator.dtsi"
+
 &sdhc_1 {
 	vdd-supply = <&L24A>;
 	qcom,vdd-voltage-level = <2960000 2960000>;
