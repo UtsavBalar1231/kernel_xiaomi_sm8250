@@ -1471,6 +1471,19 @@ static int cam_convert_hw_idx_to_ife_hw_num(int hw_idx)
 	return rc;
 }
 
+static int cam_convert_rdi_out_res_id_to_src(int res_id)
+{
+	if (res_id == CAM_ISP_IFE_OUT_RES_RDI_0)
+		return CAM_ISP_HW_VFE_IN_RDI0;
+	else if (res_id == CAM_ISP_IFE_OUT_RES_RDI_1)
+		return CAM_ISP_HW_VFE_IN_RDI1;
+	else if (res_id == CAM_ISP_IFE_OUT_RES_RDI_2)
+		return CAM_ISP_HW_VFE_IN_RDI2;
+	else if (res_id == CAM_ISP_IFE_OUT_RES_RDI_3)
+		return CAM_ISP_HW_VFE_IN_RDI3;
+	return CAM_ISP_HW_VFE_IN_MAX;
+}
+
 static int cam_convert_res_id_to_hw_path(int res_id)
 {
 	if (res_id == CAM_ISP_HW_VFE_IN_LCR)
@@ -3842,6 +3855,11 @@ static int cam_ife_mgr_start_hw(void *hw_mgr_priv, void *start_hw_args)
 	struct cam_isp_resource_node     *rsrc_node = NULL;
 	uint32_t                          i, camif_debug;
 	bool                              res_rdi_context_set = false;
+	uint32_t                          primary_rdi_src_res;
+	uint32_t                          primary_rdi_out_res;
+
+	primary_rdi_src_res = CAM_ISP_HW_VFE_IN_MAX;
+	primary_rdi_out_res = CAM_ISP_IFE_OUT_RES_MAX;
 
 	if (!hw_mgr_priv || !start_isp) {
 		CAM_ERR(CAM_ISP, "Invalid arguments");
@@ -3941,6 +3959,22 @@ start_only:
 		ctx->ctx_index);
 	/* start the IFE out devices */
 	for (i = 0; i < CAM_IFE_HW_OUT_RES_MAX; i++) {
+		hw_mgr_res = &ctx->res_list_ife_out[i];
+		switch (hw_mgr_res->res_id) {
+		case CAM_ISP_IFE_OUT_RES_RDI_0:
+		case CAM_ISP_IFE_OUT_RES_RDI_1:
+		case CAM_ISP_IFE_OUT_RES_RDI_2:
+		case CAM_ISP_IFE_OUT_RES_RDI_3:
+			if (!res_rdi_context_set && ctx->is_rdi_only_context) {
+				hw_mgr_res->hw_res[0]->rdi_only_ctx =
+					ctx->is_rdi_only_context;
+				res_rdi_context_set = true;
+				primary_rdi_out_res = hw_mgr_res->res_id;
+			}
+			break;
+		default:
+			break;
+		}
 		rc = cam_ife_hw_mgr_start_hw_res(
 			&ctx->res_list_ife_out[i], ctx);
 		if (rc) {
@@ -3962,23 +3996,17 @@ start_only:
 		}
 	}
 
+	if (primary_rdi_out_res < CAM_ISP_IFE_OUT_RES_MAX)
+		primary_rdi_src_res =
+			cam_convert_rdi_out_res_id_to_src(primary_rdi_out_res);
+
 	CAM_DBG(CAM_ISP, "START IFE SRC ... in ctx id:%d",
 		ctx->ctx_index);
 	/* Start the IFE mux in devices */
 	list_for_each_entry(hw_mgr_res, &ctx->res_list_ife_src, list) {
-		switch (hw_mgr_res->res_id) {
-		case CAM_ISP_HW_VFE_IN_RDI0:
-		case CAM_ISP_HW_VFE_IN_RDI1:
-		case CAM_ISP_HW_VFE_IN_RDI2:
-		case CAM_ISP_HW_VFE_IN_RDI3:
-			if (!res_rdi_context_set) {
-				hw_mgr_res->hw_res[0]->rdi_only_ctx =
+		if (primary_rdi_src_res == hw_mgr_res->res_id) {
+			hw_mgr_res->hw_res[0]->rdi_only_ctx =
 				ctx->is_rdi_only_context;
-				res_rdi_context_set = true;
-			}
-			break;
-		default:
-			break;
 		}
 
 		rc = cam_ife_hw_mgr_start_hw_res(hw_mgr_res, ctx);
