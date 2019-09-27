@@ -248,7 +248,11 @@ static struct msm_vidc_codec_capability lito_capabilities_v0[] = {
 	{CAP_HEIC_IMAGE_FRAME_WIDTH, ENC, HEVC, 512, 8192, 1, 8192},
 	{CAP_HEIC_IMAGE_FRAME_HEIGHT, ENC, HEVC, 512, 8192, 1, 8192},
 
-	/* Level for AVC and HEVC encoder specific */
+	/* Level for AVC and HEVC encoder specific.
+	   Default for levels is UNKNOWN value. But if we use unknown
+	   value here to set as default, max value needs to be set to
+	   unknown as well, which creates a problem of allowing client
+	   to set higher level than supported */
 	{CAP_H264_LEVEL, ENC, H264, V4L2_MPEG_VIDEO_H264_LEVEL_1_0,
 	                            V4L2_MPEG_VIDEO_H264_LEVEL_6_0, 1,
 	                            V4L2_MPEG_VIDEO_H264_LEVEL_6_0},
@@ -256,7 +260,7 @@ static struct msm_vidc_codec_capability lito_capabilities_v0[] = {
 	                            V4L2_MPEG_VIDEO_HEVC_LEVEL_6, 1,
 	                            V4L2_MPEG_VIDEO_HEVC_LEVEL_6},
 
-	/* Level for AVC, HEVC and VP9 decoder specific */
+	/* Level for AVC and HEVC decoder specific */
 	{CAP_H264_LEVEL, DEC, H264, V4L2_MPEG_VIDEO_H264_LEVEL_1_0,
 	                            V4L2_MPEG_VIDEO_H264_LEVEL_6_1, 1,
 	                            V4L2_MPEG_VIDEO_H264_LEVEL_5_0},
@@ -338,7 +342,11 @@ static struct msm_vidc_codec_capability lito_capabilities_v1[] = {
 	{CAP_HEIC_IMAGE_FRAME_WIDTH, ENC, HEVC, 512, 8192, 1, 8192},
 	{CAP_HEIC_IMAGE_FRAME_HEIGHT, ENC, HEVC, 512, 8192, 1, 8192},
 
-	/* Level for AVC and HEVC encoder specific */
+	/* Level for AVC and HEVC encoder specific.
+	   Default for levels is UNKNOWN value. But if we use unknown
+	   value here to set as default, max value needs to be set to
+	   unknown as well, which creates a problem of allowing client
+	   to set higher level than supported */
 	{CAP_H264_LEVEL, ENC, H264, V4L2_MPEG_VIDEO_H264_LEVEL_1_0,
 	                            V4L2_MPEG_VIDEO_H264_LEVEL_6_0, 1,
 	                            V4L2_MPEG_VIDEO_H264_LEVEL_6_0},
@@ -346,7 +354,7 @@ static struct msm_vidc_codec_capability lito_capabilities_v1[] = {
 	                            V4L2_MPEG_VIDEO_HEVC_LEVEL_6, 1,
 	                            V4L2_MPEG_VIDEO_HEVC_LEVEL_6},
 
-	/* Level for AVC, HEVC and VP9 decoder specific */
+	/* Level for AVC and HEVC decoder specific */
 	{CAP_H264_LEVEL, DEC, H264, V4L2_MPEG_VIDEO_H264_LEVEL_1_0,
 	                            V4L2_MPEG_VIDEO_H264_LEVEL_6_1, 1,
 	                            V4L2_MPEG_VIDEO_H264_LEVEL_5_0},
@@ -469,7 +477,11 @@ static struct msm_vidc_codec_capability kona_capabilities[] = {
 	{CAP_HEIC_IMAGE_FRAME_WIDTH, ENC, HEVC, 512, 16384, 1, 16384},
 	{CAP_HEIC_IMAGE_FRAME_HEIGHT, ENC, HEVC, 512, 16384, 1, 16384},
 
-	/* Level for AVC and HEVC encoder specific */
+	/* Level for AVC and HEVC encoder specific.
+	   Default for levels is UNKNOWN value. But if we use unknown
+	   value here to set as default, max value needs to be set to
+	   unknown as well, which creates a problem of allowing client
+	   to set higher level than supported */
 	{CAP_H264_LEVEL, ENC, H264, V4L2_MPEG_VIDEO_H264_LEVEL_1_0,
 	                            V4L2_MPEG_VIDEO_H264_LEVEL_6_0, 1,
 	                            V4L2_MPEG_VIDEO_H264_LEVEL_6_0},
@@ -477,7 +489,7 @@ static struct msm_vidc_codec_capability kona_capabilities[] = {
 	                            V4L2_MPEG_VIDEO_HEVC_LEVEL_6, 1,
 	                            V4L2_MPEG_VIDEO_HEVC_LEVEL_6},
 
-	/* Level for AVC, HEVC and VP9 decoder specific */
+	/* Level for AVC and HEVC decoder specific */
 	{CAP_H264_LEVEL, DEC, H264, V4L2_MPEG_VIDEO_H264_LEVEL_1_0,
 	                            V4L2_MPEG_VIDEO_H264_LEVEL_6_1, 1,
 	                            V4L2_MPEG_VIDEO_H264_LEVEL_5_0},
