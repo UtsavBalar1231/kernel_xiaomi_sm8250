@@ -9,3 +9,7 @@
 &redriver {
 	status = "disabled";
 };
+
+&dwc1 {
+	dr_mode = "host";
+};
