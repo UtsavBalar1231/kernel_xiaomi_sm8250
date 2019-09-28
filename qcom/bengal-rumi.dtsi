@@ -28,6 +28,23 @@
 	wdog: qcom,wdt@f017000 {
 		status = "disabled";
 	};
+
+	bi_tcxo: bi_tcxo {
+		compatible = "fixed-factor-clock";
+		clocks = <&xo_board>;
+		clock-mult = <1>;
+		clock-div = <1>;
+		#clock-cells = <0>;
+	};
+
+	bi_tcxo_ao: bi_tcxo_ao {
+		compatible = "fixed-factor-clock";
+		clocks = <&xo_board>;
+		clock-mult = <1>;
+		clock-div = <1>;
+		#clock-cells = <0>;
+	};
+
 };
 
 &qupv3_se1_i2c {
