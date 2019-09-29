@@ -4026,6 +4026,8 @@
 		qcom,firmware-name = "spss";
 		memory-region = <&pil_spss_mem>;
 		qcom,spss-scsr-bits = <24 25>;
+		/* use extra size for IAR memory */
+		qcom,extra-size = <4096>;
 
 		mboxes = <&qmp_aop 0>;
 		mbox-names = "spss-pil";
