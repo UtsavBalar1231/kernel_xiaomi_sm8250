@@ -605,13 +605,17 @@
 				04 02 02 04 00 0f 13];
 			qcom,display-topology = <2 2 2>;
 			qcom,default-topology-index = <0>;
+			qcom,partial-update-enabled = "single_roi";
+			qcom,panel-roi-alignment = <720 8 8 8 1440 8>;
 		};
 
 		timing@4 { /* WQHD 120FPS CMD */
 			qcom,mdss-dsi-panel-phy-timings = [00 13 05 04 1f 1e 05
 				 05 03 02 04 00 12 14];
-			 qcom,display-topology = <2 2 2>;
-			 qcom,default-topology-index = <0>;
+			qcom,display-topology = <2 2 2>;
+			qcom,default-topology-index = <0>;
+			qcom,partial-update-enabled = "single_roi";
+			qcom,panel-roi-alignment = <720 8 8 8 1440 8>;
 		};
 
 		timing@5 { /* WQHD 120FPS VID */
@@ -626,6 +630,8 @@
 				04 02 02 04 00 0e 13];
 			qcom,display-topology = <2 2 2>;
 			qcom,default-topology-index = <0>;
+			qcom,partial-update-enabled = "single_roi";
+			qcom,panel-roi-alignment = <540 8 8 8 1080 8>;
 		};
 
 		timing@7 { /* FHD 90FPS CMD */
@@ -633,6 +639,8 @@
 				02 01 02 04 00 0c 12];
 			qcom,display-topology = <2 2 2>;
 			qcom,default-topology-index = <0>;
+			qcom,partial-update-enabled = "single_roi";
+			qcom,panel-roi-alignment = <540 8 8 8 1080 8>;
 		};
 	};
 };
@@ -684,6 +692,8 @@
 				02 00 02 04 00 0a 12];
 			qcom,display-topology = <2 2 2>;
 			qcom,default-topology-index = <0>;
+			qcom,partial-update-enabled = "single_roi";
+			qcom,panel-roi-alignment = <540 8 8 8 1080 8>;
 		};
 
 		timing@1 {
@@ -691,6 +701,8 @@
 				04 02 02 04 00 0e 13];
 			qcom,display-topology = <2 2 2>;
 			qcom,default-topology-index = <0>;
+			qcom,partial-update-enabled = "single_roi";
+			qcom,panel-roi-alignment = <540 8 8 8 1080 8>;
 		};
 
 		timing@2 {
@@ -698,6 +710,8 @@
 				02 01 02 04 00 0c 12];
 			qcom,display-topology = <2 2 2>;
 			qcom,default-topology-index = <0>;
+			qcom,partial-update-enabled = "single_roi";
+			qcom,panel-roi-alignment = <540 8 8 8 1080 8>;
 		};
 	};
 };
