@@ -669,32 +669,24 @@ static void rmnet_shs_wq_refresh_all_cpu_stats(void)
 
 void rmnet_shs_wq_update_cpu_rx_tbl(struct rmnet_shs_wq_hstat_s *hstat_p)
 {
-	struct rps_map *map;
-	struct rmnet_shs_skbn_s *node_p;
-	int cpu_num;
-	u16 map_idx;
-	u64 skb_diff, byte_diff;
 	struct rmnet_shs_wq_rx_flow_s *tbl_p = &rmnet_shs_rx_flow_tbl;
+	struct rmnet_shs_skbn_s *node_p;
+	u64 skb_diff, byte_diff;
+	u16 cpu_num;
 
 	node_p = hstat_p->node;
 
 	if (hstat_p->inactive_duration > 0)
 		return;
 
-	rcu_read_lock();
-	map = rcu_dereference(node_p->dev->_rx->rps_map);
+	cpu_num = node_p->map_cpu;
 
-	if (!map || node_p->map_index > map->len || !map->len) {
-		rcu_read_unlock();
+	if (cpu_num >= MAX_CPUS) {
+		rmnet_shs_crit_err[RMNET_SHS_INVALID_CPU_ERR]++;
 		return;
 	}
-
-	map_idx = node_p->map_index;
-	cpu_num = map->cpus[map_idx];
-
 	skb_diff = hstat_p->rx_skb - hstat_p->last_rx_skb;
 	byte_diff = hstat_p->rx_bytes - hstat_p->last_rx_bytes;
-	rcu_read_unlock();
 
 	if (hstat_p->is_new_flow) {
 		rmnet_shs_wq_cpu_list_add(hstat_p,
