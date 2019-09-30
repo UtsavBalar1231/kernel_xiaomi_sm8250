@@ -1588,6 +1588,7 @@ static inline u32 calculate_enc_scratch1_size(struct msm_vidc_inst *inst,
 	u32 frame_num_lcu, linebuf_meta_recon_uv, topline_bufsize_fe_1stg_sao;
 	u32 output_mv_bufsize = 0, temp_scratch_mv_bufsize = 0;
 	u32 size, bit_depth, num_LCUMB;
+	u32 vpss_lineBufferSize_1 = 0;
 
 	width_lcu_num = ((width)+(lcu_size)-1) / (lcu_size);
 	height_lcu_num = ((height)+(lcu_size)-1) / (lcu_size);
@@ -1695,7 +1696,9 @@ static inline u32 calculate_enc_scratch1_size(struct msm_vidc_inst *inst,
 	override_buffer_size = ALIGN(override_buffer_size,
 		VENUS_DMA_ALIGNMENT) * 2;
 	ir_buffer_size = (((frame_num_lcu << 1) + 7) & (~7)) * 3;
-	vpss_line_buf = ((((max(width_coded, height_coded) + 3) >> 2) << 5) + 256) * 16;
+	vpss_lineBufferSize_1 = ((((8192) >> 2) << 5) * num_vpp_pipes) + 64;
+	vpss_line_buf = (((((max(width_coded, height_coded) + 3) >> 2) << 5) + 256) * 16) +
+		vpss_lineBufferSize_1;
 	topline_bufsize_fe_1stg_sao = (16 * (width_coded >> 5));
 	topline_bufsize_fe_1stg_sao = ALIGN(topline_bufsize_fe_1stg_sao,
 		VENUS_DMA_ALIGNMENT);
