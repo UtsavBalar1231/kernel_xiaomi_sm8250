@@ -637,6 +637,7 @@ static int __cam_isp_ctx_handle_buf_done_for_request(
 				ctx->ctx_id);
 		} else {
 			list_add(&req->list, &ctx->pending_req_list);
+			ctx_isp->bubble_frame_cnt = 0;
 			CAM_DBG(CAM_REQ,
 				"Move active request %lld to pending list(cnt = %d) [bubble recovery], ctx %u",
 				req->request_id, ctx_isp->active_req_cnt,
@@ -788,6 +789,7 @@ static int __cam_isp_ctx_notify_sof_in_activated_state(
 	struct cam_req_mgr_trigger_notify  notify;
 	struct cam_context *ctx = ctx_isp->base;
 	struct cam_ctx_request  *req;
+	struct cam_isp_ctx_req  *req_isp;
 	uint64_t  request_id  = 0;
 
 	/*
@@ -797,6 +799,48 @@ static int __cam_isp_ctx_notify_sof_in_activated_state(
 	 * In this case, we need to skip the current notification. This
 	 * helps the state machine to catch up the delay.
 	 */
+
+	if (atomic_read(&ctx_isp->process_bubble)) {
+
+		if (list_empty(&ctx->active_req_list)) {
+			CAM_ERR(CAM_ISP,
+				"No available active req in bubble");
+			atomic_set(&ctx_isp->process_bubble, 0);
+			rc = -EINVAL;
+			return rc;
+		}
+
+		spin_lock_bh(&ctx->lock);
+		req = list_first_entry(&ctx->active_req_list,
+			struct cam_ctx_request, list);
+		req_isp = (struct cam_isp_ctx_req *) req->req_priv;
+		spin_unlock_bh(&ctx->lock);
+
+		if (ctx_isp->bubble_frame_cnt >= 1 &&
+			req_isp->bubble_detected) {
+			req_isp->num_acked = 0;
+			ctx_isp->bubble_frame_cnt = 0;
+			req_isp->bubble_detected = false;
+			spin_lock_bh(&ctx->lock);
+			list_del_init(&req->list);
+			list_add(&req->list, &ctx->pending_req_list);
+			spin_unlock_bh(&ctx->lock);
+			atomic_set(&ctx_isp->process_bubble, 0);
+			ctx_isp->active_req_cnt--;
+			CAM_DBG(CAM_REQ,
+				"Move active req: %lld to pending list(cnt = %d) [bubble re-apply], ctx %u",
+				req->request_id,
+				ctx_isp->active_req_cnt, ctx->ctx_id);
+		} else if (req_isp->bubble_detected) {
+			ctx_isp->bubble_frame_cnt++;
+			CAM_DBG(CAM_ISP,
+				"Waiting on bufdone for bubble req: %lld, since frame_cnt = %lld",
+				req->request_id, ctx_isp->bubble_frame_cnt);
+		} else
+			CAM_DBG(CAM_ISP, "Delayed bufdone for req: %lld",
+				req->request_id);
+	}
+
 	if (ctx->ctx_crm_intf && ctx->ctx_crm_intf->notify_trigger &&
 		ctx_isp->active_req_cnt <= 2) {
 		if (ctx_isp->subscribe_event & CAM_TRIGGER_POINT_SOF) {
@@ -2148,6 +2192,7 @@ static int __cam_isp_ctx_flush_req_in_top_state(
 	}
 
 end:
+	ctx_isp->bubble_frame_cnt = 0;
 	atomic_set(&ctx_isp->process_bubble, 0);
 	return rc;
 }
@@ -3648,6 +3693,7 @@ static int __cam_isp_ctx_start_dev_in_ready(struct cam_context *ctx,
 	ctx_isp->frame_id = 0;
 	ctx_isp->active_req_cnt = 0;
 	ctx_isp->reported_req_id = 0;
+	ctx_isp->bubble_frame_cnt = 0;
 	ctx_isp->substate_activated = ctx_isp->rdi_only_context ?
 		CAM_ISP_CTX_ACTIVATED_APPLIED :
 		(req_isp->num_fence_map_out) ? CAM_ISP_CTX_ACTIVATED_EPOCH :
@@ -3791,6 +3837,7 @@ static int __cam_isp_ctx_stop_dev_in_activated_unlock(
 	ctx_isp->frame_id = 0;
 	ctx_isp->active_req_cnt = 0;
 	ctx_isp->reported_req_id = 0;
+	ctx_isp->bubble_frame_cnt = 0;
 	atomic_set(&ctx_isp->process_bubble, 0);
 	atomic64_set(&ctx_isp->state_monitor_head, -1);
 
@@ -4243,6 +4290,7 @@ int cam_isp_context_init(struct cam_isp_context *ctx,
 	ctx->frame_id = 0;
 	ctx->active_req_cnt = 0;
 	ctx->reported_req_id = 0;
+	ctx->bubble_frame_cnt = 0;
 	ctx->hw_ctx = NULL;
 	ctx->substate_activated = CAM_ISP_CTX_ACTIVATED_SOF;
 	ctx->substate_machine = cam_isp_ctx_activated_state_machine;
