@@ -469,26 +469,27 @@ static int msm_dcvs_scale_clocks(struct msm_vidc_inst *inst,
 	 * Limits :
 	 * min_threshold : Buffers required for reference by FW.
 	 * nom_threshold : Midpoint of Min and Max thresholds
-	 * max_threshold : Total - Client extra buffers, allocated
-	 *				   for it's smooth flow.
-
+	 * max_threshold : Min Threshold + DCVS extra buffers, allocated
+	 *				   for smooth flow.
 	 * 1) When buffers outside FW are reaching client's extra buffers,
 	 *    FW is slow and will impact pipeline, Increase clock.
-	 * 2) When pending buffers with FW are same as FW requested,
+	 * 2) When pending buffers with FW are less than FW requested,
 	 *    pipeline has cushion to absorb FW slowness, Decrease clocks.
-	 * 3) When buffers are equally distributed between FW and Client
-	 *    switch to NOM as this is the ideal steady state.
+	 * 3) When DCVS has engaged(Inc or Dec) and pending buffers with FW
+	 *    transitions past the nom_threshold, switch to calculated load.
+	 *    This smoothens the clock transitions.
 	 * 4) Otherwise maintain previous Load config.
 	 */
 
-	if (dcvs->dcvs_window < DCVS_DEC_EXTRA_OUTPUT_BUFFERS ||
-		bufs_with_fw == dcvs->nom_threshold) {
-		dcvs->dcvs_flags = 0;
-	} else if (bufs_with_fw >= dcvs->max_threshold) {
-		dcvs->dcvs_flags |= MSM_VIDC_DCVS_INCR;
+	if (bufs_with_fw >= dcvs->max_threshold) {
+		dcvs->dcvs_flags = MSM_VIDC_DCVS_INCR;
 	} else if (bufs_with_fw < dcvs->min_threshold) {
-		dcvs->dcvs_flags |= MSM_VIDC_DCVS_DECR;
-	}
+		dcvs->dcvs_flags = MSM_VIDC_DCVS_DECR;
+	} else if ((dcvs->dcvs_flags & MSM_VIDC_DCVS_DECR &&
+		    bufs_with_fw >= dcvs->nom_threshold) ||
+		   (dcvs->dcvs_flags & MSM_VIDC_DCVS_INCR &&
+		    bufs_with_fw <= dcvs->nom_threshold))
+		dcvs->dcvs_flags = 0;
 
 	s_vpr_p(inst->sid, "DCVS: bufs_with_fw %d Th[%d %d %d] Flag %#x\n",
 		bufs_with_fw, dcvs->min_threshold,
@@ -1107,11 +1108,12 @@ void msm_clock_data_reset(struct msm_vidc_inst *inst)
 
 	dcvs->min_threshold = fmt->count_min;
 	dcvs->max_threshold =
-		max(fmt->count_min,
-			(fmt->count_actual - DCVS_DEC_EXTRA_OUTPUT_BUFFERS));
+		min((fmt->count_min + DCVS_DEC_EXTRA_OUTPUT_BUFFERS),
+			fmt->count_actual);
 
 	dcvs->dcvs_window =
-		dcvs->max_threshold - dcvs->min_threshold;
+		dcvs->max_threshold < dcvs->min_threshold ? 0 :
+			dcvs->max_threshold - dcvs->min_threshold;
 	dcvs->nom_threshold = dcvs->min_threshold +
 				(dcvs->dcvs_window ?
 				 (dcvs->dcvs_window / 2) : 0);
