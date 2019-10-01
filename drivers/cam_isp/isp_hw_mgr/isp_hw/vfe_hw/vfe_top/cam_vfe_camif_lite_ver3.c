@@ -762,72 +762,57 @@ static int cam_vfe_camif_lite_process_cmd(
 	return rc;
 }
 
-static void cam_vfe_camif_lite_overflow_debug_info(uint32_t *status,
+static void cam_vfe_camif_lite_overflow_debug_info(
 	struct cam_vfe_mux_camif_lite_data *camif_lite_priv)
 {
-	uint32_t bus_overflow_status = 0;
 	struct cam_vfe_soc_private *soc_private = NULL;
 	uint32_t val0, val1, val2, val3;
 
-	bus_overflow_status = status[CAM_IFE_IRQ_BUS_OVERFLOW_STATUS];
 	soc_private = camif_lite_priv->soc_info->soc_private;
 
-	if (bus_overflow_status) {
-		cam_cpas_reg_read(soc_private->cpas_handle,
-			CAM_CPAS_REG_CAMNOC, 0xA20, true, &val0);
-		cam_cpas_reg_read(soc_private->cpas_handle,
-			CAM_CPAS_REG_CAMNOC, 0x1420, true, &val1);
-		cam_cpas_reg_read(soc_private->cpas_handle,
-			CAM_CPAS_REG_CAMNOC, 0x1A20, true, &val2);
-		CAM_INFO(CAM_ISP,
-			"CAMNOC REG ife_linear: 0x%X ife_rdi_wr: 0x%X ife_ubwc_stats: 0x%X",
-			val0, val1, val2);
+	val0 = cam_io_r(camif_lite_priv->mem_base +
+		camif_lite_priv->common_reg->top_debug_0);
+	val1 = cam_io_r(camif_lite_priv->mem_base +
+		camif_lite_priv->common_reg->top_debug_1);
+	val2 = cam_io_r(camif_lite_priv->mem_base +
+		camif_lite_priv->common_reg->top_debug_2);
+	val3 = cam_io_r(camif_lite_priv->mem_base +
+		camif_lite_priv->common_reg->top_debug_3);
+	CAM_INFO(CAM_ISP,
+		"status_0: 0x%X status_1: 0x%X status_2: 0x%X status_3: 0x%X",
+		val0, val1, val2, val3);
 
-	} else {
-		val0 = cam_io_r(camif_lite_priv->mem_base +
-			camif_lite_priv->common_reg->top_debug_0);
-		val1 = cam_io_r(camif_lite_priv->mem_base +
-			camif_lite_priv->common_reg->top_debug_1);
-		val2 = cam_io_r(camif_lite_priv->mem_base +
-			camif_lite_priv->common_reg->top_debug_2);
-		val3 = cam_io_r(camif_lite_priv->mem_base +
-			camif_lite_priv->common_reg->top_debug_3);
-		CAM_INFO(CAM_ISP,
-			"status_0: 0x%X status_1: 0x%X status_2: 0x%X status_3: 0x%X",
-			val0, val1, val2, val3);
+	if (soc_private->is_ife_lite)
+		return;
 
-		if (soc_private->is_ife_lite)
-			return;
-
-		val0 = cam_io_r(camif_lite_priv->mem_base +
-			camif_lite_priv->common_reg->top_debug_4);
-		val1 = cam_io_r(camif_lite_priv->mem_base +
-			camif_lite_priv->common_reg->top_debug_5);
-		val2 = cam_io_r(camif_lite_priv->mem_base +
-			camif_lite_priv->common_reg->top_debug_6);
-		val3 = cam_io_r(camif_lite_priv->mem_base +
-			camif_lite_priv->common_reg->top_debug_7);
-		CAM_INFO(CAM_ISP,
-			"status_4: 0x%X status_5: 0x%X status_6: 0x%X status_7: 0x%X",
-			val0, val1, val2, val3);
-		val0 = cam_io_r(camif_lite_priv->mem_base +
-			camif_lite_priv->common_reg->top_debug_8);
-		val1 = cam_io_r(camif_lite_priv->mem_base +
-			camif_lite_priv->common_reg->top_debug_9);
-		val2 = cam_io_r(camif_lite_priv->mem_base +
-			camif_lite_priv->common_reg->top_debug_10);
-		val3 = cam_io_r(camif_lite_priv->mem_base +
-			camif_lite_priv->common_reg->top_debug_11);
-		CAM_INFO(CAM_ISP,
-			"status_8: 0x%X status_9: 0x%X status_10: 0x%X status_11: 0x%X",
-			val0, val1, val2, val3);
-		val0 = cam_io_r(camif_lite_priv->mem_base +
-			camif_lite_priv->common_reg->top_debug_12);
-		val1 = cam_io_r(camif_lite_priv->mem_base +
-			camif_lite_priv->common_reg->top_debug_13);
-		CAM_INFO(CAM_ISP, "status_12: 0x%X status_13: 0x%X",
-			val0, val1);
-	}
+	val0 = cam_io_r(camif_lite_priv->mem_base +
+		camif_lite_priv->common_reg->top_debug_4);
+	val1 = cam_io_r(camif_lite_priv->mem_base +
+		camif_lite_priv->common_reg->top_debug_5);
+	val2 = cam_io_r(camif_lite_priv->mem_base +
+		camif_lite_priv->common_reg->top_debug_6);
+	val3 = cam_io_r(camif_lite_priv->mem_base +
+		camif_lite_priv->common_reg->top_debug_7);
+	CAM_INFO(CAM_ISP,
+		"status_4: 0x%X status_5: 0x%X status_6: 0x%X status_7: 0x%X",
+		val0, val1, val2, val3);
+	val0 = cam_io_r(camif_lite_priv->mem_base +
+		camif_lite_priv->common_reg->top_debug_8);
+	val1 = cam_io_r(camif_lite_priv->mem_base +
+		camif_lite_priv->common_reg->top_debug_9);
+	val2 = cam_io_r(camif_lite_priv->mem_base +
+		camif_lite_priv->common_reg->top_debug_10);
+	val3 = cam_io_r(camif_lite_priv->mem_base +
+		camif_lite_priv->common_reg->top_debug_11);
+	CAM_INFO(CAM_ISP,
+		"status_8: 0x%X status_9: 0x%X status_10: 0x%X status_11: 0x%X",
+		val0, val1, val2, val3);
+	val0 = cam_io_r(camif_lite_priv->mem_base +
+		camif_lite_priv->common_reg->top_debug_12);
+	val1 = cam_io_r(camif_lite_priv->mem_base +
+		camif_lite_priv->common_reg->top_debug_13);
+	CAM_INFO(CAM_ISP, "status_12: 0x%X status_13: 0x%X",
+		val0, val1);
 }
 
 static void cam_vfe_camif_lite_print_status(uint32_t *status,
@@ -836,6 +821,7 @@ static void cam_vfe_camif_lite_print_status(uint32_t *status,
 	uint32_t violation_mask = 0x3F00, violation_status = 0;
 	uint32_t bus_overflow_status = 0, status_0 = 0, status_2 = 0;
 	struct cam_vfe_soc_private *soc_private = NULL;
+	uint32_t val0, val1, val2;
 
 	if (!status) {
 		CAM_ERR(CAM_ISP, "Invalid params");
@@ -893,13 +879,21 @@ static void cam_vfe_camif_lite_print_status(uint32_t *status,
 		if (bus_overflow_status & 0x02000000)
 			CAM_INFO(CAM_ISP, "RDI2 BUS OVERFLOW");
 
-		return;
+		cam_cpas_reg_read(soc_private->cpas_handle,
+			CAM_CPAS_REG_CAMNOC, 0xA20, true, &val0);
+		cam_cpas_reg_read(soc_private->cpas_handle,
+			CAM_CPAS_REG_CAMNOC, 0x1420, true, &val1);
+		cam_cpas_reg_read(soc_private->cpas_handle,
+			CAM_CPAS_REG_CAMNOC, 0x1A20, true, &val2);
+		CAM_INFO(CAM_ISP,
+			"CAMNOC REG ife_linear: 0x%X ife_rdi_wr: 0x%X ife_ubwc_stats: 0x%X",
+			val0, val1, val2);
 	}
 
 	if (err_type == CAM_VFE_IRQ_STATUS_OVERFLOW && !bus_overflow_status) {
 		CAM_INFO(CAM_ISP, "PDLIB / LCR Module hang");
 		/* print debug registers */
-		cam_vfe_camif_lite_overflow_debug_info(status, camif_lite_priv);
+		cam_vfe_camif_lite_overflow_debug_info(camif_lite_priv);
 		return;
 	}
 
@@ -979,12 +973,22 @@ ife_lite:
 
 		if (bus_overflow_status & 0x08)
 			CAM_INFO(CAM_ISP, "RDI3 BUS OVERFLOW");
+
+		cam_cpas_reg_read(soc_private->cpas_handle,
+			CAM_CPAS_REG_CAMNOC, 0xA20, true, &val0);
+		cam_cpas_reg_read(soc_private->cpas_handle,
+			CAM_CPAS_REG_CAMNOC, 0x1420, true, &val1);
+		cam_cpas_reg_read(soc_private->cpas_handle,
+			CAM_CPAS_REG_CAMNOC, 0x1A20, true, &val2);
+		CAM_INFO(CAM_ISP,
+			"CAMNOC REG ife_linear: 0x%X ife_rdi_wr: 0x%X ife_ubwc_stats: 0x%X",
+			val0, val1, val2);
 	}
 
 	if (err_type == CAM_VFE_IRQ_STATUS_OVERFLOW && !bus_overflow_status) {
 		CAM_INFO(CAM_ISP, "RDI hang");
 		/* print debug registers */
-		cam_vfe_camif_lite_overflow_debug_info(status, camif_lite_priv);
+		cam_vfe_camif_lite_overflow_debug_info(camif_lite_priv);
 		return;
 	}
 
