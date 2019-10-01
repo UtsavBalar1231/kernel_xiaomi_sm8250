@@ -663,15 +663,15 @@ static void cam_jpeg_mgr_print_io_bufs(struct cam_packet *packet,
 			}
 
 			CAM_INFO(CAM_JPEG,
-				"pln %d w %d h %d size %d addr 0x%x offset 0x%x memh %x",
+				"pln %u w %u h %u stride %u slice %u size %d addr 0x%x offset 0x%x memh %x",
 				j, io_cfg[i].planes[j].width,
 				io_cfg[i].planes[j].height,
+				io_cfg[i].planes[j].plane_stride,
+				io_cfg[i].planes[j].slice_height,
 				(int32_t)src_buf_size,
 				(unsigned int)iova_addr,
 				io_cfg[i].offsets[j],
 				io_cfg[i].mem_handle[j]);
-
-			iova_addr += io_cfg[i].offsets[j];
 		}
 	}
 }
