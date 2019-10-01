@@ -27,7 +27,7 @@
 
 /* Encoder buffer count macros */
 /* total input buffers for encoder HFR usecase */
-#define HFR_ENC_TOTAL_INPUT_BUFFERS 8
+#define HFR_ENC_TOTAL_INPUT_BUFFERS 16
 
 /* minimum number of output buffers */
 #define MIN_ENC_OUTPUT_BUFFERS 4
