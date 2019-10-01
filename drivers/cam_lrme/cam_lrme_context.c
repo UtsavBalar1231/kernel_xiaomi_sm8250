@@ -190,6 +190,8 @@ static struct cam_ctx_ops
 		.crm_ops = {},
 		.irq_ops = NULL,
 	},
+	/* Flushed */
+	{},
 	/* Activate */
 	{
 		.ioctl_ops = {

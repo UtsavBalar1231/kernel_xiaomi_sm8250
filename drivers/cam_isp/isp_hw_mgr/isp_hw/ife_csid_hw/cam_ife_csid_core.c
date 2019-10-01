@@ -657,10 +657,6 @@ static int cam_ife_csid_path_reset(struct cam_ife_csid_hw *csid_hw,
 	init_completion(complete);
 	reset_strb_val = csid_reg->cmn_reg->path_rst_stb_all;
 
-	/* Enable the Test gen before reset */
-	cam_io_w_mb(1,	csid_hw->hw_info->soc_info.reg_map[0].mem_base +
-		csid_reg->tpg_reg->csid_tpg_ctrl_addr);
-
 	/* Reset the corresponding ife csid path */
 	cam_io_w_mb(reset_strb_val, soc_info->reg_map[0].mem_base +
 				reset_strb_addr);
@@ -674,10 +670,6 @@ static int cam_ife_csid_path_reset(struct cam_ife_csid_hw *csid_hw,
 		if (rc == 0)
 			rc = -ETIMEDOUT;
 	}
-
-	/* Disable Test Gen after reset*/
-	cam_io_w_mb(0, soc_info->reg_map[0].mem_base +
-		csid_reg->tpg_reg->csid_tpg_ctrl_addr);
 
 end:
 	return rc;
@@ -2101,11 +2093,23 @@ static int cam_ife_csid_disable_pxl_path(
 
 	if (path_data->sync_mode == CAM_ISP_HW_SYNC_MASTER ||
 		path_data->sync_mode == CAM_ISP_HW_SYNC_NONE) {
-		/* configure Halt */
+		/* configure Halt for master */
 		val = cam_io_r_mb(soc_info->reg_map[0].mem_base +
 		pxl_reg->csid_pxl_ctrl_addr);
 		val &= ~0x3;
 		val |= stop_cmd;
+		cam_io_w_mb(val, soc_info->reg_map[0].mem_base +
+			pxl_reg->csid_pxl_ctrl_addr);
+	}
+
+	if (path_data->sync_mode == CAM_ISP_HW_SYNC_SLAVE &&
+		stop_cmd == CAM_CSID_HALT_IMMEDIATELY) {
+		/* configure Halt for slave */
+		val = cam_io_r_mb(soc_info->reg_map[0].mem_base +
+			pxl_reg->csid_pxl_ctrl_addr);
+		val &= ~0xF;
+		val |= stop_cmd;
+		val |= (CSID_HALT_MODE_MASTER << 2);
 		cam_io_w_mb(val, soc_info->reg_map[0].mem_base +
 			pxl_reg->csid_pxl_ctrl_addr);
 	}
