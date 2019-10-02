@@ -107,5 +107,6 @@ void rmnet_perf_opt_insert_pkt_in_flow(
 			struct rmnet_perf_opt_flow_node *flow_node,
 			struct rmnet_perf_pkt_info *pkt_info);
 bool rmnet_perf_opt_ingress(struct rmnet_perf_pkt_info *pkt_info);
+void rmnet_perf_free_hash_table(void);
 
 #endif /* _RMNET_PERF_OPT_H_ */
