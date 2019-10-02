@@ -780,18 +780,23 @@ u32 rmnet_shs_wq_get_dev_rps_msk(struct net_device *dev)
 	return dev_rps_msk;
 }
 
-/* Return the least utilized core from the list of cores available
- * If all the cores are fully utilized return no specific core
+/* Returns the least utilized core from a core mask
+ * In order of priority
+ *    1) Returns leftmost core with no flows (Fully Idle)
+ *    2) Returns the core with least flows with no pps (Semi Idle)
+ *    3) Returns the core with the least pps (Non-Idle)
  */
 int rmnet_shs_wq_get_least_utilized_core(u16 core_msk)
 {
-	int cpu_num;
 	struct rmnet_shs_wq_rx_flow_s *rx_flow_tbl_p = &rmnet_shs_rx_flow_tbl;
 	struct rmnet_shs_wq_cpu_rx_pkt_q_s *list_p;
-	u64 min_pps = rmnet_shs_wq_get_max_pps_among_cores(core_msk);
-	u64 max_pps = 0;
+	u64 min_pps = U64_MAX;
+	u32 min_flows = U32_MAX;
 	int ret_val = -1;
-	u8 is_cpu_in_msk;
+	int semi_idle_ret = -1;
+	int full_idle_ret = -1;
+	int cpu_num = 0;
+	u16 is_cpu_in_msk;
 
 	for (cpu_num = 0; cpu_num < MAX_CPUS; cpu_num++) {
 
@@ -800,23 +805,24 @@ int rmnet_shs_wq_get_least_utilized_core(u16 core_msk)
 			continue;
 
 		list_p = &rx_flow_tbl_p->cpu_list[cpu_num];
-		max_pps = rmnet_shs_wq_get_max_allowed_pps(cpu_num);
-
 		trace_rmnet_shs_wq_low(RMNET_SHS_WQ_CPU_STATS,
 				       RMNET_SHS_WQ_CPU_STATS_CURRENT_UTIL,
 				       cpu_num, list_p->rx_pps, min_pps,
-				       max_pps, NULL, NULL);
-
-		/* lets not use a core that is already kinda loaded */
-		if (list_p->rx_pps > max_pps)
-			continue;
+				       0, NULL, NULL);
 
 		/* When there are multiple free CPUs the first free CPU will
 		 * be returned
 		 */
-		if (list_p->rx_pps == 0) {
-			ret_val = cpu_num;
+		if (list_p->flows == 0) {
+			full_idle_ret = cpu_num;
 			break;
+		}
+		/* When there are semi-idle CPUs the CPU w/ least flows will
+		 * be returned
+		 */
+		if (list_p->rx_pps == 0 && list_p->flows < min_flows) {
+			min_flows = list_p->flows;
+			semi_idle_ret = cpu_num;
 		}
 
 		/* Found a core that is processing even lower packets */
@@ -824,8 +830,12 @@ int rmnet_shs_wq_get_least_utilized_core(u16 core_msk)
 			min_pps = list_p->rx_pps;
 			ret_val = cpu_num;
 		}
-
 	}
+
+	if (full_idle_ret >= 0)
+		ret_val = full_idle_ret;
+	else if (semi_idle_ret >= 0)
+		ret_val = semi_idle_ret;
 
 	return ret_val;
 }
