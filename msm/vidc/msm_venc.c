@@ -250,7 +250,7 @@ static struct msm_vidc_ctrl msm_venc_ctrls[] = {
 		.type = V4L2_CTRL_TYPE_MENU,
 		.minimum = V4L2_MPEG_VIDEO_H264_ENTROPY_MODE_CAVLC,
 		.maximum = V4L2_MPEG_VIDEO_H264_ENTROPY_MODE_CABAC,
-		.default_value = V4L2_MPEG_VIDEO_H264_ENTROPY_MODE_CAVLC,
+		.default_value = V4L2_MPEG_VIDEO_H264_ENTROPY_MODE_CABAC,
 		.menu_skip_mask = ~(
 		(1 << V4L2_MPEG_VIDEO_H264_ENTROPY_MODE_CAVLC) |
 		(1 << V4L2_MPEG_VIDEO_H264_ENTROPY_MODE_CABAC)
@@ -1864,12 +1864,16 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 	case V4L2_CID_MPEG_VIDC_VIDEO_FULL_RANGE:
 		inst->full_range = ctrl->val;
 		break;
+	case V4L2_CID_MPEG_VIDEO_H264_ENTROPY_MODE:
+		inst->entropy_mode = msm_comm_v4l2_to_hfi(
+			V4L2_CID_MPEG_VIDEO_H264_ENTROPY_MODE,
+			ctrl->val, inst->sid);
+		break;
 	case V4L2_CID_MPEG_VIDC_CAPTURE_FRAME_RATE:
 	case V4L2_CID_MPEG_VIDC_VIDEO_HEVC_MAX_HIER_CODING_LAYER:
 	case V4L2_CID_MPEG_VIDEO_HEVC_HIER_CODING_TYPE:
 	case V4L2_CID_ROTATE:
 	case V4L2_CID_MPEG_VIDC_VIDEO_LTRCOUNT:
-	case V4L2_CID_MPEG_VIDEO_H264_ENTROPY_MODE:
 	case V4L2_CID_MPEG_VIDEO_H264_LOOP_FILTER_MODE:
 	case V4L2_CID_MPEG_VIDEO_H264_LOOP_FILTER_ALPHA:
 	case V4L2_CID_MPEG_VIDEO_H264_LOOP_FILTER_BETA:
@@ -3054,7 +3058,6 @@ int msm_venc_set_entropy_mode(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
 	struct hfi_device *hdev;
-	struct v4l2_ctrl *ctrl;
 	struct hfi_h264_entropy_control entropy;
 
 	if (!inst || !inst->core) {
@@ -3066,10 +3069,7 @@ int msm_venc_set_entropy_mode(struct msm_vidc_inst *inst)
 	if (get_v4l2_codec(inst) != V4L2_PIX_FMT_H264)
 		return 0;
 
-	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_H264_ENTROPY_MODE);
-	entropy.entropy_mode = msm_comm_v4l2_to_hfi(
-			V4L2_CID_MPEG_VIDEO_H264_ENTROPY_MODE,
-			ctrl->val, inst->sid);
+	entropy.entropy_mode = inst->entropy_mode;
 	entropy.cabac_model = HFI_H264_CABAC_MODEL_2;
 
 	s_vpr_h(inst->sid, "%s: %d\n", __func__, entropy.entropy_mode);
@@ -3078,8 +3078,6 @@ int msm_venc_set_entropy_mode(struct msm_vidc_inst *inst)
 		sizeof(entropy));
 	if (rc)
 		s_vpr_e(inst->sid, "%s: set property failed\n", __func__);
-	else
-		inst->entropy_mode = entropy.entropy_mode;
 
 	return rc;
 }
@@ -4352,6 +4350,28 @@ int msm_venc_set_cvp_skipratio(struct msm_vidc_inst *inst)
 	return rc;
 }
 
+int msm_venc_update_entropy_mode(struct msm_vidc_inst *inst)
+{
+	if (!inst) {
+		d_vpr_e("%s: invalid params\n", __func__);
+		return -EINVAL;
+	}
+
+	if (get_v4l2_codec(inst) == V4L2_PIX_FMT_H264) {
+		if ((inst->profile == HFI_H264_PROFILE_BASELINE ||
+			inst->profile == HFI_H264_PROFILE_CONSTRAINED_BASE)
+			&& inst->entropy_mode == HFI_H264_ENTROPY_CABAC) {
+			inst->entropy_mode = HFI_H264_ENTROPY_CAVLC;
+			s_vpr_h(inst->sid,
+				"%s: profile %d entropy %d\n",
+				__func__, inst->profile,
+				inst->entropy_mode);
+		}
+	}
+
+	return 0;
+}
+
 int handle_all_intra_restrictions(struct msm_vidc_inst *inst)
 {
 	struct v4l2_ctrl *ctrl = NULL;
@@ -4464,6 +4484,9 @@ int msm_venc_set_properties(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
 
+	rc = msm_venc_update_entropy_mode(inst);
+	if (rc)
+		goto exit;
 	rc = handle_all_intra_restrictions(inst);
 	if (rc)
 		goto exit;
