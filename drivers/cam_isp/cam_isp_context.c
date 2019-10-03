@@ -3683,6 +3683,8 @@ static int __cam_isp_ctx_start_dev_in_ready(struct cam_context *ctx,
 	start_isp.hw_config.init_packet = 1;
 	start_isp.hw_config.reapply = 0;
 
+	ctx_isp->last_applied_req_id = req->request_id;
+
 	if (ctx->state == CAM_CTX_FLUSHED)
 		start_isp.start_only = true;
 	else
@@ -3837,6 +3839,7 @@ static int __cam_isp_ctx_stop_dev_in_activated_unlock(
 	ctx_isp->active_req_cnt = 0;
 	ctx_isp->reported_req_id = 0;
 	ctx_isp->bubble_frame_cnt = 0;
+	ctx_isp->last_applied_req_id = 0;
 	atomic_set(&ctx_isp->process_bubble, 0);
 	atomic64_set(&ctx_isp->state_monitor_head, -1);
 
