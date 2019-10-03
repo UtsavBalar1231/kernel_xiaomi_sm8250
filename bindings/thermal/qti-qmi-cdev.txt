@@ -35,7 +35,7 @@ Subsystem properties:
 		Definition: Remote subsystem device identifier. Below strings
 			are the only acceptable device names,
 			"pa" -> for pa cooling device,
-			"pa_1" -> for pa cooling device,
+			"pa_fr1" -> for pa cooling device,
 			"cpuv_restriction_cold" -> for vdd restriction,
 			"cx_vdd_limit" -> for vdd limit,
 			"modem" -> for processor passive cooling device,
@@ -47,10 +47,10 @@ Subsystem properties:
 			"mmw2" -> Millimeter wave limiting device 2,
 			"mmw3" -> Millimeter wave limiting device 3,
 			"modem_skin" -> Modem skin mitigation device,
-			"modem_skin0" -> Modem skin mitigation device0,
-			"modem_skin1" -> Modem skin mitigation device1,
-			"modem_skin2" -> Modem skin mitigation device2,
-			"modem_skin3" -> Modem skin mitigation device3,
+			"mmw_skin0" -> MMW skin mitigation device0,
+			"mmw_skin1" -> MMW skin mitigation device1,
+			"mmw_skin2" -> MMW skin mitigation device2,
+			"mmw_skin3" -> MMW skin mitigation device3,
 			"cpr_cold" -> for cpr restriction.
 			"wlan" -> for modem wlan mitigation device.
 
