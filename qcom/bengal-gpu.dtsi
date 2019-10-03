@@ -3,6 +3,7 @@
 		compatible = "qcom,pil-tz-generic";
 		qcom,pas-id = <13>;
 		qcom,firmware-name = "a610_zap";
+		qcom,mas-crypto = <&mas_crypto_c0>;
 	};
 
 	gpu_opp_table: gpu-opp-table {

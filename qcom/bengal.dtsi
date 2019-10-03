@@ -744,6 +744,7 @@
 		clocks = <&rpmcc CXO_SMD_PIL_LPASS_CLK>;
 		clock-names = "xo";
 		qcom,proxy-clock-names = "xo";
+		qcom,mas-crypto = <&mas_crypto_c0>;
 
 		qcom,pas-id = <1>;
 		qcom,proxy-timeout-ms = <10000>;
@@ -783,6 +784,7 @@
 		clocks = <&rpmcc CXO_SMD_PIL_CDSP_CLK>;
 		clock-names = "xo";
 		qcom,proxy-clock-names = "xo";
+		qcom,mas-crypto = <&mas_crypto_c0>;
 
 		qcom,pas-id = <18>;
 		qcom,proxy-timeout-ms = <10000>;
@@ -1589,6 +1591,7 @@
 			<&gcc GCC_VIDEO_THROTTLE_CORE_CLK>;
 		clock-names = "xo_clock", "core_clk", "bus_clk", "iface_clk", "video_bus0_clk", "video_iface_clk", "throttle_clk";
 		qcom,proxy-clock-names = "xo_clock", "core_clk", "bus_clk", "iface_clk", "video_bus0_clk", "video_iface_clk", "throttle_clk";
+		qcom,mas-crypto = <&mas_crypto_c0>;
 
 		qcom,core-freq = <240000000>;
 		qcom,ahb-freq = <240000000>;
@@ -1612,6 +1615,7 @@
 		clocks = <&rpmcc CXO_SMD_PIL_MSS_CLK>;
 		clock-names = "xo";
 		qcom,proxy-clock-names = "xo";
+		qcom,mas-crypto = <&mas_crypto_c0>;
 
 		vdd_cx-supply = <&VDD_CX_LEVEL>;
 		qcom,vdd_cx-uV-uA = <RPMH_REGULATOR_LEVEL_TURBO 100000>;
