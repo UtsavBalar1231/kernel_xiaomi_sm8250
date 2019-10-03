@@ -11,7 +11,7 @@
 };
 
 &camcc {
-	compatible = "qcom,lito-camcc-v2";
+	compatible = "qcom,lito-camcc-v2", "syscon";
 };
 
 &pm8008_regulators {
