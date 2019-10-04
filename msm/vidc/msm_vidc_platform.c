@@ -569,6 +569,10 @@ static struct msm_vidc_common_data lito_common_data_v0[] = {
 		.value = 244800,/* ((1920x1088)/256) MBs@30fps */
 	},
 	{
+		.key = "qcom,max-mbpf",
+		.value = 65280,/* (3840x2176)/256 + (3840x2176)/256 */
+	},
+	{
 		.key = "qcom,power-collapse-delay",
 		.value = 1500,
 	},
@@ -642,6 +646,10 @@ static struct msm_vidc_common_data lito_common_data_v1[] = {
 	{
 		.key = "qcom,max-b-frame-mbs-per-sec",
 		.value = 244800,/* ((1920x1088)/256) MBs@30fps */
+	},
+	{
+		.key = "qcom,max-mbpf",
+		.value = 40800,	/* (3840x2176)/256 + (1920x1088)/256 */
 	},
 	{
 		.key = "qcom,power-collapse-delay",
