@@ -181,8 +181,8 @@ static struct msm_vidc_codec_capability lito_capabilities_v0[] = {
 	{CAP_FRAME_HEIGHT, DOMAINS_ALL, CODECS_ALL, 96, 5760, 1, 1080},
 	/*  ((5760 * 2880) / 256) */
 	{CAP_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 36, 64800, 1, 8160},
-	/* ((4096x2160)/256)@90fps */
-	{CAP_MBS_PER_SECOND, DOMAINS_ALL, CODECS_ALL, 36, 3110400, 1, 2073600},
+	/* ((3840x2176)/256)@60fps */
+	{CAP_MBS_PER_SECOND, DOMAINS_ALL, CODECS_ALL, 36, 1958400, 1, 1958400},
 	{CAP_FRAMERATE, DOMAINS_ALL, CODECS_ALL, 1, 480, 1, 30},
 	{CAP_BITRATE, DOMAINS_ALL, CODECS_ALL, 1, 200000000, 1, 20000000},
 	{CAP_SCALE_X, ENC, CODECS_ALL, 8192, 65536, 1, 8192},
@@ -209,10 +209,10 @@ static struct msm_vidc_codec_capability lito_capabilities_v0[] = {
 	/* VP8 specific */
 	{CAP_FRAME_WIDTH, ENC|DEC, VP8, 96, 4096, 1, 1920},
 	{CAP_FRAME_HEIGHT, ENC|DEC, VP8, 96, 4096, 1, 1080},
-	/* (4096 * 2304) / 256 */
-	{CAP_MBS_PER_FRAME, ENC|DEC, VP8, 36, 36864, 1, 8160},
-	/* (4096 * 2160) / 256) * 30*/
-	{CAP_MBS_PER_SECOND, ENC|DEC, VP8, 36, 1036800, 1, 244800},
+	/* (4096 * 2176) / 256 */
+	{CAP_MBS_PER_FRAME, ENC|DEC, VP8, 36, 34816, 1, 8160},
+	/* (3840 * 2176) / 256) * 30*/
+	{CAP_MBS_PER_SECOND, ENC|DEC, VP8, 36, 979200, 1, 244800},
 	{CAP_FRAMERATE, ENC|DEC, VP8, 1, 30, 1, 30},
 	{CAP_BITRATE, ENC, VP8, 1, 100000000, 1, 20000000},
 	{CAP_BITRATE, DEC, VP8, 1, 100000000, 1, 20000000},
@@ -230,8 +230,8 @@ static struct msm_vidc_codec_capability lito_capabilities_v0[] = {
 	/* Secure usecase specific */
 	{CAP_SECURE_FRAME_WIDTH, DOMAINS_ALL, CODECS_ALL, 96, 4096, 1, 1920},
 	{CAP_SECURE_FRAME_HEIGHT, DOMAINS_ALL, CODECS_ALL, 96, 4096, 1, 1080},
-	/* (4096 * 2304) / 256 */
-	{CAP_SECURE_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 36, 36864, 1, 8160},
+	/* (4096 * 2176) / 256 */
+	{CAP_SECURE_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 36, 34816, 1, 8160},
 	{CAP_SECURE_BITRATE, DOMAINS_ALL, CODECS_ALL, 1, 40000000, 1, 20000000},
 
 	/* Batch Mode Decode */
@@ -273,10 +273,10 @@ static struct msm_vidc_codec_capability lito_capabilities_v1[] = {
 	/* {cap_type, domains, codecs, min, max, step_size, default_value} */
 	{CAP_FRAME_WIDTH, DOMAINS_ALL, CODECS_ALL, 96, 4096, 1, 1920},
 	{CAP_FRAME_HEIGHT, DOMAINS_ALL, CODECS_ALL, 96, 4096, 1, 1080},
-	/*  ((4096 * 2304) / 256) */
-	{CAP_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 36, 36864, 1, 8160},
-	/* 4K@30 decode + 1080@30 encode */
-	{CAP_MBS_PER_SECOND, DOMAINS_ALL, CODECS_ALL, 36, 1281600, 1, 2073600},
+	/*  ((4096 * 2176) / 256) */
+	{CAP_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 36, 34816, 1, 8160},
+	/* UHD@30 decode + 1080@30 encode */
+	{CAP_MBS_PER_SECOND, DOMAINS_ALL, CODECS_ALL, 36, 1224000, 1, 1224000},
 	{CAP_FRAMERATE, DOMAINS_ALL, CODECS_ALL, 1, 240, 1, 30},
 	{CAP_BITRATE, DOMAINS_ALL, CODECS_ALL, 1, 100000000, 1, 20000000},
 	{CAP_SCALE_X, ENC, CODECS_ALL, 8192, 65536, 1, 8192},
@@ -324,8 +324,8 @@ static struct msm_vidc_codec_capability lito_capabilities_v1[] = {
 	/* Secure usecase specific */
 	{CAP_SECURE_FRAME_WIDTH, DOMAINS_ALL, CODECS_ALL, 96, 4096, 1, 1920},
 	{CAP_SECURE_FRAME_HEIGHT, DOMAINS_ALL, CODECS_ALL, 96, 4096, 1, 1080},
-	/* (4096 * 2304) / 256 */
-	{CAP_SECURE_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 36, 36864, 1, 8160},
+	/* (4096 * 2176) / 256 */
+	{CAP_SECURE_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 36, 34816, 1, 8160},
 	{CAP_SECURE_BITRATE, DOMAINS_ALL, CODECS_ALL, 1, 40000000, 1, 20000000},
 
 	/* Batch Mode Decode */
@@ -458,8 +458,8 @@ static struct msm_vidc_codec_capability kona_capabilities[] = {
 	{CAP_SECURE_BITRATE, DOMAINS_ALL, CODECS_ALL, 1, 40000000, 1, 20000000},
 
 	/* Batch Mode Decode */
-	{CAP_BATCH_MAX_MB_PER_FRAME, DEC, CODECS_ALL, 64, 34560, 1, 34560},
-	/* (4096 * 2160) / 256 */
+	{CAP_BATCH_MAX_MB_PER_FRAME, DEC, CODECS_ALL, 64, 34816, 1, 34816},
+	/* (4096 * 2176) / 256 */
 	{CAP_BATCH_MAX_FPS, DEC, CODECS_ALL, 1, 120, 1, 120},
 
 	/* Lossless encoding usecase specific */
@@ -545,8 +545,8 @@ static struct msm_vidc_common_data lito_common_data_v0[] = {
 	},
 	{
 		.key = "qcom,max-hw-load",
-		.value = 3110400,/* ((4096x2160)/256)@90fps */
-				/* 4k@60 decode + 4k@30 encode */
+		.value = 1958400,/* ((3840x2176)/256)@60fps */
+				 /* UHD@30 decode + UHD@30 encode */
 	},
 	{
 		.key = "qcom,max-hq-mbs-per-frame",
@@ -621,7 +621,7 @@ static struct msm_vidc_common_data lito_common_data_v1[] = {
 	},
 	{
 		.key = "qcom,max-hw-load",
-		.value = 1281600,/* 4K@30 decode + 1080@30 encode */
+		.value = 1224000,/* UHD@30 decode + 1080@30 encode */
 	},
 	{
 		.key = "qcom,max-hq-mbs-per-frame",
@@ -696,31 +696,31 @@ static struct msm_vidc_common_data kona_common_data[] = {
 	},
 	{
 		.key = "qcom,max-hw-load",
-		.value = 7776000,       /*
-					 * 7680x4320@60fps, 3840x2160@240fps
-					 * Greater than 4096x2160@120fps,
+		.value = 7833600,       /*
+					 * 7680x4320@60fps, 3840x2176@240fps
+					 * Greater than 4096x2176@120fps,
 					 *  8192x4320@48fps
 					 */
 	},
 	{
 		.key = "qcom,max-mbpf",
-		.value = 172800,	/* (8192x4320)/256 + (4096x2160)/256*/
+		.value = 173056,	/* (8192x4320)/256 + (4096x2176)/256*/
 	},
 	{
 		.key = "qcom,max-hq-mbs-per-frame",
-		.value = 34560,		/* 4096x2160 */
+		.value = 34816,		/* 4096x2176 */
 	},
 	{
 		.key = "qcom,max-hq-mbs-per-sec",
-		.value = 1036800,	/* 4096x2160@30fps */
+		.value = 1044480,	/* 4096x2176@30fps */
 	},
 	{
 		.key = "qcom,max-b-frame-mbs-per-frame",
-		.value = 32400, /* 3840x2160/256 */
+		.value = 32640, /* 3840x2176/256 */
 	},
 	{
 		.key = "qcom,max-b-frame-mbs-per-sec",
-		.value = 1944000, /* 3840x2160/256 MBs@60fps */
+		.value = 1958400, /* 3840x2176/256 MBs@60fps */
 	},
 	{
 		.key = "qcom,power-collapse-delay",
@@ -911,7 +911,7 @@ static struct msm_vidc_common_data sm8150_common_data[] = {
 		.value = 3916800,       /*
 					 * 1920x1088/256 MBs@480fps. It is less
 					 * any other usecases (ex:
-					 * 3840x2160@120fps, 4096x2160@96ps,
+					 * 3840x2176@120fps, 4096x2176@96ps,
 					 * 7680x4320@30fps)
 					 */
 	},
@@ -992,7 +992,7 @@ static struct msm_vidc_common_data sdm845_common_data[] = {
 	},
 	{
 		.key = "qcom,max-hw-load",
-		.value = 3110400,	/* 4096x2160@90 */
+		.value = 3133440,	/* 4096x2176@90 */
 	},
 	{
 		.key = "qcom,max-hq-mbs-per-frame",
