@@ -1563,15 +1563,6 @@ void rmnet_shs_assign(struct sk_buff *skb, struct rmnet_port *port)
 		return;
 	}
 
-	if (!rmnet_shs_cfg.is_reg_dl_mrk_ind) {
-		rmnet_map_dl_ind_register(port, &rmnet_shs_cfg.dl_mrk_ind_cb);
-		qmi_rmnet_ps_ind_register(port,
-					  &rmnet_shs_cfg.rmnet_idl_ind_cb);
-
-		rmnet_shs_cfg.is_reg_dl_mrk_ind = 1;
-		shs_rx_work.port = port;
-
-	}
 	/* We got the first packet after a previous successdul flush. Arm the
 	 * flushing timer.
 	 */

@@ -70,26 +70,26 @@ static int rmnet_shs_dev_notify_cb(struct notifier_block *nb,
 	struct net_device *dev = netdev_notifier_info_to_dev(data);
 	struct rmnet_priv *priv;
 	struct rmnet_port *port;
+	int ret = 0;
 
 	if (!dev) {
 		rmnet_shs_crit_err[RMNET_SHS_NETDEV_ERR]++;
 		return NOTIFY_DONE;
 	}
 
-	switch (event) {
-	case NETDEV_GOING_DOWN:
-		rmnet_shs_wq_reset_ep_active(dev);
+	if (!(strncmp(dev->name, "rmnet_data", 10) == 0 ||
+	      strncmp(dev->name, "r_rmnet_data", 12) == 0))
+		return NOTIFY_DONE;
 
-		if (strncmp(dev->name, "rmnet_data", 10) == 0)
-			rmnet_vnd_total--;
+	switch (event) {
+	case NETDEV_UNREGISTER:
+		rmnet_shs_wq_reset_ep_active(dev);
+		rmnet_vnd_total--;
 
 		/* Deinitialize if last vnd is going down or if
 		 * phy_dev is going down.
 		 */
-		if ((rmnet_is_real_dev_registered(dev) &&
-		    (!strcmp(dev->name, "rmnet_ipa0") ||
-		    !strcmp(dev->name, "rmnet_mhi0"))) &&
-		    rmnet_shs_cfg.rmnet_shs_init_complete) {
+		if (!rmnet_vnd_total && rmnet_shs_cfg.rmnet_shs_init_complete) {
 			pr_info("rmnet_shs deinit %s going down ", dev->name);
 			RCU_INIT_POINTER(rmnet_shs_skb_entry, NULL);
 			qmi_rmnet_ps_ind_deregister(rmnet_shs_cfg.port,
@@ -105,58 +105,73 @@ static int rmnet_shs_dev_notify_cb(struct notifier_block *nb,
 		}
 		break;
 
-	case NETDEV_UP:
+	case NETDEV_REGISTER:
+		rmnet_vnd_total++;
 
-		if (strncmp(dev->name, "rmnet_data", 10) == 0){
-			rmnet_vnd_total++;
-		}
-
-		if (strncmp(dev->name, "rmnet_data", 10) == 0) {
-			/* Need separate if check to avoid
-			 * NULL dereferencing
-			 */
-
-			if (!rmnet_shs_cfg.rmnet_shs_init_complete) {
-				pr_info("rmnet_shs initializing %s", dev->name);
-				priv = netdev_priv(dev);
-				port = rmnet_get_port(priv->real_dev);
-				if (!port) {
-					pr_err("rmnet_shs: invalid rmnet_port");
-					break;
-				}
-				rmnet_shs_init(priv->real_dev, dev);
-				rmnet_shs_wq_init(priv->real_dev);
-				rmnet_shs_rx_wq_init();
-				rmnet_shs_cfg.is_timer_init = 1;
-				rmnet_shs_cfg.dl_mrk_ind_cb.priority =
-				   RMNET_SHS;
-				if (port->data_format & RMNET_INGRESS_FORMAT_DL_MARKER_V2) {
-					rmnet_shs_cfg.dl_mrk_ind_cb.dl_hdr_handler_v2 =
-						&rmnet_shs_dl_hdr_handler_v2;
-					rmnet_shs_cfg.dl_mrk_ind_cb.dl_trl_handler_v2 =
-						&rmnet_shs_dl_trl_handler_v2;
-				} else {
-					rmnet_shs_cfg.dl_mrk_ind_cb.dl_hdr_handler =
-						&rmnet_shs_dl_hdr_handler;
-					rmnet_shs_cfg.dl_mrk_ind_cb.dl_trl_handler =
-						&rmnet_shs_dl_trl_handler;
-				}
-
-				trace_rmnet_shs_high(RMNET_SHS_MODULE,
-						     RMNET_SHS_MODULE_INIT_WQ,
-						     0xDEF, 0xDEF, 0xDEF,
-						     0xDEF, NULL, NULL);
-				rmnet_shs_cfg.rmnet_idl_ind_cb.ps_on_handler =
-						&rmnet_shs_ps_on_hdlr;
-				rmnet_shs_cfg.rmnet_idl_ind_cb.ps_off_handler =
-						&rmnet_shs_ps_off_hdlr;
-				RCU_INIT_POINTER(rmnet_shs_skb_entry,
-						 rmnet_shs_assign);
-
-
+		if (rmnet_vnd_total && !rmnet_shs_cfg.rmnet_shs_init_complete) {
+			pr_info("rmnet_shs initializing %s", dev->name);
+			priv = netdev_priv(dev);
+			port = rmnet_get_port(priv->real_dev);
+			if (!port) {
+				pr_err("rmnet_shs: invalid rmnet_port");
+				break;
 			}
-			rmnet_shs_wq_set_ep_active(dev);
+			rmnet_shs_init(priv->real_dev, dev);
+			rmnet_shs_wq_init(priv->real_dev);
+			rmnet_shs_rx_wq_init();
 
+			rmnet_shs_cfg.is_timer_init = 1;
+		}
+		rmnet_shs_wq_set_ep_active(dev);
+
+		break;
+	case NETDEV_UP:
+		if (!rmnet_shs_cfg.is_reg_dl_mrk_ind &&
+		    rmnet_shs_cfg.rmnet_shs_init_complete) {
+
+			port = rmnet_shs_cfg.port;
+			if (!port) {
+				pr_err("rmnet_shs: invalid rmnet_cfg_port");
+				break;
+			}
+
+			rmnet_shs_cfg.dl_mrk_ind_cb.priority =
+				RMNET_SHS;
+			if (port->data_format & RMNET_INGRESS_FORMAT_DL_MARKER_V2) {
+				rmnet_shs_cfg.dl_mrk_ind_cb.dl_hdr_handler_v2 =
+					&rmnet_shs_dl_hdr_handler_v2;
+				rmnet_shs_cfg.dl_mrk_ind_cb.dl_trl_handler_v2 =
+					&rmnet_shs_dl_trl_handler_v2;
+			} else {
+				rmnet_shs_cfg.dl_mrk_ind_cb.dl_hdr_handler =
+					&rmnet_shs_dl_hdr_handler;
+				rmnet_shs_cfg.dl_mrk_ind_cb.dl_trl_handler =
+					&rmnet_shs_dl_trl_handler;
+			}
+			rmnet_shs_cfg.rmnet_idl_ind_cb.ps_on_handler =
+					&rmnet_shs_ps_on_hdlr;
+			rmnet_shs_cfg.rmnet_idl_ind_cb.ps_off_handler =
+					&rmnet_shs_ps_off_hdlr;
+
+			ret = rmnet_map_dl_ind_register(port,
+						        &rmnet_shs_cfg.dl_mrk_ind_cb);
+			if (ret)
+				pr_err("%s(): rmnet dl_ind registration fail\n",
+				       __func__);
+
+			ret = qmi_rmnet_ps_ind_register(port,
+						        &rmnet_shs_cfg.rmnet_idl_ind_cb);
+			if (ret)
+				pr_err("%s(): rmnet ps_ind registration fail\n",
+				       __func__);
+
+			rmnet_shs_cfg.is_reg_dl_mrk_ind = 1;
+			trace_rmnet_shs_high(RMNET_SHS_MODULE,
+					     RMNET_SHS_MODULE_INIT_WQ,
+					     0xDEF, 0xDEF, 0xDEF,
+					     0xDEF, NULL, NULL);
+					     RCU_INIT_POINTER(rmnet_shs_skb_entry,
+					     rmnet_shs_assign);
 		}
 
 		break;
