@@ -1773,8 +1773,11 @@ static int cam_ife_csid_init_config_pxl_path(
 		CAM_DBG(CAM_ISP, "CSID:%d Vertical Crop config val: 0x%x",
 			csid_hw->hw_intf->hw_idx, val);
 
-		/* Enable generating early eof strobe based on crop config */
-		if (!(csid_hw->csid_debug & CSID_DEBUG_DISABLE_EARLY_EOF)) {
+		/* Enable generating early eof strobe based on crop config.
+		 * Skip for version 480 HW due to HW limitation.
+		 */
+		if (!(csid_hw->csid_debug & CSID_DEBUG_DISABLE_EARLY_EOF) &&
+			(camera_hw_version != CAM_CPAS_TITAN_480_V100)) {
 			val = cam_io_r_mb(soc_info->reg_map[0].mem_base +
 				pxl_reg->csid_pxl_cfg0_addr);
 			val |= (1 << pxl_reg->early_eof_en_shift_val);
