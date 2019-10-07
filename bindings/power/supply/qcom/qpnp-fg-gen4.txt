@@ -552,6 +552,13 @@ First Level Node - FG Gen4 device
 		    specified. If this is not specified, then the
 		    default value is 10000. Unit is in ms.
 
+- qcom,force-calib-level
+	Usage:      optional
+	Value type: <u32>
+	Definition: Calibration level in decimal. When specified,
+		    the calibration level is forced to this value.
+		    Possible values are in the range of 1 to 130.
+
 ==========================================================
 Second Level Nodes - Peripherals managed by FG Gen4 driver
 ==========================================================
