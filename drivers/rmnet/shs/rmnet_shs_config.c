@@ -164,14 +164,15 @@ static int rmnet_shs_dev_notify_cb(struct notifier_block *nb,
 			if (ret)
 				pr_err("%s(): rmnet ps_ind registration fail\n",
 				       __func__);
-
+			rmnet_shs_update_cfg_mask();
+			rmnet_shs_wq_refresh_new_flow_list();
 			rmnet_shs_cfg.is_reg_dl_mrk_ind = 1;
 			trace_rmnet_shs_high(RMNET_SHS_MODULE,
 					     RMNET_SHS_MODULE_INIT_WQ,
 					     0xDEF, 0xDEF, 0xDEF,
 					     0xDEF, NULL, NULL);
-					     RCU_INIT_POINTER(rmnet_shs_skb_entry,
-					     rmnet_shs_assign);
+			RCU_INIT_POINTER(rmnet_shs_skb_entry,
+					 rmnet_shs_assign);
 		}
 
 		break;

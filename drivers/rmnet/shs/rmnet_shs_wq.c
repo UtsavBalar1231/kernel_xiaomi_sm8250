@@ -168,24 +168,16 @@ static struct list_head rmnet_shs_wq_ep_tbl =
  */
 void rmnet_shs_wq_ep_tbl_add(struct rmnet_shs_wq_ep_s *ep)
 {
-	unsigned long flags;
 	trace_rmnet_shs_wq_low(RMNET_SHS_WQ_EP_TBL, RMNET_SHS_WQ_EP_TBL_ADD,
 				0xDEF, 0xDEF, 0xDEF, 0xDEF, ep, NULL);
-	spin_lock_irqsave(&rmnet_shs_hstat_tbl_lock, flags);
 	list_add(&ep->ep_list_id, &rmnet_shs_wq_ep_tbl);
-	spin_unlock_irqrestore(&rmnet_shs_hstat_tbl_lock, flags);
 }
 
 void rmnet_shs_wq_ep_tbl_remove(struct rmnet_shs_wq_ep_s *ep)
 {
-	unsigned long flags;
 	trace_rmnet_shs_wq_low(RMNET_SHS_WQ_EP_TBL, RMNET_SHS_WQ_EP_TBL_DEL,
 				0xDEF, 0xDEF, 0xDEF, 0xDEF, ep, NULL);
-
-	spin_lock_irqsave(&rmnet_shs_hstat_tbl_lock, flags);
 	list_del_init(&ep->ep_list_id);
-	spin_unlock_irqrestore(&rmnet_shs_hstat_tbl_lock, flags);
-
 }
 
 /* Helper functions to add and remove entries to the table
@@ -415,7 +407,7 @@ void rmnet_shs_wq_update_hstat_rps_msk(struct rmnet_shs_wq_hstat_s *hstat_p)
 	/*Map RPS mask from the endpoint associated with this flow*/
 	list_for_each_entry(ep, &rmnet_shs_wq_ep_tbl, ep_list_id) {
 
-		if (ep && (node_p->dev == ep->ep->egress_dev)) {
+		if (ep && (node_p->dev == ep->ep)) {
 			hstat_p->rps_config_msk = ep->rps_config_msk;
 			hstat_p->def_core_msk = ep->default_core_msk;
 			hstat_p->pri_core_msk = ep->pri_core_msk;
@@ -556,7 +548,7 @@ static void rmnet_shs_wq_refresh_dl_mrkr_stats(void)
 	tbl_p->dl_mrk_last_rx_bytes = tbl_p->dl_mrk_rx_bytes;
 	tbl_p->dl_mrk_last_rx_pkts = tbl_p->dl_mrk_rx_pkts;
 
-	port = rmnet_get_port(rmnet_shs_delayed_wq->netdev);
+	port = rmnet_shs_cfg.port;
 	if (!port) {
 		rmnet_shs_crit_err[RMNET_SHS_WQ_GET_RMNET_PORT_ERR]++;
 		return;
@@ -735,7 +727,7 @@ void rmnet_shs_wq_chng_suggested_cpu(u16 old_cpu, u16 new_cpu,
 		hstat_p = node_p->hstats;
 
 		if ((hstat_p->suggested_cpu == old_cpu) &&
-		    (node_p->dev == ep->ep->egress_dev)) {
+		    (node_p->dev == ep->ep)) {
 
 			trace_rmnet_shs_wq_high(RMNET_SHS_WQ_FLOW_STATS,
 				RMNET_SHS_WQ_FLOW_STATS_SUGGEST_NEW_CPU,
@@ -760,24 +752,6 @@ u64 rmnet_shs_wq_get_max_pps_among_cores(u32 core_msk)
 		}
 	}
 	return max_pps;
-}
-
-u32 rmnet_shs_wq_get_dev_rps_msk(struct net_device *dev)
-{
-	u32 dev_rps_msk = 0;
-	struct rmnet_shs_wq_ep_s *ep = NULL;
-
-	list_for_each_entry(ep, &rmnet_shs_wq_ep_tbl, ep_list_id) {
-		if (!ep)
-			continue;
-
-		if (!ep->is_ep_active)
-			continue;
-
-		if (ep->ep->egress_dev == dev)
-			dev_rps_msk = ep->rps_config_msk;
-	}
-	return dev_rps_msk;
 }
 
 /* Returns the least utilized core from a core mask
@@ -1102,7 +1076,7 @@ int rmnet_shs_wq_get_lpwr_cpu_new_flow(struct net_device *dev)
 		if (!ep->is_ep_active)
 			continue;
 
-		if (ep->ep->egress_dev == dev) {
+		if (ep->ep == dev) {
 			is_match_found = 1;
 			break;
 		}
@@ -1152,7 +1126,7 @@ int rmnet_shs_wq_get_perf_cpu_new_flow(struct net_device *dev)
 		if (!ep->is_ep_active)
 			continue;
 
-		if (ep->ep->egress_dev == dev) {
+		if (ep->ep == dev) {
 			is_match_found = 1;
 			break;
 		}
@@ -1254,18 +1228,18 @@ void rmnet_shs_wq_update_ep_rps_msk(struct rmnet_shs_wq_ep_s *ep)
 	struct rps_map *map;
 	u8 len = 0;
 
-	if (!ep || !ep->ep || !ep->ep->egress_dev) {
+	if (!ep || !ep->ep ) {
 		rmnet_shs_crit_err[RMNET_SHS_WQ_EP_ACCESS_ERR]++;
 		return;
 	}
 
 	rcu_read_lock();
-	if (!ep->ep || !ep->ep->egress_dev) {
+	if (!ep->ep) {
 		pr_info(" rmnet_shs invalid state %p", ep->ep);
 		rmnet_shs_crit_err[RMNET_SHS_WQ_EP_ACCESS_ERR]++;
 		return;
 	}
-	map = rcu_dereference(ep->ep->egress_dev->_rx->rps_map);
+	map = rcu_dereference(ep->ep->_rx->rps_map);
 
 	ep->rps_config_msk = 0;
 	if (map != NULL) {
@@ -1281,20 +1255,23 @@ void rmnet_shs_wq_update_ep_rps_msk(struct rmnet_shs_wq_ep_s *ep)
 void rmnet_shs_wq_reset_ep_active(struct net_device *dev)
 {
 	struct rmnet_shs_wq_ep_s *ep = NULL;
+	struct rmnet_shs_wq_ep_s *tmp = NULL;
 	unsigned long flags;
 
 	spin_lock_irqsave(&rmnet_shs_ep_lock, flags);
-	list_for_each_entry(ep, &rmnet_shs_wq_ep_tbl, ep_list_id) {
+	list_for_each_entry_safe(ep, tmp, &rmnet_shs_wq_ep_tbl, ep_list_id) {
 		if (!ep)
 			continue;
 
-		if (ep->netdev == dev){
+		if (ep->ep == dev){
 			ep->is_ep_active = 0;
-			ep->netdev = NULL;
+			rmnet_shs_wq_ep_tbl_remove(ep);
+			kfree(ep);
+			break;
 		}
 	}
-	spin_unlock_irqrestore(&rmnet_shs_ep_lock, flags);
 
+	spin_unlock_irqrestore(&rmnet_shs_ep_lock, flags);
 }
 
 void rmnet_shs_wq_set_ep_active(struct net_device *dev)
@@ -1303,16 +1280,21 @@ void rmnet_shs_wq_set_ep_active(struct net_device *dev)
 	unsigned long flags;
 
 	spin_lock_irqsave(&rmnet_shs_ep_lock, flags);
-	list_for_each_entry(ep, &rmnet_shs_wq_ep_tbl, ep_list_id) {
-		if (!ep)
-			continue;
 
-		if (ep->ep->egress_dev == dev){
-			ep->is_ep_active = 1;
-			ep->netdev = dev;
+	ep = kzalloc(sizeof(*ep), GFP_ATOMIC);
 
-		}
+	if (!ep) {
+		rmnet_shs_crit_err[RMNET_SHS_WQ_ALLOC_EP_TBL_ERR]++;
+		spin_unlock_irqrestore(&rmnet_shs_ep_lock, flags);
+		return;
 	}
+	ep->ep = dev;
+	ep->is_ep_active = 1;
+
+	INIT_LIST_HEAD(&ep->ep_list_id);
+	rmnet_shs_wq_update_ep_rps_msk(ep);
+	rmnet_shs_wq_ep_tbl_add(ep);
+
 	spin_unlock_irqrestore(&rmnet_shs_ep_lock, flags);
 }
 
@@ -1443,34 +1425,6 @@ void rmnet_shs_wq_exit(void)
 				   0xDEF, 0xDEF, 0xDEF, 0xDEF, NULL, NULL);
 }
 
-void rmnet_shs_wq_gather_rmnet_ep(struct net_device *dev)
-{
-	u8 mux_id;
-	struct rmnet_port *port;
-	struct rmnet_endpoint *ep;
-	struct rmnet_shs_wq_ep_s *ep_wq;
-
-	port = rmnet_get_port(dev);
-
-	for (mux_id = 1; mux_id < 255; mux_id++) {
-		ep = rmnet_get_endpoint(port, mux_id);
-		if (!ep)
-			continue;
-
-		trace_rmnet_shs_wq_high(RMNET_SHS_WQ_EP_TBL,
-					RMNET_SHS_WQ_EP_TBL_INIT,
-					0xDEF, 0xDEF, 0xDEF, 0xDEF, ep, NULL);
-		ep_wq = kzalloc(sizeof(*ep_wq), GFP_ATOMIC);
-		if (!ep_wq) {
-			rmnet_shs_crit_err[RMNET_SHS_WQ_ALLOC_EP_TBL_ERR]++;
-			return;
-		}
-		INIT_LIST_HEAD(&ep_wq->ep_list_id);
-		ep_wq->ep = ep;
-		rmnet_shs_wq_update_ep_rps_msk(ep_wq);
-		rmnet_shs_wq_ep_tbl_add(ep_wq);
-	}
-}
 void rmnet_shs_wq_init_cpu_rx_flow_tbl(void)
 {
 	u8 cpu_num;
@@ -1527,20 +1481,11 @@ void rmnet_shs_wq_init(struct net_device *dev)
 		return;
 	}
 
-	rmnet_shs_delayed_wq->netdev = dev;
-	rmnet_shs_wq_gather_rmnet_ep(dev);
-
 	/*All hstat nodes allocated during Wq init will be held for ever*/
 	rmnet_shs_wq_hstat_alloc_nodes(RMNET_SHS_MIN_HSTAT_NODES_REQD, 1);
 	rmnet_shs_wq_init_cpu_rx_flow_tbl();
 	INIT_DEFERRABLE_WORK(&rmnet_shs_delayed_wq->wq,
 			     rmnet_shs_wq_process_wq);
-
-	/* During initialization, we can start workqueue without a delay
-	 * to initialize all meta data and pre allocated memory
-	 * for hash stats, if required
-	 */
-	queue_delayed_work(rmnet_shs_wq, &rmnet_shs_delayed_wq->wq, 0);
 
 	trace_rmnet_shs_wq_high(RMNET_SHS_WQ_INIT, RMNET_SHS_WQ_INIT_END,
 				0xDEF, 0xDEF, 0xDEF, 0xDEF, NULL, NULL);

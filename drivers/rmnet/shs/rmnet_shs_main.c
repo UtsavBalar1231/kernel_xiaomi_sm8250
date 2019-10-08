@@ -1354,7 +1354,7 @@ void rmnet_shs_init(struct net_device *dev, struct net_device *vnd)
 		map_len = 0;
 	} else {
 		map_mask = rmnet_shs_mask_from_map(map);
-		map_len = rmnet_shs_get_mask_len(rmnet_shs_cfg.map_mask);
+		map_len = rmnet_shs_get_mask_len(map_mask);
 	}
 
 	rmnet_shs_cfg.port = rmnet_get_port(dev);
