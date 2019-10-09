@@ -3,7 +3,7 @@
 / {
 	model = "Qualcomm Technologies, Inc. Lito v2";
 	compatible = "qcom,lito";
-	qcom,msm-id = <400 0x20000>;
+	qcom,msm-id = <400 0x20000>, <440 0x20000>;
 };
 
 &lito_snd {
