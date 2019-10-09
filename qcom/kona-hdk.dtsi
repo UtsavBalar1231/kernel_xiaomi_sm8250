@@ -1,5 +1,15 @@
 #include "kona-qrd.dtsi"
 
+&qupv3_se13_i2c {
+	status = "ok";
+	qcom,i2c-touch-active = "";
+
+	st_fts@49 {
+		st,x-flip;
+		st,y-flip;
+	};
+};
+
 &kona_snd {
 	qcom,msm-mbhc-usbc-audio-supported = <0>;
 	qcom,msm-mbhc-hphl-swh = <1>;
