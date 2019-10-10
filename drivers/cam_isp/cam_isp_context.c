@@ -1405,7 +1405,7 @@ move_to_pending:
 end:
 	do {
 		if (list_empty(&ctx->pending_req_list)) {
-			error_request_id = ctx_isp->last_applied_req_id + 1;
+			error_request_id = ctx_isp->last_applied_req_id;
 			req_isp = NULL;
 			break;
 		}
@@ -1436,13 +1436,11 @@ end:
 		notify.link_hdl = ctx->link_hdl;
 		notify.dev_hdl = ctx->dev_hdl;
 		notify.req_id = error_request_id;
+		notify.error = CRM_KMD_ERR_FATAL;
 
-		if (req_isp_to_report && req_isp_to_report->bubble_report) {
+		if (req_isp_to_report && req_isp_to_report->bubble_report)
 			if (error_event_data->recovery_enabled)
 				notify.error = CRM_KMD_ERR_BUBBLE;
-		} else {
-			notify.error = CRM_KMD_ERR_FATAL;
-		}
 
 		CAM_WARN(CAM_ISP,
 			"Notify CRM: req %lld, frame %lld ctx %u, error %d",
