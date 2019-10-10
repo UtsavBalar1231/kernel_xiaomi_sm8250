@@ -88,14 +88,16 @@ int cam_tasklet_get_cmd(
 	}
 
 	if (!atomic_read(&tasklet->tasklet_active)) {
-		CAM_ERR_RATE_LIMIT(CAM_ISP, "Tasklet is not active");
+		CAM_ERR_RATE_LIMIT(CAM_ISP, "Tasklet idx:%d is not active",
+			tasklet->index);
 		rc = -EPIPE;
 		return rc;
 	}
 
 	spin_lock_irqsave(&tasklet->tasklet_lock, flags);
 	if (list_empty(&tasklet->free_cmd_list)) {
-		CAM_ERR_RATE_LIMIT(CAM_ISP, "No more free tasklet cmd");
+		CAM_ERR_RATE_LIMIT(CAM_ISP, "No more free tasklet cmd idx:%d",
+			tasklet->index);
 		rc = -ENODEV;
 		goto spin_unlock;
 	} else {
@@ -158,7 +160,7 @@ static int cam_tasklet_dequeue_cmd(
 
 	*tasklet_cmd = NULL;
 
-	CAM_DBG(CAM_ISP, "Dequeue before lock.");
+	CAM_DBG(CAM_ISP, "Dequeue before lock tasklet idx:%d", tasklet->index);
 	spin_lock_irqsave(&tasklet->tasklet_lock, flags);
 	if (list_empty(&tasklet->used_cmd_list)) {
 		CAM_DBG(CAM_ISP, "End of list reached. Exit");
@@ -198,11 +200,12 @@ void cam_tasklet_enqueue_cmd(
 	}
 
 	if (!atomic_read(&tasklet->tasklet_active)) {
-		CAM_ERR_RATE_LIMIT(CAM_ISP, "Tasklet is not active\n");
+		CAM_ERR_RATE_LIMIT(CAM_ISP, "Tasklet is not active idx:%d",
+			tasklet->index);
 		return;
 	}
 
-	CAM_DBG(CAM_ISP, "Enqueue tasklet cmd");
+	CAM_DBG(CAM_ISP, "Enqueue tasklet cmd idx:%d", tasklet->index);
 	tasklet_cmd->bottom_half_handler = bottom_half_handler;
 	tasklet_cmd->payload = evt_payload_priv;
 	tasklet_cmd->handler_priv = handler_priv;
@@ -273,7 +276,7 @@ int cam_tasklet_start(void  *tasklet_info)
 	int i = 0;
 
 	if (atomic_read(&tasklet->tasklet_active)) {
-		CAM_ERR(CAM_ISP, "Tasklet already active. idx = %d",
+		CAM_ERR(CAM_ISP, "Tasklet already active idx:%d",
 			tasklet->index);
 		return -EBUSY;
 	}
