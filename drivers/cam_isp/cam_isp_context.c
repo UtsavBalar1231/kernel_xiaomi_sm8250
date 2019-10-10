@@ -810,21 +810,17 @@ static int __cam_isp_ctx_notify_sof_in_activated_state(
 			return rc;
 		}
 
-		spin_lock_bh(&ctx->lock);
 		req = list_first_entry(&ctx->active_req_list,
 			struct cam_ctx_request, list);
 		req_isp = (struct cam_isp_ctx_req *) req->req_priv;
-		spin_unlock_bh(&ctx->lock);
 
 		if (ctx_isp->bubble_frame_cnt >= 1 &&
 			req_isp->bubble_detected) {
 			req_isp->num_acked = 0;
 			ctx_isp->bubble_frame_cnt = 0;
 			req_isp->bubble_detected = false;
-			spin_lock_bh(&ctx->lock);
 			list_del_init(&req->list);
 			list_add(&req->list, &ctx->pending_req_list);
-			spin_unlock_bh(&ctx->lock);
 			atomic_set(&ctx_isp->process_bubble, 0);
 			ctx_isp->active_req_cnt--;
 			CAM_DBG(CAM_REQ,
