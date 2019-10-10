@@ -417,6 +417,50 @@ static void __cam_req_mgr_tbl_set_all_skip_cnt(
 }
 
 /**
+ * __cam_req_mgr_flush_req_slot()
+ *
+ * @brief    : reset all the slots/pd tables when flush is
+ *             invoked
+ * @link     : link pointer
+ *
+ */
+static void __cam_req_mgr_flush_req_slot(
+	struct cam_req_mgr_core_link *link)
+{
+	int                           idx = 0;
+	struct cam_req_mgr_slot      *slot;
+	struct cam_req_mgr_req_tbl   *tbl;
+	struct cam_req_mgr_req_queue *in_q = link->req.in_q;
+
+	for (idx = 0; idx < in_q->num_slots; idx++) {
+		slot = &in_q->slot[idx];
+		tbl = link->req.l_tbl;
+		CAM_DBG(CAM_CRM,
+			"RESET idx: %d req_id: %lld slot->status: %d",
+			idx, slot->req_id, slot->status);
+
+		/* Reset input queue slot */
+		slot->req_id = -1;
+		slot->skip_idx = 1;
+		slot->recover = 0;
+		slot->sync_mode = CAM_REQ_MGR_SYNC_MODE_NO_SYNC;
+		slot->status = CRM_SLOT_STATUS_NO_REQ;
+
+		/* Reset all pd table slot */
+		while (tbl != NULL) {
+			CAM_DBG(CAM_CRM, "pd: %d: idx %d state %d",
+				tbl->pd, idx, tbl->slot[idx].state);
+			tbl->slot[idx].req_ready_map = 0;
+			tbl->slot[idx].state = CRM_REQ_STATE_EMPTY;
+			tbl = tbl->next;
+		}
+	}
+
+	in_q->wr_idx = 0;
+	in_q->rd_idx = 0;
+}
+
+/**
  * __cam_req_mgr_reset_req_slot()
  *
  * @brief    : reset specified idx/slot in input queue as well as all pd tables
@@ -1966,15 +2010,7 @@ int cam_req_mgr_process_flush_req(void *priv, void *data)
 		link->last_flush_id = flush_info->req_id;
 		CAM_INFO(CAM_CRM, "Last request id to flush is %lld",
 			flush_info->req_id);
-		for (i = 0; i < in_q->num_slots; i++) {
-			slot = &in_q->slot[i];
-			slot->req_id = -1;
-			slot->sync_mode = CAM_REQ_MGR_SYNC_MODE_NO_SYNC;
-			slot->skip_idx = 1;
-			slot->status = CRM_SLOT_STATUS_NO_REQ;
-		}
-		in_q->wr_idx = 0;
-		in_q->rd_idx = 0;
+		__cam_req_mgr_flush_req_slot(link);
 	} else if (flush_info->flush_type ==
 		CAM_REQ_MGR_FLUSH_TYPE_CANCEL_REQ) {
 		idx = __cam_req_mgr_find_slot_for_req(in_q, flush_info->req_id);
