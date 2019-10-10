@@ -251,6 +251,13 @@ int cam_vfe_deinit_hw(void *hw_priv, void *deinit_hw_args, uint32_t arg_size)
 		return -EINVAL;
 	}
 
+	isp_res = (struct cam_isp_resource_node *)deinit_hw_args;
+	if (isp_res && isp_res->deinit) {
+		rc = isp_res->deinit(isp_res, NULL, 0);
+		if (rc)
+			CAM_ERR(CAM_ISP, "deinit failed");
+	}
+
 	mutex_lock(&vfe_hw->hw_mutex);
 	if (!vfe_hw->open_count) {
 		mutex_unlock(&vfe_hw->hw_mutex);
@@ -279,13 +286,6 @@ int cam_vfe_deinit_hw(void *hw_priv, void *deinit_hw_args, uint32_t arg_size)
 			NULL, 0);
 		if (rc)
 			CAM_ERR(CAM_ISP, "Bus HW deinit Failed rc=%d", rc);
-	}
-
-	isp_res   = (struct cam_isp_resource_node *)deinit_hw_args;
-	if (isp_res && isp_res->deinit) {
-		rc = isp_res->deinit(isp_res, NULL, 0);
-		if (rc)
-			CAM_ERR(CAM_ISP, "deinit failed");
 	}
 
 	rc = cam_vfe_reset(hw_priv, &reset_core_args, sizeof(uint32_t));
