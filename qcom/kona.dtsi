@@ -4967,6 +4967,7 @@
 				mhi,chan = "IPCR";
 				qcom,net-id = <0>;
 				qcom,low-latency;
+				mhi,early-notify;
 			};
 		};
 	};
