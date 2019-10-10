@@ -782,8 +782,9 @@ bool is_vidc_cvp_allowed(struct msm_vidc_inst *inst)
 			is_secure_session(inst), superframe_enable->val);
 		allowed = false;
 	}
+	s_vpr_h(inst->sid, "%s: Hardcoded as cvp not allowed\n", __func__);
 exit:
-	return allowed;
+	return false;
 }
 
 static int msm_vidc_prepare_preprocess(struct msm_vidc_inst *inst)
