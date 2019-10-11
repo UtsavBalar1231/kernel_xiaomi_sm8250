@@ -2163,6 +2163,7 @@ static int __cam_isp_ctx_flush_req_in_top_state(
 			CAM_ERR(CAM_ISP, "Failed to stop HW in Flush rc: %d",
 				rc);
 
+		CAM_INFO(CAM_ISP, "Stop HW complete. Reset HW next.");
 		CAM_DBG(CAM_ISP, "Flush wait and active lists");
 		spin_lock_bh(&ctx->lock);
 		if (!list_empty(&ctx->wait_req_list))
@@ -3553,12 +3554,13 @@ static int __cam_isp_ctx_config_dev_in_flushed(struct cam_context *ctx,
 
 	if (!ctx_isp->hw_acquired) {
 		CAM_ERR(CAM_ISP, "HW is not acquired, reject packet");
-		return -EINVAL;
+		rc = -EINVAL;
+		goto end;
 	}
 
 	rc = __cam_isp_ctx_config_dev_in_top_state(ctx, cmd);
 	if (rc)
-		return rc;
+		goto end;
 
 	if (!ctx_isp->init_received) {
 		CAM_WARN(CAM_ISP,
@@ -3574,7 +3576,7 @@ static int __cam_isp_ctx_config_dev_in_flushed(struct cam_context *ctx,
 		&hw_cmd_args);
 	if (rc) {
 		CAM_ERR(CAM_ISP, "Failed to resume HW rc: %d", rc);
-		return rc;
+		goto end;
 	}
 
 	start_cmd.dev_handle = cmd->dev_handle;
@@ -3583,6 +3585,9 @@ static int __cam_isp_ctx_config_dev_in_flushed(struct cam_context *ctx,
 	if (rc)
 		CAM_ERR(CAM_ISP,
 			"Failed to re-start HW after flush rc: %d", rc);
+	else
+		CAM_INFO(CAM_ISP,
+			"Received init after flush. Re-start HW complete.");
 
 end:
 	CAM_DBG(CAM_ISP, "next state %d sub_state:%d", ctx->state,
