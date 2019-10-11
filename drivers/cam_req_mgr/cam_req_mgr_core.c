@@ -2343,6 +2343,35 @@ end:
 }
 
 /**
+ * __cam_req_mgr_apply_on_bubble()
+ *
+ * @brief    : This API tries to apply settings to the device
+ *             with highest pd on the bubbled frame
+ * @link     : link information.
+ * @err_info : contains information about frame_id, trigger etc.
+ *
+ */
+void __cam_req_mgr_apply_on_bubble(
+	struct cam_req_mgr_core_link    *link,
+	struct cam_req_mgr_error_notify *err_info)
+{
+	int rc = 0;
+	struct cam_req_mgr_trigger_notify trigger_data;
+
+	trigger_data.dev_hdl = err_info->dev_hdl;
+	trigger_data.frame_id = err_info->frame_id;
+	trigger_data.link_hdl = err_info->link_hdl;
+	trigger_data.sof_timestamp_val =
+		err_info->sof_timestamp_val;
+	trigger_data.trigger = err_info->trigger;
+
+	rc = __cam_req_mgr_process_req(link, &trigger_data);
+	if (rc)
+		CAM_ERR(CAM_CRM,
+			"Failed to apply request on bubbled frame");
+}
+
+/**
  * cam_req_mgr_process_error()
  *
  * @brief: This runs in workque thread context. bubble /err recovery.
@@ -2432,6 +2461,7 @@ int cam_req_mgr_process_error(void *priv, void *data)
 			link->state = CAM_CRM_LINK_STATE_ERR;
 			spin_unlock_bh(&link->link_state_spin_lock);
 			link->open_req_cnt++;
+			__cam_req_mgr_apply_on_bubble(link, err_info);
 		}
 	}
 	mutex_unlock(&link->req.lock);

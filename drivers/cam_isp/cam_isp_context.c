@@ -1414,6 +1414,11 @@ static int __cam_isp_ctx_epoch_in_applied(struct cam_isp_context *ctx_isp,
 		notify.dev_hdl = ctx->dev_hdl;
 		notify.req_id = req->request_id;
 		notify.error = CRM_KMD_ERR_BUBBLE;
+		notify.trigger = 0;
+		if (ctx_isp->subscribe_event & CAM_TRIGGER_POINT_SOF)
+			notify.trigger = CAM_TRIGGER_POINT_SOF;
+		notify.frame_id = ctx_isp->frame_id;
+		notify.sof_timestamp_val = ctx_isp->sof_timestamp_val;
 		CAM_WARN(CAM_ISP,
 			"Notify CRM about Bubble req %lld frame %lld, ctx %u",
 			req->request_id, ctx_isp->frame_id, ctx->ctx_id);
@@ -1590,6 +1595,11 @@ static int __cam_isp_ctx_epoch_in_bubble_applied(
 		notify.dev_hdl = ctx->dev_hdl;
 		notify.req_id = req->request_id;
 		notify.error = CRM_KMD_ERR_BUBBLE;
+		notify.trigger = 0;
+		if (ctx_isp->subscribe_event & CAM_TRIGGER_POINT_SOF)
+			notify.trigger = CAM_TRIGGER_POINT_SOF;
+		notify.frame_id = ctx_isp->frame_id;
+		notify.sof_timestamp_val = ctx_isp->sof_timestamp_val;
 		CAM_WARN(CAM_REQ,
 			"Notify CRM about Bubble req_id %llu frame %lld, ctx %u",
 			req->request_id, ctx_isp->frame_id, ctx->ctx_id);
@@ -3159,6 +3169,11 @@ static int __cam_isp_ctx_rdi_only_sof_in_bubble_applied(
 		notify.dev_hdl = ctx->dev_hdl;
 		notify.req_id = req->request_id;
 		notify.error = CRM_KMD_ERR_BUBBLE;
+		notify.trigger = 0;
+		if (ctx_isp->subscribe_event & CAM_TRIGGER_POINT_SOF)
+			notify.trigger = CAM_TRIGGER_POINT_SOF;
+		notify.frame_id = ctx_isp->frame_id;
+		notify.sof_timestamp_val = ctx_isp->sof_timestamp_val;
 		CAM_WARN(CAM_ISP,
 			"Notify CRM about Bubble req %lld frame %lld ctx %u",
 			req->request_id,

@@ -239,12 +239,18 @@ struct cam_req_mgr_timer_notify {
  * @link_hdl : link identifier
  * @dev_hdl  : device handle which has sent this req id
  * @req_id   : req id which hit error
+ * @frame_id : frame id for internal tracking
+ * @trigger  : trigger point of this notification, CRM will send apply
+ * @sof_timestamp_val : Captured time stamp value at sof hw event
  * @error    : what error device hit while processing this req
  */
 struct cam_req_mgr_error_notify {
 	int32_t  link_hdl;
 	int32_t  dev_hdl;
 	uint64_t req_id;
+	int64_t  frame_id;
+	uint32_t trigger;
+	uint64_t sof_timestamp_val;
 	enum cam_req_mgr_device_error error;
 };
 
