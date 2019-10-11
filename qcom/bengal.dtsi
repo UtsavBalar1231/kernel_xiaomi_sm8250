@@ -530,6 +530,8 @@
 		clock-frequency = <19200000>;
 	};
 
+	qusb_phy0: qusb_phy0 {};
+
 	dcc: dcc_v2@1be2000 {
 		compatible = "qcom,dcc-v2";
 		reg = <0x1be2000 0x1000>,
