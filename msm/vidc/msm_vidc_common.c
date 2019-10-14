@@ -5566,7 +5566,7 @@ static int msm_vidc_check_mbpf_supported(struct msm_vidc_inst *inst)
 		if (is_thumbnail_session(temp))
 			continue;
 		/* ignore HEIF sessions */
-		if (is_image_session(temp))
+		if (is_image_session(temp) || is_grid_session(temp))
 			continue;
 		mbpf += NUM_MBS_PER_FRAME(
 			temp->fmts[INPUT_PORT].v4l2_fmt.fmt.pix_mp.height,
@@ -5834,7 +5834,8 @@ int msm_vidc_check_session_supported(struct msm_vidc_inst *inst)
 		/* Image size max capability has equal width and height,
 		 * hence, don't check mbpf for image sessions.
 		 */
-		if (!rc && !is_image_session(inst) &&
+		if (!rc && !(is_image_session(inst) ||
+			is_grid_session(inst)) &&
 			NUM_MBS_PER_FRAME(input_width, input_height) >
 			mbpf_max) {
 			s_vpr_e(sid, "Unsupported mbpf %d, max %d\n",
