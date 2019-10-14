@@ -3798,6 +3798,70 @@ static int cam_ife_csid_set_csid_qcfa(
 	return 0;
 }
 
+static int cam_ife_csid_dump_hw(
+	struct cam_ife_csid_hw *csid_hw, void *cmd_args)
+{
+	int                             i;
+	uint8_t                        *dst;
+	uint32_t                       *addr, *start;
+	uint32_t                        min_len;
+	uint32_t                        num_reg;
+	size_t                          remain_len;
+	struct cam_isp_hw_dump_header  *hdr;
+	struct cam_isp_hw_dump_args    *dump_args =
+		(struct cam_isp_hw_dump_args *)cmd_args;
+	struct cam_hw_soc_info         *soc_info;
+
+	if (!dump_args) {
+		CAM_ERR(CAM_ISP, "Invalid args");
+		return -EINVAL;
+	}
+	if (!dump_args->cpu_addr || !dump_args->buf_len) {
+		CAM_ERR(CAM_ISP,
+			"Invalid params %pK %zu",
+			(void *)dump_args->cpu_addr,
+			dump_args->buf_len);
+		return -EINVAL;
+	}
+	soc_info = &csid_hw->hw_info->soc_info;
+	if (dump_args->buf_len <= dump_args->offset) {
+		CAM_WARN(CAM_ISP,
+			"Dump offset overshoot offset %zu buf_len %zu",
+			dump_args->offset, dump_args->buf_len);
+		return -ENOSPC;
+	}
+	min_len = soc_info->reg_map[0].size +
+		sizeof(struct cam_isp_hw_dump_header) +
+		sizeof(uint32_t);
+	remain_len = dump_args->buf_len - dump_args->offset;
+	if (remain_len < min_len) {
+		CAM_WARN(CAM_ISP, "Dump buffer exhaust remain %zu, min %u",
+			remain_len, min_len);
+		return -ENOSPC;
+	}
+	dst = (uint8_t *)dump_args->cpu_addr + dump_args->offset;
+	hdr = (struct cam_isp_hw_dump_header *)dst;
+	scnprintf(hdr->tag, CAM_ISP_HW_DUMP_TAG_MAX_LEN, "CSID_REG:");
+	addr = (uint32_t *)(dst + sizeof(struct cam_isp_hw_dump_header));
+
+	start = addr;
+	num_reg = soc_info->reg_map[0].size/4;
+	hdr->word_size = sizeof(uint32_t);
+	*addr = soc_info->index;
+	addr++;
+	for (i = 0; i < num_reg; i++) {
+		addr[0] = soc_info->mem_block[0]->start + (i*4);
+		addr[1] = cam_io_r(soc_info->reg_map[0].mem_base
+			+ (i*4));
+		addr += 2;
+	}
+	hdr->size = hdr->word_size * (addr - start);
+	dump_args->offset +=  hdr->size +
+		sizeof(struct cam_isp_hw_dump_header);
+	CAM_DBG(CAM_ISP, "offset %zu", dump_args->offset);
+	return 0;
+}
+
 static int cam_ife_csid_process_cmd(void *hw_priv,
 	uint32_t cmd_type, void *cmd_args, uint32_t arg_size)
 {
@@ -3834,6 +3898,9 @@ static int cam_ife_csid_process_cmd(void *hw_priv,
 		break;
 	case CAM_ISP_HW_CMD_CSID_QCFA_SUPPORTED:
 		rc = cam_ife_csid_set_csid_qcfa(csid_hw, cmd_args);
+		break;
+	case CAM_ISP_HW_CMD_DUMP_HW:
+		rc = cam_ife_csid_dump_hw(csid_hw, cmd_args);
 		break;
 	default:
 		CAM_ERR(CAM_ISP, "CSID:%d unsupported cmd:%d",
