@@ -230,6 +230,34 @@ int cam_context_handle_crm_process_evt(struct cam_context *ctx,
 	return rc;
 }
 
+int cam_context_handle_crm_dump_req(struct cam_context *ctx,
+	struct cam_req_mgr_dump_info *dump)
+{
+	int rc = 0;
+
+	if (!ctx) {
+		CAM_ERR(CAM_CORE, "Invalid Context");
+		return -EINVAL;
+	}
+	if (!ctx->state_machine) {
+		CAM_ERR(CAM_CORE, "Context %s ctx_id %d is not ready",
+			ctx->dev_name, ctx->ctx_id);
+		return -EINVAL;
+	}
+	mutex_lock(&ctx->ctx_mutex);
+
+	if (ctx->state_machine[ctx->state].crm_ops.dump_req)
+		rc = ctx->state_machine[ctx->state].crm_ops.dump_req(ctx,
+			dump);
+	else
+		CAM_ERR(CAM_CORE, "No crm dump req for %s dev %d, state %d",
+			ctx->dev_name, ctx->dev_hdl, ctx->state);
+
+	mutex_unlock(&ctx->ctx_mutex);
+
+	return rc;
+}
+
 int cam_context_dump_pf_info(struct cam_context *ctx, unsigned long iova,
 	uint32_t buf_info)
 {
@@ -520,6 +548,43 @@ int cam_context_handle_info_dump(void *context,
 		CAM_WARN(CAM_CORE,
 			"Dump for id %u failed on ctx_id %u name %s state %d",
 			id, ctx->ctx_id, ctx->dev_name, ctx->state);
+
+	return rc;
+}
+
+int cam_context_handle_dump_dev(struct cam_context *ctx,
+	struct cam_dump_req_cmd *cmd)
+{
+	int rc = 0;
+
+	if (!ctx) {
+		CAM_ERR(CAM_CORE, "Invalid Context");
+		return -EINVAL;
+	}
+
+	if (!ctx->state_machine) {
+		CAM_ERR(CAM_CORE, "Context %s ctx_id %d is not ready",
+			ctx->dev_name, ctx->ctx_id);
+		return -EINVAL;
+	}
+
+	if (!cmd) {
+		CAM_ERR(CAM_CORE,
+			"Context %s ctx_id %d Invalid dump command payload",
+			ctx->dev_name, ctx->ctx_id);
+		return -EINVAL;
+	}
+
+	mutex_lock(&ctx->ctx_mutex);
+	CAM_DBG(CAM_CORE, "dump device in dev %d, name %s state %d",
+		ctx->dev_hdl, ctx->dev_name, ctx->state);
+	if (ctx->state_machine[ctx->state].ioctl_ops.dump_dev)
+		rc = ctx->state_machine[ctx->state].ioctl_ops.dump_dev(
+			ctx, cmd);
+	else
+		CAM_WARN(CAM_CORE, "No dump device in dev %d, name %s state %d",
+			ctx->dev_hdl, ctx->dev_name, ctx->state);
+	mutex_unlock(&ctx->ctx_mutex);
 
 	return rc;
 }

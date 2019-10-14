@@ -523,6 +523,30 @@ static long cam_private_ioctl(struct file *file, void *fh,
 			rc = -EINVAL;
 		}
 		break;
+	case CAM_REQ_MGR_REQUEST_DUMP: {
+		struct cam_dump_req_cmd cmd;
+
+		if (k_ioctl->size != sizeof(cmd))
+			return -EINVAL;
+
+		if (copy_from_user(&cmd,
+			u64_to_user_ptr(k_ioctl->handle),
+			sizeof(struct cam_dump_req_cmd))) {
+			rc = -EFAULT;
+			break;
+		}
+		rc = cam_req_mgr_dump_request(&cmd);
+		if (rc) {
+			CAM_ERR(CAM_CORE, "dump fail for dev %d req %llu rc %d",
+				cmd.dev_handle, cmd.issue_req_id, rc);
+			break;
+		}
+		if (copy_to_user(
+			u64_to_user_ptr(k_ioctl->handle),
+			&cmd, sizeof(struct cam_dump_req_cmd)))
+			rc = -EFAULT;
+		}
+		break;
 	default:
 		return -ENOIOCTLCMD;
 	}
