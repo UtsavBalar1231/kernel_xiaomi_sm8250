@@ -44,6 +44,7 @@
 			i-cache-size = <0x8000>;
 			next-level-cache = <&L2_0>;
 			qcom,freq-domain = <&cpufreq_hw 0 7>;
+			qcom,lmh-dcvs = <&lmh_dcvs0>;
 			L2_0: l2-cache {
 				compatible = "arm,arch-cache";
 				cache-level = <2>;
@@ -69,6 +70,7 @@
 			i-cache-size = <0x8000>;
 			next-level-cache = <&L2_0>;
 			qcom,freq-domain = <&cpufreq_hw 0 7>;
+			qcom,lmh-dcvs = <&lmh_dcvs0>;
 
 			L1_I_1: l1-icache {
 				compatible = "arm,arch-cache";
@@ -90,6 +92,7 @@
 			i-cache-size = <0x8000>;
 			next-level-cache = <&L2_0>;
 			qcom,freq-domain = <&cpufreq_hw 0 7>;
+			qcom,lmh-dcvs = <&lmh_dcvs0>;
 
 			L1_I_2: l1-icache {
 				compatible = "arm,arch-cache";
@@ -111,6 +114,7 @@
 			i-cache-size = <0x8000>;
 			next-level-cache = <&L2_0>;
 			qcom,freq-domain = <&cpufreq_hw 0 7>;
+			qcom,lmh-dcvs = <&lmh_dcvs0>;
 
 			L1_I_3: l1-icache {
 				compatible = "arm,arch-cache";
@@ -132,6 +136,7 @@
 			i-cache-size = <0x10000>;
 			next-level-cache = <&L2_1>;
 			qcom,freq-domain = <&cpufreq_hw 1 7>;
+			qcom,lmh-dcvs = <&lmh_dcvs1>;
 			L2_1: l2-cache {
 				compatible = "arm,arch-cache";
 				cache-level = <2>;
@@ -157,6 +162,7 @@
 			i-cache-size = <0x10000>;
 			next-level-cache = <&L2_1>;
 			qcom,freq-domain = <&cpufreq_hw 1 7>;
+			qcom,lmh-dcvs = <&lmh_dcvs1>;
 
 			L1_I_101: l1-icache {
 				compatible = "arm,arch-cache";
@@ -178,6 +184,7 @@
 			i-cache-size = <0x10000>;
 			next-level-cache = <&L2_1>;
 			qcom,freq-domain = <&cpufreq_hw 1 7>;
+			qcom,lmh-dcvs = <&lmh_dcvs1>;
 
 			L1_I_102: l1-icache {
 				compatible = "arm,arch-cache";
@@ -199,6 +206,7 @@
 			i-cache-size = <0x10000>;
 			next-level-cache = <&L2_1>;
 			qcom,freq-domain = <&cpufreq_hw 1 7>;
+			qcom,lmh-dcvs = <&lmh_dcvs1>;
 
 			L1_I_103: l1-icache {
 				compatible = "arm,arch-cache";
