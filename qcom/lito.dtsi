@@ -1937,6 +1937,7 @@
 		resets = <&gcc GCC_UFS_PHY_BCR>;
 		reset-names = "core_reset";
 		non-removable;
+		scsi-cmd-timeout = <10>;
 
 		status = "disabled";
 	};
