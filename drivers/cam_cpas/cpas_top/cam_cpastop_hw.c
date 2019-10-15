@@ -7,6 +7,8 @@
 #include <linux/timer.h>
 #include <linux/slab.h>
 
+#include <soc/qcom/scm.h>
+
 #include "cam_cpas_hw_intf.h"
 #include "cam_cpas_hw.h"
 #include "cam_cpastop_hw.h"
@@ -513,6 +515,10 @@ done:
 static int cam_cpastop_poweron(struct cam_hw_info *cpas_hw)
 {
 	int i;
+	struct cam_cpas_hw_errata_wa_list *errata_wa_list =
+		camnoc_info->errata_wa_list;
+	struct cam_cpas_hw_errata_wa *errata_wa =
+		&errata_wa_list->tcsr_camera_hf_sf_ares_glitch;
 
 	cam_cpastop_reset_irq(cpas_hw);
 	for (i = 0; i < camnoc_info->specific_size; i++) {
@@ -532,6 +538,11 @@ static int cam_cpastop_poweron(struct cam_hw_info *cpas_hw)
 			cam_cpas_util_reg_update(cpas_hw, CAM_CPAS_REG_CAMNOC,
 				&camnoc_info->specific[i].flag_out_set0_low);
 		}
+	}
+
+	if (errata_wa->enable) {
+		scm_io_write(errata_wa->data.reg_info.offset,
+			errata_wa->data.reg_info.value);
 	}
 
 	return 0;

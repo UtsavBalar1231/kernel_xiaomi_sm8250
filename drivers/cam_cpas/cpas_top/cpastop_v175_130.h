@@ -747,6 +747,17 @@ static struct cam_cpas_hw_errata_wa_list cam175_cpas130_errata_wa_list = {
 			.value = 0, /* expected to be 0 */
 		},
 	},
+	/* TZ owned register */
+	.tcsr_camera_hf_sf_ares_glitch = {
+		.enable = true,
+		.data.reg_info = {
+			.enable = true,
+			.access_type = CAM_REG_TYPE_READ_WRITE,
+			/* TCSR_CAMERA_HF_SF_ARES_GLITCH_MASK */
+			.offset = 0x01FCA08C,
+			.value = 0x4, /* set bit[2] to 1 */
+		},
+	},
 };
 
 static struct cam_camnoc_info cam175_cpas130_camnoc_info = {
