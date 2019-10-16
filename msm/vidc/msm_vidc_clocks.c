@@ -1311,9 +1311,13 @@ static int msm_vidc_decide_work_mode_ar50(struct msm_vidc_inst *inst)
 				pdata.video_work_mode = HFI_WORKMODE_1;
 			break;
 		}
-	} else if (inst->session_type == MSM_VIDC_ENCODER)
+	} else if (inst->session_type == MSM_VIDC_ENCODER) {
 		pdata.video_work_mode = HFI_WORKMODE_1;
-	else {
+		if (inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_VBR ||
+		    inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_MBR ||
+		    inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_MBR_VFR)
+			pdata.video_work_mode = HFI_WORKMODE_2;
+	} else {
 		return -EINVAL;
 	}
 
