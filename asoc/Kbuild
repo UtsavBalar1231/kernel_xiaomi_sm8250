@@ -235,6 +235,7 @@ endif
 
 ifeq ($(TARGET_PRODUCT), $(filter $(TARGET_PRODUCT), picasso picassoin))
 CDEFINES += -DAUDIO_SM7250_FLAG
+CDEFINES += -DTFA_ADSP_SUPPORTED
 endif
 
 KBUILD_CPPFLAGS += $(CDEFINES)

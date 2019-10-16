@@ -524,7 +524,7 @@ static struct dev_config mi2s_rx_cfg[] = {
 
 static struct dev_config mi2s_tx_cfg[] = {
 	[PRIM_MI2S] = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
-	[SEC_MI2S]  = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
+	[SEC_MI2S]  = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2},
 	[TERT_MI2S] = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
 	[QUAT_MI2S] = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
 	[QUIN_MI2S] = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
@@ -6476,19 +6476,21 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 };
 
 static struct snd_soc_dai_link msm_bolero_fe_dai_links[] = {
-	{/* hw:x,33 */
-		.name = LPASS_BE_WSA_CDC_DMA_TX_0,
-		.stream_name = "WSA CDC DMA0 Capture",
-		.cpu_dai_name = "msm-dai-cdc-dma-dev.45057",
-		.platform_name = "msm-pcm-hostless",
-		.codec_name = "bolero_codec",
-		.codec_dai_name = "wsa_macro_vifeedback",
-		.id = MSM_BACKEND_DAI_WSA_CDC_DMA_TX_0,
-		.be_hw_params_fixup = msm_be_hw_params_fixup,
-		.ignore_suspend = 1,
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
-		.ops = &msm_cdc_dma_be_ops,
-	},
+        {/* hw:x,33 */
+                .name = LPASS_BE_WSA_CDC_DMA_TX_0,
+                .stream_name = "WSA CDC DMA0 Capture",
+                .cpu_dai_name = "msm-dai-cdc-dma-dev.45057",
+                .platform_name = "msm-pcm-hostless",
+                //.codec_name = "bolero_codec",
+                //.codec_dai_name = "wsa_macro_vifeedback",
+                .codec_name = "snd-soc-dummy",
+                .codec_dai_name = "snd-soc-dummy-dai",
+                .id = MSM_BACKEND_DAI_WSA_CDC_DMA_TX_0,
+                .be_hw_params_fixup = msm_be_hw_params_fixup,
+                .ignore_suspend = 1,
+                .no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
+                .ops = &msm_cdc_dma_be_ops,
+        },
 };
 
 static struct snd_soc_dai_link msm_common_misc_fe_dai_links[] = {
