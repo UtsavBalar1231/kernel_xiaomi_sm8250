@@ -2409,8 +2409,8 @@ static int cam_ife_mgr_acquire_hw_for_ctx(
 		goto err;
 	}
 
-	*num_pix_port += ipp_count + ppp_count + ife_rd_count + lcr_count;
-	*num_rdi_port += rdi_count;
+	*num_pix_port = ipp_count + ppp_count + ife_rd_count + lcr_count;
+	*num_rdi_port = rdi_count;
 
 	return 0;
 err:
