@@ -183,6 +183,11 @@ struct cam_req_mgr_flush_info {
  * @bubble_enable: Input Param - Cam req mgr will do bubble recovery if this
  * flag is set.
  * @sync_mode: Type of Sync mode for this request
+ * @additional_timeout: Additional timeout value (in ms) associated with
+ * this request. This value needs to be 0 in cases where long exposure is
+ * not configured for the sensor.The max timeout that will be supported
+ * is 50000 ms
+ * @reserved: Reserved
  * @req_id: Input Param - Request Id from which all requests will be flushed
  */
 struct cam_req_mgr_sched_request {
@@ -190,6 +195,8 @@ struct cam_req_mgr_sched_request {
 	int32_t link_hdl;
 	int32_t bubble_enable;
 	int32_t sync_mode;
+	int32_t additional_timeout;
+	int32_t reserved;
 	int64_t req_id;
 };
 
@@ -406,11 +413,13 @@ struct cam_mem_cache_ops_cmd {
  * @CAM_REQ_MGR_ERROR_TYPE_REQUEST: Error on a single request, not fatal
  * @CAM_REQ_MGR_ERROR_TYPE_BUFFER: Buffer was not filled, not fatal
  * @CAM_REQ_MGR_ERROR_TYPE_RECOVERY: Fatal error, can be recovered
+ * @CAM_REQ_MGR_ERROR_TYPE_SOF_FREEZE: SOF freeze, can be recovered
  */
 #define CAM_REQ_MGR_ERROR_TYPE_DEVICE           0
 #define CAM_REQ_MGR_ERROR_TYPE_REQUEST          1
 #define CAM_REQ_MGR_ERROR_TYPE_BUFFER           2
 #define CAM_REQ_MGR_ERROR_TYPE_RECOVERY         3
+#define CAM_REQ_MGR_ERROR_TYPE_SOF_FREEZE       4
 
 /**
  * struct cam_req_mgr_error_msg
