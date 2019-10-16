@@ -145,6 +145,64 @@
 			};
 		};
 
+		/* WSA speaker reset pin1 */
+		spkr_1_sd_n {
+			spkr_1_sd_n_sleep: spkr_1_sd_n_sleep {
+				mux {
+					pins = "gpio106";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio106";
+					drive-strength = <2>;   /* 2 mA */
+					bias-pull-down;
+					input-enable;
+				};
+			};
+
+			spkr_1_sd_n_active: spkr_1_sd_n_active {
+				mux {
+					pins = "gpio106";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio106";
+					drive-strength = <16>;   /* 16 mA */
+					bias-disable;
+					output-high;
+				};
+			};
+		};
+
+		wcd937x_reset_active: wcd937x_reset_active {
+			mux {
+				pins = "gpio92";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio92";
+				drive-strength = <16>;
+				output-high;
+			};
+		};
+
+		wcd937x_reset_sleep: wcd937x_reset_sleep {
+			mux {
+				pins = "gpio92";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio92";
+				drive-strength = <16>;
+				bias-disable;
+				output-low;
+			};
+		};
+
 		qupv3_se4_2uart_pins: qupv3_se4_2uart_pins {
 			qupv3_se4_2uart_active: qupv3_se4_2uart_active {
 				mux {

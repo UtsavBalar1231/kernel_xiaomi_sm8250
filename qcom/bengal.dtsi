@@ -25,6 +25,8 @@
 	aliases {
 		sdhc1 = &sdhc_1; /* SDC1 eMMC slot */
 		sdhc2 = &sdhc_2; /* SDC2 SD Card slot */
+		swr0 = &swr0;
+		swr1 = &swr1;
 	};
 
 	cpus {
@@ -2193,6 +2195,7 @@
 #include "bengal-pinctrl.dtsi"
 #include "bengal-qupv3.dtsi"
 #include "bengal-gpu.dtsi"
+#include "bengal-audio.dtsi"
 
 &qupv3_se1_i2c {
 	status = "ok";
