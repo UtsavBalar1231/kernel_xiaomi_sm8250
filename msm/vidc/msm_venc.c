@@ -1161,7 +1161,7 @@ int msm_venc_inst_init(struct msm_vidc_inst *inst)
 	strlcpy(inst->fmts[INPUT_PORT].description, fmt_desc->description,
 		sizeof(inst->fmts[INPUT_PORT].description));
 	inst->prop.bframe_changed = false;
-	inst->prop.extradata_ctrls = EXTRADATA_DEFAULT;
+	inst->prop.extradata_ctrls = EXTRADATA_NONE;
 	inst->buffer_mode_set[INPUT_PORT] = HAL_BUFFER_MODE_DYNAMIC;
 	inst->buffer_mode_set[OUTPUT_PORT] = HAL_BUFFER_MODE_STATIC;
 	inst->clk_data.frame_rate = (DEFAULT_FPS << 16);
@@ -1601,6 +1601,10 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 		inst->flags &= ~VIDC_SECURE;
 		if (ctrl->val)
 			inst->flags |= VIDC_SECURE;
+		f = &inst->fmts[INPUT_PORT].v4l2_fmt;
+		f->fmt.pix_mp.num_planes = 1;
+		s_vpr_h(sid, "%s: num planes %d for secure sessions\n",
+					__func__, f->fmt.pix_mp.num_planes);
 		break;
 	case V4L2_CID_MPEG_VIDC_VIDEO_USELTRFRAME:
 		if (inst->state == MSM_VIDC_START_DONE) {
