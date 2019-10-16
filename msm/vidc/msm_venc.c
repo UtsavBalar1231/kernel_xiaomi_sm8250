@@ -1506,6 +1506,29 @@ static int msm_venc_resolve_rate_control(struct msm_vidc_inst *inst,
 	return 0;
 }
 
+static int msm_venc_update_bitrate(struct msm_vidc_inst *inst)
+{
+	u32 cabac_max_bitrate = 0;
+
+	if (!inst) {
+		d_vpr_e("%s: invalid params %pK\n", __func__);
+		return -EINVAL;
+	}
+
+	if (get_v4l2_codec(inst) == V4L2_PIX_FMT_H264) {
+		cabac_max_bitrate = inst->capability.cap[CAP_CABAC_BITRATE].max;
+		if ((inst->clk_data.bitrate > cabac_max_bitrate) &&
+			(inst->entropy_mode == HFI_H264_ENTROPY_CABAC)) {
+			s_vpr_h(inst->sid,
+				"%s: update bitrate %u to max allowed cabac bitrate %u\n",
+				__func__, inst->clk_data.bitrate,
+				cabac_max_bitrate);
+			inst->clk_data.bitrate = cabac_max_bitrate;
+		}
+	}
+	return 0;
+}
+
 int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 {
 	int rc = 0;
@@ -1564,6 +1587,10 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 	case V4L2_CID_MPEG_VIDEO_BITRATE:
 		inst->clk_data.bitrate = ctrl->val;
 		if (inst->state == MSM_VIDC_START_DONE) {
+			rc = msm_venc_update_bitrate(inst);
+			if (rc)
+				s_vpr_e(sid, "%s: Update bitrate failed\n",
+					__func__);
 			rc = msm_venc_set_bitrate(inst);
 			if (rc)
 				s_vpr_e(sid, "%s: set bitrate failed\n",
@@ -2645,7 +2672,6 @@ int msm_venc_set_bitrate(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
 	struct hfi_device *hdev;
-	struct v4l2_ctrl *ctrl;
 	struct hfi_bitrate bitrate;
 	struct hfi_enable enable;
 
@@ -2671,8 +2697,7 @@ int msm_venc_set_bitrate(struct msm_vidc_inst *inst)
 		return rc;
 	}
 
-	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_BITRATE);
-	bitrate.bit_rate = ctrl->val;
+	bitrate.bit_rate = inst->clk_data.bitrate;
 	bitrate.layer_id = MSM_VIDC_ALL_LAYER_ID;
 	s_vpr_h(inst->sid, "%s: %d\n", __func__, bitrate.bit_rate);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
@@ -2688,12 +2713,12 @@ int msm_venc_set_layer_bitrate(struct msm_vidc_inst *inst)
 {
 	int rc = 0, i = 0;
 	struct hfi_device *hdev;
-	struct v4l2_ctrl *bitrate = NULL;
 	struct v4l2_ctrl *layer = NULL;
 	struct v4l2_ctrl *max_layer = NULL;
 	struct v4l2_ctrl *layer_br_ratios[MAX_HIER_CODING_LAYER] = {NULL};
 	struct hfi_bitrate layer_br;
 	struct hfi_enable enable;
+	u32 bitrate;
 
 	if (!inst || !inst->core) {
 		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
@@ -2760,10 +2785,10 @@ int msm_venc_set_layer_bitrate(struct msm_vidc_inst *inst)
 		goto error;
 	}
 
-	bitrate = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_BITRATE);
+	bitrate = inst->clk_data.bitrate;
 	for (i = 0; i < layer->val; ++i) {
 		layer_br.bit_rate =
-			bitrate->val * layer_br_ratios[i]->val / 100;
+			bitrate * layer_br_ratios[i]->val / 100;
 		layer_br.layer_id = i;
 		s_vpr_h(inst->sid, "%s: Bitrate for Layer[%u]: [%u]\n",
 			__func__, layer_br.layer_id, layer_br.bit_rate);
@@ -4487,6 +4512,9 @@ int msm_venc_set_properties(struct msm_vidc_inst *inst)
 	rc = msm_venc_update_entropy_mode(inst);
 	if (rc)
 		goto exit;
+	rc = msm_venc_update_bitrate(inst);
+	if (rc)
+		goto exit;
 	rc = handle_all_intra_restrictions(inst);
 	if (rc)
 		goto exit;
@@ -4512,9 +4540,6 @@ int msm_venc_set_properties(struct msm_vidc_inst *inst)
 	if (rc)
 		goto exit;
 	rc = msm_venc_set_8x8_transform(inst);
-	if (rc)
-		goto exit;
-	rc = msm_venc_set_bitrate(inst);
 	if (rc)
 		goto exit;
 	rc = msm_venc_set_entropy_mode(inst);
