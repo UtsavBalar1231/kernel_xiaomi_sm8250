@@ -1158,6 +1158,14 @@
 		#clock-cells = <1>;
 	};
 
+	qcom,rmtfs_sharedmem@0 {
+		compatible = "qcom,sharedmem-uio";
+		reg = <0x0 0x200000>;
+		reg-names = "rmtfs";
+		qcom,client-id = <0x00000001>;
+		qcom,guard-memory;
+	};
+
 	gcc: qcom,gcc@1400000 {
 		compatible = "qcom,bengal-gcc", "syscon";
 		reg = <0x1400000 0x1f0000>;
