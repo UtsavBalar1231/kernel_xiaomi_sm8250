@@ -111,7 +111,6 @@
 		csi-vdd-voltage = <880000>;
 		mipi-csi-vdd-supply = <&L5A>;
 		clocks = <&camcc CAM_CC_CPHY_RX_CLK_SRC>,
-			<&camcc CAM_CC_CSIPHY0_CLK>,
 			<&camcc CAM_CC_CSIPHY3_CLK>,
 			<&camcc CAM_CC_CSI3PHYTIMER_CLK_SRC>,
 			<&camcc CAM_CC_CSI3PHYTIMER_CLK>;
