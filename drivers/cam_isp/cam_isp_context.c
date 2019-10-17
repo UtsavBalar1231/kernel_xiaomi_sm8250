@@ -689,9 +689,10 @@ static int __cam_isp_ctx_handle_buf_done_in_activated_state(
 
 	if (done_next_req.num_handles) {
 		struct cam_isp_hw_done_event_data unhandled_res;
-		struct cam_ctx_request  *next_req = list_next_entry(req, list);
+		struct cam_ctx_request  *next_req = list_last_entry(
+			&ctx->active_req_list, struct cam_ctx_request, list);
 
-		if (next_req) {
+		if (next_req->request_id != req->request_id) {
 			/*
 			 * Few resource handles are already signalled in the
 			 * current request, lets check if there is another
@@ -719,6 +720,10 @@ static int __cam_isp_ctx_handle_buf_done_in_activated_state(
 				CAM_ERR(CAM_ISP,
 					"BUF Done not handled for next request %lld",
 					next_req->request_id);
+		} else {
+			CAM_WARN(CAM_ISP,
+				"Req %lld only active request, spurious buf_done rxd",
+				req->request_id);
 		}
 	}
 
@@ -2103,6 +2108,7 @@ static int __cam_isp_ctx_flush_req(struct cam_context *ctx,
 			}
 		}
 		req_isp->reapply = false;
+		list_del_init(&req->list);
 		list_add_tail(&req->list, &ctx->free_req_list);
 	}
 
@@ -2127,31 +2133,35 @@ static int __cam_isp_ctx_flush_req_in_top_state(
 	struct cam_hw_cmd_args            hw_cmd_args;
 
 	ctx_isp = (struct cam_isp_context *) ctx->ctx_priv;
-	if (flush_req->type == CAM_REQ_MGR_FLUSH_TYPE_ALL) {
-		CAM_INFO(CAM_ISP, "Last request id to flush is %lld",
-			flush_req->req_id);
-		ctx->last_flush_req = flush_req->req_id;
-	}
 
 	CAM_DBG(CAM_ISP, "Flush pending list");
 	spin_lock_bh(&ctx->lock);
 	rc = __cam_isp_ctx_flush_req(ctx, &ctx->pending_req_list, flush_req);
 	spin_unlock_bh(&ctx->lock);
 
-	memset(&hw_cmd_args, 0, sizeof(hw_cmd_args));
-	hw_cmd_args.ctxt_to_hw_map = ctx->ctxt_to_hw_map;
-	hw_cmd_args.cmd_type = CAM_HW_MGR_CMD_REG_DUMP_ON_FLUSH;
-	rc = ctx->hw_mgr_intf->hw_cmd(ctx->hw_mgr_intf->hw_mgr_priv,
-		&hw_cmd_args);
-	if (rc) {
-		CAM_ERR(CAM_ISP, "Reg dump on flush failed rc: %d", rc);
-		rc = 0;
-	}
-
 	if (flush_req->type == CAM_REQ_MGR_FLUSH_TYPE_ALL) {
 		if (ctx->state <= CAM_CTX_READY) {
 			ctx->state = CAM_CTX_ACQUIRED;
 			goto end;
+		}
+
+		spin_lock_bh(&ctx->lock);
+		ctx->state = CAM_CTX_FLUSHED;
+		ctx_isp->substate_activated = CAM_ISP_CTX_ACTIVATED_HALT;
+		spin_unlock_bh(&ctx->lock);
+
+		CAM_INFO(CAM_ISP, "Last request id to flush is %lld",
+			flush_req->req_id);
+		ctx->last_flush_req = flush_req->req_id;
+
+		memset(&hw_cmd_args, 0, sizeof(hw_cmd_args));
+		hw_cmd_args.ctxt_to_hw_map = ctx->ctxt_to_hw_map;
+		hw_cmd_args.cmd_type = CAM_HW_MGR_CMD_REG_DUMP_ON_FLUSH;
+		rc = ctx->hw_mgr_intf->hw_cmd(ctx->hw_mgr_intf->hw_mgr_priv,
+			&hw_cmd_args);
+		if (rc) {
+			CAM_ERR(CAM_ISP, "Reg dump on flush failed rc: %d", rc);
+			rc = 0;
 		}
 
 		stop_args.ctxt_to_hw_map = ctx_isp->hw_ctx;
@@ -2184,8 +2194,6 @@ static int __cam_isp_ctx_flush_req_in_top_state(
 		if (rc)
 			CAM_ERR(CAM_ISP, "Failed to reset HW rc: %d", rc);
 
-		ctx->state = CAM_CTX_FLUSHED;
-		ctx_isp->substate_activated = CAM_ISP_CTX_ACTIVATED_HALT;
 		ctx_isp->init_received = false;
 	}
 
@@ -3025,10 +3033,12 @@ static int __cam_isp_ctx_config_dev_in_top_state(
 			ctx_isp->init_received = true;
 		} else {
 			rc = -EINVAL;
-			CAM_ERR(CAM_ISP, "Recevied INIT pkt in wrong state");
+			CAM_ERR(CAM_ISP, "Recevied INIT pkt in wrong state:%d",
+				ctx->state);
 		}
 	} else {
-		if (ctx->state >= CAM_CTX_READY && ctx->ctx_crm_intf->add_req) {
+		if (ctx->state != CAM_CTX_FLUSHED && ctx->state >= CAM_CTX_READY
+			&& ctx->ctx_crm_intf->add_req) {
 			add_req.link_hdl = ctx->link_hdl;
 			add_req.dev_hdl  = ctx->dev_hdl;
 			add_req.req_id   = req->request_id;
@@ -3043,7 +3053,9 @@ static int __cam_isp_ctx_config_dev_in_top_state(
 			}
 		} else {
 			rc = -EINVAL;
-			CAM_ERR(CAM_ISP, "Recevied Update in wrong state");
+			CAM_ERR(CAM_ISP,
+				"Recevied update req %lld in wrong state:%d",
+				req->request_id, ctx->state);
 		}
 	}
 	if (rc)
