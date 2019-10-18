@@ -1480,13 +1480,6 @@ static void handle_session_init_done(enum hal_command_response cmd, void *data)
 		goto error;
 	}
 
-	if (inst->session_type == MSM_VIDC_CVP) {
-		s_vpr_h(inst->sid, "%s: cvp session\n", __func__);
-		signal_session_msg_receipt(cmd, inst);
-		put_inst(inst);
-		return;
-	}
-
 	s_vpr_l(inst->sid, "handled: SESSION_INIT_DONE\n");
 	signal_session_msg_receipt(cmd, inst);
 	put_inst(inst);
@@ -1511,6 +1504,11 @@ static int msm_comm_update_capabilities(struct msm_vidc_inst *inst)
 	if (!inst || !inst->core) {
 		d_vpr_e("%s: invalid parameters\n", __func__);
 		return -EINVAL;
+	}
+
+	if (inst->session_type == MSM_VIDC_CVP) {
+		s_vpr_h(inst->sid, "%s: cvp session\n", __func__);
+		return 0;
 	}
 
 	core = inst->core;
