@@ -13,9 +13,10 @@
 #define CAM_REQ_MGR_MAX_LINKED_DEV     16
 #define MAX_REQ_SLOTS                  48
 
-#define CAM_REQ_MGR_WATCHDOG_TIMEOUT   5000
-#define CAM_REQ_MGR_SCHED_REQ_TIMEOUT  1000
-#define CAM_REQ_MGR_SIMULATE_SCHED_REQ 30
+#define CAM_REQ_MGR_WATCHDOG_TIMEOUT       1000
+#define CAM_REQ_MGR_WATCHDOG_TIMEOUT_MAX   50000
+#define CAM_REQ_MGR_SCHED_REQ_TIMEOUT      1000
+#define CAM_REQ_MGR_SIMULATE_SCHED_REQ     30
 
 #define FORCE_DISABLE_RECOVERY  2
 #define FORCE_ENABLE_RECOVERY   1
@@ -226,13 +227,15 @@ struct cam_req_mgr_req_tbl {
 /**
  * struct cam_req_mgr_slot
  * - Internal Book keeping
- * @idx          : slot index
- * @skip_idx     : if req id in this slot needs to be skipped/not applied
- * @status       : state machine for life cycle of a slot
+ * @idx                : slot index
+ * @skip_idx           : if req id in this slot needs to be skipped/not applied
+ * @status             : state machine for life cycle of a slot
  * - members updated due to external events
- * @recover      : if user enabled recovery for this request.
- * @req_id       : mask tracking which all devices have request ready
- * @sync_mode    : Sync mode in which req id in this slot has to applied
+ * @recover            : if user enabled recovery for this request.
+ * @req_id             : mask tracking which all devices have request ready
+ * @sync_mode          : Sync mode in which req id in this slot has to applied
+ * @additional_timeout : Adjusted watchdog timeout value associated with
+ * this request
  */
 struct cam_req_mgr_slot {
 	int32_t               idx;
@@ -241,6 +244,7 @@ struct cam_req_mgr_slot {
 	int32_t               recover;
 	int64_t               req_id;
 	int32_t               sync_mode;
+	int32_t               additional_timeout;
 };
 
 /**
