@@ -456,6 +456,14 @@ bool sde_encoder_is_primary_display(struct drm_encoder *drm_enc)
 		SDE_CONNECTOR_PRIMARY);
 }
 
+bool sde_encoder_is_dsi_display(struct drm_encoder *drm_enc)
+{
+	struct sde_encoder_virt *sde_enc = to_sde_encoder_virt(drm_enc);
+
+	return sde_enc &&
+		(sde_enc->disp_info.intf_type == DRM_MODE_CONNECTOR_DSI);
+}
+
 int sde_encoder_in_cont_splash(struct drm_encoder *drm_enc)
 {
 	struct sde_encoder_virt *sde_enc = to_sde_encoder_virt(drm_enc);
@@ -769,8 +777,8 @@ void sde_encoder_helper_update_intf_cfg(
 	struct sde_hw_intf_cfg_v1 *intf_cfg;
 	enum sde_3d_blend_mode mode_3d;
 
-	if (!phys_enc) {
-		SDE_ERROR("invalid arg, encoder %d\n", !phys_enc);
+	if (!phys_enc || !phys_enc->hw_pp) {
+		SDE_ERROR("invalid args, encoder %d\n", !phys_enc);
 		return;
 	}
 
@@ -3336,7 +3344,8 @@ static void sde_encoder_virt_disable(struct drm_encoder *drm_enc)
 	/* wait for idle */
 	sde_encoder_wait_for_event(drm_enc, MSM_ENC_TX_COMPLETE);
 
-	if (sde_enc->input_handler)
+	if (sde_enc->input_handler &&
+		sde_encoder_check_curr_mode(drm_enc, MSM_DISPLAY_CMD_MODE))
 		input_unregister_handler(sde_enc->input_handler);
 
 	/*
