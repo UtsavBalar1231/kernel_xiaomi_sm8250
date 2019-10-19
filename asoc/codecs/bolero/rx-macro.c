@@ -77,6 +77,8 @@ static const struct snd_kcontrol_new name##_mux = \
 #define RX_MACRO_EC_MIX_TX1_MASK 0x0f
 #define RX_MACRO_EC_MIX_TX2_MASK 0x0f
 
+#define COMP_MAX_COEFF 25
+
 struct wcd_imped_val {
 	u32 imped_val;
 	u8 index;
@@ -93,6 +95,75 @@ static const struct wcd_imped_val imped_index[] = {
 	{11, 7},
 	{12, 8},
 	{13, 9},
+};
+
+struct comp_coeff_val {
+	u8 lsb;
+	u8 msb;
+};
+
+enum {
+	HPH_ULP,
+	HPH_LOHIFI,
+	HPH_MODE_MAX,
+};
+
+static const struct comp_coeff_val
+			comp_coeff_table [HPH_MODE_MAX][COMP_MAX_COEFF] = {
+	{
+		{0x40, 0x00},
+		{0x4C, 0x00},
+		{0x5A, 0x00},
+		{0x6B, 0x00},
+		{0x7F, 0x00},
+		{0x97, 0x00},
+		{0xB3, 0x00},
+		{0xD5, 0x00},
+		{0xFD, 0x00},
+		{0x2D, 0x01},
+		{0x66, 0x01},
+		{0xA7, 0x01},
+		{0xF8, 0x01},
+		{0x57, 0x02},
+		{0xC7, 0x02},
+		{0x4B, 0x03},
+		{0xE9, 0x03},
+		{0xA3, 0x04},
+		{0x7D, 0x05},
+		{0x90, 0x06},
+		{0xD1, 0x07},
+		{0x49, 0x09},
+		{0x00, 0x0B},
+		{0x01, 0x0D},
+		{0x59, 0x0F},
+	},
+	{
+		{0x40, 0x00},
+		{0x4C, 0x00},
+		{0x5A, 0x00},
+		{0x6B, 0x00},
+		{0x80, 0x00},
+		{0x98, 0x00},
+		{0xB4, 0x00},
+		{0xD5, 0x00},
+		{0xFE, 0x00},
+		{0x2E, 0x01},
+		{0x66, 0x01},
+		{0xA9, 0x01},
+		{0xF8, 0x01},
+		{0x56, 0x02},
+		{0xC4, 0x02},
+		{0x4F, 0x03},
+		{0xF0, 0x03},
+		{0xAE, 0x04},
+		{0x8B, 0x05},
+		{0x8E, 0x06},
+		{0xBC, 0x07},
+		{0x56, 0x09},
+		{0x0F, 0x0B},
+		{0x13, 0x0D},
+		{0x6F, 0x0F},
+	},
 };
 
 struct rx_macro_reg_mask_val {
@@ -280,6 +351,7 @@ static int rx_macro_hw_params(struct snd_pcm_substream *substream,
 static int rx_macro_get_channel_map(struct snd_soc_dai *dai,
 				unsigned int *tx_num, unsigned int *tx_slot,
 				unsigned int *rx_num, unsigned int *rx_slot);
+static int rx_macro_digital_mute(struct snd_soc_dai *dai, int mute);
 static int rx_macro_int_dem_inp_mux_put(struct snd_kcontrol *kcontrol,
 				     struct snd_ctl_elem_value *ucontrol);
 static int rx_macro_mux_get(struct snd_kcontrol *kcontrol,
@@ -300,6 +372,7 @@ struct rx_swr_ctrl_platform_data {
 	int (*write)(void *handle, int reg, int val);
 	int (*bulk_write)(void *handle, u32 *reg, u32 *val, size_t len);
 	int (*clk)(void *handle, bool enable);
+	int (*core_vote)(void *handle, bool enable);
 	int (*handle_irq)(void *handle,
 			  irqreturn_t (*swrm_irq_handler)(int irq,
 							  void *data),
@@ -374,6 +447,7 @@ struct rx_macro_priv {
 			[RX_MACRO_CHILD_DEVICES_MAX];
 	int child_count;
 	int is_softclip_on;
+	int is_aux_hpf_on;
 	int softclip_clk_users;
 	struct rx_macro_bcl_pmic_params bcl_pmic_params;
 	u16 clk_id;
@@ -570,6 +644,7 @@ static const struct snd_kcontrol_new rx_mix_tx0_mux =
 static struct snd_soc_dai_ops rx_macro_dai_ops = {
 	.hw_params = rx_macro_hw_params,
 	.get_channel_map = rx_macro_get_channel_map,
+	.digital_mute = rx_macro_digital_mute,
 };
 
 static struct snd_soc_dai_driver rx_macro_dai[] = {
@@ -844,12 +919,12 @@ static int rx_macro_set_prim_interpolator_rate(struct snd_soc_dai *dai,
 						component, int_mux_cfg0);
 			int_mux_cfg1_val = snd_soc_component_read32(
 						component, int_mux_cfg1);
-			inp0_sel = int_mux_cfg0_val & 0x07;
-			inp1_sel = (int_mux_cfg0_val >> 4) & 0x038;
-			inp2_sel = (int_mux_cfg1_val >> 4) & 0x038;
-			if ((inp0_sel == int_1_mix1_inp) ||
-			    (inp1_sel == int_1_mix1_inp) ||
-			    (inp2_sel == int_1_mix1_inp)) {
+			inp0_sel = int_mux_cfg0_val & 0x0F;
+			inp1_sel = (int_mux_cfg0_val >> 4) & 0x0F;
+			inp2_sel = (int_mux_cfg1_val >> 4) & 0x0F;
+			if ((inp0_sel == int_1_mix1_inp + INTn_1_INP_SEL_RX0) ||
+			    (inp1_sel == int_1_mix1_inp + INTn_1_INP_SEL_RX0) ||
+			    (inp2_sel == int_1_mix1_inp + INTn_1_INP_SEL_RX0)) {
 				int_fs_reg = BOLERO_CDC_RX_RX0_RX_PATH_CTL +
 					     0x80 * j;
 				pr_debug("%s: AIF_PB DAI(%d) connected to INT%u_1\n",
@@ -897,8 +972,9 @@ static int rx_macro_set_mix_interpolator_rate(struct snd_soc_dai *dai,
 		for (j = 0; j < INTERP_MAX; j++) {
 			int_mux_cfg1_val = snd_soc_component_read32(
 						component, int_mux_cfg1) &
-						0x07;
-			if (int_mux_cfg1_val == int_2_inp) {
+						0x0F;
+			if (int_mux_cfg1_val == int_2_inp +
+							INTn_2_INP_SEL_RX0) {
 				int_fs_reg = BOLERO_CDC_RX_RX0_RX_PATH_MIX_CTL +
 						0x80 * j;
 				pr_debug("%s: AIF_PB DAI(%d) connected to INT%u_2\n",
@@ -1026,8 +1102,26 @@ static int rx_macro_get_channel_map(struct snd_soc_dai *dai,
 			if (++i == RX_MACRO_MAX_DMA_CH_PER_PORT)
 				break;
 		}
+		/*
+		 * CDC_DMA_RX_0 port drives RX0/RX1 -- ch_mask 0x1/0x2/0x3
+		 * CDC_DMA_RX_1 port drives RX2/RX3 -- ch_mask 0x1/0x2/0x3
+		 * CDC_DMA_RX_2 port drives RX4     -- ch_mask 0x1
+		 * CDC_DMA_RX_3 port drives RX5     -- ch_mask 0x1
+		 * AIFn can pair to any CDC_DMA_RX_n port.
+		 * In general, below convention is used::
+		 * CDC_DMA_RX_0(AIF1)/CDC_DMA_RX_1(AIF2)/
+		 * CDC_DMA_RX_2(AIF3)/CDC_DMA_RX_3(AIF4)
+		 * Above is reflected in machine driver BE dailink
+		 */
+		if (ch_mask & 0x0C)
+			ch_mask = ch_mask >> 2;
+		if ((ch_mask & 0x10) || (ch_mask & 0x20))
+			ch_mask = 0x1;
 		*rx_slot = ch_mask;
 		*rx_num = rx_priv->active_ch_cnt[dai->id];
+		dev_dbg(rx_priv->dev,
+			"%s: dai->id:%d, ch_mask:0x%x, active_ch_cnt:%d active_mask: 0x%x\n",
+			__func__, dai->id, *rx_slot, *rx_num, rx_priv->active_ch_mask[dai->id]);
 		break;
 	case RX_MACRO_AIF_ECHO:
 		val = snd_soc_component_read32(component,
@@ -1051,6 +1145,60 @@ static int rx_macro_get_channel_map(struct snd_soc_dai *dai,
 		break;
 	default:
 		dev_err(rx_dev, "%s: Invalid AIF\n", __func__);
+		break;
+	}
+	return 0;
+}
+
+static int rx_macro_digital_mute(struct snd_soc_dai *dai, int mute)
+{
+	struct snd_soc_component *component = dai->component;
+	struct device *rx_dev = NULL;
+	struct rx_macro_priv *rx_priv = NULL;
+	uint16_t j = 0, reg = 0, mix_reg = 0, dsm_reg = 0;
+	u16 int_mux_cfg0 = 0, int_mux_cfg1 = 0;
+	u8 int_mux_cfg0_val = 0, int_mux_cfg1_val = 0;
+
+	if (mute)
+		return 0;
+
+	if (!rx_macro_get_data(component, &rx_dev, &rx_priv, __func__))
+		return -EINVAL;
+
+	switch (dai->id) {
+	case RX_MACRO_AIF1_PB:
+	case RX_MACRO_AIF2_PB:
+	case RX_MACRO_AIF3_PB:
+	case RX_MACRO_AIF4_PB:
+	for (j = 0; j < INTERP_MAX; j++) {
+		reg = BOLERO_CDC_RX_RX0_RX_PATH_CTL +
+				(j * RX_MACRO_RX_PATH_OFFSET);
+		mix_reg = BOLERO_CDC_RX_RX0_RX_PATH_MIX_CTL +
+				(j * RX_MACRO_RX_PATH_OFFSET);
+		dsm_reg = BOLERO_CDC_RX_RX0_RX_PATH_DSM_CTL +
+				(j * RX_MACRO_RX_PATH_OFFSET);
+		if (j == INTERP_AUX)
+			dsm_reg = BOLERO_CDC_RX_RX2_RX_PATH_DSM_CTL;
+		int_mux_cfg0 = BOLERO_CDC_RX_INP_MUX_RX_INT0_CFG0 + j * 8;
+		int_mux_cfg1 = int_mux_cfg0 + 4;
+		int_mux_cfg0_val = snd_soc_component_read32(component,
+							int_mux_cfg0);
+		int_mux_cfg1_val = snd_soc_component_read32(component,
+							int_mux_cfg1);
+		if (snd_soc_component_read32(component, dsm_reg) & 0x01) {
+			if (int_mux_cfg0_val || (int_mux_cfg1_val & 0xF0))
+				snd_soc_component_update_bits(component,
+							reg, 0x20, 0x20);
+			if (int_mux_cfg1_val & 0x0F) {
+				snd_soc_component_update_bits(component,
+							reg, 0x20, 0x20);
+				snd_soc_component_update_bits(component,
+							mix_reg, 0x20, 0x20);
+			}
+		}
+	}
+		break;
+	default:
 		break;
 	}
 	return 0;
@@ -1412,8 +1560,6 @@ static int rx_macro_enable_mix_path(struct snd_soc_dapm_widget *w,
 		rx_macro_set_idle_detect_thr(component, rx_priv, w->shift,
 					INTERP_MIX_PATH);
 		rx_macro_enable_interp_clk(component, event, w->shift);
-		/* Clk enable */
-		snd_soc_component_update_bits(component, mix_reg, 0x20, 0x20);
 		break;
 	case SND_SOC_DAPM_POST_PMU:
 		snd_soc_component_write(component, gain_reg,
@@ -1430,6 +1576,42 @@ static int rx_macro_enable_mix_path(struct snd_soc_dapm_widget *w,
 	}
 
 	return 0;
+}
+
+static bool rx_macro_adie_lb(struct snd_soc_component *component,
+			     int interp_idx)
+{
+	u16 int_mux_cfg0 = 0, int_mux_cfg1 = 0;
+	u8 int_mux_cfg0_val = 0, int_mux_cfg1_val = 0;
+	u8 int_n_inp0 = 0, int_n_inp1 = 0, int_n_inp2 = 0;
+
+	int_mux_cfg0 = BOLERO_CDC_RX_INP_MUX_RX_INT0_CFG0 + interp_idx * 8;
+	int_mux_cfg1 = int_mux_cfg0 + 4;
+	int_mux_cfg0_val = snd_soc_component_read32(component, int_mux_cfg0);
+	int_mux_cfg1_val = snd_soc_component_read32(component, int_mux_cfg1);
+
+	int_n_inp0 = int_mux_cfg0_val & 0x0F;
+	if (int_n_inp0 == INTn_1_INP_SEL_DEC0 ||
+		int_n_inp0 == INTn_1_INP_SEL_DEC1 ||
+		int_n_inp0 == INTn_1_INP_SEL_IIR0 ||
+		int_n_inp0 == INTn_1_INP_SEL_IIR1)
+		return true;
+
+	int_n_inp1 = int_mux_cfg0_val >> 4;
+	if (int_n_inp1 == INTn_1_INP_SEL_DEC0 ||
+		int_n_inp1 == INTn_1_INP_SEL_DEC1 ||
+		int_n_inp1 == INTn_1_INP_SEL_IIR0 ||
+		int_n_inp1 == INTn_1_INP_SEL_IIR1)
+		return true;
+
+	int_n_inp2 = int_mux_cfg1_val >> 4;
+	if (int_n_inp2 == INTn_1_INP_SEL_DEC0 ||
+		int_n_inp2 == INTn_1_INP_SEL_DEC1 ||
+		int_n_inp2 == INTn_1_INP_SEL_IIR0 ||
+		int_n_inp2 == INTn_1_INP_SEL_IIR1)
+		return true;
+
+	return false;
 }
 
 static int rx_macro_enable_main_path(struct snd_soc_dapm_widget *w,
@@ -1464,6 +1646,9 @@ static int rx_macro_enable_main_path(struct snd_soc_dapm_widget *w,
 		rx_macro_set_idle_detect_thr(component, rx_priv, w->shift,
 						INTERP_MAIN_PATH);
 		rx_macro_enable_interp_clk(component, event, w->shift);
+		if (rx_macro_adie_lb(component, w->shift))
+			snd_soc_component_update_bits(component,
+						reg, 0x20, 0x20);
 		break;
 	case SND_SOC_DAPM_POST_PMU:
 		snd_soc_component_write(component, gain_reg,
@@ -1526,6 +1711,47 @@ static int rx_macro_config_compander(struct snd_soc_component *component,
 	return 0;
 }
 
+static int rx_macro_load_compander_coeff(struct snd_soc_component *component,
+					 struct rx_macro_priv *rx_priv,
+					 int interp_n, int event)
+{
+	int comp = 0;
+	u16 comp_coeff_lsb_reg = 0, comp_coeff_msb_reg = 0;
+	int i = 0;
+	int hph_pwr_mode = HPH_LOHIFI;
+
+	if (!rx_priv->comp_enabled[comp])
+		return 0;
+
+	if (interp_n == INTERP_HPHL) {
+		comp_coeff_lsb_reg = BOLERO_CDC_RX_TOP_HPHL_COMP_WR_LSB;
+		comp_coeff_msb_reg = BOLERO_CDC_RX_TOP_HPHL_COMP_WR_MSB;
+	} else if (interp_n == INTERP_HPHR) {
+		comp_coeff_lsb_reg = BOLERO_CDC_RX_TOP_HPHR_COMP_WR_LSB;
+		comp_coeff_msb_reg = BOLERO_CDC_RX_TOP_HPHR_COMP_WR_MSB;
+	} else {
+		/* compander coefficients are loaded only for hph path */
+		return 0;
+	}
+
+	comp = interp_n;
+	hph_pwr_mode = rx_priv->hph_pwr_mode;
+	dev_dbg(component->dev, "%s: event %d compander %d, enabled %d\n",
+		__func__, event, comp + 1, rx_priv->comp_enabled[comp]);
+
+	if (SND_SOC_DAPM_EVENT_ON(event)) {
+		/* Load Compander Coeff */
+		for (i = 0; i < COMP_MAX_COEFF; i++) {
+			snd_soc_component_write(component, comp_coeff_lsb_reg,
+					comp_coeff_table[hph_pwr_mode][i].lsb);
+			snd_soc_component_write(component, comp_coeff_msb_reg,
+					comp_coeff_table[hph_pwr_mode][i].msb);
+		}
+	}
+
+	return 0;
+}
+
 static void rx_macro_enable_softclip_clk(struct snd_soc_component *component,
 					 struct rx_macro_priv *rx_priv,
 					 bool enable)
@@ -1571,6 +1797,30 @@ static int rx_macro_config_softclip(struct snd_soc_component *component,
 
 	return 0;
 }
+
+static int rx_macro_config_aux_hpf(struct snd_soc_component *component,
+				struct rx_macro_priv *rx_priv,
+				int event)
+{
+	dev_dbg(component->dev, "%s: event %d, enabled %d\n",
+		__func__, event, rx_priv->is_aux_hpf_on);
+
+	if (SND_SOC_DAPM_EVENT_ON(event)) {
+		/* Update Aux HPF control */
+		if (!rx_priv->is_aux_hpf_on)
+			snd_soc_component_update_bits(component,
+				BOLERO_CDC_RX_RX2_RX_PATH_CFG1, 0x04, 0x00);
+	}
+
+	if (SND_SOC_DAPM_EVENT_OFF(event)) {
+		/* Reset to default (HPF=ON) */
+		snd_soc_component_update_bits(component,
+			BOLERO_CDC_RX_RX2_RX_PATH_CFG1, 0x04, 0x04);
+	}
+
+	return 0;
+}
+
 
 static inline void
 rx_macro_enable_clsh_block(struct rx_macro_priv *rx_priv, bool enable)
@@ -2006,6 +2256,45 @@ static int rx_macro_soft_clip_enable_put(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
+static int rx_macro_aux_hpf_mode_get(struct snd_kcontrol *kcontrol,
+					  struct snd_ctl_elem_value *ucontrol)
+{
+	struct snd_soc_component *component =
+			snd_soc_kcontrol_component(kcontrol);
+	struct device *rx_dev = NULL;
+	struct rx_macro_priv *rx_priv = NULL;
+
+	if (!rx_macro_get_data(component, &rx_dev, &rx_priv, __func__))
+		return -EINVAL;
+
+	ucontrol->value.integer.value[0] = rx_priv->is_aux_hpf_on;
+
+	dev_dbg(component->dev, "%s: ucontrol->value.integer.value[0] = %ld\n",
+		__func__, ucontrol->value.integer.value[0]);
+
+	return 0;
+}
+
+static int rx_macro_aux_hpf_mode_put(struct snd_kcontrol *kcontrol,
+					  struct snd_ctl_elem_value *ucontrol)
+{
+	struct snd_soc_component *component =
+			snd_soc_kcontrol_component(kcontrol);
+	struct device *rx_dev = NULL;
+	struct rx_macro_priv *rx_priv = NULL;
+
+	if (!rx_macro_get_data(component, &rx_dev, &rx_priv, __func__))
+		return -EINVAL;
+
+	rx_priv->is_aux_hpf_on = ucontrol->value.integer.value[0];
+
+	dev_dbg(component->dev, "%s: aux hpf enable = %d\n", __func__,
+		rx_priv->is_aux_hpf_on);
+
+	return 0;
+}
+
+
 static int rx_macro_enable_vbat(struct snd_soc_dapm_widget *w,
 				 struct snd_kcontrol *kcontrol,
 				 int event)
@@ -2240,11 +2529,10 @@ static int rx_macro_enable_interp_clk(struct snd_soc_component *component,
 					0x10, 0x10);
 			snd_soc_component_update_bits(component, dsm_reg,
 					0x01, 0x01);
-			/* Clk enable */
-			snd_soc_component_update_bits(component, main_reg,
-					0x20, 0x20);
 			snd_soc_component_update_bits(component, rx_cfg2_reg,
 					0x03, 0x03);
+			rx_macro_load_compander_coeff(component, rx_priv,
+						      interp_idx, event);
 			rx_macro_idle_detect_control(component, rx_priv,
 					interp_idx, event);
 			if (rx_priv->hph_hd2_mode)
@@ -2254,9 +2542,12 @@ static int rx_macro_enable_interp_clk(struct snd_soc_component *component,
 						    interp_idx, event);
 			rx_macro_config_compander(component, rx_priv,
 						interp_idx, event);
-			if (interp_idx ==  INTERP_AUX)
+			if (interp_idx == INTERP_AUX) {
 				rx_macro_config_softclip(component, rx_priv,
 							event);
+				rx_macro_config_aux_hpf(component, rx_priv,
+							event);
+			}
 			rx_macro_config_classh(component, rx_priv,
 						interp_idx, event);
 		}
@@ -2289,9 +2580,12 @@ static int rx_macro_enable_interp_clk(struct snd_soc_component *component,
 						interp_idx, event);
 			rx_macro_config_compander(component, rx_priv,
 						interp_idx, event);
-			if (interp_idx ==  INTERP_AUX)
+			if (interp_idx ==  INTERP_AUX) {
 				rx_macro_config_softclip(component, rx_priv,
 							event);
+				rx_macro_config_aux_hpf(component, rx_priv,
+				event);
+			}
 			rx_macro_hphdelay_lutbypass(component, rx_priv,
 						interp_idx, event);
 			if (rx_priv->hph_hd2_mode)
@@ -2313,10 +2607,12 @@ static int rx_macro_enable_rx_path_clk(struct snd_soc_dapm_widget *w,
 {
 	struct snd_soc_component *component =
 				snd_soc_dapm_to_component(w->dapm);
-	u16 sidetone_reg = 0;
+	u16 sidetone_reg = 0, fs_reg = 0;
 
 	dev_dbg(component->dev, "%s %d %d\n", __func__, event, w->shift);
 	sidetone_reg = BOLERO_CDC_RX_RX0_RX_PATH_CFG1 +
+			RX_MACRO_RX_PATH_OFFSET * (w->shift);
+	fs_reg = BOLERO_CDC_RX_RX0_RX_PATH_CTL +
 			RX_MACRO_RX_PATH_OFFSET * (w->shift);
 
 	switch (event) {
@@ -2324,6 +2620,8 @@ static int rx_macro_enable_rx_path_clk(struct snd_soc_dapm_widget *w,
 		rx_macro_enable_interp_clk(component, event, w->shift);
 		snd_soc_component_update_bits(component, sidetone_reg,
 					0x10, 0x10);
+		snd_soc_component_update_bits(component, fs_reg,
+					0x20, 0x20);
 		break;
 	case SND_SOC_DAPM_POST_PMD:
 		snd_soc_component_update_bits(component, sidetone_reg,
@@ -2679,6 +2977,9 @@ static const struct snd_kcontrol_new rx_macro_snd_controls[] = {
 	SOC_SINGLE_EXT("RX_Softclip Enable", SND_SOC_NOPM, 0, 1, 0,
 		     rx_macro_soft_clip_enable_get,
 		     rx_macro_soft_clip_enable_put),
+	SOC_SINGLE_EXT("AUX_HPF Enable", SND_SOC_NOPM, 0, 1, 0,
+			rx_macro_aux_hpf_mode_get,
+			rx_macro_aux_hpf_mode_put),
 
 	SOC_SINGLE_SX_TLV("IIR0 INP0 Volume",
 		BOLERO_CDC_RX_SIDETONE_IIR0_IIR_GAIN_B1_CTL, 0, -84, 40,
@@ -3257,6 +3558,23 @@ static const struct snd_soc_dapm_route rx_audio_map[] = {
 	{"RX INT2 MIX2 INP", "SRC1", "SRC1"},
 };
 
+static int rx_macro_core_vote(void *handle, bool enable)
+{
+	struct rx_macro_priv *rx_priv = (struct rx_macro_priv *) handle;
+
+	if (rx_priv == NULL) {
+		pr_err("%s: rx priv data is NULL\n", __func__);
+		return -EINVAL;
+	}
+	if (enable) {
+		pm_runtime_get_sync(rx_priv->dev);
+		pm_runtime_put_autosuspend(rx_priv->dev);
+		pm_runtime_mark_last_busy(rx_priv->dev);
+	}
+
+	return 0;
+}
+
 static int rx_swrm_clock(void *handle, bool enable)
 {
 	struct rx_macro_priv *rx_priv = (struct rx_macro_priv *) handle;
@@ -3275,8 +3593,16 @@ static int rx_swrm_clock(void *handle, bool enable)
 	if (enable) {
 		pm_runtime_get_sync(rx_priv->dev);
 		if (rx_priv->swr_clk_users == 0) {
-			msm_cdc_pinctrl_select_active_state(
+			ret = msm_cdc_pinctrl_select_active_state(
 						rx_priv->rx_swr_gpio_p);
+			if (ret < 0) {
+				dev_err(rx_priv->dev,
+					"%s: rx swr pinctrl enable failed\n",
+					__func__);
+				pm_runtime_mark_last_busy(rx_priv->dev);
+				pm_runtime_put_autosuspend(rx_priv->dev);
+				goto exit;
+			}
 			ret = rx_macro_mclk_enable(rx_priv, 1, true);
 			if (ret < 0) {
 				msm_cdc_pinctrl_select_sleep_state(
@@ -3284,6 +3610,8 @@ static int rx_swrm_clock(void *handle, bool enable)
 				dev_err(rx_priv->dev,
 					"%s: rx request clock enable failed\n",
 					__func__);
+				pm_runtime_mark_last_busy(rx_priv->dev);
+				pm_runtime_put_autosuspend(rx_priv->dev);
 				goto exit;
 			}
 			if (rx_priv->reset_swr)
@@ -3316,8 +3644,14 @@ static int rx_swrm_clock(void *handle, bool enable)
 				BOLERO_CDC_RX_CLK_RST_CTRL_SWR_CONTROL,
 				0x01, 0x00);
 			rx_macro_mclk_enable(rx_priv, 0, true);
-			msm_cdc_pinctrl_select_sleep_state(
+			ret = msm_cdc_pinctrl_select_sleep_state(
 						rx_priv->rx_swr_gpio_p);
+			if (ret < 0) {
+				dev_err(rx_priv->dev,
+					"%s: rx swr pinctrl disable failed\n",
+					__func__);
+				goto exit;
+			}
 		}
 	}
 	dev_dbg(rx_priv->dev, "%s: swrm clock users %d\n",
@@ -3326,6 +3660,15 @@ exit:
 	mutex_unlock(&rx_priv->swr_clk_lock);
 	return ret;
 }
+
+static const struct rx_macro_reg_mask_val rx_macro_reg_init[] = {
+	{BOLERO_CDC_RX_RX0_RX_PATH_SEC7, 0x07, 0x02},
+	{BOLERO_CDC_RX_RX1_RX_PATH_SEC7, 0x07, 0x02},
+	{BOLERO_CDC_RX_RX2_RX_PATH_SEC7, 0x07, 0x02},
+	{BOLERO_CDC_RX_RX0_RX_PATH_CFG3, 0x03, 0x02},
+	{BOLERO_CDC_RX_RX1_RX_PATH_CFG3, 0x03, 0x02},
+	{BOLERO_CDC_RX_RX2_RX_PATH_CFG3, 0x03, 0x02},
+};
 
 static void rx_macro_init_bcl_pmic_reg(struct snd_soc_component *component)
 {
@@ -3381,6 +3724,7 @@ static int rx_macro_init(struct snd_soc_component *component)
 	int ret = 0;
 	struct device *rx_dev = NULL;
 	struct rx_macro_priv *rx_priv = NULL;
+	int i;
 
 	rx_dev = bolero_get_device_ptr(component->dev, RX_MACRO);
 	if (!rx_dev) {
@@ -3432,27 +3776,11 @@ static int rx_macro_init(struct snd_soc_component *component)
 	snd_soc_dapm_ignore_suspend(dapm, "RX_TX DEC3_INP");
 	snd_soc_dapm_sync(dapm);
 
-	snd_soc_component_update_bits(component,
-				BOLERO_CDC_RX_RX0_RX_PATH_DSM_CTL,
-				0x01, 0x01);
-	snd_soc_component_update_bits(component,
-				BOLERO_CDC_RX_RX1_RX_PATH_DSM_CTL,
-				0x01, 0x01);
-	snd_soc_component_update_bits(component,
-				BOLERO_CDC_RX_RX2_RX_PATH_DSM_CTL,
-				0x01, 0x01);
-	snd_soc_component_update_bits(component, BOLERO_CDC_RX_RX0_RX_PATH_SEC7,
-				0x07, 0x02);
-	snd_soc_component_update_bits(component, BOLERO_CDC_RX_RX1_RX_PATH_SEC7,
-				0x07, 0x02);
-	snd_soc_component_update_bits(component, BOLERO_CDC_RX_RX2_RX_PATH_SEC7,
-				0x07, 0x02);
-	snd_soc_component_update_bits(component, BOLERO_CDC_RX_RX0_RX_PATH_CFG3,
-				0x03, 0x02);
-	snd_soc_component_update_bits(component, BOLERO_CDC_RX_RX1_RX_PATH_CFG3,
-				0x03, 0x02);
-	snd_soc_component_update_bits(component, BOLERO_CDC_RX_RX2_RX_PATH_CFG3,
-				0x03, 0x02);
+	for (i = 0; i < ARRAY_SIZE(rx_macro_reg_init); i++)
+		snd_soc_component_update_bits(component,
+				rx_macro_reg_init[i].reg,
+				rx_macro_reg_init[i].mask,
+				rx_macro_reg_init[i].val);
 
 	rx_priv->component = component;
 	rx_macro_init_bcl_pmic_reg(component);
@@ -3649,7 +3977,8 @@ static int rx_macro_probe(struct platform_device *pdev)
 			__func__);
 		return -EINVAL;
 	}
-	if (msm_cdc_pinctrl_get_state(rx_priv->rx_swr_gpio_p) < 0) {
+	if (msm_cdc_pinctrl_get_state(rx_priv->rx_swr_gpio_p) < 0 &&
+		is_used_rx_swr_gpio) {
 		dev_err(&pdev->dev, "%s: failed to get swr pin state\n",
 			__func__);
 		return -EPROBE_DEFER;
@@ -3677,6 +4006,7 @@ static int rx_macro_probe(struct platform_device *pdev)
 	rx_priv->swr_plat_data.write = NULL;
 	rx_priv->swr_plat_data.bulk_write = NULL;
 	rx_priv->swr_plat_data.clk = rx_swrm_clock;
+	rx_priv->swr_plat_data.core_vote = rx_macro_core_vote;
 	rx_priv->swr_plat_data.handle_irq = NULL;
 
 	ret = of_property_read_u8_array(pdev->dev.of_node,
@@ -3694,6 +4024,8 @@ static int rx_macro_probe(struct platform_device *pdev)
 	rx_priv->default_clk_id  = default_clk_id;
 	ops.clk_id_req = rx_priv->clk_id;
 	ops.default_clk_id = default_clk_id;
+
+	rx_priv->is_aux_hpf_on = 1;
 
 	dev_set_drvdata(&pdev->dev, rx_priv);
 	mutex_init(&rx_priv->mclk_lock);

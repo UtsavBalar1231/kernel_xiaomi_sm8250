@@ -11,6 +11,8 @@
 #include <asoc/wcd-clsh.h>
 #include "wcd938x-mbhc.h"
 
+#define SWR_SCP_CONTROL    0x44
+#define SWR_SCP_HOST_CLK_DIV2_CTL_BANK 0xE0
 #define WCD938X_MAX_MICBIAS 4
 
 /* Convert from vout ctl to micbias voltage in mV */
@@ -97,6 +99,7 @@ struct wcd938x_priv {
 	struct snd_info_entry *variant_entry;
 	int flyback_cur_det_disable;
 	int ear_rx_path;
+	bool dev_up;
 };
 
 struct wcd938x_micbias_setting {

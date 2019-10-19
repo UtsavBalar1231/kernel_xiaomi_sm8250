@@ -88,6 +88,7 @@ static struct regmap_irq_chip wcd937x_regmap_irq_chip = {
 	.mask_base = WCD937X_DIGITAL_INTR_MASK_0,
 	.ack_base = WCD937X_DIGITAL_INTR_CLEAR_0,
 	.use_ack = 1,
+	.clear_ack = 1,
 	.type_base = WCD937X_DIGITAL_INTR_LEVEL_0,
 	.runtime_pm = false,
 	.handle_post_irq = wcd937x_handle_post_irq,
@@ -1349,19 +1350,25 @@ static int wcd937x_enable_req(struct snd_soc_dapm_widget *w,
 		snd_soc_component_update_bits(component,
 				WCD937X_ANA_TX_CH2, 0x40, 0x40);
 		snd_soc_component_update_bits(component,
-				WCD937X_DIGITAL_CDC_DIG_CLK_CTL, 0x30, 0x30);
+				WCD937X_ANA_TX_CH3_HPF, 0x40, 0x40);
+		snd_soc_component_update_bits(component,
+				WCD937X_DIGITAL_CDC_DIG_CLK_CTL, 0x70, 0x70);
 		snd_soc_component_update_bits(component,
 				WCD937X_ANA_TX_CH1, 0x80, 0x80);
 		snd_soc_component_update_bits(component,
 				WCD937X_ANA_TX_CH2, 0x40, 0x00);
 		snd_soc_component_update_bits(component,
 				WCD937X_ANA_TX_CH2, 0x80, 0x80);
+		snd_soc_component_update_bits(component,
+				WCD937X_ANA_TX_CH3, 0x80, 0x80);
 		break;
 	case SND_SOC_DAPM_POST_PMD:
 		snd_soc_component_update_bits(component,
 				WCD937X_ANA_TX_CH1, 0x80, 0x00);
 		snd_soc_component_update_bits(component,
 				WCD937X_ANA_TX_CH2, 0x80, 0x00);
+		snd_soc_component_update_bits(component,
+				WCD937X_ANA_TX_CH3, 0x80, 0x00);
 		snd_soc_component_update_bits(component,
 				WCD937X_DIGITAL_CDC_DIG_CLK_CTL, 0x10, 0x00);
 		mutex_lock(&wcd937x->ana_tx_clk_lock);
@@ -2316,7 +2323,8 @@ int wcd937x_info_create_codec_entry(struct snd_info_entry *codec_root,
 						   "variant",
 						   priv->entry);
 	if (!variant_entry) {
-		dev_dbg(codec->dev, "%s: failed to create wcd937x variant entry\n",
+		dev_dbg(component->dev,
+			"%s: failed to create wcd937x variant entry\n",
 			__func__);
 		return -ENOMEM;
 	}

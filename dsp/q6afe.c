@@ -596,6 +596,11 @@ static int32_t afe_callback(struct apr_client_data *data, void *priv)
 			rtac_set_afe_handle(this_afe.apr);
 		}
 
+		/* Reset the core client handle in SSR/PDR use cases */
+		mutex_lock(&this_afe.afe_cmd_lock);
+		this_afe.lpass_hw_core_client_hdl = 0;
+		mutex_unlock(&this_afe.afe_cmd_lock);
+
 		/*
 		 * Pass reset events to proxy driver, if cb is registered
 		 */
@@ -914,6 +919,10 @@ int afe_sizeof_cfg_cmd(u16 port_id)
 	case AFE_PORT_ID_SENARY_MI2S_RX:
 	case AFE_PORT_ID_SENARY_MI2S_TX:
 		ret_size = SIZEOF_CFG_CMD(afe_param_id_i2s_cfg);
+		break;
+	case AFE_PORT_ID_PRIMARY_META_MI2S_RX:
+	case AFE_PORT_ID_SECONDARY_META_MI2S_RX:
+		ret_size = SIZEOF_CFG_CMD(afe_param_id_meta_i2s_cfg);
 		break;
 	case HDMI_RX:
 	case DISPLAY_PORT_RX:
@@ -4556,6 +4565,10 @@ static int __afe_port_start(u16 port_id, union afe_port_config *afe_config,
 	case AFE_PORT_ID_INT6_MI2S_TX:
 		cfg_type = AFE_PARAM_ID_I2S_CONFIG;
 		break;
+	case AFE_PORT_ID_PRIMARY_META_MI2S_RX:
+	case AFE_PORT_ID_SECONDARY_META_MI2S_RX:
+		cfg_type = AFE_PARAM_ID_META_I2S_CONFIG;
+		break;
 	case HDMI_RX:
 	case DISPLAY_PORT_RX:
 		cfg_type = AFE_PARAM_ID_HDMI_CONFIG;
@@ -5091,6 +5104,10 @@ int afe_get_port_index(u16 port_id)
 		return IDX_AFE_PORT_ID_INT6_MI2S_RX;
 	case AFE_PORT_ID_INT6_MI2S_TX:
 		return IDX_AFE_PORT_ID_INT6_MI2S_TX;
+	case AFE_PORT_ID_PRIMARY_META_MI2S_RX:
+		return IDX_AFE_PORT_ID_PRIMARY_META_MI2S_RX;
+	case AFE_PORT_ID_SECONDARY_META_MI2S_RX:
+		return IDX_AFE_PORT_ID_SECONDARY_META_MI2S_RX;
 	case AFE_PORT_ID_VA_CODEC_DMA_TX_0:
 		return IDX_AFE_PORT_ID_VA_CODEC_DMA_TX_0;
 	case AFE_PORT_ID_VA_CODEC_DMA_TX_1:
@@ -5253,6 +5270,10 @@ int afe_open(u16 port_id,
 	case AFE_PORT_ID_SENARY_MI2S_RX:
 	case AFE_PORT_ID_SENARY_MI2S_TX:
 		cfg_type = AFE_PARAM_ID_I2S_CONFIG;
+		break;
+	case AFE_PORT_ID_PRIMARY_META_MI2S_RX:
+	case AFE_PORT_ID_SECONDARY_META_MI2S_RX:
+		cfg_type = AFE_PARAM_ID_META_I2S_CONFIG;
 		break;
 	case HDMI_RX:
 	case DISPLAY_PORT_RX:
@@ -7231,6 +7252,8 @@ int afe_validate_port(u16 port_id)
 	case AFE_PORT_ID_QUINARY_MI2S_TX:
 	case AFE_PORT_ID_SENARY_MI2S_RX:
 	case AFE_PORT_ID_SENARY_MI2S_TX:
+	case AFE_PORT_ID_PRIMARY_META_MI2S_RX:
+	case AFE_PORT_ID_SECONDARY_META_MI2S_RX:
 	case AFE_PORT_ID_PRIMARY_TDM_RX:
 	case AFE_PORT_ID_PRIMARY_TDM_TX:
 	case AFE_PORT_ID_PRIMARY_TDM_RX_1:
@@ -8503,7 +8526,7 @@ static int afe_set_cal_sp_th_vi_cfg(int32_t cal_type, size_t data_size,
 	uint32_t mode;
 
 	if (cal_data == NULL ||
-	    data_size != sizeof(*cal_data) ||
+	    data_size > sizeof(*cal_data) ||
 	    this_afe.cal_data[AFE_FB_SPKR_PROT_TH_VI_CAL] == NULL)
 		goto done;
 
@@ -8647,7 +8670,7 @@ static int afe_get_cal_sp_th_vi_param(int32_t cal_type, size_t data_size,
 	int ret = 0;
 
 	if (cal_data == NULL ||
-	    data_size != sizeof(*cal_data) ||
+	    data_size > sizeof(*cal_data) ||
 	    this_afe.cal_data[AFE_FB_SPKR_PROT_TH_VI_CAL] == NULL)
 		return 0;
 
@@ -9040,6 +9063,7 @@ int __init afe_init(void)
 	this_afe.mmap_handle = 0;
 	this_afe.vi_tx_port = -1;
 	this_afe.vi_rx_port = -1;
+	this_afe.lpass_hw_core_client_hdl = 0;
 	this_afe.prot_cfg.mode = MSM_SPKR_PROT_DISABLED;
 	this_afe.th_ftm_cfg.mode = MSM_SPKR_PROT_DISABLED;
 	this_afe.ex_ftm_cfg.mode = MSM_SPKR_PROT_DISABLED;
@@ -9244,6 +9268,11 @@ int afe_unvote_lpass_core_hw(uint32_t hw_block_id, uint32_t client_handle)
 
 	mutex_lock(&this_afe.afe_cmd_lock);
 
+	if (!this_afe.lpass_hw_core_client_hdl) {
+		pr_debug("%s: SSR in progress, return\n", __func__);
+		goto done;
+	}
+
 	memset(cmd_ptr, 0, sizeof(hw_vote_cfg));
 
 	cmd_ptr->hdr.hdr_field = APR_HDR_FIELD(APR_MSG_TYPE_SEQ_CMD,
@@ -9259,6 +9288,12 @@ int afe_unvote_lpass_core_hw(uint32_t hw_block_id, uint32_t client_handle)
 
 	pr_debug("%s: lpass core hw unvote opcode[0x%x] hw id[0x%x]\n",
 		__func__, cmd_ptr->hdr.opcode, cmd_ptr->hw_block_id);
+
+	if (cmd_ptr->client_handle <= 0) {
+		pr_err("%s: invalid client handle\n", __func__);
+		ret = -EINVAL;
+		goto done;
+	}
 
 	atomic_set(&this_afe.status, 0);
 	atomic_set(&this_afe.state, 1);

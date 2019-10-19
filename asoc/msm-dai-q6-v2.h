@@ -23,8 +23,8 @@
 #define MSM_TERT_MI2S 2
 #define MSM_QUAT_MI2S  3
 #define MSM_QUIN_MI2S  4
-#define MSM_SEC_MI2S_SD1  5
-#define MSM_SENARY_MI2S  6
+#define MSM_SENARY_MI2S  5
+#define MSM_SEC_MI2S_SD1  6
 #define MSM_INT0_MI2S  7
 #define MSM_INT1_MI2S  8
 #define MSM_INT2_MI2S  9
@@ -37,6 +37,11 @@
 
 #define MSM_DISPLAY_PORT	0
 #define MSM_DISPLAY_PORT1	1
+
+#define MSM_PRIM_META_MI2S 0
+#define MSM_SEC_META_MI2S  1
+#define MSM_META_MI2S_MIN  MSM_PRIM_META_MI2S
+#define MSM_META_MI2S_MAX  MSM_SEC_META_MI2S
 
 struct msm_dai_auxpcm_config {
 	u16 mode;
@@ -57,6 +62,13 @@ struct msm_dai_auxpcm_pdata {
 struct msm_mi2s_pdata {
 	u16 rx_sd_lines;
 	u16 tx_sd_lines;
+	u16 intf_id;
+};
+
+struct msm_meta_mi2s_pdata {
+	u32 num_member_ports;
+	u32 member_port[MAX_NUM_I2S_META_PORT_MEMBER_PORTS];
+	u32 sd_lines[MAX_NUM_I2S_META_PORT_MEMBER_PORTS];
 	u16 intf_id;
 };
 

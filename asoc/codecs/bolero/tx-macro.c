@@ -41,6 +41,7 @@
 #define TX_MACRO_TX_PATH_OFFSET 0x80
 #define TX_MACRO_SWR_MIC_MUX_SEL_MASK 0xF
 #define TX_MACRO_ADC_MUX_CFG_OFFSET 0x2
+#define TX_MACRO_ADC_MODE_CFG0_SHIFT 1
 
 #define TX_MACRO_TX_UNMUTE_DELAY_MS	40
 
@@ -71,6 +72,7 @@ struct tx_macro_swr_ctrl_platform_data {
 	int (*write)(void *handle, int reg, int val);
 	int (*bulk_write)(void *handle, u32 *reg, u32 *val, size_t len);
 	int (*clk)(void *handle, bool enable);
+	int (*core_vote)(void *handle, bool enable);
 	int (*handle_irq)(void *handle,
 			  irqreturn_t (*swrm_irq_handler)(int irq,
 							  void *data),
@@ -118,6 +120,12 @@ enum {
 	VA_MCLK,
 };
 
+struct tx_macro_reg_mask_val {
+	u16 reg;
+	u8 mask;
+	u8 val;
+};
+
 struct tx_mute_work {
 	struct tx_macro_priv *tx_priv;
 	u32 decimator;
@@ -163,6 +171,7 @@ struct tx_macro_priv {
 	int va_clk_status;
 	int tx_clk_status;
 	bool bcs_enable;
+	int dec_mode[NUM_DECIMATORS];
 };
 
 static bool tx_macro_get_data(struct snd_soc_component *component,
@@ -609,6 +618,91 @@ static int tx_macro_tx_mixer_put(struct snd_kcontrol *kcontrol,
 
 	return 0;
 }
+
+static inline int tx_macro_path_get(const char *wname,
+				    unsigned int *path_num)
+{
+	int ret = 0;
+	char *widget_name = NULL;
+	char *w_name = NULL;
+	char *path_num_char = NULL;
+	char *path_name = NULL;
+
+	widget_name = kstrndup(wname, 10, GFP_KERNEL);
+	if (!widget_name)
+		return -EINVAL;
+
+	w_name = widget_name;
+
+	path_name = strsep(&widget_name, " ");
+	if (!path_name) {
+		pr_err("%s: Invalid widget name = %s\n",
+			__func__, widget_name);
+		ret = -EINVAL;
+		goto err;
+	}
+	path_num_char = strpbrk(path_name, "01234567");
+	if (!path_num_char) {
+		pr_err("%s: tx path index not found\n",
+			__func__);
+		ret = -EINVAL;
+		goto err;
+	}
+	ret = kstrtouint(path_num_char, 10, path_num);
+	if (ret < 0)
+		pr_err("%s: Invalid tx path = %s\n",
+			__func__, w_name);
+
+err:
+	kfree(w_name);
+	return ret;
+}
+
+static int tx_macro_dec_mode_get(struct snd_kcontrol *kcontrol,
+				 struct snd_ctl_elem_value *ucontrol)
+{
+	struct snd_soc_component *component =
+			snd_soc_kcontrol_component(kcontrol);
+	struct tx_macro_priv *tx_priv = NULL;
+	struct device *tx_dev = NULL;
+	int ret = 0;
+	int path = 0;
+
+	if (!tx_macro_get_data(component, &tx_dev, &tx_priv, __func__))
+		return -EINVAL;
+
+	ret = tx_macro_path_get(kcontrol->id.name, &path);
+	if (ret)
+		return ret;
+
+	ucontrol->value.integer.value[0] = tx_priv->dec_mode[path];
+
+	return 0;
+}
+
+static int tx_macro_dec_mode_put(struct snd_kcontrol *kcontrol,
+				 struct snd_ctl_elem_value *ucontrol)
+{
+	struct snd_soc_component *component =
+			snd_soc_kcontrol_component(kcontrol);
+	struct tx_macro_priv *tx_priv = NULL;
+	struct device *tx_dev = NULL;
+	int value = ucontrol->value.integer.value[0];
+	int ret = 0;
+	int path = 0;
+
+	if (!tx_macro_get_data(component, &tx_dev, &tx_priv, __func__))
+		return -EINVAL;
+
+	ret = tx_macro_path_get(kcontrol->id.name, &path);
+	if (ret)
+		return ret;
+
+	tx_priv->dec_mode[path] = value;
+
+	return 0;
+}
+
 static int tx_macro_get_bcs(struct snd_kcontrol *kcontrol,
                             struct snd_ctl_elem_value *ucontrol)
 {
@@ -759,6 +853,9 @@ static int tx_macro_enable_dec(struct snd_soc_dapm_widget *w,
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
+		snd_soc_component_update_bits(component,
+			dec_cfg_reg, 0x06, tx_priv->dec_mode[decimator] <<
+			TX_MACRO_ADC_MODE_CFG0_SHIFT);
 		/* Enable TX PGA Mute */
 		snd_soc_component_update_bits(component,
 			tx_vol_ctl_reg, 0x10, 0x10);
@@ -840,6 +937,8 @@ static int tx_macro_enable_dec(struct snd_soc_dapm_widget *w,
 	case SND_SOC_DAPM_POST_PMD:
 		snd_soc_component_update_bits(component, tx_vol_ctl_reg,
 						0x20, 0x00);
+		snd_soc_component_update_bits(component,
+			dec_cfg_reg, 0x06, 0x00);
 		snd_soc_component_update_bits(component, tx_vol_ctl_reg,
 						0x10, 0x00);
 		if (tx_priv->bcs_enable) {
@@ -1110,6 +1209,14 @@ TX_MACRO_DAPM_ENUM_EXT(tx_smic6, BOLERO_CDC_TX_INP_MUX_ADC_MUX6_CFG0,
 TX_MACRO_DAPM_ENUM_EXT(tx_smic7, BOLERO_CDC_TX_INP_MUX_ADC_MUX7_CFG0,
 			0, smic_mux_text, snd_soc_dapm_get_enum_double,
 			tx_macro_put_dec_enum);
+
+static const char * const dec_mode_mux_text[] = {
+	"ADC_DEFAULT", "ADC_LOW_PWR", "ADC_HIGH_PERF",
+};
+
+static const struct soc_enum dec_mode_mux_enum =
+	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(dec_mode_mux_text),
+			    dec_mode_mux_text);
 
 static const struct snd_kcontrol_new tx_aif1_cap_mixer[] = {
 	SOC_SINGLE_EXT("DEC0", SND_SOC_NOPM, TX_MACRO_DEC0, 1, 0,
@@ -1586,9 +1693,74 @@ static const struct snd_kcontrol_new tx_macro_snd_controls[] = {
 			  BOLERO_CDC_TX7_TX_VOL_CTL,
 			  0, -84, 40, digital_gain),
 
+	SOC_ENUM_EXT("DEC0 MODE", dec_mode_mux_enum,
+			tx_macro_dec_mode_get, tx_macro_dec_mode_put),
+
+	SOC_ENUM_EXT("DEC1 MODE", dec_mode_mux_enum,
+			tx_macro_dec_mode_get, tx_macro_dec_mode_put),
+
+	SOC_ENUM_EXT("DEC2 MODE", dec_mode_mux_enum,
+			tx_macro_dec_mode_get, tx_macro_dec_mode_put),
+
+	SOC_ENUM_EXT("DEC3 MODE", dec_mode_mux_enum,
+			tx_macro_dec_mode_get, tx_macro_dec_mode_put),
+
+	SOC_ENUM_EXT("DEC4 MODE", dec_mode_mux_enum,
+			tx_macro_dec_mode_get, tx_macro_dec_mode_put),
+
+	SOC_ENUM_EXT("DEC5 MODE", dec_mode_mux_enum,
+			tx_macro_dec_mode_get, tx_macro_dec_mode_put),
+
+	SOC_ENUM_EXT("DEC6 MODE", dec_mode_mux_enum,
+			tx_macro_dec_mode_get, tx_macro_dec_mode_put),
+
+	SOC_ENUM_EXT("DEC7 MODE", dec_mode_mux_enum,
+			tx_macro_dec_mode_get, tx_macro_dec_mode_put),
+
 	SOC_SINGLE_EXT("DEC0_BCS Switch", SND_SOC_NOPM, 0, 1, 0,
 		       tx_macro_get_bcs, tx_macro_set_bcs),
 };
+
+static int tx_macro_register_event_listener(struct snd_soc_component *component,
+					    bool enable)
+{
+	struct device *tx_dev = NULL;
+	struct tx_macro_priv *tx_priv = NULL;
+	int ret = 0;
+
+	if (!component)
+		return -EINVAL;
+
+	tx_dev = bolero_get_device_ptr(component->dev, TX_MACRO);
+	if (!tx_dev) {
+		dev_err(component->dev,
+			"%s: null device for macro!\n", __func__);
+		return -EINVAL;
+	}
+	tx_priv = dev_get_drvdata(tx_dev);
+	if (!tx_priv) {
+		dev_err(component->dev,
+			"%s: priv is null for macro!\n", __func__);
+		return -EINVAL;
+	}
+	if (tx_priv->swr_ctrl_data) {
+		if (enable) {
+			ret = swrm_wcd_notify(
+				tx_priv->swr_ctrl_data[0].tx_swr_pdev,
+				SWR_REGISTER_WAKEUP, NULL);
+			msm_cdc_pinctrl_set_wakeup_capable(
+					tx_priv->tx_swr_gpio_p, false);
+		} else {
+			msm_cdc_pinctrl_set_wakeup_capable(
+					tx_priv->tx_swr_gpio_p, true);
+			ret = swrm_wcd_notify(
+				tx_priv->swr_ctrl_data[0].tx_swr_pdev,
+				SWR_DEREGISTER_WAKEUP, NULL);
+		}
+	}
+
+	return ret;
+}
 
 static int tx_macro_tx_va_mclk_enable(struct tx_macro_priv *tx_priv,
 				      struct regmap *regmap, int clk_type,
@@ -1602,9 +1774,16 @@ static int tx_macro_tx_va_mclk_enable(struct tx_macro_priv *tx_priv,
 		(enable ? "enable" : "disable"), tx_priv->tx_mclk_users);
 
 	if (enable) {
-		if (tx_priv->swr_clk_users == 0)
-			msm_cdc_pinctrl_select_active_state(
+		if (tx_priv->swr_clk_users == 0) {
+			ret = msm_cdc_pinctrl_select_active_state(
 						tx_priv->tx_swr_gpio_p);
+			if (ret < 0) {
+				dev_err_ratelimited(tx_priv->dev,
+					"%s: tx swr pinctrl enable failed\n",
+					__func__);
+				goto exit;
+			}
+		}
 
 		clk_tx_ret = bolero_clk_rsc_request_clock(tx_priv->dev,
 						   TX_CORE_CLK,
@@ -1717,9 +1896,16 @@ static int tx_macro_tx_va_mclk_enable(struct tx_macro_priv *tx_priv,
 						   TX_CORE_CLK,
 						   TX_CORE_CLK,
 						   false);
-		if (tx_priv->swr_clk_users == 0)
-			msm_cdc_pinctrl_select_sleep_state(
+		if (tx_priv->swr_clk_users == 0) {
+			ret = msm_cdc_pinctrl_select_sleep_state(
 						tx_priv->tx_swr_gpio_p);
+			if (ret < 0) {
+				dev_err_ratelimited(tx_priv->dev,
+					"%s: tx swr pinctrl disable failed\n",
+					__func__);
+				goto exit;
+			}
+		}
 	}
 	return 0;
 
@@ -1729,6 +1915,7 @@ done:
 				TX_CORE_CLK,
 				TX_CORE_CLK,
 				false);
+exit:
 	return ret;
 }
 
@@ -1762,6 +1949,24 @@ static int tx_macro_clk_switch(struct snd_soc_component *component)
 	return ret;
 }
 
+static int tx_macro_core_vote(void *handle, bool enable)
+{
+	struct tx_macro_priv *tx_priv = (struct tx_macro_priv *) handle;
+	int ret = 0;
+
+	if (tx_priv == NULL) {
+		pr_err("%s: tx priv data is NULL\n", __func__);
+		return -EINVAL;
+	}
+	if (enable) {
+		pm_runtime_get_sync(tx_priv->dev);
+		pm_runtime_put_autosuspend(tx_priv->dev);
+		pm_runtime_mark_last_busy(tx_priv->dev);
+	}
+
+	return ret;
+}
+
 static int tx_macro_swrm_clock(void *handle, bool enable)
 {
 	struct tx_macro_priv *tx_priv = (struct tx_macro_priv *) handle;
@@ -1784,14 +1989,20 @@ static int tx_macro_swrm_clock(void *handle, bool enable)
 		if (tx_priv->va_swr_clk_cnt && !tx_priv->tx_swr_clk_cnt) {
 			ret = tx_macro_tx_va_mclk_enable(tx_priv, regmap,
 							VA_MCLK, enable);
-			if (ret)
+			if (ret) {
+				pm_runtime_mark_last_busy(tx_priv->dev);
+				pm_runtime_put_autosuspend(tx_priv->dev);
 				goto done;
+			}
 			tx_priv->va_clk_status++;
 		} else {
 			ret = tx_macro_tx_va_mclk_enable(tx_priv, regmap,
 							TX_MCLK, enable);
-			if (ret)
+			if (ret) {
+				pm_runtime_mark_last_busy(tx_priv->dev);
+				pm_runtime_put_autosuspend(tx_priv->dev);
 				goto done;
+			}
 			tx_priv->tx_clk_status++;
 		}
 		pm_runtime_mark_last_busy(tx_priv->dev);
@@ -1889,6 +2100,10 @@ undefined_rate:
 	return dmic_sample_rate;
 }
 
+static const struct tx_macro_reg_mask_val tx_macro_reg_init[] = {
+	{BOLERO_CDC_TX0_TX_PATH_SEC7, 0x3F, 0x02},
+};
+
 static int tx_macro_init(struct snd_soc_component *component)
 {
 	struct snd_soc_dapm_context *dapm =
@@ -1968,8 +2183,12 @@ static int tx_macro_init(struct snd_soc_component *component)
 	}
 	tx_priv->component = component;
 
-	snd_soc_component_update_bits(component,
-		BOLERO_CDC_TX0_TX_PATH_SEC7, 0x3F, 0x0E);
+	for (i = 0; i < ARRAY_SIZE(tx_macro_reg_init); i++)
+		snd_soc_component_update_bits(component,
+				tx_macro_reg_init[i].reg,
+				tx_macro_reg_init[i].mask,
+				tx_macro_reg_init[i].val);
+
 	return 0;
 }
 
@@ -2129,6 +2348,7 @@ static void tx_macro_init_ops(struct macro_ops *ops,
 	ops->reg_wake_irq = tx_macro_reg_wake_irq;
 	ops->set_port_map = tx_macro_set_port_map;
 	ops->clk_switch = tx_macro_clk_switch;
+	ops->reg_evt_listener = tx_macro_register_event_listener;
 }
 
 static int tx_macro_probe(struct platform_device *pdev)
@@ -2175,7 +2395,8 @@ static int tx_macro_probe(struct platform_device *pdev)
 			__func__);
 		return -EINVAL;
 	}
-	if (msm_cdc_pinctrl_get_state(tx_priv->tx_swr_gpio_p) < 0) {
+	if (msm_cdc_pinctrl_get_state(tx_priv->tx_swr_gpio_p) < 0 &&
+			is_used_tx_swr_gpio) {
 		dev_err(&pdev->dev, "%s: failed to get swr pin state\n",
 			__func__);
 		return -EPROBE_DEFER;
@@ -2208,6 +2429,7 @@ static int tx_macro_probe(struct platform_device *pdev)
 	tx_priv->swr_plat_data.write = NULL;
 	tx_priv->swr_plat_data.bulk_write = NULL;
 	tx_priv->swr_plat_data.clk = tx_macro_swrm_clock;
+	tx_priv->swr_plat_data.core_vote = tx_macro_core_vote;
 	tx_priv->swr_plat_data.handle_irq = NULL;
 
 	mutex_init(&tx_priv->mclk_lock);
