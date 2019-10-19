@@ -405,6 +405,16 @@ typedef  enum  {
     WMI_SERVICE_EXT2_MSG = 220, /* WMI_SERVICE_READY_EXT2 msg is sent by target */
     WMI_SERVICE_WPA3_SAE_ROAM_SUPPORT = 221, /* Indicates FW supports WPA3 SAE roaming */
     WMI_SERVICE_WPA3_OWE_ROAM_SUPPORT = 222, /* Indicates FW supports WPA3 OWE roaming */
+    WMI_SERVICE_AUDIO_AGGR = 223, /* Indicates FW supports audio frame aggregation */
+    WMI_SERVICE_6GHZ_SUPPORT = 224, /* Indicates FW supports 6GHZ (scan, connection and so on) */
+    /* WMI_SERVICE_QMI_STATS_SUPPORT
+     * Indicates FW supports stat request command WMI_REQUEST_LINK_STATS_CMDID
+     * and WMI_REQUEST_STATS_CMDID coming from QMI which will be used in
+     * runtime PM suspend.
+     */
+    WMI_SERVICE_QMI_STATS_SUPPORT = 225,
+    WMI_SERVICE_CFR_CAPTURE_FILTER_SUPPORT = 226, /* Indicate FW Supports Channel Frequency Response (CFR) via WMI_CFR_CAPTURE_FILTER_CMDID */
+
 
     /******* ADD NEW SERVICES HERE *******/
 
@@ -415,7 +425,22 @@ typedef  enum  {
 #define WMI_SERVICE_BM_SIZE   ((WMI_MAX_SERVICE + sizeof(A_UINT32)- 1)/sizeof(A_UINT32))
 
 #define WMI_NUM_EXT_SERVICES (WMI_MAX_EXT_SERVICE - WMI_MAX_SERVICE)
+
+/*
+ * TEMPORARY WORKAROUND
+ * Virtually all branches of the target utilize an incorrect check on
+ * the value of WMI_SERVICE_EXT_BM_SIZE32, checking that
+ * WMI_SERVICE_EXT_BM_SIZE32 < 4, rather than WMI_SERVICE_EXT_BM_SIZE32 <= 4.
+ * Until all target branches are fixed, this check is being disabled
+ * by artificially setting WMI_SERVICE_EXT_BM_SIZE32 to 0, rather than
+ * the number of 4-byte words required for holding the WMI extension
+ * service flags.
+ */
+#if 0
 #define WMI_SERVICE_EXT_BM_SIZE32 ((WMI_NUM_EXT_SERVICES + 31) / 32)
+#else
+#define WMI_SERVICE_EXT_BM_SIZE32 0
+#endif
 
 #define WMI_SERVICE_ROAM_OFFLOAD WMI_SERVICE_ROAM_SCAN_OFFLOAD /* depreciated the name WMI_SERVICE_ROAM_OFFLOAD, but here to help compiling with old host driver */
 
