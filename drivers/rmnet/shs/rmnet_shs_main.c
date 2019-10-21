@@ -1354,7 +1354,7 @@ void rmnet_shs_init(struct net_device *dev, struct net_device *vnd)
 		map_len = 0;
 	} else {
 		map_mask = rmnet_shs_mask_from_map(map);
-		map_len = rmnet_shs_get_mask_len(rmnet_shs_cfg.map_mask);
+		map_len = rmnet_shs_get_mask_len(map_mask);
 	}
 
 	rmnet_shs_cfg.port = rmnet_get_port(dev);
@@ -1563,15 +1563,6 @@ void rmnet_shs_assign(struct sk_buff *skb, struct rmnet_port *port)
 		return;
 	}
 
-	if (!rmnet_shs_cfg.is_reg_dl_mrk_ind) {
-		rmnet_map_dl_ind_register(port, &rmnet_shs_cfg.dl_mrk_ind_cb);
-		qmi_rmnet_ps_ind_register(port,
-					  &rmnet_shs_cfg.rmnet_idl_ind_cb);
-
-		rmnet_shs_cfg.is_reg_dl_mrk_ind = 1;
-		shs_rx_work.port = port;
-
-	}
 	/* We got the first packet after a previous successdul flush. Arm the
 	 * flushing timer.
 	 */
