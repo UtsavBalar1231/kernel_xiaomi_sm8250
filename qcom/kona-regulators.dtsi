@@ -6,6 +6,8 @@
 	rpmh-regulator-mxlvl {
 		compatible = "qcom,rpmh-arc-regulator";
 		qcom,resource-name = "mx.lvl";
+		pm8150a_s3_mmcx_sup_level-parent-supply =
+						<&VDD_CX_MMCX_SUPPLY_LEVEL>;
 
 		VDD_MX_LEVEL: S3C_LEVEL:
 		pm8150a_s3_level: regulator-pm8150a-s3-level {
@@ -30,6 +32,17 @@
 			qcom,init-voltage-level =
 				<RPMH_REGULATOR_LEVEL_RETENTION>;
 		};
+
+		VDD_MX_MMCX_SUPPLY_LEVEL: regulator-pm8150a-s3-mmcx-sup-level {
+			regulator-name = "pm8150a_s3_mmcx_sup_level";
+			qcom,set = <RPMH_REGULATOR_SET_ALL>;
+			regulator-min-microvolt =
+				<RPMH_REGULATOR_LEVEL_RETENTION>;
+			regulator-max-microvolt =
+				<RPMH_REGULATOR_LEVEL_MAX>;
+			qcom,init-voltage-level =
+				<RPMH_REGULATOR_LEVEL_RETENTION>;
+		};
 	};
 
 	/* PM8150 S3 + S2 + S1 = VDD_CX supply */
@@ -38,6 +51,7 @@
 		qcom,resource-name = "cx.lvl";
 		pm8150_s3_level-parent-supply = <&VDD_MX_LEVEL>;
 		pm8150_s3_level_ao-parent-supply = <&VDD_MX_LEVEL_AO>;
+		proxy-supply = <&VDD_CX_MMCX_SUPPLY_LEVEL>;
 
 		VDD_CX_LEVEL: S3A_LEVEL:
 		pm8150_s3_level: regulator-pm8150-s3-level {
@@ -63,6 +77,21 @@
 			qcom,init-voltage-level =
 				<RPMH_REGULATOR_LEVEL_RETENTION>;
 			qcom,min-dropout-voltage-level = <(-1)>;
+		};
+
+		VDD_CX_MMCX_SUPPLY_LEVEL: regulator-pm8150-s3-mmcx-sup-level {
+			regulator-name = "pm8150_s3_mmcx_sup_level";
+			qcom,set = <RPMH_REGULATOR_SET_ALL>;
+			regulator-min-microvolt =
+				<RPMH_REGULATOR_LEVEL_MIN_SVS>;
+			regulator-max-microvolt =
+				<RPMH_REGULATOR_LEVEL_MAX>;
+			qcom,init-voltage-level =
+				<RPMH_REGULATOR_LEVEL_MIN_SVS>;
+			qcom,proxy-consumer-enable;
+			qcom,proxy-consumer-voltage
+				= <RPMH_REGULATOR_LEVEL_TURBO
+				   RPMH_REGULATOR_LEVEL_MAX>;
 		};
 	};
 
@@ -454,7 +483,7 @@
 	rpmh-regulator-mmcxlvl {
 		compatible = "qcom,rpmh-arc-regulator";
 		qcom,resource-name = "mmcx.lvl";
-		pm8150a_s4_level-parent-supply = <&VDD_MX_LEVEL>;
+		pm8150a_s4_level-parent-supply = <&VDD_MX_MMCX_SUPPLY_LEVEL>;
 		pm8150a_s4_level_ao-parent-supply = <&VDD_MX_LEVEL_AO>;
 		proxy-supply = <&VDD_MMCX_LEVEL>;
 
