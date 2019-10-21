@@ -84,6 +84,11 @@
 	/delete-node/ rpm-regulator-ldoa24;
 };
 
+&thermal_zones {
+	/delete-node/ mapss-lowf;
+	/delete-node/ camera-lowf;
+};
+
  #include "bengal-stub-regulator.dtsi"
 
 &sdhc_1 {
