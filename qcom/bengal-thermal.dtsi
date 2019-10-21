@@ -78,6 +78,14 @@
 		reg =  <0xf550800 0x1000>;
 		#cooling-cells = <2>;
 	};
+
+	cxip_cdev: cxip-cdev@3ed000 {
+		compatible = "qcom,cxip-lm-cooling-device";
+		reg = <0x3ed000 0x800c>;
+		qcom,thermal-client-offset = <0x8000>;
+		qcom,bypass-client-list = <0x1004 0x4004>;
+		#cooling-cells = <2>;
+	};
 };
 
 &thermal_zones {
