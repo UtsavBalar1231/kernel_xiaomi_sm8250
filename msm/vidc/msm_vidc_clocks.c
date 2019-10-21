@@ -762,6 +762,13 @@ static unsigned long msm_vidc_calc_freq_iris2(struct msm_vidc_inst *inst,
 		/* 1.01 is multi-pipe overhead */
 		if (inst->clk_data.work_route > 1)
 			vpp_cycles += vpp_cycles / 100;
+		/*
+		 * 1080p@480fps usecase needs exactly 338MHz
+		 * without any margin left. Hence, adding 2 percent
+		 * extra to bump it to next level (366MHz).
+		 */
+		if (fps == 480)
+			vpp_cycles += vpp_cycles * 2 / 100;
 
 		/* VSP */
 		/* bitrate is based on fps, scale it using operating rate */
