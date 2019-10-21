@@ -72,6 +72,12 @@
 			};
 		};
 	};
+
+	lmh_cpu_vdd: qcom,lmh-cpu-vdd@f550800 {
+		compatible = "qcom,lmh-cpu-vdd";
+		reg =  <0xf550800 0x1000>;
+		#cooling-cells = <2>;
+	};
 };
 
 &thermal_zones {
