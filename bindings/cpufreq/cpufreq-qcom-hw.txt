@@ -36,6 +36,11 @@ Properties:
 	Value type:	<u32>
 	Definition:	Size of the LUT row size.
 
+- qcom,lut-max-entries
+	Usage:		Optional
+	Value type:	<u32>
+	Definition:	Size of the LUT entries.
+
 - qcom,skip-enable-check
 	Usage:		Optional
 	Value type:	bool
