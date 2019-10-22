@@ -349,6 +349,9 @@ Required properties:
  - compatible : "qcom,bolero-codec"
 		This device is added to represent bolero codec.
 
+Optional properties:
+ - qcom,bolero-version: Provides info relating to bolero version.
+
 * msm-ocmem-audio
 
 Required properties:

@@ -6,6 +6,7 @@
 
 &bolero {
 	qcom,num-macros = <3>;
+	qcom,bolero-version = <5>;
 	bolero-clk-rsc-mngr {
 		compatible = "qcom,bolero-clk-rsc-mngr";
 		qcom,fs-gen-sequence = <0x3000 0x1>,
