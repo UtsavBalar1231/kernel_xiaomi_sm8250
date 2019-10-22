@@ -192,6 +192,7 @@ int msm_smem_map_dma_buf(struct msm_vidc_inst *inst, struct msm_smem *smem)
 	unsigned long align = SZ_4K;
 	struct dma_buf *dbuf;
 	unsigned long ion_flags = 0;
+	u32 b_type = HAL_BUFFER_INPUT | HAL_BUFFER_OUTPUT | HAL_BUFFER_OUTPUT2;
 
 	if (!inst || !smem) {
 		d_vpr_e("%s: invalid params: %pK %pK\n",
@@ -224,6 +225,14 @@ int msm_smem_map_dma_buf(struct msm_vidc_inst *inst, struct msm_smem *smem)
 	if (ion_flags & ION_FLAG_SECURE)
 		smem->flags |= SMEM_SECURE;
 
+	if ((smem->buffer_type & b_type) &&
+		!!(smem->flags & SMEM_SECURE) ^ !!(inst->flags & VIDC_SECURE)) {
+		s_vpr_e(inst->sid, "Failed to map %s buffer with %s session\n",
+			smem->flags & SMEM_SECURE ? "secure" : "non-secure",
+			inst->flags & VIDC_SECURE ? "secure" : "non-secure");
+		rc = -EINVAL;
+		goto exit;
+	}
 	buffer_size = smem->size;
 
 	rc = msm_dma_get_device_address(dbuf, align, &iova, &buffer_size,
