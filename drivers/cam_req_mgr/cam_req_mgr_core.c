@@ -1198,10 +1198,11 @@ static int __cam_req_mgr_check_sync_req_is_ready(
 	 * difference of two SOF timestamp less than
 	 * (sync_frame_duration / 5).
 	 */
+	do_div(sync_frame_duration, 5);
 	if ((link->sof_timestamp > sync_link->sof_timestamp) &&
 		(sync_link->sof_timestamp > 0) &&
 		(link->sof_timestamp - sync_link->sof_timestamp <
-		sync_frame_duration / 5) &&
+		sync_frame_duration) &&
 		(sync_rd_slot->sync_mode == CAM_REQ_MGR_SYNC_MODE_SYNC)) {
 
 		/*
