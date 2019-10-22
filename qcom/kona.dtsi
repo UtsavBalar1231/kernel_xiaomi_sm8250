@@ -5051,6 +5051,19 @@
 	demux {
 		compatible = "qcom,demux";
 	};
+
+	qfprom: qfprom@780000 {
+		compatible = "qcom,qfprom";
+		reg = <0x00784000 0x3000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		read-only;
+		ranges;
+
+		gpu_lm_efuse: gpu_lm_efuse@5c8 {
+			reg = <0x5c8 0x4>;
+		};
+	};
 };
 
 #include "kona-regulators.dtsi"
