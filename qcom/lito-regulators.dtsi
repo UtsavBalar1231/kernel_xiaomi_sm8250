@@ -359,9 +359,9 @@
 		L13A: pm8150_l13: regulator-pm8150-l13 {
 			regulator-name = "pm8150_l13";
 			qcom,set = <RPMH_REGULATOR_SET_ALL>;
-			regulator-min-microvolt = <2696000>;
+			regulator-min-microvolt = <3008000>;
 			regulator-max-microvolt = <3304000>;
-			qcom,init-voltage = <2696000>;
+			qcom,init-voltage = <3008000>;
 			qcom,init-mode = <RPMH_REGULATOR_MODE_LPM>;
 		};
 	};
