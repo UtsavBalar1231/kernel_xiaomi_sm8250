@@ -23,3 +23,10 @@
 &dwc1 {
 	dr_mode = "host";
 };
+
+&usb2_phy0 {
+	qcom,param-override-seq =
+		<0xc7 0x6c
+		0x03 0x70
+		0x03 0x74>;
+};
