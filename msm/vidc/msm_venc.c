@@ -1384,6 +1384,14 @@ int msm_venc_s_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 			inst->bit_depth = MSM_VIDC_BIT_DEPTH_10;
 		}
 
+		rc = msm_vidc_calculate_buffer_counts(inst);
+		if (rc) {
+			s_vpr_e(inst->sid,
+				"%s failed to calculate buffer count\n",
+				__func__);
+			return rc;
+		}
+
 		rc = msm_vidc_check_session_supported(inst);
 		if (rc) {
 			s_vpr_e(inst->sid,
