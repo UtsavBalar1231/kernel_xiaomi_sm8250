@@ -30,15 +30,11 @@
 #define NUM_MASTERS 2
 #define NUM_QUEUES 2
 
-#define TRUE  1
-#define FALSE 0
-
 #define ACTUATOR_DRIVER_I2C "i2c_actuator"
 #define CAMX_ACTUATOR_DEV_NAME "cam-actuator-driver"
 
 #define MSM_ACTUATOR_MAX_VREGS (10)
 #define ACTUATOR_MAX_POLL_COUNT 10
-
 
 enum cam_actuator_apply_state_t {
 	ACT_APPLY_SETTINGS_NOW,

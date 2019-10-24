@@ -42,9 +42,6 @@
 #define NUM_MASTERS 2
 #define NUM_QUEUES 2
 
-#define TRUE  1
-#define FALSE 0
-
 #define CCI_PINCTRL_STATE_DEFAULT "cci_default"
 #define CCI_PINCTRL_STATE_SLEEP "cci_suspend"
 
