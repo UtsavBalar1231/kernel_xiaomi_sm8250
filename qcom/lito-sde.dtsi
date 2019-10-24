@@ -147,8 +147,8 @@
 		qcom,sde-max-dest-scaler-output-linewidth = <2560>;
 		qcom,sde-max-bw-low-kbps = <5800000>;
 		qcom,sde-max-bw-high-kbps = <8600000>;
-		qcom,sde-min-core-ib-kbps = <2400000>;
-		qcom,sde-min-llcc-ib-kbps = <800000>;
+		qcom,sde-min-core-ib-kbps = <4800000>;
+		qcom,sde-min-llcc-ib-kbps = <0>;
 		qcom,sde-min-dram-ib-kbps = <800000>;
 		qcom,sde-dram-channels = <2>;
 		qcom,sde-num-nrt-paths = <0>;
@@ -275,6 +275,40 @@
 				<1 590 0 76800>,
 				<1 590 0 150000>,
 				<1 590 0 300000>;
+		};
+
+		qcom,sde-limits {
+			qcom,sde-linewidth-limits {
+				qcom,sde-limit-name = "sspp_linewidth_usecases";
+				qcom,sde-limit-cases = "vig", "dma", "scale", "inline_rot";
+				qcom,sde-limit-ids= <0x1 0x2 0x4 0x8>;
+				qcom,sde-limit-values = <0x1 4096>,
+							<0x5 2560>,
+							<0x2 2880>,
+							<0x9 1088>;
+			};
+
+			qcom,sde-bw-limits {
+				qcom,sde-limit-name = "sde_bwlimit_usecases";
+				qcom,sde-limit-cases = "per_vig_pipe",
+							"per_dma_pipe",
+							"total_max_bw",
+							"camera_concurrency",
+							"cwb_concurrency";
+				qcom,sde-limit-ids = <0x1 0x2 0x4 0x8 0x10>;
+				qcom,sde-limit-values = <0x1 4700000>,
+							<0x11 4700000>,
+							<0x9 4700000>,
+							<0x19 4700000>,
+							<0x2 4700000>,
+							<0x12 4700000>,
+							<0xa 4700000>,
+							<0x1a 4700000>,
+							<0x4 8600000>,
+							<0x14 8600000>,
+							<0xc 5800000>,
+							<0x1c 5800000>;
+			};
 		};
 	};
 

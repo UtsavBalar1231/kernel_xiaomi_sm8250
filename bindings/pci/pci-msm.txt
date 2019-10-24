@@ -218,6 +218,13 @@ Main node
 		the system can enter CX power collapse once the DRV subsystem
 		removes its PCIe votes.
 
+- qcom,drv-l1ss-timeout-us:
+	Usage: optional depends on qcom,drv-supported
+	Value type: <u32>
+	Definition: This timeout determines when DRV subsystem will put the
+		link into l1ss sleep while idle in l1ss. If this is omitted,
+		the default timeout is 100ms.
+
 - qcom,use-19p2mhz-aux-clk:
 	Usage: optional
 	Value type: <bool>
@@ -332,6 +339,13 @@ Main node
 	Usage: optional
 	Definition: The latency(ms) between when PCIe link is up and before
 		any device over the switch is accessed
+
+- qcom,core-preset:
+	Usage: optional
+	Definition: Determines how aggressive the PCIe PHY equalization is for
+		Gen3 cores. The following are recommended settings:
+		- short channels: 0x55555555 (default)
+		- long channels: 0x77777777
 
 - qcom,pcie-phy-ver:
 	Usage: required
@@ -508,6 +522,7 @@ Example
 		qcom,ep-latency = <20>;
 		qcom,switch-latency = <25>;
 
+		qcom,core-preset = <0x55555555> /* short channel */
 		qcom,pcie-phy-ver = <0x2101>; /* v2 version 1.01 */
 		qcom,phy-status-offset = <0x814>;
 		qcom,phy-status-bit = <6>;

@@ -187,6 +187,8 @@
 
 	qcom,vddp-ref-clk-supply = <&pm8150_l6>;
 	qcom,vddp-ref-clk-max-microamp = <100>;
+	qcom,vccq-parent-supply = <&pm8150a_s8>;
+	qcom,vccq-parent-max-microamp = <210000>;
 
 	status = "ok";
 };
@@ -312,7 +314,7 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "ok";
-	redriver@1c {
+	redriver: redriver@1c {
 		compatible = "onnn,redriver";
 		reg = <0x1c>;
 		extcon = <&pm8150b_pdphy>, <&pm8150b_pdphy>;
@@ -779,6 +781,7 @@
 
 &usb2_phy0 {
 	qcom,param-override-seq =
-		<0x1f 0x70
+		<0xc7 0x6c
+		0x0f 0x70
 		0x03 0x74>;
 };

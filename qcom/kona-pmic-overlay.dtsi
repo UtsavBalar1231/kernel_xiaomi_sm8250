@@ -175,3 +175,7 @@
 &usb0 {
 	extcon = <&pm8150b_pdphy>, <&eud>;
 };
+
+&sde_dp {
+	extcon = <&pm8150b_pdphy>;
+};

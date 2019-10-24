@@ -30,6 +30,10 @@
 	compatible = "qcom,videocc-kona-v2", "syscon";
 };
 
+&clock_npucc {
+	compatible = "qcom,npucc-kona-v2", "syscon";
+};
+
 &spss_utils {
 	qcom,spss-dev-firmware-name  = "spss2d";	/* 8 chars max */
 	qcom,spss-test-firmware-name = "spss2t";	/* 8 chars max */
@@ -379,4 +383,11 @@
 				800000000>;
 		};
 	};
+};
+
+&cpufreq_hw {
+	interrupts = <GIC_SPI 30 IRQ_TYPE_LEVEL_HIGH>,
+		   <GIC_SPI 31 IRQ_TYPE_LEVEL_HIGH>,
+		   <GIC_SPI 19 IRQ_TYPE_LEVEL_HIGH>;
+	interrupt-names = "dcvsh0_int", "dcvsh1_int", "dcvsh2_int";
 };

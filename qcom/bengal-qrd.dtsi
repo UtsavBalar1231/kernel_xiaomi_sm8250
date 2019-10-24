@@ -1,0 +1,70 @@
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/iio/qcom,spmi-vadc.h>
+#include <dt-bindings/input/input.h>
+
+&soc {
+	qrd_batterydata: qcom,battery-data {
+		qcom,batt-id-range-pct = <15>;
+		#include "qg-batterydata-atl466271_3300mAh.dtsi"
+	};
+};
+
+&pmi632_qg {
+	qcom,battery-data = <&qrd_batterydata>;
+	qcom,qg-iterm-ma = <100>;
+	qcom,hold-soc-while-full;
+	qcom,linearize-soc;
+	qcom,qg-use-s7-ocv;
+};
+
+&pmi632_charger {
+	qcom,battery-data = <&qrd_batterydata>;
+	qcom,suspend-input-on-debug-batt;
+	qcom,sw-jeita-enable;
+	qcom,step-charging-enable;
+	/* SMB1355 only */
+	qcom,sec-charger-config = <2>;
+	dpdm-supply = <&qusb_phy0>;
+	qcom,charger-temp-max = <800>;
+	qcom,smb-temp-max = <800>;
+	qcom,auto-recharge-soc = <98>;
+	qcom,flash-disable-soc = <10>;
+	qcom,hw-die-temp-mitigation;
+	qcom,hw-connector-mitigation;
+	qcom,connector-internal-pull-kohm = <100>;
+	qcom,float-option = <1>;
+	qcom,thermal-mitigation = <4200000 3500000 3000000
+			2500000 2000000 1500000 1000000 500000>;
+};
+
+&pm6125_gpios {
+	key_vol_up {
+		key_vol_up_default: key_vol_up_default {
+			pins = "gpio5";
+			function = "normal";
+			input-enable;
+			bias-pull-up;
+			power-source = <0>;
+		};
+	};
+};
+
+&soc {
+	gpio_keys {
+		compatible = "gpio-keys";
+		label = "gpio-keys";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&key_vol_up_default>;
+
+		vol_up {
+			label = "volume_up";
+			gpios = <&pm6125_gpios 5 GPIO_ACTIVE_LOW>;
+			linux,input-type = <1>;
+			linux,code = <KEY_VOLUMEUP>;
+			linux,can-disable;
+			debounce-interval = <15>;
+			gpio-key,wakeup;
+		};
+	};
+};

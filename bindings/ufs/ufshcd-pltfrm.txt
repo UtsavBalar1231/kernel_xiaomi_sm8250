@@ -80,6 +80,19 @@ Optional properties:
 - reset-names       : describe reset node register, the "rst" corresponds to reset the whole UFS IP.
 - force-g4          : forces UFS Host PHY to be initialized in HS-G4
 
+- vccq-pwr-collapse-sup	:
+- vccq2-pwr-collapse-sup	: Support turning off UFS's Vccq/Vccq2 power supply during system suspend events.
+				  The UFS device will be fully reinitialized during system resume events.
+				  The advantage is to save power consumption during system suspend because the
+				  entire UFS device is powered off.
+				  The tradeoffs are:
+				  1. The System Resume time will increase due to full UFS device re-initializations.
+				  2. The UFS device life expectancy may be reduced because of the frequent power cycles.
+				  Customers should only enable the feature if the SoC supports turning off the UFS
+				  power supplies during power collapse events.
+				  In addition, customers should evaluate the benefits and tradeoffs of this feature
+				  very carefully before enabling it.
+
 Note: If above properties are not defined it can be assumed that the supply
 regulators or clocks are always on.
 
@@ -167,6 +180,9 @@ enabled and functional in the driver:
 - qcom,vddp-ref-clk-supply	 : reference clock to ufs device. Controlled by the host driver.
 - qcom,vddp-ref-clk-max-microamp : specifies max. load that can be drawn for
 				   ref-clk supply.
+- qcom,vccq-parent-supply	 : phandle to VCCQ's parent supply regulator.
+- qcom,vccq-parent-max-microamp : specifies max. load that can be drawn for
+				   VCCQ's parent supply regulator.
 
 Example:
 	ufshc@0xfc598000 {

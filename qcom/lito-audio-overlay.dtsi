@@ -134,24 +134,28 @@
 				compatible = "qcom,wsa881x";
 				reg = <0x10 0x20170211>;
 				qcom,spkr-sd-n-node = <&wsa_spkr_en1>;
+				qcom,bolero-handle = <&bolero>;
 			};
 
 			wsa881x_0212: wsa881x@20170212 {
 				compatible = "qcom,wsa881x";
 				reg = <0x10 0x20170212>;
 				qcom,spkr-sd-n-node = <&wsa_spkr_en2>;
+				qcom,bolero-handle = <&bolero>;
 			};
 
 			wsa881x_0213: wsa881x@21170213 {
 				compatible = "qcom,wsa881x";
 				reg = <0x10 0x21170213>;
 				qcom,spkr-sd-n-node = <&wsa_spkr_en1>;
+				qcom,bolero-handle = <&bolero>;
 			};
 
 			wsa881x_0214: wsa881x@21170214 {
 				compatible = "qcom,wsa881x";
 				reg = <0x10 0x21170214>;
 				qcom,spkr-sd-n-node = <&wsa_spkr_en2>;
+				qcom,bolero-handle = <&bolero>;
 			};
 		};
 
@@ -207,6 +211,7 @@
 		qcom,cdc-micbias1-mv = <1800>;
 		qcom,cdc-micbias2-mv = <1800>;
 		qcom,cdc-micbias3-mv = <1800>;
+		qcom,cdc-micbias4-mv = <1800>;
 
 		qcom,cdc-static-supplies = "cdc-vdd-rxtx",
 					   "cdc-vddio",
@@ -271,12 +276,18 @@
 		"VA_AIF1 CAP", "VA_SWR_CLK",
 		"VA_AIF2 CAP", "VA_SWR_CLK",
 		"VA_AIF3 CAP", "VA_SWR_CLK",
-		"VA DMIC0", "MIC BIAS3",
-		"VA DMIC1", "MIC BIAS3",
-		"VA DMIC2", "MIC BIAS1",
-		"VA DMIC3", "MIC BIAS1",
-		"VA DMIC4", "MIC BIAS4",
-		"VA DMIC5", "MIC BIAS4",
+		"VA MIC BIAS3", "Digital Mic0",
+		"VA MIC BIAS3", "Digital Mic1",
+		"VA MIC BIAS1", "Digital Mic2",
+		"VA MIC BIAS1", "Digital Mic3",
+		"VA MIC BIAS4", "Digital Mic4",
+		"VA MIC BIAS4", "Digital Mic5",
+		"VA DMIC0", "VA MIC BIAS3",
+		"VA DMIC1", "VA MIC BIAS3",
+		"VA DMIC2", "VA MIC BIAS1",
+		"VA DMIC3", "VA MIC BIAS1",
+		"VA DMIC4", "VA MIC BIAS4",
+		"VA DMIC5", "VA MIC BIAS4",
 		"VA SWR_ADC0", "VA_SWR_CLK",
 		"VA SWR_ADC1", "VA_SWR_CLK",
 		"VA SWR_ADC2", "VA_SWR_CLK",
@@ -316,8 +327,8 @@
 				  "SpkrLeft", "SpkrRight";
 	qcom,codec-max-aux-devs = <1>;
 	qcom,codec-aux-devs = <&wcd938x_codec>;
-	qcom,msm_audio_ssr_devs = <&audio_apr>, <&q6core>, <&bolero>,
-				  <&lpi_tlmm>;
+	qcom,msm_audio_ssr_devs = <&audio_apr>, <&q6core>,
+				  <&lpi_tlmm>, <&bolero>;
 };
 
 &q6core {
@@ -327,6 +338,7 @@
 		pinctrl-0 = <&cdc_dmic01_clk_active &cdc_dmic01_data_active>;
 		pinctrl-1 = <&cdc_dmic01_clk_sleep &cdc_dmic01_data_sleep>;
 		qcom,lpi-gpios;
+		qcom,tlmm-gpio = <121 122>;
 	};
 
 	cdc_dmic23_gpios: cdc_dmic23_pinctrl {
@@ -335,6 +347,7 @@
 		pinctrl-0 = <&cdc_dmic23_clk_active &cdc_dmic23_data_active>;
 		pinctrl-1 = <&cdc_dmic23_clk_sleep &cdc_dmic23_data_sleep>;
 		qcom,lpi-gpios;
+		qcom,tlmm-gpio = <124>;
 	};
 
 	cdc_dmic45_gpios: cdc_dmic45_pinctrl {
@@ -343,6 +356,7 @@
 		pinctrl-0 = <&cdc_dmic45_clk_active &cdc_dmic45_data_active>;
 		pinctrl-1 = <&cdc_dmic45_clk_sleep &cdc_dmic45_data_sleep>;
 		qcom,lpi-gpios;
+		qcom,tlmm-gpio = <127 128>;
 	};
 
 	wsa_swr_gpios: wsa_swr_clk_data_pinctrl {
@@ -371,6 +385,7 @@
 		pinctrl-1 = <&tx_swr_clk_sleep &tx_swr_data1_sleep
 			    &tx_swr_data2_sleep &tx_swr_data3_sleep>;
 		qcom,lpi-gpios;
+		qcom,tlmm-gpio = <115 116 117>;
 	};
 };
 

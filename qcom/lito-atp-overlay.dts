@@ -7,6 +7,6 @@
 / {
 	model = "Qualcomm Technologies, Inc. Lito ATP";
 	compatible = "qcom,lito-atp", "qcom,lito", "qcom,atp";
-	qcom,msm-id = <400 0x10000>;
+	qcom,msm-id = <400 0x10000>, <440 0x10000>;
 	qcom,board-id = <33 0>;
 };

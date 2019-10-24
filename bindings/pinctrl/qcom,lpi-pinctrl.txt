@@ -49,6 +49,12 @@ Following properties are for LPI GPIO controller device main node.
 		    position in bits in the slew register base for slew
 		    settings.
 
+- #qcom,lpi-slew-base-tbl:
+	Usage: optional
+	Value type: <u32-array>
+	Definition: Table points to physical address for corresponding
+		    slew registers.
+
 Please refer to ../gpio/gpio.txt for general description of GPIO bindings.
 
 Please refer to pinctrl-bindings.txt in this directory for details of the

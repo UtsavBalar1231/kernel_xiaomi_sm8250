@@ -200,6 +200,9 @@
 		#cooling-cells = <2>;
 	};
 
+	lmh_isense_cdsp {
+		compatible = "qcom,msm-limits-cdsp";
+	};
 };
 
 &thermal_zones {

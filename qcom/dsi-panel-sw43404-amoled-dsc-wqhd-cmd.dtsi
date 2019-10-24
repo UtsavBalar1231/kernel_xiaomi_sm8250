@@ -54,7 +54,8 @@
 				qcom,mdss-dsi-h-right-border = <0>;
 				qcom,mdss-dsi-v-top-border = <0>;
 				qcom,mdss-dsi-v-bottom-border = <0>;
-				qcom,mdss-dsi-panel-jitter = <0x4 0x1>;
+				qcom,mdss-dsi-panel-jitter = <0x6 0x1>;
+				qcom,mdss-mdp-transfer-time-us = <15300>;
 
 				qcom,mdss-dsi-timing-switch-command = [
 					39 01 00 00 00 00 03 b0 a5 00

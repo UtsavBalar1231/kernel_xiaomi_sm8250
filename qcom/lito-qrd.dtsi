@@ -370,12 +370,18 @@
 		"VA_AIF1 CAP", "VA_SWR_CLK",
 		"VA_AIF2 CAP", "VA_SWR_CLK",
 		"VA_AIF3 CAP", "VA_SWR_CLK",
-		"VA DMIC0", "MIC BIAS3",
-		"VA DMIC1", "MIC BIAS3",
-		"VA DMIC2", "MIC BIAS1",
-		"VA DMIC3", "MIC BIAS1",
-		"VA DMIC4", "MIC BIAS4",
-		"VA DMIC5", "MIC BIAS4",
+		"VA MIC BIAS3", "Digital Mic0",
+		"VA MIC BIAS3", "Digital Mic1",
+		"VA MIC BIAS1", "Digital Mic2",
+		"VA MIC BIAS1", "Digital Mic3",
+		"VA MIC BIAS4", "Digital Mic4",
+		"VA MIC BIAS4", "Digital Mic5",
+		"VA DMIC0", "VA MIC BIAS3",
+		"VA DMIC1", "VA MIC BIAS3",
+		"VA DMIC2", "VA MIC BIAS1",
+		"VA DMIC3", "VA MIC BIAS1",
+		"VA DMIC4", "VA MIC BIAS4",
+		"VA DMIC5", "VA MIC BIAS4",
 		"VA SWR_ADC0", "VA_SWR_CLK",
 		"VA SWR_ADC1", "VA_SWR_CLK",
 		"VA SWR_ADC2", "VA_SWR_CLK",
@@ -486,4 +492,47 @@
 	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
 	qcom,platform-reset-gpio = <&pm8150l_gpios 3 0>;
+};
+
+&pm7250b_gpios {
+	smb_stat {
+		smb_stat_default: smb_stat_default {
+			pins = "gpio6";
+			function = "normal";
+			input-enable;
+			bias-pull-up;
+			qcom,pull-up-strength = <PMIC_GPIO_PULL_UP_30>;
+			power-source = <0>;
+		};
+	};
+};
+
+&qupv3_se9_i2c {
+	status = "ok";
+	#include "smb1390.dtsi"
+};
+
+&smb1390 {
+	/delete-property/ interrupts;
+	interrupts = <0x2 0xc5 0x0 IRQ_TYPE_LEVEL_LOW>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&smb_stat_default>;
+	status = "ok";
+};
+
+&smb1390_charger {
+	compatible = "qcom,smb1390-charger-psy";
+	io-channels = <&pm7250b_vadc ADC_AMUX_THM2>;
+	io-channel-names = "cp_die_temp";
+	qcom,parallel-input-mode = <1>; /* USBIN */
+	qcom,parallel-output-mode = <2>; /* VBAT */
+	status = "ok";
+};
+
+&smb1390_slave {
+	status = "ok";
+};
+
+&smb1390_slave_charger {
+	status = "ok";
 };

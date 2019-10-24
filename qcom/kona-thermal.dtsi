@@ -66,6 +66,11 @@
 				#cooling-cells = <2>;
 			};
 
+			modem_pa_fr1: modem_pa_fr1 {
+				qcom,qmi-dev-name = "pa_fr1";
+				#cooling-cells = <2>;
+			};
+
 			modem_tj: modem_tj {
 				qcom,qmi-dev-name = "modem";
 				#cooling-cells = <2>;
@@ -82,22 +87,22 @@
 			};
 
 			modem_mmw_skin0: modem_mmw_skin0 {
-				qcom,qmi-dev-name = "modem_skin0";
+				qcom,qmi-dev-name = "mmw_skin0";
 				#cooling-cells = <2>;
 			};
 
 			modem_mmw_skin1: modem_mmw_skin1 {
-				qcom,qmi-dev-name = "modem_skin1";
+				qcom,qmi-dev-name = "mmw_skin1";
 				#cooling-cells = <2>;
 			};
 
 			modem_mmw_skin2: modem_mmw_skin2 {
-				qcom,qmi-dev-name = "modem_skin2";
+				qcom,qmi-dev-name = "mmw_skin2";
 				#cooling-cells = <2>;
 			};
 
 			modem_mmw_skin3: modem_mmw_skin3 {
-				qcom,qmi-dev-name = "modem_skin3";
+				qcom,qmi-dev-name = "mmw_skin3";
 				#cooling-cells = <2>;
 			};
 
@@ -123,6 +128,11 @@
 
 			modem_bcl: modem_bcl {
 				qcom,qmi-dev-name = "vbatt_low";
+				#cooling-cells = <2>;
+			};
+
+			modem_charge_state: modem_charge_state {
+				qcom,qmi-dev-name = "charge_state";
 				#cooling-cells = <2>;
 			};
 		};
@@ -157,6 +167,10 @@
 						"sys_therm2",
 						"modem_tsens1";
 		};
+	};
+
+	lmh_isense_cdsp {
+		compatible = "qcom,msm-limits-cdsp";
 	};
 };
 

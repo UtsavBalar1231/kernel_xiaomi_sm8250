@@ -44,11 +44,11 @@ Optional Properties:
 				bus level for the power level.  X will be the
 				return value from of_fdt_get_ddrtype().
 
-- qcom,dvm-val:			Value that is used as a register setting for
-				the ACD power feature. It helps determine the
-				threshold for when ACD activates. 0xFFFFFFFF
-				is the default value, and the setting where
-				ACD will never activate.
+- qcom,acd-level:		Value that is used as a register setting for
+				the ACD power feature. It helps to determine
+				the threshold for when ACD activates. Zero is
+				the default value, and the setting where ACD
+				will never activate.
 Example:
 
 qcom,gpu-pwrlevel@6 {
@@ -57,7 +57,7 @@ qcom,gpu-pwrlevel@6 {
 	qcom,bus-freq = <0>;
 	qcom,bus-min = <0>;
 	qcom,bus-max = <0>;
-	qcom,dvm-val = <0xffffffff>;
+	qcom,acd-level = <0xffffffff>;
 };
 
 Example for DDR4/DDR5 specific part:
@@ -76,5 +76,5 @@ qcom,gpu-pwrlevel@6 {
 	qcom,bus-min-ddr7 = <7>;
 	qcom,bus-max-ddr7 = <9>;
 
-	qcom,dvm-val = <0xffffffff>;
+	qcom,acd-level = <0xffffffff>;
 };

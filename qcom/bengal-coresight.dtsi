@@ -198,6 +198,8 @@
 
 		coresight-name = "coresight-tpdm-dcc";
 
+		qcom,hw-enable-check;
+
 		clocks = <&rpmcc RPM_SMD_QDSS_CLK>;
 		clock-names = "apb_pclk";
 		port {

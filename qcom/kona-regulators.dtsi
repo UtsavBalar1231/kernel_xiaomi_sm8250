@@ -531,12 +531,18 @@
 	rpmh-regulator-smpc8 {
 		compatible = "qcom,rpmh-vrm-regulator";
 		qcom,resource-name = "smpc8";
+		qcom,regulator-type = "pmic5-hfsmps";
+		qcom,supported-modes =
+			<RPMH_REGULATOR_MODE_RET
+			 RPMH_REGULATOR_MODE_AUTO>;
+		qcom,mode-threshold-currents = <0 200000>;
 		S8C: pm8150a_s8: regulator-pm8150a-s8 {
 			regulator-name = "pm8150a_s8";
 			qcom,set = <RPMH_REGULATOR_SET_ALL>;
 			regulator-min-microvolt = <1200000>;
 			regulator-max-microvolt = <1400000>;
 			qcom,init-voltage = <1200000>;
+			qcom,init-mode = <RPMH_REGULATOR_MODE_RET>;
 		};
 	};
 

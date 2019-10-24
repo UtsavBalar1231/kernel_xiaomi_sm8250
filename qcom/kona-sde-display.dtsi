@@ -68,6 +68,25 @@
 			qcom,supply-disable-load = <0>;
 			qcom,supply-post-on-sleep = <0>;
 		};
+
+		qcom,panel-supply-entry@2 {
+			reg = <2>;
+			qcom,supply-name = "lab";
+			qcom,supply-min-voltage = <4600000>;
+			qcom,supply-max-voltage = <6000000>;
+			qcom,supply-enable-load = <100000>;
+			qcom,supply-disable-load = <100>;
+		};
+
+		qcom,panel-supply-entry@3 {
+			reg = <3>;
+			qcom,supply-name = "ibb";
+			qcom,supply-min-voltage = <4600000>;
+			qcom,supply-max-voltage = <6000000>;
+			qcom,supply-enable-load = <100000>;
+			qcom,supply-disable-load = <100>;
+			qcom,supply-post-on-sleep = <20>;
+		};
 	};
 
 	dsi_panel_pwr_supply_lab_ibb: dsi_panel_pwr_supply_lab_ibb {
@@ -178,6 +197,8 @@
 		vddio-supply = <&pm8150_l14>;
 		vdd-supply = <&pm8150a_l11>;
 		avdd-supply = <&display_panel_avdd>;
+		lab-supply = <&ab_vreg>;
+		ibb-supply = <&ibb_vreg>;
 
 		qcom,mdp = <&mdss_mdp>;
 		qcom,dsi-default-panel = <&dsi_sw43404_amoled_cmd>;
@@ -245,7 +266,7 @@
 	qcom,mdss-dsi-panel-status-read-length = <1>;
 
 	qcom,dsi-dyn-clk-enable;
-	qcom,dsi-dyn-clk-list = <534578386 536805792 539033152>;
+	qcom,dsi-dyn-clk-list = <552424501 549895420 547366339>;
 
 	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0",
 				"src_byte_clk0", "src_pixel_clk0",
@@ -405,14 +426,21 @@
 			qcom,panel-roi-alignment = <720 8 8 8 1440 8>;
 		};
 
-		timing@5 { /* FHD 120FPS CMD */
+		timing@5 { /* WQHD 120FPS VID */
+			qcom,mdss-dsi-panel-phy-timings = [00 14 05 05 1f 1f 05
+				05 03 02 04 00 12 15];
+			qcom,display-topology = <2 2 2>;
+			qcom,default-topology-index = <0>;
+		};
+
+		timing@6 { /* FHD 120FPS CMD */
 			qcom,mdss-dsi-panel-phy-timings = [00 0e 03 03 1e 1d 04
 				04 02 02 04 00 0e 13];
 			qcom,display-topology = <2 2 2>;
 			qcom,default-topology-index = <0>;
 		};
 
-		timing@6 { /* FHD 90FPS CMD */
+		timing@7 { /* FHD 90FPS CMD */
 			qcom,mdss-dsi-panel-phy-timings = [00 0b 02 02 1c 1c 03
 				02 01 02 04 00 0c 12];
 			qcom,display-topology = <2 2 2>;
