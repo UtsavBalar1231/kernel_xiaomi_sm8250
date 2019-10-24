@@ -2231,6 +2231,7 @@
 };
 
 #include "msm-arm-smmu-bengal.dtsi"
+#include "pm6125-rpm-regulator.dtsi"
 #include "bengal-regulator.dtsi"
 #include "bengal-pm.dtsi"
 #include "bengal-pinctrl.dtsi"
