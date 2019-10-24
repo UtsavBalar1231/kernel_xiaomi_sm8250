@@ -1453,6 +1453,7 @@
 		reg = <0x8A21000 0x1000>;
 		reg-names = "cti-base";
 
+		status = "disabled";
 		coresight-name = "coresight-cti-lpass-q6";
 
 		clocks = <&rpmcc RPM_SMD_QDSS_CLK>;
