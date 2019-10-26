@@ -1936,11 +1936,11 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 	case V4L2_CID_MPEG_VIDEO_VBV_DELAY:
 	case V4L2_CID_MPEG_VIDC_VENC_BITRATE_SAVINGS:
 	case V4L2_CID_MPEG_VIDC_SUPERFRAME:
-		s_vpr_h(sid, "Control set: ID : %x Val : %d\n",
+		s_vpr_h(sid, "Control set: ID : 0x%x Val : %d\n",
 			ctrl->id, ctrl->val);
 		break;
 	default:
-		s_vpr_e(sid, "Unsupported index: %x\n", ctrl->id);
+		s_vpr_e(sid, "Unsupported index: 0x%x\n", ctrl->id);
 		rc = -ENOTSUPP;
 		break;
 	}
@@ -2626,15 +2626,13 @@ int msm_venc_set_vbv_delay(struct msm_vidc_inst *inst)
 set_vbv_delay:
 	inst->clk_data.is_legacy_cbr = is_legacy_cbr;
 	hrd_buf_size.vbv_hrd_buf_size = buf_size;
-	s_vpr_h(inst->sid,
-		"Set hrd_buf_size %d", hrd_buf_size.vbv_hrd_buf_size);
+	s_vpr_h(inst->sid, "%s: %d\n", __func__, hrd_buf_size.vbv_hrd_buf_size);
 	rc = call_hfi_op(hdev, session_set_property,
 		(void *)inst->session,
 		HFI_PROPERTY_CONFIG_VENC_VBV_HRD_BUF_SIZE,
 		(void *)&hrd_buf_size, sizeof(hrd_buf_size));
 	if (rc) {
-		s_vpr_e(inst->sid, "%s: set HRD_BUF_SIZE %u failed\n",
-				__func__, hrd_buf_size.vbv_hrd_buf_size);
+		s_vpr_e(inst->sid, "%s: set property failed\n", __func__);
 	}
 	return rc;
 }
