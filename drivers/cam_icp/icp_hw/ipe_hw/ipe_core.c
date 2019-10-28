@@ -39,7 +39,7 @@ static int cam_ipe_cpas_vote(struct cam_ipe_device_core_info *core_info,
 			&cpas_vote->axi_vote);
 
 	if (rc)
-		CAM_ERR(CAM_ICP, "cpas vote is failed: %d", rc);
+		CAM_ERR(CAM_PERF, "cpas vote is failed: %d", rc);
 
 	return rc;
 }
@@ -168,7 +168,7 @@ static int cam_ipe_handle_pc(struct cam_hw_info *ipe_dev)
 			hw_info->pwr_ctrl, true, 0x1);
 
 		if (pwr_status >> IPE_PWR_ON_MASK)
-			CAM_WARN(CAM_ICP, "BPS: pwr_status(%x):pwr_ctrl(%x)",
+			CAM_WARN(CAM_PERF, "BPS: pwr_status(%x):pwr_ctrl(%x)",
 				pwr_status, pwr_ctrl);
 
 	}
@@ -179,7 +179,7 @@ static int cam_ipe_handle_pc(struct cam_hw_info *ipe_dev)
 	cam_cpas_reg_read(core_info->cpas_handle,
 		CAM_CPAS_REG_CPASTOP, hw_info->pwr_status,
 		true, &pwr_status);
-	CAM_DBG(CAM_ICP, "pwr_ctrl = %x pwr_status = %x",
+	CAM_DBG(CAM_PERF, "pwr_ctrl = %x pwr_status = %x",
 		pwr_ctrl, pwr_status);
 
 	return 0;
@@ -202,7 +202,7 @@ static int cam_ipe_handle_resume(struct cam_hw_info *ipe_dev)
 		CAM_CPAS_REG_CPASTOP, hw_info->pwr_ctrl,
 		true, &pwr_ctrl);
 	if (pwr_ctrl & IPE_COLLAPSE_MASK) {
-		CAM_DBG(CAM_ICP, "IPE pwr_ctrl set(%x)", pwr_ctrl);
+		CAM_DBG(CAM_PERF, "IPE pwr_ctrl set(%x)", pwr_ctrl);
 		cam_cpas_reg_write(core_info->cpas_handle,
 			CAM_CPAS_REG_CPASTOP,
 			hw_info->pwr_ctrl, true, 0);
@@ -214,7 +214,7 @@ static int cam_ipe_handle_resume(struct cam_hw_info *ipe_dev)
 	cam_cpas_reg_read(core_info->cpas_handle,
 		CAM_CPAS_REG_CPASTOP, hw_info->pwr_status,
 		true, &pwr_status);
-	CAM_DBG(CAM_ICP, "pwr_ctrl = %x pwr_status = %x",
+	CAM_DBG(CAM_PERF, "pwr_ctrl = %x pwr_status = %x",
 		pwr_ctrl, pwr_status);
 
 	return rc;
@@ -364,7 +364,7 @@ int cam_ipe_process_cmd(void *device_priv, uint32_t cmd_type,
 		uint32_t clk_rate = clk_upd_cmd->curr_clk_rate;
 		int32_t clk_level  = 0, err = 0;
 
-		CAM_DBG(CAM_ICP, "ipe_src_clk rate = %d", (int)clk_rate);
+		CAM_DBG(CAM_PERF, "ipe_src_clk rate = %d", (int)clk_rate);
 		if (!core_info->clk_enable) {
 			if (clk_upd_cmd->ipe_bps_pc_enable) {
 				cam_ipe_handle_pc(ipe_dev);
@@ -383,11 +383,11 @@ int cam_ipe_process_cmd(void *device_priv, uint32_t cmd_type,
 					CAM_ERR(CAM_ICP, "bps resume failed");
 			}
 		}
-		CAM_DBG(CAM_ICP, "clock rate %d", clk_rate);
+		CAM_DBG(CAM_PERF, "clock rate %d", clk_rate);
 
 		rc = cam_ipe_update_clk_rate(soc_info, clk_rate);
 		if (rc)
-			CAM_ERR(CAM_ICP, "Failed to update clk");
+			CAM_ERR(CAM_PERF, "Failed to update clk %d", clk_rate);
 
 		err = cam_soc_util_get_clk_level(soc_info,
 			clk_rate, soc_info->src_clk_idx,
