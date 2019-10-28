@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #include "cam_fd_hw_core.h"
@@ -513,6 +513,80 @@ static int cam_fd_hw_util_processcmd_frame_done(struct cam_hw_info *fd_hw,
 	spin_unlock_irqrestore(&fd_core->spin_lock, flags);
 	mutex_unlock(&fd_hw->hw_mutex);
 
+	return 0;
+}
+
+static int cam_fd_hw_util_processcmd_hw_dump(
+	struct cam_hw_info *fd_hw,
+	void               *args)
+{
+	int                            i, j;
+	uint8_t                       *dst;
+	uint32_t                      *addr, *start;
+	uint32_t                       num_reg, min_len;
+	uint64_t                       remain_len;
+	struct cam_hw_soc_info        *soc_info;
+	struct cam_fd_hw_dump_header  *hdr;
+	struct cam_fd_hw_dump_args    *dump_args;
+
+	if (!fd_hw || !args) {
+		CAM_ERR(CAM_FD, "Invalid args %pK %pK",
+			fd_hw, args);
+		return -EINVAL;
+	}
+
+	mutex_lock(&fd_hw->hw_mutex);
+
+	if (fd_hw->hw_state == CAM_HW_STATE_POWER_DOWN) {
+		CAM_INFO(CAM_FD, "power off state");
+		mutex_unlock(&fd_hw->hw_mutex);
+		return 0;
+	}
+
+	dump_args = (struct cam_fd_hw_dump_args *)args;
+	soc_info = &fd_hw->soc_info;
+
+	if (dump_args->buf_len <= dump_args->offset) {
+		CAM_WARN(CAM_FD, "dump offset overshoot len %zu offset %zu",
+			dump_args->buf_len, dump_args->offset);
+		mutex_unlock(&fd_hw->hw_mutex);
+		return -ENOSPC;
+	}
+
+	remain_len = dump_args->buf_len - dump_args->offset;
+	min_len =  sizeof(struct cam_fd_hw_dump_header) +
+		    soc_info->reg_map[0].size + sizeof(uint32_t);
+
+	if (remain_len < min_len) {
+		CAM_WARN(CAM_FD, "dump buffer exhaust remain %zu min %u",
+			remain_len, min_len);
+		mutex_unlock(&fd_hw->hw_mutex);
+		return -ENOSPC;
+	}
+
+	dst = (uint8_t *)dump_args->cpu_addr + dump_args->offset;
+	hdr = (struct cam_fd_hw_dump_header *)dst;
+	scnprintf(hdr->tag, CAM_FD_HW_DUMP_TAG_MAX_LEN,
+		"FD_REG:");
+	hdr->word_size = sizeof(uint32_t);
+	addr = (uint32_t *)(dst + sizeof(struct cam_fd_hw_dump_header));
+	start = addr;
+	*addr++ = soc_info->index;
+
+	for (j = 0; j < soc_info->num_reg_map; j++) {
+		num_reg = soc_info->reg_map[j].size/4;
+		for (i = 0; i < num_reg; i++) {
+			*addr++ = soc_info->mem_block[j]->start + i*4;
+			*addr++ = cam_io_r(soc_info->reg_map[j].mem_base +
+				(i*4));
+		}
+	}
+
+	mutex_unlock(&fd_hw->hw_mutex);
+	hdr->size = hdr->word_size * (addr - start);
+	dump_args->offset += hdr->size +
+		sizeof(struct cam_fd_hw_dump_header);
+	CAM_DBG(CAM_FD, "%zu", dump_args->offset);
 	return 0;
 }
 
@@ -1154,6 +1228,11 @@ int cam_fd_hw_process_cmd(void *hw_priv, uint32_t cmd_type,
 			(struct cam_fd_hw_frame_done_args *)cmd_args;
 		rc = cam_fd_hw_util_processcmd_frame_done(fd_hw,
 			cmd_frame_results);
+		break;
+	}
+	case CAM_FD_HW_CMD_HW_DUMP: {
+		rc = cam_fd_hw_util_processcmd_hw_dump(fd_hw,
+			cmd_args);
 		break;
 	}
 	default:

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/of.h>
@@ -378,6 +378,81 @@ int cam_jpeg_enc_stop_hw(void *data,
 	return 0;
 }
 
+int cam_jpeg_enc_hw_dump(
+	struct cam_hw_info           *jpeg_enc_dev,
+	struct cam_jpeg_hw_dump_args *dump_args)
+{
+
+	int                                   i;
+	uint8_t                              *dst;
+	uint32_t                             *addr, *start;
+	uint32_t                              num_reg, min_len;
+	uint32_t                              reg_start_offset;
+	size_t                                remain_len;
+	struct cam_hw_soc_info               *soc_info;
+	struct cam_jpeg_hw_dump_header       *hdr;
+	struct cam_jpeg_enc_device_hw_info   *hw_info;
+	struct cam_jpeg_enc_device_core_info *core_info;
+
+	soc_info = &jpeg_enc_dev->soc_info;
+	core_info = (struct cam_jpeg_enc_device_core_info *)
+		jpeg_enc_dev->core_info;
+	hw_info = core_info->jpeg_enc_hw_info;
+	mutex_lock(&core_info->core_mutex);
+	spin_lock(&jpeg_enc_dev->hw_lock);
+
+	if (jpeg_enc_dev->hw_state == CAM_HW_STATE_POWER_DOWN) {
+		CAM_ERR(CAM_JPEG, "JPEG HW is in off state");
+		spin_unlock(&jpeg_enc_dev->hw_lock);
+		mutex_unlock(&core_info->core_mutex);
+		return -EINVAL;
+	}
+
+	spin_unlock(&jpeg_enc_dev->hw_lock);
+
+	if (dump_args->buf_len <= dump_args->offset) {
+		CAM_WARN(CAM_JPEG, "dump buffer overshoot %zu %zu",
+			dump_args->buf_len, dump_args->offset);
+		mutex_unlock(&core_info->core_mutex);
+		return -ENOSPC;
+	}
+
+	remain_len = dump_args->buf_len - dump_args->offset;
+	min_len =  sizeof(struct cam_jpeg_hw_dump_header) +
+		    soc_info->reg_map[0].size + sizeof(uint32_t);
+	if (remain_len < min_len) {
+		CAM_WARN(CAM_JPEG, "dump buffer exhaust %zu %u",
+			remain_len, min_len);
+		mutex_unlock(&core_info->core_mutex);
+		return -ENOSPC;
+	}
+
+	dst = (uint8_t *)dump_args->cpu_addr + dump_args->offset;
+	hdr = (struct cam_jpeg_hw_dump_header *)dst;
+	snprintf(hdr->tag, CAM_JPEG_HW_DUMP_TAG_MAX_LEN,
+		"JPEG_REG:");
+	hdr->word_size = sizeof(uint32_t);
+	addr = (uint32_t *)(dst + sizeof(struct cam_jpeg_hw_dump_header));
+	start = addr;
+	*addr++ = soc_info->index;
+	num_reg = (hw_info->reg_dump.end_offset -
+		hw_info->reg_dump.start_offset)/4;
+	reg_start_offset = hw_info->reg_dump.start_offset;
+	for (i = 0; i < num_reg; i++) {
+		*addr++ = soc_info->mem_block[0]->start +
+			reg_start_offset + i*4;
+		*addr++ = cam_io_r(soc_info->reg_map[0].mem_base + (i*4));
+	}
+
+	mutex_unlock(&core_info->core_mutex);
+	hdr->size = hdr->word_size * (addr - start);
+	dump_args->offset += hdr->size +
+		sizeof(struct cam_jpeg_hw_dump_header);
+	CAM_DBG(CAM_JPEG, "offset %zu", dump_args->offset);
+
+	return 0;
+}
+
 int cam_jpeg_enc_process_cmd(void *device_priv, uint32_t cmd_type,
 	void *cmd_args, uint32_t arg_size)
 {
@@ -416,6 +491,12 @@ int cam_jpeg_enc_process_cmd(void *device_priv, uint32_t cmd_type,
 			core_info->irq_cb.data = NULL;
 		}
 		rc = 0;
+		break;
+	}
+	case CAM_JPEG_CMD_HW_DUMP:
+	{
+		rc = cam_jpeg_enc_hw_dump(jpeg_enc_dev,
+			cmd_args);
 		break;
 	}
 	default:

@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef CAM_JPEG_ENC_CORE_H
@@ -39,10 +39,16 @@ struct cam_jpeg_enc_int_status {
 	uint32_t stopdone;
 };
 
+struct cam_jpeg_enc_reg_dump {
+	uint32_t start_offset;
+	uint32_t end_offset;
+};
+
 struct cam_jpeg_enc_device_hw_info {
 	struct cam_jpeg_enc_reg_offsets reg_offset;
 	struct cam_jpeg_enc_regval reg_val;
 	struct cam_jpeg_enc_int_status int_status;
+	struct cam_jpeg_enc_reg_dump reg_dump;
 };
 
 enum cam_jpeg_enc_core_state {

@@ -3982,6 +3982,7 @@ static int cam_icp_mgr_config_hw(void *hw_mgr_priv, void *config_hw_args)
 
 	cam_icp_mgr_ipe_bps_clk_update(hw_mgr, ctx_data, idx);
 	ctx_data->hfi_frame_process.fw_process_flag[idx] = true;
+	ctx_data->hfi_frame_process.submit_timestamp[idx] = ktime_get();
 
 	CAM_DBG(CAM_ICP, "req_id %llu, io config %llu", req_id,
 		frame_info->io_config);
@@ -5090,6 +5091,115 @@ static int cam_icp_mgr_enqueue_abort(
 	return 0;
 }
 
+static int cam_icp_mgr_hw_dump(void *hw_priv, void *hw_dump_args)
+{
+	int                              rc;
+	int                              i;
+	size_t                           remain_len;
+	uint8_t                         *dst;
+	uint32_t                         min_len;
+	uint64_t                         diff;
+	uint64_t                        *addr, *start;
+	struct timespec64                cur_ts;
+	struct timespec64                req_ts;
+	ktime_t                          cur_time;
+	struct cam_hw_intf              *a5_dev_intf;
+	struct cam_icp_hw_mgr           *hw_mgr;
+	struct cam_hw_dump_args         *dump_args;
+	struct cam_icp_hw_ctx_data      *ctx_data;
+	struct cam_icp_dump_header      *hdr;
+	struct cam_icp_hw_dump_args      icp_dump_args;
+	struct hfi_frame_process_info   *frm_process;
+
+	if ((!hw_priv) || (!hw_dump_args)) {
+		CAM_ERR(CAM_ICP, "Invalid params %pK %pK",
+			hw_priv, hw_dump_args);
+		return -EINVAL;
+	}
+
+	dump_args = (struct cam_hw_dump_args *)hw_dump_args;
+	hw_mgr = hw_priv;
+	ctx_data = dump_args->ctxt_to_hw_map;
+	CAM_DBG(CAM_ICP, "Req %lld", dump_args->request_id);
+	frm_process = &ctx_data->hfi_frame_process;
+	for (i = 0; i < CAM_FRAME_CMD_MAX; i++) {
+		if ((frm_process->request_id[i] ==
+			dump_args->request_id) &&
+			frm_process->fw_process_flag[i])
+			goto hw_dump;
+	}
+	return 0;
+hw_dump:
+	cur_time = ktime_get();
+	diff = ktime_us_delta(frm_process->submit_timestamp[i], cur_time);
+	cur_ts = ktime_to_timespec64(cur_time);
+	req_ts = ktime_to_timespec64(frm_process->submit_timestamp[i]);
+
+	if (diff < CAM_ICP_CTX_RESPONSE_TIME_THRESHOLD) {
+		CAM_INFO(CAM_ICP, "No Error req %lld %ld:%06ld %ld:%06ld",
+			dump_args->request_id,
+			req_ts.tv_sec,
+			req_ts.tv_nsec/NSEC_PER_USEC,
+			cur_ts.tv_sec,
+			cur_ts.tv_nsec/NSEC_PER_USEC);
+		return 0;
+	}
+
+	CAM_INFO(CAM_ICP, "Error req %lld %ld:%06ld %ld:%06ld",
+		dump_args->request_id,
+		req_ts.tv_sec,
+		req_ts.tv_nsec/NSEC_PER_USEC,
+		cur_ts.tv_sec,
+		cur_ts.tv_nsec/NSEC_PER_USEC);
+	rc  = cam_mem_get_cpu_buf(dump_args->buf_handle,
+		&icp_dump_args.cpu_addr, &icp_dump_args.buf_len);
+	if (rc) {
+		CAM_ERR(CAM_ICP, "Invalid addr %u rc %d",
+			dump_args->buf_handle, rc);
+		return rc;
+	}
+	if (icp_dump_args.buf_len <= dump_args->offset) {
+		CAM_WARN(CAM_ICP, "dump buffer overshoot len %zu offset %zu",
+			icp_dump_args.buf_len, dump_args->offset);
+		return -ENOSPC;
+	}
+
+	remain_len = icp_dump_args.buf_len - dump_args->offset;
+	min_len = sizeof(struct cam_icp_dump_header) +
+			(CAM_ICP_DUMP_NUM_WORDS * sizeof(uint64_t));
+
+	if (remain_len < min_len) {
+		CAM_WARN(CAM_ICP, "dump buffer exhaust remain %zu min %u",
+			remain_len, min_len);
+		return -ENOSPC;
+	}
+
+	dst = (uint8_t *)icp_dump_args.cpu_addr + dump_args->offset;
+	hdr = (struct cam_icp_dump_header *)dst;
+	scnprintf(hdr->tag, CAM_ICP_DUMP_TAG_MAX_LEN, "ICP_REQ:");
+	hdr->word_size = sizeof(uint64_t);
+	addr = (uint64_t *)(dst + sizeof(struct cam_icp_dump_header));
+	start = addr;
+	*addr++ = frm_process->request_id[i];
+	*addr++ = req_ts.tv_sec;
+	*addr++ = req_ts.tv_nsec/NSEC_PER_USEC;
+	*addr++ = cur_ts.tv_sec;
+	*addr++ = cur_ts.tv_nsec/NSEC_PER_USEC;
+	hdr->size = hdr->word_size * (addr - start);
+	dump_args->offset += (hdr->size + sizeof(struct cam_icp_dump_header));
+	/* Dumping the fw image*/
+	icp_dump_args.offset = dump_args->offset;
+	a5_dev_intf = hw_mgr->a5_dev_intf;
+	rc = a5_dev_intf->hw_ops.process_cmd(
+		a5_dev_intf->hw_priv,
+		CAM_ICP_A5_CMD_HW_DUMP, &icp_dump_args,
+		sizeof(struct cam_icp_hw_dump_args));
+	CAM_DBG(CAM_ICP, "Offset before %zu after %zu",
+		dump_args->offset, icp_dump_args.offset);
+	dump_args->offset = icp_dump_args.offset;
+	return rc;
+}
+
 static int cam_icp_mgr_hw_flush(void *hw_priv, void *hw_flush_args)
 {
 	struct cam_hw_flush_args *flush_args = hw_flush_args;
@@ -5902,6 +6012,7 @@ int cam_icp_hw_mgr_init(struct device_node *of_node, uint64_t *hw_mgr_hdl,
 	hw_mgr_intf->hw_close = cam_icp_mgr_hw_close_u;
 	hw_mgr_intf->hw_flush = cam_icp_mgr_hw_flush;
 	hw_mgr_intf->hw_cmd = cam_icp_mgr_cmd;
+	hw_mgr_intf->hw_dump = cam_icp_mgr_hw_dump;
 
 	icp_hw_mgr.secure_mode = CAM_SECURE_MODE_NON_SECURE;
 	mutex_init(&icp_hw_mgr.hw_mgr_mutex);
