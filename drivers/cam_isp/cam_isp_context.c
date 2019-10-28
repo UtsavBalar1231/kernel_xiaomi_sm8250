@@ -56,7 +56,7 @@ static void __cam_isp_ctx_update_state_monitor_array(
 }
 
 static const char *__cam_isp_ctx_substate_val_to_type(
-	uint32_t type)
+	enum cam_isp_ctx_activated_substate type)
 {
 	switch (type) {
 	case CAM_ISP_CTX_ACTIVATED_SOF:
@@ -74,7 +74,7 @@ static const char *__cam_isp_ctx_substate_val_to_type(
 	case CAM_ISP_CTX_ACTIVATED_HALT:
 		return "HALT";
 	default:
-		return "CAM_ISP_CTX_INVALID_STATE";
+		return "INVALID";
 	}
 }
 
@@ -130,7 +130,7 @@ static void __cam_isp_ctx_dump_state_monitor_array(
 
 	for (i = 0; i < num_entries; i++) {
 		CAM_ERR(CAM_ISP,
-		"Index[%d] time[%d] : State[%s] Frame[%lld] ReqId[%llu] evt_type[%s]",
+		"Index[%d] time[%d] : Substate[%s] Frame[%lld] ReqId[%llu] evt_type[%s]",
 		index,
 		ctx_isp->cam_isp_ctx_state_monitor[index].evt_time_stamp,
 		__cam_isp_ctx_substate_val_to_type(
@@ -730,15 +730,19 @@ static int __cam_isp_ctx_handle_buf_done_in_activated_state(
 	return rc;
 }
 
-static int __cam_isp_ctx_reg_upd_in_epoch_state(
+static int __cam_isp_ctx_reg_upd_in_epoch_bubble_state(
 	struct cam_isp_context *ctx_isp, void *evt_data)
 {
 	if (ctx_isp->frame_id == 1)
-		CAM_DBG(CAM_ISP, "Reg update for early PCR");
+		CAM_DBG(CAM_ISP, "Reg update in Substate[%s] for early PCR",
+			__cam_isp_ctx_substate_val_to_type(
+			ctx_isp->substate_activated));
 	else
 		CAM_WARN(CAM_ISP,
-			"Unexpected reg update in activated substate:%d for frame_id:%lld",
-			ctx_isp->substate_activated, ctx_isp->frame_id);
+			"Unexpected reg update in activated Substate[%s] for frame_id:%lld",
+			__cam_isp_ctx_substate_val_to_type(
+			ctx_isp->substate_activated),
+			ctx_isp->frame_id);
 	return 0;
 }
 
@@ -780,7 +784,9 @@ static int __cam_isp_ctx_reg_upd_in_applied_state(
 	 * state so change substate here.
 	 */
 	ctx_isp->substate_activated = CAM_ISP_CTX_ACTIVATED_EPOCH;
-	CAM_DBG(CAM_ISP, "next substate %d", ctx_isp->substate_activated);
+	CAM_DBG(CAM_ISP, "next Substate[%s]",
+		__cam_isp_ctx_substate_val_to_type(
+		ctx_isp->substate_activated));
 
 	__cam_isp_ctx_update_state_monitor_array(ctx_isp,
 		CAM_ISP_STATE_CHANGE_TRIGGER_REG_UPDATE, request_id);
@@ -1073,8 +1079,9 @@ static int __cam_isp_ctx_epoch_in_applied(struct cam_isp_context *ctx_isp,
 		CAM_REQ_MGR_SOF_EVENT_ERROR);
 
 	ctx_isp->substate_activated = CAM_ISP_CTX_ACTIVATED_BUBBLE;
-	CAM_DBG(CAM_ISP, "next substate %d",
-		ctx_isp->substate_activated);
+	CAM_DBG(CAM_ISP, "next Substate[%s]",
+		__cam_isp_ctx_substate_val_to_type(
+		ctx_isp->substate_activated));
 end:
 	if (request_id == 0) {
 		req = list_last_entry(&ctx->active_req_list,
@@ -1132,12 +1139,15 @@ static int __cam_isp_ctx_sof_in_epoch(struct cam_isp_context *ctx_isp,
 
 	if (ctx_isp->frame_id == 1)
 		CAM_INFO(CAM_ISP,
-			"First SOF in EPCR ctx:%d frame_id:%lld next substate %d",
+			"First SOF in EPCR ctx:%d frame_id:%lld next substate %s",
 			ctx->ctx_id, ctx_isp->frame_id,
-			ctx_isp->substate_activated);
+			__cam_isp_ctx_substate_val_to_type(
+			ctx_isp->substate_activated));
 
-	CAM_DBG(CAM_ISP, "SOF in epoch ctx:%d frame_id:%lld next substate:%d",
-		ctx->ctx_id, ctx_isp->frame_id, ctx_isp->substate_activated);
+	CAM_DBG(CAM_ISP, "SOF in epoch ctx:%d frame_id:%lld next substate:%s",
+		ctx->ctx_id, ctx_isp->frame_id,
+		__cam_isp_ctx_substate_val_to_type(
+		ctx_isp->substate_activated));
 
 	return rc;
 }
@@ -1237,7 +1247,9 @@ static int __cam_isp_ctx_epoch_in_bubble_applied(
 			CAM_REQ_MGR_SOF_EVENT_SUCCESS);
 
 	ctx_isp->substate_activated = CAM_ISP_CTX_ACTIVATED_BUBBLE;
-	CAM_DBG(CAM_ISP, "next substate %d", ctx_isp->substate_activated);
+	CAM_DBG(CAM_ISP, "next Substate[%s]",
+		__cam_isp_ctx_substate_val_to_type(
+		ctx_isp->substate_activated));
 end:
 	req = list_last_entry(&ctx->active_req_list, struct cam_ctx_request,
 		list);
@@ -1718,7 +1730,9 @@ static int __cam_isp_ctx_fs2_reg_upd_in_applied_state(
 		rc = -EFAULT;
 	}
 
-	CAM_DBG(CAM_ISP, "next substate %d", ctx_isp->substate_activated);
+	CAM_DBG(CAM_ISP, "next Substate[%s]",
+		__cam_isp_ctx_substate_val_to_type(
+		ctx_isp->substate_activated));
 end:
 	if (req != NULL && !rc) {
 		__cam_isp_ctx_update_state_monitor_array(ctx_isp,
@@ -1757,7 +1771,7 @@ static struct cam_isp_ctx_irq_ops
 		.irq_ops = {
 			__cam_isp_ctx_handle_error,
 			__cam_isp_ctx_sof_in_epoch,
-			__cam_isp_ctx_reg_upd_in_epoch_state,
+			__cam_isp_ctx_reg_upd_in_epoch_bubble_state,
 			__cam_isp_ctx_notify_sof_in_activated_state,
 			__cam_isp_ctx_notify_eof_in_activated_state,
 			__cam_isp_ctx_buf_done_in_epoch,
@@ -1768,7 +1782,7 @@ static struct cam_isp_ctx_irq_ops
 		.irq_ops = {
 			__cam_isp_ctx_handle_error,
 			__cam_isp_ctx_sof_in_activated_state,
-			NULL,
+			__cam_isp_ctx_reg_upd_in_epoch_bubble_state,
 			__cam_isp_ctx_notify_sof_in_activated_state,
 			__cam_isp_ctx_notify_eof_in_activated_state,
 			__cam_isp_ctx_buf_done_in_bubble,
@@ -1830,7 +1844,7 @@ static struct cam_isp_ctx_irq_ops
 		.irq_ops = {
 			__cam_isp_ctx_handle_error,
 			__cam_isp_ctx_sof_in_epoch,
-			__cam_isp_ctx_reg_upd_in_epoch_state,
+			__cam_isp_ctx_reg_upd_in_epoch_bubble_state,
 			__cam_isp_ctx_notify_sof_in_activated_state,
 			__cam_isp_ctx_notify_eof_in_activated_state,
 			__cam_isp_ctx_fs2_buf_done_in_epoch,
@@ -1841,7 +1855,7 @@ static struct cam_isp_ctx_irq_ops
 		.irq_ops = {
 			__cam_isp_ctx_handle_error,
 			__cam_isp_ctx_sof_in_activated_state,
-			NULL,
+			__cam_isp_ctx_reg_upd_in_epoch_bubble_state,
 			__cam_isp_ctx_notify_sof_in_activated_state,
 			__cam_isp_ctx_notify_eof_in_activated_state,
 			__cam_isp_ctx_buf_done_in_bubble,
@@ -1876,7 +1890,7 @@ static struct cam_isp_ctx_irq_ops
 
 static int __cam_isp_ctx_apply_req_in_activated_state(
 	struct cam_context *ctx, struct cam_req_mgr_apply_request *apply,
-	uint32_t next_state)
+	enum cam_isp_ctx_activated_substate next_state)
 {
 	int rc = 0;
 	struct cam_ctx_request          *req;
@@ -1926,8 +1940,10 @@ static int __cam_isp_ctx_apply_req_in_activated_state(
 		goto end;
 	}
 
-	CAM_DBG(CAM_REQ, "Apply request %lld in substate %d ctx %u",
-		req->request_id, ctx_isp->substate_activated, ctx->ctx_id);
+	CAM_DBG(CAM_REQ, "Apply request %lld in Substate[%s] ctx %u",
+		req->request_id,
+		__cam_isp_ctx_substate_val_to_type(ctx_isp->substate_activated),
+		ctx->ctx_id);
 	req_isp = (struct cam_isp_ctx_req *) req->req_priv;
 
 	if (ctx_isp->active_req_cnt >=  2) {
@@ -1976,8 +1992,9 @@ static int __cam_isp_ctx_apply_req_in_activated_state(
 		ctx_isp->last_applied_req_id = apply->request_id;
 		list_del_init(&req->list);
 		list_add_tail(&req->list, &ctx->wait_req_list);
-		CAM_DBG(CAM_ISP, "new substate state %d, applied req %lld",
-			next_state, ctx_isp->last_applied_req_id);
+		CAM_DBG(CAM_ISP, "new substate Substate[%s], applied req %lld",
+			__cam_isp_ctx_substate_val_to_type(next_state),
+			ctx_isp->last_applied_req_id);
 		spin_unlock_bh(&ctx->lock);
 
 		__cam_isp_ctx_update_state_monitor_array(ctx_isp,
@@ -1995,15 +2012,19 @@ static int __cam_isp_ctx_apply_req_in_sof(
 	struct cam_isp_context *ctx_isp =
 		(struct cam_isp_context *) ctx->ctx_priv;
 
-	CAM_DBG(CAM_ISP, "current substate %d",
-		ctx_isp->substate_activated);
+	CAM_DBG(CAM_ISP, "current Substate[%s]",
+		__cam_isp_ctx_substate_val_to_type(
+		ctx_isp->substate_activated));
 	rc = __cam_isp_ctx_apply_req_in_activated_state(ctx, apply,
 		CAM_ISP_CTX_ACTIVATED_APPLIED);
-	CAM_DBG(CAM_ISP, "new substate %d", ctx_isp->substate_activated);
+	CAM_DBG(CAM_ISP, "new Substate[%s]",
+		__cam_isp_ctx_substate_val_to_type(
+		ctx_isp->substate_activated));
 
 	if (rc)
-		CAM_DBG(CAM_ISP, "Apply failed in state %d, rc %d",
-			ctx_isp->substate_activated, rc);
+		CAM_DBG(CAM_ISP, "Apply failed in Substate[%s], rc %d",
+			__cam_isp_ctx_substate_val_to_type(
+			ctx_isp->substate_activated), rc);
 
 	return rc;
 }
@@ -2015,15 +2036,19 @@ static int __cam_isp_ctx_apply_req_in_epoch(
 	struct cam_isp_context *ctx_isp =
 		(struct cam_isp_context *) ctx->ctx_priv;
 
-	CAM_DBG(CAM_ISP, "current substate %d",
-		ctx_isp->substate_activated);
+	CAM_DBG(CAM_ISP, "current Substate[%s]",
+		__cam_isp_ctx_substate_val_to_type(
+		ctx_isp->substate_activated));
 	rc = __cam_isp_ctx_apply_req_in_activated_state(ctx, apply,
 		CAM_ISP_CTX_ACTIVATED_APPLIED);
-	CAM_DBG(CAM_ISP, "new substate %d", ctx_isp->substate_activated);
+	CAM_DBG(CAM_ISP, "new Substate[%s]",
+		__cam_isp_ctx_substate_val_to_type(
+		ctx_isp->substate_activated));
 
 	if (rc)
-		CAM_DBG(CAM_ISP, "Apply failed in state %d, rc %d",
-			ctx_isp->substate_activated, rc);
+		CAM_DBG(CAM_ISP, "Apply failed in Substate[%s], rc %d",
+			__cam_isp_ctx_substate_val_to_type(
+			ctx_isp->substate_activated), rc);
 
 	return rc;
 }
@@ -2035,15 +2060,19 @@ static int __cam_isp_ctx_apply_req_in_bubble(
 	struct cam_isp_context *ctx_isp =
 		(struct cam_isp_context *) ctx->ctx_priv;
 
-	CAM_DBG(CAM_ISP, "current substate %d",
-		ctx_isp->substate_activated);
+	CAM_DBG(CAM_ISP, "current Substate[%s]",
+		__cam_isp_ctx_substate_val_to_type(
+		ctx_isp->substate_activated));
 	rc = __cam_isp_ctx_apply_req_in_activated_state(ctx, apply,
 		CAM_ISP_CTX_ACTIVATED_BUBBLE_APPLIED);
-	CAM_DBG(CAM_ISP, "new substate %d", ctx_isp->substate_activated);
+	CAM_DBG(CAM_ISP, "new Substate[%s]",
+		__cam_isp_ctx_substate_val_to_type(
+		ctx_isp->substate_activated));
 
 	if (rc)
-		CAM_DBG(CAM_ISP, "Apply failed in state %d, rc %d",
-			ctx_isp->substate_activated, rc);
+		CAM_DBG(CAM_ISP, "Apply failed in Substate[%s], rc %d",
+			__cam_isp_ctx_substate_val_to_type(
+			ctx_isp->substate_activated), rc);
 
 	return rc;
 }
@@ -2389,8 +2418,9 @@ static int __cam_isp_ctx_rdi_only_sof_in_top_state(
 	else
 		CAM_DBG(CAM_ISP, "Still need to wait for the buf done");
 
-	CAM_DBG(CAM_ISP, "next substate %d",
-		ctx_isp->substate_activated);
+	CAM_DBG(CAM_ISP, "next Substate[%s]",
+		__cam_isp_ctx_substate_val_to_type(
+		ctx_isp->substate_activated));
 	return rc;
 }
 
@@ -2411,7 +2441,9 @@ static int __cam_isp_ctx_rdi_only_sof_in_applied_state(
 		ctx_isp->frame_id, ctx_isp->sof_timestamp_val);
 
 	ctx_isp->substate_activated = CAM_ISP_CTX_ACTIVATED_BUBBLE_APPLIED;
-	CAM_DBG(CAM_ISP, "next substate %d", ctx_isp->substate_activated);
+	CAM_DBG(CAM_ISP, "next Substate[%s]",
+		__cam_isp_ctx_substate_val_to_type(
+		ctx_isp->substate_activated));
 
 	return 0;
 }
@@ -2507,7 +2539,9 @@ static int __cam_isp_ctx_rdi_only_sof_in_bubble_applied(
 
 	/* change the state to bubble, as reg update has not come */
 	ctx_isp->substate_activated = CAM_ISP_CTX_ACTIVATED_BUBBLE;
-	CAM_DBG(CAM_ISP, "next substate %d", ctx_isp->substate_activated);
+	CAM_DBG(CAM_ISP, "next Substate[%s]",
+		__cam_isp_ctx_substate_val_to_type(
+		ctx_isp->substate_activated));
 end:
 	return 0;
 }
@@ -2579,8 +2613,9 @@ static int __cam_isp_ctx_rdi_only_sof_in_bubble_state(
 
 	ctx_isp->substate_activated = CAM_ISP_CTX_ACTIVATED_SOF;
 
-	CAM_DBG(CAM_ISP, "next substate %d",
-		ctx_isp->substate_activated);
+	CAM_DBG(CAM_ISP, "next Substate[%s]",
+		__cam_isp_ctx_substate_val_to_type(
+		ctx_isp->substate_activated));
 
 	return 0;
 }
@@ -2644,7 +2679,9 @@ static int __cam_isp_ctx_rdi_only_reg_upd_in_bubble_applied_state(
 
 	__cam_isp_ctx_send_sof_timestamp(ctx_isp, request_id,
 		CAM_REQ_MGR_SOF_EVENT_SUCCESS);
-	CAM_DBG(CAM_ISP, "next substate %d", ctx_isp->substate_activated);
+	CAM_DBG(CAM_ISP, "next Substate[%s]",
+		__cam_isp_ctx_substate_val_to_type(
+		ctx_isp->substate_activated));
 
 	return 0;
 error:
@@ -2734,15 +2771,19 @@ static int __cam_isp_ctx_rdi_only_apply_req_top_state(
 	struct cam_isp_context *ctx_isp =
 		(struct cam_isp_context *) ctx->ctx_priv;
 
-	CAM_DBG(CAM_ISP, "current substate %d",
-		ctx_isp->substate_activated);
+	CAM_DBG(CAM_ISP, "current Substate[%s]",
+		__cam_isp_ctx_substate_val_to_type(
+		ctx_isp->substate_activated));
 	rc = __cam_isp_ctx_apply_req_in_activated_state(ctx, apply,
 		CAM_ISP_CTX_ACTIVATED_APPLIED);
-	CAM_DBG(CAM_ISP, "new substate %d", ctx_isp->substate_activated);
+	CAM_DBG(CAM_ISP, "new Substate[%s]",
+		__cam_isp_ctx_substate_val_to_type(
+		ctx_isp->substate_activated));
 
 	if (rc)
-		CAM_ERR(CAM_ISP, "Apply failed in state %d, rc %d",
-			ctx_isp->substate_activated, rc);
+		CAM_ERR(CAM_ISP, "Apply failed in Substate[%s], rc %d",
+			__cam_isp_ctx_substate_val_to_type(
+			ctx_isp->substate_activated), rc);
 
 	return rc;
 }
@@ -3808,7 +3849,9 @@ static int __cam_isp_ctx_stop_dev_in_activated_unlock(
 	spin_lock_bh(&ctx->lock);
 	ctx_isp->substate_activated = CAM_ISP_CTX_ACTIVATED_HALT;
 	spin_unlock_bh(&ctx->lock);
-	CAM_DBG(CAM_ISP, "next substate %d", ctx_isp->substate_activated);
+	CAM_DBG(CAM_ISP, "next Substate[%s]",
+		__cam_isp_ctx_substate_val_to_type(
+		ctx_isp->substate_activated));
 
 	while (!list_empty(&ctx->pending_req_list)) {
 		req = list_first_entry(&ctx->pending_req_list,
@@ -4032,22 +4075,25 @@ static int __cam_isp_ctx_apply_req(struct cam_context *ctx,
 		(struct cam_isp_context *) ctx->ctx_priv;
 
 	trace_cam_apply_req("ISP", apply->request_id);
-	CAM_DBG(CAM_ISP, "Enter: apply req in Substate %d request _id:%lld",
-		 ctx_isp->substate_activated, apply->request_id);
+	CAM_DBG(CAM_ISP, "Enter: apply req in Substate[%s] request_id:%lld",
+		__cam_isp_ctx_substate_val_to_type(
+		ctx_isp->substate_activated), apply->request_id);
 	ctx_ops = &ctx_isp->substate_machine[ctx_isp->substate_activated];
 	if (ctx_ops->crm_ops.apply_req) {
 		rc = ctx_ops->crm_ops.apply_req(ctx, apply);
 	} else {
 		CAM_WARN_RATE_LIMIT(CAM_ISP,
-			"No handle function in activated substate %d",
-			ctx_isp->substate_activated);
+			"No handle function in activated Substate[%s]",
+			__cam_isp_ctx_substate_val_to_type(
+			ctx_isp->substate_activated));
 		rc = -EFAULT;
 	}
 
 	if (rc)
 		CAM_WARN_RATE_LIMIT(CAM_ISP,
-			"Apply failed in active substate %d rc %d",
-			ctx_isp->substate_activated, rc);
+			"Apply failed in active Substate[%s] rc %d",
+			__cam_isp_ctx_substate_val_to_type(
+			ctx_isp->substate_activated), rc);
 	return rc;
 }
 
@@ -4067,20 +4113,23 @@ static int __cam_isp_ctx_handle_irq_in_activated(void *context,
 	trace_cam_isp_activated_irq(ctx, ctx_isp->substate_activated, evt_id,
 		__cam_isp_ctx_get_event_ts(evt_id, evt_data));
 
-	CAM_DBG(CAM_ISP, "Enter: State %d, Substate %d, evt id %d",
-		 ctx->state, ctx_isp->substate_activated, evt_id);
+	CAM_DBG(CAM_ISP, "Enter: State %d, Substate[%s], evt id %d",
+		ctx->state, __cam_isp_ctx_substate_val_to_type(
+		ctx_isp->substate_activated), evt_id);
 	irq_ops = &ctx_isp->substate_machine_irq[ctx_isp->substate_activated];
 	if (irq_ops->irq_ops[evt_id]) {
 		rc = irq_ops->irq_ops[evt_id](ctx_isp, evt_data);
 	} else {
-		CAM_DBG(CAM_ISP, "No handle function for substate %d",
-			ctx_isp->substate_activated);
+		CAM_DBG(CAM_ISP, "No handle function for Substate[%s]",
+			__cam_isp_ctx_substate_val_to_type(
+			ctx_isp->substate_activated));
 		if (isp_ctx_debug.enable_state_monitor_dump)
 			__cam_isp_ctx_dump_state_monitor_array(ctx_isp);
 	}
 
-	CAM_DBG(CAM_ISP, "Exit: State %d Substate %d",
-		 ctx->state, ctx_isp->substate_activated);
+	CAM_DBG(CAM_ISP, "Exit: State %d Substate[%s]",
+		ctx->state, __cam_isp_ctx_substate_val_to_type(
+		ctx_isp->substate_activated));
 	spin_unlock(&ctx->lock);
 	return rc;
 }
@@ -4358,7 +4407,9 @@ int cam_isp_context_deinit(struct cam_isp_context *ctx)
 		cam_context_deinit(ctx->base);
 
 	if (ctx->substate_activated != CAM_ISP_CTX_ACTIVATED_SOF)
-		CAM_ERR(CAM_ISP, "ISP context substate is invalid");
+		CAM_ERR(CAM_ISP, "ISP context Substate[%s] is invalid",
+			__cam_isp_ctx_substate_val_to_type(
+			ctx->substate_activated));
 
 	memset(ctx, 0, sizeof(*ctx));
 	return rc;
