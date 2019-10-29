@@ -909,8 +909,10 @@ static void _sde_kms_drm_check_dpms(struct drm_atomic_state *old_state,
 
 			notifier_data.data = &new_mode;
 			notifier_data.refresh_rate = new_fps;
+			notifier_data.id = connector->base.id;
 
-			drm_panel_notifier_call_chain(connector->panel,
+			if (connector->panel)
+				drm_panel_notifier_call_chain(connector->panel,
 							event, &notifier_data);
 		}
 	}
