@@ -45,6 +45,9 @@
 		#clock-cells = <0>;
 	};
 
+	qmi-tmd-devices {
+		status = "disabled";
+	};
 };
 
 &qupv3_se1_i2c {
@@ -84,9 +87,45 @@
 	/delete-node/ rpm-regulator-ldoa24;
 };
 
+&tsens0 {
+	status = "disabled";
+};
+
+&bcl_sensor {
+	status = "disabled";
+};
+
+&bcl_soc {
+	status = "disabled";
+};
+
+&lmh_cpu_vdd {
+	status = "disabled";
+};
+
+&cxip_cdev {
+	status = "disabled";
+};
+
+&lmh_dcvs0 {
+	status = "disabled";
+};
+
+&lmh_dcvs1 {
+	status = "disabled";
+};
+
 &thermal_zones {
 	/delete-node/ mapss-lowf;
 	/delete-node/ camera-lowf;
+	/delete-node/ pmi632-ibat-lvl0;
+	/delete-node/ pmi632-ibat-lvl1;
+	/delete-node/ pmi632-vbat-lvl0;
+	/delete-node/ pmi632-vbat-lvl1;
+	/delete-node/ pmi632-vbat-lvl2;
+	/delete-node/ pmi632-bcl-lvl0;
+	/delete-node/ pmi632-bcl-lvl1;
+	/delete-node/ pmi632-bcl-lvl2;
 };
 
  #include "bengal-stub-regulator.dtsi"
