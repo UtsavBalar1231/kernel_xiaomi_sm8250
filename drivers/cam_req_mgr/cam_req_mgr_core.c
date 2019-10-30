@@ -1744,6 +1744,10 @@ static void __cam_req_mgr_sof_freeze(struct timer_list *timer_data)
 	}
 
 	link = (struct cam_req_mgr_core_link *)timer->parent;
+
+	if (link->watchdog->pause_timer)
+		return;
+
 	task = cam_req_mgr_workq_get_task(link->workq);
 	if (!task) {
 		CAM_ERR(CAM_CRM, "No empty task");
@@ -2644,6 +2648,52 @@ end:
 }
 
 /**
+ * cam_req_mgr_cb_notify_timer()
+ *
+ * @brief      : Notify SOF timer to pause after flush
+ * @timer_data : contains information about frame_id, link etc.
+ *
+ * @return  : 0 on success
+ *
+ */
+static int cam_req_mgr_cb_notify_timer(
+	struct cam_req_mgr_timer_notify *timer_data)
+{
+	int                              rc = 0;
+	struct cam_req_mgr_core_link    *link = NULL;
+
+	if (!timer_data) {
+		CAM_ERR(CAM_CRM, "timer data  is NULL");
+		rc = -EINVAL;
+		goto end;
+	}
+
+	link = (struct cam_req_mgr_core_link *)
+		cam_get_device_priv(timer_data->link_hdl);
+	if (!link) {
+		CAM_DBG(CAM_CRM, "link ptr NULL %x", timer_data->link_hdl);
+		rc = -EINVAL;
+		goto end;
+	}
+
+	spin_lock_bh(&link->link_state_spin_lock);
+	if (link->state < CAM_CRM_LINK_STATE_READY) {
+		CAM_WARN(CAM_CRM, "invalid link state:%d", link->state);
+		spin_unlock_bh(&link->link_state_spin_lock);
+		rc = -EPERM;
+		goto end;
+	}
+	spin_unlock_bh(&link->link_state_spin_lock);
+
+
+	if (!timer_data->state)
+		link->watchdog->pause_timer = true;
+
+end:
+	return rc;
+}
+
+/**
  * cam_req_mgr_cb_notify_trigger()
  *
  * @brief   : SOF received from device, sends trigger through workqueue
@@ -2682,6 +2732,10 @@ static int cam_req_mgr_cb_notify_trigger(
 		rc = -EPERM;
 		goto end;
 	}
+
+	if (link->watchdog->pause_timer)
+		link->watchdog->pause_timer = false;
+
 	crm_timer_reset(link->watchdog);
 	spin_unlock_bh(&link->link_state_spin_lock);
 
@@ -2711,6 +2765,7 @@ static struct cam_req_mgr_crm_cb cam_req_mgr_ops = {
 	.notify_trigger = cam_req_mgr_cb_notify_trigger,
 	.notify_err     = cam_req_mgr_cb_notify_err,
 	.add_req        = cam_req_mgr_cb_add_req,
+	.notify_timer   = cam_req_mgr_cb_notify_timer,
 };
 
 /**

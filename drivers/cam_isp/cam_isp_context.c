@@ -2165,6 +2165,7 @@ static int __cam_isp_ctx_flush_req_in_top_state(
 	struct cam_hw_stop_args           stop_args;
 	struct cam_hw_reset_args          reset_args;
 	struct cam_hw_cmd_args            hw_cmd_args;
+	struct cam_req_mgr_timer_notify    timer;
 
 	ctx_isp = (struct cam_isp_context *) ctx->ctx_priv;
 
@@ -2210,6 +2211,14 @@ static int __cam_isp_ctx_flush_req_in_top_state(
 
 		CAM_INFO(CAM_ISP, "Stop HW complete. Reset HW next.");
 		CAM_DBG(CAM_ISP, "Flush wait and active lists");
+
+		if (ctx->ctx_crm_intf && ctx->ctx_crm_intf->notify_timer) {
+			timer.link_hdl = ctx->link_hdl;
+			timer.dev_hdl = ctx->dev_hdl;
+			timer.state = false;
+			ctx->ctx_crm_intf->notify_timer(&timer);
+		}
+
 		spin_lock_bh(&ctx->lock);
 		if (!list_empty(&ctx->wait_req_list))
 			rc = __cam_isp_ctx_flush_req(ctx, &ctx->wait_req_list,

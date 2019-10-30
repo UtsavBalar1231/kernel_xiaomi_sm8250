@@ -14,6 +14,7 @@
 struct cam_req_mgr_trigger_notify;
 struct cam_req_mgr_error_notify;
 struct cam_req_mgr_add_request;
+struct cam_req_mgr_timer_notify;
 struct cam_req_mgr_device_info;
 struct cam_req_mgr_core_dev_link_setup;
 struct cam_req_mgr_apply_request;
@@ -35,6 +36,7 @@ typedef int (*cam_req_mgr_notify_trigger)(
 	struct cam_req_mgr_trigger_notify *);
 typedef int (*cam_req_mgr_notify_err)(struct cam_req_mgr_error_notify *);
 typedef int (*cam_req_mgr_add_req)(struct cam_req_mgr_add_request *);
+typedef int (*cam_req_mgr_notify_timer)(struct cam_req_mgr_timer_notify *);
 
 /**
  * @brief: cam req mgr to camera device drivers
@@ -64,6 +66,7 @@ struct cam_req_mgr_crm_cb {
 	cam_req_mgr_notify_trigger  notify_trigger;
 	cam_req_mgr_notify_err      notify_err;
 	cam_req_mgr_add_req         add_req;
+	cam_req_mgr_notify_timer    notify_timer;
 };
 
 /**
@@ -204,6 +207,19 @@ struct cam_req_mgr_trigger_notify {
 	int64_t  frame_id;
 	uint32_t trigger;
 	uint64_t sof_timestamp_val;
+};
+
+/**
+ * struct cam_req_mgr_timer_notify
+ * @link_hdl : link identifier
+ * @dev_hdl  : device handle which has sent this req id
+ * @frame_id : frame id for internal tracking
+ * @state    : timer state i.e ON or OFF
+ */
+struct cam_req_mgr_timer_notify {
+	int32_t  link_hdl;
+	int32_t  dev_hdl;
+	bool     state;
 };
 
 /**
