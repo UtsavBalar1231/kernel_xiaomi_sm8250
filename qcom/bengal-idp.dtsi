@@ -4,6 +4,7 @@
 #include "bengal-audio-overlay.dtsi"
 #include "bengal-thermal-overlay.dtsi"
 #include "bengal-sde-display.dtsi"
+#include "camera/bengal-camera-sensor-idp.dtsi"
 
 &soc {
 	mtp_batterydata: qcom,battery-data {
