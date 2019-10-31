@@ -2385,18 +2385,15 @@
 		qcom,support-shutdown;
 		qcom,pil-force-shutdown;
 		qcom,esoc-skip-restart-for-mdm-crash;
-		qcom,esoc-spmi-soft-reset;
-		pinctrl-names = "default", "mdm_active", "mdm_suspend";
-		pinctrl-0 = <&ap2mdm_pon_reset_default>;
-		pinctrl-1 = <&ap2mdm_active &mdm2ap_active>;
-		pinctrl-2 = <&ap2mdm_sleep &mdm2ap_sleep>;
+		pinctrl-names = "mdm_active", "mdm_suspend";
+		pinctrl-0 = <&ap2mdm_active &mdm2ap_active>;
+		pinctrl-1 = <&ap2mdm_sleep &mdm2ap_sleep>;
 		interrupt-map = <0 &tlmm 1 0x3
 				1 &tlmm 3 0x3>;
 		qcom,mdm2ap-errfatal-gpio = <&tlmm 1 0x00>;
 		qcom,ap2mdm-errfatal-gpio = <&tlmm 57 0x00>;
 		qcom,mdm2ap-status-gpio   = <&tlmm 3 0x00>;
 		qcom,ap2mdm-status-gpio   = <&tlmm 56 0x00>;
-		qcom,ap2mdm-soft-reset-gpio = <&tlmm 145 GPIO_ACTIVE_LOW>;
 		qcom,mdm-link-info = "0306_02.01.00";
 		status = "ok";
 	};
