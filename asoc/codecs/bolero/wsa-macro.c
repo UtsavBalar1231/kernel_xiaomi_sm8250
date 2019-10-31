@@ -2802,7 +2802,6 @@ static void wsa_macro_init_reg(struct snd_soc_component *component)
 static int wsa_macro_core_vote(void *handle, bool enable)
 {
 	struct wsa_macro_priv *wsa_priv = (struct wsa_macro_priv *) handle;
-	int ret = 0;
 
 	if (wsa_priv == NULL) {
 		pr_err("%s: wsa priv data is NULL\n", __func__);
@@ -2814,7 +2813,10 @@ static int wsa_macro_core_vote(void *handle, bool enable)
 		pm_runtime_mark_last_busy(wsa_priv->dev);
 	}
 
-	return ret;
+	if (bolero_check_core_votes(wsa_priv->dev))
+		return 0;
+	else
+		return -EINVAL;
 }
 
 static int wsa_swrm_clock(void *handle, bool enable)
@@ -3199,6 +3201,7 @@ static int wsa_macro_probe(struct platform_device *pdev)
 	pm_runtime_set_autosuspend_delay(&pdev->dev, AUTO_SUSPEND_DELAY);
 	pm_runtime_use_autosuspend(&pdev->dev);
 	pm_runtime_set_suspended(&pdev->dev);
+	pm_suspend_ignore_children(&pdev->dev, true);
 	pm_runtime_enable(&pdev->dev);
 
 	return ret;

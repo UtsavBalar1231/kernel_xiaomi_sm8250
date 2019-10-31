@@ -104,8 +104,7 @@ static int q6lsm_get_session_id_from_lsm_client(struct lsm_client *client)
 		if (lsm_session[n] == client)
 			return n;
 	}
-	pr_err("%s: cannot find matching lsm client. client = %pa\n",
-		__func__, client);
+	pr_err("%s: cannot find matching lsm client.\n", __func__);
 	return LSM_INVALID_SESSION_ID;
 }
 
@@ -376,10 +375,10 @@ void q6lsm_client_free(struct lsm_client *client)
 		return;
 	}
 	apr_deregister(client->apr);
+	q6lsm_mmap_apr_dereg();
 	client->mmap_apr = NULL;
 	mutex_lock(&session_lock);
 	q6lsm_session_free(client);
-	q6lsm_mmap_apr_dereg();
 	mutex_destroy(&client->cmd_lock);
 	kfree(client);
 	client = NULL;

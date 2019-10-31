@@ -3572,7 +3572,10 @@ static int rx_macro_core_vote(void *handle, bool enable)
 		pm_runtime_mark_last_busy(rx_priv->dev);
 	}
 
-	return 0;
+	if (bolero_check_core_votes(rx_priv->dev))
+		return 0;
+	else
+		return -EINVAL;
 }
 
 static int rx_swrm_clock(void *handle, bool enable)
@@ -4042,6 +4045,7 @@ static int rx_macro_probe(struct platform_device *pdev)
 	pm_runtime_set_autosuspend_delay(&pdev->dev, AUTO_SUSPEND_DELAY);
 	pm_runtime_use_autosuspend(&pdev->dev);
 	pm_runtime_set_suspended(&pdev->dev);
+	pm_suspend_ignore_children(&pdev->dev, true);
 	pm_runtime_enable(&pdev->dev);
 
 	return 0;

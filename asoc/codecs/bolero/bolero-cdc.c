@@ -661,7 +661,11 @@ static int bolero_ssr_enable(struct device *dev, void *data)
 	priv->dev_up = true;
 	mutex_unlock(&priv->clk_lock);
 	regcache_mark_dirty(priv->regmap);
+	bolero_clk_rsc_enable_all_clocks(priv->clk_dev, true);
 	regcache_sync(priv->regmap);
+	/* Add a 100usec sleep to ensure last register write is done */
+	usleep_range(100,110);
+	bolero_clk_rsc_enable_all_clocks(priv->clk_dev, false);
 	/* call ssr event for supported macros */
 	for (macro_idx = START_MACRO; macro_idx < MAX_MACRO; macro_idx++) {
 		if (!priv->macro_params[macro_idx].event_handler)
@@ -1111,12 +1115,12 @@ int bolero_runtime_resume(struct device *dev)
 	struct bolero_priv *priv = dev_get_drvdata(dev->parent);
 	int ret = 0;
 
+	mutex_lock(&priv->vote_lock);
 	if (priv->lpass_core_hw_vote == NULL) {
 		dev_dbg(dev, "%s: Invalid lpass core hw node\n", __func__);
-		return 0;
+		goto audio_vote;
 	}
 
-	mutex_lock(&priv->vote_lock);
 	if (priv->core_hw_vote_count == 0) {
 		ret = clk_prepare_enable(priv->lpass_core_hw_vote);
 		if (ret < 0) {
@@ -1179,6 +1183,21 @@ int bolero_runtime_suspend(struct device *dev)
 	return 0;
 }
 EXPORT_SYMBOL(bolero_runtime_suspend);
+
+bool bolero_check_core_votes(struct device *dev)
+{
+	struct bolero_priv *priv = dev_get_drvdata(dev->parent);
+	bool ret = true;
+
+	mutex_lock(&priv->vote_lock);
+	if ((priv->lpass_core_hw_vote && !priv->core_hw_vote_count) ||
+		(priv->lpass_audio_hw_vote && !priv->core_audio_vote_count))
+		ret = false;
+	mutex_unlock(&priv->vote_lock);
+
+	return ret;
+}
+EXPORT_SYMBOL(bolero_check_core_votes);
 
 static const struct of_device_id bolero_dt_match[] = {
 	{.compatible = "qcom,bolero-codec"},

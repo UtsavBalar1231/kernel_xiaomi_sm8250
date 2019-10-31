@@ -6,8 +6,6 @@ else
 	KERNEL_BUILD := 0
 endif
 
-
-
 ifeq ($(KERNEL_BUILD), 1)
 	# These are configurable via Kconfig for kernel-based builds
 	# Need to explicitly configure for Android-based builds
@@ -16,34 +14,9 @@ ifeq ($(KERNEL_BUILD), 1)
 endif
 
 ifeq ($(KERNEL_BUILD), 0)
-	ifeq ($(CONFIG_ARCH_SM6150), y)
-		include $(AUDIO_ROOT)/config/sm6150auto.conf
-		export
-		INCS    +=  -include $(AUDIO_ROOT)/config/sm6150autoconf.h
-	endif
-	ifeq ($(CONFIG_ARCH_TRINKET), y)
-		include $(AUDIO_ROOT)/config/sm6150auto.conf
-		export
-		INCS    +=  -include $(AUDIO_ROOT)/config/sm6150autoconf.h
-	endif
-	ifeq ($(CONFIG_ARCH_KONA), y)
-		include $(AUDIO_ROOT)/config/konaauto.conf
-		INCS    +=  -include $(AUDIO_ROOT)/config/konaautoconf.h
-	endif
-	ifeq ($(CONFIG_ARCH_LITO), y)
-		include $(AUDIO_ROOT)/config/litoauto.conf
-		export
-		INCS    +=  -include $(AUDIO_ROOT)/config/litoautoconf.h
-	endif
-	ifeq ($(CONFIG_ARCH_BENGAL), y)
-		include $(AUDIO_ROOT)/config/bengalauto.conf
-		export
-		INCS    +=  -include $(AUDIO_ROOT)/config/bengalautoconf.h
-	endif
-	ifeq ($(CONFIG_ARCH_QCS405), y)
-		include $(AUDIO_ROOT)/config/qcs405auto.conf
-		export
-		INCS    +=  -include $(AUDIO_ROOT)/config/qcs405autoconf.h
+	ifeq ($(CONFIG_ARCH_LAHAINA), y)
+		include $(AUDIO_ROOT)/config/lahainaauto.conf
+		INCS    +=  -include $(AUDIO_ROOT)/config/lahainaautoconf.h
 	endif
 endif
 
@@ -71,31 +44,14 @@ UAPI_INC :=	-I$(AUDIO_ROOT)/include/$(UAPI_DIR)
 COMMON_DIR :=	include
 COMMON_INC :=	-I$(AUDIO_ROOT)/$(COMMON_DIR)
 
-############ BOLERO ############
+############ WSA883X ############
 
-# for BOLERO Codec
-ifdef CONFIG_SND_SOC_BOLERO
-	BOLERO_OBJS += bolero-cdc.o
-	BOLERO_OBJS += bolero-cdc-utils.o
-	BOLERO_OBJS += bolero-cdc-regmap.o
-	BOLERO_OBJS += bolero-cdc-tables.o
-	BOLERO_OBJS += bolero-clk-rsc.o
-endif
-
-ifdef CONFIG_WSA_MACRO
-	WSA_OBJS += wsa-macro.o
-endif
-
-ifdef CONFIG_VA_MACRO
-	VA_OBJS += va-macro.o
-endif
-
-ifdef CONFIG_TX_MACRO
-	TX_OBJS += tx-macro.o
-endif
-
-ifdef CONFIG_RX_MACRO
-	RX_OBJS += rx-macro.o
+# for WSA883X Codec
+ifdef CONFIG_SND_SOC_WSA883X
+	WSA883X_OBJS += wsa883x.o
+	WSA883X_OBJS += wsa883x-regmap.o
+	WSA883X_OBJS += wsa883x-tables.o
+	WSA883X_OBJS += wsa883x-temp-sensor.o
 endif
 
 LINUX_INC +=	-Iinclude/linux
@@ -140,20 +96,8 @@ KBUILD_EXTRA_SYMBOLS +=$(OUT)/obj/vendor/qcom/opensource/audio-kernel/soc/Module
 endif
 
 # Module information used by KBuild framework
-obj-$(CONFIG_SND_SOC_BOLERO) += bolero_cdc_dlkm.o
-bolero_cdc_dlkm-y := $(BOLERO_OBJS)
-
-obj-$(CONFIG_WSA_MACRO) += wsa_macro_dlkm.o
-wsa_macro_dlkm-y := $(WSA_OBJS)
-
-obj-$(CONFIG_VA_MACRO) += va_macro_dlkm.o
-va_macro_dlkm-y := $(VA_OBJS)
-
-obj-$(CONFIG_TX_MACRO) += tx_macro_dlkm.o
-tx_macro_dlkm-y := $(TX_OBJS)
-
-obj-$(CONFIG_RX_MACRO) += rx_macro_dlkm.o
-rx_macro_dlkm-y := $(RX_OBJS)
+obj-$(CONFIG_SND_SOC_WSA883X) += wsa883x_dlkm.o
+wsa883x_dlkm-y := $(WSA883X_OBJS)
 
 # inject some build related information
 DEFINES += -DBUILD_TIMESTAMP=\"$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')\"
