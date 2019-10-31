@@ -65,6 +65,16 @@ Charger specific properties:
 		2 - If SMB1390 output is connected to VBATT.
 		If this value is not specified then default value is 1.
 
+- qcom,parallel-input-mode
+  Usage:      optional
+  Value type: <u32>
+  Definition: Defines the SMB1390 input connection topology.
+		This should be one of the following:
+		0 - If SMB1390 input is not connected to anything;
+		1 - If SMB1390 input is connected to USBIN;
+		3 - If SMB1390 input is connected to USBMID.
+		If this value is not specified then default value is 3.
+
 ================================================
 Second Level Nodes - SMB1390 Charger Peripherals
 ================================================
