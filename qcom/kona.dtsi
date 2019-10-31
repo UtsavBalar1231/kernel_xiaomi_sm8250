@@ -1119,11 +1119,11 @@
 	qoslat_opp_table: qoslat-opp-table {
 		compatible = "operating-points-v2";
 		opp-0 {
-			opp-hz = /bits/ 64 < 0 >;
+			opp-hz = /bits/ 64 < 1 >;
 		};
 
 		opp-1 {
-			opp-hz = /bits/ 64 < 1 >;
+			opp-hz = /bits/ 64 < 2 >;
 		};
 	};
 
@@ -1303,8 +1303,8 @@
 			qcom,target-dev = <&cpu4_cpu_ddr_qoslat>;
 			qcom,cachemiss-ev = <0x2A>;
 			qcom,core-dev-table =
-				<  300000 0 >,
-				< 3000000 1 >;
+				<  300000 1 >,
+				< 3000000 2 >;
 		};
 	};
 
