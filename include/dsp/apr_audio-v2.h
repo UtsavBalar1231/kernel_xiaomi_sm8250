@@ -12348,6 +12348,12 @@ struct afe_av_dev_drift_get_param_resp {
  */
 #define ASM_SESSION_MTMX_STRTR_PARAM_RENDER_WINDOW_END_V2   0x00010DD2
 
+/* Parameter used by #ASM_SESSION_MTMX_STRTR_MODULE_ID_AVSYNC to specify the
+ * ttp offset value. This parameter is supported only for a Set
+ * command (not a Get command) in the Tx direction
+ */
+#define ASM_SESSION_MTMX_STRTR_PARAM_TTP_OFFSET 0x00013228
+
 /* Generic payload of the window parameters in the
  * #ASM_SESSION_MTMX_STRTR_MODULE_ID_AVSYNC module.
  * This payload is supported only for a Set command
@@ -12456,6 +12462,26 @@ struct asm_session_mtmx_strtr_param_render_mode_t {
 	u32                  flags;
 } __packed;
 
+struct asm_session_mtmx_strtr_param_ttp_offset_t {
+	uint32_t                  ttp_offset_lsw;
+	/* Lower 32 bits of the ttp_offset in microseconds. */
+
+	uint32_t                  ttp_offset_msw;
+	/* Upper 32 bits of the ttp_offset in microseconds.
+	 *
+	 * Internal default value is 0 for both values. The 64-bit number
+	 * formed by ttp_offset_lsw and ttp_offset_lsw is treated as unsigned.
+	 * In case of local DSP loopback when using start flag
+	 * ASM_SESSION_CMD_RUN_START_TIME_RUN_WITH_TTP the max. ttp_offset
+	 * value is limited by internal buffer constraints. Currently the
+	 * limit is 200ms.
+
+	 * This parameter can be set before or while an ASM stream is running,
+	 * allowing “at-run-time” changes of the overall latency.
+	 */
+
+} __packed;
+
 /* Parameter used by #ASM_SESSION_MTMX_STRTR_MODULE_ID_AVSYNC which allows the
  * audio client to specify the clock recovery mechanism that the audio DSP
  * should use.
@@ -12527,6 +12553,7 @@ union asm_session_mtmx_strtr_param_config {
 	struct asm_session_mtmx_strtr_param_render_mode_t render_param;
 	struct asm_session_mtmx_strtr_param_clk_rec_t clk_rec_param;
 	struct asm_session_mtmx_param_adjust_session_time_ctl_t adj_time_param;
+	struct asm_session_mtmx_strtr_param_ttp_offset_t ttp_offset;
 } __packed;
 
 struct asm_mtmx_strtr_params {
