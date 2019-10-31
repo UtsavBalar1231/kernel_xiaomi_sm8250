@@ -8,3 +8,7 @@
 	compatible = "qcom,lito-atp", "qcom,lito", "qcom,atp";
 	qcom,board-id = <33 0>;
 };
+
+&ufsphy_mem {
+	vdda-phy-always-on;
+};

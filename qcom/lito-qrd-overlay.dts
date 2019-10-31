@@ -9,3 +9,7 @@
 	qcom,msm-id = <400 0x10000>, <440 0x10000>;
 	qcom,board-id = <11 0>;
 };
+
+&ufsphy_mem {
+	vdda-phy-always-on;
+};
