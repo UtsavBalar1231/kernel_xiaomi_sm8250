@@ -25,6 +25,24 @@ struct sync_device *sync_dev;
  */
 static bool trigger_cb_without_switch;
 
+static void cam_sync_print_fence_table(void)
+{
+	int idx;
+
+	for (idx = 0; idx < CAM_SYNC_MAX_OBJS; idx++) {
+		spin_lock_bh(&sync_dev->row_spinlocks[idx]);
+		CAM_INFO(CAM_SYNC,
+			"index[%u]: sync_id=%d, name=%s, type=%d, state=%d, ref_cnt=%d",
+			idx,
+			sync_dev->sync_table[idx].sync_id,
+			sync_dev->sync_table[idx].name,
+			sync_dev->sync_table[idx].type,
+			sync_dev->sync_table[idx].state,
+			sync_dev->sync_table[idx].ref_cnt);
+		spin_unlock_bh(&sync_dev->row_spinlocks[idx]);
+	}
+}
+
 int cam_sync_create(int32_t *sync_obj, const char *name)
 {
 	int rc;
@@ -33,8 +51,13 @@ int cam_sync_create(int32_t *sync_obj, const char *name)
 
 	do {
 		idx = find_first_zero_bit(sync_dev->bitmap, CAM_SYNC_MAX_OBJS);
-		if (idx >= CAM_SYNC_MAX_OBJS)
+		if (idx >= CAM_SYNC_MAX_OBJS) {
+			CAM_ERR(CAM_SYNC,
+				"Error: Unable to create sync idx = %d reached max!",
+				idx);
+			cam_sync_print_fence_table();
 			return -ENOMEM;
+		}
 		CAM_DBG(CAM_SYNC, "Index location available at idx: %ld", idx);
 		bit = test_and_set_bit(idx, sync_dev->bitmap);
 	} while (bit);
