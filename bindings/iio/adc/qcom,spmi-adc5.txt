@@ -136,6 +136,13 @@ Channel node properties:
             If property is not found, a default LUT is used for that channel,
             corresponding to index 0.
 
+- qcom,scale-fn-type:
+    Usage: optional
+    Value type: <u32>
+    Definition: The index of the VADC scale function used to convert raw ADC
+	    code to physical scaled units for the channel.
+	    See include/dt-bindings/iio/qcom,spmi-vadc.h
+
 Example:
 
         /* VADC node */
