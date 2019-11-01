@@ -40,6 +40,9 @@ void cam_req_mgr_core_link_reset(struct cam_req_mgr_core_link *link)
 	link->open_req_cnt = 0;
 	link->last_flush_id = 0;
 	link->initial_sync_req = -1;
+	link->dual_trigger = false;
+	link->trigger_cnt[0] = 0;
+	link->trigger_cnt[1] = 0;
 	link->in_msync_mode = false;
 	link->retry_cnt = 0;
 	link->is_shutdown = false;
@@ -2767,6 +2770,33 @@ end:
 	return rc;
 }
 
+static int __cam_req_mgr_check_for_dual_trigger(
+	struct cam_req_mgr_core_link    *link)
+{
+	int rc  = -EAGAIN;
+
+	if (link->trigger_cnt[0] == link->trigger_cnt[1]) {
+		link->trigger_cnt[0] = 0;
+		link->trigger_cnt[1] = 0;
+		rc = 0;
+		return rc;
+	}
+
+	if ((link->trigger_cnt[0] &&
+		(link->trigger_cnt[0] - link->trigger_cnt[1] > 1)) ||
+		(link->trigger_cnt[1] &&
+		(link->trigger_cnt[1] - link->trigger_cnt[0] > 1))) {
+
+		CAM_ERR(CAM_CRM,
+			"One of the devices could not generate trigger");
+		return rc;
+	}
+
+	CAM_DBG(CAM_CRM, "Only one device has generated trigger");
+
+	return rc;
+}
+
 /**
  * cam_req_mgr_cb_notify_timer()
  *
@@ -2885,7 +2915,7 @@ end:
 static int cam_req_mgr_cb_notify_trigger(
 	struct cam_req_mgr_trigger_notify *trigger_data)
 {
-	int                              rc = 0;
+	int32_t                          rc = 0, trigger_id = 0;
 	struct crm_workq_task           *task = NULL;
 	struct cam_req_mgr_core_link    *link = NULL;
 	struct cam_req_mgr_trigger_notify   *notify_trigger;
@@ -2905,6 +2935,8 @@ static int cam_req_mgr_cb_notify_trigger(
 		goto end;
 	}
 
+	trigger_id = trigger_data->trigger_id;
+
 	spin_lock_bh(&link->link_state_spin_lock);
 	if (link->state < CAM_CRM_LINK_STATE_READY) {
 		CAM_WARN(CAM_CRM, "invalid link state:%d", link->state);
@@ -2915,6 +2947,23 @@ static int cam_req_mgr_cb_notify_trigger(
 
 	if ((link->watchdog) && (link->watchdog->pause_timer))
 		link->watchdog->pause_timer = false;
+
+	if (link->dual_trigger) {
+		if ((trigger_id >= 0) && (trigger_id <
+			CAM_REQ_MGR_MAX_TRIGGERS)) {
+			link->trigger_cnt[trigger_id]++;
+			rc = __cam_req_mgr_check_for_dual_trigger(link);
+			if (rc) {
+				spin_unlock_bh(&link->link_state_spin_lock);
+				goto end;
+			}
+		} else {
+			CAM_ERR(CAM_CRM, "trigger_id invalid %d", trigger_id);
+			rc = -EINVAL;
+			spin_unlock_bh(&link->link_state_spin_lock);
+			goto end;
+		}
+	}
 
 	crm_timer_reset(link->watchdog);
 	spin_unlock_bh(&link->link_state_spin_lock);
@@ -2970,16 +3019,18 @@ static int __cam_req_mgr_setup_link_info(struct cam_req_mgr_core_link *link,
 	struct cam_req_mgr_req_tbl             *pd_tbl;
 	enum cam_pipeline_delay                 max_delay;
 	uint32_t                                subscribe_event = 0;
+	uint32_t num_trigger_devices = 0;
 	if (link_info->version == VERSION_1) {
 		if (link_info->u.link_info_v1.num_devices >
 			CAM_REQ_MGR_MAX_HANDLES)
 			return -EPERM;
-		}
+	}
 	else if (link_info->version == VERSION_2) {
 		if (link_info->u.link_info_v2.num_devices >
 			CAM_REQ_MGR_MAX_HANDLES_V2)
 			return -EPERM;
-		}
+	}
+
 	mutex_init(&link->req.lock);
 	CAM_DBG(CAM_CRM, "LOCK_DBG in_q lock %pK", &link->req.lock);
 	link->req.num_tbl = 0;
@@ -3059,6 +3110,17 @@ static int __cam_req_mgr_setup_link_info(struct cam_req_mgr_core_link *link,
 
 			subscribe_event |= (uint32_t)dev->dev_info.trigger;
 		}
+
+		if (dev->dev_info.trigger_on)
+			num_trigger_devices++;
+	}
+
+	if (num_trigger_devices > CAM_REQ_MGR_MAX_TRIGGERS) {
+		CAM_ERR(CAM_CRM,
+			"Unsupported number of trigger devices %u",
+			num_trigger_devices);
+		rc = -EINVAL;
+		goto error;
 	}
 
 	link->subscribe_event = subscribe_event;
@@ -3067,7 +3129,10 @@ static int __cam_req_mgr_setup_link_info(struct cam_req_mgr_core_link *link,
 	link_data.crm_cb = &cam_req_mgr_ops;
 	link_data.max_delay = max_delay;
 	link_data.subscribe_event = subscribe_event;
+	if (num_trigger_devices == CAM_REQ_MGR_MAX_TRIGGERS)
+		link->dual_trigger = true;
 
+	num_trigger_devices = 0;
 	for (i = 0; i < num_devices; i++) {
 		dev = &link->l_dev[i];
 
@@ -3107,6 +3172,12 @@ static int __cam_req_mgr_setup_link_info(struct cam_req_mgr_core_link *link,
 		CAM_DBG(CAM_CRM, "dev_bit %u name %s pd %u mask %d",
 			dev->dev_bit, dev->dev_info.name, pd_tbl->pd,
 			pd_tbl->dev_mask);
+		link_data.trigger_id = -1;
+		if ((dev->dev_info.trigger_on) && (link->dual_trigger)) {
+			link_data.trigger_id = num_trigger_devices;
+			num_trigger_devices++;
+		}
+
 		/* Communicate with dev to establish the link */
 		dev->ops->link_setup(&link_data);
 

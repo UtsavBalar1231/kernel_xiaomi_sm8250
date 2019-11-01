@@ -255,6 +255,7 @@ struct cam_isp_context_event_record {
  * @rxd_epoch:                 Indicate whether epoch has been received. Used to
  *                             decide whether to apply request in offline ctx
  * @workq:                     Worker thread for offline ife
+ * @trigger_id:                ID provided by CRM for each ctx on the link
  *
  */
 struct cam_isp_context {
@@ -296,6 +297,7 @@ struct cam_isp_context {
 	unsigned int                          init_timestamp;
 	atomic_t                              rxd_epoch;
 	struct cam_req_mgr_core_workq        *workq;
+	int32_t                               trigger_id;
 };
 
 /**
