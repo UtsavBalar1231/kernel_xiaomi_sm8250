@@ -369,6 +369,11 @@ Charger specific properties:
   Definition: Boolean flag which when present enables compenstation of
 		charger current for HVDCP3 with CP configuration.
 
+- qcom,disable-fcc-restriction
+  Usage:      optional
+  Value type: bool
+  Definition: Boolean flag which when present disables FCC restriction.
+
 =============================================
 Second Level Nodes - SMB5 Charger Peripherals
 =============================================
