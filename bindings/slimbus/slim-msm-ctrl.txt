@@ -35,6 +35,9 @@ Optional property:
  - reg entry for slew rate : If slew rate control register is provided, this
 	 entry should be used.
  - reg-name for slew rate: "slimbus_slew_reg"
+ - reg entry for LPASS memory: If LPASS memory is to be used instead of DDR by
+		 slimbus, this entry should be used.
+ - reg-names for LPASS memory: "slimbus_lpass_mem"
  - qcom,min-clk-gear : Minimum clock gear at which this controller can be run
 		 (range: 1-10)
 		 Default value will be 1 if this entry is not specified
