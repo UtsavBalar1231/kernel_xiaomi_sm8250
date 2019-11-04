@@ -14,9 +14,16 @@ static struct v4l2_subdev *g_cci_subdev[MAX_CCI];
 
 struct v4l2_subdev *cam_cci_get_subdev(int cci_dev_index)
 {
+	struct v4l2_subdev *sub_device = NULL;
+
 	if (cci_dev_index < MAX_CCI)
-		return g_cci_subdev[cci_dev_index];
-	return NULL;
+		sub_device = g_cci_subdev[cci_dev_index];
+	else
+		CAM_WARN(CAM_CCI, "Index: %u is beyond max num CCI allowed: %u",
+			cci_dev_index,
+			MAX_CCI);
+
+	return sub_device;
 }
 
 static long cam_cci_subdev_ioctl(struct v4l2_subdev *sd,
