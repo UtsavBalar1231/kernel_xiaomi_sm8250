@@ -610,6 +610,7 @@
 };
 
 #include "scuba-pinctrl.dtsi"
+#include "scuba-ion.dtsi"
 #include "scuba-stub-regulator.dtsi"
 #include "scuba-gdsc.dtsi"
 
