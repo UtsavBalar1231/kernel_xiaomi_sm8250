@@ -1358,6 +1358,11 @@
 		coresight-name = "coresight-tpdm-npu-llm";
 
 		clocks = <&aopcc QDSS_CLK>,
+				<&gcc GCC_NPU_AXI_CLK>,
+				<&gcc GCC_NPU_CFG_AHB_CLK>,
+				<&npucc NPU_CC_XO_CLK>,
+				<&npucc NPU_CC_CORE_CLK>,
+				<&npucc NPU_CC_CORE_CLK_SRC>,
 				<&npucc NPU_CC_DL_LLM_CLK>,
 				<&npucc NPU_CC_LLM_CLK>,
 				<&npucc NPU_CC_LLM_CURR_CLK>,
@@ -1365,13 +1370,23 @@
 				<&npucc NPU_CC_LLM_XO_CLK>;
 
 		clock-names = "apb_pclk",
+				"npu_axi_clk",
+				"npu_cfg_ahb_clk",
+				"npu_cc_xo_clk",
+				"npu_core_clk",
+				"npu_core_clk_src",
 				"dl_llm_clk",
 				"llm_clk",
 				"llm_curr_clk",
 				"llm_temp_clk",
 				"llm_xo_clk";
 
-		qcom,proxy-clks = "dl_llm_clk",
+		qcom,proxy-clks = "npu_axi_clk",
+				"npu_cfg_ahb_clk",
+				"npu_cc_xo_clk",
+				"npu_core_clk",
+				"npu_core_clk_src",
+				"dl_llm_clk",
 				"llm_clk",
 				"llm_curr_clk",
 				"llm_temp_clk",
