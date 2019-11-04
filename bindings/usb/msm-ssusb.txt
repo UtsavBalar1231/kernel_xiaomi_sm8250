@@ -47,6 +47,9 @@ Optional properties :
 - vbus_dwc3-supply: phandle to the 5V VBUS supply regulator used for host mode.
 - USB3_GDSC-supply : phandle to the globally distributed switch controller
   regulator node to the USB controller.
+- qcom,gdsc-collapse-in-host-suspend: GDSC regulator will not be turned off by
+  default when USB controller goes into LPM as part of host mode bus suspend.
+  This property collapses GDSC regulator as part of LPM entry in host mode bus suspend.
 - dpdm-supply: phandle to dpdm supply which will be used to drive dp/dm lines
   in high-z state.
 - qcom,dwc-usb3-msm-tx-fifo-size: If present, represents RAM size available for
