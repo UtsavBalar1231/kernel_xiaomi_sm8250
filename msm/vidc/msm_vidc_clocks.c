@@ -729,6 +729,7 @@ static unsigned long msm_vidc_calc_freq_iris2(struct msm_vidc_inst *inst,
 	struct clock_data *dcvs = NULL;
 	u32 operating_rate, vsp_factor_num = 1, vsp_factor_den = 1;
 	u32 base_cycles = 0;
+	u32 codec = 0;
 
 	core = inst->core;
 	dcvs = &inst->clk_data;
@@ -781,8 +782,11 @@ static unsigned long msm_vidc_calc_freq_iris2(struct msm_vidc_inst *inst,
 		vsp_cycles = div_u64(((u64)inst->clk_data.bitrate *
 					vsp_factor_num), vsp_factor_den);
 
+		codec = get_v4l2_codec(inst);
 		base_cycles = inst->clk_data.entry->vsp_cycles;
-		if (inst->entropy_mode == HFI_H264_ENTROPY_CABAC) {
+		if (codec == V4L2_PIX_FMT_VP8 || codec == V4L2_PIX_FMT_VP9) {
+			vsp_cycles = div_u64(vsp_cycles * 170, 100);
+		} else if (inst->entropy_mode == HFI_H264_ENTROPY_CABAC) {
 			vsp_cycles = div_u64(vsp_cycles * 135, 100);
 		} else {
 			base_cycles = 0;
@@ -807,9 +811,13 @@ static unsigned long msm_vidc_calc_freq_iris2(struct msm_vidc_inst *inst,
 			vpp_cycles += div_u64(vpp_cycles * 59, 1000);
 
 		/* VSP */
+		codec = get_v4l2_codec(inst);
 		base_cycles = inst->clk_data.entry->vsp_cycles;
 		vsp_cycles = fps * filled_len * 8;
-		if (inst->entropy_mode == HFI_H264_ENTROPY_CABAC) {
+
+		if (codec == V4L2_PIX_FMT_VP8 || codec == V4L2_PIX_FMT_VP9) {
+			vsp_cycles = div_u64(vsp_cycles * 170, 100);
+		} else if (inst->entropy_mode == HFI_H264_ENTROPY_CABAC) {
 			vsp_cycles = div_u64(vsp_cycles * 135, 100);
 		} else {
 			base_cycles = 0;
