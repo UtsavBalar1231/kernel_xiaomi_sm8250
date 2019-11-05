@@ -1853,7 +1853,9 @@ Optional properties:
 - qcom,msm_audio_ssr_devs: List the snd event framework clients
 - qcom,afe-rxtx-lb: AFE RX to TX loopback.
 - qcom,tlmm-gpio: TLMM gpio number for corresponding LPASS gpio
-
+- qcom,va-bolero-codec: Property to specify VA macro supported.
+- qcom,rxtx-bolero-codec: Property to specify RX-TX macros supported.
+- qcom,wsa-bolero-codec: Property to specify WSA macro supported.
 
 Example:
 	bengal_snd: sound {
@@ -1863,6 +1865,8 @@ Example:
 		qcom,mi2s-audio-intf = <1>;
 		qcom,auxpcm-audio-intf = <1>;
 		qcom,afe-rxtx-lb = <1>;
+		qcom,va-bolero-codec = <1>;
+		qcom,rxtx-bolero-codec = <1>;
 
 		asoc-platform = <&pcm0>, <&pcm1>, <&pcm2>, <&voip>, <&voice>,
 				<&loopback>, <&compress>, <&hostless>,
