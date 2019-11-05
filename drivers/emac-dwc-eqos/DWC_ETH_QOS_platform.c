@@ -2288,10 +2288,10 @@ static void DWC_ETH_QOS_shutdown(struct platform_device *pdev)
  * \retval 0
  */
 
-static INT DWC_ETH_QOS_suspend(struct platform_device *pdev, pm_message_t state)
+static INT DWC_ETH_QOS_suspend(struct device *dev)
 {
-	struct net_device *dev = platform_get_drvdata(pdev);
-	struct DWC_ETH_QOS_prv_data *pdata = netdev_priv(dev);
+	struct DWC_ETH_QOS_prv_data *pdata = gDWC_ETH_QOS_prv_data;
+	struct net_device *net_dev = pdata->dev;
 	struct hw_if_struct *hw_if = &pdata->hw_if;
 	INT ret, pmt_flags = 0;
 	unsigned int rwk_filter_values[] = {
@@ -2327,7 +2327,7 @@ static INT DWC_ETH_QOS_suspend(struct platform_device *pdev, pm_message_t state)
 
 	EMACDBG("-->DWC_ETH_QOS_suspend\n");
 
-	if (of_device_is_compatible(pdev->dev.of_node, "qcom,emac-smmu-embedded")) {
+	if (of_device_is_compatible(dev->of_node, "qcom,emac-smmu-embedded")) {
 		EMACDBG("<--DWC_ETH_QOS_suspend smmu return\n");
 		return 0;
 	}
@@ -2339,7 +2339,7 @@ static INT DWC_ETH_QOS_suspend(struct platform_device *pdev, pm_message_t state)
 		return 0;
 	}
 
-	if (!dev || !netif_running(dev)) {
+	if (!net_dev || !netif_running(net_dev)) {
 		return -EINVAL;
 	}
 
@@ -2351,7 +2351,7 @@ static INT DWC_ETH_QOS_suspend(struct platform_device *pdev, pm_message_t state)
 	if (pdata->hw_feat.mgk_sel && (pdata->wolopts & WAKE_MAGIC))
 		pmt_flags |= DWC_ETH_QOS_MAGIC_WAKEUP;
 
-	ret = DWC_ETH_QOS_powerdown(dev, pmt_flags, DWC_ETH_QOS_DRIVER_CONTEXT);
+	ret = DWC_ETH_QOS_powerdown(net_dev, pmt_flags, DWC_ETH_QOS_DRIVER_CONTEXT);
 
 	DWC_ETH_QOS_suspend_clks(pdata);
 
@@ -2396,18 +2396,18 @@ static INT DWC_ETH_QOS_suspend(struct platform_device *pdev, pm_message_t state)
  * \retval 0
  */
 
-static INT DWC_ETH_QOS_resume(struct platform_device *pdev)
+static INT DWC_ETH_QOS_resume(struct device *dev)
 {
-	struct net_device *dev = platform_get_drvdata(pdev);
-	struct DWC_ETH_QOS_prv_data *pdata = netdev_priv(dev);
+	struct DWC_ETH_QOS_prv_data *pdata = gDWC_ETH_QOS_prv_data;
+	struct net_device *net_dev = pdata->dev;
 	INT ret;
 
 	EMACDBG("-->DWC_ETH_QOS_resume\n");
-	if (of_device_is_compatible(pdev->dev.of_node, "qcom,emac-smmu-embedded"))
+	if (of_device_is_compatible(dev->of_node, "qcom,emac-smmu-embedded"))
 		return 0;
 
-	if (!dev || !netif_running(dev)) {
-		EMACERR("<--DWC_ETH_QOS_dev_resume not possible\n");
+	if (!net_dev || !netif_running(net_dev)) {
+		EMACERR("<--DWC_ETH_QOS_dev_resume\n");
 		return -EINVAL;
 	}
 
@@ -2424,7 +2424,7 @@ static INT DWC_ETH_QOS_resume(struct platform_device *pdev)
 
 		/* Wakeup reason can be PHY link event or a RX packet */
 		/* Set a wakeup event to ensure enough time for processing */
-		pm_wakeup_event(&pdev->dev, 5000);
+		pm_wakeup_event(dev, 5000);
 		return 0;
 	}
 
@@ -2443,14 +2443,14 @@ static INT DWC_ETH_QOS_resume(struct platform_device *pdev)
 
 	DWC_ETH_QOS_resume_clks(pdata);
 
-	ret = DWC_ETH_QOS_powerup(dev, DWC_ETH_QOS_DRIVER_CONTEXT);
+	ret = DWC_ETH_QOS_powerup(net_dev, DWC_ETH_QOS_DRIVER_CONTEXT);
 
 	if (pdata->ipa_enabled)
 		DWC_ETH_QOS_ipa_offload_event_handler(pdata, EV_DPM_RESUME);
 
 	/* Wakeup reason can be PHY link event or a RX packet */
 	/* Set a wakeup event to ensure enough time for processing */
-	pm_wakeup_event(&pdev->dev, 5000);
+	pm_wakeup_event(dev, 5000);
 
 	EMACDBG("<--DWC_ETH_QOS_resume\n");
 
@@ -2546,16 +2546,16 @@ static const struct dev_pm_ops DWC_ETH_QOS_pm_ops = {
 	.freeze = DWC_ETH_QOS_hib_freeze,
 	.restore = DWC_ETH_QOS_hib_restore,
 	.thaw = DWC_ETH_QOS_hib_restore,
+#ifdef CONFIG_PM
+	.suspend = DWC_ETH_QOS_suspend,
+	.resume = DWC_ETH_QOS_resume,
+#endif
 };
 
 static struct platform_driver DWC_ETH_QOS_plat_drv = {
 	.probe = DWC_ETH_QOS_probe,
 	.remove = DWC_ETH_QOS_remove,
 	.shutdown = DWC_ETH_QOS_shutdown,
-#ifdef CONFIG_PM
-	.suspend = DWC_ETH_QOS_suspend,
-	.resume = DWC_ETH_QOS_resume,
-#endif
 	.driver = {
 		.name = DRV_NAME,
 		.owner = THIS_MODULE,
