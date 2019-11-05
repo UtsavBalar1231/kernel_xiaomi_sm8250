@@ -615,6 +615,24 @@
 		#interrupt-cells = <2>;
 	};
 
+	bluetooth: bt_wcn3990 {
+		compatible = "qca,wcn3990";
+		qca,bt-vdd-io-supply =   <&L9A>;  /* IO */
+		qca,bt-vdd-core-supply = <&L17A>; /* RFA */
+		qca,bt-vdd-pa-supply =   <&L23A>; /* CH0 */
+		qca,bt-vdd-xtal-supply = <&L16A>; /* XO */
+
+		qca,bt-vdd-io-voltage-level = <1700000 1900000>;
+		qca,bt-vdd-core-voltage-level = <1304000 1304000>;
+		qca,bt-vdd-pa-voltage-level = <3000000 3312000>;
+		qca,bt-vdd-xtal-voltage-level = <1700000 1900000>;
+
+		qca,bt-vdd-io-current-level = <1>; /* LPM/PFM */
+		qca,bt-vdd-core-current-level = <1>; /* LPM/PFM */
+		qca,bt-vdd-pa-current-level = <1>; /* LPM/PFM */
+		qca,bt-vdd-xtal-current-level = <1>; /* LPM/PFM */
+	};
+
 	timer {
 		compatible = "arm,armv8-timer";
 		interrupts = <1 1 0xf08>,
@@ -2694,6 +2712,10 @@
 };
 
 &qupv3_se4_2uart {
+	status = "ok";
+};
+
+&qupv3_se3_4uart {
 	status = "ok";
 };
 
