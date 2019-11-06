@@ -1519,6 +1519,19 @@ static int try_get_ctrl_for_instance(struct msm_vidc_inst *inst,
 	case V4L2_CID_MPEG_VIDC_VIDEO_EXTRADATA:
 		ctrl->val = inst->prop.extradata_ctrls;
 		break;
+	case V4L2_CID_MPEG_VIDC_VIDEO_ROI_TYPE:
+	{
+		uint32_t vpu_ver;
+
+		if (!inst->core || !inst->core->platform_data)
+			return -EINVAL;
+		vpu_ver = inst->core->platform_data->vpu_ver;
+		ctrl->val = (vpu_ver == VPU_VERSION_IRIS1 ||
+				vpu_ver == VPU_VERSION_IRIS2) ?
+				V4L2_CID_MPEG_VIDC_VIDEO_ROI_TYPE_2BYTE :
+				V4L2_CID_MPEG_VIDC_VIDEO_ROI_TYPE_2BIT;
+		break;
+	}
 	default:
 		break;
 	}
