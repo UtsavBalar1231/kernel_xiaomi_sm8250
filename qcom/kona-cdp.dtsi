@@ -83,46 +83,6 @@
 	status = "ok";
 };
 
-&extcon_storage_cd {
-	extcon-gpio = <&tlmm 77 GPIO_ACTIVE_LOW>;
-	debounce-ms = <200>;
-	irq-flags = <IRQ_TYPE_EDGE_BOTH>;
-
-	pinctrl-names = "default";
-	pinctrl-0 = <&storage_cd>;
-
-	status = "ok";
-};
-
-&ufsphy_card {
-	compatible = "qcom,ufs-phy-qmp-v4-card";
-
-	vdda-phy-supply = <&pm8150_l5>; /* 0.88v */
-	vdda-phy-always-on;
-	vdda-pll-supply = <&pm8150_l9>; /* 1.2v */
-	vdda-phy-max-microamp = <87100>;
-	vdda-pll-max-microamp = <18300>;
-
-	status = "ok";
-};
-
-&ufshc_card {
-	vdd-hba-supply = <&ufs_card_gdsc>;
-	vdd-hba-fixed-regulator;
-	vcc-supply = <&pm8150a_l9>;
-	vcc-voltage-level = <2950000 2960000>;
-	vccq2-supply = <&pm8150_s4>;
-	vcc-max-microamp = <500000>;
-	vccq2-max-microamp = <400000>;
-
-	qcom,vddp-ref-clk-supply = <&pm8150_l6>;
-	qcom,vddp-ref-clk-max-microamp = <100>;
-
-	extcon = <&extcon_storage_cd>;
-
-	status = "ok";
-};
-
 &soc {
 	gpio_keys {
 		compatible = "gpio-keys";
@@ -845,10 +805,10 @@
 	qcom,vdd-io-current-level = <200 22000>;
 
 	pinctrl-names = "active", "sleep";
-	pinctrl-0 = <&sdc2_clk_on  &sdc2_cmd_on &sdc2_data_on>;
-	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off>;
+	pinctrl-0 = <&sdc2_clk_on  &sdc2_cmd_on &sdc2_data_on &storage_cd>;
+	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off &storage_cd>;
 
-	extcon = <&extcon_storage_cd>;
+	cd-gpios = <&tlmm 77 GPIO_ACTIVE_LOW>;
 
 	status = "ok";
 };
