@@ -5163,6 +5163,51 @@ static int cam_isp_blob_vfe_out_update(
 	return rc;
 }
 
+static int cam_isp_blob_csid_config_update(
+	uint32_t                               blob_type,
+	struct cam_isp_generic_blob_info      *blob_info,
+	struct cam_isp_csid_epd_config        *epd_config,
+	struct cam_hw_prepare_update_args     *prepare)
+{
+	struct cam_ife_hw_mgr_ctx                   *ctx = NULL;
+	struct cam_ife_hw_mgr_res                   *hw_mgr_res;
+	struct cam_hw_intf                          *hw_intf;
+	struct cam_ife_csid_epd_update_args         epd_update_args;
+	int                                         rc = -EINVAL;
+	uint32_t                                    i = 0;
+
+	ctx = prepare->ctxt_to_hw_map;
+
+	list_for_each_entry(hw_mgr_res, &ctx->res_list_ife_csid, list) {
+		for (i = 0; i < CAM_ISP_HW_SPLIT_MAX; i++) {
+			if (!hw_mgr_res->hw_res[i])
+				continue;
+
+			hw_intf = hw_mgr_res->hw_res[i]->hw_intf;
+			if (hw_intf && hw_intf->hw_ops.process_cmd) {
+				epd_update_args.epd_supported =
+					epd_config->is_epd_supported;
+
+				rc = hw_intf->hw_ops.process_cmd(
+					hw_intf->hw_priv,
+					CAM_IFE_CSID_SET_CONFIG,
+					&epd_update_args,
+					sizeof(
+					struct cam_ife_csid_epd_update_args)
+					);
+				if (rc)
+					CAM_ERR(CAM_ISP,
+						"Failed to epd config:%d",
+						epd_config->is_epd_supported);
+			} else {
+				CAM_WARN(CAM_ISP, "NULL hw_intf!");
+			}
+
+		}
+	}
+
+	return rc;
+}
 static int cam_isp_packet_generic_blob_handler(void *user_data,
 	uint32_t blob_type, uint32_t blob_size, uint8_t *blob_data)
 {
@@ -5174,12 +5219,6 @@ static int cam_isp_packet_generic_blob_handler(void *user_data,
 	if (!blob_data || (blob_size == 0) || !blob_info) {
 		CAM_ERR(CAM_ISP, "Invalid args data %pK size %d info %pK",
 			blob_data, blob_size, blob_info);
-		return -EINVAL;
-	}
-
-	if (blob_type >= CAM_ISP_GENERIC_BLOB_TYPE_MAX) {
-		CAM_ERR(CAM_ISP, "Invalid Blob Type %d Max %d", blob_type,
-			CAM_ISP_GENERIC_BLOB_TYPE_MAX);
 		return -EINVAL;
 	}
 
@@ -5632,7 +5671,23 @@ static int cam_isp_packet_generic_blob_handler(void *user_data,
 			CAM_ERR(CAM_ISP, "VFE out update failed rc: %d", rc);
 	}
 		break;
+	case CAM_ISP_GENERIC_BLOB_TYPE_CSID_CONFIG: {
+		struct cam_isp_csid_epd_config *epd_config;
 
+		if (blob_size < sizeof(struct cam_isp_csid_epd_config)) {
+			CAM_ERR(CAM_ISP,
+				"Invalid epd config blob size %u expected %u",
+				blob_size,
+				sizeof(struct cam_isp_csid_epd_config));
+			return -EINVAL;
+		}
+		epd_config = (struct cam_isp_csid_epd_config *)blob_data;
+		rc = cam_isp_blob_csid_config_update(blob_type, blob_info,
+			epd_config, prepare);
+		if (rc)
+			CAM_ERR(CAM_ISP, "CSID Config failed rc: %d", rc);
+	}
+		break;
 	default:
 		CAM_WARN(CAM_ISP, "Invalid blob type %d", blob_type);
 		break;
