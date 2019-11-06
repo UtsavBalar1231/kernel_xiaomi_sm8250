@@ -1407,7 +1407,8 @@ void *vidc_get_drv_data(struct device *dev)
 			driver_data->ubwc_config->highest_bank_bit = 0xf;
 
 		d_vpr_h("DDR Type 0x%x hbb 0x%x\n",
-			ddr_type, driver_data->ubwc_config->highest_bank_bit);
+			ddr_type, driver_data->ubwc_config ?
+			driver_data->ubwc_config->highest_bank_bit : -1);
 	}
 
 exit:
