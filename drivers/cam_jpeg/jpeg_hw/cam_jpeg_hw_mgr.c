@@ -656,7 +656,7 @@ static void cam_jpeg_mgr_print_io_bufs(struct cam_packet *packet,
 				CAM_ERR(CAM_UTIL, "get src buf address fail");
 				continue;
 			}
-			if (iova_addr >> 32) {
+			if ((iova_addr & 0xFFFFFFFF) != iova_addr) {
 				CAM_ERR(CAM_JPEG, "Invalid mapped address");
 				rc = -EINVAL;
 				continue;
