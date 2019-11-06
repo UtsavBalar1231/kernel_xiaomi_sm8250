@@ -11,7 +11,6 @@
 #include <linux/timer.h>
 #include <media/cam_icp.h>
 #include <linux/iopoll.h>
-#include <soc/qcom/socinfo.h>
 
 #include "cam_io_util.h"
 #include "hfi_reg.h"
@@ -20,7 +19,6 @@
 #include "hfi_intf.h"
 #include "cam_icp_hw_mgr_intf.h"
 #include "cam_debug_util.h"
-#include "cam_soc_util.h"
 
 #define HFI_VERSION_INFO_MAJOR_VAL  1
 #define HFI_VERSION_INFO_MINOR_VAL  1
@@ -681,7 +679,7 @@ int cam_hfi_init(uint8_t event_driven_mode, struct hfi_mem_info *hfi_mem,
 	struct hfi_qtbl *qtbl;
 	struct hfi_qtbl_hdr *qtbl_hdr;
 	struct hfi_q_hdr *cmd_q_hdr, *msg_q_hdr, *dbg_q_hdr;
-	uint32_t hw_version, soc_version, fw_version, status = 0;
+	uint32_t hw_version, fw_version, status = 0;
 	uint32_t retry_cnt = 0;
 	struct sfr_buf *sfr_buffer;
 
@@ -703,7 +701,6 @@ int cam_hfi_init(uint8_t event_driven_mode, struct hfi_mem_info *hfi_mem,
 
 	memcpy(&g_hfi->map, hfi_mem, sizeof(g_hfi->map));
 	g_hfi->hfi_state = HFI_DEINIT;
-	soc_version = socinfo_get_version();
 	if (debug) {
 		cam_io_w_mb(
 		(uint32_t)(ICP_FLAG_CSR_A5_EN | ICP_FLAG_CSR_WAKE_UP_EN |
