@@ -156,7 +156,8 @@
 	qcom,model = "bengal-idp-snd-card";
 	qcom,msm-mi2s-master = <1>, <1>, <1>, <1>;
 	qcom,wcn-btfm = <0>;
-	qcom,ext-disp-audio-rx = <0>;
+	qcom,va-bolero-codec = <1>;
+	qcom,rxtx-bolero-codec = <1>;
 	qcom,audio-routing =
 		"AMIC1", "MIC BIAS1",
 		"MIC BIAS1", "Analog Mic1",
