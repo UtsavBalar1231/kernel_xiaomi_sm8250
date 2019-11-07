@@ -59,10 +59,6 @@
 #define INPUT_MPLANE V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE
 #define OUTPUT_MPLANE V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE
 
-/* EXTRADATA_ENC_INPUT_KK_CVP is an extension of
-   v4l2_mpeg_vidc_extradata for internal usage.
-   This is needed to indicate internal kernel to kernel CVP usage. */
-#define EXTRADATA_ENC_INPUT_KK_CVP (1UL << 31)
 #define RATE_CONTROL_OFF (V4L2_MPEG_VIDEO_BITRATE_MODE_CQ + 1)
 #define RATE_CONTROL_LOSSLESS (V4L2_MPEG_VIDEO_BITRATE_MODE_CQ + 2)
 #define SYS_MSG_START HAL_SYS_INIT_DONE
@@ -506,7 +502,6 @@ struct msm_vidc_inst {
 	enum session_type session_type;
 	void *session;
 	u32 sid;
-	struct msm_cvp_external *cvp;
 	struct session_prop prop;
 	enum instance_state state;
 	struct msm_vidc_format fmts[MAX_PORT_NUM];

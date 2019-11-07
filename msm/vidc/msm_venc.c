@@ -4349,11 +4349,25 @@ int msm_venc_set_extradata(struct msm_vidc_inst *inst)
 		}
 	}
 
-	if(!msm_vidc_cvp_usage)
-		inst->prop.extradata_ctrls &= ~EXTRADATA_ENC_INPUT_CVP;
+	if (inst->prop.extradata_ctrls & EXTRADATA_ENC_INPUT_CVP) {
+		struct v4l2_ctrl *max_layers = NULL;
+		u32 value = 0x1;
 
-	/* CVP extradata is common between user space and external CVP kernel to kernel.
-	   Hence, skipping here and will be set after msm_vidc_prepare_preprocess in start_streaming*/
+		max_layers = get_ctrl(inst,
+			V4L2_CID_MPEG_VIDC_VIDEO_HEVC_MAX_HIER_CODING_LAYER);
+		if (!msm_vidc_cvp_usage || max_layers->val > 1) {
+			inst->prop.extradata_ctrls &= ~EXTRADATA_ENC_INPUT_CVP;
+			value = 0x0;
+		}
+		s_vpr_h(inst->sid, "%s: CVP extradata %d\n", __func__, value);
+		rc = msm_comm_set_extradata(inst,
+			HFI_PROPERTY_PARAM_VENC_CVP_METADATA_EXTRADATA, value);
+		if (rc)
+			s_vpr_h(inst->sid,
+				"%s: set CVP extradata failed\n", __func__);
+	} else {
+		s_vpr_h(inst->sid, "%s: CVP extradata not enabled\n", __func__);
+	}
 
 	return rc;
 }
@@ -4391,7 +4405,8 @@ int msm_venc_set_cvp_skipratio(struct msm_vidc_inst *inst)
 		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
 		return -EINVAL;
 	}
-	if (!msm_vidc_cvp_usage || !inst->core->resources.cvp_external)
+	if (!msm_vidc_cvp_usage ||
+		!(inst->prop.extradata_ctrls & EXTRADATA_ENC_INPUT_CVP))
 		return 0;
 
 	capture_rate_ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_CAPTURE_FRAME_RATE);
@@ -4662,6 +4677,9 @@ int msm_venc_set_properties(struct msm_vidc_inst *inst)
 	if (rc)
 		goto exit;
 	rc = msm_venc_set_extradata(inst);
+	if (rc)
+		goto exit;
+	rc = msm_venc_set_cvp_skipratio(inst);
 	if (rc)
 		goto exit;
 	rc = msm_venc_set_operating_rate(inst);

@@ -15,7 +15,6 @@
 #include "vidc_hfi.h"
 #include "msm_vidc_debug.h"
 #include "msm_vidc_clocks.h"
-#include "msm_cvp_external.h"
 #include "msm_cvp_internal.h"
 #include "msm_vidc_buffer_calculations.h"
 
@@ -4121,35 +4120,6 @@ int msm_vidc_comm_cmd(void *instance, union msm_v4l2_cmd *cmd)
 	return rc;
 }
 
-static int msm_comm_preprocess(struct msm_vidc_inst *inst,
-		struct msm_vidc_buffer *mbuf)
-{
-	int rc = 0;
-
-	if (!inst || !mbuf) {
-		d_vpr_e("%s: invalid params %pK %pK\n",
-			__func__, inst, mbuf);
-		return -EINVAL;
-	}
-
-	/* preprocessing is allowed for encoder input buffer only */
-	if (!is_encode_session(inst) || mbuf->vvb.vb2_buf.type != INPUT_MPLANE)
-		return 0;
-
-	/* preprocessing is done using CVP module only */
-	if (!is_vidc_cvp_enabled(inst))
-		return 0;
-
-	rc = msm_vidc_cvp_preprocess(inst, mbuf);
-	if (rc) {
-		s_vpr_e(inst->sid, "%s: cvp preprocess failed\n",
-			__func__);
-		return rc;
-	}
-
-	return rc;
-}
-
 static void populate_frame_data(struct vidc_frame_data *data,
 		struct msm_vidc_buffer *mbuf, struct msm_vidc_inst *inst)
 {
@@ -4500,10 +4470,6 @@ int msm_comm_qbuf(struct msm_vidc_inst *inst, struct msm_vidc_buffer *mbuf)
 		print_vidc_buffer(VIDC_HIGH, "qbuf deferred", inst, mbuf);
 		return 0;
 	}
-
-	rc = msm_comm_preprocess(inst, mbuf);
-	if (rc)
-		return rc;
 
 	do_bw_calc = mbuf->vvb.vb2_buf.type == INPUT_MPLANE;
 	rc = msm_comm_scale_clocks_and_bus(inst, do_bw_calc);
