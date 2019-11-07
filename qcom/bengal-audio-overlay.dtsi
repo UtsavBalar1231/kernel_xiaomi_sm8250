@@ -292,6 +292,7 @@
 		qcom,lpi-gpios;
 		qcom,chip-wakeup-reg = <0x003ca04c>;
 		qcom,chip-wakeup-maskbit = <0>;
+		qcom,chip-wakeup-default-val = <0x1>;
 	};
 };
 
