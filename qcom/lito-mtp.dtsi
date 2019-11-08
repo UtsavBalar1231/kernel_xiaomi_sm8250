@@ -187,14 +187,16 @@
 		      <&pm7250b_vadc ADC_DIE_TEMP>,
 		      <&pm7250b_vadc ADC_AMUX_THM3_PU2>,
 		      <&pm7250b_vadc ADC_SBUx>,
-		      <&pm7250b_vadc ADC_VPH_PWR>;
+		      <&pm7250b_vadc ADC_VPH_PWR>,
+		      <&pm7250b_vadc ADC_AMUX_THM1_PU2>;
 	io-channel-names = "usb_in_voltage",
 			   "usb_in_current",
 			   "chg_temp",
 			   "die_temp",
 			   "conn_temp",
 			   "sbux_res",
-			   "vph_voltage";
+			   "vph_voltage",
+			   "skin_temp";
 	qcom,battery-data = <&mtp_batterydata>;
 	qcom,sec-charger-config = <1>;
 	qcom,auto-recharge-soc = <98>;
@@ -206,6 +208,9 @@
 	qcom,fcc-stepping-enable;
 	qcom,fcc-step-delay-ms = <100>;
 	qcom,fcc-step-size-ua = <100000>;
+	qcom,smb-internal-pull-kohm = <0>;
+	qcom,en-skin-therm-mitigation;
+	qcom,hvdcp3-standalone-config;
 };
 
 &pm7250b_qg {
