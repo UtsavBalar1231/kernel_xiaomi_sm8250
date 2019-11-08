@@ -3817,6 +3817,7 @@
 
 &usb30_prim_gdsc {
 	status = "ok";
+	qcom,retain-regs;
 };
 
 &hlos1_vote_mmnoc_mmu_tbu_hf0_gdsc {
