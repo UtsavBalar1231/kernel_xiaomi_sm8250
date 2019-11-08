@@ -7240,10 +7240,10 @@ int msm_comm_check_window_bitrate(struct msm_vidc_inst *inst,
 		inst->core->resources.allowed_clks_tbl[0].clock_rate / fps -
 		inst->clk_data.entry->vsp_cycles *
 		msm_vidc_get_mbs_per_frame(inst);
-	max_avg_frame_size = (u64)max_frame_size * 100 *
-		(window_size + window_buffer) / (window_size * 135);
-	max_frame_size = (u64)max_frame_size * 100 *
-		(1 + window_buffer) / 135;
+	max_avg_frame_size = div_u64((u64)max_frame_size * 100 *
+		(window_size + window_buffer), (window_size * 135));
+	max_frame_size = div_u64((u64)max_frame_size * 100 *
+				(1 + window_buffer), 135);
 
 	frame_size = frame_data->filled_len;
 	window_start = inst->count.etb;
