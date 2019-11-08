@@ -33,6 +33,58 @@ enum cam_cpas_reg_base {
 };
 
 /**
+ * enum cam_cpas_camera_version Enum for Titan Camera Versions
+ */
+enum cam_cpas_camera_version {
+	CAM_CPAS_CAMERA_VERSION_NONE = 0,
+	CAM_CPAS_CAMERA_VERSION_150  = 0x00010500,
+	CAM_CPAS_CAMERA_VERSION_170  = 0x00010700,
+	CAM_CPAS_CAMERA_VERSION_175  = 0x00010705,
+	CAM_CPAS_CAMERA_VERSION_480  = 0x00040800,
+	CAM_CPAS_CAMERA_VERSION_MAX
+};
+
+/**
+ * enum cam_cpas_version Enum for Titan CPAS Versions
+ */
+enum cam_cpas_version {
+	CAM_CPAS_VERSION_NONE = 0,
+	CAM_CPAS_VERSION_100  = 0x10000000,
+	CAM_CPAS_VERSION_101  = 0x10000001,
+	CAM_CPAS_VERSION_110  = 0x10010000,
+	CAM_CPAS_VERSION_120  = 0x10020000,
+	CAM_CPAS_VERSION_130  = 0x10030000,
+	CAM_CPAS_VERSION_200  = 0x20000000,
+	CAM_CPAS_VERSION_MAX
+};
+
+/**
+ * enum cam_cpas_camera_version_map_id Enum for camera version map id
+ * This enum is mapped with cam_cpas_camera_version
+ */
+enum cam_cpas_camera_version_map_id {
+	CAM_CPAS_CAMERA_VERSION_ID_150  = 0x0,
+	CAM_CPAS_CAMERA_VERSION_ID_170  = 0x1,
+	CAM_CPAS_CAMERA_VERSION_ID_175  = 0x2,
+	CAM_CPAS_CAMERA_VERSION_ID_480  = 0x3,
+	CAM_CPAS_CAMERA_VERSION_ID_MAX
+};
+
+/**
+ * enum cam_cpas_version_map_id Enum for cpas version map id
+ * This enum is mapped with cam_cpas_version
+ */
+enum cam_cpas_version_map_id {
+	CAM_CPAS_VERSION_ID_100  = 0x0,
+	CAM_CPAS_VERSION_ID_101  = 0x1,
+	CAM_CPAS_VERSION_ID_110  = 0x2,
+	CAM_CPAS_VERSION_ID_120  = 0x3,
+	CAM_CPAS_VERSION_ID_130  = 0x4,
+	CAM_CPAS_VERSION_ID_200  = 0x5,
+	CAM_CPAS_VERSION_ID_MAX
+};
+
+/**
  * enum cam_cpas_hw_version - Enum for Titan CPAS HW Versions
  */
 enum cam_cpas_hw_version {
@@ -41,6 +93,7 @@ enum cam_cpas_hw_version {
 	CAM_CPAS_TITAN_170_V100 = 0x170100,
 	CAM_CPAS_TITAN_170_V110 = 0x170110,
 	CAM_CPAS_TITAN_170_V120 = 0x170120,
+	CAM_CPAS_TITAN_170_V200 = 0x170200,
 	CAM_CPAS_TITAN_175_V100 = 0x175100,
 	CAM_CPAS_TITAN_175_V101 = 0x175101,
 	CAM_CPAS_TITAN_175_V120 = 0x175120,
