@@ -357,7 +357,7 @@ static struct cam_camnoc_specific
 			.value = 0x0,
 		},
 		.safe_lut = {
-			.enable = true,
+			.enable = false,
 			.access_type = CAM_REG_TYPE_READ_WRITE,
 			.offset = 0x1048, /* IFE_RDI_RD_SAFELUT_LOW */
 			.value = 0x0,
