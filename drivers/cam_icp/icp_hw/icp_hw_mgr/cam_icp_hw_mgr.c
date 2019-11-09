@@ -4742,6 +4742,8 @@ static void cam_icp_mgr_print_io_bufs(struct cam_packet *packet,
 
 		}
 	}
+	cam_packet_dump_patch_info(packet, icp_hw_mgr.iommu_hdl,
+		icp_hw_mgr.iommu_sec_hdl);
 }
 
 static int cam_icp_mgr_config_stream_settings(

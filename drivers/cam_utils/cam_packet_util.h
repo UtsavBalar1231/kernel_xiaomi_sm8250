@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_PACKET_UTIL_H_
@@ -85,6 +85,20 @@ int cam_packet_util_validate_cmd_desc(struct cam_cmd_buf_desc *cmd_desc);
  */
 int cam_packet_util_get_kmd_buffer(struct cam_packet *packet,
 	struct cam_kmd_buf_info *kmd_buf_info);
+
+/**
+ * cam_packet_dump_patch_info()
+ *
+ * @brief:              Dump patch info in case of page fault
+ *
+ * @packet:             Input packet containing Command Buffers and Patches
+ * @iommu_hdl:          IOMMU handle of the HW Device that received the packet
+ * @sec_iommu_hdl:      Secure IOMMU handle of the HW Device that
+ *                      received the packet
+ *
+ */
+void cam_packet_dump_patch_info(struct cam_packet *packet,
+	int32_t iommu_hdl, int32_t sec_mmu_hdl);
 
 /**
  * cam_packet_util_process_patches()
