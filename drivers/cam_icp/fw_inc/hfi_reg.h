@@ -74,7 +74,7 @@
 #define ICP_SHARED_MEM_IN_BYTES                 (1024 * 1024)
 #define ICP_UNCACHED_HEAP_SIZE_IN_BYTES         (2 * 1024 * 1024)
 #define ICP_HFI_MAX_PKT_SIZE_IN_WORDS           25600
-#define ICP_HFI_MAX_PKT_SIZE_MSGQ_IN_WORDS      256
+#define ICP_HFI_MAX_PKT_SIZE_MSGQ_IN_WORDS      1024
 
 #define ICP_HFI_QTBL_HOSTID1                    0x01000000
 #define ICP_HFI_QTBL_STATUS_ENABLED             0x00000001
