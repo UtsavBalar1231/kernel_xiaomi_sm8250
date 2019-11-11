@@ -290,6 +290,7 @@
 	qcom,wd-bark-time-secs = <16>;
 	qcom,suspend-input-on-debug-batt;
 	qcom,fcc-stepping-enable;
+	qcom,smb-internal-pull-kohm = <0>;
 };
 
 &pm8150b_fg {
