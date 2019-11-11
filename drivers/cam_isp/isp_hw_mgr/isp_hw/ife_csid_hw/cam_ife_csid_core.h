@@ -40,6 +40,7 @@
 #define CSID_CSI2_RX_ERROR_TG_FIFO_OVERFLOW       BIT(26)
 #define CSID_CSI2_RX_INFO_RST_DONE                BIT(27)
 
+#define CSID_TOP_IRQ_DONE                         BIT(0)
 #define CSID_PATH_INFO_RST_DONE                   BIT(1)
 #define CSID_PATH_ERROR_FIFO_OVERFLOW             BIT(2)
 #define CSID_PATH_INFO_SUBSAMPLED_EOF             BIT(3)
