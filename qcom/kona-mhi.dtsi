@@ -30,6 +30,7 @@
 		mhi,timeout = <2000>;
 		mhi,buffer-len = <0x8000>;
 		mhi,sfr-support;
+		mhi,name = "esoc0";
 
 		#address-cells = <1>;
 		#size-cells = <1>;
