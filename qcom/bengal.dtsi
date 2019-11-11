@@ -364,6 +364,30 @@
 			reg = <0x0 0x55215000 0x0 0x2000>;
 		};
 
+		user_contig_mem: user_contig_region {
+			compatible = "shared-dma-pool";
+			alloc-ranges = <0x0 0x00000000 0x0 0xffffffff>;
+			reusable;
+			alignment = <0x0 0x400000>;
+			size = <0x0 0x1000000>;
+		};
+
+		qseecom_mem: qseecom_region {
+			compatible = "shared-dma-pool";
+			alloc-ranges = <0x0 0x00000000 0x0 0xffffffff>;
+			reusable;
+			alignment = <0x0 0x400000>;
+			size = <0x0 0x1400000>;
+		};
+
+		qseecom_ta_mem: qseecom_ta_region {
+			compatible = "shared-dma-pool";
+			alloc-ranges = <0x0 0x00000000 0x0 0xffffffff>;
+			reusable;
+			alignment = <0x0 0x400000>;
+			size = <0x0 0x1000000>;
+		};
+
 		cdsp_sec_mem: cdsp_sec_regions@5f800000 {
 			compatible = "removed-dma-pool";
 			no-map;
@@ -715,6 +739,126 @@
 		reg = <0x440b000 0x4>,
 		      <0x03d3000 0x4>;
 		reg-names = "pshold-base", "tcsr-boot-misc-detect";
+	};
+
+	qcom_seecom: qseecom@47900000 {
+		compatible = "qcom,qseecom";
+		reg = <0x47900000 0x2200000>;
+		reg-names = "secapp-region";
+		memory-region = <&qseecom_mem>;
+		qcom,hlos-num-ce-hw-instances = <1>;
+		qcom,hlos-ce-hw-instance = <0>;
+		qcom,qsee-ce-hw-instance = <0>;
+		qcom,disk-encrypt-pipe-pair = <2>;
+		qcom,support-fde;
+		qcom,fde-key-size;
+		qcom,appsbl-qseecom-support;
+		qcom,commonlib64-loaded-by-uefi;
+		qcom,msm-bus,name = "qseecom-noc";
+		qcom,msm-bus,num-cases = <4>;
+		qcom,msm-bus,num-paths = <1>;
+		qcom,msm-bus,vectors-KBps =
+			<MSM_BUS_MASTER_CRYPTO_CORE0
+			MSM_BUS_SLAVE_FIRST 0 0>,
+			<MSM_BUS_MASTER_CRYPTO_CORE0
+			MSM_BUS_SLAVE_FIRST 200000 400000>,
+			<MSM_BUS_MASTER_CRYPTO_CORE0
+			MSM_BUS_SLAVE_FIRST 300000 800000>,
+			<MSM_BUS_MASTER_CRYPTO_CORE0
+			MSM_BUS_SLAVE_FIRST 400000 1000000>;
+		clock-names =
+			"core_clk_src", "core_clk",
+			"iface_clk", "bus_clk";
+		clocks =
+			<&rpmcc QSEECOM_CE1_CLK>,
+			<&rpmcc QSEECOM_CE1_CLK>,
+			<&rpmcc QSEECOM_CE1_CLK>,
+			<&rpmcc QSEECOM_CE1_CLK>;
+		qcom,ce-opp-freq = <192000000>;
+		qcom,qsee-reentrancy-support = <2>;
+	};
+
+	qcom_smcinvoke: smcinvoke@47900000 {
+		compatible = "qcom,smcinvoke";
+		reg = <0x47900000 0x2200000>;
+		reg-names = "secapp-region";
+	};
+
+	qcom_rng: qrng@1b53000 {
+		compatible = "qcom,msm-rng";
+		reg = <0x1b53000 0x1000>;
+		qcom,msm-rng-iface-clk;
+		qcom,no-qrng-config;
+		qcom,msm-bus,name = "msm-rng-noc";
+		qcom,msm-bus,num-cases = <2>;
+		qcom,msm-bus,num-paths = <1>;
+		qcom,msm-bus,vectors-KBps =
+			<MSM_BUS_MASTER_AMPSS_M0
+			MSM_BUS_SLAVE_PRNG 0 0>,    /* No vote */
+			<MSM_BUS_MASTER_AMPSS_M0
+			MSM_BUS_SLAVE_PRNG 0 300000>;  /* 75 MHz */
+		clocks = <&gcc GCC_PRNG_AHB_CLK>;
+		clock-names = "iface_clk";
+	};
+
+	qcom_tzlog: tz-log@c125720 {
+		compaible = "qcom,tz-log";
+		reg = <0xc125720 0x3000>;
+		qcom,hyplog-enabled;
+		hyplog-address-offset = <0x410>;
+		hyplog-size-offset = <0x414>;
+	};
+
+	qcom_cedev: qcedev@1b20000 {
+		compatible = "qcom,qcedev";
+		reg = <0x1b20000 0x20000>,
+			<0x1b04000 0x24000>;
+		reg-names = "crypto-base","crypto-bam-base";
+		interrupts = <GIC_SPI 247 IRQ_TYPE_LEVEL_HIGH>;
+		qcom,bam-pipe-pair = <3>;
+		qcom,ce-hw-instance = <0>;
+		qcom,ce-device = <0>;
+		qcom,ce-hw-shared;
+		qcom,bam-ee = <0>;
+		qcom,msm-bus,name = "qcedev-noc";
+		qcom,msm-bus,num-cases = <2>;
+		qcom,msm-bus,num-paths = <1>;
+		qcom,msm-bus,vectors-KBps =
+				<MSM_BUS_MASTER_CRYPTO_CORE0
+				MSM_BUS_SLAVE_FIRST 0 0>,
+				<MSM_BUS_MASTER_CRYPTO_CORE0
+				MSM_BUS_SLAVE_FIRST 393600 393600>;
+		clock-names =
+			"core_clk_src", "core_clk",
+			"iface_clk", "bus_clk";
+		clocks =
+			<&rpmcc QCEDEV_CE1_CLK>,
+			<&rpmcc QCEDEV_CE1_CLK>,
+			<&rpmcc QCEDEV_CE1_CLK>,
+			<&rpmcc QCEDEV_CE1_CLK>;
+		qcom,ce-opp-freq = <192000000>;
+		qcom,smmu-s1-enable;
+		iommus = <&apps_smmu 0x0086 0x0011>,
+			 <&apps_smmu 0x0096 0x0011>;
+		qcom,iommu-dma = "atomic";
+
+		qcom_cedev_ns_cb {
+			compatible = "qcom,qcedev,context-bank";
+			label = "ns_context";
+			iommus = <&apps_smmu 0x92 0>,
+				<&apps_smmu 0x98 0x1>,
+				<&apps_smmu 0x9F 0>;
+		};
+
+		qcom_cedev_s_cb {
+			compatible = "qcom,qcedev,context-bank";
+			label = "secure_context";
+			iommus = <&apps_smmu 0x93 0>,
+				<&apps_smmu 0x9C 0x1>,
+				<&apps_smmu 0x9E 0>;
+			qcom,iommu-vmid = <0x9>; /* VMID_CP_BITSTREAM */
+			qcom,secure-context-bank;
+		};
 	};
 
 	qcom,mpm2-sleep-counter@4403000 {
