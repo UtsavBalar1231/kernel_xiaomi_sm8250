@@ -2625,6 +2625,8 @@
 #include "bengal-qupv3.dtsi"
 #include "bengal-gpu.dtsi"
 #include "bengal-audio.dtsi"
+#include "bengal-sde-pll.dtsi"
+#include "bengal-sde.dtsi"
 
 &qupv3_se1_i2c {
 	status = "ok";
