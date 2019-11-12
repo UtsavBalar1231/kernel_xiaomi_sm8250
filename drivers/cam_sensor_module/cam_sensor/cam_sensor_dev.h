@@ -28,9 +28,6 @@
 #define NUM_MASTERS 2
 #define NUM_QUEUES 2
 
-#define TRUE  1
-#define FALSE 0
-
 #undef CDBG
 #ifdef CAM_SENSOR_DEBUG
 #define CDBG(fmt, args...) pr_err(fmt, ##args)
