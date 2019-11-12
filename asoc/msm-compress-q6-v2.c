@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/* Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
  */
 
 
@@ -1231,7 +1231,7 @@ static int msm_compr_send_media_format_block(struct snd_compr_stream *cstream,
 		dsd_cfg.dsd_data_rate = prtd->sample_rate;
 		dsd_cfg.num_version = 0;
 		dsd_cfg.is_bitwise_big_endian = 1;
-		dsd_cfg.dsd_channel_block_size = 1;
+		dsd_cfg.dsd_channel_block_size = 4;
 		ret = q6asm_media_format_block_dsd(prtd->audio_client,
 						   &dsd_cfg, stream_id);
 		if (ret < 0)

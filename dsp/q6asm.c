@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
  * Author: Brian Swetland <swetland@google.com>
  *
  * This software is licensed under the terms of the GNU General Public
@@ -3096,6 +3096,10 @@ int q6asm_open_read_compressed(struct audio_client *ac, uint32_t format,
 		open.mode_flags = 0x1;
 		open.frames_per_buf = 1;
 		pr_debug("%s: Flag 1 IEC61937 output\n", __func__);
+	} else if (format == FORMAT_DSD) {
+		open.mode_flags = ASM_DSD_FORMAT_FLAG;
+		open.frames_per_buf = 1;
+		pr_debug("%s: Flag 2 DSD output\n", __func__);
 	} else {
 		open.mode_flags = 0;
 		open.frames_per_buf = 1;
