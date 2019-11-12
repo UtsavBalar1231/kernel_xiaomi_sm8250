@@ -378,6 +378,7 @@ static struct msm_vidc_codec_capability bengal_capabilities[] = {
 		0, 244800, 1, 244800},
 	{CAP_I_FRAME_QP, ENC, H264|HEVC, 0, 51, 1, 10},
 	{CAP_P_FRAME_QP, ENC, H264|HEVC, 0, 51, 1, 20},
+	{CAP_B_FRAME_QP, ENC, H264|HEVC, 0, 51, 1, 20},
 
 	/* 10 slices */
 	{CAP_SLICE_BYTE, ENC, H264|HEVC, 1, 10, 1, 10},
@@ -390,6 +391,12 @@ static struct msm_vidc_codec_capability bengal_capabilities[] = {
 	/* (1920 * 1088) / 256 */
 	{CAP_SECURE_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 36, 8160, 1, 8160},
 	{CAP_SECURE_BITRATE, DOMAINS_ALL, CODECS_ALL, 1, 40000000, 1, 20000000},
+
+	/* Image specific */
+	{CAP_HEVC_IMAGE_FRAME_WIDTH, ENC, HEVC, 128, 512, 1, 512},
+	{CAP_HEVC_IMAGE_FRAME_HEIGHT, ENC, HEVC, 128, 512, 1, 512},
+	{CAP_HEIC_IMAGE_FRAME_WIDTH, ENC, HEVC, 512, 8192, 1, 8192},
+	{CAP_HEIC_IMAGE_FRAME_HEIGHT, ENC, HEVC, 512, 8192, 1, 8192},
 };
 
 static struct msm_vidc_codec_capability kona_capabilities[] = {
