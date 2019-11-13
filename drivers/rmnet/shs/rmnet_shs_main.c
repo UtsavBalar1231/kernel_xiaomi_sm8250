@@ -161,16 +161,36 @@ int rmnet_shs_is_skb_stamping_reqd(struct sk_buff *skb)
 		case htons(ETH_P_IP):
 			if (!ip_is_fragment(ip_hdr(skb)) &&
 			((ip_hdr(skb)->protocol == IPPROTO_TCP) ||
-			(ip_hdr(skb)->protocol == IPPROTO_UDP)))
+			(ip_hdr(skb)->protocol == IPPROTO_UDP))){
 				ret_val =  1;
-
+				break;
+			}
+			/* RPS logic is skipped if RPS hash is 0 while sw_hash
+			 * is set as active and packet is processed on the same
+			 * CPU as the initial caller.
+			 */
+			if (ip_hdr(skb)->protocol == IPPROTO_ICMP) {
+			    skb->hash = 0;
+			    skb->sw_hash = 1;
+			}
 			break;
 
 		case htons(ETH_P_IPV6):
 			if (!(ipv6_hdr(skb)->nexthdr == NEXTHDR_FRAGMENT) &&
 			((ipv6_hdr(skb)->nexthdr == IPPROTO_TCP) ||
-			(ipv6_hdr(skb)->nexthdr == IPPROTO_UDP)))
+			(ipv6_hdr(skb)->nexthdr == IPPROTO_UDP))) {
 				ret_val =  1;
+				break;
+			}
+
+			/* RPS logic is skipped if RPS hash is 0 while sw_hash
+			 * is set as active and packet is processed on the same
+			 * CPU as the initial caller.
+			 */
+			if (ipv6_hdr(skb)->nexthdr == IPPROTO_ICMP) {
+			    skb->hash = 0;
+			    skb->sw_hash = 1;
+			}
 
 			break;
 
@@ -187,6 +207,15 @@ int rmnet_shs_is_skb_stamping_reqd(struct sk_buff *skb)
 			    (ip4h->protocol == IPPROTO_TCP ||
 			     ip4h->protocol == IPPROTO_UDP)) {
 				ret_val =  1;
+				break;
+			}
+			/* RPS logic is skipped if RPS hash is 0 while sw_hash
+			 * is set as active and packet is processed on the same
+			 * CPU as the initial caller.
+			 */
+			if (ip4h->protocol == IPPROTO_ICMP) {
+			    skb->hash = 0;
+			    skb->sw_hash = 1;
 			}
 
 			break;
@@ -196,8 +225,18 @@ int rmnet_shs_is_skb_stamping_reqd(struct sk_buff *skb)
 
 			if (!(ip6h->nexthdr == NEXTHDR_FRAGMENT) &&
 			((ip6h->nexthdr == IPPROTO_TCP) ||
-			(ip6h->nexthdr == IPPROTO_UDP)))
+			(ip6h->nexthdr == IPPROTO_UDP))) {
 				ret_val =  1;
+				break;
+			}
+			/* RPS logic is skipped if RPS hash is 0 while sw_hash
+			 * is set as active and packet is processed on the same
+			 * CPU as the initial caller.
+			 */
+			if (ip6h->nexthdr == IPPROTO_ICMP) {
+			    skb->hash = 0;
+			    skb->sw_hash = 1;
+			}
 
 			break;
 
