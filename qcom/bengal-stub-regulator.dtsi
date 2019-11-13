@@ -137,8 +137,8 @@
 		compatible = "qcom,stub-regulator";
 		regulator-name = "pm6125_l9";
 		qcom,hpm-min-load = <10000>;
-		regulator-min-microvolt = <0>;
-		regulator-max-microvolt = <3300000>;
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <2000000>;
 	};
 
 	L10A: pm6125_l10: regulator-pm6125-l10 {

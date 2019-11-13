@@ -576,7 +576,7 @@
 			alloc-ranges = <0x0 0x00000000 0x0 0xffffffff>;
 			reusable;
 			alignment = <0x0 0x400000>;
-			size = <0x0 0xA000000>;
+			size = <0x0 0xA400000>;
 		};
 
 		cnss_wlan_mem: cnss_wlan_region {
@@ -1071,6 +1071,29 @@
 		qcom,count-unit = <0x10000>;
 	};
 
+	npu_npu_ddr_latfloor: qcom,npu-npu-ddr-latfloor {
+		compatible = "qcom,devbw-ddr";
+		governor = "powersave";
+		qcom,src-dst-ports = <MSM_BUS_MASTER_NPU MSM_BUS_SLAVE_EBI_CH0>;
+		operating-points-v2 = <&suspendable_ddr_bw_opp_table>;
+	};
+
+	npu_staticmap_mon: qcom,npu-staticmap-mon {
+		compatible = "qcom,static-map";
+		qcom,target-dev = <&npu_npu_ddr_latfloor>;
+		clocks = <&clock_npucc NPU_CC_CAL_HM0_CLK>;
+		clock-names = "cal_hm0_clk";
+		qcom,dev_clk = "cal_hm0_clk";
+		qcom,core-dev-table =
+				<       0 MHZ_TO_MBPS(    0, 4) >,
+				<  300000 MHZ_TO_MBPS(  451, 4) >,
+				<  406000 MHZ_TO_MBPS(  768, 4) >,
+				<  533000 MHZ_TO_MBPS( 1555, 4) >,
+				<  730000 MHZ_TO_MBPS( 1804, 4) >,
+				<  920000 MHZ_TO_MBPS( 2092, 4) >,
+				< 1000000 MHZ_TO_MBPS( 2736, 4) >;
+	};
+
 	cpu0_cpu_llcc_lat: qcom,cpu0-cpu-llcc-lat {
 		compatible = "qcom,devbw";
 		governor = "performance";
@@ -1119,11 +1142,11 @@
 	qoslat_opp_table: qoslat-opp-table {
 		compatible = "operating-points-v2";
 		opp-0 {
-			opp-hz = /bits/ 64 < 0 >;
+			opp-hz = /bits/ 64 < 1 >;
 		};
 
 		opp-1 {
-			opp-hz = /bits/ 64 < 1 >;
+			opp-hz = /bits/ 64 < 2 >;
 		};
 	};
 
@@ -1303,8 +1326,8 @@
 			qcom,target-dev = <&cpu4_cpu_ddr_qoslat>;
 			qcom,cachemiss-ev = <0x2A>;
 			qcom,core-dev-table =
-				<  300000 0 >,
-				< 3000000 1 >;
+				<  300000 1 >,
+				< 3000000 2 >;
 		};
 	};
 
@@ -4943,7 +4966,7 @@
 		mhi_events {
 			mhi_event@0 {
 				mhi,num-elements = <32>;
-				mhi,intmod = <1>;
+				mhi,intmod = <0>;
 				mhi,msi = <1>;
 				mhi,priority = <1>;
 				mhi,brstmode = <2>;
@@ -4952,7 +4975,7 @@
 
 			mhi_event@1 {
 				mhi,num-elements = <256>;
-				mhi,intmod = <1>;
+				mhi,intmod = <0>;
 				mhi,msi = <2>;
 				mhi,priority = <1>;
 				mhi,brstmode = <2>;
@@ -5050,6 +5073,19 @@
 
 	demux {
 		compatible = "qcom,demux";
+	};
+
+	qfprom: qfprom@780000 {
+		compatible = "qcom,qfprom";
+		reg = <0x00784000 0x3000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		read-only;
+		ranges;
+
+		gpu_lm_efuse: gpu_lm_efuse@5c8 {
+			reg = <0x5c8 0x4>;
+		};
 	};
 };
 

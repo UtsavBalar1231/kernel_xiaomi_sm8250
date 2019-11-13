@@ -45,6 +45,9 @@
 		#clock-cells = <0>;
 	};
 
+	qmi-tmd-devices {
+		status = "disabled";
+	};
 };
 
 &qupv3_se1_i2c {
@@ -82,6 +85,47 @@
 	/delete-node/ rpm-regulator-ldoa22;
 	/delete-node/ rpm-regulator-ldoa23;
 	/delete-node/ rpm-regulator-ldoa24;
+};
+
+&tsens0 {
+	status = "disabled";
+};
+
+&bcl_sensor {
+	status = "disabled";
+};
+
+&bcl_soc {
+	status = "disabled";
+};
+
+&lmh_cpu_vdd {
+	status = "disabled";
+};
+
+&cxip_cdev {
+	status = "disabled";
+};
+
+&lmh_dcvs0 {
+	status = "disabled";
+};
+
+&lmh_dcvs1 {
+	status = "disabled";
+};
+
+&thermal_zones {
+	/delete-node/ mapss-lowf;
+	/delete-node/ camera-lowf;
+	/delete-node/ pmi632-ibat-lvl0;
+	/delete-node/ pmi632-ibat-lvl1;
+	/delete-node/ pmi632-vbat-lvl0;
+	/delete-node/ pmi632-vbat-lvl1;
+	/delete-node/ pmi632-vbat-lvl2;
+	/delete-node/ pmi632-bcl-lvl0;
+	/delete-node/ pmi632-bcl-lvl1;
+	/delete-node/ pmi632-bcl-lvl2;
 };
 
  #include "bengal-stub-regulator.dtsi"
@@ -132,7 +176,40 @@
 	status = "ok";
 };
 
+&ufsphy_mem {
+	compatible = "qcom,ufs-phy-qrbtc-sdm845";
+
+	vdda-phy-supply = <&L4A>; /* 0.9v */
+	vdda-pll-supply = <&L12A>; /* 1.8v */
+	vdda-phy-max-microamp = <51400>;
+	vdda-pll-max-microamp = <14200>;
+
+	status = "ok";
+};
+
+&ufshc_mem {
+	limit-tx-hs-gear = <1>;
+	limit-rx-hs-gear = <1>;
+	scsi-cmd-timeout = <300000>;
+
+	vdd-hba-supply = <&gcc_ufs_phy_gdsc>;
+	vdd-hba-fixed-regulator;
+	vcc-supply = <&L24A>;
+	vccq2-supply = <&L11A>;
+	vcc-max-microamp = <600000>;
+	vccq2-max-microamp = <600000>;
+
+	qcom,vddp-ref-clk-supply = <&L18A>;
+	qcom,vddp-ref-clk-max-microamp = <100>;
+	qcom,vddp-ref-clk-min-uV = <1232000>;
+	qcom,vddp-ref-clk-max-uV = <1232000>;
+
+	qcom,disable-lpm;
+	status = "ok";
+};
+
 &usb0 {
+	dpdm-supply = <&usb_nop_phy>;
 	dwc3@4e00000 {
 		usb-phy = <&usb_emu_phy>, <&usb_nop_phy>;
 		maximum-speed = "high-speed";
@@ -145,4 +222,9 @@
 	clock-output-names = "rpmcc_clocks";
 	#clock-cells = <1>;
 	#reset-cells = <1>;
+};
+
+&debugcc {
+	compatible = "qcom,dummycc";
+	clock-output-names = "debugcc_clocks";
 };

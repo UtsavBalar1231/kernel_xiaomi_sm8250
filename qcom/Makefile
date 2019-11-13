@@ -67,20 +67,30 @@ dtb-$(CONFIG_ARCH_LITO) += lito-rumi.dtb \
                 lito-v2-qrd.dtb
 endif
 
+ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
+dtbo-$(CONFIG_ARCH_LAGOON) += lagoon-rumi-overlay.dtbo
+
+lagoon-rumi-overlay.dtbo-base := lagoon.dtb
+else
+dtb-$(CONFIG_ARCH_LAGOON) += lagoon-rumi.dtb
+endif
 
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
         dtbo-$(CONFIG_ARCH_BENGAL) += \
                 bengal-rumi-overlay.dtbo \
                 bengal-qrd-overlay.dtbo \
-                bengal-idp-overlay.dtbo
+                bengal-idp-overlay.dtbo \
+                bengal-idp-usbc-overlay.dtbo
 
 bengal-rumi-overlay.dtbo-base := bengal.dtb
 bengal-qrd-overlay.dtbo-base := bengal.dtb
 bengal-idp-overlay.dtbo-base := bengal.dtb
+bengal-idp-usbc-overlay.dtbo-base := bengal.dtb
 else
 dtb-$(CONFIG_ARCH_BENGAL) += bengal-rumi.dtb \
                 bengal-qrd.dtb \
-		bengal-idp.dtb
+		bengal-idp.dtb \
+		bengal-idp-usbc.dtb
 endif
 
 always		:= $(dtb-y)

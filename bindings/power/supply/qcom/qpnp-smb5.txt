@@ -344,6 +344,37 @@ Charger specific properties:
 		If left unspecified, the HW min value of 1.5 A is applied by
 		default.
 
+- qcom,fcc-step-delay-ms
+  Usage:      optional
+  Value type: <u32>
+  Definition: Specifies the delay between each step of FCC stepper algorithm.
+		If left unspecified, the default value is 1 Sec.
+
+- qcom,fcc-step-size-ua
+  Usage:      optional
+  Value type: <u32>
+  Definition: Specifies the step size of each step of FCC stepper algorithm.
+		If left unspecified, the default value is 100mA.
+
+- qcom,hvdcp3-max-icl-ua
+  Usage:      optional
+  Value type: <u32>
+  Definition: Specifies the maximum input current limit that can be configured
+		for HVDCP3 adapter.
+		If left unspecified, the default value is 3000mA.
+
+- qcom,hvdcp3-standalone-config
+  Usage:      optional
+  Value type: bool
+  Definition: Boolean flag which when present indicates that the charging is
+		only done by the main charger (standalone, no CP) with a QC 3.0
+		adapter.
+
+- qcom,disable-fcc-restriction
+  Usage:      optional
+  Value type: bool
+  Definition: Boolean flag which when present disables FCC restriction.
+
 =============================================
 Second Level Nodes - SMB5 Charger Peripherals
 =============================================

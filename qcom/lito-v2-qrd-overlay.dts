@@ -2,6 +2,7 @@
 /plugin/;
 
 #include "lito-qrd.dtsi"
+#include "lito-v2-audio.dtsi"
 
 / {
 	model = "Qualcomm Technologies, Inc. Lito v2 QRD";

@@ -1809,24 +1809,6 @@
 		qcom,instance-type = "ufs";
 	};
 
-	ufsphy_mem: ufsphy_mem@1d87000 {
-		reg = <0x1d87000 0xe00>; /* PHY regs */
-		reg-names = "phy_mem";
-		#phy-cells = <0>;
-		ufs-qcom-crypto = <&ufs_ice>;
-
-		lanes-per-direction = <2>;
-
-		clock-names = "ref_clk_src",
-			"ref_clk",
-			"ref_aux_clk";
-		clocks = <&rpmhcc RPMH_CXO_CLK>,
-			<&gcc GCC_UFS_1X_CLKREF_CLK>,
-			<&gcc GCC_UFS_PHY_PHY_AUX_CLK>;
-
-		status = "disabled";
-	};
-
 	ufshc_mem: ufshc@1d84000 {
 		compatible = "qcom,ufshc";
 		reg = <0x1d84000 0x3000>;
@@ -1937,6 +1919,7 @@
 		resets = <&gcc GCC_UFS_PHY_BCR>;
 		reset-names = "core_reset";
 		non-removable;
+		scsi-cmd-timeout = <10>;
 
 		status = "disabled";
 	};
@@ -2142,6 +2125,9 @@
 				  <SLEEP_TCS   3>,
 				  <WAKE_TCS    3>,
 				  <CONTROL_TCS 1>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
 
 		system_pm {
 			compatible = "qcom,system-pm";
@@ -2155,6 +2141,23 @@
 		msm_bus_apps_rsc {
 			compatible = "qcom,msm-bus-rsc";
 			qcom,msm-bus-id = <MSM_BUS_RSC_APPS>;
+		};
+
+		ufsphy_mem: ufsphy_mem@1d87000 {
+			reg = <0x1d87000 0xe00>; /* PHY regs */
+			reg-names = "phy_mem";
+			#phy-cells = <0>;
+			ufs-qcom-crypto = <&ufs_ice>;
+
+			lanes-per-direction = <2>;
+			qcom,rpmh-resource-name = "qphy.lvl";
+
+			clock-names = "ref_clk_src",
+				"ref_clk",
+				"ref_aux_clk";
+			clocks = <&rpmhcc RPMH_CXO_CLK>,
+				<&gcc GCC_UFS_1X_CLKREF_CLK>,
+				<&gcc GCC_UFS_PHY_PHY_AUX_CLK>;
 		};
 	};
 
@@ -3632,14 +3635,14 @@
 		<MSM_BUS_MASTER_LLCC MSM_BUS_SLAVE_EBI_CH0 150000 700000>,
 		<MSM_BUS_MASTER_IPA MSM_BUS_SLAVE_OCIMEM 75000 700000>,
 		<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_IPA_CFG 0 76800>,
-		<MSM_BUS_MASTER_IPA_CORE MSM_BUS_SLAVE_IPA_CORE 0 150>,
+		<MSM_BUS_MASTER_IPA_CORE MSM_BUS_SLAVE_IPA_CORE 0 100>,
 
 		/* SVS */
 		<MSM_BUS_MASTER_IPA MSM_BUS_SLAVE_LLCC 625000 1200000>,
 		<MSM_BUS_MASTER_LLCC MSM_BUS_SLAVE_EBI_CH0 625000 1100000>,
 		<MSM_BUS_MASTER_IPA MSM_BUS_SLAVE_OCIMEM 312500 1500000>,
 		<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_IPA_CFG 0 150000>,
-		<MSM_BUS_MASTER_IPA_CORE MSM_BUS_SLAVE_IPA_CORE 0 260>,
+		<MSM_BUS_MASTER_IPA_CORE MSM_BUS_SLAVE_IPA_CORE 0 150>,
 
 		/* NOMINAL */
 		<MSM_BUS_MASTER_IPA MSM_BUS_SLAVE_LLCC 1250000 2400000>,
@@ -3725,8 +3728,10 @@
 		vdd-cx-mx-supply = <&L1A>;
 		vdd-1.8-xo-supply = <&L14A>;
 		vdd-1.3-rfa-supply = <&L2C>;
+		vdd-3.3-ch1-supply = <&L11C>;
 		vdd-3.3-ch0-supply = <&L10C>;
 		qcom,vdd-cx-mx-config = <0 0>;
+		qcom,vdd-3.3-ch1-config = <3000000 3312000>;
 		qcom,vdd-3.3-ch0-config = <3000000 3312000>;
 		qcom,smp2p_map_wlan_1_in {
 			interrupts-extended = <&smp2p_wlan_1_in 0 0>,

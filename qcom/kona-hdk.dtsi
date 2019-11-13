@@ -23,3 +23,123 @@
 &dwc1 {
 	dr_mode = "host";
 };
+
+&usb2_phy0 {
+	qcom,param-override-seq =
+		<0xc7 0x6c
+		0x03 0x70
+		0x03 0x74>;
+};
+
+&qupv3_se1_i2c {
+	status = "ok";
+	lt9611: lt,lt9611@2b {
+		compatible = "lt,lt9611uxc";
+		reg = <0x2b>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <1 0>;
+		interrupt-names = "lt_irq";
+		lt,irq-gpio = <&tlmm 1 0x0>;
+		lt,reset-gpio = <&tlmm 2 0x0>;
+		instance_id = <0>;
+		lt,non-pluggable;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&lt9611_pins>;
+
+		lt,preferred-mode = "1920x1080";
+
+		lt,customize-modes {
+			lt,customize-mode-id@0 {
+				lt,mode-h-active = <1920>;
+				lt,mode-h-front-porch = <88>;
+				lt,mode-h-pulse-width = <44>;
+				lt,mode-h-back-porch = <148>;
+				lt,mode-h-active-high;
+				lt,mode-v-active = <1080>;
+				lt,mode-v-front-porch = <4>;
+				lt,mode-v-pulse-width = <5>;
+				lt,mode-v-back-porch = <36>;
+				lt,mode-v-active-high;
+				lt,mode-refresh-rate = <60>;
+				lt,mode-clock-in-khz = <148500>;
+			};
+		};
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				lt9611_in: endpoint {
+					remote-endpoint = <&ext_dsi_out>;
+				};
+			};
+
+		};
+	};
+};
+
+&sde_dsi {
+	qcom,dsi-default-panel = <&dsi_ext_bridge_1080p>;
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			ext_dsi_out: endpoint {
+				remote-endpoint = <&lt9611_in>;
+			};
+		};
+	};
+};
+
+&extcon_storage_cd {
+	extcon-gpio = <&tlmm 77 GPIO_ACTIVE_LOW>;
+	debounce-ms = <200>;
+	irq-flags = <IRQ_TYPE_EDGE_BOTH>;
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&storage_cd>;
+
+	status = "ok";
+};
+
+&ufsphy_card {
+	compatible = "qcom,ufs-phy-qmp-v4-card";
+
+	vdda-phy-supply = <&pm8150_l5>; /* 0.88v */
+	vdda-phy-always-on;
+	vdda-pll-supply = <&pm8150_l9>; /* 1.2v */
+	vdda-phy-max-microamp = <87100>;
+	vdda-pll-max-microamp = <18300>;
+
+	status = "ok";
+};
+
+&ufshc_card {
+	vdd-hba-supply = <&ufs_card_gdsc>;
+	vdd-hba-fixed-regulator;
+	vcc-supply = <&pm8150a_l9>;
+	vcc-voltage-level = <2950000 2960000>;
+	vccq2-supply = <&pm8150_s4>;
+	vcc-max-microamp = <500000>;
+	vccq2-max-microamp = <400000>;
+
+	qcom,vddp-ref-clk-supply = <&pm8150_l6>;
+	qcom,vddp-ref-clk-max-microamp = <100>;
+
+	extcon = <&extcon_storage_cd>;
+
+	status = "ok";
+};
+
+&sdhc_2 {
+	pinctrl-0 = <&sdc2_clk_on  &sdc2_cmd_on &sdc2_data_on>;
+	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off>;
+
+	extcon = <&extcon_storage_cd>;
+};

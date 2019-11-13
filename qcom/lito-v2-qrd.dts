@@ -9,3 +9,7 @@
 	compatible = "qcom,lito-qrd", "qcom,lito", "qcom,qrd";
 	qcom,board-id = <11 0>;
 };
+
+&ufsphy_mem {
+	/delete-property/ vdda-phy-always-on;
+};
