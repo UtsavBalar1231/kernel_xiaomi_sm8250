@@ -189,6 +189,7 @@ enum frame_trigger_mode_type {
  * @state: current state of smmu context banks
  * @prev_state: previous state of smmu context banks
  * @secure_level: secure level cached from crtc
+ * @prev_secure_level: previous secure level
  * @transition_type: transition request type
  * @transition_error: whether there is error while transitioning the state
  */
@@ -196,6 +197,7 @@ struct sde_kms_smmu_state_data {
 	uint32_t state;
 	uint32_t prev_state;
 	uint32_t secure_level;
+	uint32_t prev_secure_level;
 	uint32_t transition_type;
 	uint32_t transition_error;
 	uint32_t sui_misr_state;
@@ -246,9 +248,8 @@ struct sde_kms {
 	struct dentry *debugfs_vbif;
 
 	/* io/register spaces: */
-	void __iomem *mmio, *vbif[VBIF_MAX], *reg_dma, *sid, *sw_fuse;
+	void __iomem *mmio, *vbif[VBIF_MAX], *reg_dma, *sid;
 	unsigned long mmio_len, vbif_len[VBIF_MAX], reg_dma_len, sid_len;
-	unsigned long sw_fuse_len;
 
 	struct regulator *vdd;
 	struct regulator *mmagic;
@@ -274,7 +275,6 @@ struct sde_kms {
 	struct sde_hw_mdp *hw_mdp;
 	struct sde_hw_uidle *hw_uidle;
 	struct sde_hw_sid *hw_sid;
-	struct sde_hw_sw_fuse *hw_sw_fuse;
 	int dsi_display_count;
 	void **dsi_displays;
 	int wb_display_count;

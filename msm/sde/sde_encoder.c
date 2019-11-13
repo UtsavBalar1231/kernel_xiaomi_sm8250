@@ -1769,6 +1769,9 @@ static void _sde_encoder_update_vsync_source(struct sde_encoder_virt *sde_enc,
 		else
 			vsync_source = sde_enc->te_source;
 
+		SDE_EVT32(DRMID(&sde_enc->base), vsync_source, is_dummy,
+				disp_info->is_te_using_watchdog_timer);
+
 		for (i = 0; i < sde_enc->num_phys_encs; i++) {
 			phys = sde_enc->phys_encs[i];
 
@@ -1825,7 +1828,8 @@ static void _sde_encoder_dsc_disable(struct sde_encoder_virt *sde_enc)
 	 */
 }
 
-static int _sde_encoder_switch_to_watchdog_vsync(struct drm_encoder *drm_enc)
+int sde_encoder_helper_switch_vsync(struct drm_encoder *drm_enc,
+	 bool watchdog_te)
 {
 	struct sde_encoder_virt *sde_enc;
 	struct msm_display_info disp_info;
@@ -1840,7 +1844,7 @@ static int _sde_encoder_switch_to_watchdog_vsync(struct drm_encoder *drm_enc)
 	sde_encoder_control_te(drm_enc, false);
 
 	memcpy(&disp_info, &sde_enc->disp_info, sizeof(disp_info));
-	disp_info.is_te_using_watchdog_timer = true;
+	disp_info.is_te_using_watchdog_timer = watchdog_te;
 	_sde_encoder_update_vsync_source(sde_enc, &disp_info, false);
 
 	sde_encoder_control_te(drm_enc, true);
@@ -1901,7 +1905,7 @@ static int _sde_encoder_rsc_client_update_vsync_wait(
 			 * by generating the vsync from watchdog timer.
 			 */
 			if (crtc->base.id == wait_vblank_crtc_id)
-				_sde_encoder_switch_to_watchdog_vsync(drm_enc);
+				sde_encoder_helper_switch_vsync(drm_enc, true);
 		}
 	}
 
@@ -1924,11 +1928,13 @@ static int _sde_encoder_update_rsc_client(
 	struct drm_crtc *crtc;
 	enum sde_rsc_state rsc_state = SDE_RSC_IDLE_STATE;
 	struct sde_rsc_cmd_config *rsc_config;
-	int ret, prefill_lines;
+	int ret;
 	struct msm_display_info *disp_info;
 	struct msm_mode_info *mode_info;
 	int wait_vblank_crtc_id = SDE_RSC_INVALID_CRTC_ID;
-	u32 qsync_mode = 0;
+	u32 qsync_mode = 0, v_front_porch;
+	struct drm_display_mode *mode;
+	bool is_vid_mode;
 
 	if (!drm_enc || !drm_enc->dev) {
 		SDE_ERROR("invalid encoder arguments\n");
@@ -1973,17 +1979,31 @@ static int _sde_encoder_update_rsc_client(
 
 	SDE_EVT32(rsc_state, qsync_mode);
 
-	prefill_lines = mode_info->prefill_lines;
+	is_vid_mode = sde_encoder_check_curr_mode(&sde_enc->base,
+				MSM_DISPLAY_VIDEO_MODE);
+	mode = &sde_enc->crtc->state->mode;
+	v_front_porch = mode->vsync_start - mode->vdisplay;
 
 	/* compare specific items and reconfigure the rsc */
 	if ((rsc_config->fps != mode_info->frame_rate) ||
 	    (rsc_config->vtotal != mode_info->vtotal) ||
-	    (rsc_config->prefill_lines != prefill_lines) ||
+	    (rsc_config->prefill_lines != mode_info->prefill_lines) ||
 	    (rsc_config->jitter_numer != mode_info->jitter_numer) ||
 	    (rsc_config->jitter_denom != mode_info->jitter_denom)) {
+
 		rsc_config->fps = mode_info->frame_rate;
 		rsc_config->vtotal = mode_info->vtotal;
-		rsc_config->prefill_lines = prefill_lines;
+		/*
+		 * for video mode, prefill lines should not go beyond vertical
+		 * front porch for RSCC configuration. This will ensure bw
+		 * downvotes are not sent within the active region. Additional
+		 * -1 is to give one line time for rscc mode min_threshold.
+		 */
+		if (is_vid_mode && (mode_info->prefill_lines >= v_front_porch))
+			rsc_config->prefill_lines = v_front_porch - 1;
+		else
+			rsc_config->prefill_lines = mode_info->prefill_lines;
+
 		rsc_config->jitter_numer = mode_info->jitter_numer;
 		rsc_config->jitter_denom = mode_info->jitter_denom;
 		sde_enc->rsc_state_init = false;
@@ -2577,8 +2597,8 @@ static int _sde_encoder_rc_idle(struct drm_encoder *drm_enc,
 		SDE_EVT32(DRMID(drm_enc), sw_event, sde_enc->rc_state,
 				SDE_EVTLOG_ERROR);
 		goto end;
-	} else if (sde_crtc_frame_pending(sde_enc->crtc) > 1) {
-		SDE_ERROR_ENC(sde_enc, "skip idle entry");
+	} else if (sde_crtc_frame_pending(sde_enc->crtc)) {
+		SDE_DEBUG_ENC(sde_enc, "skip idle entry");
 		SDE_EVT32(DRMID(drm_enc), sw_event, sde_enc->rc_state,
 			sde_crtc_frame_pending(sde_enc->crtc),
 			SDE_EVTLOG_ERROR);
@@ -4699,11 +4719,6 @@ int sde_encoder_prepare_for_kickoff(struct drm_encoder *drm_enc,
 	SDE_DEBUG_ENC(sde_enc, "\n");
 	SDE_EVT32(DRMID(drm_enc));
 
-	/* update the qsync parameters for the current frame */
-	if (sde_enc->cur_master)
-		sde_connector_set_qsync_params(
-				sde_enc->cur_master->connector);
-
 	is_cmd_mode = sde_encoder_check_curr_mode(drm_enc,
 				MSM_DISPLAY_CMD_MODE);
 	if (sde_enc->cur_master && sde_enc->cur_master->connector
@@ -4956,7 +4971,7 @@ void sde_encoder_prepare_commit(struct drm_encoder *drm_enc)
 {
 	struct sde_encoder_virt *sde_enc;
 	struct sde_encoder_phys *phys;
-	int i;
+	int i, rc = 0;
 	struct sde_hw_ctl *ctl;
 
 	if (!drm_enc) {
@@ -4964,6 +4979,11 @@ void sde_encoder_prepare_commit(struct drm_encoder *drm_enc)
 		return;
 	}
 	sde_enc = to_sde_encoder_virt(drm_enc);
+
+	/* update the qsync parameters for the current frame */
+	if (sde_enc->cur_master)
+		sde_connector_set_qsync_params(
+				sde_enc->cur_master->connector);
 
 	for (i = 0; i < sde_enc->num_phys_encs; i++) {
 		phys = sde_enc->phys_encs[i];
@@ -4981,6 +5001,16 @@ void sde_encoder_prepare_commit(struct drm_encoder *drm_enc)
 					ctl->ops.clear_pending_flush)
 				ctl->ops.clear_pending_flush(ctl);
 		}
+	}
+
+	if (sde_enc->cur_master && sde_enc->cur_master->connector) {
+		rc = sde_connector_prepare_commit(
+				  sde_enc->cur_master->connector);
+		if (rc)
+			SDE_ERROR_ENC(sde_enc,
+				      "prepare commit failed conn %d rc %d\n",
+				      sde_enc->cur_master->connector->base.id,
+				      rc);
 	}
 }
 
@@ -5696,6 +5726,29 @@ int sde_encoder_wait_for_event(struct drm_encoder *drm_enc,
 	return ret;
 }
 
+void sde_encoder_helper_get_jitter_bounds_ns(struct drm_encoder *drm_enc,
+		u64 *l_bound, u64 *u_bound)
+{
+	struct sde_encoder_virt *sde_enc;
+	u64 jitter_ns, frametime_ns;
+	struct msm_mode_info *info;
+
+	if (!drm_enc) {
+		SDE_ERROR("invalid encoder\n");
+		return;
+	}
+
+	sde_enc = to_sde_encoder_virt(drm_enc);
+	info = &sde_enc->mode_info;
+
+	frametime_ns = (1 * 1000000000) / info->frame_rate;
+	jitter_ns =  info->jitter_numer * frametime_ns;
+	do_div(jitter_ns, info->jitter_denom * 100);
+
+	*l_bound = frametime_ns - jitter_ns;
+	*u_bound = frametime_ns + jitter_ns;
+}
+
 u32 sde_encoder_get_fps(struct drm_encoder *drm_enc)
 {
 	struct sde_encoder_virt *sde_enc;
@@ -5993,12 +6046,12 @@ int sde_encoder_display_failure_notification(struct drm_encoder *enc,
 		kthread_flush_work(&sde_enc->esd_trigger_work);
 	}
 
-	/**
+	/*
 	 * panel may stop generating te signal (vsync) during esd failure. rsc
 	 * hardware may hang without vsync. Avoid rsc hang by generating the
 	 * vsync from watchdog timer instead of panel.
 	 */
-	_sde_encoder_switch_to_watchdog_vsync(enc);
+	sde_encoder_helper_switch_vsync(enc, true);
 
 	if (!skip_pre_kickoff)
 		sde_encoder_wait_for_event(enc, MSM_ENC_TX_COMPLETE);

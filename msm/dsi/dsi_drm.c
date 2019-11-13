@@ -423,6 +423,15 @@ static bool dsi_bridge_mode_fixup(struct drm_bridge *bridge,
 			dsi_mode.dsi_mode_flags |= DSI_MODE_FLAG_DMS;
 	}
 
+	/* Reject seamless transition when active changed */
+	if (crtc_state->active_changed &&
+		((dsi_mode.dsi_mode_flags & DSI_MODE_FLAG_VRR) ||
+		(dsi_mode.dsi_mode_flags & DSI_MODE_FLAG_DYN_CLK))) {
+		DSI_ERR("seamless upon active changed 0x%x %d\n",
+			dsi_mode.dsi_mode_flags, crtc_state->active_changed);
+		return false;
+	}
+
 	/* convert back to drm mode, propagating the private info & flags */
 	dsi_convert_to_drm_mode(&dsi_mode, adjusted_mode);
 
@@ -799,6 +808,8 @@ int dsi_connector_get_modes(struct drm_connector *connector, void *data,
 	struct drm_display_mode drm_mode;
 	struct dsi_display *display = data;
 	struct edid edid;
+	u8 width_mm = connector->display_info.width_mm;
+	u8 height_mm = connector->display_info.height_mm;
 	const u8 edid_buf[EDID_LENGTH] = {
 		0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x44, 0x6D,
 		0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x1B, 0x10, 0x01, 0x03,
@@ -860,6 +871,14 @@ int dsi_connector_get_modes(struct drm_connector *connector, void *data,
 	rc =  drm_connector_update_edid_property(connector, &edid);
 	if (rc)
 		count = 0;
+	/*
+	 * DRM EDID structure maintains panel physical dimensions in
+	 * centimeters, we will be losing the precision anything below cm.
+	 * Changing DRM framework will effect other clients at this
+	 * moment, overriding the values back to millimeter.
+	 */
+	connector->display_info.width_mm = width_mm;
+	connector->display_info.height_mm = height_mm;
 end:
 	DSI_DEBUG("MODE COUNT =%d\n\n", count);
 	return count;
@@ -901,6 +920,17 @@ int dsi_conn_pre_kickoff(struct drm_connector *connector,
 	return dsi_display_pre_kickoff(connector, display, params);
 }
 
+int dsi_conn_prepare_commit(void *display,
+		struct msm_display_conn_params *params)
+{
+	if (!display || !params) {
+		pr_err("Invalid params\n");
+		return -EINVAL;
+	}
+
+	return dsi_display_pre_commit(display, params);
+}
+
 void dsi_conn_enable_event(struct drm_connector *connector,
 		uint32_t event_idx, bool enable, void *display)
 {
@@ -915,7 +945,8 @@ void dsi_conn_enable_event(struct drm_connector *connector,
 			event_idx, &event_info, enable);
 }
 
-int dsi_conn_post_kickoff(struct drm_connector *connector)
+int dsi_conn_post_kickoff(struct drm_connector *connector,
+	struct msm_display_conn_params *params)
 {
 	struct drm_encoder *encoder;
 	struct dsi_bridge *c_bridge;
@@ -923,6 +954,7 @@ int dsi_conn_post_kickoff(struct drm_connector *connector)
 	struct dsi_display *display;
 	struct dsi_display_ctrl *m_ctrl, *ctrl;
 	int i, rc = 0;
+	bool enable;
 
 	if (!connector || !connector->state) {
 		DSI_ERR("invalid connector or connector state\n");
@@ -967,6 +999,12 @@ int dsi_conn_post_kickoff(struct drm_connector *connector)
 
 	/* ensure dynamic clk switch flag is reset */
 	c_bridge->dsi_mode.dsi_mode_flags &= ~DSI_MODE_FLAG_DYN_CLK;
+
+	if (params->qsync_update) {
+		enable = (params->qsync_mode > 0) ? true : false;
+		display_for_each_ctrl(i, display)
+			dsi_ctrl_setup_avr(display->ctrl[i].ctrl, enable);
+	}
 
 	return 0;
 }
