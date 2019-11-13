@@ -24,6 +24,7 @@
 		qcom,use-pdc-interrupts;
 
 		USB3_GDSC-supply = <&usb30_prim_gdsc>;
+		qcom,gdsc-collapse-in-host-suspend;
 		dpdm-supply = <&usb2_phy0>;
 		clocks = <&gcc GCC_USB30_PRIM_MASTER_CLK>,
 			<&gcc GCC_CFG_NOC_USB3_PRIM_AXI_CLK>,
