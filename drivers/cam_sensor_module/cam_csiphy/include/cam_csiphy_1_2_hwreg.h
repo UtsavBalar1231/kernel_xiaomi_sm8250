@@ -13,7 +13,7 @@ struct csiphy_reg_parms_t csiphy_v1_2 = {
 	.mipi_csiphy_interrupt_clear0_addr = 0x858,
 	.mipi_csiphy_glbl_irq_cmd_addr = 0x828,
 	.csiphy_common_array_size = 6,
-	.csiphy_reset_array_size = 4,
+	.csiphy_reset_array_size = 5,
 	.csiphy_2ph_config_array_size = 18,
 	.csiphy_3ph_config_array_size = 33,
 	.csiphy_2ph_clock_lane = 0x1,
@@ -33,6 +33,7 @@ struct csiphy_reg_t csiphy_reset_reg_1_2[] = {
 	{0x0814, 0x00, 0x05, CSIPHY_LANE_ENABLE},
 	{0x0818, 0x00, 0x00, CSIPHY_DEFAULT_PARAMS},
 	{0x081C, 0x00, 0x00, CSIPHY_DEFAULT_PARAMS},
+	{0x0800, 0x01, 0x01, CSIPHY_DEFAULT_PARAMS},
 	{0x0800, 0x00, 0x00, CSIPHY_DEFAULT_PARAMS},
 };
 
