@@ -6,11 +6,6 @@
 #include "msm_vidc_bus.h"
 #include "msm_vidc_internal.h"
 
-static unsigned long __calculate_vpe(struct vidc_bus_vote_data *d)
-{
-	return 0;
-}
-
 static unsigned long __calculate_encoder(struct vidc_bus_vote_data *d)
 {
 	/* Encoder Parameters */
@@ -274,9 +269,6 @@ static unsigned long __calculate(struct vidc_bus_vote_data *d)
 	unsigned long value = 0;
 
 	switch (d->domain) {
-	case HAL_VIDEO_DOMAIN_VPE:
-		value = __calculate_vpe(d);
-		break;
 	case HAL_VIDEO_DOMAIN_ENCODER:
 		value = __calculate_encoder(d);
 		break;

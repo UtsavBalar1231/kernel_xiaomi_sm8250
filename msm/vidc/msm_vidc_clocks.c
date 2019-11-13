@@ -32,6 +32,14 @@ struct msm_vidc_core_ops core_ops_ar50 = {
 	.calc_bw = NULL,
 };
 
+struct msm_vidc_core_ops core_ops_ar50lt = {
+	.calc_freq = msm_vidc_calc_freq_ar50,
+	.decide_work_route = NULL,
+	.decide_work_mode = msm_vidc_decide_work_mode_ar50,
+	.decide_core_and_power_mode = NULL,
+	.calc_bw = calc_bw_ar50lt,
+};
+
 struct msm_vidc_core_ops core_ops_iris1 = {
 	.calc_freq = msm_vidc_calc_freq_iris1,
 	.decide_work_route = msm_vidc_decide_work_route_iris1,
@@ -1701,8 +1709,10 @@ void msm_vidc_init_core_clk_ops(struct msm_vidc_core *core)
 
 	vpu = core->platform_data->vpu_ver;
 
-	if (vpu == VPU_VERSION_AR50 || vpu == VPU_VERSION_AR50_LITE)
+	if (vpu == VPU_VERSION_AR50)
 		core->core_ops = &core_ops_ar50;
+	else if (vpu == VPU_VERSION_AR50_LITE)
+		core->core_ops = &core_ops_ar50lt;
 	else if (vpu == VPU_VERSION_IRIS1)
 		core->core_ops = &core_ops_iris1;
 	else
