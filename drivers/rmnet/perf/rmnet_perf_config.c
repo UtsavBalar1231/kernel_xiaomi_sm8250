@@ -55,18 +55,30 @@ rmnet_perf_config_alloc_64k_buffs(struct rmnet_perf *perf)
 {
 	int i;
 	struct sk_buff *skbn;
-	struct rmnet_perf_core_64k_buff_pool *pool = perf->core_meta->buff_pool;
 	enum rmnet_perf_resource_management_e return_val;
+	struct rmnet_perf_core_64k_buff_pool *pool = perf->core_meta->buff_pool;
 
 	return_val = RMNET_PERF_RESOURCE_MGMT_SUCCESS;
-
+	memset(pool, 0, sizeof(struct rmnet_perf_core_64k_buff_pool));
+	pool->index = 0;
 	for (i = 0; i < RMNET_PERF_NUM_64K_BUFFS; i++) {
 		skbn = alloc_skb(RMNET_PERF_CORE_RECYCLE_SKB_SIZE, GFP_ATOMIC);
-		if (!skbn)
+		if (!skbn) {
+			int j;
+
 			return_val = RMNET_PERF_RESOURCE_MGMT_FAIL;
+			/* If one skb fails to allocate, dont use feature */
+			for (j = i - 1; j >= 0; j--) {
+				if (pool->available[j]) {
+					kfree_skb(pool->available[j]);
+					pool->available[j] = NULL;
+				}
+			}
+			return return_val;
+		}
 		pool->available[i] = skbn;
 	}
-	pool->index = 0;
+
 	return return_val;
 }
 
@@ -89,11 +101,14 @@ static void rmnet_perf_config_free_64k_buffs(struct rmnet_perf *perf)
 	/* Free both busy and available because if its truly busy,
 	 * we will simply decrement the users count... This means NW stack
 	 * will still have opportunity to process the packet as it wishes
-	 * and will naturally free the sk_buff when it is done
+	 * and will naturally free the sk_buff when it is done. Available[0]
+	 * being not null means that all indexes of available are filled by
+	 * SKBs from module initialization
 	 */
-
-	for (i = 0; i < RMNET_PERF_NUM_64K_BUFFS; i++)
-		kfree_skb(buff_pool->available[i]);
+	if (buff_pool->available[0]) {
+		for (i = 0; i < RMNET_PERF_NUM_64K_BUFFS; i++)
+			kfree_skb(buff_pool->available[i]);
+	}
 }
 
 /* rmnet_perf_config_free_resources() - on rmnet teardown free all the
@@ -170,10 +185,10 @@ static int rmnet_perf_config_allocate_resources(struct rmnet_perf **perf)
 
 	/* allocate all the memory in one chunk for cache coherency sake */
 	buffer_head = kmalloc(total_size, GFP_KERNEL);
+	*perf = buffer_head;
 	if (!buffer_head)
 		return RMNET_PERF_RESOURCE_MGMT_FAIL;
 
-	*perf = buffer_head;
 	local_perf = *perf;
 	buffer_head += perf_size;
 
@@ -216,6 +231,7 @@ static int rmnet_perf_config_allocate_resources(struct rmnet_perf **perf)
 	core_meta->bm_state->curr_seq = 0;
 	core_meta->bm_state->expect_packets = 0;
 	core_meta->bm_state->wait_for_start = true;
+	core_meta->bm_state->callbacks_valid = false;
 	buffer_head += bm_state_size;
 
 	return RMNET_PERF_RESOURCE_MGMT_SUCCESS;
@@ -233,6 +249,7 @@ rmnet_perf_config_register_callbacks(struct net_device *dev,
 	perf->core_meta->dev = dev;
 	/* register for DL marker */
 	dl_ind = kzalloc(sizeof(struct rmnet_map_dl_ind), GFP_ATOMIC);
+	perf->core_meta->dl_ind = dl_ind;
 	if (dl_ind) {
 		dl_ind->priority = RMNET_PERF;
 		if (port->data_format & RMNET_INGRESS_FORMAT_DL_MARKER_V2) {
@@ -246,10 +263,11 @@ rmnet_perf_config_register_callbacks(struct net_device *dev,
 			dl_ind->dl_trl_handler =
 				&rmnet_perf_core_handle_map_control_end;
 		}
-		perf->core_meta->dl_ind = dl_ind;
+
 		if (rmnet_map_dl_ind_register(port, dl_ind)) {
 			kfree(dl_ind);
 			pr_err("%s(): Failed to register dl_ind\n", __func__);
+			perf->core_meta->dl_ind = NULL;
 			rc = RMNET_PERF_RESOURCE_MGMT_FAIL;
 		}
 	} else {
@@ -259,19 +277,23 @@ rmnet_perf_config_register_callbacks(struct net_device *dev,
 
 	/* register for PS mode indications */
 	ps_ind = kzalloc(sizeof(struct qmi_rmnet_ps_ind), GFP_ATOMIC);
+	perf->core_meta->ps_ind = ps_ind;
 	if (ps_ind) {
 		ps_ind->ps_on_handler = &rmnet_perf_core_ps_on;
 		ps_ind->ps_off_handler = &rmnet_perf_core_ps_off;
-		perf->core_meta->ps_ind = ps_ind;
 		if (qmi_rmnet_ps_ind_register(port, ps_ind)) {
 			kfree(ps_ind);
 			rc = RMNET_PERF_RESOURCE_MGMT_FAIL;
+			perf->core_meta->ps_ind = NULL;
 			pr_err("%s(): Failed to register ps_ind\n", __func__);
 		}
 	} else {
 		rc = RMNET_PERF_RESOURCE_MGMT_FAIL;
 		pr_err("%s(): Failed to allocate ps_ind\n", __func__);
 	}
+
+	if (rc == RMNET_PERF_RESOURCE_MGMT_SUCCESS)
+		perf->core_meta->bm_state->callbacks_valid = true;
 
 	return rc;
 }
@@ -297,9 +319,11 @@ static int rmnet_perf_netdev_up(struct net_device *real_dev,
 	 */
 	rc = rmnet_perf_config_alloc_64k_buffs(perf);
 	if (rc == RMNET_PERF_RESOURCE_MGMT_FAIL) {
+		/* Since recycling buffers isnt a feature we use, refrain
+		 * from returning with a return failure status
+		 */
 		pr_err("%s(): Failed to allocate 64k buffers for recycling\n",
 		       __func__);
-		return RMNET_PERF_RESOURCE_MGMT_SEMI_FAIL;
 	}
 
 	rc = rmnet_perf_config_register_callbacks(real_dev, port);
@@ -411,8 +435,7 @@ static int rmnet_perf_config_notify_cb(struct notifier_block *nb,
 				goto exit;
 			} else if (return_val ==
 				   RMNET_PERF_RESOURCE_MGMT_SEMI_FAIL) {
-				pr_err("%s(): rmnet_perf recycle buffer "
-				       "allocation or callback registry "
+				pr_err("%s(): rmnet_perf callback registry "
 				       "failed. Continue without them\n",
 					__func__);
 			}

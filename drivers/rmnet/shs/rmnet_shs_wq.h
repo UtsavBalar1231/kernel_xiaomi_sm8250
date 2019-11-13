@@ -32,8 +32,7 @@
 
 struct rmnet_shs_wq_ep_s {
 	struct list_head ep_list_id;
-	struct rmnet_endpoint *ep;
-	struct net_device *netdev;
+	struct net_device *ep;
 	int  new_lo_core[MAX_CPUS];
 	int  new_hi_core[MAX_CPUS];
 	u16 default_core_msk;
@@ -133,7 +132,6 @@ struct rmnet_shs_wq_rx_flow_s {
 
 struct rmnet_shs_delay_wq_s {
 	struct delayed_work wq;
-	struct net_device *netdev;
 };
 
 
@@ -214,6 +212,8 @@ void rmnet_shs_wq_exit(void);
 void rmnet_shs_wq_restart(void);
 void rmnet_shs_wq_pause(void);
 
+void rmnet_shs_update_cfg_mask(void);
+
 u64 rmnet_shs_wq_get_max_pps_among_cores(u32 core_msk);
 void rmnet_shs_wq_create_new_flow(struct rmnet_shs_skbn_s *node_p);
 int rmnet_shs_wq_get_least_utilized_core(u16 core_msk);
@@ -221,9 +221,9 @@ int rmnet_shs_wq_get_lpwr_cpu_new_flow(struct net_device *dev);
 int rmnet_shs_wq_get_perf_cpu_new_flow(struct net_device *dev);
 u64 rmnet_shs_wq_get_max_allowed_pps(u16 cpu);
 void rmnet_shs_wq_inc_cpu_flow(u16 cpu);
-u32 rmnet_shs_wq_get_dev_rps_msk(struct net_device *dev);
 void rmnet_shs_wq_dec_cpu_flow(u16 cpu);
 void rmnet_shs_hstat_tbl_delete(void);
 void rmnet_shs_wq_set_ep_active(struct net_device *dev);
 void rmnet_shs_wq_reset_ep_active(struct net_device *dev);
+void rmnet_shs_wq_refresh_new_flow_list(void);
 #endif /*_RMNET_SHS_WQ_H_*/
