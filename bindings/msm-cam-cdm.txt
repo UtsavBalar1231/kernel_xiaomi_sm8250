@@ -54,8 +54,10 @@ to CDM interface node.
 - compatible
   Usage: required
   Value type: <string>
-  Definition: Should be "qcom,cam480-cpas-cdm0", "qcom,cam480-cpas-cdm1"
-              "qcom,cam170-cpas-cdm0" or "qcom,cam480-cpas-cdm2".
+  Definition: Should be "qcom,cam170-cpas-cdm0", "qcom,cam480-cpas-cdm0",
+	"qcom,cam480-cpas-cdm1", "qcom,cam480-cpas-cdm2", "qcom,cam-cpas-cdm1_0",
+	"qcom,cam-cpas-cdm1_1", "qcom,cam-cpas-cdm1_2", "qcom,cam-ife-cdm1_2",
+	"qcom,cam-cpas-cdm2_0" or "qcom,cam-ope-cdm2_0"
 
 - label
   Usage: required
@@ -128,7 +130,7 @@ to CDM interface node.
 Example:
 	qcom,cpas-cdm0@ac48000 {
 		cell-index = <0>;
-		compatible = "qcom,cam480-cpas-cdm0";
+		compatible = "qcom,cam170-cpas-cdm0";
 		label = "cpas-cdm0";
 		reg = <0xac48000 0x1000>;
 		reg-names = "cpas-cdm";
