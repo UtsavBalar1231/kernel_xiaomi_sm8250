@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_REQ_MGR_TIMER_H_
@@ -12,16 +12,18 @@
 #include "cam_req_mgr_core_defs.h"
 
 /** struct cam_req_mgr_timer
- * @expires   : timeout value for timer
- * @sys_timer : system timer variable
- * @parent    : priv data - link pointer
- * @timer_cb  : callback func which will be called when timeout expires
+ * @expires      : timeout value for timer
+ * @sys_timer    : system timer variable
+ * @parent       : priv data - link pointer
+ * @timer_cb     : callback func which will be called when timeout expires
+ * @pause_timer  : flag to pause SOF timer
  */
 struct cam_req_mgr_timer {
 	int32_t            expires;
 	struct timer_list  sys_timer;
 	void               *parent;
 	void               (*timer_cb)(struct timer_list *timer_data);
+	bool                pause_timer;
 };
 
 /**
