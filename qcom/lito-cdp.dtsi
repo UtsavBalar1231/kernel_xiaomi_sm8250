@@ -543,7 +543,3 @@
 	qcom,dsi-default-panel = <&dsi_sw43404_amoled_video>;
 };
 
-&qupv3_se9_i2c {
-	/* Multi-ee usecase */
-	qcom,shared;
-};

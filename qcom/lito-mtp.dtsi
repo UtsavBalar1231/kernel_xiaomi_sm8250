@@ -336,8 +336,3 @@
 	qcom,platform-reset-gpio = <&pm8150l_gpios 3 0>;
 };
 
-&qupv3_se9_i2c {
-	/* Multi-ee usecase */
-	qcom,shared;
-};
-
