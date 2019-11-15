@@ -1195,6 +1195,7 @@ static int cam_ife_csid_enable_hw(struct cam_ife_csid_hw  *csid_hw)
 	struct cam_hw_soc_info                 *soc_info;
 	uint32_t                               i, val;
 	int                                    clk_lvl;
+	unsigned long                          flags;
 
 	csid_reg = csid_hw->csid_info->csid_reg;
 	soc_info = &csid_hw->hw_info->soc_info;
@@ -1274,6 +1275,10 @@ static int cam_ife_csid_enable_hw(struct cam_ife_csid_hw  *csid_hw)
 			csid_reg->cmn_reg->csid_hw_version_addr);
 	CAM_DBG(CAM_ISP, "CSID:%d CSID HW version: 0x%x",
 		csid_hw->hw_intf->hw_idx, val);
+
+	spin_lock_irqsave(&csid_hw->lock_state, flags);
+	csid_hw->device_enabled = 1;
+	spin_unlock_irqrestore(&csid_hw->lock_state, flags);
 
 	return 0;
 
@@ -3273,7 +3278,6 @@ int cam_ife_csid_init_hw(void *hw_priv,
 	struct cam_hw_info                     *csid_hw_info;
 	struct cam_isp_resource_node           *res;
 	const struct cam_ife_csid_reg_offset   *csid_reg;
-	unsigned long                           flags;
 
 	if (!hw_priv || !init_args ||
 		(arg_size != sizeof(struct cam_isp_resource_node))) {
@@ -3354,9 +3358,6 @@ int cam_ife_csid_init_hw(void *hw_priv,
 	if (rc)
 		cam_ife_csid_disable_hw(csid_hw);
 
-	spin_lock_irqsave(&csid_hw->lock_state, flags);
-	csid_hw->device_enabled = 1;
-	spin_unlock_irqrestore(&csid_hw->lock_state, flags);
 end:
 	mutex_unlock(&csid_hw->hw_info->hw_mutex);
 	return rc;
