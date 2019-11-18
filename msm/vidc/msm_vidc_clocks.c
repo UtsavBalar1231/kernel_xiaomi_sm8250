@@ -974,11 +974,8 @@ int msm_comm_scale_clocks(struct msm_vidc_inst *inst)
 		if (temp->vvb.vb2_buf.type == INPUT_MPLANE) {
 			filled_len = max(filled_len,
 				temp->vvb.vb2_buf.planes[0].bytesused);
-			if (inst->session_type == MSM_VIDC_ENCODER &&
-				(temp->vvb.flags &
-				 V4L2_BUF_FLAG_PERF_MODE)) {
+			if (temp->vvb.flags & V4L2_BUF_FLAG_PERF_MODE)
 				is_turbo = true;
-			}
 			device_addr = temp->smem[0].device_addr;
 		}
 	}
@@ -989,7 +986,8 @@ int msm_comm_scale_clocks(struct msm_vidc_inst *inst)
 		return 0;
 	}
 
-	if (inst->clk_data.buffer_counter < DCVS_FTB_WINDOW || is_turbo) {
+	if (inst->clk_data.buffer_counter < DCVS_FTB_WINDOW || is_turbo ||
+		is_turbo_session(inst)) {
 		inst->clk_data.min_freq =
 				msm_vidc_max_freq(inst->core, inst->sid);
 		inst->clk_data.dcvs_flags = 0;
