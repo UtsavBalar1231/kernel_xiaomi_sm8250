@@ -2554,6 +2554,10 @@
 		qcom,pil-force-shutdown;
 		memory-region = <&pil_ipa_fw_mem>;
 	};
+
+	qcom,demux {
+		compatible = "qcom,demux";
+	};
 };
 
 #include "bengal-gdsc.dtsi"
