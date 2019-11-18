@@ -554,7 +554,7 @@ int32_t cam_actuator_i2c_pkt_parse(struct cam_actuator_ctrl_t *a_ctrl,
 				rc = cam_sensor_i2c_command_parser(
 					&a_ctrl->io_master_info,
 					i2c_reg_settings,
-					&cmd_desc[i], 1);
+					&cmd_desc[i], 1, NULL);
 				if (rc < 0) {
 					CAM_ERR(CAM_ACTUATOR,
 					"Failed:parse init settings: %d",
@@ -612,7 +612,7 @@ int32_t cam_actuator_i2c_pkt_parse(struct cam_actuator_ctrl_t *a_ctrl,
 		rc = cam_sensor_i2c_command_parser(
 			&a_ctrl->io_master_info,
 			i2c_reg_settings,
-			cmd_desc, 1);
+			cmd_desc, 1, NULL);
 		if (rc < 0) {
 			CAM_ERR(CAM_ACTUATOR,
 				"Auto move lens parsing failed: %d", rc);
@@ -643,7 +643,7 @@ int32_t cam_actuator_i2c_pkt_parse(struct cam_actuator_ctrl_t *a_ctrl,
 		rc = cam_sensor_i2c_command_parser(
 			&a_ctrl->io_master_info,
 			i2c_reg_settings,
-			cmd_desc, 1);
+			cmd_desc, 1, NULL);
 		if (rc < 0) {
 			CAM_ERR(CAM_ACTUATOR,
 				"Manual move lens parsing failed: %d", rc);
@@ -662,6 +662,68 @@ int32_t cam_actuator_i2c_pkt_parse(struct cam_actuator_ctrl_t *a_ctrl,
 		}
 		cam_actuator_update_req_mgr(a_ctrl, csl_packet);
 		break;
+	case CAM_ACTUATOR_PACKET_OPCODE_READ: {
+		struct cam_buf_io_cfg *io_cfg;
+		struct i2c_settings_array i2c_read_settings;
+
+		if (a_ctrl->cam_act_state < CAM_ACTUATOR_CONFIG) {
+			rc = -EINVAL;
+			CAM_WARN(CAM_ACTUATOR,
+				"Not in right state to read actuator: %d",
+				a_ctrl->cam_act_state);
+			goto end;
+		}
+		CAM_DBG(CAM_ACTUATOR, "number of I/O configs: %d:",
+			csl_packet->num_io_configs);
+		if (csl_packet->num_io_configs == 0) {
+			CAM_ERR(CAM_ACTUATOR, "No I/O configs to process");
+			rc = -EINVAL;
+			goto end;
+		}
+
+		INIT_LIST_HEAD(&(i2c_read_settings.list_head));
+
+		io_cfg = (struct cam_buf_io_cfg *) ((uint8_t *)
+			&csl_packet->payload +
+			csl_packet->io_configs_offset);
+
+		if (io_cfg == NULL) {
+			CAM_ERR(CAM_ACTUATOR, "I/O config is invalid(NULL)");
+			rc = -EINVAL;
+			goto end;
+		}
+
+		offset = (uint32_t *)&csl_packet->payload;
+		offset += (csl_packet->cmd_buf_offset / sizeof(uint32_t));
+		cmd_desc = (struct cam_cmd_buf_desc *)(offset);
+		i2c_read_settings.is_settings_valid = 1;
+		i2c_read_settings.request_id = 0;
+		rc = cam_sensor_i2c_command_parser(&a_ctrl->io_master_info,
+			&i2c_read_settings,
+			cmd_desc, 1, io_cfg);
+		if (rc < 0) {
+			CAM_ERR(CAM_ACTUATOR,
+				"actuator read pkt parsing failed: %d", rc);
+			goto end;
+		}
+
+		rc = cam_sensor_i2c_read_data(
+			&i2c_read_settings,
+			&a_ctrl->io_master_info);
+		if (rc < 0) {
+			CAM_ERR(CAM_ACTUATOR, "cannot read data, rc:%d", rc);
+			delete_request(&i2c_read_settings);
+			goto end;
+		}
+
+		rc = delete_request(&i2c_read_settings);
+		if (rc < 0) {
+			CAM_ERR(CAM_ACTUATOR,
+				"Failed in deleting the read settings");
+			goto end;
+		}
+		break;
+		}
 	default:
 		CAM_ERR(CAM_ACTUATOR, "Wrong Opcode: %d",
 			csl_packet->header.op_code & 0xFFFFFF);

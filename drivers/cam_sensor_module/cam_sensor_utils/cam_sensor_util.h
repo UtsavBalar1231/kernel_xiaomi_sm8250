@@ -30,10 +30,15 @@ int msm_camera_pinctrl_init
 
 int cam_sensor_i2c_command_parser(struct camera_io_master *io_master,
 	struct i2c_settings_array *i2c_reg_settings,
-	struct cam_cmd_buf_desc *cmd_desc, int32_t num_cmd_buffers);
+	struct cam_cmd_buf_desc *cmd_desc, int32_t num_cmd_buffers,
+	struct cam_buf_io_cfg *io_cfg);
 
 int cam_sensor_util_i2c_apply_setting(struct camera_io_master *io_master_info,
 	struct i2c_settings_list *i2c_list);
+
+int32_t cam_sensor_i2c_read_data(
+	struct i2c_settings_array *i2c_settings,
+	struct camera_io_master *io_master_info);
 
 int32_t delete_request(struct i2c_settings_array *i2c_array);
 int cam_sensor_util_request_gpio_table(
