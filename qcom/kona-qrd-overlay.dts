@@ -13,7 +13,3 @@
 	compatible = "qcom,kona-qrd", "qcom,kona", "qcom,qrd";
 	qcom,board-id = <11 0>;
 };
-
-&sdhc_2 {
-	cd-gpios = <&tlmm 77 GPIO_ACTIVE_LOW>;
-};
