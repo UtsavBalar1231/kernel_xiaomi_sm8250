@@ -800,8 +800,8 @@
 		};
 
 		timing@12 { /* 5k */
-			qcom,mdss-dsi-panel-phy-timings = [00 46 13 14 33 30 12
-				14 0e 02 04 00 37 22];
+			qcom,mdss-dsi-panel-phy-timings = [00 1a 07 06 22 21 07
+				07 04 02 04 00 16 16];
 			qcom,display-topology = <2 2 2>;
 			qcom,default-topology-index = <0>;
 		};
