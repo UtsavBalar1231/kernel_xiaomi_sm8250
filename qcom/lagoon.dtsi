@@ -2779,3 +2779,200 @@
 };
 #include "lagoon-bus.dtsi"
 #include "lagoon-thermal.dtsi"
+
+&pm7250b_vadc {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	charger_skin_therm {
+		reg = <ADC_AMUX_THM1_PU2>;
+		label = "charger_skin_therm";
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+		qcom,pre-scaling = <1 1>;
+	};
+
+	conn_therm {
+		reg = <ADC_AMUX_THM3_PU2>;
+		label = "conn_therm";
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+		qcom,pre-scaling = <1 1>;
+	};
+};
+
+&pm7250b_adc_tm {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	io-channels = <&pm7250b_vadc ADC_AMUX_THM1_PU2>,
+			<&pm7250b_vadc ADC_AMUX_THM3_PU2>;
+
+	/* Channel nodes */
+	charger_skin_therm {
+		reg = <ADC_AMUX_THM1_PU2>;
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+	};
+
+	conn_therm {
+		reg = <ADC_AMUX_THM3_PU2>;
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+	};
+};
+
+&pm6150l_vadc {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-names = "default";
+	pinctrl-0 = <
+			&rfc_cam_therm_default
+			&rear_cam_flash_therm_default
+			&quiet_therm_default
+	>;
+
+	pa_therm2 {
+		reg = <ADC_AMUX_THM1_PU2>;
+		label = "pa_therm2";
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+		qcom,pre-scaling = <1 1>;
+	};
+
+	msm_therm {
+		reg = <ADC_AMUX_THM2_PU2>;
+		label = "msm_therm";
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+		qcom,pre-scaling = <1 1>;
+	};
+
+	pa_therm1 {
+		reg = <ADC_AMUX_THM3_PU2>;
+		label = "pa_therm1";
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+		qcom,pre-scaling = <1 1>;
+	};
+
+	rfc_cam_therm {
+		reg = <ADC_GPIO2_PU2>;
+		label = "_therm";
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+		qcom,pre-scaling = <1 1>;
+	};
+
+	rear_cam_flash_therm {
+		reg = <ADC_GPIO3_PU2>;
+		label = "_therm";
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+		qcom,pre-scaling = <1 1>;
+	};
+
+	quiet_therm {
+		reg = <ADC_GPIO4_PU2>;
+		label = "_therm";
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+		qcom,pre-scaling = <1 1>;
+	};
+};
+
+&pm6150l_gpios {
+	rfc_cam_therm {
+		rfc_cam_therm_default: rfc_cam_therm_default {
+			pins = "gpio6";
+			bias-high-impedance;
+		};
+	};
+
+	rear_cam_flash_therm {
+		rear_cam_flash_therm_default: rear_cam_flash_therm_default {
+			pins = "gpio7";
+			bias-high-impedance;
+		};
+	};
+
+	quiet_therm {
+		quiet_therm_default: quiet_therm_default {
+			pins = "gpio10";
+			bias-high-impedance;
+		};
+	};
+};
+
+&pm6150l_adc_tm {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	io-channels = <&pm6150l_vadc ADC_AMUX_THM1_PU2>,
+			<&pm6150l_vadc ADC_AMUX_THM2_PU2>,
+			<&pm6150l_vadc ADC_AMUX_THM3_PU2>,
+			<&pm6150l_vadc ADC_GPIO3_PU2>;
+
+	/* Channel nodes */
+
+	pa_therm1 {
+		reg = <ADC_AMUX_THM1_PU2>;
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+	};
+
+	msm_therm {
+		reg = <ADC_AMUX_THM2_PU2>;
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+	};
+
+	pa_therm0 {
+		reg = <ADC_AMUX_THM3_PU2>;
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+	};
+
+	rear_cam_flash_therm {
+		reg = <ADC_GPIO3_PU2>;
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+	};
+};
+
+&pmk8350_adc_tm {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	io-channels = <&pmk8350_vadc PMK8350_ADC7_AMUX_THM1_100K_PU>;
+
+	xo_therm {
+		reg = <PMK8350_ADC7_AMUX_THM1_100K_PU>;
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+	};
+};
+
+&spmi_bus {
+	qcom,pm6150l@4 {
+		pm6150l_adc_tm_iio: adc_tm@3400 {
+			compatible = "qcom,adc-tm5-iio";
+			reg = <0x3400 0x100>;
+			#thermal-sensor-cells = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			io-channels = <&pm6150l_vadc ADC_GPIO2_PU2>,
+					<&pm6150l_vadc ADC_GPIO4_PU2>;
+
+			rfc_cam_therm {
+				reg = <ADC_GPIO2_PU2>;
+				qcom,ratiometric;
+				qcom,hw-settle-time = <200>;
+			};
+
+			quiet_therm {
+				reg = <ADC_GPIO4_PU2>;
+				qcom,ratiometric;
+				qcom,hw-settle-time = <200>;
+			};
+		};
+	};
+};
+
