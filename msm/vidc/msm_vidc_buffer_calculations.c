@@ -20,7 +20,7 @@
 #define BATCH_DEC_TOTAL_INPUT_BUFFERS 6
 
 /* total input buffers for decoder HFR usecase (fps > 480) */
-#define HFR_DEC_TOTAL_MAX_INPUT_BUFFERS 24
+#define MAX_HFR_DEC_TOTAL_INPUT_BUFFERS 12
 
 /* total input buffers for decoder HFR usecase */
 #define HFR_DEC_TOTAL_INPUT_BUFFERS 12
@@ -799,7 +799,7 @@ static int msm_vidc_get_extra_input_buff_count(struct msm_vidc_inst *inst)
 			inst->is_perf_eligible_session = true;
 			if (fps > 480)
 				extra_input_count =
-					(HFR_DEC_TOTAL_MAX_INPUT_BUFFERS -
+					(MAX_HFR_DEC_TOTAL_INPUT_BUFFERS -
 					MIN_INPUT_BUFFERS);
 			else
 				extra_input_count =
