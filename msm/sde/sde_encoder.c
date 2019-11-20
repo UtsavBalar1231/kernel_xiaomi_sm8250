@@ -1252,10 +1252,17 @@ static bool _sde_encoder_dsc_ich_reset_override_needed(bool pu_en,
 static void _sde_encoder_dsc_pipe_cfg(struct sde_hw_dsc *hw_dsc,
 		struct sde_hw_pingpong *hw_pp, struct msm_display_dsc_info *dsc,
 		u32 common_mode, bool ich_reset, bool enable,
-		struct sde_hw_pingpong *hw_dsc_pp)
+		struct sde_hw_pingpong *hw_dsc_pp,
+		bool half_panel_partial_update)
 {
 	if (!enable) {
-		if (hw_dsc_pp && hw_dsc_pp->ops.disable_dsc)
+		/*
+		 * avoid disabling dsc encoder in pp-block as it is
+		 * not double-buffered and is not required to be disabled
+		 * for half panel updates
+		 */
+		if (hw_dsc_pp && hw_dsc_pp->ops.disable_dsc
+				&& !half_panel_partial_update)
 			hw_dsc_pp->ops.disable_dsc(hw_dsc_pp);
 
 		if (hw_dsc && hw_dsc->ops.dsc_disable)
@@ -1351,7 +1358,7 @@ static int _sde_encoder_dsc_n_lm_1_enc_1_intf(struct sde_encoder_virt *sde_enc)
 	SDE_EVT32(DRMID(&sde_enc->base), roi->w, roi->h, dsc_common_mode);
 
 	_sde_encoder_dsc_pipe_cfg(hw_dsc, hw_pp, dsc, dsc_common_mode,
-			ich_res, true, hw_dsc_pp);
+			ich_res, true, hw_dsc_pp, false);
 	cfg.dsc[cfg.dsc_count++] = hw_dsc->idx;
 
 	/* setup dsc active configuration in the control path */
@@ -1466,7 +1473,8 @@ static int _sde_encoder_dsc_2_lm_2_enc_2_intf(struct sde_encoder_virt *sde_enc,
 		SDE_EVT32(DRMID(&sde_enc->base), roi->w, roi->h,
 				dsc_common_mode, i, active);
 		_sde_encoder_dsc_pipe_cfg(hw_dsc[i], hw_pp[i], &dsc[i],
-				dsc_common_mode, ich_res, active, hw_dsc_pp[i]);
+				dsc_common_mode, ich_res, active,
+				hw_dsc_pp[i], false);
 
 		if (active) {
 			if (cfg.dsc_count >= MAX_DSC_PER_CTL_V1) {
@@ -1566,7 +1574,7 @@ static int _sde_encoder_dsc_2_lm_2_enc_1_intf(struct sde_encoder_virt *sde_enc,
 			dsc_common_mode, i, params->affected_displays);
 
 	_sde_encoder_dsc_pipe_cfg(hw_dsc[0], hw_pp[0], dsc, dsc_common_mode,
-			ich_res, true, hw_dsc_pp[0]);
+			ich_res, true, hw_dsc_pp[0], false);
 	cfg.dsc[0] = hw_dsc[0]->idx;
 	cfg.dsc_count++;
 	if (hw_ctl->ops.update_bitmask_dsc)
@@ -1574,7 +1582,8 @@ static int _sde_encoder_dsc_2_lm_2_enc_1_intf(struct sde_encoder_virt *sde_enc,
 
 
 	_sde_encoder_dsc_pipe_cfg(hw_dsc[1], hw_pp[1], dsc, dsc_common_mode,
-			ich_res, !half_panel_partial_update, hw_dsc_pp[1]);
+			ich_res, !half_panel_partial_update, hw_dsc_pp[1],
+			half_panel_partial_update);
 	if (!half_panel_partial_update) {
 		cfg.dsc[1] = hw_dsc[1]->idx;
 		cfg.dsc_count++;
@@ -1808,7 +1817,7 @@ static void _sde_encoder_dsc_disable(struct sde_encoder_virt *sde_enc)
 		hw_dsc_pp = sde_enc->hw_dsc_pp[i];
 
 		_sde_encoder_dsc_pipe_cfg(hw_dsc, hw_pp, NULL,
-						0, 0, 0, hw_dsc_pp);
+						0, 0, 0, hw_dsc_pp, false);
 
 		if (hw_dsc)
 			sde_enc->dirty_dsc_ids[i] = hw_dsc->idx;
