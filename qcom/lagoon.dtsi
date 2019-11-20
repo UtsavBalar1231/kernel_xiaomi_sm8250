@@ -1494,6 +1494,34 @@
 		mbox-desc-offset = <0x0>;
 		#mbox-cells = <1>;
 	};
+
+	qcom,venus@aab0000 {
+		compatible = "qcom,pil-tz-generic";
+		reg = <0xaab0000 0x2000>;
+
+		vdd-supply = <&video_cc_mvsc_gdsc>;
+		qcom,proxy-reg-names = "vdd";
+		qcom,complete-ramdump;
+
+		clocks = <&videocc VIDEO_CC_MVSC_CORE_CLK>,
+			<&videocc VIDEO_CC_VENUS_AHB_CLK>;
+		clock-names = "core", "ahb";
+		qcom,proxy-clock-names = "core", "ahb";
+
+		qcom,core-freq = <200000000>;
+		qcom,ahb-freq = <200000000>;
+
+		qcom,pas-id = <9>;
+		qcom,msm-bus,name = "pil-venus";
+		qcom,msm-bus,num-cases = <2>;
+		qcom,msm-bus,num-paths = <1>;
+		qcom,msm-bus,vectors-KBps =
+			<63 512 0 0>,
+			<63 512 0 304000>;
+		qcom,proxy-timeout-ms = <100>;
+		qcom,firmware-name = "venus";
+		memory-region = <&pil_video_mem>;
+	};
 };
 
 #include "lagoon-gdsc.dtsi"
