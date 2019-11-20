@@ -1741,6 +1741,7 @@
 #include "lagoon-ion.dtsi"
 #include "lagoon-qupv3.dtsi"
 #include "ipcc-test-lagoon.dtsi"
+#include "lagoon-vidc.dtsi"
 
 /*Debug UART*/
 &qupv3_se9_2uart {
