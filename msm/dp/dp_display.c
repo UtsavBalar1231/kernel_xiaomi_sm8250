@@ -1289,7 +1289,6 @@ static void dp_display_attention_work(struct work_struct *work)
 
 		mutex_lock(&dp->session_lock);
 		dp_audio_enable(dp, false);
-		mutex_unlock(&dp->session_lock);
 
 		if (dp->link->sink_request & DP_TEST_LINK_PHY_TEST_PATTERN) {
 			SDE_EVT32_EXTERNAL(dp->state,
@@ -1308,7 +1307,6 @@ static void dp_display_attention_work(struct work_struct *work)
 			dp->ctrl->link_maintenance(dp->ctrl);
 		}
 
-		mutex_lock(&dp->session_lock);
 		dp_audio_enable(dp, true);
 		mutex_unlock(&dp->session_lock);
 
