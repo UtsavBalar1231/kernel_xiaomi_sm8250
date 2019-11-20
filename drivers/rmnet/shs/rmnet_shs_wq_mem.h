@@ -26,14 +26,14 @@
 
 #define RMNET_SHS_MAX_USRFLOWS (128)
 
-struct rmnet_shs_wq_cpu_cap_usr_s {
+struct __attribute__((__packed__)) rmnet_shs_wq_cpu_cap_usr_s {
 	u64 pps_capacity;
 	u64 avg_pps_capacity;
 	u64 bps_capacity;
 	u16 cpu_num;
 };
 
-struct rmnet_shs_wq_gflows_usr_s {
+struct __attribute__((__packed__)) rmnet_shs_wq_gflows_usr_s {
 	u64 rx_pps;
 	u64 avg_pps;
 	u64 rx_bps;
@@ -41,7 +41,7 @@ struct rmnet_shs_wq_gflows_usr_s {
 	u16 cpu_num;
 };
 
-struct rmnet_shs_wq_ssflows_usr_s {
+struct __attribute__((__packed__)) rmnet_shs_wq_ssflows_usr_s {
 	u64 rx_pps;
 	u64 avg_pps;
 	u64 rx_bps;

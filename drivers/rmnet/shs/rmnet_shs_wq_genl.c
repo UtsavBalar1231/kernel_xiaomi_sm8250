@@ -68,7 +68,7 @@ int rmnet_shs_genl_send_int_to_userspace(struct genl_info *info, int val)
 	void *msg_head;
 	int rc;
 
-	skb = genlmsg_new(NLMSG_GOODSIZE, GFP_KERNEL);
+	skb = genlmsg_new(NLMSG_GOODSIZE, GFP_ATOMIC);
 	if (skb == NULL)
 		goto out;
 
@@ -109,7 +109,7 @@ int rmnet_shs_genl_send_int_to_userspace_no_info(int val)
 		return -1;
 	}
 
-	skb = genlmsg_new(NLMSG_GOODSIZE, GFP_KERNEL);
+	skb = genlmsg_new(NLMSG_GOODSIZE, GFP_ATOMIC);
 	if (skb == NULL)
 		goto out;
 
@@ -148,7 +148,7 @@ int rmnet_shs_genl_send_msg_to_userspace(void)
 	int val = rmnet_shs_genl_seqnum++;
 
 	rm_err("SHS_GNL: Trying to send msg %d\n", val);
-	skb = genlmsg_new(NLMSG_GOODSIZE, GFP_KERNEL);
+	skb = genlmsg_new(NLMSG_GOODSIZE, GFP_ATOMIC);
 	if (skb == NULL)
 		goto out;
 

@@ -255,7 +255,7 @@ void rmnet_shs_wq_ssflow_list_add(struct rmnet_shs_wq_hstat_s *hnode,
 		return;
 	}
 
-	ssflow_node = kzalloc(sizeof(*ssflow_node), GFP_KERNEL);
+	ssflow_node = kzalloc(sizeof(*ssflow_node), GFP_ATOMIC);
 	if (ssflow_node != NULL) {
 		ssflow_node->avg_pps = hnode->avg_pps;
 		ssflow_node->cpu_num = hnode->current_cpu;
@@ -304,7 +304,7 @@ void rmnet_shs_wq_gflow_list_add(struct rmnet_shs_wq_hstat_s *hnode,
 	}
 
 	if (!rmnet_shs_is_lpwr_cpu(hnode->current_cpu)) {
-		gflow_node = kzalloc(sizeof(*gflow_node), GFP_KERNEL);
+		gflow_node = kzalloc(sizeof(*gflow_node), GFP_ATOMIC);
 		if (gflow_node != NULL) {
 			gflow_node->avg_pps = hnode->avg_pps;
 			gflow_node->cpu_num = hnode->current_cpu;
@@ -361,7 +361,7 @@ void rmnet_shs_wq_cpu_caps_list_add(
 	pps_uthresh = rmnet_shs_cpu_rx_max_pps_thresh[cpu_node->cpu_num];
 	pps_lthresh = rmnet_shs_cpu_rx_min_pps_thresh[cpu_node->cpu_num];
 
-	cap_node = kzalloc(sizeof(*cap_node), GFP_KERNEL);
+	cap_node = kzalloc(sizeof(*cap_node), GFP_ATOMIC);
 	if (cap_node == NULL) {
 		rmnet_shs_crit_err[RMNET_SHS_WQ_NODE_MALLOC_ERR]++;
 		return;
