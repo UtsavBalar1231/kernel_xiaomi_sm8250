@@ -795,6 +795,10 @@ void DWC_ETH_QOS_handle_phy_interrupt(struct DWC_ETH_QOS_prv_data *pdata)
 		EMACDBG(
 			"MICREL PHY Intr EN Reg (%#x) = %#x\n", DWC_ETH_QOS_MICREL_PHY_INTCS, micrel_intr_status);
 
+		/* Call ack interrupt to clear the WOL interrupt status fields */
+		if (pdata->phydev->drv->ack_interrupt)
+			pdata->phydev->drv->ack_interrupt(pdata->phydev);
+
 		/* Interrupt received for link state change */
 		if (phy_intr_status & LINK_STATE_MASK) {
 			EMACDBG("Interrupt received for link UP state\n");
