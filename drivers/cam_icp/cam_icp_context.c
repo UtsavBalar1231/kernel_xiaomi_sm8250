@@ -37,8 +37,6 @@ static int cam_icp_context_dump_active_request(void *data, unsigned long iova,
 		return -EINVAL;
 	}
 
-	mutex_lock(&ctx->ctx_mutex);
-
 	if (ctx->state < CAM_CTX_ACQUIRED || ctx->state > CAM_CTX_ACTIVATED) {
 		CAM_ERR(CAM_ICP, "Invalid state icp ctx %d state %d",
 			ctx->ctx_id, ctx->state);
@@ -64,7 +62,6 @@ static int cam_icp_context_dump_active_request(void *data, unsigned long iova,
 	}
 
 end:
-	mutex_unlock(&ctx->ctx_mutex);
 	return rc;
 }
 

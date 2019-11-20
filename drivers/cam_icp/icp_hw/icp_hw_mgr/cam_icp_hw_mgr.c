@@ -3031,6 +3031,36 @@ static int cam_icp_mgr_hfi_resume(struct cam_icp_hw_mgr *hw_mgr)
 		hw_mgr->a5_jtag_debug);
 }
 
+static int cam_icp_retry_wait_for_abort(
+	struct cam_icp_hw_ctx_data *ctx_data)
+{
+	int retry_cnt = 1;
+	unsigned long rem_jiffies;
+	int timeout = 1000;
+
+	CAM_WARN(CAM_ICP, "FW timeout in abort ctx: %u retry_left: %d",
+		ctx_data->ctx_id, retry_cnt);
+	while (retry_cnt > 0) {
+		rem_jiffies = wait_for_completion_timeout(
+			&ctx_data->wait_complete,
+			msecs_to_jiffies((timeout)));
+		if (!rem_jiffies) {
+			retry_cnt--;
+			if (retry_cnt > 0) {
+				CAM_WARN(CAM_ICP,
+					"FW timeout in abort ctx: %u retry_left: %u",
+					ctx_data->ctx_id, retry_cnt);
+				continue;
+			}
+		}
+
+		if (retry_cnt > 0)
+			return 0;
+	}
+
+	return -ETIMEDOUT;
+}
+
 static int cam_icp_mgr_abort_handle(
 	struct cam_icp_hw_ctx_data *ctx_data)
 {
@@ -3074,10 +3104,14 @@ static int cam_icp_mgr_abort_handle(
 	rem_jiffies = wait_for_completion_timeout(&ctx_data->wait_complete,
 			msecs_to_jiffies((timeout)));
 	if (!rem_jiffies) {
-		rc = -ETIMEDOUT;
-		CAM_ERR(CAM_ICP, "FW timeout/err in abort handle command");
-		cam_icp_mgr_process_dbg_buf(icp_hw_mgr.a5_dbg_lvl);
-		cam_hfi_queue_dump();
+		rc = cam_icp_retry_wait_for_abort(ctx_data);
+		if (rc) {
+			CAM_ERR(CAM_ICP,
+				"FW timeout/err in abort handle command ctx: %u",
+				ctx_data->ctx_id);
+			cam_icp_mgr_process_dbg_buf(icp_hw_mgr.a5_dbg_lvl);
+			cam_hfi_queue_dump();
+		}
 	}
 
 	kfree(abort_cmd);
@@ -4805,6 +4839,24 @@ static int cam_icp_mgr_flush_req(struct cam_icp_hw_ctx_data *ctx_data,
 	return 0;
 }
 
+static void cam_icp_mgr_flush_info_dump(
+	struct cam_hw_flush_args *flush_args, uint32_t ctx_id)
+{
+	int i;
+
+	for (i = 0; i < flush_args->num_req_active; i++) {
+		CAM_DBG(CAM_ICP, "Flushing active request %lld in ctx %u",
+			*(int64_t *)flush_args->flush_req_active[i],
+			ctx_id);
+	}
+
+	for (i = 0; i < flush_args->num_req_pending; i++) {
+		CAM_DBG(CAM_ICP, "Flushing pending request %lld in ctx %u",
+			*(int64_t *)flush_args->flush_req_pending[i],
+			ctx_id);
+	}
+}
+
 static int cam_icp_mgr_hw_flush(void *hw_priv, void *hw_flush_args)
 {
 	struct cam_hw_flush_args *flush_args = hw_flush_args;
@@ -4838,6 +4890,8 @@ static int cam_icp_mgr_hw_flush(void *hw_priv, void *hw_flush_args)
 		if (!atomic_read(&hw_mgr->recovery)
 			&& flush_args->num_req_active) {
 			mutex_unlock(&hw_mgr->hw_mgr_mutex);
+			cam_icp_mgr_flush_info_dump(flush_args,
+				ctx_data->ctx_id);
 			cam_icp_mgr_abort_handle(ctx_data);
 		} else {
 			mutex_unlock(&hw_mgr->hw_mgr_mutex);
