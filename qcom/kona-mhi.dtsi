@@ -29,6 +29,7 @@
 		mhi,max-channels = <111>;
 		mhi,timeout = <2000>;
 		mhi,buffer-len = <0x8000>;
+		mhi,sfr-support;
 
 		#address-cells = <1>;
 		#size-cells = <1>;
