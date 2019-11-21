@@ -709,6 +709,16 @@ static int cam_vfe_camif_handle_irq_bottom_half(void *handler_priv,
 	CAM_DBG(CAM_ISP, "irq_status_0 = 0x%x irq_status_1 = 0x%x",
 		irq_status0, irq_status1);
 
+	if (irq_status0 & camif_priv->reg_data->eof_irq_mask) {
+		CAM_DBG(CAM_ISP, "Received EOF");
+
+		if (camif_priv->event_cb)
+			camif_priv->event_cb(camif_priv->priv,
+				CAM_ISP_HW_EVENT_EOF, (void *)&evt_info);
+
+		ret = CAM_VFE_IRQ_STATUS_SUCCESS;
+	}
+
 	if (irq_status0 & camif_priv->reg_data->sof_irq_mask) {
 		if ((camif_priv->enable_sof_irq_debug) &&
 			(camif_priv->irq_debug_cnt <=
@@ -732,16 +742,6 @@ static int cam_vfe_camif_handle_irq_bottom_half(void *handler_priv,
 		ret = CAM_VFE_IRQ_STATUS_SUCCESS;
 	}
 
-	if (irq_status0 & camif_priv->reg_data->epoch0_irq_mask) {
-		CAM_DBG(CAM_ISP, "Received EPOCH");
-
-		if (camif_priv->event_cb)
-			camif_priv->event_cb(camif_priv->priv,
-				CAM_ISP_HW_EVENT_EPOCH, (void *)&evt_info);
-
-		ret = CAM_VFE_IRQ_STATUS_SUCCESS;
-	}
-
 	if (irq_status0 & camif_priv->reg_data->reg_update_irq_mask) {
 		CAM_DBG(CAM_ISP, "Received REG_UPDATE_ACK");
 
@@ -752,12 +752,12 @@ static int cam_vfe_camif_handle_irq_bottom_half(void *handler_priv,
 		ret = CAM_VFE_IRQ_STATUS_SUCCESS;
 	}
 
-	if (irq_status0 & camif_priv->reg_data->eof_irq_mask) {
-		CAM_DBG(CAM_ISP, "Received EOF");
+	if (irq_status0 & camif_priv->reg_data->epoch0_irq_mask) {
+		CAM_DBG(CAM_ISP, "Received EPOCH");
 
 		if (camif_priv->event_cb)
 			camif_priv->event_cb(camif_priv->priv,
-				CAM_ISP_HW_EVENT_EOF, (void *)&evt_info);
+				CAM_ISP_HW_EVENT_EPOCH, (void *)&evt_info);
 
 		ret = CAM_VFE_IRQ_STATUS_SUCCESS;
 	}
