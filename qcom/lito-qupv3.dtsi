@@ -424,6 +424,7 @@
 		pinctrl-0 = <&qupv3_se9_i2c_active>;
 		pinctrl-1 = <&qupv3_se9_i2c_sleep>;
 		qcom,wrapper-core = <&qupv3_1>;
+		qcom,shared;
 		status = "disabled";
 	};
 
