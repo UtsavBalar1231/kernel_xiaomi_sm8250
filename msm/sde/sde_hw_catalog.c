@@ -712,9 +712,9 @@ static struct sde_prop_type intf_prop[] = {
 };
 
 static struct sde_prop_type wb_prop[] = {
-	{WB_OFF, "qcom,sde-wb-off", true, PROP_TYPE_U32_ARRAY},
+	{WB_OFF, "qcom,sde-wb-off", false, PROP_TYPE_U32_ARRAY},
 	{WB_LEN, "qcom,sde-wb-size", false, PROP_TYPE_U32},
-	{WB_ID, "qcom,sde-wb-id", true, PROP_TYPE_U32_ARRAY},
+	{WB_ID, "qcom,sde-wb-id", false, PROP_TYPE_U32_ARRAY},
 	{WB_XIN_ID, "qcom,sde-wb-xin-id", false, PROP_TYPE_U32_ARRAY},
 	{WB_CLK_CTRL, "qcom,sde-wb-clk-ctrl", false,
 		PROP_TYPE_BIT_OFFSET_ARRAY},
@@ -4248,6 +4248,9 @@ static int _sde_hardware_pre_caps(struct sde_mdss_cfg *sde_cfg, uint32_t hw_rev)
 		sde_cfg->sui_block_xin_mask = 0xC01;
 		sde_cfg->has_hdr = false;
 		sde_cfg->has_sui_blendstage = true;
+		sde_cfg->has_qos_fl_nocalc = true;
+		clear_bit(MDSS_INTR_AD4_0_INTR, sde_cfg->mdss_irqs);
+		clear_bit(MDSS_INTR_AD4_1_INTR, sde_cfg->mdss_irqs);
 	} else {
 		SDE_ERROR("unsupported chipset id:%X\n", hw_rev);
 		sde_cfg->perf.min_prefill_lines = 0xffff;
