@@ -681,8 +681,10 @@ static int __cam_req_mgr_send_req(struct cam_req_mgr_core_link *link,
 		apply_req.trigger_point = trigger;
 		if (dev->ops && dev->ops->apply_req) {
 			rc = dev->ops->apply_req(&apply_req);
-			if (rc)
+			if (rc) {
+				*failed_dev = dev;
 				return rc;
+			}
 			CAM_DBG(CAM_REQ,
 				"SEND: link_hdl: %x pd: %d req_id %lld",
 				link->link_hdl, pd, apply_req.request_id);
@@ -2456,6 +2458,14 @@ static int cam_req_mgr_process_trigger(void *priv, void *data)
 		link->link_hdl, in_q->rd_idx, in_q->slot[in_q->rd_idx].status);
 
 	spin_lock_bh(&link->link_state_spin_lock);
+
+	if (link->state < CAM_CRM_LINK_STATE_READY) {
+		CAM_WARN(CAM_CRM, "invalid link state:%d", link->state);
+		spin_unlock_bh(&link->link_state_spin_lock);
+		rc = -EPERM;
+		goto release_lock;
+	}
+
 	if (link->state == CAM_CRM_LINK_STATE_ERR)
 		CAM_WARN(CAM_CRM, "Error recovery idx %d status %d",
 			in_q->rd_idx,
