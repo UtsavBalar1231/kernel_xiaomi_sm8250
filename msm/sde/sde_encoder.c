@@ -4689,7 +4689,7 @@ static void _sde_encoder_helper_hdr_plus_mempool_update(
 	}
 }
 
-void sde_encoder_helper_needs_hw_reset(struct drm_encoder *drm_enc)
+void sde_encoder_needs_hw_reset(struct drm_encoder *drm_enc)
 {
 	struct sde_encoder_virt *sde_enc = to_sde_encoder_virt(drm_enc);
 	struct sde_encoder_phys *phys;
@@ -4773,7 +4773,7 @@ int sde_encoder_prepare_for_kickoff(struct drm_encoder *drm_enc,
 
 	/* if any phys needs reset, reset all phys, in-order */
 	if (needs_hw_reset)
-		sde_encoder_helper_needs_hw_reset(drm_enc);
+		sde_encoder_needs_hw_reset(drm_enc);
 
 	_sde_encoder_update_master(drm_enc, params);
 
@@ -4976,16 +4976,16 @@ int sde_encoder_helper_reset_mixers(struct sde_encoder_phys *phys_enc,
 	return 0;
 }
 
-void sde_encoder_prepare_commit(struct drm_encoder *drm_enc)
+int sde_encoder_prepare_commit(struct drm_encoder *drm_enc)
 {
 	struct sde_encoder_virt *sde_enc;
 	struct sde_encoder_phys *phys;
-	int i, rc = 0;
+	int i, rc = 0, ret = 0;
 	struct sde_hw_ctl *ctl;
 
 	if (!drm_enc) {
 		SDE_ERROR("invalid encoder\n");
-		return;
+		return -EINVAL;
 	}
 	sde_enc = to_sde_encoder_virt(drm_enc);
 
@@ -4998,6 +4998,9 @@ void sde_encoder_prepare_commit(struct drm_encoder *drm_enc)
 		phys = sde_enc->phys_encs[i];
 		if (phys && phys->ops.prepare_commit)
 			phys->ops.prepare_commit(phys);
+
+		if (phys->enable_state == SDE_ENC_ERR_NEEDS_HW_RESET)
+			ret = -ETIMEDOUT;
 
 		if (phys && phys->hw_ctl) {
 			ctl = phys->hw_ctl;
@@ -5021,6 +5024,8 @@ void sde_encoder_prepare_commit(struct drm_encoder *drm_enc)
 				      sde_enc->cur_master->connector->base.id,
 				      rc);
 	}
+
+	return ret;
 }
 
 void sde_encoder_helper_setup_misr(struct sde_encoder_phys *phys_enc,
