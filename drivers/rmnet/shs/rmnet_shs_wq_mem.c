@@ -205,7 +205,7 @@ static int rmnet_shs_release_ss_flows(struct inode *inode, struct file *filp)
 	struct rmnet_shs_mmap_info *info;
 
 	rm_err("%s", "SHS_MEM: rmnet_shs_release - entry\n");
-	if (gflow_shared) {
+	if (ssflow_shared) {
 		info = filp->private_data;
 		ssflow_shared = NULL;
 		free_page((unsigned long)info->data);
