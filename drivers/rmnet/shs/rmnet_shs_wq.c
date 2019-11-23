@@ -1989,7 +1989,6 @@ void rmnet_shs_wq_exit(void)
 	if (!rmnet_shs_wq || !rmnet_shs_delayed_wq)
 		return;
 
-	rmnet_shs_wq_genl_deinit();
 	rmnet_shs_wq_mem_deinit();
 
 	trace_rmnet_shs_wq_high(RMNET_SHS_WQ_EXIT, RMNET_SHS_WQ_EXIT_START,
@@ -2077,10 +2076,6 @@ void rmnet_shs_wq_init(struct net_device *dev)
 	rmnet_shs_wq_init_cpu_rx_flow_tbl();
 	INIT_DEFERRABLE_WORK(&rmnet_shs_delayed_wq->wq,
 			     rmnet_shs_wq_process_wq);
-
-	if (rmnet_shs_wq_genl_init()) {
-		rm_err("%s", "SHS_GNL: Failed to init generic netlink");
-	}
 
 	trace_rmnet_shs_wq_high(RMNET_SHS_WQ_INIT, RMNET_SHS_WQ_INIT_END,
 				0xDEF, 0xDEF, 0xDEF, 0xDEF, NULL, NULL);
