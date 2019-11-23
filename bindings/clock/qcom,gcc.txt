@@ -23,6 +23,7 @@ Required properties :
 			"qcom,gcc-kona"
 			"qcom,gcc-lito"
 			"qcom,bengal-gcc"
+			"qcom,lagoon-gcc"
 
 - reg : shall contain base register location and length
 - #clock-cells : shall contain 1

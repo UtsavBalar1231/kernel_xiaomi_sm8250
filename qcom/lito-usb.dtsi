@@ -24,6 +24,7 @@
 		qcom,use-pdc-interrupts;
 
 		USB3_GDSC-supply = <&usb30_prim_gdsc>;
+		qcom,gdsc-collapse-in-host-suspend;
 		dpdm-supply = <&usb2_phy0>;
 		clocks = <&gcc GCC_USB30_PRIM_MASTER_CLK>,
 			<&gcc GCC_CFG_NOC_USB3_PRIM_AXI_CLK>,
@@ -76,7 +77,6 @@
 			<MSM_BUS_MASTER_USB3 MSM_BUS_SLAVE_IPA_CFG 1 1>,
 			<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_USB3 1 1>;
 
-		qcom,default-bus-vote = <2>; /* use svs bus voting */
 		dwc3@a600000 {
 			compatible = "snps,dwc3";
 			reg = <0x0a600000 0xcd00>;

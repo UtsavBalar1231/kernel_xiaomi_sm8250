@@ -385,6 +385,7 @@
 	qcom,wd-bark-time-secs = <16>;
 	qcom,suspend-input-on-debug-batt;
 	qcom,fcc-stepping-enable;
+	qcom,smb-internal-pull-kohm = <0>;
 	qcom,thermal-mitigation = <5325000 4500000 4000000 3500000 3000000
 				2500000 2000000 1500000 1000000 500000>;
 };
@@ -746,6 +747,8 @@
 	pinctrl-names = "active", "sleep";
 	pinctrl-0 = <&sdc2_clk_on  &sdc2_cmd_on &sdc2_data_on &storage_cd>;
 	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off &storage_cd>;
+
+	cd-gpios = <&tlmm 77 GPIO_ACTIVE_LOW>;
 
 	status = "ok";
 };

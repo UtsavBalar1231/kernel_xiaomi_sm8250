@@ -1339,7 +1339,6 @@
 
 		coresight-name = "coresight-tmc-etr";
 
-		qcom,smmu-s1-bypass;
 
 		iommus = <&apps_smmu 0x0180 0>,
 			<&apps_smmu 0x0160 0>;

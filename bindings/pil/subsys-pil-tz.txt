@@ -91,6 +91,8 @@ Optional properties:
 
 - qcom,minidump-as-elf32: Boolean. If set, minidump is collected in ELF32 format.
 
+- qcom,mas-crypto: phandle to the bus master of crypto core.
+
 Example:
 	qcom,venus@fdce0000 {
 		compatible = "qcom,pil-tz-generic";

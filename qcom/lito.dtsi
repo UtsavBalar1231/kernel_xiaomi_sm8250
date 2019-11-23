@@ -3617,6 +3617,7 @@
 		qcom,arm-smmu;
 		qcom,smmu-fast-map;
 		qcom,bandwidth-vote-for-ipa;
+		qcom,ipa-endp-delay-wa;
 		qcom,use-64-bit-dma-mask;
 		qcom,msm-bus,name = "ipa";
 		qcom,wan-use-skb-page;
@@ -3817,6 +3818,7 @@
 
 &usb30_prim_gdsc {
 	status = "ok";
+	qcom,retain-regs;
 };
 
 &hlos1_vote_mmnoc_mmu_tbu_hf0_gdsc {
