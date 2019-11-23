@@ -832,7 +832,7 @@ static struct msm_vidc_common_data sm6150_common_data[] = {
 	},
 	{
 		.key = "qcom,fw-vpp-cycles",
-		.value = 225975,
+		.value = 166666,
 	},
 };
 
