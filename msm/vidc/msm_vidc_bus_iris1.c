@@ -31,7 +31,7 @@ fp_t __compression_ratio(struct lut const *entry, int bpp)
 	return FP_ZERO; /* impossible */
 }
 
-void __dump(struct dump dump[], int len)
+void __dump(struct dump dump[], int len, u32 sid)
 {
 	int c = 0;
 
@@ -64,7 +64,7 @@ void __dump(struct dump dump[], int len)
 
 			}
 		}
-		dprintk(VIDC_BUS, "%s", formatted_line);
+		s_vpr_b(sid, "%s", formatted_line);
 	}
 }
 
@@ -128,7 +128,8 @@ static unsigned long __calculate_decoder(struct vidc_bus_vote_data *d)
 
 	lcu_size = d->lcu_size;
 
-	dpb_bpp = d->num_formats >= 1 ? __bpp(d->color_formats[0]) : INT_MAX;
+	dpb_bpp = d->num_formats >= 1 ?
+		__bpp(d->color_formats[0], d->sid) : INT_MAX;
 
 	unified_dpb_opb = d->num_formats == 1;
 
@@ -315,7 +316,7 @@ static unsigned long __calculate_decoder(struct vidc_bus_vote_data *d)
 		{"llc line buffer write", DUMP_FP_FMT, llc.line_buffer_write},
 
 		};
-		__dump(dump, ARRAY_SIZE(dump));
+		__dump(dump, ARRAY_SIZE(dump), d->sid);
 	}
 
 	d->calc_bw_ddr = kbps(fp_round(ddr.total));
@@ -403,7 +404,8 @@ static unsigned long __calculate_encoder(struct vidc_bus_vote_data *d)
 	original_color_format = d->num_formats >= 1 ?
 		d->color_formats[0] : HAL_UNUSED_COLOR;
 
-	dpb_bpp = d->num_formats >= 1 ? __bpp(d->color_formats[0]) : INT_MAX;
+	dpb_bpp = d->num_formats >= 1 ?
+		__bpp(d->color_formats[0], d->sid) : INT_MAX;
 
 	original_compression_enabled = __ubwc(original_color_format);
 
@@ -603,7 +605,7 @@ static unsigned long __calculate_encoder(struct vidc_bus_vote_data *d)
 		{"llc ref read crcb", DUMP_FP_FMT, llc.ref_read_crcb},
 		{"llc line buffer", DUMP_FP_FMT, llc.line_buffer},
 		};
-		__dump(dump, ARRAY_SIZE(dump));
+		__dump(dump, ARRAY_SIZE(dump), d->sid);
 	}
 
 	d->calc_bw_ddr = kbps(fp_round(ddr.total));
@@ -630,7 +632,7 @@ static unsigned long __calculate(struct vidc_bus_vote_data *d)
 		value = __calculate_cvp(d);
 		break;
 	default:
-		dprintk(VIDC_ERR, "Unknown Domain");
+		s_vpr_e(d->sid, "Unknown Domain %#x", d->domain);
 	}
 
 	return value;

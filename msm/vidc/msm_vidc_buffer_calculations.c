@@ -19,6 +19,9 @@
 /* total input buffers in case of decoder batch */
 #define BATCH_DEC_TOTAL_INPUT_BUFFERS 6
 
+/* total input buffers for decoder HFR usecase (fps > 480) */
+#define HFR_DEC_TOTAL_MAX_INPUT_BUFFERS 24
+
 /* total input buffers for decoder HFR usecase */
 #define HFR_DEC_TOTAL_INPUT_BUFFERS 12
 
@@ -27,13 +30,16 @@
 
 /* Encoder buffer count macros */
 /* total input buffers for encoder HFR usecase */
-#define HFR_ENC_TOTAL_INPUT_BUFFERS 8
+#define HFR_ENC_TOTAL_INPUT_BUFFERS 16
 
 /* minimum number of output buffers */
 #define MIN_ENC_OUTPUT_BUFFERS 4
 
 /* extra output buffers for encoder HFR usecase */
 #define HFR_ENC_TOTAL_OUTPUT_BUFFERS 12
+
+/* extra output buffers for encoder HEIF usecase */
+#define HEIF_ENC_TOTAL_OUTPUT_BUFFERS 12
 
 #define HFI_COLOR_FORMAT_YUV420_NV12_UBWC_Y_TILE_WIDTH 32
 #define HFI_COLOR_FORMAT_YUV420_NV12_UBWC_Y_TILE_HEIGHT 8
@@ -383,7 +389,7 @@ int msm_vidc_get_decoder_internal_buffer_sizes(struct msm_vidc_inst *inst)
 	struct v4l2_format *f;
 
 	if (!inst) {
-		dprintk(VIDC_ERR, "Instance is null!");
+		d_vpr_e("%s: Instance is null!", __func__);
 		return -EINVAL;
 	}
 
@@ -405,8 +411,8 @@ int msm_vidc_get_decoder_internal_buffer_sizes(struct msm_vidc_inst *inst)
 		dec_calculators = &mpeg2d_calculators;
 		break;
 	default:
-		dprintk(VIDC_ERR,
-			"Invalid pix format. Internal buffer cal not defined : %x ",
+		s_vpr_e(inst->sid,
+			"Invalid pix format. Internal buffer cal not defined : %x\n",
 			f->fmt.pix_mp.pixelformat);
 		return -EINVAL;
 	}
@@ -503,7 +509,7 @@ int msm_vidc_get_encoder_internal_buffer_sizes(struct msm_vidc_inst *inst)
 	struct v4l2_format *f;
 
 	if (!inst) {
-		dprintk(VIDC_ERR, "Instance is null!");
+		d_vpr_e("%s: Instance is null!", __func__);
 		return -EINVAL;
 	}
 
@@ -519,7 +525,7 @@ int msm_vidc_get_encoder_internal_buffer_sizes(struct msm_vidc_inst *inst)
 		enc_calculators = &vp8e_calculators;
 		break;
 	default:
-		dprintk(VIDC_ERR,
+		s_vpr_e(inst->sid,
 			"Invalid pix format. Internal buffer cal not defined : %x ",
 			f->fmt.pix_mp.pixelformat);
 		return -EINVAL;
@@ -531,8 +537,7 @@ int msm_vidc_get_encoder_internal_buffer_sizes(struct msm_vidc_inst *inst)
 	bframe = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_B_FRAMES);
 	num_bframes = bframe->val;
 	if (num_bframes < 0) {
-		dprintk(VIDC_ERR,
-			"%s: get num bframe failed\n", __func__);
+		s_vpr_e(inst->sid, "%s: get num bframe failed\n", __func__);
 		return -EINVAL;
 	}
 
@@ -583,7 +588,7 @@ int msm_vidc_get_encoder_internal_buffer_sizes(struct msm_vidc_inst *inst)
 int msm_vidc_calculate_internal_buffer_sizes(struct msm_vidc_inst *inst)
 {
 	if (!inst) {
-		dprintk(VIDC_ERR, "Instance is null!");
+		d_vpr_e("%s: Instance is null!", __func__);
 		return -EINVAL;
 	}
 
@@ -617,7 +622,7 @@ int msm_vidc_calculate_input_buffer_count(struct msm_vidc_inst *inst)
 	int extra_buff_count = 0;
 
 	if (!inst) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params\n", __func__);
 		return -EINVAL;
 	}
 	fmt = &inst->fmts[INPUT_PORT];
@@ -641,9 +646,9 @@ int msm_vidc_calculate_input_buffer_count(struct msm_vidc_inst *inst)
 	fmt->count_min_host = fmt->count_actual =
 		fmt->count_min + extra_buff_count;
 
-	dprintk(VIDC_HIGH, "%s: %x : input min %d min_host %d actual %d\n",
-		__func__, hash32_ptr(inst->session),
-		fmt->count_min, fmt->count_min_host, fmt->count_actual);
+	s_vpr_h(inst->sid, "%s: input min %d min_host %d actual %d\n",
+		__func__, fmt->count_min,
+		fmt->count_min_host, fmt->count_actual);
 
 	return 0;
 }
@@ -655,7 +660,7 @@ int msm_vidc_calculate_output_buffer_count(struct msm_vidc_inst *inst)
 	u32 codec, output_min_count;
 
 	if (!inst) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params\n", __func__);
 		return -EINVAL;
 	}
 	fmt = &inst->fmts[OUTPUT_PORT];
@@ -697,9 +702,9 @@ int msm_vidc_calculate_output_buffer_count(struct msm_vidc_inst *inst)
 	fmt->count_min_host = fmt->count_actual =
 		fmt->count_min + extra_buff_count;
 
-	dprintk(VIDC_HIGH, "%s: %x : output min %d min_host %d actual %d\n",
-		__func__, hash32_ptr(inst->session),
-		fmt->count_min, fmt->count_min_host, fmt->count_actual);
+	s_vpr_h(inst->sid, "%s: output min %d min_host %d actual %d\n",
+		__func__, fmt->count_min, fmt->count_min_host,
+		fmt->count_actual);
 
 	return 0;
 }
@@ -722,7 +727,7 @@ int msm_vidc_get_extra_buff_count(struct msm_vidc_inst *inst,
 	enum hal_buffer buffer_type)
 {
 	if (!inst || !inst->core) {
-		dprintk(VIDC_ERR, "%s Invalid args\n", __func__);
+		d_vpr_e("%s: Invalid args\n", __func__);
 		return 0;
 	}
 
@@ -742,9 +747,10 @@ static int msm_vidc_get_extra_input_buff_count(struct msm_vidc_inst *inst)
 	unsigned int extra_input_count = 0;
 	struct msm_vidc_core *core;
 	struct v4l2_format *f;
+	int fps;
 
 	if (!inst || !inst->core) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
 		return -EINVAL;
 	}
 
@@ -758,16 +764,15 @@ static int msm_vidc_get_extra_input_buff_count(struct msm_vidc_inst *inst)
 	if (!is_realtime_session(inst) || is_thumbnail_session(inst))
 		return extra_input_count;
 
-	/*
-	 * Batch mode and HFR not supported for resolution greater than
-	 * UHD. Hence extra buffers are not required.
-	 */
-	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
-	if (res_is_greater_than(f->fmt.pix_mp.width, f->fmt.pix_mp.height,
-		4096, 2160))
-		return extra_input_count;
-
 	if (is_decode_session(inst)) {
+		/*
+		 * Batch mode and HFR not supported for resolution greater than
+		 * UHD. Hence extra buffers are not required.
+		 */
+		f = &inst->fmts[INPUT_PORT].v4l2_fmt;
+		if (res_is_greater_than(f->fmt.pix_mp.width,
+					f->fmt.pix_mp.height, 4096, 2160))
+			goto exit;
 
 		/*
 		 * Allocating 2 extra buffers, assuming current session is
@@ -790,26 +795,33 @@ static int msm_vidc_get_extra_input_buff_count(struct msm_vidc_inst *inst)
 		if (!is_secure_session(inst) &&
 			msm_comm_get_num_perf_sessions(inst) <
 			MAX_PERF_ELIGIBLE_SESSIONS) {
+			fps = inst->clk_data.frame_rate >> 16;
 			inst->is_perf_eligible_session = true;
-			extra_input_count = (HFR_DEC_TOTAL_INPUT_BUFFERS -
-				MIN_INPUT_BUFFERS);
+			if (fps > 480)
+				extra_input_count =
+					(HFR_DEC_TOTAL_MAX_INPUT_BUFFERS -
+					MIN_INPUT_BUFFERS);
+			else
+				extra_input_count =
+					(HFR_DEC_TOTAL_INPUT_BUFFERS -
+					MIN_INPUT_BUFFERS);
 		}
 	} else if (is_encode_session(inst)) {
-		/*
-		 * Both DCVS and HFR needs extra 4 buffers. Since all sessions
-		 * are DCVS eligible, we do not need extra handling for HFR as
-		 * we are making sure initial 4 sessions have extra 4 buffers.
-		 * For the remaining non-perf sessions, no extra buffers are
-		 * allocated and total number of buffers will be 4 with best
-		 * effort performance.
-		 */
+		/* add 4 extra buffers for dcvs */
+		if (core->resources.dcvs)
+			extra_input_count = DCVS_ENC_EXTRA_INPUT_BUFFERS;
+
+		/* Increase buffer count for HFR usecase */
 		if (msm_comm_get_num_perf_sessions(inst) <
-			MAX_PERF_ELIGIBLE_SESSIONS) {
+			MAX_PERF_ELIGIBLE_SESSIONS &&
+			msm_vidc_get_fps(inst) > 60) {
 			inst->is_perf_eligible_session = true;
 			extra_input_count = (HFR_ENC_TOTAL_INPUT_BUFFERS -
 				MIN_INPUT_BUFFERS);
 		}
 	}
+
+exit:
 	return extra_input_count;
 }
 
@@ -820,7 +832,7 @@ static int msm_vidc_get_extra_output_buff_count(struct msm_vidc_inst *inst)
 	struct v4l2_format *f;
 
 	if (!inst || !inst->core) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
 		return -EINVAL;
 	}
 
@@ -834,16 +846,26 @@ static int msm_vidc_get_extra_output_buff_count(struct msm_vidc_inst *inst)
 	if (!is_realtime_session(inst) || is_thumbnail_session(inst))
 		return extra_output_count;
 
-	/*
-	 * Batch mode and HFR not supported for resolution greater than
-	 * UHD. Hence extra buffers are not required.
-	 */
-	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
-	if (res_is_greater_than(f->fmt.pix_mp.width, f->fmt.pix_mp.height,
-		4096, 2160))
+	/* For HEIF, we are increasing buffer count */
+	if (is_image_session(inst) || is_grid_session(inst)) {
+		extra_output_count = (HEIF_ENC_TOTAL_OUTPUT_BUFFERS -
+			MIN_ENC_OUTPUT_BUFFERS);
 		return extra_output_count;
+	}
 
 	if (is_decode_session(inst)) {
+		/* add 4 extra buffers for dcvs */
+		if (core->resources.dcvs)
+			extra_output_count = DCVS_DEC_EXTRA_OUTPUT_BUFFERS;
+		/*
+		 * Batch mode and HFR not supported for resolution greater than
+		 * UHD. Hence extra buffers are not required.
+		 */
+		f = &inst->fmts[INPUT_PORT].v4l2_fmt;
+		if (res_is_greater_than(f->fmt.pix_mp.width,
+					f->fmt.pix_mp.height, 4096, 2160))
+			goto exit;
+
 		/*
 		 * Minimum number of decoder output buffers is codec specific.
 		 * If platform supports decode batching ensure minimum 6 extra
@@ -851,8 +873,6 @@ static int msm_vidc_get_extra_output_buff_count(struct msm_vidc_inst *inst)
 		 */
 		if (core->resources.decode_batching)
 			extra_output_count = BATCH_DEC_EXTRA_OUTPUT_BUFFERS;
-		else if (core->resources.dcvs)
-			extra_output_count = DCVS_DEC_EXTRA_OUTPUT_BUFFERS;
 	} else if (is_encode_session(inst)) {
 		/*
 		 * Batching and DCVS are based on input. We assume that encoder
@@ -861,16 +881,15 @@ static int msm_vidc_get_extra_output_buff_count(struct msm_vidc_inst *inst)
 		 * For HFR, we are increasing buffer count to avoid latency/perf
 		 * issue to re-cycle buffers.
 		 */
-		if (msm_vidc_get_fps(inst) >= 120 &&
-			!res_is_greater_than(f->fmt.pix_mp.width,
-			f->fmt.pix_mp.height, 1920, 1088) &&
-			msm_comm_get_num_perf_sessions(inst) <
-			MAX_PERF_ELIGIBLE_SESSIONS) {
+		if (msm_comm_get_num_perf_sessions(inst) <
+			MAX_PERF_ELIGIBLE_SESSIONS &&
+			msm_vidc_get_fps(inst) > 60) {
 			inst->is_perf_eligible_session = true;
 			extra_output_count = (HFR_ENC_TOTAL_OUTPUT_BUFFERS -
 				MIN_ENC_OUTPUT_BUFFERS);
-			}
+		}
 	}
+exit:
 	return extra_output_count;
 }
 
@@ -914,10 +933,10 @@ u32 msm_vidc_calculate_dec_input_frame_size(struct msm_vidc_inst *inst)
 	if (inst->buffer_size_limit &&
 		(inst->buffer_size_limit < frame_size)) {
 		frame_size = inst->buffer_size_limit;
-		dprintk(VIDC_HIGH, "input buffer size limited to %d\n",
+		s_vpr_h(inst->sid, "input buffer size limited to %d\n",
 			frame_size);
 	} else {
-		dprintk(VIDC_HIGH, "set input buffer size to %d\n",
+		s_vpr_h(inst->sid, "set input buffer size to %d\n",
 			frame_size);
 	}
 
@@ -930,7 +949,8 @@ u32 msm_vidc_calculate_dec_output_frame_size(struct msm_vidc_inst *inst)
 	struct v4l2_format *f;
 
 	f = &inst->fmts[OUTPUT_PORT].v4l2_fmt;
-	hfi_fmt = msm_comm_convert_color_fmt(f->fmt.pix_mp.pixelformat);
+	hfi_fmt = msm_comm_convert_color_fmt(f->fmt.pix_mp.pixelformat,
+					inst->sid);
 	return VENUS_BUFFER_SIZE(hfi_fmt, f->fmt.pix_mp.width,
 			f->fmt.pix_mp.height);
 }
@@ -949,7 +969,8 @@ u32 msm_vidc_calculate_enc_input_frame_size(struct msm_vidc_inst *inst)
 	struct v4l2_format *f;
 
 	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
-	hfi_fmt = msm_comm_convert_color_fmt(f->fmt.pix_mp.pixelformat);
+	hfi_fmt = msm_comm_convert_color_fmt(f->fmt.pix_mp.pixelformat,
+					inst->sid);
 	return VENUS_BUFFER_SIZE(hfi_fmt, f->fmt.pix_mp.width,
 			f->fmt.pix_mp.height);
 }
@@ -969,6 +990,10 @@ u32 msm_vidc_calculate_enc_output_frame_size(struct msm_vidc_inst *inst)
 	 * For resolution > 4k : YUVsize / 4
 	 * Initially frame_size = YUVsize * 2;
 	 */
+
+	if (is_grid_session(inst)) {
+		f->fmt.pix_mp.width = f->fmt.pix_mp.height = HEIC_GRID_DIMENSION;
+	}
 	width = ALIGN(f->fmt.pix_mp.width, BUFFER_ALIGNMENT_SIZE(32));
 	height = ALIGN(f->fmt.pix_mp.height, BUFFER_ALIGNMENT_SIZE(32));
 	mbs_per_frame = NUM_MBS_PER_FRAME(width, height);
@@ -1573,6 +1598,7 @@ static inline u32 calculate_enc_scratch1_size(struct msm_vidc_inst *inst,
 	u32 frame_num_lcu, linebuf_meta_recon_uv, topline_bufsize_fe_1stg_sao;
 	u32 output_mv_bufsize = 0, temp_scratch_mv_bufsize = 0;
 	u32 size, bit_depth, num_LCUMB;
+	u32 vpss_lineBufferSize_1 = 0;
 
 	width_lcu_num = ((width)+(lcu_size)-1) / (lcu_size);
 	height_lcu_num = ((height)+(lcu_size)-1) / (lcu_size);
@@ -1680,7 +1706,9 @@ static inline u32 calculate_enc_scratch1_size(struct msm_vidc_inst *inst,
 	override_buffer_size = ALIGN(override_buffer_size,
 		VENUS_DMA_ALIGNMENT) * 2;
 	ir_buffer_size = (((frame_num_lcu << 1) + 7) & (~7)) * 3;
-	vpss_line_buf = ((((width_coded + 3) >> 2) << 5) + 256) * 16;
+	vpss_lineBufferSize_1 = ((((8192) >> 2) << 5) * num_vpp_pipes) + 64;
+	vpss_line_buf = (((((max(width_coded, height_coded) + 3) >> 2) << 5) + 256) * 16) +
+		vpss_lineBufferSize_1;
 	topline_bufsize_fe_1stg_sao = (16 * (width_coded >> 5));
 	topline_bufsize_fe_1stg_sao = ALIGN(topline_bufsize_fe_1stg_sao,
 		VENUS_DMA_ALIGNMENT);

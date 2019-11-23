@@ -41,6 +41,9 @@ int msm_venc_check_dynamic_flip_constraints(struct msm_vidc_inst *inst);
 int msm_venc_set_dynamic_flip(struct msm_vidc_inst *inst);
 int msm_venc_set_lossless(struct msm_vidc_inst *inst);
 int msm_venc_set_blur_resolution(struct msm_vidc_inst *inst);
+int msm_venc_set_cvp_skipratio(struct msm_vidc_inst *inst);
 int handle_all_intra_restrictions(struct msm_vidc_inst *inst);
 int check_blur_restrictions(struct msm_vidc_inst *inst);
+int msm_venc_set_frame_quality(struct msm_vidc_inst *inst);
+int msm_venc_set_image_grid(struct msm_vidc_inst *inst);
 #endif

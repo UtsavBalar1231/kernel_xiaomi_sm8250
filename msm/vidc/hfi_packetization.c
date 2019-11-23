@@ -5,81 +5,7 @@
 #include "hfi_packetization.h"
 #include "msm_vidc_debug.h"
 
-/* Set up look-up tables to convert HAL_* to HFI_*.
- *
- * The tables below mostly take advantage of the fact that most
- * HAL_* types are defined bitwise. So if we index them normally
- * when declaring the tables, we end up with huge arrays with wasted
- * space.  So before indexing them, we apply log2 to use a more
- * sensible index.
- */
-
-enum hal_domain vidc_get_hal_domain(u32 hfi_domain)
-{
-	enum hal_domain hal_domain = 0;
-
-	switch (hfi_domain) {
-	case HFI_VIDEO_DOMAIN_VPE:
-		hal_domain = HAL_VIDEO_DOMAIN_VPE;
-		break;
-	case HFI_VIDEO_DOMAIN_ENCODER:
-		hal_domain = HAL_VIDEO_DOMAIN_ENCODER;
-		break;
-	case HFI_VIDEO_DOMAIN_DECODER:
-		hal_domain = HAL_VIDEO_DOMAIN_DECODER;
-		break;
-	case HFI_VIDEO_DOMAIN_CVP:
-		hal_domain = HAL_VIDEO_DOMAIN_CVP;
-		break;
-	default:
-		dprintk(VIDC_ERR, "%s: invalid domain %x\n",
-			__func__, hfi_domain);
-		hal_domain = 0;
-		break;
-	}
-	return hal_domain;
-}
-
-enum hal_video_codec vidc_get_hal_codec(u32 hfi_codec)
-{
-	enum hal_video_codec hal_codec = 0;
-
-	switch (hfi_codec) {
-	case HFI_VIDEO_CODEC_H264:
-		hal_codec = HAL_VIDEO_CODEC_H264;
-		break;
-	case HFI_VIDEO_CODEC_MPEG1:
-		hal_codec = HAL_VIDEO_CODEC_MPEG1;
-		break;
-	case HFI_VIDEO_CODEC_MPEG2:
-		hal_codec = HAL_VIDEO_CODEC_MPEG2;
-		break;
-	case HFI_VIDEO_CODEC_VP8:
-		hal_codec = HAL_VIDEO_CODEC_VP8;
-		break;
-	case HFI_VIDEO_CODEC_HEVC:
-		hal_codec = HAL_VIDEO_CODEC_HEVC;
-		break;
-	case HFI_VIDEO_CODEC_VP9:
-		hal_codec = HAL_VIDEO_CODEC_VP9;
-		break;
-	case HFI_VIDEO_CODEC_TME:
-		hal_codec = HAL_VIDEO_CODEC_TME;
-		break;
-	case HFI_VIDEO_CODEC_CVP:
-		hal_codec = HAL_VIDEO_CODEC_CVP;
-		break;
-	default:
-		dprintk(VIDC_HIGH, "%s: invalid codec 0x%x\n",
-			__func__, hfi_codec);
-		hal_codec = 0;
-		break;
-	}
-	return hal_codec;
-}
-
-
-u32 vidc_get_hfi_domain(enum hal_domain hal_domain)
+u32 vidc_get_hfi_domain(enum hal_domain hal_domain, u32 sid)
 {
 	u32 hfi_domain;
 
@@ -97,7 +23,7 @@ u32 vidc_get_hfi_domain(enum hal_domain hal_domain)
 		hfi_domain = HFI_VIDEO_DOMAIN_CVP;
 		break;
 	default:
-		dprintk(VIDC_ERR, "%s: invalid domain 0x%x\n",
+		s_vpr_e(sid, "%s: invalid domain 0x%x\n",
 			__func__, hal_domain);
 		hfi_domain = 0;
 		break;
@@ -105,7 +31,7 @@ u32 vidc_get_hfi_domain(enum hal_domain hal_domain)
 	return hfi_domain;
 }
 
-u32 vidc_get_hfi_codec(enum hal_video_codec hal_codec)
+u32 vidc_get_hfi_codec(enum hal_video_codec hal_codec, u32 sid)
 {
 	u32 hfi_codec = 0;
 
@@ -135,7 +61,7 @@ u32 vidc_get_hfi_codec(enum hal_video_codec hal_codec)
 		hfi_codec = HFI_VIDEO_CODEC_CVP;
 		break;
 	default:
-		dprintk(VIDC_HIGH, "%s: invalid codec 0x%x\n",
+		s_vpr_h(sid, "%s: invalid codec 0x%x\n",
 			__func__, hal_codec);
 		hfi_codec = 0;
 		break;
@@ -194,10 +120,10 @@ int create_pkt_cmd_sys_debug_config(
 
 int create_pkt_cmd_sys_coverage_config(
 	struct hfi_cmd_sys_set_property_packet *pkt,
-	u32 mode)
+	u32 mode, u32 sid)
 {
 	if (!pkt) {
-		dprintk(VIDC_ERR, "In %s(), No input packet\n", __func__);
+		s_vpr_e(sid, "In %s(), No input packet\n", __func__);
 		return -EINVAL;
 	}
 
@@ -207,8 +133,7 @@ int create_pkt_cmd_sys_coverage_config(
 	pkt->num_properties = 1;
 	pkt->rg_property_data[0] = HFI_PROPERTY_SYS_CONFIG_COVERAGE;
 	pkt->rg_property_data[1] = mode;
-	dprintk(VIDC_HIGH, "Firmware coverage mode %d\n",
-			pkt->rg_property_data[1]);
+	s_vpr_h(sid, "Firmware coverage mode %d\n", pkt->rg_property_data[1]);
 	return 0;
 }
 
@@ -221,8 +146,7 @@ int create_pkt_cmd_sys_set_resource(
 	u32 i = 0;
 
 	if (!pkt || !res_hdr || !res_value) {
-		dprintk(VIDC_ERR,
-			"Invalid paramas pkt %pK res_hdr %pK res_value %pK\n",
+		d_vpr_e("Invalid paramas pkt %pK res_hdr %pK res_value %pK\n",
 				pkt, res_hdr, res_value);
 		return -EINVAL;
 	}
@@ -256,14 +180,13 @@ int create_pkt_cmd_sys_set_resource(
 
 		for (i = 0; i < hfi_sc_info->num_entries; i++) {
 			hfi_sc[i] = res_sc[i];
-		dprintk(VIDC_HIGH, "entry hfi#%d, sc_id %d, size %d\n",
+		d_vpr_h("entry hfi#%d, sc_id %d, size %d\n",
 				 i, hfi_sc[i].sc_id, hfi_sc[i].size);
 		}
 		break;
 	}
 	default:
-		dprintk(VIDC_ERR,
-			"Invalid resource_id %d\n", res_hdr->resource_id);
+		d_vpr_e("Invalid resource_id %d\n", res_hdr->resource_id);
 		rc = -ENOTSUPP;
 	}
 
@@ -277,8 +200,7 @@ int create_pkt_cmd_sys_release_resource(
 	int rc = 0;
 
 	if (!pkt || !res_hdr) {
-		dprintk(VIDC_ERR,
-			"Invalid paramas pkt %pK res_hdr %pK\n",
+		d_vpr_e("Invalid paramas pkt %pK res_hdr %pK\n",
 				pkt, res_hdr);
 		return -EINVAL;
 	}
@@ -292,13 +214,11 @@ int create_pkt_cmd_sys_release_resource(
 		pkt->resource_type = HFI_RESOURCE_SYSCACHE;
 		break;
 	default:
-		dprintk(VIDC_ERR,
-			 "Invalid resource_id %d\n", res_hdr->resource_id);
+		d_vpr_e("Invalid resource_id %d\n", res_hdr->resource_id);
 		rc = -ENOTSUPP;
 	}
 
-	dprintk(VIDC_HIGH,
-		"rel_res: pkt_type 0x%x res_type 0x%x prepared\n",
+	d_vpr_h("rel_res: pkt_type 0x%x res_type 0x%x prepared\n",
 		pkt->packet_type, pkt->resource_type);
 
 	return rc;
@@ -306,8 +226,7 @@ int create_pkt_cmd_sys_release_resource(
 
 inline int create_pkt_cmd_sys_session_init(
 		struct hfi_cmd_sys_session_init_packet *pkt,
-		struct hal_session *session,
-		u32 session_domain, u32 session_codec)
+		u32 sid, u32 session_domain, u32 session_codec)
 {
 	int rc = 0;
 
@@ -316,9 +235,9 @@ inline int create_pkt_cmd_sys_session_init(
 
 	pkt->size = sizeof(struct hfi_cmd_sys_session_init_packet);
 	pkt->packet_type = HFI_CMD_SYS_SESSION_INIT;
-	pkt->session_id = hash32_ptr(session);
-	pkt->session_domain = vidc_get_hfi_domain(session_domain);
-	pkt->session_codec = vidc_get_hfi_codec(session_codec);
+	pkt->sid = sid;
+	pkt->session_domain = vidc_get_hfi_domain(session_domain, sid);
+	pkt->session_codec = vidc_get_hfi_codec(session_codec, sid);
 	if (!pkt->session_codec)
 		return -EINVAL;
 
@@ -369,9 +288,8 @@ int create_pkt_cmd_sys_ubwc_config(
 	return rc;
 }
 
-
 int create_pkt_cmd_session_cmd(struct vidc_hal_session_cmd_pkt *pkt,
-			int pkt_type, struct hal_session *session)
+			int pkt_type, u32 sid)
 {
 	int rc = 0;
 
@@ -380,7 +298,7 @@ int create_pkt_cmd_session_cmd(struct vidc_hal_session_cmd_pkt *pkt,
 
 	pkt->size = sizeof(struct vidc_hal_session_cmd_pkt);
 	pkt->packet_type = pkt_type;
-	pkt->session_id = hash32_ptr(session);
+	pkt->sid = sid;
 
 	return rc;
 }
@@ -391,7 +309,7 @@ int create_pkt_cmd_sys_power_control(
 	struct hfi_enable *hfi;
 
 	if (!pkt) {
-		dprintk(VIDC_ERR, "No input packet\n");
+		d_vpr_e("%s: No input packet\n", __func__);
 		return -EINVAL;
 	}
 
@@ -405,7 +323,7 @@ int create_pkt_cmd_sys_power_control(
 	return 0;
 }
 
-static u32 get_hfi_buffer(int hal_buffer)
+static u32 get_hfi_buffer(int hal_buffer, u32 sid)
 {
 	u32 buffer;
 
@@ -444,8 +362,7 @@ static u32 get_hfi_buffer(int hal_buffer)
 		buffer = HFI_BUFFER_INTERNAL_PERSIST_1;
 		break;
 	default:
-		dprintk(VIDC_ERR, "Invalid buffer: %#x\n",
-				hal_buffer);
+		s_vpr_e(sid, "Invalid buffer: %#x\n", hal_buffer);
 		buffer = 0;
 		break;
 	}
@@ -454,17 +371,16 @@ static u32 get_hfi_buffer(int hal_buffer)
 
 int create_pkt_cmd_session_set_buffers(
 		struct hfi_cmd_session_set_buffers_packet *pkt,
-		struct hal_session *session,
-		struct vidc_buffer_addr_info *buffer_info)
+		u32 sid, struct vidc_buffer_addr_info *buffer_info)
 {
 	int rc = 0;
 	u32 i = 0;
 
-	if (!pkt || !session)
+	if (!pkt)
 		return -EINVAL;
 
 	pkt->packet_type = HFI_CMD_SESSION_SET_BUFFERS;
-	pkt->session_id = hash32_ptr(session);
+	pkt->sid = sid;
 	pkt->buffer_size = buffer_info->buffer_size;
 	pkt->min_buffer_size = buffer_info->buffer_size;
 	pkt->num_buffers = buffer_info->num_buffers;
@@ -495,7 +411,8 @@ int create_pkt_cmd_session_set_buffers(
 		}
 	}
 
-	pkt->buffer_type = get_hfi_buffer(buffer_info->buffer_type);
+	pkt->buffer_type =
+		get_hfi_buffer(buffer_info->buffer_type, pkt->sid);
 	if (!pkt->buffer_type)
 		return -EINVAL;
 
@@ -504,17 +421,16 @@ int create_pkt_cmd_session_set_buffers(
 
 int create_pkt_cmd_session_release_buffers(
 		struct hfi_cmd_session_release_buffer_packet *pkt,
-		struct hal_session *session,
-		struct vidc_buffer_addr_info *buffer_info)
+		u32 sid, struct vidc_buffer_addr_info *buffer_info)
 {
 	int rc = 0;
 	u32 i = 0;
 
-	if (!pkt || !session)
+	if (!pkt)
 		return -EINVAL;
 
 	pkt->packet_type = HFI_CMD_SESSION_RELEASE_BUFFERS;
-	pkt->session_id = hash32_ptr(session);
+	pkt->sid = sid;
 	pkt->buffer_size = buffer_info->buffer_size;
 	pkt->num_buffers = buffer_info->num_buffers;
 
@@ -542,7 +458,8 @@ int create_pkt_cmd_session_release_buffers(
 			((buffer_info->num_buffers - 1) * sizeof(u32));
 	}
 	pkt->response_req = buffer_info->response_required;
-	pkt->buffer_type = get_hfi_buffer(buffer_info->buffer_type);
+	pkt->buffer_type =
+		get_hfi_buffer(buffer_info->buffer_type, pkt->sid);
 	if (!pkt->buffer_type)
 		return -EINVAL;
 	return rc;
@@ -550,20 +467,18 @@ int create_pkt_cmd_session_release_buffers(
 
 int create_pkt_cmd_session_register_buffer(
 		struct hfi_cmd_session_register_buffers_packet *pkt,
-		struct hal_session *session,
-		struct vidc_register_buffer *buffer)
+		u32 sid, struct vidc_register_buffer *buffer)
 {
 	int rc = 0;
 	u32 i;
 	struct hfi_buffer_mapping_type *buf;
 
-	if (!pkt || !session) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+	if (!pkt) {
+		d_vpr_e("%s: invalid params %pK\n", __func__, pkt);
 		return -EINVAL;
 	}
-
 	pkt->packet_type = HFI_CMD_SESSION_REGISTER_BUFFERS;
-	pkt->session_id = hash32_ptr(session);
+	pkt->sid = sid;
 	pkt->client_data = buffer->client_data;
 	pkt->response_req = buffer->response_required;
 	pkt->num_buffers = 1;
@@ -584,20 +499,18 @@ int create_pkt_cmd_session_register_buffer(
 
 int create_pkt_cmd_session_unregister_buffer(
 		struct hfi_cmd_session_unregister_buffers_packet *pkt,
-		struct hal_session *session,
-		struct vidc_unregister_buffer *buffer)
+		u32 sid, struct vidc_unregister_buffer *buffer)
 {
 	int rc = 0;
 	u32 i;
 	struct hfi_buffer_mapping_type *buf;
 
-	if (!pkt || !session) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
+	if (!pkt) {
+		d_vpr_e("%s: invalid params %pK\n", __func__, pkt);
 		return -EINVAL;
 	}
-
 	pkt->packet_type = HFI_CMD_SESSION_UNREGISTER_BUFFERS;
-	pkt->session_id = hash32_ptr(session);
+	pkt->sid = sid;
 	pkt->client_data = buffer->client_data;
 	pkt->response_req = buffer->response_required;
 	pkt->num_buffers = 1;
@@ -618,17 +531,17 @@ int create_pkt_cmd_session_unregister_buffer(
 
 int create_pkt_cmd_session_etb_decoder(
 	struct hfi_cmd_session_empty_buffer_compressed_packet *pkt,
-	struct hal_session *session, struct vidc_frame_data *input_frame)
+	u32 sid, struct vidc_frame_data *input_frame)
 {
 	int rc = 0;
 
-	if (!pkt || !session)
+	if (!pkt)
 		return -EINVAL;
 
 	pkt->size =
 		sizeof(struct hfi_cmd_session_empty_buffer_compressed_packet);
 	pkt->packet_type = HFI_CMD_SESSION_EMPTY_BUFFER;
-	pkt->session_id = hash32_ptr(session);
+	pkt->sid = sid;
 	pkt->time_stamp_hi = upper_32_bits(input_frame->timestamp);
 	pkt->time_stamp_lo = lower_32_bits(input_frame->timestamp);
 	pkt->flags = input_frame->flags;
@@ -650,17 +563,17 @@ int create_pkt_cmd_session_etb_decoder(
 
 int create_pkt_cmd_session_etb_encoder(
 	struct hfi_cmd_session_empty_buffer_uncompressed_plane0_packet *pkt,
-	struct hal_session *session, struct vidc_frame_data *input_frame)
+	u32 sid, struct vidc_frame_data *input_frame)
 {
 	int rc = 0;
 
-	if (!pkt || !session)
+	if (!pkt)
 		return -EINVAL;
 
 	pkt->size = sizeof(struct
 		hfi_cmd_session_empty_buffer_uncompressed_plane0_packet);
 	pkt->packet_type = HFI_CMD_SESSION_EMPTY_BUFFER;
-	pkt->session_id = hash32_ptr(session);
+	pkt->sid = sid;
 	pkt->view_id = 0;
 	pkt->time_stamp_hi = upper_32_bits(input_frame->timestamp);
 	pkt->time_stamp_lo = lower_32_bits(input_frame->timestamp);
@@ -683,17 +596,16 @@ int create_pkt_cmd_session_etb_encoder(
 }
 
 int create_pkt_cmd_session_ftb(struct hfi_cmd_session_fill_buffer_packet *pkt,
-		struct hal_session *session,
-		struct vidc_frame_data *output_frame)
+		u32 sid, struct vidc_frame_data *output_frame)
 {
 	int rc = 0;
 
-	if (!pkt || !session || !output_frame)
+	if (!pkt || !output_frame)
 		return -EINVAL;
 
 	pkt->size = sizeof(struct hfi_cmd_session_fill_buffer_packet);
 	pkt->packet_type = HFI_CMD_SESSION_FILL_BUFFER;
-	pkt->session_id = hash32_ptr(session);
+	pkt->sid = sid;
 
 	if (output_frame->buffer_type == HAL_BUFFER_OUTPUT)
 		pkt->stream_id = 0;
@@ -720,16 +632,16 @@ int create_pkt_cmd_session_ftb(struct hfi_cmd_session_fill_buffer_packet *pkt,
 
 int create_pkt_cmd_session_get_buf_req(
 		struct hfi_cmd_session_get_property_packet *pkt,
-		struct hal_session *session)
+		u32 sid)
 {
 	int rc = 0;
 
-	if (!pkt || !session)
+	if (!pkt)
 		return -EINVAL;
 
 	pkt->size = sizeof(struct hfi_cmd_session_get_property_packet);
 	pkt->packet_type = HFI_CMD_SESSION_GET_PROPERTY;
-	pkt->session_id = hash32_ptr(session);
+	pkt->sid = sid;
 	pkt->num_properties = 1;
 	pkt->rg_property_data[0] = HFI_PROPERTY_CONFIG_BUFFER_REQUIREMENTS;
 
@@ -737,16 +649,16 @@ int create_pkt_cmd_session_get_buf_req(
 }
 
 int create_pkt_cmd_session_flush(struct hfi_cmd_session_flush_packet *pkt,
-			struct hal_session *session, enum hal_flush flush_mode)
+			u32 sid, enum hal_flush flush_mode)
 {
 	int rc = 0;
 
-	if (!pkt || !session)
+	if (!pkt)
 		return -EINVAL;
 
 	pkt->size = sizeof(struct hfi_cmd_session_flush_packet);
 	pkt->packet_type = HFI_CMD_SESSION_FLUSH;
-	pkt->session_id = hash32_ptr(session);
+	pkt->sid = sid;
 	switch (flush_mode) {
 	case HAL_FLUSH_INPUT:
 		pkt->flush_type = HFI_FLUSH_INPUT;
@@ -758,7 +670,7 @@ int create_pkt_cmd_session_flush(struct hfi_cmd_session_flush_packet *pkt,
 		pkt->flush_type = HFI_FLUSH_ALL;
 		break;
 	default:
-		dprintk(VIDC_ERR, "Invalid flush mode: %#x\n", flush_mode);
+		s_vpr_e(pkt->sid, "Invalid flush mode: %#x\n", flush_mode);
 		return -EINVAL;
 	}
 	return rc;
@@ -766,22 +678,22 @@ int create_pkt_cmd_session_flush(struct hfi_cmd_session_flush_packet *pkt,
 
 int create_pkt_cmd_session_set_property(
 		struct hfi_cmd_session_set_property_packet *pkt,
-		struct hal_session *session,
+		u32 sid,
 		u32 ptype, void *pdata, u32 size)
 {
-	if (!pkt || !session)
+	if (!pkt)
 		return -EINVAL;
 
 	pkt->size = sizeof(struct hfi_cmd_session_set_property_packet);
 	pkt->packet_type = HFI_CMD_SESSION_SET_PROPERTY;
-	pkt->session_id = hash32_ptr(session);
+	pkt->sid = sid;
 	pkt->num_properties = 1;
 	pkt->size += size;
 	pkt->rg_property_data[0] = ptype;
 	if (size && pdata)
 		memcpy(&pkt->rg_property_data[1], pdata, size);
 
-	dprintk(VIDC_HIGH, "Setting HAL Property = 0x%x\n", ptype);
+	s_vpr_h(pkt->sid, "Setting HAL Property = 0x%x\n", ptype);
 	return 0;
 }
 
@@ -800,8 +712,7 @@ static int get_hfi_ssr_type(enum hal_ssr_trigger_type type)
 		rc = HFI_TEST_SSR_HW_WDOG_IRQ;
 		break;
 	default:
-		dprintk(VIDC_ERR,
-			"SSR trigger type not recognized, using WDOG.\n");
+		d_vpr_e("SSR trigger type not recognized, using WDOG.\n");
 	}
 	return rc;
 }
@@ -810,7 +721,7 @@ int create_pkt_ssr_cmd(enum hal_ssr_trigger_type type,
 		struct hfi_cmd_sys_test_ssr_packet *pkt)
 {
 	if (!pkt) {
-		dprintk(VIDC_ERR, "Invalid params, device: %pK\n", pkt);
+		d_vpr_e("%s: invalid params\n", __func__);
 		return -EINVAL;
 	}
 	pkt->size = sizeof(struct hfi_cmd_sys_test_ssr_packet);
@@ -823,7 +734,7 @@ int create_pkt_cmd_sys_image_version(
 		struct hfi_cmd_sys_get_property_packet *pkt)
 {
 	if (!pkt) {
-		dprintk(VIDC_ERR, "%s invalid param :%pK\n", __func__, pkt);
+		d_vpr_e("%s: invalid params\n", __func__);
 		return -EINVAL;
 	}
 	pkt->size = sizeof(struct hfi_cmd_sys_get_property_packet);
@@ -834,16 +745,15 @@ int create_pkt_cmd_sys_image_version(
 }
 
 int create_pkt_cmd_session_sync_process(
-		struct hfi_cmd_session_sync_process_packet *pkt,
-		struct hal_session *session)
+	struct hfi_cmd_session_sync_process_packet *pkt, u32 sid)
 {
-	if (!pkt || !session)
+	if (!pkt)
 		return -EINVAL;
 
 	*pkt = (struct hfi_cmd_session_sync_process_packet) {0};
 	pkt->size = sizeof(*pkt);
 	pkt->packet_type = HFI_CMD_SESSION_SYNC;
-	pkt->session_id = hash32_ptr(session);
+	pkt->sid = sid;
 	pkt->sync_id = 0;
 
 	return 0;
@@ -878,8 +788,7 @@ static struct hfi_packetization_ops hfi_default = {
 struct hfi_packetization_ops *hfi_get_pkt_ops_handle(
 			enum hfi_packetization_type type)
 {
-	dprintk(VIDC_HIGH, "%s selected\n",
-		type == HFI_PACKETIZATION_4XX ?
+	d_vpr_h("%s selected\n", type == HFI_PACKETIZATION_4XX ?
 		"4xx packetization" : "Unknown hfi");
 
 	switch (type) {
