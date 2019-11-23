@@ -490,6 +490,14 @@ void rmnet_shs_wq_mem_update_cached_sorted_gold_flows(struct list_head *gold_flo
 		if (!gflow_node)
 			continue;
 
+		if (gflow_node->rx_pps == 0) {
+			continue;
+		}
+
+		if (idx >= RMNET_SHS_MAX_USRFLOWS) {
+			break;
+		}
+
 		rm_err("SHS_SGOLD: > flow 0x%x with pps %llu on cpu[%d]",
 		       gflow_node->hash, gflow_node->rx_pps,
 		       gflow_node->cpu_num);
@@ -547,6 +555,15 @@ void rmnet_shs_wq_mem_update_cached_sorted_ss_flows(struct list_head *ss_flows)
 	list_for_each_entry(ssflow_node, ss_flows, ssflow_list) {
 		if (!ssflow_node)
 			continue;
+
+
+		if (ssflow_node->rx_pps == 0) {
+			continue;
+		}
+
+		if (idx >= RMNET_SHS_MAX_USRFLOWS) {
+			break;
+		}
 
 		rm_err("SHS_SLOW: > flow 0x%x with pps %llu on cpu[%d]",
 		       ssflow_node->hash, ssflow_node->rx_pps,
