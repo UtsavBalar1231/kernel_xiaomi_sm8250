@@ -104,21 +104,25 @@ static int __bolero_reg_read(struct bolero_priv *priv,
 	if (priv->macro_params[VA_MACRO].dev)
 		pm_runtime_get_sync(priv->macro_params[VA_MACRO].dev);
 
-	/* Request Clk before register access */
-	ret = bolero_clk_rsc_request_clock(priv->macro_params[macro_id].dev,
+	if (priv->version < BOLERO_VERSION_2_0) {
+		/* Request Clk before register access */
+		ret = bolero_clk_rsc_request_clock(priv->macro_params[macro_id].dev,
 				priv->macro_params[macro_id].default_clk_id,
 				priv->macro_params[macro_id].clk_id_req,
 				true);
-	if (ret < 0) {
-		dev_err_ratelimited(priv->dev,
-			"%s: Failed to enable clock, ret:%d\n", __func__, ret);
-		goto err;
+		if (ret < 0) {
+			dev_err_ratelimited(priv->dev,
+				"%s: Failed to enable clock, ret:%d\n",
+				__func__, ret);
+			goto err;
+		}
 	}
 
 	bolero_ahb_read_device(
 		priv->macro_params[macro_id].io_base, reg, val);
 
-	bolero_clk_rsc_request_clock(priv->macro_params[macro_id].dev,
+	if (priv->version < BOLERO_VERSION_2_0)
+		bolero_clk_rsc_request_clock(priv->macro_params[macro_id].dev,
 				priv->macro_params[macro_id].default_clk_id,
 				priv->macro_params[macro_id].clk_id_req,
 				false);
@@ -148,21 +152,25 @@ static int __bolero_reg_write(struct bolero_priv *priv,
 	if (priv->macro_params[VA_MACRO].dev)
 		pm_runtime_get_sync(priv->macro_params[VA_MACRO].dev);
 
-	/* Request Clk before register access */
-	ret = bolero_clk_rsc_request_clock(priv->macro_params[macro_id].dev,
+	if (priv->version < BOLERO_VERSION_2_0) {
+		/* Request Clk before register access */
+		ret = bolero_clk_rsc_request_clock(priv->macro_params[macro_id].dev,
 				priv->macro_params[macro_id].default_clk_id,
 				priv->macro_params[macro_id].clk_id_req,
 				true);
-	if (ret < 0) {
-		dev_err_ratelimited(priv->dev,
-			"%s: Failed to enable clock, ret:%d\n", __func__, ret);
-		goto err;
+		if (ret < 0) {
+			dev_err_ratelimited(priv->dev,
+				"%s: Failed to enable clock, ret:%d\n",
+				__func__, ret);
+			goto err;
+		}
 	}
 
 	bolero_ahb_write_device(
 			priv->macro_params[macro_id].io_base, reg, val);
 
-	bolero_clk_rsc_request_clock(priv->macro_params[macro_id].dev,
+	if (priv->version < BOLERO_VERSION_2_0)
+		bolero_clk_rsc_request_clock(priv->macro_params[macro_id].dev,
 				priv->macro_params[macro_id].default_clk_id,
 				priv->macro_params[macro_id].clk_id_req,
 				false);
@@ -717,6 +725,12 @@ static void bolero_ssr_disable(struct device *dev, void *data)
 	struct bolero_priv *priv = data;
 	int macro_idx;
 
+	if (!priv->dev_up) {
+		dev_err_ratelimited(priv->dev,
+				    "%s: already disabled\n", __func__);
+		return;
+	}
+
 	bolero_cdc_notifier_call(priv, BOLERO_WCD_EVT_PA_OFF_PRE_SSR);
 	regcache_cache_only(priv->regmap, true);
 
@@ -1035,10 +1049,9 @@ static void bolero_add_child_devices(struct work_struct *work)
 		pdev->dev.parent = priv->dev;
 		pdev->dev.of_node = node;
 
-		if (split_codec) {
-			priv->dev->platform_data = platdata;
+		priv->dev->platform_data = platdata;
+		if (split_codec)
 			priv->wcd_dev = &pdev->dev;
-		}
 
 		ret = platform_device_add(pdev);
 		if (ret) {
@@ -1101,6 +1114,13 @@ static int bolero_probe(struct platform_device *pdev)
 			__func__);
 		ret = 0;
 	}
+	if (priv->version == BOLERO_VERSION_2_1) {
+		bolero_reg_access[TX_MACRO] = bolero_tx_reg_access_v2;
+		bolero_reg_access[VA_MACRO] = bolero_va_reg_access_v2;
+	} else if (priv->version == BOLERO_VERSION_2_0) {
+		bolero_reg_access[VA_MACRO] = bolero_va_reg_access_v3;
+	}
+
 	priv->dev = &pdev->dev;
 	priv->dev_up = true;
 	priv->initial_boot = true;
