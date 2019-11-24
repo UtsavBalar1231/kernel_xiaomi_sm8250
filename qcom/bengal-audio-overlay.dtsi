@@ -89,8 +89,8 @@
 			qcom,mipi-sdw-block-packing-mode = <1>;
 			swrm-io-base = <0xa740000 0x0>;
 			interrupts =
-				<&intc GIC_SPI 296 IRQ_TYPE_LEVEL_HIGH>,
-				<&intc GIC_SPI 79 IRQ_TYPE_LEVEL_HIGH>;
+				<0 296 IRQ_TYPE_LEVEL_HIGH>,
+				<0 79 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-names = "swr_master_irq", "swr_wake_irq";
 			qcom,swr-wakeup-required = <1>;
 			qcom,swr-num-ports = <3>;
