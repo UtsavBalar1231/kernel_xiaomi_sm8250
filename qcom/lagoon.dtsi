@@ -21,6 +21,7 @@
 
 	aliases {
 		ufshc1 = &ufshc_mem; /* Embedded UFS slot */
+		serial0 = &qupv3_se9_2uart; /* Debug Console */
 	};
 
 	cpus {
@@ -1150,3 +1151,9 @@
 #include "lagoon-pm.dtsi"
 #include "lagoon-stub-regulator.dtsi"
 #include "lagoon-ion.dtsi"
+#include "lagoon-qupv3.dtsi"
+
+/*Debug UART*/
+&qupv3_se9_2uart {
+	status = "ok";
+};
