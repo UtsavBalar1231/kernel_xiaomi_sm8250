@@ -66,6 +66,22 @@
 		};
 	};
 
+	rpm-regulator-smpa7 {
+		compatible = "qcom,rpm-smd-regulator-resource";
+		qcom,resource-name = "smpa";
+		qcom,resource-id = <7>;
+		qcom,regulator-type = <1>;
+		qcom,hpm-min-load = <100000>;
+		status = "disabled";
+
+		regulator-s7 {
+			compatible = "qcom,rpm-smd-regulator";
+			regulator-name = "pm6125_s7";
+			qcom,set = <3>;
+			status = "disabled";
+		};
+	};
+
 	rpm-regulator-smpa8 {
 		compatible = "qcom,rpm-smd-regulator-resource";
 		qcom,resource-name = "smpa";
