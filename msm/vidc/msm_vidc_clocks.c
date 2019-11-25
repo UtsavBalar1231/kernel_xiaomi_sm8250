@@ -36,7 +36,8 @@ struct msm_vidc_core_ops core_ops_ar50lt = {
 	.calc_freq = msm_vidc_calc_freq_ar50,
 	.decide_work_route = NULL,
 	.decide_work_mode = msm_vidc_decide_work_mode_ar50,
-	.decide_core_and_power_mode = NULL,
+	.decide_core_and_power_mode =
+		msm_vidc_decide_core_and_power_mode_ar50lt,
 	.calc_bw = calc_bw_ar50lt,
 };
 
@@ -1610,6 +1611,12 @@ static u32 get_core_load(struct msm_vidc_core *core,
 	mutex_unlock(&core->lock);
 
 	return load;
+}
+
+int msm_vidc_decide_core_and_power_mode_ar50lt(struct msm_vidc_inst *inst)
+{
+	inst->clk_data.core_id = VIDC_CORE_ID_1;
+	return 0;
 }
 
 int msm_vidc_decide_core_and_power_mode_iris1(struct msm_vidc_inst *inst)
