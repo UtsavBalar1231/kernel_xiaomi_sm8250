@@ -833,6 +833,13 @@
 			qcom,display-topology = <2 2 2>;
 			qcom,default-topology-index = <0>;
 		};
+
+		timing@17 { /* 1080 144 FPS */
+			qcom,mdss-dsi-panel-phy-timings = [00 13 05 04 1f 1e 05
+				05 03 02 04 00 12 14];
+			qcom,display-topology = <2 2 2>;
+			qcom,default-topology-index = <0>;
+		};
 	};
 };
 
