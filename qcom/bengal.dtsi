@@ -1551,6 +1551,7 @@
 		reg-names = "rmtfs";
 		qcom,client-id = <0x00000001>;
 		qcom,guard-memory;
+		qcom,vm-nav-path;
 	};
 
 	gcc: qcom,gcc@1400000 {
