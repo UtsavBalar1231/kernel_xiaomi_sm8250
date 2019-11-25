@@ -462,6 +462,12 @@
 			size = <0 0x8c00000>;
 		};
 
+		cmd_db: reserved-memory@80860000 {
+			reg = <0x0 0x80860000 0x0 0x20000>;
+			compatible = "qcom,cmd-db";
+			no-map;
+		};
+
 		/* global autoconfigured region for contiguous allocations */
 		linux,cma {
 			compatible = "shared-dma-pool";
