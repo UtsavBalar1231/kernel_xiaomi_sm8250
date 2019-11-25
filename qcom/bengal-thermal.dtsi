@@ -6,7 +6,7 @@
 	#size-cells = <1>;
 	lmh_dcvs0: qcom,limits-dcvs@f521000 {
 		compatible = "qcom,msm-hw-limits";
-		interrupts = <GIC_SPI 32 IRQ_TYPE_LEVEL_HIGH>;
+		interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL_HIGH>;
 		qcom,affinity = <0>;
 		reg = <0xf550800 0x1000>,
 			<0xf521000 0x1000>;
@@ -16,7 +16,7 @@
 
 	lmh_dcvs1: qcom,limits-dcvs@f523000 {
 		compatible = "qcom,msm-hw-limits";
-		interrupts = <GIC_SPI 32 IRQ_TYPE_LEVEL_HIGH>;
+		interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL_HIGH>;
 		qcom,affinity = <1>;
 		reg = <0xf550800 0x1000>,
 			<0xf523000 0x1000>;
