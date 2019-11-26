@@ -455,6 +455,9 @@ static u64 rmnet_shs_wq_get_flow_avg_pps(struct rmnet_shs_wq_hstat_s *hnode)
 		/* More weight to current value */
 		new_weight = rmnet_shs_wq_tuning;
 		old_weight = 100 - rmnet_shs_wq_tuning;
+	} else {
+		old_weight = rmnet_shs_wq_tuning;
+		new_weight = 100 - rmnet_shs_wq_tuning;
 	}
 
 	/* computing weighted average per flow, if the flow has just started,
