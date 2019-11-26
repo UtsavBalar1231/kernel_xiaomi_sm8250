@@ -2526,7 +2526,7 @@
 	ipa_smmu_ap: ipa_smmu_ap {
 		compatible = "qcom,ipa-smmu-ap-cb";
 		iommus = <&apps_smmu 0x0140 0x0>;
-		qcom,iommu-dma-addr-pool = <0x20000000 0x40000000>;
+		qcom,iommu-dma-addr-pool = <0x10000000 0x30000000>;
 		qcom,iommu-dma = "bypass";
 		/* modem tables in IMEM */
 		qcom,additional-mapping = <0x0c123000 0x0c123000 0x2000>;
@@ -2544,7 +2544,7 @@
 		compatible = "qcom,ipa-smmu-uc-cb";
 		iommus = <&apps_smmu 0x0142 0x0>;
 		qcom,iommu-dma = "bypass";
-		qcom,iommu-dma-addr-pool = <0x40000000 0x20000000>;
+		qcom,iommu-dma-addr-pool = <0x40400000 0x1fc00000>;
 	};
 
 	qcom,ipa_fws {
