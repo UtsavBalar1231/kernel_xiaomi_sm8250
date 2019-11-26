@@ -231,6 +231,7 @@
 					qcom,bus-freq = <5>;
 					qcom,bus-min = <5>;
 					qcom,bus-max = <7>;
+					qcom,acd-level = <0x802F5FFD>;
 				};
 
 				qcom,gpu-pwrlevel@4 {
@@ -288,6 +289,7 @@
 					qcom,bus-freq = <5>;
 					qcom,bus-min = <5>;
 					qcom,bus-max = <7>;
+					qcom,acd-level = <0x802F5FFD>;
 				};
 
 				qcom,gpu-pwrlevel@4 {
@@ -334,6 +336,7 @@
 					qcom,bus-freq = <5>;
 					qcom,bus-min = <5>;
 					qcom,bus-max = <7>;
+					qcom,acd-level = <0x802F5FFD>;
 				};
 
 				qcom,gpu-pwrlevel@3 {
