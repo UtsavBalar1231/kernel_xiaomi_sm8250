@@ -28,6 +28,8 @@
 	aliases {
 		ufshc1 = &ufshc_mem; /* Embedded UFS slot */
 		serial0 = &qupv3_se9_2uart; /* Debug Console */
+		sdhc1 = &sdhc_1; /* SDC1 eMMC slot */
+		sdhc2 = &sdhc_2; /* SDC2 SD Card slot */
 	};
 
 	cpus {
@@ -2197,6 +2199,150 @@
 				< 2350000 MHZ_TO_MBPS(1804, 4) >,
 				< 3000000 MHZ_TO_MBPS(2092, 4) >;
 		};
+	};
+
+	sdhc_1: sdhci@7c4000 {
+		compatible = "qcom,sdhci-msm-v5", "qcom,sdhci-msm-cqe";
+		reg = <0x7c4000 0x1000>, <0x7c5000 0x1000>;
+		reg-names = "hc_mem", "cqhci_mem";
+
+		interrupts = <GIC_SPI 641 IRQ_TYPE_LEVEL_HIGH>,
+				 <GIC_SPI 644 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "hc_irq", "pwr_irq";
+
+		qcom,bus-width = <8>;
+		qcom,large-address-bus;
+
+		qcom,clk-rates = <400000 25000000 50000000 100000000
+					192000000 384000000>;
+		qcom,bus-speed-mode = "HS400_1p8v", "HS200_1p8v", "DDR_1p8v";
+
+		qcom,devfreq,freq-table = <50000000 200000000>;
+
+		qcom,scaling-lower-bus-speed-mode = "DDR52";
+
+		clocks = <&gcc GCC_SDCC1_AHB_CLK>,
+			<&gcc GCC_SDCC1_APPS_CLK>,
+			<&gcc GCC_SDCC1_ICE_CORE_CLK>;
+		clock-names = "iface_clk", "core_clk", "ice_core_clk";
+
+		qcom,ice-clk-rates = <300000000 100000000>;
+
+		qcom,msm-bus,name = "sdhc1";
+		qcom,msm-bus,num-cases = <8>;
+		qcom,msm-bus,num-paths = <3>;
+		qcom,msm-bus,vectors-KBps =
+			/* No vote */
+			<150 10073 0 0>,
+			<135 512 0 0>,
+			<1 825 0 0>,
+			/* 400 KB/s */
+			<150 10073 1000 790000>,
+			<135 512 1000 1800000>,
+			<1 825 2000 131000>,
+			/* 25 MB/s */
+			<150 10073 50000 790000>,
+			<135 512 50000 1800000>,
+			<1 825 30000 131000>,
+			/* 50 MB/s */
+			<150 10073 50000 790000>,
+			<135 512 80000 1800000>,
+			<1 825 40000 131000>,
+			/* 100 MB/s */
+			<150 10073 50000 790000>,
+			<135 512 100000 1800000>,
+			<1 825 50000 131000>,
+			/* 200 MB/s */
+			<150 10073 50000 790000>,
+			<135 512 150000 1800000>,
+			<1 825 80000 131000>,
+			/* 400 MB/s */
+			<150 10073 261438 3190000>,
+			<135 512 261438 4000000>,
+			<1 825 300000 294000>,
+			/* Max. bandwidth */
+			<150 10073 1338562 4290000>,
+			<135 512 1338562 7200000>,
+			<1 825 1338562 4096000>;
+		qcom,bus-bw-vectors-bps = <0 400000 25000000 50000000
+			100000000 200000000 400000000 4294967295>;
+
+		/* PM QoS */
+		qcom,pm-qos-irq-type = "affine_irq";
+		qcom,pm-qos-irq-latency = <59 59>;
+		qcom,pm-qos-cpu-groups = <0x3f 0xc0>;
+		qcom,pm-qos-cmdq-latency-us = <65 65>, <65 65>;
+		qcom,pm-qos-legacy-latency-us = <65 65>, <65 65>;
+
+		qcom,nonremovable;
+		status = "disabled";
+	};
+
+	sdhc_2: sdhci@8804000 {
+		compatible = "qcom,sdhci-msm-v5";
+		reg = <0x8804000 0x1000>;
+		reg-names = "hc_mem";
+
+		interrupts = <GIC_SPI 204 IRQ_TYPE_LEVEL_HIGH>,
+				 <GIC_SPI 222 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "hc_irq", "pwr_irq";
+
+		qcom,bus-width = <4>;
+		qcom,large-address-bus;
+
+		qcom,clk-rates = <400000 25000000
+				 50000000 100000000 202000000>;
+		qcom,bus-speed-mode = "SDR12", "SDR25", "SDR50", "DDR50",
+					"SDR104";
+
+		qcom,devfreq,freq-table = <50000000 202000000>;
+
+		clocks = <&gcc GCC_SDCC2_AHB_CLK>,
+			<&gcc GCC_SDCC2_APPS_CLK>;
+		clock-names = "iface_clk", "core_clk";
+
+		qcom,msm-bus,name = "sdhc2";
+		qcom,msm-bus,num-cases = <7>;
+		qcom,msm-bus,num-paths = <3>;
+		qcom,msm-bus,vectors-KBps =
+			/* No vote */
+			<81 10073 0 0>,
+			<135 512 0 0>,
+			<1 608 0 0>,
+			/* 400 KB/s*/
+			<81 10073 1000 790000>,
+			<135 512 1000 1800000>,
+			<1 608 2000 131000>,
+			/* 25 MB/s */
+			<81 10073 50000 790000>,
+			<135 512 50000 1800000>,
+			<1 608 30000 131000>,
+			/* 50 MB/s */
+			<81 10073 50000 790000>,
+			<135 512 80000 1800000>,
+			<1 608 40000 131000>,
+			/* 100 MB/s */
+			<81 10073 50000 790000>,
+			<135 512 100000 1800000>,
+			<1 608 50000 131000>,
+			/* 200 MB/s */
+			<81 10073 261438 3190000>,
+			<135 512 261438 4000000>,
+			<1 608 300000 294000>,
+			/* Max. bandwidth */
+			<81 10073 1338562 4290000>,
+			<135 512 1338562 7200000>,
+			<1 608 1338562 4096000>;
+		qcom,bus-bw-vectors-bps = <0 400000 25000000 50000000
+				100000000 200000000 4294967295>;
+
+		/* PM QoS */
+		qcom,pm-qos-irq-type = "affine_irq";
+		qcom,pm-qos-irq-latency = <59 59>;
+		qcom,pm-qos-cpu-groups = <0x3f 0xc0>;
+		qcom,pm-qos-legacy-latency-us = <65 65>, <65 65>;
+
+		status = "disabled";
 	};
 };
 
