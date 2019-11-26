@@ -2615,7 +2615,7 @@ int msm_venc_set_vbv_delay(struct msm_vidc_inst *inst)
 	}
 
 	hdev = inst->core->device;
-	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
+	f = &inst->fmts[OUTPUT_PORT].v4l2_fmt;
 	codec = get_v4l2_codec(inst);
 	height = f->fmt.pix_mp.height;
 	width = f->fmt.pix_mp.width;
