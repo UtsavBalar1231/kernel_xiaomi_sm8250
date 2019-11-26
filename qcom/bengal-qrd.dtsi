@@ -3,6 +3,8 @@
 #include <dt-bindings/input/input.h>
 #include "bengal-thermal-overlay.dtsi"
 #include "bengal-audio-overlay.dtsi"
+#include "bengal-sde-display.dtsi"
+
 &soc {
 	qrd_batterydata: qcom,battery-data {
 		qcom,batt-id-range-pct = <15>;
@@ -190,4 +192,35 @@
 	qcom,vddp-ref-clk-max-uV = <1232000>;
 
 	status = "ok";
+};
+
+&pm6125_pwm {
+	status = "ok";
+};
+
+&dsi_td4330_truly_v2_video {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_pwm";
+	pwms = <&pm6125_pwm 0 0>;
+	qcom,bl-pmic-pwm-period-usecs = <100>;
+	qcom,mdss-dsi-bl-min-level = <1>;
+	qcom,mdss-dsi-bl-max-level = <4095>;
+	qcom,platform-reset-gpio = <&tlmm 82 0>;
+	qcom,platform-bklight-en-gpio = <&pmi632_gpios 6 0>;
+};
+
+&dsi_td4330_truly_v2_cmd {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_pwm";
+	pwms = <&pm6125_pwm 0 0>;
+	qcom,bl-pmic-pwm-period-usecs = <100>;
+	qcom,mdss-dsi-bl-min-level = <1>;
+	qcom,mdss-dsi-bl-max-level = <4095>;
+	qcom,platform-te-gpio = <&tlmm 81 0>;
+	qcom,platform-reset-gpio = <&tlmm 82 0>;
+	qcom,platform-bklight-en-gpio = <&pmi632_gpios 6 0>;
+};
+
+&sde_dsi {
+	qcom,dsi-default-panel = <&dsi_td4330_truly_v2_video>;
 };
