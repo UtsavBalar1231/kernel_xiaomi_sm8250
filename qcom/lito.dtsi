@@ -1699,6 +1699,8 @@
 			<0x9810000 0x10000>;
 		reg-names = "cc", "qdsp6ss", "qdsp6ss_pll";
 		vdd_cx-supply = <&VDD_CX_LEVEL>;
+		nvmem-cells = <&npu_efuse>;
+		nvmem-cell-names = "npu-bin";
 		#clock-cells = <1>;
 		#reset-cells = <1>;
 	};
@@ -3780,6 +3782,10 @@
 
 		iris_efuse: iris@6008 {
 			reg = <0x6008 0x4>;
+		};
+
+		npu_efuse: npu@6010 {
+			reg = <0x6010 0x4>;
 		};
 
 		feat_conf10: feat_conf10@602c {
