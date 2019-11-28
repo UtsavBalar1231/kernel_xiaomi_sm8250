@@ -2861,4 +2861,4 @@
 
 #include "bengal-thermal.dtsi"
 #include "camera/bengal-camera.dtsi"
-
+#include "msm-rdbg.dtsi"
