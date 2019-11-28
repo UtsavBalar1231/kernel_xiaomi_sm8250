@@ -815,7 +815,7 @@
 	};
 
 	qcom_tzlog: tz-log@c125720 {
-		compaible = "qcom,tz-log";
+		compatible = "qcom,tz-log";
 		reg = <0xc125720 0x3000>;
 		qcom,hyplog-enabled;
 		hyplog-address-offset = <0x410>;
