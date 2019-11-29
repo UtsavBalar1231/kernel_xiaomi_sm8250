@@ -1275,6 +1275,7 @@ struct sde_limit_cfg {
  * @has_qos_fl_nocalc  flag to indicate QoS fill level needs no calculation
  * @update_tcsr_disp_glitch  flag to enable HW workaround to avoid spurious
  *                            transactions during suspend
+ * @has_base_layer     Supports staging layer as base layer
  * @sc_cfg: system cache configuration
  * @uidle_cfg		Settings for uidle feature
  * @sui_misr_supported  indicate if secure-ui-misr is supported
@@ -1336,6 +1337,7 @@ struct sde_mdss_cfg {
 	bool has_decimation;
 	bool has_qos_fl_nocalc;
 	bool update_tcsr_disp_glitch;
+	bool has_base_layer;
 
 	struct sde_sc_cfg sc_cfg;
 
