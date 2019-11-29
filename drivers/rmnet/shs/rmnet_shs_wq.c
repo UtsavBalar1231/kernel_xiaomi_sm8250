@@ -2194,3 +2194,13 @@ u64 rmnet_shs_wq_get_max_allowed_pps(u16 cpu)
 
 	return rmnet_shs_cpu_rx_max_pps_thresh[cpu];
 }
+
+void rmnet_shs_wq_ep_lock_bh(void)
+{
+	spin_lock_bh(&rmnet_shs_ep_lock);
+}
+
+void rmnet_shs_wq_ep_unlock_bh(void)
+{
+	spin_unlock_bh(&rmnet_shs_ep_lock);
+}

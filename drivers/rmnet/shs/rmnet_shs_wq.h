@@ -1,4 +1,4 @@
-/* Copyright (c) 2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -284,5 +284,9 @@ int rmnet_shs_wq_try_to_move_flow(u16 cur_cpu, u16 dest_cpu, u32 hash_to_move,
 				  u32 sugg_type);
 
 int rmnet_shs_wq_set_flow_segmentation(u32 hash_to_set, u8 seg_enable);
+
+void rmnet_shs_wq_ep_lock_bh(void);
+
+void rmnet_shs_wq_ep_unlock_bh(void);
 
 #endif /*_RMNET_SHS_WQ_H_*/
