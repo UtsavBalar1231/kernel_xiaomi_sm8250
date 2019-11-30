@@ -85,12 +85,15 @@ static int rmnet_shs_open_caps(struct inode *inode, struct file *filp)
 	rmnet_shs_wq_ep_lock_bh();
 	if (!cap_shared) {
 		info = kzalloc(sizeof(struct rmnet_shs_mmap_info), GFP_ATOMIC);
-		if (!info) {
-			rmnet_shs_wq_ep_unlock_bh();
-			rm_err("%s", "SHS_MEM: rmnet_shs_open - FAILED\n");
-			return -ENOMEM;
-		}
+		if (!info)
+			goto fail;
+
 		info->data = (char *)get_zeroed_page(GFP_ATOMIC);
+		if (!info->data) {
+			kfree(info);
+			goto fail;
+		}
+
 		cap_shared = info;
 		rm_err("SHS_MEM: virt_to_phys = 0x%llx cap_shared = 0x%llx\n",
 		       (unsigned long long)virt_to_phys((void *)info),
@@ -103,6 +106,11 @@ static int rmnet_shs_open_caps(struct inode *inode, struct file *filp)
 	rm_err("%s", "SHS_MEM: rmnet_shs_open - OK\n");
 
 	return 0;
+
+fail:
+	rmnet_shs_wq_ep_unlock_bh();
+	rm_err("%s", "SHS_MEM: rmnet_shs_open - FAILED\n");
+	return -ENOMEM;
 }
 
 static int rmnet_shs_open_g_flows(struct inode *inode, struct file *filp)
@@ -114,12 +122,15 @@ static int rmnet_shs_open_g_flows(struct inode *inode, struct file *filp)
 	rmnet_shs_wq_ep_lock_bh();
 	if (!gflow_shared) {
 		info = kzalloc(sizeof(struct rmnet_shs_mmap_info), GFP_ATOMIC);
-		if (!info) {
-			rmnet_shs_wq_ep_unlock_bh();
-			rm_err("%s", "SHS_MEM: rmnet_shs_open - FAILED\n");
-			return -ENOMEM;
-		}
+		if (!info)
+			goto fail;
+
 		info->data = (char *)get_zeroed_page(GFP_ATOMIC);
+		if (!info->data) {
+			kfree(info);
+			goto fail;
+		}
+
 		gflow_shared = info;
 		rm_err("SHS_MEM: virt_to_phys = 0x%llx gflow_shared = 0x%llx\n",
 		       (unsigned long long)virt_to_phys((void *)info),
@@ -129,6 +140,11 @@ static int rmnet_shs_open_g_flows(struct inode *inode, struct file *filp)
 	rmnet_shs_wq_ep_unlock_bh();
 
 	return 0;
+
+fail:
+	rmnet_shs_wq_ep_unlock_bh();
+	rm_err("%s", "SHS_MEM: rmnet_shs_open - FAILED\n");
+	return -ENOMEM;
 }
 
 static int rmnet_shs_open_ss_flows(struct inode *inode, struct file *filp)
@@ -140,12 +156,15 @@ static int rmnet_shs_open_ss_flows(struct inode *inode, struct file *filp)
 	rmnet_shs_wq_ep_lock_bh();
 	if (!ssflow_shared) {
 		info = kzalloc(sizeof(struct rmnet_shs_mmap_info), GFP_ATOMIC);
-		if (!info) {
-			rmnet_shs_wq_ep_unlock_bh();
-			rm_err("%s", "SHS_MEM: rmnet_shs_open - FAILED\n");
-			return -ENOMEM;
-		}
+		if (!info)
+			goto fail;
+
 		info->data = (char *)get_zeroed_page(GFP_ATOMIC);
+		if (!info->data) {
+			kfree(info);
+			goto fail;
+		}
+
 		ssflow_shared = info;
 		rm_err("SHS_MEM: virt_to_phys = 0x%llx ssflow_shared = 0x%llx\n",
 		       (unsigned long long)virt_to_phys((void *)info),
@@ -155,6 +174,11 @@ static int rmnet_shs_open_ss_flows(struct inode *inode, struct file *filp)
 	rmnet_shs_wq_ep_unlock_bh();
 
 	return 0;
+
+fail:
+	rmnet_shs_wq_ep_unlock_bh();
+	rm_err("%s", "SHS_MEM: rmnet_shs_open - FAILED\n");
+	return -ENOMEM;
 }
 
 static ssize_t rmnet_shs_read(struct file *filp, char __user *buf, size_t len, loff_t *off)
