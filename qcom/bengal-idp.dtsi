@@ -97,6 +97,10 @@
 	};
 };
 
+&usb0 {
+	extcon = <&pmi632_charger>, <&eud>;
+};
+
 &soc {
 	gpio_keys {
 		compatible = "gpio-keys";
