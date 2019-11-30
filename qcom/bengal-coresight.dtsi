@@ -76,13 +76,13 @@
 
 	};
 
-	tpdm_dl_ct: tpdm@8b58000 {
+	tpdm_center: tpdm@8b58000 {
 		compatible = "arm,primecell";
 		arm,primecell-periphid = <0x000bb968>;
 		reg = <0x8b58000 0x1000>;
 		reg-names = "tpdm-base";
 
-		coresight-name = "coresight-tpdm-dl-ct";
+		coresight-name = "coresight-tpdm-center";
 
 		clocks = <&rpmcc RPM_SMD_QDSS_CLK>;
 		clock-names = "apb_pclk";
@@ -300,10 +300,10 @@
 		};
 	};
 
-	tpdm_wcss_silver: tpdm@899c000 {
+	tpdm_wcss: tpdm@899c000 {
 		compatible = "qcom,coresight-dummy";
 
-		coresight-name = "coresight-tpdm-wcss-silver";
+		coresight-name = "coresight-tpdm-wcss";
 		qcom,dummy-source;
 
 		port {
