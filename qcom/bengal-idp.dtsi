@@ -18,6 +18,8 @@
 };
 
 &pm6125_vadc {
+	pinctrl-0 = <&camera_therm_default &emmc_therm_default &rf_pa1_therm_default>;
+
 	rf_pa1_therm {
 		reg = <ADC_GPIO4_PU2>;
 		label = "rf_pa1_therm";
@@ -41,7 +43,7 @@
 };
 
 &thermal_zones {
-	rf-pa1-therm-adc {
+	rf-pa1-therm-usr {
 		polling-delay-passive = <0>;
 		polling-delay = <0>;
 		thermal-governor = "user_space";
@@ -86,6 +88,14 @@
 };
 
 &pm6125_gpios {
+
+	rf_pa1_therm {
+		rf_pa1_therm_default: rf_pa1_therm_default {
+			 pins = "gpio7";
+			 bias-high-impedance;
+		};
+	};
+
 	key_vol_up {
 		key_vol_up_default: key_vol_up_default {
 			pins = "gpio5";
