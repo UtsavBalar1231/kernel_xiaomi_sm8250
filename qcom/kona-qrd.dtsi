@@ -355,6 +355,7 @@
 	io-channel-names = "cp_die_temp";
 	qcom,parallel-output-mode = <2>;
 	qcom,min-ilim-ua = <750000>;
+	qcom,parallel-input-mode = <1>;
 	status = "ok";
 };
 
