@@ -245,7 +245,6 @@
 	};
 
 	mdss_rotator: qcom,mdss_rotator {
-		status = "disabled";
 		compatible = "qcom,sde_rotator";
 		reg = <0x5e00000 0xac000>,
 		      <0x5eb0000 0x2008>;
@@ -278,8 +277,6 @@
 		interrupt-parent = <&mdss_mdp>;
 		interrupts = <2 0>;
 
-		power-domains = <&mdss_mdp>;
-
 		/*Offline rotator RT setting */
 		qcom,mdss-rot-parent = <&mdss_mdp 0>;
 		qcom,mdss-rot-xin-id = <10 11>;
@@ -306,14 +303,31 @@
 				<1 590 0 76800>;
 		};
 
+		qcom,platform-supply-entries {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			qcom,platform-supply-entry@0 {
+				reg = <0>;
+				qcom,supply-min-voltage = <0>;
+				qcom,supply-max-voltage = <0>;
+				qcom,supply-enable-load = <0>;
+				qcom,supply-disable-load = <0>;
+			};
+		};
+
 		smmu_rot_unsec: qcom,smmu_rot_unsec_cb {
 			compatible = "qcom,smmu_sde_rot_unsec";
 			iommus = <&apps_smmu 0x43C 0x0>;
+			qcom,iommu-dma-addr-pool = <0x00020000 0xfffe0000>;
+			qcom,iommu-faults = "non-fatal";
 		};
 
 		smmu_rot_sec: qcom,smmu_rot_sec_cb {
 			compatible = "qcom,smmu_sde_rot_sec";
 			iommus = <&apps_smmu 0x43D 0x0>;
+			qcom,iommu-dma-addr-pool = <0x00020000 0xfffe0000>;
+			qcom,iommu-faults = "non-fatal";
 		};
 	};
 
