@@ -1944,6 +1944,8 @@ static int _sde_encoder_update_rsc_client(
 	u32 qsync_mode = 0, v_front_porch;
 	struct drm_display_mode *mode;
 	bool is_vid_mode;
+	struct msm_drm_private *priv;
+	struct sde_kms *sde_kms;
 
 	if (!drm_enc || !drm_enc->dev) {
 		SDE_ERROR("invalid encoder arguments\n");
@@ -1967,6 +1969,14 @@ static int _sde_encoder_update_rsc_client(
 		return 0;
 	}
 
+	priv = drm_enc->dev->dev_private;
+	if (!priv || !priv->kms) {
+		SDE_ERROR("Invalid kms\n");
+		return -EINVAL;
+	}
+
+	sde_kms = to_sde_kms(priv->kms);
+
 	/**
 	 * only primary command mode panel without Qsync can request CMD state.
 	 * all other panels/displays can request for VID state including
@@ -1985,6 +1995,10 @@ static int _sde_encoder_update_rsc_client(
 		rsc_state = enable ? SDE_RSC_CMD_STATE : SDE_RSC_IDLE_STATE;
 	else if (sde_encoder_check_curr_mode(drm_enc, MSM_DISPLAY_VIDEO_MODE))
 		rsc_state = enable ? SDE_RSC_VID_STATE : SDE_RSC_IDLE_STATE;
+
+	if (IS_SDE_MAJOR_SAME(sde_kms->core_rev, SDE_HW_VER_600) &&
+			 (rsc_state == SDE_RSC_VID_STATE))
+		rsc_state = SDE_RSC_CLK_STATE;
 
 	SDE_EVT32(rsc_state, qsync_mode);
 
