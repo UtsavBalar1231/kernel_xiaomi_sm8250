@@ -177,7 +177,9 @@ static int cam_jpeg_mgr_process_irq(void *priv, void *data)
 		PTR_TO_U64(p_cfg_req->hw_cfg_args.priv);
 	ctx_data->ctxt_event_cb(ctx_data->context_priv, 0, &buf_data);
 
+	mutex_lock(&g_jpeg_hw_mgr.hw_mgr_mutex);
 	list_add_tail(&p_cfg_req->list, &hw_mgr->free_req_list);
+	mutex_unlock(&g_jpeg_hw_mgr.hw_mgr_mutex);
 	return rc;
 }
 
