@@ -5,6 +5,7 @@ Required properties:
 - compatible:		Should be "qcom,npucc-kona",
 				  "qcom,npucc-kona-v2",
 				  "qcom,lito-npucc",
+				  "qcom,lito-npucc-v2",
 				  "qcom,lagoon-npucc".
 - reg:			Shall contain base register addresses and sizes.
 - reg-names:		Names of the register bases listed in the same order as
