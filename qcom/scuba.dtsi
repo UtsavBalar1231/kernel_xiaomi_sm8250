@@ -525,6 +525,7 @@
 #include "scuba-stub-regulator.dtsi"
 #include "scuba-gdsc.dtsi"
 #include "scuba-qupv3.dtsi"
+#include "scuba-usb.dtsi"
 
 &gcc_camss_top_gdsc {
 	status = "ok";
