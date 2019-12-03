@@ -2287,16 +2287,12 @@
 		vdd-supply = <&gcc_venus_gdsc>;
 		qcom,proxy-reg-names = "vdd";
 
-		clocks =
-			<&gcc GCC_VIDEO_XO_CLK>,
-			<&gcc GCC_VIDEO_VENUS_CTL_CLK>,
+		clocks = <&gcc GCC_VIDEO_VENUS_CTL_CLK>,
 			<&gcc GCC_VENUS_CTL_AXI_CLK>,
-			<&gcc GCC_VENUS_AHB_CLK>,
-			<&gcc GCC_VIDEO_AXI0_CLK>,
 			<&gcc GCC_VIDEO_AHB_CLK>,
 			<&gcc GCC_VIDEO_THROTTLE_CORE_CLK>;
-		clock-names = "xo_clock", "core_clk", "bus_clk", "iface_clk", "video_bus0_clk", "video_iface_clk", "throttle_clk";
-		qcom,proxy-clock-names = "xo_clock", "core_clk", "bus_clk", "iface_clk", "video_bus0_clk", "video_iface_clk", "throttle_clk";
+		clock-names = "core_clk", "bus_clk", "iface_clk", "throttle_clk";
+		qcom,proxy-clock-names = "core_clk", "bus_clk", "iface_clk", "throttle_clk";
 		qcom,mas-crypto = <&mas_crypto_c0>;
 
 		qcom,core-freq = <240000000>;
