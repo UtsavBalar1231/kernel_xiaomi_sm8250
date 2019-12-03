@@ -241,6 +241,12 @@ static int32_t cam_sensor_get_io_buffer(
 	size_t buf_size = 0;
 	int32_t rc = 0;
 
+	if (io_cfg == NULL || i2c_settings == NULL) {
+		CAM_ERR(CAM_SENSOR,
+			"Invalid args, io buf or i2c settings is NULL");
+		return -EINVAL;
+	}
+
 	if (io_cfg->direction == CAM_BUF_OUTPUT) {
 		rc = cam_mem_get_cpu_buf(io_cfg->mem_handle[0],
 			&buf_addr, &buf_size);
