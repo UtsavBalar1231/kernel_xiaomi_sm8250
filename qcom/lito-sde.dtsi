@@ -198,7 +198,7 @@
 		qcom,sde-reg-dma-xin-id = <7>;
 		qcom,sde-reg-dma-clk-ctrl = <0x2bc 20>;
 
-		qcom,sde-secure-sid-mask = <0xb41>;
+		qcom,sde-secure-sid-mask = <0xb41 0xf41>;
 
 		qcom,sde-sspp-vig-blocks {
 			qcom,sde-vig-csc-off = <0x1a00>;
