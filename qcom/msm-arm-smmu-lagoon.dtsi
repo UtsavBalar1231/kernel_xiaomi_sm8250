@@ -6,7 +6,6 @@
 		compatible = "qcom,smmu-v2";
 		reg = <0x3d40000 0x10000>;
 		#iommu-cells = <1>;
-		qcom,dynamic;
 		qcom,use-3-lvl-tables;
 		#global-interrupts = <2>;
 		interrupts = <GIC_SPI 229 IRQ_TYPE_LEVEL_HIGH>,
