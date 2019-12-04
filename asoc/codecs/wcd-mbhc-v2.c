@@ -1625,6 +1625,45 @@ static int wcd_mbhc_init_gpio(struct wcd_mbhc *mbhc,
 
 	return rc;
 }
+
+static int wcd_mbhc_non_usb_c_event_changed(struct notifier_block *nb,
+					unsigned long evt, void *ptr)
+{
+	int ret;
+	union power_supply_propval mode;
+	struct wcd_mbhc *mbhc = container_of(nb, struct wcd_mbhc, fsa_nb);
+
+	ret = power_supply_get_property(ptr,
+			POWER_SUPPLY_PROP_TYPEC_MODE, &mode);
+
+	switch (mode.intval) {
+	case POWER_SUPPLY_TYPEC_SINK_AUDIO_ADAPTER:
+		dev_err(mbhc->component->dev, "%s: report Type-C usb headphone\n", __func__);
+		if (mbhc->usbc_mode == mode.intval)
+			break; /* filter notifications received before */
+		wcd_mbhc_jack_report(mbhc, &mbhc->usb_3_5_jack,
+					(SND_JACK_HEADSET | SND_JACK_UNSUPPORTED),
+					WCD_MBHC_JACK_USB_3_5_MASK);
+		mbhc->usbc_mode = mode.intval;
+		break;
+	case POWER_SUPPLY_TYPEC_NONE:
+		if (mbhc->usbc_mode == mode.intval)
+			break; /* filter notifications received before */
+		if (mbhc->usbc_mode == POWER_SUPPLY_TYPEC_SINK_AUDIO_ADAPTER) {
+			mbhc->usbc_mode = mode.intval - 1;
+			break;
+		}
+		wcd_mbhc_jack_report(mbhc, &mbhc->usb_3_5_jack, 0,
+					WCD_MBHC_JACK_USB_3_5_MASK);
+		mbhc->usbc_mode = mode.intval;
+		break;
+	default:
+		break;
+	}
+
+	return ret;
+}
+
 static int wcd_mbhc_usbc_ana_event_handler(struct notifier_block *nb,
 					   unsigned long mode, void *ptr)
 {
@@ -1740,6 +1779,15 @@ int wcd_mbhc_start(struct wcd_mbhc *mbhc, struct wcd_mbhc_config *mbhc_cfg)
 		mbhc->fsa_nb.notifier_call = wcd_mbhc_usbc_ana_event_handler;
 		mbhc->fsa_nb.priority = 0;
 		rc = fsa4480_reg_notifier(&mbhc->fsa_nb, mbhc->fsa_np);
+	} else {
+		mbhc->fsa_nb.notifier_call = wcd_mbhc_non_usb_c_event_changed;
+		mbhc->fsa_nb.priority = 0;
+		rc = power_supply_reg_notifier(&mbhc->fsa_nb);
+		if (rc) {
+			dev_err(card->dev, "%s: power supply registration failed\n",
+					__func__);
+			goto err;
+		}
 	}
 
 	return rc;
@@ -1775,8 +1823,12 @@ void wcd_mbhc_stop(struct wcd_mbhc *mbhc)
 		mbhc->mbhc_cal = NULL;
 	}
 
-	if (mbhc->mbhc_cfg->enable_usbc_analog)
+	if (mbhc->mbhc_cfg->enable_usbc_analog) {
 		fsa4480_unreg_notifier(&mbhc->fsa_nb, mbhc->fsa_np);
+	} else {
+		if (mbhc->fsa_nb.notifier_call != NULL)
+			power_supply_unreg_notifier(&mbhc->fsa_nb);
+	}
 
 	pr_debug("%s: leave\n", __func__);
 }
@@ -1911,6 +1963,14 @@ int wcd_mbhc_init(struct wcd_mbhc *mbhc, struct snd_soc_component *component,
 		if (ret) {
 			pr_err("%s: Failed to set code for btn-0\n",
 				__func__);
+			return ret;
+		}
+
+		ret = snd_soc_card_jack_new(component->card,
+					    "USB_3_5 Jack", WCD_MBHC_JACK_USB_3_5_MASK,
+					    &mbhc->usb_3_5_jack, NULL, 0);
+		if (ret) {
+			pr_err("%s: Failed to create new jack USB_3_5 Jack\n", __func__);
 			return ret;
 		}
 
