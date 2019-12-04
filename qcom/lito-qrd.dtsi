@@ -232,6 +232,9 @@
 	qcom,fcc-step-size-ua = <100000>;
 	qcom,smb-internal-pull-kohm = <0>;
 	qcom,en-skin-therm-mitigation;
+	qcom,thermal-mitigation = <8000000 7500000 7000000 6500000 6000000
+				5500000 4500000 4000000 3500000 3000000 2500000
+				2000000 1500000 1000000 500000>;
 };
 
 &pm7250b_qg {
@@ -254,26 +257,50 @@
 		thermal-sensors = <&pm8150_adc_tm ADC_XO_THERM_PU2>;
 		wake-capable-sensor;
 		trips {
+			modem0_trip: modem0-trip {
+				temperature = <48000>;
+				hysteresis = <4000>;
+				type = "passive";
+			};
+
+			modem1_trip: modem1-trip {
+				temperature = <50000>;
+				hysteresis = <2000>;
+				type = "passive";
+			};
+
 			gold_plus_trip: gold-plus-trip {
-				temperature = <46000>;
+				temperature = <50000>;
 				hysteresis = <0>;
+				type = "passive";
+			};
+
+			modem2_trip: modem2-trip {
+				temperature = <52000>;
+				hysteresis = <2000>;
 				type = "passive";
 			};
 
 			gold_trip: gold-trip {
-				temperature = <48000>;
-				hysteresis = <0>;
-				type = "passive";
-			};
-
-			silver_trip: silver-trip {
 				temperature = <52000>;
 				hysteresis = <0>;
 				type = "passive";
 			};
 
 			cx_emer_trip: cx-emer-trip {
-				temperature = <52000>;
+				temperature = <54000>;
+				hysteresis = <6000>;
+				type = "passive";
+			};
+
+			silver_trip: silver-trip {
+				temperature = <54000>;
+				hysteresis = <0>;
+				type = "passive";
+			};
+
+			modem_gpu_skin_trip: modem-gpu-skin-trip {
+				temperature = <56000>;
 				hysteresis = <4000>;
 				type = "passive";
 			};
@@ -304,19 +331,45 @@
 			};
 
 			skin_gpu {
-				trip = <&cx_emer_trip>;
+				trip = <&modem_gpu_skin_trip>;
 				cooling-device = <&msm_gpu (THERMAL_MAX_LIMIT-1)
 						(THERMAL_MAX_LIMIT-1)>;
 			};
 
-			skin_modem {
-				trip = <&cx_emer_trip>;
+			skin_modem_proc1 {
+				trip = <&modem0_trip>;
+				cooling-device = <&modem_tj 1 1>;
+			};
+
+			skin_modem_pa1 {
+				trip = <&modem1_trip>;
+				cooling-device = <&modem_pa 1 1>;
+			};
+
+			skin_modem_pa2 {
+				trip = <&modem2_trip>;
+				cooling-device = <&modem_pa 2 2>;
+			};
+
+			skin_modem_pa3 {
+				trip = <&modem_gpu_skin_trip>;
 				cooling-device = <&modem_pa 3 3>;
+			};
+
+			skin_modem_proce2 {
+				trip = <&modem_gpu_skin_trip>;
+				cooling-device = <&modem_tj 3 3>;
 			};
 
 			skin_cdsp {
 				trip = <&cx_emer_trip>;
-				cooling-device = <&msm_cdsp_rm 7 7>;
+				cooling-device = <&msm_cdsp_rm 3 3>;
+			};
+
+			skin_npu {
+				trip = <&cx_emer_trip>;
+				cooling-device = <&msm_npu THERMAL_MAX_LIMIT
+						THERMAL_MAX_LIMIT>;
 			};
 		};
 	};
