@@ -1678,6 +1678,7 @@
 #include "lagoon-gdsc.dtsi"
 #include "lagoon-usb.dtsi"
 #include "lagoon-npu.dtsi"
+#include "camera/lagoon-camera.dtsi"
 
 &gcc_ufs_phy_gdsc {
 	status = "ok";
