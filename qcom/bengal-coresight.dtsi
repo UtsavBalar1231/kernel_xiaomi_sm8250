@@ -45,6 +45,7 @@
 		coresight-name = "coresight-swao-csr";
 
 		qcom,timestamp-support;
+		qcom,aodbg-csr-support;
 
 		clocks = <&rpmcc RPM_SMD_QDSS_CLK>;
 		clock-names = "apb_pclk";

@@ -187,6 +187,7 @@ its hardware characteristcs.
 
 	* qcom,timestamp-support:boolean, indicates CSR support sys interface to read
 	  timestamp value.
+	* qcom,aodbg-csr-support: boolean, indicates this CSR is AODBG CSR.
 
 * Required property for Remote ETMs:
 
