@@ -322,6 +322,13 @@
 			qcom,iommu-dma-addr-pool = <0x00020000 0xfffe0000>;
 			qcom,iommu-faults = "non-fatal";
 		};
+
+		smmu_rot_sec: qcom,smmu_rot_sec_cb {
+			compatible = "qcom,smmu_sde_rot_sec";
+			iommus = <&apps_smmu 0x43D 0x0>;
+			qcom,iommu-dma-addr-pool = <0x00020000 0xfffe0000>;
+			qcom,iommu-faults = "non-fatal";
+		};
 	};
 
 	mdss_dsi0: qcom,mdss_dsi0_ctrl {
