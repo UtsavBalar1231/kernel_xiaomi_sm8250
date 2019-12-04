@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/* Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/of_platform.h>
@@ -991,9 +991,11 @@ EXPORT_SYMBOL(bolero_register_wake_irq);
  *
  * @component: pointer to codec component instance.
  *
+ * @clk_src: 0 for TX_RCG and 1 for VA_RCG
+ *
  * Returns 0 on success or -EINVAL on error.
  */
-int bolero_tx_clk_switch(struct snd_soc_component *component)
+int bolero_tx_clk_switch(struct snd_soc_component *component, int clk_src)
 {
 	struct bolero_priv *priv = NULL;
 	int ret = 0;
@@ -1011,7 +1013,8 @@ int bolero_tx_clk_switch(struct snd_soc_component *component)
 	}
 
 	if (priv->macro_params[TX_MACRO].clk_switch)
-		ret = priv->macro_params[TX_MACRO].clk_switch(component);
+		ret = priv->macro_params[TX_MACRO].clk_switch(component,
+							      clk_src);
 
 	return ret;
 }

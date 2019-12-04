@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef BOLERO_CDC_H
@@ -35,6 +35,11 @@ enum {
 	BOLERO_ADC2,
 	BOLERO_ADC3,
 	BOLERO_ADC_MAX
+};
+
+enum {
+	CLK_SRC_TX_RCG = 0,
+	CLK_SRC_VA_RCG,
 };
 
 enum {
@@ -80,8 +85,8 @@ struct macro_ops {
 	int (*reg_wake_irq)(struct snd_soc_component *component, u32 data);
 	int (*set_port_map)(struct snd_soc_component *component, u32 uc,
 			    u32 size, void *data);
-	int (*clk_switch)(struct snd_soc_component *component);
 	int (*clk_div_get)(struct snd_soc_component *component);
+	int (*clk_switch)(struct snd_soc_component *component, int clk_src);
 	int (*reg_evt_listener)(struct snd_soc_component *component, bool en);
 	int (*clk_enable)(struct snd_soc_component *c, bool en);
 	char __iomem *io_base;
@@ -107,7 +112,7 @@ void bolero_clear_amic_tx_hold(struct device *dev, u16 adc_n);
 int bolero_runtime_resume(struct device *dev);
 int bolero_runtime_suspend(struct device *dev);
 int bolero_set_port_map(struct snd_soc_component *component, u32 size, void *data);
-int bolero_tx_clk_switch(struct snd_soc_component *component);
+int bolero_tx_clk_switch(struct snd_soc_component *component, int clk_src);
 int bolero_register_event_listener(struct snd_soc_component *component,
 				   bool enable);
 void bolero_wsa_pa_on(struct device *dev);
@@ -175,7 +180,8 @@ static inline int bolero_set_port_map(struct snd_soc_component *component,
 	return 0;
 }
 
-static inline int bolero_tx_clk_switch(struct snd_soc_component *component)
+static inline int bolero_tx_clk_switch(struct snd_soc_component *component,
+					int clk_src)
 {
 	return 0;
 }
