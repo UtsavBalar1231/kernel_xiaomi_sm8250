@@ -977,6 +977,9 @@
 				"eud_tcsr_check_reg";
 		qcom,secure-eud-en;
 		qcom,eud-tcsr-check-enable;
+		qcom,eud-clock-vote-req;
+		clocks = <&gcc GCC_AHB2PHY_USB_CLK>;
+		clock-names = "eud_ahb2phy_clk";
 		status = "ok";
 	};
 
