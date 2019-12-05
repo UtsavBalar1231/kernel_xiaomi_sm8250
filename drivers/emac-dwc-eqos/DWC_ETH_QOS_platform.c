@@ -2264,6 +2264,13 @@ int DWC_ETH_QOS_remove(struct platform_device *pdev)
 static void DWC_ETH_QOS_shutdown(struct platform_device *pdev)
 {
 	pr_info("qcom-emac-dwc-eqos: DWC_ETH_QOS_shutdown\n");
+#ifdef DWC_ETH_QOS_BUILTIN
+	if (gDWC_ETH_QOS_prv_data->dev->flags & IFF_UP) {
+		gDWC_ETH_QOS_prv_data->dev->netdev_ops->ndo_stop(gDWC_ETH_QOS_prv_data->dev);
+		gDWC_ETH_QOS_prv_data->dev->flags &= ~IFF_UP;
+	}
+	DWC_ETH_QOS_remove(pdev);
+#endif
 }
 
 #ifdef CONFIG_PM
