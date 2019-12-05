@@ -1657,6 +1657,11 @@ static int dp_display_set_mode(struct dp_display *dp_display, void *panel,
 	dp = container_of(dp_display, struct dp_display_private, dp_display);
 
 	mutex_lock(&dp->session_lock);
+
+	if (dp_panel->connector->display_info.max_tmds_clock > 0)
+		dp->panel->connector->display_info.max_tmds_clock =
+			dp_panel->connector->display_info.max_tmds_clock;
+
 	mode->timing.bpp =
 		dp_panel->connector->display_info.bpc * num_components;
 	if (!mode->timing.bpp)
@@ -2134,7 +2139,7 @@ static enum drm_mode_status dp_display_validate_mode(
 	struct dp_display_mode dp_mode;
 	bool dsc_en;
 	u32 num_lm = 0;
-	int rc = 0;
+	int rc = 0, tmds_max_clock = 0;
 
 	if (!dp_display || !mode || !panel ||
 			!avail_res || !avail_res->max_mixer_width) {
@@ -2167,6 +2172,7 @@ static enum drm_mode_status dp_display_validate_mode(
 	mode_rate_khz = mode->clock * mode_bpp;
 	rate = drm_dp_bw_code_to_link_rate(dp->link->link_params.bw_code);
 	supported_rate_khz = link_info->num_lanes * rate * 8;
+	tmds_max_clock = dp_panel->connector->display_info.max_tmds_clock;
 
 	if (mode_rate_khz > supported_rate_khz) {
 		DP_MST_DEBUG("pclk:%d, supported_rate:%d\n",
@@ -2177,6 +2183,12 @@ static enum drm_mode_status dp_display_validate_mode(
 	if (mode->clock > dp_display->max_pclk_khz) {
 		DP_MST_DEBUG("clk:%d, max:%d\n", mode->clock,
 				dp_display->max_pclk_khz);
+		goto end;
+	}
+
+	if (tmds_max_clock > 0 && mode->clock > tmds_max_clock) {
+		DP_MST_DEBUG("clk:%d, max tmds:%d\n", mode->clock,
+				tmds_max_clock);
 		goto end;
 	}
 
