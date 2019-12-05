@@ -659,6 +659,11 @@ static int __cam_req_mgr_send_req(struct cam_req_mgr_core_link *link,
 
 	apply_req.link_hdl = link->link_hdl;
 	apply_req.report_if_bubble = 0;
+	apply_req.re_apply = false;
+	if (link->retry_cnt > 0) {
+		if (g_crm_core_dev->recovery_on_apply_fail)
+			apply_req.re_apply = true;
+	}
 
 	for (i = 0; i < link->num_devs; i++) {
 		dev = &link->l_dev[i];

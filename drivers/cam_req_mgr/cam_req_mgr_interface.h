@@ -325,6 +325,7 @@ struct cam_req_mgr_core_dev_link_setup {
  * @request_id       : request id settings to apply
  * @report_if_bubble : report to crm if failure in applying
  * @trigger_point    : the trigger point of this apply
+ * @re_apply         : to skip re_apply for buf_done request
  *
  */
 struct cam_req_mgr_apply_request {
@@ -333,6 +334,7 @@ struct cam_req_mgr_apply_request {
 	uint64_t   request_id;
 	int32_t    report_if_bubble;
 	uint32_t   trigger_point;
+	bool       re_apply;
 };
 
 /**
