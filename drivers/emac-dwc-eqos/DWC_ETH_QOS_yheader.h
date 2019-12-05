@@ -1,4 +1,4 @@
-/* Copyright (c) 2017-2018, The Linux Foundation. All rights
+/* Copyright (c) 2017-2019, The Linux Foundation. All rights
  * reserved.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -427,7 +427,8 @@ extern void *ipc_emac_log_ctxt;
 #define DWC_ETH_QOS_SYSCLOCK	250000000 /* System clock is 250MHz */
 #define DWC_ETH_QOS_SYSTIMEPERIOD	4 /* System time period is 4ns */
 
-#define DWC_ETH_QOS_DEFAULT_PTP_CLOCK 250000000
+#define DWC_ETH_QOS_DEFAULT_PTP_CLOCK    96000000
+#define DWC_ETH_QOS_DEFAULT_LPASS_PPS_FREQUENCY 19200000
 
 #define DWC_ETH_QOS_TX_QUEUE_CNT (pdata->tx_queue_cnt)
 #define DWC_ETH_QOS_RX_QUEUE_CNT (pdata->rx_queue_cnt)
@@ -1005,6 +1006,7 @@ struct hw_if_struct {
 	/* for hw time stamping */
 	INT(*config_hw_time_stamping)(UINT);
 	INT(*config_sub_second_increment)(unsigned long ptp_clock);
+	INT(*config_default_addend)(struct DWC_ETH_QOS_prv_data *pdata, unsigned long ptp_clock);
 	INT(*init_systime)(UINT, UINT);
 	INT(*config_addend)(UINT);
 	INT(*adjust_systime)(UINT, UINT, INT, bool);
@@ -1564,6 +1566,9 @@ struct DWC_ETH_QOS_res_data {
 	bool is_pinctrl_names;
 	int gpio_phy_intr_redirect;
 	int gpio_phy_reset;
+	struct pinctrl *pinctrl;
+	struct pinctrl_state *rgmii_rxc_suspend_state;
+	struct pinctrl_state *rgmii_rxc_resume_state;
 
 	/* Regulators */
 	struct regulator *gdsc_emac;
@@ -1578,6 +1583,7 @@ struct DWC_ETH_QOS_res_data {
 	struct clk *ptp_clk;
 	unsigned int emac_hw_version_type;
 	bool early_eth_en;
+	bool pps_lpass_conn_en;
 };
 
 struct DWC_ETH_QOS_prv_ipa_data {
@@ -2036,6 +2042,8 @@ void DWC_ETH_QOS_set_clk_and_bus_config(struct DWC_ETH_QOS_prv_data *pdata, int 
 #define EMAC_PHY_RESET "dev-emac-phy_reset_state"
 #define EMAC_PHY_INTR "dev-emac-phy_intr"
 #define EMAC_PIN_PPS0 "dev-emac_pin_pps_0"
+#define EMAC_RGMII_RXC_SUSPEND "dev-emac-rgmii_rxc_suspend_state"
+#define EMAC_RGMII_RXC_RESUME "dev-emac-rgmii_rxc_resume_state"
 
 #ifdef PER_CH_INT
 void DWC_ETH_QOS_handle_DMA_Int(struct DWC_ETH_QOS_prv_data *pdata, int chinx, bool);

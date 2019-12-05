@@ -88,7 +88,7 @@ void rmnet_shs_reset_freq(void)
 	}
 }
 
-void rmnet_shs_boost_cpus()
+void rmnet_shs_boost_cpus(void)
 {
 	struct cpu_freq *boost;
 	int i;
@@ -110,7 +110,7 @@ void rmnet_shs_boost_cpus()
 		queue_work(shs_boost_wq, &boost_cpu);
 }
 
-void rmnet_shs_reset_cpus()
+void rmnet_shs_reset_cpus(void)
 {
 	struct cpu_freq *boost;
 	int i;
