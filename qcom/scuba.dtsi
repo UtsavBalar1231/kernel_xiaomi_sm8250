@@ -561,6 +561,12 @@
 		qcom,qsee-reentrancy-support = <2>;
 	};
 
+	qcom_smcinvoke: smcinvoke@61700000 {
+		compatible = "qcom,smcinvoke";
+		reg = <0x61700000 0x2200000>;
+		reg-names = "secapp-region";
+	};
+
 	qcom,mpm2-sleep-counter@4403000 {
 		compatible = "qcom,mpm2-sleep-counter";
 		reg = <0x4403000 0x1000>;
