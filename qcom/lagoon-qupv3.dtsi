@@ -9,7 +9,7 @@
 		qcom,msm-bus,vectors-bus-ids =
 			<MSM_BUS_MASTER_QUP_CORE_1 MSM_BUS_SLAVE_QUP_CORE_1>,
 			<MSM_BUS_MASTER_QUP_1 MSM_BUS_SLAVE_EBI_CH0>;
-		iommus = <&apps_smmu 0x0e3 0x0>;
+		iommus = <&apps_smmu 0x4c3 0x0>;
 		qcom,iommu-dma-addr-pool = <0x40000000 0xc0000000>;
 		qcom,iommu-dma = "atomic";
 	};
