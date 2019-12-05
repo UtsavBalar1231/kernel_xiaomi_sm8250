@@ -196,4 +196,23 @@
 			qcom,stream-id-range = <0x1800 0x400>;
 		};
 	};
+
+	kgsl_iommu_test_device {
+		compatible = "iommu-debug-test";
+		qcom,iommu-dma = "disabled";
+		iommus = <&kgsl_smmu 0x7>;
+	};
+
+	apps_iommu_test_device {
+		compatible = "iommu-debug-test";
+		qcom,iommu-dma = "disabled";
+		iommus = <&apps_smmu 0x1 0>;
+	};
+
+	apps_iommu_coherent_test_device {
+		compatible = "iommu-debug-test";
+		qcom,iommu-dma = "disabled";
+		iommus = <&apps_smmu 0x3 0>;
+		dma-coherent;
+	};
 };
