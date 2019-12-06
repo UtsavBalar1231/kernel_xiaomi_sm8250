@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2012-2015, 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015, 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_CCI_HWREG_
@@ -54,8 +54,10 @@
 #define CCI_IRQ_STATUS_0_I2C_M0_Q0_REPORT_BMSK                            0x10
 #define CCI_IRQ_STATUS_0_I2C_M0_ERROR_BMSK                          0x18000EE6
 #define CCI_IRQ_STATUS_0_I2C_M1_ERROR_BMSK                          0x60EE6000
-#define CCI_IRQ_STATUS_0_I2C_M0_NACK_ERROR_BMSK                     0x18000000
-#define CCI_IRQ_STATUS_0_I2C_M1_NACK_ERROR_BMSK                     0x60000000
+#define CCI_IRQ_STATUS_0_I2C_M0_Q0_NACK_ERROR_BMSK                   0x8000000
+#define CCI_IRQ_STATUS_0_I2C_M0_Q1_NACK_ERROR_BMSK                  0x10000000
+#define CCI_IRQ_STATUS_0_I2C_M1_Q0_NACK_ERROR_BMSK                  0x20000000
+#define CCI_IRQ_STATUS_0_I2C_M1_Q1_NACK_ERROR_BMSK                  0x40000000
 #define CCI_IRQ_STATUS_0_I2C_M0_Q0Q1_ERROR_BMSK                          0xEE0
 #define CCI_IRQ_STATUS_0_I2C_M1_Q0Q1_ERROR_BMSK                       0xEE0000
 #define CCI_IRQ_STATUS_0_I2C_M0_RD_ERROR_BMSK                              0x6
