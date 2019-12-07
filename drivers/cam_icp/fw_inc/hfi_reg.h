@@ -39,6 +39,8 @@
 #define HFI_REG_QDSS_IOVA_SIZE                  0x70
 #define HFI_REG_IO_REGION_IOVA                  0x74
 #define HFI_REG_IO_REGION_SIZE                  0x78
+#define HFI_REG_IO2_REGION_IOVA                 0x7C
+#define HFI_REG_IO2_REGION_SIZE                 0x80
 
 /* end of ICP CSR registers */
 

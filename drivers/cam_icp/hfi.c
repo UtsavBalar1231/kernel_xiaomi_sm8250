@@ -669,6 +669,15 @@ int cam_hfi_resume(struct hfi_mem_info *hfi_mem,
 	cam_io_w_mb((uint32_t)hfi_mem->io_mem.len,
 		icp_base + HFI_REG_IO_REGION_SIZE);
 
+	cam_io_w_mb((uint32_t)hfi_mem->io_mem2.iova,
+		icp_base + HFI_REG_IO2_REGION_IOVA);
+	cam_io_w_mb((uint32_t)hfi_mem->io_mem2.len,
+		icp_base + HFI_REG_IO2_REGION_SIZE);
+
+	CAM_INFO(CAM_HFI, "Resume IO1 : [0x%x 0x%x] IO2 [0x%x 0x%x]",
+		hfi_mem->io_mem.iova, hfi_mem->io_mem.len,
+		hfi_mem->io_mem2.iova, hfi_mem->io_mem2.len);
+
 	return rc;
 }
 
@@ -859,6 +868,14 @@ int cam_hfi_init(uint8_t event_driven_mode, struct hfi_mem_info *hfi_mem,
 		icp_base + HFI_REG_IO_REGION_IOVA);
 	cam_io_w_mb((uint32_t)hfi_mem->io_mem.len,
 		icp_base + HFI_REG_IO_REGION_SIZE);
+	cam_io_w_mb((uint32_t)hfi_mem->io_mem2.iova,
+		icp_base + HFI_REG_IO2_REGION_IOVA);
+	cam_io_w_mb((uint32_t)hfi_mem->io_mem2.len,
+		icp_base + HFI_REG_IO2_REGION_SIZE);
+
+	CAM_INFO(CAM_HFI, "Init IO1 : [0x%x 0x%x] IO2 [0x%x 0x%x]",
+		hfi_mem->io_mem.iova, hfi_mem->io_mem.len,
+		hfi_mem->io_mem2.iova, hfi_mem->io_mem2.len);
 
 	hw_version = cam_io_r(icp_base + HFI_REG_A5_HW_VERSION);
 
