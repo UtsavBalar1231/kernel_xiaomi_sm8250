@@ -74,7 +74,18 @@
 				<138 0 &pdc 64 0>,
 				<142 0 &pdc 60 0>,
 				<143 0 &pdc 61 0>,
-				<147 0 &pdc 109 0>; /* bi_mx_lpass_1_aoss_mx  */
+				<147 0 &pdc 109 0>, /* bi_mx_lpass_1_aoss_mx  */
+				<150 0 &pdc 110 0>,
+				<157 0 &pdc 111 0>,
+				<158 0 &pdc 112 0>,
+				<160 0 &pdc 113 0>,
+				<162 0 &pdc 114 0>,
+				<164 0 &pdc 115 0>,
+				<166 0 &pdc 116 0>,
+				<167 0 &pdc 117 0>,
+				<175 0 &pdc 118 0>,
+				<177 0 &pdc 119 0>,
+				<179 0 &pdc 120 0>;
 		irqdomain-map-mask = <0xff 0>;
 		irqdomain-map-pass-thru = <0 0xff>;
 
