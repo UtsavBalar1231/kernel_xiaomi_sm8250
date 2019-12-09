@@ -319,6 +319,7 @@ go_write:
 	up_read(&F2FS_I(inode)->i_sem);
 
 	if (cp_reason) {
+		stat_inc_cp_reason(sbi, cp_reason);
 		/* all the dirty node pages should be flushed for POR */
 		ret = f2fs_sync_fs(inode->i_sb, 1);
 
@@ -379,6 +380,7 @@ flush_out:
 out:
 	trace_f2fs_sync_file_exit(inode, cp_reason, datasync, ret);
 	f2fs_trace_ios(NULL, 1);
+	stat_inc_sync_file_count(sbi);
 	trace_android_fs_fsync_end(inode, start, end - start);
 
 	return ret;
