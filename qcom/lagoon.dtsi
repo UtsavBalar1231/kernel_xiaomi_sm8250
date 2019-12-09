@@ -816,6 +816,11 @@
 				0x10100 0x10100 0x25900 0x25900>;
 	};
 
+	qcom,sps {
+		compatible = "qcom,msm-sps-4k";
+		qcom,pipe-attr-ee;
+	};
+
 	qcom,chd_sliver {
 		compatible = "qcom,core-hang-detect";
 		label = "silver";
