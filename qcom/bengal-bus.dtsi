@@ -418,7 +418,6 @@
 			qcom,qport = <13>;
 			qcom,qos-mode = "fixed";
 			qcom,prio = <4>;
-			qcom,forwarding;
 			qcom,connections = <&slv_snoc_bimc_nrt>;
 			qcom,bus-dev = <&fab_mmnrt_virt>;
 			qcom,mas-rpm-id = <ICBID_MASTER_VIDEO_PROC>;
