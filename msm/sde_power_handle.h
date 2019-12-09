@@ -139,6 +139,7 @@ struct sde_power_handle {
 	struct sde_power_data_bus_handle data_bus_handle
 		[SDE_POWER_HANDLE_DBUS_ID_MAX];
 	struct list_head event_list;
+	u32 last_event_handled;
 	struct sde_rsc_client *rsc_client;
 	bool rsc_client_init;
 	struct cx_ipeak_client *dss_cx_ipeak;
