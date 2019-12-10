@@ -1043,7 +1043,7 @@
 		qcom,complete-ramdump;
 
 		/* Inputs from lpass */
-		interrupts-extended = <&intc 0 396 1>,
+		interrupts-extended = <&intc 0 282 1>,
 				      <&adsp_smp2p_in 0 0>,
 				      <&adsp_smp2p_in 2 0>,
 				      <&adsp_smp2p_in 1 0>,
