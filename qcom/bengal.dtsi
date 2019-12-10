@@ -20,7 +20,7 @@
 / {
 	model = "Qualcomm Technologies, Inc. BENGAL";
 	compatible = "qcom,bengal";
-	qcom,msm-id = <417 0x10000>;
+	qcom,msm-id = <417 0x10000>, <444 0x10000>;
 	interrupt-parent = <&wakegic>;
 
 	#address-cells = <2>;
