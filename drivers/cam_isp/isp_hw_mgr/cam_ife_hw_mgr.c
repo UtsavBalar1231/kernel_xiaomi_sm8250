@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/slab.h>
@@ -1576,6 +1576,7 @@ static int cam_ife_hw_mgr_acquire_res_ife_src(
 			else
 				vfe_acquire.vfe_in.sync_mode =
 				CAM_ISP_HW_SYNC_NONE;
+			vfe_acquire.vfe_in.is_dual = csid_res->is_dual_vfe;
 
 			break;
 		case CAM_IFE_PIX_PATH_RES_PPP:
@@ -1616,12 +1617,20 @@ static int cam_ife_hw_mgr_acquire_res_ife_src(
 			hw_intf = ife_hw_mgr->ife_devices[
 				csid_res->hw_res[i]->hw_intf->hw_idx];
 
+			if (i == CAM_ISP_HW_SPLIT_LEFT &&
+				ife_src_res->is_dual_vfe) {
+				vfe_acquire.vfe_in.dual_hw_idx =
+					ife_ctx->slave_hw_idx;
+			}
 			/* fill in more acquire information as needed */
 			/* slave Camif resource, */
 			if (i == CAM_ISP_HW_SPLIT_RIGHT &&
-				ife_src_res->is_dual_vfe)
+				ife_src_res->is_dual_vfe) {
 				vfe_acquire.vfe_in.sync_mode =
 				CAM_ISP_HW_SYNC_SLAVE;
+				vfe_acquire.vfe_in.dual_hw_idx =
+					ife_ctx->master_hw_idx;
+			}
 
 			rc = hw_intf->hw_ops.reserve(hw_intf->hw_priv,
 					&vfe_acquire,

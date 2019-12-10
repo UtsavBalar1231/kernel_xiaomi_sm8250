@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/ratelimit.h>
@@ -2591,6 +2591,7 @@ static void cam_vfe_bus_update_ubwc_meta_addr(
 	case CAM_CPAS_TITAN_170_V100:
 	case CAM_CPAS_TITAN_170_V110:
 	case CAM_CPAS_TITAN_170_V120:
+	case CAM_CPAS_TITAN_170_V200:
 		ubwc_regs =
 			(struct cam_vfe_bus_ver2_reg_offset_ubwc_client *)regs;
 		CAM_VFE_ADD_REG_VAL_PAIR(reg_val_pair, *j,
@@ -2808,6 +2809,7 @@ static int cam_vfe_bus_update_ubwc_regs(
 	case CAM_CPAS_TITAN_170_V100:
 	case CAM_CPAS_TITAN_170_V110:
 	case CAM_CPAS_TITAN_170_V120:
+	case CAM_CPAS_TITAN_170_V200:
 		rc = cam_vfe_bus_update_ubwc_legacy_regs(
 			wm_data, camera_hw_version, reg_val_pair, i, j);
 		break;

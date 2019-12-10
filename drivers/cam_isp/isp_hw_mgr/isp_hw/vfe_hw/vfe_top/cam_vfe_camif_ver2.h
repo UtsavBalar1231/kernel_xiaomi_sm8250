@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_VFE_CAMIF_VER2_H_
@@ -22,6 +22,7 @@ struct cam_vfe_camif_ver2_reg {
 	uint32_t     reg_update_cmd;
 	uint32_t     vfe_diag_config;
 	uint32_t     vfe_diag_sensor_status;
+	uint32_t     dual_vfe_sync;
 };
 
 struct cam_vfe_camif_reg_data {
@@ -62,6 +63,7 @@ struct cam_vfe_camif_reg_data {
 	uint32_t     subscribe_irq_mask1;
 
 	uint32_t     enable_diagnostic_hw;
+	uint32_t     dual_vfe_sync_mask;
 };
 
 struct cam_vfe_camif_ver2_hw_info {

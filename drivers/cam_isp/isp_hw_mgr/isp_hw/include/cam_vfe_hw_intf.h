@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_VFE_HW_INTF_H_
@@ -137,14 +137,18 @@ struct cam_vfe_hw_vfe_out_acquire_args {
  *                           is successful
  * @res_id:                  Resource ID of resource to acquire if specific,
  *                           else CAM_ISP_HW_VFE_IN_MAX
+ * @dual_hw_idx:             Slave core for this master core if dual vfe case
  * @cdm_ops:                 CDM operations
  * @sync_mode:               In case of Dual VFE, this is Master or Slave.
  *                           (Default is Master in case of Single VFE)
  * @in_port:                 Input port details to acquire
+ * @is_dual:                 flag to indicate if dual vfe case
  */
 struct cam_vfe_hw_vfe_in_acquire_args {
 	struct cam_isp_resource_node         *rsrc_node;
 	uint32_t                              res_id;
+	uint32_t                              dual_hw_idx;
+	uint32_t                              is_dual;
 	void                                 *cdm_ops;
 	enum cam_isp_hw_sync_mode             sync_mode;
 	struct cam_isp_in_port_generic_info  *in_port;

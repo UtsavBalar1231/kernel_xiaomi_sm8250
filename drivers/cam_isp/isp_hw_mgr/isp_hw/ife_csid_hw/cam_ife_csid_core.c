@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/iopoll.h>
@@ -763,6 +763,7 @@ int cam_ife_csid_cid_reserve(struct cam_ife_csid_hw *csid_hw,
 	case CAM_CPAS_TITAN_170_V100:
 	case CAM_CPAS_TITAN_170_V110:
 	case CAM_CPAS_TITAN_170_V120:
+	case CAM_CPAS_TITAN_170_V200:
 		if (cid_reserv->in_port->res_type == CAM_ISP_IFE_IN_RES_PHY_3 &&
 			csid_hw->hw_intf->hw_idx != 2) {
 			rc = -EINVAL;
@@ -770,18 +771,20 @@ int cam_ife_csid_cid_reserve(struct cam_ife_csid_hw *csid_hw,
 		}
 		break;
 	case CAM_CPAS_TITAN_480_V100:
-		if (cid_reserv->in_port->cust_node == 1) {
-			if (cid_reserv->in_port->usage_type == 1) {
-				CAM_ERR(CAM_ISP, "Dual IFE is not supported");
-				rc = -EINVAL;
-				goto end;
-			}
-			if (csid_hw->hw_intf->hw_idx != 0) {
-				CAM_DBG(CAM_ISP, "CSID%d not eligible",
-					csid_hw->hw_intf->hw_idx);
-				rc = -EINVAL;
-				goto end;
-			}
+
+		if (cid_reserv->in_port->cust_node != 1)
+			break;
+
+		if (cid_reserv->in_port->usage_type == 1) {
+			CAM_ERR(CAM_ISP, "Dual IFE is not supported");
+			rc = -EINVAL;
+			goto end;
+		}
+		if (csid_hw->hw_intf->hw_idx != 0) {
+			CAM_DBG(CAM_ISP, "CSID%d not eligible",
+				csid_hw->hw_intf->hw_idx);
+			rc = -EINVAL;
+			goto end;
 		}
 		break;
 	default:
@@ -796,28 +799,31 @@ int cam_ife_csid_cid_reserve(struct cam_ife_csid_hw *csid_hw,
 			goto end;
 		}
 
-		if (cid_reserv->in_port->res_type != CAM_ISP_IFE_IN_RES_TPG) {
-			if (csid_hw->csi2_rx_cfg.lane_cfg !=
-				cid_reserv->in_port->lane_cfg  ||
-				csid_hw->csi2_rx_cfg.lane_type !=
-				cid_reserv->in_port->lane_type ||
-				csid_hw->csi2_rx_cfg.lane_num !=
-				cid_reserv->in_port->lane_num) {
-				rc = -EINVAL;
-				goto end;
-				}
-		} else {
-			if (csid_hw->tpg_cfg.in_format !=
-				cid_reserv->in_port->format     ||
-				csid_hw->tpg_cfg.width !=
-				cid_reserv->in_port->left_width ||
-				csid_hw->tpg_cfg.height !=
-				cid_reserv->in_port->height     ||
-				csid_hw->tpg_cfg.test_pattern !=
-				cid_reserv->in_port->test_pattern) {
-				rc = -EINVAL;
-				goto end;
-			}
+		if ((cid_reserv->in_port->res_type !=
+			CAM_ISP_IFE_IN_RES_TPG) &&
+			(csid_hw->csi2_rx_cfg.lane_cfg !=
+			cid_reserv->in_port->lane_cfg  ||
+			csid_hw->csi2_rx_cfg.lane_type !=
+			cid_reserv->in_port->lane_type ||
+			csid_hw->csi2_rx_cfg.lane_num !=
+			cid_reserv->in_port->lane_num)) {
+
+			rc = -EINVAL;
+			goto end;
+		}
+		if ((cid_reserv->in_port->res_type ==
+			CAM_ISP_IFE_IN_RES_TPG) &&
+			(csid_hw->tpg_cfg.in_format !=
+			cid_reserv->in_port->format     ||
+			csid_hw->tpg_cfg.width !=
+			cid_reserv->in_port->left_width ||
+			csid_hw->tpg_cfg.height !=
+			cid_reserv->in_port->height     ||
+			csid_hw->tpg_cfg.test_pattern !=
+			cid_reserv->in_port->test_pattern)) {
+
+			rc = -EINVAL;
+			goto end;
 		}
 	}
 
@@ -902,39 +908,45 @@ int cam_ife_csid_cid_reserve(struct cam_ife_csid_hw *csid_hw,
 		csid_hw->csi2_rx_cfg.lane_num =
 			cid_reserv->in_port->lane_num;
 
-		if (cid_reserv->in_port->res_type == CAM_ISP_IFE_IN_RES_TPG) {
-			csid_hw->csi2_rx_cfg.phy_sel = 0;
-			if (cid_reserv->in_port->format >
-			    CAM_FORMAT_MIPI_RAW_16) {
-				CAM_ERR(CAM_ISP, " Wrong TPG format");
-				rc = -EINVAL;
-				goto end;
-			}
-			csid_hw->tpg_cfg.in_format =
-				cid_reserv->in_port->format;
-			csid_hw->tpg_cfg.usage_type =
-				cid_reserv->in_port->usage_type;
-			if (cid_reserv->in_port->usage_type)
-				csid_hw->tpg_cfg.width =
-					(cid_reserv->in_port->right_stop + 1);
-			else
-				csid_hw->tpg_cfg.width =
-					cid_reserv->in_port->left_width;
-
-			csid_hw->tpg_cfg.height = cid_reserv->in_port->height;
-			csid_hw->tpg_cfg.test_pattern =
-				cid_reserv->in_port->test_pattern;
-
-			CAM_DBG(CAM_ISP, "CSID:%d TPG width:%d height:%d",
-				csid_hw->hw_intf->hw_idx,
-				csid_hw->tpg_cfg.width,
-				csid_hw->tpg_cfg.height);
-
-			cid_data->tpg_set = 1;
-		} else {
+		if (cid_reserv->in_port->res_type != CAM_ISP_IFE_IN_RES_TPG) {
 			csid_hw->csi2_rx_cfg.phy_sel =
 				(cid_reserv->in_port->res_type & 0xFF) - 1;
+			csid_hw->csi2_reserve_cnt++;
+			CAM_DBG(CAM_ISP, "CSID:%d CID:%d acquired",
+				csid_hw->hw_intf->hw_idx,
+				cid_reserv->node_res->res_id);
+			goto end;
 		}
+
+		/* Below code is executed only for TPG in_res type */
+		csid_hw->csi2_rx_cfg.phy_sel = 0;
+		if (cid_reserv->in_port->format >
+		    CAM_FORMAT_MIPI_RAW_16) {
+			CAM_ERR(CAM_ISP, " Wrong TPG format");
+			rc = -EINVAL;
+			goto end;
+		}
+		csid_hw->tpg_cfg.in_format =
+			cid_reserv->in_port->format;
+		csid_hw->tpg_cfg.usage_type =
+			cid_reserv->in_port->usage_type;
+		if (cid_reserv->in_port->usage_type)
+			csid_hw->tpg_cfg.width =
+				(cid_reserv->in_port->right_stop + 1);
+		else
+			csid_hw->tpg_cfg.width =
+				cid_reserv->in_port->left_width;
+
+		csid_hw->tpg_cfg.height = cid_reserv->in_port->height;
+		csid_hw->tpg_cfg.test_pattern =
+			cid_reserv->in_port->test_pattern;
+
+		CAM_DBG(CAM_ISP, "CSID:%d TPG width:%d height:%d",
+			csid_hw->hw_intf->hw_idx,
+			csid_hw->tpg_cfg.width,
+			csid_hw->tpg_cfg.height);
+
+		cid_data->tpg_set = 1;
 	}
 
 	csid_hw->csi2_reserve_cnt++;
@@ -1971,17 +1983,26 @@ static int cam_ife_csid_enable_pxl_path(
 
 	CAM_DBG(CAM_ISP, "Enable %s path", (is_ipp) ? "IPP" : "PPP");
 
+
 	/* Set master or slave path */
-	if (path_data->sync_mode == CAM_ISP_HW_SYNC_MASTER)
+	if (path_data->sync_mode == CAM_ISP_HW_SYNC_MASTER) {
 		/*Set halt mode as master */
-		val = CSID_HALT_MODE_MASTER << 2;
-	else if (path_data->sync_mode == CAM_ISP_HW_SYNC_SLAVE)
+		if (pxl_reg->halt_master_sel_en)
+			val = pxl_reg->halt_sel_internal_master_val << 4 |
+				CSID_HALT_MODE_MASTER << 2;
+		else
+			val = CSID_HALT_MODE_MASTER << 2;
+	} else if (path_data->sync_mode == CAM_ISP_HW_SYNC_SLAVE) {
 		/*Set halt mode as slave and set master idx */
-		val = path_data->master_idx  << 4 | CSID_HALT_MODE_SLAVE << 2;
-	else
+		if (pxl_reg->halt_master_sel_en)
+			val = CSID_HALT_MODE_SLAVE << 2;
+		else
+			val = path_data->master_idx  << 4 |
+				CSID_HALT_MODE_SLAVE << 2;
+	} else {
 		/* Default is internal halt mode */
 		val = 0;
-
+	}
 	/*
 	 * Resume at frame boundary if Master or No Sync.
 	 * Slave will get resume command from Master.
