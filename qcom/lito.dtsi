@@ -3774,6 +3774,10 @@
 			bits = <0 1>;
 		};
 
+		gpu_lm_efuse: gpu_lm_efuse@45c8 {
+			reg = <0x45c8 0x4>;
+		};
+
 		adsp_variant: adsp_variant@210 {
 			reg = <0x213 0x1>;
 			bits = <1 2>;
