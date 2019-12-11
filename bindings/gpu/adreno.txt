@@ -248,7 +248,7 @@ KGSL Memory Pools:
 				Each mempool defines a pool order, reserved pages,
 				allocation allowed.
 Properties:
-- compatible:			Must be qcom,gpu-mempools.
+- compatible:			Should be qcom,gpu-mempools or qcom,gpu-mempools-lowmem.
 - qcom,mempool-max-pages:	Max pages for all mempools, If not defined there is no limit.
 - qcom,gpu-mempool:		Defines a set of mempools.
 
