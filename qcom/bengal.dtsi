@@ -2723,25 +2723,13 @@
 	#include "pm8008.dtsi"
 };
 
-&tlmm {
-	pm8008_active: pm8008_active {
-		mux {
-			pins = "gpio26";
-			function = "gpio";
-		};
+&pm8008_8 {
+	/* PM8008 IRQ STAT */
+	interrupt-parent = <&tlmm>;
+	interrupts = <25 IRQ_TYPE_EDGE_RISING>;
 
-		config {
-			pins = "gpio26";
-			bias-pull-up;
-			output-high;
-			drive-strength = <2>;
-		};
-	};
-};
-
-&pm8008_chip {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pm8008_active>;
+	pinctrl-0 = <&pm8008_active &pm8008_interrupt>;
 };
 
 &pm8008_regulators {

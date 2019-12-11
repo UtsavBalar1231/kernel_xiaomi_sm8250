@@ -3942,25 +3942,13 @@
 	status = "ok";
 };
 
-&tlmm {
-	pm8008_active: pm8008_active {
-		mux {
-			pins = "gpio44";
-			function = "gpio";
-		};
+&pm8008_8 {
+	/* PM8008 IRQ STAT */
+	interrupt-parent = <&tlmm>;
+	interrupts = <45 IRQ_TYPE_EDGE_RISING>;
 
-		config {
-			pins = "gpio44";
-			bias-pull-up;
-			output-high;
-			drive-strength = <2>;
-		};
-	};
-};
-
-&pm8008_chip {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pm8008_active>;
+	pinctrl-0 = <&pm8008_active &pm8008_interrupt>;
 };
 
 &pm8008_regulators {
