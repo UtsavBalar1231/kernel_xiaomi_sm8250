@@ -701,6 +701,15 @@
 		};
 	};
 
+	ipcc_mproc: qcom,ipcc@408000 {
+		compatible = "qcom,ipcc";
+		reg = <0x408000 0x1000>;
+		interrupts = <GIC_SPI 228 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-controller;
+		#interrupt-cells = <3>;
+		#mbox-cells = <2>;
+	};
+
 	pdc: interrupt-controller@b220000 {
 		compatible = "qcom,lagoon-pdc";
 		reg = <0xb220000 0x30000>, <0x17c000f0 0x64>;
