@@ -20,7 +20,7 @@ First Level Node - CAM ISP device
 - arch-compat
   Usage: required
   Value type: <string>
-  Definition: Should be "vfe" or "ife".
+  Definition: Should be "vfe", "ife" or "tfe".
 
 - ubwc-static-cfg
   Usage: optional

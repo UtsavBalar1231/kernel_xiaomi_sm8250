@@ -375,7 +375,6 @@
 				<&apps_smmu 0xC01 0x400>,
 				<&apps_smmu 0xC40 0x400>,
 				<&apps_smmu 0xC41 0x400>;
-			qcom,iommu-faults = "non-fatal";
 			qcom,iommu-dma-addr-pool = <0x7400000 0xd8c00000>;
 			label = "ife";
 			ife_iova_mem_map: iova-mem-map {
@@ -395,7 +394,6 @@
 			iommus = <&apps_smmu 0x2040 0x400>,
 				<&apps_smmu 0x2440 0x400>;
 			label = "jpeg";
-			qcom,iommu-faults = "non-fatal";
 			qcom,iommu-dma-addr-pool = <0x7400000 0xd8c00000>;
 			jpeg_iova_mem_map: iova-mem-map {
 				/* IO region is approximately 3.4 GB */
@@ -432,8 +430,7 @@
 				<&apps_smmu 0x2420 0x400>,
 				<&apps_smmu 0x2421 0x400>;
 			label = "icp";
-			qcom,iommu-faults = "non-fatal";
-			qcom,iommu-dma-addr-pool = <0xda00000 0xace00000>;
+			qcom,iommu-dma-addr-pool = <0x10c00000 0xcf300000>;
 			icp_iova_mem_map: iova-mem-map {
 				iova-mem-region-firmware {
 					/* Firmware region is 5MB */
@@ -488,7 +485,6 @@
 			iommus = <&apps_smmu 0x20C0 0x400>,
 				<&apps_smmu 0x24C0 0x400>;
 			label = "cpas-cdm0";
-			qcom,iommu-faults = "non-fatal";
 			qcom,iommu-dma-addr-pool = <0x7400000 0xd8c00000>;
 			cpas_cdm_iova_mem_map: iova-mem-map {
 				iova-mem-region-io {
@@ -512,7 +508,6 @@
 			compatible = "qcom,msm-cam-smmu-cb";
 			iommus = <&apps_smmu 0x2080 0x400>,
 				<&apps_smmu 0x2480 0x400>;
-			qcom,iommu-faults = "non-fatal";
 			qcom,iommu-dma-addr-pool = <0x7400000 0xd8c00000>;
 			label = "fd";
 			fd_iova_mem_map: iova-mem-map {
@@ -569,14 +564,15 @@
 			<0 0 0 80000000 0 0 400000000 0>,
 			<0 0 0 80000000 0 0 400000000 0>,
 			<0 0 0 80000000 0 0 400000000 0>,
+			<0 0 0 80000000 0 0 400000000 0>,
 			<0 0 0 80000000 0 0 480000000 0>;
 		clock-cntl-level = "suspend", "minsvs", "lowsvs", "svs",
-			"svs_l1", "nominal", "turbo";
+			"svs_l1", "nominal", "nominal_l1", "turbo";
 		control-camnoc-axi-clk;
 		camnoc-bus-width = <32>;
 		camnoc-axi-clk-bw-margin-perc = <20>;
 		qcom,msm-bus,name = "cam_ahb";
-		qcom,msm-bus,num-cases = <7>;
+		qcom,msm-bus,num-cases = <8>;
 		qcom,msm-bus,num-paths = <1>;
 		qcom,msm-bus,vectors-KBps =
 			<MSM_BUS_MASTER_AMPSS_M0
@@ -589,6 +585,8 @@
 			MSM_BUS_SLAVE_CAMERA_CFG 0 150000>,
 			<MSM_BUS_MASTER_AMPSS_M0
 			MSM_BUS_SLAVE_CAMERA_CFG 0 150000>,
+			<MSM_BUS_MASTER_AMPSS_M0
+			MSM_BUS_SLAVE_CAMERA_CFG 0 300000>,
 			<MSM_BUS_MASTER_AMPSS_M0
 			MSM_BUS_SLAVE_CAMERA_CFG 0 300000>,
 			<MSM_BUS_MASTER_AMPSS_M0

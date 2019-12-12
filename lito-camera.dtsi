@@ -111,7 +111,6 @@
 		csi-vdd-voltage = <880000>;
 		mipi-csi-vdd-supply = <&L5A>;
 		clocks = <&camcc CAM_CC_CPHY_RX_CLK_SRC>,
-			<&camcc CAM_CC_CSIPHY0_CLK>,
 			<&camcc CAM_CC_CSIPHY3_CLK>,
 			<&camcc CAM_CC_CSI3PHYTIMER_CLK_SRC>,
 			<&camcc CAM_CC_CSI3PHYTIMER_CLK>;
@@ -387,7 +386,7 @@
 				<&apps_smmu 0x1260 0x0>;
 			label = "icp";
 			qcom,iommu-faults = "non-fatal";
-			qcom,iommu-dma-addr-pool = <0xda00000 0xace00000>;
+			qcom,iommu-dma-addr-pool = <0x10c00000 0xcf300000>;
 			icp_iova_mem_map: iova-mem-map {
 				iova-mem-region-firmware {
 					/* Firmware region is 5MB */
@@ -1068,14 +1067,15 @@
 			<0 0 0 80000000 0 240000000 0>,
 			<0 0 0 80000000 0 320000000 0>,
 			<0 0 0 80000000 0 400000000 0>,
+			<0 0 0 80000000 0 400000000 0>,
 			<0 0 0 80000000 0 480000000 0>;
 		clock-cntl-level = "suspend", "lowsvs", "svs",
-			"svs_l1", "nominal", "turbo";
+			"svs_l1", "nominal", "nominal_l1", "turbo";
 		control-camnoc-axi-clk;
 		camnoc-bus-width = <32>;
 		camnoc-axi-clk-bw-margin-perc = <20>;
 		qcom,msm-bus,name = "cam_ahb";
-		qcom,msm-bus,num-cases = <7>;
+		qcom,msm-bus,num-cases = <8>;
 		qcom,msm-bus,num-paths = <1>;
 		qcom,msm-bus,vectors-KBps =
 			<MSM_BUS_MASTER_AMPSS_M0
@@ -1086,6 +1086,8 @@
 			MSM_BUS_SLAVE_CAMERA_CFG 0 125000>,
 			<MSM_BUS_MASTER_AMPSS_M0
 			MSM_BUS_SLAVE_CAMERA_CFG 0 125000>,
+			<MSM_BUS_MASTER_AMPSS_M0
+			MSM_BUS_SLAVE_CAMERA_CFG 0 250000>,
 			<MSM_BUS_MASTER_AMPSS_M0
 			MSM_BUS_SLAVE_CAMERA_CFG 0 250000>,
 			<MSM_BUS_MASTER_AMPSS_M0
