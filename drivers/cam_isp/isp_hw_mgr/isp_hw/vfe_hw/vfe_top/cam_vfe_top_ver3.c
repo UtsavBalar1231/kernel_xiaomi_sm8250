@@ -82,10 +82,14 @@ static int cam_vfe_top_ver3_set_hw_clk_rate(
 	struct cam_vfe_top_ver3_priv *top_priv)
 {
 	struct cam_hw_soc_info        *soc_info = NULL;
-	int                            i, rc = 0;
+	struct cam_vfe_soc_private    *soc_private = NULL;
+	struct cam_ahb_vote            ahb_vote;
+	int                            i, rc = 0, clk_lvl = -1;
 	unsigned long                  max_clk_rate = 0;
 
 	soc_info = top_priv->common_data.soc_info;
+	soc_private =
+		(struct cam_vfe_soc_private *)soc_info->soc_private;
 
 	for (i = 0; i < top_priv->top_common.num_mux; i++) {
 		if (top_priv->req_clk_rate[i] > max_clk_rate)
@@ -100,11 +104,26 @@ static int cam_vfe_top_ver3_set_hw_clk_rate(
 
 	rc = cam_soc_util_set_src_clk_rate(soc_info, max_clk_rate);
 
-	if (!rc)
+	if (!rc) {
 		top_priv->hw_clk_rate = max_clk_rate;
-	else
+		rc = cam_soc_util_get_clk_level(soc_info, max_clk_rate,
+			soc_info->src_clk_idx, &clk_lvl);
+		if (rc) {
+			CAM_WARN(CAM_ISP,
+				"Failed to get clk level for %s with clk_rate %llu src_idx %d rc %d",
+				soc_info->dev_name, max_clk_rate,
+				soc_info->src_clk_idx, rc);
+			rc = 0;
+			goto end;
+		}
+		ahb_vote.type = CAM_VOTE_ABSOLUTE;
+		ahb_vote.vote.level = clk_lvl;
+		cam_cpas_update_ahb_vote(soc_private->cpas_handle, &ahb_vote);
+	} else {
 		CAM_ERR(CAM_PERF, "Set Clock rate failed, rc=%d", rc);
+	}
 
+end:
 	return rc;
 }
 

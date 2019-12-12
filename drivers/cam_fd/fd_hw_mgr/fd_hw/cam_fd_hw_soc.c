@@ -71,39 +71,6 @@ static int cam_fd_hw_soc_util_setup_regbase_indices(
 	return 0;
 }
 
-static int cam_fd_soc_set_clk_flags(struct cam_hw_soc_info *soc_info)
-{
-	int i, rc = 0;
-
-	if (soc_info->num_clk > CAM_SOC_MAX_CLK) {
-		CAM_ERR(CAM_FD, "Invalid num clk %d", soc_info->num_clk);
-		return -EINVAL;
-	}
-
-	/* set memcore and mem periphery logic flags to 0 */
-	for (i = 0; i < soc_info->num_clk; i++) {
-		if ((strcmp(soc_info->clk_name[i], "fd_core_clk") == 0) ||
-			(strcmp(soc_info->clk_name[i], "fd_core_uar_clk") ==
-			0)) {
-			rc = cam_soc_util_set_clk_flags(soc_info, i,
-				CLKFLAG_NORETAIN_MEM);
-			if (rc)
-				CAM_ERR(CAM_FD,
-					"Failed in NORETAIN_MEM i=%d, rc=%d",
-					i, rc);
-
-			cam_soc_util_set_clk_flags(soc_info, i,
-				CLKFLAG_NORETAIN_PERIPH);
-			if (rc)
-				CAM_ERR(CAM_FD,
-					"Failed in NORETAIN_PERIPH i=%d, rc=%d",
-					i, rc);
-		}
-	}
-
-	return rc;
-}
-
 void cam_fd_soc_register_write(struct cam_hw_soc_info *soc_info,
 	enum cam_fd_reg_base reg_base, uint32_t reg_offset, uint32_t reg_value)
 {
@@ -143,7 +110,7 @@ int cam_fd_soc_enable_resources(struct cam_hw_soc_info *soc_info)
 	int rc;
 
 	ahb_vote.type = CAM_VOTE_ABSOLUTE;
-	ahb_vote.vote.level = CAM_SVS_VOTE;
+	ahb_vote.vote.level = CAM_LOWSVS_VOTE;
 	axi_vote.num_paths = 2;
 	axi_vote.axi_path[0].path_data_type = CAM_AXI_PATH_DATA_ALL;
 	axi_vote.axi_path[0].transac_type = CAM_AXI_TRANSACTION_READ;
@@ -226,12 +193,6 @@ int cam_fd_soc_init_resources(struct cam_hw_soc_info *soc_info,
 		CAM_ERR(CAM_FD, "Failed in request_platform_resource rc=%d",
 			rc);
 		return rc;
-	}
-
-	rc = cam_fd_soc_set_clk_flags(soc_info);
-	if (rc) {
-		CAM_ERR(CAM_FD, "failed in set_clk_flags rc=%d", rc);
-		goto release_res;
 	}
 
 	soc_private = kzalloc(sizeof(struct cam_fd_soc_private), GFP_KERNEL);

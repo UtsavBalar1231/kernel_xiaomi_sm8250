@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_IRQ_CONTROLLER_H_
@@ -131,6 +131,7 @@ struct cam_irq_bh_api {
  * @register_info:      Register Info structure associated with this Controller
  * @irq_controller:     Pointer to IRQ Controller that will be filled if
  *                      initialization is successful
+ * @clear_all:          Flag to indicate whether to clear entire status register
  *
  * @return:             0: Success
  *                      Negative: Failure
@@ -138,7 +139,8 @@ struct cam_irq_bh_api {
 int cam_irq_controller_init(const char       *name,
 	void __iomem                         *mem_base,
 	struct cam_irq_controller_reg_info   *register_info,
-	void                                **irq_controller);
+	void                                **irq_controller,
+	bool                                  clear_all);
 
 /*
  * cam_irq_controller_subscribe_irq()

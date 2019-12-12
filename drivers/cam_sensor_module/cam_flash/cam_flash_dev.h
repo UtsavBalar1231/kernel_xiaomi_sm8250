@@ -86,7 +86,7 @@ struct cam_flash_intf_params {
 struct cam_flash_common_attr {
 	bool      is_settings_valid;
 	uint64_t  request_id;
-	uint16_t  count;
+	uint32_t  count;
 	uint8_t   cmd_type;
 };
 
@@ -97,7 +97,7 @@ struct cam_flash_common_attr {
  */
 struct cam_flash_init_packet {
 	struct cam_flash_common_attr  cmn_attr;
-	uint8_t                       flash_type;
+	uint32_t                      flash_type;
 };
 
 /**

@@ -208,10 +208,12 @@ struct cam_cpas_hw_errata_wa {
  *
  * @camnoc_flush_slave_pending_trans: Errata workaround info for flushing
  *         camnoc slave pending transactions before turning off CPAS_TOP gdsc
- *
+ * @tcsr_camera_hf_sf_ares_glitch: Errata workaround info from ignoring
+ *         erroneous signals at camera start
  */
 struct cam_cpas_hw_errata_wa_list {
 	struct cam_cpas_hw_errata_wa camnoc_flush_slave_pending_trans;
+	struct cam_cpas_hw_errata_wa tcsr_camera_hf_sf_ares_glitch;
 };
 
 /**

@@ -76,7 +76,7 @@ int cam_ife_csid_probe(struct platform_device *pdev)
 	/* need to setup the pdev before call the ife hw probe init */
 	csid_dev->csid_info = csid_hw_data;
 
-	rc = cam_ife_csid_hw_probe_init(csid_hw_intf, csid_dev_idx);
+	rc = cam_ife_csid_hw_probe_init(csid_hw_intf, csid_dev_idx, false);
 	if (rc)
 		goto free_dev;
 

@@ -44,7 +44,7 @@ int cam_cpas_util_reg_update(struct cam_hw_info *cpas_hw,
 		value = reg_info->value;
 	}
 
-	CAM_DBG(CAM_CPAS, "Base[%d] Offset[0x%8x] Value[0x%8x]",
+	CAM_DBG(CAM_CPAS, "Base[%d] Offset[0x%08x] Value[0x%08x]",
 		reg_base, reg_info->offset, value);
 
 	cam_io_w_mb(value, soc_info->reg_map[reg_base_index].mem_base +
@@ -424,7 +424,7 @@ static int cam_cpas_util_set_camnoc_axi_clk_rate(
 
 	if (soc_private->control_camnoc_axi_clk) {
 		struct cam_hw_soc_info *soc_info = &cpas_hw->soc_info;
-		uint64_t required_camnoc_bw = 0;
+		uint64_t required_camnoc_bw = 0, intermediate_result = 0;
 		int32_t clk_rate = 0;
 
 		for (i = 0; i < CAM_CPAS_MAX_TREE_NODES; i++) {
@@ -440,15 +440,19 @@ static int cam_cpas_util_set_camnoc_axi_clk_rate(
 			}
 		}
 
-		required_camnoc_bw += (required_camnoc_bw *
-			soc_private->camnoc_axi_clk_bw_margin) / 100;
+		intermediate_result = required_camnoc_bw *
+			soc_private->camnoc_axi_clk_bw_margin;
+		do_div(intermediate_result, 100);
+		required_camnoc_bw += intermediate_result;
 
 		if ((required_camnoc_bw > 0) &&
 			(required_camnoc_bw <
 			soc_private->camnoc_axi_min_ib_bw))
 			required_camnoc_bw = soc_private->camnoc_axi_min_ib_bw;
 
-		clk_rate = required_camnoc_bw / soc_private->camnoc_bus_width;
+		intermediate_result = required_camnoc_bw;
+		do_div(intermediate_result, soc_private->camnoc_bus_width);
+		clk_rate = intermediate_result;
 
 		CAM_DBG(CAM_CPAS, "Setting camnoc axi clk rate : %llu %d",
 			required_camnoc_bw, clk_rate);
@@ -932,12 +936,14 @@ static int cam_cpas_util_apply_client_ahb_vote(struct cam_hw_info *cpas_hw,
 
 	CAM_DBG(CAM_CPAS, "Required highest_level[%d]", highest_level);
 
-	rc = cam_cpas_util_vote_bus_client_level(ahb_bus_client,
-		highest_level);
-	if (rc) {
-		CAM_ERR(CAM_CPAS, "Failed in ahb vote, level=%d, rc=%d",
-			highest_level, rc);
-		goto unlock_bus_client;
+	if (!cpas_core->ahb_bus_scaling_disable) {
+		rc = cam_cpas_util_vote_bus_client_level(ahb_bus_client,
+			highest_level);
+		if (rc) {
+			CAM_ERR(CAM_CPAS, "Failed in ahb vote, level=%d, rc=%d",
+				highest_level, rc);
+			goto unlock_bus_client;
+		}
 	}
 
 	rc = cam_soc_util_set_clk_rate_level(&cpas_hw->soc_info, highest_level);
@@ -1367,6 +1373,12 @@ static int cam_cpas_hw_register_client(struct cam_hw_info *cpas_hw,
 	struct cam_cpas_private_soc *soc_private =
 		(struct cam_cpas_private_soc *) cpas_hw->soc_info.soc_private;
 
+	if ((!register_params) ||
+		(strlen(register_params->identifier) < 1)) {
+		CAM_ERR(CAM_CPAS, "Invalid cpas client identifier");
+		return -EINVAL;
+	}
+
 	CAM_DBG(CAM_CPAS, "Register params : identifier=%s, cell_index=%d",
 		register_params->identifier, register_params->cell_index);
 
@@ -1661,6 +1673,33 @@ static int cam_cpas_util_get_internal_ops(struct platform_device *pdev,
 	return rc;
 }
 
+static int cam_cpas_util_create_debugfs(
+	struct cam_cpas *cpas_core)
+{
+	int rc = 0;
+
+	cpas_core->dentry = debugfs_create_dir("camera_cpas", NULL);
+	if (!cpas_core->dentry)
+		return -ENOMEM;
+
+	if (!debugfs_create_bool("ahb_bus_scaling_disable",
+		0644,
+		cpas_core->dentry,
+		&cpas_core->ahb_bus_scaling_disable)) {
+		CAM_ERR(CAM_CPAS,
+			"failed to create ahb_bus_scaling_disable entry");
+		rc = -ENOMEM;
+		goto err;
+	}
+
+	return 0;
+
+err:
+	debugfs_remove_recursive(cpas_core->dentry);
+	cpas_core->dentry = NULL;
+	return rc;
+}
+
 int cam_cpas_hw_probe(struct platform_device *pdev,
 	struct cam_hw_intf **hw_intf)
 {
@@ -1700,6 +1739,7 @@ int cam_cpas_hw_probe(struct platform_device *pdev,
 	cpas_hw->soc_info.dev = &pdev->dev;
 	cpas_hw->soc_info.dev_name = pdev->name;
 	cpas_hw->open_count = 0;
+	cpas_core->ahb_bus_scaling_disable = false;
 	mutex_init(&cpas_hw->hw_mutex);
 	spin_lock_init(&cpas_hw->hw_lock);
 	init_completion(&cpas_hw->hw_complete);
@@ -1803,6 +1843,10 @@ int cam_cpas_hw_probe(struct platform_device *pdev,
 	if (rc)
 		goto axi_cleanup;
 
+	rc  = cam_cpas_util_create_debugfs(cpas_core);
+	if (rc)
+		CAM_WARN(CAM_CPAS, "Failed to create dentry");
+
 	*hw_intf = cpas_hw_intf;
 	return 0;
 
@@ -1854,6 +1898,8 @@ int cam_cpas_hw_remove(struct cam_hw_intf *cpas_hw_intf)
 	cam_cpas_util_unregister_bus_client(&cpas_core->ahb_bus_client);
 	cam_cpas_util_client_cleanup(cpas_hw);
 	cam_cpas_soc_deinit_resources(&cpas_hw->soc_info);
+	debugfs_remove_recursive(cpas_core->dentry);
+	cpas_core->dentry = NULL;
 	flush_workqueue(cpas_core->work_queue);
 	destroy_workqueue(cpas_core->work_queue);
 	mutex_destroy(&cpas_hw->hw_mutex);

@@ -481,7 +481,7 @@ int32_t cam_context_prepare_dev_to_hw(struct cam_context *ctx,
 
 	return rc;
 put_ctx_ref:
-	for (j; j >= 0; j--)
+	for (; j >= 0; j--)
 		cam_context_putref(ctx);
 put_ref:
 	for (--i; i >= 0; i--) {
@@ -1009,6 +1009,35 @@ int32_t cam_context_dump_pf_info_to_hw(struct cam_context *ctx,
 		cmd_args.u.pf_args.iova = iova;
 		cmd_args.u.pf_args.buf_info = buf_info;
 		cmd_args.u.pf_args.mem_found = mem_found;
+		ctx->hw_mgr_intf->hw_cmd(ctx->hw_mgr_intf->hw_mgr_priv,
+			&cmd_args);
+	}
+
+end:
+	return rc;
+}
+
+int32_t cam_context_dump_hw_acq_info(struct cam_context *ctx)
+{
+	int rc = 0;
+	struct cam_hw_cmd_args cmd_args;
+
+	if (!ctx) {
+		CAM_ERR(CAM_CTXT, "Invalid input params");
+		rc = -EINVAL;
+		goto end;
+	}
+
+	if (!ctx->hw_mgr_intf) {
+		CAM_ERR(CAM_CTXT, "[%s][%d] HW interface is not ready",
+			ctx->dev_name, ctx->ctx_id);
+		rc = -EFAULT;
+		goto end;
+	}
+
+	if (ctx->hw_mgr_intf->hw_cmd) {
+		cmd_args.ctxt_to_hw_map = ctx->ctxt_to_hw_map;
+		cmd_args.cmd_type = CAM_HW_MGR_CMD_DUMP_ACQ_INFO;
 		ctx->hw_mgr_intf->hw_cmd(ctx->hw_mgr_intf->hw_mgr_priv,
 			&cmd_args);
 	}

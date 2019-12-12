@@ -149,6 +149,14 @@ static int cam_jpeg_mgr_process_irq(void *priv, void *data)
 
 	cmd_buf_kaddr = (uint32_t *)kaddr;
 
+	if ((p_cfg_req->hw_cfg_args.hw_update_entries[CAM_JPEG_PARAM].offset /
+			sizeof(uint32_t)) >= cmd_buf_len) {
+		CAM_ERR(CAM_JPEG, "Invalid offset: %u cmd buf len: %zu",
+			p_cfg_req->hw_cfg_args.hw_update_entries[
+			CAM_JPEG_PARAM].offset, cmd_buf_len);
+		return -EINVAL;
+	}
+
 	cmd_buf_kaddr =
 		(cmd_buf_kaddr +
 		(p_cfg_req->hw_cfg_args.hw_update_entries[CAM_JPEG_PARAM].offset
@@ -603,7 +611,7 @@ static void cam_jpeg_mgr_print_io_bufs(struct cam_packet *packet,
 	int32_t iommu_hdl, int32_t sec_mmu_hdl, uint32_t pf_buf_info,
 	bool *mem_found)
 {
-	uint64_t   iova_addr;
+	dma_addr_t   iova_addr;
 	size_t     src_buf_size;
 	int        i;
 	int        j;
@@ -648,22 +656,22 @@ static void cam_jpeg_mgr_print_io_bufs(struct cam_packet *packet,
 				CAM_ERR(CAM_UTIL, "get src buf address fail");
 				continue;
 			}
-			if (iova_addr >> 32) {
+			if ((iova_addr & 0xFFFFFFFF) != iova_addr) {
 				CAM_ERR(CAM_JPEG, "Invalid mapped address");
 				rc = -EINVAL;
 				continue;
 			}
 
 			CAM_INFO(CAM_JPEG,
-				"pln %d w %d h %d size %d addr 0x%x offset 0x%x memh %x",
+				"pln %u w %u h %u stride %u slice %u size %d addr 0x%x offset 0x%x memh %x",
 				j, io_cfg[i].planes[j].width,
 				io_cfg[i].planes[j].height,
+				io_cfg[i].planes[j].plane_stride,
+				io_cfg[i].planes[j].slice_height,
 				(int32_t)src_buf_size,
 				(unsigned int)iova_addr,
 				io_cfg[i].offsets[j],
 				io_cfg[i].mem_handle[j]);
-
-			iova_addr += io_cfg[i].offsets[j];
 		}
 	}
 }

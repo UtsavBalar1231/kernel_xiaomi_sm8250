@@ -126,6 +126,11 @@
 #define CAM_ISP_USAGE_RIGHT_PX    2
 #define CAM_ISP_USAGE_RDI         3
 
+/* Acquire with custom hw */
+#define CAM_ISP_ACQ_CUSTOM_NONE       0
+#define CAM_ISP_ACQ_CUSTOM_PRIMARY    1
+#define CAM_ISP_ACQ_CUSTOM_SECONDARY  2
+
 /* Query devices */
 /**
  * struct cam_isp_dev_cap_info - A cap info for particular hw type

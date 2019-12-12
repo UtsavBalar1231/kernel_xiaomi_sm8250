@@ -262,7 +262,7 @@ int cam_a5_init_hw(void *device_priv,
 	a5_soc_info = soc_info->soc_private;
 
 	cpas_vote.ahb_vote.type = CAM_VOTE_ABSOLUTE;
-	cpas_vote.ahb_vote.vote.level = CAM_SVS_VOTE;
+	cpas_vote.ahb_vote.vote.level = CAM_LOWSVS_VOTE;
 	cpas_vote.axi_vote.num_paths = 1;
 	cpas_vote.axi_vote.axi_path[0].path_data_type =
 		CAM_ICP_DEFAULT_AXI_PATH;
@@ -521,6 +521,7 @@ int cam_a5_process_cmd(void *device_priv, uint32_t cmd_type,
 	}
 	case CAM_ICP_A5_CMD_CLK_UPDATE: {
 		int32_t clk_level = 0;
+		struct cam_ahb_vote ahb_vote;
 
 		if (!cmd_args) {
 			CAM_ERR(CAM_ICP, "Invalid args");
@@ -536,6 +537,10 @@ int cam_a5_process_cmd(void *device_priv, uint32_t cmd_type,
 				"Failed to update clk to level: %d rc: %d",
 				clk_level, rc);
 
+		ahb_vote.type = CAM_VOTE_ABSOLUTE;
+		ahb_vote.vote.level = clk_level;
+		cam_cpas_update_ahb_vote(
+			core_info->cpas_handle, &ahb_vote);
 		break;
 	}
 	default:

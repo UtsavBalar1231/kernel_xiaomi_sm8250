@@ -39,7 +39,7 @@ static int cam_ife_csid_request_platform_resource(
 }
 
 int cam_ife_csid_init_soc_resources(struct cam_hw_soc_info *soc_info,
-	irq_handler_t csid_irq_handler, void *irq_data)
+	irq_handler_t csid_irq_handler, void *irq_data, bool is_custom)
 {
 	int rc = 0;
 	struct cam_cpas_register_params   cpas_register_param;
@@ -66,8 +66,13 @@ int cam_ife_csid_init_soc_resources(struct cam_hw_soc_info *soc_info,
 	}
 
 	memset(&cpas_register_param, 0, sizeof(cpas_register_param));
-	strlcpy(cpas_register_param.identifier, "csid",
-		CAM_HW_IDENTIFIER_LENGTH);
+	if (is_custom)
+		strlcpy(cpas_register_param.identifier, "csid-custom",
+			CAM_HW_IDENTIFIER_LENGTH);
+	else
+		strlcpy(cpas_register_param.identifier, "csid",
+			CAM_HW_IDENTIFIER_LENGTH);
+
 	cpas_register_param.cell_index = soc_info->index;
 	cpas_register_param.dev = soc_info->dev;
 	rc = cam_cpas_register_client(&cpas_register_param);
@@ -120,7 +125,7 @@ int cam_ife_csid_enable_soc_resources(
 	soc_private = soc_info->soc_private;
 
 	ahb_vote.type = CAM_VOTE_ABSOLUTE;
-	ahb_vote.vote.level = CAM_SVS_VOTE;
+	ahb_vote.vote.level = CAM_LOWSVS_VOTE;
 	axi_vote.num_paths = 1;
 	axi_vote.axi_path[0].path_data_type = CAM_AXI_PATH_DATA_ALL;
 	axi_vote.axi_path[0].transac_type = CAM_AXI_TRANSACTION_WRITE;

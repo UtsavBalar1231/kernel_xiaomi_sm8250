@@ -232,7 +232,7 @@ int cam_vfe_enable_soc_resources(struct cam_hw_soc_info *soc_info)
 	soc_private = soc_info->soc_private;
 
 	ahb_vote.type       = CAM_VOTE_ABSOLUTE;
-	ahb_vote.vote.level = CAM_SVS_VOTE;
+	ahb_vote.vote.level = CAM_LOWSVS_VOTE;
 	axi_vote.num_paths = 1;
 	if (strnstr(soc_info->compatible, "lite",
 		strlen(soc_info->compatible))) {

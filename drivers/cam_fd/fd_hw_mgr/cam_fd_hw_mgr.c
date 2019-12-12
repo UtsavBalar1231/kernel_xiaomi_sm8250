@@ -582,11 +582,21 @@ static int cam_fd_mgr_util_prepare_io_buf_info(int32_t iommu_hdl,
 					iommu_hdl, &io_addr[plane], &size);
 				if (rc) {
 					CAM_ERR(CAM_FD,
-						"Invalid io buf %d %d %d %d",
+						"Failed to get io buf %u %u %u %d",
 						io_cfg[i].direction,
 						io_cfg[i].resource_type, plane,
 						rc);
 					return -ENOMEM;
+				}
+
+				if (io_cfg[i].offsets[plane] >= size) {
+					CAM_ERR(CAM_FD,
+						"Invalid io buf %u %u %u %d %u %zu",
+						io_cfg[i].direction,
+						io_cfg[i].resource_type, plane,
+						i, io_cfg[i].offsets[plane],
+						size);
+					return -EINVAL;
 				}
 
 				io_addr[plane] += io_cfg[i].offsets[plane];

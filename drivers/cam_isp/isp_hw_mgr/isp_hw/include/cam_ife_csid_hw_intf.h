@@ -12,6 +12,7 @@
 /* MAX IFE CSID instance */
 #define CAM_IFE_CSID_HW_NUM_MAX                        7
 #define CAM_IFE_CSID_RDI_MAX                           4
+#define CAM_IFE_CSID_UDI_MAX                           3
 
 /**
  * enum cam_ife_pix_path_res_id - Specify the csid patch
@@ -23,6 +24,9 @@ enum cam_ife_pix_path_res_id {
 	CAM_IFE_PIX_PATH_RES_RDI_3,
 	CAM_IFE_PIX_PATH_RES_IPP,
 	CAM_IFE_PIX_PATH_RES_PPP,
+	CAM_IFE_PIX_PATH_RES_UDI_0,
+	CAM_IFE_PIX_PATH_RES_UDI_1,
+	CAM_IFE_PIX_PATH_RES_UDI_2,
 	CAM_IFE_PIX_PATH_RES_MAX,
 };
 
@@ -97,6 +101,7 @@ struct cam_isp_in_port_generic_info {
 	uint32_t                        num_out_res;
 	uint32_t                        horizontal_bin;
 	uint32_t                        qcfa_bin;
+	uint32_t                        num_bytes_out;
 	struct cam_isp_out_port_generic_info    *data;
 };
 

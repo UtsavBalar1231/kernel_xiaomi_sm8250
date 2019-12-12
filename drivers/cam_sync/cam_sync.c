@@ -25,6 +25,24 @@ struct sync_device *sync_dev;
  */
 static bool trigger_cb_without_switch;
 
+static void cam_sync_print_fence_table(void)
+{
+	int idx;
+
+	for (idx = 0; idx < CAM_SYNC_MAX_OBJS; idx++) {
+		spin_lock_bh(&sync_dev->row_spinlocks[idx]);
+		CAM_INFO(CAM_SYNC,
+			"index[%u]: sync_id=%d, name=%s, type=%d, state=%d, ref_cnt=%d",
+			idx,
+			sync_dev->sync_table[idx].sync_id,
+			sync_dev->sync_table[idx].name,
+			sync_dev->sync_table[idx].type,
+			sync_dev->sync_table[idx].state,
+			sync_dev->sync_table[idx].ref_cnt);
+		spin_unlock_bh(&sync_dev->row_spinlocks[idx]);
+	}
+}
+
 int cam_sync_create(int32_t *sync_obj, const char *name)
 {
 	int rc;
@@ -33,8 +51,13 @@ int cam_sync_create(int32_t *sync_obj, const char *name)
 
 	do {
 		idx = find_first_zero_bit(sync_dev->bitmap, CAM_SYNC_MAX_OBJS);
-		if (idx >= CAM_SYNC_MAX_OBJS)
+		if (idx >= CAM_SYNC_MAX_OBJS) {
+			CAM_ERR(CAM_SYNC,
+				"Error: Unable to create sync idx = %d reached max!",
+				idx);
+			cam_sync_print_fence_table();
 			return -ENOMEM;
+		}
 		CAM_DBG(CAM_SYNC, "Index location available at idx: %ld", idx);
 		bit = test_and_set_bit(idx, sync_dev->bitmap);
 	} while (bit);
@@ -847,10 +870,25 @@ static int cam_sync_close(struct file *filep)
 	return rc;
 }
 
+static void cam_sync_event_queue_notify_error(const struct v4l2_event *old,
+	struct v4l2_event *new)
+{
+	struct cam_sync_ev_header *ev_header;
+
+	ev_header = CAM_SYNC_GET_HEADER_PTR((*old));
+	CAM_ERR(CAM_CRM, "Failed to notify event id %d fence %d statue %d",
+		old->id, ev_header->sync_obj, ev_header->status);
+}
+
+static struct v4l2_subscribed_event_ops cam_sync_v4l2_ops = {
+	.merge = cam_sync_event_queue_notify_error,
+};
+
 int cam_sync_subscribe_event(struct v4l2_fh *fh,
 		const struct v4l2_event_subscription *sub)
 {
-	return v4l2_event_subscribe(fh, sub, CAM_SYNC_MAX_V4L2_EVENTS, NULL);
+	return v4l2_event_subscribe(fh, sub, CAM_SYNC_MAX_V4L2_EVENTS,
+		&cam_sync_v4l2_ops);
 }
 
 int cam_sync_unsubscribe_event(struct v4l2_fh *fh,

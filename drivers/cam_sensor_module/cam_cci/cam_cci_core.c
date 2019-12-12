@@ -49,8 +49,8 @@ static void cam_cci_flush_queue(struct cci_device *cci_dev,
 	} else if (rc == 0) {
 		CAM_ERR(CAM_CCI, "wait timeout");
 
-		/* Set reset pending flag to TRUE */
-		cci_dev->cci_master_info[master].reset_pending = TRUE;
+		/* Set reset pending flag to true */
+		cci_dev->cci_master_info[master].reset_pending = true;
 
 		/* Set proper mask to RESET CMD address based on MASTER */
 		if (master == MASTER_0)

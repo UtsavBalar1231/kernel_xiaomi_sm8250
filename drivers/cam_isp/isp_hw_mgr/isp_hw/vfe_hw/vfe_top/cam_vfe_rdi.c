@@ -201,6 +201,7 @@ int cam_vfe_rdi_ver2_acquire_resource(
 	rdi_data->event_cb    = acquire_data->event_cb;
 	rdi_data->priv        = acquire_data->priv;
 	rdi_data->sync_mode   = acquire_data->vfe_in.sync_mode;
+	rdi_res->rdi_only_ctx = 0;
 
 	return 0;
 }
@@ -243,7 +244,7 @@ static int cam_vfe_rdi_resource_start(
 	if (!rsrc_data->irq_err_handle) {
 		rsrc_data->irq_err_handle = cam_irq_controller_subscribe_irq(
 			rsrc_data->vfe_irq_controller,
-			CAM_IRQ_PRIORITY_1,
+			CAM_IRQ_PRIORITY_0,
 			err_irq_mask,
 			rdi_res,
 			cam_vfe_rdi_err_irq_top_half,
@@ -263,7 +264,7 @@ static int cam_vfe_rdi_resource_start(
 	if (!rsrc_data->irq_handle) {
 		rsrc_data->irq_handle = cam_irq_controller_subscribe_irq(
 			rsrc_data->vfe_irq_controller,
-			CAM_IRQ_PRIORITY_0,
+			CAM_IRQ_PRIORITY_1,
 			irq_mask,
 			rdi_res,
 			rdi_res->top_half_handler,

@@ -6,12 +6,17 @@
 #include <linux/module.h>
 #include <linux/slab.h>
 #include <linux/platform_device.h>
+#include <linux/highmem.h>
+
+#include <mm/slab.h>
+
 #include <media/v4l2-fh.h>
 #include <media/v4l2-device.h>
 #include <media/v4l2-event.h>
 #include <media/v4l2-ioctl.h>
 #include <media/cam_req_mgr.h>
 #include <media/cam_defs.h>
+
 #include "cam_req_mgr_dev.h"
 #include "cam_req_mgr_util.h"
 #include "cam_req_mgr_core.h"
@@ -19,7 +24,6 @@
 #include "cam_mem_mgr.h"
 #include "cam_debug_util.h"
 #include "cam_common_util.h"
-#include <linux/slub_def.h>
 
 #define CAM_REQ_MGR_EVENT_MAX 30
 
@@ -151,6 +155,8 @@ static int cam_req_mgr_close(struct file *filep)
 	struct v4l2_fh *vfh = filep->private_data;
 	struct v4l2_subdev_fh *subdev_fh = to_v4l2_subdev_fh(vfh);
 
+	CAM_WARN(CAM_CRM,
+		"release invoked associated userspace process has died");
 	mutex_lock(&g_dev.cam_lock);
 
 	if (g_dev.open_cnt <= 0) {
@@ -195,10 +201,61 @@ static struct v4l2_file_operations g_cam_fops = {
 #endif
 };
 
+static void cam_v4l2_event_queue_notify_error(const struct v4l2_event *old,
+	struct v4l2_event *new)
+{
+	struct cam_req_mgr_message *ev_header;
+
+	ev_header = CAM_REQ_MGR_GET_PAYLOAD_PTR((*old),
+		struct cam_req_mgr_message);
+
+	switch (old->id) {
+	case V4L_EVENT_CAM_REQ_MGR_SOF:
+	case V4L_EVENT_CAM_REQ_MGR_SOF_BOOT_TS:
+		if (ev_header->u.frame_msg.request_id)
+			CAM_ERR(CAM_CRM,
+				"Failed to notify %s Sess %X FrameId %lld FrameMeta %d ReqId %lld link %X",
+				((old->id == V4L_EVENT_CAM_REQ_MGR_SOF) ?
+				"SOF_TS" : "BOOT_TS"),
+				ev_header->session_hdl,
+				ev_header->u.frame_msg.frame_id,
+				ev_header->u.frame_msg.frame_id_meta,
+				ev_header->u.frame_msg.request_id,
+				ev_header->u.frame_msg.link_hdl);
+		else
+			CAM_WARN_RATE_LIMIT_CUSTOM(CAM_CRM, 5, 1,
+				"Failed to notify %s Sess %X FrameId %lld FrameMeta %d ReqId %lld link %X",
+				((old->id == V4L_EVENT_CAM_REQ_MGR_SOF) ?
+				"SOF_TS" : "BOOT_TS"),
+				ev_header->session_hdl,
+				ev_header->u.frame_msg.frame_id,
+				ev_header->u.frame_msg.frame_id_meta,
+				ev_header->u.frame_msg.request_id,
+				ev_header->u.frame_msg.link_hdl);
+		break;
+	case V4L_EVENT_CAM_REQ_MGR_ERROR:
+		CAM_ERR(CAM_CRM,
+			"Failed to notify ERROR Sess %X ReqId %d Link %X Type %d",
+			ev_header->session_hdl,
+			ev_header->u.err_msg.request_id,
+			ev_header->u.err_msg.link_hdl,
+			ev_header->u.err_msg.error_type);
+		break;
+	default:
+		CAM_ERR(CAM_CRM, "Failed to notify crm event id %d",
+			old->id);
+	}
+}
+
+static struct v4l2_subscribed_event_ops g_cam_v4l2_ops = {
+	.merge = cam_v4l2_event_queue_notify_error,
+};
+
 static int cam_subscribe_event(struct v4l2_fh *fh,
 	const struct v4l2_event_subscription *sub)
 {
-	return v4l2_event_subscribe(fh, sub, CAM_REQ_MGR_EVENT_MAX, NULL);
+	return v4l2_event_subscribe(fh, sub, CAM_REQ_MGR_EVENT_MAX,
+		&g_cam_v4l2_ops);
 }
 
 static int cam_unsubscribe_event(struct v4l2_fh *fh,
@@ -256,7 +313,7 @@ static long cam_private_ioctl(struct file *file, void *fh,
 			return -EFAULT;
 		}
 
-		rc = cam_req_mgr_destroy_session(&ses_info);
+		rc = cam_req_mgr_destroy_session(&ses_info, false);
 		}
 		break;
 

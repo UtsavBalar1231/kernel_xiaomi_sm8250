@@ -135,7 +135,7 @@ struct clk_work_data {
  */
 struct icp_frame_info {
 	uint64_t request_id;
-	uint64_t io_config;
+	dma_addr_t io_config;
 	struct hfi_cmd_ipebps_async hfi_cfg_io_cmd;
 };
 
@@ -145,6 +145,7 @@ struct icp_frame_info {
  * @budget_ns: Time required to process frame
  * @frame_cycles: Frame cycles needed to process the frame
  * @rt_flag: Flag to indicate real time stream
+ * @reserved: Reserved filed.
  * @num_paths: Number of paths for per path bw vote
  * @axi_path: Per path vote info for IPE/BPS
  */
@@ -152,6 +153,7 @@ struct cam_icp_clk_bw_req_internal_v2 {
 	uint64_t budget_ns;
 	uint32_t frame_cycles;
 	uint32_t rt_flag;
+	uint32_t reserved;
 	uint32_t num_paths;
 	struct cam_axi_per_path_bw_vote axi_path[CAM_ICP_MAX_PER_PATH_VOTES];
 };
@@ -262,7 +264,7 @@ struct cam_icp_hw_ctx_data {
 struct icp_cmd_generic_blob {
 	struct cam_icp_hw_ctx_data *ctx;
 	uint32_t frame_info_idx;
-	uint64_t *io_buf_addr;
+	dma_addr_t *io_buf_addr;
 };
 
 /**

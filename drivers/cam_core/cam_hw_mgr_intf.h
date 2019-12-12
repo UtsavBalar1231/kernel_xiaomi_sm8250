@@ -24,6 +24,17 @@
 /* Maximum reg dump cmd buffer entries in a context */
 #define CAM_REG_DUMP_MAX_BUF_ENTRIES        10
 
+/**
+ * enum cam_context_dump_id -
+ *              context dump type
+ *
+ */
+enum cam_context_dump_id {
+	CAM_CTX_DUMP_TYPE_NONE,
+	CAM_CTX_DUMP_ACQ_INFO,
+	CAM_CTX_DUMP_TYPE_MAX,
+};
+
 /* hardware event callback function type */
 typedef int (*cam_hw_event_cb_func)(void *context, uint32_t evt_id,
 	void *evt_data);
@@ -31,6 +42,10 @@ typedef int (*cam_hw_event_cb_func)(void *context, uint32_t evt_id,
 /* hardware page fault callback function type */
 typedef int (*cam_hw_pagefault_cb_func)(void *context, unsigned long iova,
 	uint32_t buf_info);
+
+/* ctx dump callback function type */
+typedef int (*cam_ctx_info_dump_cb_func)(void *context,
+	enum cam_context_dump_id dump_id);
 
 /**
  * struct cam_hw_update_entry - Entry for hardware config
@@ -219,6 +234,7 @@ struct cam_hw_stream_setttings {
  * @num_out_map_entries:   Number of out map entries
  * @priv:                  Private pointer
  * @request_id:            Request ID
+ * @reapply                True if reapplying after bubble
  *
  */
 struct cam_hw_config_args {
@@ -230,6 +246,7 @@ struct cam_hw_config_args {
 	void                           *priv;
 	uint64_t                        request_id;
 	bool                            init_packet;
+	bool                            reapply;
 };
 
 /**
@@ -270,12 +287,23 @@ struct cam_hw_dump_pf_args {
 	bool                           *mem_found;
 };
 
+/**
+ * struct cam_hw_reset_args -hw reset arguments
+ *
+ * @ctxt_to_hw_map:        HW context from the acquire
+ *
+ */
+struct cam_hw_reset_args {
+	void                           *ctxt_to_hw_map;
+};
+
 /* enum cam_hw_mgr_command - Hardware manager command type */
 enum cam_hw_mgr_command {
 	CAM_HW_MGR_CMD_INTERNAL,
 	CAM_HW_MGR_CMD_DUMP_PF_INFO,
 	CAM_HW_MGR_CMD_REG_DUMP_ON_FLUSH,
 	CAM_HW_MGR_CMD_REG_DUMP_ON_ERROR,
+	CAM_HW_MGR_CMD_DUMP_ACQ_INFO,
 };
 
 /**
@@ -323,6 +351,7 @@ struct cam_hw_cmd_args {
  * @hw_open:                   Function pointer for HW init
  * @hw_close:                  Function pointer for HW deinit
  * @hw_flush:                  Function pointer for HW flush
+ * @hw_reset:                  Function pointer for HW reset
  *
  */
 struct cam_hw_mgr_intf {
@@ -343,6 +372,7 @@ struct cam_hw_mgr_intf {
 	int (*hw_open)(void *hw_priv, void *fw_download_args);
 	int (*hw_close)(void *hw_priv, void *hw_close_args);
 	int (*hw_flush)(void *hw_priv, void *hw_flush_args);
+	int (*hw_reset)(void *hw_priv, void *hw_reset_args);
 };
 
 #endif /* _CAM_HW_MGR_INTF_H_ */

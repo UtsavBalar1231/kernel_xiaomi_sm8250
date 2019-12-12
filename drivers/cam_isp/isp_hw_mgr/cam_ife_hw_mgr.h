@@ -7,6 +7,7 @@
 #define _CAM_IFE_HW_MGR_H_
 
 #include <linux/completion.h>
+#include <linux/time.h>
 #include "cam_isp_hw_mgr.h"
 #include "cam_vfe_hw_intf.h"
 #include "cam_ife_csid_hw_intf.h"
@@ -82,6 +83,7 @@ struct ctx_base_info {
  * @enable_recovery:           enable recovery
  * @enable_diag_sensor_status: enable sensor diagnosis status
  * @enable_req_dump:           Enable request dump on HW errors
+ * @per_req_reg_dump:          Enable per request reg dump
  *
  */
 struct cam_ife_hw_mgr_debug {
@@ -89,7 +91,8 @@ struct cam_ife_hw_mgr_debug {
 	uint64_t       csid_debug;
 	uint32_t       enable_recovery;
 	uint32_t       camif_debug;
-	uint32_t       enable_req_dump;
+	bool           enable_req_dump;
+	bool           per_req_reg_dump;
 };
 
 /**
@@ -122,6 +125,8 @@ struct cam_ife_hw_mgr_debug {
  * @eof_cnt                 eof count value per core, used for dual VFE
  * @overflow_pending        flat to specify the overflow is pending for the
  *                          context
+ * @cdm_done                flag to indicate cdm has finished writing shadow
+ *                          registers
  * @is_rdi_only_context     flag to specify the context has only rdi resource
  * @config_done_complete    indicator for configuration complete
  * @reg_dump_buf_desc:      cmd buffer descriptors for reg dump
@@ -132,6 +137,7 @@ struct cam_ife_hw_mgr_debug {
  * @init_done               indicate whether init hw is done
  * @is_fe_enable            indicate whether fetch engine\read path is enabled
  * @is_dual                 indicate whether context is in dual VFE mode
+ * @ts                      captured timestamp when the ctx is acquired
  */
 struct cam_ife_hw_mgr_ctx {
 	struct list_head                list;
@@ -164,6 +170,7 @@ struct cam_ife_hw_mgr_ctx {
 	uint32_t                        epoch_cnt[CAM_IFE_HW_NUM_MAX];
 	uint32_t                        eof_cnt[CAM_IFE_HW_NUM_MAX];
 	atomic_t                        overflow_pending;
+	atomic_t                        cdm_done;
 	uint32_t                        is_rdi_only_context;
 	struct completion               config_done_complete;
 	struct cam_cmd_buf_desc         reg_dump_buf_desc[
@@ -175,6 +182,7 @@ struct cam_ife_hw_mgr_ctx {
 	bool                            init_done;
 	bool                            is_fe_enable;
 	bool                            is_dual;
+	struct timespec64               ts;
 };
 
 /**
