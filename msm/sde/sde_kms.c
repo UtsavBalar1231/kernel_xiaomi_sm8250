@@ -27,6 +27,7 @@
 #include <linux/dma-buf.h>
 #include <linux/memblock.h>
 #include <linux/bootmem.h>
+#include <soc/qcom/scm.h>
 
 #include "msm_drv.h"
 #include "msm_mmu.h"
@@ -59,6 +60,8 @@
 /* defines for secure channel call */
 #define MEM_PROTECT_SD_CTRL_SWITCH 0x18
 #define MDP_DEVICE_ID            0x1A
+
+#define TCSR_DISP_HF_SF_ARES_GLITCH_MASK        0x01FCA084
 
 static const char * const iommu_ports[] = {
 		"mdp_0",
@@ -3368,6 +3371,23 @@ static int _sde_kms_hw_init_power_helper(struct drm_device *dev,
 	return rc;
 }
 
+static void _sde_kms_update_tcsr_glitch_mask(struct sde_kms *sde_kms)
+{
+	u32 read_val, write_val;
+
+	if (!sde_kms || !sde_kms->catalog ||
+		!sde_kms->catalog->update_tcsr_disp_glitch)
+		return;
+
+	read_val = scm_io_read(TCSR_DISP_HF_SF_ARES_GLITCH_MASK);
+	write_val = read_val | BIT(2);
+	scm_io_write(TCSR_DISP_HF_SF_ARES_GLITCH_MASK, write_val);
+
+	pr_info("tcsr glitch programmed read_val:%x write_val:%x\n",
+						read_val, write_val);
+
+}
+
 static int _sde_kms_hw_init_blocks(struct sde_kms *sde_kms,
 	struct drm_device *dev,
 	struct msm_drm_private *priv)
@@ -3393,6 +3413,9 @@ static int _sde_kms_hw_init_blocks(struct sde_kms *sde_kms,
 		sde_kms->catalog = NULL;
 		goto power_error;
 	}
+
+	/* mask glitch during gdsc power up */
+	_sde_kms_update_tcsr_glitch_mask(sde_kms);
 
 	/* initialize power domain if defined */
 	rc = _sde_kms_hw_init_power_helper(dev, sde_kms);

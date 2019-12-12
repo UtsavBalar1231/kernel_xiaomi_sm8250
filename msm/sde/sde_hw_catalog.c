@@ -4222,6 +4222,7 @@ static int _sde_hardware_pre_caps(struct sde_mdss_cfg *sde_cfg, uint32_t hw_rev)
 		sde_cfg->true_inline_prefill_fudge_lines = 2;
 		sde_cfg->true_inline_prefill_lines_nv12 = 32;
 		sde_cfg->true_inline_prefill_lines = 48;
+		sde_cfg->update_tcsr_disp_glitch = true;
 	} else if (IS_SDMTRINKET_TARGET(hw_rev)) {
 		sde_cfg->has_cwb_support = true;
 		sde_cfg->has_qsync = true;
