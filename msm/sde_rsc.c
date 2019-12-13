@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
 #define pr_fmt(fmt)	"[sde_rsc:%s:%d]: " fmt, __func__, __LINE__
@@ -531,6 +531,8 @@ vsync_wait:
 	/* indicate wait for vsync for vid to cmd state switch & cfg update */
 	if (!rc && (rsc->current_state == SDE_RSC_VID_STATE ||
 			rsc->current_state == SDE_RSC_CMD_STATE)) {
+		rsc->post_poms = true;
+
 		/* clear VSYNC timestamp for indication when update completes */
 		if (rsc->hw_ops.hw_vsync)
 			rsc->hw_ops.hw_vsync(rsc, VSYNC_ENABLE, NULL, 0, 0);
@@ -670,6 +672,8 @@ vsync_wait:
 	/* indicate wait for vsync for vid to cmd state switch & cfg update */
 	if (!rc && (rsc->current_state == SDE_RSC_VID_STATE ||
 			rsc->current_state == SDE_RSC_CMD_STATE)) {
+		rsc->post_poms = true;
+
 		/* clear VSYNC timestamp for indication when update completes */
 		if (rsc->hw_ops.hw_vsync)
 			rsc->hw_ops.hw_vsync(rsc, VSYNC_ENABLE, NULL, 0, 0);
@@ -737,6 +741,7 @@ static int sde_rsc_switch_to_idle(struct sde_rsc_priv *rsc,
 			rc = CLK_MODE_SWITCH_SUCCESS;
 	} else if (rsc->hw_ops.state_update) {
 		rc = rsc->hw_ops.state_update(rsc, SDE_RSC_IDLE_STATE);
+		rsc->post_poms = false;
 		if (!rc)
 			rpmh_mode_solver_set(rsc->rpmh_dev, true);
 	}
