@@ -2728,6 +2728,7 @@
 			<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_CAMERA_CFG 0 0>,
 			<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_CAMERA_CFG 0 1>;
 		qcom,retain-regs;
+		qcom,gds-timeout = <500>;
 	};
 
 	/* DISP_CC GDSC */
