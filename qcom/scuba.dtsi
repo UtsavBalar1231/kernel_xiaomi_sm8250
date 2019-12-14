@@ -508,6 +508,7 @@
 };
 
 #include "scuba-pinctrl.dtsi"
+#include "scuba-stub-regulator.dtsi"
 #include "scuba-gdsc.dtsi"
 
 &gcc_camss_top_gdsc {
