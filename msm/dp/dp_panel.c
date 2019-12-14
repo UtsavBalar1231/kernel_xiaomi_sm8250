@@ -2174,7 +2174,7 @@ static u32 dp_panel_get_supported_bpp(struct dp_panel *dp_panel,
 	struct drm_dp_link *link_info;
 	const u32 max_supported_bpp = 30;
 	u32 min_supported_bpp = 18;
-	u32 bpp = 0, data_rate_khz = 0;
+	u32 bpp = 0, data_rate_khz = 0, tmds_max_clock = 0;
 
 	if (dp_panel->dsc_en)
 		min_supported_bpp = 24;
@@ -2183,6 +2183,7 @@ static u32 dp_panel_get_supported_bpp(struct dp_panel *dp_panel,
 
 	link_info = &dp_panel->link_info;
 	data_rate_khz = link_info->num_lanes * link_info->rate * 8;
+	tmds_max_clock = dp_panel->connector->display_info.max_tmds_clock;
 
 	for (; bpp > min_supported_bpp; bpp -= 6) {
 		if (dp_panel->dsc_en) {
@@ -2198,6 +2199,10 @@ static u32 dp_panel_get_supported_bpp(struct dp_panel *dp_panel,
 					DP_DSC_8_BPC))
 				continue;
 		}
+
+		if (tmds_max_clock > 0 &&
+		    mult_frac(mode_pclk_khz, bpp, 24)  > tmds_max_clock)
+			continue;
 
 		if (mode_pclk_khz * bpp <= data_rate_khz)
 			break;
