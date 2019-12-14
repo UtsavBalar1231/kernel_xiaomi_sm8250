@@ -734,6 +734,26 @@
 			};
 		};
 	};
+
+	gpu-skin-avg-step {
+		polling-delay-passive = <1000>;
+		polling-delay = <5000>;
+		thermal-governor = "step_wise";
+		trips {
+			virt_trip: virt-trip {
+				temperature = <64600>;
+				hysteresis = <2000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			gpu_cdev {
+				trip = <&virt_trip>;
+				cooling-device = <&msm_gpu 0 1>;
+			};
+		};
+	};
 };
 
 &sdhc_2 {
