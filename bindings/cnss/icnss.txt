@@ -7,7 +7,8 @@ to FW are communicated thru this interface. This driver also listens to
 WLAN PD restart notifications.
 
 Required properties:
-  - compatible: "qcom,icnss"
+  - compatible: "qcom,icnss" for ADRASTEA architecture
+                "qcom,wcn6750" for iWCN architecture
   - reg: Memory regions defined as starting address and size
   - reg-names: Names of the memory regions defined in reg entry
   - interrupts: Copy engine interrupt table
