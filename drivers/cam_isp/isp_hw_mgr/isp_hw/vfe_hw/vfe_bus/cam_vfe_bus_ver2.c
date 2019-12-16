@@ -319,6 +319,7 @@ static int cam_vfe_bus_ver2_get_intra_client_mask(
 	case CAM_VFE_BUS_VER2_VFE_CORE_0:
 		switch (dual_slave_core) {
 		case CAM_VFE_BUS_VER2_VFE_CORE_1:
+		case CAM_VFE_BUS_VER2_VFE_CORE_2:
 			*intra_client_mask = version_based_intra_client_mask;
 			break;
 		default:
@@ -331,6 +332,20 @@ static int cam_vfe_bus_ver2_get_intra_client_mask(
 	case CAM_VFE_BUS_VER2_VFE_CORE_1:
 		switch (dual_slave_core) {
 		case CAM_VFE_BUS_VER2_VFE_CORE_0:
+		case CAM_VFE_BUS_VER2_VFE_CORE_2:
+			*intra_client_mask = version_based_intra_client_mask;
+			break;
+		default:
+			CAM_ERR(CAM_ISP, "Invalid value for slave core %u",
+				dual_slave_core);
+			rc = -EINVAL;
+			break;
+		}
+		break;
+	case CAM_VFE_BUS_VER2_VFE_CORE_2:
+		switch (dual_slave_core) {
+		case CAM_VFE_BUS_VER2_VFE_CORE_0:
+		case CAM_VFE_BUS_VER2_VFE_CORE_1:
 			*intra_client_mask = version_based_intra_client_mask;
 			break;
 		default:
