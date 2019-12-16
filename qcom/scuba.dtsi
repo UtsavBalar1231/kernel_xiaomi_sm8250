@@ -208,6 +208,15 @@
 		};
 	};
 
+	arm64_cpu_erp {
+		compatible = "arm,arm64-cpu-erp";
+		interrupt-names = "pri-dbe-irq",
+				  "pri-ext-irq";
+		interrupts = <0 43 4>,
+			     <0 41 4>;
+		poll-delay-ms = <5000>;
+	};
+
 	qcom,msm-imem@c125000 {
 		compatible = "qcom,msm-imem";
 		reg = <0xc125000 0x1000>;
