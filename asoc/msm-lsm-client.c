@@ -1457,6 +1457,12 @@ static int msm_lsm_ioctl_shared(struct snd_pcm_substream *substream,
 					prtd->lsm_client->lab_started = false;
 				}
 			}
+
+			if (!atomic_read(&prtd->read_abort)) {
+				dev_dbg(rtd->dev,
+					"%s: set read_abort to stop buffering\n", __func__);
+				atomic_set(&prtd->read_abort, 1);
+			}
 			rc = q6lsm_stop(prtd->lsm_client, true);
 			if (!rc)
 				dev_dbg(rtd->dev,
@@ -2660,6 +2666,12 @@ static int msm_lsm_close(struct snd_pcm_substream *substream)
 						__func__, ret);
 			}
 		}
+
+		if (!atomic_read(&prtd->read_abort)) {
+			dev_dbg(rtd->dev,
+				"%s: set read_abort to stop buffering\n", __func__);
+			atomic_set(&prtd->read_abort, 1);
+		}
 		ret = q6lsm_stop(prtd->lsm_client, true);
 		if (ret)
 			dev_err(rtd->dev,
@@ -2690,6 +2702,11 @@ static int msm_lsm_close(struct snd_pcm_substream *substream)
 					SNDRV_PCM_STREAM_CAPTURE);
 
 	if (prtd->lsm_client->opened) {
+		if (!atomic_read(&prtd->read_abort)) {
+			dev_dbg(rtd->dev,
+				"%s: set read_abort to stop buffering\n", __func__);
+			atomic_set(&prtd->read_abort, 1);
+		}
 		q6lsm_close(prtd->lsm_client);
 		prtd->lsm_client->opened = false;
 	}
