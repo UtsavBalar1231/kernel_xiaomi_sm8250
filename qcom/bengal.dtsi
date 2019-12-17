@@ -971,9 +971,12 @@
 		interrupt-names = "eud_irq";
 		interrupts = <GIC_SPI 189 IRQ_TYPE_LEVEL_HIGH>;
 		reg = <0x1610000 0x2000>,
-		      <0x1612000 0x1000>;
-		reg-names = "eud_base", "eud_mode_mgr2";
+		      <0x1612000 0x1000>,
+		      <0x3E5018 0x4>;
+		reg-names = "eud_base", "eud_mode_mgr2",
+				"eud_tcsr_check_reg";
 		qcom,secure-eud-en;
+		qcom,eud-tcsr-check-enable;
 		status = "ok";
 	};
 
