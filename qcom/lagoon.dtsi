@@ -395,7 +395,7 @@
 			reg = <0x0 0x86000000 0x0 0x500000>;
 		};
 
-		npu_mem: npu_region@86500000 {
+		pil_npu_mem: pil_npu_region@86500000 {
 			compatible = "removed-dma-pool";
 			no-map;
 			reg = <0x0 0x86500000 0x0 0x500000>;
@@ -1522,10 +1522,24 @@
 		qcom,firmware-name = "venus";
 		memory-region = <&pil_video_mem>;
 	};
+
+	qcom,npu@9800000 {
+		compatible = "qcom,pil-tz-generic";
+		reg = <0x9800000 0x800000>;
+		status = "ok";
+		qcom,pas-id = <23>;
+		qcom,firmware-name = "npu";
+		memory-region = <&pil_npu_mem>;
+
+		/* Outputs to npu */
+		qcom,smem-states = <&npu_smp2p_out 0>;
+		qcom,smem-state-names = "qcom,force-stop";
+	};
 };
 
 #include "lagoon-gdsc.dtsi"
 #include "lagoon-usb.dtsi"
+#include "lagoon-npu.dtsi"
 
 &gcc_pcie_0_gdsc {
 	qcom,support-hw-trigger;
