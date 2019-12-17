@@ -173,6 +173,22 @@ Optional properties:
 - qcom,max-refresh-rate:		Maximum refresh rate supported by the panel. If max refresh
 					rate is not specified, then the frame rate of the panel in
 					qcom,mdss-dsi-panel-framerate is used.
+- qcom,dsi-dyn-clk-enable:		Boolean to indicate dsi dynamic clock switch feature
+					is supported.
+- qcom,dsi-dyn-clk-list:		An u32 array which lists all the supported dsi bit clock
+					frequencies in Hz for the given panel.
+- qcom,dsi-dyn-clk-type:		A string that specifies the sub-type for the dynamic
+					clk feature. If dyn clk type is not specified, default
+					value "legacy" is used.
+					"legacy" = FPS is not maintained after dynamic clock switch.
+					"constant-fps-adjust-hfp" = FPS is maintained even after
+					dynamic clock switch by changing panel horizontal front
+					porch values.
+					"constant-fps-adjust-vfp" = FPS is maintained even after
+					dynamic clock switch by changing panel vertical front
+					porch values.
+					This dyn-clk-type entry is an optional binding which is
+                                        contingent on the enabling of dynamic clock switch.
 - qcom,mdss-dsi-bl-pmic-control-type:	A string that specifies the implementation of backlight
 					control for this panel.
 					"bl_ctrl_pwm" = Backlight controlled by PWM gpio.
@@ -676,6 +692,10 @@ Example:
 		qcom,mdss-dsi-pan-fps-update = "dfps_suspend_resume_mode";
 		qcom,min-refresh-rate = <30>;
 		qcom,max-refresh-rate = <60>;
+		qcom,dsi-dyn-clk-enable;
+		qcom,dsi-dyn-clk-list =
+			<534712320 532484352 530256384>;
+		qcom,dsi-dyn-clk-type = "constant-fps-adjust-vfp";
 		qcom,mdss-dsi-bl-pmic-bank-select = <0>;
 		qcom,mdss-dsi-bl-pmic-pwm-frequency = <0>;
 		qcom,mdss-dsi-pwm-gpio = <&pm8941_mpps 5 0>;
