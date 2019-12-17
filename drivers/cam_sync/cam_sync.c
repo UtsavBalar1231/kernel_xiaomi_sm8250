@@ -38,7 +38,7 @@ static void cam_sync_print_fence_table(void)
 			sync_dev->sync_table[idx].name,
 			sync_dev->sync_table[idx].type,
 			sync_dev->sync_table[idx].state,
-			sync_dev->sync_table[idx].ref_cnt);
+			atomic_read(&sync_dev->sync_table[idx].ref_cnt));
 		spin_unlock_bh(&sync_dev->row_spinlocks[idx]);
 	}
 }
