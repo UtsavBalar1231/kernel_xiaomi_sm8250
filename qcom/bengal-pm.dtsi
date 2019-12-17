@@ -78,6 +78,7 @@
 					#size-cells = <0>;
 					qcom,psci-mode-shift = <0>;
 					qcom,psci-mode-mask = <0xf>;
+					qcom,disable-ipi-prediction;
 					qcom,cpu = <&CPU0 &CPU1 &CPU2 &CPU3>;
 
 					qcom,pm-cpu-level@0 { /* C1 */
@@ -146,6 +147,7 @@
 					#size-cells = <0>;
 					qcom,psci-mode-shift = <0>;
 					qcom,psci-mode-mask = <0xf>;
+					qcom,disable-ipi-prediction;
 					qcom,cpu = <&CPU4 &CPU5 &CPU6 &CPU7>;
 
 					qcom,pm-cpu-level@0 { /* C1 */

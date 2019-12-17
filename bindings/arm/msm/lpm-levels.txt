@@ -83,6 +83,8 @@ that share the parameters.It contains the following properties.
 	node.
 
 Optional properties:
+	- qcom,disable-ipi-prediction: This property is used to indicate the
+	LPM governor to disable ipi based LPM prediction on CPUs.
 	- qcom,disable-prediction: This property is used to indicate the
 	LPM governor is to disable sleep prediction to this cpu.
 	- qcom,ref-stddev: This property is used as reference standard deviation
