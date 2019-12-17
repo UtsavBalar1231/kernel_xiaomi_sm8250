@@ -984,7 +984,7 @@
 		compatible = "qcom,msm-gladiator-v2";
 		reg = <0xf100000 0xdc00>;
 		reg-names = "gladiator_base";
-		interrupts = <0 22 0>;
+		interrupts = <GIC_SPI 22 IRQ_TYPE_LEVEL_HIGH>;
 		clock-names = "atb_clk";
 		clocks = <&rpmcc RPM_QDSS_CLK>;
 	};
@@ -993,7 +993,8 @@
 		compatible = "qcom,msm-watchdog";
 		reg = <0xf017000 0x1000>;
 		reg-names = "wdt-base";
-		interrupts = <0 3 0>, <0 4 0>;
+		interrupts = <GIC_SPI 3 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 4 IRQ_TYPE_LEVEL_HIGH>;
 		qcom,bark-time = <11000>;
 		qcom,pet-time = <9360>;
 		qcom,ipi-ping;
