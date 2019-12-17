@@ -445,6 +445,43 @@ void dump_phy_registers(struct DWC_ETH_QOS_prv_data *pdata)
 	pr_alert("\n****************************************************\n");
 }
 
+static void DWC_ETH_QOS_request_phy_wol(struct DWC_ETH_QOS_prv_data *pdata)
+{
+	pdata->phy_wol_supported = 0;
+	pdata->phy_wol_wolopts = 0;
+
+	/* Check if phydev is valid*/
+	/* Check and enable Wake-on-LAN functionality in PHY*/
+	if (pdata->phydev) {
+		struct ethtool_wolinfo wol = {.cmd = ETHTOOL_GWOL};
+		wol.supported = 0;
+		wol.wolopts= 0;
+
+		phy_ethtool_get_wol(pdata->phydev, &wol);
+		pdata->phy_wol_supported = wol.supported;
+
+		/* Try to enable supported Wake-on-LAN features in PHY*/
+		if (wol.supported) {
+
+			device_set_wakeup_capable(&pdata->pdev->dev, 1);
+
+			wol.cmd = ETHTOOL_SWOL;
+			wol.wolopts = wol.supported;
+
+			if (!phy_ethtool_set_wol(pdata->phydev, &wol)){
+				pdata->phy_wol_wolopts = wol.wolopts;
+
+				enable_irq_wake(pdata->phy_irq);
+
+				device_set_wakeup_enable(&pdata->pdev->dev, 1);
+				EMACDBG("Enabled WoL[0x%x] in %s\n", wol.wolopts,
+						 pdata->phydev->drv->name);
+				pdata->wol_enabled = 1;
+			}
+		}
+	}
+}
+
 /*!
  * \brief API to enable or disable PHY hibernation mode
  *
@@ -1007,6 +1044,9 @@ void DWC_ETH_QOS_adjust_link(struct net_device *dev)
 		}
 #endif
 
+		if (pdata->phy_intr_en && !pdata->wol_enabled)
+			DWC_ETH_QOS_request_phy_wol(pdata);
+
 		if (pdata->ipa_enabled && netif_running(dev)) {
 			if (phydev->link == 1)
 				 DWC_ETH_QOS_ipa_offload_event_handler(pdata, EV_PHY_LINK_UP);
@@ -1028,42 +1068,6 @@ void DWC_ETH_QOS_adjust_link(struct net_device *dev)
 	//spin_unlock_irqrestore(&pdata->lock, flags);
 
 	DBGPR_MDIO("<--DWC_ETH_QOS_adjust_link\n");
-}
-
-static void DWC_ETH_QOS_request_phy_wol(struct DWC_ETH_QOS_prv_data *pdata)
-{
-	pdata->phy_wol_supported = 0;
-	pdata->phy_wol_wolopts = 0;
-
-	/* Check if phydev is valid*/
-	/* Check and enable Wake-on-LAN functionality in PHY*/
-	if (pdata->phydev) {
-		struct ethtool_wolinfo wol = {.cmd = ETHTOOL_GWOL};
-		wol.supported = 0;
-		wol.wolopts= 0;
-
-		phy_ethtool_get_wol(pdata->phydev, &wol);
-		pdata->phy_wol_supported = wol.supported;
-
-		/* Try to enable supported Wake-on-LAN features in PHY*/
-		if (wol.supported) {
-
-			device_set_wakeup_capable(&pdata->pdev->dev, 1);
-
-			wol.cmd = ETHTOOL_SWOL;
-			wol.wolopts = wol.supported;
-
-			if (!phy_ethtool_set_wol(pdata->phydev, &wol)){
-				pdata->phy_wol_wolopts = wol.wolopts;
-
-				enable_irq_wake(pdata->phy_irq);
-
-				device_set_wakeup_enable(&pdata->pdev->dev, 1);
-				EMACDBG("Enabled WoL[0x%x] in %s\n", wol.wolopts,
-						 pdata->phydev->drv->name);
-			}
-		}
-	}
 }
 
 bool DWC_ETH_QOS_is_phy_link_up(struct DWC_ETH_QOS_prv_data *pdata)
@@ -1194,10 +1198,8 @@ static int DWC_ETH_QOS_init_phy(struct net_device *dev)
 		phydev->irq = PHY_IGNORE_INTERRUPT;
 		phydev->interrupts =  PHY_INTERRUPT_ENABLED;
 
-		if (phydev->drv->config_intr &&
-			!phydev->drv->config_intr(phydev)){
-			DWC_ETH_QOS_request_phy_wol(pdata);
-		} else {
+		if (!(phydev->drv->config_intr &&
+			!phydev->drv->config_intr(phydev))){
 			EMACERR("Failed to configure PHY interrupts");
 			BUG();
 		}
