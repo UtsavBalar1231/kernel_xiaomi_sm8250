@@ -1814,6 +1814,7 @@
 		reg-names = "csr-base";
 
 		coresight-name = "coresight-csr";
+		qcom,perflsheot-set-support;
 		qcom,usb-bam-support;
 		qcom,hwctrl-set-support;
 		qcom,set-byte-cntr-support;
