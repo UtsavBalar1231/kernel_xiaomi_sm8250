@@ -1943,6 +1943,7 @@
 #include "lagoon-pinctrl.dtsi"
 #include "lagoon-pm.dtsi"
 #include "lagoon-regulators.dtsi"
+#include "lagoon-coresight.dtsi"
 #include "pm6350.dtsi"
 #include "lagoon-ion.dtsi"
 #include "lagoon-qupv3.dtsi"
