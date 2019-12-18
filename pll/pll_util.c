@@ -102,7 +102,7 @@ static int mdss_pll_util_parse_dt_supply(struct platform_device *pdev,
 	supply_root_node = of_get_child_by_name(of_node,
 						"qcom,platform-supply-entries");
 	if (!supply_root_node) {
-		pr_err("no supply entry present\n");
+		pr_debug("no supply entry present\n");
 		return rc;
 	}
 
