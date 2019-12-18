@@ -18,6 +18,15 @@ enum clock_properties {
 	CLOCK_PROP_HAS_MEM_RETENTION    = 1 << 1,
 };
 
+static struct memory_limit_table memory_limit_tbl_mbytes[] = {
+	/* target_memory_size - max_video_cap */
+	{12288, 4096},  /* 12 GB - 4 Gb*/
+	{8192, 3584},   /*  8 GB - 3.5 Gb*/
+	{6144, 2560},   /*  6 GB - 2.5 Gb*/
+	{4096, 1536},   /*  4 GB - 1.5 Gb*/
+	{2048, 768},    /*  2 GB - 0.75 Gb*/
+};
+
 static inline struct device *msm_iommu_get_ctx(const char *ctx_name)
 {
 	return NULL;
@@ -757,6 +766,9 @@ int read_platform_resources_from_drv_data(
 	res->codec_data = platform_data->codec_data;
 
 	res->sku_version = platform_data->sku_version;
+	res->mem_limit_tbl = memory_limit_tbl_mbytes;
+	res->memory_limit_table_size =
+		ARRAY_SIZE(memory_limit_tbl_mbytes);
 
 	res->fw_name = "venus";
 
