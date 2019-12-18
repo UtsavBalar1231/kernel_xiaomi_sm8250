@@ -9,7 +9,7 @@
 		qcom,bus-slv-id = <MSM_BUS_SLAVE_EBI_CH0>;
 		iommus = <&apps_smmu 0x5a3 0x0>;
 		qcom,iommu-dma-addr-pool = <0x40000000 0xc0000000>;
-		qcom,iommu-dma = "atomic";
+		qcom,iommu-dma = "fastmap";
 	};
 
 	/* QUPV3_0_SE0 */
@@ -463,7 +463,7 @@
 		qcom,bus-slv-id = <MSM_BUS_SLAVE_EBI_CH0>;
 		iommus = <&apps_smmu 0x43 0x0>;
 		qcom,iommu-dma-addr-pool = <0x40000000 0xc0000000>;
-		qcom,iommu-dma = "atomic";
+		qcom,iommu-dma = "fastmap";
 	};
 
 	/* Debug UART Instance for CDP/MTP platform */
@@ -746,7 +746,7 @@
 		qcom,bus-slv-id = <MSM_BUS_SLAVE_EBI_CH0>;
 		iommus = <&apps_smmu 0x63 0x0>;
 		qcom,iommu-dma-addr-pool = <0x40000000 0xc0000000>;
-		qcom,iommu-dma = "atomic";
+		qcom,iommu-dma = "fastmap";
 	};
 
 	/*
