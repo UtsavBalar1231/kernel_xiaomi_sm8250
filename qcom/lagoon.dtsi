@@ -5,6 +5,7 @@
 #include <dt-bindings/clock/qcom,gpucc-lagoon.h>
 #include <dt-bindings/clock/qcom,npucc-lagoon.h>
 #include <dt-bindings/clock/qcom,rpmh.h>
+#include <dt-bindings/regulator/qcom,rpmh-regulator-levels.h>
 #include <dt-bindings/clock/qcom,videocc-lagoon.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/soc/qcom,rpmh-rsc.h>
@@ -1618,7 +1619,7 @@
 #include "msm-arm-smmu-lagoon.dtsi"
 #include "lagoon-pinctrl.dtsi"
 #include "lagoon-pm.dtsi"
-#include "lagoon-stub-regulator.dtsi"
+#include "lagoon-regulators.dtsi"
 #include "pm6350.dtsi"
 #include "lagoon-ion.dtsi"
 #include "lagoon-qupv3.dtsi"
