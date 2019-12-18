@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/module.h>
@@ -957,10 +957,19 @@ int32_t cam_actuator_driver_cmd(struct cam_actuator_ctrl_t *a_ctrl,
 			ACT_APPLY_SETTINGS_NOW) {
 			rc = cam_actuator_apply_settings(a_ctrl,
 				&a_ctrl->i2c_data.init_settings);
+			if ((rc == -EAGAIN) &&
+			(a_ctrl->io_master_info.master_type == CCI_MASTER)) {
+				CAM_WARN(CAM_ACTUATOR,
+					"CCI HW is in resetting mode:: Reapplying Init settings");
+				usleep_range(1000, 1010);
+				rc = cam_actuator_apply_settings(a_ctrl,
+					&a_ctrl->i2c_data.init_settings);
+			}
+
 			if (rc < 0)
 				CAM_ERR(CAM_ACTUATOR,
-					"Cannot apply Update settings");
-
+					"Failed to apply Init settings: rc = %d",
+					rc);
 			/* Delete the request even if the apply is failed */
 			rc = delete_request(&a_ctrl->i2c_data.init_settings);
 			if (rc < 0) {
