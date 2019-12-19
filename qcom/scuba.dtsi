@@ -524,6 +524,7 @@
 #include "scuba-pinctrl.dtsi"
 #include "scuba-stub-regulator.dtsi"
 #include "scuba-gdsc.dtsi"
+#include "scuba-qupv3.dtsi"
 
 &gcc_camss_top_gdsc {
 	status = "ok";
@@ -568,5 +569,9 @@
 };
 
 &gpu_gx_gdsc {
+	status = "ok";
+};
+
+&qupv3_se4_2uart {
 	status = "ok";
 };
