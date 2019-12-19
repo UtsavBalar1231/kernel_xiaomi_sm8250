@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/* Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -22970,6 +22970,9 @@ static const struct snd_kcontrol_new msm_source_tracking_controls[] = {
 		.info   = msm_source_tracking_info,
 		.get    = msm_audio_source_tracking_get,
 	},
+};
+
+static const struct snd_kcontrol_new msm_source_doa_tracking_controls[] = {
 	{
 		.access = SNDRV_CTL_ELEM_ACCESS_READ,
 		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
@@ -29712,6 +29715,20 @@ static const struct snd_pcm_ops msm_routing_pcm_ops = {
 	.prepare        = msm_pcm_routing_prepare,
 };
 
+#ifdef CONFIG_DOA_PARAMS_ENABLED
+void msm_routing_add_doa_control(struct snd_soc_component *component)
+{
+	snd_soc_add_component_controls(component,
+				msm_source_doa_tracking_controls,
+				ARRAY_SIZE(msm_source_doa_tracking_controls));
+}
+#else
+void msm_routing_add_doa_control(struct snd_soc_component *component)
+{
+	return;
+}
+#endif
+
 /* Not used but frame seems to require it */
 static int msm_routing_probe(struct snd_soc_component *component)
 {
@@ -29781,6 +29798,8 @@ static int msm_routing_probe(struct snd_soc_component *component)
 		msm_routing_be_dai_name_table_mixer_controls,
 		ARRAY_SIZE(msm_routing_be_dai_name_table_mixer_controls));
 
+	/* Add doa control based on config */
+	msm_routing_add_doa_control(component);
 	snd_soc_add_component_controls(component, msm_source_tracking_controls,
 				ARRAY_SIZE(msm_source_tracking_controls));
 	snd_soc_add_component_controls(component, adm_channel_config_controls,
