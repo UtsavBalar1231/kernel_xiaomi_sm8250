@@ -764,10 +764,10 @@
 		interrupts = <GIC_PPI 5 IRQ_TYPE_LEVEL_HIGH>;
 	};
 
-	qcom,msm-imem@146ab000 {
+	qcom,msm-imem@146aa000 {
 		compatible = "qcom,msm-imem";
-		reg = <0x146ab000 0x1000>;
-		ranges = <0x0 0x146ab000 0x1000>;
+		reg = <0x146aa000 0x1000>;
+		ranges = <0x0 0x146aa000 0x1000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
