@@ -20,6 +20,7 @@
 #include <linux/of_platform.h>
 #include <linux/pm_runtime.h>
 #include <linux/msm_dma_iommu_mapping.h>
+#include <linux/dma-mapping.h>
 
 #include <asm/dma-iommu.h>
 #include <soc/qcom/secure_buffer.h>
@@ -32,6 +33,7 @@
 struct msm_smmu_client {
 	struct device *dev;
 	struct iommu_domain *domain;
+	const struct dma_map_ops *dma_ops;
 	bool domain_attached;
 	bool secure;
 };
@@ -66,6 +68,12 @@ static int msm_smmu_attach(struct msm_mmu *mmu, const char * const *names,
 	if (client->domain_attached)
 		return 0;
 
+	if (client->dma_ops) {
+		set_dma_ops(client->dev, client->dma_ops);
+		client->dma_ops = NULL;
+		dev_dbg(client->dev, "iommu domain ops restored\n");
+	}
+
 	rc = iommu_attach_device(client->domain, client->dev);
 	if (rc) {
 		dev_err(client->dev, "iommu attach dev failed (%d)\n", rc);
@@ -96,6 +104,13 @@ static void msm_smmu_detach(struct msm_mmu *mmu, const char * const *names,
 	pm_runtime_get_sync(mmu->dev);
 	msm_dma_unmap_all_for_dev(client->dev);
 	iommu_detach_device(client->domain, client->dev);
+
+	client->dma_ops = get_dma_ops(client->dev);
+	if (client->dma_ops) {
+		set_dma_ops(client->dev, NULL);
+		dev_dbg(client->dev, "iommu domain ops removed\n");
+	}
+
 	pm_runtime_put_sync(mmu->dev);
 
 	client->domain_attached = false;
