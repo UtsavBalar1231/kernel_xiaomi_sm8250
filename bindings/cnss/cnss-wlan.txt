@@ -71,6 +71,7 @@ Optional properties:
                        specifications, should be drived depending on products
   - cnss-daemon-support: Boolean property to decide whether cnss_daemon
                          userspace QMI client is supported.
+  - use-nv-mac: Boolean property to indicate whether NV MAC is used or not.
 
 Example:
 
