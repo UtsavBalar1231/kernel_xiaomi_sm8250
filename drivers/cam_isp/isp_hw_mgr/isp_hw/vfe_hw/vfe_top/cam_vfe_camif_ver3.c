@@ -296,20 +296,6 @@ static int cam_vfe_camif_ver3_resource_init(
 				"failed to enable dsp clk, rc = %d", rc);
 	}
 
-	/* All auto clock gating disabled by default */
-	CAM_INFO(CAM_ISP, "overriding clock gating");
-	cam_io_w_mb(0xFFFFFFFF, camif_data->mem_base +
-		camif_data->common_reg->core_cgc_ovd_0);
-
-	cam_io_w_mb(0xFF, camif_data->mem_base +
-		camif_data->common_reg->core_cgc_ovd_1);
-
-	cam_io_w_mb(0x1, camif_data->mem_base +
-		camif_data->common_reg->ahb_cgc_ovd);
-
-	cam_io_w_mb(0x1, camif_data->mem_base +
-		camif_data->common_reg->noc_cgc_ovd);
-
 	return rc;
 }
 
