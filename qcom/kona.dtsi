@@ -4726,6 +4726,7 @@
 		qcom,wlan-rc-num = <0>;
 		qcom,wlan-ramdump-dynamic = <0x400000>;
 		qcom,smmu-s1-enable;
+		cnss-daemon-support;
 		qcom,cmd_db_name = "smpf2";
 
 		qcom,msm-bus,name = "msm-cnss";
