@@ -704,7 +704,10 @@ static int32_t afe_callback(struct apr_client_data *data, void *priv)
 				payload[0], payload[1], data->token);
 			/* payload[1] contains the error status for response */
 			if (payload[1] != 0) {
-				atomic_set(&this_afe.status, payload[1]);
+				if(data->token == AFE_CLK_TOKEN)
+					atomic_set(&this_afe.clk_status, payload[1]);
+				else
+					atomic_set(&this_afe.status, payload[1]);
 				pr_err("%s: cmd = 0x%x returned error = 0x%x\n",
 					__func__, payload[0], payload[1]);
 			}
@@ -781,6 +784,9 @@ static int32_t afe_callback(struct apr_client_data *data, void *priv)
 			case AFE_CMD_REMOTE_LPASS_CORE_HW_VOTE_REQUEST:
 			case AFE_CMD_REMOTE_LPASS_CORE_HW_DEVOTE_REQUEST:
 				atomic_set(&this_afe.clk_state, 0);
+				if (payload[1] != 0)
+					atomic_set(&this_afe.clk_status,
+							payload[1]);
 				wake_up(&this_afe.lpass_core_hw_wait);
 				break;
 			case AFE_SVC_CMD_EVENT_CFG:
