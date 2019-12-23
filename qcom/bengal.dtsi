@@ -2004,14 +2004,8 @@
 
 				msm_cdsp_rm: qcom,msm_cdsp_rm {
 					compatible = "qcom,msm-cdsp-rm";
-					qcom,qos-latency-us = <44>;
+					qcom,qos-latency-us = <100>;
 					qcom,qos-maxhold-ms = <20>;
-					#cooling-cells = <2>;
-				};
-
-				msm_hvx_rm: qcom,msm_hvx_rm {
-					compatible = "qcom,msm-hvx-rm";
-					#cooling-cells = <2>;
 				};
 			};
 
