@@ -34,8 +34,6 @@
 #include <linux/poll.h>
 #include <linux/reservation.h>
 #include <linux/mm.h>
-#include <linux/kernel.h>
-#include <linux/atomic.h>
 #include <linux/sched/signal.h>
 #include <linux/fdtable.h>
 #include <linux/list_sort.h>
@@ -45,8 +43,6 @@
 
 #include <uapi/linux/dma-buf.h>
 #include <uapi/linux/magic.h>
-
-static atomic_long_t name_counter;
 
 static inline int is_dma_buf_file(struct file *);
 
@@ -373,13 +369,6 @@ out:
 	return events;
 }
 
-static int dma_buf_begin_cpu_access_umapped(struct dma_buf *dmabuf,
-					    enum dma_data_direction direction);
-
-
-static int dma_buf_end_cpu_access_umapped(struct dma_buf *dmabuf,
-					  enum dma_data_direction direction);
-
 /**
  * dma_buf_set_name - Set a name to a specific dma_buf to track the usage.
  * The name of the dma-buf buffer can only be set when the dma-buf is not
@@ -595,9 +584,7 @@ struct dma_buf *dma_buf_export(const struct dma_buf_export_info *exp_info)
 	struct reservation_object *resv = exp_info->resv;
 	struct file *file;
 	size_t alloc_size = sizeof(struct dma_buf);
-	char *bufname;
 	int ret;
-	long cnt;
 
 	if (!exp_info->resv)
 		alloc_size += sizeof(struct reservation_object);
@@ -618,17 +605,11 @@ struct dma_buf *dma_buf_export(const struct dma_buf_export_info *exp_info)
 	if (!try_module_get(exp_info->owner))
 		return ERR_PTR(-ENOENT);
 
-	cnt = atomic_long_inc_return(&name_counter);
-	bufname = kasprintf(GFP_KERNEL, "dmabuf%ld", cnt);
-	if (!bufname) {
-		ret = -ENOMEM;
-		goto err_module;
-	}
 
 	dmabuf = kzalloc(alloc_size, GFP_KERNEL);
 	if (!dmabuf) {
 		ret = -ENOMEM;
-		goto err_name;
+		goto err_module;
 	}
 
 	dmabuf->priv = exp_info->priv;
@@ -639,7 +620,6 @@ struct dma_buf *dma_buf_export(const struct dma_buf_export_info *exp_info)
 	init_waitqueue_head(&dmabuf->poll);
 	dmabuf->cb_excl.poll = dmabuf->cb_shared.poll = &dmabuf->poll;
 	dmabuf->cb_excl.active = dmabuf->cb_shared.active = 0;
-	dmabuf->name = bufname;
 	dmabuf->ktime = ktime_get();
 	atomic_set(&dmabuf->dent_count, 1);
 
@@ -673,8 +653,6 @@ struct dma_buf *dma_buf_export(const struct dma_buf_export_info *exp_info)
 
 err_dmabuf:
 	kfree(dmabuf);
-err_name:
-	kfree(bufname);
 err_module:
 	module_put(exp_info->owner);
 	return ERR_PTR(ret);
@@ -1349,9 +1327,8 @@ static int dma_buf_debug_show(struct seq_file *s, void *unused)
 		return ret;
 
 	seq_puts(s, "\nDma-buf Objects:\n");
-	seq_printf(s, "%-8s\t%-8s\t%-8s\t%-8s\t%-12s\t%-s\t%-8s\n",
-		   "size", "flags", "mode", "count", "exp_name",
-		   "name", "ino");
+	seq_printf(s, "%-8s\t%-8s\t%-8s\t%-8s\texp_name\t%-8s\n",
+		   "size", "flags", "mode", "count", "ino");
 
 	list_for_each_entry(buf_obj, &db_list.head, list_node) {
 		ret = mutex_lock_interruptible(&buf_obj->lock);
@@ -1362,11 +1339,11 @@ static int dma_buf_debug_show(struct seq_file *s, void *unused)
 			continue;
 		}
 
-		seq_printf(s, "%08zu\t%08x\t%08x\t%08ld\t%-12s\t%-s\t%08lu\t%s\n",
+		seq_printf(s, "%08zu\t%08x\t%08x\t%08ld\t%s\t%08lu\t%s\n",
 				buf_obj->size,
 				buf_obj->file->f_flags, buf_obj->file->f_mode,
 				file_count(buf_obj->file),
-				buf_obj->exp_name, buf_obj->name,
+				buf_obj->exp_name,
 				file_inode(buf_obj->file)->i_ino,
 				buf_obj->name ?: "");
 
