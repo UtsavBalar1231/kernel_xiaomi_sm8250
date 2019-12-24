@@ -950,10 +950,10 @@
 		pinctrl-names = "default", "sleep";
 		pinctrl-0 = <&qupv3_se15_spi_active>;
 		pinctrl-1 = <&qupv3_se15_spi_sleep>;
-		interrupts = <GIC_SPI 583 0>;
+		interrupts = <GIC_SPI 583 IRQ_TYPE_LEVEL_HIGH>;
 		spi-max-frequency = <50000000>;
 		qcom,wrapper-core = <&qupv3_2>;
-		dmas = <&gpi_dma2 0 1 1 64 IRQ_TYPE_LEVEL_HIGH>,
+		dmas = <&gpi_dma2 0 1 1 64 0>,
 			<&gpi_dma2 1 1 1 64 0>;
 		dma-names = "tx", "rx";
 		status = "disabled";
@@ -972,10 +972,10 @@
 		pinctrl-names = "default", "sleep";
 		pinctrl-0 = <&qupv3_se16_spi_active>;
 		pinctrl-1 = <&qupv3_se16_spi_sleep>;
-		interrupts = <GIC_SPI 584 0>;
+		interrupts = <GIC_SPI 584 IRQ_TYPE_LEVEL_HIGH>;
 		spi-max-frequency = <50000000>;
 		qcom,wrapper-core = <&qupv3_2>;
-		dmas = <&gpi_dma2 0 2 1 64 IRQ_TYPE_LEVEL_HIGH>,
+		dmas = <&gpi_dma2 0 2 1 64 0>,
 			<&gpi_dma2 1 2 1 64 0>;
 		dma-names = "tx", "rx";
 		status = "disabled";

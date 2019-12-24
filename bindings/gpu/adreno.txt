@@ -73,6 +73,13 @@ Properties:
 						qcom,msm-bus,vectors-KBps
 			to be used by ocmem msm bus scaling client.
 
+- qcom,cpu-to-gpu-cfg-path: Container for another set of bus scaling properties
+						qcom,msm-bus,name
+						qcom,msm-bus,num-cases
+						qcom,msm-bus,num-paths
+						qcom,msm-bus,vectors-KBps
+			to be used for keeping all clocks ON in CPU to GPU AHB config path.
+
 GDSC Oxili Regulators:
 - regulator-names:		List of regulator name strings sorted in power-on order
 - vddcx-supply:			Phandle for vddcx regulator device node.
@@ -124,19 +131,6 @@ Optional Properties:
 - qcom,l2pc-cpu-mask-latency:
 				The CPU mask latency in microseconds to avoid L2PC
 				on masked CPUs.
-
-- qcom,gpu-cx-ipeak:
-				CX Ipeak is a mitigation scheme which throttles cDSP frequency
-				if all the clients are running at their respective threshold
-				frequencies to limit CX peak current.
-				<phandle bit>
-				phandle - phandle of CX Ipeak device node
-				bit     - Every bit corresponds to a client of CX Ipeak
-				driver in the relevant register.
-- qcom, gpu-cx-ipeak-freq:
-				GPU frequency threshold for CX Ipeak voting. GPU votes
-				to CX Ipeak driver when GPU clock crosses this threshold.
-				CX Ipeak can limit peak current based on voting from other clients.
 
 - qcom,force-32bit:
 				Force the GPU to use 32 bit data sizes even if
@@ -264,6 +258,29 @@ Properties:
 - qcom,mempool-reserved:	Number of pages reserved at init time for a pool.
 - qcom,mempool-allocate:	Allocate memory from the system memory when the
 				reserved pool exhausted.
+GPU CX Ipeak:
+- qcom,gpu-cx-ipeak:		Container for GPU CX ipeak clients. Multiple clients
+				can be defined within qcom,gpu-cx-ipeak. Each client
+				specifies the data required by CX Ipeak driver for
+				registration and frequency value for which this client
+				will be used.
+Properties:
+- compatible:			Must be qcom,gpu-cx-ipeak.
+- qcom,gpu-cx-ipeak:		Defines a CX Ipeak client.
+
+Properties:
+- qcom,gpu-cx-ipeak:
+				CX Ipeak is a mitigation scheme which throttles cDSP frequency
+				if all the clients are running at their respective threshold
+				frequencies to limit CX peak current.
+				<phandle bit>
+				phandle - phandle of CX Ipeak device node
+				bit     - Every bit corresponds to a client of CX Ipeak
+				driver in the relevant register.
+- qcom,gpu-cx-ipeak-freq:
+				GPU frequency threshold for CX Ipeak voting. GPU votes
+				to CX Ipeak driver when GPU clock crosses this threshold.
+				CX Ipeak can limit peak current based on voting from other client.
 
 SOC Hardware revisions:
 - qcom,soc-hw-revisions:
@@ -389,6 +406,22 @@ Example of A330 GPU in MSM8916:
 
 		/* Context aware jump target power level */
 		qcom,ca-target-pwrlevel = <1>;
+
+		qcom,gpu-cx-ipeak {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "qcom,gpu-cx-ipeak";
+
+			qcom,gpu-cx-ipeak@0 {
+				qcom,gpu-cx-ipeak = <&cx_ipeak_lm 10>;
+				qcom,gpu-cx-ipeak-freq = <980000000>;
+			};
+
+			qcom,gpu-cx-ipeak@1 {
+				qcom,gpu-cx-ipeak = <&cx_ipeak_lm 1>;
+				qcom,gpu-cx-ipeak-freq = <900000000>;
+			};
+		};
 
 		qcom,soc-hw-revisions {
 			#address-cells = <1>;

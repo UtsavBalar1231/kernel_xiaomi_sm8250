@@ -13,11 +13,18 @@
 	};
 };
 
+&qupv3_se1_i2c {
+	status = "ok";
+	#include "smb1355.dtsi"
+};
+
 &qupv3_se4_2uart {
 	status = "ok";
 };
 
 &pm6125_vadc {
+	pinctrl-0 = <&camera_therm_default &emmc_therm_default &rf_pa1_therm_default>;
+
 	rf_pa1_therm {
 		reg = <ADC_GPIO4_PU2>;
 		label = "rf_pa1_therm";
@@ -41,7 +48,7 @@
 };
 
 &thermal_zones {
-	rf-pa1-therm-adc {
+	rf-pa1-therm-usr {
 		polling-delay-passive = <0>;
 		polling-delay = <0>;
 		thermal-governor = "user_space";
@@ -85,7 +92,43 @@
 			2000000 1500000 1000000 500000>;
 };
 
+&pmi632_gpios {
+	smb_en {
+		smb_en_default: smb_en_default {
+			pins = "gpio2";
+			function = "func1";
+			output-enable;
+		};
+	};
+
+	pmi632_sense {
+		/* GPIO 7 and 8 are external-sense pins for PMI632 */
+		pmi632_sense_default: pmi632_sense_default {
+			pins = "gpio7", "gpio8";
+			bias-high-impedance;	/* disable the GPIO */
+			bias-disable;		/* no-pull */
+		};
+	};
+
+	pmi632_ctm {
+		/* Disable GPIO1 for h/w base mitigation */
+		pmi632_ctm_default: pmi632_ctm_default {
+			pins = "gpio1";
+			bias-high-impedance;	/* disable the GPIO */
+			bias-disable;		/* no-pull */
+		};
+	};
+};
+
 &pm6125_gpios {
+
+	rf_pa1_therm {
+		rf_pa1_therm_default: rf_pa1_therm_default {
+			 pins = "gpio7";
+			 bias-high-impedance;
+		};
+	};
+
 	key_vol_up {
 		key_vol_up_default: key_vol_up_default {
 			pins = "gpio5";
@@ -95,6 +138,10 @@
 			power-source = <0>;
 		};
 	};
+};
+
+&usb0 {
+	extcon = <&pmi632_charger>, <&eud>;
 };
 
 &soc {
@@ -115,6 +162,60 @@
 			gpio-key,wakeup;
 		};
 	};
+};
+
+&qupv3_se1_i2c {
+	status = "ok";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	nq@28 {
+		compatible = "qcom,nq-nci";
+		reg = <0x28>;
+		qcom,nq-irq = <&tlmm 70 0x00>;
+		qcom,nq-ven = <&tlmm 69 0x00>;
+		qcom,nq-firm = <&tlmm 31 0x00>;
+		qcom,nq-clkreq = <&tlmm 86 0x00>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <70 0>;
+		interrupt-names = "nfc_irq";
+		pinctrl-names = "nfc_active", "nfc_suspend";
+		pinctrl-0 = <&nfc_int_active &nfc_enable_active
+				&nfc_clk_req_active>;
+		pinctrl-1 = <&nfc_int_suspend &nfc_enable_suspend
+				&nfc_clk_req_suspend>;
+	};
+};
+
+&tlmm {
+	smb_int_default: smb_int_default {
+		mux {
+			pins = "gpio105";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio105";
+			bias-pull-up;
+			input-enable;
+		};
+	};
+};
+
+&smb1355 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&smb_int_default>;
+	interrupt-parent = <&tlmm>;
+	interrupts = <105 IRQ_TYPE_LEVEL_LOW>;
+	status = "ok";
+};
+
+&smb1355_charger {
+	pinctrl-names = "default";
+	pinctrl-0 = <&smb_en_default &pmi632_sense_default &pmi632_ctm_default>;
+	qcom,parallel-mode = <1>;
+	qcom,disable-ctm;
+	qcom,hw-die-temp-mitigation;
+	status = "ok";
 };
 
 &sdhc_1 {

@@ -29,6 +29,8 @@
 		mhi,max-channels = <111>;
 		mhi,timeout = <2000>;
 		mhi,buffer-len = <0x8000>;
+		mhi,sfr-support;
+		mhi,name = "esoc0";
 
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -617,7 +619,7 @@
 			};
 
 			mhi_event@8 {
-				mhi,num-elements = <1024>;
+				mhi,num-elements = <2048>;
 				mhi,intmod = <5>;
 				mhi,msi = <6>;
 				mhi,chan = <101>;

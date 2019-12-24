@@ -76,13 +76,13 @@
 
 	};
 
-	tpdm_dl_ct: tpdm@8b58000 {
+	tpdm_center: tpdm@8b58000 {
 		compatible = "arm,primecell";
 		arm,primecell-periphid = <0x000bb968>;
 		reg = <0x8b58000 0x1000>;
 		reg-names = "tpdm-base";
 
-		coresight-name = "coresight-tpdm-dl-ct";
+		coresight-name = "coresight-tpdm-center";
 
 		clocks = <&rpmcc RPM_SMD_QDSS_CLK>;
 		clock-names = "apb_pclk";
@@ -119,9 +119,9 @@
 		qcom,inst-id = <5>;
 
 		port {
-			audio_etm0_out_funnel_lpass: endpoint {
+			audio_etm0_out_funnel_qatb: endpoint {
 				remote-endpoint =
-				<&funnel_lpass_in_audio_etm0>;
+				<&funnel_qatb_in_audio_etm0>;
 			};
 		};
 	};
@@ -300,10 +300,10 @@
 		};
 	};
 
-	tpdm_wcss_silver: tpdm@899c000 {
+	tpdm_wcss: tpdm@899c000 {
 		compatible = "qcom,coresight-dummy";
 
-		coresight-name = "coresight-tpdm-wcss-silver";
+		coresight-name = "coresight-tpdm-wcss";
 		qcom,dummy-source;
 
 		port {
@@ -911,38 +911,6 @@
 		};
 	};
 
-	funnel_lpass: funnel@8a24000 {
-		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x000bb908>;
-		reg = <0x8a24000 0x1000>;
-		reg-names = "funnel-base";
-
-		coresight-name = "coresight-funnel-lpass";
-
-		clocks = <&rpmcc RPM_SMD_QDSS_CLK>;
-		clock-names = "apb_pclk";
-		ports {
-			#address-cells = <1>;
-			#size-cells = <0>;
-			port@0 {
-				reg = <0>;
-				funnel_lpass_out_funnel_qatb: endpoint {
-					remote-endpoint =
-					<&funnel_qatb_in_funnel_lpass>;
-				};
-			};
-
-			port@1 {
-				reg = <0>;
-				funnel_lpass_in_audio_etm0: endpoint {
-					slave-mode;
-					remote-endpoint =
-					<&audio_etm0_out_funnel_lpass>;
-				};
-			};
-		};
-	};
-
 	tpda: tpda@8004000 {
 		compatible = "arm,primecell";
 		arm,primecell-periphid = <0x000bb969>;
@@ -1092,15 +1060,6 @@
 			};
 
 			port@2 {
-				reg = <5>;
-				funnel_qatb_in_funnel_lpass: endpoint {
-					slave-mode;
-					remote-endpoint =
-					<&funnel_lpass_out_funnel_qatb>;
-				};
-			};
-
-			port@3 {
 				reg = <6>;
 				funnel_qatb_in_funnel_turing: endpoint {
 					slave-mode;
@@ -1109,12 +1068,21 @@
 				};
 			};
 
-			port@4 {
+			port@3 {
 				reg = <5>;
 				funnel_qatb_in_tpdm_lpass: endpoint {
 					slave-mode;
 					remote-endpoint =
 					<&tpdm_lpass_out_funnel_qatb>;
+				};
+			};
+
+			port@4 {
+				reg = <5>;
+				funnel_qatb_in_audio_etm0: endpoint {
+					slave-mode;
+					remote-endpoint =
+					<&audio_etm0_out_funnel_qatb>;
 				};
 			};
 		};

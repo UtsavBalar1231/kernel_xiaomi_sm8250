@@ -85,7 +85,7 @@
 			clock-names = "lpass_audio_hw_vote";
 			clocks = <&lpass_audio_hw_vote 0>;
 			qcom,swr_master_id = <3>;
-			qcom,swrm-hctl-reg = <0x0a7ec0f0>;
+			qcom,swrm-hctl-reg = <0x0a7ec100>;
 			qcom,mipi-sdw-block-packing-mode = <1>;
 			swrm-io-base = <0xa740000 0x0>;
 			interrupts =
@@ -155,7 +155,7 @@
 &bengal_snd {
 	qcom,model = "bengal-idp-snd-card";
 	qcom,msm-mi2s-master = <1>, <1>, <1>, <1>;
-	qcom,wcn-btfm = <0>;
+	qcom,wcn-btfm = <1>;
 	qcom,va-bolero-codec = <1>;
 	qcom,rxtx-bolero-codec = <1>;
 	qcom,audio-routing =
@@ -167,14 +167,14 @@
 		"MIC BIAS3", "Analog Mic3",
 		"AMIC4", "MIC BIAS3",
 		"MIC BIAS3", "Analog Mic4",
-		"TX DMIC0", "MIC BIAS3",
-		"MIC BIAS3", "Digital Mic0",
-		"TX DMIC1", "MIC BIAS3",
-		"MIC BIAS3", "Digital Mic1",
-		"TX DMIC2", "MIC BIAS1",
-		"MIC BIAS1", "Digital Mic2",
-		"TX DMIC3", "MIC BIAS1",
-		"MIC BIAS1", "Digital Mic3",
+		"TX DMIC0", "MIC BIAS1",
+		"MIC BIAS1", "Digital Mic0",
+		"TX DMIC1", "MIC BIAS1",
+		"MIC BIAS1", "Digital Mic1",
+		"TX DMIC2", "MIC BIAS3",
+		"MIC BIAS3", "Digital Mic2",
+		"TX DMIC3", "MIC BIAS3",
+		"MIC BIAS3", "Digital Mic3",
 		"IN1_HPHL", "HPHL_OUT",
 		"IN2_HPHR", "HPHR_OUT",
 		"IN3_AUX", "AUX_OUT",
@@ -207,14 +207,14 @@
 		"TX_AIF1 CAP", "VA_TX_SWR_CLK",
 		"TX_AIF2 CAP", "VA_TX_SWR_CLK",
 		"TX_AIF3 CAP", "VA_TX_SWR_CLK",
-		"VA DMIC0", "VA MIC BIAS3",
-		"VA DMIC1", "VA MIC BIAS3",
-		"VA DMIC2", "VA MIC BIAS1",
-		"VA DMIC3", "VA MIC BIAS1",
-		"VA MIC BIAS3", "Digital Mic0",
-		"VA MIC BIAS3", "Digital Mic1",
-		"VA MIC BIAS1", "Digital Mic2",
-		"VA MIC BIAS1", "Digital Mic3",
+		"VA DMIC0", "VA MIC BIAS1",
+		"VA DMIC1", "VA MIC BIAS1",
+		"VA DMIC2", "VA MIC BIAS3",
+		"VA DMIC3", "VA MIC BIAS3",
+		"VA MIC BIAS1", "Digital Mic0",
+		"VA MIC BIAS1", "Digital Mic1",
+		"VA MIC BIAS3", "Digital Mic2",
+		"VA MIC BIAS3", "Digital Mic3",
 		"VA SWR_MIC0", "ADC1_OUTPUT",
 		"VA SWR_MIC4", "ADC2_OUTPUT",
 		"VA SWR_MIC5", "ADC3_OUTPUT",
@@ -286,9 +286,9 @@
 		compatible = "qcom,msm-cdc-pinctrl";
 		pinctrl-names = "aud_active", "aud_sleep";
 		pinctrl-0 = <&tx_swr_clk_active &tx_swr_data1_active
-			    &tx_swr_data2_active &tx_swr_data3_active>;
+			    &tx_swr_data2_active>;
 		pinctrl-1 = <&tx_swr_clk_sleep &tx_swr_data1_sleep
-			    &tx_swr_data2_sleep &tx_swr_data3_sleep>;
+			    &tx_swr_data2_sleep>;
 		qcom,lpi-gpios;
 		qcom,chip-wakeup-reg = <0x003ca04c>;
 		qcom,chip-wakeup-maskbit = <0>;

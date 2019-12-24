@@ -3973,6 +3973,7 @@
 		qcom,fastrpc-adsp-audio-pdr;
 		qcom,fastrpc-adsp-sensors-pdr;
 		qcom,rpc-latency-us = <235>;
+		qcom,qos-cores = <0 1 2 3>;
 
 		qcom,msm_fastrpc_compute_cb1 {
 			compatible = "qcom,msm-fastrpc-compute-cb";
@@ -4607,6 +4608,7 @@
 		interrupts = <GIC_SPI 506 IRQ_TYPE_LEVEL_HIGH>,
 				<GIC_SPI 508 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "tsens-upper-lower", "tsens-critical";
+		tsens-reinit-wa;
 		#thermal-sensor-cells = <1>;
 	};
 
@@ -4619,6 +4621,7 @@
 		interrupts = <GIC_SPI 507 IRQ_TYPE_LEVEL_HIGH>,
 				<GIC_SPI 509 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "tsens-upper-lower", "tsens-critical";
+		tsens-reinit-wa;
 		#thermal-sensor-cells = <1>;
 	};
 

@@ -231,6 +231,7 @@
 					qcom,bus-freq = <5>;
 					qcom,bus-min = <5>;
 					qcom,bus-max = <7>;
+					qcom,acd-level = <0x802F5FFD>;
 				};
 
 				qcom,gpu-pwrlevel@4 {
@@ -288,6 +289,7 @@
 					qcom,bus-freq = <5>;
 					qcom,bus-min = <5>;
 					qcom,bus-max = <7>;
+					qcom,acd-level = <0x802F5FFD>;
 				};
 
 				qcom,gpu-pwrlevel@4 {
@@ -334,6 +336,7 @@
 					qcom,bus-freq = <5>;
 					qcom,bus-min = <5>;
 					qcom,bus-max = <7>;
+					qcom,acd-level = <0x802F5FFD>;
 				};
 
 				qcom,gpu-pwrlevel@3 {
@@ -344,6 +347,16 @@
 					qcom,bus-max = <0>;
 				};
 			};
+		};
+
+		qcom,cpu-to-gpu-cfg-path {
+			qcom,msm-bus,name = "gpu_cfg";
+			qcom,msm-bus,num-cases = <3>;
+			qcom,msm-bus,num-paths = <1>;
+			qcom,msm-bus,vectors-KBps =
+				<1 598 0 0>,            // off
+				<1 598 0 100>,          // min freq
+				<1 598 0 9999999>;      // max freq
 		};
 	};
 

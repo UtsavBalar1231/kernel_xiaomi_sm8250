@@ -1734,34 +1734,6 @@
 			};
 		};
 
-		tx_swr_data3_sleep: tx_swr_data3_sleep {
-			mux {
-				pins = "gpio18";
-				function = "func2";
-			};
-
-			config {
-				pins = "gpio18";
-				drive-strength = <10>;
-				input-enable;
-				bias-pull-down;
-			};
-		};
-
-		tx_swr_data3_active: tx_swr_data3_active {
-			mux {
-				pins = "gpio18";
-				function = "func2";
-			};
-
-			config {
-				pins = "gpio18";
-				drive-strength = <10>;
-				slew-rate = <3>;
-				bias-bus-hold;
-			};
-		};
-
 		rx_swr_clk_sleep: rx_swr_clk_sleep {
 			mux {
 				pins = "gpio3";

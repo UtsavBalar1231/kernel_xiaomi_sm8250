@@ -29,8 +29,8 @@
 
 	mem-offline {
 		compatible = "qcom,mem-offline";
-		offline-sizes = <0x1 0x40000000 0x0 0x80000000>,
-				<0x1 0xc0000000 0x0 0xc0000000>,
+		offline-sizes = <0x1 0x40000000 0x0 0x40000000>,
+				<0x1 0xc0000000 0x0 0x80000000>,
 				<0x2 0xc0000000 0x1 0x40000000>;
 		granule = <512>;
 		mboxes = <&qmp_aop 0>;
@@ -1586,6 +1586,7 @@
 		interrupt-names = "tsens-upper-lower",
 				"tsens-critical", "tsens-0C";
 		0C-sensor-num = <16>;
+		tsens-reinit-wa;
 		#thermal-sensor-cells = <1>;
 	};
 
@@ -1602,6 +1603,7 @@
 		interrupt-names = "tsens-upper-lower",
 				"tsens-critical", "tsens-0C";
 		0C-sensor-num = <16>;
+		tsens-reinit-wa;
 		#thermal-sensor-cells = <1>;
 	};
 
@@ -1699,6 +1701,8 @@
 			<0x9810000 0x10000>;
 		reg-names = "cc", "qdsp6ss", "qdsp6ss_pll";
 		vdd_cx-supply = <&VDD_CX_LEVEL>;
+		nvmem-cells = <&npu_efuse>;
+		nvmem-cell-names = "npu-bin";
 		#clock-cells = <1>;
 		#reset-cells = <1>;
 	};
@@ -1827,7 +1831,6 @@
 			"iface_clk",
 			"core_clk_unipro",
 			"core_clk_ice",
-			"core_clk_ice_hw_ctl",
 			"ref_clk",
 			"tx_lane0_sync_clk",
 			"rx_lane0_sync_clk",
@@ -1838,7 +1841,6 @@
 			<&gcc GCC_UFS_PHY_AHB_CLK>,
 			<&gcc GCC_UFS_PHY_UNIPRO_CORE_CLK>,
 			<&gcc GCC_UFS_PHY_ICE_CORE_CLK>,
-			<&gcc GCC_UFS_PHY_ICE_CORE_HW_CTL_CLK>,
 			<&rpmhcc RPMH_CXO_CLK>,
 			<&gcc GCC_UFS_PHY_TX_SYMBOL_0_CLK>,
 			<&gcc GCC_UFS_PHY_RX_SYMBOL_0_CLK>,
@@ -1848,7 +1850,6 @@
 			<0 0>,
 			<0 0>,
 			<37500000 150000000>,
-			<75000000 300000000>,
 			<75000000 300000000>,
 			<0 0>,
 			<0 0>,
@@ -1919,7 +1920,6 @@
 		resets = <&gcc GCC_UFS_PHY_BCR>;
 		reset-names = "core_reset";
 		non-removable;
-		scsi-cmd-timeout = <10>;
 
 		status = "disabled";
 	};
@@ -2993,6 +2993,7 @@
 		qcom,fastrpc-adsp-audio-pdr;
 		qcom,fastrpc-adsp-sensors-pdr;
 		qcom,rpc-latency-us = <235>;
+		qcom,qos-cores = <0 1 2 3 4 5>;
 
 		qcom,msm_fastrpc_compute_cb1 {
 			compatible = "qcom,msm-fastrpc-compute-cb";
@@ -3782,6 +3783,10 @@
 			reg = <0x6008 0x4>;
 		};
 
+		npu_efuse: npu@6010 {
+			reg = <0x6010 0x4>;
+		};
+
 		feat_conf10: feat_conf10@602c {
 			reg = <0x602c 0x4>;
 		};
@@ -3880,6 +3885,7 @@
 
 &gpu_cx_gdsc {
 	parent-supply = <&VDD_CX_LEVEL>;
+	vdd_parent-supply = <&VDD_CX_LEVEL>;
 	status = "ok";
 };
 
@@ -3963,12 +3969,14 @@
 
 &L1P {
 	regulator-max-microvolt = <1056000>;
-	qcom,min-dropout-voltage = <225000>;
+	/* Reduced the headroom by 16mV for AHC */
+	qcom,min-dropout-voltage = <209000>;
 };
 
 &L2P {
 	regulator-max-microvolt = <1104000>;
-	qcom,min-dropout-voltage = <225000>;
+	/* Reduced the headroom by 16mV for AHC */
+	qcom,min-dropout-voltage = <209000>;
 };
 
 &L3P {

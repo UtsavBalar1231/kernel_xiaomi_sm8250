@@ -39,7 +39,8 @@ Required properties:
 		   Add "tsens-critical" for Critical temperature threshold notification
 		   in addition to "tsens-upper-lower" for 8996 TSENS since
 		   8996 supports Upper/Lower and Critical temperature threshold.
-
+- tsens-reinit-wa : To support the re-initialization of tsens controller from
+			trustzone
 Example:
 
 tsens@fc4a8000 {
