@@ -84,6 +84,62 @@ static bool _sde_core_perf_crtc_is_power_on(struct drm_crtc *crtc)
 	return sde_crtc_is_enabled(crtc);
 }
 
+static void _sde_core_perf_calc_doze_suspend(struct drm_crtc *crtc,
+		struct drm_crtc_state *state,
+		struct sde_core_perf_params *perf)
+{
+	struct sde_crtc_state *new_cstate, *old_cstate;
+	struct sde_core_perf_params *old_perf;
+	struct drm_connector *conn;
+	struct sde_connector *c_conn;
+	bool is_doze_suspend = false;
+	int i;
+
+	if (!crtc || !crtc->state || !state)
+		return;
+
+	old_cstate = to_sde_crtc_state(crtc->state);
+	new_cstate = to_sde_crtc_state(state);
+	old_perf = &old_cstate->new_perf;
+
+	if (!old_perf)
+		return;
+
+	if (!perf->bw_ctl[SDE_POWER_HANDLE_DBUS_ID_LLCC] &&
+		!perf->max_per_pipe_ib[SDE_POWER_HANDLE_DBUS_ID_LLCC] &&
+		!perf->bw_ctl[SDE_POWER_HANDLE_DBUS_ID_EBI] &&
+		!perf->max_per_pipe_ib[SDE_POWER_HANDLE_DBUS_ID_EBI] &&
+		state->plane_mask) {
+
+		perf->bw_ctl[SDE_POWER_HANDLE_DBUS_ID_LLCC] =
+			old_perf->bw_ctl[SDE_POWER_HANDLE_DBUS_ID_LLCC];
+		perf->max_per_pipe_ib[SDE_POWER_HANDLE_DBUS_ID_LLCC] =
+		  old_perf->max_per_pipe_ib[SDE_POWER_HANDLE_DBUS_ID_LLCC];
+		perf->bw_ctl[SDE_POWER_HANDLE_DBUS_ID_EBI] =
+			old_perf->bw_ctl[SDE_POWER_HANDLE_DBUS_ID_EBI];
+		perf->max_per_pipe_ib[SDE_POWER_HANDLE_DBUS_ID_EBI] =
+		  old_perf->max_per_pipe_ib[SDE_POWER_HANDLE_DBUS_ID_EBI];
+
+		for (i = 0; i < new_cstate->num_connectors; i++) {
+			conn = new_cstate->connectors[i];
+			if (!conn)
+				continue;
+			c_conn = to_sde_connector(conn);
+			if ((c_conn->dpms_mode == DRM_MODE_DPMS_ON) &&
+			   (sde_connector_get_lp(conn) == SDE_MODE_DPMS_LP2))
+				is_doze_suspend = true;
+		}
+
+		if (!is_doze_suspend) {
+			SDE_DEBUG("No BW, planes:%x dpms_mode:%d lpmode:%d\n",
+				state->plane_mask, c_conn->dpms_mode,
+				sde_connector_get_lp(conn));
+			SDE_EVT32(state->plane_mask, c_conn->dpms_mode,
+				sde_connector_get_lp(conn), SDE_EVTLOG_ERROR);
+		}
+	}
+}
+
 static void _sde_core_perf_calc_crtc(struct sde_kms *kms,
 		struct drm_crtc *crtc,
 		struct drm_crtc_state *state,
@@ -127,6 +183,8 @@ static void _sde_core_perf_calc_crtc(struct sde_kms *kms,
 
 	perf->core_clk_rate =
 			sde_crtc_get_property(sde_cstate, CRTC_PROP_CORE_CLK);
+
+	_sde_core_perf_calc_doze_suspend(crtc, state, perf);
 
 	if (!sde_cstate->bw_control) {
 		for (i = 0; i < SDE_POWER_HANDLE_DBUS_ID_MAX; i++) {
