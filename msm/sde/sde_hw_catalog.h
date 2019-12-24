@@ -1273,6 +1273,8 @@ struct sde_limit_cfg {
  * @has_3d_merge_reset Supports 3D merge reset
  * @has_decimation     Supports decimation
  * @has_qos_fl_nocalc  flag to indicate QoS fill level needs no calculation
+ * @update_tcsr_disp_glitch  flag to enable HW workaround to avoid spurious
+ *                            transactions during suspend
  * @sc_cfg: system cache configuration
  * @uidle_cfg		Settings for uidle feature
  * @sui_misr_supported  indicate if secure-ui-misr is supported
@@ -1333,6 +1335,7 @@ struct sde_mdss_cfg {
 	bool has_3d_merge_reset;
 	bool has_decimation;
 	bool has_qos_fl_nocalc;
+	bool update_tcsr_disp_glitch;
 
 	struct sde_sc_cfg sc_cfg;
 

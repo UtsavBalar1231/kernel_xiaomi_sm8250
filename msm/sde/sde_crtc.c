@@ -3126,6 +3126,9 @@ static void sde_crtc_atomic_begin(struct drm_crtc *crtc,
 		sde_encoder_trigger_kickoff_pending(encoder);
 	}
 
+	/* update performance setting */
+	sde_core_perf_crtc_update(crtc, 1, false);
+
 	/*
 	 * If no mixers have been allocated in sde_crtc_atomic_check(),
 	 * it means we are trying to flush a CRTC whose state is disabled:
@@ -3272,9 +3275,6 @@ static void sde_crtc_atomic_flush(struct drm_crtc *crtc,
 		}
 		cstate->rsc_update = true;
 	}
-
-	/* update performance setting before crtc kickoff */
-	sde_core_perf_crtc_update(crtc, 1, false);
 
 	/*
 	 * Final plane updates: Give each plane a chance to complete all
@@ -3510,7 +3510,7 @@ void sde_crtc_commit_kickoff(struct drm_crtc *crtc,
 	struct msm_drm_private *priv;
 	struct sde_kms *sde_kms;
 	struct sde_crtc_state *cstate;
-	bool is_error = false, reset_req;
+	bool is_error = false;
 	unsigned long flags;
 	enum sde_crtc_idle_pc_state idle_pc_state;
 	struct sde_encoder_kickoff_params params = { 0 };
@@ -3522,7 +3522,6 @@ void sde_crtc_commit_kickoff(struct drm_crtc *crtc,
 	dev = crtc->dev;
 	sde_crtc = to_sde_crtc(crtc);
 	sde_kms = _sde_crtc_get_kms(crtc);
-	reset_req = false;
 
 	if (!sde_kms || !sde_kms->dev || !sde_kms->dev->dev_private) {
 		SDE_ERROR("invalid argument\n");
@@ -3555,7 +3554,7 @@ void sde_crtc_commit_kickoff(struct drm_crtc *crtc,
 		params.affected_displays = _sde_crtc_get_displays_affected(crtc,
 				crtc->state);
 		if (sde_encoder_prepare_for_kickoff(encoder, &params))
-			reset_req = true;
+			sde_crtc->needs_hw_reset = true;
 
 		if (idle_pc_state != IDLE_PC_NONE)
 			sde_encoder_control_idle_pc(encoder,
@@ -3566,13 +3565,14 @@ void sde_crtc_commit_kickoff(struct drm_crtc *crtc,
 	 * Optionally attempt h/w recovery if any errors were detected while
 	 * preparing for the kickoff
 	 */
-	if (reset_req) {
+	if (sde_crtc->needs_hw_reset) {
 		sde_crtc->frame_trigger_mode = params.frame_trigger_mode;
 		if (sde_crtc->frame_trigger_mode
 					!= FRAME_DONE_WAIT_POSTED_START &&
 		    sde_crtc_reset_hw(crtc, old_state,
 						params.recovery_events_enabled))
 			is_error = true;
+		sde_crtc->needs_hw_reset = false;
 	}
 
 	sde_crtc_calc_fps(sde_crtc);
@@ -4166,7 +4166,8 @@ end:
 static int _sde_crtc_check_secure_blend_config(struct drm_crtc *crtc,
 	struct drm_crtc_state *state, struct plane_state pstates[],
 	struct sde_crtc_state *cstate, struct sde_kms *sde_kms,
-	int cnt, int secure, int fb_ns, int fb_sec, int fb_sec_dir)
+	int cnt, int secure, int fb_ns, int fb_sec, int fb_sec_dir,
+	bool conn_secure, bool is_wb)
 {
 	struct drm_plane *plane;
 	int i;
@@ -4247,6 +4248,19 @@ static int _sde_crtc_check_secure_blend_config(struct drm_crtc *crtc,
 		}
 	}
 
+	/*
+	 * If any input buffers are secure,
+	 * the output buffer must also be secure.
+	 */
+	if (is_wb && fb_sec && !conn_secure) {
+		SDE_ERROR(
+			"crtc%d: input fb sec %d, output fb secure %d\n",
+			DRMID(crtc),
+			(fb_sec) ? 1 : 0,
+			(conn_secure) ? 1 : 0);
+		return -EINVAL;
+	}
+
 	return 0;
 }
 
@@ -4313,7 +4327,7 @@ static int _sde_crtc_check_secure_state_smmu_translation(struct drm_crtc *crtc,
 
 static int _sde_crtc_check_secure_state(struct drm_crtc *crtc,
 		struct drm_crtc_state *state, struct plane_state pstates[],
-		int cnt)
+		int cnt, bool conn_secure, bool is_wb)
 {
 	struct sde_crtc_state *cstate;
 	struct sde_kms *sde_kms;
@@ -4342,7 +4356,8 @@ static int _sde_crtc_check_secure_state(struct drm_crtc *crtc,
 		return rc;
 
 	rc = _sde_crtc_check_secure_blend_config(crtc, state, pstates, cstate,
-			sde_kms, cnt, secure, fb_ns, fb_sec, fb_sec_dir);
+			sde_kms, cnt, secure, fb_ns, fb_sec, fb_sec_dir,
+			conn_secure, is_wb);
 	if (rc)
 		return rc;
 
@@ -4533,7 +4548,8 @@ static int _sde_crtc_check_zpos(struct drm_crtc_state *state,
 static int _sde_crtc_atomic_check_pstates(struct drm_crtc *crtc,
 		struct drm_crtc_state *state,
 		struct plane_state *pstates,
-		struct sde_multirect_plane_states *multirect_plane)
+		struct sde_multirect_plane_states *multirect_plane,
+		bool conn_secure, bool is_wb)
 {
 	struct sde_crtc *sde_crtc;
 	struct sde_crtc_state *cstate;
@@ -4564,7 +4580,8 @@ static int _sde_crtc_atomic_check_pstates(struct drm_crtc *crtc,
 	if (rc)
 		return rc;
 
-	rc = _sde_crtc_check_secure_state(crtc, state, pstates, cnt);
+	rc = _sde_crtc_check_secure_state(crtc, state, pstates, cnt,
+			conn_secure, is_wb);
 	if (rc)
 		return rc;
 
@@ -4590,6 +4607,7 @@ static int sde_crtc_atomic_check(struct drm_crtc *crtc,
 	struct sde_crtc_state *cstate;
 	struct drm_display_mode *mode;
 	int rc = 0;
+	bool conn_secure = false, is_wb = false;
 	struct sde_multirect_plane_states *multirect_plane = NULL;
 	struct drm_connector *conn;
 	struct drm_connector_list_iter conn_iter;
@@ -4643,6 +4661,14 @@ static int sde_crtc_atomic_check(struct drm_crtc *crtc,
 		if (conn->state && conn->state->crtc == crtc &&
 				cstate->num_connectors < MAX_CONNECTORS) {
 			cstate->connectors[cstate->num_connectors++] = conn;
+
+			if (conn->connector_type ==
+					DRM_MODE_CONNECTOR_VIRTUAL)
+				is_wb = true;
+			if (sde_connector_get_property(conn->state,
+					CONNECTOR_PROP_FB_TRANSLATION_MODE) ==
+					SDE_DRM_FB_SEC)
+				conn_secure = true;
 		}
 	drm_connector_list_iter_end(&conn_iter);
 
@@ -4650,7 +4676,7 @@ static int sde_crtc_atomic_check(struct drm_crtc *crtc,
 	_sde_crtc_setup_lm_bounds(crtc, state);
 
 	rc = _sde_crtc_atomic_check_pstates(crtc, state, pstates,
-			multirect_plane);
+			multirect_plane, conn_secure, is_wb);
 	if (rc) {
 		SDE_ERROR("crtc%d failed pstate check %d\n", crtc->base.id, rc);
 		goto end;

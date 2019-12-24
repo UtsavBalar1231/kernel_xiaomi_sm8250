@@ -27,6 +27,7 @@
 #include <linux/dma-buf.h>
 #include <linux/memblock.h>
 #include <linux/bootmem.h>
+#include <soc/qcom/scm.h>
 
 #include "msm_drv.h"
 #include "msm_mmu.h"
@@ -59,6 +60,8 @@
 /* defines for secure channel call */
 #define MEM_PROTECT_SD_CTRL_SWITCH 0x18
 #define MDP_DEVICE_ID            0x1A
+
+#define TCSR_DISP_HF_SF_ARES_GLITCH_MASK        0x01FCA084
 
 static const char * const iommu_ports[] = {
 		"mdp_0",
@@ -295,7 +298,12 @@ static int _sde_kms_scm_call(struct sde_kms *sde_kms, int vmid)
 
 		sec_sid = (uint32_t *) shm.vaddr;
 		desc.args[1] = shm.paddr;
-		desc.args[2] = shm.size;
+		/**
+		 * SMMUSecureModeSwitch requires the size to be number of SID's
+		 * but shm allocates size in pages. Modify the args as per
+		 * client requirement.
+		 */
+		desc.args[2] = sizeof(uint32_t) * num_sids;
 	} else {
 		sec_sid = kcalloc(num_sids, sizeof(uint32_t), GFP_KERNEL);
 		if (!sec_sid)
@@ -907,6 +915,14 @@ static void _sde_kms_drm_check_dpms(struct drm_atomic_state *old_state,
 			pr_debug("change detected (power mode %d->%d, fps %d->%d)\n",
 				old_mode, new_mode, old_fps, new_fps);
 
+			/* If suspend resume and fps change are happening
+			 * at the same time, give preference to power mode
+			 * changes rather than fps change.
+			 */
+
+			if ((old_mode == new_mode) && (old_fps != new_fps))
+				new_mode = DRM_PANEL_BLANK_FPS_CHANGE;
+
 			notifier_data.data = &new_mode;
 			notifier_data.refresh_rate = new_fps;
 			notifier_data.id = connector->base.id;
@@ -957,7 +973,12 @@ static void sde_kms_prepare_commit(struct msm_kms *kms,
 			if (encoder->crtc != crtc)
 				continue;
 
-			sde_encoder_prepare_commit(encoder);
+			if (sde_encoder_prepare_commit(encoder) == -ETIMEDOUT) {
+				SDE_ERROR("crtc:%d, initiating hw reset\n",
+						DRMID(crtc));
+				sde_encoder_needs_hw_reset(encoder);
+				sde_crtc_set_needs_hw_reset(crtc);
+			}
 		}
 	}
 
@@ -3360,6 +3381,23 @@ static int _sde_kms_hw_init_power_helper(struct drm_device *dev,
 	return rc;
 }
 
+static void _sde_kms_update_tcsr_glitch_mask(struct sde_kms *sde_kms)
+{
+	u32 read_val, write_val;
+
+	if (!sde_kms || !sde_kms->catalog ||
+		!sde_kms->catalog->update_tcsr_disp_glitch)
+		return;
+
+	read_val = scm_io_read(TCSR_DISP_HF_SF_ARES_GLITCH_MASK);
+	write_val = read_val | BIT(2);
+	scm_io_write(TCSR_DISP_HF_SF_ARES_GLITCH_MASK, write_val);
+
+	pr_info("tcsr glitch programmed read_val:%x write_val:%x\n",
+						read_val, write_val);
+
+}
+
 static int _sde_kms_hw_init_blocks(struct sde_kms *sde_kms,
 	struct drm_device *dev,
 	struct msm_drm_private *priv)
@@ -3385,6 +3423,9 @@ static int _sde_kms_hw_init_blocks(struct sde_kms *sde_kms,
 		sde_kms->catalog = NULL;
 		goto power_error;
 	}
+
+	/* mask glitch during gdsc power up */
+	_sde_kms_update_tcsr_glitch_mask(sde_kms);
 
 	/* initialize power domain if defined */
 	rc = _sde_kms_hw_init_power_helper(dev, sde_kms);
