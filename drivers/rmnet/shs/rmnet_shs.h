@@ -54,14 +54,14 @@
 //#define RMNET_SHS_UDP_PPS_SILVER_CORE_UPPER_THRESH 90000
 //#define RMNET_SHS_TCP_PPS_SILVER_CORE_UPPER_THRESH 90000
 
-#define SHS_TRACE_ERR(...) if (rmnet_shs_debug) \
-	trace_rmnet_shs_err(__VA_ARGS__)
+#define SHS_TRACE_ERR(...) \
+  do { if (rmnet_shs_debug) trace_rmnet_shs_err(__VA_ARGS__); } while (0)
 
-#define SHS_TRACE_HIGH(...) if (rmnet_shs_debug) \
-	trace_rmnet_shs_high(__VA_ARGS__)
+#define SHS_TRACE_HIGH(...) \
+  do { if (rmnet_shs_debug) trace_rmnet_shs_high(__VA_ARGS__); } while (0)
 
-#define SHS_TRACE_LOW(...) if (rmnet_shs_debug) \
-	trace_rmnet_shs_low(__VA_ARGS__)
+#define SHS_TRACE_LOW(...) \
+  do { if (rmnet_shs_debug) trace_rmnet_shs_low(__VA_ARGS__); } while (0)
 
 #define RMNET_SHS_MAX_SILVER_CORE_BURST_CAPACITY  204800
 
@@ -76,6 +76,9 @@
 #define RMNET_SHS_UDP_PPS_LPWR_CPU_LTHRESH 0
 #define RMNET_SHS_UDP_PPS_PERF_CPU_LTHRESH 40000
 #define RMNET_SHS_TCP_PPS_PERF_CPU_LTHRESH (40000*RMNET_SHS_TCP_COALESCING_RATIO)
+
+#define RMNET_SHS_UDP_PPS_HEADROOM 20000
+#define RMNET_SHS_GOLD_BALANCING_THRESH (RMNET_SHS_UDP_PPS_PERF_CPU_UTHRESH / 2)
 
 struct core_flush_s {
 	struct  hrtimer core_timer;
@@ -92,8 +95,8 @@ struct rmnet_shs_cfg_s {
 	struct rmnet_port *port;
 	struct  core_flush_s core_flush[MAX_CPUS];
 	u64 core_skbs[MAX_CPUS];
-	long int num_bytes_parked;
-	long int num_pkts_parked;
+	long num_bytes_parked;
+	long num_pkts_parked;
 	u32 is_reg_dl_mrk_ind;
 	u16 num_flows;
 	u8 is_pkt_parked;

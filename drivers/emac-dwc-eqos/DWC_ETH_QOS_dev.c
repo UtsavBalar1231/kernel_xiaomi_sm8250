@@ -1136,8 +1136,9 @@ static INT drop_tx_status_enabled(void)
 
 static INT config_sub_second_increment(ULONG ptp_clock)
 {
-	ULONG val;
 	ULONG VARMAC_TCR;
+	double ss_inc = 0;
+	double sns_inc = 0;
 
 	MAC_TCR_RGRD(VARMAC_TCR);
 
@@ -1145,30 +1146,69 @@ static INT config_sub_second_increment(ULONG ptp_clock)
 	/*  formula is : ((1/ptp_clock) * 1000000000) */
 	/*  where, ptp_clock = 50MHz if FINE correction */
 	/*  and ptp_clock = DWC_ETH_QOS_SYSCLOCK if COARSE correction */
-#ifdef CONFIG_PPS_OUTPUT
 	if (GET_VALUE(VARMAC_TCR, MAC_TCR_TSCFUPDT_LPOS, MAC_TCR_TSCFUPDT_HPOS) == 1) {
 		EMACDBG("Using PTP clock %ld MHz\n", ptp_clock);
-		val = ((1 * 1000000000ull) / ptp_clock);
+		ss_inc = (double)1000000000.0 / (double)ptp_clock;
 	}
 	else {
 		EMACDBG("Using SYSCLOCK for coarse correction\n");
-		val = ((1 * 1000000000ull) / DWC_ETH_QOS_SYSCLOCK );
+		ss_inc = (double)1000000000.0 / (double)DWC_ETH_QOS_SYSCLOCK;
 	}
-#else
-	if (GET_VALUE(VARMAC_TCR, MAC_TCR_TSCFUPDT_LPOS, MAC_TCR_TSCFUPDT_HPOS) == 1) {
-      val = ((1 * 1000000000ull) / 50000000);
-    }
-    else {
-      val = ((1 * 1000000000ull) / ptp_clock);
-    }
-#endif
-	/* 0.465ns accurecy */
+
+	/* 0.465ns accuracy */
 	if (GET_VALUE(
 			VARMAC_TCR, MAC_TCR_TSCTRLSSR_LPOS,
-			MAC_TCR_TSCTRLSSR_HPOS) == 0)
-		val = (val * 1000) / 465;
+			MAC_TCR_TSCTRLSSR_HPOS) == 0) {
+		EMACDBG("using 0.465 ns accuracy");
+		ss_inc /= 0.465;
+ 	}
 
-	MAC_SSIR_SSINC_UDFWR(val);
+	sns_inc = ss_inc - (int)ss_inc; // take remainder
+	sns_inc *= 256.0; // sns_inc needs to be multiplied by 2^8, per spec.
+	sns_inc += 0.5; // round to nearest int value.
+
+	MAC_SSIR_SSINC_UDFWR((int)ss_inc);
+	MAC_SSIR_SNSINC_UDFWR((int)sns_inc);
+	EMACDBG("ss_inc = %d, sns_inc = %d\n", (int)ss_inc, (int)sns_inc);
+
+	return Y_SUCCESS;
+    }
+/*!
+ * \brief
+ * \param[in]
+ * \return Success or Failure
+ * \retval  0 Success
+ * \retval -1 Failure
+ */
+
+static INT config_default_addend(struct DWC_ETH_QOS_prv_data *pdata, ULONG ptp_clock)
+{
+	struct hw_if_struct *hw_if = &pdata->hw_if;
+	u64 temp;
+
+	/* formula is :
+	 * addend = 2^32/freq_div_ratio;
+	 *
+	 * where, freq_div_ratio = DWC_ETH_QOS_SYSCLOCK/50MHz
+	 *
+	 * hence, addend = ((2^32) * 50MHz)/DWC_ETH_QOS_SYSCLOCK;
+	 *
+	 * NOTE: DWC_ETH_QOS_SYSCLOCK should be >= 50MHz to
+	 *       achive 20ns accuracy.
+	 *
+	 * 2^x * y == (y << x), hence
+	 * 2^32 * 50000000 ==> (50000000 << 32)
+	 */
+	if (ptp_clock == DWC_ETH_QOS_SYSCLOCK) {
+		// If PTP_CLOCK == SYS_CLOCK, best we can do is 2^32 - 1
+		pdata->default_addend = 0xFFFFFFFF;
+	} else {
+		temp = (u64)((u64)ptp_clock << 32);
+		pdata->default_addend = div_u64(temp, DWC_ETH_QOS_SYSCLOCK);
+	}
+	hw_if->config_addend(pdata->default_addend);
+	EMACDBG("PPS: PTPCLK_Config: freq=%dHz, addend_reg=0x%x\n",
+				ptp_clock, (unsigned int)pdata->default_addend);
 
 	return Y_SUCCESS;
 }
@@ -5114,6 +5154,7 @@ void DWC_ETH_QOS_init_function_ptrs_dev(struct hw_if_struct *hw_if)
 	/* for hw time stamping */
 	hw_if->config_hw_time_stamping = config_hw_time_stamping;
 	hw_if->config_sub_second_increment = config_sub_second_increment;
+	hw_if->config_default_addend = config_default_addend;
 	hw_if->init_systime = init_systime;
 	hw_if->config_addend = config_addend;
 	hw_if->adjust_systime = adjust_systime;

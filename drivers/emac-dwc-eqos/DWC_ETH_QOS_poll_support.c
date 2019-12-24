@@ -36,7 +36,7 @@ static ssize_t pps_fops_read(struct file *filp, char __user *buf,
 
 	unsigned int len = 0, buf_len = 5000;
 	char* temp_buf;
-	ssize_t ret_cnt;
+	ssize_t ret_cnt = 0;
 	struct pps_info *info;
 
 	info = filp->private_data;
@@ -54,7 +54,8 @@ static ssize_t pps_fops_read(struct file *filp, char __user *buf,
 
 		ret_cnt = simple_read_from_buffer(buf, count, f_pos, temp_buf, len);
 		kfree(temp_buf);
-		EMACERR("poll pps2intr info=%d sent by kernel\n", gDWC_ETH_QOS_prv_data->avb_class_a_intr_cnt);
+		if (gDWC_ETH_QOS_prv_data)
+			EMACERR("poll pps2intr info=%d sent by kernel\n", gDWC_ETH_QOS_prv_data->avb_class_a_intr_cnt);
 	} else if (info->channel_no == AVB_CLASS_B_CHANNEL_NUM ) {
 		temp_buf = kzalloc(buf_len, GFP_KERNEL);
 		if (!temp_buf)

@@ -784,30 +784,50 @@ void DWC_ETH_QOS_handle_phy_interrupt(struct DWC_ETH_QOS_prv_data *pdata)
 	int micrel_intr_status = 0;
 	EMACDBG("Enter\n");
 
-	DWC_ETH_QOS_mdio_read_direct(
-		pdata, pdata->phyaddr, DWC_ETH_QOS_BASIC_STATUS, &phy_intr_status);
-	EMACDBG(
-		"Basic Status Reg (%#x) = %#x\n", DWC_ETH_QOS_BASIC_STATUS, phy_intr_status);
+	if ((pdata->phydev->phy_id & pdata->phydev->drv->phy_id_mask) == MICREL_PHY_ID) {
+		DWC_ETH_QOS_mdio_read_direct(
+			pdata, pdata->phyaddr, DWC_ETH_QOS_BASIC_STATUS, &phy_intr_status);
+		EMACDBG(
+			"Basic Status Reg (%#x) = %#x\n", DWC_ETH_QOS_BASIC_STATUS, phy_intr_status);
 
-	DWC_ETH_QOS_mdio_read_direct(
-		pdata, pdata->phyaddr, DWC_ETH_QOS_MICREL_PHY_INTCS, &micrel_intr_status);
-	EMACDBG(
-		"MICREL PHY Intr EN Reg (%#x) = %#x\n", DWC_ETH_QOS_MICREL_PHY_INTCS, micrel_intr_status);
+		DWC_ETH_QOS_mdio_read_direct(
+			pdata, pdata->phyaddr, DWC_ETH_QOS_MICREL_PHY_INTCS, &micrel_intr_status);
+		EMACDBG(
+			"MICREL PHY Intr EN Reg (%#x) = %#x\n", DWC_ETH_QOS_MICREL_PHY_INTCS, micrel_intr_status);
 
-	/* Call ack interrupt to clear the WOL interrupt status fields */
-	if (pdata->phydev->drv->ack_interrupt)
-		pdata->phydev->drv->ack_interrupt(pdata->phydev);
+		/* Call ack interrupt to clear the WOL interrupt status fields */
+		if (pdata->phydev->drv->ack_interrupt)
+			pdata->phydev->drv->ack_interrupt(pdata->phydev);
 
-	/* Interrupt received for link state change */
-	if (phy_intr_status & LINK_STATE_MASK) {
-		EMACDBG("Interrupt received for link UP state\n");
-		phy_mac_interrupt(pdata->phydev, LINK_UP);
-	} else if (!(phy_intr_status & LINK_STATE_MASK)) {
-		EMACDBG("Interrupt received for link DOWN state\n");
-		phy_mac_interrupt(pdata->phydev, LINK_DOWN);
-	} else if (!(phy_intr_status & AUTONEG_STATE_MASK)) {
-		EMACDBG("Interrupt received for link down with"
+		/* Interrupt received for link state change */
+		if (phy_intr_status & LINK_STATE_MASK) {
+			EMACDBG("Interrupt received for link UP state\n");
+			phy_mac_interrupt(pdata->phydev, LINK_UP);
+		} else if (!(phy_intr_status & LINK_STATE_MASK)) {
+			EMACDBG("Interrupt received for link DOWN state\n");
+			phy_mac_interrupt(pdata->phydev, LINK_DOWN);
+		} else if (!(phy_intr_status & AUTONEG_STATE_MASK)) {
+			EMACDBG("Interrupt received for link down with"
+					" auto-negotiation error\n");
+		}
+	} else {
+		DWC_ETH_QOS_mdio_read_direct(
+		pdata, pdata->phyaddr, DWC_ETH_QOS_PHY_INTR_STATUS, &phy_intr_status);
+		EMACDBG("Phy Interrupt status Reg at offset 0x13 = %#x\n", phy_intr_status);
+		/* Interrupt received for link state change */
+		if (phy_intr_status & LINK_UP_STATE) {
+			pdata->hw_if.stop_mac_tx_rx();
+			EMACDBG("Interrupt received for link UP state\n");
+			phy_mac_interrupt(pdata->phydev, LINK_UP);
+		} else if (phy_intr_status & LINK_DOWN_STATE) {
+			EMACDBG("Interrupt received for link DOWN state\n");
+			phy_mac_interrupt(pdata->phydev, LINK_DOWN);
+		} else if (phy_intr_status & AUTO_NEG_ERROR) {
+			EMACDBG("Interrupt received for link down with"
 				" auto-negotiation error\n");
+		} else if (phy_intr_status & PHY_WOL) {
+			EMACDBG("Interrupt received for WoL packet\n");
+		}
 	}
 
 	EMACDBG("Exit\n");
@@ -2429,6 +2449,7 @@ inline UINT DWC_ETH_QOS_cal_int_mod(struct sk_buff *skb, UINT eth_type,
 	struct DWC_ETH_QOS_prv_data *pdata)
 {
 	UINT ret = DEFAULT_INT_MOD;
+	bool is_udp;
 
 #ifdef DWC_ETH_QOS_CONFIG_PTP
 	if (eth_type == ETH_P_1588)
@@ -2439,8 +2460,11 @@ inline UINT DWC_ETH_QOS_cal_int_mod(struct sk_buff *skb, UINT eth_type,
 		ret = AVB_INT_MOD;
 	} else if (eth_type == ETH_P_IP || eth_type == ETH_P_IPV6) {
 #ifdef DWC_ETH_QOS_CONFIG_PTP
-		if (udp_hdr(skb)->dest == htons(PTP_UDP_EV_PORT)
-			|| udp_hdr(skb)->dest == htons(PTP_UDP_GEN_PORT)) {
+		is_udp = (eth_type == ETH_P_IP && ip_hdr(skb)->protocol == IPPROTO_UDP)
+						|| (eth_type == ETH_P_IPV6 && ipv6_hdr(skb)->nexthdr == IPPROTO_UDP);
+
+		if (is_udp && (udp_hdr(skb)->dest == htons(PTP_UDP_EV_PORT)
+			|| udp_hdr(skb)->dest == htons(PTP_UDP_GEN_PORT))) {
 			ret = PTP_INT_MOD;
 		} else
 #endif
@@ -3113,10 +3137,11 @@ static void DWC_ETH_QOS_consume_page_split_hdr(
 {
 	if (page2_used)
 		buffer->page2 = NULL;
-
-	skb->len += length;
-	skb->data_len += length;
-	skb->truesize += length;
+		if (skb != NULL) {
+			skb->len += length;
+			skb->data_len += length;
+			skb->truesize += length;
+		}
 }
 
 /* Receive Checksum Offload configuration */
@@ -3224,7 +3249,7 @@ static int DWC_ETH_QOS_clean_split_hdr_rx_irq(
 	unsigned short payload_len = 0;
 	unsigned char intermediate_desc_cnt = 0;
 	unsigned char buf2_used = 0;
-	int ret;
+	int ret = 0;
 
 	DBGPR("-->DWC_ETH_QOS_clean_split_hdr_rx_irq: qinx = %u, quota = %d\n",
 	      qinx, quota);
@@ -3323,15 +3348,13 @@ static int DWC_ETH_QOS_clean_split_hdr_rx_irq(
 				} else {
 					/* this is the middle of a chain */
 					payload_len = pdata->rx_buffer_len;
-					skb_fill_page_desc(desc_data->skb_top,
-							   skb_shinfo(desc_data->skb_top)->nr_frags,
-						buffer->page2, 0,
-						payload_len);
-
+					if (desc_data->skb_top != NULL)
+						skb_fill_page_desc(desc_data->skb_top,skb_shinfo(desc_data->skb_top)->nr_frags,buffer->page2, 0,payload_len);
 					/* re-use this skb, as consumed only the page */
 					buffer->skb = skb;
 				}
-				DWC_ETH_QOS_consume_page_split_hdr(buffer,
+				if (desc_data->skb_top != NULL)
+						DWC_ETH_QOS_consume_page_split_hdr(buffer,
 								   desc_data->skb_top,
 							 payload_len, buf2_used);
 				goto next_desc;
@@ -3348,17 +3371,15 @@ static int DWC_ETH_QOS_clean_split_hdr_rx_irq(
 							(pdata->rx_buffer_len * intermediate_desc_cnt) -
 							buffer->rx_hdr_size);
 					}
-
-					skb_fill_page_desc(desc_data->skb_top,
-							   skb_shinfo(desc_data->skb_top)->nr_frags,
-						buffer->page2, 0,
-						payload_len);
-
-					/* re-use this skb, as consumed only the page */
-					buffer->skb = skb;
-					skb = desc_data->skb_top;
+					if (desc_data->skb_top != NULL) {
+						skb_fill_page_desc(desc_data->skb_top,skb_shinfo(desc_data->skb_top)->nr_frags,buffer->page2, 0,payload_len);
+						/* re-use this skb, as consumed only the page */
+						buffer->skb = skb;
+						skb = desc_data->skb_top;
+					}
 					desc_data->skb_top = NULL;
-					DWC_ETH_QOS_consume_page_split_hdr(buffer, skb,
+					if (skb != NULL)
+						DWC_ETH_QOS_consume_page_split_hdr(buffer, skb,
 									   payload_len, buf2_used);
 				} else {
 					/* no chain, got both FD + LD together */
@@ -3402,11 +3423,13 @@ static int DWC_ETH_QOS_clean_split_hdr_rx_irq(
 				hdr_len = 0;
 			}
 
-			DWC_ETH_QOS_config_rx_csum(pdata, skb, RX_NORMAL_DESC);
+			if (skb != NULL) {
+				DWC_ETH_QOS_config_rx_csum(pdata, skb, RX_NORMAL_DESC);
 
 #ifdef DWC_ETH_QOS_ENABLE_VLAN_TAG
-			DWC_ETH_QOS_get_rx_vlan(pdata, skb, RX_NORMAL_DESC);
+				DWC_ETH_QOS_get_rx_vlan(pdata, skb, RX_NORMAL_DESC);
 #endif
+			}
 
 #ifdef YDEBUG_FILTER
 			DWC_ETH_QOS_check_rx_filter_status(RX_NORMAL_DESC);
@@ -3415,14 +3438,16 @@ static int DWC_ETH_QOS_clean_split_hdr_rx_irq(
 			if ((pdata->hw_feat.tsstssel) && (pdata->hwts_rx_en)) {
 				/* get rx tstamp if available */
 				if (hw_if->rx_tstamp_available(RX_NORMAL_DESC)) {
-					ret = DWC_ETH_QOS_get_rx_hwtstamp(pdata,
+					if (skb != NULL )
+						ret = DWC_ETH_QOS_get_rx_hwtstamp(pdata,
 									  skb, desc_data, qinx);
 					if (ret == 0) {
 						/* device has not yet updated the CONTEXT desc to hold the
 						 * time stamp, hence delay the packet reception
 						 */
 						buffer->skb = skb;
-						buffer->dma = dma_map_single(GET_MEM_PDEV_DEV, skb->data,
+						if (skb != NULL)
+							buffer->dma = dma_map_single(GET_MEM_PDEV_DEV, skb->data,
 								pdata->rx_buffer_len, DMA_FROM_DEVICE);
 						if (dma_mapping_error(GET_MEM_PDEV_DEV, buffer->dma))
 							dev_alert(&pdata->pdev->dev, "failed to do the RX dma map\n");
@@ -3442,8 +3467,10 @@ static int DWC_ETH_QOS_clean_split_hdr_rx_irq(
 #endif
 			/* update the statistics */
 			dev->stats.rx_packets++;
-			dev->stats.rx_bytes += skb->len;
-			DWC_ETH_QOS_receive_skb(pdata, dev, skb, qinx);
+			if ( skb != NULL) {
+				dev->stats.rx_bytes += skb->len;
+				DWC_ETH_QOS_receive_skb(pdata, dev, skb, qinx);
+			}
 			received++;
  next_desc:
 			desc_data->dirty_rx++;
@@ -3504,7 +3531,7 @@ static int DWC_ETH_QOS_clean_jumbo_rx_irq(struct DWC_ETH_QOS_prv_data *pdata,
 	u16 pkt_len;
 	UCHAR intermediate_desc_cnt = 0;
 	unsigned int buf2_used;
-	int ret;
+	int ret = 0 ;
 
 	DBGPR("-->DWC_ETH_QOS_clean_jumbo_rx_irq: qinx = %u, quota = %d\n",
 	      qinx, quota);
@@ -3575,20 +3602,22 @@ static int DWC_ETH_QOS_clean_jumbo_rx_irq(struct DWC_ETH_QOS_prv_data *pdata,
 						pdata->rx_buffer_len);
 				} else {
 					/* this is the middle of a chain */
-					skb_fill_page_desc(desc_data->skb_top,
+					if (desc_data->skb_top != NULL) {
+						skb_fill_page_desc(desc_data->skb_top,
 							   skb_shinfo(desc_data->skb_top)->nr_frags,
 						buffer->page, 0,
 						pdata->rx_buffer_len);
-
-					DBGPR("RX: pkt in second buffer pointer\n");
-					skb_fill_page_desc(desc_data->skb_top,
+						DBGPR("RX: pkt in second buffer pointer\n");
+						skb_fill_page_desc(desc_data->skb_top,
 							   skb_shinfo(desc_data->skb_top)->nr_frags,
 						buffer->page2, 0,
 						pdata->rx_buffer_len);
+					}
 					/* re-use this skb, as consumed only the page */
 					buffer->skb = skb;
 				}
-				DWC_ETH_QOS_consume_page(buffer,
+				if (desc_data->skb_top != NULL )
+					DWC_ETH_QOS_consume_page(buffer,
 							 desc_data->skb_top,
 							 (pdata->rx_buffer_len * 2),
 							 buf2_used);
@@ -3599,19 +3628,21 @@ static int DWC_ETH_QOS_clean_jumbo_rx_irq(struct DWC_ETH_QOS_prv_data *pdata,
 					pkt_len =
 						(pkt_len - (pdata->rx_buffer_len * intermediate_desc_cnt));
 					if (pkt_len > pdata->rx_buffer_len) {
-						skb_fill_page_desc(desc_data->skb_top,
+						if (desc_data->skb_top != NULL) {
+							skb_fill_page_desc(desc_data->skb_top,
 								   skb_shinfo(desc_data->skb_top)->nr_frags,
 							buffer->page, 0,
 							pdata->rx_buffer_len);
-
-						DBGPR("RX: pkt in second buffer pointer\n");
-						skb_fill_page_desc(desc_data->skb_top,
+							DBGPR("RX: pkt in second buffer pointer\n");
+							skb_fill_page_desc(desc_data->skb_top,
 								   skb_shinfo(desc_data->skb_top)->nr_frags,
 							buffer->page2, 0,
 							(pkt_len - pdata->rx_buffer_len));
+						}
 						buf2_used = 1;
 					} else {
-						skb_fill_page_desc(desc_data->skb_top,
+						if (desc_data->skb_top != NULL)
+							skb_fill_page_desc(desc_data->skb_top,
 								   skb_shinfo(desc_data->skb_top)->nr_frags,
 							buffer->page, 0,
 							pkt_len);
@@ -3619,9 +3650,11 @@ static int DWC_ETH_QOS_clean_jumbo_rx_irq(struct DWC_ETH_QOS_prv_data *pdata,
 					}
 					/* re-use this skb, as consumed only the page */
 					buffer->skb = skb;
-					skb = desc_data->skb_top;
+					if (desc_data->skb_top != NULL)
+						skb = desc_data->skb_top;
 					desc_data->skb_top = NULL;
-					DWC_ETH_QOS_consume_page(buffer, skb,
+					if (skb != NULL)
+						DWC_ETH_QOS_consume_page(buffer, skb,
 								 pkt_len,
 								 buf2_used);
 				} else {
@@ -3671,11 +3704,13 @@ static int DWC_ETH_QOS_clean_jumbo_rx_irq(struct DWC_ETH_QOS_prv_data *pdata,
 				intermediate_desc_cnt = 0;
 			}
 
-			DWC_ETH_QOS_config_rx_csum(pdata, skb, RX_NORMAL_DESC);
+			if (skb != NULL) {
+				DWC_ETH_QOS_config_rx_csum(pdata, skb, RX_NORMAL_DESC);
 
 #ifdef DWC_ETH_QOS_ENABLE_VLAN_TAG
-			DWC_ETH_QOS_get_rx_vlan(pdata, skb, RX_NORMAL_DESC);
+				DWC_ETH_QOS_get_rx_vlan(pdata, skb, RX_NORMAL_DESC);
 #endif
+			}
 
 #ifdef YDEBUG_FILTER
 			DWC_ETH_QOS_check_rx_filter_status(RX_NORMAL_DESC);
@@ -3684,15 +3719,16 @@ static int DWC_ETH_QOS_clean_jumbo_rx_irq(struct DWC_ETH_QOS_prv_data *pdata,
 			if ((pdata->hw_feat.tsstssel) && (pdata->hwts_rx_en)) {
 				/* get rx tstamp if available */
 				if (hw_if->rx_tstamp_available(RX_NORMAL_DESC)) {
-					ret = DWC_ETH_QOS_get_rx_hwtstamp(pdata,
-									  skb, desc_data, qinx);
+					if (skb != NULL)
+						ret = DWC_ETH_QOS_get_rx_hwtstamp(pdata, skb, desc_data, qinx);
 					if (ret == 0) {
 						/* device has not yet updated the CONTEXT desc to hold the
 						 * time stamp, hence delay the packet reception
 						 */
 						buffer->skb = skb;
-						buffer->dma = dma_map_single(GET_MEM_PDEV_DEV, skb->data,
-								pdata->rx_buffer_len, DMA_FROM_DEVICE);
+						if (skb != NULL)
+							buffer->dma = dma_map_single(GET_MEM_PDEV_DEV, skb->data, pdata->rx_buffer_len, DMA_FROM_DEVICE);
+
 						if (dma_mapping_error(GET_MEM_PDEV_DEV, buffer->dma))
 							dev_alert(&pdata->pdev->dev, "failed to do the RX dma map\n");
 
@@ -3712,16 +3748,16 @@ static int DWC_ETH_QOS_clean_jumbo_rx_irq(struct DWC_ETH_QOS_prv_data *pdata,
 #endif
 			/* update the statistics */
 			dev->stats.rx_packets++;
-			dev->stats.rx_bytes += skb->len;
-
-			/* eth type trans needs skb->data to point to something */
-			if (!pskb_may_pull(skb, ETH_HLEN)) {
-				dev_alert(&pdata->pdev->dev, "pskb_may_pull failed\n");
-				dev_kfree_skb_any(skb);
-				goto next_desc;
+			if (skb != NULL) {
+				dev->stats.rx_bytes += skb->len;
+				/* eth type trans needs skb->data to point to something */
+				if (!pskb_may_pull(skb, ETH_HLEN)) {
+					dev_alert(&pdata->pdev->dev, "pskb_may_pull failed\n");
+					dev_kfree_skb_any(skb);
+					goto next_desc;
+				}
+				DWC_ETH_QOS_receive_skb(pdata, dev, skb, qinx);
 			}
-
-			DWC_ETH_QOS_receive_skb(pdata, dev, skb, qinx);
 			received++;
  next_desc:
 			desc_data->dirty_rx++;
@@ -4922,52 +4958,14 @@ static VOID DWC_ETH_QOS_config_timer_registers(
 {
 		struct timespec now;
 		struct hw_if_struct *hw_if = &pdata->hw_if;
-		u64 temp;
 
 		DBGPR("-->DWC_ETH_QOS_config_timer_registers\n");
 
+	pdata->ptpclk_freq = DWC_ETH_QOS_DEFAULT_PTP_CLOCK;
+	/* program default addend */
+	hw_if->config_default_addend(pdata, DWC_ETH_QOS_DEFAULT_PTP_CLOCK);
 		/* program Sub Second Increment Reg */
-#ifdef CONFIG_PPS_OUTPUT
-		/* If default_addend is already programmed, then we expect that
-      * sub_second_increment is also programmed already */
-    if(pdata->default_addend == 0){
-			hw_if->config_sub_second_increment(DWC_ETH_QOS_SYSCLOCK); // Using default 250MHz
-		}
-		else {
-			u64 pclk;
-			pclk = (u64) (pdata->default_addend) *  DWC_ETH_QOS_SYSCLOCK;
-			pclk += 0x8000000;
-			pclk >>= 32;
-			hw_if->config_sub_second_increment((u32)pclk);
-		}
-#else
-		hw_if->config_sub_second_increment(DWC_ETH_QOS_SYSCLOCK);
-#endif
-		/* formula is :
-		 * addend = 2^32/freq_div_ratio;
-		 *
-		 * where, freq_div_ratio = DWC_ETH_QOS_SYSCLOCK/50MHz
-		 *
-		 * hence, addend = ((2^32) * 50MHz)/DWC_ETH_QOS_SYSCLOCK;
-		 *
-		 * NOTE: DWC_ETH_QOS_SYSCLOCK should be >= 50MHz to
-		 *       achive 20ns accuracy.
-		 *
-		 * 2^x * y == (y << x), hence
-		 * 2^32 * 50000000 ==> (50000000 << 32)
-		 */
-#ifdef CONFIG_PPS_OUTPUT
-		if(pdata->default_addend == 0){
-			temp = (u64)(50000000ULL << 32);
-			pdata->default_addend = div_u64(temp, DWC_ETH_QOS_SYSCLOCK);
-			EMACDBG("Using default PTP clock = 250MHz\n");
-		}
-#else
-		temp = (u64)(50000000ULL << 32);
-		pdata->default_addend = div_u64(temp, DWC_ETH_QOS_SYSCLOCK);
-#endif
-		hw_if->config_addend(pdata->default_addend);
-
+		hw_if->config_sub_second_increment(DWC_ETH_QOS_DEFAULT_PTP_CLOCK);
 		/* initialize system time */
 		getnstimeofday(&now);
 		hw_if->init_systime(now.tv_sec, now.tv_nsec);
@@ -5105,7 +5103,6 @@ static int ETH_PTPCLK_Config(struct DWC_ETH_QOS_prv_data *pdata, struct ifr_data
 	struct ETH_PPS_Config *eth_pps_cfg = (struct ETH_PPS_Config *)req->ptr;
 	struct hw_if_struct *hw_if = &pdata->hw_if;
 	int ret = 0;
-	u64 val;
 
 	if ((eth_pps_cfg->ppsout_ch < 0) ||
 		(eth_pps_cfg->ppsout_ch >= pdata->hw_feat.pps_out_num))
@@ -5119,17 +5116,9 @@ static int ETH_PTPCLK_Config(struct DWC_ETH_QOS_prv_data *pdata, struct ifr_data
 			eth_pps_cfg->ptpclk_freq );
 		return -1;
 	}
-	pdata->ptpclk_freq = eth_pps_cfg->ptpclk_freq;
-	val = (u64)(1ULL << 32);
-	val = val * (eth_pps_cfg->ptpclk_freq);
-	val += (DWC_ETH_QOS_SYSCLOCK/2);
-	val = div_u64(val, DWC_ETH_QOS_SYSCLOCK);
-	if ( val > 0xFFFFFFFF) val = 0xFFFFFFFF;
-	EMACDBG("PPS: PTPCLK_Config: freq=%dHz, addend_reg=0x%x\n",
-				eth_pps_cfg->ptpclk_freq, (unsigned int)val);
 
-	pdata->default_addend = val;
-	ret = hw_if->config_addend((unsigned int)val);
+	pdata->ptpclk_freq = eth_pps_cfg->ptpclk_freq;
+	ret = hw_if->config_default_addend(pdata, (ULONG)eth_pps_cfg->ptpclk_freq);
 	ret |= hw_if->config_sub_second_increment( (ULONG)eth_pps_cfg->ptpclk_freq);
 
 	return ret;
@@ -5212,15 +5201,8 @@ void DWC_ETH_QOS_pps_timer_init(struct ifr_data_struct *req)
 
 	/* Enable timestamping. This is required to start system time generator.*/
 	MAC_TCR_TSENA_UDFWR(0x1);
-
-	/* Configure MAC Sub-second and Sub-nanosecond increment register based on PTP clock. */
-	MAC_SSIR_SSINC_UDFWR(0x4); // Sub-second increment value for 250MHz and 230.4MHz ptp clock
-
-	MAC_SSIR_SNSINC_UDFWR(0x0); // Sub-nanosecond increment value for 250 MHz ptp clock
-	EMACDBG("250 clock\n");
-
 	MAC_TCR_TSUPDT_UDFWR(0x1);
-	MAC_TCR_TSCFUPDT_UDFWR(0x0); // Coarse Timestamp Update method.
+	MAC_TCR_TSCFUPDT_UDFWR(0x1); // Fine Timestamp Update method.
 
 	/* Initialize MAC System Time Update register */
 	MAC_STSUR_TSS_UDFWR(0x0); // MAC system time in seconds
@@ -5279,12 +5261,16 @@ int ETH_PPSOUT_Config(struct DWC_ETH_QOS_prv_data *pdata, struct ifr_data_struct
 	struct ETH_PPS_Config *eth_pps_cfg = (struct ETH_PPS_Config *)req->ptr;
 	unsigned int val;
 	int interval, width;
-	int interval_ns; /*interval in nano seconds*/
+	struct hw_if_struct *hw_if = &pdata->hw_if;
 
-	if (pdata->emac_hw_version_type == EMAC_HW_v2_3_1 &&
-		eth_pps_cfg->ptpclk_freq <= 0) {
-		/* Set PTP clock to default 250 */
+	/* For lpass we need 19.2Mhz PPS frequency for PPS0.
+	   If lpass is enabled don't allow to change the PTP clock
+	   becuase if we change PTP clock then addend & subsecond increament
+	   will change & We will not see 19.2Mhz for PPS0.
+	*/
+	if (pdata->res_data->pps_lpass_conn_en ) {
 		eth_pps_cfg->ptpclk_freq = DWC_ETH_QOS_DEFAULT_PTP_CLOCK;
+		EMACDBG("using default ptp clock \n");
 	}
 
 	if ((eth_pps_cfg->ppsout_ch < 0) ||
@@ -5302,6 +5288,12 @@ int ETH_PPSOUT_Config(struct DWC_ETH_QOS_prv_data *pdata, struct ifr_data_struct
 		printk("PPS: PPSOut_Config: duty cycle is invalid. Using duty=99\n");
 		eth_pps_cfg->ppsout_duty = 99;
 	}
+
+	/* Configure increment values */
+	hw_if->config_sub_second_increment(eth_pps_cfg->ptpclk_freq);
+
+	/* Configure addent value as Fine Timestamp method is used */
+	hw_if->config_default_addend(pdata, eth_pps_cfg->ptpclk_freq);
 
 	if(0 < eth_pps_cfg->ptpclk_freq) {
 		pdata->ptpclk_freq = eth_pps_cfg->ptpclk_freq;
@@ -5323,17 +5315,9 @@ int ETH_PPSOUT_Config(struct DWC_ETH_QOS_prv_data *pdata, struct ifr_data_struct
 
 	EMACDBG("PPS: PPSOut_Config: interval=%d, width=%d\n", interval, width);
 
-	if (pdata->emac_hw_version_type == EMAC_HW_v2_3_1) {
-		//calculate interval & width
-		interval_ns = (1000000000/eth_pps_cfg->ppsout_freq) ;
-		interval = ((interval_ns)/4) - 1;
-		width = ((interval_ns)/(2*4)) - 1;
-		EMACDBG("pps_interval=%d,width=%d\n",interval,width);
-	}
-
 	switch (eth_pps_cfg->ppsout_ch) {
 	case DWC_ETH_QOS_PPS_CH_0:
-		if (pdata->emac_hw_version_type == EMAC_HW_v2_3_1) {
+		if (pdata->res_data->pps_lpass_conn_en) {
 			if (eth_pps_cfg->ppsout_start == DWC_ETH_QOS_PPS_START) {
 				MAC_PPSC_PPSEN0_UDFWR(0x1);
 				MAC_PPS_INTVAL_PPSINT0_UDFWR(DWC_ETH_QOS_PPS_CH_0, interval);
@@ -5885,7 +5869,6 @@ static int DWC_ETH_QOS_handle_hwtstamp_ioctl(struct DWC_ETH_QOS_prv_data *pdata,
 	u32 ts_event_en = 0;
 	u32 av_8021asm_en = 0;
 	u32 VARMAC_TCR = 0;
-	u64 temp = 0;
 	struct timespec now;
 
 	DBGPR_PTP("-->DWC_ETH_QOS_handle_hwtstamp_ioctl\n");
@@ -6056,46 +6039,11 @@ static int DWC_ETH_QOS_handle_hwtstamp_ioctl(struct DWC_ETH_QOS_prv_data *pdata,
 
 		hw_if->config_hw_time_stamping(VARMAC_TCR);
 
+		/* program default addend */
+		hw_if->config_default_addend(pdata, DWC_ETH_QOS_DEFAULT_PTP_CLOCK);
+
 		/* program Sub Second Increment Reg */
-#ifdef CONFIG_PPS_OUTPUT
-		/* If default_addend is already programmed, then we expect that
-		* sub_second_increment is also programmed already */
-		if (pdata->default_addend == 0) {
-			hw_if->config_sub_second_increment(DWC_ETH_QOS_SYSCLOCK); // Using default 250MHz
-		} else {
-			u64 pclk;
-			pclk = (u64) (pdata->default_addend) *  DWC_ETH_QOS_SYSCLOCK;
-			pclk += 0x8000000;
-			pclk >>= 32;
-			hw_if->config_sub_second_increment((u32)pclk);
-		}
-#else
-		hw_if->config_sub_second_increment(DWC_ETH_QOS_SYSCLOCK);
-#endif
-		/* formula is :
-		 * addend = 2^32/freq_div_ratio;
-		 *
-		 * where, freq_div_ratio = DWC_ETH_QOS_SYSCLOCK/50MHz
-		 *
-		 * hence, addend = ((2^32) * 50MHz)/DWC_ETH_QOS_SYSCLOCK;
-		 *
-		 * NOTE: DWC_ETH_QOS_SYSCLOCK should be >= 50MHz to
-		 *       achive 20ns accuracy.
-		 *
-		 * 2^x * y == (y << x), hence
-		 * 2^32 * 50000000 ==> (50000000 << 32)
-		 *
-		 */
-#ifdef CONFIG_PPS_OUTPUT
-	if(pdata->default_addend == 0){
-		temp = (u64)(50000000ULL << 32);
-		pdata->default_addend = div_u64(temp, DWC_ETH_QOS_SYSCLOCK);
-		EMACINFO("Using default PTP clock = 250MHz\n");
-#else
-		temp = (u64)(50000000ULL << 32);
-		pdata->default_addend = div_u64(temp, DWC_ETH_QOS_SYSCLOCK);
-#endif
-		hw_if->config_addend(pdata->default_addend);
+		hw_if->config_sub_second_increment(DWC_ETH_QOS_DEFAULT_PTP_CLOCK);
 
 		/* initialize system time */
 		getnstimeofday(&now);

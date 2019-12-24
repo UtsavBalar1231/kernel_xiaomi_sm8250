@@ -1,4 +1,4 @@
-/* Copyright (c) 2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -19,6 +19,11 @@
 #include "rmnet_shs_config.h"
 #include "rmnet_shs.h"
 
+#define RMNET_SHS_DEBUG 0
+
+#define rm_err(fmt, ...)  \
+	do { if (RMNET_SHS_DEBUG) pr_err(fmt, __VA_ARGS__); } while (0)
+
 #define MAX_SUPPORTED_FLOWS_DEBUG 16
 
 #define RMNET_SHS_RX_BPNSEC_TO_BPSEC(x) ((x)*1000000000)
@@ -27,6 +32,9 @@
 #define RMNET_SHS_BYTE_TO_BIT(x) ((x)*8)
 #define RMNET_SHS_MIN_HSTAT_NODES_REQD 16
 #define RMNET_SHS_WQ_DELAY_TICKS  10
+
+extern unsigned long long rmnet_shs_cpu_rx_max_pps_thresh[MAX_CPUS]__read_mostly;
+extern unsigned long long rmnet_shs_cpu_rx_min_pps_thresh[MAX_CPUS]__read_mostly;
 
 /* stores wq and end point details */
 
@@ -50,7 +58,17 @@ struct list_head ep_id;
 	struct rmnet_shs_wq_ep_s ep;
 };
 
+/* Types of suggestions made by shs wq */
+enum rmnet_shs_wq_suggestion_type {
+	RMNET_SHS_WQ_SUGG_NONE,
+	RMNET_SHS_WQ_SUGG_SILVER_TO_GOLD,
+	RMNET_SHS_WQ_SUGG_GOLD_TO_SILVER,
+	RMNET_SHS_WQ_SUGG_GOLD_BALANCE,
+	RMNET_SHS_WQ_SUGG_MAX,
+};
+
 struct rmnet_shs_wq_hstat_s {
+	unsigned long int rmnet_shs_wq_suggs[RMNET_SHS_WQ_SUGG_MAX];
 	struct list_head cpu_node_id;
 	struct list_head hstat_node_id;
 	struct rmnet_shs_skbn_s *node; //back pointer to node
@@ -61,6 +79,8 @@ struct rmnet_shs_wq_hstat_s {
 	u64 rx_bytes;
 	u64 rx_pps; /*pkts per second*/
 	u64 rx_bps; /*bits per second*/
+	u64 last_pps;
+	u64 avg_pps;
 	u64 last_rx_skb;
 	u64 last_rx_bytes;
 	u32 rps_config_msk; /*configured rps mask for net device*/
@@ -69,13 +89,14 @@ struct rmnet_shs_wq_hstat_s {
 	u32 pri_core_msk; /* priority cores availability mask*/
 	u32 available_core_msk; /* other available cores for this flow*/
 	u32 hash; /*skb hash*/
+	int stat_idx; /*internal used for datatop*/
 	u16 suggested_cpu; /* recommended CPU to stamp pkts*/
 	u16 current_cpu; /* core where the flow is being processed*/
 	u16 skb_tport_proto;
-	int stat_idx; /*internal used for datatop*/
 	u8 in_use;
 	u8 is_perm;
 	u8 is_new_flow;
+	u8 segment_enable; /* segment coalesces packets */
 };
 
 struct rmnet_shs_wq_cpu_rx_pkt_q_s {
@@ -97,6 +118,7 @@ struct rmnet_shs_wq_cpu_rx_pkt_q_s {
 	u32 qhead_start; /* start mark of total pp*/
 	u32 qhead_total; /* end mark of total pp*/
 	int flows;
+	u16 cpu_num;
 };
 
 struct rmnet_shs_wq_rx_flow_s {
@@ -134,7 +156,32 @@ struct rmnet_shs_delay_wq_s {
 	struct delayed_work wq;
 };
 
+/* Structures to be used for creating sorted versions of flow and cpu lists */
+struct rmnet_shs_wq_cpu_cap_s {
+	struct list_head cpu_cap_list;
+	u64 pps_capacity;
+	u64 avg_pps_capacity;
+	u16 cpu_num;
+};
 
+struct rmnet_shs_wq_gold_flow_s {
+	struct list_head gflow_list;
+	u64 rx_pps;
+	u64 avg_pps;
+	u32 hash;
+	u16 cpu_num;
+};
+
+struct rmnet_shs_wq_ss_flow_s {
+	struct list_head ssflow_list;
+	u64 rx_pps;
+	u64 avg_pps;
+	u64 rx_bps;
+	u32 hash;
+	u16 cpu_num;
+};
+
+/* Tracing Definitions */
 enum rmnet_shs_wq_trace_func {
 	RMNET_SHS_WQ_INIT,
 	RMNET_SHS_WQ_PROCESS_WQ,
@@ -145,6 +192,7 @@ enum rmnet_shs_wq_trace_func {
 	RMNET_SHS_WQ_FLOW_STATS,
 	RMNET_SHS_WQ_CPU_STATS,
 	RMNET_SHS_WQ_TOTAL_STATS,
+	RMNET_SHS_WQ_SHSUSR,
 };
 
 enum rmnet_shs_wq_trace_evt {
@@ -201,8 +249,13 @@ enum rmnet_shs_wq_trace_evt {
 	RMNET_SHS_WQ_INIT_END,
 	RMNET_SHS_WQ_EXIT_START,
 	RMNET_SHS_WQ_EXIT_END,
-
-
+	RMNET_SHS_WQ_TRY_PASS,
+	RMNET_SHS_WQ_TRY_FAIL,
+	RMNET_SHS_WQ_SHSUSR_SYNC_START,
+	RMNET_SHS_WQ_SHSUSR_SYNC_END,
+	RMNET_SHS_WQ_FLOW_STATS_SET_FLOW_SEGMENTATION,
+	RMNET_SHS_WQ_FLOW_SEG_SET_PASS,
+	RMNET_SHS_WQ_FLOW_SEG_SET_FAIL,
 };
 
 extern struct rmnet_shs_cpu_node_s rmnet_shs_cpu_node_tbl[MAX_CPUS];
@@ -226,4 +279,14 @@ void rmnet_shs_hstat_tbl_delete(void);
 void rmnet_shs_wq_set_ep_active(struct net_device *dev);
 void rmnet_shs_wq_reset_ep_active(struct net_device *dev);
 void rmnet_shs_wq_refresh_new_flow_list(void);
+
+int rmnet_shs_wq_try_to_move_flow(u16 cur_cpu, u16 dest_cpu, u32 hash_to_move,
+				  u32 sugg_type);
+
+int rmnet_shs_wq_set_flow_segmentation(u32 hash_to_set, u8 seg_enable);
+
+void rmnet_shs_wq_ep_lock_bh(void);
+
+void rmnet_shs_wq_ep_unlock_bh(void);
+
 #endif /*_RMNET_SHS_WQ_H_*/

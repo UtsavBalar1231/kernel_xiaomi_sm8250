@@ -525,7 +525,7 @@ static int DWC_ETH_QOS_ipa_offload_resume(struct DWC_ETH_QOS_prv_data *pdata)
 
 static int DWC_ETH_QOS_ipa_ready(struct DWC_ETH_QOS_prv_data *pdata)
 {
-	int ret;
+	int ret = 0 ;
 
 	EMACDBG("Enter \n");
 
@@ -960,8 +960,8 @@ static int DWC_ETH_QOS_ipa_offload_connect(struct DWC_ETH_QOS_prv_data *pdata)
 	struct DWC_ETH_QOS_prv_ipa_data *ntn_ipa = &pdata->prv_ipa;
 	struct ipa_uc_offload_conn_in_params in;
 	struct ipa_uc_offload_conn_out_params out;
-	struct ipa_ntn_setup_info rx_setup_info;
-	struct ipa_ntn_setup_info tx_setup_info;
+	struct ipa_ntn_setup_info rx_setup_info = {0};
+	struct ipa_ntn_setup_info tx_setup_info = {0};
 	struct ipa_perf_profile profile;
 	int ret = 0;
 	int i = 0;

@@ -20,6 +20,7 @@
 #include "rmnet_shs_config.h"
 #include "rmnet_shs.h"
 #include "rmnet_shs_wq.h"
+#include "rmnet_shs_wq_genl.h"
 
 MODULE_LICENSE("GPL v2");
 
@@ -32,7 +33,7 @@ unsigned int rmnet_shs_stats_enabled __read_mostly = 1;
 module_param(rmnet_shs_stats_enabled, uint, 0644);
 MODULE_PARM_DESC(rmnet_shs_stats_enabled, "Enable Disable stats collection");
 
-unsigned long int rmnet_shs_crit_err[RMNET_SHS_CRIT_ERR_MAX];
+unsigned long rmnet_shs_crit_err[RMNET_SHS_CRIT_ERR_MAX];
 module_param_array(rmnet_shs_crit_err, ulong, 0, 0444);
 MODULE_PARM_DESC(rmnet_shs_crit_err, "rmnet shs crtical error type");
 
@@ -51,6 +52,11 @@ int __init rmnet_shs_module_init(void)
 	pr_info("%s(): Starting rmnet SHS module\n", __func__);
 	trace_rmnet_shs_high(RMNET_SHS_MODULE, RMNET_SHS_MODULE_INIT,
 			    0xDEF, 0xDEF, 0xDEF, 0xDEF, NULL, NULL);
+
+	if (rmnet_shs_wq_genl_init()) {
+		rm_err("%s", "SHS_GNL: Failed to init generic netlink");
+	}
+
 	return register_netdevice_notifier(&rmnet_shs_dev_notifier);
 }
 
@@ -60,6 +66,9 @@ void __exit rmnet_shs_module_exit(void)
 	trace_rmnet_shs_high(RMNET_SHS_MODULE, RMNET_SHS_MODULE_EXIT,
 			    0xDEF, 0xDEF, 0xDEF, 0xDEF, NULL, NULL);
 	unregister_netdevice_notifier(&rmnet_shs_dev_notifier);
+
+	rmnet_shs_wq_genl_deinit();
+
 	pr_info("%s(): Exiting rmnet SHS module\n", __func__);
 }
 
