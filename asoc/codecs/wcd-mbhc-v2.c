@@ -1680,9 +1680,12 @@ static int wcd_mbhc_usbc_ana_event_handler(struct notifier_block *nb,
 		msm_cdc_pinctrl_select_active_state(config->uart_audio_switch_gpio_p);
 		dev_dbg(mbhc->component->dev, "disable uart\n");
 #endif
-		if (mbhc->mbhc_cb->clk_setup)
+		if (mbhc->mbhc_cb->clk_setup) {
+			mbhc->mbhc_cb->clk_setup(mbhc->component, false);
 			mbhc->mbhc_cb->clk_setup(mbhc->component, true);
+		}
 		/* insertion detected, enable L_DET_EN */
+		WCD_MBHC_REG_UPDATE_BITS(WCD_MBHC_L_DET_EN, 0);
 		WCD_MBHC_REG_UPDATE_BITS(WCD_MBHC_L_DET_EN, 1);
 	} else {
 #ifdef CONFIG_AUDIO_UART_DEBUG
