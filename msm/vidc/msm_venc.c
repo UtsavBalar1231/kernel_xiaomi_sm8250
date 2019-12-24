@@ -1138,6 +1138,7 @@ int msm_venc_inst_init(struct msm_vidc_inst *inst)
 		return -EINVAL;
 	}
 	f = &inst->fmts[OUTPUT_PORT].v4l2_fmt;
+	f->type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
 	f->fmt.pix_mp.height = DEFAULT_HEIGHT;
 	f->fmt.pix_mp.width = DEFAULT_WIDTH;
 	f->fmt.pix_mp.pixelformat = V4L2_PIX_FMT_H264;
@@ -1157,6 +1158,7 @@ int msm_venc_inst_init(struct msm_vidc_inst *inst)
 	strlcpy(inst->fmts[OUTPUT_PORT].description, fmt_desc->description,
 		sizeof(inst->fmts[OUTPUT_PORT].description));
 	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
+	f->type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
 	f->fmt.pix_mp.height = DEFAULT_HEIGHT;
 	f->fmt.pix_mp.width = DEFAULT_WIDTH;
 	f->fmt.pix_mp.pixelformat = V4L2_PIX_FMT_NV12_UBWC;
@@ -1679,6 +1681,12 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 		break;
 	case V4L2_CID_MPEG_VIDC_VIDEO_OPERATING_RATE:
 		inst->clk_data.operating_rate = ctrl->val;
+		/* For HEIC image encode, set operating rate to 1 */
+		if (is_grid_session(inst)) {
+			s_vpr_h(sid, "%s: set operating rate to 1 for HEIC\n",
+					__func__);
+			inst->clk_data.operating_rate = 1 << 16;
+		}
 		inst->flags &= ~VIDC_TURBO;
 		if (ctrl->val == INT_MAX)
 			inst->flags |= VIDC_TURBO;
@@ -1918,6 +1926,9 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 			s_vpr_h(sid, "%s: set fps to 1 for HEIC\n",
 					__func__);
 			inst->clk_data.frame_rate = 1 << 16;
+			s_vpr_h(sid, "%s: set operating rate to 1 for HEIC\n",
+					__func__);
+			inst->clk_data.operating_rate = 1 << 16;
 		}
 		break;
 	case V4L2_CID_MPEG_VIDC_VIDEO_FULL_RANGE:
@@ -2200,7 +2211,6 @@ int msm_venc_set_operating_rate(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
 	struct hfi_device *hdev;
-	struct v4l2_ctrl *ctrl;
 	struct hfi_operating_rate op_rate;
 
 	if (!inst || !inst->core) {
@@ -2211,9 +2221,7 @@ int msm_venc_set_operating_rate(struct msm_vidc_inst *inst)
 		return 0;
 
 	hdev = inst->core->device;
-
-	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_OPERATING_RATE);
-	op_rate.operating_rate = ctrl->val;
+	op_rate.operating_rate = inst->clk_data.operating_rate;
 
 	s_vpr_h(inst->sid, "%s: %d\n", __func__, op_rate.operating_rate >> 16);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
@@ -2607,7 +2615,7 @@ int msm_venc_set_vbv_delay(struct msm_vidc_inst *inst)
 	}
 
 	hdev = inst->core->device;
-	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
+	f = &inst->fmts[OUTPUT_PORT].v4l2_fmt;
 	codec = get_v4l2_codec(inst);
 	height = f->fmt.pix_mp.height;
 	width = f->fmt.pix_mp.width;

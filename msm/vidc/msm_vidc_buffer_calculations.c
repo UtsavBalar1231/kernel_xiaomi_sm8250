@@ -20,7 +20,7 @@
 #define BATCH_DEC_TOTAL_INPUT_BUFFERS 6
 
 /* total input buffers for decoder HFR usecase (fps > 480) */
-#define HFR_DEC_TOTAL_MAX_INPUT_BUFFERS 24
+#define MAX_HFR_DEC_TOTAL_INPUT_BUFFERS 12
 
 /* total input buffers for decoder HFR usecase */
 #define HFR_DEC_TOTAL_INPUT_BUFFERS 12
@@ -799,7 +799,7 @@ static int msm_vidc_get_extra_input_buff_count(struct msm_vidc_inst *inst)
 			inst->is_perf_eligible_session = true;
 			if (fps > 480)
 				extra_input_count =
-					(HFR_DEC_TOTAL_MAX_INPUT_BUFFERS -
+					(MAX_HFR_DEC_TOTAL_INPUT_BUFFERS -
 					MIN_INPUT_BUFFERS);
 			else
 				extra_input_count =
@@ -1013,15 +1013,9 @@ u32 msm_vidc_calculate_enc_output_frame_size(struct msm_vidc_inst *inst)
 	if (inst->rc_type == RATE_CONTROL_LOSSLESS)
 		frame_size = (width * height * 9) >> 2;
 
-	/*
-	 * In case of opaque color format bitdepth will be known
-	 * with first ETB, buffers allocated already with 8 bit
-	 * won't be sufficient for 10 bit
-	 * calculate size considering 10-bit by default
-	 * For 10-bit cases size = size * 1.25
-	*/
-		frame_size *= 5;
-		frame_size /= 4;
+	/* multiply by 10/8 (1.25) to get size for 10 bit case */
+	if (f->fmt.pix_mp.pixelformat == V4L2_PIX_FMT_HEVC)
+		frame_size = frame_size + (frame_size >> 2);
 
 	return ALIGN(frame_size, SZ_4K);
 }

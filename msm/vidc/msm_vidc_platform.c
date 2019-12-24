@@ -103,11 +103,11 @@ static struct msm_vidc_codec_data sm6150_codec_data[] =  {
 };
 
 static struct msm_vidc_codec_data bengal_codec_data[] =  {
-	CODEC_ENTRY(V4L2_PIX_FMT_H264, MSM_VIDC_ENCODER, 125, 675, 320),
-	CODEC_ENTRY(V4L2_PIX_FMT_HEVC, MSM_VIDC_ENCODER, 125, 675, 320),
-	CODEC_ENTRY(V4L2_PIX_FMT_H264, MSM_VIDC_DECODER, 50, 200, 200),
-	CODEC_ENTRY(V4L2_PIX_FMT_HEVC, MSM_VIDC_DECODER, 50, 200, 200),
-	CODEC_ENTRY(V4L2_PIX_FMT_VP9, MSM_VIDC_DECODER, 50, 200, 200),
+	CODEC_ENTRY(V4L2_PIX_FMT_H264, MSM_VIDC_ENCODER, 0, 675, 320),
+	CODEC_ENTRY(V4L2_PIX_FMT_HEVC, MSM_VIDC_ENCODER, 0, 675, 320),
+	CODEC_ENTRY(V4L2_PIX_FMT_H264, MSM_VIDC_DECODER, 0, 440, 440),
+	CODEC_ENTRY(V4L2_PIX_FMT_HEVC, MSM_VIDC_DECODER, 0, 440, 440),
+	CODEC_ENTRY(V4L2_PIX_FMT_VP9, MSM_VIDC_DECODER, 0, 440, 440),
 };
 
 /* Update with 855 data */
@@ -363,21 +363,23 @@ static struct msm_vidc_codec_capability lito_capabilities_v1[] = {
 
 static struct msm_vidc_codec_capability bengal_capabilities[] = {
 	/* {cap_type, domains, codecs, min, max, step_size, default_value} */
-	{CAP_FRAME_WIDTH, DOMAINS_ALL, CODECS_ALL, 96, 1920, 1, 1920},
-	{CAP_FRAME_HEIGHT, DOMAINS_ALL, CODECS_ALL, 96, 1920, 1, 1080},
+	{CAP_FRAME_WIDTH, DOMAINS_ALL, CODECS_ALL, 128, 1920, 1, 1920},
+	{CAP_FRAME_HEIGHT, DOMAINS_ALL, CODECS_ALL, 128, 1920, 1, 1080},
 	/*  ((1920 * 1088) / 256) */
-	{CAP_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 36, 8160, 1, 8160},
+	{CAP_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 64, 8160, 1, 8160},
 	/* 1080@30 decode + 1080@30 encode */
-	{CAP_MBS_PER_SECOND, DOMAINS_ALL, CODECS_ALL, 36, 486000, 1, 243000},
+	{CAP_MBS_PER_SECOND, DOMAINS_ALL, CODECS_ALL, 64, 486000, 1, 243000},
 	{CAP_FRAMERATE, DOMAINS_ALL, CODECS_ALL, 1, 120, 1, 30},
-	{CAP_BITRATE, DOMAINS_ALL, CODECS_ALL, 1, 40000000, 1, 20000000},
+	{CAP_BITRATE, DOMAINS_ALL, CODECS_ALL, 1, 60000000, 1, 20000000},
 	{CAP_HIER_P_NUM_ENH_LAYERS, ENC, H264|HEVC, 0, 6, 1, 0},
 	{CAP_LTR_COUNT, ENC, H264|HEVC, 0, 4, 1, 0},
 	/* ((1920 * 1088) / 256) * 30 fps */
 	{CAP_MBS_PER_SECOND_POWER_SAVE, ENC, CODECS_ALL,
 		0, 244800, 1, 244800},
+	{CAP_CABAC_BITRATE, ENC, H264, 1, 60000000, 1, 20000000},
 	{CAP_I_FRAME_QP, ENC, H264|HEVC, 0, 51, 1, 10},
 	{CAP_P_FRAME_QP, ENC, H264|HEVC, 0, 51, 1, 20},
+	{CAP_B_FRAME_QP, ENC, H264|HEVC, 0, 51, 1, 20},
 
 	/* 10 slices */
 	{CAP_SLICE_BYTE, ENC, H264|HEVC, 1, 10, 1, 10},
@@ -385,11 +387,38 @@ static struct msm_vidc_codec_capability bengal_capabilities[] = {
 	{CAP_MAX_VIDEOCORES, DOMAINS_ALL, CODECS_ALL, 0, 1, 1, 1},
 
 	/* Secure usecase specific */
-	{CAP_SECURE_FRAME_WIDTH, DOMAINS_ALL, CODECS_ALL, 96, 1920, 1, 1920},
-	{CAP_SECURE_FRAME_HEIGHT, DOMAINS_ALL, CODECS_ALL, 96, 1920, 1, 1080},
+	{CAP_SECURE_FRAME_WIDTH, DOMAINS_ALL, CODECS_ALL, 128, 1920, 1, 1920},
+	{CAP_SECURE_FRAME_HEIGHT, DOMAINS_ALL, CODECS_ALL, 128, 1920, 1, 1080},
 	/* (1920 * 1088) / 256 */
-	{CAP_SECURE_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 36, 8160, 1, 8160},
-	{CAP_SECURE_BITRATE, DOMAINS_ALL, CODECS_ALL, 1, 40000000, 1, 20000000},
+	{CAP_SECURE_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 64, 8160, 1, 8160},
+	{CAP_SECURE_BITRATE, DOMAINS_ALL, CODECS_ALL, 1, 35000000, 1, 20000000},
+
+	/* Image specific */
+	{CAP_HEVC_IMAGE_FRAME_WIDTH, ENC, HEVC, 128, 512, 1, 512},
+	{CAP_HEVC_IMAGE_FRAME_HEIGHT, ENC, HEVC, 128, 512, 1, 512},
+	{CAP_HEIC_IMAGE_FRAME_WIDTH, ENC, HEVC, 512, 8192, 1, 8192},
+	{CAP_HEIC_IMAGE_FRAME_HEIGHT, ENC, HEVC, 512, 8192, 1, 8192},
+
+	/* Level for AVC and HEVC encoder specific.
+	 * Default for levels is UNKNOWN value. But if we use unknown
+	 * value here to set as default, max value needs to be set to
+	 * unknown as well, which creates a problem of allowing client
+	 * to set higher level than supported
+	 */
+	{CAP_H264_LEVEL, ENC, H264, V4L2_MPEG_VIDEO_H264_LEVEL_1_0,
+				V4L2_MPEG_VIDEO_H264_LEVEL_5_0, 1,
+				V4L2_MPEG_VIDEO_H264_LEVEL_4_1},
+	{CAP_HEVC_LEVEL, ENC, HEVC, V4L2_MPEG_VIDEO_HEVC_LEVEL_1,
+				V4L2_MPEG_VIDEO_HEVC_LEVEL_5, 1,
+				V4L2_MPEG_VIDEO_HEVC_LEVEL_4_1},
+
+	/* Level for AVC and HEVC decoder specific */
+	{CAP_H264_LEVEL, DEC, H264, V4L2_MPEG_VIDEO_H264_LEVEL_1_0,
+				V4L2_MPEG_VIDEO_H264_LEVEL_5_0, 1,
+				V4L2_MPEG_VIDEO_H264_LEVEL_4_1},
+	{CAP_HEVC_LEVEL, DEC, HEVC, V4L2_MPEG_VIDEO_HEVC_LEVEL_1,
+				V4L2_MPEG_VIDEO_HEVC_LEVEL_5, 1,
+				V4L2_MPEG_VIDEO_HEVC_LEVEL_4_1},
 };
 
 static struct msm_vidc_codec_capability kona_capabilities[] = {
@@ -503,12 +532,12 @@ static struct msm_vidc_codec_capability kona_capabilities[] = {
  * 3x3 transformation matrix coefficients in s4.9 fixed point format
  */
 static u32 vpe_csc_custom_matrix_coeff[HAL_MAX_MATRIX_COEFFS] = {
-	470, 8170, 8148, 0, 490, 50, 0, 34, 483
+	440, 8140, 8098, 0, 460, 52, 0, 34, 463
 };
 
 /* offset coefficients in s9 fixed point format */
 static u32 vpe_csc_custom_bias_coeff[HAL_MAX_BIAS_COEFFS] = {
-	34, 0, 4
+	53, 0, 4
 };
 
 /* clamping value for Y/U/V([min,max] for Y/U/V) */
@@ -825,7 +854,7 @@ static struct msm_vidc_common_data sm6150_common_data[] = {
 	},
 	{
 		.key = "qcom,fw-vpp-cycles",
-		.value = 225975,
+		.value = 166666,
 	},
 };
 
@@ -1409,7 +1438,8 @@ void *vidc_get_drv_data(struct device *dev)
 			driver_data->ubwc_config->highest_bank_bit = 0xf;
 
 		d_vpr_h("DDR Type 0x%x hbb 0x%x\n",
-			ddr_type, driver_data->ubwc_config->highest_bank_bit);
+			ddr_type, driver_data->ubwc_config ?
+			driver_data->ubwc_config->highest_bank_bit : -1);
 	}
 
 exit:

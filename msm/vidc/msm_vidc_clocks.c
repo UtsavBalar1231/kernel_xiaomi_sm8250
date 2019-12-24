@@ -32,6 +32,15 @@ struct msm_vidc_core_ops core_ops_ar50 = {
 	.calc_bw = NULL,
 };
 
+struct msm_vidc_core_ops core_ops_ar50lt = {
+	.calc_freq = msm_vidc_calc_freq_ar50,
+	.decide_work_route = NULL,
+	.decide_work_mode = msm_vidc_decide_work_mode_ar50,
+	.decide_core_and_power_mode =
+		msm_vidc_decide_core_and_power_mode_ar50lt,
+	.calc_bw = calc_bw_ar50lt,
+};
+
 struct msm_vidc_core_ops core_ops_iris1 = {
 	.calc_freq = msm_vidc_calc_freq_iris1,
 	.decide_work_route = msm_vidc_decide_work_route_iris1,
@@ -966,11 +975,8 @@ int msm_comm_scale_clocks(struct msm_vidc_inst *inst)
 		if (temp->vvb.vb2_buf.type == INPUT_MPLANE) {
 			filled_len = max(filled_len,
 				temp->vvb.vb2_buf.planes[0].bytesused);
-			if (inst->session_type == MSM_VIDC_ENCODER &&
-				(temp->vvb.flags &
-				 V4L2_BUF_FLAG_PERF_MODE)) {
+			if (temp->vvb.flags & V4L2_BUF_FLAG_PERF_MODE)
 				is_turbo = true;
-			}
 			device_addr = temp->smem[0].device_addr;
 		}
 	}
@@ -981,7 +987,8 @@ int msm_comm_scale_clocks(struct msm_vidc_inst *inst)
 		return 0;
 	}
 
-	if (inst->clk_data.buffer_counter < DCVS_FTB_WINDOW || is_turbo) {
+	if (inst->clk_data.buffer_counter < DCVS_FTB_WINDOW || is_turbo ||
+		is_turbo_session(inst)) {
 		inst->clk_data.min_freq =
 				msm_vidc_max_freq(inst->core, inst->sid);
 		inst->clk_data.dcvs_flags = 0;
@@ -1319,9 +1326,13 @@ static int msm_vidc_decide_work_mode_ar50(struct msm_vidc_inst *inst)
 				pdata.video_work_mode = HFI_WORKMODE_1;
 			break;
 		}
-	} else if (inst->session_type == MSM_VIDC_ENCODER)
+	} else if (inst->session_type == MSM_VIDC_ENCODER) {
 		pdata.video_work_mode = HFI_WORKMODE_1;
-	else {
+		if (inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_VBR ||
+		    inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_MBR ||
+		    inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_MBR_VFR)
+			pdata.video_work_mode = HFI_WORKMODE_2;
+	} else {
 		return -EINVAL;
 	}
 
@@ -1602,6 +1613,12 @@ static u32 get_core_load(struct msm_vidc_core *core,
 	return load;
 }
 
+int msm_vidc_decide_core_and_power_mode_ar50lt(struct msm_vidc_inst *inst)
+{
+	inst->clk_data.core_id = VIDC_CORE_ID_1;
+	return 0;
+}
+
 int msm_vidc_decide_core_and_power_mode_iris1(struct msm_vidc_inst *inst)
 {
 	bool enable = false;
@@ -1709,8 +1726,10 @@ void msm_vidc_init_core_clk_ops(struct msm_vidc_core *core)
 
 	vpu = core->platform_data->vpu_ver;
 
-	if (vpu == VPU_VERSION_AR50 || vpu == VPU_VERSION_AR50_LITE)
+	if (vpu == VPU_VERSION_AR50)
 		core->core_ops = &core_ops_ar50;
+	else if (vpu == VPU_VERSION_AR50_LITE)
+		core->core_ops = &core_ops_ar50lt;
 	else if (vpu == VPU_VERSION_IRIS1)
 		core->core_ops = &core_ops_iris1;
 	else

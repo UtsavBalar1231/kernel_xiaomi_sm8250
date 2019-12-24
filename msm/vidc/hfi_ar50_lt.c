@@ -53,6 +53,7 @@
 /* VIDC_UC_REGION_ADDR */
 #define VIDC_CPU_CS_SCIBARG2_AR50_LT		(VIDC_CPU_CS_BASE_OFFS_AR50_LT + 0x68)
 
+#define VIDC_CPU_IC_SOFTINT_EN_AR50_LT	(VIDC_CPU_IC_BASE_OFFS_AR50_LT + 0x148)
 #define VIDC_CPU_IC_SOFTINT_AR50_LT		(VIDC_CPU_IC_BASE_OFFS_AR50_LT + 0x150)
 #define VIDC_CPU_IC_SOFTINT_H2A_BMSK_AR50_LT	0x8000
 #define VIDC_CPU_IC_SOFTINT_H2A_SHFT_AR50_LT	0x1
@@ -91,6 +92,15 @@
 #define VIDC_WRAPPER_INTR_CLEAR_A2HWD_SHFT_AR50_LT	0x4
 #define VIDC_WRAPPER_INTR_CLEAR_A2H_BMSK_AR50_LT	0x4
 #define VIDC_WRAPPER_INTR_CLEAR_A2H_SHFT_AR50_LT	0x2
+
+/*
+ * --------------------------------------------------------------------------
+ * MODULE: tz_wrapper
+ * --------------------------------------------------------------------------
+ */
+#define VIDC_WRAPPER_TZ_BASE_OFFS	0x000C0000
+#define VIDC_WRAPPER_TZ_CPU_CLOCK_CONFIG	(VIDC_WRAPPER_TZ_BASE_OFFS)
+#define VIDC_WRAPPER_TZ_CPU_STATUS	(VIDC_WRAPPER_TZ_BASE_OFFS + 0x10)
 
 #define VIDC_CTRL_INIT_AR50_LT			VIDC_CPU_CS_SCIACMD_AR50_LT
 
@@ -156,6 +166,7 @@ int __prepare_pc_ar50_lt(struct venus_hfi_device *device)
 	int rc = 0;
 	u32 wfi_status = 0, idle_status = 0, pc_ready = 0;
 	u32 ctrl_status = 0;
+	u32 count = 0, max_tries = 10;
 
 	ctrl_status = __read_register(device, VIDC_CTRL_STATUS_AR50_LT, DEFAULT_SID);
 	pc_ready = ctrl_status & VIDC_CTRL_STATUS_PC_READY_AR50_LT;
@@ -165,11 +176,37 @@ int __prepare_pc_ar50_lt(struct venus_hfi_device *device)
 		d_vpr_l("Already in pc_ready state\n");
 		return 0;
 	}
+
+	wfi_status = BIT(0) & __read_register(device,
+			VIDC_WRAPPER_TZ_CPU_STATUS, DEFAULT_SID);
+	if (!wfi_status || !idle_status) {
+		d_vpr_e("Skipping PC, wfi status not set\n");
+		goto skip_power_off;
+	}
+
 	rc = __prepare_pc(device);
 	if (rc) {
 		d_vpr_e("Failed __prepare_pc %d\n", rc);
 		goto skip_power_off;
 	}
+
+	while (count < max_tries) {
+		wfi_status = BIT(0) & __read_register(device,
+				VIDC_WRAPPER_TZ_CPU_STATUS, DEFAULT_SID);
+		ctrl_status = __read_register(device,
+				VIDC_CTRL_STATUS_AR50_LT, DEFAULT_SID);
+		pc_ready = ctrl_status & VIDC_CTRL_STATUS_PC_READY_AR50_LT;
+		if (wfi_status && pc_ready)
+			break;
+		usleep_range(150, 250);
+		count++;
+	}
+
+	if (count == max_tries) {
+		d_vpr_e("Skip PC. Core is not in right state\n");
+		goto skip_power_off;
+	}
+
 	return rc;
 
 skip_power_off:
@@ -234,5 +271,8 @@ int __boot_firmware_ar50_lt(struct venus_hfi_device *device, u32 sid)
 		s_vpr_e(sid, "Error booting up vidc firmware\n");
 		rc = -ETIME;
 	}
+
+	/* Enable interrupt before sending commands to venus */
+	__write_register(device, VIDC_CPU_IC_SOFTINT_EN_AR50_LT, 0x1, sid);
 	return rc;
 }

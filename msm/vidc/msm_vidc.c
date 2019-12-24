@@ -375,6 +375,12 @@ int msm_vidc_qbuf(void *instance, struct v4l2_buffer *b)
 		msm_comm_store_input_tag(&inst->etb_data, b->index,
 			client_data->id, 0, inst->sid);
 	}
+	/*
+	 * set perf mode for image session buffers so that
+	 * they will be processed quickly
+	 */
+	if (is_grid_session(inst) && b->type == INPUT_MPLANE)
+		b->flags |= V4L2_BUF_FLAG_PERF_MODE;
 
 	q = msm_comm_get_vb2q(inst, b->type);
 	if (!q) {
