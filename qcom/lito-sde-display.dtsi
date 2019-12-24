@@ -270,7 +270,8 @@
 
 	qcom,dsi-dyn-clk-enable;
 	qcom,dsi-dyn-clk-list =
-		<534712320 532484352 530256384>;
+		<534712320 536940288 539168256>;
+	qcom,dsi-dyn-clk-type = "constant-fps-adjust-hfp";
 
 	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0",
 				"src_byte_clk0", "src_pixel_clk0",
