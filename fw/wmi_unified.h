@@ -1005,6 +1005,8 @@ typedef enum {
     WMI_GET_ELNA_BYPASS_CMDID,
     /** get ANI level of the channels */
     WMI_GET_CHANNEL_ANI_CMDID,
+    /** set OCL (One Chain Listen) mode */
+    WMI_SET_OCL_CMDID,
 
     /*  Offload 11k related requests */
     WMI_11K_OFFLOAD_REPORT_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_11K_OFFLOAD),
@@ -1574,6 +1576,8 @@ typedef enum {
     WMI_ROAM_PREAUTH_START_EVENTID,
     /** Roaming PMKID request event */
     WMI_ROAM_PMKID_REQUEST_EVENTID,
+    /** roam stats */
+    WMI_ROAM_STATS_EVENTID,
 
     /** P2P disc found */
     WMI_P2P_DISC_EVENTID = WMI_EVT_GRP_START_ID(WMI_GRP_P2P),
@@ -5547,8 +5551,10 @@ typedef enum {
     WMI_CSA_IE_PRESENT    = 0x00000001,
     WMI_XCSA_IE_PRESENT   = 0x00000002,
     WMI_WBW_IE_PRESENT    = 0x00000004,
-    WMI_CSWARP_IE_PRESENT = 0x00000008,
+    WMI_CSWRAP_IE_PRESENT = 0x00000008,
+    WMI_CSWARP_IE_PRESENT = WMI_CSWRAP_IE_PRESENT, /* deprecated: typo */
     WMI_QSBW_ISE_PRESENT  = 0x00000010,
+    WMI_CSWRAP_IE_EXTENDED_PRESENT = 0x00000020, /* Added bitmask to verify if the additional information is filled in */
 } WMI_CSA_EVENT_IES_PRESENT_FLAG;
 
 /* wmi CSA receive event from beacon frame */
@@ -5562,9 +5568,23 @@ typedef struct {
     A_UINT32 csa_ie[2];
     A_UINT32 xcsa_ie[2];
     A_UINT32 wb_ie[2];
-    A_UINT32 cswarp_ie;
+    union {
+        A_UINT32 cswrap_ie; /* use this */
+        A_UINT32 cswarp_ie; /* deprecated (typo) */
+    };
     A_UINT32 ies_present_flag; /* WMI_CSA_EVENT_IES_PRESENT_FLAG */
     A_UINT32 qsbw_ise;
+    /* cswrap_ie_extended:
+     * Stores full IEEE80211_ELEMID_CHAN_SWITCH_WRAP information element.
+     * The first two octets host the Element ID and Length fields.
+     * The IE comprises New Country Subelement (optional and max length 6),
+     * Wide Bandwidth Channel Subelement (optional and max length 5) and
+     * New Transmit Power Envelope subelement (optional and max length 7)
+     * The 4-byte words within cswrap_ie_extended[] use little endian ordering;
+     * the first octect of the IE resides in bits 7:0 of cswrap_ie_extended[0],
+     * the second octet resides in bits 15:8 of cswrap_ie_extended[0] and so on.
+     */
+    A_UINT32 cswrap_ie_extended[5];
 } wmi_csa_event_fixed_param;
 
 typedef enum {
@@ -6458,6 +6478,7 @@ typedef struct {
 typedef struct {
     A_UINT32 tlv_header; /* WMITLV_TAG_STRUC_wmi_pdev_bss_chan_info_request_fixed_param */
     A_UINT32 param;   /* 1 = read only, 2= read and clear */
+    A_UINT32 pdev_id; /* pdev_id for identifying mac */
 } wmi_pdev_bss_chan_info_request_fixed_param;
 
 typedef struct {
@@ -6754,6 +6775,7 @@ typedef struct {
 
     A_UINT32 rx_bss_cycle_count_low;    /* low 31 bits of rx cycle cnt for my bss in 64bits format */
     A_UINT32 rx_bss_cycle_count_high;   /* high 31 bits of rx_cycle cnt for my bss in 64bits format */
+    A_UINT32 pdev_id;                   /* pdev_id for identifying the MAC */
 } wmi_pdev_bss_chan_info_event_fixed_param;
 
 typedef struct {
@@ -9637,9 +9659,9 @@ typedef enum {
 /* Control to enable/disable FILS discovery frame tx in non-HT duplicate */
 #define WMI_VDEV_6GHZ_BITMAP_NON_HT_DUPLICATE_FD_FRAME                  0x4
 /* Control to enable/disable periodic FILS discovery frame transmission */
-#define WMI_VDEV_6GHZ_BITMAP_FD_FRAME                                   0x8
+#define WMI_VDEV_6GHZ_BITMAP_FD_FRAME                                   0x8  /* deprecated */
 /* Control to enable/disable periodic broadcast probe response transmission */
-#define WMI_VDEV_6GHZ_BITMAP_BCAST_PROBE_RSP                            0x10
+#define WMI_VDEV_6GHZ_BITMAP_BCAST_PROBE_RSP                            0x10 /* deprecated */
 
 /** the definition of different VDEV parameters */
 typedef enum {
@@ -10380,6 +10402,13 @@ typedef enum {
      */
     WMI_VDEV_PARAM_6GHZ_PARAMS,                /* 0x99 */
 
+    /**
+     * VDEV parameter to enable or disable RTT initiator role
+     * Default : Enabled
+     * valid values: 0-Disable initiator role, 1-Enable initiator role.
+     */
+    WMI_VDEV_PARAM_ENABLE_DISABLE_RTT_INITIATOR_ROLE, /* 0x9A */
+
     /*=== ADD NEW VDEV PARAM TYPES ABOVE THIS LINE ===
      * The below vdev param types are used for prototyping, and are
      * prone to change.
@@ -10598,16 +10627,22 @@ typedef struct {
 
 /** Upto 8 bits are available for Roaming module to be sent along with
 WMI_VDEV_PARAM_ROAM_FW_OFFLOAD WMI_VDEV_PARAM **/
-/* Enable Roaming FW offload LFR1.5/LFR2.0 implementation */
+/* Bit 0: Enable Roaming FW offload LFR1.5/LFR2.0 implementation */
 #define WMI_ROAM_FW_OFFLOAD_ENABLE_FLAG                          0x1
-/* Enable Roaming module in FW to do scan based on Final BMISS */
+/* Bit 1: Enable Roaming module in FW to do scan based on Final BMISS */
 #define WMI_ROAM_BMISS_FINAL_SCAN_ENABLE_FLAG                    0x2
-/**
+/* Bit 2:
  * To enable/disable EAPOL_4WAY_HANDSHAKE process while roaming.
  * param value = 0 --> Enable EAPOL 4way handshake
  * param value = 1 --> Skip EAPOL 4way handshake
  */
 #define WMI_VDEV_PARAM_SKIP_ROAM_EAPOL_4WAY_HANDSHAKE            0x4
+/* Bit 3:
+ * Scan type when WMI_ROAM_BMISS_FINAL_SCAN_ENABLE_FLAG is set:
+ * value = 0 --> Chanmap scan followed by one full scan if no candidate found.
+ * value = 1 --> Chanmap scan only
+ */
+#define WMI_ROAM_BMISS_FINAL_SCAN_TYPE_FLAG                      0x8
 
 /** slot time long */
 #define WMI_VDEV_SLOT_TIME_LONG                                  0x1
@@ -11458,9 +11493,16 @@ typedef struct {
     A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_tbtt_offset_event_fixed_param  */
     /** bimtap of VDEVs that has tbtt offset updated */
     A_UINT32 vdev_map;
-/* The TLVs for tbttoffset_list will follow this TLV.
- *     tbtt offset list in the order of the LSB to MSB in the vdev_map bitmap
+/* The TLVs for tbttoffset_list, tbtt_qtime_low_us_list, and
+ * tbtt_qtime_high_us_list will follow this TLV.
+ *   - tbtt offset list in the order of the LSb to MSb in the vdev_map bitmap
  *     A_UINT32 tbttoffset_list[WMI_MAX_AP_VDEV];
+ *   - tbtt qtime_low_us list(Lower 32 bit of qtime us) in the order of the
+ *     LSb to MSb in the vdev_map bitmap
+ *     A_UINT32 tbtt_qtime_low_us_list[WMI_MAX_AP_VDEV];
+ *   - tbtt qtime_high_us list(Higher 32 bit of qtime us) in the order of the
+ *     LSb to MSb in the vdev_map bitmap
+ *     A_UINT32 tbtt_qtime_high_us_list[WMI_MAX_AP_VDEV];
  */
 } wmi_tbtt_offset_event_fixed_param;
 
@@ -11470,6 +11512,9 @@ typedef struct {
     A_UINT32 vdev_id;
     /** tbttoffset in TUs */
     A_UINT32 tbttoffset;
+    /** absolute tbtt time in qtime us */
+    A_UINT32 tbtt_qtime_low_us;  /* bits 31:0 of qtime */
+    A_UINT32 tbtt_qtime_high_us; /* bits 63:32 of qtime */
 } wmi_tbtt_offset_info;
 
 /** Use this event if number of vdevs > 32 */
@@ -12203,6 +12248,12 @@ typedef struct {
 
     /* min data rate to be used in Mbps */
     A_UINT32 min_data_rate;
+
+    /** HE 6 GHz Band Capabilities of the peer.
+     * (Defined in 9.4.2.261 HE 6GHz Band Capabilities element in 802.11ax_D5.0)
+     * valid when WMI_PEER_HE is set and WMI_PEER_VHT/HT are not set.
+     */
+    A_UINT32 peer_he_caps_6ghz;
 
 /* Following this struct are the TLV's:
  *     A_UINT8 peer_legacy_rates[];
@@ -13187,13 +13238,22 @@ typedef struct wmi_fd_send_from_host {
 } wmi_fd_send_from_host_cmd_fixed_param;
 
 /*
+ * Control to send broadcast probe response instead of FD frames.
+ * When this flag is not set then FD frame will be transmitted when
+ * fd_period is non-zero
+ */
+#define WMI_FILS_FLAGS_BITMAP_BCAST_PROBE_RSP   0x1
+
+/*
  * WMI command structure for FILS feature enable/disable
  */
 typedef struct {
     A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_enable_fils_cmd_fixed_param  */
     /* VDEV identifier */
     A_UINT32 vdev_id;
-    A_UINT32 fd_period; /* non-zero - enable Fils Discovery frames with this period (in TU), 0 - disable FD frames */
+    A_UINT32 fd_period; /* non-zero - enable Fils Discovery frames or broadcast probe response with this period (in TU),
+                         * 0 - disable FD and broadcast probe response frames */
+    A_UINT32 flags; /* WMI_FILS_FLAGS_BITMAP flags */
 } wmi_enable_fils_cmd_fixed_param;
 
 /*
@@ -14172,6 +14232,7 @@ typedef enum wake_reason_e {
     WOW_REASON_PAGE_FAULT, /* Host wake up due to page fault */
     WOW_REASON_ROAM_PREAUTH_START,
     WOW_REASON_ROAM_PMKID_REQUEST,
+    WOW_REASON_RFKILL,
 
     /* add new WOW_REASON_ defs before this line */
     WOW_REASON_MAX,
@@ -18072,11 +18133,22 @@ typedef struct {
 */
 } wmi_nan_cmd_param;
 
+#define WMI_NAN_GET_RANGING_INITIATOR_ROLE(flag)      WMI_GET_BITS(flag, 0, 1)
+#define WMI_NAN_SET_RANGING_INITIATOR_ROLE(flag, val) WMI_SET_BITS(flag, 0, 1, val)
+#define WMI_NAN_GET_RANGING_RESPONDER_ROLE(flag)      WMI_GET_BITS(flag, 1, 1)
+#define WMI_NAN_SET_RANGING_RESPONDER_ROLE(flag, val) WMI_SET_BITS(flag, 1, 1, val)
+
 typedef struct {
     A_UINT32 tlv_header; /** TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_nan_host_config_param */
     A_UINT32 nan_2g_disc_disable:1; /** This bit when set to 1 indicate NAN 2G discovery should be disabled */
     A_UINT32 nan_5g_disc_disable:1; /** This bit when set to 1 indicate NAN 5G discovery should be disabled */
     A_UINT32 reserved:30;
+    /** Flags: refer to WMI_NAN_GET/SET macros
+     *  Bit   0    -> Nan ranging initiator role (0 - Disable, 1 - Enable)
+     *  Bit   1    -> Nan ranging responder role (0 - Disable, 1 - Enable)
+     *  Bits  2-31 -> Reserved
+     */
+    A_UINT32 flags;
 } wmi_nan_host_config_param_PROTOTYPE;
 #define wmi_nan_host_config_param wmi_nan_host_config_param_PROTOTYPE
 
@@ -18095,6 +18167,7 @@ typedef struct {
     A_UINT32 mac_id; /* MAC ID associated with NAN primary discovery channel; Valid only for NAN enable resp message identified by NAN_MSG_ID_ENABLE_RSP */
     A_UINT32 status:1; /** This bit when set to 0 indicates status is successful; Valid only for NAN enable resp message identified by NAN_MSG_ID_ENABLE_RSP */
     A_UINT32 reserved:31;
+    A_UINT32 vdev_id; /** Unique id identifying the vdev with type OPMODE_NAN; Valid only for NAN enable resp message identified by NAN_MSG_ID_ENABLE_RSP */
 } wmi_nan_event_info_PROTOTYPE;
 
 #define wmi_nan_event_info wmi_nan_event_info_PROTOTYPE
@@ -24950,6 +25023,7 @@ static INLINE A_UINT8 *wmi_id_to_name(A_UINT32 wmi_command)
         WMI_RETURN_STRING(WMI_ATF_GROUP_WMM_AC_CONFIG_REQUEST_CMDID);
         WMI_RETURN_STRING(WMI_PEER_ATF_EXT_REQUEST_CMDID);
         WMI_RETURN_STRING(WMI_GET_CHANNEL_ANI_CMDID);
+        WMI_RETURN_STRING(WMI_SET_OCL_CMDID);
     }
 
     return "Invalid WMI cmd";
@@ -26403,6 +26477,177 @@ typedef struct {
      *       and the last 3 elements from the second scan.
      */
 } wmi_roam_scan_stats_event_fixed_param;
+
+typedef enum {
+    WMI_ROAM_TRIGGER_SUB_REASON_PERIODIC_TIMER = 1, /* Roam scan triggered due to periodic timer expiry */
+    WMI_ROAM_TRIGGER_SUB_REASON_INACTIVITY_TIMER,   /* Roam scan triggered due to inactivity detection */
+    WMI_ROAM_TRIGGER_SUB_REASON_BTM_DI_TIMER,       /* Roam scan triggered due to BTM Disassoc Imminent timeout */
+    WMI_ROAM_TRIGGER_SUB_REASON_FULL_SCAN,          /* Roam scan triggered due to partial scan failure */
+} WMI_ROAM_TRIGGER_SUB_REASON_ID;
+
+typedef struct {
+    A_UINT32 tlv_header;     /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_roam_trigger_reason_tlv_param */
+    /*
+     * timestamp is the absolute time w.r.t host timer which is synchronized
+     * between the host and target.
+     * This timestamp indicates the time when roam trigger happened.
+     */
+    A_UINT32 timestamp;      /* Timestamp in milli seconds */
+    /* trigger_reason:
+     * Roam trigger reason from WMI_ROAM_TRIGGER_REASON_ID
+     */
+    A_UINT32 trigger_reason;
+    /* trigger_sub_reason:
+     * Reason for each roam scan from WMI_ROAM_TRIGGER_SUB_REASON_ID,
+     * if multiple scans are triggered for a single roam trigger.
+     */
+    A_UINT32 trigger_sub_reason;
+    A_UINT32 current_rssi;   /* Connected AP rssi in dBm */
+    /* roam_rssi_threshold:
+     * RSSI threshold value in dBm for low RSSI roam trigger.
+     */
+    A_UINT32 roam_rssi_threshold;
+    A_UINT32 cu_load;        /* Connected AP CU load percentage (0-100) */
+    /* deauth_type:
+     * 1 -> De-authentication
+     * 2 -> Disassociation
+     */
+    A_UINT32 deauth_type;
+    /* deauth_reason:
+     * De-authentication or disassociation reason.
+     * De-authentication / disassociation Values are enumerated in the
+     * 802.11 spec.
+     */
+    A_UINT32 deauth_reason;
+    /* btm_request_mode:
+     * Mode Values are enumerated in the 802.11 spec.
+     */
+    A_UINT32 btm_request_mode;
+    A_UINT32 disassoc_imminent_timer;  /* in Milli seconds */
+    /* validity_internal:
+     * Preferred candidate list validity interval in Milli seconds.
+     */
+    A_UINT32 validity_internal;
+    /* candidate_list_count:
+     * Number of preferred candidates from BTM request.
+     */
+    A_UINT32 candidate_list_count;
+    /* btm_response_status_code:
+     * Response status Values are enumerated in the 802.11 spec.
+     */
+    A_UINT32 btm_response_status_code;
+} wmi_roam_trigger_reason;
+
+typedef struct {
+    A_UINT32 tlv_header;     /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_roam_scan_info_tlv_param */
+    /* roam_scan_type:
+     * 0 -> Partial roam scan
+     * 1 -> Full roam scan
+     */
+    A_UINT32 roam_scan_type;
+    /* next_rssi_trigger_threshold:
+     * Updated RSSI threshold value in dBm for next roam trigger.
+     */
+    A_UINT32 next_rssi_trigger_threshold;
+    A_UINT32 roam_scan_channel_count; /* Number of channels scanned during roam scan */
+    A_UINT32 roam_ap_count; /* Number of roamable APs */
+} wmi_roam_scan_info;
+
+typedef struct {
+    A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_roam_scan_channel_info_tlv_param */
+    A_UINT32 channel;    /* Channel frequency in MHz */
+} wmi_roam_scan_channel_info;
+
+typedef struct {
+    A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_roam_ap_info_tlv_param */
+    /*
+     * timestamp is the absolute time w.r.t host timer which is synchronized
+     * between the host and target.
+     * This timestamp indicates the time when candidate AP is found
+     * during roam scan.
+     */
+    A_UINT32 timestamp;      /* Timestamp in milli seconds */
+    A_UINT32 candidate_type; /* 0 - Candidate AP, 1 - Connected AP */
+    wmi_mac_addr bssid;      /* AP MAC address */
+    A_UINT32 channel;        /* AP channel frequency in MHz */
+    A_UINT32 rssi;           /* AP current rssi in dBm */
+    A_UINT32 cu_load;        /* AP current cu load percentage (0-100) */
+    /*
+     * The score fields below don't have a pre-determined range,
+     * but use the sense that a higher score indicates a better
+     * roam candidate.
+     */
+    A_UINT32 rssi_score;     /* AP current rssi score */
+    A_UINT32 cu_score;       /* AP current cu score */
+    A_UINT32 total_score;    /* AP total score */
+    A_UINT32 etp;            /* AP Estimated Throughput (ETP) value in mbps */
+} wmi_roam_ap_info;
+
+typedef enum {
+    /* Failures reasons for not triggering roaming */
+    WMI_ROAM_FAIL_REASON_NO_SCAN_START = 1, /* Roam scan not started */
+    WMI_ROAM_FAIL_REASON_NO_AP_FOUND,       /* No roamable APs found during roam scan */
+    WMI_ROAM_FAIL_REASON_NO_CAND_AP_FOUND,  /* No candidate APs found during roam scan */
+
+    /* Failure reasons after roaming is triggered */
+    WMI_ROAM_FAIL_REASON_HOST,              /* Roam fail due to VDEV STOP issued from Host */
+    WMI_ROAM_FAIL_REASON_AUTH_SEND,         /* Unable to send auth request frame */
+    WMI_ROAM_FAIL_REASON_AUTH_RECV,         /* Received auth response with error status code */
+    WMI_ROAM_FAIL_REASON_NO_AUTH_RESP,      /* Not receiving auth response frame */
+    WMI_ROAM_FAIL_REASON_REASSOC_SEND,      /* Unable to send reassoc request frame */
+    WMI_ROAM_FAIL_REASON_REASSOC_RECV,      /* Received reassoc response with error status code */
+    WMI_ROAM_FAIL_REASON_NO_REASSOC_RESP,   /* Not receiving reassoc response frame */
+    WMI_ROAM_FAIL_REASON_EAPOL_TIMEOUT,     /* EAPOL TIMEOUT */
+    WMI_ROAM_FAIL_REASON_MLME,              /* MLME internal error */
+    WMI_ROAM_FAIL_REASON_INTERNAL_ABORT,    /* Internal abort */
+
+
+    WMI_ROAM_FAIL_REASON_UNKNOWN = 255,
+} WMI_ROAM_FAIL_REASON_ID;
+
+typedef struct {
+    A_UINT32 tlv_header;    /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_roam_result_tlv_param */
+    /*
+     * timestamp is the absolute time w.r.t host timer which is synchronized
+     * between the host and target.
+     * This timestamp indicates the time when roaming is completed.
+     */
+    A_UINT32 timestamp;     /* Timestamp in milli seconds */
+    A_UINT32 roam_status;   /* 0 - Roaming is success, 1 - Roaming is failed */
+    A_UINT32 roam_fail_reason; /* from WMI_ROAM_FAIL_REASON_ID */
+} wmi_roam_result;
+
+typedef struct {
+    A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_roam_neighbor_report_info_tlv_param */
+    /* request_type:
+     * 1 -> BTM query
+     * 2 -> 11K neighbor report request
+     */
+    A_UINT32 request_type;
+    /* neighbor_report_request_timestamp:
+     * timestamp is the absolute time w.r.t host timer which is synchronized
+     * between the host and target.
+     * This timestamp indicates the time when neighbor report request
+     * is received.
+     */
+    A_UINT32 neighbor_report_request_timestamp;  /* in milli seconds */
+    /* neighbor_report_response_timestamp:
+     * This timestamp indicates the time when neighbor report response is sent.
+     */
+    A_UINT32 neighbor_report_response_timestamp; /* in milli seconds */
+    A_UINT32 neighbor_report_channel_count; /* Number of channels received in neighbor report response */
+} wmi_roam_neighbor_report_info;
+
+typedef struct {
+    A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_roam_neighbor_report_channel_info_tlv_param */
+    A_UINT32 channel;    /* Channel frequency in MHz */
+} wmi_roam_neighbor_report_channel_info;
+
+typedef struct {
+    A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_roam_stats_event_fixed_param */
+    A_UINT32 vdev_id;
+    A_UINT32 roam_scan_trigger_count; /* Number of roam scans triggered */
+} wmi_roam_stats_event_fixed_param;
 
 typedef struct {
     A_UINT32 tlv_header;    /* TLV tag and len; tag equals wmi_txpower_query_cmd_fixed_param  */
@@ -28105,6 +28350,16 @@ typedef struct {
     A_UINT32 group_id;
     A_UINT32 retry_thresh;
 } wmi_audio_aggr_set_group_retry_cmd_fixed_param;
+
+typedef struct {
+    /** TLV tag and len; tag equals
+     * WMITLV_TAG_STRUC_wmi_set_ocl_cmd_fixed_param */
+    A_UINT32 tlv_header;
+    /* VDEV identifier */
+    A_UINT32 vdev_id;
+    /** enable/disable OCL, 1 - enable, 0 - disable*/
+    A_UINT32 en_dis_chain;
+} wmi_set_ocl_cmd_fixed_param;
 
 
 #define WMI_CFR_GROUP_TA_ADDR_VALID_BIT_POS           0

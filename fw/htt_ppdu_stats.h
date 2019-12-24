@@ -509,6 +509,32 @@ typedef enum HTT_PPDU_STATS_SEQ_TYPE HTT_PPDU_STATS_SEQ_TYPE;
          ((_var) |= ((_val) << HTT_PPDU_STATS_COMMON_TLV_PHY_PPDU_TX_TIME_US_S)); \
      } while (0)
 
+#define HTT_PPDU_STATS_COMMON_TLV_NUM_UL_EXPECTED_USERS_M     0x00ff0000
+#define HTT_PPDU_STATS_COMMON_TLV_NUM_UL_EXPECTED_USERS_S             16
+
+#define HTT_PPDU_STATS_COMMON_TLV_NUM_UL_EXPECTED_USERS_GET(_var) \
+    (((_var) & HTT_PPDU_STATS_COMMON_TLV_NUM_UL_EXPECTED_USERS_M) >> \
+    HTT_PPDU_STATS_COMMON_TLV_NUM_UL_EXPECTED_USERS_S)
+
+#define HTT_PPDU_STATS_COMMON_TLV_NUM_UL_EXPECTED_USERS_SET(_var, _val) \
+   do { \
+      HTT_CHECK_SET_VAL(HTT_PPDU_STATS_COMMON_TLV_NUM_UL_EXPECTED_USERS, _val); \
+      ((_var) |= ((_val) << HTT_PPDU_STATS_COMMON_TLV_NUM_UL_EXPECTED_USERS_S)); \
+   } while(0);
+
+#define HTT_PPDU_STATS_COMMON_TLV_BEAM_CHANGE_M    0x01000000
+#define HTT_PPDU_STATS_COMMON_TLV_BEAM_CHANGE_S            24
+
+#define HTT_PPDU_STATS_COMMON_TLV_BEAM_CHANGE_GET(_var) \
+    (((_var) & HTT_PPDU_STATS_COMMON_TLV_BEAM_CHANGE_M) >> \
+    HTT_PPDU_STATS_COMMON_TLV_BEAM_CHANGE_S)
+
+#define HTT_PPDU_STATS_COMMON_TLV_BEAM_CHANGE_SET(_var, _val) \
+     do { \
+         HTT_CHECK_SET_VAL(HTT_PPDU_STATS_COMMON_TLV_BEAM_CHANGE, _val); \
+         ((_var) |= ((_val) << HTT_PPDU_STATS_COMMON_TLV_BEAM_CHANGE_S)); \
+     } while (0)
+
 typedef struct {
     htt_tlv_hdr_t tlv_hdr;
 
@@ -599,14 +625,25 @@ typedef struct {
      * The phy_ppdu_tx_time_us reports the time it took to transmit
      * a PPDU by itself
      * BIT [15 :  0] - phy_ppdu_tx_time_us reports the time it took to
-     #                 transmit by itself (not including response time)
-     * BIT [31 : 16] - reserved
+     *                 transmit by itself (not including response time)
+     * BIT [23 : 16] - num_ul_expected_users reports the number of users
+     *                 that are expected to respond to this transmission
+     * BIT [24 : 24] - beam_change reports the beam forming pattern
+     *                 between non-HE and HE portion.
+     *                 If we apply TxBF starting from legacy preamble,
+     *                 then beam_change = 0.
+     *                 If we apply TxBF only starting from HE portion,
+     *                 then beam_change = 1.
+     * BIT [31 : 25] - reserved
      */
     union {
         A_UINT32 reserved__ppdu_tx_time_us;
+        A_UINT32 reserved__num_ul_expected_users__ppdu_tx_time_us;
         struct {
             A_UINT32 phy_ppdu_tx_time_us:   16,
-                     reserved1:             16;
+                     num_ul_expected_users:  8,
+                     beam_change:            1,
+                     reserved1:              7;
         };
     };
     /* ppdu_start_tstmp_u32_us:
