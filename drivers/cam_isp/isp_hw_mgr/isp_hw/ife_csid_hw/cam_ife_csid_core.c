@@ -3292,6 +3292,8 @@ static int cam_ife_csid_reset_regs(
 
 	spin_lock_irqsave(&csid_hw->hw_info->hw_lock, flags);
 
+	csid_hw->is_resetting = true;
+
 	/* clear the top interrupt first */
 	cam_io_w_mb(1, soc_info->reg_map[0].mem_base +
 		csid_reg->cmn_reg->csid_top_irq_clear_addr);
@@ -3355,6 +3357,7 @@ static int cam_ife_csid_reset_regs(
 			rem_jiffies);
 
 end:
+	csid_hw->is_resetting = false;
 	return rc;
 }
 
@@ -4055,6 +4058,14 @@ irqreturn_t cam_ife_csid_irq(int irq_num, void *data)
 	if (irq_status_top & CSID_TOP_IRQ_DONE) {
 		CAM_DBG(CAM_ISP, "csid top reset complete");
 		complete(&csid_hw->csid_top_complete);
+		csid_hw->is_resetting = false;
+		return IRQ_HANDLED;
+	}
+
+	if (csid_hw->is_resetting) {
+		CAM_DBG(CAM_ISP, "CSID:%d is resetting, IRQ Handling exit",
+			csid_hw->hw_intf->hw_idx);
+		return IRQ_HANDLED;
 	}
 
 	if (irq_status_rx & BIT(csid_reg->csi2_reg->csi2_rst_done_shift_val)) {
@@ -4436,6 +4447,7 @@ int cam_ife_csid_hw_probe_init(struct cam_hw_intf  *csid_hw_intf,
 
 
 	ife_csid_hw->device_enabled = 0;
+	ife_csid_hw->is_resetting = false;
 	ife_csid_hw->hw_info->hw_state = CAM_HW_STATE_POWER_DOWN;
 	mutex_init(&ife_csid_hw->hw_info->hw_mutex);
 	spin_lock_init(&ife_csid_hw->hw_info->hw_lock);
