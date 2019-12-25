@@ -60,12 +60,16 @@ typedef void (*cam_smmu_client_page_fault_handler)(struct iommu_domain *domain,
 /**
  * @brief            : Structure to store region information
  *
- * @param iova_start : Start address of region
- * @param iova_len   : length of region
+ * @param iova_start         : Start address of region
+ * @param iova_len           : length of region
+ * @param discard_iova_start : iova addr start from where should not be used
+ * @param discard_iova_len   : length of discard iova region
  */
 struct cam_smmu_region_info {
 	dma_addr_t iova_start;
 	size_t iova_len;
+	dma_addr_t discard_iova_start;
+	size_t discard_iova_len;
 };
 
 /**
@@ -387,10 +391,13 @@ int cam_smmu_dealloc_qdss(int32_t smmu_hdl);
  * @param smmu_hdl: SMMU handle identifying the context bank
  * @param iova: IOVA address of allocated I/O region
  * @param len: Length of allocated I/O memory
+ * @param discard_iova_start: Start address of io space to discard
+ * @param discard_iova_len: Length of io space to discard
  *
  * @return Status of operation. Negative in case of error. Zero otherwise.
  */
 int cam_smmu_get_io_region_info(int32_t smmu_hdl,
-	dma_addr_t *iova, size_t *len);
+	dma_addr_t *iova, size_t *len,
+	dma_addr_t *discard_iova_start, size_t *discard_iova_len);
 
 #endif /* _CAM_SMMU_API_H_ */

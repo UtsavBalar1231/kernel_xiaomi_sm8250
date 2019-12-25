@@ -2794,18 +2794,21 @@ static int cam_icp_allocate_qdss_mem(void)
 static int cam_icp_get_io_mem_info(void)
 {
 	int rc;
-	size_t len;
-	dma_addr_t iova;
+	size_t len, discard_iova_len;
+	dma_addr_t iova, discard_iova_start;
 
 	rc = cam_smmu_get_io_region_info(icp_hw_mgr.iommu_hdl,
-		&iova, &len);
+		&iova, &len, &discard_iova_start, &discard_iova_len);
 	if (rc)
 		return rc;
 
 	icp_hw_mgr.hfi_mem.io_mem.iova_len = len;
 	icp_hw_mgr.hfi_mem.io_mem.iova_start = iova;
+	icp_hw_mgr.hfi_mem.io_mem.discard_iova_start = discard_iova_start;
+	icp_hw_mgr.hfi_mem.io_mem.discard_iova_len = discard_iova_len;
 
-	CAM_DBG(CAM_ICP, "iova: %llx, len: %zu", iova, len);
+	CAM_DBG(CAM_ICP, "iova: %llx, len: %zu discard iova %llx len %llx",
+		iova, len, discard_iova_start, discard_iova_len);
 
 	return rc;
 }
@@ -3098,12 +3101,38 @@ static int cam_icp_mgr_hfi_resume(struct cam_icp_hw_mgr *hw_mgr)
 	hfi_mem.qdss.iova = icp_hw_mgr.hfi_mem.qdss_buf.iova;
 	hfi_mem.qdss.len = icp_hw_mgr.hfi_mem.qdss_buf.len;
 
-	hfi_mem.io_mem.iova = icp_hw_mgr.hfi_mem.io_mem.iova_start;
-	hfi_mem.io_mem.len = icp_hw_mgr.hfi_mem.io_mem.iova_len;
+	if (icp_hw_mgr.hfi_mem.io_mem.discard_iova_start &&
+		icp_hw_mgr.hfi_mem.io_mem.discard_iova_len) {
+		/* IO Region 1 */
+		hfi_mem.io_mem.iova = icp_hw_mgr.hfi_mem.io_mem.iova_start;
+		hfi_mem.io_mem.len =
+			icp_hw_mgr.hfi_mem.io_mem.discard_iova_start -
+			icp_hw_mgr.hfi_mem.io_mem.iova_start;
 
-	CAM_DBG(CAM_ICP, "IO region IOVA = %X length = %lld",
-			hfi_mem.io_mem.iova,
-			hfi_mem.io_mem.len);
+		/* IO Region 2 */
+		hfi_mem.io_mem2.iova =
+			icp_hw_mgr.hfi_mem.io_mem.discard_iova_start +
+			icp_hw_mgr.hfi_mem.io_mem.discard_iova_len;
+		hfi_mem.io_mem2.len =
+			icp_hw_mgr.hfi_mem.io_mem.iova_start +
+			icp_hw_mgr.hfi_mem.io_mem.iova_len   -
+			hfi_mem.io_mem2.iova;
+	} else {
+		/* IO Region 1 */
+		hfi_mem.io_mem.iova = icp_hw_mgr.hfi_mem.io_mem.iova_start;
+		hfi_mem.io_mem.len = icp_hw_mgr.hfi_mem.io_mem.iova_len;
+
+		/* IO Region 2 */
+		hfi_mem.io_mem2.iova = 0x0;
+		hfi_mem.io_mem2.len = 0x0;
+	}
+
+	CAM_DBG(CAM_ICP,
+		"IO region1 IOVA = %X length = %lld, IO region2 IOVA = %X length = %lld",
+		hfi_mem.io_mem.iova,
+		hfi_mem.io_mem.len,
+		hfi_mem.io_mem2.iova,
+		hfi_mem.io_mem2.len);
 
 	return cam_hfi_resume(&hfi_mem,
 		a5_dev->soc_info.reg_map[A5_SIERRA_BASE].mem_base,
@@ -3572,8 +3601,31 @@ static int cam_icp_mgr_hfi_init(struct cam_icp_hw_mgr *hw_mgr)
 	hfi_mem.qdss.iova = icp_hw_mgr.hfi_mem.qdss_buf.iova;
 	hfi_mem.qdss.len = icp_hw_mgr.hfi_mem.qdss_buf.len;
 
-	hfi_mem.io_mem.iova = icp_hw_mgr.hfi_mem.io_mem.iova_start;
-	hfi_mem.io_mem.len = icp_hw_mgr.hfi_mem.io_mem.iova_len;
+	if (icp_hw_mgr.hfi_mem.io_mem.discard_iova_start &&
+		icp_hw_mgr.hfi_mem.io_mem.discard_iova_len) {
+		/* IO Region 1 */
+		hfi_mem.io_mem.iova = icp_hw_mgr.hfi_mem.io_mem.iova_start;
+		hfi_mem.io_mem.len =
+			icp_hw_mgr.hfi_mem.io_mem.discard_iova_start -
+			icp_hw_mgr.hfi_mem.io_mem.iova_start;
+
+		/* IO Region 2 */
+		hfi_mem.io_mem2.iova =
+			icp_hw_mgr.hfi_mem.io_mem.discard_iova_start +
+			icp_hw_mgr.hfi_mem.io_mem.discard_iova_len;
+		hfi_mem.io_mem2.len =
+			icp_hw_mgr.hfi_mem.io_mem.iova_start +
+			icp_hw_mgr.hfi_mem.io_mem.iova_len   -
+			hfi_mem.io_mem2.iova;
+	} else {
+		/* IO Region 1 */
+		hfi_mem.io_mem.iova = icp_hw_mgr.hfi_mem.io_mem.iova_start;
+		hfi_mem.io_mem.len = icp_hw_mgr.hfi_mem.io_mem.iova_len;
+
+		/* IO Region 2 */
+		hfi_mem.io_mem2.iova = 0x0;
+		hfi_mem.io_mem2.len = 0x0;
+	}
 
 	return cam_hfi_init(0, &hfi_mem,
 		a5_dev->soc_info.reg_map[A5_SIERRA_BASE].mem_base,

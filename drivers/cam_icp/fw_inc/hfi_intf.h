@@ -32,6 +32,7 @@ struct hfi_mem {
  * @sec_heap: secondary heap hfi memory for firmware
  * @qdss: qdss mapped memory for fw
  * @io_mem: io memory info
+ * @io_mem2: 2nd io memory info
  * @icp_base: icp base address
  */
 struct hfi_mem_info {
@@ -44,6 +45,7 @@ struct hfi_mem_info {
 	struct hfi_mem shmem;
 	struct hfi_mem qdss;
 	struct hfi_mem io_mem;
+	struct hfi_mem io_mem2;
 	void __iomem *icp_base;
 };
 
