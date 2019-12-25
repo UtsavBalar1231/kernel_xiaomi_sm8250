@@ -430,7 +430,8 @@
 				<&apps_smmu 0x2420 0x400>,
 				<&apps_smmu 0x2421 0x400>;
 			label = "icp";
-			qcom,iommu-dma-addr-pool = <0x10c00000 0xcf300000>;
+			qcom,iommu-dma-addr-pool = <0x10c00000 0xee300000>;
+			iova-region-discard = <0xdff00000 0x300000>;
 			icp_iova_mem_map: iova-mem-map {
 				iova-mem-region-firmware {
 					/* Firmware region is 5MB */
@@ -460,11 +461,12 @@
 				};
 
 				iova-mem-region-io {
-					/* IO region is approximately 3.3 GB */
+					/* IO region is approximately 3.7 GB */
 					iova-region-name = "io";
 					iova-region-start = <0x10c00000>;
-					iova-region-len = <0xcf300000>;
+					iova-region-len = <0xee300000>;
 					iova-region-id = <0x3>;
+					iova-region-discard = <0xdff00000 0x300000>;
 					status = "ok";
 				};
 
