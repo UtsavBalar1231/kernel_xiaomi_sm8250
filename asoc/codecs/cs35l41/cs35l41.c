@@ -11,7 +11,7 @@
  * published by the Free Software Foundation.
  *
  */
-
+#define DEBUG
 #include <linux/module.h>
 #include <linux/moduleparam.h>
 #include <linux/version.h>
@@ -207,11 +207,9 @@ static int cs35l41_halo_booted_put(struct snd_kcontrol *kcontrol,
 }
 
 static const char *cs35l41_fast_switch_text[] = {
-	"fast_switch1.txt",
-	"fast_switch2.txt",
-	"fast_switch3.txt",
-	"fast_switch4.txt",
-	"fast_switch5.txt",
+	"cs35l41-dsp1-spk-prot-dt-music.txt",
+	"cs35l41-dsp1-spk-prot-dt-handset.txt",
+	"cs35l41-dsp1-spk-prot-dt-handsfree.txt",
 };
 
 static int cs35l41_fast_switch_en_get(struct snd_kcontrol *kcontrol,
