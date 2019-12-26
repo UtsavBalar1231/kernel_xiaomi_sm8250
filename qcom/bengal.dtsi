@@ -2263,9 +2263,10 @@
 			     <GIC_SPI 367 IRQ_TYPE_LEVEL_HIGH /* CE9 */ >,
 			     <GIC_SPI 368 IRQ_TYPE_LEVEL_HIGH /* CE10 */ >,
 			     <GIC_SPI 369 IRQ_TYPE_LEVEL_HIGH /* CE11 */ >;
-		qcom,iommu-dma = "bypass";
 		qcom,wlan-msa-fixed-region = <&wlan_msa_mem>;
 		qcom,iommu-dma-addr-pool = <0xa0000000 0x10000000>;
+		qcom,iommu-dma = "fastmap";
+		qcom,iommu-faults = "stall-disable";
 		vdd-cx-mx-supply = <&L8A>;
 		vdd-1.8-xo-supply = <&L16A>;
 		vdd-1.3-rfa-supply = <&L17A>;
@@ -2642,23 +2643,22 @@
 		compatible = "qcom,ipa-smmu-ap-cb";
 		iommus = <&apps_smmu 0x0140 0x0>;
 		qcom,iommu-dma-addr-pool = <0x10000000 0x30000000>;
-		qcom,iommu-dma = "bypass";
 		/* modem tables in IMEM */
+		qcom,iommu-dma = "fastmap";
 		qcom,additional-mapping = <0x0c123000 0x0c123000 0x2000>;
 	};
 
 	ipa_smmu_wlan: ipa_smmu_wlan {
 		compatible = "qcom,ipa-smmu-wlan-cb";
 		iommus = <&apps_smmu 0x0141 0x0>;
-		qcom,iommu-dma = "bypass";
 		/* ipa-uc ram */
+		qcom,iommu-dma = "fastmap";
 		qcom,additional-mapping = <0x5860000 0x5860000 0x80000>;
 	};
 
 	ipa_smmu_uc: ipa_smmu_uc {
 		compatible = "qcom,ipa-smmu-uc-cb";
 		iommus = <&apps_smmu 0x0142 0x0>;
-		qcom,iommu-dma = "bypass";
 		qcom,iommu-dma-addr-pool = <0x40400000 0x1fc00000>;
 	};
 
