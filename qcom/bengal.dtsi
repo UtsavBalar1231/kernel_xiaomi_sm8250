@@ -737,6 +737,25 @@
 		poll-delay-ms = <5000>;
 	};
 
+	l2cache_pmu {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "qcom,l2cache-pmu";
+		ranges;
+
+		cluster0@f111000 {
+			cluster-id = <0>;
+			interrupts = <GIC_SPI 57 IRQ_TYPE_LEVEL_HIGH>;
+			reg = <0xf111000 0x1000>;
+		};
+
+		cluster1@f011000 {
+			cluster-id = <1>;
+			interrupts = <GIC_SPI 58 IRQ_TYPE_LEVEL_HIGH>;
+			reg = <0xf011000 0x1000>;
+		};
+	};
+
 	qcom,msm-imem@c125000 {
 		compatible = "qcom,msm-imem";
 		reg = <0xc125000 0x1000>;
