@@ -85,6 +85,11 @@ struct msm_pcm_channel_mixer {
 	bool override_out_ch_map;
 };
 
+struct ffv_spf_freeze_param_t {
+	uint16_t freeze;
+	uint16_t source_id;
+};
+
 int srs_trumedia_open(int port_id, int copp_idx, __s32 srs_tech_id,
 		      void *srs_params);
 
@@ -221,4 +226,5 @@ int adm_programable_channel_mixer(int port_id, int copp_idx, int session_id,
 void msm_dts_srs_acquire_lock(void);
 void msm_dts_srs_release_lock(void);
 void adm_set_native_mode(int mode);
+int adm_set_ffecns_freeze_event(bool ffecns_freeze_event);
 #endif /* __Q6_ADM_V2_H__ */
