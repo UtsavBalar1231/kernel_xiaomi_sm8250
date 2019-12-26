@@ -48,7 +48,7 @@
 				qcom,bus-freq = <10>;
 				qcom,bus-min = <9>;
 				qcom,bus-max = <12>;
-				qcom,acd-level = <0x802F5FFD>;
+				qcom,acd-level = <0x802C5FFD>;
 			};
 
 			/* SVS L1 */
@@ -58,7 +58,7 @@
 				qcom,bus-freq = <8>;
 				qcom,bus-min = <7>;
 				qcom,bus-max = <10>;
-				qcom,acd-level = <0x802F5FFD>;
+				qcom,acd-level = <0xA02C5FFD>;
 			};
 
 			/* SVS */
@@ -68,7 +68,7 @@
 				qcom,bus-freq = <7>;
 				qcom,bus-min = <5>;
 				qcom,bus-max = <8>;
-				qcom,acd-level = <0x802F5FFD>;
+				qcom,acd-level = <0xA02C5FFD>;
 			};
 
 			/* Low SVS */
@@ -106,7 +106,7 @@
 				qcom,bus-freq = <10>;
 				qcom,bus-min = <9>;
 				qcom,bus-max = <12>;
-				qcom,acd-level = <0x802F5FFD>;
+				qcom,acd-level = <0x802C5FFD>;
 			};
 
 			/* SVS L1 */
@@ -116,7 +116,7 @@
 				qcom,bus-freq = <8>;
 				qcom,bus-min = <7>;
 				qcom,bus-max = <10>;
-				qcom,acd-level = <0x802F5FFD>;
+				qcom,acd-level = <0xA02C5FFD>;
 			};
 
 			/* SVS */
@@ -126,7 +126,7 @@
 				qcom,bus-freq = <7>;
 				qcom,bus-min = <5>;
 				qcom,bus-max = <8>;
-				qcom,acd-level = <0x802F5FFD>;
+				qcom,acd-level = <0xA02C5FFD>;
 			};
 
 			/* Low SVS */
@@ -163,7 +163,7 @@
 				qcom,bus-freq = <8>;
 				qcom,bus-min = <7>;
 				qcom,bus-max = <12>;
-				qcom,acd-level = <0x802F5FFD>;
+				qcom,acd-level = <0x802C5FFD>;
 			};
 
 			/* SVS */
@@ -173,7 +173,7 @@
 				qcom,bus-freq = <7>;
 				qcom,bus-min = <5>;
 				qcom,bus-max = <8>;
-				qcom,acd-level = <0x802F5FFD>;
+				qcom,acd-level = <0xA02C5FFD>;
 			};
 
 			/* Low SVS */
@@ -211,7 +211,7 @@
 				qcom,bus-freq = <10>;
 				qcom,bus-min = <9>;
 				qcom,bus-max = <12>;
-				qcom,acd-level = <0x802F5FFD>;
+				qcom,acd-level = <0x802C5FFD>;
 			};
 
 			/* SVS L1 */
@@ -221,7 +221,7 @@
 				qcom,bus-freq = <8>;
 				qcom,bus-min = <7>;
 				qcom,bus-max = <10>;
-				qcom,acd-level = <0x802F5FFD>;
+				qcom,acd-level = <0xA02C5FFD>;
 			};
 
 			/* SVS */
@@ -231,7 +231,7 @@
 				qcom,bus-freq = <7>;
 				qcom,bus-min = <5>;
 				qcom,bus-max = <8>;
-				qcom,acd-level = <0x802F5FFD>;
+				qcom,acd-level = <0xA02C5FFD>;
 			};
 
 			/* Low SVS */
