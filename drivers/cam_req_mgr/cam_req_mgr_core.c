@@ -3149,11 +3149,12 @@ static int __cam_req_mgr_unlink(struct cam_req_mgr_core_link *link)
 	}
 
 	mutex_lock(&link->lock);
-	/* Destroy timer of link */
-	crm_timer_exit(&link->watchdog);
 
 	/* Destroy workq of link */
 	cam_req_mgr_workq_destroy(&link->workq);
+
+	/* Destroy timer of link */
+	crm_timer_exit(&link->watchdog);
 
 	/* Cleanup request tables and unlink devices */
 	__cam_req_mgr_destroy_link_info(link);
