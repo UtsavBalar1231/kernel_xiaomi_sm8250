@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/module.h>
@@ -628,6 +628,15 @@ static int wcd938x_codec_ear_dac_event(struct snd_soc_dapm_widget *w,
 		if (wcd938x->ear_rx_path & EAR_RX_PATH_AUX) {
 			snd_soc_component_update_bits(component,
 				WCD938X_DIGITAL_CDC_AUX_GAIN_CTL, 0x01, 0x00);
+			snd_soc_component_update_bits(component,
+				WCD938X_DIGITAL_CDC_DIG_CLK_CTL, 0x04, 0x00);
+		} else {
+			snd_soc_component_update_bits(component,
+				WCD938X_DIGITAL_CDC_HPH_GAIN_CTL, 0x04, 0x00);
+			snd_soc_component_update_bits(component,
+				WCD938X_DIGITAL_CDC_DIG_CLK_CTL, 0x01, 0x00);
+			snd_soc_component_update_bits(component,
+				WCD938X_DIGITAL_CDC_COMP_CTL_0, 0x02, 0x00);
 		}
 		snd_soc_component_update_bits(component,
 				WCD938X_ANA_EAR_COMPANDER_CTL, 0x80, 0x00);
@@ -2379,7 +2388,6 @@ static const struct snd_kcontrol_new wcd938x_snd_controls[] = {
 		wcd938x_get_compander, wcd938x_set_compander),
 	SOC_SINGLE_EXT("HPHR_COMP Switch", SND_SOC_NOPM, 1, 1, 0,
 		wcd938x_get_compander, wcd938x_set_compander),
-
 	SOC_SINGLE_EXT("LDOH Enable", SND_SOC_NOPM, 0, 1, 0,
 		wcd938x_ldoh_get, wcd938x_ldoh_put),
 
