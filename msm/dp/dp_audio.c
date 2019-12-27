@@ -766,6 +766,12 @@ static int dp_audio_off(struct dp_audio *dp_audio)
 	}
 
 	audio = container_of(dp_audio, struct dp_audio_private, dp_audio);
+
+	if (!atomic_read(&audio->session_on)) {
+		DP_DEBUG("audio already off\n");
+		return rc;
+	}
+
 	ext = &audio->ext_audio_data;
 
 	work_pending = cancel_delayed_work_sync(&audio->notify_delayed_work);
