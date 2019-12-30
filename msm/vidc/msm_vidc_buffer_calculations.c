@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  */
 
 #include "msm_vidc_debug.h"
@@ -774,13 +774,7 @@ static int msm_vidc_get_extra_input_buff_count(struct msm_vidc_inst *inst)
 					f->fmt.pix_mp.height, 4096, 2160))
 			goto exit;
 
-		/*
-		 * Allocating 2 extra buffers, assuming current session is
-		 * always batch eligible. Cannot rely on inst->batch.enable
-		 * as it can be enabled/disabled based on clip fps etc. But
-		 * decoder input can not be reallocated at run time.
-		 */
-		if (core->resources.decode_batching)
+		if (inst->batch.enable)
 			extra_input_count = (BATCH_DEC_TOTAL_INPUT_BUFFERS -
 				MIN_INPUT_BUFFERS);
 
@@ -871,7 +865,7 @@ static int msm_vidc_get_extra_output_buff_count(struct msm_vidc_inst *inst)
 		 * If platform supports decode batching ensure minimum 6 extra
 		 * output buffers. Else add 4 extra output buffers for DCVS.
 		 */
-		if (core->resources.decode_batching)
+		if (inst->batch.enable)
 			extra_output_count = BATCH_DEC_EXTRA_OUTPUT_BUFFERS;
 	} else if (is_encode_session(inst)) {
 		/*
