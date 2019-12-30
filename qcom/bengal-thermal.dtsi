@@ -114,6 +114,15 @@
 				#cooling-cells = <2>;
 			};
 		};
+
+		adsp {
+			qcom,instance-id = <QMI_ADSP_INST_ID>;
+
+			adsp_vdd: adsp_vdd {
+				qcom,qmi-dev-name = "cpuv_restriction_cold";
+				#cooling-cells = <2>;
+			};
+		};
 	};
 
 	lmh_cpu_vdd: qcom,lmh-cpu-vdd@f550800 {
@@ -877,6 +886,11 @@
 				trip = <&mapss_trip>;
 				cooling-device = <&modem_vdd 0 0>;
 			};
+
+			adsp_vdd_cdev {
+				trip = <&mapss_trip>;
+				cooling-device = <&adsp_vdd 0 0>;
+			};
 		};
 	};
 
@@ -934,6 +948,11 @@
 			modem_vdd_cdev {
 				trip = <&camera_trip>;
 				cooling-device = <&modem_vdd 0 0>;
+			};
+
+			adsp_vdd_cdev {
+				trip = <&camera_trip>;
+				cooling-device = <&adsp_vdd 0 0>;
 			};
 		};
 	};
