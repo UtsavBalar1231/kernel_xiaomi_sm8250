@@ -937,8 +937,8 @@ static int rx_macro_set_prim_interpolator_rate(struct snd_soc_dai *dai,
 					     0x80 * j;
 				pr_debug("%s: AIF_PB DAI(%d) connected to INT%u_1\n",
 					  __func__, dai->id, j);
-				pr_debug("%s: set INT%u_1 sample rate to %u\n",
-					__func__, j, sample_rate);
+				pr_debug("%s: set INT%u_1 sample rate to %u, rate_reg=%d\n",
+					__func__, j, sample_rate, rate_reg_val);
 				/* sample_rate is in Hz */
 				snd_soc_component_update_bits(component,
 						int_fs_reg,
@@ -1749,6 +1749,27 @@ static int rx_macro_config_compander(struct snd_soc_component *component,
 	/* AUX does not have compander */
 	if (interp_n == INTERP_AUX)
 		return 0;
+
+	rx_path_cfg3_reg = BOLERO_CDC_RX_RX0_RX_PATH_CFG3 +
+					(comp * RX_MACRO_RX_PATH_OFFSET);
+	rx0_path_ctl_reg = BOLERO_CDC_RX_RX0_RX_PATH_CTL +
+					(comp * RX_MACRO_RX_PATH_OFFSET);
+	pcm_rate = (snd_soc_component_read32(component, rx0_path_ctl_reg)
+						& 0x0F);
+
+	dev_err(component->dev, "%s: pcm_rate %d\n",
+		__func__, pcm_rate);
+
+	if (pcm_rate < 0x06)
+		val = 0x03;
+	else if (pcm_rate < 0x08)
+		val = 0x01;
+	else if (pcm_rate < 0x0B)
+		val = 0x02;
+	else
+		val = 0x00;
+	snd_soc_component_update_bits(component, rx_path_cfg3_reg,
+					0x03, val);
 
 	comp = interp_n;
 	dev_dbg(component->dev, "%s: event %d compander %d, enabled %d\n",
@@ -2674,6 +2695,7 @@ static int rx_macro_enable_interp_clk(struct snd_soc_component *component,
 			snd_soc_component_update_bits(component, main_reg,
 						0x40, 0x00);
 			/* Reset rate to 48K*/
+			dev_dbg(component->dev, "%s: reset rate to 48k\n", __func__);
 			snd_soc_component_update_bits(component, main_reg,
 						0x0F, 0x04);
 			snd_soc_component_update_bits(component, rx_cfg2_reg,
