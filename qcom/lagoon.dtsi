@@ -10,6 +10,7 @@
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/soc/qcom,rpmh-rsc.h>
 #include <dt-bindings/soc/qcom,ipcc.h>
+#include <dt-bindings/msm/msm-bus-ids.h>
 
 / {
 	model = "Qualcomm Technologies, Inc. Lagoon";
@@ -742,6 +743,11 @@
 		system_pm {
 			compatible = "qcom,system-pm";
 		};
+
+		msm_bus_apps_rsc {
+			compatible = "qcom,msm-bus-rsc";
+			qcom,msm-bus-id = <MSM_BUS_RSC_APPS>;
+		};
 	};
 
 	disp_rsc: rsc@af20000 {
@@ -756,6 +762,11 @@
 				  <SLEEP_TCS   1>,
 				  <WAKE_TCS    1>,
 				  <CONTROL_TCS 1>;
+
+		msm_bus_disp_rsc {
+			compatible = "qcom,msm-bus-rsc";
+			qcom,msm-bus-id = <MSM_BUS_RSC_DISP>;
+		};
 	};
 
 	cpu_pmu: cpu-pmu {
@@ -1712,3 +1723,4 @@
 &qupv3_se9_2uart {
 	status = "ok";
 };
+#include "lagoon-bus.dtsi"
