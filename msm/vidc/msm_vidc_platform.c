@@ -1558,6 +1558,9 @@ void *vidc_get_drv_data(struct device *dev)
 			ddr_type, driver_data->ubwc_config ?
 			driver_data->ubwc_config->highest_bank_bit : -1);
 	} else if (!strcmp(match->compatible, "qcom,bengal-vidc")) {
+		d_vpr_h("Disable NOC error recovery");
+		msm_vidc_err_recovery_disable =
+				VIDC_DISABLE_NOC_ERR_RECOV;
 		rc = msm_vidc_read_rank(driver_data, dev);
 		if (rc) {
 			d_vpr_e("Failed to get ddr rank, use Dual Rank DDR\n");
