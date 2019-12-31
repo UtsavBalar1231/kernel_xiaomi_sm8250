@@ -99,6 +99,11 @@
 				qcom,qmi-dev-name = "cpuv_restriction_cold";
 				#cooling-cells = <2>;
 			};
+
+			modem_wlan: modem_wlan {
+				qcom,qmi-dev-name = "wlan";
+				#cooling-cells = <2>;
+			};
 		};
 
 		cdsp {
@@ -111,6 +116,15 @@
 
 			cdsp_hw: hvx {
 				qcom,qmi-dev-name = "cdsp_hw";
+				#cooling-cells = <2>;
+			};
+		};
+
+		adsp {
+			qcom,instance-id = <QMI_ADSP_INST_ID>;
+
+			adsp_vdd: adsp_vdd {
+				qcom,qmi-dev-name = "cpuv_restriction_cold";
 				#cooling-cells = <2>;
 			};
 		};
@@ -877,6 +891,11 @@
 				trip = <&mapss_trip>;
 				cooling-device = <&modem_vdd 0 0>;
 			};
+
+			adsp_vdd_cdev {
+				trip = <&mapss_trip>;
+				cooling-device = <&adsp_vdd 0 0>;
+			};
 		};
 	};
 
@@ -934,6 +953,11 @@
 			modem_vdd_cdev {
 				trip = <&camera_trip>;
 				cooling-device = <&modem_vdd 0 0>;
+			};
+
+			adsp_vdd_cdev {
+				trip = <&camera_trip>;
+				cooling-device = <&adsp_vdd 0 0>;
 			};
 		};
 	};
