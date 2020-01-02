@@ -92,18 +92,19 @@
 #define CAM_ISP_DSP_MODE_ROUND                  2
 
 /* ISP Generic Cmd Buffer Blob types */
-#define CAM_ISP_GENERIC_BLOB_TYPE_HFR_CONFIG          0
-#define CAM_ISP_GENERIC_BLOB_TYPE_CLOCK_CONFIG        1
-#define CAM_ISP_GENERIC_BLOB_TYPE_BW_CONFIG           2
-#define CAM_ISP_GENERIC_BLOB_TYPE_UBWC_CONFIG         3
-#define CAM_ISP_GENERIC_BLOB_TYPE_CSID_CLOCK_CONFIG   4
-#define CAM_ISP_GENERIC_BLOB_TYPE_FE_CONFIG           5
-#define CAM_ISP_GENERIC_BLOB_TYPE_UBWC_CONFIG_V2      6
-#define CAM_ISP_GENERIC_BLOB_TYPE_IFE_CORE_CONFIG     7
-#define CAM_ISP_GENERIC_BLOB_TYPE_VFE_OUT_CONFIG      8
-#define CAM_ISP_GENERIC_BLOB_TYPE_BW_CONFIG_V2        9
-#define CAM_ISP_GENERIC_BLOB_TYPE_CSID_CONFIG         10
-#define CAM_ISP_GENERIC_BLOB_TYPE_CSID_QCFA_CONFIG    12
+#define CAM_ISP_GENERIC_BLOB_TYPE_HFR_CONFIG                0
+#define CAM_ISP_GENERIC_BLOB_TYPE_CLOCK_CONFIG              1
+#define CAM_ISP_GENERIC_BLOB_TYPE_BW_CONFIG                 2
+#define CAM_ISP_GENERIC_BLOB_TYPE_UBWC_CONFIG               3
+#define CAM_ISP_GENERIC_BLOB_TYPE_CSID_CLOCK_CONFIG         4
+#define CAM_ISP_GENERIC_BLOB_TYPE_FE_CONFIG                 5
+#define CAM_ISP_GENERIC_BLOB_TYPE_UBWC_CONFIG_V2            6
+#define CAM_ISP_GENERIC_BLOB_TYPE_IFE_CORE_CONFIG           7
+#define CAM_ISP_GENERIC_BLOB_TYPE_VFE_OUT_CONFIG            8
+#define CAM_ISP_GENERIC_BLOB_TYPE_BW_CONFIG_V2              9
+#define CAM_ISP_GENERIC_BLOB_TYPE_CSID_CONFIG               10
+#define CAM_ISP_GENERIC_BLOB_TYPE_SENSOR_DIMENSION_CONFIG   11
+#define CAM_ISP_GENERIC_BLOB_TYPE_CSID_QCFA_CONFIG          12
 
 #define CAM_ISP_VC_DT_CFG    4
 
@@ -132,6 +133,8 @@
 #define CAM_ISP_ACQ_CUSTOM_NONE       0
 #define CAM_ISP_ACQ_CUSTOM_PRIMARY    1
 #define CAM_ISP_ACQ_CUSTOM_SECONDARY  2
+
+#define CAM_IFE_CSID_RDI_MAX          4
 
 /* Query devices */
 /**
@@ -593,6 +596,37 @@ struct cam_fe_config {
 	uint32_t    format;
 	uint32_t    unpacker_cfg;
 	uint32_t    latency_buf_size;
+} __attribute__((packed));
+
+
+/**
+ * struct cam_isp_sensor_path_dimension
+ *
+ * @width             expected width
+ * @height            expected height
+ * @measure_enabled   flag to indicate if pixel measurement is to be enabled
+ */
+struct cam_isp_sensor_dimension {
+	uint32_t width;
+	uint32_t height;
+	uint32_t measure_enabled;
+} __attribute__((packed));
+
+/**
+ * struct cam_isp_sensor_config - Sensor Dimension configuration
+ *
+ * @ppp_path:                   expected ppp path configuration
+ * @ipp_path:                   expected ipp path configuration
+ * @rdi_path:                   expected rdi path configuration
+ * @hbi:                        HBI value
+ * @vbi:                        VBI value
+ */
+struct cam_isp_sensor_config {
+	struct cam_isp_sensor_dimension  ppp_path;
+	struct cam_isp_sensor_dimension  ipp_path;
+	struct cam_isp_sensor_dimension  rdi_path[CAM_IFE_CSID_RDI_MAX];
+	uint32_t                   hbi;
+	uint32_t                   vbi;
 } __attribute__((packed));
 
 /**
