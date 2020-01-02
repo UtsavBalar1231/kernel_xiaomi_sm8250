@@ -2928,6 +2928,7 @@ static int cam_ife_mgr_acquire_hw(void *hw_mgr_priv, void *acquire_hw_args)
 	acquire_args->custom_enabled = ife_ctx->custom_enabled;
 	acquire_args->use_frame_header_ts = ife_ctx->use_frame_header_ts;
 	ife_ctx->ctx_in_use = 1;
+	ife_ctx->num_reg_dump_buf = 0;
 
 	acquire_args->valid_acquired_hw =
 		acquire_hw_info->num_inputs;
@@ -3172,6 +3173,7 @@ static int cam_ife_mgr_acquire_dev(void *hw_mgr_priv, void *acquire_hw_args)
 
 	acquire_args->ctxt_to_hw_map = ife_ctx;
 	ife_ctx->ctx_in_use = 1;
+	ife_ctx->num_reg_dump_buf = 0;
 
 	CAM_INFO(CAM_ISP,
 		"Acquire HW success with total_pix: %u total_rdi: %u is_dual: %u in ctx: %u",
@@ -4334,6 +4336,7 @@ static int cam_ife_mgr_release_hw(void *hw_mgr_priv,
 	ctx->cdm_ops = NULL;
 	ctx->custom_enabled = false;
 	ctx->use_frame_header_ts = false;
+	ctx->num_reg_dump_buf = 0;
 	atomic_set(&ctx->overflow_pending, 0);
 	for (i = 0; i < CAM_IFE_HW_NUM_MAX; i++) {
 		ctx->sof_cnt[i] = 0;
@@ -5907,13 +5910,24 @@ static int cam_ife_mgr_prepare_hw_update(void *hw_mgr_priv,
 	if (((prepare->packet->header.op_code + 1) & 0xF) ==
 		CAM_ISP_PACKET_INIT_DEV) {
 		prepare_hw_data->packet_opcode_type = CAM_ISP_PACKET_INIT_DEV;
-		if ((prepare->num_reg_dump_buf) && (prepare->num_reg_dump_buf <
-			CAM_REG_DUMP_MAX_BUF_ENTRIES)) {
+
+		if ((!prepare->num_reg_dump_buf) || (prepare->num_reg_dump_buf >
+			CAM_REG_DUMP_MAX_BUF_ENTRIES))
+			goto end;
+
+		if (!ctx->num_reg_dump_buf) {
 			ctx->num_reg_dump_buf = prepare->num_reg_dump_buf;
 			memcpy(ctx->reg_dump_buf_desc,
 				prepare->reg_dump_buf_desc,
 				sizeof(struct cam_cmd_buf_desc) *
 				prepare->num_reg_dump_buf);
+		} else {
+			prepare_hw_data->num_reg_dump_buf =
+				prepare->num_reg_dump_buf;
+			memcpy(prepare_hw_data->reg_dump_buf_desc,
+				prepare->reg_dump_buf_desc,
+				sizeof(struct cam_cmd_buf_desc) *
+				prepare_hw_data->num_reg_dump_buf);
 		}
 
 		goto end;

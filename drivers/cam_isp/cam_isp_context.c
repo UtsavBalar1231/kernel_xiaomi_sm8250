@@ -424,6 +424,8 @@ static int __cam_isp_ctx_enqueue_init_request(
 	struct cam_isp_ctx_req                *req_isp_old;
 	struct cam_isp_ctx_req                *req_isp_new;
 	struct cam_isp_prepare_hw_update_data *hw_update_data;
+	struct cam_isp_prepare_hw_update_data *req_update_old;
+	struct cam_isp_prepare_hw_update_data *req_update_new;
 
 	spin_lock_bh(&ctx->lock);
 	if (list_empty(&ctx->pending_req_list)) {
@@ -481,6 +483,17 @@ static int __cam_isp_ctx_enqueue_init_request(
 				req_isp_new->hw_update_data.frame_header_res_id;
 			req_isp_old->hw_update_data.frame_header_cpu_addr =
 				hw_update_data->frame_header_cpu_addr;
+
+			if (req_isp_new->hw_update_data.num_reg_dump_buf) {
+				req_update_new = &req_isp_new->hw_update_data;
+				req_update_old = &req_isp_old->hw_update_data;
+				memcpy(&req_update_old->reg_dump_buf_desc,
+					&req_update_new->reg_dump_buf_desc,
+					sizeof(struct cam_cmd_buf_desc) *
+					req_update_new->num_reg_dump_buf);
+				req_update_old->num_reg_dump_buf =
+					req_update_new->num_reg_dump_buf;
+			}
 
 			req_old->request_id = req->request_id;
 
