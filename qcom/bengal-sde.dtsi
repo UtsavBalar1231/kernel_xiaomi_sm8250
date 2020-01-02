@@ -277,6 +277,7 @@
 		interrupt-parent = <&mdss_mdp>;
 		interrupts = <2 0>;
 
+		power-domains = <&mdss_mdp>;
 		/*Offline rotator RT setting */
 		qcom,mdss-rot-parent = <&mdss_mdp 0>;
 		qcom,mdss-rot-xin-id = <10 11>;
@@ -301,19 +302,6 @@
 			qcom,msm-bus,vectors-KBps =
 				<1 590 0 0>,
 				<1 590 0 76800>;
-		};
-
-		qcom,platform-supply-entries {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			qcom,platform-supply-entry@0 {
-				reg = <0>;
-				qcom,supply-min-voltage = <0>;
-				qcom,supply-max-voltage = <0>;
-				qcom,supply-enable-load = <0>;
-				qcom,supply-disable-load = <0>;
-			};
 		};
 
 		smmu_rot_unsec: qcom,smmu_rot_unsec_cb {
