@@ -69,3 +69,8 @@
 		maximum-speed = "high-speed";
 	};
 };
+
+&aopcc {
+	compatible = "qcom,dummycc";
+	clock-output-names = "qdss_clocks";
+};
