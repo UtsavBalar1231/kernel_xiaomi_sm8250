@@ -764,6 +764,11 @@
 			compatible = "qcom,msm-bus-rsc";
 			qcom,msm-bus-id = <MSM_BUS_RSC_APPS>;
 		};
+
+		rpmhcc: qcom,rpmhclk {
+			compatible = "qcom,lagoon-rpmh-clk";
+			#clock-cells = <1>;
+		};
 	};
 
 	disp_rsc: rsc@af20000 {
@@ -1178,34 +1183,11 @@
 		};
 	};
 
-	bi_tcxo: bi_tcxo {
-		compatible = "fixed-factor-clock";
-		clock-mult = <1>;
-		clock-div = <4>;
-		clocks = <&xo_board>;
-		#clock-cells = <0>;
-	};
-
-	bi_tcxo_ao: bi_tcxo_ao {
-		compatible = "fixed-factor-clock";
-		clock-mult = <1>;
-		clock-div = <4>;
-		clocks = <&xo_board>;
-		#clock-cells = <0>;
-	};
-
 	aopcc: qcom,aopcc {
 		compatible = "qcom,aop-qmp-clk";
 		mboxes = <&qmp_aop 0>;
 		mbox-names = "qdss_clk";
 		#clock-cells = <1>;
-	};
-
-	rpmhcc: qcom,rpmhcc {
-		compatible = "qcom,dummycc";
-		clock-output-names = "rpmhcc_clocks";
-		#clock-cells = <1>;
-		#reset-cells = <1>;
 	};
 
 	gcc: qcom,gcc@100000 {
