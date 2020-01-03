@@ -2653,14 +2653,13 @@ static int cam_smmu_map_stage2_buffer_and_add_to_list(int idx, int ion_fd,
 	/* add to the list */
 	list_add(&mapping_info->list, &iommu_cb_set.cb_info[idx].smmu_buf_list);
 
-	return 0;
-
 err_unmap_sg:
 	dma_buf_unmap_attachment(attach, table, dma_dir);
 err_detach:
 	dma_buf_detach(dmabuf, attach);
 err_put:
-	dma_buf_put(dmabuf);
+	if (rc)
+		dma_buf_put(dmabuf);
 err_out:
 	return rc;
 }
