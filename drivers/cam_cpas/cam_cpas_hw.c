@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/device.h>
@@ -242,11 +242,24 @@ static int cam_cpas_util_axi_cleanup(struct cam_cpas *cpas_core,
 		return -EINVAL;
 	}
 
+	if (cpas_core->num_camnoc_axi_ports > CAM_CPAS_MAX_AXI_PORTS) {
+		CAM_ERR(CAM_CPAS, "Invalid num_camnoc_axi_ports: %d",
+			cpas_core->num_camnoc_axi_ports);
+		return -EINVAL;
+	}
+
 	for (i = 0; i < cpas_core->num_axi_ports; i++) {
 		cam_cpas_util_unregister_bus_client(
 			&cpas_core->axi_port[i].bus_client);
 		of_node_put(cpas_core->axi_port[i].axi_port_node);
 		cpas_core->axi_port[i].axi_port_node = NULL;
+	}
+
+	for (i = 0; i < cpas_core->num_camnoc_axi_ports; i++) {
+		cam_cpas_util_unregister_bus_client(
+			&cpas_core->camnoc_axi_port[i].bus_client);
+		of_node_put(cpas_core->camnoc_axi_port[i].axi_port_node);
+		cpas_core->camnoc_axi_port[i].axi_port_node = NULL;
 	}
 
 	return 0;
@@ -257,6 +270,7 @@ static int cam_cpas_util_axi_setup(struct cam_cpas *cpas_core,
 {
 	int i = 0, rc = 0;
 	struct device_node *axi_port_mnoc_node = NULL;
+	struct device_node *axi_port_camnoc_node = NULL;
 
 	if (cpas_core->num_axi_ports > CAM_CPAS_MAX_AXI_PORTS) {
 		CAM_ERR(CAM_CPAS, "Invalid num_axi_ports: %d",
@@ -268,6 +282,15 @@ static int cam_cpas_util_axi_setup(struct cam_cpas *cpas_core,
 		axi_port_mnoc_node = cpas_core->axi_port[i].axi_port_node;
 		rc = cam_cpas_util_register_bus_client(soc_info,
 			axi_port_mnoc_node, &cpas_core->axi_port[i].bus_client);
+		if (rc)
+			goto bus_register_fail;
+	}
+	for (i = 0; i < cpas_core->num_camnoc_axi_ports; i++) {
+		axi_port_camnoc_node =
+			cpas_core->camnoc_axi_port[i].axi_port_node;
+		rc = cam_cpas_util_register_bus_client(soc_info,
+			axi_port_camnoc_node,
+			&cpas_core->camnoc_axi_port[i].bus_client);
 		if (rc)
 			goto bus_register_fail;
 	}
@@ -608,6 +631,99 @@ static int cam_cpas_axi_consolidate_path_votes(
 	return rc;
 }
 
+static int cam_cpas_update_axi_vote_bw(
+	struct cam_hw_info *cpas_hw,
+	struct cam_cpas_tree_node *cpas_tree_node,
+	bool   *mnoc_axi_port_updated,
+	bool   *camnoc_axi_port_updated)
+{
+	struct cam_cpas *cpas_core = (struct cam_cpas *) cpas_hw->core_info;
+	struct cam_cpas_private_soc *soc_private =
+		(struct cam_cpas_private_soc *) cpas_hw->soc_info.soc_private;
+
+	if (cpas_tree_node->axi_port_idx >= CAM_CPAS_MAX_AXI_PORTS) {
+		CAM_ERR(CAM_CPAS, "Invalid axi_port_idx: %d",
+			cpas_tree_node->axi_port_idx);
+		return -EINVAL;
+	}
+
+	cpas_core->axi_port[cpas_tree_node->axi_port_idx].ab_bw =
+		cpas_tree_node->mnoc_ab_bw;
+	cpas_core->axi_port[cpas_tree_node->axi_port_idx].ib_bw =
+		cpas_tree_node->mnoc_ib_bw;
+	mnoc_axi_port_updated[cpas_tree_node->axi_port_idx] = true;
+
+	if (soc_private->control_camnoc_axi_clk)
+		return 0;
+
+	cpas_core->camnoc_axi_port[cpas_tree_node->axi_port_idx].camnoc_bw =
+		cpas_tree_node->camnoc_bw;
+	camnoc_axi_port_updated[cpas_tree_node->camnoc_axi_port_idx] = true;
+	return 0;
+}
+
+static int cam_cpas_camnoc_set_vote_axi_clk_rate(
+	struct cam_hw_info *cpas_hw,
+	bool   *camnoc_axi_port_updated)
+{
+	struct cam_cpas *cpas_core = (struct cam_cpas *) cpas_hw->core_info;
+	struct cam_cpas_private_soc *soc_private =
+		(struct cam_cpas_private_soc *) cpas_hw->soc_info.soc_private;
+	int i;
+	int rc = 0;
+	struct cam_cpas_axi_port *camnoc_axi_port = NULL;
+	uint64_t camnoc_bw;
+
+	if (soc_private->control_camnoc_axi_clk) {
+		rc = cam_cpas_util_set_camnoc_axi_clk_rate(cpas_hw);
+		if (rc)
+			CAM_ERR(CAM_CPAS,
+				"Failed in setting axi clk rate rc=%d", rc);
+		return rc;
+	}
+
+	/* Below code is executed if we just vote and do not set the clk rate
+	 * for camnoc
+	 */
+
+	if (cpas_core->num_camnoc_axi_ports > CAM_CPAS_MAX_AXI_PORTS) {
+		CAM_ERR(CAM_CPAS, "Invalid num_camnoc_axi_ports: %d",
+			cpas_core->num_camnoc_axi_ports);
+		return -EINVAL;
+	}
+
+	for (i = 0; i < cpas_core->num_camnoc_axi_ports; i++) {
+		if (camnoc_axi_port_updated[i])
+			camnoc_axi_port = &cpas_core->camnoc_axi_port[i];
+		else
+			continue;
+
+		CAM_DBG(CAM_PERF, "Port[%s] : camnoc_bw=%lld",
+			camnoc_axi_port->axi_port_name,
+			camnoc_axi_port->camnoc_bw);
+
+		if (camnoc_axi_port->camnoc_bw)
+			camnoc_bw = camnoc_axi_port->camnoc_bw;
+		else
+			camnoc_bw = camnoc_axi_port->additional_bw;
+
+		rc = cam_cpas_util_vote_bus_client_bw(
+			&camnoc_axi_port->bus_client,
+			0, camnoc_bw, true);
+
+		CAM_DBG(CAM_CPAS,
+			"camnoc vote camnoc_bw[%llu] rc=%d %s",
+			camnoc_bw, rc, camnoc_axi_port->axi_port_name);
+		if (rc) {
+			CAM_ERR(CAM_CPAS,
+				"Failed in camnoc vote camnoc_bw[%llu] rc=%d",
+				camnoc_bw, rc);
+			break;
+		}
+	}
+	return rc;
+}
+
 static int cam_cpas_util_apply_client_axi_vote(
 	struct cam_hw_info *cpas_hw,
 	struct cam_cpas_client *cpas_client,
@@ -615,12 +731,13 @@ static int cam_cpas_util_apply_client_axi_vote(
 {
 	struct cam_cpas *cpas_core = (struct cam_cpas *) cpas_hw->core_info;
 	struct cam_axi_vote *con_axi_vote = NULL;
-	struct cam_cpas_axi_port *axi_port = NULL;
+	struct cam_cpas_axi_port *mnoc_axi_port = NULL;
 	struct cam_cpas_tree_node *curr_tree_node = NULL;
 	struct cam_cpas_tree_node *par_tree_node = NULL;
 	uint32_t transac_type;
 	uint32_t path_data_type;
-	bool axi_port_updated[CAM_CPAS_MAX_AXI_PORTS] = {false};
+	bool mnoc_axi_port_updated[CAM_CPAS_MAX_AXI_PORTS] = {false};
+	bool camnoc_axi_port_updated[CAM_CPAS_MAX_AXI_PORTS] = {false};
 	uint64_t mnoc_ab_bw = 0, mnoc_ib_bw = 0,
 		curr_camnoc_old = 0, curr_mnoc_ab_old = 0, curr_mnoc_ib_old = 0,
 		par_camnoc_old = 0, par_mnoc_ab_old = 0, par_mnoc_ib_old = 0;
@@ -643,7 +760,7 @@ static int cam_cpas_util_apply_client_axi_vote(
 				cpas_core->axi_port[i].additional_bw -=
 					CAM_CPAS_DEFAULT_AXI_BW;
 			}
-			axi_port_updated[i] = true;
+			mnoc_axi_port_updated[i] = true;
 		}
 		goto vote_start_clients;
 	}
@@ -733,15 +850,15 @@ static int cam_cpas_util_apply_client_axi_vote(
 					rc = -EINVAL;
 					goto unlock_tree;
 				}
-
-				cpas_core->axi_port
-				[par_tree_node->axi_port_idx].ab_bw =
-				par_tree_node->mnoc_ab_bw;
-				cpas_core->axi_port
-				[par_tree_node->axi_port_idx].ib_bw =
-				par_tree_node->mnoc_ib_bw;
-				axi_port_updated[par_tree_node->axi_port_idx] =
-					true;
+				rc = cam_cpas_update_axi_vote_bw(cpas_hw,
+					par_tree_node,
+					mnoc_axi_port_updated,
+					camnoc_axi_port_updated);
+				if (rc) {
+					CAM_ERR(CAM_CPAS,
+						"Update Vote failed");
+					goto unlock_tree;
+				}
 			}
 
 			curr_tree_node = par_tree_node;
@@ -759,26 +876,27 @@ static int cam_cpas_util_apply_client_axi_vote(
 
 vote_start_clients:
 	for (i = 0; i < cpas_core->num_axi_ports; i++) {
-		if (axi_port_updated[i])
-			axi_port = &cpas_core->axi_port[i];
+		if (mnoc_axi_port_updated[i])
+			mnoc_axi_port = &cpas_core->axi_port[i];
 		else
 			continue;
 
 		CAM_DBG(CAM_PERF, "Port[%s] : ab=%lld ib=%lld additional=%lld",
-			axi_port->axi_port_name, axi_port->ab_bw,
-			axi_port->ib_bw, axi_port->additional_bw);
+			mnoc_axi_port->axi_port_name, mnoc_axi_port->ab_bw,
+			mnoc_axi_port->ib_bw, mnoc_axi_port->additional_bw);
 
-		if (axi_port->ab_bw)
-			mnoc_ab_bw = axi_port->ab_bw;
+		if (mnoc_axi_port->ab_bw)
+			mnoc_ab_bw = mnoc_axi_port->ab_bw;
 		else
-			mnoc_ab_bw = axi_port->additional_bw;
+			mnoc_ab_bw = mnoc_axi_port->additional_bw;
 
 		if (cpas_core->axi_port[i].ib_bw_voting_needed)
-			mnoc_ib_bw = axi_port->ib_bw;
+			mnoc_ib_bw = mnoc_axi_port->ib_bw;
 		else
 			mnoc_ib_bw = 0;
 
-		rc = cam_cpas_util_vote_bus_client_bw(&axi_port->bus_client,
+		rc = cam_cpas_util_vote_bus_client_bw(
+			&mnoc_axi_port->bus_client,
 			mnoc_ab_bw, mnoc_ib_bw, false);
 		if (rc) {
 			CAM_ERR(CAM_CPAS,
@@ -787,8 +905,8 @@ vote_start_clients:
 			goto unlock_tree;
 		}
 	}
-
-	rc = cam_cpas_util_set_camnoc_axi_clk_rate(cpas_hw);
+	rc = cam_cpas_camnoc_set_vote_axi_clk_rate(
+		cpas_hw, camnoc_axi_port_updated);
 	if (rc)
 		CAM_ERR(CAM_CPAS, "Failed in setting axi clk rate rc=%d", rc);
 
