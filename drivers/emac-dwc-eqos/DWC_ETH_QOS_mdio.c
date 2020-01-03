@@ -1,4 +1,4 @@
-/* Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -1097,8 +1097,6 @@ static int DWC_ETH_QOS_init_phy(struct net_device *dev)
 {
 	struct DWC_ETH_QOS_prv_data *pdata = netdev_priv(dev);
 	struct phy_device *phydev = NULL;
-	char phy_id_fmt[MII_BUS_ID_SIZE + 3];
-	char bus_id[MII_BUS_ID_SIZE];
 	u32 phydata = 0;
 	int ret = 0;
 
@@ -1108,22 +1106,24 @@ static int DWC_ETH_QOS_init_phy(struct net_device *dev)
 	pdata->speed = 0;
 	pdata->oldduplex = -1;
 
-	snprintf(bus_id, MII_BUS_ID_SIZE, "dwc_phy-%x", pdata->bus_id);
-
-	snprintf(phy_id_fmt, MII_BUS_ID_SIZE + 3, PHY_ID_FMT, bus_id,
-		 pdata->phyaddr);
-
-	DBGPR_MDIO("trying to attach to %s\n", phy_id_fmt);
-
-	phydev = phy_connect(dev, phy_id_fmt, &DWC_ETH_QOS_adjust_link,
-			     pdata->interface);
-
+	phydev = mdiobus_get_phy(pdata->mii, pdata->phyaddr);
 	if (IS_ERR(phydev)) {
 		pr_alert("%s: Could not attach to PHY\n", dev->name);
 		return PTR_ERR(phydev);
 	}
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
+	phydev->skip_sw_reset = true;
+#endif
+	ret = phy_connect_direct(dev, phydev, &DWC_ETH_QOS_adjust_link,
+							pdata->interface);
+	if (ret) {
+		EMACERR("phy_connect_direct failed\n");
+		return ret;
+	}
+
 	if (phydev->phy_id == 0) {
+		pr_alert("%s: Invalid phy id\n", dev->name);
 		phy_disconnect(phydev);
 		return -ENODEV;
 	}
