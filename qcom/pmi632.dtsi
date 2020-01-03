@@ -20,7 +20,7 @@
 		};
 
 		pmi632_vadc: vadc@3100 {
-			compatible = "qcom,spmi-adc5";
+			compatible = "qcom,spmi-adc5-lite";
 			reg = <0x3100 0x100>, <0x3700 0x100>;
 			reg-names = "adc5-usr-base", "adc5-cal-base";
 			#address-cells = <1>;
@@ -110,6 +110,12 @@
 				label = "bat_id";
 				qcom,ratiometric;
 				qcom,hw-settle-time = <200>;
+				qcom,pre-scaling = <1 1>;
+			};
+
+			i_parallel {
+				reg = <ADC_PARALLEL_ISENSE>;
+				label = "i_parallel";
 				qcom,pre-scaling = <1 1>;
 			};
 
