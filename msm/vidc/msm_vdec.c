@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/slab.h>
@@ -1377,11 +1377,6 @@ int msm_vdec_set_extradata(struct msm_vidc_inst *inst)
 	msm_comm_set_extradata(inst,
 		HFI_PROPERTY_PARAM_VDEC_INTERLACE_VIDEO_EXTRADATA, 0x1);
 	msm_comm_set_extradata(inst, display_info, 0x1);
-
-	if (codec == V4L2_PIX_FMT_VP9 || codec == V4L2_PIX_FMT_HEVC) {
-		msm_comm_set_extradata(inst,
-			HFI_PROPERTY_PARAM_VDEC_HDR10_HIST_EXTRADATA, 0x1);
-	}
 
 	msm_comm_set_extradata(inst,
 		HFI_PROPERTY_PARAM_VDEC_NUM_CONCEALED_MB, 0x1);
