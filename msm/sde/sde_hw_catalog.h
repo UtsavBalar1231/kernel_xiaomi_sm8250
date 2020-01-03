@@ -1209,6 +1209,7 @@ struct limit_value_cfg {
  * @name: name of the limit property
  * @lmt_vec_cnt: number of vector values for each limit
  * @lmt_case_cnt: number of usecases for each limit
+ * @max_value: maximum possible value for this property
  * @vector_cfg: pointer to the vector entries containing info on usecase
  * @value_cfg: pointer to the value of each vector entry
  */
@@ -1216,6 +1217,7 @@ struct sde_limit_cfg {
 	const char *name;
 	u32 lmt_vec_cnt;
 	u32 lmt_case_cnt;
+	u32 max_value;
 	struct limit_vector_cfg *vector_cfg;
 	struct limit_value_cfg *value_cfg;
 };
@@ -1228,6 +1230,8 @@ struct sde_limit_cfg {
  *
  * @max_sspp_linewidth max source pipe line width support.
  * @vig_sspp_linewidth max vig source pipe line width support.
+ * @scaling_linewidth max vig source pipe linewidth for scaling usecases
+ * @inline_linewidth max source pipe linewidth for inline rotation
  * @max_mixer_width    max layer mixer line width support.
  * @max_mixer_blendstages max layer mixer blend stages or
  *                       supported z order
@@ -1298,6 +1302,8 @@ struct sde_mdss_cfg {
 
 	u32 max_sspp_linewidth;
 	u32 vig_sspp_linewidth;
+	u32 scaling_linewidth;
+	u32 inline_linewidth;
 	u32 max_mixer_width;
 	u32 max_mixer_blendstages;
 	u32 max_wb_linewidth;

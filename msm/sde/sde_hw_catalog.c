@@ -1196,7 +1196,8 @@ static void _sde_sspp_setup_vig(struct sde_mdss_cfg *sde_cfg,
 			sde_cfg->true_inline_dwnscale_rt_denom;
 		sblk->in_rot_maxdwnscale_nrt =
 			sde_cfg->true_inline_dwnscale_nrt;
-		sblk->in_rot_maxheight =
+		sblk->in_rot_maxheight = sde_cfg->inline_linewidth ?
+				sde_cfg->inline_linewidth :
 			MAX_PRE_ROT_HEIGHT_INLINE_ROT_DEFAULT;
 		sblk->in_rot_prefill_fudge_lines =
 			sde_cfg->true_inline_prefill_fudge_lines;
@@ -3173,6 +3174,8 @@ static int sde_read_limit_node(struct device_node *snp,
 	int j, i = 0, rc = 0;
 	const char *type = NULL;
 	struct device_node *node = NULL;
+	u32 vig = 0, dma = 0, inline_rot = 0, scaling = 0;
+	u32 usecase = 0, val = 0;
 
 	for_each_child_of_node(snp, node) {
 		cfg->limit_cfg[i].vector_cfg =
@@ -3191,6 +3194,16 @@ static int sde_read_limit_node(struct device_node *snp,
 			cfg->limit_cfg[i].vector_cfg[j].value =
 				PROP_VALUE_ACCESS(&lmt_val[i * LIMIT_PROP_MAX],
 				LIMIT_ID, j);
+			if (!strcmp(type, "vig"))
+				vig = cfg->limit_cfg[i].vector_cfg[j].value;
+			else if (!strcmp(type, "dma"))
+				dma = cfg->limit_cfg[i].vector_cfg[j].value;
+			else if (!strcmp(type, "inline_rot"))
+				inline_rot =
+					cfg->limit_cfg[i].vector_cfg[j].value;
+			else if (!strcmp(type, "scale"))
+				scaling =
+					cfg->limit_cfg[i].vector_cfg[j].value;
 		}
 
 		cfg->limit_cfg[i].value_cfg =
@@ -3211,7 +3224,24 @@ static int sde_read_limit_node(struct device_node *snp,
 				PROP_BITVALUE_ACCESS(
 					&lmt_val[i * LIMIT_PROP_MAX],
 					LIMIT_VALUE, j, 1);
+			cfg->limit_cfg[i].max_value =
+				max(cfg->limit_cfg[i].max_value,
+					cfg->limit_cfg[i].value_cfg[j].value);
 
+			usecase = cfg->limit_cfg[i].value_cfg[j].use_concur;
+			val = cfg->limit_cfg[i].value_cfg[j].value;
+
+			if (!strcmp(cfg->limit_cfg[i].name,
+					"sspp_linewidth_usecases")) {
+				if (usecase == dma)
+					cfg->max_sspp_linewidth = val;
+				else if (usecase == vig)
+					cfg->vig_sspp_linewidth = val;
+				else if (usecase == (vig | inline_rot))
+					cfg->inline_linewidth = val;
+				else if (usecase == (vig | scaling))
+					cfg->scaling_linewidth = val;
+			}
 		}
 		i++;
 	}
@@ -3421,6 +3451,8 @@ static int sde_top_parse_dt(struct device_node *np, struct sde_mdss_cfg *cfg)
 	cfg->pipe_order_type = PROP_VALUE_ACCESS(prop_value,
 		PIPE_ORDER_VERSION, 0);
 	cfg->has_base_layer = PROP_VALUE_ACCESS(prop_value, BASE_LAYER, 0);
+	cfg->scaling_linewidth = 0;
+	cfg->inline_linewidth = MAX_PRE_ROT_HEIGHT_INLINE_ROT_DEFAULT;
 
 	rc = sde_limit_parse_dt(np, cfg);
 	if (rc)
@@ -4274,7 +4306,7 @@ static int _sde_hardware_post_caps(struct sde_mdss_cfg *sde_cfg,
 	uint32_t hw_rev)
 {
 	int rc = 0, i;
-	u32 max_horz_deci = 0, max_vert_deci = 0;
+	u32 max_horz_deci = 0, max_vert_deci = 0, max_linewidth = 0;
 
 	if (!sde_cfg)
 		return -EINVAL;
@@ -4309,9 +4341,19 @@ static int _sde_hardware_post_caps(struct sde_mdss_cfg *sde_cfg,
 	/* this should be updated based on HW rev in future */
 	sde_cfg->max_lm_per_display = MAX_LM_PER_DISPLAY;
 
+	for (i = 0; i < sde_cfg->limit_count; i++) {
+		if (!strcmp(sde_cfg->limit_cfg[i].name,
+				"sspp_linewidth_usecases"))
+			max_linewidth = sde_cfg->limit_cfg[i].max_value;
+		else if (!strcmp(sde_cfg->limit_cfg[i].name,
+				"sde_bwlimit_usecases"))
+			sde_cfg->perf.max_bw_high =
+				sde_cfg->limit_cfg[i].max_value;
+	}
+
 	if (max_horz_deci)
-		sde_cfg->max_display_width = sde_cfg->max_sspp_linewidth *
-			max_horz_deci;
+		sde_cfg->max_display_width = (max_linewidth ? max_linewidth :
+			sde_cfg->max_sspp_linewidth) * max_horz_deci;
 	else
 		sde_cfg->max_display_width = sde_cfg->max_sspp_linewidth *
 			MAX_DOWNSCALE_RATIO;
