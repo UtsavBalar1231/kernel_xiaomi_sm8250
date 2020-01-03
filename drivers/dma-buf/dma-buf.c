@@ -484,16 +484,33 @@ static void dma_buf_show_fdinfo(struct seq_file *m, struct file *file)
 	spin_unlock(&dmabuf->name_lock);
 }
 
-static const struct file_operations dma_buf_fops = {
-	.release	= dma_buf_file_release,
-	.mmap		= dma_buf_mmap_internal,
-	.llseek		= dma_buf_llseek,
-	.poll		= dma_buf_poll,
-	.unlocked_ioctl	= dma_buf_ioctl,
 #ifdef CONFIG_COMPAT
-	.compat_ioctl	= dma_buf_ioctl,
+static long dma_buf_ioctl_compat(struct file *file, unsigned int cmd,
+				 unsigned long arg)
+{
+	switch (_IOC_NR(cmd)) {
+	case _IOC_NR(DMA_BUF_SET_NAME):
+		/* Fix up pointer size*/
+		if (_IOC_SIZE(cmd) == sizeof(compat_uptr_t)) {
+			cmd &= ~IOCSIZE_MASK;
+			cmd |= sizeof(void *) << IOCSIZE_SHIFT;
+		}
+		break;
+	}
+	return dma_buf_ioctl(file, cmd, (unsigned long)compat_ptr(arg));
+}
 #endif
-	.show_fdinfo	= dma_buf_show_fdinfo,
+
+static const struct file_operations dma_buf_fops = {
+	.release = dma_buf_file_release,
+	.mmap = dma_buf_mmap_internal,
+	.llseek = dma_buf_llseek,
+	.poll = dma_buf_poll,
+	.unlocked_ioctl = dma_buf_ioctl,
+#ifdef CONFIG_COMPAT
+	.compat_ioctl = dma_buf_ioctl_compat,
+#endif
+	.show_fdinfo = dma_buf_show_fdinfo,
 };
 
 /*
