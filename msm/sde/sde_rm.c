@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
 #define pr_fmt(fmt)	"[drm:%s] " fmt, __func__
@@ -1863,12 +1863,15 @@ static struct drm_connector *_sde_rm_get_connector(
 		struct drm_encoder *enc)
 {
 	struct drm_connector *conn = NULL;
+	struct sde_connector *c_conn = NULL;
 	struct list_head *connector_list =
 			&enc->dev->mode_config.connector_list;
 
-	list_for_each_entry(conn, connector_list, head)
-		if (conn->encoder == enc)
+	list_for_each_entry(conn, connector_list, head) {
+		c_conn = to_sde_connector(conn);
+		if (c_conn->encoder == enc)
 			return conn;
+	}
 
 	return NULL;
 }
@@ -1987,8 +1990,8 @@ void sde_rm_release(struct sde_rm *rm, struct drm_encoder *enc, bool nxt)
 
 	conn = _sde_rm_get_connector(enc);
 	if (!conn) {
-		SDE_ERROR("failed to get connector for enc %d, nxt %d",
-				enc->base.id, nxt);
+		SDE_ERROR("failed to get conn for enc %d nxt %d rsvp[s%de%d]\n",
+				enc->base.id, nxt, rsvp->seq, rsvp->enc_id);
 		goto end;
 	}
 
