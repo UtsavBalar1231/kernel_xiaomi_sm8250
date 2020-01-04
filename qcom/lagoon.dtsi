@@ -1173,7 +1173,7 @@
 		sleep_clk: sleep-clk {
 			compatible = "fixed-clock";
 			clock-frequency = <32764>;
-			clock-output-names = "sleep_clk";
+			clock-output-names = "chip_sleep_clk";
 			#clock-cells = <0>;
 		};
 	};
@@ -1189,7 +1189,7 @@
 	bi_tcxo_ao: bi_tcxo_ao {
 		compatible = "fixed-factor-clock";
 		clock-mult = <1>;
-		clock-div = <2>;
+		clock-div = <4>;
 		clocks = <&xo_board>;
 		#clock-cells = <0>;
 	};
@@ -1209,15 +1209,21 @@
 	};
 
 	gcc: qcom,gcc@100000 {
-		compatible = "qcom,dummycc";
-		clock-output-names = "gcc_clocks";
+		compatible = "qcom,lagoon-gcc", "syscon";
+		reg = <0x100000 0x1f0000>;
+		reg-names = "cc_base";
+		vdd_cx-supply = <&VDD_CX_LEVEL>;
+		vdd_cx_ao-supply = <&VDD_CX_LEVEL_AO>;
 		#clock-cells = <1>;
 		#reset-cells = <1>;
 	};
 
 	camcc: qcom,camcc@ad00000 {
-		compatible = "qcom,dummycc";
-		clock-output-names = "camcc_clocks";
+		compatible = "qcom,lagoon-camcc", "syscon";
+		reg = <0xad00000 0x16000>;
+		reg-names = "cc_base";
+		vdd_mx-supply = <&VDD_MX_LEVEL>;
+		vdd_cx-supply = <&VDD_CX_LEVEL>;
 		#clock-cells = <1>;
 		#reset-cells = <1>;
 	};
@@ -1230,22 +1236,36 @@
 	};
 
 	gpucc: qcom,gpucc@3d90000 {
-		compatible = "qcom,dummycc";
-		clock-output-names = "gpucc_clocks";
+		compatible = "qcom,lagoon-gpucc", "syscon";
+		reg = <0x3d90000 0x9000>;
+		reg-names = "cc_base";
+		vdd_mx-supply = <&VDD_MX_LEVEL>;
+		vdd_cx-supply = <&VDD_CX_LEVEL>;
+		vdd_gx-supply = <&VDD_GFX_LEVEL>;
 		#clock-cells = <1>;
 		#reset-cells = <1>;
 	};
 
 	npucc: qcom,npucc@9980000 {
-		compatible = "qcom,dummycc";
-		clock-output-names = "npucc_clocks";
+		compatible = "qcom,lagoon-npucc", "syscon";
+		reg = <0x9980000 0x10000>,
+			<0x9800000 0x10000>,
+			<0x9810000 0x10000>,
+			<0x007841e0 0x8>;
+		reg-names = "cc", "qdsp6ss", "qdsp6ss_pll", "efuse";
+		npu_gdsc-supply = <&npu_cc_core_gdsc>;
+		vdd_cx-supply = <&VDD_CX_LEVEL>;
 		#clock-cells = <1>;
 		#reset-cells = <1>;
 	};
 
 	videocc: qcom,videocc@aaf0000 {
-		compatible = "qcom,dummycc";
-		clock-output-names = "videocc_clocks";
+		compatible = "qcom,lagoon-videocc", "syscon";
+		reg = <0x0aaf0000 0x10000>;
+		reg-names = "cc_base";
+		vdd_cx-supply = <&VDD_CX_LEVEL>;
+		clock-names = "cfg_ahb_clk";
+		clocks = <&gcc GCC_VIDEO_AHB_CLK>;
 		#clock-cells = <1>;
 		#reset-cells = <1>;
 	};
@@ -1659,11 +1679,6 @@
 #include "lagoon-usb.dtsi"
 #include "lagoon-npu.dtsi"
 
-&gcc_pcie_0_gdsc {
-	qcom,support-hw-trigger;
-	status = "ok";
-};
-
 &gcc_ufs_phy_gdsc {
 	status = "ok";
 };
@@ -1717,6 +1732,7 @@
 
 &gpu_cx_gdsc {
 	parent-supply = <&VDD_CX_LEVEL>;
+	vdd_parent-supply = <&VDD_CX_LEVEL>;
 	status = "ok";
 };
 
@@ -1725,11 +1741,15 @@
 };
 
 &video_cc_mvs0_gdsc {
+	clock-names = "ahb_clk";
+	clocks = <&gcc GCC_VIDEO_AHB_CLK>;
 	qcom,support-hw-trigger;
 	status = "ok";
 };
 
 &video_cc_mvsc_gdsc {
+	clock-names = "ahb_clk";
+	clocks = <&gcc GCC_VIDEO_AHB_CLK>;
 	status = "ok";
 };
 
