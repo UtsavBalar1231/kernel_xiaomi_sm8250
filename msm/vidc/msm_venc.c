@@ -1271,7 +1271,7 @@ static int msm_venc_set_csc(struct msm_vidc_inst *inst,
 
 	vpe_csc.input_color_primaries = color_primaries;
 	/* Custom bias, matrix & limit */
-	vpe_csc.custom_matrix_enabled = custom_matrix;
+	vpe_csc.custom_matrix_enabled = custom_matrix ? 7 : 0;
 
 	if (vpe_csc.custom_matrix_enabled && bias_coeff != NULL
 			&& csc_limit != NULL && csc_matrix != NULL) {
