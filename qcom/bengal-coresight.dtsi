@@ -45,6 +45,7 @@
 		coresight-name = "coresight-swao-csr";
 
 		qcom,timestamp-support;
+		qcom,aodbg-csr-support;
 
 		clocks = <&rpmcc RPM_SMD_QDSS_CLK>;
 		clock-names = "apb_pclk";
@@ -1310,6 +1311,7 @@
 
 		iommus = <&apps_smmu 0x0180 0>,
 			<&apps_smmu 0x0160 0>;
+		qcom,iommu-dma = "bypass";
 
 		#address-cells = <1>;
 		#size-cells = <1>;

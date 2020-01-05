@@ -45,7 +45,7 @@
 				qcom,mdss-dsi-h-back-porch = <40>;
 				qcom,mdss-dsi-h-pulse-width = <20>;
 				qcom,mdss-dsi-h-sync-skew = <0>;
-				qcom,mdss-dsi-v-back-porch = <16>;
+				qcom,mdss-dsi-v-back-porch = <6>;
 				qcom,mdss-dsi-v-front-porch = <10>;
 				qcom,mdss-dsi-v-pulse-width = <2>;
 				qcom,mdss-dsi-panel-framerate = <60>;
@@ -225,7 +225,7 @@
 						E8 00 01 23 00
 					29 01 00 00 00 00 1E
 						EA 01 02 47 80 47 00 00 00 05
-						00 13 60 02 47 80 47 00 00 00
+						00 12 60 02 47 80 47 00 00 00
 						00 13 60 00 11 00 30 10 21 02
 					29 01 00 00 00 00 08
 						EB 00 00 00 00 01 00 11

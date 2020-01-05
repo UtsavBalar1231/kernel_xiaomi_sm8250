@@ -1842,5 +1842,32 @@
 				drive-strenght = <16>;
 			};
 		};
+
+		pm8008_interrupt: pm8008_interrupt {
+			mux {
+				pins = "gpio45";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio45";
+				bias-disable;
+				input-enable;
+			};
+		};
+
+		pm8008_active: pm8008_active {
+			mux {
+				pins = "gpio44";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio44";
+				bias-pull-up;
+				output-high;
+				drive-strength = <2>;
+			};
+		};
 	};
 };

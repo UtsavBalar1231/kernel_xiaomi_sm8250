@@ -2728,6 +2728,7 @@
 			<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_CAMERA_CFG 0 0>,
 			<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_CAMERA_CFG 0 1>;
 		qcom,retain-regs;
+		qcom,gds-timeout = <500>;
 	};
 
 	/* DISP_CC GDSC */
@@ -4726,6 +4727,7 @@
 		qcom,wlan-rc-num = <0>;
 		qcom,wlan-ramdump-dynamic = <0x400000>;
 		qcom,smmu-s1-enable;
+		cnss-daemon-support;
 		qcom,cmd_db_name = "smpf2";
 
 		qcom,msm-bus,name = "msm-cnss";

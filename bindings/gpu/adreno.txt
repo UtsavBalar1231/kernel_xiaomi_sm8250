@@ -248,7 +248,7 @@ KGSL Memory Pools:
 				Each mempool defines a pool order, reserved pages,
 				allocation allowed.
 Properties:
-- compatible:			Must be qcom,gpu-mempools.
+- compatible:			Should be qcom,gpu-mempools or qcom,gpu-mempools-lowmem.
 - qcom,mempool-max-pages:	Max pages for all mempools, If not defined there is no limit.
 - qcom,gpu-mempool:		Defines a set of mempools.
 
@@ -258,6 +258,8 @@ Properties:
 - qcom,mempool-reserved:	Number of pages reserved at init time for a pool.
 - qcom,mempool-allocate:	Allocate memory from the system memory when the
 				reserved pool exhausted.
+- qcom,mempool-max-pages:	Limit on max pages this pool can hold, If not defined
+				there is no limit.
 GPU CX Ipeak:
 - qcom,gpu-cx-ipeak:		Container for GPU CX ipeak clients. Multiple clients
 				can be defined within qcom,gpu-cx-ipeak. Each client

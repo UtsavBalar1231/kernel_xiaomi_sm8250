@@ -14,6 +14,10 @@
 	compatible = "qcom,lito-camcc-v2", "syscon";
 };
 
+&npucc {
+	compatible = "qcom,lito-npucc-v2", "syscon";
+};
+
 &pm8008_regulators {
 	vdd_l7-supply = <&BOB>;
 };
@@ -44,7 +48,7 @@
 				qcom,bus-freq = <10>;
 				qcom,bus-min = <9>;
 				qcom,bus-max = <12>;
-				qcom,acd-level = <0x802F5FFD>;
+				qcom,acd-level = <0x802C5FFD>;
 			};
 
 			/* SVS L1 */
@@ -54,7 +58,7 @@
 				qcom,bus-freq = <8>;
 				qcom,bus-min = <7>;
 				qcom,bus-max = <10>;
-				qcom,acd-level = <0x802F5FFD>;
+				qcom,acd-level = <0xA02C5FFD>;
 			};
 
 			/* SVS */
@@ -64,7 +68,7 @@
 				qcom,bus-freq = <7>;
 				qcom,bus-min = <5>;
 				qcom,bus-max = <8>;
-				qcom,acd-level = <0x802F5FFD>;
+				qcom,acd-level = <0xA02C5FFD>;
 			};
 
 			/* Low SVS */
@@ -102,7 +106,7 @@
 				qcom,bus-freq = <10>;
 				qcom,bus-min = <9>;
 				qcom,bus-max = <12>;
-				qcom,acd-level = <0x802F5FFD>;
+				qcom,acd-level = <0x802C5FFD>;
 			};
 
 			/* SVS L1 */
@@ -112,7 +116,7 @@
 				qcom,bus-freq = <8>;
 				qcom,bus-min = <7>;
 				qcom,bus-max = <10>;
-				qcom,acd-level = <0x802F5FFD>;
+				qcom,acd-level = <0xA02C5FFD>;
 			};
 
 			/* SVS */
@@ -122,7 +126,7 @@
 				qcom,bus-freq = <7>;
 				qcom,bus-min = <5>;
 				qcom,bus-max = <8>;
-				qcom,acd-level = <0x802F5FFD>;
+				qcom,acd-level = <0xA02C5FFD>;
 			};
 
 			/* Low SVS */
@@ -159,7 +163,7 @@
 				qcom,bus-freq = <8>;
 				qcom,bus-min = <7>;
 				qcom,bus-max = <12>;
-				qcom,acd-level = <0x802F5FFD>;
+				qcom,acd-level = <0x802C5FFD>;
 			};
 
 			/* SVS */
@@ -169,7 +173,7 @@
 				qcom,bus-freq = <7>;
 				qcom,bus-min = <5>;
 				qcom,bus-max = <8>;
-				qcom,acd-level = <0x802F5FFD>;
+				qcom,acd-level = <0xA02C5FFD>;
 			};
 
 			/* Low SVS */
@@ -207,7 +211,7 @@
 				qcom,bus-freq = <10>;
 				qcom,bus-min = <9>;
 				qcom,bus-max = <12>;
-				qcom,acd-level = <0x802F5FFD>;
+				qcom,acd-level = <0x802C5FFD>;
 			};
 
 			/* SVS L1 */
@@ -217,7 +221,7 @@
 				qcom,bus-freq = <8>;
 				qcom,bus-min = <7>;
 				qcom,bus-max = <10>;
-				qcom,acd-level = <0x802F5FFD>;
+				qcom,acd-level = <0xA02C5FFD>;
 			};
 
 			/* SVS */
@@ -227,7 +231,7 @@
 				qcom,bus-freq = <7>;
 				qcom,bus-min = <5>;
 				qcom,bus-max = <8>;
-				qcom,acd-level = <0x802F5FFD>;
+				qcom,acd-level = <0xA02C5FFD>;
 			};
 
 			/* Low SVS */
@@ -342,3 +346,185 @@
 		< 3000000 MHZ_TO_MBPS(2092, 4) >;
 };
 
+/* NPU overrides */
+&msm_npu {
+	qcom,npu-pwrlevels {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "qcom,npu-pwrlevels";
+		initial-pwrlevel = <5>;
+		qcom,npu-pwrlevel@0 {
+			reg = <0>;
+			vreg = <1>;
+			clk-freq = <19200000
+				100000000
+				230000000
+				230000000
+				150000000
+				40000000
+				300000000
+				100000000
+				19200000
+				50000000
+				50000000
+				100000000
+				100000000
+				100000000
+				19200000
+				100000000
+				19200000
+				50000000
+				230000000
+				50000000
+				19200000
+				230000000
+				19200000
+				300000000>;
+		};
+
+		qcom,npu-pwrlevel@1 {
+			reg = <1>;
+			vreg = <2>;
+			clk-freq = <19200000
+				200000000
+				422000000
+				422000000
+				207000000
+				40000000
+				403000000
+				200000000
+				19200000
+				50000000
+				50000000
+				200000000
+				200000000
+				200000000
+				19200000
+				200000000
+				19200000
+				50000000
+				422000000
+				50000000
+				19200000
+				422000000
+				19200000
+				400000000>;
+		};
+
+		qcom,npu-pwrlevel@2 {
+			reg = <2>;
+			vreg = <3>;
+			clk-freq = <19200000
+				333000000
+				557000000
+				557000000
+				300000000
+				75000000
+				533000000
+				214000000
+				19200000
+				50000000
+				100000000
+				214000000
+				214000000
+				214000000
+				19200000
+				214000000
+				19200000
+				50000000
+				557000000
+				50000000
+				19200000
+				557000000
+				19200000
+				500000000>;
+		};
+
+		qcom,npu-pwrlevel@3 {
+			reg = <3>;
+			vreg = <4>;
+			clk-freq = <19200000
+				400000000
+				729000000
+				729000000
+				403000000
+				75000000
+				700000000
+				285714286
+				19200000
+				100000000
+				200000000
+				285714286
+				285714286
+				285714286
+				19200000
+				285714286
+				19200000
+				100000000
+				729000000
+				100000000
+				19200000
+				729000000
+				19200000
+				660000000>;
+		};
+
+		qcom,npu-pwrlevel@4 {
+			reg = <4>;
+			vreg = <6>;
+			clk-freq = <19200000
+				500000000
+				844000000
+				844000000
+				533000000
+				75000000
+				806000000
+				285714286
+				19200000
+				100000000
+				200000000
+				285714286
+				285714286
+				285714286
+				19200000
+				285714286
+				19200000
+				100000000
+				844000000
+				100000000
+				19200000
+				844000000
+				19200000
+				800000000>;
+		};
+
+		qcom,npu-pwrlevel@5 {
+			reg = <5>;
+			vreg = <7>;
+			clk-freq = <19200000
+				500000000
+				1000000000
+				1000000000
+				533000000
+				75000000
+				806000000
+				285714286
+				19200000
+				100000000
+				200000000
+				285714286
+				285714286
+				285714286
+				19200000
+				285714286
+				19200000
+				100000000
+				1000000000
+				100000000
+				19200000
+				1000000000
+				19200000
+				800000000>;
+		};
+	};
+};

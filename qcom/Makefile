@@ -80,26 +80,32 @@ ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
                 bengal-rumi-overlay.dtbo \
                 bengal-qrd-overlay.dtbo \
                 bengal-idp-overlay.dtbo \
-                bengal-idp-usbc-overlay.dtbo
+                bengal-idp-usbc-overlay.dtbo \
+                bengalp-idp-overlay.dtbo
 
 bengal-rumi-overlay.dtbo-base := bengal.dtb
 bengal-qrd-overlay.dtbo-base := bengal.dtb
 bengal-idp-overlay.dtbo-base := bengal.dtb
 bengal-idp-usbc-overlay.dtbo-base := bengal.dtb
+bengalp-idp-overlay.dtbo-base := bengalp.dtb
 else
 dtb-$(CONFIG_ARCH_BENGAL) += bengal-rumi.dtb \
                 bengal-qrd.dtb \
 		bengal-idp.dtb \
-		bengal-idp-usbc.dtb
+		bengal-idp-usbc.dtb \
+		bengalp-idp.dtb
 endif
 
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
         dtbo-$(CONFIG_ARCH_SCUBA) += \
-                scuba-rumi-overlay.dtbo
+                scuba-rumi-overlay.dtbo \
+                scuba-idp-overlay.dtbo
 
 scuba-rumi-overlay.dtbo-base := scuba.dtb
+scuba-idp-overlay.dtbo-base := scuba.dtb
 else
-dtb-$(CONFIG_ARCH_SCUBA) += scuba-rumi.dtb
+dtb-$(CONFIG_ARCH_SCUBA) += scuba-rumi.dtb \
+	scuba-idp.dtb
 endif
 
 always		:= $(dtb-y)
