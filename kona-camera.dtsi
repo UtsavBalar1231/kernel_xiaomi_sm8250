@@ -1435,11 +1435,11 @@
 		camss-supply = <&titan_top_gdsc>;
 		clock-names =
 			"ife_csid_clk_src",
-			"ife_lite_ahb",
 			"ife_csid_clk",
 			"cphy_rx_clk_src",
 			"ife_cphy_rx_clk",
 			"ife_clk_src",
+			"ife_lite_ahb",
 			"ife_clk";
 		clocks =
 			<&clock_camcc CAM_CC_IFE_LITE_CSID_CLK_SRC>,
