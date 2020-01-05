@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_JPEG_DEV_H_
@@ -24,8 +24,8 @@
 struct cam_jpeg_dev {
 	struct cam_subdev sd;
 	struct cam_node *node;
-	struct cam_context ctx[CAM_CTX_MAX];
-	struct cam_jpeg_context ctx_jpeg[CAM_CTX_MAX];
+	struct cam_context ctx[CAM_JPEG_CTX_MAX];
+	struct cam_jpeg_context ctx_jpeg[CAM_JPEG_CTX_MAX];
 	struct mutex jpeg_mutex;
 	int32_t open_cnt;
 };
