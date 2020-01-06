@@ -64,13 +64,13 @@
 
 end	.req	x5
 srcin	.req	x15
-ENTRY(__arch_copy_from_user)
+SYM_FUNC_START(__arch_copy_from_user)
 	add	end, x0, x2
 	mov	srcin, x1
 #include "copy_template.S"
 	mov	x0, #0				// Nothing to copy
 	ret
-ENDPROC(__arch_copy_from_user)
+SYM_FUNC_END(__arch_copy_from_user)
 
 	.section .fixup,"ax"
 	.align	2
