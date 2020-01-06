@@ -38,6 +38,7 @@
 			enable-method = "psci";
 			capacity-dmips-mhz = <1024>;
 			dynamic-power-coefficient = <100>;
+			qcom,freq-domain = <&cpufreq_hw 0 6>;
 			cache-size = <0x8000>;
 			next-level-cache = <&L2_0>;
 			L2_0: l2-cache {
@@ -75,6 +76,7 @@
 			enable-method = "psci";
 			capacity-dmips-mhz = <1024>;
 			dynamic-power-coefficient = <100>;
+			qcom,freq-domain = <&cpufreq_hw 0 6>;
 			cache-size = <0x8000>;
 			next-level-cache = <&L2_100>;
 			L2_100: l2-cache {
@@ -106,6 +108,7 @@
 			enable-method = "psci";
 			capacity-dmips-mhz = <1024>;
 			dynamic-power-coefficient = <100>;
+			qcom,freq-domain = <&cpufreq_hw 0 6>;
 			cache-size = <0x8000>;
 			next-level-cache = <&L2_200>;
 			L2_200: l2-cache {
@@ -137,6 +140,7 @@
 			enable-method = "psci";
 			capacity-dmips-mhz = <1024>;
 			dynamic-power-coefficient = <100>;
+			qcom,freq-domain = <&cpufreq_hw 0 6>;
 			cache-size = <0x8000>;
 			next-level-cache = <&L2_300>;
 			L2_300: l2-cache {
@@ -169,6 +173,7 @@
 			enable-method = "psci";
 			capacity-dmips-mhz = <1024>;
 			dynamic-power-coefficient = <100>;
+			qcom,freq-domain = <&cpufreq_hw 0 6>;
 			cache-size = <0x8000>;
 			next-level-cache = <&L2_400>;
 			L2_400: l2-cache {
@@ -200,6 +205,7 @@
 			enable-method = "psci";
 			capacity-dmips-mhz = <1024>;
 			dynamic-power-coefficient = <100>;
+			qcom,freq-domain = <&cpufreq_hw 0 6>;
 			cache-size = <0x8000>;
 			next-level-cache = <&L2_500>;
 			L2_500: l2-cache {
@@ -231,6 +237,7 @@
 			enable-method = "psci";
 			capacity-dmips-mhz = <1894>;
 			dynamic-power-coefficient = <703>;
+			qcom,freq-domain = <&cpufreq_hw 1 2>;
 			cache-size = <0x10000>;
 			next-level-cache = <&L2_600>;
 			L2_600: l2-cache {
@@ -271,6 +278,7 @@
 			enable-method = "psci";
 			capacity-dmips-mhz = <1894>;
 			dynamic-power-coefficient = <703>;
+			qcom,freq-domain = <&cpufreq_hw 1 2>;
 			cache-size = <0x10000>;
 			next-level-cache = <&L2_700>;
 			L2_700: l2-cache {
@@ -1269,6 +1277,41 @@
 		#clock-cells = <1>;
 		#reset-cells = <1>;
 	};
+
+	cpufreq_hw: qcom,cpufreq-hw {
+		compatible = "qcom,cpufreq-hw";
+		reg = <0x18323000 0x1000>, <0x18325800 0x1000>;
+		reg-names = "freq-domain0", "freq-domain1";
+		clocks = <&rpmhcc RPMH_CXO_CLK>, <&gcc GPLL0>;
+		clock-names = "xo", "alternate";
+		qcom,no-accumulative-counter;
+		#freq-domain-cells = <2>;
+	};
+
+	qcom,devfreq-l3 {
+		compatible = "qcom,devfreq-fw";
+		reg = <0x18321000 0x4>, <0x18321110 0x500>, <0x18321920 0x4>;
+		reg-names = "en-base", "ftbl-base", "perf-base";
+
+		qcom,ftbl-row-size = <32>;
+
+		cpu0_l3: qcom,cpu0-cpu-l3-lat {
+			compatible = "qcom,devfreq-fw-voter";
+		};
+
+		cpu6_l3: qcom,cpu6-cpu-l3-lat {
+			compatible = "qcom,devfreq-fw-voter";
+		};
+
+		cpu7_l3: qcom,cpu7-cpu-l3-lat {
+			compatible = "qcom,devfreq-fw-voter";
+		};
+
+		cdsp_l3: qcom,cdsp-cdsp-l3-lat {
+			compatible = "qcom,devfreq-fw-voter";
+		};
+	};
+
 
 	tcsr_mutex_block: syscon@1f40000 {
 		compatible = "syscon";
