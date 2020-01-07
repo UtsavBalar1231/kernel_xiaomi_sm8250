@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
  */
 #include <linux/slab.h>
 #include "msm_venc.h"
@@ -1680,6 +1680,8 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 		}
 		break;
 	case V4L2_CID_MPEG_VIDC_VIDEO_OPERATING_RATE:
+		if (!is_valid_operating_rate(inst, ctrl->val))
+			break;
 		inst->clk_data.operating_rate = ctrl->val;
 		/* For HEIC image encode, set operating rate to 1 */
 		if (is_grid_session(inst)) {

@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef __VIDC_HFI_API_H__
@@ -244,6 +244,7 @@ enum hal_capability {
 	CAP_MBS_PER_FRAME,
 	CAP_MBS_PER_SECOND,
 	CAP_FRAMERATE,
+	CAP_OPERATINGRATE,
 	CAP_SCALE_X,
 	CAP_SCALE_Y,
 	CAP_BITRATE,
