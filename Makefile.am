@@ -37,6 +37,11 @@ obj-m += asoc/codecs/bolero/
 obj-m += asoc/codecs/wcd937x/
 endif
 
+ifeq ($(TARGET_SUPPORT), qrb5165)
+obj-m += asoc/codecs/bolero/
+obj-m += asoc/codecs/wcd938x/
+endif
+
 ifeq ($(TARGET_SUPPORT), $(filter $(TARGET_SUPPORT), sa8155 sa8155ivi sa6155 sa8195 qtiquingvm))
 obj-m := ipc/
 obj-m += dsp/
@@ -48,6 +53,9 @@ KBUILD_OPTIONS += CONFIG_SND_SOC_SA8155=m
 endif
 ifeq ($(TARGET_SUPPORT), $(filter $(TARGET_SUPPORT), sa6155))
 KBUILD_OPTIONS += CONFIG_SND_SOC_SA6155=m
+endif
+ifeq ($(TARGET_SUPPORT), $(filter $(TARGET_SUPPORT), qrb5165))
+KBUILD_OPTIONS += CONFIG_SND_SOC_KONA=m
 endif
 endif
 
