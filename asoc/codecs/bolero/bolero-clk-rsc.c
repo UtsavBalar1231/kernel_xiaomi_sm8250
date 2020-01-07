@@ -100,7 +100,7 @@ int bolero_rsc_clk_reset(struct device *dev, int clk_id)
 	int count = 0;
 
 	if (!dev) {
-		pr_err("%s: dev is null %d\n", __func__);
+		pr_err("%s: dev is null\n", __func__);
 		return -EINVAL;
 	}
 
@@ -147,7 +147,7 @@ void bolero_clk_rsc_enable_all_clocks(struct device *dev, bool enable)
 	int i = 0;
 
 	if (!dev) {
-		pr_err("%s: dev is null %d\n", __func__);
+		pr_err("%s: dev is null\n", __func__);
 		return;
 	}
 
@@ -439,7 +439,7 @@ void bolero_clk_rsc_fs_gen_request(struct device *dev, bool enable)
 	struct bolero_clk_rsc *priv = NULL;
 
 	if (!dev) {
-		pr_err("%s: dev is null %d\n", __func__);
+		pr_err("%s: dev is null\n", __func__);
 		return;
 	}
 	clk_dev = bolero_get_rsc_clk_device_ptr(dev->parent);
@@ -514,7 +514,7 @@ int bolero_clk_rsc_request_clock(struct device *dev,
 	bool mux_switch = false;
 
 	if (!dev) {
-		pr_err("%s: dev is null %d\n", __func__);
+		pr_err("%s: dev is null\n", __func__);
 		return -EINVAL;
 	}
 	if ((clk_id_req < 0 || clk_id_req >= MAX_CLK) &&
