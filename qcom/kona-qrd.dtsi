@@ -776,6 +776,138 @@
 			};
 		};
 	};
+
+	xo-therm-step {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-governor = "step_wise";
+		thermal-sensors = <&pm8150_adc_tm ADC_XO_THERM_PU2>;
+
+		trips {
+			xo_lvl0: active-config0 {
+				temperature = <42000>;
+				hysteresis = <2000>;
+				type = "passive";
+			};
+
+			xo_lvl1: active-config1 {
+				temperature = <46000>;
+				hysteresis = <2000>;
+				type = "passive";
+			};
+
+			xo_lvl2: active-config2 {
+				temperature = <56000>;
+				hysteresis = <6000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			xo_skin_lvl0 {
+				trip = <&xo_lvl0>;
+				cooling-device = <&modem_mmw_skin2 1 1>;
+			};
+
+			xo_skin_lvl1 {
+				trip = <&xo_lvl1>;
+				cooling-device = <&modem_mmw_skin2 2 2>;
+			};
+
+			xo_skin_lvl2 {
+				trip = <&xo_lvl2>;
+				cooling-device = <&modem_mmw_skin2 3 3>;
+			};
+		};
+	};
+
+	mmw-pa1-step {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-governor = "step_wise";
+		thermal-sensors = <&pm8150_adc_tm ADC_AMUX_THM2_PU2>;
+
+		trips {
+			pa1_lvl0: active-config0 {
+				temperature = <44000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+
+			pa1_lvl1: active-config1 {
+				temperature = <48000>;
+				hysteresis = <2000>;
+				type = "passive";
+			};
+
+			pa1_lvl2: active-config2 {
+				temperature = <56000>;
+				hysteresis = <6000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			pa1_skin_lvl0 {
+				trip = <&pa1_lvl0>;
+				cooling-device = <&modem_mmw_skin0 1 1>;
+			};
+
+			pa1_skin_lvl1 {
+				trip = <&pa1_lvl1>;
+				cooling-device = <&modem_mmw_skin0 2 2>;
+			};
+
+			pa1_skin_lvl2 {
+				trip = <&pa1_lvl2>;
+				cooling-device = <&modem_mmw_skin0 3 3>;
+			};
+		};
+	};
+
+	mmw-pa2-step {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-governor = "step_wise";
+		thermal-sensors = <&pm8150l_adc_tm ADC_AMUX_THM3_PU2>;
+
+		trips {
+			pa2_lvl0: active-config0 {
+				temperature = <42000>;
+				hysteresis = <4000>;
+				type = "passive";
+			};
+
+			pa2_lvl1: active-config1 {
+				temperature = <46000>;
+				hysteresis = <2000>;
+				type = "passive";
+			};
+
+			pa2_lvl2: active-config2 {
+				temperature = <56000>;
+				hysteresis = <6000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			pa2_skin_lvl0 {
+				trip = <&pa2_lvl0>;
+				cooling-device = <&modem_mmw_skin1 1 1>;
+			};
+
+			pa2_skin_lvl1 {
+				trip = <&pa2_lvl1>;
+				cooling-device = <&modem_mmw_skin1 2 2>;
+			};
+
+			pa2_skin_lvl2 {
+				trip = <&pa2_lvl2>;
+				cooling-device = <&modem_mmw_skin1 3 3>;
+			};
+		};
+	};
 };
 
 &sdhc_2 {
