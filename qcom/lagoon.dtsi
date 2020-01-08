@@ -46,6 +46,7 @@
 			qcom,freq-domain = <&cpufreq_hw 0 6>;
 			cache-size = <0x8000>;
 			next-level-cache = <&L2_0>;
+			#cooling-cells = <2>;
 			L2_0: l2-cache {
 			      compatible = "arm,arch-cache";
 			      cache-size = <0x10000>;
@@ -245,6 +246,7 @@
 			qcom,freq-domain = <&cpufreq_hw 1 2>;
 			cache-size = <0x10000>;
 			next-level-cache = <&L2_600>;
+			#cooling-cells = <2>;
 			L2_600: l2-cache {
 				compatible = "arm,arch-cache";
 				cache-size = <0x40000>;
@@ -2528,3 +2530,4 @@
 	status = "ok";
 };
 #include "lagoon-bus.dtsi"
+#include "lagoon-thermal.dtsi"
