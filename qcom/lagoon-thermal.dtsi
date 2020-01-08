@@ -65,6 +65,20 @@
 	};
 };
 
+&soc {
+	lmh_cpu_vdd0: qcom,lmh-cpu-vdd@18358800 {
+		compatible = "qcom,lmh-cpu-vdd";
+		reg =  <0x18358800 0x1000>;
+		#cooling-cells = <2>;
+	};
+
+	lmh_cpu_vdd1: qcom,lmh-cpu-vdd@18350800 {
+		compatible = "qcom,lmh-cpu-vdd";
+		reg =  <0x18350800 0x1000>;
+		#cooling-cells = <2>;
+	};
+};
+
 &thermal_zones {
 	aoss-0-usr {
 		polling-delay-passive = <0>;
