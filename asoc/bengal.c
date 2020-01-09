@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/clk.h>
@@ -156,6 +156,7 @@ struct msm_asoc_mach_data {
 	struct device_node *hph_en0_gpio_p; /* used by pinctrl API */
 	bool is_afe_config_done;
 	struct device_node *fsa_handle;
+	bool va_disable;
 };
 
 struct tdm_port {
@@ -261,7 +262,6 @@ static u32 mi2s_ebit_clk[MI2S_MAX] = {
 };
 
 static struct mi2s_conf mi2s_intf_conf[MI2S_MAX];
-static bool va_disable;
 
 /* Default configuration of TDM channels */
 static struct dev_config tdm_rx_cfg[TDM_INTERFACE_MAX][TDM_PORT_MAX] = {
@@ -3815,13 +3815,17 @@ static int msm_snd_cdc_dma_startup(struct snd_pcm_substream *substream)
 	int ret = 0;
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_soc_dai_link *dai_link = rtd->dai_link;
+	struct snd_soc_card *card = rtd->card;
+	struct msm_asoc_mach_data *pdata = snd_soc_card_get_drvdata(card);
 
 	switch (dai_link->id) {
 	case MSM_BACKEND_DAI_VA_CDC_DMA_TX_0:
 	case MSM_BACKEND_DAI_VA_CDC_DMA_TX_1:
 	case MSM_BACKEND_DAI_VA_CDC_DMA_TX_2:
-		if (va_disable)
-			break;
+		if (pdata->va_disable) {
+			pr_debug("%s: SVA not supported\n", __func__);
+			return -EINVAL;
+		}
 		ret = bengal_send_island_va_config(dai_link->id);
 		if (ret)
 			pr_err("%s: send island va cfg failed, err: %d\n",
@@ -6616,7 +6620,7 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	}
 	memcpy(&adsp_var_idx, buf, len);
 	kfree(buf);
-	va_disable = adsp_var_idx;
+	pdata->va_disable = adsp_var_idx;
 
 ret:
 	return 0;
