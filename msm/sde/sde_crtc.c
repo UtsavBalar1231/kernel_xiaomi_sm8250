@@ -5006,6 +5006,10 @@ static void sde_crtc_install_properties(struct drm_crtc *crtc,
 		sde_kms_info_add_keyint(info, "max_mdp_clk",
 				sde_kms->perf.max_core_clk_rate);
 
+	if (catalog->uidle_cfg.uidle_rev)
+		sde_kms_info_add_keyint(info, "has_uidle",
+			true);
+
 	for (i = 0; i < catalog->limit_count; i++) {
 		sde_kms_info_add_keyint(info,
 			catalog->limit_cfg[i].name,
