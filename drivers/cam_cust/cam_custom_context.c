@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/debugfs.h>
@@ -23,6 +23,10 @@ static const char custom_dev_name[] = "cam-custom";
 
 static int __cam_custom_ctx_handle_irq_in_activated(
 	void *context, uint32_t evt_id, void *evt_data);
+
+static int __cam_custom_ctx_start_dev_in_ready(
+	struct cam_context *ctx, struct cam_start_stop_dev_cmd *cmd);
+
 
 static int __cam_custom_ctx_enqueue_request_in_order(
 	struct cam_context *ctx, struct cam_ctx_request *req)
@@ -131,22 +135,104 @@ static int __cam_custom_ctx_flush_req(struct cam_context *ctx,
 	return 0;
 }
 
+static int __cam_custom_ctx_unlink_in_acquired(struct cam_context *ctx,
+	struct cam_req_mgr_core_dev_link_setup *unlink)
+{
+	ctx->link_hdl = -1;
+	ctx->ctx_crm_intf = NULL;
+
+	return 0;
+}
+
+static int __cam_custom_ctx_unlink_in_ready(struct cam_context *ctx,
+	struct cam_req_mgr_core_dev_link_setup *unlink)
+{
+	ctx->link_hdl = -1;
+	ctx->ctx_crm_intf = NULL;
+	ctx->state = CAM_CTX_ACQUIRED;
+
+	return 0;
+}
+
+static int __cam_custom_ctx_get_dev_info_in_acquired(struct cam_context *ctx,
+	struct cam_req_mgr_device_info *dev_info)
+{
+	dev_info->dev_hdl = ctx->dev_hdl;
+	strlcpy(dev_info->name, CAM_CUSTOM_DEV_NAME, sizeof(dev_info->name));
+	dev_info->dev_id = CAM_REQ_MGR_DEVICE_CUSTOM_HW;
+	dev_info->p_delay = 1;
+	dev_info->trigger = CAM_TRIGGER_POINT_SOF;
+
+	return 0;
+}
+
 static int __cam_custom_ctx_flush_req_in_top_state(
 	struct cam_context *ctx,
 	struct cam_req_mgr_flush_request *flush_req)
 {
 	int rc = 0;
+	struct cam_custom_context      *custom_ctx;
+	struct cam_hw_reset_args        reset_args;
+	struct cam_hw_stop_args         stop_args;
+	struct cam_custom_stop_args     custom_stop;
+
+	custom_ctx =
+		(struct cam_custom_context *) ctx->ctx_priv;
+
+	CAM_DBG(CAM_CUSTOM, "Flushing pending list");
+	spin_lock_bh(&ctx->lock);
+	__cam_custom_ctx_flush_req(ctx, &ctx->pending_req_list, flush_req);
+	spin_unlock_bh(&ctx->lock);
 
 	if (flush_req->type == CAM_REQ_MGR_FLUSH_TYPE_ALL) {
+		if (ctx->state <= CAM_CTX_READY) {
+			ctx->state = CAM_CTX_ACQUIRED;
+			goto end;
+		}
+
+		spin_lock_bh(&ctx->lock);
+		ctx->state = CAM_CTX_FLUSHED;
+		spin_unlock_bh(&ctx->lock);
+
 		CAM_INFO(CAM_CUSTOM, "Last request id to flush is %lld",
 			flush_req->req_id);
 		ctx->last_flush_req = flush_req->req_id;
+
+		/* stop hw first */
+		if (ctx->hw_mgr_intf->hw_stop) {
+			custom_stop.stop_only = true;
+			stop_args.ctxt_to_hw_map = ctx->ctxt_to_hw_map;
+			stop_args.args = (void *) &custom_stop;
+			rc = ctx->hw_mgr_intf->hw_stop(
+				ctx->hw_mgr_intf->hw_mgr_priv, &stop_args);
+			if (rc)
+				CAM_ERR(CAM_CUSTOM,
+					"HW stop failed in flush rc %d", rc);
+		}
+
+		spin_lock_bh(&ctx->lock);
+		if (!list_empty(&ctx->wait_req_list))
+			__cam_custom_ctx_flush_req(ctx, &ctx->wait_req_list,
+			flush_req);
+
+		if (!list_empty(&ctx->active_req_list))
+			__cam_custom_ctx_flush_req(ctx, &ctx->active_req_list,
+			flush_req);
+
+		custom_ctx->active_req_cnt = 0;
+		spin_unlock_bh(&ctx->lock);
+
+		reset_args.ctxt_to_hw_map = custom_ctx->hw_ctx;
+		rc = ctx->hw_mgr_intf->hw_reset(ctx->hw_mgr_intf->hw_mgr_priv,
+			&reset_args);
+		if (rc)
+			CAM_ERR(CAM_CUSTOM,
+				"Reset HW failed in flush rc %d", rc);
+
+		custom_ctx->init_received = false;
 	}
 
-	spin_lock_bh(&ctx->lock);
-	rc = __cam_custom_ctx_flush_req(ctx, &ctx->pending_req_list, flush_req);
-	spin_unlock_bh(&ctx->lock);
-
+end:
 	return rc;
 }
 
@@ -170,34 +256,27 @@ static int __cam_custom_ctx_flush_req_in_ready(
 	return rc;
 }
 
-static int __cam_custom_ctx_unlink_in_ready(struct cam_context *ctx,
-	struct cam_req_mgr_core_dev_link_setup *unlink)
-{
-	ctx->link_hdl = -1;
-	ctx->ctx_crm_intf = NULL;
-	ctx->state = CAM_CTX_ACQUIRED;
-
-	return 0;
-}
-
 static int __cam_custom_stop_dev_core(
 	struct cam_context *ctx, struct cam_start_stop_dev_cmd *stop_cmd)
 {
 	int rc = 0;
 	uint32_t i;
 	struct cam_custom_context          *ctx_custom =
-		(struct cam_custom_context *) ctx->ctx_priv;
-	struct cam_ctx_request          *req;
-	struct cam_custom_dev_ctx_req       *req_custom;
-	struct cam_hw_stop_args          stop;
+		(struct cam_custom_context *)   ctx->ctx_priv;
+	struct cam_ctx_request             *req;
+	struct cam_custom_dev_ctx_req      *req_custom;
+	struct cam_hw_stop_args             stop;
+	struct cam_custom_stop_args         custom_stop;
 
-	if (ctx_custom->hw_ctx) {
+	if ((ctx->state != CAM_CTX_FLUSHED) && (ctx_custom->hw_ctx) &&
+		(ctx->hw_mgr_intf->hw_stop)) {
+		custom_stop.stop_only = false;
 		stop.ctxt_to_hw_map = ctx_custom->hw_ctx;
-
-		stop.args = NULL;
-		if (ctx->hw_mgr_intf->hw_stop)
-			ctx->hw_mgr_intf->hw_stop(ctx->hw_mgr_intf->hw_mgr_priv,
+		stop.args = (void *) &custom_stop;
+		rc = ctx->hw_mgr_intf->hw_stop(ctx->hw_mgr_intf->hw_mgr_priv,
 			&stop);
+		if (rc)
+			CAM_ERR(CAM_CUSTOM, "HW stop failed rc %d", rc);
 	}
 
 	while (!list_empty(&ctx->pending_req_list)) {
@@ -752,7 +831,9 @@ static int __cam_custom_ctx_config_dev(struct cam_context *ctx,
 			CAM_ERR(CAM_CUSTOM, "Recevied INIT pkt in wrong state");
 		}
 	} else {
-		if (ctx->state >= CAM_CTX_READY && ctx->ctx_crm_intf->add_req) {
+		if ((ctx->state != CAM_CTX_FLUSHED) &&
+			(ctx->state >= CAM_CTX_READY) &&
+			(ctx->ctx_crm_intf->add_req)) {
 			add_req.link_hdl = ctx->link_hdl;
 			add_req.dev_hdl  = ctx->dev_hdl;
 			add_req.req_id   = req->request_id;
@@ -796,6 +877,44 @@ free_req:
 
 }
 
+static int __cam_custom_ctx_config_dev_in_flushed(struct cam_context *ctx,
+	struct cam_config_dev_cmd *cmd)
+{
+	int rc = 0;
+	struct cam_start_stop_dev_cmd start_cmd;
+	struct cam_custom_context *custom_ctx =
+		(struct cam_custom_context *) ctx->ctx_priv;
+
+	if (!custom_ctx->hw_acquired) {
+		CAM_ERR(CAM_CUSTOM, "HW is not acquired, reject packet");
+		rc = -EINVAL;
+		goto end;
+	}
+
+	rc = __cam_custom_ctx_config_dev(ctx, cmd);
+	if (rc)
+		goto end;
+
+	if (!custom_ctx->init_received) {
+		CAM_WARN(CAM_CUSTOM,
+			"Received update packet in flushed state, skip start");
+		goto end;
+	}
+
+	start_cmd.dev_handle = cmd->dev_handle;
+	start_cmd.session_handle = cmd->session_handle;
+	rc = __cam_custom_ctx_start_dev_in_ready(ctx, &start_cmd);
+	if (rc)
+		CAM_ERR(CAM_CUSTOM,
+			"Failed to re-start HW after flush rc: %d", rc);
+	else
+		CAM_INFO(CAM_CUSTOM,
+			"Received init after flush. Re-start HW complete.");
+
+end:
+	return rc;
+}
+
 static int __cam_custom_ctx_config_dev_in_acquired(struct cam_context *ctx,
 	struct cam_config_dev_cmd *cmd)
 {
@@ -835,32 +954,11 @@ static int __cam_custom_ctx_link_in_acquired(struct cam_context *ctx,
 	return 0;
 }
 
-static int __cam_custom_ctx_unlink_in_acquired(struct cam_context *ctx,
-	struct cam_req_mgr_core_dev_link_setup *unlink)
-{
-	ctx->link_hdl = -1;
-	ctx->ctx_crm_intf = NULL;
-
-	return 0;
-}
-
-static int __cam_custom_ctx_get_dev_info_in_acquired(struct cam_context *ctx,
-	struct cam_req_mgr_device_info *dev_info)
-{
-	dev_info->dev_hdl = ctx->dev_hdl;
-	strlcpy(dev_info->name, CAM_CUSTOM_DEV_NAME, sizeof(dev_info->name));
-	dev_info->dev_id = CAM_REQ_MGR_DEVICE_CUSTOM_HW;
-	dev_info->p_delay = 1;
-	dev_info->trigger = CAM_TRIGGER_POINT_SOF;
-
-	return 0;
-}
-
 static int __cam_custom_ctx_start_dev_in_ready(struct cam_context *ctx,
 	struct cam_start_stop_dev_cmd *cmd)
 {
 	int rc = 0;
-	struct cam_hw_config_args        hw_config;
+	struct cam_custom_start_args     custom_start;
 	struct cam_ctx_request          *req;
 	struct cam_custom_dev_ctx_req   *req_custom;
 	struct cam_custom_context       *ctx_custom =
@@ -889,16 +987,20 @@ static int __cam_custom_ctx_start_dev_in_ready(struct cam_context *ctx,
 		goto end;
 	}
 
-	hw_config.ctxt_to_hw_map = ctx_custom->hw_ctx;
-	hw_config.request_id = req->request_id;
-	hw_config.hw_update_entries = req_custom->cfg;
-	hw_config.num_hw_update_entries = req_custom->num_cfg;
-	hw_config.priv  = &req_custom->hw_update_data;
-	hw_config.init_packet = 1;
+	custom_start.hw_config.ctxt_to_hw_map = ctx_custom->hw_ctx;
+	custom_start.hw_config.request_id = req->request_id;
+	custom_start.hw_config.hw_update_entries = req_custom->cfg;
+	custom_start.hw_config.num_hw_update_entries = req_custom->num_cfg;
+	custom_start.hw_config.priv  = &req_custom->hw_update_data;
+	custom_start.hw_config.init_packet = 1;
+	if (ctx->state == CAM_CTX_FLUSHED)
+		custom_start.start_only = true;
+	else
+		custom_start.start_only = false;
 
 	ctx->state = CAM_CTX_ACTIVATED;
 	rc = ctx->hw_mgr_intf->hw_start(ctx->hw_mgr_intf->hw_mgr_priv,
-		&hw_config);
+		&custom_start);
 	if (rc) {
 		/* HW failure. User need to clean up the resource */
 		CAM_ERR(CAM_CUSTOM, "Start HW failed");
@@ -1064,7 +1166,20 @@ static struct cam_ctx_ops
 		.pagefault_ops = NULL,
 	},
 	/* Flushed */
-	{},
+	{
+		.ioctl_ops = {
+			.stop_dev = __cam_custom_stop_dev_in_activated,
+			.release_dev =
+				__cam_custom_ctx_release_dev_in_activated,
+			.config_dev = __cam_custom_ctx_config_dev_in_flushed,
+			.release_hw =
+				__cam_custom_ctx_release_hw_in_activated_state,
+		},
+		.crm_ops = {
+			.unlink = __cam_custom_ctx_unlink_in_ready,
+		},
+		.irq_ops = NULL,
+	},
 	/* Activated */
 	{
 		.ioctl_ops = {

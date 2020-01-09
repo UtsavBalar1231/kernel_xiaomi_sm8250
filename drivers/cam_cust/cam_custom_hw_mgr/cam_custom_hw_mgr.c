@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/slab.h>
@@ -220,6 +220,7 @@ err:
 static int cam_custom_mgr_stop_hw(void *hw_mgr_priv, void *stop_hw_args)
 {
 	int                               rc        = 0;
+	struct cam_custom_stop_args      *custom_args;
 	struct cam_hw_stop_args          *stop_args = stop_hw_args;
 	struct cam_custom_hw_mgr_res     *hw_mgr_res;
 	struct cam_custom_hw_mgr_ctx     *ctx;
@@ -229,6 +230,7 @@ static int cam_custom_mgr_stop_hw(void *hw_mgr_priv, void *stop_hw_args)
 		return -EINVAL;
 	}
 
+	custom_args = (struct cam_custom_stop_args *)stop_args->args;
 	ctx = (struct cam_custom_hw_mgr_ctx *)
 		stop_args->ctxt_to_hw_map;
 
@@ -261,6 +263,9 @@ static int cam_custom_mgr_stop_hw(void *hw_mgr_priv, void *stop_hw_args)
 
 	/* stop custom hw here */
 
+	if (custom_args->stop_only)
+		goto end;
+
 	/* Deinit custom cid here */
 	list_for_each_entry(hw_mgr_res,
 		&ctx->res_list_custom_cid, list) {
@@ -282,6 +287,7 @@ static int cam_custom_mgr_stop_hw(void *hw_mgr_priv, void *stop_hw_args)
 
 	/* deinit custom rsrc */
 
+end:
 	return rc;
 }
 
@@ -357,13 +363,19 @@ static int cam_custom_mgr_start_hw(void *hw_mgr_priv,
 	struct cam_hw_stop_args                  stop_args;
 	struct cam_custom_hw_mgr_res            *hw_mgr_res;
 	struct cam_custom_hw_mgr_ctx            *ctx;
+	struct cam_custom_stop_args              custom_stop_args;
+	struct cam_custom_start_args            *custom_args;
 
 	if (!hw_mgr_priv || !start_hw_args) {
 		CAM_ERR(CAM_CUSTOM, "Invalid arguments");
 		return -EINVAL;
 	}
 
-	hw_config = (struct cam_hw_config_args *)start_hw_args;
+	custom_args =
+		(struct cam_custom_start_args *)start_hw_args;
+
+	hw_config = (struct cam_hw_config_args *)
+		&custom_args->hw_config;
 
 	ctx = (struct cam_custom_hw_mgr_ctx *)
 		hw_config->ctxt_to_hw_map;
@@ -374,6 +386,9 @@ static int cam_custom_mgr_start_hw(void *hw_mgr_priv,
 
 	CAM_DBG(CAM_CUSTOM, "Enter... ctx id:%d",
 		ctx->ctx_index);
+
+	if (custom_args->start_only)
+		goto start_only;
 
 	/* Init custom cid */
 	list_for_each_entry(hw_mgr_res,
@@ -401,6 +416,8 @@ static int cam_custom_mgr_start_hw(void *hw_mgr_priv,
 	/* Init custom hw here */
 
 	/* Apply init config */
+
+start_only:
 
 	/* Start custom HW first */
 	if (rc < 0)
@@ -432,6 +449,8 @@ static int cam_custom_mgr_start_hw(void *hw_mgr_priv,
 	return 0;
 
 err:
+	custom_stop_args.stop_only = false;
+	stop_args.args = (void *) &custom_stop_args;
 	stop_args.ctxt_to_hw_map = hw_config->ctxt_to_hw_map;
 	cam_custom_mgr_stop_hw(hw_mgr_priv, &stop_args);
 deinit_hw:
@@ -1113,6 +1132,81 @@ static int cam_custom_mgr_prepare_hw_update(void *hw_mgr_priv,
 	return 0;
 }
 
+static int cam_custom_hw_mgr_reset_csid_res(
+	struct cam_custom_hw_mgr_res *hw_mgr_res)
+{
+	int rc = -1;
+	struct cam_csid_reset_cfg_args  csid_reset_args;
+	struct cam_isp_resource_node *custom_rsrc_node = NULL;
+	struct cam_hw_intf *hw_intf = NULL;
+
+	custom_rsrc_node =
+		(struct cam_isp_resource_node *)hw_mgr_res->rsrc_node;
+	if (!custom_rsrc_node) {
+		CAM_ERR(CAM_CUSTOM, "Invalid args");
+		return -EINVAL;
+	}
+
+	csid_reset_args.reset_type = CAM_IFE_CSID_RESET_PATH;
+	csid_reset_args.node_res = custom_rsrc_node;
+	hw_intf = custom_rsrc_node->hw_intf;
+	if (hw_intf->hw_ops.reset) {
+		CAM_DBG(CAM_CUSTOM, "RESET HW for res_id:%u",
+			hw_mgr_res->res_id);
+		rc = hw_intf->hw_ops.reset(hw_intf->hw_priv,
+			&csid_reset_args,
+			sizeof(struct cam_csid_reset_cfg_args));
+		if (rc)
+			goto err;
+	}
+
+	return 0;
+
+err:
+	CAM_ERR(CAM_CUSTOM,
+		"RESET HW failed for res_id:%u",
+		hw_mgr_res->res_id);
+	return rc;
+}
+
+static int cam_custom_hw_mgr_reset(
+	void *hw_mgr_priv, void *hw_reset_args)
+{
+	struct cam_hw_reset_args         *reset_args =
+		hw_reset_args;
+	struct cam_custom_hw_mgr_ctx     *ctx;
+	struct cam_custom_hw_mgr_res     *hw_mgr_res;
+	int                               rc = 0;
+
+	if (!hw_mgr_priv || !hw_reset_args) {
+		CAM_ERR(CAM_CUSTOM, "Invalid arguments");
+		return -EINVAL;
+	}
+
+	ctx = (struct cam_custom_hw_mgr_ctx *)
+		reset_args->ctxt_to_hw_map;
+	if (!ctx || !ctx->ctx_in_use) {
+		CAM_ERR(CAM_CUSTOM, "Invalid context is used");
+		return -EPERM;
+	}
+
+	CAM_DBG(CAM_CUSTOM, "Reset SBI CSID and SBI core");
+	list_for_each_entry(hw_mgr_res, &ctx->res_list_custom_csid, list) {
+		rc = cam_custom_hw_mgr_reset_csid_res(hw_mgr_res);
+		if (rc) {
+			CAM_ERR(CAM_CUSTOM,
+				"Failed to reset CSID:%d rc: %d",
+				hw_mgr_res->res_id, rc);
+			goto end;
+		}
+	}
+
+	/* Reset SBI HW */
+
+end:
+	return rc;
+}
+
 static int cam_custom_mgr_config_hw(void *hw_mgr_priv,
 	void *hw_config_args)
 {
@@ -1279,6 +1373,7 @@ int cam_custom_hw_mgr_init(struct device_node *of_node,
 	hw_mgr_intf->hw_release = cam_custom_mgr_release_hw;
 	hw_mgr_intf->hw_prepare_update = cam_custom_mgr_prepare_hw_update;
 	hw_mgr_intf->hw_config = cam_custom_mgr_config_hw;
+	hw_mgr_intf->hw_reset = cam_custom_hw_mgr_reset;
 
 	if (iommu_hdl)
 		*iommu_hdl = g_custom_hw_mgr.img_iommu_hdl;
