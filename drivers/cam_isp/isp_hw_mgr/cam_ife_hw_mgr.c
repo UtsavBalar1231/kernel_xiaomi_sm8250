@@ -285,7 +285,7 @@ static int cam_ife_hw_mgr_reset_csid_res(
 			rc = hw_intf->hw_ops.reset(hw_intf->hw_priv,
 				&csid_reset_args,
 				sizeof(struct cam_csid_reset_cfg_args));
-			if (rc <= 0)
+			if (rc)
 				goto err;
 		}
 	}
