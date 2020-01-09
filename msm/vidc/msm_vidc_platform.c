@@ -211,7 +211,7 @@ static struct msm_vidc_codec_capability lito_capabilities_v0[] = {
 	{CAP_MBS_PER_FRAME, ENC|DEC, VP8, 36, 34816, 1, 8160},
 	/* (3840 * 2176) / 256) * 30*/
 	{CAP_MBS_PER_SECOND, ENC|DEC, VP8, 36, 979200, 1, 244800},
-	{CAP_FRAMERATE, ENC|DEC, VP8, 1, 30, 1, 30},
+	{CAP_FRAMERATE, ENC|DEC, VP8, 1, 240, 1, 30},
 	{CAP_BITRATE, ENC, VP8, 1, 100000000, 1, 20000000},
 	{CAP_BITRATE, DEC, VP8, 1, 100000000, 1, 20000000},
 
@@ -307,7 +307,7 @@ static struct msm_vidc_codec_capability lito_capabilities_v1[] = {
 	{CAP_MBS_PER_FRAME, ENC|DEC, VP8, 36, 8160, 1, 8160},
 	/* ((1920 * 1088) / 256) * 60*/
 	{CAP_MBS_PER_SECOND, ENC|DEC, VP8, 36, 489600, 1, 244800},
-	{CAP_FRAMERATE, ENC|DEC, VP8, 1, 60, 1, 30},
+	{CAP_FRAMERATE, ENC|DEC, VP8, 1, 120, 1, 30},
 	{CAP_BITRATE, ENC, VP8, 1, 40000000, 1, 20000000},
 	{CAP_BITRATE, DEC, VP8, 1, 100000000, 1, 20000000},
 
