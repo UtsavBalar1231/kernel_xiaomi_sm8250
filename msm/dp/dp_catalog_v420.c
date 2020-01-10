@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 
@@ -247,7 +247,10 @@ static void dp_catalog_ctrl_update_vx_px_v420(struct dp_catalog_ctrl *ctrl,
 	io_data = catalog->io->dp_ahb;
 	version = dp_read(DP_HW_VERSION);
 
-	if (version == 0x10020003) {
+	/*
+	 * For DP controller versions 1.2.3 and 1.2.4
+	 */
+	if ((version == 0x10020003) || (version == 0x10020004)) {
 		if (high) {
 			value0 = dp_swing_hbr2_hbr3[v_level][p_level];
 			value1 = dp_pre_emp_hbr2_hbr3[v_level][p_level];
