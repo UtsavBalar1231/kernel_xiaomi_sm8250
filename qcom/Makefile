@@ -32,7 +32,8 @@ dtb-$(CONFIG_ARCH_KONA) += kona-rumi.dtb \
         kona-v2.1-mtp-ws.dtb \
         kona-v2.1-cdp.dtb \
         kona-v2.1-qrd.dtb \
-        kona-v2.1-hdk.dtb
+        kona-v2.1-hdk.dtb \
+        kona-v2.1-iot-rb5.dtb
 endif
 
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
