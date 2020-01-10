@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
 #define pr_fmt(fmt)	"%s: " fmt, __func__
@@ -3244,7 +3244,7 @@ int sde_cp_ltm_hist_interrupt(struct drm_crtc *crtc, bool en,
 	hw_dspp = sde_crtc->mixers[0].hw_dspp;
 	if (!hw_dspp) {
 		DRM_ERROR("invalid dspp\n");
-		return -EINVAL;
+		return -ENODEV;
 	}
 
 	if (en) {
