@@ -99,14 +99,16 @@ static int rmnet_shs_dev_notify_cb(struct notifier_block *nb,
 		 * phy_dev is going down.
 		 */
 		if (!rmnet_vnd_total && rmnet_shs_cfg.rmnet_shs_init_complete) {
+			unsigned int cpu_switch;
+
 			pr_info("rmnet_shs deinit %s going down ", dev->name);
 			RCU_INIT_POINTER(rmnet_shs_skb_entry, NULL);
 			qmi_rmnet_ps_ind_deregister(rmnet_shs_cfg.port,
 					    &rmnet_shs_cfg.rmnet_idl_ind_cb);
 			rmnet_shs_cancel_table();
-			rmnet_shs_rx_wq_exit();
+			cpu_switch = rmnet_shs_rx_wq_exit();
 			rmnet_shs_wq_exit();
-			rmnet_shs_exit();
+			rmnet_shs_exit(cpu_switch);
 			trace_rmnet_shs_high(RMNET_SHS_MODULE,
 					     RMNET_SHS_MODULE_INIT_WQ,
 					     0xDEF, 0xDEF, 0xDEF,
