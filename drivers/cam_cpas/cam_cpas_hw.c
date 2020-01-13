@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/device.h>
@@ -425,7 +425,7 @@ static int cam_cpas_util_set_camnoc_axi_clk_rate(
 	if (soc_private->control_camnoc_axi_clk) {
 		struct cam_hw_soc_info *soc_info = &cpas_hw->soc_info;
 		uint64_t required_camnoc_bw = 0, intermediate_result = 0;
-		int32_t clk_rate = 0;
+		int64_t clk_rate = 0;
 
 		for (i = 0; i < CAM_CPAS_MAX_TREE_NODES; i++) {
 			tree_node = soc_private->tree_node[i];
@@ -454,7 +454,7 @@ static int cam_cpas_util_set_camnoc_axi_clk_rate(
 		do_div(intermediate_result, soc_private->camnoc_bus_width);
 		clk_rate = intermediate_result;
 
-		CAM_DBG(CAM_CPAS, "Setting camnoc axi clk rate : %llu %d",
+		CAM_DBG(CAM_CPAS, "Setting camnoc axi clk rate : %llu %lld",
 			required_camnoc_bw, clk_rate);
 
 		/*
@@ -467,7 +467,7 @@ static int cam_cpas_util_set_camnoc_axi_clk_rate(
 			rc = cam_soc_util_set_src_clk_rate(soc_info, clk_rate);
 			if (rc)
 				CAM_ERR(CAM_CPAS,
-				"Failed in setting camnoc axi clk %llu %d %d",
+				"Failed in setting camnoc axi clk %llu %lld %d",
 				required_camnoc_bw, clk_rate, rc);
 		}
 	}
