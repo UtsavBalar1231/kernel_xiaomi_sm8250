@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2019 The Linux Foundation. All rights reserved.
+ * Copyright (C) 2014-2020 The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
  *
@@ -3339,6 +3339,7 @@ static void sde_plane_atomic_update(struct drm_plane *plane,
 {
 	struct sde_plane *psde;
 	struct drm_plane_state *state;
+	struct sde_plane_state *pstate;
 
 	if (!plane) {
 		SDE_ERROR("invalid plane\n");
@@ -3349,9 +3350,14 @@ static void sde_plane_atomic_update(struct drm_plane *plane,
 	}
 
 	psde = to_sde_plane(plane);
-	psde->is_error = false;
 	state = plane->state;
+	pstate = to_sde_plane_state(state);
 
+	if (psde->is_error && !(msm_property_is_dirty(&psde->property_info,
+		&pstate->property_state, PLANE_PROP_SCALER_V2)))
+		pstate->scaler_check_state = SDE_PLANE_SCLCHECK_INVALID;
+
+	psde->is_error = false;
 	SDE_DEBUG_PLANE(psde, "\n");
 
 	if (!sde_plane_enabled(state)) {
