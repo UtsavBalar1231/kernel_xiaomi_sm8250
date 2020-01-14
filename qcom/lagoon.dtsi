@@ -1347,6 +1347,12 @@
 		#reset-cells = <1>;
 	};
 
+	aop-msg-client {
+		compatible = "qcom,debugfs-qmp-client";
+		mboxes = <&qmp_aop 0>;
+		mbox-names = "aop";
+	};
+
 	videocc: qcom,videocc@aaf0000 {
 		compatible = "qcom,lagoon-videocc", "syscon";
 		reg = <0x0aaf0000 0x10000>;
