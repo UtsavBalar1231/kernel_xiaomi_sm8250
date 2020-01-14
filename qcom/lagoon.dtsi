@@ -394,7 +394,7 @@
 		xbl_aop_mem: xbl_aop_mem@80700000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0x0 0x80700000 0x0 0x180000>;
+			reg = <0x0 0x80700000 0x0 0x160000>;
 		};
 
 		sec_apps_mem: sec_apps_region@808ff000 {
