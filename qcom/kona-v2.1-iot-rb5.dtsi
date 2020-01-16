@@ -1,4 +1,4 @@
-#include <dt-bindings/gpio/gpio.h>
+#include "kona-qrd.dtsi"
 
 &qupv3_se12_2uart {
 	status = "okay";
