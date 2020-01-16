@@ -1043,7 +1043,9 @@ static void _sde_encoder_phys_wb_frame_done_helper(void *arg, bool frame_error)
 		event |= SDE_ENCODER_FRAME_EVENT_DONE |
 			SDE_ENCODER_FRAME_EVENT_SIGNAL_RETIRE_FENCE;
 
-		if (!phys_enc->in_clone_mode)
+		if (phys_enc->in_clone_mode)
+			event |= SDE_ENCODER_FRAME_EVENT_CWB_DONE;
+		else
 			event |= SDE_ENCODER_FRAME_EVENT_SIGNAL_RELEASE_FENCE;
 
 		phys_enc->parent_ops.handle_frame_done(phys_enc->parent,
@@ -1198,7 +1200,9 @@ static int sde_encoder_phys_wb_frame_timeout(struct sde_encoder_phys *phys_enc)
 		event = SDE_ENCODER_FRAME_EVENT_SIGNAL_RETIRE_FENCE
 			| SDE_ENCODER_FRAME_EVENT_ERROR;
 
-		if (!phys_enc->in_clone_mode)
+		if (phys_enc->in_clone_mode)
+			event |= SDE_ENCODER_FRAME_EVENT_CWB_DONE;
+		else
 			event |= SDE_ENCODER_FRAME_EVENT_SIGNAL_RELEASE_FENCE;
 
 		phys_enc->parent_ops.handle_frame_done(

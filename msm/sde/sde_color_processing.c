@@ -2774,10 +2774,15 @@ static void _sde_cp_crtc_queue_ltm_buffer(struct sde_crtc *sde_crtc, void *cfg)
 	struct sde_hw_cp_cfg *hw_cfg = cfg;
 	struct drm_msm_ltm_buffer *buf;
 	struct drm_msm_ltm_stats_data *ltm_data = NULL;
+	struct sde_ltm_buffer *free_buf;
 	u32 i;
 	bool found = false, already = false;
 	unsigned long irq_flags;
 	struct sde_ltm_buffer *buffer = NULL, *n = NULL;
+	u64 addr = 0;
+	bool submit_buf = false;
+	uint32_t num_mixers = 0;
+	struct sde_hw_dspp *hw_dspp = NULL;
 
 	if (!sde_crtc || !cfg) {
 		DRM_ERROR("invalid parameters sde_crtc %pK cfg %pK\n", sde_crtc,
@@ -2790,6 +2795,7 @@ static void _sde_cp_crtc_queue_ltm_buffer(struct sde_crtc *sde_crtc, void *cfg)
 		DRM_ERROR("invalid parameters payload %pK\n", buf);
 		return;
 	}
+	num_mixers = sde_crtc->num_mixers;
 
 	spin_lock_irqsave(&sde_crtc->ltm_lock, irq_flags);
 	if (!sde_crtc->ltm_buffer_cnt) {
@@ -2798,6 +2804,8 @@ static void _sde_cp_crtc_queue_ltm_buffer(struct sde_crtc *sde_crtc, void *cfg)
 		return;
 	}
 
+	if (list_empty(&sde_crtc->ltm_buf_free))
+		submit_buf = true;
 	for (i = 0; i < LTM_BUFFER_SIZE; i++) {
 		if (sde_crtc->ltm_buffers[i] && buf->fd ==
 				sde_crtc->ltm_buffers[i]->drm_fb_id) {
@@ -2816,6 +2824,20 @@ static void _sde_cp_crtc_queue_ltm_buffer(struct sde_crtc *sde_crtc, void *cfg)
 				list_add_tail(&sde_crtc->ltm_buffers[i]->node,
 					&sde_crtc->ltm_buf_free);
 			found = true;
+		}
+	}
+	if (submit_buf && found) {
+		free_buf = list_first_entry(&sde_crtc->ltm_buf_free,
+				struct sde_ltm_buffer, node);
+		addr = free_buf->iova + free_buf->offset;
+
+		for (i = 0; i < num_mixers; i++) {
+			hw_dspp = sde_crtc->mixers[i].hw_dspp;
+			if (!hw_dspp) {
+				DRM_ERROR("invalid dspp for mixer %d\n", i);
+				break;
+			}
+			hw_dspp->ops.setup_ltm_hist_buffer(hw_dspp, addr);
 		}
 	}
 	spin_unlock_irqrestore(&sde_crtc->ltm_lock, irq_flags);
@@ -3327,4 +3349,27 @@ int sde_cp_ltm_off_event_handler(struct drm_crtc *crtc_drm, bool en,
 	struct sde_irq_callback *hist_irq)
 {
 	return 0;
+}
+
+void sde_cp_mode_switch_prop_dirty(struct drm_crtc *crtc_drm)
+{
+	struct sde_cp_node *prop_node = NULL, *n = NULL;
+	struct sde_crtc *crtc;
+
+	if (!crtc_drm) {
+		DRM_ERROR("invalid crtc handle");
+		return;
+	}
+	crtc = to_sde_crtc(crtc_drm);
+	mutex_lock(&crtc->crtc_cp_lock);
+	list_for_each_entry_safe(prop_node, n, &crtc->active_list,
+				 active_list) {
+		if (prop_node->feature == SDE_CP_CRTC_DSPP_LTM_INIT ||
+			prop_node->feature == SDE_CP_CRTC_DSPP_LTM_VLUT) {
+			list_del_init(&prop_node->active_list);
+			list_add_tail(&prop_node->dirty_list,
+				&crtc->dirty_list);
+		}
+	}
+	mutex_unlock(&crtc->crtc_cp_lock);
 }

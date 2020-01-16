@@ -609,6 +609,7 @@ static int sde_kms_prepare_secure_transition(struct msm_kms *kms,
 {
 	struct drm_crtc *crtc;
 	struct drm_crtc_state *old_crtc_state;
+	struct drm_plane_state *old_plane_state, *new_plane_state;
 
 	struct drm_plane *plane;
 	struct drm_plane_state *plane_state;
@@ -670,6 +671,9 @@ static int sde_kms_prepare_secure_transition(struct msm_kms *kms,
 		if (ops & SDE_KMS_OPS_CLEANUP_PLANE_FB) {
 			SDE_DEBUG("cleanup planes\n");
 			drm_atomic_helper_cleanup_planes(dev, state);
+			for_each_oldnew_plane_in_state(state, plane,
+					old_plane_state, new_plane_state, i)
+				sde_plane_destroy_fb(old_plane_state);
 		}
 		if (ops & SDE_KMS_OPS_SECURE_STATE_CHANGE) {
 			SDE_DEBUG("secure ctrl\n");
@@ -887,16 +891,18 @@ static void _sde_kms_drm_check_dpms(struct drm_atomic_state *old_state,
 	struct drm_connector *connector;
 	struct drm_connector_state *old_conn_state;
 	struct drm_crtc_state *old_crtc_state;
+	struct drm_crtc *crtc;
 	int i, old_mode, new_mode, old_fps, new_fps;
 
 	for_each_old_connector_in_state(old_state, connector,
 			old_conn_state, i) {
-		if (!connector->state->crtc)
+		crtc = connector->state->crtc ? connector->state->crtc :
+			old_conn_state->crtc;
+		if (!crtc)
 			continue;
 
-		new_fps = connector->state->crtc->state->mode.vrefresh;
-		new_mode = _sde_kms_get_blank(connector->state->crtc->state,
-						connector->state);
+		new_fps = crtc->state->mode.vrefresh;
+		new_mode = _sde_kms_get_blank(crtc->state, connector->state);
 		if (old_conn_state->crtc) {
 			old_crtc_state = drm_atomic_get_existing_crtc_state(
 					old_state, old_conn_state->crtc);

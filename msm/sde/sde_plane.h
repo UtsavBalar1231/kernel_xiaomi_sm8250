@@ -133,6 +133,12 @@ struct sde_multirect_plane_states {
 	((S)->property_values[(X)].value) : 0)
 
 /**
+ * sde_plane_destroy_fb - destroy fb object and clear fb
+ * @state: old plane state
+ */
+void sde_plane_destroy_fb(struct drm_plane_state *state);
+
+/**
  * sde_plane_pipe - return sspp identifier for the given plane
  * @plane:   Pointer to DRM plane object
  * Returns: sspp identifier of the given plane

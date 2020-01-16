@@ -430,6 +430,7 @@ static bool sde_crtc_mode_fixup(struct drm_crtc *crtc,
 {
 	SDE_DEBUG("\n");
 
+	sde_cp_mode_switch_prop_dirty(crtc);
 	if ((msm_is_mode_seamless(adjusted_mode) ||
 	     (msm_is_mode_seamless_vrr(adjusted_mode) ||
 	      msm_is_mode_seamless_dyn_clk(adjusted_mode))) &&
@@ -2337,7 +2338,8 @@ static void sde_crtc_frame_event_work(struct kthread_work *work)
 
 	SDE_EVT32_VERBOSE(DRMID(crtc), fevent->event, SDE_EVTLOG_FUNC_ENTRY);
 
-	in_clone_mode = sde_encoder_in_clone_mode(fevent->connector->encoder);
+	in_clone_mode = (fevent->event & SDE_ENCODER_FRAME_EVENT_CWB_DONE) ?
+			true : false;
 
 	if (!in_clone_mode && (fevent->event & (SDE_ENCODER_FRAME_EVENT_ERROR
 					| SDE_ENCODER_FRAME_EVENT_PANEL_DEAD
@@ -2441,16 +2443,17 @@ static void _sde_crtc_clear_dim_layers_v1(struct sde_crtc_state *cstate)
  * @cstate:      Pointer to sde crtc state
  * @user_ptr:    User ptr for sde_drm_dim_layer_v1 struct
  */
-static void _sde_crtc_set_dim_layer_v1(struct sde_crtc_state *cstate,
-		void __user *usr_ptr)
+static void _sde_crtc_set_dim_layer_v1(struct drm_crtc *crtc,
+	struct sde_crtc_state *cstate, void __user *usr_ptr)
 {
 	struct sde_drm_dim_layer_v1 dim_layer_v1;
 	struct sde_drm_dim_layer_cfg *user_cfg;
 	struct sde_hw_dim_layer *dim_layer;
 	u32 count, i;
+	struct sde_kms *kms;
 
-	if (!cstate) {
-		SDE_ERROR("invalid cstate\n");
+	if (!crtc || !cstate) {
+		SDE_ERROR("invalid crtc or cstate\n");
 		return;
 	}
 	dim_layer = cstate->dim_layer;
@@ -2459,6 +2462,12 @@ static void _sde_crtc_set_dim_layer_v1(struct sde_crtc_state *cstate,
 		/* usr_ptr is null when setting the default property value */
 		_sde_crtc_clear_dim_layers_v1(cstate);
 		SDE_DEBUG("dim_layer data removed\n");
+		return;
+	}
+
+	kms = _sde_crtc_get_kms(crtc);
+	if (!kms || !kms->catalog) {
+		SDE_ERROR("invalid kms\n");
 		return;
 	}
 
@@ -2479,7 +2488,9 @@ static void _sde_crtc_set_dim_layer_v1(struct sde_crtc_state *cstate,
 		user_cfg = &dim_layer_v1.layer_cfg[i];
 
 		dim_layer[i].flags = user_cfg->flags;
-		dim_layer[i].stage = user_cfg->stage + SDE_STAGE_0;
+		dim_layer[i].stage = (kms->catalog->has_base_layer) ?
+					user_cfg->stage : user_cfg->stage +
+					SDE_STAGE_0;
 
 		dim_layer[i].rect.x = user_cfg->rect.x1;
 		dim_layer[i].rect.y = user_cfg->rect.y1;
@@ -4166,8 +4177,7 @@ end:
 static int _sde_crtc_check_secure_blend_config(struct drm_crtc *crtc,
 	struct drm_crtc_state *state, struct plane_state pstates[],
 	struct sde_crtc_state *cstate, struct sde_kms *sde_kms,
-	int cnt, int secure, int fb_ns, int fb_sec, int fb_sec_dir,
-	bool conn_secure, bool is_wb)
+	int cnt, int secure, int fb_ns, int fb_sec, int fb_sec_dir)
 {
 	struct drm_plane *plane;
 	int i;
@@ -4236,9 +4246,12 @@ static int _sde_crtc_check_secure_blend_config(struct drm_crtc *crtc,
 			int sec_stage = cnt ? pstates[0].sde_pstate->stage :
 						cstate->dim_layer[0].stage;
 
+			if (!sde_kms->catalog->has_base_layer)
+				sec_stage -= SDE_STAGE_0;
+
 			if ((!cnt && !cstate->num_dim_layers) ||
 				(sde_kms->catalog->sui_supported_blendstage
-						!= (sec_stage - SDE_STAGE_0))) {
+						!= sec_stage)) {
 				SDE_ERROR(
 				  "crtc%d: empty cnt%d/dim%d or bad stage%d\n",
 					DRMID(crtc), cnt,
@@ -4246,19 +4259,6 @@ static int _sde_crtc_check_secure_blend_config(struct drm_crtc *crtc,
 				return -EINVAL;
 			}
 		}
-	}
-
-	/*
-	 * If any input buffers are secure,
-	 * the output buffer must also be secure.
-	 */
-	if (is_wb && fb_sec && !conn_secure) {
-		SDE_ERROR(
-			"crtc%d: input fb sec %d, output fb secure %d\n",
-			DRMID(crtc),
-			(fb_sec) ? 1 : 0,
-			(conn_secure) ? 1 : 0);
-		return -EINVAL;
 	}
 
 	return 0;
@@ -4325,9 +4325,43 @@ static int _sde_crtc_check_secure_state_smmu_translation(struct drm_crtc *crtc,
 	return 0;
 }
 
+static int _sde_crtc_check_secure_conn(struct drm_crtc *crtc,
+		struct drm_crtc_state *state, uint32_t fb_sec)
+{
+
+	bool conn_secure = false, is_wb = false;
+	struct drm_connector *conn;
+	struct drm_connector_state *conn_state;
+	int i;
+
+	for_each_new_connector_in_state(state->state, conn, conn_state, i) {
+		if (conn_state && conn_state->crtc == crtc) {
+			if (conn->connector_type ==
+					DRM_MODE_CONNECTOR_VIRTUAL)
+				is_wb = true;
+			if (sde_connector_get_property(conn_state,
+					CONNECTOR_PROP_FB_TRANSLATION_MODE) ==
+					SDE_DRM_FB_SEC)
+				conn_secure = true;
+		}
+	}
+
+	/*
+	 * If any input buffers are secure for wb,
+	 * the output buffer must also be secure.
+	 */
+	if (is_wb && fb_sec && !conn_secure) {
+		SDE_ERROR("crtc%d: input fb sec %d, output fb secure %d\n",
+			DRMID(crtc), fb_sec, conn_secure);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int _sde_crtc_check_secure_state(struct drm_crtc *crtc,
 		struct drm_crtc_state *state, struct plane_state pstates[],
-		int cnt, bool conn_secure, bool is_wb)
+		int cnt)
 {
 	struct sde_crtc_state *cstate;
 	struct sde_kms *sde_kms;
@@ -4356,8 +4390,11 @@ static int _sde_crtc_check_secure_state(struct drm_crtc *crtc,
 		return rc;
 
 	rc = _sde_crtc_check_secure_blend_config(crtc, state, pstates, cstate,
-			sde_kms, cnt, secure, fb_ns, fb_sec, fb_sec_dir,
-			conn_secure, is_wb);
+			sde_kms, cnt, secure, fb_ns, fb_sec, fb_sec_dir);
+	if (rc)
+		return rc;
+
+	rc = _sde_crtc_check_secure_conn(crtc, state, fb_sec);
 	if (rc)
 		return rc;
 
@@ -4392,9 +4429,17 @@ static int _sde_crtc_check_get_pstates(struct drm_crtc *crtc,
 	const struct drm_plane_state *pstate;
 	const struct drm_plane_state *pipe_staged[SSPP_MAX];
 	int rc = 0, multirect_count = 0, i, mixer_width, mixer_height;
+	int inc_sde_stage = 0;
+	struct sde_kms *kms;
 
 	sde_crtc = to_sde_crtc(crtc);
 	cstate = to_sde_crtc_state(state);
+
+	kms = _sde_crtc_get_kms(crtc);
+	if (!kms || !kms->catalog) {
+		SDE_ERROR("invalid kms\n");
+		return -EINVAL;
+	}
 
 	memset(pipe_staged, 0, sizeof(pipe_staged));
 
@@ -4421,10 +4466,13 @@ static int _sde_crtc_check_get_pstates(struct drm_crtc *crtc,
 				pstates[*cnt].sde_pstate, PLANE_PROP_ZPOS);
 		pstates[*cnt].pipe_id = sde_plane_pipe(plane);
 
+		if (!kms->catalog->has_base_layer)
+			inc_sde_stage = SDE_STAGE_0;
+
 		/* check dim layer stage with every plane */
 		for (i = 0; i < cstate->num_dim_layers; i++) {
 			if (cstate->dim_layer[i].stage ==
-					(pstates[*cnt].stage + SDE_STAGE_0)) {
+				(pstates[*cnt].stage + inc_sde_stage)) {
 				SDE_ERROR(
 					"plane:%d/dim_layer:%i-same stage:%d\n",
 					plane->base.id, i,
@@ -4500,6 +4548,16 @@ static int _sde_crtc_check_zpos(struct drm_crtc_state *state,
 {
 	int rc = 0, i, z_pos;
 	u32 zpos_cnt = 0;
+	struct drm_crtc *crtc;
+	struct sde_kms *kms;
+
+	crtc = &sde_crtc->base;
+	kms = _sde_crtc_get_kms(crtc);
+
+	if (!kms || !kms->catalog) {
+		SDE_ERROR("Invalid kms\n");
+		return -EINVAL;
+	}
 
 	sort(pstates, cnt, sizeof(pstates[0]), pstate_cmp, NULL);
 
@@ -4539,7 +4597,11 @@ static int _sde_crtc_check_zpos(struct drm_crtc_state *state,
 			zpos_cnt++;
 		}
 
-		pstates[i].sde_pstate->stage = z_pos + SDE_STAGE_0;
+		if (!kms->catalog->has_base_layer)
+			pstates[i].sde_pstate->stage = z_pos + SDE_STAGE_0;
+		else
+			pstates[i].sde_pstate->stage = z_pos;
+
 		SDE_DEBUG("%s: zpos %d", sde_crtc->name, z_pos);
 	}
 	return rc;
@@ -4548,8 +4610,7 @@ static int _sde_crtc_check_zpos(struct drm_crtc_state *state,
 static int _sde_crtc_atomic_check_pstates(struct drm_crtc *crtc,
 		struct drm_crtc_state *state,
 		struct plane_state *pstates,
-		struct sde_multirect_plane_states *multirect_plane,
-		bool conn_secure, bool is_wb)
+		struct sde_multirect_plane_states *multirect_plane)
 {
 	struct sde_crtc *sde_crtc;
 	struct sde_crtc_state *cstate;
@@ -4580,8 +4641,7 @@ static int _sde_crtc_atomic_check_pstates(struct drm_crtc *crtc,
 	if (rc)
 		return rc;
 
-	rc = _sde_crtc_check_secure_state(crtc, state, pstates, cnt,
-			conn_secure, is_wb);
+	rc = _sde_crtc_check_secure_state(crtc, state, pstates, cnt);
 	if (rc)
 		return rc;
 
@@ -4607,7 +4667,6 @@ static int sde_crtc_atomic_check(struct drm_crtc *crtc,
 	struct sde_crtc_state *cstate;
 	struct drm_display_mode *mode;
 	int rc = 0;
-	bool conn_secure = false, is_wb = false;
 	struct sde_multirect_plane_states *multirect_plane = NULL;
 	struct drm_connector *conn;
 	struct drm_connector_list_iter conn_iter;
@@ -4661,14 +4720,6 @@ static int sde_crtc_atomic_check(struct drm_crtc *crtc,
 		if (conn->state && conn->state->crtc == crtc &&
 				cstate->num_connectors < MAX_CONNECTORS) {
 			cstate->connectors[cstate->num_connectors++] = conn;
-
-			if (conn->connector_type ==
-					DRM_MODE_CONNECTOR_VIRTUAL)
-				is_wb = true;
-			if (sde_connector_get_property(conn->state,
-					CONNECTOR_PROP_FB_TRANSLATION_MODE) ==
-					SDE_DRM_FB_SEC)
-				conn_secure = true;
 		}
 	drm_connector_list_iter_end(&conn_iter);
 
@@ -4676,7 +4727,7 @@ static int sde_crtc_atomic_check(struct drm_crtc *crtc,
 	_sde_crtc_setup_lm_bounds(crtc, state);
 
 	rc = _sde_crtc_atomic_check_pstates(crtc, state, pstates,
-			multirect_plane, conn_secure, is_wb);
+			multirect_plane);
 	if (rc) {
 		SDE_ERROR("crtc%d failed pstate check %d\n", crtc->base.id, rc);
 		goto end;
@@ -5022,6 +5073,9 @@ static void sde_crtc_install_properties(struct drm_crtc *crtc,
 		sde_kms_info_add_keyint(info, "ubwc_bw_calc_ver",
 				catalog->ubwc_bw_calc_version);
 
+	sde_kms_info_add_keyint(info, "use_baselayer_for_stage",
+			 catalog->has_base_layer);
+
 	msm_property_set_blob(&sde_crtc->property_info, &sde_crtc->blob_info,
 			info->data, SDE_KMS_INFO_DATALEN(info), CRTC_PROP_INFO);
 
@@ -5114,7 +5168,7 @@ static int sde_crtc_atomic_set_property(struct drm_crtc *crtc,
 		_sde_crtc_set_input_fence_timeout(cstate);
 		break;
 	case CRTC_PROP_DIM_LAYER_V1:
-		_sde_crtc_set_dim_layer_v1(cstate,
+		_sde_crtc_set_dim_layer_v1(crtc, cstate,
 					(void __user *)(uintptr_t)val);
 		break;
 	case CRTC_PROP_ROI_V1:
@@ -6135,6 +6189,7 @@ static int _sde_crtc_event_enable(struct sde_kms *kms,
 			if (!node)
 				return -ENOMEM;
 			INIT_LIST_HEAD(&node->list);
+			INIT_LIST_HEAD(&node->irq.list);
 			node->func = custom_events[i].func;
 			node->event = event;
 			node->state = IRQ_NOINIT;
