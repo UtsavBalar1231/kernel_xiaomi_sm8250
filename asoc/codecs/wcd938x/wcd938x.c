@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/module.h>
@@ -40,6 +40,8 @@
 #define ADC_MODE_VAL_LP       0x05
 #define ADC_MODE_VAL_ULP1     0x09
 #define ADC_MODE_VAL_ULP2     0x0B
+
+#define NUM_ATTEMPTS 5
 
 enum {
 	CODEC_TX = 0,
@@ -626,6 +628,15 @@ static int wcd938x_codec_ear_dac_event(struct snd_soc_dapm_widget *w,
 		if (wcd938x->ear_rx_path & EAR_RX_PATH_AUX) {
 			snd_soc_component_update_bits(component,
 				WCD938X_DIGITAL_CDC_AUX_GAIN_CTL, 0x01, 0x00);
+			snd_soc_component_update_bits(component,
+				WCD938X_DIGITAL_CDC_DIG_CLK_CTL, 0x04, 0x00);
+		} else {
+			snd_soc_component_update_bits(component,
+				WCD938X_DIGITAL_CDC_HPH_GAIN_CTL, 0x04, 0x00);
+			snd_soc_component_update_bits(component,
+				WCD938X_DIGITAL_CDC_DIG_CLK_CTL, 0x01, 0x00);
+			snd_soc_component_update_bits(component,
+				WCD938X_DIGITAL_CDC_COMP_CTL_0, 0x02, 0x00);
 		}
 		snd_soc_component_update_bits(component,
 				WCD938X_ANA_EAR_COMPANDER_CTL, 0x80, 0x00);
@@ -706,6 +717,11 @@ static int wcd938x_codec_enable_hphr_pa(struct snd_soc_dapm_widget *w,
 			     WCD_CLSH_STATE_HPHR,
 			     hph_mode);
 		wcd_clsh_set_hph_mode(component, CLS_H_HIFI);
+		if (hph_mode == CLS_H_LP || hph_mode == CLS_H_LOHIFI ||
+		    hph_mode == CLS_H_ULP) {
+			snd_soc_component_update_bits(component,
+				WCD938X_HPH_REFBUFF_LP_CTL, 0x01, 0x01);
+		}
 		snd_soc_component_update_bits(component, WCD938X_ANA_HPH,
 					      0x10, 0x10);
 		wcd_clsh_set_hph_mode(component, hph_mode);
@@ -726,6 +742,12 @@ static int wcd938x_codec_enable_hphr_pa(struct snd_soc_dapm_widget *w,
 				usleep_range(20000, 20100);
 			else
 				usleep_range(7000, 7100);
+			if (hph_mode == CLS_H_LP ||
+			    hph_mode == CLS_H_LOHIFI ||
+			    hph_mode == CLS_H_ULP)
+				snd_soc_component_update_bits(component,
+					WCD938X_HPH_REFBUFF_LP_CTL, 0x01,
+					0x00);
 			clear_bit(HPH_PA_DELAY, &wcd938x->status_mask);
 		}
 		snd_soc_component_update_bits(component,
@@ -831,6 +853,11 @@ static int wcd938x_codec_enable_hphl_pa(struct snd_soc_dapm_widget *w,
 			     WCD_CLSH_STATE_HPHL,
 			     hph_mode);
 		wcd_clsh_set_hph_mode(component, CLS_H_HIFI);
+		if (hph_mode == CLS_H_LP || hph_mode == CLS_H_LOHIFI ||
+		    hph_mode == CLS_H_ULP) {
+			snd_soc_component_update_bits(component,
+				WCD938X_HPH_REFBUFF_LP_CTL, 0x01, 0x01);
+		}
 		snd_soc_component_update_bits(component, WCD938X_ANA_HPH,
 						0x20, 0x20);
 		wcd_clsh_set_hph_mode(component, hph_mode);
@@ -851,6 +878,12 @@ static int wcd938x_codec_enable_hphl_pa(struct snd_soc_dapm_widget *w,
 				usleep_range(20000, 20100);
 			else
 				usleep_range(7000, 7100);
+			if (hph_mode == CLS_H_LP ||
+			    hph_mode == CLS_H_LOHIFI ||
+			    hph_mode == CLS_H_ULP)
+				snd_soc_component_update_bits(component,
+					WCD938X_HPH_REFBUFF_LP_CTL,
+					0x01, 0x00);
 			clear_bit(HPH_PA_DELAY, &wcd938x->status_mask);
 		}
 		snd_soc_component_update_bits(component,
@@ -1842,15 +1875,18 @@ static int wcd938x_get_logical_addr(struct swr_device *swr_dev)
 {
 	int ret = 0;
 	uint8_t devnum = 0;
+	int num_retry = NUM_ATTEMPTS;
 
-	ret = swr_get_logical_dev_num(swr_dev, swr_dev->addr, &devnum);
-	if (ret) {
-		dev_err(&swr_dev->dev,
-			"%s get devnum %d for dev addr %lx failed\n",
-			__func__, devnum, swr_dev->addr);
-		swr_remove_device(swr_dev);
-		return ret;
-	}
+	do {
+		ret = swr_get_logical_dev_num(swr_dev, swr_dev->addr, &devnum);
+		if (ret) {
+			dev_err(&swr_dev->dev,
+				"%s get devnum %d for dev addr %lx failed\n",
+				__func__, devnum, swr_dev->addr);
+			/* retry after 1ms */
+			usleep_range(1000, 1010);
+		}
+	} while (ret && --num_retry);
 	swr_dev->dev_num = devnum;
 	return 0;
 }
@@ -1898,14 +1934,19 @@ static int wcd938x_event_notify(struct notifier_block *block,
 		break;
 	case BOLERO_WCD_EVT_SSR_DOWN:
 		wcd938x->dev_up = false;
+		wcd938x->mbhc->wcd_mbhc.deinit_in_progress = true;
 		mbhc = &wcd938x->mbhc->wcd_mbhc;
 		wcd938x_mbhc_ssr_down(wcd938x->mbhc, component);
 		wcd938x_reset_low(wcd938x->dev);
 		break;
 	case BOLERO_WCD_EVT_SSR_UP:
 		wcd938x_reset(wcd938x->dev);
+		/* allow reset to take effect */
+		usleep_range(10000, 10010);
+
 		wcd938x_get_logical_addr(wcd938x->tx_swr_dev);
 		wcd938x_get_logical_addr(wcd938x->rx_swr_dev);
+
 		wcd938x_init_reg(component);
 		regcache_mark_dirty(wcd938x->regmap);
 		regcache_sync(wcd938x->regmap);
@@ -1918,6 +1959,7 @@ static int wcd938x_event_notify(struct notifier_block *block,
 		} else {
 			wcd938x_mbhc_hs_detect(component, mbhc->mbhc_cfg);
 		}
+		wcd938x->mbhc->wcd_mbhc.deinit_in_progress = false;
 		wcd938x->dev_up = true;
 		break;
 	case BOLERO_WCD_EVT_CLK_NOTIFY:
@@ -2346,7 +2388,6 @@ static const struct snd_kcontrol_new wcd938x_snd_controls[] = {
 		wcd938x_get_compander, wcd938x_set_compander),
 	SOC_SINGLE_EXT("HPHR_COMP Switch", SND_SOC_NOPM, 1, 1, 0,
 		wcd938x_get_compander, wcd938x_set_compander),
-
 	SOC_SINGLE_EXT("LDOH Enable", SND_SOC_NOPM, 0, 1, 0,
 		wcd938x_ldoh_get, wcd938x_ldoh_put),
 

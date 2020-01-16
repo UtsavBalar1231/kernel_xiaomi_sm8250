@@ -25,7 +25,7 @@
 
 #define SWR_ROW_48		0
 #define SWR_ROW_50		1
-#define SWR_ROW_64		2
+#define SWR_ROW_64		3
 #define SWR_MAX_COL		7 /* Cols = 16 */
 #define SWR_MIN_COL		0 /* Cols = 2 */
 
@@ -178,6 +178,7 @@ struct swr_mstr_ctrl {
 	u32 swr_irq_wakeup_capable;
 	int hw_core_clk_en;
 	int aud_core_clk_en;
+	int clk_src;
 #ifdef CONFIG_DEBUG_FS
 	struct dentry *debugfs_swrm_dent;
 	struct dentry *debugfs_peek;

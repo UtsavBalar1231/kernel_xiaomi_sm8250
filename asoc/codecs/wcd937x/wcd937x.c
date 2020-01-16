@@ -623,7 +623,6 @@ static int wcd937x_codec_aux_dac_event(struct snd_soc_dapm_widget *w,
 
 		break;
 	case SND_SOC_DAPM_POST_PMD:
-		wcd937x_rx_clk_disable(component);
 		snd_soc_component_update_bits(component,
 				WCD937X_DIGITAL_CDC_ANA_CLK_CTL,
 				0x04, 0x00);
@@ -1581,6 +1580,7 @@ static int wcd937x_event_notify(struct notifier_block *block,
 					0x80, 0x00);
 		break;
 	case BOLERO_WCD_EVT_SSR_DOWN:
+		wcd937x->mbhc->wcd_mbhc.deinit_in_progress = true;
 		mbhc = &wcd937x->mbhc->wcd_mbhc;
 		wcd937x_mbhc_ssr_down(wcd937x->mbhc, component);
 		wcd937x_reset_low(wcd937x->dev);
@@ -1604,6 +1604,7 @@ static int wcd937x_event_notify(struct notifier_block *block,
 		} else {
 			wcd937x_mbhc_hs_detect(component, mbhc->mbhc_cfg);
 		}
+		wcd937x->mbhc->wcd_mbhc.deinit_in_progress = false;
 		break;
 	default:
 		dev_err(component->dev, "%s: invalid event %d\n", __func__,
@@ -2462,6 +2463,7 @@ static int wcd937x_soc_codec_probe(struct snd_soc_component *component)
 		return -EINVAL;
 
 	wcd937x->component = component;
+	snd_soc_component_init_regmap(component, wcd937x->regmap);
 	variant = (snd_soc_component_read32(
 			component, WCD937X_DIGITAL_EFUSE_REG_0) & 0x1E) >> 1;
 	wcd937x->variant = variant;

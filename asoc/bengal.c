@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/clk.h>
@@ -14,6 +14,7 @@
 #include <linux/input.h>
 #include <linux/of_device.h>
 #include <linux/soc/qcom/fsa4480-i2c.h>
+#include <linux/nvmem-consumer.h>
 #include <sound/core.h>
 #include <sound/soc.h>
 #include <sound/soc-dapm.h>
@@ -155,6 +156,7 @@ struct msm_asoc_mach_data {
 	struct device_node *hph_en0_gpio_p; /* used by pinctrl API */
 	bool is_afe_config_done;
 	struct device_node *fsa_handle;
+	bool va_disable;
 };
 
 struct tdm_port {
@@ -3465,6 +3467,8 @@ static int msm_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 		break;
 
 	case MSM_BACKEND_DAI_SLIMBUS_7_TX:
+		param_set_mask(params, SNDRV_PCM_HW_PARAM_FORMAT,
+				slim_tx_cfg[SLIM_TX_7].bit_format);
 		rate->min = rate->max = slim_tx_cfg[SLIM_TX_7].sample_rate;
 		channels->min = channels->max =
 			slim_tx_cfg[SLIM_TX_7].channels;
@@ -3811,11 +3815,17 @@ static int msm_snd_cdc_dma_startup(struct snd_pcm_substream *substream)
 	int ret = 0;
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_soc_dai_link *dai_link = rtd->dai_link;
+	struct snd_soc_card *card = rtd->card;
+	struct msm_asoc_mach_data *pdata = snd_soc_card_get_drvdata(card);
 
 	switch (dai_link->id) {
 	case MSM_BACKEND_DAI_VA_CDC_DMA_TX_0:
 	case MSM_BACKEND_DAI_VA_CDC_DMA_TX_1:
 	case MSM_BACKEND_DAI_VA_CDC_DMA_TX_2:
+		if (pdata->va_disable) {
+			pr_debug("%s: SVA not supported\n", __func__);
+			return -EINVAL;
+		}
 		ret = bengal_send_island_va_config(dai_link->id);
 		if (ret)
 			pr_err("%s: send island va cfg failed, err: %d\n",
@@ -4835,7 +4845,7 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 };
 
 static struct snd_soc_dai_link msm_common_misc_fe_dai_links[] = {
-	{/* hw:x,34 */
+	{/* hw:x,33 */
 		.name = MSM_DAILINK_NAME(ASM Loopback),
 		.stream_name = "MultiMedia6",
 		.cpu_dai_name = "MultiMedia6",
@@ -4852,7 +4862,7 @@ static struct snd_soc_dai_link msm_common_misc_fe_dai_links[] = {
 		.ignore_pmdown_time = 1,
 		.id = MSM_FRONTEND_DAI_MULTIMEDIA6,
 	},
-	{/* hw:x,35 */
+	{/* hw:x,34 */
 		.name = "USB Audio Hostless",
 		.stream_name = "USB Audio Hostless",
 		.cpu_dai_name = "USBAUDIO_HOSTLESS",
@@ -4868,7 +4878,7 @@ static struct snd_soc_dai_link msm_common_misc_fe_dai_links[] = {
 		.codec_dai_name = "snd-soc-dummy-dai",
 		.codec_name = "snd-soc-dummy",
 	},
-	{/* hw:x,36 */
+	{/* hw:x,35 */
 		.name = "SLIMBUS_7 Hostless",
 		.stream_name = "SLIMBUS_7 Hostless",
 		.cpu_dai_name = "SLIMBUS7_HOSTLESS",
@@ -4884,7 +4894,7 @@ static struct snd_soc_dai_link msm_common_misc_fe_dai_links[] = {
 		.codec_dai_name = "snd-soc-dummy-dai",
 		.codec_name = "snd-soc-dummy",
 	},
-	{/* hw:x,37 */
+	{/* hw:x,36 */
 		.name = "Compress Capture",
 		.stream_name = "Compress9",
 		.cpu_dai_name = "MultiMedia17",
@@ -4899,7 +4909,7 @@ static struct snd_soc_dai_link msm_common_misc_fe_dai_links[] = {
 		.ignore_pmdown_time = 1,
 		.id = MSM_FRONTEND_DAI_MULTIMEDIA17,
 	},
-	{/* hw:x,38 */
+	{/* hw:x,37 */
 		.name = "SLIMBUS_8 Hostless",
 		.stream_name = "SLIMBUS_8 Hostless",
 		.cpu_dai_name = "SLIMBUS8_HOSTLESS",
@@ -4915,7 +4925,7 @@ static struct snd_soc_dai_link msm_common_misc_fe_dai_links[] = {
 		.codec_dai_name = "snd-soc-dummy-dai",
 		.codec_name = "snd-soc-dummy",
 	},
-	{/* hw:x,39 */
+	{/* hw:x,38 */
 		.name = LPASS_BE_TX_CDC_DMA_TX_5,
 		.stream_name = "TX CDC DMA5 Capture",
 		.cpu_dai_name = "msm-dai-cdc-dma-dev.45115",
@@ -6443,6 +6453,10 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	const char *mbhc_audio_jack_type = NULL;
 	int ret = 0;
 	uint index = 0;
+	struct nvmem_cell *cell;
+	size_t len;
+	u32 *buf;
+	u32 adsp_var_idx = 0;
 
 	if (!pdev->dev.of_node) {
 		dev_err(&pdev->dev,
@@ -6592,7 +6606,23 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 			__func__, ret);
 
 	is_initial_boot = true;
+	/* get adsp variant idx */
+	cell = nvmem_cell_get(&pdev->dev, "adsp_variant");
+	if (IS_ERR_OR_NULL(cell)) {
+		dev_dbg(&pdev->dev, "%s: FAILED to get nvmem cell \n", __func__);
+		goto ret;
+	}
+	buf = nvmem_cell_read(cell, &len);
+	nvmem_cell_put(cell);
+	if (IS_ERR_OR_NULL(buf) || len <= 0 || len > sizeof(32)) {
+		dev_dbg(&pdev->dev, "%s: FAILED to read nvmem cell \n", __func__);
+		goto ret;
+	}
+	memcpy(&adsp_var_idx, buf, len);
+	kfree(buf);
+	pdata->va_disable = adsp_var_idx;
 
+ret:
 	return 0;
 err:
 	devm_kfree(&pdev->dev, pdata);
