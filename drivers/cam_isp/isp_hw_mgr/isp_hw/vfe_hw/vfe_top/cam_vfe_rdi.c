@@ -212,7 +212,7 @@ static int cam_vfe_rdi_resource_start(
 	struct cam_vfe_mux_rdi_data   *rsrc_data;
 	int                            rc = 0;
 	uint32_t                       err_irq_mask[CAM_IFE_IRQ_REGISTERS_MAX];
-	uint32_t                       irq_mask[CAM_IFE_IRQ_REGISTERS_MAX];
+	uint32_t                 rdi_irq_mask[CAM_IFE_IRQ_REGISTERS_MAX] = {0};
 
 	if (!rdi_res) {
 		CAM_ERR(CAM_ISP, "Error! Invalid input arguments");
@@ -230,10 +230,6 @@ static int cam_vfe_rdi_resource_start(
 		rsrc_data->rdi_common_reg_data->error_irq_mask0;
 	err_irq_mask[CAM_IFE_IRQ_CAMIF_REG_STATUS1] =
 		rsrc_data->rdi_common_reg_data->error_irq_mask1;
-	irq_mask[CAM_IFE_IRQ_CAMIF_REG_STATUS0] =
-		rsrc_data->rdi_common_reg_data->subscribe_irq_mask0;
-	irq_mask[CAM_IFE_IRQ_CAMIF_REG_STATUS1] =
-		rsrc_data->rdi_common_reg_data->subscribe_irq_mask1;
 
 	rdi_res->res_state = CAM_ISP_RESOURCE_STATE_STREAMING;
 
@@ -261,11 +257,19 @@ static int cam_vfe_rdi_resource_start(
 	if (!rdi_res->rdi_only_ctx)
 		goto end;
 
+	rdi_irq_mask[0] =
+		(rsrc_data->reg_data->reg_update_irq_mask |
+			rsrc_data->reg_data->sof_irq_mask);
+
+	CAM_DBG(CAM_ISP, "RDI%d irq_mask 0x%x",
+		rdi_res->res_id - CAM_ISP_HW_VFE_IN_RDI0,
+		rdi_irq_mask[0]);
+
 	if (!rsrc_data->irq_handle) {
 		rsrc_data->irq_handle = cam_irq_controller_subscribe_irq(
 			rsrc_data->vfe_irq_controller,
 			CAM_IRQ_PRIORITY_1,
-			irq_mask,
+			rdi_irq_mask,
 			rdi_res,
 			rdi_res->top_half_handler,
 			rdi_res->bottom_half_handler,

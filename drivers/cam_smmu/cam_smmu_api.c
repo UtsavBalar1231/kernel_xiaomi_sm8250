@@ -14,6 +14,8 @@
 #include <linux/workqueue.h>
 #include <linux/genalloc.h>
 #include <linux/debugfs.h>
+#include <linux/dma-iommu.h>
+
 #include <soc/qcom/scm.h>
 #include <soc/qcom/secure_buffer.h>
 #include <media/cam_req_mgr.h>
@@ -134,6 +136,10 @@ struct cam_context_bank_info {
 
 	size_t io_mapping_size;
 	size_t shared_mapping_size;
+
+	/* discard iova - non-zero values are valid */
+	dma_addr_t discard_iova_start;
+	size_t discard_iova_len;
 };
 
 struct cam_iommu_cb_set {
@@ -218,8 +224,9 @@ static struct cam_dma_buff_info *cam_smmu_find_mapping_by_virt_address(int idx,
 	dma_addr_t virt_addr);
 
 static int cam_smmu_map_buffer_and_add_to_list(int idx, int ion_fd,
-	enum dma_data_direction dma_dir, dma_addr_t *paddr_ptr,
-	size_t *len_ptr, enum cam_smmu_region_id region_id);
+	bool dis_delayed_unmap, enum dma_data_direction dma_dir,
+	dma_addr_t *paddr_ptr, size_t *len_ptr,
+	enum cam_smmu_region_id region_id);
 
 static int cam_smmu_map_kernel_buffer_and_add_to_list(int idx,
 	struct dma_buf *buf, enum dma_data_direction dma_dir,
@@ -292,6 +299,7 @@ static void cam_smmu_page_fault_work(struct work_struct *work)
 				buf_info);
 		}
 	}
+	cam_smmu_dump_cb_info(idx);
 	kfree(payload);
 }
 
@@ -424,8 +432,9 @@ end:
 	if (closest_mapping) {
 		buf_handle = GET_MEM_HANDLE(idx, closest_mapping->ion_fd);
 		CAM_INFO(CAM_SMMU,
-			"Closest map fd %d 0x%lx 0x%lx-0x%lx buf=%pK mem %0x",
+			"Closest map fd %d 0x%lx %llu-%llu 0x%lx-0x%lx buf=%pK mem %0x",
 			closest_mapping->ion_fd, current_addr,
+			mapping->len, closest_mapping->len,
 			(unsigned long)closest_mapping->paddr,
 			(unsigned long)closest_mapping->paddr + mapping->len,
 			closest_mapping->buf,
@@ -1418,11 +1427,13 @@ end:
 EXPORT_SYMBOL(cam_smmu_dealloc_qdss);
 
 int cam_smmu_get_io_region_info(int32_t smmu_hdl,
-	dma_addr_t *iova, size_t *len)
+	dma_addr_t *iova, size_t *len,
+	dma_addr_t *discard_iova_start, size_t *discard_iova_len)
 {
 	int32_t idx;
 
-	if (!iova || !len || (smmu_hdl == HANDLE_INIT)) {
+	if (!iova || !len || !discard_iova_start || !discard_iova_len ||
+		(smmu_hdl == HANDLE_INIT)) {
 		CAM_ERR(CAM_SMMU, "Error: Input args are invalid");
 		return -EINVAL;
 	}
@@ -1444,10 +1455,15 @@ int cam_smmu_get_io_region_info(int32_t smmu_hdl,
 	mutex_lock(&iommu_cb_set.cb_info[idx].lock);
 	*iova = iommu_cb_set.cb_info[idx].io_info.iova_start;
 	*len = iommu_cb_set.cb_info[idx].io_info.iova_len;
+	*discard_iova_start =
+		iommu_cb_set.cb_info[idx].io_info.discard_iova_start;
+	*discard_iova_len =
+		iommu_cb_set.cb_info[idx].io_info.discard_iova_len;
 
 	CAM_DBG(CAM_SMMU,
-		"I/O area for hdl = %x start addr = %pK len = %zu",
-		smmu_hdl, *iova, *len);
+		"I/O area for hdl = %x Region:[%pK %zu] Discard:[%pK %zu]",
+		smmu_hdl, *iova, *len,
+		*discard_iova_start, *discard_iova_len);
 	mutex_unlock(&iommu_cb_set.cb_info[idx].lock);
 
 	return 0;
@@ -1691,7 +1707,7 @@ EXPORT_SYMBOL(cam_smmu_release_sec_heap);
 static int cam_smmu_map_buffer_validate(struct dma_buf *buf,
 	int idx, enum dma_data_direction dma_dir, dma_addr_t *paddr_ptr,
 	size_t *len_ptr, enum cam_smmu_region_id region_id,
-	struct cam_dma_buff_info **mapping_info)
+	bool dis_delayed_unmap, struct cam_dma_buff_info **mapping_info)
 {
 	struct dma_buf_attachment *attach = NULL;
 	struct sg_table *table = NULL;
@@ -1766,7 +1782,8 @@ static int cam_smmu_map_buffer_validate(struct dma_buf *buf,
 		}
 		iommu_cb_set.cb_info[idx].shared_mapping_size += *len_ptr;
 	} else if (region_id == CAM_SMMU_REGION_IO) {
-		attach->dma_map_attrs |= DMA_ATTR_DELAYED_UNMAP;
+		if (!dis_delayed_unmap)
+			attach->dma_map_attrs |= DMA_ATTR_DELAYED_UNMAP;
 
 		table = dma_buf_map_attachment(attach, dma_dir);
 		if (IS_ERR_OR_NULL(table)) {
@@ -1784,8 +1801,9 @@ static int cam_smmu_map_buffer_validate(struct dma_buf *buf,
 		goto err_unmap_sg;
 	}
 
-	CAM_DBG(CAM_SMMU, "iova=%pK, region_id=%d, paddr=%pK, len=%d",
-		iova, region_id, *paddr_ptr, *len_ptr);
+	CAM_DBG(CAM_SMMU,
+		"iova=%pK, region_id=%d, paddr=%pK, len=%d, dma_map_attrs=%d",
+		iova, region_id, *paddr_ptr, *len_ptr, attach->dma_map_attrs);
 
 	if (table->sgl) {
 		CAM_DBG(CAM_SMMU,
@@ -1853,8 +1871,9 @@ err_out:
 
 
 static int cam_smmu_map_buffer_and_add_to_list(int idx, int ion_fd,
-	 enum dma_data_direction dma_dir, dma_addr_t *paddr_ptr,
-	 size_t *len_ptr, enum cam_smmu_region_id region_id)
+	bool dis_delayed_unmap, enum dma_data_direction dma_dir,
+	dma_addr_t *paddr_ptr, size_t *len_ptr,
+	enum cam_smmu_region_id region_id)
 {
 	int rc = -1;
 	struct cam_dma_buff_info *mapping_info = NULL;
@@ -1864,7 +1883,7 @@ static int cam_smmu_map_buffer_and_add_to_list(int idx, int ion_fd,
 	buf = dma_buf_get(ion_fd);
 
 	rc = cam_smmu_map_buffer_validate(buf, idx, dma_dir, paddr_ptr, len_ptr,
-		region_id, &mapping_info);
+		region_id, dis_delayed_unmap, &mapping_info);
 
 	if (rc) {
 		CAM_ERR(CAM_SMMU, "buffer validation failure");
@@ -1888,7 +1907,7 @@ static int cam_smmu_map_kernel_buffer_and_add_to_list(int idx,
 	struct cam_dma_buff_info *mapping_info = NULL;
 
 	rc = cam_smmu_map_buffer_validate(buf, idx, dma_dir, paddr_ptr, len_ptr,
-		region_id, &mapping_info);
+		region_id, false, &mapping_info);
 
 	if (rc) {
 		CAM_ERR(CAM_SMMU, "buffer validation failure");
@@ -1925,6 +1944,11 @@ static int cam_smmu_unmap_buf_and_remove_from_list(
 		return -EINVAL;
 	}
 
+	CAM_DBG(CAM_SMMU,
+		"region_id=%d, paddr=%pK, len=%d, dma_map_attrs=%d",
+		mapping_info->region_id, mapping_info->paddr, mapping_info->len,
+		mapping_info->attach->dma_map_attrs);
+
 	if (mapping_info->region_id == CAM_SMMU_REGION_SHARED) {
 		CAM_DBG(CAM_SMMU,
 			"Removing SHARED buffer paddr = %pK, len = %zu",
@@ -1953,7 +1977,6 @@ static int cam_smmu_unmap_buf_and_remove_from_list(
 		iommu_cb_set.cb_info[idx].shared_mapping_size -=
 			mapping_info->len;
 	} else if (mapping_info->region_id == CAM_SMMU_REGION_IO) {
-		mapping_info->attach->dma_map_attrs |= DMA_ATTR_DELAYED_UNMAP;
 		iommu_cb_set.cb_info[idx].io_mapping_size -= mapping_info->len;
 	}
 
@@ -2706,7 +2729,7 @@ static int cam_smmu_map_iova_validate_params(int handle,
 	return rc;
 }
 
-int cam_smmu_map_user_iova(int handle, int ion_fd,
+int cam_smmu_map_user_iova(int handle, int ion_fd, bool dis_delayed_unmap,
 	enum cam_smmu_map_dir dir, dma_addr_t *paddr_ptr,
 	size_t *len_ptr, enum cam_smmu_region_id region_id)
 {
@@ -2757,8 +2780,8 @@ int cam_smmu_map_user_iova(int handle, int ion_fd,
 		goto get_addr_end;
 	}
 
-	rc = cam_smmu_map_buffer_and_add_to_list(idx, ion_fd, dma_dir,
-			paddr_ptr, len_ptr, region_id);
+	rc = cam_smmu_map_buffer_and_add_to_list(idx, ion_fd,
+		dis_delayed_unmap, dma_dir, paddr_ptr, len_ptr, region_id);
 	if (rc < 0) {
 		CAM_ERR(CAM_SMMU,
 			"mapping or add list fail, idx=%d, fd=%d, region=%d, rc=%d",
@@ -3271,6 +3294,13 @@ static int cam_smmu_setup_cb(struct cam_context_bank_info *cb,
 			rc = -ENODEV;
 			goto end;
 		}
+
+		iommu_dma_enable_best_fit_algo(dev);
+
+		if (cb->discard_iova_start)
+			iommu_dma_reserve_iova(dev, cb->discard_iova_start,
+				cb->discard_iova_len);
+
 		cb->state = CAM_SMMU_ATTACH;
 	} else {
 		CAM_ERR(CAM_SMMU, "Context bank does not have IO region");
@@ -3334,6 +3364,52 @@ static int cam_alloc_smmu_context_banks(struct device *dev)
 	iommu_cb_set.cb_init_count = 0;
 
 	CAM_DBG(CAM_SMMU, "no of context banks :%d", iommu_cb_set.cb_num);
+	return 0;
+}
+
+static int cam_smmu_get_discard_memory_regions(struct device_node *of_node,
+	dma_addr_t *discard_iova_start, size_t *discard_iova_len)
+{
+	uint32_t discard_iova[2] = { 0 };
+	int num_values = 0;
+	int rc = 0;
+
+	if (!discard_iova_start || !discard_iova_len)
+		return -EINVAL;
+
+	*discard_iova_start = 0;
+	*discard_iova_len = 0;
+
+	num_values = of_property_count_u32_elems(of_node,
+		"iova-region-discard");
+	if (num_values <= 0) {
+		CAM_DBG(CAM_UTIL, "No discard region specified");
+		return 0;
+	} else if (num_values != 2) {
+		CAM_ERR(CAM_UTIL, "Invalid discard region specified %d",
+			num_values);
+		return -EINVAL;
+	}
+
+	rc = of_property_read_u32_array(of_node,
+		"iova-region-discard",
+		discard_iova, num_values);
+	if (rc) {
+		CAM_ERR(CAM_UTIL, "Can not read discard region %d", num_values);
+		return rc;
+	} else if (!discard_iova[0] || !discard_iova[1]) {
+		CAM_ERR(CAM_UTIL,
+			"Incorrect Discard region specified [0x%x 0x%x]",
+			discard_iova[0], discard_iova[1]);
+		return -EINVAL;
+	}
+
+	CAM_DBG(CAM_UTIL, "Discard region [0x%x 0x%x]",
+		discard_iova[0], discard_iova[0] + discard_iova[1]);
+
+	*discard_iova_start = discard_iova[0];
+	*discard_iova_len = discard_iova[1];
+
 	return 0;
 }
 
@@ -3435,6 +3511,16 @@ static int cam_smmu_get_memory_regions_info(struct device_node *of_node,
 			cb->io_support = 1;
 			cb->io_info.iova_start = region_start;
 			cb->io_info.iova_len = region_len;
+			rc = cam_smmu_get_discard_memory_regions(child_node,
+				&cb->io_info.discard_iova_start,
+				&cb->io_info.discard_iova_len);
+			if (rc) {
+				CAM_ERR(CAM_SMMU,
+					"Invalid Discard region specified in IO region, rc=%d",
+					rc);
+				of_node_put(mem_map_node);
+				return -EINVAL;
+			}
 			break;
 		case CAM_SMMU_REGION_SECHEAP:
 			cb->secheap_support = 1;
@@ -3459,6 +3545,60 @@ static int cam_smmu_get_memory_regions_info(struct device_node *of_node,
 		CAM_DBG(CAM_SMMU, "region_len -> %X", region_len);
 		CAM_DBG(CAM_SMMU, "region_id -> %X", region_id);
 	}
+
+	if (cb->io_support) {
+		rc = cam_smmu_get_discard_memory_regions(of_node,
+			&cb->discard_iova_start,
+			&cb->discard_iova_len);
+		if (rc) {
+			CAM_ERR(CAM_SMMU,
+				"Invalid Discard region specified in CB, rc=%d",
+				rc);
+			of_node_put(mem_map_node);
+			return -EINVAL;
+		}
+
+		/* Make sure Discard region is properly specified */
+		if ((cb->discard_iova_start !=
+			cb->io_info.discard_iova_start) ||
+			(cb->discard_iova_len !=
+			cb->io_info.discard_iova_len)) {
+			CAM_ERR(CAM_SMMU,
+				"Mismatch Discard region specified, [0x%x 0x%x] [0x%x 0x%x]",
+				cb->discard_iova_start,
+				cb->discard_iova_len,
+				cb->io_info.discard_iova_start,
+				cb->io_info.discard_iova_len);
+			of_node_put(mem_map_node);
+			return -EINVAL;
+		} else if (cb->discard_iova_start && cb->discard_iova_len) {
+			if ((cb->discard_iova_start <=
+			cb->io_info.iova_start) ||
+			(cb->discard_iova_start >=
+			cb->io_info.iova_start + cb->io_info.iova_len) ||
+			(cb->discard_iova_start + cb->discard_iova_len >=
+			cb->io_info.iova_start + cb->io_info.iova_len)) {
+				CAM_ERR(CAM_SMMU,
+				"[%s] : Incorrect Discard region specified [0x%x 0x%x] in [0x%x 0x%x]",
+				cb->name,
+				cb->discard_iova_start,
+				cb->discard_iova_start + cb->discard_iova_len,
+				cb->io_info.iova_start,
+				cb->io_info.iova_start + cb->io_info.iova_len);
+				of_node_put(mem_map_node);
+				return -EINVAL;
+			}
+
+			CAM_INFO(CAM_SMMU,
+				"[%s] : Discard region specified [0x%x 0x%x] in [0x%x 0x%x]",
+				cb->name,
+				cb->discard_iova_start,
+				cb->discard_iova_start + cb->discard_iova_len,
+				cb->io_info.iova_start,
+				cb->io_info.iova_start + cb->io_info.iova_len);
+		}
+	}
+
 	of_node_put(mem_map_node);
 
 	if (!num_regions) {

@@ -82,6 +82,12 @@
 #define CAMERAICP_EHWVIOLATION         11
 #define CAMERAICP_ECDMERROR            12
 
+/* HFI Specific errors. */
+#define CAMERAICP_HFI_ERR_COMMAND_SIZE 1000
+#define CAMERAICP_HFI_ERR_MESSAGE_SIZE 1001
+#define CAMERAICP_HFI_QUEUE_EMPTY      1002
+#define CAMERAICP_HFI_QUEUE_FULL       1003
+
 /* Core level commands */
 /* IPE/BPS core Commands */
 #define HFI_CMD_IPE_BPS_COMMON_START \
