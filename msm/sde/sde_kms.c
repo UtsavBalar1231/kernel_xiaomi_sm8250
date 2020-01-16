@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
  *
@@ -3630,6 +3630,8 @@ static int sde_kms_hw_init(struct msm_kms *kms)
 	dev->mode_config.max_height = sde_kms->catalog->max_display_height;
 
 	mutex_init(&sde_kms->secure_transition_lock);
+	mutex_init(&sde_kms->vblank_ctl_global_lock);
+
 	atomic_set(&sde_kms->detach_sec_cb, 0);
 	atomic_set(&sde_kms->detach_all_cb, 0);
 
