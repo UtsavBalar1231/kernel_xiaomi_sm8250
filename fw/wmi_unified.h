@@ -487,6 +487,10 @@ typedef enum {
     WMI_VDEV_DELETE_ALL_PEER_CMDID,
     /* To set bss max idle time related parameters */
     WMI_VDEV_BSS_MAX_IDLE_TIME_CMDID,
+    /** Indicates FW to trigger Audio sync  */
+    WMI_VDEV_AUDIO_SYNC_TRIGGER_CMDID,
+    /** Gives Qtimer value  to FW  */
+    WMI_VDEV_AUDIO_SYNC_QTIMER_CMDID,
 
     /* peer specific commands */
 
@@ -1264,6 +1268,9 @@ typedef enum {
     WMI_AUDIO_AGGR_DEL_GROUP_CMDID,
     WMI_AUDIO_AGGR_SET_GROUP_RATE_CMDID,
     WMI_AUDIO_AGGR_SET_GROUP_RETRY_CMDID,
+    WMI_AUDIO_AGGR_SET_GROUP_AUTO_RATE_CMDID,
+    WMI_AUDIO_AGGR_SET_GROUP_PROBE_CMDID,
+    WMI_AUDIO_AGGR_UPDATE_STA_GROUP_INFO_CMDID,
 
     /** WMI commands related to Channel Frequency Response Capture **/
     WMI_CFR_CAPTURE_FILTER_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_CFR_CAPTURE),
@@ -1443,6 +1450,11 @@ typedef enum {
 
     /* FW response to Host for delete all peer cmdid */
     WMI_VDEV_DELETE_ALL_PEER_RESP_EVENTID,
+
+    /** Indicates host to start/stop strobing for QTIMER periodically */
+    WMI_VDEV_AUDIO_SYNC_START_STOP_EVENTID,
+    /** Sends the final offset in the QTIMERs of both master and slave */
+    WMI_VDEV_AUDIO_SYNC_Q_MASTER_SLAVE_OFFSET_EVENTID,
 
 
     /* peer specific events */
@@ -3263,6 +3275,20 @@ typedef struct {
     #define WMI_RSRC_CFG_FLAG_BSS_MAX_IDLE_TIME_SUPPORT_S 28
     #define WMI_RSRC_CFG_FLAG_BSS_MAX_IDLE_TIME_SUPPORT_M 0x10000000
 
+    /*
+     * If this bit is set, then target should use the audio sync feature.
+     * Host should only set this bit if the target has indicated via the
+     * WMI_SERVICE_AUDIO_SYNC_SUPPORT flag that it supports audio sync.
+     */
+    #define WMI_RSRC_CFG_FLAG_AUDIO_SYNC_SUPPORT_S  29
+    #define WMI_RSRC_CFG_FLAG_AUDIO_SYNC_SUPPORT_M 0x20000000
+
+    /*
+     * If this BIT is set, then the target should disable IPA
+     */
+    #define WMI_RSRC_CFG_FLAG_IPA_DISABLE_S 30
+    #define WMI_RSRC_CFG_FLAG_IPA_DISABLE_M 0x40000000
+
     A_UINT32 flag1;
 
     /** @brief smart_ant_cap - Smart Antenna capabilities information
@@ -3634,6 +3660,16 @@ typedef struct {
     WMI_RSRC_CFG_FLAG_SET((word32), BSS_MAX_IDLE_TIME_SUPPORT, (value))
 #define WMI_RSRC_CFG_FLAG_BSS_MAX_IDLE_TIME_SUPPORT_GET(word32) \
     WMI_RSRC_CFG_FLAG_GET((word32), BSS_MAX_IDLE_TIME_SUPPORT)
+
+#define WMI_RSRC_CFG_FLAG_AUDIO_SYNC_SUPPORT_SET(word32, value) \
+    WMI_RSRC_CFG_FLAG_SET((word32), AUDIO_SYNC_SUPPORT, (value))
+#define WMI_RSRC_CFG_FLAG_AUDIO_SYNC_SUPPORT_GET(word32) \
+    WMI_RSRC_CFG_FLAG_GET((word32), AUDIO_SYNC_SUPPORT)
+
+#define WMI_RSRC_CFG_FLAG_IPA_DISABLE_SET(word32, value) \
+    WMI_RSRC_CFG_FLAG_SET((word32), IPA_DISABLE, (value))
+#define WMI_RSRC_CFG_FLAG_IPA_DISABLE_GET(word32) \
+    WMI_RSRC_CFG_FLAG_GET((word32), IPA_DISABLE)
 
 #define WMI_RSRC_CFG_FLAGS2_RE_ULRESP_PDEV_CFG_GET(flags2, pdev_id) \
     WMI_GET_BITS(flags2, pdev_id, 1)
@@ -23846,6 +23882,56 @@ typedef struct {
     wmi_mac_addr leader_mac_addr;
 } wmi_rmc_manual_leader_event_fixed_param;
 
+typedef struct {
+    /** TLV tag and len; tag equals
+     * WMITLV_TAG_STRUC_wmi_audio_sync_start_event_fixed_param
+     */
+    A_UINT32 tlv_header;
+    /* VDEV identifier */
+    A_UINT32 vdev_id;
+    /* periodicity:
+     * How frequently (in msec) FW wants host to capture the Q_TIMER.
+     * periodicity = 0 indicates to the host to stop capturing the QTIMERs.
+     */
+    A_UINT32 periodicity;
+    /* No of Qtimer captures FW wants */
+    A_UINT32 reads_needed;
+    /* Lower 32 bits of the mac timer. Value is valid only if periodicity = 0 */
+    A_UINT32 mac_timer_l32;
+    /* Upper 32 bits of the mac timer. Value is valid only if periodicity = 0 */
+    A_UINT32 mac_timer_u32;
+    /* Lower 32 bits of the Qtimer. Value is valid only if periodicity = 0 */
+    A_UINT32 qtimer_l32;
+    /* Upper 32 bits of the Qtimer. Value is valid only if periodicity = 0 */
+    A_UINT32 qtimer_u32;
+} wmi_audio_sync_start_stop_event_fixed_param;
+
+typedef struct {
+    /** TLV tag and len; tag equals
+    * WMITLV_TAG_STRUC_wmi_audio_sync_q_mac_relation_event_fixed_param */
+    A_UINT32 tlv_header;
+    /* VDEV identifier */
+    A_UINT32 vdev_id;
+    /* Lower 32 bits of the offset between Qmaster and Qslave */
+    A_UINT32 offset_l32;
+    /* Upper 32 bits of the offset between Qmaster and Qslave */
+    A_UINT32 offset_u32;
+} wmi_audio_sync_q_master_slave_offset_event_fixed_param;
+
+typedef struct {
+    /** TLV tag and len; tag equals
+    * WMITLV_TAG_STRUC_wmi_audio_sync_q_mac_relation_event_fixed_param */
+    A_UINT32 tlv_header;
+    /* Lower 32 bits of the Qtimer of master */
+    A_UINT32 qmaster_l32;
+    /* Upper 32 bits of the Qtimer of master */
+    A_UINT32 qmaster_u32;
+    /* Lower 32 bits of the Qtimer of slave*/
+    A_UINT32 qslave_l32;
+    /* Upper 32 bits of the Qtimer of slave*/
+    A_UINT32 qslave_u32;
+} wmi_audio_sync_q_master_slave_times;
+
 typedef enum {
     WLAN_2G_CAPABILITY = 0x1,
     WLAN_5G_CAPABILITY = 0x2,
@@ -25018,12 +25104,17 @@ static INLINE A_UINT8 *wmi_id_to_name(A_UINT32 wmi_command)
         WMI_RETURN_STRING(WMI_AUDIO_AGGR_DEL_GROUP_CMDID);
         WMI_RETURN_STRING(WMI_AUDIO_AGGR_SET_GROUP_RATE_CMDID);
         WMI_RETURN_STRING(WMI_AUDIO_AGGR_SET_GROUP_RETRY_CMDID);
+        WMI_RETURN_STRING(WMI_AUDIO_AGGR_UPDATE_STA_GROUP_INFO_CMDID);
         WMI_RETURN_STRING(WMI_CFR_CAPTURE_FILTER_CMDID);
         WMI_RETURN_STRING(WMI_ATF_SSID_GROUPING_REQUEST_CMDID);
         WMI_RETURN_STRING(WMI_ATF_GROUP_WMM_AC_CONFIG_REQUEST_CMDID);
         WMI_RETURN_STRING(WMI_PEER_ATF_EXT_REQUEST_CMDID);
         WMI_RETURN_STRING(WMI_GET_CHANNEL_ANI_CMDID);
         WMI_RETURN_STRING(WMI_SET_OCL_CMDID);
+        WMI_RETURN_STRING(WMI_AUDIO_AGGR_SET_GROUP_AUTO_RATE_CMDID);
+        WMI_RETURN_STRING(WMI_AUDIO_AGGR_SET_GROUP_PROBE_CMDID);
+        WMI_RETURN_STRING(WMI_VDEV_AUDIO_SYNC_TRIGGER_CMDID);
+        WMI_RETURN_STRING(WMI_VDEV_AUDIO_SYNC_QTIMER_CMDID);
     }
 
     return "Invalid WMI cmd";
@@ -26483,6 +26574,8 @@ typedef enum {
     WMI_ROAM_TRIGGER_SUB_REASON_INACTIVITY_TIMER,   /* Roam scan triggered due to inactivity detection */
     WMI_ROAM_TRIGGER_SUB_REASON_BTM_DI_TIMER,       /* Roam scan triggered due to BTM Disassoc Imminent timeout */
     WMI_ROAM_TRIGGER_SUB_REASON_FULL_SCAN,          /* Roam scan triggered due to partial scan failure */
+    WMI_ROAM_TRIGGER_SUB_REASON_LOW_RSSI_PERIODIC,  /* Roam scan triggered due to Low rssi periodic timer */
+    WMI_ROAM_TRIGGER_SUB_REASON_CU_PERIODIC,        /* Roam scan triggered due to CU periodic timer */
 } WMI_ROAM_TRIGGER_SUB_REASON_ID;
 
 typedef struct {
@@ -26551,6 +26644,7 @@ typedef struct {
     A_UINT32 next_rssi_trigger_threshold;
     A_UINT32 roam_scan_channel_count; /* Number of channels scanned during roam scan */
     A_UINT32 roam_ap_count; /* Number of roamable APs */
+    A_UINT32 frame_info_count; /* Number of frame info */
 } wmi_roam_scan_info;
 
 typedef struct {
@@ -26586,6 +26680,7 @@ typedef struct {
 typedef enum {
     /* Failures reasons for not triggering roaming */
     WMI_ROAM_FAIL_REASON_NO_SCAN_START = 1, /* Roam scan not started */
+    WMI_ROAM_FAIL_REASON_SCAN_NOT_ALLOWED = WMI_ROAM_FAIL_REASON_NO_SCAN_START, /* Roam scan is not allowed to start */
     WMI_ROAM_FAIL_REASON_NO_AP_FOUND,       /* No roamable APs found during roam scan */
     WMI_ROAM_FAIL_REASON_NO_CAND_AP_FOUND,  /* No candidate APs found during roam scan */
 
@@ -26598,8 +26693,21 @@ typedef enum {
     WMI_ROAM_FAIL_REASON_REASSOC_RECV,      /* Received reassoc response with error status code */
     WMI_ROAM_FAIL_REASON_NO_REASSOC_RESP,   /* Not receiving reassoc response frame */
     WMI_ROAM_FAIL_REASON_EAPOL_TIMEOUT,     /* EAPOL TIMEOUT */
+    WMI_ROAM_FAIL_REASON_EAPOL_M1_TIMEOUT = WMI_ROAM_FAIL_REASON_EAPOL_TIMEOUT, /* EAPOL M1 is not received */
     WMI_ROAM_FAIL_REASON_MLME,              /* MLME internal error */
     WMI_ROAM_FAIL_REASON_INTERNAL_ABORT,    /* Internal abort */
+    WMI_ROAM_FAIL_REASON_SCAN_START,        /* Unable to start roam scan */
+    WMI_ROAM_FAIL_REASON_AUTH_NO_ACK,       /* No ACK is received for Auth request */
+    WMI_ROAM_FAIL_REASON_AUTH_INTERNAL_DROP, /* Auth request is dropped internally */
+    WMI_ROAM_FAIL_REASON_REASSOC_NO_ACK,    /* No ACK is received for Reassoc request */
+    WMI_ROAM_FAIL_REASON_REASSOC_INTERNAL_DROP, /* Reassoc request is dropped internally */
+    WMI_ROAM_FAIL_REASON_EAPOL_M2_SEND,     /* Unable to send EAPOL M2 frame */
+    WMI_ROAM_FAIL_REASON_EAPOL_M2_INTERNAL_DROP,   /* EAPOL M2 frame dropped internally */
+    WMI_ROAM_FAIL_REASON_EAPOL_M2_NO_ACK,   /* No Ack is recieved for EAPOL M2 frame */
+    WMI_ROAM_FAIL_REASON_EAPOL_M3_TIMEOUT,  /* M3 is not received */
+    WMI_ROAM_FAIL_REASON_EAPOL_M4_SEND,     /* Unable to send EAPOL M4 frame */
+    WMI_ROAM_FAIL_REASON_EAPOL_M4_INTERNAL_DROP,   /* EAPOL M4 frame dropped internally */
+    WMI_ROAM_FAIL_REASON_EAPOL_M4_NO_ACK,   /* No Ack is recieved for EAPOL M4 frame */
 
 
     WMI_ROAM_FAIL_REASON_UNKNOWN = 255,
@@ -26642,6 +26750,21 @@ typedef struct {
     A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_roam_neighbor_report_channel_info_tlv_param */
     A_UINT32 channel;    /* Channel frequency in MHz */
 } wmi_roam_neighbor_report_channel_info;
+
+typedef struct {
+    A_UINT32 tlv_header;     /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_roam_frame_info_tlv_param */
+    /* timestamp is the absolute time w.r.t host timer which is synchronized between the host and target */
+    A_UINT32 timestamp;      /* Timestamp when frame is sent or received */
+    /*
+     * frame_info = frame_type | (frame_subtype << 2) | (request_or_response << 6)| (seq_num << 16)
+     * frame_type(2 bits), frame_subtype(4 bits) are from 802.11 spec.
+     * request_or_response(1 bit) - Valid if frame_subtype is authentication.
+     *      0 - Authentication request 1 - Authentication response
+     * seq_num(16 bits) - frame sequence number
+     */
+    A_UINT32 frame_info;
+    A_UINT32 status_code; /* Status code from 802.11 spec, section 9.4.1.9 */
+} wmi_roam_frame_info;
 
 typedef struct {
     A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_roam_stats_event_fixed_param */
@@ -28316,28 +28439,33 @@ typedef struct {
     A_UINT32 tlv_header; /** TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_audio_aggr_enable_cmd_fixed_param */
     A_UINT32 aggr_enable; /* enable aggregation for audio frame */
     A_UINT32 tbd_enable;  /* enable time_based discarding for audio frame */
+    A_UINT32 vdev_id;
 } wmi_audio_aggr_enable_cmd_fixed_param;
 
 typedef struct wmi_audio_aggr_rate_set_s {
     A_UINT32 tlv_header; /** TLV tag and len; tag equals WMITLV_TAG_STRUC_audio_aggr_rate_set */
     A_UINT32 mcs;
     A_UINT32 bandwidth; /* 0 for 20M, 1 for 40M and 2 for 80M, etc. */
+    A_UINT32 vdev_id;
 } WMI_AUDIO_AGGR_RATE_SET_T;
 
 typedef struct {
     A_UINT32 tlv_header; /** TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_audio_aggr_add_group */
     A_UINT32 group_id;      /* id of audio group */
     wmi_mac_addr multicast_addr; /* multicast address of audio group */
+    A_UINT32 vdev_id;
 } wmi_audio_aggr_add_group_cmd_fixed_param;
 
 typedef struct {
     A_UINT32 tlv_header; /** TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_audio_aggr_del_group */
     A_UINT32 group_id;
+    A_UINT32 vdev_id;
 } wmi_audio_aggr_del_group_cmd_fixed_param;
 
 typedef struct {
     A_UINT32 tlv_header; /** TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_audio_aggr_set_group_rate */
     A_UINT32 group_id;
+    A_UINT32 vdev_id;
     /**
      * TLV (tag length value) parameters follow the
      * structure. The TLV's are:
@@ -28349,7 +28477,55 @@ typedef struct {
     A_UINT32 tlv_header; /** TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_audio_aggr_set_group_retry */
     A_UINT32 group_id;
     A_UINT32 retry_thresh;
+    A_UINT32 vdev_id;
 } wmi_audio_aggr_set_group_retry_cmd_fixed_param;
+
+typedef struct {
+    A_UINT32 tlv_header;
+    A_UINT32 vdev_id;
+    A_UINT32 group_id;
+    /*
+     * bit0: if set, Enable HT20
+     * bit1: if set, Enable HT40
+     * bit2, bit3: Reserved
+     * bit4: if set, Enable VHT20
+     * bit5: if set, Enable VHT40
+     * bit6: if set, Enable VHT80
+     * bit7 ~ bit31: Reserved
+     */
+    A_UINT32 bw;
+    A_UINT32 mcs_min;
+    A_UINT32 mcs_max;
+    A_UINT32 mcs_offset;
+    A_UINT32 nss;
+} wmi_audio_aggr_set_group_auto_rate_cmd_fixed_param;
+
+typedef struct {
+    A_UINT32 tlv_header;
+    A_UINT32 vdev_id;
+    A_UINT32 group_id;
+    A_UINT32 interval;
+} wmi_audio_aggr_set_group_probe_cmd_fixed_param;
+
+typedef struct {
+    /**
+     * TLV tag and len;
+     * tag equals WMITLV_TAG_STRUC_wmi_audio_aggr_update_sta_group_info */
+    A_UINT32 tlv_header;
+
+    /* vdev id */
+    A_UINT32 vdev_id; /* which STA/vdev's group membership is being specified */
+
+    /* bitmap that indicates which groups this sta belongs to */
+    A_UINT32 group_bmap;
+
+/*
+ * This fixed_param struct is followed by a TLV array of wmi_mac_addr,
+ * which specifies the multi-cast MAC address used for each group.
+ * The number of elements within the TLV array matches the number of bits
+ * set within group_bmap.
+ */
+} wmi_audio_aggr_update_sta_group_info_cmd_fixed_param;
 
 typedef struct {
     /** TLV tag and len; tag equals
@@ -28361,6 +28537,24 @@ typedef struct {
     A_UINT32 en_dis_chain;
 } wmi_set_ocl_cmd_fixed_param;
 
+typedef struct {
+    A_UINT32 tlv_header; /** TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_audio_sync_qtimer */
+    A_UINT32 vdev_id;
+    A_UINT32 qtimer_l32;
+    A_UINT32 qtimer_u32;
+} wmi_audio_sync_qtimer_cmd_fixed_param;
+
+typedef struct {
+    A_UINT32 tlv_header; /** TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_audio_sync_trigger */
+    A_UINT32 vdev_id;
+    /* agg_relation:
+     * indicates whether host needs only one pair of Qmaster and Qslave,
+     * or Qmaster and Qslave pairs derived for each FTM frame exchange.
+     *  0 indicates one pair for each FTM frame exchanged
+     *  1 indicates only one pair of Qmaster and Qslave times.
+     */
+    A_UINT32 agg_relation;
+} wmi_audio_sync_trigger_cmd_fixed_param;
 
 #define WMI_CFR_GROUP_TA_ADDR_VALID_BIT_POS           0
 #define WMI_CFR_GROUP_TA_ADDR_MASK_VALID_BIT_POS      1
