@@ -1191,44 +1191,9 @@
 			qcom,dump-id = <0x7>;
 		};
 
-		c0_scandump {
+		c_scandump {
 			qcom,dump-size = <0x40000>;
-			qcom,dump-id = <0x130>;
-		};
-
-		c1_scandump {
-			qcom,dump-size = <0x40000>;
-			qcom,dump-id = <0x131>;
-		};
-
-		c2_scandump {
-			qcom,dump-size = <0x40000>;
-			qcom,dump-id = <0x132>;
-		};
-
-		c3_scandump {
-			qcom,dump-size = <0x40000>;
-			qcom,dump-id = <0x133>;
-		};
-
-		c100_scandump {
-			qcom,dump-size = <0x40000>;
-			qcom,dump-id = <0x134>;
-		};
-
-		c101_scandump {
-			qcom,dump-size = <0x40000>;
-			qcom,dump-id = <0x135>;
-		};
-
-		c102_scandump {
-			qcom,dump-size = <0x40000>;
-			qcom,dump-id = <0x136>;
-		};
-
-		c103_scandump {
-			qcom,dump-size = <0x40000>;
-			qcom,dump-id = <0x137>;
+			qcom,dump-id = <0xeb>;
 		};
 
 		l1_icache0 {
