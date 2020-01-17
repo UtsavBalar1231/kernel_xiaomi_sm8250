@@ -502,6 +502,23 @@
 				   0x0f1a80b8 0x0f1b80b8>;
 	};
 
+	eud: qcom,msm-eud@1610000 {
+		compatible = "qcom,msm-eud";
+		interrupt-names = "eud_irq";
+		interrupts = <GIC_SPI 189 IRQ_TYPE_LEVEL_HIGH>;
+		reg = <0x1610000 0x2000>,
+		      <0x1612000 0x1000>,
+		      <0x3E5018 0x4>;
+		reg-names = "eud_base", "eud_mode_mgr2",
+				"eud_tcsr_check_reg";
+		qcom,secure-eud-en;
+		qcom,eud-tcsr-check-enable;
+		qcom,eud-clock-vote-req;
+		clocks = <&gcc GCC_AHB2PHY_USB_CLK>;
+		clock-names = "eud_ahb2phy_clk";
+		status = "ok";
+	};
+
 	wdog: qcom,wdt@f017000 {
 		compatible = "qcom,msm-watchdog";
 		reg = <0xf017000 0x1000>;
