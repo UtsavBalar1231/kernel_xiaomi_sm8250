@@ -1094,6 +1094,7 @@
 #include "scuba-gdsc.dtsi"
 #include "scuba-qupv3.dtsi"
 #include "scuba-usb.dtsi"
+#include "msm-arm-smmu-scuba.dtsi"
 
 &gcc_camss_top_gdsc {
 	status = "ok";
