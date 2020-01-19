@@ -2720,6 +2720,58 @@
 			};
 		};
 
+		sde_led_driver_en1_gpio: sde_led_driver_en1_gpio {
+			mux {
+				pins = "gpio144";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio144";
+				bias-pull-down;
+				drive-strength = <16>;
+			};
+		};
+
+		sde_led_driver_en2_gpio: sde_led_driver_en2_gpio {
+			mux {
+				pins = "gpio140";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio140";
+				bias-pull-down;
+				drive-strength = <16>;
+			};
+		};
+
+		sde_led_5v_en_gpio: sde_led_5v_en_gpio {
+			mux {
+				pins = "gpio134";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio134";
+				bias-pull-down;
+				drive-strength = <16>;
+			};
+		};
+
+		sde_display_1p8_en_gpio: sde_display_1p8_en_gpio {
+			mux {
+				pins = "gpio133";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio133";
+				bias-pull-down;
+				drive-strength = <16>;
+			};
+		};
+
 		bt_en_sleep: bt_en_sleep {
 			mux {
 			pins = "gpio21";
