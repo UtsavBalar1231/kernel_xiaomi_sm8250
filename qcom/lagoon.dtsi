@@ -2436,6 +2436,7 @@
 
 #include "lagoon-gdsc.dtsi"
 #include "lagoon-usb.dtsi"
+#include "lagoon-gpu.dtsi"
 #include "lagoon-npu.dtsi"
 #include "camera/lagoon-camera.dtsi"
 
