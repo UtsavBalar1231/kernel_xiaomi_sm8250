@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <asm/dma-iommu.h>
@@ -80,7 +80,7 @@ const struct msm_vidc_bus_data DEFAULT_BUS_VOTE = {
 	((a) > (b) ? (a) - (b) < TRIVIAL_BW_THRESHOLD : \
 		(b) - (a) < TRIVIAL_BW_THRESHOLD)
 
-const int max_packets = 1000;
+const int max_packets = 480; /* 16 sessions x 30 packets */
 
 static void venus_hfi_pm_handler(struct work_struct *work);
 static DECLARE_DELAYED_WORK(venus_hfi_pm_work, venus_hfi_pm_handler);
