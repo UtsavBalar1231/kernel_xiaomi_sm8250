@@ -1296,9 +1296,12 @@ static void swrm_apply_port_config(struct swr_master *master)
 	dev_dbg(swrm->dev, "%s: enter bank: %d master_ports: %d\n",
 		__func__, bank, master->num_port);
 
-
-	swrm_cmd_fifo_wr_cmd(swrm, 0x01, 0xF, 0x00,
-			SWRS_SCP_HOST_CLK_DIV2_CTL_BANK(bank));
+	if (bank == 0)
+		swrm_cmd_fifo_wr_cmd(swrm, 0x01, 0xF, 0x00,
+				SWRS_SCP_HOST_CLK_DIV2_CTL_BANK(bank));
+	else
+		swrm_cmd_fifo_wr_cmd(swrm, 0x00, 0xF, 0x00,
+				SWRS_SCP_HOST_CLK_DIV2_CTL_BANK(bank));
 
 	swrm_copy_data_port_config(master, bank);
 }
