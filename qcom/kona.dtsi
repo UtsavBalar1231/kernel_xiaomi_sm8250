@@ -4965,6 +4965,11 @@
 		gpu_lm_efuse: gpu_lm_efuse@5c8 {
 			reg = <0x5c8 0x4>;
 		};
+
+		gpu_speed_bin: gpu_speed_bin@19b {
+			reg = <0x19b 0x1>;
+			bits = <5 3>;
+		};
 	};
 };
 
