@@ -10,6 +10,7 @@ ADC node:
     Value type: <string>
     Definition: Should contain "qcom,spmi-adc5" for PMIC5 ADC driver.
 		Should contain "qcom,spmi-adc-rev2" for PMIC refresh ADC driver.
+		Should contain "qcom,spmi-adc5-lite" for PMIC5 ADC-lite driver.
 
 - reg:
     Usage: required for VADC base address
