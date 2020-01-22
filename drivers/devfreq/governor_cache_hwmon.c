@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2014-2015, 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2015, 2019-2020, The Linux Foundation. All rights reserved.
  */
 
 #define pr_fmt(fmt) "cache-hwmon: " fmt
@@ -401,7 +401,7 @@ int register_cache_hwmon(struct device *dev, struct cache_hwmon *hwmon)
 	mutex_unlock(&register_lock);
 
 	if (!ret) {
-		dev_info(dev, "Cache HWmon governor registered.\n");
+		dev_dbg(dev, "Cache HWmon governor registered.\n");
 	} else {
 		dev_err(dev, "Failed to add Cache HWmon governor\n");
 		return ret;
