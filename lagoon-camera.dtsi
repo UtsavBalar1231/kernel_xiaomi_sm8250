@@ -346,7 +346,7 @@
 		reg = <0xacc1000 0x1000>;
 		reg-cam-base = <0xc1000>;
 		interrupt-names = "csid";
-		interrupts = <GIC_SPI 718 IRQ_TYPE_EDGE_RISING>;
+		interrupts = <GIC_SPI 717 IRQ_TYPE_EDGE_RISING>;
 		regulator-names = "camss", "ife2";
 		camss-supply = <&cam_cc_titan_top_gdsc>;
 		ife2-supply = <&cam_cc_ife_2_gdsc>;
@@ -383,7 +383,7 @@
 		reg = <0xacbd000 0x4000>;
 		reg-cam-base = <0xbd000>;
 		interrupt-names = "ife";
-		interrupts = <GIC_SPI 719 IRQ_TYPE_EDGE_RISING>;
+		interrupts = <GIC_SPI 718 IRQ_TYPE_EDGE_RISING>;
 		regulator-names = "camss", "ife2";
 		camss-supply = <&cam_cc_titan_top_gdsc>;
 		ife2-supply = <&cam_cc_ife_2_gdsc>;
@@ -496,6 +496,7 @@
 			"soc_ahb_clk",
 			"icp_clk",
 			"icp_clk_src";
+		src-clock-name = "icp_clk_src";
 		clocks =
 			<&camcc CAM_CC_FAST_AHB_CLK_SRC>,
 			<&camcc CAM_CC_SOC_AHB_CLK>,
@@ -506,8 +507,10 @@
 			<100000000 0 0 384000000>,
 			<200000000 0 0 404000000>,
 			<300000000 0 0 600000000>,
+			<404000000 0 0 600000000>,
 			<404000000 0 0 600000000>;
-		clock-cntl-level = "lowsvs", "svs", "svs_l1", "turbo";
+		clock-cntl-level = "lowsvs", "svs",
+			"svs_l1", "nominal", "turbo";
 		fw_name = "CAMERA_ICP.elf";
 		ubwc-cfg = <0x73 0x1CF>;
 		status = "ok";
@@ -538,7 +541,7 @@
 			<0 0 0 0 240000000>,
 			<0 0 0 0 320000000>,
 			<0 0 0 0 404000000>,
-			<0 0 0 0 538000000>,
+			<0 0 0 0 538666666>,
 			<0 0 0 0 600000000>;
 		clock-cntl-level = "lowsvs", "svs",
 			"svs_l1", "nominal", "turbo";
@@ -1070,14 +1073,17 @@
 					parent-node = <&level1_nrt0_rd>;
 				};
 
-				ipe0_ref_wr: ipe0-ref-wr {
+				ipe0_all_wr: ipe0-all-wr {
 					cell-index = <20>;
-					node-name = "ipe0-ref-wr";
+					node-name = "ipe0-all-wr";
 					client-name = "ipe0";
-					traffic-data =
-					<CAM_CPAS_PATH_DATA_IPE_WR_REF>;
+					traffic-data = <CAM_CPAS_PATH_DATA_ALL>;
 					traffic-transaction-type =
 					<CAM_CPAS_TRANSACTION_WRITE>;
+					constituent-paths =
+					<CAM_CPAS_PATH_DATA_IPE_WR_VID
+					CAM_CPAS_PATH_DATA_IPE_WR_DISP
+					CAM_CPAS_PATH_DATA_IPE_WR_REF>;
 					parent-node = <&level1_nrt0_wr>;
 				};
 
