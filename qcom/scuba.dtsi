@@ -1151,7 +1151,7 @@
 #include "scuba-coresight.dtsi"
 #include "scuba-pinctrl.dtsi"
 #include "scuba-ion.dtsi"
-#include "scuba-stub-regulator.dtsi"
+#include "scuba-regulator.dtsi"
 #include "scuba-gdsc.dtsi"
 #include "scuba-qupv3.dtsi"
 #include "scuba-usb.dtsi"
