@@ -2394,36 +2394,6 @@ static int _sde_plane_validate_scaler_v2(struct sde_plane *psde,
 	return 0;
 }
 
-static int sde_get_sspp_linewidth(struct sde_plane *psde,
-	struct drm_plane_state *state, struct sde_rect *src,
-	struct sde_rect *dst)
-{
-	struct sde_plane_state *pstate;
-	struct sde_kms *kms;
-	u32 src_deci_w = 0, src_deci_h = 0, deci_w = 0, deci_h = 0;
-
-	pstate = to_sde_plane_state(state);
-	kms = _sde_plane_get_kms(&psde->base);
-
-	if (!kms || !kms->catalog)
-		return -EINVAL;
-
-	if (!kms->catalog->scaling_linewidth)
-		return psde->pipe_sblk->maxlinewidth;
-
-	deci_w = sde_plane_get_property(pstate, PLANE_PROP_H_DECIMATE);
-	deci_h = sde_plane_get_property(pstate, PLANE_PROP_V_DECIMATE);
-
-	src_deci_w = DECIMATED_DIMENSION(src->w, deci_w);
-	src_deci_h = DECIMATED_DIMENSION(src->h, deci_h);
-
-	if ((src->w != state->crtc_w) || (src->h != state->crtc_h) ||
-		(src_deci_w != state->crtc_w) || (src_deci_h != state->crtc_h))
-		return kms->catalog->scaling_linewidth;
-	else
-		return  psde->pipe_sblk->maxlinewidth;
-}
-
 static int _sde_atomic_check_decimation_scaler(struct drm_plane_state *state,
 	struct sde_plane *psde, const struct sde_format *fmt,
 	struct sde_plane_state *pstate, struct sde_rect *src,
@@ -2433,13 +2403,21 @@ static int _sde_atomic_check_decimation_scaler(struct drm_plane_state *state,
 	uint32_t deci_w, deci_h, src_deci_w, src_deci_h;
 	uint32_t scaler_src_w, scaler_src_h;
 	uint32_t max_downscale_num, max_downscale_denom;
-	uint32_t max_upscale, max_linewidth;
+	uint32_t max_upscale, max_linewidth = 0;
 	bool inline_rotation, rt_client;
 	struct drm_crtc *crtc;
 	struct drm_crtc_state *new_cstate;
+	struct sde_kms *kms;
 
 	if (!state || !state->state || !state->crtc) {
 		SDE_ERROR_PLANE(psde, "invalid arguments\n");
+		return -EINVAL;
+	}
+
+	kms = _sde_plane_get_kms(&psde->base);
+
+	if (!kms || !kms->catalog) {
+		SDE_ERROR_PLANE(psde, "invalid kms");
 		return -EINVAL;
 	}
 
@@ -2460,12 +2438,14 @@ static int _sde_atomic_check_decimation_scaler(struct drm_plane_state *state,
 	}
 
 	max_upscale = psde->pipe_sblk->maxupscale;
-	max_linewidth = sde_get_sspp_linewidth(psde, state, src, dst);
 
-	if (max_linewidth <= 0) {
-		SDE_ERROR("Invalid max linewidth\n");
-		return -EINVAL;
-	}
+	if ((scaler_src_w != state->crtc_w) || (scaler_src_h != state->crtc_h))
+		max_linewidth = inline_rotation ?
+				 psde->pipe_sblk->in_rot_maxheight :
+				 kms->catalog->scaling_linewidth;
+
+	if (!max_linewidth)
+		max_linewidth = psde->pipe_sblk->maxlinewidth;
 
 	crtc = state->crtc;
 	new_cstate = drm_atomic_get_new_crtc_state(state->state, crtc);
@@ -2508,10 +2488,10 @@ static int _sde_atomic_check_decimation_scaler(struct drm_plane_state *state,
 		ret = -EINVAL;
 
 	/* check decimated source width */
-	} else if (src_deci_w > max_linewidth) {
+	} else if (scaler_src_w > max_linewidth) {
 		SDE_ERROR_PLANE(psde,
-				"invalid src w:%u, deci w:%u, line w:%u\n",
-				src->w, src_deci_w, max_linewidth);
+			"invalid src w:%u, deci w:%u, line w:%u, rot: %d\n",
+			src->w, src_deci_w, max_linewidth, inline_rotation);
 		ret = -E2BIG;
 	}
 
