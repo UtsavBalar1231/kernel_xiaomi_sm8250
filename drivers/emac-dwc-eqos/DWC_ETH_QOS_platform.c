@@ -1501,6 +1501,8 @@ static int DWC_ETH_QOS_init_gpios(struct device *dev)
 
 		gpio_set_value(dwc_eth_qos_res_data.gpio_phy_reset, PHY_RESET_GPIO_HIGH);
 		EMACDBG("PHY is out of reset successfully\n");
+		/* Add delay of 50ms so that phy should get sufficient time*/
+		mdelay(50);
 	}
 
 	return ret;
