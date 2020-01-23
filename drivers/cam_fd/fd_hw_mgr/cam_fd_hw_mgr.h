@@ -159,6 +159,8 @@ struct cam_fd_mgr_work_data {
  * @work                      : Worker handle
  * @work_data                 : Worker data
  * @fd_caps                   : FD driver capabilities
+ * @num_pending_frames        : Number of total frames pending for processing
+ *                              across contexts
  */
 struct cam_fd_hw_mgr {
 	struct list_head                   free_ctx_list;
@@ -182,6 +184,7 @@ struct cam_fd_hw_mgr {
 	struct cam_req_mgr_core_workq     *work;
 	struct cam_fd_mgr_work_data        work_data[CAM_FD_WORKQ_NUM_TASK];
 	struct cam_fd_query_cap_cmd        fd_caps;
+	uint32_t                           num_pending_frames;
 };
 
 #endif /* _CAM_FD_HW_MGR_H_ */
