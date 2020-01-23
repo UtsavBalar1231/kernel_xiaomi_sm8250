@@ -10,6 +10,9 @@
 			<MSM_BUS_MASTER_QUP_CORE_0 MSM_BUS_SLAVE_QUP_CORE_0>,
 			<MSM_BUS_MASTER_QUP_0 MSM_BUS_SLAVE_EBI_CH0>;
 		qcom,vote-for-bw;
+		iommus = <&apps_smmu 0xe3 0x0>;
+		qcom,iommu-dma-addr-pool = <0x40000000 0xc0000000>;
+		qcom,iommu-dma = "fastmap";
 	};
 
 	/* Debug Console UART Instance: QUPV3_0_SE4 */
