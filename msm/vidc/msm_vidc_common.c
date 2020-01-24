@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/jiffies.h>
@@ -5574,8 +5574,8 @@ int msm_vidc_check_scaling_supported(struct msm_vidc_inst *inst)
 	u32 input_height, input_width, output_height, output_width;
 	struct v4l2_format *f;
 
-	if (is_grid_session(inst)) {
-		s_vpr_h(inst->sid, "Skip scaling check for HEIC\n");
+	if (is_grid_session(inst) || is_decode_session(inst)) {
+		s_vpr_h(inst->sid, "Skip scaling check\n");
 		return 0;
 	}
 
