@@ -17,6 +17,10 @@
 /delete-node/ &pil_gpu_mem;
 /delete-node/ &cdsp_sec_mem;
 
+/delete-node/ &user_contig_mem;
+/delete-node/ &qseecom_mem;
+/delete-node/ &qseecom_ta_mem;
+
 /delete-node/ &secure_display_memory;
 
 /delete-node/ &disp_rdump_memory;
@@ -105,12 +109,29 @@
 		no-map;
 		reg = <0x0 0xa0100000 0x0 0x2200000>;
 	};
+
+	qseecom_mem: qseecom_region {
+		compatible = "shared-dma-pool";
+		alloc-ranges = <0x0 0x00000000 0x0 0xffffffff>;
+		reusable;
+		alignment = <0x0 0x400000>;
+		size = <0x0 0x1000000>;
+	};
+
+	qseecom_ta_mem: qseecom_ta_region {
+		compatible = "shared-dma-pool";
+		alloc-ranges = <0x0 0x00000000 0x0 0xffffffff>;
+		reusable;
+		alignment = <0x0 0x400000>;
+		size = <0x0 0x400000>;
+	};
 };
 
 &soc {
 	qcom,ion {
 		/delete-node/ qcom,ion-heap@14;
 		/delete-node/ qcom,ion-heap@10;
+		/delete-node/ qcom,ion-heap@26;
 	};
 
 	qcom_seecom: qseecom@a1700000 {
