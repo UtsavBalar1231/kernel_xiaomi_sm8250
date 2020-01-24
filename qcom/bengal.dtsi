@@ -2206,6 +2206,11 @@
 			reg = <0x6018 0x4>;
 		};
 
+		feat_conf10: feat_conf10@602c {
+			reg = <0x602c 0x2>;
+			bits = <13 1>;
+		};
+
 		adsp_variant: adsp_variant@6011 {
 			reg = <0x6011 0x1>;
 			bits = <3 1>;
