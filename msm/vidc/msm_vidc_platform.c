@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/debugfs.h>
@@ -180,6 +180,7 @@ static struct msm_vidc_codec_capability lito_capabilities_v0[] = {
 	/* ((3840x2176)/256)@60fps */
 	{CAP_MBS_PER_SECOND, DOMAINS_ALL, CODECS_ALL, 36, 1958400, 1, 1958400},
 	{CAP_FRAMERATE, DOMAINS_ALL, CODECS_ALL, 1, 480, 1, 30},
+	{CAP_OPERATINGRATE, DOMAINS_ALL, CODECS_ALL, 1, 480, 1, 30},
 	{CAP_BITRATE, DOMAINS_ALL, CODECS_ALL, 1, 200000000, 1, 20000000},
 	{CAP_CABAC_BITRATE, ENC, H264, 1, 200000000, 1, 20000000},
 	{CAP_SCALE_X, ENC, CODECS_ALL, 8192, 65536, 1, 8192},
@@ -210,7 +211,7 @@ static struct msm_vidc_codec_capability lito_capabilities_v0[] = {
 	{CAP_MBS_PER_FRAME, ENC|DEC, VP8, 36, 34816, 1, 8160},
 	/* (3840 * 2176) / 256) * 30*/
 	{CAP_MBS_PER_SECOND, ENC|DEC, VP8, 36, 979200, 1, 244800},
-	{CAP_FRAMERATE, ENC|DEC, VP8, 1, 30, 1, 30},
+	{CAP_FRAMERATE, ENC|DEC, VP8, 1, 240, 1, 30},
 	{CAP_BITRATE, ENC, VP8, 1, 100000000, 1, 20000000},
 	{CAP_BITRATE, DEC, VP8, 1, 100000000, 1, 20000000},
 
@@ -275,6 +276,7 @@ static struct msm_vidc_codec_capability lito_capabilities_v1[] = {
 	/* UHD@30 decode + 1080@30 encode */
 	{CAP_MBS_PER_SECOND, DOMAINS_ALL, CODECS_ALL, 36, 1224000, 1, 1224000},
 	{CAP_FRAMERATE, DOMAINS_ALL, CODECS_ALL, 1, 240, 1, 30},
+	{CAP_OPERATINGRATE, DOMAINS_ALL, CODECS_ALL, 1, 240, 1, 30},
 	{CAP_BITRATE, DOMAINS_ALL, CODECS_ALL, 1, 100000000, 1, 20000000},
 	{CAP_CABAC_BITRATE, ENC, H264, 1, 100000000, 1, 20000000},
 	{CAP_SCALE_X, ENC, CODECS_ALL, 8192, 65536, 1, 8192},
@@ -305,7 +307,7 @@ static struct msm_vidc_codec_capability lito_capabilities_v1[] = {
 	{CAP_MBS_PER_FRAME, ENC|DEC, VP8, 36, 8160, 1, 8160},
 	/* ((1920 * 1088) / 256) * 60*/
 	{CAP_MBS_PER_SECOND, ENC|DEC, VP8, 36, 489600, 1, 244800},
-	{CAP_FRAMERATE, ENC|DEC, VP8, 1, 60, 1, 30},
+	{CAP_FRAMERATE, ENC|DEC, VP8, 1, 120, 1, 30},
 	{CAP_BITRATE, ENC, VP8, 1, 40000000, 1, 20000000},
 	{CAP_BITRATE, DEC, VP8, 1, 100000000, 1, 20000000},
 
@@ -370,6 +372,7 @@ static struct msm_vidc_codec_capability bengal_capabilities_v0[] = {
 	/* 1080@30 decode + 1080@30 encode */
 	{CAP_MBS_PER_SECOND, DOMAINS_ALL, CODECS_ALL, 64, 489600, 1, 244800},
 	{CAP_FRAMERATE, DOMAINS_ALL, CODECS_ALL, 1, 120, 1, 30},
+	{CAP_OPERATINGRATE, DOMAINS_ALL, CODECS_ALL, 1, INT_MAX, 1, 30},
 	{CAP_BITRATE, DOMAINS_ALL, CODECS_ALL, 1, 60000000, 1, 20000000},
 	{CAP_HIER_P_NUM_ENH_LAYERS, ENC, H264|HEVC, 0, 6, 1, 0},
 	{CAP_LTR_COUNT, ENC, H264|HEVC, 0, 4, 1, 0},
@@ -430,6 +433,7 @@ static struct msm_vidc_codec_capability bengal_capabilities_v1[] = {
 	/* 1920*1088 @30fps */
 	{CAP_MBS_PER_SECOND, DOMAINS_ALL, CODECS_ALL, 64, 244800, 1, 244800},
 	{CAP_FRAMERATE, DOMAINS_ALL, CODECS_ALL, 1, 120, 1, 30},
+	{CAP_OPERATINGRATE, DOMAINS_ALL, CODECS_ALL, 1, INT_MAX, 1, 30},
 	{CAP_BITRATE, DOMAINS_ALL, CODECS_ALL, 1, 60000000, 1, 20000000},
 	{CAP_HIER_P_NUM_ENH_LAYERS, ENC, H264|HEVC, 0, 6, 1, 0},
 	{CAP_LTR_COUNT, ENC, H264|HEVC, 0, 4, 1, 0},
@@ -490,6 +494,7 @@ static struct msm_vidc_codec_capability kona_capabilities[] = {
 	/* ((1920 * 1088) / 256) * 960 fps */
 	{CAP_MBS_PER_SECOND, DOMAINS_ALL, CODECS_ALL, 64, 7833600, 1, 7833600},
 	{CAP_FRAMERATE, DOMAINS_ALL, CODECS_ALL, 1, 960, 1, 30},
+	{CAP_OPERATINGRATE, DOMAINS_ALL, CODECS_ALL, 1, INT_MAX, 1, 30},
 	{CAP_BITRATE, DOMAINS_ALL, CODECS_ALL, 1, 220000000, 1, 20000000},
 	{CAP_BITRATE, ENC, HEVC, 1, 160000000, 1, 20000000},
 	{CAP_CABAC_BITRATE, ENC, H264, 1, 160000000, 1, 20000000},
@@ -653,7 +658,7 @@ static struct msm_vidc_common_data lito_common_data_v0[] = {
 	},
 	{
 		.key = "qcom,max-mbpf",
-		.value = 65280,/* (3840x2176)/256 + (3840x2176)/256 */
+		.value = 130560,/* ((3840x2176)/256) x 4 */
 	},
 	{
 		.key = "qcom,power-collapse-delay",
@@ -732,7 +737,7 @@ static struct msm_vidc_common_data lito_common_data_v1[] = {
 	},
 	{
 		.key = "qcom,max-mbpf",
-		.value = 40800,	/* (3840x2176)/256 + (1920x1088)/256 */
+		.value = 130560,/* ((3840x2176)/256) x 4 */
 	},
 	{
 		.key = "qcom,power-collapse-delay",
@@ -1558,6 +1563,9 @@ void *vidc_get_drv_data(struct device *dev)
 			ddr_type, driver_data->ubwc_config ?
 			driver_data->ubwc_config->highest_bank_bit : -1);
 	} else if (!strcmp(match->compatible, "qcom,bengal-vidc")) {
+		d_vpr_h("Disable NOC error recovery");
+		msm_vidc_err_recovery_disable =
+				VIDC_DISABLE_NOC_ERR_RECOV;
 		rc = msm_vidc_read_rank(driver_data, dev);
 		if (rc) {
 			d_vpr_e("Failed to get ddr rank, use Dual Rank DDR\n");

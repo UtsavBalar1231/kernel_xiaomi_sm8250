@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _MSM_VIDC_COMMON_H_
@@ -177,6 +177,22 @@ static inline int msm_comm_s_ctrl(struct msm_vidc_inst *inst,
 		struct v4l2_control *ctrl)
 {
 	return v4l2_s_ctrl(NULL, &inst->ctrl_handler, ctrl);
+}
+
+static inline bool is_valid_operating_rate(struct msm_vidc_inst *inst, s32 val)
+{
+	struct hal_capability_supported *cap;
+
+	cap = &inst->capability.cap[CAP_OPERATINGRATE];
+
+	if (((val >> 16) < cap->min || (val >> 16) > cap->max) &&
+		val != INT_MAX) {
+		s_vpr_e(inst->sid,
+			"Unsupported operating rate %d min %d max %d\n",
+			val >> 16, cap->min, cap->max);
+		return false;
+	}
+	return true;
 }
 
 bool is_single_session(struct msm_vidc_inst *inst, u32 ignore_flags);
