@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  */
 
 
@@ -77,6 +77,7 @@ static struct cam_vfe_camif_ver3_reg_data vfe_480_camif_reg_data = {
 	.error_irq_mask0                 = 0x82000200,
 	.error_irq_mask2                 = 0x30301F80,
 	.subscribe_irq_mask1             = 0x00000007,
+	.frame_id_irq_mask               = 0x400,
 	.enable_diagnostic_hw            = 0x1,
 	.pp_camif_cfg_en_shift           = 0,
 	.pp_camif_cfg_ife_out_en_shift   = 8,
@@ -101,7 +102,7 @@ static struct cam_vfe_top_ver3_reg_offset_common vfe480_top_common_reg = {
 	.ahb_cgc_ovd              = 0x00000024,
 	.noc_cgc_ovd              = 0x00000028,
 	.trigger_cdm_events       = 0x00000090,
-	.sbi_frame_idx            = 0x00000110,
+	.custom_frame_idx         = 0x00000110,
 	.dsp_status               = 0x0000007C,
 	.diag_config              = 0x00000064,
 	.diag_sensor_status_0     = 0x00000068,

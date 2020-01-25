@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <media/cam_defs.h>
@@ -463,7 +463,8 @@ int cam_isp_add_io_buffers(
 	struct cam_ife_hw_mgr_res            *res_list_isp_out,
 	struct list_head                     *res_list_ife_in_rd,
 	uint32_t                              size_isp_out,
-	bool                                  fill_fence)
+	bool                                  fill_fence,
+	struct cam_isp_frame_header_info     *frame_header_info)
 {
 	int                                 rc = 0;
 	dma_addr_t                          io_addr[CAM_PACKET_MAX_PLANES];
@@ -479,6 +480,7 @@ int cam_isp_add_io_buffers(
 	uint32_t                            i, j, num_out_buf, num_in_buf;
 	uint32_t                            res_id_out, res_id_in, plane_id;
 	uint32_t                            io_cfg_used_bytes, num_ent;
+	uint64_t                            iova_addr;
 	size_t                              size;
 	int32_t                             hdl;
 	int                                 mmu_hdl;
@@ -679,6 +681,21 @@ int cam_isp_add_io_buffers(
 			wm_update.image_buf = io_addr;
 			wm_update.num_buf   = plane_id;
 			wm_update.io_cfg    = &io_cfg[i];
+			wm_update.frame_header = 0;
+			iova_addr = frame_header_info->frame_header_iova_addr;
+			if ((frame_header_info->frame_header_enable) &&
+				!(frame_header_info->frame_header_res_id)) {
+				wm_update.frame_header = iova_addr;
+				frame_header_info->frame_header_res_id =
+					res->res_id;
+				wm_update.local_id =
+					prepare->packet->header.request_id;
+				CAM_DBG(CAM_ISP,
+					"Frame header enabled for res: 0x%x iova: %pK",
+					frame_header_info->frame_header_res_id,
+					wm_update.frame_header);
+			}
+
 			update_buf.cmd.size = kmd_buf_remain_size;
 			update_buf.wm_update = &wm_update;
 

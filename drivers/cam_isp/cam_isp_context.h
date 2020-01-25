@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_ISP_CONTEXT_H_
@@ -13,6 +13,10 @@
 
 #include "cam_context.h"
 #include "cam_isp_hw_mgr_intf.h"
+
+
+#define CAM_IFE_QTIMER_MUL_FACTOR        10000
+#define CAM_IFE_QTIMER_DIV_FACTOR        192
 
 /*
  * Maximum hw resource - This number is based on the maximum
@@ -165,6 +169,8 @@ struct cam_isp_context_req_id_info {
  *
  * @base:                      Common context object pointer
  * @frame_id:                  Frame id tracking for the isp context
+ * @frame_id_meta:             Frame id read every epoch for the ctx
+ *                             meta from the sensor
  * @substate_actiavted:        Current substate for the activated state.
  * @process_bubble:            Atomic variable to check if ctx is still
  *                             processing bubble.
@@ -189,37 +195,42 @@ struct cam_isp_context_req_id_info {
  * @hw_acquired:               Indicate whether HW resources are acquired
  * @init_received:             Indicate whether init config packet is received
  * @split_acquire:             Indicate whether a separate acquire is expected
+ * @custom_enabled:            Custom HW enabled for this ctx
+ * @use_frame_header_ts:       Use frame header for qtimer ts
  * @init_timestamp:            Timestamp at which this context is initialized
  *
  */
 struct cam_isp_context {
-	struct cam_context                   *base;
+	struct cam_context              *base;
 
-	int64_t                               frame_id;
-	enum cam_isp_ctx_activated_substate   substate_activated;
-	atomic_t                              process_bubble;
-	uint32_t                              bubble_frame_cnt;
-	struct cam_ctx_ops                   *substate_machine;
-	struct cam_isp_ctx_irq_ops           *substate_machine_irq;
+	int64_t                          frame_id;
+	uint32_t                         frame_id_meta;
+	uint32_t                         substate_activated;
+	atomic_t                         process_bubble;
+	uint32_t                         bubble_frame_cnt;
+	struct cam_ctx_ops              *substate_machine;
+	struct cam_isp_ctx_irq_ops      *substate_machine_irq;
 
-	struct cam_ctx_request                req_base[CAM_CTX_REQ_MAX];
-	struct cam_isp_ctx_req                req_isp[CAM_CTX_REQ_MAX];
+	struct cam_ctx_request           req_base[CAM_CTX_REQ_MAX];
+	struct cam_isp_ctx_req           req_isp[CAM_CTX_REQ_MAX];
 
-	void                                 *hw_ctx;
-	uint64_t                              sof_timestamp_val;
-	uint64_t                              boot_timestamp;
-	int32_t                               active_req_cnt;
-	int64_t                               reported_req_id;
-	uint32_t                              subscribe_event;
-	int64_t                               last_applied_req_id;
-	atomic64_t                            state_monitor_head;
-	struct cam_isp_context_state_monitor  cam_isp_ctx_state_monitor[
+	void                            *hw_ctx;
+	uint64_t                         sof_timestamp_val;
+	uint64_t                         boot_timestamp;
+	int32_t                          active_req_cnt;
+	int64_t                          reported_req_id;
+	uint32_t                         subscribe_event;
+	int64_t                          last_applied_req_id;
+	atomic64_t                       state_monitor_head;
+	struct cam_isp_context_state_monitor cam_isp_ctx_state_monitor[
 		CAM_ISP_CTX_STATE_MONITOR_MAX_ENTRIES];
 	struct cam_isp_context_req_id_info    req_info;
 	bool                                  rdi_only_context;
 	bool                                  hw_acquired;
 	bool                                  init_received;
 	bool                                  split_acquire;
+	bool                                  custom_enabled;
+	bool                                  use_frame_header_ts;
 	unsigned int                          init_timestamp;
 };
 

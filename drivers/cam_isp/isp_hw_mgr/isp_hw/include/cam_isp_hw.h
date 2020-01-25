@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_ISP_HW_H_
@@ -165,6 +165,7 @@ struct cam_isp_resource_node {
  * @res_id:         Unique resource ID
  * @hw_idx:         IFE hw index
  * @err_type:       Error type if any
+ * @th_reg_val:     Any critical register value captured during th
  *
  */
 struct cam_isp_hw_event_info {
@@ -172,6 +173,7 @@ struct cam_isp_hw_event_info {
 	uint32_t                       res_id;
 	uint32_t                       hw_idx;
 	uint32_t                       err_type;
+	uint32_t                       th_reg_val;
 };
 
 /*
@@ -197,12 +199,16 @@ struct cam_isp_hw_cmd_buf_update {
  *
  * @ image_buf:    image buffer address array
  * @ num_buf:      Number of buffers in the image_buf array
+ * @ frame_header: frame header iova
+ * @ local_id:     local id for the wm
  * @ io_cfg:       IO buffer config information sent from UMD
  *
  */
 struct cam_isp_hw_get_wm_update {
 	dma_addr_t                     *image_buf;
 	uint32_t                        num_buf;
+	uint64_t                        frame_header;
+	uint32_t                        local_id;
 	struct cam_buf_io_cfg          *io_cfg;
 };
 

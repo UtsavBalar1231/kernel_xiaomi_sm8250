@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_ISP_HW_MGR_INTF_H_
@@ -119,6 +119,9 @@ struct cam_isp_bw_config_internal {
  * @packet_opcode_type:     Packet header opcode in the packet header
  *                          this opcode defines, packet is init packet or
  *                          update packet
+ * @frame_header_cpu_addr:  Frame header cpu addr
+ * @frame_header_iova:      Frame header iova
+ * @frame_header_res_id:    Out port res_id corresponding to frame header
  * @bw_config_version:      BW config version indicator
  * @bw_config:              BW config information
  * @bw_config_v2:           BW config info for AXI bw voting v2
@@ -131,10 +134,13 @@ struct cam_isp_bw_config_internal {
 struct cam_isp_prepare_hw_update_data {
 	struct cam_ife_hw_mgr_ctx            *ife_mgr_ctx;
 	uint32_t                              packet_opcode_type;
+	uint32_t                             *frame_header_cpu_addr;
+	uint64_t                              frame_header_iova;
+	uint32_t                              frame_header_res_id;
 	uint32_t                              bw_config_version;
 	struct cam_isp_bw_config_internal     bw_config[CAM_IFE_HW_NUM_MAX];
 	struct cam_isp_bw_config_internal_v2  bw_config_v2[CAM_IFE_HW_NUM_MAX];
-	bool                                bw_config_valid[CAM_IFE_HW_NUM_MAX];
+	bool                               bw_config_valid[CAM_IFE_HW_NUM_MAX];
 	struct cam_cmd_buf_desc               reg_dump_buf_desc[
 						CAM_REG_DUMP_MAX_BUF_ENTRIES];
 	uint32_t                              num_reg_dump_buf;
@@ -168,10 +174,11 @@ struct cam_isp_hw_reg_update_event_data {
  * struct cam_isp_hw_epoch_event_data - Event payload for CAM_HW_EVENT_EPOCH
  *
  * @timestamp:     Time stamp for the epoch event
- *
+ * @frame_id_meta: Frame id value corresponding to this frame
  */
 struct cam_isp_hw_epoch_event_data {
 	uint64_t       timestamp;
+	uint32_t       frame_id_meta;
 };
 
 /**
@@ -222,6 +229,7 @@ enum cam_isp_hw_mgr_command {
 	CAM_ISP_HW_MGR_CMD_RESUME_HW,
 	CAM_ISP_HW_MGR_CMD_SOF_DEBUG,
 	CAM_ISP_HW_MGR_CMD_CTX_TYPE,
+	CAM_ISP_HW_MGR_GET_PACKET_OPCODE,
 	CAM_ISP_HW_MGR_CMD_MAX,
 };
 
@@ -235,14 +243,18 @@ enum cam_isp_ctx_type {
  * struct cam_isp_hw_cmd_args - Payload for hw manager command
  *
  * @cmd_type               HW command type
+ * @cmd_data               command data
  * @sof_irq_enable         To debug if SOF irq is enabled
  * @ctx_type               RDI_ONLY, PIX and RDI, or FS2
+ * @packet_op_code         packet opcode
  */
 struct cam_isp_hw_cmd_args {
 	uint32_t                          cmd_type;
+	void                             *cmd_data;
 	union {
 		uint32_t                      sof_irq_enable;
 		uint32_t                      ctx_type;
+		uint32_t                      packet_op_code;
 	} u;
 };
 

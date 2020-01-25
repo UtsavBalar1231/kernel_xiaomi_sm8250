@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 
 #include <linux/module.h>
 #include "cam_ife_csid_core.h"
 #include "cam_ife_csid170.h"
+#include "cam_ife_csid170_200.h"
 #include "cam_ife_csid175.h"
 #include "cam_ife_csid175_200.h"
 #include "cam_ife_csid480.h"
@@ -19,6 +20,11 @@
 
 static struct cam_ife_csid_hw_info cam_ife_csid170_hw_info = {
 	.csid_reg = &cam_ife_csid_170_reg_offset,
+	.hw_dts_version = CAM_CSID_VERSION_V170,
+};
+
+static struct cam_ife_csid_hw_info cam_ife_csid170_200_hw_info = {
+	.csid_reg = &cam_ife_csid_170_200_reg_offset,
 	.hw_dts_version = CAM_CSID_VERSION_V170,
 };
 
@@ -41,6 +47,10 @@ static const struct of_device_id cam_ife_csid17x_dt_match[] = {
 	{
 		.compatible = "qcom,csid170",
 		.data = &cam_ife_csid170_hw_info,
+	},
+	{
+		.compatible = "qcom,csid170_200",
+		.data = &cam_ife_csid170_200_hw_info,
 	},
 	{
 		.compatible = "qcom,csid175",

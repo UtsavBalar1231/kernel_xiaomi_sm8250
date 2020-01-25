@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_VFE_TOP_VER3_H_
@@ -41,7 +41,7 @@ struct cam_vfe_top_ver3_reg_offset_common {
 	uint32_t reg_update_cmd;
 	uint32_t trigger_cdm_events;
 	uint32_t violation_status;
-	uint32_t sbi_frame_idx;
+	uint32_t custom_frame_idx;
 	uint32_t dsp_status;
 	uint32_t diag_config;
 	uint32_t diag_sensor_status_0;

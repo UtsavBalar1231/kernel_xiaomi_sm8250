@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/slab.h>
@@ -48,6 +48,8 @@ struct cam_vfe_mux_camif_data {
 	bool                               enable_sof_irq_debug;
 	uint32_t                           irq_debug_cnt;
 	uint32_t                           camif_debug;
+	uint32_t                           dual_hw_idx;
+	uint32_t                           is_dual;
 };
 
 static int cam_vfe_camif_get_evt_payload(
@@ -256,6 +258,11 @@ int cam_vfe_camif_ver2_acquire_resource(
 	camif_data->last_line   = acquire_data->vfe_in.in_port->line_stop;
 	camif_data->event_cb    = acquire_data->event_cb;
 	camif_data->priv        = acquire_data->priv;
+	camif_data->is_dual     = acquire_data->vfe_in.is_dual;
+
+	if (acquire_data->vfe_in.is_dual)
+		camif_data->dual_hw_idx =
+			acquire_data->vfe_in.dual_hw_idx;
 
 	CAM_DBG(CAM_ISP, "hw id:%d pix_pattern:%d dsp_mode=%d",
 		camif_res->hw_intf->hw_idx,
@@ -328,6 +335,7 @@ static int cam_vfe_camif_resource_start(
 	int                             rc = 0;
 	uint32_t                        err_irq_mask[CAM_IFE_IRQ_REGISTERS_MAX];
 	uint32_t                        irq_mask[CAM_IFE_IRQ_REGISTERS_MAX];
+	uint32_t                        dual_vfe_sync_val;
 	struct cam_vfe_soc_private     *soc_private;
 
 	if (!camif_res) {
@@ -388,6 +396,7 @@ static int cam_vfe_camif_resource_start(
 	case CAM_CPAS_TITAN_170_V100:
 	case CAM_CPAS_TITAN_170_V110:
 	case CAM_CPAS_TITAN_170_V120:
+	case CAM_CPAS_TITAN_170_V200:
 		cam_io_w_mb(rsrc_data->reg_data->epoch_line_cfg,
 				rsrc_data->mem_base +
 				rsrc_data->camif_reg->epoch_irq);
@@ -412,6 +421,12 @@ static int cam_vfe_camif_resource_start(
 		break;
 	}
 
+	if (rsrc_data->is_dual && rsrc_data->reg_data->dual_vfe_sync_mask) {
+		dual_vfe_sync_val = (rsrc_data->dual_hw_idx &
+			rsrc_data->reg_data->dual_vfe_sync_mask) + 1;
+		cam_io_w_mb(dual_vfe_sync_val, rsrc_data->mem_base +
+			rsrc_data->camif_reg->dual_vfe_sync);
+	}
 	camif_res->res_state = CAM_ISP_RESOURCE_STATE_STREAMING;
 
 	/* Reg Update */
