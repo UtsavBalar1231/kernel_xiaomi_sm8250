@@ -432,10 +432,10 @@
 			reg = <0x0 0x80900000 0x0 0x200000>;
 		};
 
-		removed_region: removed_region@80b00000 {
+		cdsp_sec_mem: cdsp_sec_regions@80b00000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0x0 0x80b00000 0x0 0x3900000>;
+			reg = <0x0 0x80b00000 0x0 0x1e00000>;
 		};
 
 		pil_camera_mem: camera_region@86000000 {
@@ -498,10 +498,10 @@
 			reg = <0x0 0x8b800000 0x0 0xf800000>;
 		};
 
-		cdsp_sec_mem: cdsp_sec_regions@0x9f400000 {
+		removed_region: removed_region@c0000000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0x0 0x9f400000 0x0 0x1e00000>;
+			reg = <0x0 0xc0000000 0x0 0x3900000>;
 		};
 
 		secure_display_memory: secure_display_region {
