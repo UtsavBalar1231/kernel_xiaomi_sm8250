@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/dma-direction.h>
@@ -143,21 +143,63 @@ int msm_vidc_query_ctrl(void *instance, struct v4l2_queryctrl *q_ctrl)
 	}
 	q_ctrl->minimum = ctrl->minimum;
 	q_ctrl->maximum = ctrl->maximum;
+	q_ctrl->default_value = ctrl->default_value;
 	/* remove tier info for HEVC level */
 	if (q_ctrl->id == V4L2_CID_MPEG_VIDEO_HEVC_LEVEL) {
 		q_ctrl->minimum &= ~(0xF << 28);
 		q_ctrl->maximum &= ~(0xF << 28);
 	}
-	if (ctrl->type == V4L2_CTRL_TYPE_MENU)
+	if (ctrl->type == V4L2_CTRL_TYPE_MENU) {
 		q_ctrl->flags = ~(ctrl->menu_skip_mask);
-	else
+	} else {
 		q_ctrl->flags = 0;
-
-	s_vpr_h(inst->sid, "query ctrl: %s: min %d, max %d, flags %#x\n",
-		ctrl->name, q_ctrl->minimum, q_ctrl->maximum, q_ctrl->flags);
+		q_ctrl->step = ctrl->step;
+	}
+	s_vpr_h(inst->sid,
+		"query ctrl: %s: min %d, max %d, default %d step %d flags %#x\n",
+		ctrl->name, q_ctrl->minimum, q_ctrl->maximum,
+		q_ctrl->default_value, q_ctrl->step, q_ctrl->flags);
 	return rc;
 }
 EXPORT_SYMBOL(msm_vidc_query_ctrl);
+
+int msm_vidc_query_menu(void *instance, struct v4l2_querymenu *qmenu)
+{
+	int rc = 0;
+	struct msm_vidc_inst *inst = instance;
+	struct v4l2_ctrl *ctrl;
+
+	if (!inst || !qmenu) {
+		d_vpr_e("%s: invalid params %pK %pK\n",
+			__func__, inst, qmenu);
+		return -EINVAL;
+	}
+
+	ctrl = v4l2_ctrl_find(&inst->ctrl_handler, qmenu->id);
+	if (!ctrl) {
+		s_vpr_e(inst->sid, "%s: get_ctrl failed for id %d\n",
+			__func__, qmenu->id);
+		return -EINVAL;
+	}
+	if (ctrl->type != V4L2_CTRL_TYPE_MENU) {
+		s_vpr_e(inst->sid, "%s: ctrl: %s: type (%d) is not MENU type\n",
+			__func__, ctrl->name, ctrl->type);
+		return -EINVAL;
+	}
+	if (qmenu->index < ctrl->minimum || qmenu->index > ctrl->maximum)
+		return -EINVAL;
+
+	if (ctrl->menu_skip_mask & (1 << qmenu->index))
+		rc = -EINVAL;
+
+	s_vpr_h(inst->sid,
+		"%s: ctrl: %s: min %d, max %d, menu_skip_mask %#x, qmenu: id %d, index %d, %s\n",
+		__func__, ctrl->name, ctrl->minimum, ctrl->maximum,
+		ctrl->menu_skip_mask, qmenu->id, qmenu->index,
+		rc ? "not supported" : "supported");
+	return rc;
+}
+EXPORT_SYMBOL(msm_vidc_query_menu);
 
 int msm_vidc_s_fmt(void *instance, struct v4l2_format *f)
 {
