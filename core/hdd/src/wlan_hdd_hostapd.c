@@ -2330,6 +2330,11 @@ QDF_STATUS hdd_hostapd_sap_event_cb(struct sap_event *sap_event,
 			cache_stainfo->disassoc_ts = qdf_system_ticks();
 			hdd_put_sta_info(&adapter->cache_sta_info_list,
 					 &cache_stainfo, true);
+			hdd_debug("Cache_stainfo rssi %d txrate %d rxrate %d reason_code %d",
+				  cache_stainfo->rssi,
+				  cache_stainfo->tx_rate,
+				  cache_stainfo->rx_rate,
+				  cache_stainfo->reason_code);
 		}
 		hdd_nofl_info("SAP disassociated " QDF_MAC_ADDR_STR,
 			      QDF_MAC_ADDR_ARRAY(wrqu.addr.sa_data));
