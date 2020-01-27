@@ -908,6 +908,52 @@
 			};
 		};
 	};
+
+	skin-therm-step {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-governor = "step_wise";
+		thermal-sensors = <&pm8150_adc_tm ADC_AMUX_THM1_PU2>;
+		wake-capable-sensor;
+
+		trips {
+			skin_therm0: active-config0 {
+				temperature = <52000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+
+			skin_therm1: active-config1 {
+				temperature = <55000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+
+			skin_therm2: active-config2 {
+				temperature = <62000>;
+				hysteresis = <2000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			skin_lvl0 {
+				trip = <&skin_therm0>;
+				cooling-device = <&modem_skin 1 1>;
+			};
+
+			skin_lvl1 {
+				trip = <&skin_therm1>;
+				cooling-device = <&modem_skin 2 2>;
+			};
+
+			skin_lvl2 {
+				trip = <&skin_therm2>;
+				cooling-device = <&modem_skin 3 3>;
+			};
+		};
+
+	};
 };
 
 &sdhc_2 {
