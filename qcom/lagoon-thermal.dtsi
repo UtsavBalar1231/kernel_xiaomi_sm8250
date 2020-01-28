@@ -78,6 +78,22 @@
 		reg =  <0x18350800 0x1000>;
 		#cooling-cells = <2>;
 	};
+
+	qmi-tmd-devices {
+		cdsp {
+			qcom,instance-id = <QMI_CDSP_INST_ID>;
+
+			cdsp_sw: cdsp {
+				qcom,qmi-dev-name = "cdsp_sw";
+				#cooling-cells = <2>;
+			};
+
+			cdsp_hw: hvx {
+				qcom,qmi-dev-name = "cdsp_hw";
+				#cooling-cells = <2>;
+			};
+		};
+	};
 };
 
 &thermal_zones {
@@ -878,6 +894,51 @@
 			cpu13_cdev {
 				trip = <&cpu13_config>;
 				cooling-device = <&cpu7_isolate 1 1>;
+			};
+		};
+	};
+
+	q6-hvx-step {
+		polling-delay-passive = <10>;
+		polling-delay = <0>;
+		thermal-sensors = <&tsens1 4>;
+		thermal-governor = "step_wise";
+		wake-capable-sensor;
+		trips {
+			q6_hvx_trip0: q6-hvx-trip0 {
+				temperature = <95000>;
+				hysteresis = <0>;
+				type = "passive";
+			};
+
+			q6_hvx_trip1: q6-hvx-trip1 {
+				temperature = <100000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			cdsp-cdev0 {
+				trip = <&q6_hvx_trip0>;
+				cooling-device = <&cdsp_sw THERMAL_NO_LIMIT
+							THERMAL_NO_LIMIT>;
+			};
+
+			cdsp-cdev1 {
+				trip = <&q6_hvx_trip1>;
+				cooling-device = <&cdsp_sw THERMAL_MAX_LIMIT
+							THERMAL_MAX_LIMIT>;
+			};
+
+			modem-pa-cdev {
+				trip = <&q6_hvx_trip1>;
+				cooling-device = <&modem_pa 3 3>;
+			};
+
+			modem-tj-cdev {
+				trip = <&q6_hvx_trip1>;
+				cooling-device = <&modem_tj 3 3>;
 			};
 		};
 	};
