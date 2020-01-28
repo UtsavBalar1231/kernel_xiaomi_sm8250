@@ -1858,6 +1858,7 @@ Optional properties:
 - qcom,va-bolero-codec: Property to specify VA macro supported.
 - qcom,rxtx-bolero-codec: Property to specify RX-TX macros supported.
 - qcom,wsa-bolero-codec: Property to specify WSA macro supported.
+- qcom,tdm-audio-intf: Property to specify if Aux PCM interface is used for the target
 
 Example:
 	bengal_snd: sound {
@@ -1869,6 +1870,7 @@ Example:
 		qcom,afe-rxtx-lb = <1>;
 		qcom,va-bolero-codec = <1>;
 		qcom,rxtx-bolero-codec = <1>;
+		qcom,tdm-audio-intf = <1>;
 
 		asoc-platform = <&pcm0>, <&pcm1>, <&pcm2>, <&voip>, <&voice>,
 				<&loopback>, <&compress>, <&hostless>,
