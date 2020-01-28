@@ -359,3 +359,9 @@
 		panel = <&dsi_td4330_truly_v2_video &dsi_td4330_truly_v2_cmd>;
 	};
 };
+
+&thermal_zones {
+	quiet-therm-step {
+		status = "ok";
+	};
+};
