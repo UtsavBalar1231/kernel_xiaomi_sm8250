@@ -2773,6 +2773,73 @@
 #include "ipcc-test-lagoon.dtsi"
 #include "lagoon-vidc.dtsi"
 
+&qupv3_se10_i2c {
+	status = "ok";
+	#include "pm8008.dtsi"
+};
+
+&pm8008_8 {
+	/* PM8008 IRQ STAT */
+	interrupt-parent = <&tlmm>;
+	interrupts = <59 IRQ_TYPE_EDGE_RISING>;
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pm8008_active &pm8008_interrupt>;
+};
+
+&pm8008_regulators {
+	vdd_l1_l2-supply = <&S8E>;
+	vdd_l3_l4-supply = <&BOB>;
+	vdd_l5-supply = <&BOB>;
+	vdd_l6-supply = <&S2A>;
+	vdd_l7-supply = <&BOB>;
+};
+
+&L1P {
+	regulator-max-microvolt = <1056000>;
+	qcom,min-dropout-voltage = <225000>;
+};
+
+&L2P {
+	regulator-max-microvolt = <1104000>;
+	qcom,min-dropout-voltage = <225000>;
+};
+
+&L3P {
+	regulator-max-microvolt = <2800000>;
+	qcom,min-dropout-voltage = <128000>;
+};
+
+&L4P {
+	regulator-max-microvolt = <2904000>;
+	qcom,min-dropout-voltage = <96000>;
+};
+
+&L5P {
+	regulator-max-microvolt = <2800000>;
+	qcom,min-dropout-voltage = <300000>;
+};
+
+&L6P {
+	regulator-max-microvolt = <1800000>;
+	qcom,min-dropout-voltage = <72000>;
+};
+
+&L7P {
+	regulator-max-microvolt = <2800000>;
+	qcom,min-dropout-voltage = <120000>;
+};
+
+&pm7250b_charger {
+	smb5_vbus: qcom,smb5-vbus {
+		regulator-name = "smb5-vbus";
+	};
+
+	smb5_vconn: qcom,smb5-vconn {
+		regulator-name = "smb5-vconn";
+	};
+};
+
 /*Debug UART*/
 &qupv3_se9_2uart {
 	status = "ok";

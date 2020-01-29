@@ -1,7 +1,42 @@
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/linux-event-codes.h>
+#include <dt-bindings/iio/qcom,spmi-vadc.h>
 
 &soc {
+	gpio_keys {
+		compatible = "gpio-keys";
+		label = "gpio-keys";
 
+		pinctrl-names = "default";
+		pinctrl-0 = <&key_vol_up_default>;
+
+		vol_up {
+			label = "volume_up";
+			gpios = <&pm6350_gpios 2 GPIO_ACTIVE_LOW>;
+			linux,input-type = <1>;
+			linux,code = <KEY_VOLUMEUP>;
+			gpio-key,wakeup;
+			debounce-interval = <15>;
+			linux,can-disable;
+		};
+	};
+
+	qrd_batterydata: qcom,battery-data {
+		qcom,batt-id-range-pct = <15>;
+		#include "qg-batterydata-atl466271_3300mAh.dtsi"
+	};
+};
+
+&pm6350_gpios {
+	key_vol_up {
+		key_vol_up_default: key_vol_up_default {
+			pins = "gpio2";
+			function = "normal";
+			input-enable;
+			bias-pull-up;
+			power-source = <0>;
+		};
+	};
 };
 
 &ufsphy_mem {
@@ -67,4 +102,60 @@
 	cd-gpios = <&tlmm 94 GPIO_ACTIVE_HIGH>;
 
 	status = "ok";
+};
+
+&pm6150a_amoled {
+	status = "ok";
+};
+
+&pm7250b_charger {
+	status = "ok";
+	io-channels = <&pm7250b_vadc ADC_USB_IN_V_16>,
+		      <&pm7250b_vadc ADC_USB_IN_I>,
+		      <&pm7250b_vadc ADC_CHG_TEMP>,
+		      <&pm7250b_vadc ADC_DIE_TEMP>,
+		      <&pm7250b_vadc ADC_AMUX_THM3_PU2>,
+		      <&pm7250b_vadc ADC_SBUx>,
+		      <&pm7250b_vadc ADC_VPH_PWR>,
+		      <&pm7250b_vadc ADC_AMUX_THM1_PU2>;
+	io-channel-names = "usb_in_voltage",
+			   "usb_in_current",
+			   "chg_temp",
+			   "die_temp",
+			   "conn_temp",
+			   "sbux_res",
+			   "vph_voltage",
+			   "skin_temp";
+	qcom,battery-data = <&qrd_batterydata>;
+	qcom,sec-charger-config = <1>;
+	qcom,auto-recharge-soc = <98>;
+	qcom,step-charging-enable;
+	qcom,sw-jeita-enable;
+	qcom,charger-temp-max = <800>;
+	qcom,smb-temp-max = <800>;
+	qcom,suspend-input-on-debug-batt;
+	qcom,fcc-stepping-enable;
+	qcom,fcc-step-delay-ms = <100>;
+	qcom,fcc-step-size-ua = <100000>;
+	qcom,smb-internal-pull-kohm = <0>;
+	qcom,en-skin-therm-mitigation;
+	qcom,thermal-mitigation = <8000000 7500000 7000000 6500000 6000000
+				5500000 4500000 4000000 3500000 3000000 2500000
+				2000000 1500000 1000000 500000>;
+};
+
+&pm7250b_qg {
+	status = "ok";
+	io-channels = <&pm7250b_vadc ADC_BAT_THERM_PU2>,
+		      <&pm7250b_vadc ADC_BAT_ID_PU2>;
+	io-channel-names = "batt-therm",
+			   "batt-id";
+	qcom,qg-iterm-ma = <100>;
+	qcom,hold-soc-while-full;
+	qcom,linearize-soc;
+	qcom,cl-feedback-on;
+	qcom,tcss-enable;
+	qcom,fvss-enable;
+	qcom,fvss-vbatt-mv = <3300>;
+	qcom,bass-enable;
 };
