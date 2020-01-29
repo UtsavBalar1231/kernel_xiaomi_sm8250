@@ -2654,7 +2654,6 @@
 &video_cc_mvs0_gdsc {
 	clock-names = "ahb_clk";
 	clocks = <&gcc GCC_VIDEO_AHB_CLK>;
-	qcom,support-hw-trigger;
 	status = "ok";
 };
 
