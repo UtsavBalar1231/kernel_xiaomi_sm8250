@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _SDE_HW_UTIL_H
@@ -158,6 +158,13 @@ struct sde_hw_scaler3_lut_cfg {
 	size_t cir_len;
 	u32 *sep_lut;
 	size_t sep_len;
+};
+
+struct sde_hw_inline_pre_downscale_cfg {
+	u32 pre_downscale_x_0;
+	u32 pre_downscale_x_1;
+	u32 pre_downscale_y_0;
+	u32 pre_downscale_y_1;
 };
 
 u32 *sde_hw_util_get_log_mask_ptr(void);
