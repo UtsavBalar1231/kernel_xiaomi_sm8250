@@ -1326,7 +1326,7 @@ int DWC_ETH_QOS_mdio_register(struct net_device *dev)
 	snprintf(new_bus->id, MII_BUS_ID_SIZE, "%s-%x", new_bus->name,
 		 pdata->bus_id);
 	new_bus->priv = dev;
-	new_bus->phy_mask = 0;
+	new_bus->phy_mask = ~(1 << phyaddr);
 	new_bus->parent = &pdata->pdev->dev;
 	ret = mdiobus_register(new_bus);
 	if (ret != 0) {
