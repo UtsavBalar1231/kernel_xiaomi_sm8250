@@ -786,100 +786,13 @@
 			qcom,init-mode = <RPMH_REGULATOR_MODE_AUTO>;
 		};
 	};
+};
 
-	rpmh-regulator-ldok1 {
-		compatible = "qcom,rpmh-vrm-regulator";
-		qcom,resource-name = "ldok1";
-		qcom,regulator-type = "pmic5-ldo";
-		qcom,supported-modes =
-			<RPMH_REGULATOR_MODE_LPM
-			RPMH_REGULATOR_MODE_HPM>;
-		qcom,mode-threshold-currents = <0 1>;
-		L1K:
-		pmr735b_l1: regulator-pmr735b-l1 {
-			regulator-name = "pmr735b_l1";
-			qcom,set = <RPMH_REGULATOR_SET_ALL>;
-			regulator-min-microvolt = <1140000>;
-			regulator-max-microvolt = <1240000>;
-			qcom,init-voltage = <1140000>;
-			qcom,init-mode = <RPMH_REGULATOR_MODE_LPM>;
-		};
+&soc {
+	refgen: refgen-regulator@88e7000 {
+		compatible = "qcom,refgen-kona-regulator";
+		reg = <0x88e7000 0x60>;
+		regulator-name = "refgen";
+		regulator-enable-ramp-delay = <5>;
 	};
-
-	rpmh-regulator-ldok4 {
-		compatible = "qcom,rpmh-vrm-regulator";
-		qcom,resource-name = "ldok4";
-		qcom,regulator-type = "pmic5-ldo";
-		qcom,supported-modes =
-			<RPMH_REGULATOR_MODE_LPM
-			RPMH_REGULATOR_MODE_HPM>;
-		qcom,mode-threshold-currents = <0 1>;
-		L4K:
-		pmr735b_l4: regulator-pmr735b-l4 {
-			regulator-name = "pmr735b_l4";
-			qcom,set = <RPMH_REGULATOR_SET_ALL>;
-			regulator-min-microvolt = <1700000>;
-			regulator-max-microvolt = <1900000>;
-			qcom,init-voltage = <1700000>;
-			qcom,init-mode = <RPMH_REGULATOR_MODE_LPM>;
-		};
-	};
-
-	rpmh-regulator-ldok5 {
-		compatible = "qcom,rpmh-vrm-regulator";
-		qcom,resource-name = "ldok5";
-		qcom,regulator-type = "pmic5-ldo";
-		qcom,supported-modes =
-			<RPMH_REGULATOR_MODE_LPM
-			RPMH_REGULATOR_MODE_HPM>;
-		qcom,mode-threshold-currents = <0 1>;
-		L5K:
-		pmr735b_l5: regulator-pmr735b-l5 {
-			regulator-name = "pmr735b_l5";
-			qcom,set = <RPMH_REGULATOR_SET_ALL>;
-			regulator-min-microvolt = <760000>;
-			regulator-max-microvolt = <855000>;
-			qcom,init-voltage = <760000>;
-			qcom,init-mode = <RPMH_REGULATOR_MODE_LPM>;
-		};
-	};
-
-	rpmh-regulator-ldok6 {
-		compatible = "qcom,rpmh-vrm-regulator";
-		qcom,resource-name = "ldok6";
-		qcom,regulator-type = "pmic5-ldo";
-		qcom,supported-modes =
-			<RPMH_REGULATOR_MODE_LPM
-			RPMH_REGULATOR_MODE_HPM>;
-		qcom,mode-threshold-currents = <0 1>;
-		L6K:
-		pmr735b_l6: regulator-pmr735b-l6 {
-			regulator-name = "pmr735b_l6";
-			qcom,set = <RPMH_REGULATOR_SET_ALL>;
-			regulator-min-microvolt = <652000>;
-			regulator-max-microvolt = <800000>;
-			qcom,init-voltage = <652000>;
-			qcom,init-mode = <RPMH_REGULATOR_MODE_LPM>;
-		};
-	};
-
-	rpmh-regulator-ldok11 {
-		compatible = "qcom,rpmh-vrm-regulator";
-		qcom,resource-name = "ldok11";
-		qcom,regulator-type = "pmic5-ldo";
-		qcom,supported-modes =
-			<RPMH_REGULATOR_MODE_LPM
-			RPMH_REGULATOR_MODE_HPM>;
-		qcom,mode-threshold-currents = <0 1>;
-		L11K:
-		pmr735b_l11: regulator-pmr735b-l11 {
-			regulator-name = "pmr735b_l11";
-			qcom,set = <RPMH_REGULATOR_SET_ALL>;
-			regulator-min-microvolt = <831000>;
-			regulator-max-microvolt = <939000>;
-			qcom,init-voltage = <831000>;
-			qcom,init-mode = <RPMH_REGULATOR_MODE_LPM>;
-		};
-	};
-
 };
