@@ -166,5 +166,4 @@ struct ufs_dev_fix {
  */
 #define UFS_DEVICE_QUIRK_PA_HIBER8TIME   (1 << 12)
 
-
 #endif /* UFS_QUIRKS_H_ */
