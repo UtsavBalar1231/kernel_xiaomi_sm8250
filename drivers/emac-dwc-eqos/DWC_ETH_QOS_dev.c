@@ -3126,7 +3126,7 @@ static INT set_promiscuous_mode(void)
 
 static INT write_phy_regs(INT phy_id, INT phy_reg, INT phy_reg_data)
 {
-	ULONG RETRYCOUNT = 1000;
+	ULONG RETRYCOUNT = 5000;
 	ULONG vy_count;
 	volatile ULONG VARMAC_GMIIAR;
 
@@ -3139,7 +3139,7 @@ static INT write_phy_regs(INT phy_id, INT phy_reg, INT phy_reg_data)
 			return -Y_FAILURE;
 
 		vy_count++;
-		mdelay(1);
+		udelay(200);
 
 		MAC_GMIIAR_RGRD(VARMAC_GMIIAR);
 		if (GET_VALUE(
@@ -3173,7 +3173,7 @@ static INT write_phy_regs(INT phy_id, INT phy_reg, INT phy_reg_data)
 			return -Y_FAILURE;
 
 		vy_count++;
-		mdelay(1);
+		udelay(200);
 
 		MAC_GMIIAR_RGRD(VARMAC_GMIIAR);
 		if (GET_VALUE(
@@ -3197,7 +3197,7 @@ static INT write_phy_regs(INT phy_id, INT phy_reg, INT phy_reg_data)
 
 static INT read_phy_regs(INT phy_id, INT phy_reg, INT *phy_reg_data)
 {
-	ULONG RETRYCOUNT = 1000;
+	ULONG RETRYCOUNT = 5000;
 	ULONG vy_count;
 	volatile ULONG VARMAC_GMIIAR;
 	ULONG VARMAC_GMIIDR;
@@ -3211,8 +3211,7 @@ static INT read_phy_regs(INT phy_id, INT phy_reg, INT *phy_reg_data)
 			return -Y_FAILURE;
 
 		vy_count++;
-		mdelay(1);
-
+		udelay(200);
 		MAC_GMIIAR_RGRD(VARMAC_GMIIAR);
 		if (GET_VALUE(
 				VARMAC_GMIIAR, MAC_GMIIAR_GB_LPOS,
@@ -3243,7 +3242,7 @@ static INT read_phy_regs(INT phy_id, INT phy_reg, INT *phy_reg_data)
 			return -Y_FAILURE;
 
 		vy_count++;
-		mdelay(1);
+		udelay(200);
 
 		MAC_GMIIAR_RGRD(VARMAC_GMIIAR);
 		if (GET_VALUE(
