@@ -1533,6 +1533,31 @@
 		#reset-cells = <1>;
 	};
 
+	cpucc: syscon@182a0018 {
+		compatible = "syscon";
+		reg = <0x182a0000 0x1000>;
+	};
+
+	mccc: syscon@90b0000 {
+		compatible = "syscon";
+		reg = <0x90b0000 0x1000>;
+	};
+
+	debugcc: qcom,cc-debug {
+		compatible = "qcom,lagoon-debugcc";
+		qcom,gcc = <&gcc>;
+		qcom,videocc = <&videocc>;
+		qcom,camcc = <&camcc>;
+		qcom,dispcc = <&dispcc>;
+		qcom,gpucc = <&gpucc>;
+		qcom,npucc = <&npucc>;
+		qcom,cpucc = <&cpucc>;
+		qcom,mccc = <&mccc>;
+		clock-names = "xo_clk_src";
+		clocks = <&rpmhcc RPMH_CXO_CLK>;
+		#clock-cells = <1>;
+	};
+
 	cpufreq_hw: qcom,cpufreq-hw {
 		compatible = "qcom,cpufreq-hw";
 		reg = <0x18323000 0x1000>, <0x18325800 0x1000>;
