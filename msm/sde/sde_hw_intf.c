@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  */
 #include <linux/iopoll.h>
 
@@ -514,10 +514,11 @@ static int sde_hw_intf_setup_autorefresh_config(struct sde_hw_intf *intf,
 
 	c = &intf->hw;
 
+	refresh_cfg = SDE_REG_READ(c, INTF_TEAR_AUTOREFRESH_CONFIG);
 	if (cfg->enable)
 		refresh_cfg = BIT(31) | cfg->frame_count;
 	else
-		refresh_cfg = 0;
+		refresh_cfg &= ~BIT(31);
 
 	SDE_REG_WRITE(c, INTF_TEAR_AUTOREFRESH_CONFIG, refresh_cfg);
 
