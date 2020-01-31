@@ -3280,12 +3280,19 @@ int swrm_wcd_notify(struct platform_device *pdev, u32 id, void *data)
 		break;
 	case SWR_DEVICE_SSR_DOWN:
 		trace_printk("%s: swr device down called\n", __func__);
+		mutex_lock(&swrm->mlock);
+		if (swrm->state == SWR_MSTR_DOWN)
+			dev_dbg(swrm->dev, "%s:SWR master is already Down:%d\n",
+				__func__, swrm->state);
+		else
+			swrm_device_down(&pdev->dev);
 		mutex_lock(&swrm->devlock);
 		swrm->dev_up = false;
 		mutex_unlock(&swrm->devlock);
 		mutex_lock(&swrm->reslock);
 		swrm->state = SWR_MSTR_SSR;
 		mutex_unlock(&swrm->reslock);
+		mutex_unlock(&swrm->mlock);
 		break;
 	case SWR_DEVICE_SSR_UP:
 		/* wait for clk voting to be zero */

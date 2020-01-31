@@ -1376,9 +1376,6 @@ static int rx_macro_event_handler(struct snd_soc_component *component,
 		if (rx_priv->swr_ctrl_data) {
 			swrm_wcd_notify(
 				rx_priv->swr_ctrl_data[0].rx_swr_pdev,
-				SWR_DEVICE_DOWN, NULL);
-			swrm_wcd_notify(
-				rx_priv->swr_ctrl_data[0].rx_swr_pdev,
 				SWR_DEVICE_SSR_DOWN, NULL);
 		}
 		if ((!pm_runtime_enabled(rx_dev) ||
