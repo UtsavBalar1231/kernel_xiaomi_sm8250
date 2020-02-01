@@ -1099,7 +1099,7 @@
 		qcom,minidump-as-elf32;
 
 		/* Inputs from lpass */
-		interrupts-extended = <&pdc GIC_SPI 162 IRQ_TYPE_EDGE_RISING>,
+		interrupts-extended = <&pdc 6 IRQ_TYPE_LEVEL_HIGH>,
 				      <&adsp_smp2p_in 0 0>,
 				      <&adsp_smp2p_in 1 0>,
 				      <&adsp_smp2p_in 2 0>,
@@ -1153,7 +1153,7 @@
 			<MSM_BUS_MASTER_NPU MSM_BUS_SLAVE_CDSP_GEM_NOC 0 1>;
 
 		/* Inputs from turing */
-		interrupts-extended = <&pdc GIC_SPI 578 IRQ_TYPE_EDGE_RISING>,
+		interrupts-extended = <&intc GIC_SPI 578 IRQ_TYPE_EDGE_RISING>,
 				      <&cdsp_smp2p_in 0 0>,
 				      <&cdsp_smp2p_in 1 0>,
 				      <&cdsp_smp2p_in 2 0>,
@@ -1200,7 +1200,7 @@
 		qcom,complete-ramdump;
 
 		/* Inputs from mss */
-		interrupts-extended = <&pdc GIC_SPI 136 IRQ_TYPE_EDGE_RISING>,
+		interrupts-extended = <&intc GIC_SPI 136 IRQ_TYPE_EDGE_RISING>,
 				<&mpss_smp2p_in 0 IRQ_TYPE_NONE>,
 				<&mpss_smp2p_in 1 IRQ_TYPE_NONE>,
 				<&mpss_smp2p_in 2 IRQ_TYPE_NONE>,
