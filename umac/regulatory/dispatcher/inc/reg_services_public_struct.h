@@ -64,6 +64,7 @@
 
 #define BW_80_MHZ     80
 #define BW_160_MHZ    160
+#define BW_40_MHZ     40
 
 /**
  * enum dfs_reg - DFS region
