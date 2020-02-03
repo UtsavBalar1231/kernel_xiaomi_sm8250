@@ -155,6 +155,8 @@ struct cam_cpas_bus_client {
  * @ib_bw: IB bw value for this port
  * @camnoc_bw: CAMNOC bw value for this port
  * @additional_bw: Additional bandwidth to cover non-hw cpas clients
+ * @applied_ab_bw: applied ab bw for this port
+ * @applied_ib_bw: applied ib bw for this port
  */
 struct cam_cpas_axi_port {
 	const char *axi_port_name;
@@ -165,6 +167,8 @@ struct cam_cpas_axi_port {
 	uint64_t ib_bw;
 	uint64_t camnoc_bw;
 	uint64_t additional_bw;
+	uint64_t applied_ab_bw;
+	uint64_t applied_ib_bw;
 };
 
 /**
@@ -189,6 +193,7 @@ struct cam_cpas_axi_port {
  * @irq_count_wq: wait variable to ensure all irq's are handled
  * @dentry: debugfs file entry
  * @ahb_bus_scaling_disable: ahb scaling based on src clk corner for bus
+ * @applied_camnoc_axi_rate: applied camnoc axi clock rate
  */
 struct cam_cpas {
 	struct cam_cpas_hw_caps hw_caps;
@@ -210,6 +215,7 @@ struct cam_cpas {
 	wait_queue_head_t irq_count_wq;
 	struct dentry *dentry;
 	bool ahb_bus_scaling_disable;
+	uint64_t applied_camnoc_axi_rate;
 };
 
 int cam_camsstop_get_internal_ops(struct cam_cpas_internal_ops *internal_ops);

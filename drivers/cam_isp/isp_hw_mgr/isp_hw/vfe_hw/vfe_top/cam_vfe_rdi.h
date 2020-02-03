@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_VFE_RDI_H_
@@ -15,6 +15,14 @@
 
 struct cam_vfe_rdi_ver2_reg {
 	uint32_t     reg_update_cmd;
+};
+
+struct cam_vfe_rdi_overflow_status {
+	uint32_t    rdi0_overflow_mask;
+	uint32_t    rdi1_overflow_mask;
+	uint32_t    rdi2_overflow_mask;
+	uint32_t    rdi3_overflow_mask;
+	uint32_t    rdi_overflow_mask;
 };
 
 struct cam_vfe_rdi_common_reg_data {
@@ -35,6 +43,7 @@ struct cam_vfe_rdi_ver2_hw_info {
 	struct cam_vfe_top_ver2_reg_offset_common  *common_reg;
 	struct cam_vfe_rdi_ver2_reg                *rdi_reg;
 	struct cam_vfe_rdi_common_reg_data         *common_reg_data;
+	struct cam_vfe_rdi_overflow_status         *rdi_irq_status;
 	struct cam_vfe_rdi_reg_data  *reg_data[CAM_VFE_RDI_VER2_MAX];
 };
 
