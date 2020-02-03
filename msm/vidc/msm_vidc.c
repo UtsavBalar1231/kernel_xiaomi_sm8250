@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/dma-direction.h>
@@ -1359,7 +1359,8 @@ static int try_get_ctrl_for_instance(struct msm_vidc_inst *inst,
 			return -EINVAL;
 		vpu_ver = inst->core->platform_data->vpu_ver;
 		ctrl->val = (vpu_ver == VPU_VERSION_IRIS1 ||
-				vpu_ver == VPU_VERSION_IRIS2) ?
+				vpu_ver == VPU_VERSION_IRIS2 ||
+				vpu_ver == VPU_VERSION_IRIS2_1) ?
 				V4L2_CID_MPEG_VIDC_VIDEO_ROI_TYPE_2BYTE :
 				V4L2_CID_MPEG_VIDC_VIDEO_ROI_TYPE_2BIT;
 		break;

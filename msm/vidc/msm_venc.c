@@ -1132,11 +1132,13 @@ int msm_venc_inst_init(struct msm_vidc_inst *inst)
 	int rc = 0;
 	struct msm_vidc_format_desc *fmt_desc = NULL;
 	struct v4l2_format *f = NULL;
+	uint32_t vpu;
 
 	if (!inst) {
 		d_vpr_e("Invalid input = %pK\n", inst);
 		return -EINVAL;
 	}
+	vpu = inst->core->platform_data->vpu_ver;
 	f = &inst->fmts[OUTPUT_PORT].v4l2_fmt;
 	f->type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
 	f->fmt.pix_mp.height = DEFAULT_HEIGHT;
@@ -1162,9 +1164,8 @@ int msm_venc_inst_init(struct msm_vidc_inst *inst)
 	f->fmt.pix_mp.height = DEFAULT_HEIGHT;
 	f->fmt.pix_mp.width = DEFAULT_WIDTH;
 	f->fmt.pix_mp.pixelformat = V4L2_PIX_FMT_NV12_UBWC;
-	if(inst->core->platform_data->vpu_ver == VPU_VERSION_IRIS1)
-		f->fmt.pix_mp.num_planes = 1;
-	else
+	f->fmt.pix_mp.num_planes = 1;
+	if (vpu == VPU_VERSION_IRIS2)
 		f->fmt.pix_mp.num_planes = 2;
 	f->fmt.pix_mp.plane_fmt[0].sizeimage =
 		msm_vidc_calculate_enc_input_frame_size(inst);

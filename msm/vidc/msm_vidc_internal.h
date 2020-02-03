@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _MSM_VIDC_INTERNAL_H_
@@ -269,6 +269,7 @@ enum vpu_version {
 	VPU_VERSION_AR50 = 1,
 	VPU_VERSION_IRIS1,
 	VPU_VERSION_IRIS2,
+	VPU_VERSION_IRIS2_1,
 	VPU_VERSION_AR50_LITE,
 };
 
