@@ -3,6 +3,7 @@
 #include <dt-bindings/input/linux-event-codes.h>
 #include <dt-bindings/iio/qcom,spmi-vadc.h>
 #include "lagoon-sde-display.dtsi"
+#include "lagoon-thermal-overlay.dtsi"
 
 &soc {
 	gpio_keys {

@@ -5,6 +5,7 @@
 #include "lagoon-sde-display.dtsi"
 #include "camera/lagoon-camera-sensor-mtp.dtsi"
 #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
+#include "lagoon-thermal-overlay.dtsi"
 
 &soc {
 	gpio_keys {
