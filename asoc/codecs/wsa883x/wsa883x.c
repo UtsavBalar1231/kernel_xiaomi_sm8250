@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/module.h>
@@ -16,6 +16,7 @@
 #include <linux/kernel.h>
 #include <linux/gpio.h>
 #include <linux/of_gpio.h>
+#include <linux/of_platform.h>
 #include <linux/regmap.h>
 #include <linux/debugfs.h>
 #include <soc/soundwire.h>
@@ -25,6 +26,7 @@
 #include <sound/soc-dapm.h>
 #include <sound/tlv.h>
 #include <asoc/msm-cdc-pinctrl.h>
+#include <asoc/msm-cdc-supply.h>
 #include "wsa883x.h"
 #include "internal.h"
 
@@ -34,6 +36,13 @@
 #define HIGH_TEMP_THRESHOLD 45
 #define TEMP_INVALID	0xFFFF
 #define WSA883X_TEMP_RETRY 3
+#define WSA883X_VBAT_TIMER_SEC    2
+
+static int wsa883x_vbat_timer_sec = WSA883X_VBAT_TIMER_SEC;
+module_param(wsa883x_vbat_timer_sec, int, 0664);
+MODULE_PARM_DESC(wsa883x_vbat_timer_sec, "timer for VBAT monitor polling");
+
+#define DRV_NAME "wsa-codec"
 
 enum {
 	WSA_4OHMS =4,
@@ -49,6 +58,56 @@ struct wsa_temp_register {
 	u8 d2_lsb;
 	u8 dmeas_msb;
 	u8 dmeas_lsb;
+};
+
+struct wsa_reg_mask_val {
+	u16 reg;
+	u8 mask;
+	u8 val;
+};
+
+static const struct wsa_reg_mask_val reg_init[] = {
+	{WSA883X_PA_FSM_BYP, 0x01, 0x00},
+	{WSA883X_CDC_SPK_DSM_A2_0, 0xFF, 0x0A},
+	{WSA883X_CDC_SPK_DSM_A2_1, 0x0F, 0x08},
+	{WSA883X_CDC_SPK_DSM_A3_0, 0xFF, 0xF3},
+	{WSA883X_CDC_SPK_DSM_A3_1, 0x07, 0x07},
+	{WSA883X_CDC_SPK_DSM_A4_0, 0xFF, 0x79},
+	{WSA883X_CDC_SPK_DSM_A4_1, 0x03, 0x02},
+	{WSA883X_CDC_SPK_DSM_A5_0, 0xFF, 0x0B},
+	{WSA883X_CDC_SPK_DSM_A5_1, 0x03, 0x02},
+	{WSA883X_CDC_SPK_DSM_A6_0, 0xFF, 0x8A},
+	{WSA883X_CDC_SPK_DSM_A7_0, 0xFF, 0x9B},
+	{WSA883X_CDC_SPK_DSM_C_0, 0xFF, 0x68},
+	{WSA883X_CDC_SPK_DSM_C_1, 0xFF, 0x54},
+	{WSA883X_CDC_SPK_DSM_C_2, 0xFF, 0xF2},
+	{WSA883X_CDC_SPK_DSM_C_3, 0x3F, 0x20},
+	{WSA883X_CDC_SPK_DSM_R1, 0xFF, 0x83},
+	{WSA883X_CDC_SPK_DSM_R2, 0xFF, 0x7F},
+	{WSA883X_CDC_SPK_DSM_R3, 0xFF, 0x9D},
+	{WSA883X_CDC_SPK_DSM_R4, 0xFF, 0x82},
+	{WSA883X_CDC_SPK_DSM_R5, 0xFF, 0x8B},
+	{WSA883X_CDC_SPK_DSM_R6, 0xFF, 0x9B},
+	{WSA883X_CDC_SPK_DSM_R7, 0xFF, 0x3F},
+	{WSA883X_DRE_CTL_0, 0xF0, 0x90},
+	{WSA883X_DRE_IDLE_DET_CTL, 0x10, 0x00},
+	{WSA883X_PDM_WD_CTL, 0x01, 0x01},
+	{WSA883X_CURRENT_LIMIT, 0x78, 0x40},
+	{WSA883X_DRE_CTL_0, 0x07, 0x02},
+	{WSA883X_VAGC_TIME, 0x03, 0x02},
+	{WSA883X_VAGC_CTL, 0x01, 0x01},
+	{WSA883X_TAGC_CTL, 0x0E, 0x0A},
+	{WSA883X_TAGC_TIME, 0x0C, 0x0C},
+	{WSA883X_TAGC_E2E_GAIN, 0x1F, 0x02},
+	{WSA883X_TEMP_CONFIG0, 0x07, 0x02},
+	{WSA883X_TEMP_CONFIG1, 0x07, 0x02},
+	{WSA883X_OTP_REG_1, 0xFF, 0x49},
+	{WSA883X_OTP_REG_2, 0xC0, 0x80},
+	{WSA883X_OTP_REG_3, 0xFF, 0xC9},
+	{WSA883X_OTP_REG_4, 0xC0, 0x40},
+	{WSA883X_TAGC_CTL, 0x01, 0x01},
+	{WSA883X_CKWD_CTL_0, 0x60, 0x00},
+	{WSA883X_CKWD_CTL_1, 0x1F, 0x1B},
 };
 
 static int wsa883x_get_temperature(struct snd_soc_component *component,
@@ -69,6 +128,7 @@ enum {
 	WSA883X_IRQ_INT_INTR_PIN,
 	WSA883X_IRQ_INT_UVLO,
 	WSA883X_IRQ_INT_PA_ON_ERR,
+	WSA883X_NUM_IRQS,
 };
 
 static const struct regmap_irq wsa883x_irqs[WSA883X_NUM_IRQS] = {
@@ -535,13 +595,58 @@ static ssize_t wsa883x_codec_version_read(struct snd_info_entry *entry,
 		return -EINVAL;
 	}
 
-	len = snprintf(buffer, sizeof(buffer), "WSA883X-SOUNDWIRE_1_0\n");
+	switch (wsa883x->version) {
+	case WSA883X_VERSION_1_0:
+		len = snprintf(buffer, sizeof(buffer), "WSA883X_1_0\n");
+		break;
+	case WSA883X_VERSION_1_1:
+		len = snprintf(buffer, sizeof(buffer), "WSA883X_1_1\n");
+		break;
+	default:
+		len = snprintf(buffer, sizeof(buffer), "VER_UNDEFINED\n");
+		break;
+	}
 
 	return simple_read_from_buffer(buf, count, &pos, buffer, len);
 }
 
 static struct snd_info_entry_ops wsa883x_codec_info_ops = {
 	.read = wsa883x_codec_version_read,
+};
+
+static ssize_t wsa883x_variant_read(struct snd_info_entry *entry,
+				    void *file_private_data,
+				    struct file *file,
+				    char __user *buf, size_t count,
+				    loff_t pos)
+{
+	struct wsa883x_priv *wsa883x;
+	char buffer[WSA883X_VARIANT_ENTRY_SIZE];
+	int len = 0;
+
+	wsa883x = (struct wsa883x_priv *) entry->private_data;
+	if (!wsa883x) {
+		pr_err("%s: wsa883x priv is null\n", __func__);
+		return -EINVAL;
+	}
+
+	switch (wsa883x->variant) {
+	case WSA8830:
+		len = snprintf(buffer, sizeof(buffer), "WSA8830\n");
+		break;
+	case WSA8835:
+		len = snprintf(buffer, sizeof(buffer), "WSA8835\n");
+		break;
+	default:
+		len = snprintf(buffer, sizeof(buffer), "UNDEFINED\n");
+		break;
+	}
+
+	return simple_read_from_buffer(buf, count, &pos, buffer, len);
+}
+
+static struct snd_info_entry_ops wsa883x_variant_ops = {
+	.read = wsa883x_variant_read,
 };
 
 /*
@@ -558,6 +663,7 @@ int wsa883x_codec_info_create_codec_entry(struct snd_info_entry *codec_root,
 					  struct snd_soc_component *component)
 {
 	struct snd_info_entry *version_entry;
+	struct snd_info_entry *variant_entry;
 	struct wsa883x_priv *wsa883x;
 	struct snd_soc_card *card;
 	char name[80];
@@ -566,16 +672,28 @@ int wsa883x_codec_info_create_codec_entry(struct snd_info_entry *codec_root,
 		return -EINVAL;
 
 	wsa883x = snd_soc_component_get_drvdata(component);
+	if (wsa883x->entry) {
+		dev_dbg(wsa883x->dev,
+			"%s:wsa883x module already created\n", __func__);
+		return 0;
+	}
 	card = component->card;
+
 	snprintf(name, sizeof(name), "%s.%x", "wsa883x",
 		 (u32)wsa883x->swr_slave->addr);
 
-	wsa883x->entry = snd_info_create_subdir(codec_root->module,
+	wsa883x->entry = snd_info_create_module_entry(codec_root->module,
 						(const char *)name,
 						codec_root);
 	if (!wsa883x->entry) {
 		dev_dbg(component->dev, "%s: failed to create wsa883x entry\n",
 			__func__);
+		return -ENOMEM;
+	}
+
+	wsa883x->entry->mode = S_IFDIR | 0555;
+	if (snd_info_register(wsa883x->entry) < 0) {
+		snd_info_free_entry(wsa883x->entry);
 		return -ENOMEM;
 	}
 
@@ -585,6 +703,7 @@ int wsa883x_codec_info_create_codec_entry(struct snd_info_entry *codec_root,
 	if (!version_entry) {
 		dev_dbg(component->dev, "%s: failed to create wsa883x version entry\n",
 			__func__);
+		snd_info_free_entry(wsa883x->entry);
 		return -ENOMEM;
 	}
 
@@ -595,21 +714,39 @@ int wsa883x_codec_info_create_codec_entry(struct snd_info_entry *codec_root,
 
 	if (snd_info_register(version_entry) < 0) {
 		snd_info_free_entry(version_entry);
+		snd_info_free_entry(wsa883x->entry);
 		return -ENOMEM;
 	}
 	wsa883x->version_entry = version_entry;
 
+	variant_entry = snd_info_create_card_entry(card->snd_card,
+						   "variant",
+						   wsa883x->entry);
+	if (!variant_entry) {
+		dev_dbg(component->dev,
+			"%s: failed to create wsa883x variant entry\n",
+			__func__);
+		snd_info_free_entry(version_entry);
+		snd_info_free_entry(wsa883x->entry);
+		return -ENOMEM;
+	}
+
+	variant_entry->private_data = wsa883x;
+	variant_entry->size = WSA883X_VARIANT_ENTRY_SIZE;
+	variant_entry->content = SNDRV_INFO_CONTENT_DATA;
+	variant_entry->c.ops = &wsa883x_variant_ops;
+
+	if (snd_info_register(variant_entry) < 0) {
+		snd_info_free_entry(variant_entry);
+		snd_info_free_entry(version_entry);
+		snd_info_free_entry(wsa883x->entry);
+		return -ENOMEM;
+	}
+	wsa883x->variant_entry = variant_entry;
+
 	return 0;
 }
 EXPORT_SYMBOL(wsa883x_codec_info_create_codec_entry);
-
-static void wsa883x_regcache_sync(struct wsa883x_priv *wsa883x)
-{
-	mutex_lock(&wsa883x->res_lock);
-	regcache_mark_dirty(wsa883x->regmap);
-	regcache_sync(wsa883x->regmap);
-	mutex_unlock(&wsa883x->res_lock);
-}
 
 static int wsa883x_get_compander(struct snd_kcontrol *kcontrol,
 			       struct snd_ctl_elem_value *ucontrol)
@@ -819,21 +956,34 @@ static int wsa883x_spkr_event(struct snd_soc_dapm_widget *w,
 	struct snd_soc_component *component =
 			snd_soc_dapm_to_component(w->dapm);
 	struct wsa883x_priv *wsa883x = snd_soc_component_get_drvdata(component);
-	int min_gain, max_gain;
 
 	dev_dbg(component->dev, "%s: %s %d\n", __func__, w->name, event);
 	switch (event) {
-	case SND_SOC_DAPM_PRE_PMU:
-		/* TODO Vote for Global PA */
-		break;
-
 	case SND_SOC_DAPM_POST_PMU:
+		snd_soc_component_update_bits(component, WSA883X_PA_FSM_CTL,
+				0x01, 0x01);
 		/* Force remove group */
 		swr_remove_from_group(wsa883x->swr_slave,
 				      wsa883x->swr_slave->dev_num);
+		snd_soc_component_update_bits(component,
+				WSA883X_VBAT_ADC_FLT_CTL,
+				0x0E, 0x06);
+		snd_soc_component_update_bits(component,
+				WSA883X_VBAT_ADC_FLT_CTL,
+				0x01, 0x01);
+		schedule_delayed_work(&wsa883x->vbat_work,
+			msecs_to_jiffies(wsa883x_vbat_timer_sec * 1000));
 		break;
-	case SND_SOC_DAPM_POST_PMD:
-		/* TODO Unvote for Global PA */
+	case SND_SOC_DAPM_PRE_PMD:
+		cancel_delayed_work_sync(&wsa883x->vbat_work);
+		snd_soc_component_update_bits(component,
+				WSA883X_VBAT_ADC_FLT_CTL,
+				0x01, 0x00);
+		snd_soc_component_update_bits(component,
+				WSA883X_VBAT_ADC_FLT_CTL,
+				0x0E, 0x00);
+		snd_soc_component_update_bits(component, WSA883X_PA_FSM_CTL,
+				0x01, 0x00);
 		break;
 	}
 	return 0;
@@ -884,10 +1034,14 @@ EXPORT_SYMBOL(wsa883x_set_channel_map);
 static void wsa883x_codec_init(struct snd_soc_component *component)
 {
 	struct wsa883x_priv *wsa883x = snd_soc_component_get_drvdata(component);
+	int i;
 
 	if (!wsa883x)
 		return;
 
+	for (i = 0; i < ARRAY_SIZE(reg_init); i++)
+		snd_soc_component_update_bits(component, reg_init[i].reg,
+					reg_init[i].mask, reg_init[i].val);
 }
 
 static int32_t wsa883x_temp_reg_read(struct snd_soc_component *component,
@@ -929,7 +1083,6 @@ static int32_t wsa883x_temp_reg_read(struct snd_soc_component *component,
 static int wsa883x_get_temperature(struct snd_soc_component *component,
 				   int *temp)
 {
-	struct snd_soc_component *component;
 	struct wsa_temp_register reg;
 	int dmeas, d1, d2;
 	int ret = 0;
@@ -943,7 +1096,7 @@ static int wsa883x_get_temperature(struct snd_soc_component *component,
 		return -EINVAL;
 
 	do {
-		ret = wsa883x_temp_reg_read(component, &reg)
+		ret = wsa883x_temp_reg_read(component, &reg);
 		if (ret) {
 			pr_err("%s: temp read failed: %d, current temp: %d\n",
 				__func__, ret, wsa883x->curr_temp);
@@ -996,10 +1149,42 @@ static int wsa883x_get_temperature(struct snd_soc_component *component,
 	return ret;
 }
 
+static void wsa883x_vbat_monitor_work(struct work_struct *work)
+{
+	struct wsa883x_priv *wsa883x;
+	struct delayed_work *dwork;
+	struct snd_soc_component *component;
+	u16 val = 0, vbat_code = 0;
+	int vbat_val = 0;
+
+	dwork = to_delayed_work(work);
+	wsa883x = container_of(dwork, struct wsa883x_priv, vbat_work);
+	component = wsa883x->component;
+
+	val = snd_soc_component_read32(component, WSA883X_VBAT_DIN_MSB);
+	vbat_code = (val << 2);
+	val = (snd_soc_component_read32(component, WSA883X_VBAT_DIN_LSB)
+		& 0xC0);
+	vbat_code |= (val >> 6);
+	vbat_val = ((vbat_code * 5) / 1023);
+	dev_dbg(component->dev, "%s: instant vbat code = %d val = %d\n",
+		__func__, vbat_code, vbat_val);
+
+	val = snd_soc_component_read32(component, WSA883X_VBAT_DOUT);
+	vbat_val = ((val * 5) / 255);
+
+	dev_dbg(component->dev, "%s: low pass vbat code = %d val = %d\n",
+		__func__, val, vbat_val);
+
+	schedule_delayed_work(&wsa883x->vbat_work,
+			msecs_to_jiffies(wsa883x_vbat_timer_sec * 1000));
+}
+
 static int wsa883x_codec_probe(struct snd_soc_component *component)
 {
 	struct wsa883x_priv *wsa883x = snd_soc_component_get_drvdata(component);
 	struct swr_device *dev;
+	int variant = 0, version = 0;
 
 	if (!wsa883x)
 		return -EINVAL;
@@ -1007,8 +1192,18 @@ static int wsa883x_codec_probe(struct snd_soc_component *component)
 
 	dev = wsa883x->swr_slave;
 	wsa883x->component = component;
+
+	variant = (snd_soc_component_read32(component, WSA883X_OTP_REG_0)
+					    & 0x0F);
+	wsa883x->variant = variant;
+
+	version = (snd_soc_component_read32(component, WSA883X_CHIP_ID0)
+					    & 0xFF);
+	wsa883x->version = version;
+
 	wsa883x_codec_init(component);
 	wsa883x->global_pa_cnt = 0;
+	INIT_DELAYED_WORK(&wsa883x->vbat_work, wsa883x_vbat_monitor_work);
 
 	return 0;
 }
@@ -1067,23 +1262,55 @@ static int wsa883x_event_notify(struct notifier_block *nb,
 
 	switch (event) {
 	case BOLERO_WSA_EVT_PA_OFF_PRE_SSR:
+		if (delayed_work_pending(&wsa883x->vbat_work))
+			cancel_delayed_work_sync(&wsa883x->vbat_work);
 		snd_soc_component_update_bits(wsa883x->component,
-					      WSA883X_SPKR_DRV_GAIN,
-					      0xF0, 0xC0);
-		snd_soc_component_update_bits(wsa883x->component,
-					      WSA883X_SPKR_DRV_EN,
-					      0x80, 0x00);
+					WSA883X_PA_FSM_CTL,
+					0x01, 0x00);
 		break;
 	default:
+		dev_dbg(wsa883x->dev, "%s: unknown event %d\n",
+			__func__, event);
 		break;
 	}
 
 	return 0;
 }
 
-static int wsa883x_swr_probe(struct swr_device *pdev)
+static int wsa883x_enable_supplies(struct device * dev,
+				   struct wsa883x_priv *priv)
 {
 	int ret = 0;
+
+	/* Parse power supplies */
+	msm_cdc_get_power_supplies(dev, &priv->regulator,
+				   &priv->num_supplies);
+	if (!priv->regulator || (priv->num_supplies <= 0)) {
+		dev_err(dev, "%s: no power supplies defined\n", __func__);
+		return -EINVAL;
+	}
+
+	ret = msm_cdc_init_supplies(dev, &priv->supplies,
+				    priv->regulator, priv->num_supplies);
+	if (!priv->supplies) {
+		dev_err(dev, "%s: Cannot init wsa supplies\n",
+			__func__);
+		return ret;
+	}
+
+	ret = msm_cdc_enable_static_supplies(dev, priv->supplies,
+					     priv->regulator,
+					     priv->num_supplies);
+	if (ret)
+		dev_err(dev, "%s: wsa static supply enable failed!\n",
+			__func__);
+
+	return ret;
+}
+
+static int wsa883x_swr_probe(struct swr_device *pdev)
+{
+	int ret = 0, i = 0;
 	struct wsa883x_priv *wsa883x;
 	u8 devnum = 0;
 	bool pin_state_current = false;
@@ -1093,6 +1320,10 @@ static int wsa883x_swr_probe(struct swr_device *pdev)
 			    GFP_KERNEL);
 	if (!wsa883x)
 		return -ENOMEM;
+
+	ret = wsa883x_enable_supplies(&pdev->dev, wsa883x);
+	if (ret)
+		return -EINVAL;
 
 	wsa883x->wsa_rst_np = of_parse_phandle(pdev->dev.of_node,
 					     "qcom,spkr-sd-n-node", 0);
@@ -1109,10 +1340,10 @@ static int wsa883x_swr_probe(struct swr_device *pdev)
 	 * soundwire auto enumeration of slave devices as
 	 * as per HW requirement.
 	 */
-	usleep_range(5000, 5010);
+	usleep_range(20000, 20010);
 	ret = swr_get_logical_dev_num(pdev, pdev->addr, &devnum);
 	if (ret) {
-		dev_dbg(&pdev->dev,
+		dev_err(&pdev->dev,
 			"%s get devnum %d for dev addr %lx failed\n",
 			__func__, devnum, pdev->addr);
 		goto dev_err;
@@ -1136,7 +1367,7 @@ static int wsa883x_swr_probe(struct swr_device *pdev)
 	wsa883x->irq_info.wcd_regmap_irq_chip = &wsa883x_regmap_irq_chip;
 	wsa883x->irq_info.codec_name = "WSA883X";
 	wsa883x->irq_info.regmap = wsa883x->regmap;
-	wsa883x->irq_info.dev = dev;
+	wsa883x->irq_info.dev = &pdev->dev;
 	ret = wcd_irq_init(&wsa883x->irq_info, &wsa883x->virq);
 
 	if (ret) {
