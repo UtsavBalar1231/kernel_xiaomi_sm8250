@@ -3,6 +3,7 @@
  * Copyright (C) 2012-2013 Samsung Electronics Co., Ltd.
  */
 
+#include <linux/version.h>
 #include <linux/init.h>
 #include <linux/buffer_head.h>
 #include <linux/mpage.h>
@@ -12,8 +13,9 @@
 #include <linux/writeback.h>
 #include <linux/uio.h>
 #include <linux/random.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
 #include <linux/iversion.h>
-
+#endif
 #include "exfat_raw.h"
 #include "exfat_fs.h"
 
@@ -437,7 +439,11 @@ static int exfat_write_end(struct file *file, struct address_space *mapping,
 		exfat_write_failed(mapping, pos+len);
 
 	if (!(err < 0) && !(ei->attr & ATTR_ARCHIVE)) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0)
 		inode->i_mtime = inode->i_ctime = current_time(inode);
+#else
+		inode->i_mtime = inode->i_ctime = CURRENT_TIME_SEC;
+#endif
 		ei->attr |= ATTR_ARCHIVE;
 		mark_inode_dirty(inode);
 	}
@@ -582,7 +588,11 @@ static int exfat_fill_inode(struct inode *inode, struct exfat_dir_entry *info)
 
 	inode->i_uid = sbi->options.fs_uid;
 	inode->i_gid = sbi->options.fs_gid;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
 	inode_inc_iversion(inode);
+#else
+	inode->i_version++;
+#endif
 	inode->i_generation = prandom_u32();
 
 	if (info->attr & ATTR_SUBDIR) { /* directory */
@@ -640,7 +650,11 @@ struct inode *exfat_build_inode(struct super_block *sb,
 		goto out;
 	}
 	inode->i_ino = iunique(sb, EXFAT_ROOT_INO);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
 	inode_set_iversion(inode, 1);
+#else
+	inode->i_version = 1;
+#endif
 	err = exfat_fill_inode(inode, info);
 	if (err) {
 		iput(inode);

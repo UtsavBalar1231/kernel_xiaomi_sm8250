@@ -3,6 +3,7 @@
  * Copyright (C) 2012-2013 Samsung Electronics Co., Ltd.
  */
 
+#include <linux/version.h>
 #include <linux/slab.h>
 #include <linux/cred.h>
 #include <linux/buffer_head.h>
@@ -20,7 +21,11 @@ static int exfat_cont_expand(struct inode *inode, loff_t size)
 	if (err)
 		return err;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0)
 	inode->i_ctime = inode->i_mtime = current_time(inode);
+#else
+	inode->i_ctime = inode->i_mtime = CURRENT_TIME_SEC;
+#endif
 	mark_inode_dirty(inode);
 
 	if (!IS_SYNC(inode))
@@ -160,7 +165,11 @@ int __exfat_truncate(struct inode *inode, loff_t new_size)
 			return -EIO;
 		ep2 = ep + 1;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0)
 		ts = current_time(inode);
+#else
+		ts = CURRENT_TIME_SEC;
+#endif
 		exfat_set_entry_time(sbi, &ts,
 				&ep->dentry.file.modify_tz,
 				&ep->dentry.file.modify_time,
@@ -243,7 +252,11 @@ void exfat_truncate(struct inode *inode, loff_t size)
 	if (err)
 		goto write_size;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0)
 	inode->i_ctime = inode->i_mtime = current_time(inode);
+#else
+	inode->i_ctime = inode->i_mtime = CURRENT_TIME_SEC;
+#endif
 	if (IS_DIRSYNC(inode))
 		exfat_sync_inode(inode);
 	else

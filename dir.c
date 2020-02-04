@@ -3,6 +3,7 @@
  * Copyright (C) 2012-2013 Samsung Electronics Co., Ltd.
  */
 
+#include <linux/version.h>
 #include <linux/slab.h>
 #include <linux/bio.h>
 #include <linux/buffer_head.h>
@@ -443,7 +444,11 @@ int exfat_init_dir_entry(struct inode *inode, struct exfat_chain *p_dir,
 {
 	struct super_block *sb = inode->i_sb;
 	struct exfat_sb_info *sbi = EXFAT_SB(sb);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0)
 	struct timespec64 ts = current_time(inode);
+#else
+	struct timespec64 ts = CURRENT_TIME_SEC;
+#endif
 	sector_t sector;
 	struct exfat_dentry *ep;
 	struct buffer_head *bh;
@@ -884,7 +889,13 @@ struct exfat_entry_set_cache *exfat_get_dentry_set(struct super_block *sb,
 
 	num_entries = type == ES_ALL_ENTRIES ?
 		ep->dentry.file.num_ext + 1 : type;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
 	es = kmalloc(struct_size(es, entries, num_entries), GFP_KERNEL);
+#else
+	es = kmalloc((offsetof(struct exfat_entry_set_cache, entries) +
+		(num_entries) * sizeof(struct exfat_dentry)), GFP_KERNEL);
+#endif
 	if (!es)
 		goto release_bh;
 
