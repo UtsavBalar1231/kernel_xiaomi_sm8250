@@ -197,6 +197,32 @@
 		};
 
 		qupv3_se1_4uart_pins: qupv3_se1_4uart_pins {
+			qupv3_se1_default_ctsrtsrx: qupv3_se1_default_ctsrtsrx {
+				mux {
+					pins = "gpio61", "gpio62", "gpio64";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio61", "gpio62", "gpio64";
+					drive-strength = <2>;
+					bias-pull-down;
+				};
+			};
+
+			qupv3_se1_default_tx: qupv3_se1_default_tx {
+				mux {
+					pins = "gpio63";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio63";
+					drive-strength = <2>;
+					bias-pull-up;
+				};
+			};
+
 			qupv3_se1_ctsrx: qupv3_se1_ctsrx {
 				mux {
 					pins = "gpio61", "gpio64";
