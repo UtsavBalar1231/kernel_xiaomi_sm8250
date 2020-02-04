@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/iopoll.h>
@@ -35,7 +35,7 @@
 
 #define DITHER_DEPTH_MAP_INDEX 9
 static u32 dither_depth_map[DITHER_DEPTH_MAP_INDEX] = {
-	0, 0, 0, 0, 0, 0, 0, 1, 2
+	0, 0, 0, 0, 0, 1, 2, 3, 3
 };
 
 #define MERGE_3D_MODE 0x004
