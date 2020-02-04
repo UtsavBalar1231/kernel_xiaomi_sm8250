@@ -1312,6 +1312,10 @@ static struct msm_vidc_common_data bengal_common_data_v0[] = {
 		.value = 489600,
 	},
 	{
+		.key = "qcom,max-mbpf",
+		.value = 65280,/* ((3840x2176)/256) x 2 */
+	},
+	{
 		.key = "qcom,max-hq-mbs-per-frame",
 		.value = 8160,
 	},
@@ -1361,6 +1365,10 @@ static struct msm_vidc_common_data bengal_common_data_v1[] = {
 	{
 		.key = "qcom,max-hw-load",
 		.value = 244800,
+	},
+	{
+		.key = "qcom,max-mbpf",
+		.value = 65280,/* ((3840x2176)/256) x 2 */
 	},
 	{
 		.key = "qcom,max-hq-mbs-per-frame",
