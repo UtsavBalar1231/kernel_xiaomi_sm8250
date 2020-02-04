@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  */
 
 #include "msm_vidc_debug.h"
@@ -121,26 +121,6 @@
 #define VIDC_UC_REGION_ADDR_AR50_LT		VIDC_CPU_CS_SCIBARG1_AR50_LT
 #define VIDC_UC_REGION_SIZE_AR50_LT		VIDC_CPU_CS_SCIBARG2_AR50_LT
 
-/*
- * --------------------------------------------------------------------------
- * MODULE: vcodec noc error log registers
- * --------------------------------------------------------------------------
- */
-#define VCODEC_CORE0_VIDEO_NOC_BASE_OFFS		0x00004000
-#define VCODEC_COREX_VIDEO_NOC_ERR_SWID_LOW_OFFS	0x0500
-#define VCODEC_COREX_VIDEO_NOC_ERR_SWID_HIGH_OFFS	0x0504
-#define VCODEC_COREX_VIDEO_NOC_ERR_MAINCTL_LOW_OFFS	0x0508
-#define VCODEC_COREX_VIDEO_NOC_ERR_ERRVLD_LOW_OFFS	0x0510
-#define VCODEC_COREX_VIDEO_NOC_ERR_ERRCLR_LOW_OFFS	0x0518
-#define VCODEC_COREX_VIDEO_NOC_ERR_ERRLOG0_LOW_OFFS	0x0520
-#define VCODEC_COREX_VIDEO_NOC_ERR_ERRLOG0_HIGH_OFFS	0x0524
-#define VCODEC_COREX_VIDEO_NOC_ERR_ERRLOG1_LOW_OFFS	0x0528
-#define VCODEC_COREX_VIDEO_NOC_ERR_ERRLOG1_HIGH_OFFS	0x052C
-#define VCODEC_COREX_VIDEO_NOC_ERR_ERRLOG2_LOW_OFFS	0x0530
-#define VCODEC_COREX_VIDEO_NOC_ERR_ERRLOG2_HIGH_OFFS	0x0534
-#define VCODEC_COREX_VIDEO_NOC_ERR_ERRLOG3_LOW_OFFS	0x0538
-#define VCODEC_COREX_VIDEO_NOC_ERR_ERRLOG3_HIGH_OFFS	0x053C
-
 void __interrupt_init_ar50_lt(struct venus_hfi_device *device, u32 sid)
 {
 	__write_register(device, VIDC_WRAPPER_INTR_MASK_AR50_LT,
@@ -161,48 +141,6 @@ void __setup_ucregion_memory_map_ar50_lt(struct venus_hfi_device *device, u32 si
 	if (device->qdss.align_device_addr)
 		__write_register(device, VIDC_MMAP_ADDR_AR50_LT,
 				(u32)device->qdss.align_device_addr, sid);
-}
-
-void __noc_error_info_ar50_lt(struct venus_hfi_device *device)
-{
-	u32 val;
-	u32 vcodec_core_video_noc_base_offs =
-			VCODEC_CORE0_VIDEO_NOC_BASE_OFFS;
-	u32 sid = DEFAULT_SID;
-
-	val = __read_register(device, vcodec_core_video_noc_base_offs +
-			VCODEC_COREX_VIDEO_NOC_ERR_SWID_LOW_OFFS, sid);
-	d_vpr_e("NOC_ERR_SWID_LOW:     %#x\n", val);
-	val = __read_register(device, vcodec_core_video_noc_base_offs +
-			VCODEC_COREX_VIDEO_NOC_ERR_SWID_HIGH_OFFS, sid);
-	d_vpr_e("NOC_ERR_SWID_HIGH:    %#x\n", val);
-	val = __read_register(device, vcodec_core_video_noc_base_offs +
-			VCODEC_COREX_VIDEO_NOC_ERR_MAINCTL_LOW_OFFS, sid);
-	d_vpr_e("NOC_ERR_MAINCTL_LOW:  %#x\n", val);
-	val = __read_register(device, vcodec_core_video_noc_base_offs +
-			VCODEC_COREX_VIDEO_NOC_ERR_ERRLOG0_LOW_OFFS, sid);
-	d_vpr_e("NOC_ERR_ERRLOG0_LOW:  %#x\n", val);
-	val = __read_register(device, vcodec_core_video_noc_base_offs +
-			VCODEC_COREX_VIDEO_NOC_ERR_ERRLOG0_HIGH_OFFS, sid);
-	d_vpr_e("NOC_ERR_ERRLOG0_HIGH: %#x\n", val);
-	val = __read_register(device, vcodec_core_video_noc_base_offs +
-			VCODEC_COREX_VIDEO_NOC_ERR_ERRLOG1_LOW_OFFS, sid);
-	d_vpr_e("NOC_ERR_ERRLOG1_LOW:  %#x\n", val);
-	val = __read_register(device, vcodec_core_video_noc_base_offs +
-			VCODEC_COREX_VIDEO_NOC_ERR_ERRLOG1_HIGH_OFFS, sid);
-	d_vpr_e("NOC_ERR_ERRLOG1_HIGH: %#x\n", val);
-	val = __read_register(device, vcodec_core_video_noc_base_offs +
-			VCODEC_COREX_VIDEO_NOC_ERR_ERRLOG2_LOW_OFFS, sid);
-	d_vpr_e("NOC_ERR_ERRLOG2_LOW:  %#x\n", val);
-	val = __read_register(device, vcodec_core_video_noc_base_offs +
-			VCODEC_COREX_VIDEO_NOC_ERR_ERRLOG2_HIGH_OFFS, sid);
-	d_vpr_e("NOC_ERR_ERRLOG2_HIGH: %#x\n", val);
-	val = __read_register(device, vcodec_core_video_noc_base_offs +
-			VCODEC_COREX_VIDEO_NOC_ERR_ERRLOG3_LOW_OFFS, sid);
-	d_vpr_e("NOC_ERR_ERRLOG3_LOW:  %#x\n", val);
-	val = __read_register(device, vcodec_core_video_noc_base_offs +
-			VCODEC_COREX_VIDEO_NOC_ERR_ERRLOG3_HIGH_OFFS, sid);
-	d_vpr_e("NOC_ERR_ERRLOG3_HIGH: %#x\n", val);
 }
 
 void __power_off_ar50_lt(struct venus_hfi_device *device)
