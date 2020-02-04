@@ -1,3 +1,5 @@
+#include "lagoon-audio-overlay.dtsi"
+
 &soc {
 
 };

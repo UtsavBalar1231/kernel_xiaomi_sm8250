@@ -30,6 +30,9 @@
 		serial0 = &qupv3_se9_2uart; /* Debug Console */
 		sdhc1 = &sdhc_1; /* SDC1 eMMC slot */
 		sdhc2 = &sdhc_2; /* SDC2 SD Card slot */
+		swr0 = &swr0;
+		swr1 = &swr1;
+		swr2 = &swr2;
 	};
 
 	cpus {
@@ -2698,6 +2701,7 @@
 #include "pm6350.dtsi"
 #include "lagoon-ion.dtsi"
 #include "lagoon-qupv3.dtsi"
+#include "lagoon-audio.dtsi"
 #include "ipcc-test-lagoon.dtsi"
 #include "lagoon-vidc.dtsi"
 
