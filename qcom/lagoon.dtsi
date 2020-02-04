@@ -1019,6 +1019,50 @@
 		reg-names = "pshold-base", "tcsr-boot-misc-detect";
 	};
 
+	qcom_cedev: qcedev@1de0000 {
+		compatible = "qcom,qcedev";
+		reg = <0x1de0000 0x20000>,
+			<0x1dc4000 0x24000>;
+		reg-names = "crypto-base","crypto-bam-base";
+		interrupts = <GIC_SPI 272 IRQ_TYPE_LEVEL_HIGH>;
+		qcom,bam-pipe-pair = <3>;
+		qcom,ce-hw-instance = <0>;
+		qcom,ce-device = <0>;
+		qcom,ce-hw-shared;
+		qcom,bam-ee = <0>;
+		qcom,msm-bus,name = "qcedev-noc";
+		qcom,msm-bus,num-cases = <2>;
+		qcom,msm-bus,num-paths = <1>;
+		qcom,msm-bus,vectors-KBps =
+				<MSM_BUS_MASTER_CRYPTO_CORE_0
+				 MSM_BUS_SLAVE_FIRST 0 0>,
+				<MSM_BUS_MASTER_CRYPTO_CORE_0
+				 MSM_BUS_SLAVE_FIRST 393600 393600>;
+		qcom,smmu-s1-enable;
+		qcom,no-clock-support;
+		iommus = <&apps_smmu 0x0426 0x0011>,
+			 <&apps_smmu 0x0436 0x0011>;
+		qcom,iommu-dma = "atomic";
+
+		qcom_cedev_ns_cb {
+			compatible = "qcom,qcedev,context-bank";
+			label = "ns_context";
+			iommus = <&apps_smmu 0x432 0>,
+				<&apps_smmu 0x438 0x1>,
+				<&apps_smmu 0x43F 0>;
+		};
+
+		qcom_cedev_s_cb {
+			compatible = "qcom,qcedev,context-bank";
+			label = "secure_context";
+			iommus = <&apps_smmu 0x433 0>,
+				<&apps_smmu 0x43C 0x1>,
+				<&apps_smmu 0x43E 0>;
+			qcom,iommu-vmid = <0x9>; /* VMID_CP_BITSTREAM */
+			qcom,secure-context-bank;
+		};
+	};
+
 	qcom,mpm2-sleep-counter@0xc221000 {
 		compatible = "qcom,mpm2-sleep-counter";
 		reg = <0xc221000 0x1000>;
