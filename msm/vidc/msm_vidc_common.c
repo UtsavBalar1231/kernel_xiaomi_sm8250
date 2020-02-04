@@ -4373,6 +4373,7 @@ static int msm_comm_qbuf_superframe_to_hfi(struct msm_vidc_inst *inst,
 	frames[0].flags &= ~HAL_BUFFERFLAG_EXTRADATA;
 	frames[0].flags &= ~HAL_BUFFERFLAG_EOS;
 	frames[0].flags &= ~HAL_BUFFERFLAG_CVPMETADATA_SKIP;
+	frames[0].flags &= ~HAL_BUFFERFLAG_ENDOFSUBFRAME;
 	if (frames[0].flags)
 		s_vpr_e(inst->sid, "%s: invalid flags %#x\n",
 			__func__, frames[0].flags);
@@ -4394,10 +4395,20 @@ static int msm_comm_qbuf_superframe_to_hfi(struct msm_vidc_inst *inst,
 			/* first frame */
 			if (frames[0].extradata_addr)
 				frames[0].flags |= HAL_BUFFERFLAG_EXTRADATA;
+
+			/* Add work incomplete flag for all etb's except the
+			 * last one. For last frame, flag is cleared at the
+			 * last frame iteration.
+			 */
+			frames[0].flags |= HAL_BUFFERFLAG_ENDOFSUBFRAME;
 		} else if (i == superframe_count - 1) {
 			/* last frame */
 			if (mbuf->vvb.flags & V4L2_BUF_FLAG_EOS)
 				frames[i].flags |= HAL_BUFFERFLAG_EOS;
+			/* Clear Subframe flag just for the last frame to
+			 * indicate the end of SuperFrame.
+			 */
+			frames[i].flags &= ~HAL_BUFFERFLAG_ENDOFSUBFRAME;
 		}
 		num_etbs++;
 	}
