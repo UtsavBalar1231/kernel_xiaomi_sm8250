@@ -676,6 +676,14 @@
 				type = "passive";
 			};
 		};
+
+		cooling-maps {
+			gpu_cdev {
+				trip = <&gpu_trip0>;
+				cooling-device = <&msm_gpu THERMAL_NO_LIMIT
+							THERMAL_NO_LIMIT>;
+			};
+		};
 	};
 
 	cpu-0-0-step {
@@ -946,6 +954,12 @@
 				cooling-device = <&msm_npu THERMAL_MAX_LIMIT
 							THERMAL_MAX_LIMIT>;
 			};
+
+			gpu-cdev {
+				trip = <&q6_hvx_trip1>;
+				cooling-device = <&msm_gpu (THERMAL_MAX_LIMIT-1)
+							(THERMAL_MAX_LIMIT-1)>;
+			};
 		};
 	};
 
@@ -969,6 +983,108 @@
 				cooling-device =
 					<&msm_npu THERMAL_NO_LIMIT
 						THERMAL_NO_LIMIT>;
+			};
+		};
+	};
+
+	min-temp-0-lowf {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-sensors = <&tsens0 16>;
+		thermal-governor = "low_limits_floor";
+		wake-capable-sensor;
+		tracks-low;
+		trips {
+			min_temp_0_lowf: active-config0 {
+				temperature = <5000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			wcss_cx_vdd_cdev {
+				trip = <&min_temp_0_lowf>;
+				cooling-device = <&cx_cdev 0 0>;
+			};
+		};
+	};
+
+	min-temp-0-lowc {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-sensors = <&tsens0 16>;
+		thermal-governor = "low_limits_cap";
+		wake-capable-sensor;
+		tracks-low;
+		trips {
+			min_temp_0_lowc: active-config0 {
+				temperature = <5000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			lmh_cpu0_cdev {
+				trip = <&min_temp_0_lowc>;
+				cooling-device = <&lmh_cpu_vdd0 1 1>;
+			};
+
+			lmh_cpu6_cdev {
+				trip = <&min_temp_0_lowc>;
+				cooling-device = <&lmh_cpu_vdd1 1 1>;
+			};
+		};
+	};
+
+	min-temp-1-lowf {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-sensors = <&tsens1 16>;
+		thermal-governor = "low_limits_floor";
+		wake-capable-sensor;
+		tracks-low;
+		trips {
+			min_temp_1_lowf: active-config0 {
+				temperature = <5000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			wcss_cx_vdd_cdev {
+				trip = <&min_temp_1_lowf>;
+				cooling-device = <&cx_cdev 0 0>;
+			};
+		};
+	};
+
+	min-temp-1-lowc {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-sensors = <&tsens1 16>;
+		thermal-governor = "low_limits_cap";
+		wake-capable-sensor;
+		tracks-low;
+		trips {
+			min_temp_1_lowc: active-config0 {
+				temperature = <5000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			lmh_cpu0_cdev {
+				trip = <&min_temp_1_lowc>;
+				cooling-device = <&lmh_cpu_vdd0 1 1>;
+			};
+
+			lmh_cpu6_cdev {
+				trip = <&min_temp_1_lowc>;
+				cooling-device = <&lmh_cpu_vdd1 1 1>;
 			};
 		};
 	};
