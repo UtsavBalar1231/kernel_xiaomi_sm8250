@@ -1,5 +1,6 @@
 #include "lagoon-audio-overlay.dtsi"
 #include <dt-bindings/gpio/gpio.h>
+#include "lagoon-sde-display.dtsi"
 
 &soc {
 };
@@ -146,4 +147,17 @@
 	qcom,hold-soc-while-full;
 	qcom,linearize-soc;
 	qcom,cl-feedback-on;
+};
+
+&dsi_rm69299_visionox_amoled_video {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
+	qcom,mdss-dsi-bl-min-level = <1>;
+	qcom,mdss-dsi-bl-max-level = <255>;
+	qcom,platform-te-gpio = <&tlmm 23 0>;
+	qcom,platform-reset-gpio = <&pm6150l_gpios 9 0>;
+};
+
+&sde_dsi {
+	qcom,dsi-default-panel = <&dsi_rm69299_visionox_amoled_video>;
 };
