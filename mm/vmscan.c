@@ -320,10 +320,19 @@ static inline bool memcg_congested(struct pglist_data *pgdat,
  */
 unsigned long zone_reclaimable_pages(struct zone *zone)
 {
+	u64 pages_min = min_filelist_kbytes >> (PAGE_SHIFT - 10);
 	unsigned long nr;
 
 	nr = zone_page_state_snapshot(zone, NR_ZONE_INACTIVE_FILE) +
 		zone_page_state_snapshot(zone, NR_ZONE_ACTIVE_FILE);
+
+	pages_min *= zone->managed_pages;
+	do_div(pages_min, totalram_pages);
+	if (nr < pages_min)
+		nr = 0;
+	else
+		nr -= pages_min;
+
 	if (get_nr_swap_pages() > 0
 			|| IS_ENABLED(CONFIG_HAVE_LOW_MEMORY_KILLER))
 		nr += zone_page_state_snapshot(zone, NR_ZONE_INACTIVE_ANON) +
