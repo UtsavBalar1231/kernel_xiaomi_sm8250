@@ -6,6 +6,332 @@
 		status = "ok";
 	};
 
+	cam_csiphy0: qcom,csiphy0 {
+		cell-index = <0>;
+		compatible = "qcom,csiphy-v1.2.3", "qcom,csiphy";
+		reg = <0x0ac65000 0x1000>;
+		reg-names = "csiphy";
+		reg-cam-base = <0x65000>;
+		interrupts = <GIC_SPI 477 IRQ_TYPE_EDGE_RISING>;
+		interrupt-names = "csiphy";
+		regulator-names = "gdscr", "refgen", "mipi-csi-vdd1",
+			"mipi-csi-vdd2";
+		gdscr-supply = <&cam_cc_titan_top_gdsc>;
+		refgen-supply = <&refgen>;
+		mipi-csi-vdd1-supply = <&L18A>;
+		mipi-csi-vdd2-supply = <&L22A>;
+		rgltr-cntrl-support;
+		rgltr-min-voltage = <0 0 880000 1200000>;
+		rgltr-max-voltage = <0 0 880000 1200000>;
+		rgltr-load-current = <0 0 80000 80000>;
+		clocks = <&camcc CAM_CC_CPHY_RX_CLK_SRC>,
+			<&camcc CAM_CC_CSIPHY0_CLK>,
+			<&camcc CAM_CC_CSI0PHYTIMER_CLK_SRC>,
+			<&camcc CAM_CC_CSI0PHYTIMER_CLK>;
+		clock-names = "cphy_rx_clk_src",
+			"csiphy0_clk",
+			"csi0phytimer_clk_src",
+			"csi0phytimer_clk";
+		src-clock-name = "csi0phytimer_clk_src";
+		clock-cntl-level = "lowsvs", "svs", "svs_l1";
+		clock-rates =
+			<300000000 0 300000000 0>,
+			<384000000 0 300000000 0>,
+			<400000000 0 300000000 0>;
+		status = "ok";
+	};
+
+	cam_csiphy1: qcom,csiphy1 {
+		cell-index = <1>;
+		compatible = "qcom,csiphy-v1.2.3", "qcom,csiphy";
+		reg = <0xac66000 0x1000>;
+		reg-names = "csiphy";
+		reg-cam-base = <0x66000>;
+		interrupts = <GIC_SPI 478 IRQ_TYPE_EDGE_RISING>;
+		interrupt-names = "csiphy";
+		regulator-names = "gdscr", "refgen", "mipi-csi-vdd1",
+			"mipi-csi-vdd2";
+		gdscr-supply = <&cam_cc_titan_top_gdsc>;
+		refgen-supply = <&refgen>;
+		mipi-csi-vdd1-supply = <&L18A>;
+		mipi-csi-vdd2-supply = <&L22A>;
+		rgltr-cntrl-support;
+		rgltr-min-voltage = <0 0 880000 1200000>;
+		rgltr-max-voltage = <0 0 880000 1200000>;
+		rgltr-load-current = <0 0 80000 80000>;
+		clocks = <&camcc CAM_CC_CPHY_RX_CLK_SRC>,
+			<&camcc CAM_CC_CSIPHY1_CLK>,
+			<&camcc CAM_CC_CSI1PHYTIMER_CLK_SRC>,
+			<&camcc CAM_CC_CSI1PHYTIMER_CLK>;
+		clock-names = "cphy_rx_clk_src",
+			"csiphy1_clk",
+			"csi1phytimer_clk_src",
+			"csi1phytimer_clk";
+		src-clock-name = "csi1phytimer_clk_src";
+		clock-cntl-level = "lowsvs", "svs", "svs_l1";
+		clock-rates =
+			<300000000 0 300000000 0>,
+			<384000000 0 300000000 0>,
+			<400000000 0 300000000 0>;
+		status = "ok";
+	};
+
+	cam_csiphy2: qcom,csiphy2 {
+		cell-index = <2>;
+		compatible = "qcom,csiphy-v1.2.3", "qcom,csiphy";
+		reg = <0xac67000 0x1000>;
+		reg-names = "csiphy";
+		reg-cam-base = <0x67000>;
+		interrupts = <GIC_SPI 479 IRQ_TYPE_EDGE_RISING>;
+		interrupt-names = "csiphy";
+		regulator-names = "gdscr", "refgen", "mipi-csi-vdd1",
+			"mipi-csi-vdd2";
+		gdscr-supply = <&cam_cc_titan_top_gdsc>;
+		refgen-supply = <&refgen>;
+		mipi-csi-vdd1-supply = <&L18A>;
+		mipi-csi-vdd2-supply = <&L22A>;
+		rgltr-cntrl-support;
+		rgltr-min-voltage = <0 0 880000 1200000>;
+		rgltr-max-voltage = <0 0 880000 1200000>;
+		rgltr-load-current = <0 0 80000 80000>;
+		clocks = <&camcc CAM_CC_CPHY_RX_CLK_SRC>,
+			<&camcc CAM_CC_CSIPHY2_CLK>,
+			<&camcc CAM_CC_CSI2PHYTIMER_CLK_SRC>,
+			<&camcc CAM_CC_CSI2PHYTIMER_CLK>;
+		clock-names = "cphy_rx_clk_src",
+			"csiphy2_clk",
+			"csi2phytimer_clk_src",
+			"csi2phytimer_clk";
+		src-clock-name = "csi2phytimer_clk_src";
+		clock-cntl-level = "lowsvs", "svs", "svs_l1";
+		clock-rates =
+			<300000000 0 300000000 0>,
+			<384000000 0 300000000 0>,
+			<400000000 0 300000000 0>;
+		status = "ok";
+	};
+
+	cam_csiphy3: qcom,csiphy3 {
+		cell-index = <3>;
+		compatible = "qcom,csiphy-v1.2.3", "qcom,csiphy";
+		reg = <0xac68000 0x1000>;
+		reg-names = "csiphy";
+		reg-cam-base = <0x68000>;
+		interrupts = <GIC_SPI 461 IRQ_TYPE_EDGE_RISING>;
+		interrupt-names = "csiphy";
+		regulator-names = "gdscr", "refgen", "mipi-csi-vdd1",
+			"mipi-csi-vdd2";
+		gdscr-supply = <&cam_cc_titan_top_gdsc>;
+		refgen-supply = <&refgen>;
+		mipi-csi-vdd1-supply = <&L18A>;
+		mipi-csi-vdd2-supply = <&L22A>;
+		rgltr-cntrl-support;
+		rgltr-min-voltage = <0 0 880000 1200000>;
+		rgltr-max-voltage = <0 0 880000 1200000>;
+		rgltr-load-current = <0 0 80000 80000>;
+		clocks = <&camcc CAM_CC_CPHY_RX_CLK_SRC>,
+			<&camcc CAM_CC_CSIPHY3_CLK>,
+			<&camcc CAM_CC_CSI3PHYTIMER_CLK_SRC>,
+			<&camcc CAM_CC_CSI3PHYTIMER_CLK>;
+		clock-names = "cphy_rx_clk_src",
+			"csiphy3_clk",
+			"csi3phytimer_clk_src",
+			"csi3phytimer_clk";
+		src-clock-name = "csi3phytimer_clk_src";
+		clock-cntl-level = "lowsvs", "svs", "svs_l1";
+		clock-rates =
+			<300000000 0 300000000 0>,
+			<384000000 0 300000000 0>,
+			<400000000 0 300000000 0>;
+		status = "ok";
+	};
+
+	cam_cci0: qcom,cci0 {
+		cell-index = <0>;
+		compatible = "qcom,cci";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0xac4a000 0x1000>;
+		reg-names = "cci";
+		reg-cam-base = <0x4a000>;
+		interrupt-names = "cci";
+		interrupts = <GIC_SPI 468 IRQ_TYPE_EDGE_RISING>;
+		status = "ok";
+		gdscr-supply = <&cam_cc_titan_top_gdsc>;
+		regulator-names = "gdscr";
+		clocks = <&camcc CAM_CC_CCI_0_CLK>,
+			<&camcc CAM_CC_CCI_0_CLK_SRC>;
+		clock-names = "cci_0_clk",
+			"cci_0_clk_src";
+		src-clock-name = "cci_0_clk_src";
+		clock-cntl-level = "lowsvs";
+		clock-rates = <0 37500000>;
+		pinctrl-names = "cam_default", "cam_suspend";
+		pinctrl-0 = <&cci0_active &cci1_active>;
+		pinctrl-1 = <&cci0_suspend &cci1_suspend>;
+		gpios = <&tlmm 39 0>,
+			<&tlmm 40 0>,
+			<&tlmm 41 0>,
+			<&tlmm 42 0>;
+		gpio-req-tbl-num = <0 1 2 3>;
+		gpio-req-tbl-flags = <1 1 1 1>;
+		gpio-req-tbl-label = "CCI_I2C_DATA0",
+			"CCI_I2C_CLK0",
+			"CCI_I2C_DATA1",
+			"CCI_I2C_CLK1";
+
+		i2c_freq_100Khz_cci0: qcom,i2c_standard_mode {
+			hw-thigh = <201>;
+			hw-tlow = <174>;
+			hw-tsu-sto = <204>;
+			hw-tsu-sta = <231>;
+			hw-thd-dat = <22>;
+			hw-thd-sta = <162>;
+			hw-tbuf = <227>;
+			hw-scl-stretch-en = <0>;
+			hw-trdhld = <6>;
+			hw-tsp = <3>;
+			cci-clk-src = <37500000>;
+			status = "ok";
+		};
+
+		i2c_freq_400Khz_cci0: qcom,i2c_fast_mode {
+			hw-thigh = <38>;
+			hw-tlow = <56>;
+			hw-tsu-sto = <40>;
+			hw-tsu-sta = <40>;
+			hw-thd-dat = <22>;
+			hw-thd-sta = <35>;
+			hw-tbuf = <62>;
+			hw-scl-stretch-en = <0>;
+			hw-trdhld = <6>;
+			hw-tsp = <3>;
+			cci-clk-src = <37500000>;
+			status = "ok";
+		};
+
+		i2c_freq_custom_cci0: qcom,i2c_custom_mode {
+			hw-thigh = <38>;
+			hw-tlow = <56>;
+			hw-tsu-sto = <40>;
+			hw-tsu-sta = <40>;
+			hw-thd-dat = <22>;
+			hw-thd-sta = <35>;
+			hw-tbuf = <62>;
+			hw-scl-stretch-en = <1>;
+			hw-trdhld = <6>;
+			hw-tsp = <3>;
+			cci-clk-src = <37500000>;
+			status = "ok";
+		};
+
+		i2c_freq_1Mhz_cci0: qcom,i2c_fast_plus_mode {
+			hw-thigh = <16>;
+			hw-tlow = <22>;
+			hw-tsu-sto = <17>;
+			hw-tsu-sta = <18>;
+			hw-thd-dat = <16>;
+			hw-thd-sta = <15>;
+			hw-tbuf = <24>;
+			hw-scl-stretch-en = <0>;
+			hw-trdhld = <3>;
+			hw-tsp = <3>;
+			cci-clk-src = <37500000>;
+			status = "ok";
+		};
+	};
+
+	cam_cci1: qcom,cci1 {
+		cell-index = <1>;
+		compatible = "qcom,cci";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0xac4b000 0x1000>;
+		reg-names = "cci";
+		reg-cam-base = <0x4b000>;
+		interrupt-names = "cci";
+		interrupts = <GIC_SPI 462 IRQ_TYPE_EDGE_RISING>;
+		status = "ok";
+		gdscr-supply = <&cam_cc_titan_top_gdsc>;
+		regulator-names = "gdscr";
+		clocks = <&camcc CAM_CC_CCI_1_CLK>,
+			<&camcc CAM_CC_CCI_1_CLK_SRC>;
+		clock-names = "cci_clk",
+			"cci_1_clk_src";
+		src-clock-name = "cci_1_clk_src";
+		clock-cntl-level = "lowsvs";
+		clock-rates = <0 37500000>;
+		pinctrl-names = "cam_default", "cam_suspend";
+		pinctrl-0 = <&cci2_active>;
+		pinctrl-1 = <&cci2_suspend>;
+		gpios = <&tlmm 43 0>,
+			<&tlmm 44 0>;
+		gpio-req-tbl-num = <0 1>;
+		gpio-req-tbl-flags = <1 1>;
+		gpio-req-tbl-label = "CCI_I2C_DATA2",
+			"CCI_I2C_CLK2";
+
+		i2c_freq_100Khz_cci1: qcom,i2c_standard_mode {
+			hw-thigh = <201>;
+			hw-tlow = <174>;
+			hw-tsu-sto = <204>;
+			hw-tsu-sta = <231>;
+			hw-thd-dat = <22>;
+			hw-thd-sta = <162>;
+			hw-tbuf = <227>;
+			hw-scl-stretch-en = <0>;
+			hw-trdhld = <6>;
+			hw-tsp = <3>;
+			cci-clk-src = <37500000>;
+			status = "ok";
+		};
+
+		i2c_freq_400Khz_cci1: qcom,i2c_fast_mode {
+			hw-thigh = <38>;
+			hw-tlow = <56>;
+			hw-tsu-sto = <40>;
+			hw-tsu-sta = <40>;
+			hw-thd-dat = <22>;
+			hw-thd-sta = <35>;
+			hw-tbuf = <62>;
+			hw-scl-stretch-en = <0>;
+			hw-trdhld = <6>;
+			hw-tsp = <3>;
+			cci-clk-src = <37500000>;
+			status = "ok";
+		};
+
+		i2c_freq_custom_cci1: qcom,i2c_custom_mode {
+			hw-thigh = <38>;
+			hw-tlow = <56>;
+			hw-tsu-sto = <40>;
+			hw-tsu-sta = <40>;
+			hw-thd-dat = <22>;
+			hw-thd-sta = <35>;
+			hw-tbuf = <62>;
+			hw-scl-stretch-en = <1>;
+			hw-trdhld = <6>;
+			hw-tsp = <3>;
+			cci-clk-src = <37500000>;
+			status = "ok";
+		};
+
+		i2c_freq_1Mhz_cci1: qcom,i2c_fast_plus_mode {
+			hw-thigh = <16>;
+			hw-tlow = <22>;
+			hw-tsu-sto = <17>;
+			hw-tsu-sta = <18>;
+			hw-thd-dat = <16>;
+			hw-thd-sta = <15>;
+			hw-tbuf = <24>;
+			hw-scl-stretch-en = <0>;
+			hw-trdhld = <3>;
+			hw-tsp = <3>;
+			cci-clk-src = <37500000>;
+			status = "ok";
+		};
+	};
+
 	qcom,cam_smmu {
 		compatible = "qcom,msm-cam-smmu";
 		status = "ok";
