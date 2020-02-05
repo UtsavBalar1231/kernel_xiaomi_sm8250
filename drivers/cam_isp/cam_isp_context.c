@@ -766,10 +766,28 @@ static int __cam_isp_ctx_handle_buf_done_for_request(
 		}
 
 		if (j == req_isp->num_fence_map_out) {
-			CAM_ERR(CAM_ISP,
-				"Can not find matching lane handle 0x%x!",
-				done->resource_handle[i]);
-			rc = -EINVAL;
+			if (done_next_req) {
+				/*
+				 * If not found in current request, it could be
+				 * belonging to next request, This can happen if
+				 * IRQ delay happens.
+				 */
+				CAM_WARN(CAM_ISP,
+					"BUF_DONE for res 0x%x not found in Req %lld ",
+					__cam_isp_resource_handle_id_to_type(
+					done->resource_handle[i]),
+					req->request_id);
+
+				done_next_req->resource_handle
+					[done_next_req->num_handles++] =
+					done->resource_handle[i];
+			} else {
+				CAM_ERR(CAM_ISP,
+					"Can not find matching lane handle 0x%x! in Req %lld",
+					done->resource_handle[i],
+					req->request_id);
+				rc = -EINVAL;
+			}
 			continue;
 		}
 
