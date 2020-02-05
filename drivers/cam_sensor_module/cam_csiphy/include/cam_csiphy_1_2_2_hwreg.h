@@ -1,12 +1,35 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_CSIPHY_1_2_2_HWREG_H_
 #define _CAM_CSIPHY_1_2_2_HWREG_H_
 
 #include "../cam_csiphy_dev.h"
+
+struct csiphy_reg_parms_t csiphy_v1_2_2 = {
+	.mipi_csiphy_interrupt_status0_addr = 0x8B0,
+	.mipi_csiphy_interrupt_clear0_addr = 0x858,
+	.mipi_csiphy_glbl_irq_cmd_addr = 0x828,
+	.csiphy_common_array_size = 8,
+	.csiphy_reset_array_size = 5,
+	.csiphy_2ph_config_array_size = 18,
+	.csiphy_3ph_config_array_size = 33,
+	.csiphy_2ph_clock_lane = 0x1,
+	.csiphy_2ph_combo_ck_ln = 0x10,
+};
+
+struct csiphy_reg_t csiphy_common_reg_1_2_2[] = {
+	{0x0814, 0xd5, 0x00, CSIPHY_LANE_ENABLE},
+	{0x0818, 0x01, 0x00, CSIPHY_DEFAULT_PARAMS},
+	{0x081C, 0x5A, 0x00, CSIPHY_DEFAULT_PARAMS},
+	{0x0800, 0x03, 0x01, CSIPHY_DEFAULT_PARAMS},
+	{0x0800, 0x02, 0x00, CSIPHY_DEFAULT_PARAMS},
+	{0x0884, 0x00, 0x00, CSIPHY_DEFAULT_PARAMS},
+	{0x088C, 0x00, 0x00, CSIPHY_DEFAULT_PARAMS},
+	{0x0824, 0x72, 0x00, CSIPHY_2PH_REGS},
+};
 
 struct csiphy_reg_t
 csiphy_2ph_v1_2_2_combo_mode_reg[MAX_LANES][MAX_SETTINGS_PER_LANE] = {
