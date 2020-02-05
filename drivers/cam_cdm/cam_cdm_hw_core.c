@@ -19,6 +19,7 @@
 #include "cam_cdm_soc.h"
 #include "cam_io_util.h"
 #include "cam_hw_cdm170_reg.h"
+#include "cam_trace.h"
 
 #define CAM_HW_CDM_CPAS_0_NAME "qcom,cam170-cpas-cdm0"
 #define CAM_HW_CDM_IPE_0_NAME "qcom,cam170-ipe0-cdm"
@@ -380,6 +381,8 @@ int cam_hw_cdm_submit_gen_irq(struct cam_hw_info *cdm_hw,
 		rc = -EIO;
 	}
 
+	trace_cam_log_event("CDM_START", "CDM_START_IRQ", req->data->cookie, 0);
+
 end:
 	return rc;
 }
@@ -679,6 +682,9 @@ irqreturn_t cam_hw_cdm_irq(int irq_num, void *data)
 					"Failed to read CDM HW IRQ data");
 			}
 		}
+		trace_cam_log_event("CDM_DONE", "CDM_DONE_IRQ",
+			payload->irq_status,
+			cdm_hw->soc_info.index);
 		CAM_DBG(CAM_CDM, "Got payload=%d", payload->irq_status);
 		payload->hw = cdm_hw;
 		INIT_WORK((struct work_struct *)&payload->work,
