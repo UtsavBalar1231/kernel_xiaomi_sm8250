@@ -2571,6 +2571,9 @@
 		qcom,pm-qos-cmdq-latency-us = <65 65>, <65 65>;
 		qcom,pm-qos-legacy-latency-us = <65 65>, <65 65>;
 
+		/* DLL HSR settings. Refer go/hsr - <Target> DLL settings */
+		qcom,dll-hsr-list = <0x000f642c 0x0 0x0 0x00010800 0x80040868>;
+
 		qcom,nonremovable;
 		status = "disabled";
 	};
@@ -2638,6 +2641,9 @@
 		qcom,pm-qos-irq-latency = <59 59>;
 		qcom,pm-qos-cpu-groups = <0x3f 0xc0>;
 		qcom,pm-qos-legacy-latency-us = <65 65>, <65 65>;
+
+		/* DLL HSR settings. Refer go/hsr - <Target> DLL settings */
+		qcom,dll-hsr-list = <0x0007642c 0x0 0x0 0x00010800 0x80040868>;
 
 		status = "disabled";
 	};
