@@ -17,7 +17,7 @@ static char supported_clk_info[256];
 static char debugfs_dir_name[64];
 
 int cam_soc_util_get_clk_level(struct cam_hw_soc_info *soc_info,
-	int32_t clk_rate, int clk_idx, int32_t *clk_lvl)
+	int64_t clk_rate, int clk_idx, int32_t *clk_lvl)
 {
 	int i;
 	long clk_rate_round;
@@ -41,9 +41,9 @@ int cam_soc_util_get_clk_level(struct cam_hw_soc_info *soc_info,
 			(soc_info->clk_rate[i][clk_idx] >=
 			clk_rate_round)) {
 			CAM_DBG(CAM_UTIL,
-				"soc = %d round rate = %ld actual = %d",
+				"soc = %d round rate = %ld actual = %lld",
 				soc_info->clk_rate[i][clk_idx],
-				clk_rate_round,	clk_rate);
+				clk_rate_round, clk_rate);
 			*clk_lvl = i;
 			return 0;
 		}
@@ -380,7 +380,7 @@ long cam_soc_util_get_clk_round_rate(struct cam_hw_soc_info *soc_info,
  * @return:         Success or failure
  */
 static int cam_soc_util_set_clk_rate(struct clk *clk, const char *clk_name,
-	int32_t clk_rate)
+	int64_t clk_rate)
 {
 	int rc = 0;
 	long clk_rate_round;
@@ -388,7 +388,7 @@ static int cam_soc_util_set_clk_rate(struct clk *clk, const char *clk_name,
 	if (!clk || !clk_name)
 		return -EINVAL;
 
-	CAM_DBG(CAM_UTIL, "set %s, rate %d", clk_name, clk_rate);
+	CAM_DBG(CAM_UTIL, "set %s, rate %lld", clk_name, clk_rate);
 	if (clk_rate > 0) {
 		clk_rate_round = clk_round_rate(clk, clk_rate);
 		CAM_DBG(CAM_UTIL, "new_rate %ld", clk_rate_round);
@@ -424,7 +424,7 @@ static int cam_soc_util_set_clk_rate(struct clk *clk, const char *clk_name,
 }
 
 int cam_soc_util_set_src_clk_rate(struct cam_hw_soc_info *soc_info,
-	int32_t clk_rate)
+	int64_t clk_rate)
 {
 	int rc = 0;
 	int i = 0;
@@ -452,13 +452,13 @@ int cam_soc_util_set_src_clk_rate(struct cam_hw_soc_info *soc_info,
 		&apply_level);
 	if (rc || (apply_level < 0) || (apply_level >= CAM_MAX_VOTE)) {
 		CAM_ERR(CAM_UTIL,
-			"set %s, rate %d dev_name = %s apply level = %d",
+			"set %s, rate %lld dev_name = %s apply level = %d",
 			soc_info->clk_name[src_clk_idx], clk_rate,
 			soc_info->dev_name, apply_level);
 			return -EINVAL;
 	}
 
-	CAM_DBG(CAM_UTIL, "set %s, rate %d dev_name = %s apply level = %d",
+	CAM_DBG(CAM_UTIL, "set %s, rate %lld dev_name = %s apply level = %d",
 		soc_info->clk_name[src_clk_idx], clk_rate,
 		soc_info->dev_name, apply_level);
 
@@ -471,7 +471,7 @@ int cam_soc_util_set_src_clk_rate(struct cam_hw_soc_info *soc_info,
 		soc_info->clk_name[src_clk_idx], clk_rate);
 	if (rc) {
 		CAM_ERR(CAM_UTIL,
-			"SET_RATE Failed: src clk: %s, rate %d, dev_name = %s rc: %d",
+			"SET_RATE Failed: src clk: %s, rate %lld, dev_name = %s rc: %d",
 			soc_info->clk_name[src_clk_idx], clk_rate,
 			soc_info->dev_name, rc);
 		return rc;

@@ -413,7 +413,7 @@ long cam_soc_util_get_clk_round_rate(struct cam_hw_soc_info *soc_info,
  * @return:             success or failure
  */
 int cam_soc_util_set_src_clk_rate(struct cam_hw_soc_info *soc_info,
-	int32_t clk_rate);
+	int64_t clk_rate);
 
 /**
  * cam_soc_util_get_option_clk_by_name()
@@ -655,7 +655,7 @@ int cam_soc_util_clk_enable_default(struct cam_hw_soc_info *soc_info,
 	enum cam_vote_level clk_level);
 
 int cam_soc_util_get_clk_level(struct cam_hw_soc_info *soc_info,
-	int32_t clk_rate, int clk_idx, int32_t *clk_lvl);
+	int64_t clk_rate, int clk_idx, int32_t *clk_lvl);
 
 /* Callback to get reg space data for specific HW */
 typedef int (*cam_soc_util_regspace_data_cb)(uint32_t reg_base_type,
