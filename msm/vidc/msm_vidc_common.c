@@ -1400,6 +1400,7 @@ static int msm_vidc_comm_update_ctrl(struct msm_vidc_inst *inst,
 {
 	struct v4l2_ctrl *ctrl = NULL;
 	int rc = 0;
+	bool is_menu = false;
 
 	ctrl = v4l2_ctrl_find(&inst->ctrl_handler, id);
 	if (!ctrl) {
@@ -1408,29 +1409,32 @@ static int msm_vidc_comm_update_ctrl(struct msm_vidc_inst *inst,
 		return -EINVAL;
 	}
 
+	if (ctrl->type == V4L2_CTRL_TYPE_MENU)
+		is_menu = true;
+
+	/**
+	 * For menu controls the step value is interpreted
+	 * as a menu_skip_mask.
+	 */
 	rc = v4l2_ctrl_modify_range(ctrl, cap->min, cap->max,
-			cap->step_size, cap->default_value);
+			is_menu ? ctrl->menu_skip_mask : cap->step_size,
+			cap->default_value);
 	if (rc) {
 		s_vpr_e(inst->sid,
-			"%s: failed: control name %s, min %d, max %d, step %d, default_value %d\n",
+			"%s: failed: control name %s, min %d, max %d, %s %x, default_value %d\n",
 			__func__, ctrl->name, cap->min, cap->max,
-			cap->step_size, cap->default_value);
+			is_menu ? "menu_skip_mask" : "step",
+			is_menu ? ctrl->menu_skip_mask : cap->step_size,
+			cap->default_value);
 		goto error;
 	}
-	/*
-	 * v4l2_ctrl_modify_range() is not updating default_value,
-	 * so use v4l2_ctrl_s_ctrl() to update it.
-	 */
-	rc = v4l2_ctrl_s_ctrl(ctrl, cap->default_value);
-	if (rc) {
-		s_vpr_e(inst->sid, "%s: failed s_ctrl: %s with value %d\n",
-			__func__, ctrl->name, cap->default_value);
-		goto error;
-	}
+
 	s_vpr_h(inst->sid,
-		"Updated control: %s: min %lld, max %lld, step %lld, default value = %lld\n",
+		"Updated control: %s: min %lld, max %lld, %s %x, default value = %lld\n",
 		ctrl->name, ctrl->minimum, ctrl->maximum,
-		ctrl->step, ctrl->default_value);
+		is_menu ? "menu_skip_mask" : "step",
+		is_menu ? ctrl->menu_skip_mask : ctrl->step,
+		ctrl->default_value);
 
 error:
 	return rc;
