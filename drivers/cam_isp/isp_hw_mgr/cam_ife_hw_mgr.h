@@ -143,6 +143,7 @@ struct cam_ife_hw_mgr_debug {
  * @use_frame_header_ts     obtain qtimer ts using frame header
  * @ts                      captured timestamp when the ctx is acquired
  * @is_offline              Indicate whether context is for offline IFE
+ * @dsp_enabled             Indicate whether dsp is enabled in this context
  */
 struct cam_ife_hw_mgr_ctx {
 	struct list_head                list;
@@ -193,6 +194,7 @@ struct cam_ife_hw_mgr_ctx {
 	bool                            use_frame_header_ts;
 	struct timespec64               ts;
 	bool                            is_offline;
+	bool                            dsp_enabled;
 };
 
 /**

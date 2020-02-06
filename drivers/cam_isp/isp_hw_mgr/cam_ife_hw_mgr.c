@@ -2467,6 +2467,7 @@ static int cam_ife_mgr_acquire_hw_for_ctx(
 	bool crop_enable                          = true;
 
 	is_dual_vfe = in_port->usage_type;
+	ife_ctx->dsp_enabled = (bool)in_port->dsp_mode;
 
 	/* get root node resource */
 	rc = cam_ife_hw_mgr_acquire_res_root(ife_ctx, in_port);
@@ -3830,7 +3831,8 @@ static int cam_ife_mgr_stop_hw(void *hw_mgr_priv, void *stop_hw_args)
 	stop_isp = (struct cam_isp_stop_args    *)stop_args->args;
 
 	/* Set the csid halt command */
-	if (stop_isp->hw_stop_cmd == CAM_ISP_HW_STOP_AT_FRAME_BOUNDARY)
+	if ((stop_isp->hw_stop_cmd == CAM_ISP_HW_STOP_AT_FRAME_BOUNDARY) ||
+		ctx->dsp_enabled)
 		csid_halt_type = CAM_CSID_HALT_AT_FRAME_BOUNDARY;
 	else
 		csid_halt_type = CAM_CSID_HALT_IMMEDIATELY;
@@ -4378,6 +4380,10 @@ static int cam_ife_mgr_release_hw(void *hw_mgr_priv,
 	ctx->custom_enabled = false;
 	ctx->use_frame_header_ts = false;
 	ctx->num_reg_dump_buf = 0;
+	ctx->is_dual = false;
+	ctx->dsp_enabled = false;
+	ctx->is_fe_enabled = false;
+	ctx->is_offline = false;
 	atomic_set(&ctx->overflow_pending, 0);
 	for (i = 0; i < CAM_IFE_HW_NUM_MAX; i++) {
 		ctx->sof_cnt[i] = 0;
