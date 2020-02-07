@@ -1339,7 +1339,7 @@ static struct msm_vidc_common_data kona_common_data[] = {
 	},
 	{
 		.key = "qcom,decode-batching",
-		.value = 1,
+		.value = 0,
 	},
 	{
 		.key = "qcom,batch-timeout",
