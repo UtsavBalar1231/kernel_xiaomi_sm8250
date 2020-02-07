@@ -1,6 +1,7 @@
 #include "lagoon-audio-overlay.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include "lagoon-sde-display.dtsi"
+#include "camera/lagoon-camera-sensor-cdp.dtsi"
 
 &soc {
 };
