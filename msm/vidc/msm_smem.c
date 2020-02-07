@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <asm/dma-iommu.h>
@@ -129,6 +129,9 @@ static int msm_dma_put_device_address(u32 flags,
 	enum hal_buffer buffer_type, u32 sid)
 {
 	int rc = 0;
+	struct sg_table *table = NULL;
+	dma_addr_t iova;
+	unsigned long buffer_size;
 
 	if (!mapping_info) {
 		s_vpr_e(sid, "Invalid mapping_info\n");
@@ -142,7 +145,11 @@ static int msm_dma_put_device_address(u32 flags,
 		return -EINVAL;
 	}
 
-	trace_msm_smem_buffer_iommu_op_start("UNMAP", 0, 0, 0, 0, 0);
+	table = mapping_info->table;
+	iova = table->sgl->dma_address;
+	buffer_size = table->sgl->dma_length;
+	trace_msm_smem_buffer_iommu_op_start("UNMAP", 0, 0,
+			0, iova, buffer_size);
 	dma_buf_unmap_attachment(mapping_info->attach,
 		mapping_info->table, DMA_BIDIRECTIONAL);
 	dma_buf_detach(mapping_info->buf, mapping_info->attach);
