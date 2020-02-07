@@ -3743,7 +3743,8 @@ static void _sde_plane_install_properties(struct drm_plane *plane,
 	if (psde->features & BIT(SDE_SSPP_TRUE_INLINE_ROT)) {
 		const struct sde_format_extended *inline_rot_fmt_list;
 
-		sde_kms_info_add_keyint(info, "true_inline_rot_rev", 1);
+		sde_kms_info_add_keyint(info, "true_inline_rot_rev",
+			 catalog->true_inline_rot_rev);
 		sde_kms_info_add_keyint(info,
 			"true_inline_dwnscale_rt",
 			(int) (psde->pipe_sblk->in_rot_maxdwnscale_rt_num /
