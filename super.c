@@ -23,7 +23,7 @@
 #include <linux/nls.h>
 #include <linux/buffer_head.h>
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 16, 0)
 #include <linux/iversion.h>
 #endif
 
@@ -125,7 +125,11 @@ int exfat_set_vol_flags(struct super_block *sb, unsigned short new_flag)
 	/* skip updating volume dirty flag,
 	 * if this volume has been mounted with read-only
 	 */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
 	if (sb_rdonly(sb))
+#else
+	if (sb->s_flags & MS_RDONLY)
+#endif
 		return 0;
 
 	if (!sbi->pbr_bh) {
@@ -505,7 +509,7 @@ static int exfat_read_root(struct inode *inode)
 	inode->i_uid = sbi->options.fs_uid;
 	inode->i_gid = sbi->options.fs_gid;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 16, 0)
 	inode_inc_iversion(inode);
 #else
 	inode->i_version++;
@@ -522,7 +526,7 @@ static int exfat_read_root(struct inode *inode)
 	EXFAT_I(inode)->i_size_ondisk = i_size_read(inode);
 
 	exfat_save_attr(inode, ATTR_SUBDIR);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
 	inode->i_mtime = inode->i_atime = inode->i_ctime = ei->i_crtime =
 		current_time(inode);
 #else
@@ -743,11 +747,15 @@ static int exfat_fill_super(struct super_block *sb, void *data, int silent)
 	}
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
 	sb->s_flags |= SB_NODIRATIME;
+#else
+	sb->s_flags |= MS_NODIRATIME;
+#endif
 	sb->s_magic = EXFAT_SUPER_MAGIC;
 	sb->s_op = &exfat_sops;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
 	sb->s_time_gran = 1;
 	sb->s_time_min = EXFAT_MIN_TIMESTAMP_SECS;
 	sb->s_time_max = EXFAT_MAX_TIMESTAMP_SECS;
@@ -792,7 +800,7 @@ static int exfat_fill_super(struct super_block *sb, void *data, int silent)
 
 	root_inode->i_ino = EXFAT_ROOT_INO;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 16, 0)
 	inode_set_iversion(root_inode, 1);
 #else
 	root_inode->i_version = 1;

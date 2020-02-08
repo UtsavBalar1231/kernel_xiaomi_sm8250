@@ -13,7 +13,7 @@
 #include <linux/writeback.h>
 #include <linux/uio.h>
 #include <linux/random.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 16, 0)
 #include <linux/iversion.h>
 #endif
 #include "exfat_raw.h"
@@ -439,7 +439,7 @@ static int exfat_write_end(struct file *file, struct address_space *mapping,
 		exfat_write_failed(mapping, pos+len);
 
 	if (!(err < 0) && !(ei->attr & ATTR_ARCHIVE)) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
 		inode->i_mtime = inode->i_ctime = current_time(inode);
 #else
 		inode->i_mtime = inode->i_ctime = CURRENT_TIME_SEC;
@@ -451,7 +451,13 @@ static int exfat_write_end(struct file *file, struct address_space *mapping,
 	return err;
 }
 
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
 static ssize_t exfat_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
+#else
+static ssize_t exfat_direct_IO(struct kiocb *iocb, struct iov_iter *iter,
+                             loff_t offset)
+#endif
 {
 	struct address_space *mapping = iocb->ki_filp->f_mapping;
 	struct inode *inode = mapping->host;
@@ -477,7 +483,11 @@ static ssize_t exfat_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
 	 * Need to use the DIO_LOCKING for avoiding the race
 	 * condition of exfat_get_block() and ->truncate().
 	 */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
 	ret = blockdev_direct_IO(iocb, inode, iter, exfat_get_block);
+#else
+	ret = blockdev_direct_IO(iocb, inode, iter, offset, exfat_get_block);
+#endif
 	if (ret < 0 && (rw & WRITE))
 		exfat_write_failed(mapping, size);
 	return ret;
@@ -588,7 +598,7 @@ static int exfat_fill_inode(struct inode *inode, struct exfat_dir_entry *info)
 
 	inode->i_uid = sbi->options.fs_uid;
 	inode->i_gid = sbi->options.fs_gid;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 16, 0)
 	inode_inc_iversion(inode);
 #else
 	inode->i_version++;
@@ -650,7 +660,7 @@ struct inode *exfat_build_inode(struct super_block *sb,
 		goto out;
 	}
 	inode->i_ino = iunique(sb, EXFAT_ROOT_INO);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 16, 0)
 	inode_set_iversion(inode, 1);
 #else
 	inode->i_version = 1;

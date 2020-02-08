@@ -39,8 +39,14 @@ void __exfat_fs_error(struct super_block *sb, int report, const char *fmt, ...)
 	if (opts->errors == EXFAT_ERRORS_PANIC) {
 		panic("exFAT-fs (%s): fs panic from previous error\n",
 			sb->s_id);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
 	} else if (opts->errors == EXFAT_ERRORS_RO && !sb_rdonly(sb)) {
 		sb->s_flags |= SB_RDONLY;
+#else
+	} else if (opts->errors == EXFAT_ERRORS_RO &&
+			!(sb->s_flags & MS_RDONLY)) {
+		sb->s_flags |= MS_RDONLY;
+#endif
 		exfat_msg(sb, KERN_ERR, "Filesystem has been set read-only");
 	}
 }
@@ -105,7 +111,11 @@ void exfat_set_entry_time(struct exfat_sb_info *sbi, struct timespec64 *ts,
 	struct tm tm;
 	u16 t, d;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
 	time64_to_tm(ts->tv_sec, 0, &tm);
+#else
+	time_to_tm(ts->tv_sec, 0, &tm);
+#endif
 	t = (tm.tm_hour << 11) | (tm.tm_min << 5) | (tm.tm_sec >> 1);
 	d = ((tm.tm_year - 80) <<  9) | ((tm.tm_mon + 1) << 5) | tm.tm_mday;
 
