@@ -3,9 +3,14 @@
  * Copyright (C) 2012-2013 Samsung Electronics Co., Ltd.
  */
 
+#include <linux/version.h>
 #include <linux/slab.h>
-#include <linux/cred.h>
 #include <linux/buffer_head.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+#include <linux/cred.h>
+#else
+#include <linux/compat.h>
+#endif
 
 #include "exfat_raw.h"
 #include "exfat_fs.h"
@@ -20,7 +25,11 @@ static int exfat_cont_expand(struct inode *inode, loff_t size)
 	if (err)
 		return err;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
 	inode->i_ctime = inode->i_mtime = current_time(inode);
+#else
+	inode->i_ctime = inode->i_mtime = CURRENT_TIME_SEC;
+#endif
 	mark_inode_dirty(inode);
 
 	if (!IS_SYNC(inode))
@@ -160,7 +169,11 @@ int __exfat_truncate(struct inode *inode, loff_t new_size)
 			return -EIO;
 		ep2 = ep + 1;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
 		ts = current_time(inode);
+#else
+		ts = CURRENT_TIME_SEC;
+#endif
 		exfat_set_entry_time(sbi, &ts,
 				&ep->dentry.file.modify_tz,
 				&ep->dentry.file.modify_time,
@@ -243,7 +256,11 @@ void exfat_truncate(struct inode *inode, loff_t size)
 	if (err)
 		goto write_size;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
 	inode->i_ctime = inode->i_mtime = current_time(inode);
+#else
+	inode->i_ctime = inode->i_mtime = CURRENT_TIME_SEC;
+#endif
 	if (IS_DIRSYNC(inode))
 		exfat_sync_inode(inode);
 	else
@@ -266,16 +283,28 @@ write_size:
 	mutex_unlock(&sbi->s_lock);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 int exfat_getattr(const struct path *path, struct kstat *stat,
 		unsigned int request_mask, unsigned int query_flags)
+#else
+int exfat_getattr(struct vfsmount *mnt, struct dentry *dentry,
+		struct kstat *stat)
+#endif
+
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 	struct inode *inode = d_backing_inode(path->dentry);
 	struct exfat_inode_info *ei = EXFAT_I(inode);
+#else
+	struct inode *inode = d_inode(dentry);
+#endif
 
 	generic_fillattr(inode, stat);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 	stat->result_mask |= STATX_BTIME;
 	stat->btime.tv_sec = ei->i_crtime.tv_sec;
 	stat->btime.tv_nsec = ei->i_crtime.tv_nsec;
+#endif
 	stat->blksize = EXFAT_SB(inode->i_sb)->cluster_size;
 	return 0;
 }
@@ -303,7 +332,13 @@ int exfat_setattr(struct dentry *dentry, struct iattr *attr)
 				ATTR_TIMES_SET);
 	}
 
+#if ((LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)) && \
+		(LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 37))) || \
+		(LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0))
 	error = setattr_prepare(dentry, attr);
+#else
+	error = inode_change_ok(inode, attr);
+#endif
 	attr->ia_valid = ia_valid;
 	if (error)
 		goto out;

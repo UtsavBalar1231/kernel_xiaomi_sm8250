@@ -71,7 +71,43 @@ script:
  - ./configure > /dev/null
  - make -j$((`nproc`+1)) > /dev/null
  - sudo ./check generic/001
- - sudo ./check generic/002
- - sudo ./check generic/005
  - sudo ./check generic/006
  - sudo ./check generic/007
+ - sudo ./check generic/011
+ - sudo ./check generic/014
+ - sudo ./check generic/028
+ - sudo ./check generic/029
+ - sudo ./check generic/030
+ - sudo ./check generic/035
+ - sudo ./check generic/036
+ - sudo ./check generic/069
+ - sudo ./check generic/071
+ - sudo ./check generic/074
+ - sudo ./check generic/075
+ - sudo ./check generic/080
+ - sudo ./check generic/084
+ - sudo ./check generic/086
+ - sudo ./check generic/095
+ - sudo ./check generic/098
+ - sudo ./check generic/112
+ - sudo ./check generic/113
+ - sudo ./check generic/114
+ - sudo ./check generic/120
+ - sudo ./check generic/123
+ - sudo ./check generic/124
+ - sudo ./check generic/127
+ - sudo ./check generic/131
+ - sudo ./check generic/132
+ - sudo ./check generic/135
+ - sudo ./check generic/141
+ - sudo ./check generic/169
+ - sudo ./check generic/198
+ - sudo ./check generic/207
+ - sudo ./check generic/208
+ - sudo ./check generic/209
+ - sudo ./check generic/210
+ - sudo ./check generic/212
+ - sudo ./check generic/214
+ - sudo ./check generic/215
+ - sudo ./check generic/221
+ - sudo ./check generic/228
