@@ -18,6 +18,7 @@ before_script:
  - sudo apt-get install autoconf libtool pkg-config libnl-3-dev libnl-genl-3-dev
  - sudo apt-get install xfslibs-dev uuid-dev libtool-bin xfsprogs libgdbm-dev gawk fio attr libattr1-dev libacl1-dev libaio-dev
  - git clone --branch=exfat-next https://github.com/exfat-utils/exfat-utils
+ - git clone https://github.com/namjaejeon/exfat-testsuites
  - export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
  - export PATH=/usr/local/lib:$PATH
  - sudo useradd fsgqa
@@ -38,15 +39,17 @@ script:
  - echo 'obj-$(CONFIG_EXFAT_FS) += exfat/' >> fs/Makefile
  - echo 'source "fs/exfat/Kconfig"' >> fs/Kconfig
  - echo 'CONFIG_EXFAT_FS=m' >> .config
+ - echo 'CONFIG_EXFAT_DEFAULT_IOCHARSET="utf8"' >> .config
  - make -j$((`nproc`+1)) fs/exfat/exfat.ko
 
  # Compile with latest Torvalds' kernel
- - cd ../linux
- - yes "" | make oldconfig > /dev/null
- - echo 'obj-$(CONFIG_EXFAT) += exfat/' >> fs/Makefile
- - echo 'source "fs/exfat/Kconfig"' >> fs/Kconfig
- - echo 'CONFIG_EXFAT_FS=m' >> .config
- - make -j$((`nproc`+1)) fs/exfat/exfat.ko
+ # - cd ../linux
+ # - yes "" | make oldconfig > /dev/null
+ # - echo 'obj-$(CONFIG_EXFAT) += exfat/' >> fs/Makefile
+ #- echo 'source "fs/exfat/Kconfig"' >> fs/Kconfig
+ #- echo 'CONFIG_EXFAT_FS=m' >> .config
+ #- echo 'CONFIG_EXFAT_DEFAULT_IOCHARSET="utf8"' >> .config
+ #- make -j$((`nproc`+1)) fs/exfat/exfat.ko
 
  # Run xfstests testsuite
  - cd ../exfat
@@ -58,17 +61,20 @@ script:
  - ./configure > /dev/null
  - make -j$((`nproc`+1)) > /dev/null
  - sudo make install > /dev/null
- - cd ..
+ - sudo cp lib/.libs/libexfat.so* /lib/
  - sudo mkdir -p /mnt/scratch
  - sudo mkdir -p /mnt/test
- - dd if=/dev/zero bs=1024 count=1024000 of=test.img
- - dd if=/dev/zero bs=1024 count=1024000 of=scratch.img
- - mkfs.exfat test.img
- - mkfs.exfat scratch.img
+ - time dd if=/dev/zero bs=1G count=10 of=test.img
+ - time dd if=/dev/zero bs=1G count=10 of=scratch.img
+ - sudo losetup /dev/loop20 test.img
+ - sudo losetup /dev/loop21 test.img
+ - sudo mkfs.exfat -c 4 /dev/loop20
+ - sudo mkfs.exfat -c 4 /dev/loop21
+ - sudo make uninstall
+ - cd ..
  - cd exfat-testsuites/
  - tar xzvf xfstests-exfat.tgz > /dev/null
  - cd xfstests-exfat
- - ./configure > /dev/null
  - make -j$((`nproc`+1)) > /dev/null
  - sudo ./check generic/001
  - sudo ./check generic/006
