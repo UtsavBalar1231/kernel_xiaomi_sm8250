@@ -70,7 +70,6 @@ script:
  - sudo losetup /dev/loop21 test.img
  - sudo mkfs.exfat -c 4 /dev/loop20
  - sudo mkfs.exfat -c 4 /dev/loop21
- - sudo make uninstall
  - cd ..
  - cd exfat-testsuites/
  - tar xzvf xfstests-exfat.tgz > /dev/null
