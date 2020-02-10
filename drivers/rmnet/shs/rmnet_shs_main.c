@@ -1359,14 +1359,25 @@ void rmnet_shs_rx_wq_init(void)
 	INIT_WORK(&shs_rx_work.work, rmnet_flush_buffered);
 }
 
-void rmnet_shs_rx_wq_exit(void)
+unsigned int rmnet_shs_rx_wq_exit(void)
 {
+	unsigned int cpu_switch = rmnet_shs_inst_rate_switch;
 	int i;
 
-	for (i = 0; i < MAX_CPUS; i++)
+	/* Disable any further core_flush timer starts untill cleanup
+	 * is complete.
+	 */
+	rmnet_shs_inst_rate_switch = 0;
+
+	for (i = 0; i < MAX_CPUS; i++) {
+		hrtimer_cancel(&GET_CTIMER(i));
+
 		cancel_work_sync(&rmnet_shs_cfg.core_flush[i].work);
+	}
 
 	cancel_work_sync(&shs_rx_work.work);
+
+	return cpu_switch;
 }
 
 void rmnet_shs_ps_on_hdlr(void *port)
@@ -1724,7 +1735,7 @@ void rmnet_shs_assign(struct sk_buff *skb, struct rmnet_port *port)
 /* Cancels the flushing timer if it has been armed
  * Deregisters DL marker indications
  */
-void rmnet_shs_exit(void)
+void rmnet_shs_exit(unsigned int cpu_switch)
 {
 	rmnet_shs_freq_exit();
 	rmnet_shs_cfg.dl_mrk_ind_cb.dl_hdr_handler = NULL;
@@ -1738,5 +1749,5 @@ void rmnet_shs_exit(void)
 	memset(&rmnet_shs_cfg, 0, sizeof(rmnet_shs_cfg));
 	rmnet_shs_cfg.port = NULL;
 	rmnet_shs_cfg.rmnet_shs_init_complete = 0;
-
+	rmnet_shs_inst_rate_switch = cpu_switch;
 }

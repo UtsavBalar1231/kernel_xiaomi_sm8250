@@ -445,6 +445,43 @@ void dump_phy_registers(struct DWC_ETH_QOS_prv_data *pdata)
 	pr_alert("\n****************************************************\n");
 }
 
+static void DWC_ETH_QOS_request_phy_wol(struct DWC_ETH_QOS_prv_data *pdata)
+{
+	pdata->phy_wol_supported = 0;
+	pdata->phy_wol_wolopts = 0;
+
+	/* Check if phydev is valid*/
+	/* Check and enable Wake-on-LAN functionality in PHY*/
+	if (pdata->phydev) {
+		struct ethtool_wolinfo wol = {.cmd = ETHTOOL_GWOL};
+		wol.supported = 0;
+		wol.wolopts= 0;
+
+		phy_ethtool_get_wol(pdata->phydev, &wol);
+		pdata->phy_wol_supported = wol.supported;
+
+		/* Try to enable supported Wake-on-LAN features in PHY*/
+		if (wol.supported) {
+
+			device_set_wakeup_capable(&pdata->pdev->dev, 1);
+
+			wol.cmd = ETHTOOL_SWOL;
+			wol.wolopts = wol.supported;
+
+			if (!phy_ethtool_set_wol(pdata->phydev, &wol)){
+				pdata->phy_wol_wolopts = wol.wolopts;
+
+				enable_irq_wake(pdata->phy_irq);
+
+				device_set_wakeup_enable(&pdata->pdev->dev, 1);
+				EMACDBG("Enabled WoL[0x%x] in %s\n", wol.wolopts,
+						 pdata->phydev->drv->name);
+				pdata->wol_enabled = 1;
+			}
+		}
+	}
+}
+
 /*!
  * \brief API to enable or disable PHY hibernation mode
  *
@@ -1007,6 +1044,9 @@ void DWC_ETH_QOS_adjust_link(struct net_device *dev)
 		}
 #endif
 
+		if (pdata->phy_intr_en && !pdata->wol_enabled)
+			DWC_ETH_QOS_request_phy_wol(pdata);
+
 		if (pdata->ipa_enabled && netif_running(dev)) {
 			if (phydev->link == 1)
 				 DWC_ETH_QOS_ipa_offload_event_handler(pdata, EV_PHY_LINK_UP);
@@ -1028,42 +1068,6 @@ void DWC_ETH_QOS_adjust_link(struct net_device *dev)
 	//spin_unlock_irqrestore(&pdata->lock, flags);
 
 	DBGPR_MDIO("<--DWC_ETH_QOS_adjust_link\n");
-}
-
-static void DWC_ETH_QOS_request_phy_wol(struct DWC_ETH_QOS_prv_data *pdata)
-{
-	pdata->phy_wol_supported = 0;
-	pdata->phy_wol_wolopts = 0;
-
-	/* Check if phydev is valid*/
-	/* Check and enable Wake-on-LAN functionality in PHY*/
-	if (pdata->phydev) {
-		struct ethtool_wolinfo wol = {.cmd = ETHTOOL_GWOL};
-		wol.supported = 0;
-		wol.wolopts= 0;
-
-		phy_ethtool_get_wol(pdata->phydev, &wol);
-		pdata->phy_wol_supported = wol.supported;
-
-		/* Try to enable supported Wake-on-LAN features in PHY*/
-		if (wol.supported) {
-
-			device_set_wakeup_capable(&pdata->pdev->dev, 1);
-
-			wol.cmd = ETHTOOL_SWOL;
-			wol.wolopts = wol.supported;
-
-			if (!phy_ethtool_set_wol(pdata->phydev, &wol)){
-				pdata->phy_wol_wolopts = wol.wolopts;
-
-				enable_irq_wake(pdata->phy_irq);
-
-				device_set_wakeup_enable(&pdata->pdev->dev, 1);
-				EMACDBG("Enabled WoL[0x%x] in %s\n", wol.wolopts,
-						 pdata->phydev->drv->name);
-			}
-		}
-	}
 }
 
 bool DWC_ETH_QOS_is_phy_link_up(struct DWC_ETH_QOS_prv_data *pdata)
@@ -1194,10 +1198,8 @@ static int DWC_ETH_QOS_init_phy(struct net_device *dev)
 		phydev->irq = PHY_IGNORE_INTERRUPT;
 		phydev->interrupts =  PHY_INTERRUPT_ENABLED;
 
-		if (phydev->drv->config_intr &&
-			!phydev->drv->config_intr(phydev)){
-			DWC_ETH_QOS_request_phy_wol(pdata);
-		} else {
+		if (!(phydev->drv->config_intr &&
+			!phydev->drv->config_intr(phydev))){
 			EMACERR("Failed to configure PHY interrupts");
 			BUG();
 		}
@@ -1250,6 +1252,21 @@ int DWC_ETH_QOS_mdio_register(struct net_device *dev)
 
 	DBGPR_MDIO("-->DWC_ETH_QOS_mdio_register\n");
 
+	if (pdata->res_data->phy_addr != -1) {
+		phy_reg_read_status =
+		   DWC_ETH_QOS_mdio_read_direct(pdata, pdata->res_data->phy_addr, MII_BMSR,
+										&mii_status);
+		if (phy_reg_read_status == 0) {
+			if (mii_status != 0x0000 && mii_status != 0xffff) {
+				phy_detected = 1;
+				phyaddr = pdata->res_data->phy_addr;
+				EMACINFO("skip_phy_detection (phyaddr)%d\n", phyaddr);
+				goto skip_phy_detection;
+			} else
+				EMACERR("Invlaid phy address specified in device tree\n");
+		}
+	}
+
 	/* find the phy ID or phy address which is connected to our MAC */
 	for (phyaddr = 0; phyaddr < 32; phyaddr++) {
 
@@ -1275,6 +1292,8 @@ int DWC_ETH_QOS_mdio_register(struct net_device *dev)
 		pr_alert("%s: No phy could be detected\n", DEV_NAME);
 		return -ENOLINK;
 	}
+
+	skip_phy_detection:
 
 	pdata->phyaddr = phyaddr;
 	pdata->bus_id = 0x1;
@@ -1307,7 +1326,7 @@ int DWC_ETH_QOS_mdio_register(struct net_device *dev)
 	snprintf(new_bus->id, MII_BUS_ID_SIZE, "%s-%x", new_bus->name,
 		 pdata->bus_id);
 	new_bus->priv = dev;
-	new_bus->phy_mask = 0;
+	new_bus->phy_mask = ~(1 << phyaddr);
 	new_bus->parent = &pdata->pdev->dev;
 	ret = mdiobus_register(new_bus);
 	if (ret != 0) {

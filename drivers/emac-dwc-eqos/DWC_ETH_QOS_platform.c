@@ -920,6 +920,16 @@ static int DWC_ETH_QOS_get_dts_config(struct platform_device *pdev)
 		dwc_eth_qos_res_data.is_pinctrl_names = true;
 		EMACDBG("qcom,pinctrl-names present\n");
 	}
+	dwc_eth_qos_res_data.phy_addr = -1;
+	if (of_property_read_bool(pdev->dev.of_node, "emac-phy-addr")) {
+		ret = of_property_read_u32(pdev->dev.of_node, "emac-phy-addr",
+			&dwc_eth_qos_res_data.phy_addr);
+		if (ret) {
+			EMACINFO("Pphy_addr not specified, using dynamic phy detection\n");
+			dwc_eth_qos_res_data.phy_addr = -1;
+		}
+		EMACINFO("phy_addr = %d\n", dwc_eth_qos_res_data.phy_addr);
+	}
 
 	return ret;
 
@@ -1491,6 +1501,8 @@ static int DWC_ETH_QOS_init_gpios(struct device *dev)
 
 		gpio_set_value(dwc_eth_qos_res_data.gpio_phy_reset, PHY_RESET_GPIO_HIGH);
 		EMACDBG("PHY is out of reset successfully\n");
+		/* Add delay of 50ms so that phy should get sufficient time*/
+		mdelay(50);
 	}
 
 	return ret;

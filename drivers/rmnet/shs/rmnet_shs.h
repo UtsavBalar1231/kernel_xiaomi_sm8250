@@ -299,7 +299,7 @@ extern int (*rmnet_shs_skb_entry)(struct sk_buff *skb,
 int rmnet_shs_is_lpwr_cpu(u16 cpu);
 void rmnet_shs_cancel_table(void);
 void rmnet_shs_rx_wq_init(void);
-void rmnet_shs_rx_wq_exit(void);
+unsigned int rmnet_shs_rx_wq_exit(void);
 int rmnet_shs_get_mask_len(u8 mask);
 
 int rmnet_shs_chk_and_flush_node(struct rmnet_shs_skbn_s *node,
@@ -314,7 +314,7 @@ void rmnet_shs_assign(struct sk_buff *skb, struct rmnet_port *port);
 void rmnet_shs_flush_table(u8 is_force_flush, u8 ctxt);
 void rmnet_shs_cpu_node_remove(struct rmnet_shs_skbn_s *node);
 void rmnet_shs_init(struct net_device *dev, struct net_device *vnd);
-void rmnet_shs_exit(void);
+void rmnet_shs_exit(unsigned int cpu_switch);
 void rmnet_shs_ps_on_hdlr(void *port);
 void rmnet_shs_ps_off_hdlr(void *port);
 void rmnet_shs_update_cpu_proc_q_all_cpus(void);
