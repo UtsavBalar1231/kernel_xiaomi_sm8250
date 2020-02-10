@@ -5,5 +5,15 @@
 / {
 	model = "Qualcomm Technologies, Inc. Bengalp SoC";
 	compatible = "qcom,bengalp";
-	qcom,msm-id = <445 0x10000>;
+	qcom,msm-id = <445 0x10000>, <420 0x10000>;
+};
+
+&soc {
+	qcom,rmnet-ipa {
+		status = "disabled";
+	};
+};
+
+&ipa_hw {
+	status = "disabled";
 };

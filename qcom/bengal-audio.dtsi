@@ -40,8 +40,9 @@
 &q6core {
 	bengal_snd: sound {
 		compatible = "qcom,bengal-asoc-snd";
-		qcom,mi2s-audio-intf = <1>;
-		qcom,auxpcm-audio-intf = <1>;
+		qcom,mi2s-audio-intf = <0>;
+		qcom,auxpcm-audio-intf = <0>;
+		qcom,tdm-audio-intf = <0>;
 		qcom,wcn-btfm = <1>;
 		qcom,afe-rxtx-lb = <0>;
 

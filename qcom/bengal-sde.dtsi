@@ -80,6 +80,8 @@
 		qcom,sde-mixer-blend-op-off = <0x20 0x38 0x50 0x68 0x80 0x98
 						0xb0 0xc8 0xe0 0xf8 0x110>;
 
+		qcom,sde-mixer-stage-base-layer;
+
 		qcom,sde-max-per-pipe-bw-kbps = <2600000 2600000>;
 
 		qcom,sde-max-per-pipe-bw-high-kbps = <2600000 2600000>;
@@ -93,7 +95,7 @@
 		qcom,sde-sspp-qseed-off = <0xa00>;
 		qcom,sde-mixer-linewidth = <2048>;
 		qcom,sde-sspp-linewidth = <2160>;
-		qcom,sde-mixer-blendstages = <0x3>;
+		qcom,sde-mixer-blendstages = <0x4>;
 		qcom,sde-highest-bank-bit = <0x1>;
 		qcom,sde-ubwc-version = <0x100>;
 		qcom,sde-ubwc-swizzle = <0x7>;
@@ -277,6 +279,7 @@
 		interrupt-parent = <&mdss_mdp>;
 		interrupts = <2 0>;
 
+		power-domains = <&mdss_mdp>;
 		/*Offline rotator RT setting */
 		qcom,mdss-rot-parent = <&mdss_mdp 0>;
 		qcom,mdss-rot-xin-id = <10 11>;
@@ -301,19 +304,6 @@
 			qcom,msm-bus,vectors-KBps =
 				<1 590 0 0>,
 				<1 590 0 76800>;
-		};
-
-		qcom,platform-supply-entries {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			qcom,platform-supply-entry@0 {
-				reg = <0>;
-				qcom,supply-min-voltage = <0>;
-				qcom,supply-max-voltage = <0>;
-				qcom,supply-enable-load = <0>;
-				qcom,supply-disable-load = <0>;
-			};
 		};
 
 		smmu_rot_unsec: qcom,smmu_rot_unsec_cb {

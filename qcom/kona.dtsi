@@ -3379,6 +3379,8 @@
 
 		/* predefined channels, remote side is server */
 		qcom,spcom-ch-names = "sp_kernel", "sp_ssr";
+		/* rmb_err shared register physical address */
+		qcom,spcom-rmb-err-reg-addr = <0x188103c>;
 		/* sp2soc rmb shared register physical address and bmsk */
 		qcom,spcom-sp2soc-rmb-reg-addr = <0x01881020>;
 		qcom,spcom-sp2soc-rmb-initdone-bit = <24>;
@@ -4729,6 +4731,7 @@
 		qcom,smmu-s1-enable;
 		cnss-daemon-support;
 		qcom,cmd_db_name = "smpf2";
+		qcom,set-wlaon-pwr-ctrl;
 
 		qcom,msm-bus,name = "msm-cnss";
 		qcom,msm-bus,num-cases = <6>;
@@ -4961,6 +4964,11 @@
 
 		gpu_lm_efuse: gpu_lm_efuse@5c8 {
 			reg = <0x5c8 0x4>;
+		};
+
+		gpu_speed_bin: gpu_speed_bin@19b {
+			reg = <0x19b 0x1>;
+			bits = <5 3>;
 		};
 	};
 };

@@ -32,7 +32,8 @@ dtb-$(CONFIG_ARCH_KONA) += kona-rumi.dtb \
         kona-v2.1-mtp-ws.dtb \
         kona-v2.1-cdp.dtb \
         kona-v2.1-qrd.dtb \
-        kona-v2.1-hdk.dtb
+        kona-v2.1-hdk.dtb \
+        kona-v2.1-iot-rb5.dtb
 endif
 
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
@@ -68,11 +69,25 @@ dtb-$(CONFIG_ARCH_LITO) += lito-rumi.dtb \
 endif
 
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
-dtbo-$(CONFIG_ARCH_LAGOON) += lagoon-rumi-overlay.dtbo
+dtbo-$(CONFIG_ARCH_LAGOON) += \
+		lagoon-rumi-overlay.dtbo \
+		lagoon-mtp-overlay.dtbo \
+		lagoon-cdp-overlay.dtbo \
+		lagoon-atp-overlay.dtbo \
+		lagoon-qrd-overlay.dtbo
 
 lagoon-rumi-overlay.dtbo-base := lagoon.dtb
+lagoon-mtp-overlay.dtbo-base := lagoon.dtb
+lagoon-cdp-overlay.dtbo-base := lagoon.dtb
+lagoon-atp-overlay.dtbo-base := lagoon.dtb
+lagoon-qrd-overlay.dtbo-base := lagoon.dtb
 else
-dtb-$(CONFIG_ARCH_LAGOON) += lagoon-rumi.dtb
+dtb-$(CONFIG_ARCH_LAGOON) += \
+		lagoon-rumi.dtb \
+		lagoon-mtp.dtb \
+		lagoon-cdp.dtb \
+		lagoon-atp.dtb \
+		lagoon-qrd.dtb
 endif
 
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
@@ -81,19 +96,31 @@ ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
                 bengal-qrd-overlay.dtbo \
                 bengal-idp-overlay.dtbo \
                 bengal-idp-usbc-overlay.dtbo \
-                bengalp-idp-overlay.dtbo
+                bengalp-idp-overlay.dtbo \
+                bengal-idp-1gb-overlay.dtbo \
+                bengal-idp-2gb-overlay.dtbo \
+                bengal-idp-usbc-1gb-overlay.dtbo \
+                bengal-idp-usbc-2gb-overlay.dtbo
 
 bengal-rumi-overlay.dtbo-base := bengal.dtb
 bengal-qrd-overlay.dtbo-base := bengal.dtb
 bengal-idp-overlay.dtbo-base := bengal.dtb
 bengal-idp-usbc-overlay.dtbo-base := bengal.dtb
 bengalp-idp-overlay.dtbo-base := bengalp.dtb
+bengal-idp-1gb-overlay.dtbo-base := bengal-1gb.dtb
+bengal-idp-2gb-overlay.dtbo-base := bengal-2gb.dtb
+bengal-idp-usbc-1gb-overlay.dtbo-base := bengal-1gb.dtb
+bengal-idp-usbc-2gb-overlay.dtbo-base := bengal-2gb.dtb
 else
 dtb-$(CONFIG_ARCH_BENGAL) += bengal-rumi.dtb \
                 bengal-qrd.dtb \
 		bengal-idp.dtb \
 		bengal-idp-usbc.dtb \
-		bengalp-idp.dtb
+		bengalp-idp.dtb \
+		bengal-idp-1gb.dtb \
+		bengal-idp-2gb.dtb \
+		bengal-idp-usbc-1gb.dtb \
+		bengal-idp-usbc-2gb.dtb
 endif
 
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)

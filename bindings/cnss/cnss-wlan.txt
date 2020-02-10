@@ -72,6 +72,9 @@ Optional properties:
   - cnss-daemon-support: Boolean property to decide whether cnss_daemon
                          userspace QMI client is supported.
   - use-nv-mac: Boolean property to indicate whether NV MAC is used or not.
+  - qcom,set-wlaon-pwr-ctrl: Boolean property to indicate if set
+                             WLAON_QFPROM_PWR_CTRL_REG register during power on
+                             and off sequences.
 
 Example:
 

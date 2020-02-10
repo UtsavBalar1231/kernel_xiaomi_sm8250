@@ -64,13 +64,15 @@
 			regulator-max-microvolt = <1290000>;
 		};
 
-		L1A:
-		pm6350_l1: regulator-pm6350-l1 {
+		L1A_LEVEL:
+		pm6350_l1_level: regulator-pm6350-l1-level {
 			compatible = "qcom,stub-regulator";
-			regulator-name = "pm6350_l1";
+			regulator-name = "pm6350_l1_level";
 			qcom,hpm-min-load = <10000>;
-			regulator-min-microvolt = <352000>;
-			regulator-max-microvolt = <952000>;
+			regulator-min-microvolt =
+				<RPMH_REGULATOR_LEVEL_RETENTION>;
+			regulator-max-microvolt =
+				<RPMH_REGULATOR_LEVEL_MAX>;
 		};
 
 		L2A:

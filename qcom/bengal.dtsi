@@ -27,6 +27,14 @@
 	#size-cells = <2>;
 	memory { device_type = "memory"; reg = <0 0 0 0>; };
 
+	mem-offline {
+		compatible = "qcom,mem-offline";
+		offline-sizes = <0x1 0x40000000 0x0 0x80000000>,
+				<0x1 0xc0000000 0x0 0xc0000000>,
+				<0x2 0xc0000000 0x1 0x40000000>;
+		granule = <512>;
+	};
+
 	aliases {
 		sdhc1 = &sdhc_1; /* SDC1 eMMC slot */
 		sdhc2 = &sdhc_2; /* SDC2 SD Card slot */
@@ -1001,6 +1009,9 @@
 				"eud_tcsr_check_reg";
 		qcom,secure-eud-en;
 		qcom,eud-tcsr-check-enable;
+		qcom,eud-clock-vote-req;
+		clocks = <&gcc GCC_AHB2PHY_USB_CLK>;
+		clock-names = "eud_ahb2phy_clk";
 		status = "ok";
 	};
 
@@ -1062,9 +1073,11 @@
 		compatible = "qcom,pil-tz-generic";
 		reg = <0xab00000 0x00100>;
 
-		vdd_cx-supply = <&L3A_LEVEL>;
-		qcom,proxy-reg-names = "vdd_cx";
-		qcom,vdd_cx-uV-uA = <RPMH_REGULATOR_LEVEL_TURBO 100000>;
+		vdd_lpi_cx-supply = <&L3A_LEVEL>;
+		qcom,proxy-reg-names = "vdd_lpi_cx", "vdd_lpi_mx";
+		qcom,vdd_lpi_cx-uV-uA = <RPMH_REGULATOR_LEVEL_TURBO 0>;
+		vdd_lpi_mx-supply = <&L2A_LEVEL>;
+		qcom,vdd_lpi_mx-uV-uA = <RPMH_REGULATOR_LEVEL_TURBO 0>;
 
 		clocks = <&rpmcc CXO_SMD_PIL_LPASS_CLK>;
 		clock-names = "xo";
@@ -1080,6 +1093,7 @@
 		qcom,firmware-name = "adsp";
 		memory-region = <&pil_adsp_mem>;
 		qcom,complete-ramdump;
+		qcom,minidump-as-elf32;
 
 		/* Inputs from lpass */
 		interrupts-extended = <&intc 0 282 1>,
@@ -1121,6 +1135,7 @@
 		qcom,firmware-name = "cdsp";
 		memory-region = <&pil_cdsp_mem>;
 		qcom,complete-ramdump;
+		qcom,minidump-as-elf32;
 
 		/* Inputs from turing */
 		interrupts-extended = <&intc 0 265 1>,
@@ -1184,44 +1199,9 @@
 			qcom,dump-id = <0x7>;
 		};
 
-		c0_scandump {
+		c_scandump {
 			qcom,dump-size = <0x40000>;
-			qcom,dump-id = <0x130>;
-		};
-
-		c1_scandump {
-			qcom,dump-size = <0x40000>;
-			qcom,dump-id = <0x131>;
-		};
-
-		c2_scandump {
-			qcom,dump-size = <0x40000>;
-			qcom,dump-id = <0x132>;
-		};
-
-		c3_scandump {
-			qcom,dump-size = <0x40000>;
-			qcom,dump-id = <0x133>;
-		};
-
-		c100_scandump {
-			qcom,dump-size = <0x40000>;
-			qcom,dump-id = <0x134>;
-		};
-
-		c101_scandump {
-			qcom,dump-size = <0x40000>;
-			qcom,dump-id = <0x135>;
-		};
-
-		c102_scandump {
-			qcom,dump-size = <0x40000>;
-			qcom,dump-id = <0x136>;
-		};
-
-		c103_scandump {
-			qcom,dump-size = <0x40000>;
-			qcom,dump-id = <0x137>;
+			qcom,dump-id = <0xeb>;
 		};
 
 		l1_icache0 {
@@ -2225,6 +2205,11 @@
 			reg = <0x6018 0x4>;
 		};
 
+		feat_conf10: feat_conf10@602c {
+			reg = <0x602c 0x2>;
+			bits = <13 1>;
+		};
+
 		adsp_variant: adsp_variant@6011 {
 			reg = <0x6011 0x1>;
 			bits = <3 1>;
@@ -2302,16 +2287,12 @@
 		vdd-supply = <&gcc_venus_gdsc>;
 		qcom,proxy-reg-names = "vdd";
 
-		clocks =
-			<&gcc GCC_VIDEO_XO_CLK>,
-			<&gcc GCC_VIDEO_VENUS_CTL_CLK>,
+		clocks = <&gcc GCC_VIDEO_VENUS_CTL_CLK>,
 			<&gcc GCC_VENUS_CTL_AXI_CLK>,
-			<&gcc GCC_VENUS_AHB_CLK>,
-			<&gcc GCC_VIDEO_AXI0_CLK>,
 			<&gcc GCC_VIDEO_AHB_CLK>,
 			<&gcc GCC_VIDEO_THROTTLE_CORE_CLK>;
-		clock-names = "xo_clock", "core_clk", "bus_clk", "iface_clk", "video_bus0_clk", "video_iface_clk", "throttle_clk";
-		qcom,proxy-clock-names = "xo_clock", "core_clk", "bus_clk", "iface_clk", "video_bus0_clk", "video_iface_clk", "throttle_clk";
+		clock-names = "core_clk", "bus_clk", "iface_clk", "throttle_clk";
+		qcom,proxy-clock-names = "core_clk", "bus_clk", "iface_clk", "throttle_clk";
 		qcom,mas-crypto = <&mas_crypto_c0>;
 
 		qcom,core-freq = <240000000>;

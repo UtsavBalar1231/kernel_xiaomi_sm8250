@@ -117,6 +117,9 @@ Optional properties:
 			  0: Flash strobe is used for LED1, LED2, LED3
 			  1: Flash strobe is used for LED1, LED2 and GPIO10 is used for LED3
 			  2: Flash strobe is used for LED1; GPIO9 is used for LED2; GPIO10 is used for LED3
+			  For PM8150L/A and its derivatives, supported values are:
+			  0: Flash strobe is used for LED1, LED2, LED3
+			  1: Flash strobe is used for LED1, LED2 and GPIO12 is used for LED3
 - switchX-supply		: phandle of the regulator that needs to be used
 				  as a supply for flash switch_X device.
 - qcom,bst-pwm-ovrhd-uv		: Charger flash VPH overhead. Applicable for PMI632 only.

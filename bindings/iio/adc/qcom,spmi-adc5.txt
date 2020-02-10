@@ -8,8 +8,10 @@ ADC node:
 - compatible:
     Usage: required
     Value type: <string>
-    Definition: Should contain "qcom,spmi-adc5" for PMIC5 ADC driver.
-		Should contain "qcom,spmi-adc-rev2" for PMIC refresh ADC driver.
+    Definition: Should contain "qcom,spmi-adc5" for PMIC5 ADC devices.
+        Should contain "qcom,spmi-adc7" for PMIC7 ADC devices.
+		Should contain "qcom,spmi-adc-rev2" for PMIC refresh ADC devices.
+		Should contain "qcom,spmi-adc5-lite" for PMIC5 ADC-lite devices.
 
 - reg:
     Usage: required for VADC base address
@@ -86,8 +88,10 @@ Channel node properties:
             Quicker measurements can be made by reducing decimation ratio.
             For PMIC5 ADC, combined two step decimation values are 250, 420 and 840.
             If property is not found, default value of 840 will be used.
-	    For PMIC refresh ADC, supported decimation values are 256, 512, 1024.
-	    If property is not found, default value of 1024 will be used.
+            For PMIC7 ADC, combined two step decimation values are 85, 340 and 1360.
+            If property is not found, default value of 1360 will be used.
+            For PMIC refresh ADC, supported decimation values are 256, 512, 1024.
+            If property is not found, default value of 1024 will be used.
 
 - qcom,ratiometric:
     Usage: optional
@@ -101,13 +105,19 @@ Channel node properties:
 - qcom,hw-settle-time:
     Usage: optional
     Value type: <u32>
-    Definition: Time between AMUX getting configured and the ADC starting
+    Definition: Time in microseconds between AMUX getting configured and the ADC starting
             conversion.
 	    For PMIC5, delay = 15us for value 0,
 			100us * (value) for values 0 < value < 11, and
 			2ms * (value - 10) otherwise.
             Valid values are: 15, 100, 200, 300, 400, 500, 600, 700, 800,
             900 us and 1, 2, 4, 6, 8, 10 ms
+            If property is not found, channel will use 15us.
+        For PMIC7, delay = 15us for value 0,
+            100us * (value) for values < 8, 1ms for value 8 and
+            2ms * (value - 8) otherwise.
+            Valid values are: 15, 100, 200, 300, 400, 500, 600, 700, 1000,
+            2000, 4000, 8000, 16000, 32000, 64000, 128000 us.
             If property is not found, channel will use 15us.
 	    For PMIC rev2, delay = 100us * (value) for values 0 < value < 11, and
 			2ms * (value - 10) otherwise.
