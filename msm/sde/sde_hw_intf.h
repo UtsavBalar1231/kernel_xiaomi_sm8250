@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _SDE_HW_INTF_H
@@ -48,6 +48,11 @@ struct intf_status {
 	u8 is_en;		/* interface timing engine is enabled or not */
 	u32 frame_count;	/* frame count since timing engine enabled */
 	u32 line_count;		/* current line count including blanking */
+};
+
+struct intf_tear_status {
+	u32 read_count;		/* frame & line count for tear init value */
+	u32 write_count;	/* frame & line count for tear write */
 };
 
 struct intf_avr_params {
@@ -177,6 +182,12 @@ struct sde_hw_intf_ops {
 	 */
 	void (*avr_ctrl)(struct sde_hw_intf *intf,
 			const struct intf_avr_params *avr_params);
+
+	/**
+	 * Check the intf tear check status and reset it to start_pos
+	 */
+	int (*check_and_reset_tearcheck)(struct sde_hw_intf *intf,
+			struct intf_tear_status *status);
 };
 
 struct sde_hw_intf {
