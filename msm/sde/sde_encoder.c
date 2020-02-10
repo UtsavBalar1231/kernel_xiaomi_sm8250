@@ -1801,6 +1801,9 @@ static void _sde_encoder_dsc_disable(struct sde_encoder_virt *sde_enc)
 	struct sde_hw_ctl *hw_ctl = NULL;
 	struct sde_ctl_dsc_cfg cfg;
 
+	if (!_sde_encoder_is_dsc_enabled(&sde_enc->base))
+		return;
+
 	if (!sde_enc || !sde_enc->phys_encs[0] ||
 			!sde_enc->phys_encs[0]->connector) {
 		SDE_ERROR("invalid params %d %d\n",

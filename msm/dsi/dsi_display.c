@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/list.h>
@@ -6924,12 +6924,14 @@ int dsi_display_prepare(struct dsi_display *display)
 			goto error;
 		}
 
-		/* update dsi ctrl for new mode */
-		rc = dsi_display_pre_switch(display);
-		if (rc)
-			DSI_ERR("[%s] panel pre-prepare-res-switch failed, rc=%d\n",
+		if (!display->is_cont_splash_enabled) {
+			/* update dsi ctrl for new mode */
+			rc = dsi_display_pre_switch(display);
+			if (rc)
+				DSI_ERR("[%s] panel pre-switch failed, rc=%d\n",
 					display->name, rc);
-		goto error;
+			goto error;
+		}
 	}
 
 	if (!(mode->dsi_mode_flags & DSI_MODE_FLAG_POMS) &&

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 #include <drm/msm_drm_pp.h>
 #include "sde_reg_dma.h"
@@ -3256,7 +3256,7 @@ static void ltm_initv1_disable(struct sde_hw_dspp *ctx, void *cfg,
 		ltm_vlut_ops_mask[dspp_idx[i]] &= ~ltm_unsharp;
 		REG_DMA_SETUP_OPS(dma_write_cfg, 0x04, &opmode, sizeof(opmode),
 			REG_SINGLE_MODIFY, 0, 0,
-			REG_DMA_LTM_INIT_DISABLE_OP_MASK);
+			0);
 		rc = dma_ops->setup_payload(&dma_write_cfg);
 		if (rc) {
 			DRM_ERROR("opmode write failed ret %d\n", rc);

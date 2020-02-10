@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _SDE_RSC_PRIV_H_
@@ -186,6 +186,7 @@ struct sde_rsc_bw_config {
  * bw_config:		check sde_rsc_bw_config structure description.
  * dev:			rsc device node
  * resource_refcount:	Track rsc resource refcount
+ * post_poms:		bool if a panel mode change occurred
  */
 struct sde_rsc_priv {
 	u32 version;
@@ -227,6 +228,8 @@ struct sde_rsc_priv {
 	struct sde_rsc_bw_config bw_config;
 	struct device *dev;
 	atomic_t resource_refcount;
+
+	bool post_poms;
 };
 
 /**

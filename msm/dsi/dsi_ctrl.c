@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/of_device.h>
@@ -1272,7 +1272,8 @@ static void dsi_kickoff_msg_tx(struct dsi_ctrl *dsi_ctrl,
 		 * result in smmu write faults with DSI as client.
 		 */
 		if (flags & DSI_CTRL_CMD_NON_EMBEDDED_MODE) {
-			dsi_hw_ops.soft_reset(&dsi_ctrl->hw);
+			if (dsi_ctrl->version < DSI_CTRL_VERSION_2_4)
+				dsi_hw_ops.soft_reset(&dsi_ctrl->hw);
 			dsi_ctrl->cmd_len = 0;
 		}
 	}
@@ -2714,6 +2715,10 @@ void dsi_ctrl_enable_status_interrupt(struct dsi_ctrl *dsi_ctrl,
 		dsi_ctrl->hw.ops.enable_status_interrupts(&dsi_ctrl->hw,
 				dsi_ctrl->irq_info.irq_stat_mask);
 	}
+
+	if (intr_idx == DSI_SINT_CMD_MODE_DMA_DONE)
+		dsi_ctrl->hw.ops.enable_status_interrupts(&dsi_ctrl->hw,
+				dsi_ctrl->irq_info.irq_stat_mask);
 	++(dsi_ctrl->irq_info.irq_stat_refcount[intr_idx]);
 
 	if (event_info)
@@ -3218,7 +3223,8 @@ int dsi_ctrl_cmd_tx_trigger(struct dsi_ctrl *dsi_ctrl, u32 flags)
 					BIT(DSI_FIFO_OVERFLOW), false);
 
 		if (flags & DSI_CTRL_CMD_NON_EMBEDDED_MODE) {
-			dsi_hw_ops.soft_reset(&dsi_ctrl->hw);
+			if (dsi_ctrl->version < DSI_CTRL_VERSION_2_4)
+				dsi_hw_ops.soft_reset(&dsi_ctrl->hw);
 			dsi_ctrl->cmd_len = 0;
 		}
 	}

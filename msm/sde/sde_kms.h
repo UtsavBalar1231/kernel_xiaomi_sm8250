@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
  *
@@ -289,9 +289,14 @@ struct sde_kms {
 	atomic_t detach_sec_cb;
 	atomic_t detach_all_cb;
 	struct mutex secure_transition_lock;
+	struct mutex vblank_ctl_global_lock;
 
 	bool first_kickoff;
 	bool qdss_enabled;
+
+	cpumask_t irq_cpu_mask;
+	struct pm_qos_request pm_qos_irq_req;
+	struct irq_affinity_notify affinity_notify;
 };
 
 struct vsync_info {

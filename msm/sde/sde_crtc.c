@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2020 The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
  *
@@ -3660,9 +3660,6 @@ static int _sde_crtc_vblank_enable_no_lock(
 
 		drm_for_each_encoder_mask(enc, crtc->dev,
 			crtc->state->encoder_mask) {
-			if (enc->crtc != crtc)
-				continue;
-
 			SDE_EVT32(DRMID(&sde_crtc->base), DRMID(enc), enable,
 					sde_crtc->enabled);
 
@@ -3672,9 +3669,6 @@ static int _sde_crtc_vblank_enable_no_lock(
 	} else {
 		drm_for_each_encoder_mask(enc, crtc->dev,
 			crtc->state->encoder_mask) {
-			if (enc->crtc != crtc)
-				continue;
-
 			SDE_EVT32(DRMID(&sde_crtc->base), DRMID(enc), enable,
 					sde_crtc->enabled);
 
@@ -6258,7 +6252,7 @@ static int _sde_crtc_event_disable(struct sde_kms *kms,
 	spin_lock_irqsave(&crtc->spin_lock, flags);
 	list_for_each_entry(node, &crtc->user_event_list, list) {
 		if (node->event == event) {
-			list_del(&node->list);
+			list_del_init(&node->list);
 			found = true;
 			break;
 		}
@@ -6286,7 +6280,14 @@ static int _sde_crtc_event_disable(struct sde_kms *kms,
 	}
 
 	ret = node->func(crtc_drm, false, &node->irq);
-	kfree(node);
+	if (ret) {
+		spin_lock_irqsave(&crtc->spin_lock, flags);
+		list_add_tail(&node->list, &crtc->user_event_list);
+		spin_unlock_irqrestore(&crtc->spin_lock, flags);
+	} else {
+		kfree(node);
+	}
+
 	pm_runtime_put_sync(crtc_drm->dev->dev);
 	return ret;
 }
