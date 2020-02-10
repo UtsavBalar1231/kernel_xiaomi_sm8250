@@ -1,6 +1,115 @@
 #include "bengal.dtsi"
 / {
-	reserved-memory {
-		/delete-node/ disp_rdump_region@9c000000;
+};
+
+/delete-node/ &hyp_mem;
+/delete-node/ &xbl_aop_mem;
+/delete-node/ &sec_apps_mem;
+/delete-node/ &smem_mem;
+/delete-node/ &removed_mem;
+/delete-node/ &pil_modem_mem;
+/delete-node/ &pil_video_mem;
+/delete-node/ &wlan_msa_mem;
+/delete-node/ &pil_cdsp_mem;
+/delete-node/ &pil_adsp_mem;
+/delete-node/ &pil_ipa_fw_mem;
+/delete-node/ &pil_ipa_gsi_mem;
+/delete-node/ &pil_gpu_mem;
+/delete-node/ &cdsp_sec_mem;
+
+/delete-node/ &secure_display_memory;
+
+/delete-node/ &disp_rdump_memory;
+
+&reserved_memory {
+	hyp_mem: hyp_region@85700000 {
+		compatible = "removed-dma-pool";
+		no-map;
+		reg = <0x0 0x85700000 0x0 0x600000>;
+	};
+
+	xbl_aop_mem: xbl_aop_region@85e00000 {
+		compatible = "removed-dma-pool";
+		no-map;
+		reg = <0x0 0x85e00000 0x0 0x100000>;
+	};
+
+	sec_apps_mem: sec_apps_region@85fff000 {
+		compatible = "removed-dma-pool";
+		no-map;
+		reg = <0x0 0x85fff000 0x0 0x1000>;
+	};
+
+	smem_mem: smem_region@86000000 {
+		compatible = "removed-dma-pool";
+		no-map;
+		reg = <0x0 0x86000000 0x0 0x200000>;
+	};
+
+	pil_modem_mem: modem_region@8ab00000 {
+		compatible = "removed-dma-pool";
+		no-map;
+		reg = <0x0 0x8ab00000 0x0 0x6900000>;
+	};
+
+	pil_video_mem: pil_video_region@91400000 {
+		compatible = "removed-dma-pool";
+		no-map;
+		reg = <0x0 0x91400000 0x0 0x500000>;
+	};
+
+	wlan_msa_mem: wlan_msa_region@91900000 {
+		compatible = "removed-dma-pool";
+		no-map;
+		reg = <0x0 0x91900000 0x0 0x200000>;
+	};
+
+	pil_cdsp_mem: cdsp_regions@91b00000 {
+		compatible = "removed-dma-pool";
+		no-map;
+		reg = <0x0 0x91b00000 0x0 0x800000>;
+	};
+
+	pil_adsp_mem: pil_adsp_region@92300000 {
+		compatible = "removed-dma-pool";
+		no-map;
+		reg = <0x0 0x92300000 0x0 0x1c00000>;
+	};
+
+	pil_ipa_fw_mem: ipa_fw_region@93f00000 {
+		compatible = "removed-dma-pool";
+		no-map;
+		reg = <0x0 0x93f00000 0x0 0x10000>;
+	};
+
+	pil_ipa_gsi_mem: ipa_gsi_region@93f10000 {
+		compatible = "removed-dma-pool";
+		no-map;
+		reg = <0x0 0x93f10000 0x0 0x5000>;
+	};
+
+	pil_gpu_mem: gpu_region@93f15000 {
+		compatible = "removed-dma-pool";
+		no-map;
+		reg = <0x0 0x93f15000 0x0 0x2000>;
+	};
+
+	tz_stat_mem: tz_stat_region@a0000000 {
+		compatible = "removed-dma-pool";
+		no-map;
+		reg = <0x0 0xa0000000 0x0 0x100000>;
+	};
+
+	removed_mem: removed_region@a0100000 {
+		compatible = "removed-dma-pool";
+		no-map;
+		reg = <0x0 0xa0100000 0x0 0x2200000>;
+	};
+};
+
+&soc {
+	qcom,ion {
+		/delete-node/ qcom,ion-heap@14;
+		/delete-node/ qcom,ion-heap@10;
 	};
 };
