@@ -39,7 +39,7 @@ To load the driver manually, run this as root:
 3. edit [linux]/fs/Makefile
 ```
 	obj-$(CONFIG_FAT_FS)          += fat/
-	+obj-$(CONFIG_EXFAT_FS)       += ksmbd/
+	+obj-$(CONFIG_EXFAT_FS)       += exfat/
 	obj-$(CONFIG_BFS_FS)          += bfs/
 ```
 4. make menuconfig and set exfat
