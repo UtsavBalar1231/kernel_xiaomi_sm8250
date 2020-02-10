@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _SDE_HW_CATALOG_H
@@ -54,6 +54,7 @@
 #define SDE_HW_VER_600	SDE_HW_VER(6, 0, 0) /* kona */
 #define SDE_HW_VER_610	SDE_HW_VER(6, 1, 0) /* sm7250 */
 #define SDE_HW_VER_630	SDE_HW_VER(6, 3, 0) /* bengal */
+#define SDE_HW_VER_640	SDE_HW_VER(6, 4, 0) /* lagoon */
 
 #define IS_MSM8996_TARGET(rev) IS_SDE_MAJOR_MINOR_SAME((rev), SDE_HW_VER_170)
 #define IS_MSM8998_TARGET(rev) IS_SDE_MAJOR_MINOR_SAME((rev), SDE_HW_VER_300)
@@ -67,6 +68,7 @@
 #define IS_KONA_TARGET(rev) IS_SDE_MAJOR_MINOR_SAME((rev), SDE_HW_VER_600)
 #define IS_SAIPAN_TARGET(rev) IS_SDE_MAJOR_MINOR_SAME((rev), SDE_HW_VER_610)
 #define IS_BENGAL_TARGET(rev) IS_SDE_MAJOR_MINOR_SAME((rev), SDE_HW_VER_630)
+#define IS_LAGOON_TARGET(rev) IS_SDE_MAJOR_MINOR_SAME((rev), SDE_HW_VER_640)
 
 #define SDE_HW_BLK_NAME_LEN	16
 

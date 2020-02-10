@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  */
 
 #define pr_fmt(fmt)	"[drm:%s:%d] " fmt, __func__, __LINE__
@@ -4288,6 +4288,23 @@ static int _sde_hardware_pre_caps(struct sde_mdss_cfg *sde_cfg, uint32_t hw_rev)
 		sde_cfg->has_qos_fl_nocalc = true;
 		clear_bit(MDSS_INTR_AD4_0_INTR, sde_cfg->mdss_irqs);
 		clear_bit(MDSS_INTR_AD4_1_INTR, sde_cfg->mdss_irqs);
+	} else if (IS_LAGOON_TARGET(hw_rev)) {
+		sde_cfg->has_cwb_support = true;
+		sde_cfg->has_qsync = true;
+		sde_cfg->perf.min_prefill_lines = 24;
+		sde_cfg->vbif_qos_nlvl = 8;
+		sde_cfg->ts_prefill_rev = 2;
+		sde_cfg->ctl_rev = SDE_CTL_CFG_VERSION_1_0_0;
+		sde_cfg->delay_prg_fetch_start = true;
+		sde_cfg->sui_ns_allowed = true;
+		sde_cfg->sui_misr_supported = true;
+		sde_cfg->sui_block_xin_mask = 0x261;
+		sde_cfg->has_sui_blendstage = true;
+		sde_cfg->has_qos_fl_nocalc = true;
+		clear_bit(MDSS_INTR_AD4_0_INTR, sde_cfg->mdss_irqs);
+		clear_bit(MDSS_INTR_AD4_1_INTR, sde_cfg->mdss_irqs);
+		sde_cfg->has_hdr = true;
+		sde_cfg->has_vig_p010 = true;
 	} else {
 		SDE_ERROR("unsupported chipset id:%X\n", hw_rev);
 		sde_cfg->perf.min_prefill_lines = 0xffff;

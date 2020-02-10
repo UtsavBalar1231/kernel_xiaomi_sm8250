@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  */
 
 #include "sde_hwio.h"
@@ -237,9 +237,7 @@ static void _setup_vbif_ops(const struct sde_mdss_cfg *m,
 	if (IS_SM8150_TARGET(m->hwversion) || IS_SM6150_TARGET(m->hwversion) ||
 			IS_SDMMAGPIE_TARGET(m->hwversion) ||
 			IS_SDMTRINKET_TARGET(m->hwversion) ||
-			IS_KONA_TARGET(m->hwversion) ||
-			IS_SAIPAN_TARGET(m->hwversion) ||
-			IS_BENGAL_TARGET(m->hwversion))
+			IS_SDE_MAJOR_SAME(m->hwversion, SDE_HW_VER_600))
 		ops->set_mem_type = sde_hw_set_mem_type_v1;
 	else
 		ops->set_mem_type = sde_hw_set_mem_type;

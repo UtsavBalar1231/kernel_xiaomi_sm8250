@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2009-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2009-2020, The Linux Foundation. All rights reserved.
  */
 
 #define pr_fmt(fmt)	"[drm:%s:%d] " fmt, __func__, __LINE__
@@ -4605,7 +4605,7 @@ void sde_dbg_init_dbg_buses(u32 hwversion)
 				ARRAY_SIZE(vbif_dbg_bus_msm8998);
 		dbg->dbgbus_dsi.entries = NULL;
 		dbg->dbgbus_dsi.size = 0;
-	} else if (IS_KONA_TARGET(hwversion) || IS_SAIPAN_TARGET(hwversion)) {
+	} else if (IS_SDE_MAJOR_SAME(hwversion, SDE_HW_VER_600)) {
 		dbg->dbgbus_sde.entries = dbg_bus_sde_kona;
 		dbg->dbgbus_sde.cmn.entries_size =
 				ARRAY_SIZE(dbg_bus_sde_kona);
