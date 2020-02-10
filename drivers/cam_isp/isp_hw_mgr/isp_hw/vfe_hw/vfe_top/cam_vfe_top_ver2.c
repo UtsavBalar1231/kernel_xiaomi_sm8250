@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/slab.h>
@@ -19,6 +19,7 @@ struct cam_vfe_top_ver2_common_data {
 	struct cam_hw_soc_info                     *soc_info;
 	struct cam_hw_intf                         *hw_intf;
 	struct cam_vfe_top_ver2_reg_offset_common  *common_reg;
+	struct cam_vfe_top_dump_data               *dump_data;
 };
 
 struct cam_vfe_top_ver2_priv {
@@ -182,6 +183,140 @@ int cam_vfe_top_get_hw_caps(void *device_priv,
 	void *get_hw_cap_args, uint32_t arg_size)
 {
 	return -EPERM;
+}
+
+static int cam_vfe_hw_dump(
+	struct cam_vfe_top_ver2_priv *top_priv,
+	void *cmd_args,
+	uint32_t arg_size)
+{
+	int                                i, j;
+	uint8_t                           *dst;
+	uint32_t                           reg_start_offset;
+	uint32_t                           reg_dump_size = 0;
+	uint32_t                           lut_dump_size = 0;
+	uint32_t                           val;
+	uint32_t                           num_reg;
+	void __iomem                      *reg_base;
+	uint32_t                          *addr, *start;
+	size_t                             remain_len;
+	uint32_t                           min_len;
+	struct cam_hw_soc_info            *soc_info;
+	struct cam_vfe_top_dump_data      *dump_data;
+	struct cam_isp_hw_dump_header     *hdr;
+	struct cam_isp_hw_dump_args       *dump_args =
+		(struct cam_isp_hw_dump_args *)cmd_args;
+
+	if (!dump_args) {
+		CAM_ERR(CAM_ISP, "Invalid args");
+		return -EINVAL;
+	}
+	if (!dump_args->cpu_addr || !dump_args->buf_len) {
+		CAM_ERR(CAM_ISP,
+			"Invalid params %pK %zu",
+			(void *)dump_args->cpu_addr,
+			dump_args->buf_len);
+		return -EINVAL;
+	}
+	if (dump_args->buf_len <= dump_args->offset) {
+		CAM_WARN(CAM_ISP,
+			"Dump offset overshoot offset %zu buf_len %zu",
+			dump_args->offset, dump_args->buf_len);
+		return -ENOSPC;
+	}
+	dump_data = top_priv->common_data.dump_data;
+	soc_info = top_priv->common_data.soc_info;
+
+	/*Dump registers */
+	for (i = 0; i < dump_data->num_reg_dump_entries; i++)
+		reg_dump_size += (dump_data->reg_entry[i].reg_dump_end -
+			dump_data->reg_entry[i].reg_dump_start);
+	/*
+	 * We dump the offset as well, so the total size dumped becomes
+	 * multiplied by 2
+	 */
+	reg_dump_size *= 2;
+	for (i = 0; i < dump_data->num_lut_dump_entries; i++)
+		lut_dump_size += ((dump_data->lut_entry[i].lut_addr_size) *
+			(dump_data->lut_entry[i].lut_word_size/8));
+
+	/*Minimum len comprises of:
+	 * soc_index
+	 * lut_dump_size + reg_dump_size + sizeof dump_header +
+	 * (num_lut_dump_entries--> represents number of banks)
+	 */
+	min_len = sizeof(uint32_t) + lut_dump_size + reg_dump_size +
+		sizeof(struct cam_isp_hw_dump_header) +
+		(dump_data->num_lut_dump_entries * sizeof(uint32_t));
+	remain_len = dump_args->buf_len - dump_args->offset;
+	if (remain_len < min_len) {
+		CAM_WARN(CAM_ISP, "Dump buffer exhaust remain %zu, min %u",
+			remain_len, min_len);
+		return -ENOSPC;
+	}
+
+	dst = (uint8_t *)dump_args->cpu_addr + dump_args->offset;
+	hdr = (struct cam_isp_hw_dump_header *)dst;
+	hdr->word_size = sizeof(uint32_t);
+	scnprintf(hdr->tag, CAM_ISP_HW_DUMP_TAG_MAX_LEN, "VFE_REG:");
+	addr = (uint32_t *)(dst + sizeof(struct cam_isp_hw_dump_header));
+	start = addr;
+	*addr++ = soc_info->index;
+	for (i = 0; i < dump_data->num_reg_dump_entries; i++) {
+		num_reg  = (dump_data->reg_entry[i].reg_dump_end -
+			dump_data->reg_entry[i].reg_dump_start)/4;
+		reg_start_offset = dump_data->reg_entry[i].reg_dump_start;
+		reg_base = soc_info->reg_map[0].mem_base + reg_start_offset;
+		for (j = 0; j < num_reg; j++) {
+			addr[0] = soc_info->mem_block[0]->start +
+				reg_start_offset + (j*4);
+			addr[1] = cam_io_r(reg_base + (j*4));
+			addr += 2;
+		}
+	}
+	hdr->size = hdr->word_size * (addr - start);
+	dump_args->offset +=  hdr->size +
+		sizeof(struct cam_isp_hw_dump_header);
+
+	/*dump LUT*/
+	for (i = 0; i < dump_data->num_lut_dump_entries; i++) {
+
+		dst = (char *)dump_args->cpu_addr + dump_args->offset;
+		hdr = (struct cam_isp_hw_dump_header *)dst;
+		scnprintf(hdr->tag, CAM_ISP_HW_DUMP_TAG_MAX_LEN, "LUT_REG:");
+		hdr->word_size = dump_data->lut_entry[i].lut_word_size/8;
+		addr = (uint32_t *)(dst +
+			sizeof(struct cam_isp_hw_dump_header));
+		start = addr;
+		*addr++ = dump_data->lut_entry[i].lut_bank_sel;
+		val = 0x100 |  dump_data->lut_entry[i].lut_bank_sel;
+		cam_io_w_mb(val, soc_info->reg_map[0].mem_base +
+			dump_data->dmi_cfg);
+		cam_io_w_mb(0, soc_info->reg_map[0].mem_base +
+			dump_data->dmi_addr);
+		for (j = 0; j < dump_data->lut_entry[i].lut_addr_size;
+			j++) {
+			if (dump_data->lut_entry[i].lut_word_size == 64) {
+				addr[0] = cam_io_r(
+					soc_info->reg_map[0].mem_base +
+					dump_data->dmi_data_path_lo);
+				addr[1] = cam_io_r(
+					soc_info->reg_map[0].mem_base +
+					dump_data->dmi_data_path_hi);
+				addr += 2;
+			} else {
+				*addr = cam_io_r(
+					soc_info->reg_map[0].mem_base +
+					dump_data->dmi_data_path_lo);
+				addr++;
+			}
+		}
+		hdr->size = hdr->word_size * (addr - start);
+		dump_args->offset +=  hdr->size +
+			sizeof(struct cam_isp_hw_dump_header);
+	}
+	CAM_DBG(CAM_ISP, "offset %zu", dump_args->offset);
+	return 0;
 }
 
 int cam_vfe_top_init_hw(void *device_priv,
@@ -505,6 +640,10 @@ int cam_vfe_top_process_cmd(void *device_priv, uint32_t cmd_type,
 		rc = cam_vfe_top_bw_control(soc_private, &top_priv->top_common,
 			cmd_args, arg_size);
 		break;
+	case CAM_ISP_HW_CMD_DUMP_HW:
+		rc = cam_vfe_hw_dump(top_priv,
+			cmd_args, arg_size);
+		break;
 	default:
 		rc = -EINVAL;
 		CAM_ERR(CAM_ISP, "Error! Invalid cmd:%d", cmd_type);
@@ -627,6 +766,7 @@ int cam_vfe_top_ver2_init(
 	top_priv->common_data.hw_intf      = hw_intf;
 	top_priv->top_common.hw_idx        = hw_intf->hw_idx;
 	top_priv->common_data.common_reg   = ver2_hw_info->common_reg;
+	top_priv->common_data.dump_data    = ver2_hw_info->dump_data;
 
 	return rc;
 

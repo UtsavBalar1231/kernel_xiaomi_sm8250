@@ -926,7 +926,7 @@ int cam_isp_add_reg_update(
 				return rc;
 
 			CAM_DBG(CAM_ISP, "Reg update added for res %d hw_id %d",
-				res->res_id, res->hw_intf->hw_idx);
+				res->res_type, res->hw_intf->hw_idx);
 			reg_update_size += get_regup.cmd.used_bytes;
 		}
 	}
@@ -960,3 +960,100 @@ int cam_isp_add_reg_update(
 
 	return rc;
 }
+
+int cam_isp_add_go_cmd(
+	struct cam_hw_prepare_update_args    *prepare,
+	struct list_head                     *res_list_isp_rd,
+	uint32_t                              base_idx,
+	struct cam_kmd_buf_info              *kmd_buf_info)
+{
+	int rc = -EINVAL;
+	struct cam_isp_resource_node         *res;
+	struct cam_ife_hw_mgr_res            *hw_mgr_res;
+	struct cam_hw_update_entry           *hw_entry;
+	struct cam_isp_hw_get_cmd_update      get_regup;
+	uint32_t kmd_buf_remain_size, num_ent, i, reg_update_size;
+
+	hw_entry = prepare->hw_update_entries;
+	if (prepare->num_hw_update_entries + 1 >=
+		prepare->max_hw_update_entries) {
+		CAM_ERR(CAM_ISP, "Insufficient HW entries current: %d max: %d",
+			prepare->num_hw_update_entries,
+			prepare->max_hw_update_entries);
+		return -EINVAL;
+	}
+
+	reg_update_size = 0;
+	list_for_each_entry(hw_mgr_res, res_list_isp_rd, list) {
+		if (hw_mgr_res->res_type == CAM_IFE_HW_MGR_RES_UNINIT)
+			continue;
+
+		for (i = 0; i < CAM_ISP_HW_SPLIT_MAX; i++) {
+			if (!hw_mgr_res->hw_res[i])
+				continue;
+
+			res = hw_mgr_res->hw_res[i];
+			if (res->hw_intf->hw_idx != base_idx)
+				continue;
+
+			if (kmd_buf_info->size > (kmd_buf_info->used_bytes +
+				reg_update_size)) {
+				kmd_buf_remain_size =  kmd_buf_info->size -
+					(kmd_buf_info->used_bytes +
+					reg_update_size);
+			} else {
+				CAM_ERR(CAM_ISP, "no free mem %d %d %d",
+					base_idx, kmd_buf_info->size,
+					kmd_buf_info->used_bytes +
+					reg_update_size);
+				rc = -EINVAL;
+				return rc;
+			}
+
+			get_regup.cmd.cmd_buf_addr = kmd_buf_info->cpu_addr +
+				kmd_buf_info->used_bytes/4 +
+				reg_update_size/4;
+			get_regup.cmd.size = kmd_buf_remain_size;
+			get_regup.cmd_type = CAM_ISP_HW_CMD_FE_TRIGGER_CMD;
+			get_regup.res = res;
+
+			rc = res->process_cmd(res->res_priv,
+				CAM_ISP_HW_CMD_FE_TRIGGER_CMD, &get_regup,
+				sizeof(struct cam_isp_hw_get_cmd_update));
+			if (rc)
+				return rc;
+
+			CAM_DBG(CAM_ISP, "GO_CMD added for RD res %d hw_id %d",
+				res->res_type, res->hw_intf->hw_idx);
+			reg_update_size += get_regup.cmd.used_bytes;
+		}
+	}
+
+	if (reg_update_size) {
+		/* Update the HW entries */
+		num_ent = prepare->num_hw_update_entries;
+		prepare->hw_update_entries[num_ent].handle =
+					kmd_buf_info->handle;
+		prepare->hw_update_entries[num_ent].len = reg_update_size;
+		prepare->hw_update_entries[num_ent].offset =
+			kmd_buf_info->offset;
+
+		prepare->hw_update_entries[num_ent].flags =
+			CAM_ISP_IOCFG_BL;
+		CAM_DBG(CAM_ISP,
+			"num_ent=%d handle=0x%x, len=%u, offset=%u",
+			num_ent,
+			prepare->hw_update_entries[num_ent].handle,
+			prepare->hw_update_entries[num_ent].len,
+			prepare->hw_update_entries[num_ent].offset);
+		num_ent++;
+
+		kmd_buf_info->used_bytes += reg_update_size;
+		kmd_buf_info->offset     += reg_update_size;
+		prepare->num_hw_update_entries = num_ent;
+		rc = 0;
+	}
+
+	return rc;
+}
+

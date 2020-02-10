@@ -97,6 +97,7 @@ struct cam_isp_in_port_generic_info {
 	uint32_t                        batch_size;
 	uint32_t                        dsp_mode;
 	uint32_t                        hbi_cnt;
+	uint32_t                        fe_unpacker_fmt;
 	uint32_t                        cust_node;
 	uint32_t                        num_out_res;
 	uint32_t                        horizontal_bin;
@@ -204,6 +205,7 @@ enum cam_ife_csid_cmd_type {
 	CAM_IFE_CSID_CMD_GET_TIME_STAMP,
 	CAM_IFE_CSID_SET_CSID_DEBUG,
 	CAM_IFE_CSID_SOF_IRQ_DEBUG,
+	CAM_IFE_CSID_SET_CONFIG,
 	CAM_IFE_CSID_CMD_MAX,
 };
 
@@ -236,5 +238,13 @@ struct cam_ife_csid_qcfa_update_args {
 	uint32_t                           qcfa_binning;
 };
 
+/*
+ * struct cam_ife_csid_epd_update_args:
+ *
+ * @epd_supported:                flag to check epd supported or not
+ */
+struct cam_ife_csid_epd_update_args {
+	uint32_t                           epd_supported;
+};
 
 #endif /* _CAM_CSID_HW_INTF_H_ */

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/device.h>
@@ -134,6 +134,47 @@ static int cam_cpas_util_path_type_to_idx(uint32_t *path_data_type)
 	return 0;
 }
 
+static int cam_cpas_update_camnoc_node(struct cam_cpas *cpas_core,
+	struct device_node *curr_node,
+	struct cam_cpas_tree_node *cpas_node_ptr,
+	int *camnoc_idx)
+
+{
+	struct device_node *camnoc_node;
+	int rc;
+
+	camnoc_node = of_find_node_by_name(curr_node,
+			"qcom,axi-port-camnoc");
+	if (camnoc_node) {
+
+		if (*camnoc_idx >=
+			CAM_CPAS_MAX_AXI_PORTS) {
+			CAM_ERR(CAM_CPAS, "CAMNOC axi index overshoot %d",
+				*camnoc_idx);
+			return -EINVAL;
+		}
+
+		cpas_core->camnoc_axi_port[*camnoc_idx]
+			.axi_port_node = camnoc_node;
+		rc = of_property_read_string(
+			curr_node,
+			"qcom,axi-port-name",
+			&cpas_core->camnoc_axi_port[*camnoc_idx]
+			.axi_port_name);
+
+		if (rc) {
+			CAM_ERR(CAM_CPAS,
+				"fail to read camnoc-port-name rc=%d",
+				rc);
+			return rc;
+		}
+		cpas_node_ptr->camnoc_axi_port_idx = *camnoc_idx;
+		cpas_core->num_camnoc_axi_ports++;
+		(*camnoc_idx)++;
+	}
+	return 0;
+}
+
 static int cam_cpas_parse_node_tree(struct cam_cpas *cpas_core,
 	struct device_node *of_node, struct cam_cpas_private_soc *soc_private)
 {
@@ -142,7 +183,7 @@ static int cam_cpas_parse_node_tree(struct cam_cpas *cpas_core,
 	struct device_node *curr_node;
 	struct device_node *parent_node;
 	struct device_node *mnoc_node;
-	int mnoc_idx = 0;
+	int mnoc_idx = 0, camnoc_idx = 0;
 	uint32_t path_idx;
 	bool camnoc_max_needed = false;
 	struct cam_cpas_tree_node *curr_node_ptr = NULL;
@@ -246,6 +287,17 @@ static int cam_cpas_parse_node_tree(struct cam_cpas *cpas_core,
 				curr_node_ptr->axi_port_idx = mnoc_idx;
 				mnoc_idx++;
 				cpas_core->num_axi_ports++;
+			}
+
+			if (!soc_private->control_camnoc_axi_clk) {
+				rc = cam_cpas_update_camnoc_node(
+					cpas_core, curr_node, curr_node_ptr,
+					&camnoc_idx);
+				if (rc) {
+					CAM_ERR(CAM_CPAS,
+						"Parse Camnoc port fail");
+					return rc;
+				}
 			}
 
 			rc = of_property_read_string(curr_node,

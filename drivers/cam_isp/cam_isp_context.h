@@ -36,6 +36,27 @@
  */
 #define CAM_ISP_CTX_STATE_MONITOR_MAX_ENTRIES   40
 
+/*
+ * Threshold response time in us beyond which a request is not expected
+ * to be with IFE hw
+ */
+#define CAM_ISP_CTX_RESPONSE_TIME_THRESHOLD   100000
+
+/* Number of words for dumping isp context */
+#define CAM_ISP_CTX_DUMP_NUM_WORDS  5
+
+/* Number of words for dumping isp context events*/
+#define CAM_ISP_CTX_DUMP_EVENT_NUM_WORDS  3
+
+/* Number of words for dumping request info*/
+#define CAM_ISP_CTX_DUMP_REQUEST_NUM_WORDS  2
+
+/* Maximum entries in event record */
+#define CAM_ISP_CTX_EVENT_RECORD_MAX_ENTRIES   20
+
+/* Maximum length of tag while dumping */
+#define CAM_ISP_CONTEXT_DUMP_TAG_MAX_LEN 32
+
 /* forward declaration */
 struct cam_isp_context;
 
@@ -56,6 +77,19 @@ enum cam_isp_ctx_activated_substate {
 	CAM_ISP_CTX_ACTIVATED_HW_ERROR,
 	CAM_ISP_CTX_ACTIVATED_HALT,
 	CAM_ISP_CTX_ACTIVATED_MAX,
+};
+
+/**
+ * enum cam_isp_ctx_event_type - events for a request
+ *
+ */
+enum cam_isp_ctx_event {
+	CAM_ISP_CTX_EVENT_SUBMIT,
+	CAM_ISP_CTX_EVENT_APPLY,
+	CAM_ISP_CTX_EVENT_EPOCH,
+	CAM_ISP_CTX_EVENT_RUP,
+	CAM_ISP_CTX_EVENT_BUFDONE,
+	CAM_ISP_CTX_EVENT_MAX
 };
 
 /**
@@ -112,6 +146,7 @@ struct cam_isp_ctx_irq_ops {
  * @bubble_report:         Flag to track if bubble report is active on
  *                         current request
  * @hw_update_data:        HW update data for this request
+ * @event_timestamp:       Timestamp for different stage of request
  * @reapply:               True if reapplying after bubble
  *
  */
@@ -128,6 +163,8 @@ struct cam_isp_ctx_req {
 	uint32_t                              num_acked;
 	int32_t                               bubble_report;
 	struct cam_isp_prepare_hw_update_data hw_update_data;
+	ktime_t                               event_timestamp
+		[CAM_ISP_CTX_EVENT_MAX];
 	bool                                  bubble_detected;
 	bool                                  reapply;
 };
@@ -163,8 +200,22 @@ struct cam_isp_context_state_monitor {
 struct cam_isp_context_req_id_info {
 	int64_t                          last_bufdone_req_id;
 };
+
 /**
  *
+ * struct cam_isp_context_event_record - Information for last 20 Events
+ *  for a request; Submit, Apply, EPOCH, RUP, Buf done.
+ *
+ * @req_id:    Last applied request id
+ * @timestamp: Timestamp for the event
+ *
+ */
+struct cam_isp_context_event_record {
+	uint64_t                         req_id;
+	ktime_t                          timestamp;
+};
+
+/**
  * struct cam_isp_context   -  ISP context object
  *
  * @base:                      Common context object pointer
@@ -190,14 +241,19 @@ struct cam_isp_context_req_id_info {
  * @state_monitor_head:        Write index to the state monitoring array
  * @req_info                   Request id information about last buf done
  * @cam_isp_ctx_state_monitor: State monitoring array
+ * @event_record_head:         Write index to the state monitoring array
+ * @event_record:              Event record array
  * @rdi_only_context:          Get context type information.
  *                             true, if context is rdi only context
+ * @offline_context:           Indicate whether context is for offline IFE
  * @hw_acquired:               Indicate whether HW resources are acquired
  * @init_received:             Indicate whether init config packet is received
  * @split_acquire:             Indicate whether a separate acquire is expected
  * @custom_enabled:            Custom HW enabled for this ctx
  * @use_frame_header_ts:       Use frame header for qtimer ts
  * @init_timestamp:            Timestamp at which this context is initialized
+ * @rxd_epoch:                 Indicate whether epoch has been received. Used to
+ *                             decide whether to apply request in offline ctx
  *
  */
 struct cam_isp_context {
@@ -225,13 +281,32 @@ struct cam_isp_context {
 	struct cam_isp_context_state_monitor cam_isp_ctx_state_monitor[
 		CAM_ISP_CTX_STATE_MONITOR_MAX_ENTRIES];
 	struct cam_isp_context_req_id_info    req_info;
+	atomic64_t                            event_record_head[
+		CAM_ISP_CTX_EVENT_MAX];
+	struct cam_isp_context_event_record   event_record[
+		CAM_ISP_CTX_EVENT_MAX][CAM_ISP_CTX_EVENT_RECORD_MAX_ENTRIES];
 	bool                                  rdi_only_context;
+	bool                                  offline_context;
 	bool                                  hw_acquired;
 	bool                                  init_received;
 	bool                                  split_acquire;
 	bool                                  custom_enabled;
 	bool                                  use_frame_header_ts;
 	unsigned int                          init_timestamp;
+	atomic_t                              rxd_epoch;
+};
+
+/**
+ * struct cam_isp_context_dump_header - ISP context dump header
+ * @tag:       Tag name for the header
+ * @word_size: Size of word
+ * @size:      Size of data
+ *
+ */
+struct cam_isp_context_dump_header {
+	uint8_t   tag[CAM_ISP_CONTEXT_DUMP_TAG_MAX_LEN];
+	uint64_t  size;
+	uint32_t  word_size;
 };
 
 /**

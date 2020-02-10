@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef CAM_A5_HW_INTF_H
@@ -27,6 +27,7 @@ enum cam_icp_a5_cmd_type {
 	CAM_ICP_A5_CMD_UBWC_CFG,
 	CAM_ICP_A5_CMD_PC_PREP,
 	CAM_ICP_A5_CMD_CLK_UPDATE,
+	CAM_ICP_A5_CMD_HW_DUMP,
 	CAM_ICP_A5_CMD_MAX,
 };
 

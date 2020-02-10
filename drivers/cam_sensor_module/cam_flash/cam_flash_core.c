@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/module.h>
@@ -662,6 +662,16 @@ int cam_flash_i2c_apply_setting(struct cam_flash_ctrl *fctrl,
 				list) {
 				rc = cam_sensor_util_i2c_apply_setting
 					(&(fctrl->io_master_info), i2c_list);
+				if ((rc == -EAGAIN) &&
+					(fctrl->io_master_info.master_type ==
+					CCI_MASTER)) {
+					CAM_WARN(CAM_FLASH,
+						"CCI HW is in reset mode: Reapplying Init settings");
+					usleep_range(1000, 1010);
+					rc = cam_sensor_util_i2c_apply_setting
+					(&(fctrl->io_master_info), i2c_list);
+				}
+
 				if (rc) {
 					CAM_ERR(CAM_FLASH,
 					"Failed to apply init settings: %d",

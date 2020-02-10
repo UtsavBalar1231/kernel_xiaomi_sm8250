@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_VFE_TOP_VER2_H_
@@ -49,6 +49,7 @@ struct cam_vfe_top_ver2_hw_info {
 	struct cam_vfe_camif_lite_ver2_hw_info      camif_lite_hw_info;
 	struct cam_vfe_rdi_ver2_hw_info             rdi_hw_info;
 	struct cam_vfe_fe_ver1_hw_info              fe_hw_info;
+	struct cam_vfe_top_dump_data               *dump_data;
 	uint32_t                                    num_mux;
 	uint32_t mux_type[CAM_VFE_TOP_MUX_MAX];
 };

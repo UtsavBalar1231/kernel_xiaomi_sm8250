@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef CAM_JPEG_ENC_HW_INFO_TITAN170_H
@@ -66,6 +66,10 @@ static struct cam_jpeg_enc_device_hw_info cam_jpeg_enc_hw_info = {
 		.resetdone = CAM_JPEG_HW_MASK_COMP_RESET_ACK,
 		.iserror = CAM_JPEG_HW_MASK_COMP_ERR,
 		.stopdone = CAM_JPEG_HW_IRQ_STATUS_STOP_DONE_MASK,
+	},
+	.reg_dump = {
+		.start_offset = 0x0,
+		.end_offset = 0x33C,
 	}
 };
 

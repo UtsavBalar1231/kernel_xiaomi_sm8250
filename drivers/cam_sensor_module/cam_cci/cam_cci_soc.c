@@ -54,6 +54,7 @@ int cam_cci_init(struct v4l2_subdev *sd,
 				&cci_dev->cci_master_info[master].report_q[i]);
 			/* Set reset pending flag to true */
 			cci_dev->cci_master_info[master].reset_pending = true;
+			cci_dev->cci_master_info[master].status = 0;
 			/* Set proper mask to RESET CMD address */
 			if (master == MASTER_0)
 				cam_io_w_mb(CCI_M0_RESET_RMSK,
@@ -67,6 +68,7 @@ int cam_cci_init(struct v4l2_subdev *sd,
 				CCI_TIMEOUT);
 			if (rc <= 0)
 				CAM_ERR(CAM_CCI, "wait failed %d", rc);
+			cci_dev->cci_master_info[master].status = 0;
 			mutex_unlock(&cci_dev->cci_master_info[master].mutex);
 		}
 		return 0;
@@ -132,6 +134,7 @@ int cam_cci_init(struct v4l2_subdev *sd,
 	}
 
 	cci_dev->cci_master_info[master].reset_pending = true;
+	cci_dev->cci_master_info[master].status = 0;
 	cam_io_w_mb(CCI_RESET_CMD_RMSK, base +
 			CCI_RESET_CMD_ADDR);
 	cam_io_w_mb(0x1, base + CCI_RESET_CMD_ADDR);

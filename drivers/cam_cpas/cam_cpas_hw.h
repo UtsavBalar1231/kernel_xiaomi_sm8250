@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_CPAS_HW_H_
@@ -153,6 +153,7 @@ struct cam_cpas_bus_client {
  * @axi_port_node: Node representing AXI Port info in device tree
  * @ab_bw: AB bw value for this port
  * @ib_bw: IB bw value for this port
+ * @camnoc_bw: CAMNOC bw value for this port
  * @additional_bw: Additional bandwidth to cover non-hw cpas clients
  */
 struct cam_cpas_axi_port {
@@ -162,6 +163,7 @@ struct cam_cpas_axi_port {
 	struct device_node *axi_port_node;
 	uint64_t ab_bw;
 	uint64_t ib_bw;
+	uint64_t camnoc_bw;
 	uint64_t additional_bw;
 };
 
@@ -174,11 +176,13 @@ struct cam_cpas_axi_port {
  * @tree_lock: Mutex lock for accessing CPAS node tree
  * @num_clients: Total number of clients that CPAS supports
  * @num_axi_ports: Total number of axi ports found in device tree
+ * @num_camnoc_axi_ports: Total number of camnoc axi ports found in device tree
  * @registered_clients: Number of Clients registered currently
  * @streamon_clients: Number of Clients that are in start state currently
  * @regbase_index: Register base indices for CPAS register base IDs
  * @ahb_bus_client: AHB Bus client info
  * @axi_port: AXI port info for a specific axi index
+ * @camnoc_axi_port: CAMNOC AXI port info for a specific camnoc axi index
  * @internal_ops: CPAS HW internal ops
  * @work_queue: Work queue handle
  * @irq_count: atomic irq count
@@ -193,11 +197,13 @@ struct cam_cpas {
 	struct mutex tree_lock;
 	uint32_t num_clients;
 	uint32_t num_axi_ports;
+	uint32_t num_camnoc_axi_ports;
 	uint32_t registered_clients;
 	uint32_t streamon_clients;
 	int32_t regbase_index[CAM_CPAS_REG_MAX];
 	struct cam_cpas_bus_client ahb_bus_client;
 	struct cam_cpas_axi_port axi_port[CAM_CPAS_MAX_AXI_PORTS];
+	struct cam_cpas_axi_port camnoc_axi_port[CAM_CPAS_MAX_AXI_PORTS];
 	struct cam_cpas_internal_ops internal_ops;
 	struct workqueue_struct *work_queue;
 	atomic_t irq_count;

@@ -103,6 +103,27 @@ struct cam_vfe_hw_get_hw_cap {
 };
 
 /*
+ * struct cam_vfe_hw_vfe_bus_rd_acquire_args:
+ *
+ * @rsrc_node:               Pointer to Resource Node object, filled if acquire
+ *                           is successful
+ * @res_id:                  Unique Identity of port to associate with this
+ *                           resource.
+ * @is_dual:                 Flag to indicate dual VFE usecase
+ * @cdm_ops:                 CDM operations
+ * @unpacket_fmt:            Unpacker format for read engine
+ * @is_offline:              Flag to indicate offline usecase
+ */
+struct cam_vfe_hw_vfe_bus_rd_acquire_args {
+	struct cam_isp_resource_node         *rsrc_node;
+	uint32_t                              res_id;
+	uint32_t                              is_dual;
+	struct cam_cdm_utils_ops             *cdm_ops;
+	uint32_t                              unpacker_fmt;
+	bool                                  is_offline;
+};
+
+/*
  * struct cam_vfe_hw_vfe_out_acquire_args:
  *
  * @rsrc_node:               Pointer to Resource Node object, filled if acquire
@@ -138,11 +159,13 @@ struct cam_vfe_hw_vfe_out_acquire_args {
  * @res_id:                  Resource ID of resource to acquire if specific,
  *                           else CAM_ISP_HW_VFE_IN_MAX
  * @dual_hw_idx:             Slave core for this master core if dual vfe case
+ * @is_dual:                 flag to indicate if dual vfe case
  * @cdm_ops:                 CDM operations
  * @sync_mode:               In case of Dual VFE, this is Master or Slave.
  *                           (Default is Master in case of Single VFE)
  * @in_port:                 Input port details to acquire
- * @is_dual:                 flag to indicate if dual vfe case
+ * @is_fe_enabled:           Flag to indicate if FE is enabled
+ * @is_offline:              Flag to indicate Offline IFE
  */
 struct cam_vfe_hw_vfe_in_acquire_args {
 	struct cam_isp_resource_node         *rsrc_node;
@@ -152,6 +175,8 @@ struct cam_vfe_hw_vfe_in_acquire_args {
 	void                                 *cdm_ops;
 	enum cam_isp_hw_sync_mode             sync_mode;
 	struct cam_isp_in_port_generic_info  *in_port;
+	bool                                  is_fe_enabled;
+	bool                                  is_offline;
 };
 
 /*
@@ -173,9 +198,9 @@ struct cam_vfe_acquire_args {
 	void                                *priv;
 	cam_hw_mgr_event_cb_func             event_cb;
 	union {
-		struct cam_vfe_hw_vfe_out_acquire_args  vfe_out;
-		struct cam_vfe_hw_vfe_out_acquire_args  vfe_bus_rd;
-		struct cam_vfe_hw_vfe_in_acquire_args   vfe_in;
+		struct cam_vfe_hw_vfe_out_acquire_args     vfe_out;
+		struct cam_vfe_hw_vfe_bus_rd_acquire_args  vfe_bus_rd;
+		struct cam_vfe_hw_vfe_in_acquire_args      vfe_in;
 	};
 };
 

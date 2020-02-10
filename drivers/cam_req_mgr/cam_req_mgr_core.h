@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 #ifndef _CAM_REQ_MGR_CORE_H_
 #define _CAM_REQ_MGR_CORE_H_
@@ -13,7 +13,7 @@
 #define CAM_REQ_MGR_MAX_LINKED_DEV     16
 #define MAX_REQ_SLOTS                  48
 
-#define CAM_REQ_MGR_WATCHDOG_TIMEOUT       1000
+#define CAM_REQ_MGR_WATCHDOG_TIMEOUT       5000
 #define CAM_REQ_MGR_WATCHDOG_TIMEOUT_MAX   50000
 #define CAM_REQ_MGR_SCHED_REQ_TIMEOUT      1000
 #define CAM_REQ_MGR_SIMULATE_SCHED_REQ     30
@@ -33,7 +33,7 @@
 
 #define MAXIMUM_LINKS_PER_SESSION  4
 
-#define MAXIMUM_RETRY_ATTEMPTS 3
+#define MAXIMUM_RETRY_ATTEMPTS 2
 
 #define VERSION_1  1
 #define VERSION_2  2

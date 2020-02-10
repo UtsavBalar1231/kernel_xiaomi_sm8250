@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only WITH Linux-syscall-note */
 /*
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef __UAPI_CAM_ISP_H__
@@ -102,6 +102,7 @@
 #define CAM_ISP_GENERIC_BLOB_TYPE_IFE_CORE_CONFIG     7
 #define CAM_ISP_GENERIC_BLOB_TYPE_VFE_OUT_CONFIG      8
 #define CAM_ISP_GENERIC_BLOB_TYPE_BW_CONFIG_V2        9
+#define CAM_ISP_GENERIC_BLOB_TYPE_CSID_CONFIG         10
 #define CAM_ISP_GENERIC_BLOB_TYPE_CSID_QCFA_CONFIG    12
 
 #define CAM_ISP_VC_DT_CFG    4
@@ -695,6 +696,15 @@ struct cam_isp_vfe_out_config {
 	uint32_t                      num_ports;
 	uint32_t                      reserved;
 	struct cam_isp_vfe_wm_config  wm_config[1];
+};
+
+/**
+ * struct cam_isp_csid_epd_config  -  Support for EPD Packet config
+ *
+ * @is_epd_sensor      : flag to check if epd supported
+ */
+struct cam_isp_csid_epd_config {
+	uint32_t                      is_epd_supported;
 };
 
 #define CAM_ISP_ACQUIRE_COMMON_VER0         0x1000

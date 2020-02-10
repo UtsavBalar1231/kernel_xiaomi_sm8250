@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
+#include <linux/timer.h>
 #include "cam_lrme_hw_core.h"
 #include "cam_lrme_hw_soc.h"
 #include "cam_smmu_api.h"
@@ -19,6 +20,159 @@ static void cam_lrme_dump_registers(void __iomem *base)
 	cam_io_dump(base, 0x800, (0x878 - 0x800) / 0x4);
 	/* dump lrme sw registers, interrupts */
 	cam_io_dump(base, 0x900, (0x928 - 0x900) / 0x4);
+}
+
+static int  cam_lrme_dump_regs_to_buf(
+	struct cam_lrme_frame_request *req,
+	struct cam_hw_info *lrme_hw,
+	struct cam_lrme_hw_dump_args *dump_args)
+{
+	int                             i;
+	uint8_t                        *dst;
+	uint32_t                       *addr, *start;
+	uint32_t                        num_reg, min_len;
+	size_t                          remain_len;
+	struct cam_hw_soc_info         *soc_info;
+	struct cam_lrme_hw_dump_header *hdr;
+
+	if (!lrme_hw || !req || !dump_args) {
+		CAM_ERR(CAM_LRME, "Invalid params %pK, %pK, %pK",
+			lrme_hw, req, dump_args);
+		return -EINVAL;
+	}
+	soc_info = &lrme_hw->soc_info;
+	if (dump_args->buf_len <= dump_args->offset) {
+		CAM_WARN(CAM_LRME, "dump buffer overshoot len %zu offset %zu",
+			dump_args->buf_len, dump_args->offset);
+		return -ENOSPC;
+	}
+	remain_len = dump_args->buf_len - dump_args->offset;
+	min_len =  sizeof(struct cam_lrme_hw_dump_header) +
+		    soc_info->reg_map[0].size + sizeof(uint32_t);
+
+	if (remain_len < min_len) {
+		CAM_WARN(CAM_LRME, "dump buffer exhaust remain %zu min %u",
+			remain_len, min_len);
+		return -ENOSPC;
+	}
+	dst = (uint8_t *)dump_args->cpu_addr + dump_args->offset;
+	hdr = (struct cam_lrme_hw_dump_header *)dst;
+	scnprintf(hdr->tag, CAM_LRME_HW_DUMP_TAG_MAX_LEN,
+		"LRME_REG:");
+	hdr->word_size = sizeof(uint32_t);
+	addr = (uint32_t *)(dst + sizeof(struct cam_lrme_hw_dump_header));
+	start = addr;
+	*addr++ = soc_info->index;
+	num_reg = soc_info->reg_map[0].size/4;
+	for (i = 0; i < num_reg; i++) {
+		*addr++ = soc_info->mem_block[0]->start + (i*4);
+		*addr++ = cam_io_r(soc_info->reg_map[0].mem_base + (i*4));
+	}
+	hdr->size = hdr->word_size * (addr - start);
+	dump_args->offset += hdr->size +
+		sizeof(struct cam_lrme_hw_dump_header);
+	CAM_DBG(CAM_LRME, "offset %zu", dump_args->offset);
+	return 0;
+}
+
+static int cam_lrme_hw_dump(
+	struct cam_hw_info           *lrme_hw,
+	struct cam_lrme_hw_dump_args *dump_args)
+{
+	uint8_t                        *dst;
+	ktime_t                         cur_time;
+	size_t                          remain_len;
+	uint32_t                        min_len;
+	uint64_t                        diff;
+	uint64_t                       *addr, *start;
+	struct timespec64               cur_ts;
+	struct timespec64               req_ts;
+	struct cam_lrme_core           *lrme_core;
+	struct cam_lrme_frame_request  *req = NULL;
+	struct cam_lrme_hw_dump_header *hdr;
+
+	mutex_lock(&lrme_hw->hw_mutex);
+	if (lrme_hw->hw_state == CAM_HW_STATE_POWER_DOWN) {
+		CAM_DBG(CAM_LRME, "LRME HW is in off state");
+		mutex_unlock(&lrme_hw->hw_mutex);
+		return 0;
+	}
+
+	lrme_core = (struct cam_lrme_core *)lrme_hw->core_info;
+
+	if (lrme_core->req_submit &&
+		lrme_core->req_submit->req_id == dump_args->request_id)
+		req = lrme_core->req_submit;
+	else if (lrme_core->req_proc &&
+		lrme_core->req_proc->req_id == dump_args->request_id)
+		req = lrme_core->req_proc;
+
+	if (!req) {
+		CAM_DBG(CAM_LRME, "LRME req %lld not with hw",
+			dump_args->request_id);
+		mutex_unlock(&lrme_hw->hw_mutex);
+		return 0;
+	}
+
+	cur_time = ktime_get();
+	diff = ktime_us_delta(req->submit_timestamp, cur_time);
+	cur_ts = ktime_to_timespec64(cur_time);
+	req_ts = ktime_to_timespec64(req->submit_timestamp);
+
+	if (diff < CAM_LRME_RESPONSE_TIME_THRESHOLD) {
+		CAM_INFO(CAM_LRME, "No error req %lld %ld:%06ld %ld:%06ld",
+			dump_args->request_id,
+			req_ts.tv_sec,
+			req_ts.tv_nsec/NSEC_PER_USEC,
+			cur_ts.tv_sec,
+			cur_ts.tv_nsec/NSEC_PER_USEC);
+		mutex_unlock(&lrme_hw->hw_mutex);
+		return 0;
+	}
+
+	CAM_INFO(CAM_LRME, "Error req %lld %ld:%06ld %ld:%06ld",
+		dump_args->request_id,
+		req_ts.tv_sec,
+		req_ts.tv_nsec/NSEC_PER_USEC,
+		cur_ts.tv_sec,
+		cur_ts.tv_nsec/NSEC_PER_USEC);
+
+	if (dump_args->buf_len <= dump_args->offset) {
+		CAM_WARN(CAM_LRME, "dump buffer overshoot len %zu offset %zu",
+			dump_args->buf_len, dump_args->offset);
+		mutex_unlock(&lrme_hw->hw_mutex);
+		return 0;
+	}
+
+	remain_len = dump_args->buf_len - dump_args->offset;
+	min_len =  sizeof(struct cam_lrme_hw_dump_header) +
+		    (CAM_LRME_HW_DUMP_NUM_WORDS * sizeof(uint64_t));
+
+	if (remain_len < min_len) {
+		CAM_WARN(CAM_LRME, "dump buffer exhaust remain %zu min %u",
+			remain_len, min_len);
+		mutex_unlock(&lrme_hw->hw_mutex);
+		return 0;
+	}
+
+	dst = (uint8_t *)dump_args->cpu_addr + dump_args->offset;
+	hdr = (struct cam_lrme_hw_dump_header *)dst;
+	scnprintf(hdr->tag, CAM_LRME_HW_DUMP_TAG_MAX_LEN,
+		"LRME_REQ:");
+	hdr->word_size = sizeof(uint64_t);
+	addr = (uint64_t *)(dst + sizeof(struct cam_lrme_hw_dump_header));
+	start = addr;
+	*addr++ = req->req_id;
+	*addr++ = req_ts.tv_sec;
+	*addr++ = req_ts.tv_nsec/NSEC_PER_USEC;
+	*addr++ = cur_ts.tv_sec;
+	*addr++ = cur_ts.tv_nsec/NSEC_PER_USEC;
+	hdr->size = hdr->word_size * (addr - start);
+	dump_args->offset += hdr->size +
+		sizeof(struct cam_lrme_hw_dump_header);
+	cam_lrme_dump_regs_to_buf(req, lrme_hw, dump_args);
+	mutex_unlock(&lrme_hw->hw_mutex);
+	return 0;
 }
 
 static void cam_lrme_cdm_write_reg_val_pair(uint32_t *buffer,
@@ -957,6 +1111,8 @@ int cam_lrme_hw_submit_req(void *hw_priv, void *hw_submit_args,
 		goto error;
 	}
 
+	frame_req->submit_timestamp = ktime_get();
+
 	switch (lrme_core->state) {
 	case CAM_LRME_CORE_STATE_PROCESSING:
 		lrme_core->state = CAM_LRME_CORE_STATE_REQ_PROC_PEND;
@@ -1266,6 +1422,12 @@ int cam_lrme_hw_process_cmd(void *hw_priv, uint32_t cmd_type,
 		break;
 	}
 
+	case CAM_LRME_HW_CMD_DUMP: {
+		struct cam_lrme_hw_dump_args *dump_args =
+		   (struct cam_lrme_hw_dump_args *)cmd_args;
+		rc = cam_lrme_hw_dump(lrme_hw, dump_args);
+		break;
+		}
 	default:
 		break;
 	}
