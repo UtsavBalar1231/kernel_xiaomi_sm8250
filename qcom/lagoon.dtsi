@@ -2666,6 +2666,23 @@
 		qcom,instance-type = "sdcc";
 	};
 
+	keepalive_opp_table: keepalive-opp-table {
+		compatible = "operating-points-v2";
+		opp-1 {
+			opp-hz = /bits/ 64 < 1 >;
+		};
+	};
+
+	snoc_cnoc_keepalive: qcom,snoc_cnoc_keepalive {
+		compatible = "qcom,devbw";
+		governor = "powersave";
+		qcom,src-dst-ports = <MSM_BUS_MASTER_AMPSS_M0
+			MSM_BUS_SLAVE_IMEM_CFG>;
+		qcom,active-only;
+		status = "ok";
+		operating-points-v2 = <&keepalive_opp_table>;
+	};
+
 	sdhc_1: sdhci@7c4000 {
 		compatible = "qcom,sdhci-msm-v5", "qcom,sdhci-msm-cqe";
 		reg = <0x7c4000 0x1000>, <0x7c5000 0x1000>;
