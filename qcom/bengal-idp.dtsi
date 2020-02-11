@@ -77,6 +77,7 @@
 	qcom,suspend-input-on-debug-batt;
 	qcom,sw-jeita-enable;
 	qcom,step-charging-enable;
+	qcom,hvdcp2-max-icl-ua = <2000000>;
 	/* SMB1355 only */
 	qcom,sec-charger-config = <2>;
 	dpdm-supply = <&qusb_phy0>;
