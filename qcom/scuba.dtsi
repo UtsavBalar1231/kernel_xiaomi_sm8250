@@ -5,6 +5,7 @@
 #include <dt-bindings/spmi/spmi.h>
 #include <dt-bindings/clock/qcom,rpmcc.h>
 #include <dt-bindings/regulator/qcom,rpmh-regulator-levels.h>
+#include <dt-bindings/msm/msm-bus-ids.h>
 
 / {
 	model = "Qualcomm Technologies, Inc. SCUBA";
@@ -1239,6 +1240,7 @@
 #include "scuba-qupv3.dtsi"
 #include "scuba-usb.dtsi"
 #include "msm-arm-smmu-scuba.dtsi"
+#include "scuba-bus.dtsi"
 
 &pm2250_vadc {
 	#address-cells = <1>;
