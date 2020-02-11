@@ -2034,4 +2034,13 @@ void dp_is_hw_dbs_enable(struct dp_soc *soc,
 #if defined(WLAN_SUPPORT_RX_FISA)
 void dp_rx_dump_fisa_table(struct dp_soc *soc);
 #endif /* WLAN_SUPPORT_RX_FISA */
+
+/**
+ * dp_rx_skip_tlvs() - Skip TLVs len + L2 hdr_offset, save in nbuf->cb
+ * @nbuf: nbuf cb to be updated
+ * @l2_hdr_offset: l2_hdr_offset
+ *
+ * Return: None
+ */
+void dp_rx_skip_tlvs(qdf_nbuf_t nbuf, uint32_t l3_padding);
 #endif /* #ifndef _DP_INTERNAL_H_ */
