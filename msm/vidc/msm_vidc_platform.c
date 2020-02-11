@@ -380,10 +380,10 @@ static struct msm_vidc_codec_capability lito_capabilities_v1[] = {
 
 static struct msm_vidc_codec_capability lagoon_capabilities_v0[] = {
 	/* {cap_type, domains, codecs, min, max, step_size, default_value,} */
-	{CAP_FRAME_WIDTH, DOMAINS_ALL, CODECS_ALL, 128, 3840, 1, 1920},
-	{CAP_FRAME_HEIGHT, DOMAINS_ALL, CODECS_ALL, 128, 3840, 1, 1080},
-	/* (3840 * 2176) / 256 */
-	{CAP_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 64, 32640, 1, 8160},
+	{CAP_FRAME_WIDTH, DOMAINS_ALL, CODECS_ALL, 128, 4096, 1, 1920},
+	{CAP_FRAME_HEIGHT, DOMAINS_ALL, CODECS_ALL, 128, 4096, 1, 1080},
+	/* (4096 * 2176) / 256 */
+	{CAP_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 64, 34816, 1, 8160},
 	/* ((3840 * 2176) / 256) * 30 fps */
 	{CAP_MBS_PER_SECOND, ENC, CODECS_ALL, 64, 979200, 1, 244800},
 	/* ((3840 * 2176) / 256) * 60 fps */
@@ -425,10 +425,10 @@ static struct msm_vidc_codec_capability lagoon_capabilities_v0[] = {
 	{CAP_BITRATE, DEC, MPEG2, 1, 40000000, 1, 20000000},
 
 	/* Secure usecase specific */
-	{CAP_SECURE_FRAME_WIDTH, DOMAINS_ALL, CODECS_ALL, 128, 3840, 1, 1920},
-	{CAP_SECURE_FRAME_HEIGHT, DOMAINS_ALL, CODECS_ALL, 128, 3840, 1, 1080},
-	/* (3840 * 2176) / 256 */
-	{CAP_SECURE_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 64, 32640, 1, 8160},
+	{CAP_SECURE_FRAME_WIDTH, DOMAINS_ALL, CODECS_ALL, 128, 4096, 1, 1920},
+	{CAP_SECURE_FRAME_HEIGHT, DOMAINS_ALL, CODECS_ALL, 128, 4096, 1, 1080},
+	/* (4096 * 2176) / 256 */
+	{CAP_SECURE_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 64, 34816, 1, 8160},
 	{CAP_SECURE_BITRATE, DOMAINS_ALL, CODECS_ALL, 1, 40000000, 1, 20000000},
 
 	/* Batch Mode Decode */
@@ -437,10 +437,10 @@ static struct msm_vidc_codec_capability lagoon_capabilities_v0[] = {
 	{CAP_BATCH_MAX_FPS, DEC, CODECS_ALL, 1, 30, 1, 30},
 
 	/* Lossless encoding usecase specific */
-	{CAP_LOSSLESS_FRAME_WIDTH, ENC, H264|HEVC, 128, 3840, 1, 1920},
-	{CAP_LOSSLESS_FRAME_HEIGHT, ENC, H264|HEVC, 128, 3840, 1, 1080},
-	/* (3840 * 2176) / 256 */
-	{CAP_LOSSLESS_MBS_PER_FRAME, ENC, H264|HEVC, 64, 32640, 1, 8160},
+	{CAP_LOSSLESS_FRAME_WIDTH, ENC, H264|HEVC, 128, 4096, 1, 1920},
+	{CAP_LOSSLESS_FRAME_HEIGHT, ENC, H264|HEVC, 128, 4096, 1, 1080},
+	/* (4096 * 2176) / 256 */
+	{CAP_LOSSLESS_MBS_PER_FRAME, ENC, H264|HEVC, 64, 34816, 1, 8160},
 
 	/* All intra encoding usecase specific */
 	{CAP_ALLINTRA_MAX_FPS, ENC, H264|HEVC, 1, 120, 1, 30},
@@ -475,10 +475,10 @@ static struct msm_vidc_codec_capability lagoon_capabilities_v0[] = {
 
 static struct msm_vidc_codec_capability lagoon_capabilities_v1[] = {
 	/* {cap_type, domains, codecs, min, max, step_size, default_value,} */
-	{CAP_FRAME_WIDTH, DOMAINS_ALL, CODECS_ALL, 128, 3840, 1, 1920},
-	{CAP_FRAME_HEIGHT, DOMAINS_ALL, CODECS_ALL, 128, 3840, 1, 1080},
-	/* (3840 * 2176) / 256 */
-	{CAP_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 64, 32640, 1, 8160},
+	{CAP_FRAME_WIDTH, DOMAINS_ALL, CODECS_ALL, 128, 4096, 1, 1920},
+	{CAP_FRAME_HEIGHT, DOMAINS_ALL, CODECS_ALL, 128, 4096, 1, 1080},
+	/* (4096 * 2176) / 256 */
+	{CAP_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 64, 34816, 1, 8160},
 	/* ((3840 * 2176) / 256) * 30 fps */
 	{CAP_MBS_PER_SECOND, DOMAINS_ALL, CODECS_ALL, 64, 979200, 1, 244800},
 	{CAP_FRAMERATE, DOMAINS_ALL, CODECS_ALL, 1, 240, 1, 30},
@@ -517,10 +517,10 @@ static struct msm_vidc_codec_capability lagoon_capabilities_v1[] = {
 	{CAP_BITRATE, DEC, MPEG2, 1, 40000000, 1, 20000000},
 
 	/* Secure usecase specific */
-	{CAP_SECURE_FRAME_WIDTH, DOMAINS_ALL, CODECS_ALL, 128, 3840, 1, 1920},
-	{CAP_SECURE_FRAME_HEIGHT, DOMAINS_ALL, CODECS_ALL, 128, 3840, 1, 1080},
-	/* (3840 * 2176) / 256 */
-	{CAP_SECURE_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 64, 32640, 1, 8160},
+	{CAP_SECURE_FRAME_WIDTH, DOMAINS_ALL, CODECS_ALL, 128, 4096, 1, 1920},
+	{CAP_SECURE_FRAME_HEIGHT, DOMAINS_ALL, CODECS_ALL, 128, 4096, 1, 1080},
+	/* (4096 * 2176) / 256 */
+	{CAP_SECURE_MBS_PER_FRAME, DOMAINS_ALL, CODECS_ALL, 64, 34816, 1, 8160},
 	{CAP_SECURE_BITRATE, DOMAINS_ALL, CODECS_ALL, 1, 40000000, 1, 20000000},
 
 	/* Batch Mode Decode */
@@ -529,10 +529,10 @@ static struct msm_vidc_codec_capability lagoon_capabilities_v1[] = {
 	{CAP_BATCH_MAX_FPS, DEC, CODECS_ALL, 1, 30, 1, 30},
 
 	/* Lossless encoding usecase specific */
-	{CAP_LOSSLESS_FRAME_WIDTH, ENC, H264|HEVC, 128, 3840, 1, 1920},
-	{CAP_LOSSLESS_FRAME_HEIGHT, ENC, H264|HEVC, 128, 3840, 1, 1080},
-	/* (3840 * 2176)/ 256 */
-	{CAP_LOSSLESS_MBS_PER_FRAME, ENC, H264|HEVC, 64, 32640, 1, 8160},
+	{CAP_LOSSLESS_FRAME_WIDTH, ENC, H264|HEVC, 128, 4096, 1, 1920},
+	{CAP_LOSSLESS_FRAME_HEIGHT, ENC, H264|HEVC, 128, 4096, 1, 1080},
+	/* (4096 * 2176)/ 256 */
+	{CAP_LOSSLESS_MBS_PER_FRAME, ENC, H264|HEVC, 64, 34816, 1, 8160},
 
 	/* All intra encoding usecase specific */
 	{CAP_ALLINTRA_MAX_FPS, ENC, H264|HEVC, 1, 120, 1, 30},
