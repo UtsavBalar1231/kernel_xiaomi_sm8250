@@ -22249,6 +22249,7 @@ static int msm_routing_get_lsm_app_type_cfg_control(
 				kcontrol->private_value)->shift;
 	int i = 0, j = 0;
 
+	mutex_lock(&routing_lock);
 	ucontrol->value.integer.value[i] = num_app_cfg_types;
 
 	for (j = 0; j < num_app_cfg_types; ++j) {
@@ -22262,6 +22263,7 @@ static int msm_routing_get_lsm_app_type_cfg_control(
 			ucontrol->value.integer.value[++i] =
 				lsm_app_type_cfg[j].num_out_channels;
 	}
+	mutex_unlock(&routing_lock);
 	return 0;
 }
 
@@ -22273,9 +22275,11 @@ static int msm_routing_put_lsm_app_type_cfg_control(
 				kcontrol->private_value)->shift;
 	int i = 0, j;
 
+	mutex_lock(&routing_lock);
 	if (ucontrol->value.integer.value[0] > MAX_APP_TYPES) {
 		pr_err("%s: number of app types exceed the max supported\n",
 			__func__);
+		mutex_unlock(&routing_lock);
 		return -EINVAL;
 	}
 
@@ -22295,7 +22299,7 @@ static int msm_routing_put_lsm_app_type_cfg_control(
 			lsm_app_type_cfg[j].num_out_channels =
 				ucontrol->value.integer.value[i++];
 	}
-
+	mutex_unlock(&routing_lock);
 	return 0;
 }
 
