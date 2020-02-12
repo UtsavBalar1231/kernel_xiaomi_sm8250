@@ -62,9 +62,11 @@ static int cam_cpas_util_vote_bus_client_level(
 		return -EINVAL;
 	}
 
-	if (level >= bus_client->num_usecases) {
-		CAM_ERR(CAM_CPAS, "Invalid vote level=%d, usecases=%d", level,
-			bus_client->num_usecases);
+	if (level >= CAM_MAX_VOTE) {
+		CAM_ERR(CAM_CPAS,
+			"Invalid votelevel=%d,usecases=%d,Bus client=[%d][%s]",
+			level, bus_client->num_usecases,
+			bus_client->client_id, bus_client->name);
 		return -EINVAL;
 	}
 
