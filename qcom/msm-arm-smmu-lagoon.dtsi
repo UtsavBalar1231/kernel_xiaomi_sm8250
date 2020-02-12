@@ -158,6 +158,7 @@
 				<0x15182200 0x8>;
 			reg-names = "base", "status-reg";
 			qcom,stream-id-range = <0x0 0x400>;
+			interrupts = <GIC_SPI 398 IRQ_TYPE_LEVEL_HIGH>;
 			qcom,msm-bus,name = "apps_smmu";
 			qcom,msm-bus,num-cases = <2>;
 			qcom,msm-bus,active-only;
@@ -177,6 +178,7 @@
 				<0x15182208 0x8>;
 			reg-names = "base", "status-reg";
 			qcom,stream-id-range = <0x400 0x400>;
+			interrupts = <GIC_SPI 399 IRQ_TYPE_LEVEL_HIGH>;
 			qcom,msm-bus,name = "apps_smmu";
 			qcom,msm-bus,num-cases = <2>;
 			qcom,msm-bus,active-only;
@@ -196,6 +198,7 @@
 				<0x15182210 0x8>;
 			reg-names = "base", "status-reg";
 			qcom,stream-id-range = <0x800 0x400>;
+			interrupts = <GIC_SPI 400 IRQ_TYPE_LEVEL_HIGH>;
 			qcom,regulator-names = "vdd";
 			vdd-supply = <&hlos1_vote_mmnoc_mmu_tbu_hf0_gdsc>;
 			qcom,msm-bus,name = "mnoc_hf_0_tbu";
@@ -217,6 +220,7 @@
 				<0x15182218 0x8>;
 			reg-names = "base", "status-reg";
 			qcom,stream-id-range = <0xc00 0x400>;
+			interrupts = <GIC_SPI 591 IRQ_TYPE_LEVEL_HIGH>;
 			qcom,regulator-names = "vdd";
 			vdd-supply = <&hlos1_vote_mmnoc_mmu_tbu_sf_gdsc>;
 			qcom,msm-bus,name = "mnoc_sf_0_tbu";
@@ -238,6 +242,7 @@
 				<0x15182220 0x8>;
 			reg-names = "base", "status-reg";
 			qcom,stream-id-range = <0x1000 0x400>;
+			interrupts = <GIC_SPI 592 IRQ_TYPE_LEVEL_HIGH>;
 			qcom,msm-bus,name = "apps_smmu";
 			qcom,msm-bus,num-cases = <2>;
 			qcom,msm-bus,active-only;
@@ -257,6 +262,7 @@
 				<0x15182228 0x8>;
 			reg-names = "base", "status-reg";
 			qcom,stream-id-range = <0x1400 0x400>;
+			interrupts = <GIC_SPI 593 IRQ_TYPE_LEVEL_HIGH>;
 			qcom,msm-bus,name = "apps_smmu";
 			qcom,msm-bus,num-cases = <2>;
 			qcom,msm-bus,active-only;
@@ -276,6 +282,7 @@
 				<0x15182230 0x8>;
 			reg-names = "base", "status-reg";
 			qcom,stream-id-range = <0x1800 0x400>;
+			interrupts = <GIC_SPI 594 IRQ_TYPE_LEVEL_HIGH>;
 			qcom,msm-bus,name = "apps_smmu";
 			qcom,msm-bus,num-cases = <2>;
 			qcom,msm-bus,active-only;
