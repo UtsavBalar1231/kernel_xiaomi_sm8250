@@ -96,3 +96,29 @@
 		};
 	};
 };
+
+&pcie2 {
+	qcom,boot-option = <0x0>;
+};
+
+&mhi_0 {
+	reg = <0x100 0x0 0x0 0x0 0x0>;
+};
+
+&pcie2_rp {
+	#address-cells = <5>;
+	#size-cells = <0>;
+
+	nvme: nvme {
+		reg = <0 0 0 0 0>;
+		qcom,iommu-group = <&nvme_pci_iommu_group>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		nvme_pci_iommu_group: nvme_pci_iommu_group {
+			qcom,iommu-dma-addr-pool = <0x20000000 0x40000000>;
+			qcom,iommu-dma = "fastmap";
+		};
+	};
+};
