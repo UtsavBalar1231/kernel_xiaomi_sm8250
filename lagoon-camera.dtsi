@@ -81,6 +81,8 @@
 		msm_cam_smmu_icp {
 			compatible = "qcom,msm-cam-smmu-cb";
 			iommus = <&apps_smmu 0xCA2 0x0>,
+				<&apps_smmu 0xC40 0x20>,
+				<&apps_smmu 0xC60 0x20>,
 				<&apps_smmu 0xCC0 0x20>,
 				<&apps_smmu 0xCE0 0x20>;
 			label = "icp";
