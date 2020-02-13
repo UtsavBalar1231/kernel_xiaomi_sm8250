@@ -136,6 +136,11 @@ struct msm_gem_object {
 
 	struct msm_gem_address_space *aspace;
 	bool in_active_list;
+
+	/* Indicates whether object  needs to request for
+	 * new pagetables due to cb switch
+	 */
+	bool obj_dirty;
 };
 #define to_msm_bo(x) container_of(x, struct msm_gem_object, base)
 
