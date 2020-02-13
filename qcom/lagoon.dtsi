@@ -2514,10 +2514,10 @@
 		qcom,msm-bus,num-paths = <1>;
 		qcom,msm-bus,vectors-KBps =
 				<MSM_BUS_MASTER_AMPSS_M0
-				 MSM_BUS_SLAVE_UFS_MEM_CFG 0 0>,
+				 MSM_BUS_SLAVE_SDCC_1 0 0>,
 				 /* No vote */
 				<MSM_BUS_MASTER_AMPSS_M0
-				 MSM_BUS_SLAVE_UFS_MEM_CFG 1000 0>;
+				 MSM_BUS_SLAVE_SDCC_1 1000 0>;
 				 /* Max. bandwidth */
 		qcom,bus-vector-names = "MIN",
 					"MAX";
