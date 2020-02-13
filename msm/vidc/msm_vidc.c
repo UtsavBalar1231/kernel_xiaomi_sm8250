@@ -881,15 +881,7 @@ static inline int start_streaming(struct msm_vidc_inst *inst)
 		}
 	}
 
-	/*
-	 * if batching enabled previously then you may chose
-	 * to disable it based on recent configuration changes.
-	 * if batching already disabled do not enable it again
-	 * as sufficient extra buffers (required for batch mode
-	 * on both ports) may not have been updated to client.
-	 */
-	if (inst->batch.enable)
-		inst->batch.enable = is_batching_allowed(inst);
+	inst->batch.enable = is_batching_allowed(inst);
 	s_vpr_hp(inst->sid, "%s: batching %s for inst %pK\n",
 		__func__, inst->batch.enable ? "enabled" : "disabled", inst);
 
