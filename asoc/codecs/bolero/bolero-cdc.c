@@ -654,7 +654,7 @@ int bolero_register_macro(struct device *dev, u16 macro_id,
 	priv->num_macros_registered++;
 	priv->macros_supported[macro_id] = true;
 
-	dev_dbg(dev, "%s: register macro successful:%d\n", macro_id);
+	dev_dbg(dev, "%s: register macro successful:%d\n", __func__, macro_id);
 
 	if (priv->num_macros_registered == priv->num_macros) {
 		ret = bolero_copy_dais_from_macro(priv);

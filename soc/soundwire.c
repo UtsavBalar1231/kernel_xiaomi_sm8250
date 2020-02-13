@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/kernel.h>
@@ -126,7 +126,7 @@ struct swr_device *swr_new_device(struct swr_master *master,
 	list_add_tail(&swr->dev_list, &master->devices);
 	mutex_unlock(&master->mlock);
 
-	dev_set_name(&swr->dev, "%s.%lx", swr->name, swr->addr);
+	dev_set_name(&swr->dev, "%s.%llx", swr->name, swr->addr);
 	result = device_register(&swr->dev);
 	if (result) {
 		dev_err(&master->dev, "device [%s] register failed err %d\n",
@@ -138,7 +138,7 @@ struct swr_device *swr_new_device(struct swr_master *master,
 	return swr;
 
 err_out:
-	dev_dbg(&master->dev, "Failed to register swr device %s at 0x%lx %d\n",
+	dev_dbg(&master->dev, "Failed to register swr device %s at 0x%llx %d\n",
 		swr->name, swr->addr, result);
 	swr_master_put(master);
 	kfree(swr);

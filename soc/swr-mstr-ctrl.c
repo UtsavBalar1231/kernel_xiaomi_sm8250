@@ -2211,7 +2211,7 @@ static int swrm_get_logical_dev_num(struct swr_master *mstr, u64 dev_id,
 						ret = 0;
 					}
 					dev_dbg(swrm->dev,
-						"%s: devnum %d is assigned for dev addr %lx\n",
+						"%s: devnum %d is assigned for dev addr %llx\n",
 						__func__, i, swr_dev->addr);
 				}
 			}
