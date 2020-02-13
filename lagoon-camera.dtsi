@@ -748,8 +748,8 @@
 			"turbo", "turbo";
 		client-id-based;
 		client-names =
-			"csiphy0", "csiphy1", "csiphy2", "cci0",
-			"csid0", "csid1", "csid2", "csid3",
+			"csiphy0", "csiphy1", "csiphy2",  "csiphy3", "cci0",
+			"cci1", "csid0", "csid1", "csid2", "csid3",
 			"ife0", "ife1", "ife2", "ife3", "ipe0",
 			"cam-cdm-intf0", "cpas-cdm0", "bps0",
 			"icp0", "jpeg-dma0", "jpeg-enc0", "lrmecpas0";
