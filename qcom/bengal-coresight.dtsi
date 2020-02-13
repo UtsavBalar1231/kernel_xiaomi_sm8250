@@ -113,6 +113,20 @@
 		};
 	};
 
+	modem_rfxe: modem_rfxe {
+		compatible = "qcom,coresight-dummy";
+
+		coresight-name = "coresight-modem-rfxe";
+		qcom,dummy-source;
+
+		port {
+			modem_rxfe_out_funnel_in1: endpoint {
+				remote-endpoint =
+				<&funnel_in1_in_modem_rxfe>;
+			};
+		};
+	};
+
 	audio_etm0: audio_etm0 {
 		compatible = "qcom,coresight-remote-etm";
 		coresight-name = "coresight-audio-etm0";
@@ -1162,6 +1176,15 @@
 			};
 
 			port@2 {
+				reg = <2>;
+				funnel_in1_in_modem_rxfe: endpoint {
+					slave-mode;
+					remote-endpoint =
+					<&modem_rxfe_out_funnel_in1>;
+				};
+			};
+
+			port@3 {
 				reg = <3>;
 				funnel_in1_in_tpdm_wcss_silver: endpoint {
 					slave-mode;
@@ -1170,7 +1193,7 @@
 				};
 			};
 
-			port@3 {
+			port@4 {
 				reg = <4>;
 				funnel_in1_in_modem_etm0: endpoint {
 					slave-mode;
@@ -1179,7 +1202,7 @@
 				};
 			};
 
-			port@4 {
+			port@5 {
 				reg = <6>;
 				funnel_in1_in_funnel_apss1: endpoint {
 					slave-mode;
