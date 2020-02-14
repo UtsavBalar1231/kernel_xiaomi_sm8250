@@ -69,9 +69,12 @@
 #define MAX_DOWNSCALE_RATIO		4
 #define SSPP_UNITY_SCALE		1
 
-#define MAX_DOWNSCALE_RATIO_INLINE_ROT_RT_NUMERATOR	11
-#define MAX_DOWNSCALE_RATIO_INLINE_ROT_RT_DENOMINATOR	5
-#define MAX_DOWNSCALE_RATIO_INLINE_ROT_NRT_DEFAULT	4
+#define MAX_DOWNSCALE_RATIO_INROT_NOPD_RT_NUMERATOR	11
+#define MAX_DOWNSCALE_RATIO_INROT_NOPD_RT_DENOMINATOR	5
+#define MAX_DOWNSCALE_RATIO_INROT_PD_RT_NUMERATOR	4
+#define MAX_DOWNSCALE_RATIO_INROT_PD_RT_DENOMINATOR	1
+#define MAX_DOWNSCALE_RATIO_INROT_NRT_DEFAULT		4
+
 #define MAX_PRE_ROT_HEIGHT_INLINE_ROT_DEFAULT	1088
 
 #define MAX_HORZ_DECIMATION		4
@@ -1187,24 +1190,33 @@ static void _sde_sspp_setup_vig(struct sde_mdss_cfg *sde_cfg,
 
 	sblk->format_list = sde_cfg->vig_formats;
 	sblk->virt_format_list = sde_cfg->virt_vig_formats;
-	if (IS_SDE_INLINE_ROT_REV_100(sde_cfg->true_inline_rot_rev)) {
-		set_bit(SDE_SSPP_TRUE_INLINE_ROT_V1, &sspp->features);
+	if (sde_cfg->true_inline_rot_rev > 0) {
+		set_bit(SDE_SSPP_TRUE_INLINE_ROT, &sspp->features);
 		sblk->in_rot_format_list = sde_cfg->inline_rot_formats;
-		sblk->in_rot_maxdwnscale_rt_num =
-			sde_cfg->true_inline_dwnscale_rt_num;
-		sblk->in_rot_maxdwnscale_rt_denom =
-			sde_cfg->true_inline_dwnscale_rt_denom;
-		sblk->in_rot_maxdwnscale_nrt =
-			sde_cfg->true_inline_dwnscale_nrt;
 		sblk->in_rot_maxheight = sde_cfg->inline_linewidth ?
 				sde_cfg->inline_linewidth :
 			MAX_PRE_ROT_HEIGHT_INLINE_ROT_DEFAULT;
-		sblk->in_rot_prefill_fudge_lines =
-			sde_cfg->true_inline_prefill_fudge_lines;
-		sblk->in_rot_prefill_lines_nv12 =
-			sde_cfg->true_inline_prefill_lines_nv12;
-		sblk->in_rot_prefill_lines =
-			sde_cfg->true_inline_prefill_lines;
+	}
+
+	if (IS_SDE_INLINE_ROT_REV_200(sde_cfg->true_inline_rot_rev)) {
+		set_bit(SDE_SSPP_PREDOWNSCALE, &sspp->features);
+		sblk->in_rot_maxdwnscale_rt_num =
+			MAX_DOWNSCALE_RATIO_INROT_PD_RT_NUMERATOR;
+		sblk->in_rot_maxdwnscale_rt_denom =
+			MAX_DOWNSCALE_RATIO_INROT_PD_RT_DENOMINATOR;
+		sblk->in_rot_maxdwnscale_nrt =
+			MAX_DOWNSCALE_RATIO_INROT_NRT_DEFAULT;
+		sblk->in_rot_minpredwnscale_num =
+			MAX_DOWNSCALE_RATIO_INROT_NOPD_RT_NUMERATOR;
+		sblk->in_rot_minpredwnscale_denom =
+			MAX_DOWNSCALE_RATIO_INROT_NOPD_RT_DENOMINATOR;
+	} else if (IS_SDE_INLINE_ROT_REV_100(sde_cfg->true_inline_rot_rev)) {
+		sblk->in_rot_maxdwnscale_rt_num =
+			MAX_DOWNSCALE_RATIO_INROT_NOPD_RT_NUMERATOR;
+		sblk->in_rot_maxdwnscale_rt_denom =
+			MAX_DOWNSCALE_RATIO_INROT_NOPD_RT_DENOMINATOR;
+		sblk->in_rot_maxdwnscale_nrt =
+			MAX_DOWNSCALE_RATIO_INROT_NRT_DEFAULT;
 	}
 
 	if (sde_cfg->sc_cfg.has_sys_cache) {
@@ -2227,8 +2239,7 @@ static int sde_rot_parse_dt(struct device_node *np,
 	if (rc) {
 		/*
 		 * This is not a fatal error, system cache can be disabled
-		 * in device tree, anyways recommendation is to have it
-		 * enabled, so print an error but don't fail
+		 * in device tree.
 		 */
 		SDE_DEBUG("sys cache will be disabled rc:%d\n", rc);
 		rc = 0;
@@ -4242,15 +4253,6 @@ static int _sde_hardware_pre_caps(struct sde_mdss_cfg *sde_cfg, uint32_t hw_rev)
 		set_bit(SDE_MDP_DHDR_MEMPOOL, &sde_cfg->mdp[0].features);
 		sde_cfg->has_vig_p010 = true;
 		sde_cfg->true_inline_rot_rev = SDE_INLINE_ROT_VERSION_1_0_0;
-		sde_cfg->true_inline_dwnscale_rt_num =
-			MAX_DOWNSCALE_RATIO_INLINE_ROT_RT_NUMERATOR;
-		sde_cfg->true_inline_dwnscale_rt_denom =
-			MAX_DOWNSCALE_RATIO_INLINE_ROT_RT_DENOMINATOR;
-		sde_cfg->true_inline_dwnscale_nrt =
-			MAX_DOWNSCALE_RATIO_INLINE_ROT_NRT_DEFAULT;
-		sde_cfg->true_inline_prefill_fudge_lines = 2;
-		sde_cfg->true_inline_prefill_lines_nv12 = 32;
-		sde_cfg->true_inline_prefill_lines = 48;
 		sde_cfg->uidle_cfg.uidle_rev = SDE_UIDLE_VERSION_1_0_0;
 	} else if (IS_SAIPAN_TARGET(hw_rev)) {
 		sde_cfg->has_cwb_support = true;
@@ -4274,15 +4276,6 @@ static int _sde_hardware_pre_caps(struct sde_mdss_cfg *sde_cfg, uint32_t hw_rev)
 		set_bit(SDE_MDP_DHDR_MEMPOOL, &sde_cfg->mdp[0].features);
 		sde_cfg->has_vig_p010 = true;
 		sde_cfg->true_inline_rot_rev = SDE_INLINE_ROT_VERSION_1_0_0;
-		sde_cfg->true_inline_dwnscale_rt_num =
-			MAX_DOWNSCALE_RATIO_INLINE_ROT_RT_NUMERATOR;
-		sde_cfg->true_inline_dwnscale_rt_denom =
-			MAX_DOWNSCALE_RATIO_INLINE_ROT_RT_DENOMINATOR;
-		sde_cfg->true_inline_dwnscale_nrt =
-			MAX_DOWNSCALE_RATIO_INLINE_ROT_NRT_DEFAULT;
-		sde_cfg->true_inline_prefill_fudge_lines = 2;
-		sde_cfg->true_inline_prefill_lines_nv12 = 32;
-		sde_cfg->true_inline_prefill_lines = 48;
 		sde_cfg->update_tcsr_disp_glitch = true;
 	} else if (IS_SDMTRINKET_TARGET(hw_rev)) {
 		sde_cfg->has_cwb_support = true;
