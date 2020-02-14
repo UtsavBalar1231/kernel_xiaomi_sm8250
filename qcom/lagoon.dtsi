@@ -953,7 +953,7 @@
 		qcom,tcs-config = <ACTIVE_TCS  0>,
 				  <SLEEP_TCS   1>,
 				  <WAKE_TCS    1>,
-				  <CONTROL_TCS 1>;
+				  <CONTROL_TCS 0>;
 
 		msm_bus_disp_rsc {
 			compatible = "qcom,msm-bus-rsc";
