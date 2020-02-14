@@ -21,6 +21,8 @@
 #include <media/cam_req_mgr.h>
 #include "cam_smmu_api.h"
 #include "cam_debug_util.h"
+#include "cam_trace.h"
+#include "cam_common_util.h"
 
 #define SHARED_MEM_POOL_GRANULARITY 16
 
@@ -171,6 +173,7 @@ struct cam_iommu_cb_set {
 	u32 non_fatal_fault;
 	struct dentry *dentry;
 	bool cb_dump_enable;
+	bool map_profile_enable;
 };
 
 static const struct of_device_id msm_cam_smmu_dt_match[] = {
@@ -1806,6 +1809,8 @@ static int cam_smmu_map_buffer_validate(struct dma_buf *buf,
 	size_t size = 0;
 	uint32_t iova = 0;
 	int rc = 0;
+	struct timespec64 ts1, ts2;
+	long microsec = 0;
 
 	if (IS_ERR_OR_NULL(buf)) {
 		rc = PTR_ERR(buf);
@@ -1819,6 +1824,9 @@ static int cam_smmu_map_buffer_validate(struct dma_buf *buf,
 		CAM_ERR(CAM_SMMU, "Error: mapping_info is invalid");
 		goto err_out;
 	}
+
+	if (iommu_cb_set.map_profile_enable)
+		CAM_GET_TIMESTAMP(ts1);
 
 	attach = dma_buf_attach(buf, iommu_cb_set.cb_info[idx].dev);
 	if (IS_ERR_OR_NULL(attach)) {
@@ -1879,7 +1887,9 @@ static int cam_smmu_map_buffer_validate(struct dma_buf *buf,
 		table = dma_buf_map_attachment(attach, dma_dir);
 		if (IS_ERR_OR_NULL(table)) {
 			rc = PTR_ERR(table);
-			CAM_ERR(CAM_SMMU, "Error: dma map attachment failed");
+			CAM_ERR(CAM_SMMU,
+				"Error: dma map attachment failed, size=%zu",
+				buf->size);
 			goto err_detach;
 		}
 
@@ -1895,6 +1905,13 @@ static int cam_smmu_map_buffer_validate(struct dma_buf *buf,
 	CAM_DBG(CAM_SMMU,
 		"iova=%pK, region_id=%d, paddr=%pK, len=%d, dma_map_attrs=%d",
 		iova, region_id, *paddr_ptr, *len_ptr, attach->dma_map_attrs);
+
+	if (iommu_cb_set.map_profile_enable) {
+		CAM_GET_TIMESTAMP(ts2);
+		CAM_GET_TIMESTAMP_DIFF_IN_MICRO(ts1, ts2, microsec);
+		trace_cam_log_event("SMMUMapProfile", "size and time in micro",
+			*len_ptr, microsec);
+	}
 
 	if (table->sgl) {
 		CAM_DBG(CAM_SMMU,
@@ -2028,6 +2045,8 @@ static int cam_smmu_unmap_buf_and_remove_from_list(
 	int rc;
 	size_t size;
 	struct iommu_domain *domain;
+	struct timespec64 ts1, ts2;
+	long microsec = 0;
 
 	if ((!mapping_info->buf) || (!mapping_info->table) ||
 		(!mapping_info->attach)) {
@@ -2048,6 +2067,9 @@ static int cam_smmu_unmap_buf_and_remove_from_list(
 		"region_id=%d, paddr=%pK, len=%d, dma_map_attrs=%d",
 		mapping_info->region_id, mapping_info->paddr, mapping_info->len,
 		mapping_info->attach->dma_map_attrs);
+
+	if (iommu_cb_set.map_profile_enable)
+		CAM_GET_TIMESTAMP(ts1);
 
 	if (mapping_info->region_id == CAM_SMMU_REGION_SHARED) {
 		CAM_DBG(CAM_SMMU,
@@ -2084,6 +2106,13 @@ static int cam_smmu_unmap_buf_and_remove_from_list(
 		mapping_info->table, mapping_info->dir);
 	dma_buf_detach(mapping_info->buf, mapping_info->attach);
 	dma_buf_put(mapping_info->buf);
+
+	if (iommu_cb_set.map_profile_enable) {
+		CAM_GET_TIMESTAMP(ts2);
+		CAM_GET_TIMESTAMP_DIFF_IN_MICRO(ts1, ts2, microsec);
+		trace_cam_log_event("SMMUUnmapProfile",
+			"size and time in micro", mapping_info->len, microsec);
+	}
 
 	mapping_info->buf = NULL;
 
@@ -3816,6 +3845,15 @@ static int cam_smmu_create_debug_fs(void)
 		&iommu_cb_set.cb_dump_enable)) {
 		CAM_ERR(CAM_SMMU,
 			"failed to create dump_enable_debug");
+		goto err;
+	}
+
+	if (!debugfs_create_bool("map_profile_enable",
+		0644,
+		iommu_cb_set.dentry,
+		&iommu_cb_set.map_profile_enable)) {
+		CAM_ERR(CAM_SMMU,
+			"failed to create map_profile_enable");
 		goto err;
 	}
 
