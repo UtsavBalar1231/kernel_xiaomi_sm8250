@@ -2858,6 +2858,8 @@
 };
 
 &pm7250b_charger {
+	dpdm-supply = <&qusb_phy0>;
+
 	smb5_vbus: qcom,smb5-vbus {
 		regulator-name = "smb5-vbus";
 	};
@@ -3070,3 +3072,16 @@
 	};
 };
 
+&pm7250b_pdphy {
+	vdd-pdphy-supply = <&L3A>;
+	vbus-supply = <&smb5_vbus>;
+	vconn-supply = <&smb5_vconn>;
+};
+
+&usb0 {
+	extcon = <&pm7250b_pdphy>, <&pm7250b_charger>;
+};
+
+&usb_qmp_dp_phy {
+	extcon = <&pm7250b_pdphy>;
+};
