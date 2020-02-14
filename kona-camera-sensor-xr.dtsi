@@ -1,21 +1,36 @@
 #include <dt-bindings/clock/qcom,camcc-kona.h>
 
 &soc {
-	led_flash_rear: qcom,camera-flash0 {
+	led_flash_rear: qcom,camera-flash@0 {
 		cell-index = <0>;
 		compatible = "qcom,camera-flash";
 		flash-source = <&pm8150l_flash0 &pm8150l_flash1>;
 		torch-source = <&pm8150l_torch0 &pm8150l_torch1>;
 		switch-source = <&pm8150l_switch2>;
-		status = "ok";
+		status = "disabled";
 	};
 
-	led_flash_rear_aux: qcom,camera-flash1 {
+	led_flash_rear_aux: qcom,camera-flash@1 {
 		cell-index = <1>;
 		compatible = "qcom,camera-flash";
 		flash-source = <&pm8150l_flash0 &pm8150l_flash1>;
 		torch-source = <&pm8150l_torch0 &pm8150l_torch1>;
 		switch-source = <&pm8150l_switch2>;
+		status = "disabled";
+	};
+
+	led_flash_eye_track: qcom,camera-flash@2 {
+		cell-index = <2>;
+		compatible = "qcom,camera-flash";
+		gpios = <&tlmm 22 0>,
+				<&tlmm 23 0>,
+				<&tlmm 24 0>;
+		gpio-req-tbl-num = <0 1 2>;
+		gpio-req-tbl-flags = <0 0 0>;
+		gpio-req-tbl-label = "TCKING_LED_1V2_EN",
+							"TCKING_LED_3V3_EN",
+							"TCKING_LED_EN";
+		gpio-req-tbl-delay = <20 20 20>;
 		status = "ok";
 	};
 
@@ -25,7 +40,7 @@
 		flash-source = <&pm8150l_flash0 &pm8150l_flash1>;
 		torch-source = <&pm8150l_torch0 &pm8150l_torch1>;
 		switch-source = <&pm8150l_switch2>;
-		status = "ok";
+		status = "disabled";
 	};
 
 	led_flash_triple_rear_aux: qcom,camera-flash@5 {
@@ -34,7 +49,7 @@
 		flash-source = <&pm8150l_flash0 &pm8150l_flash1>;
 		torch-source = <&pm8150l_torch0 &pm8150l_torch1>;
 		switch-source = <&pm8150l_switch2>;
-		status = "ok";
+		status = "disabled";
 	};
 
 	led_flash_triple_rear_aux2: qcom,camera-flash@6 {
@@ -43,7 +58,7 @@
 		flash-source = <&pm8150l_flash0 &pm8150l_flash1>;
 		torch-source = <&pm8150l_torch0 &pm8150l_torch1>;
 		switch-source = <&pm8150l_switch2>;
-		status = "ok";
+		status = "disabled";
 	};
 
 	qcom,cam-res-mgr {
@@ -266,6 +281,7 @@
 		clock-cntl-level = "turbo";
 		clock-rates = <24000000>;
 	};
+
 	/* RGB Left (Master) */
 	qcom,cam-sensor2 {
 		cell-index = <2>;
@@ -317,6 +333,7 @@
 		clock-cntl-level = "turbo";
 		clock-rates = <24000000>;
 	};
+
 	/* RGB Right (Slave) */
 	qcom,cam-sensor3 {
 		cell-index = <3>;
@@ -367,6 +384,7 @@
 		clock-cntl-level = "turbo";
 		clock-rates = <24000000>;
 	};
+
 	/* 6DOF Left (Slave) */
 	qcom,cam-sensor4 {
 		cell-index = <4>;
@@ -417,7 +435,8 @@
 		clock-cntl-level = "turbo";
 		clock-rates = <24000000>;
 	};
-      /* 6DOF Right (Master) */
+
+	/* 6DOF Right (Master) */
 	qcom,cam-sensor5 {
 		cell-index = <5>;
 		compatible = "qcom,cam-sensor";
@@ -649,6 +668,7 @@
 		sensor-position-roll = <90>;
 		sensor-position-pitch = <0>;
 		sensor-position-yaw = <180>;
+		led-flash-src = <&led_flash_eye_track>;
 		cam_vio-supply = <&pm8009_l7>;
 		cam_bob-supply = <&pm8150a_bob>;
 		cam_vana-supply = <&pm8009_l6>;
