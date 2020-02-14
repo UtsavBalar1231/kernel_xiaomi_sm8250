@@ -1724,12 +1724,22 @@
 		#freq-domain-cells = <2>;
 	};
 
+	qcom,cpufreq-hw-debug@18320000 {
+		compatible = "qcom,cpufreq-hw-debug-trace";
+		reg = <0x18320000 0x800>;
+		reg-names = "domain-top";
+		qcom,freq-hw-domain = <&cpufreq_hw 0>, <&cpufreq_hw 1>,
+					<&cpufreq_hw 2>;
+	};
+
 	qcom,devfreq-l3 {
 		compatible = "qcom,devfreq-fw";
-		reg = <0x18321000 0x4>, <0x18321110 0x500>, <0x18321920 0x4>;
-		reg-names = "en-base", "ftbl-base", "perf-base";
+		reg = <0x18321000 0x4>, <0x18321110 0x500>, <0x18321920 0x4>,
+			<0x18321700 0x4>;
+		reg-names = "en-base", "ftbl-base", "perf-base", "pstate-base";
 
 		qcom,ftbl-row-size = <32>;
+		qcom,support-panic-notifier;
 
 		cpu0_l3: qcom,cpu0-cpu-l3-lat {
 			compatible = "qcom,devfreq-fw-voter";
