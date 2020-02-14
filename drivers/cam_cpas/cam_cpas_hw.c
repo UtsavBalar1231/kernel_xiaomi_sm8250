@@ -642,6 +642,7 @@ static int cam_cpas_update_axi_vote_bw(
 	struct cam_cpas *cpas_core = (struct cam_cpas *) cpas_hw->core_info;
 	struct cam_cpas_private_soc *soc_private =
 		(struct cam_cpas_private_soc *) cpas_hw->soc_info.soc_private;
+	int idx;
 
 	if (cpas_tree_node->axi_port_idx >= CAM_CPAS_MAX_AXI_PORTS) {
 		CAM_ERR(CAM_CPAS, "Invalid axi_port_idx: %d",
@@ -658,9 +659,15 @@ static int cam_cpas_update_axi_vote_bw(
 	if (soc_private->control_camnoc_axi_clk)
 		return 0;
 
-	cpas_core->camnoc_axi_port[cpas_tree_node->axi_port_idx].camnoc_bw =
-		cpas_tree_node->camnoc_bw;
-	camnoc_axi_port_updated[cpas_tree_node->camnoc_axi_port_idx] = true;
+	if (cpas_tree_node->camnoc_axi_port_idx >= CAM_CPAS_MAX_AXI_PORTS) {
+		CAM_ERR(CAM_CPAS, "Invalid camnoc_axi_port_idx: %d",
+			cpas_tree_node->camnoc_axi_port_idx);
+		return -EINVAL;
+	}
+
+	idx = cpas_tree_node->camnoc_axi_port_idx;
+	cpas_core->camnoc_axi_port[idx].camnoc_bw = cpas_tree_node->camnoc_bw;
+	camnoc_axi_port_updated[idx] = true;
 	return 0;
 }
 
