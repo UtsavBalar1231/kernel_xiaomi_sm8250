@@ -1,4 +1,4 @@
-#include <dt-bindings/clock/qcom,camcc-lito.h>
+#include <dt-bindings/clock/qcom,camcc-lagoon.h>
 
 &soc {
 	led_flash_triple_rear: qcom,camera-flash@4 {
