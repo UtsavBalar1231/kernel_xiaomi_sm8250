@@ -73,6 +73,22 @@ struct hal_wbm_err_desc_info {
 };
 
 /**
+ * struct hal_rx_msdu_metadata:Structure to hold rx fast path information.
+ *
+ * @l3_hdr_pad:	l3 header padding
+ * @reserved:	Reserved bits
+ * @sa_sw_peer_id: sa sw peer id
+ * @sa_idx: sa index
+ * @da_idx: da index
+ */
+struct hal_rx_msdu_metadata {
+	uint32_t l3_hdr_pad:16,
+		 sa_sw_peer_id:16;
+	uint32_t sa_idx:16,
+		 da_idx:16;
+};
+
+/**
  * enum hal_reo_error_code: Enum which encapsulates "reo_push_reason"
  *
  * @ HAL_REO_ERROR_DETECTED: Packets arrived because of an error detected
@@ -979,6 +995,14 @@ hal_rx_mpdu_peer_meta_data_set(uint8_t *buf, uint32_t peer_mdata)
 		RX_MSDU_START_2_TCP_PROTO_MASK, \
 		RX_MSDU_START_2_TCP_PROTO_LSB))
 
+#define HAL_RX_TLV_GET_UDP_PROTO(buf) \
+	(_HAL_MS( \
+		 (*_OFFSET_TO_WORD_PTR(&(((struct rx_pkt_tlvs *)(buf))->\
+			 msdu_start_tlv.rx_msdu_start), \
+			 RX_MSDU_START_2_UDP_PROTO_OFFSET)), \
+		RX_MSDU_START_2_UDP_PROTO_MASK, \
+		RX_MSDU_START_2_UDP_PROTO_LSB))
+
 #define HAL_RX_TLV_GET_IPV6(buf) \
 	(_HAL_MS( \
 		 (*_OFFSET_TO_WORD_PTR(&(((struct rx_pkt_tlvs *)(buf))->\
@@ -1168,6 +1192,7 @@ hal_rx_msdu_start_toeplitz_get(uint8_t *buf)
  * @ HAL_MPDU_SW_FRAME_GROUP_MGMT_PROBE_REQ: probe req frame
  * @ HAL_MPDU_SW_FRAME_GROUP_CTRL: control frame
  * @ HAL_MPDU_SW_FRAME_GROUP_CTRL_BAR: BAR frame
+ * @ HAL_MPDU_SW_FRAME_GROUP_CTRL_RTS: RTS frame
  * @ HAL_MPDU_SW_FRAME_GROUP_UNSUPPORTED: unsupported
  * @ HAL_MPDU_SW_FRAME_GROUP_MAX: max limit
  */
@@ -1181,6 +1206,7 @@ enum hal_rx_mpdu_info_sw_frame_group_id_type {
 	HAL_MPDU_SW_FRAME_GROUP_MGMT_BEACON = 12,
 	HAL_MPDU_SW_FRAME_GROUP_CTRL = 20,
 	HAL_MPDU_SW_FRAME_GROUP_CTRL_BAR = 28,
+	HAL_MPDU_SW_FRAME_GROUP_CTRL_RTS = 31,
 	HAL_MPDU_SW_FRAME_GROUP_UNSUPPORTED = 36,
 	HAL_MPDU_SW_FRAME_GROUP_MAX = 37,
 };
@@ -3424,5 +3450,170 @@ hal_rx_get_rtt_info(hal_soc_handle_t hal_soc_hdl,
 
 	if (hal_soc->ops->hal_rx_get_rtt_info)
 		hal_soc->ops->hal_rx_get_rtt_info(rx_tlv, ppdu_info);
+}
+
+/**
+ * hal_rx_msdu_metadata_get(): API to get the
+ * fast path information from rx_msdu_end TLV
+ *
+ * @ hal_soc_hdl: DP soc handle
+ * @ buf: pointer to the start of RX PKT TLV headers
+ * @ msdu_metadata: Structure to hold msdu end information
+ * Return: none
+ */
+static inline void
+hal_rx_msdu_metadata_get(hal_soc_handle_t hal_soc_hdl, uint8_t *buf,
+			 struct hal_rx_msdu_metadata *msdu_md)
+{
+	struct hal_soc *hal_soc = (struct hal_soc *)hal_soc_hdl;
+
+	return hal_soc->ops->hal_rx_msdu_packet_metadata_get(buf, msdu_md);
+}
+
+/**
+ * hal_rx_get_fisa_cumulative_l4_checksum: API to get cumulative_l4_checksum
+ * from rx_msdu_end TLV
+ * @buf: pointer to the start of RX PKT TLV headers
+ *
+ * Return: cumulative_l4_checksum
+ */
+static inline uint16_t
+hal_rx_get_fisa_cumulative_l4_checksum(hal_soc_handle_t hal_soc_hdl,
+				       uint8_t *buf)
+{
+	struct hal_soc *hal_soc = (struct hal_soc *)hal_soc_hdl;
+
+	if (!hal_soc || !hal_soc->ops) {
+		hal_err("hal handle is NULL");
+		QDF_BUG(0);
+		return 0;
+	}
+
+	if (!hal_soc->ops->hal_rx_get_fisa_cumulative_l4_checksum)
+		return 0;
+
+	return hal_soc->ops->hal_rx_get_fisa_cumulative_l4_checksum(buf);
+}
+
+/**
+ * hal_rx_get_fisa_cumulative_ip_length: API to get cumulative_ip_length
+ * from rx_msdu_end TLV
+ * @buf: pointer to the start of RX PKT TLV headers
+ *
+ * Return: cumulative_ip_length
+ */
+static inline uint16_t
+hal_rx_get_fisa_cumulative_ip_length(hal_soc_handle_t hal_soc_hdl,
+				     uint8_t *buf)
+{
+	struct hal_soc *hal_soc = (struct hal_soc *)hal_soc_hdl;
+
+	if (!hal_soc || !hal_soc->ops) {
+		hal_err("hal handle is NULL");
+		QDF_BUG(0);
+		return 0;
+	}
+
+	if (hal_soc->ops->hal_rx_get_fisa_cumulative_ip_length)
+		return hal_soc->ops->hal_rx_get_fisa_cumulative_ip_length(buf);
+
+	return 0;
+}
+
+/**
+ * hal_rx_get_udp_proto: API to get UDP proto field
+ * from rx_msdu_start TLV
+ * @buf: pointer to the start of RX PKT TLV headers
+ *
+ * Return: UDP proto field value
+ */
+static inline bool
+hal_rx_get_udp_proto(hal_soc_handle_t hal_soc_hdl, uint8_t *buf)
+{
+	struct hal_soc *hal_soc = (struct hal_soc *)hal_soc_hdl;
+
+	if (!hal_soc || !hal_soc->ops) {
+		hal_err("hal handle is NULL");
+		QDF_BUG(0);
+		return 0;
+	}
+
+	if (hal_soc->ops->hal_rx_get_udp_proto)
+		return hal_soc->ops->hal_rx_get_udp_proto(buf);
+
+	return 0;
+}
+
+/**
+ * hal_rx_get_fisa_flow_agg_continuation: API to get fisa flow_agg_continuation
+ * from rx_msdu_end TLV
+ * @buf: pointer to the start of RX PKT TLV headers
+ *
+ * Return: flow_agg_continuation bit field value
+ */
+static inline bool
+hal_rx_get_fisa_flow_agg_continuation(hal_soc_handle_t hal_soc_hdl,
+				      uint8_t *buf)
+{
+	struct hal_soc *hal_soc = (struct hal_soc *)hal_soc_hdl;
+
+	if (!hal_soc || !hal_soc->ops) {
+		hal_err("hal handle is NULL");
+		QDF_BUG(0);
+		return 0;
+	}
+
+	if (hal_soc->ops->hal_rx_get_fisa_flow_agg_continuation)
+		return hal_soc->ops->hal_rx_get_fisa_flow_agg_continuation(buf);
+
+	return 0;
+}
+
+/**
+ * hal_rx_get_fisa_flow_agg_count: API to get fisa flow_agg count from
+ * rx_msdu_end TLV
+ * @buf: pointer to the start of RX PKT TLV headers
+ *
+ * Return: flow_agg count value
+ */
+static inline uint8_t
+hal_rx_get_fisa_flow_agg_count(hal_soc_handle_t hal_soc_hdl,
+			       uint8_t *buf)
+{
+	struct hal_soc *hal_soc = (struct hal_soc *)hal_soc_hdl;
+
+	if (!hal_soc || !hal_soc->ops) {
+		hal_err("hal handle is NULL");
+		QDF_BUG(0);
+		return 0;
+	}
+
+	if (hal_soc->ops->hal_rx_get_fisa_flow_agg_count)
+		return hal_soc->ops->hal_rx_get_fisa_flow_agg_count(buf);
+
+	return 0;
+}
+
+/**
+ * hal_rx_get_fisa_timeout: API to get fisa time out from rx_msdu_end TLV
+ * @buf: pointer to the start of RX PKT TLV headers
+ *
+ * Return: fisa flow_agg timeout bit value
+ */
+static inline bool
+hal_rx_get_fisa_timeout(hal_soc_handle_t hal_soc_hdl, uint8_t *buf)
+{
+	struct hal_soc *hal_soc = (struct hal_soc *)hal_soc_hdl;
+
+	if (!hal_soc || !hal_soc->ops) {
+		hal_err("hal handle is NULL");
+		QDF_BUG(0);
+		return 0;
+	}
+
+	if (hal_soc->ops->hal_rx_get_fisa_timeout)
+		return hal_soc->ops->hal_rx_get_fisa_timeout(buf);
+
+	return 0;
 }
 #endif /* _HAL_RX_H */

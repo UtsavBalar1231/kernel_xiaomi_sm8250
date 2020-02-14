@@ -401,9 +401,9 @@ static bool
 dp_rx_intrabss_fwd(struct dp_soc *soc,
 			struct dp_peer *ta_peer,
 			uint8_t *rx_tlv_hdr,
-			qdf_nbuf_t nbuf)
+			qdf_nbuf_t nbuf,
+			struct hal_rx_msdu_metadata msdu_metadata)
 {
-	uint16_t da_idx;
 	uint16_t len;
 	uint8_t is_frag;
 	struct dp_peer *da_peer;
@@ -420,9 +420,8 @@ dp_rx_intrabss_fwd(struct dp_soc *soc,
 	 */
 
 	if ((qdf_nbuf_is_da_valid(nbuf) && !qdf_nbuf_is_da_mcbc(nbuf))) {
-		da_idx = hal_rx_msdu_end_da_idx_get(soc->hal_soc, rx_tlv_hdr);
 
-		ast_entry = soc->ast_table[da_idx];
+		ast_entry = soc->ast_table[msdu_metadata.da_idx];
 		if (!ast_entry)
 			return false;
 
@@ -1349,7 +1348,13 @@ void dp_rx_deliver_to_stack(struct dp_soc *soc,
 		vdev->osif_rsim_rx_decap(vdev->osif_vdev, &nbuf_head,
 				&nbuf_tail, peer->mac_addr.raw);
 	}
-	vdev->osif_rx(vdev->osif_vdev, nbuf_head);
+
+	/* Function pointer initialized only when FISA is enabled */
+	if (vdev->osif_fisa_rx)
+		/* on failure send it via regular path */
+		vdev->osif_fisa_rx(soc, vdev, nbuf_head);
+	else
+		vdev->osif_rx(vdev->osif_vdev, nbuf_head);
 }
 
 /**
@@ -1379,6 +1384,30 @@ static inline void dp_rx_cksum_offload(struct dp_pdev *pdev,
 	}
 }
 
+#ifdef VDEV_PEER_PROTOCOL_COUNT
+#define dp_rx_msdu_stats_update_prot_cnts(vdev_hdl, nbuf, peer) \
+{ \
+	qdf_nbuf_t nbuf_local; \
+	struct dp_peer *peer_local; \
+	struct dp_vdev *vdev_local = vdev_hdl; \
+	do { \
+		if (qdf_likely(!((vdev_local)->peer_protocol_count_track))) \
+			break; \
+		nbuf_local = nbuf; \
+		peer_local = peer; \
+		if (qdf_unlikely(qdf_nbuf_is_frag((nbuf_local)))) \
+			break; \
+		else if (qdf_unlikely(qdf_nbuf_is_raw_frame((nbuf_local)))) \
+			break; \
+		dp_vdev_peer_stats_update_protocol_cnt((vdev_local), \
+						       (nbuf_local), \
+						       (peer_local), 0, 1); \
+	} while (0); \
+}
+#else
+#define dp_rx_msdu_stats_update_prot_cnts(vdev_hdl, nbuf, peer)
+#endif
+
 /**
  * dp_rx_msdu_stats_update() - update per msdu stats.
  * @soc: core txrx main context
@@ -1404,6 +1433,7 @@ static void dp_rx_msdu_stats_update(struct dp_soc *soc,
 	qdf_ether_header_t *eh;
 	uint16_t msdu_len = QDF_NBUF_CB_RX_PKT_LEN(nbuf);
 
+	dp_rx_msdu_stats_update_prot_cnts(vdev, nbuf, peer);
 	is_not_amsdu = qdf_nbuf_is_rx_chfrag_start(nbuf) &
 			qdf_nbuf_is_rx_chfrag_end(nbuf);
 
@@ -1501,15 +1531,14 @@ static void dp_rx_msdu_stats_update(struct dp_soc *soc,
 
 static inline bool is_sa_da_idx_valid(struct dp_soc *soc,
 				      uint8_t *rx_tlv_hdr,
-				      qdf_nbuf_t nbuf)
+				      qdf_nbuf_t nbuf,
+				      struct hal_rx_msdu_metadata msdu_info)
 {
 	if ((qdf_nbuf_is_sa_valid(nbuf) &&
-	     (hal_rx_msdu_end_sa_idx_get(soc->hal_soc, rx_tlv_hdr) >
-		wlan_cfg_get_max_ast_idx(soc->wlan_cfg_ctx))) ||
+	    (msdu_info.sa_idx > wlan_cfg_get_max_ast_idx(soc->wlan_cfg_ctx))) ||
 	    (!qdf_nbuf_is_da_mcbc(nbuf) &&
 	     qdf_nbuf_is_da_valid(nbuf) &&
-	     (hal_rx_msdu_end_da_idx_get(soc->hal_soc, rx_tlv_hdr) >
-	      wlan_cfg_get_max_ast_idx(soc->wlan_cfg_ctx))))
+	     (msdu_info.da_idx > wlan_cfg_get_max_ast_idx(soc->wlan_cfg_ctx))))
 		return false;
 
 	return true;
@@ -1716,6 +1745,28 @@ uint32_t dp_rx_srng_get_num_pending(hal_soc_handle_t hal_soc,
 	return num_pending;
 }
 
+#ifdef WLAN_SUPPORT_RX_FISA
+/*
+ * dp_rx_skip_tlvs() - Skip TLVs only if FISA is not enabled
+ * @vdev: DP vdev context
+ * @nbuf: nbuf whose data pointer is adjusted
+ * @size: size to be adjusted
+ *
+ * Return: None
+ */
+static void dp_rx_skip_tlvs(struct dp_vdev *vdev, qdf_nbuf_t nbuf, int size)
+{
+	/* TLVs include FISA info do not skip them yet */
+	if (!vdev->osif_fisa_rx)
+		qdf_nbuf_pull_head(nbuf, size);
+}
+#else /* !WLAN_SUPPORT_RX_FISA */
+static void dp_rx_skip_tlvs(struct dp_vdev *vdev, qdf_nbuf_t nbuf, int size)
+{
+	qdf_nbuf_pull_head(nbuf, size);
+}
+#endif /* !WLAN_SUPPORT_RX_FISA */
+
 /**
  * dp_rx_process() - Brain of the Rx processing functionality
  *		     Called from the bottom half (tasklet/NET_RX_SOFTIRQ)
@@ -1741,7 +1792,6 @@ uint32_t dp_rx_process(struct dp_intr *int_ctx, hal_ring_handle_t hal_ring_hdl,
 	union dp_rx_desc_list_elem_t *tail[MAX_PDEV_CNT];
 	uint32_t num_pending;
 	uint32_t rx_bufs_used = 0, rx_buf_cookie;
-	uint32_t l2_hdr_offset = 0;
 	uint16_t msdu_len = 0;
 	uint16_t peer_id;
 	uint8_t vdev_id;
@@ -1774,6 +1824,7 @@ uint32_t dp_rx_process(struct dp_intr *int_ctx, hal_ring_handle_t hal_ring_hdl,
 	uint32_t num_entries_avail = 0;
 	uint32_t rx_ol_pkt_cnt = 0;
 	uint32_t num_entries = 0;
+	struct hal_rx_msdu_metadata msdu_metadata;
 
 	DP_HIST_INIT();
 
@@ -2119,6 +2170,7 @@ done:
 		 * This is the most likely case, we receive 802.3 pkts
 		 * decapsulated by HW, here we need to set the pkt length.
 		 */
+		hal_rx_msdu_metadata_get(hal_soc, rx_tlv_hdr, &msdu_metadata);
 		if (qdf_unlikely(qdf_nbuf_is_frag(nbuf))) {
 			bool is_mcbc, is_sa_vld, is_da_vld;
 
@@ -2154,17 +2206,15 @@ done:
 				continue;
 			}
 		} else {
-			l2_hdr_offset =
-				hal_rx_msdu_end_l3_hdr_padding_get(soc->hal_soc,
-								   rx_tlv_hdr);
 
 			msdu_len = QDF_NBUF_CB_RX_PKT_LEN(nbuf);
-			pkt_len = msdu_len + l2_hdr_offset + RX_PKT_TLVS_LEN;
+			pkt_len = msdu_len +
+				  msdu_metadata.l3_hdr_pad +
+				  RX_PKT_TLVS_LEN;
 
 			qdf_nbuf_set_pktlen(nbuf, pkt_len);
-			qdf_nbuf_pull_head(nbuf,
-					   RX_PKT_TLVS_LEN +
-					   l2_hdr_offset);
+			dp_rx_skip_tlvs(vdev, nbuf, RX_PKT_TLVS_LEN +
+						msdu_metadata.l3_hdr_pad);
 		}
 
 		/*
@@ -2253,7 +2303,8 @@ done:
 			 * Drop the packet if sa_idx and da_idx OOB or
 			 * sa_sw_peerid is 0
 			 */
-			if (!is_sa_da_idx_valid(soc, rx_tlv_hdr, nbuf)) {
+			if (!is_sa_da_idx_valid(soc, rx_tlv_hdr, nbuf,
+						msdu_metadata)) {
 				qdf_nbuf_free(nbuf);
 				nbuf = next;
 				DP_STATS_INC(soc, rx.err.invalid_sa_da_idx, 1);
@@ -2262,15 +2313,19 @@ done:
 			}
 			/* WDS Source Port Learning */
 			if (qdf_likely(vdev->wds_enabled))
-				dp_rx_wds_srcport_learn(soc, rx_tlv_hdr,
-							peer, nbuf);
+				dp_rx_wds_srcport_learn(soc,
+							rx_tlv_hdr,
+							peer,
+							nbuf,
+							msdu_metadata);
 
 			/* Intrabss-fwd */
 			if (dp_rx_check_ap_bridge(vdev))
 				if (dp_rx_intrabss_fwd(soc,
 							peer,
 							rx_tlv_hdr,
-							nbuf)) {
+							nbuf,
+							msdu_metadata)) {
 					nbuf = next;
 					dp_peer_unref_del_find_by_id(peer);
 					tid_stats->intrabss_cnt++;
@@ -2326,6 +2381,9 @@ done:
 				}
 			}
 		}
+
+		if (vdev && vdev->osif_fisa_flush)
+			vdev->osif_fisa_flush(soc, reo_ring_num);
 
 		if (vdev && vdev->osif_gro_flush && rx_ol_pkt_cnt) {
 			vdev->osif_gro_flush(vdev->osif_vdev,

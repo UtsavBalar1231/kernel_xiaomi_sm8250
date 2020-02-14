@@ -462,6 +462,14 @@ struct hal_hw_txrx_ops {
 	uint16_t (*hal_rx_get_rx_sequence)(uint8_t *buf);
 	void (*hal_rx_get_bb_info)(void *rx_tlv, void *ppdu_info_handle);
 	void (*hal_rx_get_rtt_info)(void *rx_tlv, void *ppdu_info_handle);
+	void (*hal_rx_msdu_packet_metadata_get)(uint8_t *buf,
+						void *msdu_pkt_metadata);
+	uint16_t (*hal_rx_get_fisa_cumulative_l4_checksum)(uint8_t *buf);
+	uint16_t (*hal_rx_get_fisa_cumulative_ip_length)(uint8_t *buf);
+	bool (*hal_rx_get_udp_proto)(uint8_t *buf);
+	bool (*hal_rx_get_fisa_flow_agg_continuation)(uint8_t *buf);
+	uint8_t (*hal_rx_get_fisa_flow_agg_count)(uint8_t *buf);
+	bool (*hal_rx_get_fisa_timeout)(uint8_t *buf);
 };
 
 /**

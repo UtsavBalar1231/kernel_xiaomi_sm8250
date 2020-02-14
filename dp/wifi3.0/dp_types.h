@@ -134,6 +134,7 @@ union dp_rx_desc_list_elem_t;
 struct cdp_peer_rate_stats_ctx;
 struct cdp_soc_rate_stats_ctx;
 struct dp_rx_fst;
+struct dp_mon_filter;
 
 #define DP_PDEV_ITERATE_VDEV_LIST(_pdev, _vdev) \
 	TAILQ_FOREACH((_vdev), &(_pdev)->vdev_list, vdev_list_elem)
@@ -1244,13 +1245,17 @@ struct dp_soc {
 	 * invalidation bug is enabled or not
 	 */
 	bool is_rx_fse_full_cache_invalidate_war_enabled;
-#ifdef WLAN_SUPPORT_RX_FLOW_TAG
+#if defined(WLAN_SUPPORT_RX_FLOW_TAG) || defined(WLAN_SUPPORT_RX_FISA)
 	/**
 	 * Pointer to DP RX Flow FST at SOC level if
 	 * is_rx_flow_search_table_per_pdev is false
+	 * TBD: rx_fst[num_macs] if we decide to have per mac FST
 	 */
 	struct dp_rx_fst *rx_fst;
-#endif /* WLAN_SUPPORT_RX_FLOW_TAG */
+#ifdef WLAN_SUPPORT_RX_FISA
+	uint8_t fisa_enable;
+#endif
+#endif /* WLAN_SUPPORT_RX_FLOW_TAG || WLAN_SUPPORT_RX_FISA */
 };
 
 #ifdef IPA_OFFLOAD
@@ -1774,6 +1779,8 @@ struct dp_pdev {
 #ifdef WLAN_SUPPORT_DATA_STALL
 	data_stall_detect_cb data_stall_detect_callback;
 #endif /* WLAN_SUPPORT_DATA_STALL */
+
+	struct dp_mon_filter **filter;	/* Monitor Filter pointer */
 };
 
 struct dp_peer;
@@ -1806,6 +1813,10 @@ struct dp_vdev {
 	ol_txrx_rx_fp osif_rx;
 	/* callback to deliver rx frames to the OS */
 	ol_txrx_rx_fp osif_rx_stack;
+	/* Callback to handle rx fisa frames */
+	ol_txrx_fisa_rx_fp osif_fisa_rx;
+	ol_txrx_fisa_flush_fp osif_fisa_flush;
+
 	/* call back function to flush out queued rx packets*/
 	ol_txrx_rx_flush_fp osif_rx_flush;
 	ol_txrx_rsim_rx_decap_fp osif_rsim_rx_decap;
@@ -1967,6 +1978,21 @@ struct dp_vdev {
 #endif
 	/* Extended data path handle */
 	struct cdp_ext_vdev *vdev_dp_ext_handle;
+#ifdef VDEV_PEER_PROTOCOL_COUNT
+	/*
+	 * Rx-Ingress and Tx-Egress are in the lower level DP layer
+	 * Rx-Egress and Tx-ingress are handled in osif layer for DP
+	 * So
+	 * Rx-Egress and Tx-ingress mask definitions are in OSIF layer
+	 * Rx-Ingress and Tx-Egress definitions are here below
+	 */
+#define VDEV_PEER_PROTOCOL_RX_INGRESS_MASK 1
+#define VDEV_PEER_PROTOCOL_TX_INGRESS_MASK 2
+#define VDEV_PEER_PROTOCOL_RX_EGRESS_MASK 4
+#define VDEV_PEER_PROTOCOL_TX_EGRESS_MASK 8
+	bool peer_protocol_count_track;
+	int peer_protocol_count_dropmask;
+#endif
 };
 
 
@@ -2175,9 +2201,10 @@ struct dp_tx_me_buf_t {
 	uint8_t data[QDF_MAC_ADDR_SIZE];
 };
 
-#ifdef WLAN_SUPPORT_RX_FLOW_TAG
+#if defined(WLAN_SUPPORT_RX_FLOW_TAG) || defined(WLAN_SUPPORT_RX_FISA)
 struct hal_rx_fst;
 
+#ifdef WLAN_SUPPORT_RX_FLOW_TAG
 struct dp_rx_fse {
 	/* HAL Rx Flow Search Entry which matches HW definition */
 	void *hal_rx_fse;
@@ -2188,9 +2215,9 @@ struct dp_rx_fse {
 	/* Stats tracking for this flow */
 	struct cdp_flow_stats stats;
 	/* Flag indicating whether flow is IPv4 address tuple */
-	bool is_ipv4_addr_entry;
+	uint8_t is_ipv4_addr_entry;
 	/* Flag indicating whether flow is valid */
-	bool is_valid;
+	uint8_t is_valid;
 };
 
 struct dp_rx_fst {
@@ -2218,6 +2245,78 @@ struct dp_rx_fst {
 	/* Flag to indicate completion of FSE setup in HW/FW */
 	bool fse_setup_done;
 };
-#endif /* WLAN_SUPPORT_RX_FLOW_TAG */
+
+#define DP_RX_GET_SW_FT_ENTRY_SIZE sizeof(struct dp_rx_fse)
+#elif WLAN_SUPPORT_RX_FISA
+
+enum fisa_aggr_ret {
+	FISA_AGGR_DONE,
+	FISA_AGGR_NOT_ELIGIBLE,
+	FISA_FLUSH_FLOW
+};
+
+struct dp_fisa_rx_sw_ft {
+	/* HAL Rx Flow Search Entry which matches HW definition */
+	void *hw_fse;
+	/* Toeplitz hash value */
+	uint32_t flow_hash;
+	/* Flow index, equivalent to hash value truncated to FST size */
+	uint32_t flow_id;
+	/* Stats tracking for this flow */
+	struct cdp_flow_stats stats;
+	/* Flag indicating whether flow is IPv4 address tuple */
+	uint8_t is_ipv4_addr_entry;
+	/* Flag indicating whether flow is valid */
+	uint8_t is_valid;
+	uint8_t is_populated;
+	uint8_t is_flow_udp;
+	uint8_t is_flow_tcp;
+	qdf_nbuf_t head_skb;
+	uint16_t cumulative_l4_checksum;
+	uint16_t adjusted_cumulative_ip_length;
+	uint16_t cur_aggr;
+	uint16_t napi_flush_cumulative_l4_checksum;
+	uint16_t napi_flush_cumulative_ip_length;
+	qdf_nbuf_t last_skb;
+	uint32_t head_skb_ip_hdr_offset;
+	uint32_t head_skb_l4_hdr_offset;
+	struct cdp_rx_flow_tuple_info rx_flow_tuple_info;
+	uint8_t napi_id;
+	struct dp_vdev *vdev;
+	uint64_t bytes_aggregated;
+	uint32_t flush_count;
+	uint32_t aggr_count;
+	uint8_t do_not_aggregate;
+	uint16_t hal_cumultive_ip_len;
+	struct dp_soc *soc_hdl;
+};
+
+#define DP_RX_GET_SW_FT_ENTRY_SIZE sizeof(struct dp_fisa_rx_sw_ft)
+
+struct dp_rx_fst {
+	/* Software (DP) FST */
+	uint8_t *base;
+	/* Pointer to HAL FST */
+	struct hal_rx_fst *hal_rx_fst;
+	/* Base physical address of HAL RX HW FST */
+	uint64_t hal_rx_fst_base_paddr;
+	/* Maximum number of flows FSE supports */
+	uint16_t max_entries;
+	/* Num entries in flow table */
+	uint16_t num_entries;
+	/* SKID Length */
+	uint16_t max_skid_length;
+	/* Hash mask to obtain legitimate hash entry */
+	uint32_t hash_mask;
+	/* Lock for adding/deleting entries of FST */
+	qdf_spinlock_t dp_rx_fst_lock;
+	uint32_t add_flow_count;
+	uint32_t del_flow_count;
+	uint32_t hash_collision_cnt;
+	struct dp_soc *soc_hdl;
+};
+
+#endif /* WLAN_SUPPORT_RX_FISA */
+#endif /* WLAN_SUPPORT_RX_FLOW_TAG || WLAN_SUPPORT_RX_FISA */
 
 #endif /* _DP_TYPES_H_ */

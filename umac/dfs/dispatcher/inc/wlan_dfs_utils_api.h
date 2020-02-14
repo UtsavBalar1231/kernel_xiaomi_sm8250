@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020 The Linux Foundation. All rights reserved.
  *
  *
  * Permission to use, copy, modify, and/or distribute this software for
@@ -646,21 +646,6 @@ static inline bool utils_is_dfs_chan_for_freq(struct wlan_objmgr_pdev *pdev,
 #endif
 
 /**
- * utils_is_dfs_ch() - is channel dfs.
- * @pdev: pdev handler.
- *
- * is channel dfs.
- *
- * Return: True if channel dfs, else false.
- */
-#ifdef CONFIG_CHAN_NUM_API
-static inline bool utils_is_dfs_ch(struct wlan_objmgr_pdev *pdev, uint32_t chan)
-{
-	return wlan_reg_is_dfs_ch(pdev, chan);
-}
-#endif
-
-/**
  * utils_is_dfs_cfreq2_ch() - is channel dfs cfreq2.
  * @pdev: pdev handler.
  *
@@ -668,15 +653,7 @@ static inline bool utils_is_dfs_ch(struct wlan_objmgr_pdev *pdev, uint32_t chan)
  *
  * Return: True if channel dfs cfreq2, else false.
  */
-#if defined(WLAN_DFS_FULL_OFFLOAD) && defined(QCA_DFS_NOL_OFFLOAD)
 bool utils_is_dfs_cfreq2_ch(struct wlan_objmgr_pdev *pdev);
-#else
-static inline
-bool utils_is_dfs_cfreq2_ch(struct wlan_objmgr_pdev *pdev)
-{
-	return false;
-}
-#endif
 
 /**
  * utils_dfs_reg_update_nol_ch() - set nol channel

@@ -453,12 +453,6 @@ uint32_t hal_rx_msdu_start_reception_type_get_6750(uint8_t *buf)
 	return reception_type;
 }
 
-#define HAL_RX_MSDU_END_DA_IDX_GET(_rx_msdu_end)	\
-	(_HAL_MS((*_OFFSET_TO_WORD_PTR(_rx_msdu_end,	\
-		RX_MSDU_END_11_DA_IDX_OR_SW_PEER_ID_OFFSET)),	\
-		RX_MSDU_END_11_DA_IDX_OR_SW_PEER_ID_MASK,	\
-		RX_MSDU_END_11_DA_IDX_OR_SW_PEER_ID_LSB))
-
 /**
  * hal_rx_msdu_end_da_idx_get_6750: API to get da_idx
  * from rx_msdu_end TLV
@@ -1385,6 +1379,10 @@ struct hal_hw_txrx_ops qca6750_hal_hw_txrx_ops = {
 	NULL,
 	hal_rx_tlv_get_tcp_chksum_6750,
 	hal_rx_get_rx_sequence_6750,
+	NULL,
+	NULL,
+	/* rx - msdu end fast path info fields */
+	hal_rx_msdu_packet_metadata_get_generic,
 };
 
 struct hal_hw_srng_config hw_srng_table_6750[] = {
