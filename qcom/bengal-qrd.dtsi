@@ -33,6 +33,7 @@
 	qcom,step-charging-enable;
 	/* SMB1355 only */
 	qcom,sec-charger-config = <2>;
+	qcom,hvdcp2-max-icl-ua = <2000000>;
 	dpdm-supply = <&qusb_phy0>;
 	qcom,charger-temp-max = <800>;
 	qcom,smb-temp-max = <800>;
