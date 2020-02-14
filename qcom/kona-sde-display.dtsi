@@ -19,6 +19,7 @@
 #include "dsi-panel-sim-dualmipi-video.dtsi"
 #include "dsi-panel-sim-dualmipi-dsc375-cmd.dtsi"
 #include "dsi-panel-sim-sec-hd-cmd.dtsi"
+#include "dsi-panel-xrsmrtvwr-jdi-dual-video.dtsi"
 #include <dt-bindings/clock/mdss-7nm-pll-clk.h>
 
 &tlmm {
@@ -270,6 +271,26 @@
 			qcom,mdss-dsi-panel-phy-timings = [00 1e 08 07 24 22 08
 				08 05 02 04 00 19 17];
 			qcom,display-topology = <1 0 1>;
+			qcom,default-topology-index = <0>;
+		};
+	};
+};
+
+&dsi_dual_xrsmrtvwr_jdi_video {
+	qcom,mdss-dsi-min-refresh-rate = <53>;
+	qcom,mdss-dsi-max-refresh-rate = <80>;
+	qcom,mdss-dsi-panel-status-command = [06 01 00 01 00 00 01 0a];
+	qcom,mdss-dsi-panel-status-command-state = "dsi_hs_mode";
+	qcom,mdss-dsi-panel-status-value = <0x9c>;
+	qcom,mdss-dsi-panel-on-check-value = <0x9c>;
+	qcom,mdss-dsi-panel-status-read-length = <1>;
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
+	qcom,mdss-dsi-display-timings {
+		timing@0 {
+			qcom,mdss-dsi-panel-phy-timings =  [00 17 05 05 20 1F
+				06 06 03 02 04 00 13 15];
+			qcom,display-topology = <2 0 2>,
+						<1 0 2>;
 			qcom,default-topology-index = <0>;
 		};
 	};
