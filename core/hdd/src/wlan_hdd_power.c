@@ -81,6 +81,7 @@
 #include "wlan_p2p_ucfg_api.h"
 #include "wlan_mlme_ucfg_api.h"
 #include "wlan_osif_request_manager.h"
+#include <wlan_hdd_sar_limits.h>
 
 /* Preprocessor definitions and constants */
 #ifdef QCA_WIFI_NAPIER_EMULATION
@@ -950,8 +951,14 @@ int wlan_hdd_pm_qos_notify(struct notifier_block *nb, unsigned long curr_val,
 {
 	struct hdd_context *hdd_ctx = container_of(nb, struct hdd_context,
 						   pm_qos_notifier);
-	void *hif_ctx = cds_get_context(QDF_MODULE_ID_HIF);
+	void *hif_ctx;
 
+	if (hdd_ctx->driver_status != DRIVER_MODULES_ENABLED) {
+		hdd_debug_rl("Driver Module closed; skipping pm qos notify");
+		return 0;
+	}
+
+	hif_ctx = cds_get_context(QDF_MODULE_ID_HIF);
 	if (!hif_ctx) {
 		hdd_err("Hif context is Null");
 		return -EINVAL;
@@ -1256,6 +1263,9 @@ hdd_suspend_wlan(void)
 		return -EAGAIN;
 
 	hdd_ctx->hdd_wlan_suspended = true;
+
+	hdd_configure_sar_sleep_index(hdd_ctx);
+
 	hdd_wlan_suspend_resume_event(HDD_WLAN_EARLY_SUSPEND);
 
 	return 0;
@@ -1313,6 +1323,8 @@ static int hdd_resume_wlan(void)
 						     QDF_SYSTEM_SUSPEND);
 	if (QDF_IS_STATUS_ERROR(status))
 		return qdf_status_to_os_return(status);
+
+	hdd_configure_sar_resume_index(hdd_ctx);
 
 	return 0;
 }
@@ -1751,12 +1763,6 @@ static int __wlan_hdd_cfg80211_resume_wlan(struct wiphy *wiphy)
 		hdd_err("Command not allowed in mode %d",
 			hdd_get_conparam());
 		exit_code = -EINVAL;
-		goto exit_with_code;
-	}
-
-	exit_code = wlan_hdd_validate_context(hdd_ctx);
-	if (exit_code) {
-		hdd_err("Invalid HDD context");
 		goto exit_with_code;
 	}
 

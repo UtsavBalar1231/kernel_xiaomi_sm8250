@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2020 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -323,4 +323,277 @@ int wlan_hdd_cfg80211_get_sar_power_limits(struct wiphy *wiphy,
 
 	return errno;
 }
+
+#ifdef SAR_SAFETY_FEATURE
+void hdd_disable_sar(struct hdd_context *hdd_ctx)
+{
+	struct sar_limit_cmd_params *sar_limit_cmd;
+	struct sar_limit_cmd_row *row;
+	QDF_STATUS status;
+
+	if (hdd_ctx->sar_version != SAR_VERSION_2) {
+		hdd_nofl_debug("FW SAR version: %d", hdd_ctx->sar_version);
+		return;
+	}
+
+	sar_limit_cmd = qdf_mem_malloc(sizeof(struct sar_limit_cmd_params));
+	if (!sar_limit_cmd)
+		return;
+
+	/*
+	 * Need two rows to hold the per-chain V2 power index
+	 */
+	row = qdf_mem_malloc(2 * sizeof(*row));
+	if (!row)
+		goto config_sar_failed;
+
+	sar_limit_cmd->sar_enable = WMI_SAR_FEATURE_OFF;
+	sar_limit_cmd->commit_limits = 1;
+	sar_limit_cmd->num_limit_rows = 2;
+	sar_limit_cmd->sar_limit_row_list = row;
+	row[0].limit_value = 0;
+	row[1].limit_value = 0;
+	row[0].chain_id = 0;
+	row[1].chain_id = 1;
+	row[0].validity_bitmap = WMI_SAR_CHAIN_ID_VALID_MASK;
+	row[1].validity_bitmap = WMI_SAR_CHAIN_ID_VALID_MASK;
+
+	hdd_nofl_debug("Disable the SAR limit index for both the chains");
+
+	status = sme_set_sar_power_limits(hdd_ctx->mac_handle, sar_limit_cmd);
+	if (QDF_IS_STATUS_ERROR(status)) {
+		hdd_nofl_err("Failed to set sar power limits");
+		goto config_sar_failed;
+	}
+
+	/* After SSR, the SAR configuration is lost. As SSR is hidden from
+	 * userland, this command will not come from userspace after a SSR. To
+	 * restore this configuration, save this in hdd context and restore
+	 * after re-init.
+	 */
+	hdd_store_sar_config(hdd_ctx, sar_limit_cmd);
+	return;
+
+config_sar_failed:
+
+	if (sar_limit_cmd) {
+		qdf_mem_free(sar_limit_cmd->sar_limit_row_list);
+		qdf_mem_free(sar_limit_cmd);
+	}
+}
+
+void hdd_configure_sar_index(struct hdd_context *hdd_ctx, uint32_t sar_index)
+{
+	struct sar_limit_cmd_params *sar_limit_cmd;
+	struct sar_limit_cmd_row *row;
+	QDF_STATUS status;
+
+	if (hdd_ctx->sar_version != SAR_VERSION_2) {
+		hdd_nofl_debug("FW SAR version: %d", hdd_ctx->sar_version);
+		return;
+	}
+
+	sar_limit_cmd = qdf_mem_malloc(sizeof(struct sar_limit_cmd_params));
+	if (!sar_limit_cmd)
+		return;
+
+	/*
+	 * Need two rows to hold the per-chain V2 power index
+	 */
+	row = qdf_mem_malloc(2 * sizeof(*row));
+	if (!row)
+		goto config_sar_failed;
+
+	sar_limit_cmd->sar_enable = WMI_SAR_FEATURE_ON_SAR_V2_0;
+	sar_limit_cmd->commit_limits = 1;
+	sar_limit_cmd->num_limit_rows = 2;
+	sar_limit_cmd->sar_limit_row_list = row;
+	row[0].limit_value = sar_index;
+	row[1].limit_value = sar_index;
+	row[0].chain_id = 0;
+	row[1].chain_id = 1;
+	row[0].validity_bitmap = WMI_SAR_CHAIN_ID_VALID_MASK;
+	row[1].validity_bitmap = WMI_SAR_CHAIN_ID_VALID_MASK;
+
+	hdd_nofl_debug("Configure POW_Limit Index: %d for both the chains",
+		       row->limit_value);
+
+	status = sme_set_sar_power_limits(hdd_ctx->mac_handle, sar_limit_cmd);
+	if (QDF_IS_STATUS_ERROR(status)) {
+		hdd_nofl_err("Failed to set sar power limits");
+		goto config_sar_failed;
+	}
+
+	/*
+	 * After SSR, the SAR configuration is lost. As SSR is hidden from
+	 * userland, this command will not come from userspace after a SSR. To
+	 * restore this configuration, save this in hdd context and restore
+	 * after re-init.
+	 */
+	hdd_store_sar_config(hdd_ctx, sar_limit_cmd);
+	return;
+
+config_sar_failed:
+
+	if (sar_limit_cmd) {
+		qdf_mem_free(sar_limit_cmd->sar_limit_row_list);
+		qdf_mem_free(sar_limit_cmd);
+	}
+}
+
+void hdd_configure_sar_sleep_index(struct hdd_context *hdd_ctx)
+{
+	if (!hdd_ctx->config->enable_sar_safety)
+		return;
+
+	if (hdd_ctx->config->config_sar_safety_sleep_index) {
+		hdd_nofl_debug("Configure SAR sleep index %d",
+			       hdd_ctx->config->sar_safety_sleep_index);
+		hdd_configure_sar_index(
+				hdd_ctx,
+				hdd_ctx->config->sar_safety_sleep_index);
+	} else {
+		hdd_nofl_debug("Disable SAR");
+		hdd_disable_sar(hdd_ctx);
+	}
+}
+
+void hdd_configure_sar_resume_index(struct hdd_context *hdd_ctx)
+{
+	if (!hdd_ctx->config->enable_sar_safety)
+		return;
+
+	hdd_nofl_debug("Configure SAR safety index %d on wlan resume",
+		       hdd_ctx->config->sar_safety_index);
+	hdd_configure_sar_index(hdd_ctx,
+				hdd_ctx->config->sar_safety_index);
+}
+
+static void hdd_send_sar_unsolicited_event(struct hdd_context *hdd_ctx)
+{
+	struct sk_buff *vendor_event;
+	uint32_t len;
+
+	if (!hdd_ctx) {
+		hdd_err_rl("hdd context is null");
+		return;
+	}
+
+	len = NLMSG_HDRLEN;
+	vendor_event =
+		cfg80211_vendor_event_alloc(
+			hdd_ctx->wiphy, NULL, len,
+			QCA_NL80211_VENDOR_SUBCMD_REQUEST_SAR_LIMITS_INDEX,
+			GFP_KERNEL);
+
+	if (!vendor_event) {
+		hdd_err("cfg80211_vendor_event_alloc failed");
+		return;
+	}
+
+	cfg80211_vendor_event(vendor_event, GFP_KERNEL);
+}
+
+static void hdd_sar_unsolicited_timer_cb(void *user_data)
+{
+	struct hdd_context *hdd_ctx = (struct hdd_context *)user_data;
+	uint8_t i = 0;
+	QDF_STATUS status;
+
+	hdd_nofl_debug("Sar unsolicited timer expired");
+
+	for (i = 0; i < hdd_ctx->config->sar_safety_req_resp_retry; i++) {
+		hdd_send_sar_unsolicited_event(hdd_ctx);
+		status = qdf_wait_for_event_completion(
+				&hdd_ctx->sar_safety_req_resp_event,
+				hdd_ctx->config->sar_safety_req_resp_timeout);
+		if (QDF_IS_STATUS_SUCCESS(status))
+			break;
+	}
+
+	if (i >= hdd_ctx->config->sar_safety_req_resp_retry)
+		hdd_configure_sar_index(hdd_ctx,
+					hdd_ctx->config->sar_safety_index);
+}
+
+static void hdd_sar_safety_timer_cb(void *user_data)
+{
+	struct hdd_context *hdd_ctx = (struct hdd_context *)user_data;
+
+	hdd_nofl_debug("Sar safety timer expires");
+	hdd_configure_sar_index(hdd_ctx, hdd_ctx->config->sar_safety_index);
+}
+
+void wlan_hdd_sar_unsolicited_timer_start(struct hdd_context *hdd_ctx)
+{
+	if (!hdd_ctx->config->enable_sar_safety)
+		return;
+
+	if (QDF_TIMER_STATE_RUNNING !=
+		qdf_mc_timer_get_current_state(
+				&hdd_ctx->sar_safety_unsolicited_timer))
+		qdf_mc_timer_start(
+			&hdd_ctx->sar_safety_unsolicited_timer,
+			hdd_ctx->config->sar_safety_unsolicited_timeout);
+}
+
+void wlan_hdd_sar_timers_reset(struct hdd_context *hdd_ctx)
+{
+	if (!hdd_ctx->config->enable_sar_safety)
+		return;
+
+	if (hdd_ctx->sar_version != SAR_VERSION_2)
+		return;
+
+	if (QDF_TIMER_STATE_RUNNING ==
+		qdf_mc_timer_get_current_state(&hdd_ctx->sar_safety_timer))
+		qdf_mc_timer_stop(&hdd_ctx->sar_safety_timer);
+
+	qdf_mc_timer_start(&hdd_ctx->sar_safety_timer,
+			   hdd_ctx->config->sar_safety_timeout);
+
+	if (QDF_TIMER_STATE_RUNNING ==
+		qdf_mc_timer_get_current_state(
+				&hdd_ctx->sar_safety_unsolicited_timer))
+		qdf_mc_timer_stop(&hdd_ctx->sar_safety_unsolicited_timer);
+
+	qdf_event_set(&hdd_ctx->sar_safety_req_resp_event);
+}
+
+void wlan_hdd_sar_timers_init(struct hdd_context *hdd_ctx)
+{
+	if (!hdd_ctx->config->enable_sar_safety)
+		return;
+
+	qdf_mc_timer_init(&hdd_ctx->sar_safety_timer, QDF_TIMER_TYPE_SW,
+			  hdd_sar_safety_timer_cb, hdd_ctx);
+
+	qdf_mc_timer_init(&hdd_ctx->sar_safety_unsolicited_timer,
+			  QDF_TIMER_TYPE_SW,
+			  hdd_sar_unsolicited_timer_cb, hdd_ctx);
+
+	qdf_event_create(&hdd_ctx->sar_safety_req_resp_event);
+}
+
+void wlan_hdd_sar_timers_deinit(struct hdd_context *hdd_ctx)
+{
+	if (!hdd_ctx->config->enable_sar_safety)
+		return;
+
+	if (QDF_TIMER_STATE_RUNNING ==
+		qdf_mc_timer_get_current_state(&hdd_ctx->sar_safety_timer))
+		qdf_mc_timer_stop(&hdd_ctx->sar_safety_timer);
+
+	qdf_mc_timer_destroy(&hdd_ctx->sar_safety_timer);
+
+	if (QDF_TIMER_STATE_RUNNING ==
+		qdf_mc_timer_get_current_state(
+				&hdd_ctx->sar_safety_unsolicited_timer))
+		qdf_mc_timer_stop(&hdd_ctx->sar_safety_unsolicited_timer);
+
+	qdf_mc_timer_destroy(&hdd_ctx->sar_safety_unsolicited_timer);
+
+	qdf_event_destroy(&hdd_ctx->sar_safety_req_resp_event);
+}
+#endif
 

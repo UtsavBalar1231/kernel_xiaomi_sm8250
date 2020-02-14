@@ -61,12 +61,16 @@
 
 #include "wlan_hdd_nud_tracking.h"
 #include "dp_txrx.h"
+#if defined(WLAN_SUPPORT_RX_FISA)
+#include "dp_fisa_rx.h"
+#endif
 #include <ol_defines.h>
 #include "cfg_ucfg_api.h"
 #include "target_type.h"
 #include "wlan_hdd_object_manager.h"
 #include "nan_public_structs.h"
 #include "nan_ucfg_api.h"
+#include <wlan_hdd_sar_limits.h>
 
 #if defined(QCA_LL_TX_FLOW_CONTROL_V2) || defined(QCA_LL_PDEV_TX_FLOW_CONTROL)
 /*
@@ -1143,6 +1147,8 @@ static void __hdd_hard_start_xmit(struct sk_buff *skb,
 
 	netif_trans_update(dev);
 
+	wlan_hdd_sar_unsolicited_timer_start(hdd_ctx);
+
 	return;
 
 drop_pkt_and_release_skb:
@@ -1991,6 +1997,9 @@ QDF_STATUS hdd_rx_deliver_to_stack(struct hdd_adapter *adapter,
 		       hdd_ctx->enable_rxthread)) {
 		local_bh_disable();
 		netif_status = netif_receive_skb(skb);
+		if (netif_status)
+			hdd_err("netif_receive_skb return dropped skb %pk",
+				skb);
 		local_bh_enable();
 	} else if (qdf_unlikely(QDF_NBUF_CB_RX_PEER_CACHED_FRM(skb))) {
 		/*
@@ -2051,6 +2060,19 @@ QDF_STATUS hdd_rx_flush_packet_cbk(void *adapter_context, uint8_t vdev_id)
 
 	return QDF_STATUS_SUCCESS;
 }
+
+#if defined(WLAN_SUPPORT_RX_FISA)
+QDF_STATUS hdd_rx_fisa_cbk(void *dp_soc, void *dp_vdev, qdf_nbuf_t nbuf_list)
+{
+	return dp_fisa_rx((struct dp_soc *)dp_soc, (struct dp_vdev *)dp_vdev,
+			  nbuf_list);
+}
+
+QDF_STATUS hdd_rx_fisa_flush(void *dp_soc, int ring_num)
+{
+	return dp_rx_fisa_flush((struct dp_soc *)dp_soc, ring_num);
+}
+#endif
 
 QDF_STATUS hdd_rx_packet_cbk(void *adapter_context,
 			     qdf_nbuf_t rxBuf)
@@ -3190,31 +3212,6 @@ static void hdd_dp_hl_bundle_cfg_update(struct hdd_config *config,
 }
 #endif
 
-#ifdef WLAN_FEATURE_PKT_CAPTURE
-/**
- * hdd_set_pktcapture_mode_value() - set pktcapture_mode values
- * @hdd_ctx: hdd context
- * @psoc: pointer to psoc obj
- *
- * Return: none
- */
-static inline void
-hdd_dp_pktcapture_mode_cfg_update(struct hdd_context *hdd_ctx,
-				  struct wlan_objmgr_psoc *psoc)
-{
-	hdd_ctx->enable_pkt_capture_support = cfg_get(
-					psoc, CFG_DP_PKT_CAPTURE_MODE_ENABLE);
-	hdd_ctx->val_pkt_capture_mode = cfg_get(
-					psoc, CFG_DP_PKT_CAPTURE_MODE_VALUE);
-}
-#else
-static inline void
-hdd_dp_pktcapture_mode_cfg_update(struct hdd_context *hdd_ctx,
-				  struct wlan_objmgr_psoc *psoc)
-{
-}
-#endif /* WLAN_FEATURE_PKT_CAPTURE */
-
 void hdd_dp_cfg_update(struct wlan_objmgr_psoc *psoc,
 		       struct hdd_context *hdd_ctx)
 {
@@ -3236,6 +3233,7 @@ void hdd_dp_cfg_update(struct wlan_objmgr_psoc *psoc,
 		cfg_get(psoc, CFG_DP_RX_THREAD_UL_CPU_MASK);
 	config->rx_thread_affinity_mask =
 		cfg_get(psoc, CFG_DP_RX_THREAD_CPU_MASK);
+	config->fisa_enable = cfg_get(psoc, CFG_DP_RX_FISA_ENABLE);
 	qdf_uint8_array_parse(cfg_get(psoc, CFG_DP_RPS_RX_QUEUE_CPU_MAP_LIST),
 			      config->cpu_map_list,
 			      sizeof(config->cpu_map_list), &array_out_size);
@@ -3250,7 +3248,6 @@ void hdd_dp_cfg_update(struct wlan_objmgr_psoc *psoc,
 	config->cfg_wmi_credit_cnt = cfg_get(psoc, CFG_DP_HTC_WMI_CREDIT_CNT);
 	hdd_dp_dp_trace_cfg_update(config, psoc);
 	hdd_dp_nud_tracking_cfg_update(config, psoc);
-	hdd_dp_pktcapture_mode_cfg_update(hdd_ctx, psoc);
 }
 
 bool wlan_hdd_rx_rpm_mark_last_busy(struct hdd_context *hdd_ctx,

@@ -2254,7 +2254,7 @@ lim_send_assoc_req_mgmt_frame(struct mac_context *mac_ctx,
 
 		if (!is_open_auth) {
 			bss_mfp_capable =
-				lim_get_bss_rmf_capable(mac_ctx, pe_session);
+				lim_get_vdev_rmf_capable(mac_ctx, pe_session);
 			if (!bss_mfp_capable) {
 				pe_debug("Peer doesn't support PMF, Don't add MBO IE");
 				qdf_mem_free(mbo_ie);
@@ -2426,7 +2426,7 @@ lim_send_assoc_req_mgmt_frame(struct mac_context *mac_ctx,
 	MTRACE(qdf_trace(QDF_MODULE_ID_PE, TRACE_CODE_TX_MGMT,
 			 pe_session->peSessionId, mac_hdr->fc.subType));
 
-	pe_nofl_info("vid %d Assoc TX to %pM seq num %d",
+	pe_nofl_info("Assoc TX vdev %d to %pM seq num %d",
 		     pe_session->vdev_id, pe_session->bssId,
 		     mac_ctx->mgmtSeqNum);
 
@@ -2621,21 +2621,11 @@ lim_send_auth_mgmt_frame(struct mac_context *mac_ctx,
 		 * status code, 128 bytes for challenge text and
 		 * 4 bytes each for IV & ICV.
 		 */
-		pe_debug("Sending encrypted auth frame to " QDF_MAC_ADDR_STR,
-				QDF_MAC_ADDR_ARRAY(peer_addr));
-
 		body_len = wep_challenge_len + LIM_ENCR_AUTH_INFO_LEN;
 		frame_len = sizeof(tSirMacMgmtHdr) + body_len;
 
 		goto alloc_packet;
 	}
-
-	pe_debug("Sending Auth seq# %d status %d (%d) to "
-		QDF_MAC_ADDR_STR,
-		auth_frame->authTransactionSeqNumber,
-		auth_frame->authStatusCode,
-		(auth_frame->authStatusCode == eSIR_MAC_SUCCESS_STATUS),
-		QDF_MAC_ADDR_ARRAY(peer_addr));
 
 	switch (auth_frame->authTransactionSeqNumber) {
 	case SIR_MAC_AUTH_FRAME_1:
@@ -2770,10 +2760,6 @@ alloc_packet:
 
 	if (wep_challenge_len) {
 		qdf_mem_copy(body, (uint8_t *) auth_frame, body_len);
-
-		pe_debug("Sending Auth seq# 3 to " QDF_MAC_ADDR_STR,
-			QDF_MAC_ADDR_ARRAY(mac_hdr->da));
-
 	} else {
 		*((uint16_t *) (body)) =
 			sir_swap_u16if_needed(auth_frame->authAlgoNumber);
@@ -2855,16 +2841,13 @@ alloc_packet:
 			pe_debug("FILS: appending fils Auth data");
 			lim_add_fils_data_to_auth_frame(session, body);
 		}
-
-		pe_nofl_info("Auth TX seq %d seq num %d status %d to "
-			     QDF_MAC_ADDR_STR,
-			     auth_frame->authTransactionSeqNumber,
-			     mac_ctx->mgmtSeqNum,
-			     auth_frame->authStatusCode,
-			     QDF_MAC_ADDR_ARRAY(mac_hdr->da));
 	}
-	QDF_TRACE_HEX_DUMP(QDF_MODULE_ID_PE,
-			   QDF_TRACE_LEVEL_DEBUG,
+
+	pe_nofl_info("Auth TX seq %d seq num %d status %d WEP %d to " QDF_MAC_ADDR_STR,
+		     auth_frame->authTransactionSeqNumber, mac_ctx->mgmtSeqNum,
+		     auth_frame->authStatusCode, mac_hdr->fc.wep,
+		     QDF_MAC_ADDR_ARRAY(mac_hdr->da));
+	QDF_TRACE_HEX_DUMP(QDF_MODULE_ID_PE, QDF_TRACE_LEVEL_DEBUG,
 			   frame, frame_len);
 
 	if ((session->ftPEContext.pFTPreAuthReq) &&
@@ -4540,7 +4523,7 @@ lim_send_radio_measure_report_action_frame(struct mac_context *mac,
 		return QDF_STATUS_E_NOMEM;
 
 	if (!pe_session) {
-		pe_err("(!psession) in Request to send Beacon Report action frame");
+		pe_err("session not found");
 		qdf_mem_free(frm);
 		return QDF_STATUS_E_FAILURE;
 	}
@@ -4603,7 +4586,7 @@ lim_send_radio_measure_report_action_frame(struct mac_context *mac,
 		qdf_mem_free(frm);
 		return QDF_STATUS_E_FAILURE;
 	} else if (DOT11F_WARNED(nStatus)) {
-		pe_warn("There were warnings while calculating the packed size for a Radio Measure Report (0x%08x)",
+		pe_warn("Warnings while calculating the size for Radio Measure Report (0x%08x)",
 			nStatus);
 	}
 
@@ -4647,22 +4630,17 @@ lim_send_radio_measure_report_action_frame(struct mac_context *mac,
 		status_code = QDF_STATUS_E_FAILURE;
 		goto returnAfterError;
 	} else if (DOT11F_WARNED(nStatus)) {
-		pe_warn("There were warnings while packing Radio Measure Report (0x%08x)",
+		pe_warn("Warnings while packing Radio Measure Report (0x%08x)",
 			nStatus);
 	}
 
-	pe_debug("Sending Radio Measure Report to %pM", peer);
-	if (frm->MeasurementReport[0].type == SIR_MAC_RRM_BEACON_TYPE)
-		pe_nofl_info("TX: [802.11 BCN_RPT] seq_no:%d dialog_token:%d no. of APs:%d is_last_rpt:%d",
-			     (pMacHdr->seqControl.seqNumHi << HIGH_SEQ_NUM_OFFSET |
-			      pMacHdr->seqControl.seqNumLo),
-			     dialog_token, frm->num_MeasurementReport,
-			     is_last_report);
-	else
-		pe_nofl_info("TX: [802.11 RRM] seq_no:%d dialog_token %d num_report %d is_last_frm %d",
-			     (pMacHdr->seqControl.seqNumHi << HIGH_SEQ_NUM_OFFSET |
-			      pMacHdr->seqControl.seqNumLo),
-			     dialog_token, num_report, is_last_frame);
+	pe_nofl_info("TX: %s seq_no:%d dialog_token:%d no. of APs:%d is_last_rpt:%d num_report: %d peer:%pM",
+		     frm->MeasurementReport[0].type == SIR_MAC_RRM_BEACON_TYPE ?
+		     "[802.11 BCN_RPT]" : "[802.11 RRM]",
+		     (pMacHdr->seqControl.seqNumHi << HIGH_SEQ_NUM_OFFSET |
+		     pMacHdr->seqControl.seqNumLo),
+		     dialog_token, frm->num_MeasurementReport,
+		     is_last_report, num_report, peer);
 
 	if (wlan_reg_is_5ghz_ch_freq(pe_session->curr_op_freq) ||
 	    pe_session->opmode == QDF_P2P_CLIENT_MODE ||

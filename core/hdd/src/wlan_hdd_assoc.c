@@ -266,9 +266,12 @@ void hdd_conn_set_connection_state(struct hdd_adapter *adapter,
 	uint32_t time_buffer_size;
 
 	/* save the new connection state */
-	hdd_debug("Changed conn state from old:%d to new:%d for dev %s",
-		  hdd_sta_ctx->conn_info.conn_state, conn_state,
-		  adapter->dev->name);
+	if (conn_state == hdd_sta_ctx->conn_info.conn_state)
+		return;
+
+	hdd_nofl_debug("connection state changed %d --> %d for dev %s (vdev %d)",
+		       hdd_sta_ctx->conn_info.conn_state, conn_state,
+		       adapter->dev->name, adapter->vdev_id);
 
 	hdd_tsf_notify_wlan_state_change(adapter,
 					 hdd_sta_ctx->conn_info.conn_state,
@@ -2073,6 +2076,28 @@ static QDF_STATUS hdd_conn_change_peer_state(struct hdd_adapter *adapter,
 }
 #endif
 
+#if defined(WLAN_SUPPORT_RX_FISA)
+/**
+ * hdd_rx_register_fisa_ops() - FISA callback functions
+ * @txrx_ops: operations handle holding callback functions
+ * @hdd_rx_fisa_cbk: callback for fisa aggregation handle function
+ * @hdd_rx_fisa_flush: callback function to flush fisa aggregation
+ *
+ * Return: None
+ */
+static inline void
+hdd_rx_register_fisa_ops(struct ol_txrx_ops *txrx_ops)
+{
+	txrx_ops->rx.osif_fisa_rx = hdd_rx_fisa_cbk;
+	txrx_ops->rx.osif_fisa_flush = hdd_rx_fisa_flush;
+}
+#else
+static inline void
+hdd_rx_register_fisa_ops(struct ol_txrx_ops *txrx_ops)
+{
+}
+#endif
+
 /**
  * hdd_roam_register_sta() - register station
  * @adapter: pointer to adapter
@@ -2129,6 +2154,12 @@ QDF_STATUS hdd_roam_register_sta(struct hdd_adapter *adapter,
 		txrx_ops.rx.rx = hdd_rx_packet_cbk;
 		txrx_ops.rx.rx_stack = NULL;
 		txrx_ops.rx.rx_flush = NULL;
+	}
+
+	if (adapter->hdd_ctx->config->fisa_enable &&
+		(adapter->device_mode != QDF_MONITOR_MODE)) {
+		hdd_debug("FISA feature enabled");
+		hdd_rx_register_fisa_ops(&txrx_ops);
 	}
 
 	txrx_ops.rx.stats_rx = hdd_tx_rx_collect_connectivity_stats_info;
@@ -2946,8 +2977,6 @@ hdd_association_completion_handler(struct hdd_adapter *adapter,
 			adapter->wapi_info.is_wapi_sta = false;
 		}
 #endif /* FEATURE_WLAN_WAPI */
-		hdd_debug("bss_descr[%d] devicemode[%d]", !!roam_info->bss_desc,
-			  adapter->device_mode);
 		if ((QDF_STA_MODE == adapter->device_mode) &&
 						roam_info->bss_desc) {
 			ie_len = GET_IE_LEN_IN_BSS(roam_info->bss_desc->length);
@@ -3026,7 +3055,6 @@ hdd_association_completion_handler(struct hdd_adapter *adapter,
 
 		conn_info_freq = sta_ctx->conn_info.chan_freq;
 
-		hdd_debug("check if STA chan ok for DNBS");
 		if (policy_mgr_is_chan_ok_for_dnbs(hdd_ctx->psoc,
 						   conn_info_freq, &ok)) {
 			hdd_err("Unable to check DNBS eligibility for chan(freq):%u",
@@ -3130,7 +3158,6 @@ hdd_association_completion_handler(struct hdd_adapter *adapter,
 					FT_ASSOC_RSP_IES_OFFSET;
 
 				hdd_debug("assoc_rsp_len %d", assoc_rsp_len);
-				hdd_debug("Assoc Rsp IE dump");
 				QDF_TRACE_HEX_DUMP(QDF_MODULE_ID_HDD,
 						   QDF_TRACE_LEVEL_DEBUG,
 						   assoc_rsp,
@@ -3169,7 +3196,6 @@ hdd_association_completion_handler(struct hdd_adapter *adapter,
 				}
 
 				hdd_debug("assoc_req_len %d", assoc_req_len);
-				hdd_debug("Assoc/Reassoc Req IE dump");
 				QDF_TRACE_HEX_DUMP(QDF_MODULE_ID_HDD,
 						   QDF_TRACE_LEVEL_DEBUG,
 						   assoc_req,
@@ -5078,7 +5104,7 @@ enum csr_akm_type hdd_translate_rsn_to_csr_auth_type(uint8_t auth_suite[4])
 		hdd_translate_fils_rsn_to_csr_auth(auth_suite, &auth_type);
 		hdd_translate_sae_rsn_to_csr_auth(auth_suite, &auth_type);
 	}
-	hdd_debug("auth_type: %d", auth_type);
+
 	return auth_type;
 }
 
@@ -5105,7 +5131,7 @@ enum csr_akm_type hdd_translate_wpa_to_csr_auth_type(uint8_t auth_suite[4])
 	{
 		hdd_translate_fils_rsn_to_csr_auth(auth_suite, &auth_type);
 	}
-	hdd_debug("auth_type: %d", auth_type);
+
 	return auth_type;
 }
 
@@ -5138,7 +5164,6 @@ hdd_translate_rsn_to_csr_encryption_type(uint8_t cipher_suite[4])
 	else
 		cipher_type = eCSR_ENCRYPT_TYPE_FAILED;
 
-	hdd_debug("cipher_type: %d", cipher_type);
 	return cipher_type;
 }
 
@@ -5167,7 +5192,6 @@ hdd_translate_wpa_to_csr_encryption_type(uint8_t cipher_suite[4])
 	else
 		cipher_type = eCSR_ENCRYPT_TYPE_FAILED;
 
-	hdd_debug("cipher_type: %d", cipher_type);
 	return cipher_type;
 }
 
@@ -5251,13 +5275,7 @@ static int32_t hdd_process_genie(struct hdd_adapter *adapter,
 				parse_status);
 			return -EINVAL;
 		}
-		hdd_debug("gp_cipher_suite_present: %d",
-			 dot11_rsn_ie.gp_cipher_suite_present);
-		/* Copy out the encryption and authentication types */
-		hdd_debug("pairwise cipher suite count: %d",
-			 dot11_rsn_ie.pwise_cipher_suite_count);
-		hdd_debug("authentication suite count: %d",
-			 dot11_rsn_ie.akm_suite_cnt);
+
 		/* dot11_rsn_ie.akm_suite_cnt */
 		/* Just translate the FIRST one */
 		*auth_type =
@@ -5298,11 +5316,7 @@ static int32_t hdd_process_genie(struct hdd_adapter *adapter,
 				parse_status);
 			return -EINVAL;
 		}
-		/* Copy out the encryption and authentication types */
-		hdd_debug("WPA unicast cipher suite count: %d",
-			 dot11_wpa_ie.unicast_cipher_count);
-		hdd_debug("WPA authentication suite count: %d",
-			 dot11_wpa_ie.auth_suite_count);
+
 		/* dot11_wpa_ie.auth_suite_count */
 		/* Just translate the FIRST one */
 		*auth_type =
@@ -5405,7 +5419,6 @@ static void hdd_update_values_mfp_cap(
  */
 static void hdd_set_mfp_enable(struct csr_roam_profile *roam_profile)
 {
-	hdd_debug("MFPEnabled %d", roam_profile->MFPEnabled);
 	/*
 	 * Reset MFPEnabled if testmode RSNE passed doesn't have MFPR
 	 * or MFPC bit set
@@ -5538,9 +5551,6 @@ int hdd_set_genie_to_csr(struct hdd_adapter *adapter,
 
 		hdd_update_values_mfp_cap(roam_profile, mfp_required,
 					  mfp_capable);
-
-		hdd_debug("CSR AuthType = %d, EncryptionType = %d mcEncryptionType = %d",
-			 *rsn_auth_type, rsn_encrypt_type, mc_rsn_encrypt_type);
 	}
 
 	if (QDF_STATUS_SUCCESS != wlan_set_vdev_crypto_prarams_from_ie(
@@ -5621,9 +5631,6 @@ int hdd_set_csr_auth_type(struct hdd_adapter *adapter,
 
 	roam_profile = hdd_roam_profile(adapter);
 	roam_profile->AuthType.numEntries = 1;
-	hdd_debug("auth_type = %d rsn_auth_type %d wpa_versions %d key_mgmt : 0x%x",
-		  sta_ctx->conn_info.auth_type, rsn_auth_type,
-		  sta_ctx->wpa_versions, key_mgmt);
 
 	switch (sta_ctx->conn_info.auth_type) {
 	case eCSR_AUTH_TYPE_OPEN_SYSTEM:
@@ -5642,11 +5649,9 @@ int hdd_set_csr_auth_type(struct hdd_adapter *adapter,
 			if ((rsn_auth_type == eCSR_AUTH_TYPE_CCKM_WPA) &&
 			    ((key_mgmt & HDD_AUTH_KEY_MGMT_802_1X)
 			     == HDD_AUTH_KEY_MGMT_802_1X)) {
-				hdd_debug("set authType to CCKM WPA. AKM also 802.1X.");
 				roam_profile->AuthType.authType[0] =
 					eCSR_AUTH_TYPE_CCKM_WPA;
 			} else if (rsn_auth_type == eCSR_AUTH_TYPE_CCKM_WPA) {
-				hdd_debug("Last chance to set authType to CCKM WPA.");
 				roam_profile->AuthType.authType[0] =
 					eCSR_AUTH_TYPE_CCKM_WPA;
 			} else
@@ -5670,11 +5675,9 @@ int hdd_set_csr_auth_type(struct hdd_adapter *adapter,
 			if ((rsn_auth_type == eCSR_AUTH_TYPE_CCKM_RSN) &&
 			    ((key_mgmt & HDD_AUTH_KEY_MGMT_802_1X)
 			     == HDD_AUTH_KEY_MGMT_802_1X)) {
-				hdd_debug("set authType to CCKM RSN. AKM also 802.1X.");
 				roam_profile->AuthType.authType[0] =
 					eCSR_AUTH_TYPE_CCKM_RSN;
 			} else if (rsn_auth_type == eCSR_AUTH_TYPE_CCKM_RSN) {
-				hdd_debug("Last chance to set authType to CCKM RSN.");
 				roam_profile->AuthType.authType[0] =
 					eCSR_AUTH_TYPE_CCKM_RSN;
 			} else
@@ -5712,9 +5715,6 @@ int hdd_set_csr_auth_type(struct hdd_adapter *adapter,
 				rsn_auth_type)) {
 				roam_profile->AuthType.authType[0] =
 					rsn_auth_type;
-				hdd_debug("updated profile authtype as %d",
-					rsn_auth_type);
-
 			} else if ((rsn_auth_type == eCSR_AUTH_TYPE_OWE) &&
 				  ((key_mgmt & HDD_AUTH_KEY_MGMT_802_1X)
 				  == HDD_AUTH_KEY_MGMT_802_1X)) {
@@ -5790,9 +5790,6 @@ int hdd_set_csr_auth_type(struct hdd_adapter *adapter,
 		roam_profile->AuthType.authType[0] = eCSR_AUTH_TYPE_UNKNOWN;
 		break;
 	}
-
-	hdd_debug("Set roam Authtype to %d",
-		 roam_profile->AuthType.authType[0]);
 
 	return 0;
 }

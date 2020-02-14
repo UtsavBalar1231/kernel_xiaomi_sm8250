@@ -522,7 +522,6 @@ tdls_add_peer_serialize_callback(struct wlan_serialization_command *cmd,
 	}
 
 	req = cmd->umac_cmd;
-	tdls_debug("reason: %d, req %pK", reason, req);
 
 	switch (reason) {
 	case WLAN_SER_CB_ACTIVATE_CMD:
@@ -983,7 +982,6 @@ tdls_update_peer_serialize_callback(struct wlan_serialization_command *cmd,
 	}
 
 	req = cmd->umac_cmd;
-	tdls_debug("reason: %d, req %pK", reason, req);
 
 	switch (reason) {
 	case WLAN_SER_CB_ACTIVATE_CMD:
@@ -1107,7 +1105,6 @@ tdls_del_peer_serialize_callback(struct wlan_serialization_command *cmd,
 	}
 
 	req = cmd->umac_cmd;
-	tdls_debug("reason: %d, req %pK", reason, req);
 
 	switch (reason) {
 	case WLAN_SER_CB_ACTIVATE_CMD:
@@ -1713,6 +1710,7 @@ static QDF_STATUS tdls_config_force_peer(
 	const uint8_t *macaddr;
 	uint32_t feature;
 	QDF_STATUS status;
+	uint32_t chan_freq;
 	struct tdls_peer_update_state *peer_update_param;
 
 	macaddr = req->peer_addr;
@@ -1770,9 +1768,10 @@ static QDF_STATUS tdls_config_force_peer(
 	}
 
 	soc_obj->tdls_external_peer_count++;
+	chan_freq = wlan_reg_legacy_chan_to_freq(pdev, req->chan);
 
 	/* Validate if off channel is DFS channel */
-	if (wlan_reg_is_dfs_ch(pdev, req->chan)) {
+	if (wlan_reg_is_dfs_for_freq(pdev, chan_freq)) {
 		tdls_err("Resetting TDLS off-channel from %d to %d",
 			 req->chan, WLAN_TDLS_PREFERRED_OFF_CHANNEL_NUM_DEF);
 		req->chan = WLAN_TDLS_PREFERRED_OFF_CHANNEL_NUM_DEF;

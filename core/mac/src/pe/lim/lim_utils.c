@@ -7483,13 +7483,11 @@ QDF_STATUS lim_populate_he_mcs_set(struct mac_context *mac_ctx,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	pe_debug("peer rates lt 80: rx_mcs - 0x%04x tx_mcs - 0x%04x",
+	pe_debug("PEER: lt 80: rx 0x%04x tx 0x%04x, 160: rx 0x%04x tx 0x%04x, 80+80: rx 0x%04x tx 0x%04x",
 		peer_he_caps->rx_he_mcs_map_lt_80,
-		peer_he_caps->tx_he_mcs_map_lt_80);
-	pe_debug("peer rates 160: rx_mcs - 0x%04x tx_mcs - 0x%04x",
+		peer_he_caps->tx_he_mcs_map_lt_80,
 		(*(uint16_t *)peer_he_caps->rx_he_mcs_map_160),
-		(*(uint16_t *)peer_he_caps->tx_he_mcs_map_160));
-	pe_debug("peer rates 80+80: rx_mcs - 0x%04x tx_mcs - 0x%04x",
+		(*(uint16_t *)peer_he_caps->tx_he_mcs_map_160),
 		(*(uint16_t *)peer_he_caps->rx_he_mcs_map_80_80),
 		(*(uint16_t *)peer_he_caps->tx_he_mcs_map_80_80));
 
@@ -7551,14 +7549,11 @@ QDF_STATUS lim_populate_he_mcs_set(struct mac_context *mac_ctx,
 		rates->tx_he_mcs_map_80_80 |= HE_MCS_INV_MSK_4_NSS(1);
 	}
 
-	pe_debug("enable2x2 - %d nss %d",
-		mac_ctx->mlme_cfg->vht_caps.vht_cap_info.enable2x2, nss);
-	pe_debug("he_rx_lt_80 - 0x%x he_tx_lt_80 0x%x",
-		rates->rx_he_mcs_map_lt_80, rates->tx_he_mcs_map_lt_80);
-	pe_debug("he_rx_160 - 0x%x he_tx_160 0x%x",
-		rates->rx_he_mcs_map_160, rates->tx_he_mcs_map_160);
-	pe_debug("he_rx_80_80 - 0x%x he_tx_80_80 0x%x",
-		rates->rx_he_mcs_map_80_80, rates->tx_he_mcs_map_80_80);
+	pe_debug("lt 80: rx 0x%x tx 0x%x, 160: rx 0x%x tx 0x%x, 80_80: rx 0x%x tx 0x%x",
+		 rates->rx_he_mcs_map_lt_80, rates->tx_he_mcs_map_lt_80,
+		 rates->rx_he_mcs_map_160, rates->tx_he_mcs_map_160,
+		 rates->rx_he_mcs_map_80_80, rates->tx_he_mcs_map_80_80);
+
 	return QDF_STATUS_SUCCESS;
 }
 #endif
@@ -8620,11 +8615,10 @@ QDF_STATUS lim_pre_vdev_start(struct mac_context *mac,
 	mlme_obj->proto.generic.slot_time = session->shortSlotTimeSupported;
 	mlme_obj->mgmt.rate_info.bcn_tx_rate = session->beacon_tx_rate;
 
-	pe_debug("maxregpower %d cac_duration_ms %d beacon_interval %d hidden_ssid: %d dtimPeriod %d slot_time %d bcn tx rate %d",
-		 session->maxTxPower, session->cac_duration_ms,
-		 session->beaconParams.beaconInterval, session->ssidHidden,
-		 session->dtimPeriod, mlme_obj->proto.generic.slot_time,
-		 session->beacon_tx_rate);
+	pe_debug("cac_duration_ms %d beacon_interval %d hidden_ssid: %d dtimPeriod %d slot_time %d bcn tx rate %d",
+		 session->cac_duration_ms, session->beaconParams.beaconInterval,
+		 session->ssidHidden, session->dtimPeriod,
+		 mlme_obj->proto.generic.slot_time, session->beacon_tx_rate);
 
 	mlme_obj->proto.ht_info.allow_ht = !!session->htCapability;
 	mlme_obj->proto.vht_info.allow_vht = !!session->vhtCapability;

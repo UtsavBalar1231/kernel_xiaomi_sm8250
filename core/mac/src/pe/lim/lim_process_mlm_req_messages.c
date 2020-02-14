@@ -330,10 +330,6 @@ static void lim_post_join_set_link_state_callback(
 		return;
 	}
 
-	pe_debug("Sessionid %d set link state(%d) cb status: %d",
-		session_entry->peSessionId, session_entry->limMlmState,
-			status);
-
 	if (QDF_IS_STATUS_ERROR(status)) {
 		pe_err("failed to find pe session for session id:%d",
 			session_entry->peSessionId);
@@ -347,12 +343,6 @@ static void lim_post_join_set_link_state_callback(
 	session_entry->channelChangeReasonCode =
 			 LIM_SWITCH_CHANNEL_JOIN;
 	session_entry->pLimMlmReassocRetryReq = NULL;
-	pe_debug("[lim_process_mlm_join_req]: suspend link success(%d) "
-		 "on sessionid: %d setting channel to: freq %d with ch_width :%d "
-		 "and maxtxPower: %d", status, session_entry->peSessionId,
-		 session_entry->curr_op_freq,
-		 session_entry->ch_width,
-		 session_entry->maxTxPower);
 	lim_send_switch_chnl_params(mac, session_entry);
 
 	return;
@@ -450,8 +440,6 @@ void lim_process_mlm_join_req(struct mac_context *mac_ctx,
 		SIR_MAC_GET_IBSS(mlm_join_req->bssDescription.
 			capabilityInfo))) {
 		session->pLimMlmJoinReq = mlm_join_req;
-		pe_debug("vdev_id:%d Join req on current freq %d",
-			 session->vdev_id, session->curr_op_freq);
 		lim_process_mlm_post_join_suspend_link(mac_ctx, session);
 		return;
 	}
@@ -673,12 +661,11 @@ static void lim_process_mlm_auth_req(struct mac_context *mac_ctx, uint32_t *msg)
 		return;
 	}
 
-	pe_debug("Process Auth Req sessionID %d Systemrole %d"
-		       "mlmstate %d from: " QDF_MAC_ADDR_STR
-		       " with authtype %d", session_id,
-		GET_LIM_SYSTEM_ROLE(session), session->limMlmState,
-		QDF_MAC_ADDR_ARRAY(mac_ctx->lim.gpLimMlmAuthReq->peerMacAddr),
-		mac_ctx->lim.gpLimMlmAuthReq->authType);
+	pe_debug("vdev %d Systemrole %d mlmstate %d from: " QDF_MAC_ADDR_STR "with authtype %d",
+		 session->vdev_id, GET_LIM_SYSTEM_ROLE(session),
+		 session->limMlmState,
+		 QDF_MAC_ADDR_ARRAY(mac_ctx->lim.gpLimMlmAuthReq->peerMacAddr),
+		 mac_ctx->lim.gpLimMlmAuthReq->authType);
 
 	sir_copy_mac_addr(curr_bssid, session->bssId);
 
@@ -875,8 +862,7 @@ static void lim_process_mlm_assoc_req(struct mac_context *mac_ctx, uint32_t *msg
 	MTRACE(mac_trace(mac_ctx, TRACE_CODE_MLM_STATE,
 			 session_entry->peSessionId,
 			 session_entry->limMlmState));
-	pe_debug("SessionId:%d Sending Assoc_Req Frame",
-		session_entry->peSessionId);
+	pe_debug("vdev %d Sending Assoc_Req Frame", session_entry->vdev_id);
 
 	/* Prepare and send Association request frame */
 	lim_send_assoc_req_mgmt_frame(mac_ctx, mlm_assoc_req, session_entry);

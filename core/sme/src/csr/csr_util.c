@@ -1557,7 +1557,6 @@ uint32_t csr_translate_to_wni_cfg_dot11_mode(struct mac_context *mac,
 
 	switch (csrDot11Mode) {
 	case eCSR_CFG_DOT11_MODE_AUTO:
-		sme_debug("eCSR_CFG_DOT11_MODE_AUTO");
 		if (IS_FEATURE_SUPPORTED_BY_FW(DOT11AX))
 			ret = MLME_DOT11_MODE_11AX;
 		else if (IS_FEATURE_SUPPORTED_BY_FW(DOT11AC))
@@ -2697,22 +2696,32 @@ bool csr_is_pmkid_found_for_peer(struct mac_context *mac,
 {
 	uint32_t i, index;
 	uint8_t *session_pmkid;
-	tPmkidCacheInfo pmkid_cache;
+	tPmkidCacheInfo *pmkid_cache;
 
-	qdf_mem_zero(&pmkid_cache, sizeof(pmkid_cache));
-	qdf_mem_copy(pmkid_cache.BSSID.bytes, peer_mac_addr,
+	pmkid_cache = qdf_mem_malloc(sizeof(*pmkid_cache));
+	if (!pmkid_cache)
+		return false;
+
+	qdf_mem_copy(pmkid_cache->BSSID.bytes, peer_mac_addr,
 		     QDF_MAC_ADDR_SIZE);
 
-	if (!csr_lookup_pmkid_using_bssid(mac, session, &pmkid_cache, &index))
+	if (!csr_lookup_pmkid_using_bssid(mac, session, pmkid_cache, &index)) {
+		qdf_mem_free(pmkid_cache);
 		return false;
-	session_pmkid = &pmkid_cache.PMKID[0];
+	}
+
+	session_pmkid = pmkid_cache->PMKID;
 	for (i = 0; i < pmkid_count; i++) {
 		if (!qdf_mem_cmp(pmkid + (i * PMKID_LEN),
-				 session_pmkid, PMKID_LEN))
+				 session_pmkid, PMKID_LEN)) {
+			qdf_mem_free(pmkid_cache);
 			return true;
+		}
 	}
 
 	sme_debug("PMKID in PmkidCacheInfo doesn't match with PMKIDs of peer");
+	qdf_mem_free(pmkid_cache);
+
 	return false;
 }
 
