@@ -648,6 +648,9 @@
 		status = "disabled";
 	};
 
+	qcom,xr-stdalonevwr-misc {
+		compatible = "qcom,xr-stdalonevwr-misc";
+	};
 };
 
 &qupv3_se13_i2c {
