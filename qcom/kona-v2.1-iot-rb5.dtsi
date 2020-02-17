@@ -99,3 +99,10 @@
 		};
 	};
 };
+
+&usb1 {
+	/delete-property/ qcom,default-mode-none;
+	dwc3@a800000 {
+		dr_mode = "host";
+	};
+};
