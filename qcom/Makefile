@@ -52,6 +52,7 @@ dtbo-$(CONFIG_ARCH_LITO) += lito-rumi-overlay.dtbo \
                 lito-v2-cdp-overlay.dtbo \
                 lito-atp-overlay.dtbo \
                 lito-v2-atp-overlay.dtbo \
+                lito-v2-atp-lcd-overlay.dtbo \
                 lito-qrd-overlay.dtbo \
                 lito-v2-qrd-overlay.dtbo
 
@@ -62,6 +63,7 @@ lito-cdp-overlay.dtbo-base := lito.dtb
 lito-v2-cdp-overlay.dtbo-base := lito-v2.dtb
 lito-atp-overlay.dtbo-base := lito.dtb
 lito-v2-atp-overlay.dtbo-base := lito-v2.dtb
+lito-v2-atp-lcd-overlay.dtbo-base := lito-v2.dtb
 lito-qrd-overlay.dtbo-base := lito.dtb
 lito-v2-qrd-overlay.dtbo-base := lito-v2.dtb
 else
@@ -73,6 +75,7 @@ dtb-$(CONFIG_ARCH_LITO) += lito-rumi.dtb \
                 lito-v2-mtp.dtb \
                 lito-v2-cdp.dtb \
                 lito-v2-atp.dtb \
+                lito-v2-atp-lcd.dtb \
                 lito-v2-qrd.dtb
 endif
 
