@@ -117,6 +117,8 @@
 		clock-names = "core_clk", "rbbmtimer_clk", "mem_clk",
 				"mem_iface_clk", "gmu_clk";
 
+		#cooling-cells = <2>;
+
 		/* Bus Scale Settings */
 		qcom,gpubw-dev = <&gpubw>;
 		qcom,bus-control;
