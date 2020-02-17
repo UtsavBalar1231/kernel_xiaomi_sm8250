@@ -554,9 +554,10 @@ csr_roam_issue_disassociate(struct mac_context *mac, uint32_t sessionId,
 			     sizeof(struct qdf_mac_addr));
 	}
 
-	sme_debug("CSR Attempting to Disassociate Bssid=" QDF_MAC_ADDR_STR
-		   " subState: %s reason: %d", QDF_MAC_ADDR_ARRAY(bssId.bytes),
-		mac_trace_getcsr_roam_sub_state(NewSubstate), reasonCode);
+	sme_debug("Disassociate Bssid " QDF_MAC_ADDR_STR " subState: %s reason: %d",
+		  QDF_MAC_ADDR_ARRAY(bssId.bytes),
+		  mac_trace_getcsr_roam_sub_state(NewSubstate),
+		  reasonCode);
 
 	csr_roam_substate_change(mac, NewSubstate, sessionId);
 
@@ -1992,10 +1993,10 @@ void csr_roam_substate_change(struct mac_context *mac,
 	}
 	if (mac->roam.curSubState[sessionId] == NewSubstate)
 		return;
-	sme_debug("CSR RoamSubstate: [ %s <== %s ]",
-		  mac_trace_getcsr_roam_sub_state(NewSubstate),
-		  mac_trace_getcsr_roam_sub_state(mac->roam.
-		  curSubState[sessionId]));
+	sme_nofl_debug("CSR RoamSubstate: [ %s <== %s ]",
+		       mac_trace_getcsr_roam_sub_state(NewSubstate),
+		       mac_trace_getcsr_roam_sub_state(mac->roam.
+		       curSubState[sessionId]));
 	spin_lock(&mac->roam.roam_state_lock);
 	mac->roam.curSubState[sessionId] = NewSubstate;
 	spin_unlock(&mac->roam.roam_state_lock);
@@ -2012,10 +2013,10 @@ enum csr_roam_state csr_roam_state_change(struct mac_context *mac,
 	if (NewRoamState == mac->roam.curState[sessionId])
 		return PreviousState;
 
-	sme_debug("CSR RoamState[%d]: [ %s <== %s ]", sessionId,
-		  mac_trace_getcsr_roam_state(NewRoamState),
-		  mac_trace_getcsr_roam_state(
-		  mac->roam.curState[sessionId]));
+	sme_nofl_debug("CSR RoamState[%d]: [ %s <== %s ]", sessionId,
+		       mac_trace_getcsr_roam_state(NewRoamState),
+		       mac_trace_getcsr_roam_state(
+		       mac->roam.curState[sessionId]));
 	/*
 	 * Whenever we transition OUT of the Roaming state,
 	 * clear the Roaming substate.
@@ -4218,8 +4219,9 @@ csr_is_deauth_disassoc_already_active(struct mac_context *mac_ctx,
 							  vdev_id,
 							  peer_macaddr);
 
-	sme_debug("Deauth/Disassoc %s in progress for %pM",
-		  (ret ? "already" : "not"), peer_macaddr.bytes);
+	if (ret)
+		sme_debug("Deauth/Disassoc already in progress for %pM",
+			  peer_macaddr.bytes);
 
 	return ret;
 }
@@ -4327,7 +4329,7 @@ QDF_STATUS csr_roam_issue_deauth(struct mac_context *mac, uint32_t sessionId,
 		qdf_mem_copy(bssId.bytes, pSession->pConnectBssDesc->bssId,
 			     sizeof(struct qdf_mac_addr));
 	}
-	sme_debug("CSR Attempting to Deauth Bssid= " QDF_MAC_ADDR_STR,
+	sme_debug("Deauth to Bssid " QDF_MAC_ADDR_STR,
 		  QDF_MAC_ADDR_ARRAY(bssId.bytes));
 	csr_roam_substate_change(mac, NewSubstate, sessionId);
 
@@ -7043,8 +7045,6 @@ static void csr_roam_process_results_default(struct mac_context *mac_ctx,
 
 	prev_connect_info = &session->prev_assoc_ap_info;
 
-	sme_debug("receives no association indication; FILS %d",
-		  session->is_fils_connection);
 	sme_debug("Assoc ref count: %d", session->bRefAssocStartCnt);
 
 	/* Update AP's assoc info in scan before removing connectedProfile */
@@ -8059,7 +8059,7 @@ static bool csr_roam_process_results(struct mac_context *mac_ctx, tSmeCmd *cmd,
 	if (!roam_info)
 		return false;
 
-	sme_debug("Processing ROAM results...");
+	sme_debug("Result %d", res);
 	switch (res) {
 	case eCsrJoinSuccess:
 	case eCsrReassocSuccess:
@@ -9148,9 +9148,8 @@ QDF_STATUS csr_roam_issue_disassociate_cmd(struct mac_context *mac,
 		}
 		pCommand->command = eSmeCommandRoam;
 		pCommand->vdev_id = (uint8_t) sessionId;
-		sme_debug(
-			"Disassociate reason: %d, sessionId: %d",
-			reason, sessionId);
+		sme_debug("Disassociate reason: %d, vdev_id: %d",
+			 reason, sessionId);
 		switch (reason) {
 		case eCSR_DISCONNECT_REASON_MIC_ERROR:
 			pCommand->u.roamCmd.roamReason =
@@ -9238,7 +9237,6 @@ QDF_STATUS csr_roam_disconnect_internal(struct mac_context *mac, uint32_t sessio
 	    || csr_is_bss_type_ibss(pSession->connectedProfile.BSSType)
 	    || csr_is_roam_command_waiting_for_session(mac, sessionId)
 	    || CSR_IS_CONN_NDI(&pSession->connectedProfile)) {
-		sme_debug("called");
 		status = csr_roam_issue_disassociate_cmd(mac, sessionId,
 							 reason);
 	} else if (pSession->scan_info.profile) {
@@ -9962,7 +9960,7 @@ static void csr_roam_roaming_state_reassoc_rsp_processor(struct mac_context *mac
 		cds_flush_logs(WLAN_LOG_TYPE_FATAL,
 			WLAN_LOG_INDICATOR_HOST_DRIVER,
 			WLAN_LOG_REASON_ROAM_FAIL,
-			true, false);
+			false, false);
 		if ((eSIR_SME_FT_REASSOC_TIMEOUT_FAILURE ==
 		     pSmeJoinRsp->status_code)
 		    || (eSIR_SME_FT_REASSOC_FAILURE ==
@@ -10440,8 +10438,6 @@ static void csr_roam_roaming_state_deauth_rsp_processor(struct mac_context *mac,
 						struct deauth_rsp *pSmeRsp)
 {
 	tSirResultCodes status_code;
-	/* No one is sending eWNI_SME_DEAUTH_REQ to PE. */
-	sme_debug("is no-op");
 	status_code = csr_get_de_auth_rsp_status_code(pSmeRsp);
 	mac->roam.deauthRspStatus = status_code;
 	if (CSR_IS_ROAM_SUBSTATE_DEAUTH_REQ(mac, pSmeRsp->sessionId)) {
@@ -10453,10 +10449,6 @@ static void csr_roam_roaming_state_deauth_rsp_processor(struct mac_context *mac,
 			/* */
 			sme_debug(
 				"CSR SmeDeauthReq disassociated Successfully");
-		} else {
-			sme_warn(
-				"SmeDeauthReq failed with status_code= 0x%08X",
-				status_code);
 		}
 		/* We are not done yet. Get the data and continue roaming */
 		csr_roam_reissue_roam_command(mac, pSmeRsp->sessionId);
@@ -10582,10 +10574,6 @@ void csr_roaming_state_msg_processor(struct mac_context *mac, void *msg_buf)
 	struct csr_roam_info *roam_info;
 
 	pSmeRsp = (tSirSmeRsp *)msg_buf;
-	sme_debug("Message %d[0x%04X] received in substate %s",
-		pSmeRsp->messageType, pSmeRsp->messageType,
-		mac_trace_getcsr_roam_sub_state(
-			mac->roam.curSubState[pSmeRsp->vdev_id]));
 
 	switch (pSmeRsp->messageType) {
 
@@ -20363,7 +20351,7 @@ void csr_process_ho_fail_ind(struct mac_context *mac_ctx, void *msg_buf)
 		cds_flush_logs(WLAN_LOG_TYPE_FATAL,
 				WLAN_LOG_INDICATOR_HOST_DRIVER,
 				WLAN_LOG_REASON_ROAM_HO_FAILURE,
-				true, false);
+				false, false);
 }
 #endif /* WLAN_FEATURE_ROAM_OFFLOAD */
 
