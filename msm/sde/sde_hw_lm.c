@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/iopoll.h>
@@ -284,14 +284,8 @@ static void _setup_mixer_ops(struct sde_mdss_cfg *m,
 {
 	ops->setup_mixer_out = sde_hw_lm_setup_out;
 	if (IS_SDM845_TARGET(m->hwversion) || IS_SDM670_TARGET(m->hwversion) ||
-			IS_SM8150_TARGET(m->hwversion) ||
-			IS_SDMSHRIKE_TARGET(m->hwversion) ||
-			IS_SM6150_TARGET(m->hwversion) ||
-			IS_SDMMAGPIE_TARGET(m->hwversion) ||
-			IS_KONA_TARGET(m->hwversion) ||
-			IS_SAIPAN_TARGET(m->hwversion) ||
-			IS_SDMTRINKET_TARGET(m->hwversion) ||
-			IS_BENGAL_TARGET(m->hwversion))
+			IS_SDE_MAJOR_SAME(m->hwversion, SDE_HW_VER_500) ||
+			IS_SDE_MAJOR_SAME(m->hwversion, SDE_HW_VER_600))
 		ops->setup_blend_config = sde_hw_lm_setup_blend_config_sdm845;
 	else
 		ops->setup_blend_config = sde_hw_lm_setup_blend_config;

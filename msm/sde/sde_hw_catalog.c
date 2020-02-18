@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  */
 
 #define pr_fmt(fmt)	"[drm:%s:%d] " fmt, __func__, __LINE__
@@ -3970,58 +3970,86 @@ static int sde_hardware_format_caps(struct sde_mdss_cfg *sde_cfg,
 	uint32_t virt_vig_list_size, in_rot_list_size = 0;
 	uint32_t cursor_list_size = 0;
 	uint32_t index = 0;
+	const struct sde_format_extended *inline_fmt_tbl;
 
-
+	/* cursor input formats */
 	if (sde_cfg->has_cursor) {
 		cursor_list_size = ARRAY_SIZE(cursor_formats);
 		sde_cfg->cursor_formats = kcalloc(cursor_list_size,
 			sizeof(struct sde_format_extended), GFP_KERNEL);
 		if (!sde_cfg->cursor_formats) {
 			rc = -ENOMEM;
-			goto end;
+			goto out;
 		}
 		index = sde_copy_formats(sde_cfg->cursor_formats,
 			cursor_list_size, 0, cursor_formats,
 			ARRAY_SIZE(cursor_formats));
 	}
 
+	/* DMA pipe input formats */
 	dma_list_size = ARRAY_SIZE(plane_formats);
-	vig_list_size = ARRAY_SIZE(plane_formats_vig);
-	if (sde_cfg->has_vig_p010)
-		vig_list_size += ARRAY_SIZE(p010_ubwc_formats);
-	virt_vig_list_size = ARRAY_SIZE(plane_formats);
-	wb2_list_size = ARRAY_SIZE(wb2_formats);
-
-	if (IS_SDE_INLINE_ROT_REV_100(sde_cfg->true_inline_rot_rev))
-		in_rot_list_size = ARRAY_SIZE(true_inline_rot_v1_fmts);
 
 	sde_cfg->dma_formats = kcalloc(dma_list_size,
 		sizeof(struct sde_format_extended), GFP_KERNEL);
 	if (!sde_cfg->dma_formats) {
 		rc = -ENOMEM;
-		goto end;
+		goto free_cursor;
 	}
+
+	index = sde_copy_formats(sde_cfg->dma_formats, dma_list_size,
+			0, plane_formats, ARRAY_SIZE(plane_formats));
+
+	/* ViG pipe input formats */
+	vig_list_size = ARRAY_SIZE(plane_formats_vig);
+	if (sde_cfg->has_vig_p010)
+		vig_list_size += ARRAY_SIZE(p010_ubwc_formats);
 
 	sde_cfg->vig_formats = kcalloc(vig_list_size,
 		sizeof(struct sde_format_extended), GFP_KERNEL);
 	if (!sde_cfg->vig_formats) {
 		rc = -ENOMEM;
-		goto end;
+		goto free_dma;
 	}
 
+	index = sde_copy_formats(sde_cfg->vig_formats, vig_list_size,
+			0, plane_formats_vig, ARRAY_SIZE(plane_formats_vig));
+	if (sde_cfg->has_vig_p010)
+		index += sde_copy_formats(sde_cfg->vig_formats,
+			vig_list_size, index, p010_ubwc_formats,
+			ARRAY_SIZE(p010_ubwc_formats));
+
+	/* Virtual ViG pipe input formats (all virt pipes use DMA formats) */
+	virt_vig_list_size = ARRAY_SIZE(plane_formats);
 	sde_cfg->virt_vig_formats = kcalloc(virt_vig_list_size,
 		sizeof(struct sde_format_extended), GFP_KERNEL);
 	if (!sde_cfg->virt_vig_formats) {
 		rc = -ENOMEM;
-		goto end;
+		goto free_vig;
 	}
 
+	index = sde_copy_formats(sde_cfg->virt_vig_formats, virt_vig_list_size,
+			0, plane_formats, ARRAY_SIZE(plane_formats));
+
+	/* WB output formats */
+	wb2_list_size = ARRAY_SIZE(wb2_formats);
 	sde_cfg->wb_formats = kcalloc(wb2_list_size,
 		sizeof(struct sde_format_extended), GFP_KERNEL);
 	if (!sde_cfg->wb_formats) {
 		SDE_ERROR("failed to allocate wb format list\n");
 		rc = -ENOMEM;
-		goto end;
+		goto free_virt;
+	}
+
+	index = sde_copy_formats(sde_cfg->wb_formats, wb2_list_size,
+			 0, wb2_formats, ARRAY_SIZE(wb2_formats));
+
+	/* Rotation enabled input formats */
+	if (IS_SDE_INLINE_ROT_REV_100(sde_cfg->true_inline_rot_rev)) {
+		inline_fmt_tbl = true_inline_rot_v1_fmts;
+		in_rot_list_size = ARRAY_SIZE(true_inline_rot_v1_fmts);
+	} else if (IS_SDE_INLINE_ROT_REV_200(sde_cfg->true_inline_rot_rev)) {
+		inline_fmt_tbl = true_inline_rot_v2_fmts;
+		in_rot_list_size = ARRAY_SIZE(true_inline_rot_v2_fmts);
 	}
 
 	if (in_rot_list_size) {
@@ -4030,30 +4058,27 @@ static int sde_hardware_format_caps(struct sde_mdss_cfg *sde_cfg,
 		if (!sde_cfg->inline_rot_formats) {
 			SDE_ERROR("failed to alloc inline rot format list\n");
 			rc = -ENOMEM;
-			goto end;
+			goto free_wb;
 		}
+
+		index = sde_copy_formats(sde_cfg->inline_rot_formats,
+			in_rot_list_size, 0, inline_fmt_tbl, in_rot_list_size);
 	}
 
-	index = sde_copy_formats(sde_cfg->dma_formats, dma_list_size,
-		0, plane_formats, ARRAY_SIZE(plane_formats));
+	return 0;
 
-	index = sde_copy_formats(sde_cfg->vig_formats, vig_list_size,
-		0, plane_formats_vig, ARRAY_SIZE(plane_formats_vig));
-	if (sde_cfg->has_vig_p010)
-		index += sde_copy_formats(sde_cfg->vig_formats,
-			vig_list_size, index, p010_ubwc_formats,
-			ARRAY_SIZE(p010_ubwc_formats));
-
-	index = sde_copy_formats(sde_cfg->virt_vig_formats, virt_vig_list_size,
-		0, plane_formats, ARRAY_SIZE(plane_formats));
-
-	index = sde_copy_formats(sde_cfg->wb_formats, wb2_list_size,
-		0, wb2_formats, ARRAY_SIZE(wb2_formats));
-	if (in_rot_list_size)
-		index = sde_copy_formats(sde_cfg->inline_rot_formats,
-			in_rot_list_size, 0, true_inline_rot_v1_fmts,
-			ARRAY_SIZE(true_inline_rot_v1_fmts));
-end:
+free_wb:
+	kfree(sde_cfg->wb_formats);
+free_virt:
+	kfree(sde_cfg->virt_vig_formats);
+free_vig:
+	kfree(sde_cfg->vig_formats);
+free_dma:
+	kfree(sde_cfg->dma_formats);
+free_cursor:
+	if (sde_cfg->has_cursor)
+		kfree(sde_cfg->cursor_formats);
+out:
 	return rc;
 }
 
@@ -4288,6 +4313,23 @@ static int _sde_hardware_pre_caps(struct sde_mdss_cfg *sde_cfg, uint32_t hw_rev)
 		sde_cfg->has_qos_fl_nocalc = true;
 		clear_bit(MDSS_INTR_AD4_0_INTR, sde_cfg->mdss_irqs);
 		clear_bit(MDSS_INTR_AD4_1_INTR, sde_cfg->mdss_irqs);
+	} else if (IS_LAGOON_TARGET(hw_rev)) {
+		sde_cfg->has_cwb_support = true;
+		sde_cfg->has_qsync = true;
+		sde_cfg->perf.min_prefill_lines = 24;
+		sde_cfg->vbif_qos_nlvl = 8;
+		sde_cfg->ts_prefill_rev = 2;
+		sde_cfg->ctl_rev = SDE_CTL_CFG_VERSION_1_0_0;
+		sde_cfg->delay_prg_fetch_start = true;
+		sde_cfg->sui_ns_allowed = true;
+		sde_cfg->sui_misr_supported = true;
+		sde_cfg->sui_block_xin_mask = 0x261;
+		sde_cfg->has_sui_blendstage = true;
+		sde_cfg->has_qos_fl_nocalc = true;
+		clear_bit(MDSS_INTR_AD4_0_INTR, sde_cfg->mdss_irqs);
+		clear_bit(MDSS_INTR_AD4_1_INTR, sde_cfg->mdss_irqs);
+		sde_cfg->has_hdr = true;
+		sde_cfg->has_vig_p010 = true;
 	} else {
 		SDE_ERROR("unsupported chipset id:%X\n", hw_rev);
 		sde_cfg->perf.min_prefill_lines = 0xffff;
