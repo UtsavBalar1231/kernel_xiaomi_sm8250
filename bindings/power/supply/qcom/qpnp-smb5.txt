@@ -364,6 +364,13 @@ Charger specific properties:
   Definition: Specifies the step size of each step of FCC stepper algorithm.
 		If left unspecified, the default value is 100mA.
 
+- qcom,hvdcp2-max-icl-ua
+  Usage:      optional
+  Value type: <u32>
+  Definition: Specifies the maximum input current limit that can be configured
+		for HVDCP2 adapter.
+		If left unspecified, the default value is 3000mA.
+
 - qcom,hvdcp3-max-icl-ua
   Usage:      optional
   Value type: <u32>

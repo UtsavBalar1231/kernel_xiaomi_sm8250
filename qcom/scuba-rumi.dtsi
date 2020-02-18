@@ -27,6 +27,22 @@
 					     0x10060 0x3c
 					     0x0 0x4>;
 	};
+
+	bi_tcxo: bi_tcxo {
+		compatible = "fixed-factor-clock";
+		clock-mult = <1>;
+		clock-div = <2>;
+		clocks = <&xo_board>;
+		#clock-cells = <0>;
+	};
+
+	bi_tcxo_ao: bi_tcxo_ao {
+		compatible = "fixed-factor-clock";
+		clock-mult = <1>;
+		clock-div = <2>;
+		clocks = <&xo_board>;
+		#clock-cells = <0>;
+	};
 };
 
 &usb0 {
@@ -81,4 +97,11 @@
 	/delete-property/qcom,devfreq,freq-table;
 
 	status = "ok";
+};
+
+&rpmcc {
+	compatible = "qcom,dummycc";
+	clock-output-names = "rpmcc_clocks";
+	#clock-cells = <1>;
+	#reset-cells = <1>;
 };

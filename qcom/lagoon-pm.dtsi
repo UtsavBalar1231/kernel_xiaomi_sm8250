@@ -111,7 +111,6 @@
 				qcom,ref-stddev = <100>;
 				qcom,tmr-add = <100>;
 				qcom,ref-premature-cnt = <3>;
-				qcom,disable-ipi-prediction;
 				qcom,cpu = <&CPU6 &CPU7>;
 
 				qcom,pm-cpu-level@0 { /* C1 */

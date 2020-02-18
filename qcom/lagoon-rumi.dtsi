@@ -140,3 +140,7 @@
 
 	status = "ok";
 };
+
+&qupv3_se10_i2c {
+	status = "disabled";
+};
