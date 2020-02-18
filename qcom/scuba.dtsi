@@ -629,6 +629,8 @@
 		qcom,smem-state-names = "qcom,force-stop";
 	};
 
+	thermal_zones: thermal-zones { };
+
 	tsens0:tsens@04410000 {
 		compatible = "qcom,tsens24xx";
 		reg = <0x04410000 0x8>,
@@ -1141,6 +1143,7 @@
 	};
 };
 
+#include "scuba-thermal.dtsi"
 #include "scuba-coresight.dtsi"
 #include "scuba-pinctrl.dtsi"
 #include "scuba-ion.dtsi"
