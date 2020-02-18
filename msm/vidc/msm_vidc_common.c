@@ -1400,6 +1400,7 @@ static int msm_vidc_comm_update_ctrl(struct msm_vidc_inst *inst,
 {
 	struct v4l2_ctrl *ctrl = NULL;
 	int rc = 0;
+	bool is_menu = false;
 
 	ctrl = v4l2_ctrl_find(&inst->ctrl_handler, id);
 	if (!ctrl) {
@@ -1408,29 +1409,32 @@ static int msm_vidc_comm_update_ctrl(struct msm_vidc_inst *inst,
 		return -EINVAL;
 	}
 
+	if (ctrl->type == V4L2_CTRL_TYPE_MENU)
+		is_menu = true;
+
+	/**
+	 * For menu controls the step value is interpreted
+	 * as a menu_skip_mask.
+	 */
 	rc = v4l2_ctrl_modify_range(ctrl, cap->min, cap->max,
-			cap->step_size, cap->default_value);
+			is_menu ? ctrl->menu_skip_mask : cap->step_size,
+			cap->default_value);
 	if (rc) {
 		s_vpr_e(inst->sid,
-			"%s: failed: control name %s, min %d, max %d, step %d, default_value %d\n",
+			"%s: failed: control name %s, min %d, max %d, %s %x, default_value %d\n",
 			__func__, ctrl->name, cap->min, cap->max,
-			cap->step_size, cap->default_value);
+			is_menu ? "menu_skip_mask" : "step",
+			is_menu ? ctrl->menu_skip_mask : cap->step_size,
+			cap->default_value);
 		goto error;
 	}
-	/*
-	 * v4l2_ctrl_modify_range() is not updating default_value,
-	 * so use v4l2_ctrl_s_ctrl() to update it.
-	 */
-	rc = v4l2_ctrl_s_ctrl(ctrl, cap->default_value);
-	if (rc) {
-		s_vpr_e(inst->sid, "%s: failed s_ctrl: %s with value %d\n",
-			__func__, ctrl->name, cap->default_value);
-		goto error;
-	}
+
 	s_vpr_h(inst->sid,
-		"Updated control: %s: min %lld, max %lld, step %lld, default value = %lld\n",
+		"Updated control: %s: min %lld, max %lld, %s %x, default value = %lld\n",
 		ctrl->name, ctrl->minimum, ctrl->maximum,
-		ctrl->step, ctrl->default_value);
+		is_menu ? "menu_skip_mask" : "step",
+		is_menu ? ctrl->menu_skip_mask : ctrl->step,
+		ctrl->default_value);
 
 error:
 	return rc;
@@ -4373,6 +4377,7 @@ static int msm_comm_qbuf_superframe_to_hfi(struct msm_vidc_inst *inst,
 	frames[0].flags &= ~HAL_BUFFERFLAG_EXTRADATA;
 	frames[0].flags &= ~HAL_BUFFERFLAG_EOS;
 	frames[0].flags &= ~HAL_BUFFERFLAG_CVPMETADATA_SKIP;
+	frames[0].flags &= ~HAL_BUFFERFLAG_ENDOFSUBFRAME;
 	if (frames[0].flags)
 		s_vpr_e(inst->sid, "%s: invalid flags %#x\n",
 			__func__, frames[0].flags);
@@ -4394,10 +4399,20 @@ static int msm_comm_qbuf_superframe_to_hfi(struct msm_vidc_inst *inst,
 			/* first frame */
 			if (frames[0].extradata_addr)
 				frames[0].flags |= HAL_BUFFERFLAG_EXTRADATA;
+
+			/* Add work incomplete flag for all etb's except the
+			 * last one. For last frame, flag is cleared at the
+			 * last frame iteration.
+			 */
+			frames[0].flags |= HAL_BUFFERFLAG_ENDOFSUBFRAME;
 		} else if (i == superframe_count - 1) {
 			/* last frame */
 			if (mbuf->vvb.flags & V4L2_BUF_FLAG_EOS)
 				frames[i].flags |= HAL_BUFFERFLAG_EOS;
+			/* Clear Subframe flag just for the last frame to
+			 * indicate the end of SuperFrame.
+			 */
+			frames[i].flags &= ~HAL_BUFFERFLAG_ENDOFSUBFRAME;
 		}
 		num_etbs++;
 	}
@@ -5995,6 +6010,7 @@ int msm_comm_set_color_format(struct msm_vidc_inst *inst,
 void msm_comm_print_inst_info(struct msm_vidc_inst *inst)
 {
 	struct msm_vidc_buffer *mbuf;
+	struct msm_vidc_cvp_buffer *cbuf;
 	struct internal_buf *buf;
 	bool is_decode = false;
 	enum vidc_ports port;
@@ -6049,6 +6065,15 @@ void msm_comm_print_inst_info(struct msm_vidc_inst *inst)
 				buf->buffer_type, buf->smem.device_addr,
 				buf->smem.size);
 	mutex_unlock(&inst->outputbufs.lock);
+
+	mutex_lock(&inst->cvpbufs.lock);
+	s_vpr_e(inst->sid, "cvp buffer list:\n");
+	list_for_each_entry(cbuf, &inst->cvpbufs.list, list)
+		s_vpr_e(inst->sid,
+				"index: %u fd: %u offset: %u size: %u addr: %x\n",
+				cbuf->buf.index, cbuf->buf.fd, cbuf->buf.offset,
+				cbuf->buf.size, cbuf->smem.device_addr);
+	mutex_unlock(&inst->cvpbufs.lock);
 }
 
 int msm_comm_session_continue(void *instance)

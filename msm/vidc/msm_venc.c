@@ -938,10 +938,10 @@ static struct msm_vidc_ctrl msm_venc_ctrls[] = {
 	{
 		.id = V4L2_CID_MPEG_VIDC_VENC_BITRATE_SAVINGS,
 		.name = "Enable/Disable bitrate savings",
-		.type = V4L2_CTRL_TYPE_BOOLEAN,
-		.minimum = V4L2_MPEG_MSM_VIDC_DISABLE,
-		.maximum = V4L2_MPEG_MSM_VIDC_ENABLE,
-		.default_value = V4L2_MPEG_MSM_VIDC_ENABLE,
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.minimum = 0,
+		.maximum = 3,
+		.default_value = 3,
 		.step = 1,
 	},
 	{
@@ -1132,11 +1132,13 @@ int msm_venc_inst_init(struct msm_vidc_inst *inst)
 	int rc = 0;
 	struct msm_vidc_format_desc *fmt_desc = NULL;
 	struct v4l2_format *f = NULL;
+	uint32_t vpu;
 
 	if (!inst) {
 		d_vpr_e("Invalid input = %pK\n", inst);
 		return -EINVAL;
 	}
+	vpu = inst->core->platform_data->vpu_ver;
 	f = &inst->fmts[OUTPUT_PORT].v4l2_fmt;
 	f->type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
 	f->fmt.pix_mp.height = DEFAULT_HEIGHT;
@@ -1162,9 +1164,8 @@ int msm_venc_inst_init(struct msm_vidc_inst *inst)
 	f->fmt.pix_mp.height = DEFAULT_HEIGHT;
 	f->fmt.pix_mp.width = DEFAULT_WIDTH;
 	f->fmt.pix_mp.pixelformat = V4L2_PIX_FMT_NV12_UBWC;
-	if(inst->core->platform_data->vpu_ver == VPU_VERSION_IRIS1)
-		f->fmt.pix_mp.num_planes = 1;
-	else
+	f->fmt.pix_mp.num_planes = 1;
+	if (vpu == VPU_VERSION_IRIS2)
 		f->fmt.pix_mp.num_planes = 2;
 	f->fmt.pix_mp.plane_fmt[0].sizeimage =
 		msm_vidc_calculate_enc_input_frame_size(inst);
@@ -3315,8 +3316,10 @@ int msm_venc_set_bitrate_savings_mode(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
 	struct hfi_device *hdev;
-	struct v4l2_ctrl *ctrl = NULL;
+	struct v4l2_ctrl *cac;
+	struct v4l2_ctrl *profile;
 	struct hfi_enable enable;
+	u32 codec;
 
 	if (!inst || !inst->core) {
 		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
@@ -3324,12 +3327,30 @@ int msm_venc_set_bitrate_savings_mode(struct msm_vidc_inst *inst)
 	}
 	hdev = inst->core->device;
 
-	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VENC_BITRATE_SAVINGS);
-	enable.enable = !!ctrl->val;
-	if (!ctrl->val && inst->rc_type != V4L2_MPEG_VIDEO_BITRATE_MODE_VBR) {
+	cac = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VENC_BITRATE_SAVINGS);
+	codec = get_v4l2_codec(inst);
+	profile = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_HEVC_PROFILE);
+
+	/**
+	 * Enable CAC control:
+	 * 0x0 -> disabled,
+	 * 0x1 -> enabled for 8 bit
+	 * 0x2 -> enabled for 10 bit
+	 * 0x3 -> enabled for 8 and 10 bits both
+	 */
+	enable.enable = !!cac->val;
+	if (cac->val == 0x1 && codec == V4L2_PIX_FMT_HEVC &&
+		profile->val == V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10)
+		enable.enable = 0;
+	else if (cac->val == 0x2 && !(codec == V4L2_PIX_FMT_HEVC &&
+		profile->val == V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10))
+		enable.enable = 0;
+
+	if (!cac->val && inst->rc_type != V4L2_MPEG_VIDEO_BITRATE_MODE_VBR) {
 		s_vpr_h(inst->sid,
 			"Can't disable bitrate savings for non-VBR_CFR\n");
 		enable.enable = 1;
+		update_ctrl(cac, 3, inst->sid);
 	}
 
 	s_vpr_h(inst->sid, "%s: %d\n", __func__, enable.enable);

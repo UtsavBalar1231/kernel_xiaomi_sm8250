@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #include "msm_vidc_common.h"
@@ -1244,6 +1244,7 @@ int msm_vidc_decide_work_route_iris2(struct msm_vidc_inst *inst)
 	struct hfi_video_work_route pdata;
 	bool is_legacy_cbr;
 	u32 codec;
+	uint32_t vpu;
 
 	if (!inst || !inst->core || !inst->core->device) {
 		d_vpr_e("%s: Invalid args: Inst = %pK\n",
@@ -1251,10 +1252,15 @@ int msm_vidc_decide_work_route_iris2(struct msm_vidc_inst *inst)
 		return -EINVAL;
 	}
 
+	vpu = inst->core->platform_data->vpu_ver;
 	hdev = inst->core->device;
 	is_legacy_cbr = inst->clk_data.is_legacy_cbr;
 	pdata.video_work_route = 4;
 
+	if (vpu == VPU_VERSION_IRIS2_1) {
+		pdata.video_work_route = 1;
+		goto decision_done;
+	}
 	codec  = get_v4l2_codec(inst);
 	if (inst->session_type == MSM_VIDC_DECODER) {
 		if (codec == V4L2_PIX_FMT_MPEG2 ||
@@ -1278,6 +1284,7 @@ int msm_vidc_decide_work_route_iris2(struct msm_vidc_inst *inst)
 		return -EINVAL;
 	}
 
+decision_done:
 	s_vpr_h(inst->sid, "Configurng work route = %u",
 			pdata.video_work_route);
 
@@ -1698,9 +1705,9 @@ int msm_vidc_decide_core_and_power_mode_iris2(struct msm_vidc_inst *inst)
 {
 	u32 mbpf, mbps, max_hq_mbpf, max_hq_mbps;
 	bool enable = true;
+	int rc = 0;
 
 	inst->clk_data.core_id = VIDC_CORE_ID_1;
-	msm_print_core_status(inst->core, VIDC_CORE_ID_1, inst->sid);
 
 	/* Power saving always disabled for CQ and LOSSLESS RC modes. */
 	mbpf = msm_vidc_get_mbs_per_frame(inst);
@@ -1714,7 +1721,10 @@ int msm_vidc_decide_core_and_power_mode_iris2(struct msm_vidc_inst *inst)
 		(mbpf <= max_hq_mbpf && mbps <= max_hq_mbps))
 		enable = false;
 
-	return msm_vidc_power_save_mode_enable(inst, enable);
+	rc = msm_vidc_power_save_mode_enable(inst, enable);
+	msm_print_core_status(inst->core, VIDC_CORE_ID_1, inst->sid);
+
+	return rc;
 }
 
 void msm_vidc_init_core_clk_ops(struct msm_vidc_core *core)
