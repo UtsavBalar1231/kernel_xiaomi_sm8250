@@ -340,7 +340,7 @@
 		pinctrl-0 = <&cdc_dmic23_clk_active &cdc_dmic23_data_active>;
 		pinctrl-1 = <&cdc_dmic23_clk_sleep &cdc_dmic23_data_sleep>;
 		qcom,lpi-gpios;
-		qcom,tlmm-gpio = <135 136>;
+		qcom,tlmm-gpio = <136>;
 	};
 
 	cdc_dmic45_gpios: cdc_dmic45_pinctrl {
@@ -378,7 +378,7 @@
 		pinctrl-1 = <&tx_swr_clk_sleep &tx_swr_data1_sleep
 			    &tx_swr_data2_sleep &tx_swr_data3_sleep>;
 		qcom,lpi-gpios;
-		qcom,tlmm-gpio = <127 128 129 141>;
+		qcom,tlmm-gpio = <128 129>;
 	};
 };
 
