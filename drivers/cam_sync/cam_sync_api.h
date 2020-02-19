@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef __CAM_SYNC_API_H__
@@ -140,5 +140,14 @@ int cam_sync_destroy(int32_t sync_obj);
  */
 int cam_sync_wait(int32_t sync_obj, uint64_t timeout_ms);
 
+/**
+ * @brief: Check if sync object is valid
+ *
+ * @param sync_obj: int referencing the sync object to be checked
+ *
+ * @return 0 upon success, -EINVAL if sync object is in bad state or arguments
+ * are invalid
+ */
+int cam_sync_check_valid(int32_t sync_obj);
 
 #endif /* __CAM_SYNC_API_H__ */
