@@ -2764,6 +2764,7 @@
 		regulator-name = "gpu_cx_gdsc";
 		hw-ctrl-addr = <&gpu_cx_hw_ctrl>;
 		parent-supply = <&VDD_CX_LEVEL>;
+		vdd_parent-supply = <&VDD_CX_LEVEL>;
 		qcom,no-status-check-on-disable;
 		qcom,clk-dis-wait-val = <8>;
 		qcom,gds-timeout = <500>;
