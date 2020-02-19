@@ -1384,4 +1384,13 @@ source "drivers/input/touchscreen/nt36672c/Kconfig"
 
 source "drivers/input/touchscreen/xiaomi/Kconfig"
 
+config TOUCHSCREEN_COMMON
+	bool "Common touchscreen interface to interact with userspace"
+	default y
+	help
+	  Say Y here if you want to control touchpanel features via
+	  /sys/touchpanel.
+
+	  If unsure, say N.
+
 endif
