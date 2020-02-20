@@ -207,6 +207,7 @@ struct hfi_frame_process_info {
  * @clk_rate: Supported clock rates for the context
  * @num_paths: Number of valid AXI paths
  * @axi_path: ctx based per path bw vote
+ * @bw_included: Whether bw of this context is included in overal voting
  */
 struct cam_ctx_clk_info {
 	uint32_t curr_fc;
@@ -218,6 +219,7 @@ struct cam_ctx_clk_info {
 	int32_t clk_rate[CAM_MAX_VOTE];
 	uint32_t num_paths;
 	struct cam_axi_per_path_bw_vote axi_path[CAM_ICP_MAX_PER_PATH_VOTES];
+	bool bw_included;
 };
 /**
  * struct cam_icp_hw_ctx_data
