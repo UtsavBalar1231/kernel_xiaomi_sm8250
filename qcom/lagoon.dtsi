@@ -591,6 +591,24 @@
 		};
 	};
 
+	bluetooth: bt_wcn3990 {
+		compatible = "qca,wcn3990";
+		qca,bt-vdd-io-supply =   <&L11A>;  /* IO */
+		qca,bt-vdd-core-supply = <&L2E>; /* RFA */
+		qca,bt-vdd-pa-supply =   <&L10E>; /* CH0 */
+		qca,bt-vdd-xtal-supply = <&L7A>; /* XO */
+
+		qca,bt-vdd-io-voltage-level = <1700000 1900000>;
+		qca,bt-vdd-core-voltage-level = <1304000 1304000>;
+		qca,bt-vdd-pa-voltage-level = <3000000 3312000>;
+		qca,bt-vdd-xtal-voltage-level = <1700000 1900000>;
+
+		qca,bt-vdd-io-current-level = <1>; /* LPM/PFM */
+		qca,bt-vdd-core-current-level = <1>; /* LPM/PFM */
+		qca,bt-vdd-pa-current-level = <1>; /* LPM/PFM */
+		qca,bt-vdd-xtal-current-level = <1>; /* LPM/PFM */
+	};
+
 	intc: interrupt-controller@17a00000 {
 		compatible = "arm,gic-v3";
 		#interrupt-cells = <3>;
@@ -3486,6 +3504,12 @@
 &qupv3_se9_2uart {
 	status = "ok";
 };
+
+/* HS UART */
+&qupv3_se1_4uart {
+	status = "ok";
+};
+
 #include "lagoon-bus.dtsi"
 #include "lagoon-thermal.dtsi"
 
