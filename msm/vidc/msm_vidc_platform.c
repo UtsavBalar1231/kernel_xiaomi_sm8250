@@ -1685,6 +1685,7 @@ static struct msm_vidc_platform_data default_data = {
 	.efuse_data_length = 0,
 	.sku_version = 0,
 	.vpu_ver = VPU_VERSION_IRIS2,
+	.num_vpp_pipes = 0x4,
 	.ubwc_config = 0x0,
 };
 
@@ -1700,6 +1701,7 @@ static struct msm_vidc_platform_data lito_data = {
 	.efuse_data_length = ARRAY_SIZE(lito_efuse_data),
 	.sku_version = 0,
 	.vpu_ver = VPU_VERSION_IRIS1,
+	.num_vpp_pipes = 0x2,
 	.ubwc_config = 0x0,
 	.codecs = default_codecs,
 	.codecs_count = ARRAY_SIZE(default_codecs),
@@ -1719,6 +1721,7 @@ static struct msm_vidc_platform_data kona_data = {
 	.efuse_data_length = 0,
 	.sku_version = 0,
 	.vpu_ver = VPU_VERSION_IRIS2,
+	.num_vpp_pipes = 0x4,
 	.ubwc_config = kona_ubwc_data,
 	.codecs = default_codecs,
 	.codecs_count = ARRAY_SIZE(default_codecs),
@@ -1738,6 +1741,7 @@ static struct msm_vidc_platform_data lagoon_data = {
 	.efuse_data_length = ARRAY_SIZE(lagoon_efuse_data),
 	.sku_version = 0,
 	.vpu_ver = VPU_VERSION_IRIS2_1,
+	.num_vpp_pipes = 0x1,
 	.ubwc_config = 0x0,
 	.codecs = lagoon_codecs,
 	.codecs_count = ARRAY_SIZE(lagoon_codecs),
@@ -1757,6 +1761,7 @@ static struct msm_vidc_platform_data sm6150_data = {
 	.efuse_data_length = 0,
 	.sku_version = 0,
 	.vpu_ver = VPU_VERSION_AR50,
+	.num_vpp_pipes = 0x1,
 	.ubwc_config = 0x0,
 };
 
@@ -1772,6 +1777,7 @@ static struct msm_vidc_platform_data bengal_data = {
 	.efuse_data_length = 0,
 	.sku_version = 0,
 	.vpu_ver = VPU_VERSION_AR50_LITE,
+	.num_vpp_pipes = 0x1,
 	.ubwc_config = 0x0,
 	.codecs = bengal_codecs,
 	.codecs_count = ARRAY_SIZE(bengal_codecs),
@@ -1791,6 +1797,7 @@ static struct msm_vidc_platform_data sm8150_data = {
 	.efuse_data_length = 0,
 	.sku_version = 0,
 	.vpu_ver = VPU_VERSION_IRIS1,
+	.num_vpp_pipes = 0x2,
 	.ubwc_config = 0x0,
 };
 
@@ -1806,6 +1813,7 @@ static struct msm_vidc_platform_data sdm845_data = {
 	.efuse_data_length = 0,
 	.sku_version = 0,
 	.vpu_ver = VPU_VERSION_AR50,
+	.num_vpp_pipes = 0x1,
 	.ubwc_config = 0x0,
 };
 
@@ -1821,6 +1829,7 @@ static struct msm_vidc_platform_data sdm670_data = {
 	.efuse_data_length = ARRAY_SIZE(sdm670_efuse_data),
 	.sku_version = 0,
 	.vpu_ver = VPU_VERSION_AR50,
+	.num_vpp_pipes = 0x1,
 	.ubwc_config = 0x0,
 };
 
