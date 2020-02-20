@@ -1975,12 +1975,14 @@ static int __wlan_hdd_cfg80211_suspend_wlan(struct wiphy *wiphy,
 			goto resume_ol_rx;
 	}
 
-	if (hdd_ctx->enable_dp_rx_threads)
-		dp_txrx_suspend(cds_get_context(QDF_MODULE_ID_SOC));
+	if (hdd_ctx->enable_dp_rx_threads) {
+		if (dp_txrx_suspend(cds_get_context(QDF_MODULE_ID_SOC)))
+			goto resume_ol_rx;
+	}
 
 	if (cds_is_pktcapture_enabled()) {
 		if (wlan_hdd_mon_thread_suspend(hdd_ctx))
-			goto resume_ol_mon;
+			goto resume_dp_thread;
 	}
 
 	qdf_mtrace(QDF_MODULE_ID_HDD, QDF_MODULE_ID_HDD,
@@ -2003,7 +2005,6 @@ resume_dp_thread:
 	if (hdd_ctx->enable_dp_rx_threads)
 		dp_txrx_resume(cds_get_context(QDF_MODULE_ID_SOC));
 
-resume_ol_mon:
 	/* Resume tlshim MON thread */
 	if (cds_is_pktcapture_enabled())
 		wlan_hdd_mon_thread_resume(hdd_ctx);
