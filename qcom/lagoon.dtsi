@@ -3223,7 +3223,7 @@
 	qcom,ipa_fws {
 		compatible = "qcom,pil-tz-generic";
 		qcom,pas-id = <0xf>;
-		qcom,firmware-name = "ipa_fws";
+		qcom,firmware-name = "lagoon_ipa_fws";
 		qcom,pil-force-shutdown;
 		memory-region = <&pil_ipa_fw_mem>;
 	};
@@ -3250,6 +3250,7 @@
 		qcom,bandwidth-vote-for-ipa;
 		qcom,use-64-bit-dma-mask;
 		qcom,msm-bus,name = "ipa";
+		qcom,use-gsi-ipa-fw = "lagoon_ipa_fws";
 		qcom,wan-use-skb-page;
 		qcom,msm-bus,num-cases = <5>;
 		qcom,msm-bus,num-paths = <5>;
