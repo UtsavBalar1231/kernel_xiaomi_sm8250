@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_CPASTOP_HW_H_
@@ -20,11 +20,17 @@
  * @CAM_CAMNOC_HW_IRQ_IFE_UBWC_STATS_ENCODE_ERROR: Triggered if any error
  *                                                 detected in the IFE UBWC-
  *                                                 Stats encoder instance
+ * @CAM_CAMNOC_HW_IRQ_IFE01_UBWC_ENCODE_ERROR  : Triggered if any error
+ *                                               detected in the IFE1 UBWC
+ *                                               encoder instance
  * @CAM_CAMNOC_HW_IRQ_IFE02_UBWC_ENCODE_ERROR  : Triggered if any error
  *                                               detected in the IFE0 UBWC
  *                                               encoder instance
  * @CAM_CAMNOC_HW_IRQ_IFE13_UBWC_ENCODE_ERROR  : Triggered if any error
  *                                               detected in the IFE1 or IFE3
+ *                                               UBWC encoder instance
+ * @CAM_CAMNOC_HW_IRQ_IFE23_UBWC_ENCODE_ERROR  : Triggered if any error
+ *                                               detected in the IFE2 or IFE3
  *                                               UBWC encoder instance
  * @CAM_CAMNOC_HW_IRQ_IPE1_BPS_UBWC_DECODE_ERROR: Triggered if any error
  *                                                detected in the IPE1/BPS read
@@ -54,10 +60,14 @@ enum cam_camnoc_hw_irq_type {
 		CAM_CAMNOC_IRQ_SLAVE_ERROR,
 	CAM_CAMNOC_HW_IRQ_IFE_UBWC_STATS_ENCODE_ERROR =
 		CAM_CAMNOC_IRQ_IFE_UBWC_STATS_ENCODE_ERROR,
+	CAM_CAMNOC_HW_IRQ_IFE01_UBWC_ENCODE_ERROR =
+		CAM_CAMNOC_IRQ_IFE01_UBWC_ENCODE_ERROR,
 	CAM_CAMNOC_HW_IRQ_IFE02_UBWC_ENCODE_ERROR =
 		CAM_CAMNOC_IRQ_IFE02_UBWC_ENCODE_ERROR,
 	CAM_CAMNOC_HW_IRQ_IFE13_UBWC_ENCODE_ERROR =
 		CAM_CAMNOC_IRQ_IFE13_UBWC_ENCODE_ERROR,
+	CAM_CAMNOC_HW_IRQ_IFE23_UBWC_ENCODE_ERROR =
+		CAM_CAMNOC_IRQ_IFE23_UBWC_ENCODE_ERROR,
 	CAM_CAMNOC_HW_IRQ_IFE0_UBWC_ENCODE_ERROR =
 		CAM_CAMNOC_IRQ_IFE0_UBWC_ENCODE_ERROR,
 	CAM_CAMNOC_HW_IRQ_IFE1_WRITE_UBWC_ENCODE_ERROR =
@@ -109,8 +119,10 @@ enum cam_camnoc_hw_irq_type {
  */
 enum cam_camnoc_port_type {
 	CAM_CAMNOC_CDM,
+	CAM_CAMNOC_IFE01,
 	CAM_CAMNOC_IFE02,
 	CAM_CAMNOC_IFE13,
+	CAM_CAMNOC_IFE23,
 	CAM_CAMNOC_IFE_LINEAR,
 	CAM_CAMNOC_IFE_UBWC_STATS,
 	CAM_CAMNOC_IFE_RDI_WR,
