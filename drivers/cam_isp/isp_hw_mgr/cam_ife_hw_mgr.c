@@ -183,6 +183,7 @@ static int cam_ife_notify_safe_lut_scm(bool safe_trigger)
 	if (!rc) {
 		switch (camera_hw_version) {
 		case CAM_CPAS_TITAN_170_V100:
+		case CAM_CPAS_TITAN_170_V200:
 		case CAM_CPAS_TITAN_170_V110:
 		case CAM_CPAS_TITAN_175_V100:
 
