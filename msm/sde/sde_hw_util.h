@@ -178,6 +178,9 @@ int sde_reg_read(struct sde_hw_blk_reg_map *c, u32 reg_off);
 #define SDE_REG_WRITE(c, off, val) sde_reg_write(c, off, val, #off)
 #define SDE_REG_READ(c, off) sde_reg_read(c, off)
 
+#define SDE_IMEM_WRITE(addr, val) writel_relaxed(val, addr)
+#define SDE_IMEM_READ(addr) readl_relaxed(addr)
+
 #define MISR_FRAME_COUNT_MASK		0xFF
 #define MISR_CTRL_ENABLE		BIT(8)
 #define MISR_CTRL_STATUS		BIT(9)
