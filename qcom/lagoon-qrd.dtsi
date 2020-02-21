@@ -3,6 +3,7 @@
 #include <dt-bindings/iio/qcom,spmi-vadc.h>
 #include "lagoon-audio-overlay.dtsi"
 #include "lagoon-sde-display.dtsi"
+#include "camera/lagoon-camera-sensor-mtp.dtsi"
 
 &soc {
 	gpio_keys {
