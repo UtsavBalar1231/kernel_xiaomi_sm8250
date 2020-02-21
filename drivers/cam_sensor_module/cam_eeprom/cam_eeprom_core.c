@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/module.h>
@@ -108,7 +108,7 @@ static int cam_eeprom_read_memory(struct cam_eeprom_ctrl_t *e_ctrl,
 				emap[j].mem.addr_type,
 				emap[j].mem.data_type,
 				emap[j].mem.valid_size);
-			if (rc) {
+			if (rc < 0) {
 				CAM_ERR(CAM_EEPROM, "read failed rc %d",
 					rc);
 				return rc;
