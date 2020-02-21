@@ -19,11 +19,12 @@
 /* total input buffers in case of decoder batch */
 #define BATCH_DEC_TOTAL_INPUT_BUFFERS 6
 
-/* total input buffers for decoder HFR usecase (fps > 480) */
+/* total input buffers for decoder HFR usecase (fps capability > 480) */
 #define MAX_HFR_DEC_TOTAL_INPUT_BUFFERS 12
 
-/* total input buffers for decoder HFR usecase */
-#define HFR_DEC_TOTAL_INPUT_BUFFERS 12
+/* total input buffers for decoder HFR usecase (fps capablity <= 480) */
+#define MIN_HFR_DEC_TOTAL_INPUT_BUFFERS 8
+
 
 /* extra output buffers in case of decoder batch */
 #define BATCH_DEC_EXTRA_OUTPUT_BUFFERS 6
@@ -755,7 +756,7 @@ static int msm_vidc_get_extra_input_buff_count(struct msm_vidc_inst *inst)
 	unsigned int extra_input_count = 0;
 	struct msm_vidc_core *core;
 	struct v4l2_format *f;
-	int fps;
+	int max_fps = 0;
 
 	if (!inst || !inst->core) {
 		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
@@ -797,15 +798,15 @@ static int msm_vidc_get_extra_input_buff_count(struct msm_vidc_inst *inst)
 		if (!is_secure_session(inst) &&
 			msm_comm_get_num_perf_sessions(inst) <
 			MAX_PERF_ELIGIBLE_SESSIONS) {
-			fps = inst->clk_data.frame_rate >> 16;
+			max_fps = inst->capability.cap[CAP_FRAMERATE].max;
 			inst->is_perf_eligible_session = true;
-			if (fps > 480)
+			if (max_fps > 480)
 				extra_input_count =
 					(MAX_HFR_DEC_TOTAL_INPUT_BUFFERS -
 					MIN_INPUT_BUFFERS);
 			else
 				extra_input_count =
-					(HFR_DEC_TOTAL_INPUT_BUFFERS -
+					(MIN_HFR_DEC_TOTAL_INPUT_BUFFERS -
 					MIN_INPUT_BUFFERS);
 		}
 	} else if (is_encode_session(inst)) {
@@ -915,7 +916,9 @@ u32 msm_vidc_calculate_dec_input_frame_size(struct msm_vidc_inst *inst)
 		div_factor = 4;
 		base_res_mbs = inst->capability.cap[CAP_MBS_PER_FRAME].max;
 	} else {
-		base_res_mbs = NUM_MBS_4k;
+		base_res_mbs = min_t(unsigned int,
+				inst->capability.cap[CAP_MBS_PER_FRAME].max,
+				NUM_MBS_4k);
 		if (f->fmt.pix_mp.pixelformat == V4L2_PIX_FMT_VP9)
 			div_factor = 1;
 		else
