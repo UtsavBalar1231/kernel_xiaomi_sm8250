@@ -6519,6 +6519,7 @@ wlan_hdd_wifi_config_policy[QCA_WLAN_VENDOR_ATTR_CONFIG_MAX + 1] = {
 		.type = NLA_BINARY,
 		.len = SIR_MAC_MAX_ADD_IE_LENGTH + 2},
 	[QCA_WLAN_VENDOR_ATTR_CONFIG_ROAM_REASON] = {.type = NLA_U8 },
+	[QCA_WLAN_VENDOR_ATTR_BEACON_REPORT_FAIL] = {.type = NLA_U8},
 
 };
 
@@ -7694,6 +7695,45 @@ static int hdd_config_gtx(struct hdd_adapter *adapter,
 }
 
 /**
+ * hdd_set_beacon_rpt_fail() - enable/disable inclusion of
+ * beacon report error vsie in beacon report response
+ *
+ * @adapter: hdd adapter
+ * @attr: nla attr sent by supplicant
+ *
+ * Return: 0 on success, negative errno on failure
+ */
+#ifdef WLAN_FEATURE_BCN_RPT_VSIE
+static int hdd_set_beacon_rpt_fail(struct hdd_adapter *adapter,
+				   const struct nlattr *attr)
+{
+	uint8_t bcn_rpt_err_vsie_enabled;
+	QDF_STATUS status;
+	struct hdd_context *hdd_ctx = NULL;
+
+	hdd_ctx = WLAN_HDD_GET_CTX(adapter);
+	bcn_rpt_err_vsie_enabled = nla_get_u8(attr);
+	if (bcn_rpt_err_vsie_enabled > 1) {
+		hdd_err("Invalid config value %d", bcn_rpt_err_vsie_enabled);
+		return -EINVAL;
+	}
+	status =
+		ucfg_mlme_set_bcn_rpt_err_vsie_status(hdd_ctx->psoc,
+						      bcn_rpt_err_vsie_enabled);
+	if (QDF_IS_STATUS_ERROR(status))
+		hdd_err("Failed to set beacon report error vsie");
+
+	return qdf_status_to_os_return(status);
+}
+#else
+static inline int hdd_set_beacon_rpt_fail(struct hdd_adapter *adapter,
+					  const struct nlattr *attr)
+{
+	return -EINVAL;
+}
+#endif
+
+/**
  * hdd_config_disconnect_ies() - Configure disconnect IEs
  * @adapter: Pointer to HDD adapter
  * @attr: array of pointer to struct nlattr
@@ -7843,6 +7883,10 @@ static const struct independent_setters independent_setters[] = {
 #endif
 	{QCA_WLAN_VENDOR_ATTR_CONFIG_ROAM_REASON,
 	 hdd_set_roam_reason_vsie_status},
+#ifdef WLAN_FEATURE_BCN_RPT_VSIE
+	{QCA_WLAN_VENDOR_ATTR_BEACON_REPORT_FAIL,
+	 hdd_set_beacon_rpt_fail},
+#endif
 };
 
 #ifdef WLAN_FEATURE_ELNA
@@ -7870,6 +7914,50 @@ static int hdd_get_elna_bypass(struct hdd_adapter *adapter,
 	hdd_objmgr_put_vdev(vdev);
 
 	return ret;
+}
+#endif
+
+#ifdef WLAN_FEATURE_BCN_RPT_VSIE
+/**
+ * hdd_get_beacon_rpt_fail() - Get beacon_report_err_vsie
+ * @adapter: Pointer to HDD adapter
+ * @skb: sk buffer to hold nl80211 attributes
+ * @attr: Pointer to struct nlattr
+ *
+ * Return: 0 on success; error number otherwise
+ */
+static int hdd_get_beacon_rpt_fail(struct hdd_adapter *adapter,
+				   struct sk_buff *skb,
+				   const struct nlattr *attr)
+{
+	uint8_t br_err_enabled;
+	QDF_STATUS status;
+	struct hdd_context *hdd_ctx = NULL;
+
+	hdd_ctx = WLAN_HDD_GET_CTX(adapter);
+
+	status = ucfg_mlme_get_bcn_rpt_err_vsie_status(hdd_ctx->psoc,
+						       &br_err_enabled);
+	if (QDF_IS_STATUS_ERROR(status)) {
+		hdd_err("Get bcn rpt err vsie failed");
+		return -EINVAL;
+	}
+
+	hdd_debug("is br_err_enabled %d", br_err_enabled);
+	if (nla_put_u8(skb, QCA_WLAN_VENDOR_ATTR_BEACON_REPORT_FAIL,
+		       br_err_enabled)) {
+		hdd_err("nla_put failure");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+#else
+static inline int hdd_get_beacon_rpt_fail(struct hdd_adapter *adapter,
+					  struct sk_buff *skb,
+					  const struct nlattr *attr)
+{
+		return -EINVAL;
 }
 #endif
 
@@ -7952,6 +8040,11 @@ static const struct config_getters config_getters[] = {
 	{QCA_WLAN_VENDOR_ATTR_CONFIG_ROAM_REASON,
 	 sizeof(uint8_t),
 	 hdd_get_roam_reason_vsie_status},
+#ifdef WLAN_FEATURE_BCN_RPT_VSIE
+	{QCA_WLAN_VENDOR_ATTR_BEACON_REPORT_FAIL,
+	 sizeof(uint8_t),
+	 hdd_get_beacon_rpt_fail},
+#endif
 };
 
 /**

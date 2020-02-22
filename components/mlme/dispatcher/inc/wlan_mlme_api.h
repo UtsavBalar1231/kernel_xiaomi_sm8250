@@ -2462,4 +2462,30 @@ wlan_mlme_set_roam_reason_vsie_status(struct wlan_objmgr_psoc *psoc,
 }
 #endif
 
+#ifdef WLAN_FEATURE_BCN_RPT_VSIE
+/**
+ * wlan_mlme_get_bcn_rpt_err_vsie() - Indicate if beacon rpt err
+ * vsie is enabled or disabled
+ * @psoc: pointer to psoc object
+ * @bcn_rpt_err_vsie_enabled: pointer to hold value of beacon rpt err
+ *
+ * Return: QDF_STATUS
+ */
+QDF_STATUS
+wlan_mlme_get_bcn_rpt_err_vsie(struct wlan_objmgr_psoc *psoc,
+			       uint8_t *bcn_rpt_err_vsie_enabled);
+
+/**
+ * wlan_mlme_set_bcn_rpt_err_vsie() - Indicate if beacon rpt err
+ * vsie is enabled or disabled
+ * @psoc: pointer to psoc object
+ * @bcn_rpt_err_vsie_enabled: Value of beacon rpt err vsie
+ *
+ * Return: QDF_STATUS
+ */
+QDF_STATUS
+wlan_mlme_set_bcn_rpt_err_vsie(struct wlan_objmgr_psoc *psoc,
+			       uint8_t roam_reason_vsie_enabled);
+#endif
+
 #endif /* _WLAN_MLME_API_H_ */

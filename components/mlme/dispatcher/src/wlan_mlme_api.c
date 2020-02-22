@@ -3854,3 +3854,36 @@ wlan_mlme_set_roam_reason_vsie_status(struct wlan_objmgr_psoc *psoc,
 	return QDF_STATUS_SUCCESS;
 }
 #endif
+
+#ifdef WLAN_FEATURE_BCN_RPT_VSIE
+QDF_STATUS
+wlan_mlme_get_bcn_rpt_err_vsie(struct wlan_objmgr_psoc *psoc,
+			       uint8_t *bcn_rpt_err_vsie_enable)
+{
+	struct wlan_mlme_psoc_ext_obj *mlme_obj;
+
+	mlme_obj = mlme_get_psoc_ext_obj(psoc);
+	if (!mlme_obj) {
+		*bcn_rpt_err_vsie_enable =
+			cfg_default(CFG_ENABLE_BCN_RPT_ERR_VSIE);
+		return QDF_STATUS_E_FAILURE;
+	}
+
+	*bcn_rpt_err_vsie_enable = mlme_obj->cfg.sta.bcn_rpt_err_vsie;
+	return QDF_STATUS_SUCCESS;
+}
+
+QDF_STATUS
+wlan_mlme_set_bcn_rpt_err_vsie(struct wlan_objmgr_psoc *psoc,
+			       uint8_t bcn_rpt_err_vsie_enable)
+{
+	struct wlan_mlme_psoc_ext_obj *mlme_obj;
+
+	mlme_obj = mlme_get_psoc_ext_obj(psoc);
+	if (!mlme_obj)
+		return QDF_STATUS_E_FAILURE;
+
+	mlme_obj->cfg.sta.bcn_rpt_err_vsie = bcn_rpt_err_vsie_enable;
+	return QDF_STATUS_SUCCESS;
+}
+#endif

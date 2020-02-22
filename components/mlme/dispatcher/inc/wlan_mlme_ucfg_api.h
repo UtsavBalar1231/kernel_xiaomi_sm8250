@@ -4043,6 +4043,38 @@ ucfg_mlme_set_roam_reason_vsie_status(struct wlan_objmgr_psoc *psoc,
 	return wlan_mlme_set_roam_reason_vsie_status(psoc,
 					roam_reason_vsie_enabled);
 }
+#endif
 
+#ifdef WLAN_FEATURE_BCN_RPT_VSIE
+/**
+ * ucfg_mlme_get_bcn_rpt_vsie() - Get beacon report error vsie is
+ * enabled or disabled
+ * @psoc: pointer to psoc object
+ * @bcn_rpt_err_vsie_enabled: pointer to hold value of beacon rpt err
+ * vsie to include/exculde bcn rpt error in bcnt rpt rsp frame
+ *
+ * Return: Success if able to get bcn rpt err vsie value, else Failure
+ */
+static inline QDF_STATUS
+ucfg_mlme_get_bcn_rpt_err_vsie_status(struct wlan_objmgr_psoc *psoc,
+				      uint8_t *bcn_rpt_err_vsie_enabled)
+{
+	return wlan_mlme_get_bcn_rpt_err_vsie(psoc, bcn_rpt_err_vsie_enabled);
+}
+
+/**
+ * ucfg_mlme_set_bcn_rpt_vsie() - Set beacon report error vsie is
+ * enabled or disabled
+ * @psoc: pointer to psoc object
+ * @bcn_rpt_err_vsie_enabled: value of beacon rpt err vsie
+ *
+ * Return: Success if able to get bcn rpt err vsie value, else Failure
+ */
+static inline QDF_STATUS
+ucfg_mlme_set_bcn_rpt_err_vsie_status(struct wlan_objmgr_psoc *psoc,
+				      uint8_t bcn_rpt_err_vsie_enabled)
+{
+	return wlan_mlme_set_bcn_rpt_err_vsie(psoc, bcn_rpt_err_vsie_enabled);
+}
 #endif
 #endif /* _WLAN_MLME_UCFG_API_H_ */
