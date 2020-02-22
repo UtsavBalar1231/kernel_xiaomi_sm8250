@@ -173,7 +173,8 @@
 		#dma-cells = <5>;
 		reg = <0x900000 0x60000>;
 		reg-names = "gpi-top";
-		interrupts = <GIC_SPI 646 IRQ_TYPE_LEVEL_HIGH>,
+		interrupts = <GIC_SPI 645 IRQ_TYPE_LEVEL_HIGH>,
+			<GIC_SPI 646 IRQ_TYPE_LEVEL_HIGH>,
 			<GIC_SPI 647 IRQ_TYPE_LEVEL_HIGH>,
 			<GIC_SPI 648 IRQ_TYPE_LEVEL_HIGH>,
 			<GIC_SPI 649 IRQ_TYPE_LEVEL_HIGH>,
@@ -181,8 +182,7 @@
 			<GIC_SPI 651 IRQ_TYPE_LEVEL_HIGH>,
 			<GIC_SPI 652 IRQ_TYPE_LEVEL_HIGH>,
 			<GIC_SPI 653 IRQ_TYPE_LEVEL_HIGH>,
-			<GIC_SPI 654 IRQ_TYPE_LEVEL_HIGH>,
-			<GIC_SPI 655 IRQ_TYPE_LEVEL_HIGH>;
+			<GIC_SPI 654 IRQ_TYPE_LEVEL_HIGH>;
 		qcom,max-num-gpii = <10>;
 		qcom,gpii-mask = <0x3f>;
 		qcom,ev-factor = <2>;
