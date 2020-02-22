@@ -1538,6 +1538,35 @@ typedef struct sSirMacRadioMeasureReport {
 	} report;
 
 } tSirMacRadioMeasureReport, *tpSirMacRadioMeasureReport;
+/**
+ * enum beacon_report_status_code - Beacon Report response error
+ * @BCN_RPT_ERR_UNSPECIFIED: unspecified error
+ * @BCN_RPT_ERR_RRM_FEATURE_DISABLED: AP sets Radio Measurement subfield
+ * to 0 in Capability Information element
+ * @BCN_RPT_ERR_NOT_SUPPORTED_PARAMETERS: STA does not support
+ * parameters in the Beacon Report request
+ * @BCN_RPT_ERR_TEMPORARILY_UNAVAILABLE: Memory allocation Failure
+ * @BCN_RPT_ERR_VALIDATION_FAILED_IN_A_REQUEST_FRAME: Beacon Report
+ * request has invalid format
+ * @BCN_RPT_ERR_PREVIOUS_REQUEST_PROGRESS: New Beacon Report request is sent
+ * by AP before completion of previous beacon request
+ * @BCN_RPT_ERR_MAXIMUM_MEASUREMENT_DURATION_EXCCEED: Requested measurement
+ * duration greater than  Measurement Duration of STA
+ * @BCN_RPT_ERR_NOT_SUPPORTED_REPORT_BITS: AP sends not supported report bits
+ *  in Table 9-81 in IEEE802.11-2016
+ * @BCN_RPT_SUCCESS: Success
+ */
+enum beacon_report_status_code {
+	BCN_RPT_ERR_UNSPECIFIED,
+	BCN_RPT_ERR_RRM_FEATURE_DISABLED,
+	BCN_RPT_ERR_NOT_SUPPORTED_PARAMETERS,
+	BCN_RPT_ERR_TEMPORARILY_UNAVAILABLE,
+	BCN_RPT_ERR_VALIDATION_FAILED_IN_A_REQUEST_FRAME,
+	BCN_RPT_ERR_PREVIOUS_REQUEST_PROGRESS,
+	BCN_RPT_ERR_MAXIMUM_MEASUREMENT_DURATION_EXCCEED,
+	BCN_RPT_ERR_NOT_SUPPORTED_REPORT_BITS,
+	BCN_RPT_SUCCESS,
+};
 
 #ifdef WLAN_FEATURE_11AX
 struct he_cap_network_endian {
