@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  */
 
 #define pr_fmt(fmt)	"[sde-hdcp-2x] %s: " fmt, __func__
@@ -472,6 +472,11 @@ static void sde_hdcp_2x_msg_sent(struct sde_hdcp_2x_ctrl *hdcp)
 	struct hdcp_transport_wakeup_data cdata = {
 		HDCP_TRANSPORT_CMD_INVALID,
 		hdcp->client_data};
+
+	if (atomic_read(&hdcp->hdcp_off)) {
+		pr_debug("invalid state, hdcp off\n");
+		return;
+	}
 
 	switch (hdcp->app_data.response.data[0]) {
 	case SKE_SEND_TYPE_ID:
