@@ -3838,7 +3838,7 @@ static int swrm_resume(struct device *dev)
 	struct swr_mstr_ctrl *swrm = platform_get_drvdata(pdev);
 
 	dev_dbg(dev, "%s: system resume, state: %d\n", __func__, swrm->state);
-	if (!pm_runtime_enabled(dev) || !pm_runtime_suspend(dev)) {
+	if (!pm_runtime_enabled(dev) || pm_runtime_suspended(dev)) {
 		ret = swrm_runtime_resume(dev);
 		if (!ret) {
 			pm_runtime_mark_last_busy(dev);

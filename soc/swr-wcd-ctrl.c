@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/* Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/irq.h>
@@ -1897,7 +1897,7 @@ static int swrm_resume(struct device *dev)
 	struct swr_mstr_ctrl *swrm = platform_get_drvdata(pdev);
 
 	dev_dbg(dev, "%s: system resume, state: %d\n", __func__, swrm->state);
-	if (!pm_runtime_enabled(dev) || !pm_runtime_suspend(dev)) {
+	if (!pm_runtime_enabled(dev) || pm_runtime_suspended(dev)) {
 		ret = swrm_runtime_resume(dev);
 		if (!ret) {
 			pm_runtime_mark_last_busy(dev);
