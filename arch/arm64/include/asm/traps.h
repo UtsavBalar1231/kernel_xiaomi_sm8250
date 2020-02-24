@@ -122,4 +122,12 @@ bool arm64_is_fatal_ras_serror(struct pt_regs *regs, unsigned int esr);
 void __noreturn arm64_serror_panic(struct pt_regs *regs, u32 esr);
 static inline void get_timer_count_hook_init(void) {}
 static inline void get_timer_freq_hook_init(void) {}
+
+extern int (*do_tlb_conf_fault_cb)(unsigned long addr,
+				   unsigned int esr,
+				   struct pt_regs *regs);
+extern int do_tlb_conf_fault(unsigned long addr,
+			     unsigned int esr,
+			     struct pt_regs *regs);
+
 #endif
