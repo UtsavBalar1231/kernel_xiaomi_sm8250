@@ -34,8 +34,6 @@ static QDF_STATUS pmo_core_cache_arp_in_vdev_priv(
 	int index;
 	struct qdf_mac_addr peer_bssid;
 
-	pmo_enter();
-
 	vdev_ctx = pmo_vdev_get_priv(vdev);
 
 	request = qdf_mem_malloc(sizeof(*request));
@@ -76,7 +74,6 @@ free_req:
 	qdf_mem_free(request);
 
 exit_with_status:
-	pmo_exit();
 
 	return status;
 }
@@ -111,8 +108,6 @@ pmo_core_do_enable_arp_offload(struct wlan_objmgr_vdev *vdev,
 	struct pmo_psoc_priv_obj *psoc_ctx;
 	struct pmo_vdev_priv_obj *vdev_ctx;
 
-	pmo_enter();
-
 	vdev_ctx = pmo_vdev_get_priv(vdev);
 
 	psoc_ctx = vdev_ctx->pmo_psoc_ctx;
@@ -143,7 +138,6 @@ pmo_core_do_enable_arp_offload(struct wlan_objmgr_vdev *vdev,
 		break;
 	}
 out:
-	pmo_exit();
 
 	return status;
 }
@@ -221,8 +215,6 @@ QDF_STATUS pmo_core_arp_check_offload(struct wlan_objmgr_psoc *psoc,
 	bool active_offload_cond, is_applied_cond;
 	enum QDF_OPMODE opmode;
 
-	pmo_enter();
-
 	vdev = pmo_psoc_get_vdev(psoc, vdev_id);
 	if (!vdev) {
 		pmo_err("vdev is NULL");
@@ -268,7 +260,6 @@ QDF_STATUS pmo_core_cache_arp_offload_req(struct pmo_arp_req *arp_req)
 	QDF_STATUS status;
 	struct wlan_objmgr_vdev *vdev;
 
-	pmo_enter();
 	if (!arp_req) {
 		pmo_err("arp_req is NULL");
 		status = QDF_STATUS_E_INVAL;
@@ -303,7 +294,6 @@ QDF_STATUS pmo_core_cache_arp_offload_req(struct pmo_arp_req *arp_req)
 dec_ref:
 	pmo_vdev_put_ref(vdev);
 out:
-	pmo_exit();
 
 	return status;
 }
@@ -346,7 +336,6 @@ QDF_STATUS pmo_core_enable_arp_offload_in_fwr(struct wlan_objmgr_vdev *vdev,
 	QDF_STATUS status;
 	uint8_t vdev_id;
 
-	pmo_enter();
 	if (!vdev) {
 		pmo_err("vdev is NULL");
 		status = QDF_STATUS_E_NULL_VALUE;
@@ -369,8 +358,7 @@ QDF_STATUS pmo_core_enable_arp_offload_in_fwr(struct wlan_objmgr_vdev *vdev,
 
 put_ref:
 	pmo_vdev_put_ref(vdev);
-out:
-	pmo_exit();
+out:;
 
 	return status;
 }
@@ -381,7 +369,6 @@ QDF_STATUS pmo_core_disable_arp_offload_in_fwr(struct wlan_objmgr_vdev *vdev,
 	QDF_STATUS status;
 	uint8_t vdev_id;
 
-	pmo_enter();
 	if (!vdev) {
 		pmo_err("vdev is NULL");
 		status = QDF_STATUS_E_NULL_VALUE;
@@ -404,7 +391,6 @@ QDF_STATUS pmo_core_disable_arp_offload_in_fwr(struct wlan_objmgr_vdev *vdev,
 def_ref:
 	pmo_vdev_put_ref(vdev);
 out:
-	pmo_exit();
 
 	return status;
 }
