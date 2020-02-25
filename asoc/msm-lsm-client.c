@@ -2477,7 +2477,6 @@ static int msm_lsm_open(struct snd_pcm_substream *substream)
 	init_waitqueue_head(&prtd->event_wait);
 	init_waitqueue_head(&prtd->period_wait);
 	prtd->substream = substream;
-	wakeup_source_init(&prtd->ws, "lsm-client");
 	runtime->private_data = prtd;
 	runtime->hw = msm_pcm_hardware_capture;
 
@@ -2530,6 +2529,7 @@ static int msm_lsm_open(struct snd_pcm_substream *substream)
 	prtd->lsm_client->fe_id = rtd->dai_link->id;
 	prtd->lsm_client->unprocessed_data = 0;
 
+	wakeup_source_init(&prtd->ws, "lsm-client");
 	return 0;
 }
 
