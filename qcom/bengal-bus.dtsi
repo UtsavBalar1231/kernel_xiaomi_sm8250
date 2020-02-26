@@ -334,7 +334,7 @@
 			qcom,qport = <4>;
 			qcom,qos-mode = "fixed";
 			qcom,connections = <&slv_snoc_bimc_nrt>;
-			qcom,prio = <0>;
+			qcom,prio = <3>;
 			qcom,bus-dev = <&fab_mmnrt_virt>;
 			qcom,mas-rpm-id = <ICBID_MASTER_CAMNOC_SF>;
 		};
@@ -349,7 +349,7 @@
 			qcom,qos-mode = "fixed";
 			qcom,forwarding;
 			qcom,connections = <&slv_snoc_bimc_rt>;
-			qcom,prio = <0>;
+			qcom,prio = <2>;
 			qcom,bus-dev = <&fab_mmrt_virt>;
 			qcom,mas-rpm-id = <ICBID_MASTER_CAMNOC_HF>;
 		};
@@ -373,7 +373,8 @@
 			qcom,agg-ports = <1>;
 			qcom,ap-owned;
 			qcom,qport = <5>;
-			qcom,qos-mode = "bypass";
+			qcom,qos-mode = "fixed";
+			qcom,prio = <2>;
 			qcom,forwarding;
 			qcom,connections = <&slv_snoc_bimc_rt>;
 			qcom,bus-dev = <&fab_mmrt_virt>;
@@ -418,6 +419,7 @@
 			qcom,qport = <13>;
 			qcom,qos-mode = "fixed";
 			qcom,prio = <4>;
+			qcom,forwarding;
 			qcom,connections = <&slv_snoc_bimc_nrt>;
 			qcom,bus-dev = <&fab_mmnrt_virt>;
 			qcom,mas-rpm-id = <ICBID_MASTER_VIDEO_PROC>;
@@ -990,6 +992,9 @@
 			label = "slv-snoc-cnoc";
 			qcom,buswidth = <8>;
 			qcom,agg-ports = <1>;
+			qcom,qport = <8>;
+			qcom,qos-mode = "fixed";
+			qcom,prio = <2>;
 			qcom,bus-dev = <&fab_sys_noc>;
 			qcom,connections = <&mas_snoc_cnoc>;
 			qcom,slv-rpm-id = <ICBID_SLAVE_SNOC_CNOC>;
