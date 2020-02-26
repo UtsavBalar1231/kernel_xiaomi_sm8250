@@ -14158,6 +14158,8 @@ static void populate_tlv_service(uint32_t *wmi_service)
 			WMI_SERVICE_NSS_RATIO_TO_HOST_SUPPORT;
 	wmi_service[wmi_roam_scan_chan_list_to_host_support] =
 			WMI_SERVICE_ROAM_SCAN_CHANNEL_LIST_TO_HOST_SUPPORT;
+	wmi_service[wmi_service_sta_nan_ndi_four_port] =
+			WMI_SERVICE_NDI_NDI_STA_SUPPORT;
 }
 
 /**
