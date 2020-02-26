@@ -41,6 +41,12 @@
 /* max mixer blend stages */
 #define DEFAULT_SDE_MIXER_BLENDSTAGES 7
 
+/* max number of channel */
+#define MAX_NUM_CHANNELS	8
+
+/* HBB Offset */
+#define UBWC_HBB_OFFSET	13
+
 /*
  * max bank bit for macro tile and ubwc format.
  * this value is left shifted and written to register
@@ -190,6 +196,7 @@ enum sde_prop {
 	SEC_SID_MASK,
 	SDE_LIMITS,
 	BASE_LAYER,
+	NUM_DRAM_CHANNELS,
 	SDE_PROP_MAX,
 };
 
@@ -494,6 +501,7 @@ static struct sde_prop_type sde_prop[] = {
 	{SEC_SID_MASK, "qcom,sde-secure-sid-mask", false, PROP_TYPE_U32_ARRAY},
 	{SDE_LIMITS, "qcom,sde-limits", false, PROP_TYPE_NODE},
 	{BASE_LAYER, "qcom,sde-mixer-stage-base-layer", false, PROP_TYPE_BOOL},
+	{NUM_DRAM_CHANNELS, "qcom,sde-dram-channels", true, PROP_TYPE_U32},
 };
 
 static struct sde_prop_type sde_perf_prop[] = {
@@ -3114,9 +3122,39 @@ end:
 	return rc;
 }
 
+static int _sde_get_ubwc_hbb(bool prop_exists[SDE_PROP_MAX],
+				struct sde_prop_value *prop_value)
+{
+	int num_dram_channels, i, j, hbb = -EINVAL;
+	int num_ranks_per_channel[MAX_NUM_CHANNELS];
+
+	num_dram_channels = PROP_VALUE_ACCESS(prop_value,
+			NUM_DRAM_CHANNELS, 0);
+
+	if (num_dram_channels > MAX_NUM_CHANNELS)
+		return -EINVAL;
+
+	for (i = 0; i < num_dram_channels; i++)
+		num_ranks_per_channel[i] = of_fdt_get_ddrrank(i);
+
+	for (i = 0; i < num_dram_channels; i++) {
+		for (j = 0; j < num_ranks_per_channel[i]; j++)
+			hbb = max(hbb, of_fdt_get_ddrhbb(i, j));
+	}
+
+	if (hbb >= UBWC_HBB_OFFSET)
+		hbb -= UBWC_HBB_OFFSET;
+	else
+		hbb = -EINVAL;
+
+	return hbb;
+}
+
 static int _sde_parse_prop_check(struct sde_mdss_cfg *cfg,
 	bool prop_exists[SDE_PROP_MAX], struct sde_prop_value *prop_value)
 {
+	int ret;
+
 	cfg->max_sspp_linewidth = PROP_VALUE_ACCESS(prop_value,
 			SSPP_LINEWIDTH, 0);
 	if (!prop_exists[SSPP_LINEWIDTH])
@@ -3154,6 +3192,13 @@ static int _sde_parse_prop_check(struct sde_mdss_cfg *cfg,
 	if (cfg->ubwc_version == SDE_HW_UBWC_VER_40 &&
 			of_fdt_get_ddrtype() == LP_DDR4_TYPE)
 		cfg->mdp[0].highest_bank_bit = 0x02;
+
+	if (IS_SDE_MAJOR_MINOR_SAME(cfg->hwversion, SDE_HW_VER_630)) {
+		ret = _sde_get_ubwc_hbb(prop_exists, prop_value);
+
+		if (ret >= 0)
+			cfg->mdp[0].highest_bank_bit = ret;
+	}
 
 	cfg->macrotile_mode = PROP_VALUE_ACCESS(prop_value, MACROTILE_MODE, 0);
 	if (!prop_exists[MACROTILE_MODE])
