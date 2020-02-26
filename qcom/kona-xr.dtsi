@@ -420,6 +420,34 @@
 		};
 	};
 
+	display_panel_led1_default: display_panel_led1_default {
+		mux {
+			pins = "gpio144";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio144";
+			drive-strength = <8>;
+			bias-disable = <0>;
+			output-high;
+		};
+	};
+
+	display_panel_led2_default: display_panel_led2_default {
+		mux {
+			pins = "gpio140";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio140";
+			drive-strength = <8>;
+			bias-disable = <0>;
+			output-high;
+		};
+	};
+
 };
 
 &qupv3_se12_2uart {
@@ -974,18 +1002,37 @@
 	qcom,platform-reset-gpio = <&tlmm 75 0>;
 	qcom,platform-te-gpio = <&tlmm 66 0>;
 
-	qcom,display-1p8-en-gpio = <&tlmm 133 0>;
-	qcom,led-5v-en-gpio = <&tlmm 134 0>;
-	qcom,led-driver-en1-gpio = <&tlmm 144 0>;
-	qcom,led-driver-en2-gpio = <&tlmm 140 0>;
+	qcom,platform-bklight-en-gpio = <&tlmm 133 0>;
+	qcom,5v-boost-gpio = <&tlmm 134 0>;
 	/delete-property/ qcom,platform-en-gpio;
 };
 
 &sde_dsi {
-	/delete-property/ avdd-supply;
+	avdd-supply = <&display_panel_avdd>;
 	lab-supply = <&lcdb_ldo_vreg>;
 	ibb-supply = <&lcdb_ncp_vreg>;
 	qcom,dsi-default-panel = <&dsi_dual_xrsmrtvwr_jdi_video>;
+};
+
+&display_panel_avdd {
+	display_panel_led1_gpio = <&tlmm 144 0>;
+	display_panel_led2_gpio = <&tlmm 140 0>;
+	enable-active-high;
+	regulator-boot-on;
+	pinctrl-names = "default";
+	pinctrl-0 = <&display_panel_led1_default
+			 &display_panel_led2_default>;
+};
+
+&dsi_panel_pwr_supply_lab_ibb {
+	qcom,panel-supply-entry@3 {
+		reg = <1>;
+		qcom,supply-name = "avdd";
+		qcom,supply-min-voltage = <4600000>;
+		qcom,supply-max-voltage = <6000000>;
+		qcom,supply-enable-load = <100000>;
+		qcom,supply-disable-load = <100>;
+	};
 };
 
 &pm8150l_lcdb {
