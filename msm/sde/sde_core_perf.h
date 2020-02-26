@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _SDE_CORE_PERF_H_
@@ -47,11 +47,13 @@ struct sde_core_perf_params {
  * @mode: performance mode
  * @min_core_clk: minimum core clock
  * @min_bus_vote: minimum bus vote
+ * @mode_changed: indicate if clock tuning strategy changed
  */
 struct sde_core_perf_tune {
 	u32 mode;
 	u64 min_core_clk;
 	u64 min_bus_vote;
+	bool mode_changed;
 };
 
 /**
