@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
  */
 
 
@@ -12217,6 +12217,27 @@ struct afe_clk_set {
 	 *	- 1 -- Enabled  @tablebulletend
 	 */
 	uint32_t enable;
+};
+
+#define AVS_BUILD_MAJOR_VERSION_V2		2
+#define AVS_BUILD_MINOR_VERSION_V9		9
+#define AVS_BUILD_BRANCH_VERSION_V3		3
+
+#define AFE_PARAM_ID_CLOCK_SET_V2		0x000102E6
+
+#define AFE_API_VERSION_CLOCK_SET_V2		0x1
+
+struct afe_param_id_clock_set_v2_t {
+	uint32_t	clk_set_minor_version;
+	uint32_t	clk_id;
+	uint32_t	clk_freq_in_hz;
+	uint16_t	clk_attri;
+	uint16_t	clk_root;
+	uint32_t	enable;
+	uint32_t	divider_2x;
+	uint32_t	m;
+	uint32_t	n;
+	uint32_t	d;
 };
 
 struct afe_clk_cfg {
