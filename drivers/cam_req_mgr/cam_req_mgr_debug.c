@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
  */
 
 #include "cam_req_mgr_debug.h"
@@ -127,6 +127,13 @@ int cam_req_mgr_debug_register(struct cam_req_mgr_core_device *core_dev)
 	if (!debugfs_create_file("bubble_recovery", 0644,
 		debugfs_root, core_dev, &bubble_recovery))
 		return -ENOMEM;
+
+	if (!debugfs_create_bool("recovery_on_apply_fail",
+		0644,
+		debugfs_root,
+		&core_dev->recovery_on_apply_fail)) {
+		return -ENOMEM;
+	}
 
 	return 0;
 }

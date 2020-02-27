@@ -2446,6 +2446,14 @@ static int __cam_isp_ctx_apply_req_in_activated_state(
 		goto end;
 	}
 
+	if (apply->re_apply)
+		if (apply->request_id <= ctx_isp->last_applied_req_id) {
+			CAM_INFO(CAM_ISP,
+				"Trying to reapply the same request %llu again",
+				apply->request_id);
+			return 0;
+		}
+
 	spin_lock_bh(&ctx->lock);
 	req = list_first_entry(&ctx->pending_req_list, struct cam_ctx_request,
 		list);
