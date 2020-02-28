@@ -918,10 +918,11 @@ int msm_vdec_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 	case V4L2_CID_MPEG_VIDC_VIDEO_OPERATING_RATE:
 		if (!is_valid_operating_rate(inst, ctrl->val))
 			break;
-		inst->clk_data.operating_rate = ctrl->val;
 		inst->flags &= ~VIDC_TURBO;
 		if (ctrl->val == INT_MAX)
 			inst->flags |= VIDC_TURBO;
+		else
+			inst->clk_data.operating_rate = ctrl->val;
 		break;
 	case V4L2_CID_MPEG_VIDC_VIDEO_LOWLATENCY_MODE:
 		inst->clk_data.low_latency_mode = !!ctrl->val;
