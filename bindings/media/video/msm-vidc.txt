@@ -10,7 +10,7 @@ Required properties:
         - "qcom,lito-vidc" : Invokes driver specific data for LITO.
         - "qcom,bengal-vidc" : Invokes driver specific data for BENGAL.
         - "qcom,lagoon-vidc" : Invokes driver specific data for LAGOON.
-
+        - "qcom,scuba-vidc" : Invokes driver specific data for SCUBA.
 Optional properties:
 - reg : offset and length of the register set for the device.
 - sku-index : sku version of the hardware.
