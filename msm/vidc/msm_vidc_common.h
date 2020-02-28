@@ -330,16 +330,11 @@ void print_vb2_buffer(const char *str, struct msm_vidc_inst *inst,
 		struct vb2_buffer *vb2);
 void kref_put_mbuf(struct msm_vidc_buffer *mbuf);
 bool kref_get_mbuf(struct msm_vidc_inst *inst, struct msm_vidc_buffer *mbuf);
-void msm_comm_store_input_tag(struct msm_vidc_list *data_list,
+int msm_comm_store_input_tag(struct msm_vidc_list *data_list,
 		u32 index, u32 itag, u32 itag2, u32 sid);
 int msm_comm_fetch_input_tag(struct msm_vidc_list *data_list,
 		u32 index, u32 *itag, u32 *itag2, u32 sid);
 int msm_comm_release_input_tag(struct msm_vidc_inst *inst);
-struct msm_vidc_client_data *msm_comm_store_client_data(
-	struct msm_vidc_inst *inst, u32 itag);
-void msm_comm_fetch_client_data(struct msm_vidc_inst *inst, bool remove,
-	u32 itag, u32 itag2, u32 *mdata, u32 *mtarget);
-void msm_comm_release_client_data(struct msm_vidc_inst *inst, bool remove);
 int msm_comm_qbufs_batch(struct msm_vidc_inst *inst,
 		struct msm_vidc_buffer *mbuf);
 int msm_comm_qbuf_decode_batch(struct msm_vidc_inst *inst,
