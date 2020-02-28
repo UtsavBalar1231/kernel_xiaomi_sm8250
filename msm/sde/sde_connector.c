@@ -2104,6 +2104,8 @@ sde_connector_atomic_best_encoder(struct drm_connector *connector,
 		encoder = c_conn->ops.atomic_best_encoder(connector,
 				c_conn->display, connector_state);
 
+	c_conn->encoder = encoder;
+
 	return encoder;
 }
 
