@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef SDE_DBG_H_
@@ -250,7 +250,7 @@ int sde_dbg_init(struct device *dev);
  * @debugfs_root:	debugfs root in which to create sde debug entries
  * Returns:	0 or -ERROR
  */
-int sde_dbg_debugfs_register(struct dentry *debugfs_root);
+int sde_dbg_debugfs_register(struct device *dev);
 
 /**
  * sde_dbg_destroy - destroy the global sde debug facilities
@@ -413,7 +413,7 @@ static inline int sde_dbg_init(struct device *dev,
 	return 0;
 }
 
-static inline int sde_dbg_debugfs_register(struct dentry *debugfs_root)
+static inline int sde_dbg_debugfs_register(struct device *dev)
 {
 	return 0;
 }
