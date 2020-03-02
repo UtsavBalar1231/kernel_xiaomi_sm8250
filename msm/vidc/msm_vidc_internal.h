@@ -304,6 +304,7 @@ struct msm_vidc_platform_data {
 	unsigned int efuse_data_length;
 	unsigned int sku_version;
 	uint32_t vpu_ver;
+	uint32_t num_vpp_pipes;
 	struct msm_vidc_ubwc_config_data *ubwc_config;
 };
 

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  */
 
 #include "msm_vidc_debug.h"
@@ -189,6 +189,8 @@ void __power_off_iris2(struct venus_hfi_device *device)
 	__write_register(device, CPU_CS_X2RPMh_IRIS2, 0x3, sid);
 
 	/* HPG 6.1.2 Step 2, noc to low power */
+	if (device->res->vpu_ver == VPU_VERSION_IRIS2_1)
+		goto skip_aon_mvp_noc;
 	__write_register(device, AON_WRAPPER_MVP_NOC_LPI_CONTROL, 0x1, sid);
 	while (!reg_status && count < max_count) {
 		lpi_status =
@@ -205,6 +207,7 @@ void __power_off_iris2(struct venus_hfi_device *device)
 	}
 
 	/* HPG 6.1.2 Step 3, debug bridge to low power */
+skip_aon_mvp_noc:
 	__write_register(device,
 		WRAPPER_DEBUG_BRIDGE_LPI_CONTROL_IRIS2, 0x7, sid);
 	reg_status = 0;

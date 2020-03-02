@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef __H_MSM_VIDC_BUFFER_MEM_DEFS_H__
@@ -14,15 +14,17 @@ struct msm_vidc_dec_buff_size_calculators {
 	u32 (*calculate_scratch_size)(struct msm_vidc_inst *inst, u32 width,
 		u32 height, bool is_interlaced);
 	u32 (*calculate_scratch1_size)(struct msm_vidc_inst *inst, u32 width,
-		u32 height, u32 min_buf_count, bool split_mode_enabled);
+		u32 height, u32 min_buf_count, bool split_mode_enabled,
+		u32 num_vpp_pipes);
 	u32 (*calculate_persist1_size)(void);
 };
 
 struct msm_vidc_enc_buff_size_calculators {
 	u32 (*calculate_scratch_size)(struct msm_vidc_inst *inst, u32 width,
-		u32 height, u32 work_mode);
+		u32 height, u32 work_mode, u32 num_vpp_pipes);
 	u32 (*calculate_scratch1_size)(struct msm_vidc_inst *inst,
-		u32 width, u32 height, u32 num_ref, bool ten_bit);
+		u32 width, u32 height, u32 num_ref, bool ten_bit,
+		u32 num_vpp_pipes);
 	u32 (*calculate_scratch2_size)(struct msm_vidc_inst *inst,
 		u32 width, u32 height, u32 num_ref, bool ten_bit);
 	u32 (*calculate_persist_size)(void);
