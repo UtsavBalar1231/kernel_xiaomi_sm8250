@@ -304,6 +304,13 @@
 				<RPMH_REGULATOR_LEVEL_MAX>;
 		};
 
+		cx_cdev: regulator-cdev {
+			compatible = "qcom,rpmh-reg-cdev";
+			mboxes = <&qmp_aop 0>;
+			qcom,reg-resource-name = "cx";
+			#cooling-cells = <2>;
+		};
+
 		VDD_MSS_LEVEL:
 		S6E_LEVEL:
 		pm6150a_s6_level: regulator-pm6150a-s6-level {

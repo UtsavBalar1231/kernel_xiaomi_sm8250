@@ -14,6 +14,18 @@
 			qcom,ion-heap-type = "SYSTEM_SECURE";
 		};
 
+		qcom,ion-heap@27 { /* QSEECOM HEAP */
+			reg = <27>;
+			memory-region = <&qseecom_mem>;
+			qcom,ion-heap-type = "DMA";
+		};
+
+		qcom,ion-heap@19 { /* QSEECOM TA HEAP */
+			reg = <19>;
+			memory-region = <&qseecom_ta_mem>;
+			qcom,ion-heap-type = "DMA";
+		};
+
 		qcom,ion-heap@14 { /* SECURE CARVEOUT HEAP */
 			reg = <14>;
 			qcom,ion-heap-type = "SECURE_CARVEOUT";

@@ -94,6 +94,15 @@
 			};
 		};
 	};
+
+	cxip_cdev: cxip-cdev@1fed000 {
+		compatible = "qcom,cxip-lm-cooling-device";
+		reg = <0x1fed000 0x10060>;
+		qcom,thermal-client-offset = <0x8000>;
+		qcom,bypass-client-list = <0xe00c 0xf00c 0x1000c 0x1001c
+					0x1002c 0x1003c 0x1004c 0x1005c>;
+		#cooling-cells = <2>;
+	};
 };
 
 &thermal_zones {
@@ -913,6 +922,12 @@
 		thermal-governor = "step_wise";
 		wake-capable-sensor;
 		trips {
+			cxip_trip: cxip-trip {
+				temperature = <95000>;
+				hysteresis = <20000>;
+				type = "passive";
+			};
+
 			q6_hvx_trip0: q6-hvx-trip0 {
 				temperature = <95000>;
 				hysteresis = <0>;
@@ -927,6 +942,11 @@
 		};
 
 		cooling-maps {
+			cxip-cdev {
+				trip = <&cxip_trip>;
+				cooling-device = <&cxip_cdev 1 1>;
+			};
+
 			cdsp-cdev0 {
 				trip = <&q6_hvx_trip0>;
 				cooling-device = <&cdsp_sw THERMAL_NO_LIMIT
