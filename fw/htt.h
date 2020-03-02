@@ -198,9 +198,11 @@
  * 3.74 Add HTT_T2H_MSG_TYPE_RX_FISA_CFG msg.
  * 3.75 Add fp_ndp and mo_ndp flags in HTT_H2T_MSG_TYPE_RX_RING_SELECTION_CFG.
  * 3.76 Add HTT_H2T_MSG_TYPE_3_TUPLE_HASH_CFG msg.
+ * 3.77 Add HTT_H2T_MSG_TYPE_RX_FULL_MONITOR_MODE msg.
+ * 3.78 Add htt_ppdu_id def.
  */
 #define HTT_CURRENT_VERSION_MAJOR 3
-#define HTT_CURRENT_VERSION_MINOR 76
+#define HTT_CURRENT_VERSION_MINOR 78
 
 #define HTT_NUM_TX_FRAG_DESC  1024
 
@@ -544,6 +546,7 @@ enum htt_h2t_msg_type {
     HTT_H2T_MSG_TYPE_CHAN_CALDATA          = 0x14,
     HTT_H2T_MSG_TYPE_RX_FISA_CFG           = 0x15,
     HTT_H2T_MSG_TYPE_3_TUPLE_HASH_CFG      = 0x16,
+    HTT_H2T_MSG_TYPE_RX_FULL_MONITOR_MODE  = 0x17,
 
     /* keep this last */
     HTT_H2T_NUM_MSGS
@@ -6511,6 +6514,135 @@ PREPACK struct htt_h2t_msg_rx_fse_operation_t {
         A_UINT32 l4_proto:8,
                  reserved:24;
 } POSTPACK;
+
+/**
+ * @brief Host-->target HTT RX Full monitor mode register configuration message
+ * @details
+ * The host will send this Full monitor mode register configuration message.
+ * This message can be sent per SOC or per PDEV which is differentiated
+ * by pdev id values.
+ *
+ *       |31                            16|15  11|10   8|7      3|2|1|0|
+ *       |-------------------------------------------------------------|
+ *       |             reserved           |   pdev_id   |  MSG_TYPE    |
+ *       |-------------------------------------------------------------|
+ *       |                      reserved         |Release Ring   |N|Z|E|
+ *       |-------------------------------------------------------------|
+ *
+ * where E  is 1-bit full monitor mode enable/disable.
+ *       Z  is 1-bit additional descriptor for zero mpdu enable/disable
+ *       N  is 1-bit additional descriptor for non zero mdpu enable/disable
+ *
+ * The following field definitions describe the format of the full monitor
+ * mode configuration message sent from the host to target for each pdev.
+ *
+ * Header fields:
+ *  dword0 - b'7:0   - msg_type: This will be set to
+ *                     HTT_H2T_MSG_TYPE_RX_FULL_MONITOR_MODE.
+ *           b'15:8  - pdev_id:  0 indicates msg is for all LMAC rings, i.e. soc
+ *                     1, 2, 3 indicates pdev_id 0,1,2 and the msg is for the
+ *                     specified pdev's LMAC ring.
+ *           b'31:16 - reserved : Reserved for future use.
+ *  dword1 - b'0     - full_monitor_mode enable: This indicates that the full
+ *                     monitor mode rxdma register is to be enabled or disabled.
+ *           b'1     - addnl_descs_zero_mpdus_end: This indicates that the
+ *                     additional descriptors at ppdu end for zero mpdus
+ *                     enabled or disabled.
+ *           b'2     - addnl_descs_non_zero_mpdus_end: This indicates that the
+ *                     additional descriptors at ppdu end for non zero mpdus
+ *                     enabled or disabled.
+ *           b'10:3  - release_ring: This indicates the destination ring
+ *                     selection for the descriptor at the end of PPDU
+ *                     0 - REO ring select
+ *                     1 - FW  ring select
+ *                     2 - SW  ring select
+ *                     3 - Release ring select
+ *                     Refer to htt_rx_full_mon_release_ring.
+ *           b'31:11  - reserved for future use
+ */
+PREPACK struct htt_h2t_msg_rx_full_monitor_mode_t {
+    A_UINT32 msg_type:8,
+             pdev_id:8,
+             reserved0:16;
+    A_UINT32 full_monitor_mode_enable:1,
+             addnl_descs_zero_mpdus_end:1,
+             addnl_descs_non_zero_mpdus_end:1,
+             release_ring:8,
+             reserved1:21;
+} POSTPACK;
+
+/**
+ * Enumeration for full monitor mode destination ring select
+ * 0 - REO destination ring select
+ * 1 - FW destination ring select
+ * 2 - SW destination ring select
+ * 3 - Release destination ring select
+ */
+enum htt_rx_full_mon_release_ring {
+    HTT_RX_MON_RING_REO,
+    HTT_RX_MON_RING_FW,
+    HTT_RX_MON_RING_SW,
+    HTT_RX_MON_RING_RELEASE,
+};
+
+#define HTT_RX_FULL_MONITOR_MODE_SETUP_SZ    (sizeof(struct htt_h2t_msg_rx_full_monitor_mode_t))
+/* DWORD 0: Pdev ID */
+#define HTT_RX_FULL_MONITOR_MODE_OPERATION_PDEV_ID_M                  0x0000ff00
+#define HTT_RX_FULL_MONITOR_MODE_OPERATION_PDEV_ID_S                  8
+#define HTT_RX_FULL_MONITOR_MODE_OPERATION_PDEV_ID_GET(_var) \
+    (((_var) & HTT_RX_FULL_MONITOR_MODE_OPERATION_PDEV_ID_M) >> \
+     HTT_RX_FULL_MONITOR_MODE_OPERATION_PDEV_ID_S)
+#define HTT_RX_FULL_MONITOR_MODE_OPERATION_PDEV_ID_SET(_var, _val) \
+    do { \
+        HTT_CHECK_SET_VAL(HTT_RX_FULL_MONITOR_MODE_OPERATION_PDEV_ID, _val); \
+        ((_var) |= ((_val) << HTT_RX_FULL_MONITOR_MODE_OPERATION_PDEV_ID_S)); \
+    } while (0)
+
+/* DWORD 1:ENABLE */
+#define HTT_RX_FULL_MONITOR_MODE_ENABLE_M      0x00000001
+#define HTT_RX_FULL_MONITOR_MODE_ENABLE_S      0
+
+#define HTT_RX_FULL_MONITOR_MODE_ENABLE_SET(word, enable)           \
+    do { \
+        HTT_CHECK_SET_VAL(HTT_RX_FULL_MONITOR_MODE_ENABLE, enable); \
+        (word) |= ((enable) << HTT_RX_FULL_MONITOR_MODE_ENABLE_S);  \
+    } while (0)
+#define HTT_RX_FULL_MONITOR_MODE_ENABLE_GET(word) \
+    (((word) & HTT_RX_FULL_MONITOR_MODE_ENABLE_M) >> HTT_RX_FULL_MONITOR_MODE_ENABLE_S)
+
+/* DWORD 1:ZERO_MPDU */
+#define HTT_RX_FULL_MONITOR_MODE_ZERO_MPDU_M      0x00000002
+#define HTT_RX_FULL_MONITOR_MODE_ZERO_MPDU_S      1
+#define HTT_RX_FULL_MONITOR_MODE_ZERO_MPDU_SET(word, zerompdu)           \
+    do { \
+        HTT_CHECK_SET_VAL(HTT_RX_FULL_MONITOR_MODE_ZERO_MPDU, zerompdu); \
+        (word) |= ((zerompdu) << HTT_RX_FULL_MONITOR_MODE_ZERO_MPDU_S);  \
+    } while (0)
+#define HTT_RX_FULL_MONITOR_MODE_ZERO_MPDU_GET(word) \
+    (((word) & HTT_RX_FULL_MONITOR_MODE_ZERO_MPDU_M) >> HTT_RX_FULL_MONITOR_MODE_ZERO_MPDU_S)
+
+
+/* DWORD 1:NON_ZERO_MPDU */
+#define HTT_RX_FULL_MONITOR_MODE_NON_ZERO_MPDU_M      0x00000004
+#define HTT_RX_FULL_MONITOR_MODE_NON_ZERO_MPDU_S      2
+#define HTT_RX_FULL_MONITOR_MODE_NON_ZERO_MPDU_SET(word, nonzerompdu)           \
+    do { \
+        HTT_CHECK_SET_VAL(HTT_RX_FULL_MONITOR_MODE_NON_ZERO_MPDU, nonzerompdu); \
+        (word) |= ((nonzerompdu) << HTT_RX_FULL_MONITOR_MODE_NON_ZERO_MPDU_S);  \
+    } while (0)
+#define HTT_RX_FULL_MONITOR_MODE_NON_ZERO_MPDU_GET(word) \
+    (((word) & HTT_RX_FULL_MONITOR_MODE_NON_ZERO_MPDU_M) >> HTT_RX_FULL_MONITOR_MODE_NON_ZERO_MPDU_S)
+
+/* DWORD 1:RELEASE_RINGS */
+#define HTT_RX_FULL_MONITOR_MODE_RELEASE_RINGS_M      0x000007f8
+#define HTT_RX_FULL_MONITOR_MODE_RELEASE_RINGS_S      3
+#define HTT_RX_FULL_MONITOR_MODE_RELEASE_RINGS_SET(word, releaserings)           \
+    do { \
+        HTT_CHECK_SET_VAL(HTT_RX_FULL_MONITOR_MODE_RELEASE_RINGS, releaserings); \
+        (word) |= ((releaserings) << HTT_RX_FULL_MONITOR_MODE_RELEASE_RINGS_S);  \
+    } while (0)
+#define HTT_RX_FULL_MONITOR_MODE_RELEASE_RINGS_GET(word) \
+    (((word) & HTT_RX_FULL_MONITOR_MODE_RELEASE_RINGS_M) >> HTT_RX_FULL_MONITOR_MODE_RELEASE_RINGS_S)
 
 /**
  * Enumeration for IP Protocol or IPSEC Protocol
@@ -13869,5 +14001,118 @@ PREPACK struct htt_chan_caldata_msg {
         HTT_CHECK_SET_VAL(HTT_CHAN_CALDATA_MSG_FREQ2, _val);  \
         ((_var) |= ((_val) << HTT_CHAN_CALDATA_MSG_FREQ2_S)); \
     } while (0)
+
+
+/**
+ *  @brief - HTT PPDU ID format
+ *
+ *   @details
+ *    The following field definitions describe the format of the PPDU ID.
+ *    The PPDU ID is truncated to 24 bits for TLVs from TQM.
+ *
+ *  |31 30|29        24|     23|    22|21   19|18  17|16     12|11            0|
+ *  +---------------------------------------------------------------------------
+ *  |rsvd |seq_cmd_type|tqm_cmd| rsvd |seq_idx|mac_id| hwq_ id |      sch id   |
+ *  +---------------------------------------------------------------------------
+ *
+ *   sch id :Schedule command id
+ *   Bits [11 : 0] : monotonically increasing counter to track the
+ *   PPDU posted to a specific transmit queue.
+ *
+ *   hwq_id: Hardware Queue ID.
+ *   Bits [16 : 12] : Indicates the queue id in the hardware transmit queue.
+ *
+ *   mac_id: MAC ID
+ *   Bits [18 : 17] : LMAC ID obtained from the whal_mac_struct
+ *
+ *   seq_idx: Sequence index.
+ *   Bits [21 : 19] : Sequence index indicates all the PPDU belonging to
+ *   a particular TXOP.
+ *
+ *   tqm_cmd: HWSCH/TQM flag.
+ *   Bit [23] : Always set to 0.
+ *
+ *   seq_cmd_type: Sequence command type.
+ *   Bit [29 : 24] : Indicates the frame type for the current sequence.
+ *   Refer to enum HTT_STATS_FTYPE for values.
+ */
+PREPACK struct htt_ppdu_id {
+    A_UINT32
+        sch_id:         12,
+        hwq_id:          5,
+        mac_id:          2,
+        seq_idx:         3,
+        reserved1:       1,
+        tqm_cmd:         1,
+        seq_cmd_type:    6,
+        reserved2:       2;
+} POSTPACK;
+
+#define HTT_PPDU_ID_SCH_ID_S    0
+#define HTT_PPDU_ID_SCH_ID_M    0x00000fff
+#define HTT_PPDU_ID_SCH_ID_GET(_var) \
+    (((_var) & HTT_PPDU_ID_SCH_ID_M) >> HTT_PPDU_ID_SCH_ID_S)
+
+#define HTT_PPDU_ID_SCH_ID_SET(_var, _val) \
+    do {                                             \
+        HTT_CHECK_SET_VAL(HTT_PPDU_ID_SCH_ID, _val);  \
+        ((_var) |= ((_val) << HTT_PPDU_ID_SCH_ID_S)); \
+    } while (0)
+
+#define HTT_PPDU_ID_HWQ_ID_S    12
+#define HTT_PPDU_ID_HWQ_ID_M    0x0001f000
+#define HTT_PPDU_ID_HWQ_ID_GET(_var) \
+    (((_var) & HTT_PPDU_ID_HWQ_ID_M) >> HTT_PPDU_ID_HWQ_ID_S)
+
+#define HTT_PPDU_ID_HWQ_ID_SET(_var, _val) \
+    do {                                             \
+        HTT_CHECK_SET_VAL(HTT_PPDU_ID_HWQ_ID, _val);  \
+        ((_var) |= ((_val) << HTT_PPDU_ID_HWQ_ID_S)); \
+    } while (0)
+
+#define HTT_PPDU_ID_MAC_ID_S    17
+#define HTT_PPDU_ID_MAC_ID_M    0x00060000
+#define HTT_PPDU_ID_MAC_ID_GET(_var) \
+    (((_var) & HTT_PPDU_ID_MAC_ID_M) >> HTT_PPDU_ID_MAC_ID_S)
+
+#define HTT_PPDU_ID_MAC_ID_SET(_var, _val) \
+    do {                                            \
+        HTT_CHECK_SET_VAL(HTT_PPDU_ID_MAC_ID, _val);  \
+        ((_var) |= ((_val) << HTT_PPDU_ID_MAC_ID_S)); \
+    } while (0)
+
+#define HTT_PPDU_ID_SEQ_IDX_S    19
+#define HTT_PPDU_ID_SEQ_IDX_M    0x00380000
+#define HTT_PPDU_ID_SEQ_IDX_GET(_var) \
+    (((_var) & HTT_PPDU_ID_SEQ_IDX_M) >> HTT_PPDU_ID_SEQ_IDX_S)
+
+#define HTT_PPDU_ID_SEQ_IDX_SET(_var, _val) \
+    do {                                            \
+        HTT_CHECK_SET_VAL(HTT_PPDU_ID_SEQ_IDX, _val);  \
+        ((_var) |= ((_val) << HTT_PPDU_ID_SEQ_IDX_S)); \
+    } while (0)
+
+#define HTT_PPDU_ID_TQM_CMD_S    23
+#define HTT_PPDU_ID_TQM_CMD_M    0x00800000
+#define HTT_PPDU_ID_TQM_CMD_GET(_var) \
+    (((_var) & HTT_PPDU_ID_TQM_CMD_M) >> HTT_PPDU_ID_TQM_CMD_S)
+
+#define HTT_PPDU_ID_TQM_CMD_SET(_var, _val) \
+    do {                                             \
+        HTT_CHECK_SET_VAL(HTT_PPDU_ID_TQM_CMD, _val);  \
+        ((_var) |= ((_val) << HTT_PPDU_ID_TQM_CMD_S)); \
+    } while (0)
+
+#define HTT_PPDU_ID_SEQ_CMD_TYPE_S    24
+#define HTT_PPDU_ID_SEQ_CMD_TYPE_M    0x3f000000
+#define HTT_PPDU_ID_SEQ_CMD_TYPE_GET(_var) \
+    (((_var) & HTT_PPDU_ID_SEQ_CMD_TYPE_M) >> HTT_PPDU_ID_SEQ_CMD_TYPE_S)
+
+#define HTT_PPDU_ID_SEQ_CMD_TYPE_SET(_var, _val) \
+    do {                                                 \
+        HTT_CHECK_SET_VAL(HTT_PPDU_ID_SEQ_CMD_TYPE, _val);  \
+        ((_var) |= ((_val) << HTT_PPDU_ID_SEQ_CMD_TYPE_S)); \
+    } while (0)
+
 
 #endif
