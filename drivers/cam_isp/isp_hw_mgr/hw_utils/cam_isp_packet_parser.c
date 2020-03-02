@@ -196,8 +196,8 @@ int cam_isp_add_cmd_buf_update(
 	uint32_t                            total_used_bytes = 0;
 
 	if (hw_mgr_res->res_type == CAM_IFE_HW_MGR_RES_UNINIT) {
-		CAM_ERR(CAM_ISP, "io res id:%d not valid",
-			hw_mgr_res->res_type);
+		CAM_ERR(CAM_ISP, "VFE out resource:0x%X type:%d not valid",
+			hw_mgr_res->res_id, hw_mgr_res->res_type);
 		return -EINVAL;
 	}
 

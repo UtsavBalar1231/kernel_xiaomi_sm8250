@@ -63,6 +63,29 @@ TRACE_EVENT(cam_isp_activated_irq,
 	)
 );
 
+TRACE_EVENT(cam_log_event,
+	TP_PROTO(const char *string1, const char *string2,
+		uint64_t val1, uint64_t val2),
+	TP_ARGS(string1, string2, val1, val2),
+	TP_STRUCT__entry(
+		__string(string1, string1)
+		__string(string2, string2)
+		__field(uint64_t, val1)
+		__field(uint64_t, val2)
+	),
+	TP_fast_assign(
+		__assign_str(string1, string1);
+		__assign_str(string2, string2);
+		__entry->val1 = val1;
+		__entry->val2 = val2;
+	),
+	TP_printk(
+		"%s: %s val1=%llu val2=%llu",
+			__get_str(string1), __get_str(string2),
+			__entry->val1, __entry->val2
+	)
+);
+
 TRACE_EVENT(cam_icp_fw_dbg,
 	TP_PROTO(char *dbg_message, uint64_t timestamp),
 	TP_ARGS(dbg_message, timestamp),

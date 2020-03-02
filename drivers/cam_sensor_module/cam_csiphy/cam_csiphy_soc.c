@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #include "cam_csiphy_soc.h"
@@ -321,11 +321,11 @@ int32_t cam_csiphy_parse_dt_info(struct platform_device *pdev,
 		csiphy_dev->ctrl_reg->csiphy_2ph_3ph_mode_reg = NULL;
 		csiphy_dev->ctrl_reg->csiphy_irq_reg = csiphy_irq_reg_1_2;
 		csiphy_dev->ctrl_reg->csiphy_common_reg =
-			csiphy_common_reg_1_2;
+			csiphy_common_reg_1_2_2;
 		csiphy_dev->ctrl_reg->csiphy_reset_reg =
 			csiphy_reset_reg_1_2;
 		csiphy_dev->ctrl_reg->getclockvoting = get_clk_vote_default;
-		csiphy_dev->ctrl_reg->csiphy_reg = csiphy_v1_2;
+		csiphy_dev->ctrl_reg->csiphy_reg = csiphy_v1_2_2;
 		csiphy_dev->is_csiphy_3phase_hw = CSI_3PHASE_HW;
 		csiphy_dev->is_divisor_32_comp = false;
 		csiphy_dev->hw_version = CSIPHY_VERSION_V12;
