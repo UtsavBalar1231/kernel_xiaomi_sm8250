@@ -202,7 +202,7 @@ static int va_macro_clk_div_get(struct snd_soc_component *component)
 	if (!va_macro_get_data(component, &va_dev, &va_priv, __func__))
 		return -EINVAL;
 
-	if ((va_priv->version == BOLERO_VERSION_2_1)
+	if ((va_priv->version >= BOLERO_VERSION_2_0)
 		&& !va_priv->lpi_enable
 		&& (va_priv->dmic_clk_div == VA_MACRO_CLK_DIV_16))
 		return VA_MACRO_CLK_DIV_8;
@@ -226,19 +226,19 @@ static int va_macro_mclk_enable(struct va_macro_priv *va_priv,
 
 	mutex_lock(&va_priv->mclk_lock);
 	if (mclk_enable) {
+		ret = bolero_clk_rsc_request_clock(va_priv->dev,
+						   va_priv->default_clk_id,
+						   va_priv->clk_id,
+						   true);
+		if (ret < 0) {
+			dev_err(va_priv->dev,
+				"%s: va request clock en failed\n",
+				__func__);
+			goto exit;
+		}
+		bolero_clk_rsc_fs_gen_request(va_priv->dev,
+					      true);
 		if (va_priv->va_mclk_users == 0) {
-			ret = bolero_clk_rsc_request_clock(va_priv->dev,
-							   va_priv->default_clk_id,
-							   va_priv->clk_id,
-							   true);
-			if (ret < 0) {
-				dev_err(va_priv->dev,
-					"%s: va request clock en failed\n",
-					__func__);
-				goto exit;
-			}
-			bolero_clk_rsc_fs_gen_request(va_priv->dev,
-						  true);
 			regcache_mark_dirty(regmap);
 			regcache_sync_region(regmap,
 					VA_START_OFFSET,
@@ -253,14 +253,12 @@ static int va_macro_mclk_enable(struct va_macro_priv *va_priv,
 			goto exit;
 		}
 		va_priv->va_mclk_users--;
-		if (va_priv->va_mclk_users == 0) {
-			bolero_clk_rsc_fs_gen_request(va_priv->dev,
-						  false);
-			bolero_clk_rsc_request_clock(va_priv->dev,
-						va_priv->default_clk_id,
-						va_priv->clk_id,
-						false);
-		}
+		bolero_clk_rsc_fs_gen_request(va_priv->dev,
+					  false);
+		bolero_clk_rsc_request_clock(va_priv->dev,
+					va_priv->default_clk_id,
+					va_priv->clk_id,
+					false);
 	}
 exit:
 	mutex_unlock(&va_priv->mclk_lock);
@@ -325,9 +323,6 @@ static int va_macro_event_handler(struct snd_soc_component *component,
 		break;
 	case BOLERO_MACRO_EVT_SSR_DOWN:
 		if (va_priv->swr_ctrl_data) {
-			swrm_wcd_notify(
-				va_priv->swr_ctrl_data[0].va_swr_pdev,
-				SWR_DEVICE_DOWN, NULL);
 			swrm_wcd_notify(
 				va_priv->swr_ctrl_data[0].va_swr_pdev,
 				SWR_DEVICE_SSR_DOWN, NULL);

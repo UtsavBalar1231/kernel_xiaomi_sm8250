@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/* Copyright (c) 2013-2014, 2017-2019 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2013-2014, 2017-2020 The Linux Foundation. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -97,7 +97,7 @@ static int msm_dtmf_rx_generate_put(struct snd_kcontrol *kcontrol,
 	uint16_t gain = ucontrol->value.integer.value[3];
 
 	pr_debug("%s: low_freq=%d high_freq=%d duration=%lld gain=%d\n",
-		 __func__, low_freq, high_freq, (int)duration, gain);
+		 __func__, low_freq, high_freq, duration, gain);
 
 	if (duration == DTMF_MAX_DURATION)
 		duration = -1;

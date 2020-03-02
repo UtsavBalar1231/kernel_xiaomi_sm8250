@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/gpio.h>
@@ -691,7 +691,7 @@ static int lpi_pinctrl_probe(struct platform_device *pdev)
 		}
 	} else {
 		slew_base = NULL;
-		dev_dbg(dev, "error in reading lpi slew register: %d\n",
+		dev_dbg(dev, "%s: error in reading lpi slew register: %d\n",
 			__func__, ret);
 	}
 
