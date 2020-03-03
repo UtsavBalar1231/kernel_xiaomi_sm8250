@@ -38,6 +38,7 @@
 #include "ce_assignment.h"
 #include "ce_tasklet.h"
 #include "qdf_module.h"
+#include "wlan_cfg.h"
 
 #define CE_POLL_TIMEOUT 10      /* ms */
 
@@ -1569,6 +1570,8 @@ struct CE_handle *ce_init(struct hif_softc *scn,
 
 	ce_init_ce_desc_event_log(scn, CE_id,
 				  attr->src_nentries + attr->dest_nentries);
+
+	wlan_set_ce_srng_cfg(&scn->wlan_ce_srng_cfg);
 
 	/* source ring setup */
 	nentries = attr->src_nentries;

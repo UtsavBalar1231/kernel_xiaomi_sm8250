@@ -766,6 +766,8 @@ struct hal_srng_params {
 	uint32_t entry_size;
 	/* hw register base address */
 	void *hwreg_base[MAX_SRNG_REG_GROUPS];
+	/* prefetch timer config - in micro seconds */
+	uint32_t prefetch_timer;
 };
 
 /* hal_construct_shadow_config() - initialize the shadow registers for dp rings
