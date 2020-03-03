@@ -250,6 +250,8 @@
 #define HALO_SCRATCH1                        0x005c0
 #define HALO_CCM_CORE_CONTROL                0x41000
 
+
+#define HALO_WDT_CONTROL                     0x47000
 /*
  * HALO Lock support
  */
@@ -395,7 +397,10 @@
 #define HALO_CORE_EN_SHIFT                  0
 #define HALO_CORE_EN_WIDTH                  1
 #define HALO_CORE_RESET                      0x00000200
-
+/*
+ * HALO_WDT_CONTROL
+ */
+#define HALO_WDT_EN_MASK                    0x00000001
 /*
  * HALO_MPU_?M_VIO_STATUS
  */
@@ -1854,20 +1859,23 @@ static int wm_adsp_create_control(struct wm_adsp *dsp,
 		ret = snprintf(name, SNDRV_CTL_ELEM_ID_NAME_MAXLEN,
 				"DSP%d%c %.12s %x", dsp->num, *region_name,
 				wm_adsp_fw_text[dsp->fw], alg_region->alg);
+		break;
+	}
+		/* Truncate the subname from the start if it is too long */
+	if (subname) {
+		int avail = SNDRV_CTL_ELEM_ID_NAME_MAXLEN - ret - 2;
+		int skip = 0;
+
+		if (dsp->component->name_prefix)
+			avail -= strlen(dsp->component->name_prefix) + 1;
 
 		/* Truncate the subname from the start if it is too long */
-		if (subname) {
-			int avail = SNDRV_CTL_ELEM_ID_NAME_MAXLEN - ret - 2;
-			int skip = 0;
+		if (subname_len > avail)
+			skip = subname_len - avail;
 
-			if (subname_len > avail)
-				skip = subname_len - avail;
-
-			snprintf(name + ret,
-				 SNDRV_CTL_ELEM_ID_NAME_MAXLEN - ret, " %.*s",
-				 subname_len - skip, subname + skip);
-		}
-		break;
+		snprintf(name + ret,
+			 SNDRV_CTL_ELEM_ID_NAME_MAXLEN - ret, " %.*s",
+			 subname_len - skip, subname + skip);
 	}
 
 	list_for_each_entry(ctl, &dsp->ctl_list, list) {
@@ -1885,6 +1893,17 @@ static int wm_adsp_create_control(struct wm_adsp *dsp,
 	ctl->alg_region = *alg_region;
 	ctl->name = kmemdup(name, strlen(name) + 1, GFP_KERNEL);
 	if (!ctl->name) {
+		ret = -ENOMEM;
+		goto err_ctl;
+	}
+	ctl->subname_len = subname_len;
+	//Fix potential NULL pointer dereferencing for subname.
+	if (subname)
+		ctl->subname = kmemdup(subname, strlen(subname) + 1,
+				       GFP_KERNEL);
+	else
+		ctl->subname = NULL;
+	if (!ctl->subname) {
 		ret = -ENOMEM;
 		goto err_ctl;
 	}
@@ -1927,6 +1946,7 @@ err_ctl_cache:
 err_ctl_name:
 	kfree(ctl->name);
 err_ctl:
+	kfree(ctl->subname);
 	kfree(ctl);
 
 	return ret;
@@ -2240,6 +2260,7 @@ static int wm_adsp_load(struct wm_adsp *dsp)
 			snprintf(file, PAGE_SIZE,
 				 "%s", dsp->firmwares[dsp->fw].file);
 		else {
+//#if defined(CONFIG_TARGET_PRODUCT_UMI) || defined(CONFIG_TARGET_PRODUCT_CMI)
 #ifdef CONFIG_AUDIO_SMARTPA_STEREO
 			if(dsp->chip_revid == 0xB2) {
 				snprintf(file, PAGE_SIZE, "%s-%s%d-%s-revb2.wmfw",
@@ -2255,6 +2276,7 @@ static int wm_adsp_load(struct wm_adsp *dsp)
 				 dsp->part, wm_adsp_arch_text_lower(dsp->type),
 				 dsp->num, dsp->firmwares[dsp->fw].file);
 #endif
+
 		}
 		break;
 	default:
@@ -3171,6 +3193,7 @@ static int wm_adsp_load_coeff(struct wm_adsp *dsp)
 		snprintf(file, PAGE_SIZE, "%s-dsp%d-%s.bin", dsp->part,
 			 dsp->num, dsp->firmwares[dsp->fw].binfile);
 	else
+//#if defined(CONFIG_TARGET_PRODUCT_UMI) || defined(CONFIG_TARGET_PRODUCT_CMI)
 #ifdef CONFIG_AUDIO_SMARTPA_STEREO
 		if(dsp->chip_revid == 0xB2) {
 			//for B2 chip
@@ -4190,13 +4213,7 @@ int wm_halo_event(struct snd_soc_dapm_widget *w, struct snd_kcontrol *kcontrol,
 			goto err;
 		}
 		wm_halo_apply_calibration(w);
-		ret = regmap_update_bits(dsp->regmap,
-					 dsp->base + HALO_CCM_CORE_CONTROL,
-					 HALO_CORE_RESET, HALO_CORE_RESET);
-		if (ret != 0) {
-			adsp_err(dsp, "Error while resetting core: %d\n", ret);
-			return ret;
-		}
+
 		/* Sync set controls */
 		ret = wm_coeff_sync_controls(dsp);
 		if (ret != 0)
@@ -4258,6 +4275,9 @@ int wm_halo_event(struct snd_soc_dapm_widget *w, struct snd_kcontrol *kcontrol,
 	case SND_SOC_DAPM_PRE_PMD:
 		/* Tell the firmware to cleanup */
 		wm_adsp_signal_event_controls(dsp, WM_ADSP_FW_EVENT_SHUTDOWN);
+		/* manually stop dsp watch-dog */
+		regmap_update_bits(dsp->regmap, dsp->base + HALO_WDT_CONTROL,
+			   HALO_WDT_EN_MASK, 0);
 
 		/* Log firmware state, it can be useful for analysis */
 		wm_halo_show_fw_status(dsp);
@@ -4399,6 +4419,8 @@ static int wm_halo_apply_calibration(struct snd_soc_dapm_widget *w)
 				wm_adsp_k_ctl_put(dsp, "RCV DSP1X Protection cd CAL_R", dsp->cal_z);
 				wm_adsp_k_ctl_put(dsp, "RCV DSP1X Protection cd CAL_STATUS", dsp->cal_status);
 				wm_adsp_k_ctl_put(dsp, "RCV DSP1X Protection cd CAL_CHECKSUM", dsp->cal_chksum);
+				//hold time = 0x96
+				wm_adsp_k_ctl_put(dsp, "RCV DSP1X Protection 400a4 OFFSET_HOLD_TIME", 150);
 				wm_adsp_k_ctl_get(dsp, "RCV DSP1X Protection cd CAL_R");
 				wm_adsp_k_ctl_get(dsp, "RCV DSP1X Protection cd CAL_STATUS");
 				wm_adsp_k_ctl_get(dsp, "RCV DSP1X Protection cd CAL_CHECKSUM");
@@ -4406,6 +4428,8 @@ static int wm_halo_apply_calibration(struct snd_soc_dapm_widget *w)
 				wm_adsp_k_ctl_put(dsp, "DSP1X Protection cd CAL_R", dsp->cal_z);
 				wm_adsp_k_ctl_put(dsp, "DSP1X Protection cd CAL_STATUS", dsp->cal_status);
 				wm_adsp_k_ctl_put(dsp, "DSP1X Protection cd CAL_CHECKSUM", dsp->cal_chksum);
+				//hold time = 0x96
+				wm_adsp_k_ctl_put(dsp, "DSP1X Protection 400a4 OFFSET_HOLD_TIME", 150);
 				wm_adsp_k_ctl_get(dsp, "DSP1X Protection cd CAL_R");
 				wm_adsp_k_ctl_get(dsp, "DSP1X Protection cd CAL_STATUS");
 				wm_adsp_k_ctl_get(dsp, "DSP1X Protection cd CAL_CHECKSUM");

@@ -939,6 +939,7 @@ static const struct reg_sequence cs35l41_pdn_patch[] = {
 	{0x00000040, 0x00000033},
 };
 
+
 static int cs35l41_main_amp_event(struct snd_soc_dapm_widget *w,
 		struct snd_kcontrol *kcontrol, int event)
 {
@@ -950,7 +951,7 @@ static int cs35l41_main_amp_event(struct snd_soc_dapm_widget *w,
 	int i;
 	bool pdn;
 	unsigned int val;
-	pr_debug("++++>CSPL: %s, event = %d.\n", __func__, event);
+	pr_debug("++++>CSPL: %s, event = %d, DC counter = %d.\n", __func__, event, cs35l41->dc_current_cnt);
 	switch (event) {
 	case SND_SOC_DAPM_POST_PMU:
 		regmap_multi_reg_write_bypassed(cs35l41->regmap,
@@ -987,10 +988,20 @@ static int cs35l41_main_amp_event(struct snd_soc_dapm_widget *w,
 				break;
 			}
 			ret = cs35l41_set_csplmboxcmd(cs35l41, mboxcmd);
+			regmap_write(cs35l41->regmap, CS35L41_IRQ1_MASK2,
+				     ~(1 << CS35L41_DSP_VIRT2_MBOX_SHIFT));
 		}
 		break;
 	case SND_SOC_DAPM_POST_PMD:
 		if (cs35l41->dsp.running) {
+			regmap_write(cs35l41->regmap, CS35L41_IRQ1_MASK2,
+				     0xFFFFFFFF);
+			//Unmute PA if DC are less than 3 times, or keep muted state
+			//if (cs35l41->dc_current_cnt <
+			//    CS35L41_DC_CURRENT_THRESHOLD)
+			//	regmap_write(cs35l41->regmap,
+			//		     CS35L41_AMP_OUT_MUTE, 0);
+
 			if (cs35l41->reload_tuning) {
 				mboxcmd = CSPL_MBOX_CMD_STOP_PRE_REINIT;
 				/*
@@ -2293,6 +2304,8 @@ int cs35l41_probe(struct cs35l41_private *cs35l41,
 	}
 
 	irq_pol = cs35l41_irq_gpio_config(cs35l41);
+
+	cs35l41->dc_current_cnt = 0;
 
 	ret = devm_request_threaded_irq(cs35l41->dev, cs35l41->irq, NULL,
 				cs35l41_irq, irq_pol | IRQF_ONESHOT,
