@@ -269,6 +269,7 @@ qdf_export_symbol(qdf_wake_lock_name);
 	defined(WAKEUP_SOURCE_DEV)
 QDF_STATUS qdf_wake_lock_create(qdf_wake_lock_t *lock, const char *name)
 {
+	qdf_mem_zero(lock, sizeof(*lock));
 	lock->priv = wakeup_source_register(lock->lock.dev, name);
 	if (!(lock->priv)) {
 		QDF_BUG(0);
