@@ -648,6 +648,13 @@
 		#thermal-sensor-cells = <1>;
 	};
 
+	rpm_bus: qcom,rpm-smd {
+		compatible = "qcom,rpm-smd";
+		rpm-channel-name = "rpm_requests";
+		interrupts = <GIC_SPI 194 IRQ_TYPE_EDGE_RISING>;
+		rpm-channel-type = <15>; /* SMD_APPS_RPM */
+	};
+
 	mem_dump {
 		compatible = "qcom,mem-dump";
 		memory-region = <&dump_mem>;
@@ -1207,7 +1214,7 @@
 #include "scuba-coresight.dtsi"
 #include "scuba-pinctrl.dtsi"
 #include "scuba-ion.dtsi"
-#include "scuba-stub-regulator.dtsi"
+#include "scuba-regulator.dtsi"
 #include "scuba-gdsc.dtsi"
 #include "scuba-qupv3.dtsi"
 #include "scuba-usb.dtsi"
