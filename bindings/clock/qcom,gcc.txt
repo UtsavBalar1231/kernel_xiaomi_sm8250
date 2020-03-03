@@ -24,6 +24,7 @@ Required properties :
 			"qcom,gcc-lito"
 			"qcom,bengal-gcc"
 			"qcom,lagoon-gcc"
+			"qcom,scuba-gcc".
 
 - reg : shall contain base register location and length
 - #clock-cells : shall contain 1

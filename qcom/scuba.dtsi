@@ -867,15 +867,23 @@
 	};
 
 	gcc: qcom,gcc@1400000 {
-		compatible = "qcom,dummycc";
-		clock-output-names = "gcc_clocks";
+		compatible = "qcom,scuba-gcc", "syscon";
+		reg = <0x1400000 0x1f0000>;
+		reg-names = "cc_base";
+		vdd_cx-supply = <&VDD_CX_LEVEL>;
+		vdd_cx_ao-supply = <&VDD_CX_LEVEL_AO>;
+		vdd_mx-supply = <&VDD_MX_LEVEL>;
 		#clock-cells = <1>;
 		#reset-cells = <1>;
 	};
 
 	dispcc: qcom,dispcc@5f00000 {
-		compatible = "qcom,dummycc";
-		clock-output-names = "dispcc_clocks";
+		compatible = "qcom,scuba-dispcc", "syscon";
+		reg = <0x5f00000 0x20000>;
+		reg-names = "cc_base";
+		clock-names = "cfg_ahb_clk";
+		clocks = <&gcc GCC_DISP_AHB_CLK>;
+		vdd_cx-supply = <&VDD_CX_LEVEL>;
 		#clock-cells = <1>;
 		#reset-cells = <1>;
 	};
