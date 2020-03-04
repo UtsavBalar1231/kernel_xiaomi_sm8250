@@ -1709,16 +1709,12 @@ int msm_vidc_decide_core_and_power_mode_iris2(struct msm_vidc_inst *inst)
 
 	inst->clk_data.core_id = VIDC_CORE_ID_1;
 
-	/* Power saving always disabled for CQ and LOSSLESS RC modes. */
 	mbpf = msm_vidc_get_mbs_per_frame(inst);
 	mbps = mbpf * msm_vidc_get_fps(inst);
 	max_hq_mbpf = inst->core->resources.max_hq_mbs_per_frame;
 	max_hq_mbps = inst->core->resources.max_hq_mbs_per_sec;
 
-	if (inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_CQ ||
-		inst->rc_type == RATE_CONTROL_LOSSLESS ||
-		inst->all_intra ||
-		(mbpf <= max_hq_mbpf && mbps <= max_hq_mbps))
+	if (mbpf <= max_hq_mbpf && mbps <= max_hq_mbps)
 		enable = false;
 
 	rc = msm_vidc_power_save_mode_enable(inst, enable);
