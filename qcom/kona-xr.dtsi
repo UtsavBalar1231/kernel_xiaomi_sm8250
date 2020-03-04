@@ -655,7 +655,7 @@
 			label = "home";
 			gpios = <&pm8150_gpios 7 GPIO_ACTIVE_LOW>;
 			linux,input-type = <1>;
-			linux,code = <KEY_HOME>;
+			linux,code = <KEY_BACK>;
 			gpio-key,wakeup;
 			debounce-interval = <15>;
 			linux,can-disable;
@@ -1165,7 +1165,45 @@
 	extcon = <&extcon_usb1>;
 };
 
+&flash_led {
+	qcom,hw-strobe-option = <0>;
+	qcom,strobe-sel = <1>;
+};
+
+&pm8150l_flash0 {
+	qcom,hw-strobe-option = <0>;
+	qcom,strobe-sel = <1>;
+};
+
+&pm8150l_flash1 {
+	qcom,hw-strobe-option = <0>;
+	qcom,strobe-sel = <1>;
+};
+
+&pm8150l_flash2 {
+	qcom,hw-strobe-option = <0>;
+	qcom,strobe-sel = <1>;
+};
+
+&pm8150l_torch0 {
+	qcom,hw-strobe-option = <0>;
+	qcom,strobe-sel = <1>;
+};
+
+&pm8150l_torch1 {
+	qcom,hw-strobe-option = <0>;
+	qcom,strobe-sel = <1>;
+};
+
+&pm8150l_torch2 {
+	qcom,hw-strobe-option = <0>;
+	qcom,strobe-sel = <1>;
+};
 
 &wil6210 {
 	status = "disabled";
+};
+
+&key_home_default {
+	pins = "gpio7";
 };
