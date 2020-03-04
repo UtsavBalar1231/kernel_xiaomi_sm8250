@@ -142,7 +142,7 @@ struct venus_hfi_vpu_ops ar50_lite_ops = {
 	.prepare_pc = __prepare_pc_ar50_lt,
 	.raise_interrupt = __raise_interrupt_ar50_lt,
 	.watchdog = __watchdog_common,
-	.noc_error_info = __noc_error_info_common,
+	.noc_error_info = NULL,
 	.core_clear_interrupt = __core_clear_interrupt_ar50_lt,
 	.boot_firmware = __boot_firmware_ar50_lt,
 };
