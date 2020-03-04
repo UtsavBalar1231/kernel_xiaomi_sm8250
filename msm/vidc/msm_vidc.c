@@ -800,8 +800,15 @@ static inline int start_streaming(struct msm_vidc_inst *inst)
 
 	b.buffer_type = HFI_BUFFER_OUTPUT;
 	if (inst->session_type == MSM_VIDC_DECODER &&
-		is_secondary_output_mode(inst))
+		is_secondary_output_mode(inst)) {
 		b.buffer_type = HFI_BUFFER_OUTPUT2;
+		rc = msm_comm_update_dpb_bufreqs(inst);
+		if (rc) {
+			s_vpr_e(inst->sid,
+				"%s: set dpb bufreq failed\n", __func__);
+			goto fail_start;
+		}
+	}
 
 	/* Check if current session is under HW capability */
 	rc = msm_vidc_check_session_supported(inst);
@@ -839,6 +846,13 @@ static inline int start_streaming(struct msm_vidc_inst *inst)
 	}
 
 	rc = msm_comm_try_get_bufreqs(inst);
+
+	rc = msm_comm_check_memory_supported(inst);
+	if (rc) {
+		s_vpr_e(inst->sid,
+			"Memory not sufficient to proceed current session\n");
+		goto fail_start;
+	}
 
 	f = &inst->fmts[OUTPUT_PORT].v4l2_fmt;
 	b.buffer_size = f->fmt.pix_mp.plane_fmt[0].sizeimage;
