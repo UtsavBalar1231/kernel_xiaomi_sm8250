@@ -768,7 +768,7 @@ void wcd_mbhc_elec_hs_report_unplug(struct wcd_mbhc *mbhc)
 		pr_info("%s: hs_detect_plug work not cancelled\n", __func__);
 
 	pr_debug("%s: Report extension cable\n", __func__);
-	wcd_mbhc_report_plug(mbhc, 1, SND_JACK_LINEOUT);
+	wcd_mbhc_report_plug(mbhc, 1, SND_JACK_HEADPHONE);
 	/*
 	 * If PA is enabled HPHL schmitt trigger can
 	 * be unreliable, make sure to disable it
