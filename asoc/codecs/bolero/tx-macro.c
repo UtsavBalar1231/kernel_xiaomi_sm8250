@@ -17,6 +17,8 @@
 #include "bolero-cdc.h"
 #include "bolero-cdc-registers.h"
 #include "bolero-clk-rsc.h"
+#include <soc/qcom/pm.h>
+#include <linux/pm_qos.h>
 
 #define AUTO_SUSPEND_DELAY  50 /* delay in msec */
 #define TX_MACRO_MAX_OFFSET 0x1000
@@ -48,6 +50,10 @@
 #define TX_MACRO_AMIC_HPF_DELAY_MS	100
 
 static int tx_unmute_delay = TX_MACRO_DMIC_UNMUTE_DELAY_MS;
+
+#define TX_MACRO_SYSTEM_RESUME_TIMEOUT_MS 700
+#define TX_MACRO_SYS_SUSPEND_WAIT 1
+
 struct tx_macro_priv *g_tx_priv;
 
 module_param(tx_unmute_delay, int, 0664);
@@ -90,6 +96,12 @@ enum {
 	TX_MACRO_AIF2_CAP,
 	TX_MACRO_AIF3_CAP,
 	TX_MACRO_MAX_DAIS
+};
+
+enum tx_macro_pm_state {
+	TX_MACRO_PM_SLEEPABLE,
+	TX_MACRO_PM_AWAKE,
+	TX_MACRO_PM_ASLEEP,
 };
 
 enum {
@@ -169,17 +181,25 @@ struct tx_macro_priv {
 	char __iomem *tx_io_base;
 	struct platform_device *pdev_child_devices
 			[TX_MACRO_CHILD_DEVICES_MAX];
+	struct pm_qos_request pm_qos_req;
 	int child_count;
 	int tx_swr_clk_cnt;
 	int va_swr_clk_cnt;
 	int va_clk_status;
 	int tx_clk_status;
+	int wlock_holders;
 	bool bcs_enable;
 	int dec_mode[NUM_DECIMATORS];
 	bool bcs_clk_en;
 	bool hs_slow_insert_complete;
+	struct mutex pm_lock;
+	enum tx_macro_pm_state pm_state;
+	wait_queue_head_t pm_wq;
 	int amic_sample_rate;
 };
+
+static bool tx_macro_lock_sleep(struct tx_macro_priv *tx_priv);
+static void tx_macro_unlock_sleep(struct tx_macro_priv *tx_priv);
 
 static bool tx_macro_get_data(struct snd_soc_component *component,
 			      struct device **tx_dev,
@@ -420,6 +440,218 @@ static int tx_macro_event_handler(struct snd_soc_component *component,
 	}
 	return 0;
 }
+
+/*
+ * swrm_pm_cmpxchg:
+ *      Check old state and exchange with pm new state
+ *      if old state matches with current state
+ *
+ * @swrm: pointer to wcd core resource
+ * @o: pm old state
+ * @n: pm new state
+ *
+ * Returns old state
+ */
+static enum tx_macro_pm_state tx_macro_pm_cmpxchg(
+				struct tx_macro_priv *tx_priv,
+				enum tx_macro_pm_state o,
+				enum tx_macro_pm_state n)
+{
+	enum tx_macro_pm_state old;
+
+	if (!tx_priv)
+		return o;
+
+	mutex_lock(&tx_priv->pm_lock);
+	old = tx_priv->pm_state;
+	if (old == o)
+		tx_priv->pm_state = n;
+	mutex_unlock(&tx_priv->pm_lock);
+
+	return old;
+}
+
+static bool tx_macro_lock_sleep(struct tx_macro_priv *tx_priv)
+{
+	enum tx_macro_pm_state os;
+
+	/*
+	 * swrm_{lock/unlock}_sleep will be called by swr irq handler
+	 * and slave wake up requests..
+	 *
+	 * If tx macro didn't resume, we can simply return false so
+	 * IRQ handler can return without handling IRQ.
+	 */
+	mutex_lock(&tx_priv->pm_lock);
+	if (tx_priv->wlock_holders++ == 0) {
+		dev_dbg(tx_priv->dev, "%s: holding wake lock\n", __func__);
+		pm_qos_update_request(&tx_priv->pm_qos_req,
+					  msm_cpuidle_get_deep_idle_latency());
+		pm_stay_awake(tx_priv->dev);
+	}
+	mutex_unlock(&tx_priv->pm_lock);
+	if (!wait_event_timeout(tx_priv->pm_wq,
+				((os =  tx_macro_pm_cmpxchg(tx_priv,
+				  TX_MACRO_PM_SLEEPABLE,
+				  TX_MACRO_PM_AWAKE)) ==
+					TX_MACRO_PM_SLEEPABLE ||
+					(os == TX_MACRO_PM_AWAKE)),
+					msecs_to_jiffies(
+					TX_MACRO_SYSTEM_RESUME_TIMEOUT_MS))) {
+		dev_err(tx_priv->dev, "%s: bolero didn't resume within %dms, s %d, w %d\n",
+			__func__, TX_MACRO_SYSTEM_RESUME_TIMEOUT_MS, tx_priv->pm_state,
+				tx_priv->wlock_holders);
+		tx_macro_unlock_sleep(tx_priv);
+		return false;
+	}
+	wake_up_all(&tx_priv->pm_wq);
+	return true;
+}
+
+static void tx_macro_unlock_sleep(struct tx_macro_priv *tx_priv)
+{
+	mutex_lock(&tx_priv->pm_lock);
+	if (--tx_priv->wlock_holders == 0) {
+		dev_dbg(tx_priv->dev, "%s: releasing wake lock pm_state %d -> %d\n",
+			 __func__, tx_priv->pm_state, TX_MACRO_PM_SLEEPABLE);
+		/*
+		 * if swrm_lock_sleep failed, pm_state would be still
+		 * swrm_PM_ASLEEP, don't overwrite
+		 */
+		if (likely(tx_priv->pm_state == TX_MACRO_PM_AWAKE))
+			tx_priv->pm_state = TX_MACRO_PM_SLEEPABLE;
+		pm_qos_update_request(&tx_priv->pm_qos_req,
+				  PM_QOS_DEFAULT_VALUE);
+		pm_relax(tx_priv->dev);
+	}
+	mutex_unlock(&tx_priv->pm_lock);
+	wake_up_all(&tx_priv->pm_wq);
+}
+
+#ifdef CONFIG_PM_SLEEP
+static int tx_macro_suspend(struct device *dev)
+{
+	int ret = -EBUSY;
+	struct platform_device *pdev = to_platform_device(dev);
+	struct tx_macro_priv *tx_priv = NULL;
+
+	tx_priv = platform_get_drvdata(pdev);
+
+	if (!tx_priv)
+		return -EINVAL;
+
+	dev_dbg(dev, "%s: suspend\n", __func__);
+
+	mutex_lock(&tx_priv->pm_lock);
+
+	if (tx_priv->pm_state == TX_MACRO_PM_SLEEPABLE) {
+		dev_dbg(tx_priv->dev, "%s: suspending tx macro, state %d, wlock %d\n",
+			 __func__, tx_priv->pm_state,
+			tx_priv->wlock_holders);
+		tx_priv->pm_state = TX_MACRO_PM_ASLEEP;
+	} else if (tx_priv->pm_state == TX_MACRO_PM_AWAKE) {
+		/*
+		 * unlock to wait for pm_state == SWRM_PM_SLEEPABLE
+		 * then set to SWRM_PM_ASLEEP
+		 */
+		dev_dbg(tx_priv->dev, "%s: waiting to suspend tx macro, state %d, wlock %d\n",
+			 __func__, tx_priv->pm_state,
+			 tx_priv->wlock_holders);
+		mutex_unlock(&tx_priv->pm_lock);
+		if (!(wait_event_timeout(tx_priv->pm_wq, tx_macro_pm_cmpxchg(
+					 tx_priv, TX_MACRO_PM_SLEEPABLE,
+						 TX_MACRO_PM_ASLEEP) ==
+						   TX_MACRO_PM_SLEEPABLE,
+						   msecs_to_jiffies(
+						   TX_MACRO_SYS_SUSPEND_WAIT)))) {
+			dev_dbg(tx_priv->dev, "%s: suspend failed state %d, wlock %d\n",
+				 __func__, tx_priv->pm_state,
+				 tx_priv->wlock_holders);
+			return -EBUSY;
+		} else {
+			dev_dbg(tx_priv->dev,
+				"%s: done, state %d, wlock %d\n",
+				__func__, tx_priv->pm_state,
+				tx_priv->wlock_holders);
+		}
+		mutex_lock(&tx_priv->pm_lock);
+	} else if (tx_priv->pm_state == TX_MACRO_PM_ASLEEP) {
+		dev_dbg(tx_priv->dev, "%s: tx macro is already suspended, state %d, wlock %d\n",
+			__func__, tx_priv->pm_state,
+			tx_priv->wlock_holders);
+	}
+
+	mutex_unlock(&tx_priv->pm_lock);
+
+	if ((!pm_runtime_enabled(dev) || !pm_runtime_suspended(dev))) {
+		ret = bolero_runtime_suspend(dev);
+		if (!ret) {
+			/*
+			 * Synchronize runtime-pm and tx_macro-pm states:
+			 * At this point, we are already suspended. If
+			 * runtime-pm still thinks its active, then
+			 * make sure its status is in sync with HW
+			 * status. The three below calls let the
+			 * runtime-pm know that we are suspended
+			 * already without re-invoking the suspend
+			 * callback
+			 */
+			pm_runtime_disable(dev);
+			pm_runtime_set_suspended(dev);
+			pm_runtime_enable(dev);
+		}
+	}
+	if (ret == -EBUSY) {
+		/*
+		 * There is a possibility that some audio stream is active
+		 * during suspend. We dont want to return suspend failure in
+		 * that case so that display and relevant components can still
+		 * go to suspend.
+		 * If there is some other error, then it should be passed-on
+		 * to system level suspend
+		 */
+		ret = 0;
+	}
+	return ret;
+}
+
+static int tx_macro_resume(struct device *dev)
+{
+	int ret = 0;
+	struct platform_device *pdev = to_platform_device(dev);
+	struct tx_macro_priv *tx_priv = NULL;
+
+	tx_priv = platform_get_drvdata(pdev);
+
+	if (!tx_priv)
+		return -EINVAL;
+
+	dev_dbg(tx_priv->dev, "%s: tx macro resume\n", __func__);
+	if (!pm_runtime_enabled(dev) || !pm_runtime_suspend(dev)) {
+		ret = bolero_runtime_resume(dev);
+		if (!ret) {
+			pm_runtime_mark_last_busy(dev);
+			pm_request_autosuspend(dev);
+		}
+	}
+	mutex_lock(&tx_priv->pm_lock);
+	if (tx_priv->pm_state == TX_MACRO_PM_ASLEEP) {
+		dev_dbg(tx_priv->dev,
+			"%s: resuming tx macro, state %d, wlock %d\n",
+			__func__, tx_priv->pm_state,
+			tx_priv->wlock_holders);
+		tx_priv->pm_state = TX_MACRO_PM_SLEEPABLE;
+	} else {
+		dev_dbg(tx_priv->dev, "%s: tx macro is already awake, state %d wlock %d\n",
+			__func__, tx_priv->pm_state,
+			tx_priv->wlock_holders);
+	}
+	mutex_unlock(&tx_priv->pm_lock);
+	wake_up_all(&tx_priv->pm_wq);
+
+	return ret;
+}
+#endif /* CONFIG_PM_SLEEP */
 
 static int tx_macro_reg_wake_irq(struct snd_soc_component *component,
 				 u32 data)
@@ -2725,6 +2957,7 @@ static int tx_macro_core_vote(void *handle, bool enable)
 		return -EINVAL;
 	}
 
+	tx_macro_lock_sleep(tx_priv);
 	if (enable) {
 		pm_runtime_get_sync(tx_priv->dev);
 		if (bolero_check_core_votes(tx_priv->dev))
@@ -2735,6 +2968,8 @@ static int tx_macro_core_vote(void *handle, bool enable)
 		pm_runtime_put_autosuspend(tx_priv->dev);
 		pm_runtime_mark_last_busy(tx_priv->dev);
 	}
+	tx_macro_unlock_sleep(tx_priv);
+
 	return rc;
 }
 
@@ -3314,6 +3549,12 @@ static int tx_macro_probe(struct platform_device *pdev)
 	}
 	tx_priv->is_used_tx_swr_gpio = is_used_tx_swr_gpio;
 	mutex_init(&tx_priv->mclk_lock);
+	mutex_init(&tx_priv->pm_lock);
+	init_waitqueue_head(&tx_priv->pm_wq);
+	pm_qos_add_request(&tx_priv->pm_qos_req,
+			   PM_QOS_CPU_DMA_LATENCY,
+			   PM_QOS_DEFAULT_VALUE);
+	tx_priv->wlock_holders = 0;
 	tx_macro_init_ops(&ops, tx_io_base);
 	ops.clk_id_req = TX_CORE_CLK;
 	ops.default_clk_id = TX_CORE_CLK;
@@ -3334,6 +3575,8 @@ static int tx_macro_probe(struct platform_device *pdev)
 	return 0;
 err_reg_macro:
 	mutex_destroy(&tx_priv->mclk_lock);
+	mutex_destroy(&tx_priv->pm_lock);
+	pm_qos_remove_request(&tx_priv->pm_qos_req);
 	if (is_used_tx_swr_gpio)
 		mutex_destroy(&tx_priv->swr_clk_lock);
 	return ret;
@@ -3361,6 +3604,8 @@ static int tx_macro_remove(struct platform_device *pdev)
 	pm_runtime_disable(&pdev->dev);
 	pm_runtime_set_suspended(&pdev->dev);
 	mutex_destroy(&tx_priv->mclk_lock);
+	mutex_destroy(&tx_priv->pm_lock);
+	pm_qos_remove_request(&tx_priv->pm_qos_req);
 	if (tx_priv->is_used_tx_swr_gpio)
 		mutex_destroy(&tx_priv->swr_clk_lock);
 	bolero_unregister_macro(&pdev->dev, TX_MACRO);
@@ -3375,8 +3620,8 @@ static const struct of_device_id tx_macro_dt_match[] = {
 
 static const struct dev_pm_ops bolero_dev_pm_ops = {
 	SET_SYSTEM_SLEEP_PM_OPS(
-		pm_runtime_force_suspend,
-		pm_runtime_force_resume
+		tx_macro_suspend,
+		tx_macro_resume
 	)
 	SET_RUNTIME_PM_OPS(
 		bolero_runtime_suspend,
