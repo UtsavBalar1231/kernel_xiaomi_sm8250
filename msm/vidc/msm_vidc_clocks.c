@@ -1035,7 +1035,7 @@ int msm_comm_scale_clocks_and_bus(struct msm_vidc_inst *inst, bool do_bw_calc)
 int msm_dcvs_try_enable(struct msm_vidc_inst *inst)
 {
 	if (!inst || !inst->core) {
-		d_vpr_e("%s: Invalid args: %p\n", __func__, inst);
+		d_vpr_e("%s: Invalid args: %pK\n", __func__, inst);
 		return -EINVAL;
 	}
 
