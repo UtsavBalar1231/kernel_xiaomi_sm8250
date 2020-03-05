@@ -591,6 +591,7 @@ struct context_bank_info *msm_smem_get_context_bank(u32 session_type,
 			buffer_type = HAL_BUFFER_INTERNAL_PERSIST_1;
 	}
 
+	mutex_lock(&res->cb_lock);
 	list_for_each_entry(cb, &res->context_banks, list) {
 		if (cb->is_secure == is_secure &&
 				cb->buffer_type & buffer_type) {
@@ -598,6 +599,7 @@ struct context_bank_info *msm_smem_get_context_bank(u32 session_type,
 			break;
 		}
 	}
+	mutex_unlock(&res->cb_lock);
 	if (!match)
 		s_vpr_e(sid,
 			"%s: cb not found for buffer_type %x, is_secure %d\n",
