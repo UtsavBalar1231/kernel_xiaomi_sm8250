@@ -572,6 +572,61 @@
 				};
 			};
 		};
+		pmx_sde: pmx_sde {
+			sde_dsi_active: sde_dsi_active {
+				mux {
+					pins = "gpio82", "gpio105";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio82", "gpio105";
+					drive-strength = <8>;
+					bias-disable = <0>;
+				};
+			};
+
+			sde_dsi_suspend: sde_dsi_suspend {
+				mux {
+					pins = "gpio82", "gpio105";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio82", "gpio105";
+					drive-strength = <2>;
+					bias-pull-down;
+				};
+			};
+		};
+
+		pmx_sde_te {
+			sde_te_active: sde_te_active {
+				mux {
+					pins = "gpio81";
+					function = "mdp_vsync";
+				};
+
+				config {
+					pins = "gpio81";
+					drive-strength = <2>;
+					bias-pull-down;
+				};
+			};
+
+			sde_te_suspend: sde_te_suspend {
+				mux {
+					pins = "gpio81";
+					function = "mdp_vsync";
+				};
+
+				config {
+					pins = "gpio81";
+					drive-strength = <2>;
+					bias-pull-down;
+				};
+			};
+		};
 
 		pm8008_interrupt: pm8008_interrupt {
 			mux {

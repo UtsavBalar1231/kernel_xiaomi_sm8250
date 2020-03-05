@@ -1940,3 +1940,5 @@
 };
 
 #include "scuba-pm.dtsi"
+#include "scuba-sde.dtsi"
+#include "scuba-sde-pll.dtsi"
