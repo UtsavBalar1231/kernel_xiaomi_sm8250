@@ -6394,6 +6394,10 @@ QDF_STATUS hdd_stop_adapter(struct hdd_context *hdd_ctx,
 			if (wlan_hdd_del_station(adapter))
 				hdd_sap_indicate_disconnect_for_sta(adapter);
 		}
+		status = wlan_hdd_flush_pmksa_cache(adapter);
+		if (QDF_IS_STATUS_ERROR(status))
+			hdd_debug("Cannot flush PMKIDCache");
+
 		sap_config = &adapter->session.ap.sap_config;
 		wlansap_reset_sap_config_add_ie(sap_config, eUPDATE_IE_ALL);
 
