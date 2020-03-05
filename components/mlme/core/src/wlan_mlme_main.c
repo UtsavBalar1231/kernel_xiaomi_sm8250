@@ -1355,26 +1355,6 @@ mlme_init_product_details_cfg(struct wlan_mlme_product_details_cfg
 		      sizeof(product_details->model_number));
 }
 
-#ifdef WLAN_FEATURE_BCN_RPT_VSIE
-/**
- * mlme_init_bcn_rpt_err_vsi: To fill rpt_err_vsi INI
- * @psoc: psoc
- * @sta: sta config
- *
- * @return None
- */
-static void mlme_init_bcn_rpt_err_vsi(struct wlan_objmgr_psoc *psoc,
-				      struct wlan_mlme_sta_cfg *sta)
-{
-	sta->bcn_rpt_err_vsie = cfg_get(psoc, CFG_ENABLE_BCN_RPT_ERR_VSIE);
-}
-#else
-static inline void mlme_init_bcn_rpt_err_vsi(struct wlan_objmgr_psoc *psoc,
-					     struct wlan_mlme_sta_cfg *sta)
-{
-}
-#endif
-
 static void mlme_init_sta_cfg(struct wlan_objmgr_psoc *psoc,
 			      struct wlan_mlme_sta_cfg *sta)
 {
@@ -1411,7 +1391,6 @@ static void mlme_init_sta_cfg(struct wlan_objmgr_psoc *psoc,
 	sta->allow_tpc_from_ap = cfg_get(psoc, CFG_TX_POWER_CTRL);
 	sta->sta_keepalive_method =
 		cfg_get(psoc, CFG_STA_KEEPALIVE_METHOD);
-	mlme_init_bcn_rpt_err_vsi(psoc, sta);
 }
 
 static void mlme_init_stats_cfg(struct wlan_objmgr_psoc *psoc,

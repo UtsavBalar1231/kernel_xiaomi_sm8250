@@ -431,33 +431,6 @@
 			MLME_STA_KEEPALIVE_GRAT_ARP, \
 			CFG_VALUE_OR_DEFAULT, \
 			"Which keepalive method to use")
-#ifdef WLAN_FEATURE_BCN_RPT_VSIE
-/*
- * <ini>
- * enable_bcn_rpt_err_vsie - Enable/Disable ini for beacon report Err reasons
- * @Min: 0
- * @Max: 1
- * @Default: 0
- *
- * This ini is used to send vendor specific error reasons in beacon report
- * response frame in case driver rejects the beacon report measurement request
- *
- * Related: None
- *
- * Supported Feature: STA
- *
- * Usage: Internal
- *
- * </ini>
- */
-#define CFG_ENABLE_BCN_RPT_ERR_VSIE CFG_INI_BOOL( \
-		"enable_bcn_rpt_err_vsie", \
-		0, \
-		"To Enable err vsie in beacon report rsp")
-#define ENABLE_BCN_RPT_ERR_VSIE_ALL CFG(CFG_ENABLE_BCN_RPT_ERR_VSIE)
-#else
-#define ENABLE_BCN_RPT_ERR_VSIE_ALL
-#endif
 
 #define CFG_STA_ALL \
 	CFG(CFG_INFRA_STA_KEEP_ALIVE_PERIOD) \
@@ -476,6 +449,6 @@
 	CFG(CFG_STA_KEEPALIVE_METHOD) \
 	CFG(CFG_WT_CNF_TIMEOUT) \
 	CFG(CFG_CURRENT_RSSI) \
-	CFG(CFG_TX_POWER_CTRL) \
-	ENABLE_BCN_RPT_ERR_VSIE_ALL
+	CFG(CFG_TX_POWER_CTRL)
+
 #endif /* CFG_MLME_STA_H__ */

@@ -1320,7 +1320,7 @@ __lim_process_radio_measure_request(struct mac_context *mac, uint8_t *pRxPacketI
 	/* Call rrm function to handle the request. */
 
 	rrm_process_radio_measurement_request(mac, pHdr->sa, frm,
-					      pe_session, BCN_RPT_SUCCESS);
+					      pe_session);
 err:
 	qdf_mem_free(frm);
 }

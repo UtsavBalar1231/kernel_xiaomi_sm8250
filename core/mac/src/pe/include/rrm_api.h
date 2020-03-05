@@ -43,25 +43,12 @@ QDF_STATUS rrm_process_link_measurement_request(struct mac_context *mac,
 							  *pLinkReq,
 						struct pe_session *
 							  pe_session);
-/*
- * rrm_process_radio_measurement_request - Processes the Radio Resource
- * Measurement request
- *
- * @mac_ctx: Global pointer to MAC context
- * @peer: Macaddress of the peer requesting the radio measurement.
- * @rrm_req: Array of Measurement request IEs
- * @session_entry: session entry.
- * @error_code: beacon report resp error code
- *
- * Return: QDF_STATUS
- */
+
 QDF_STATUS
 rrm_process_radio_measurement_request(struct mac_context *mac_ctx,
 				      tSirMacAddr peer,
 				      tDot11fRadioMeasurementRequest *rrm_req,
-				      struct pe_session *session_entry,
-				      enum beacon_report_status_code
-				      error_code);
+				      struct pe_session *session_entry);
 
 QDF_STATUS rrm_process_neighbor_report_response(struct mac_context *mac,
 						tDot11fNeighborReportResponse

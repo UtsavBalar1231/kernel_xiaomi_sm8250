@@ -124,12 +124,6 @@ struct obss_detection_cfg {
 #define ADAPTIVE_11R_DATA_LEN      0x04
 #define ADAPTIVE_11R_OUI_DATA     "\x00\x00\x00\x01"
 
-#define BEACON_RPT_ERR_VSIE_STA_IE_LEN         0x08
-#define BEACON_RPT_ERR_VSIE_STA_OUI            "\x00\x00\x0f\x22"
-#define BEACON_RPT_ERR_VSIE_OUI_LEN            0X04
-#define BEACON_RPT_ERR_VSIE_DATA_LEN           0x03
-#define BEACON_RPT_ERR_VSIE_OUI_DATA           "\x05\x01\x01"
-
 /**
  * struct pe_session - per-vdev PE context
  * @available: true if the entry is available, false if it is in use

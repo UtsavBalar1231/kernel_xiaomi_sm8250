@@ -4482,102 +4482,6 @@ returnAfterError:
 	return status_code;
 } /* End lim_send_link_report_action_frame. */
 
-#ifdef WLAN_FEATURE_BCN_RPT_VSIE
-/**
- * lim_fill_beacon_report_error_vsie: To fill beacon report error vsie
- * @param pe_session: session
- * @param ie_buf: double pointer that holds address of error vsie
- * @param error_code: beacon_report_status_code
- *
- * @return QDF_STATUS: success/failure
- */
-static QDF_STATUS
-lim_fill_beacon_report_error_vsie(struct pe_session *pe_session,
-				  uint8_t **ie_buf, uint8_t *ie_len,
-				  enum beacon_report_status_code
-				  error_code)
-{
-	uint8_t *buf = NULL, *vsie_ie = NULL;
-
-	/*
-	 * Vendor specific IE to be advertised in beacon report response
-	 * req:
-	 * Type     0xDD
-	 * Length   0x0A
-	 * OUI      0x00 0x00 0x0F
-	 * Type     0x22
-	 * subtype  0x05
-	 * Version  0x01
-	 * Length   0x01
-	 * Data     0x00-0x07 (beacon report error)
-	 * supported)
-	 */
-	vsie_ie = qdf_mem_malloc(BEACON_RPT_ERR_VSIE_STA_IE_LEN + 2);
-	if (!vsie_ie)
-		return QDF_STATUS_E_FAILURE;
-
-	/* Fill the Vendor IE Type (0xDD) */
-	buf = vsie_ie;
-	*buf = WLAN_ELEMID_VENDOR;
-	buf++;
-
-	/* Fill the Vendor IE length (0x0A) */
-	*buf = BEACON_RPT_ERR_VSIE_STA_IE_LEN;
-	buf++;
-
-	/*
-	 * Fill the vsie Vendor specific OUI(0x00 0x00 0x0F 0x22)
-	 */
-	qdf_mem_copy(buf, BEACON_RPT_ERR_VSIE_STA_OUI,
-		     BEACON_RPT_ERR_VSIE_OUI_LEN);
-	buf += BEACON_RPT_ERR_VSIE_OUI_LEN;
-
-	/*
-	 * Fill Subtype version and length (0x05 0x01 0x01)
-	 */
-	qdf_mem_copy(buf, BEACON_RPT_ERR_VSIE_OUI_DATA,
-		     BEACON_RPT_ERR_VSIE_DATA_LEN);
-	buf += BEACON_RPT_ERR_VSIE_DATA_LEN;
-
-	/* Fill error code */
-	*buf = error_code;
-
-	*ie_len = BEACON_RPT_ERR_VSIE_STA_IE_LEN + 2;
-	*ie_buf = vsie_ie;
-	return QDF_STATUS_SUCCESS;
-}
-#else
-static QDF_STATUS
-lim_fill_beacon_report_error_vsie(struct pe_session *pe_session,
-				  uint8_t **ie_buf, uint8_t *ie_len,
-				  enum beacon_report_status_code
-				  error_code)
-{
-	return QDF_STATUS_SUCCESS;
-}
-#endif
-
-#ifdef WLAN_FEATURE_BCN_RPT_VSIE
-static bool
-lim_check_bcn_rpt_err_vsie_status(struct mac_context *mac,
-				  enum beacon_report_status_code error_code)
-{
-	if (mac->mlme_cfg->sta.bcn_rpt_err_vsie && error_code !=
-	    BCN_RPT_SUCCESS) {
-		return true;
-	}
-
-	return false;
-}
-#else
-static bool
-lim_check_bcn_rpt_err_vsie_status(struct mac_context *mac,
-				  enum beacon_report_status_code error_code)
-{
-	return false;
-}
-#endif
-
 QDF_STATUS
 lim_send_radio_measure_report_action_frame(struct mac_context *mac,
 				uint8_t dialog_token,
@@ -4585,23 +4489,18 @@ lim_send_radio_measure_report_action_frame(struct mac_context *mac,
 				bool is_last_frame,
 				tpSirMacRadioMeasureReport pRRMReport,
 				tSirMacAddr peer,
-				struct pe_session *pe_session,
-				enum beacon_report_status_code error_code)
+				struct pe_session *pe_session)
 {
 	QDF_STATUS status_code = QDF_STATUS_SUCCESS;
 	uint8_t *pFrame;
 	tpSirMacMgmtHdr pMacHdr;
-	uint32_t nPayload, nStatus;
-	uint32_t nBytes = 0;
+	uint32_t nBytes, nPayload, nStatus;
 	void *pPacket;
 	QDF_STATUS qdf_status;
 	uint8_t i;
 	uint8_t txFlag = 0;
 	uint8_t smeSessionId = 0;
 	bool is_last_report = false;
-	uint8_t *bcn_rpt_err_vsie = NULL;
-	uint8_t vs_ie_len = 0;
-	bool bcn_rpt_err_vsie_enable = false;
 
 	tDot11fRadioMeasurementReport *frm =
 		qdf_mem_malloc(sizeof(tDot11fRadioMeasurementReport));
@@ -4613,9 +4512,6 @@ lim_send_radio_measure_report_action_frame(struct mac_context *mac,
 		qdf_mem_free(frm);
 		return QDF_STATUS_E_FAILURE;
 	}
-
-	bcn_rpt_err_vsie_enable = lim_check_bcn_rpt_err_vsie_status(mac,
-								    error_code);
 
 	smeSessionId = pe_session->smeSessionId;
 
@@ -4648,15 +4544,6 @@ lim_send_radio_measure_report_action_frame(struct mac_context *mac,
 						     &pRRMReport[i].report.
 						     beaconReport,
 						     is_last_report);
-
-			if (bcn_rpt_err_vsie_enable) {
-				lim_fill_beacon_report_error_vsie
-						 (pe_session,
-						  &bcn_rpt_err_vsie,
-						  &vs_ie_len, error_code);
-				nBytes = vs_ie_len;
-			}
-
 			frm->MeasurementReport[i].incapable =
 				pRRMReport[i].incapable;
 			frm->MeasurementReport[i].refused =
@@ -4682,15 +4569,13 @@ lim_send_radio_measure_report_action_frame(struct mac_context *mac,
 		/* We'll fall back on the worst case scenario: */
 		nPayload = sizeof(tDot11fLinkMeasurementReport);
 		qdf_mem_free(frm);
-		qdf_mem_free(bcn_rpt_err_vsie);
 		return QDF_STATUS_E_FAILURE;
 	} else if (DOT11F_WARNED(nStatus)) {
 		pe_warn("Warnings while calculating the size for Radio Measure Report (0x%08x)",
 			nStatus);
 	}
 
-	nBytes += nPayload + sizeof(tSirMacMgmtHdr);
-
+	nBytes = nPayload + sizeof(tSirMacMgmtHdr);
 
 	qdf_status =
 		cds_packet_alloc((uint16_t) nBytes, (void **)&pFrame,
@@ -4699,7 +4584,6 @@ lim_send_radio_measure_report_action_frame(struct mac_context *mac,
 		pe_nofl_err("TX: [802.11 RRM] Allocation of %d bytes failed for RM"
 			   "Report", nBytes);
 		qdf_mem_free(frm);
-		qdf_mem_free(bcn_rpt_err_vsie);
 		return QDF_STATUS_E_FAILURE;
 	}
 	/* Paranoia: */
@@ -4735,11 +4619,6 @@ lim_send_radio_measure_report_action_frame(struct mac_context *mac,
 			nStatus);
 	}
 
-	if (bcn_rpt_err_vsie_enable) {
-		qdf_mem_copy(pFrame + sizeof(tSirMacMgmtHdr) + nPayload,
-			     bcn_rpt_err_vsie, vs_ie_len);
-	}
-
 	pe_nofl_info("TX: %s seq_no:%d dialog_token:%d no. of APs:%d is_last_rpt:%d num_report: %d peer:%pM",
 		     frm->MeasurementReport[0].type == SIR_MAC_RRM_BEACON_TYPE ?
 		     "[802.11 BCN_RPT]" : "[802.11 RRM]",
@@ -4769,12 +4648,10 @@ lim_send_radio_measure_report_action_frame(struct mac_context *mac,
 	}
 
 	qdf_mem_free(frm);
-	qdf_mem_free(bcn_rpt_err_vsie);
 	return status_code;
 
 returnAfterError:
 	qdf_mem_free(frm);
-	qdf_mem_free(bcn_rpt_err_vsie);
 	cds_packet_free((void *)pPacket);
 	return status_code;
 }

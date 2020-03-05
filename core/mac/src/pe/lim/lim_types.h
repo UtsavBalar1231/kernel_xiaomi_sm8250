@@ -676,7 +676,6 @@ lim_send_link_report_action_frame(struct mac_context *mac,
  * @pRRMReport: Pointer to the RRM report structure
  * @peer: MAC address of the peer
  * @pe_session: Pointer to the PE session entry
- * @beacon_report_status_code: error_code
  *
  * Return: Ret Status
  */
@@ -687,8 +686,7 @@ lim_send_radio_measure_report_action_frame(struct mac_context *mac,
 				bool is_last_frame,
 				tpSirMacRadioMeasureReport pRRMReport,
 				tSirMacAddr peer,
-				struct pe_session *pe_session,
-				enum beacon_report_status_code error_code);
+				struct pe_session *pe_session);
 
 #ifdef FEATURE_WLAN_TDLS
 void lim_init_tdls_data(struct mac_context *, struct pe_session *);

@@ -466,24 +466,28 @@ rrm_process_neighbor_report_req(struct mac_context *mac,
 }
 
 #define ABS(x)      ((x < 0) ? -x : x)
-
+/* -------------------------------------------------------------------- */
 /**
- * rrm_process_beacon_report_req:  Processes the Beacon report request
- * from the peer AP.
+ * rrm_process_beacon_report_req
  *
- * @pCurrentReq: pointer to the current Req comtext.
- * @pBeaconReq: pointer to the beacon report request IE from the peer.
- * @pe_session: session entry.
- * @error_code: pointer to beacon report error_code
+ * FUNCTION:  Processes the Beacon report request from the peer AP.
  *
- * @return : eRRM status
+ * LOGIC:
+ *
+ * ASSUMPTIONS:
+ *
+ * NOTE:
+ *
+ * @param pCurrentReq pointer to the current Req comtext.
+ * @param pBeaconReq pointer to the beacon report request IE from the peer.
+ * @param pe_session session entry.
+ * @return None
  */
 static tRrmRetStatus
 rrm_process_beacon_report_req(struct mac_context *mac,
 			      tpRRMReq pCurrentReq,
 			      tDot11fIEMeasurementRequest *pBeaconReq,
-			      struct pe_session *pe_session,
-			      enum beacon_report_status_code *error_code)
+			      struct pe_session *pe_session)
 {
 	struct scheduler_msg mmh_msg = {0};
 	tpSirBeaconReportReqInd psbrr;
@@ -507,7 +511,6 @@ rrm_process_beacon_report_req(struct mac_context *mac,
 		/* IEEE Std 802.11k-2008 Table 7-29g and section 11.10.8.1 */
 
 		pe_nofl_err("RX: [802.11 BCN_RPT] Dropping req: Reporting condition included is not zero");
-		*error_code = BCN_RPT_ERR_NOT_SUPPORTED_PARAMETERS;
 		return eRRM_INCAPABLE;
 	}
 
@@ -548,7 +551,6 @@ rrm_process_beacon_report_req(struct mac_context *mac,
 	if (measDuration == 0 &&
 	    pBeaconReq->measurement_request.Beacon.meas_mode !=
 	    eSIR_BEACON_TABLE) {
-		*error_code = BCN_RPT_ERR_VALIDATION_FAILED_IN_A_REQUEST_FRAME;
 		pe_nofl_err("RX: [802.11 BCN_RPT] Invalid measurement duration");
 		return eRRM_REFUSED;
 	}
@@ -556,8 +558,6 @@ rrm_process_beacon_report_req(struct mac_context *mac,
 	if (maxMeasduration < measDuration) {
 		if (pBeaconReq->durationMandatory) {
 			pe_nofl_err("RX: [802.11 BCN_RPT] Dropping the req: duration mandatory & maxduration > measduration");
-			*error_code =
-			      BCN_RPT_ERR_MAXIMUM_MEASUREMENT_DURATION_EXCCEED;
 			return eRRM_REFUSED;
 		} else
 			measDuration = maxMeasduration;
@@ -584,18 +584,14 @@ rrm_process_beacon_report_req(struct mac_context *mac,
 		if (!pBeaconReq->measurement_request.Beacon.RequestedInfo.
 		    num_requested_eids) {
 			pe_debug("RX: [802.11 BCN_RPT]: Requested num of EID is 0");
-			*error_code =
-			      BCN_RPT_ERR_VALIDATION_FAILED_IN_A_REQUEST_FRAME;
 			return eRRM_FAILURE;
 		}
 		pCurrentReq->request.Beacon.reqIes.pElementIds =
 			qdf_mem_malloc(sizeof(uint8_t) *
 				       pBeaconReq->measurement_request.Beacon.
 				       RequestedInfo.num_requested_eids);
-		if (!pCurrentReq->request.Beacon.reqIes.pElementIds) {
-			*error_code = BCN_RPT_ERR_TEMPORARILY_UNAVAILABLE;
+		if (!pCurrentReq->request.Beacon.reqIes.pElementIds)
 			return eRRM_FAILURE;
-		}
 
 		pCurrentReq->request.Beacon.reqIes.num =
 			pBeaconReq->measurement_request.Beacon.RequestedInfo.
@@ -608,10 +604,8 @@ rrm_process_beacon_report_req(struct mac_context *mac,
 
 	/* Prepare the request to send to SME. */
 	psbrr = qdf_mem_malloc(sizeof(tSirBeaconReportReqInd));
-	if (!psbrr) {
-		*error_code = BCN_RPT_ERR_TEMPORARILY_UNAVAILABLE;
+	if (!psbrr)
 		return eRRM_FAILURE;
-	}
 
 	/* Alloc memory for pSmeBcnReportReq, will be freed by other modules */
 	qdf_mem_copy(psbrr->bssId, pe_session->bssId,
@@ -627,7 +621,6 @@ rrm_process_beacon_report_req(struct mac_context *mac,
 	    (wlan_reg_is_6ghz_op_class(mac->pdev,
 			 pBeaconReq->measurement_request.Beacon.regClass))) {
 		pe_nofl_err("RX: [802.11 BCN_RPT] Ch belongs to 6 ghz spectrum, abort");
-		*error_code = BCN_RPT_ERR_NOT_SUPPORTED_PARAMETERS;
 		qdf_mem_free(psbrr);
 		return eRRM_FAILURE;
 	}
@@ -668,8 +661,6 @@ rrm_process_beacon_report_req(struct mac_context *mac,
 			    (wlan_reg_is_6ghz_op_class(mac->pdev,
 					    ie_ap_chan_rpt->regulatoryClass))) {
 				pe_nofl_err("RX: [802.11 BCN_RPT] Ch belongs to 6 ghz spectrum, abort");
-				*error_code =
-					BCN_RPT_ERR_NOT_SUPPORTED_PARAMETERS;
 				qdf_mem_free(psbrr);
 				return eRRM_FAILURE;
 			}
@@ -705,7 +696,6 @@ rrm_process_beacon_report_req(struct mac_context *mac,
 	MTRACE(mac_trace(mac, TRACE_CODE_TX_SME_MSG,
 			 pe_session->peSessionId, mmh_msg.type));
 	lim_sys_process_mmh_msg_api(mac, &mmh_msg);
-	*error_code = BCN_RPT_SUCCESS;
 	return eRRM_SUCCESS;
 }
 
@@ -851,8 +841,6 @@ rrm_process_beacon_report_xmit(struct mac_context *mac_ctx,
 	uint8_t rem_len = 0;
 	uint8_t frag_id = 0;
 	uint8_t num_frames, num_reports_in_frame;
-	enum beacon_report_status_code error_code =
-					BCN_RPT_SUCCESS;
 
 	pe_debug("Received beacon report xmit indication");
 
@@ -1018,8 +1006,7 @@ rrm_process_beacon_report_xmit(struct mac_context *mac_ctx,
 				curr_req->dialog_token, num_reports_in_frame,
 				(j == num_frames - 1) ? true : false,
 				&report[report_index],
-				beacon_xmit_ind->bssId, session_entry,
-				error_code);
+				beacon_xmit_ind->bssId, session_entry);
 			report_index += num_reports_in_frame;
 		}
 		curr_req->sendEmptyBcnRpt = false;
@@ -1043,9 +1030,7 @@ end:
 static void rrm_process_beacon_request_failure(struct mac_context *mac,
 					       struct pe_session *pe_session,
 					       tSirMacAddr peer,
-					       tRrmRetStatus status,
-					       enum beacon_report_status_code
-					       error_code)
+					       tRrmRetStatus status)
 {
 	tpSirMacRadioMeasureReport pReport = NULL;
 	tpRRMReq pCurrentReq = mac->rrm.rrmPEContext.pCurrentReq;
@@ -1075,7 +1060,7 @@ static void rrm_process_beacon_request_failure(struct mac_context *mac,
 						   pCurrentReq->dialog_token,
 						   1, true,
 						   pReport, peer,
-						   pe_session, error_code);
+						   pe_session);
 
 	qdf_mem_free(pReport);
 	return;
@@ -1091,7 +1076,6 @@ static void rrm_process_beacon_request_failure(struct mac_context *mac,
  * @rrm_req: Array of Measurement request IEs
  * @num_report: No.of reports
  * @index: Index for Measurement request
- * @error_code: pointer beacon report resp error code
  *
  * Update structure sRRMReq and sSirMacRadioMeasureReport and pass it to
  * rrm_process_beacon_report_req().
@@ -1103,12 +1087,11 @@ QDF_STATUS rrm_process_beacon_req(struct mac_context *mac_ctx, tSirMacAddr peer,
 				  struct pe_session *session_entry, tpRRMReq curr_req,
 				  tpSirMacRadioMeasureReport *radiomes_report,
 				  tDot11fRadioMeasurementRequest *rrm_req,
-				  uint8_t *num_report, int index,
-				  enum beacon_report_status_code
-				  *error_code)
+				  uint8_t *num_report, int index)
 {
 	tRrmRetStatus rrm_status = eRRM_SUCCESS;
 	tpSirMacRadioMeasureReport report;
+
 	if (curr_req) {
 		if (!*radiomes_report) {
 			/*
@@ -1117,11 +1100,8 @@ QDF_STATUS rrm_process_beacon_req(struct mac_context *mac_ctx, tSirMacAddr peer,
 			 */
 			*radiomes_report = qdf_mem_malloc(sizeof(*report) *
 				(rrm_req->num_MeasurementRequest - index));
-			if (!*radiomes_report) {
-				*error_code =
-					BCN_RPT_ERR_TEMPORARILY_UNAVAILABLE;
+			if (!*radiomes_report)
 				return QDF_STATUS_E_NOMEM;
-			}
 			pe_debug("rrm beacon type refused of %d report in beacon table",
 				*num_report);
 		}
@@ -1131,28 +1111,26 @@ QDF_STATUS rrm_process_beacon_req(struct mac_context *mac_ctx, tSirMacAddr peer,
 		report[*num_report].token =
 			rrm_req->MeasurementRequest[index].measurement_token;
 		(*num_report)++;
-		*error_code = BCN_RPT_SUCCESS;
 		return QDF_STATUS_SUCCESS;
-	}
-	curr_req = qdf_mem_malloc(sizeof(*curr_req));
-	if (!curr_req) {
-		qdf_mem_free(*radiomes_report);
-		return QDF_STATUS_E_NOMEM;
-	}
-	pe_debug("Processing Beacon Report request");
-	curr_req->dialog_token = rrm_req->DialogToken.token;
-	curr_req->token =
-		rrm_req->MeasurementRequest[index].measurement_token;
-	curr_req->sendEmptyBcnRpt = true;
-	mac_ctx->rrm.rrmPEContext.pCurrentReq = curr_req;
-	rrm_status =
-	    rrm_process_beacon_report_req(mac_ctx, curr_req,
-					  &rrm_req->MeasurementRequest[index],
-					  session_entry, error_code);
-	if (eRRM_SUCCESS != rrm_status) {
-		rrm_process_beacon_request_failure(mac_ctx, session_entry, peer,
-						   rrm_status, *error_code);
-		rrm_cleanup(mac_ctx);
+	} else {
+		curr_req = qdf_mem_malloc(sizeof(*curr_req));
+		if (!curr_req) {
+				qdf_mem_free(*radiomes_report);
+			return QDF_STATUS_E_NOMEM;
+		}
+		pe_debug("Processing Beacon Report request");
+		curr_req->dialog_token = rrm_req->DialogToken.token;
+		curr_req->token = rrm_req->
+				  MeasurementRequest[index].measurement_token;
+		curr_req->sendEmptyBcnRpt = true;
+		mac_ctx->rrm.rrmPEContext.pCurrentReq = curr_req;
+		rrm_status = rrm_process_beacon_report_req(mac_ctx, curr_req,
+			&rrm_req->MeasurementRequest[index], session_entry);
+		if (eRRM_SUCCESS != rrm_status) {
+			rrm_process_beacon_request_failure(mac_ctx,
+				session_entry, peer, rrm_status);
+			rrm_cleanup(mac_ctx);
+		}
 	}
 
 	return QDF_STATUS_SUCCESS;
@@ -1199,15 +1177,15 @@ QDF_STATUS update_rrm_report(struct mac_context *mac_ctx,
 	return QDF_STATUS_SUCCESS;
 }
 
+/* -------------------------------------------------------------------- */
 /**
- * rrm_process_radio_measurement_request - Processes the Radio Resource
- * Measurement request
- *
+ * rrm_process_radio_measurement_request - Process rrm request
  * @mac_ctx: Global pointer to MAC context
  * @peer: Macaddress of the peer requesting the radio measurement.
  * @rrm_req: Array of Measurement request IEs
  * @session_entry: session entry.
- * @error_code: beacon report resp error code
+ *
+ * Processes the Radio Resource Measurement request.
  *
  * Return: QDF_STATUS
  */
@@ -1215,9 +1193,7 @@ QDF_STATUS
 rrm_process_radio_measurement_request(struct mac_context *mac_ctx,
 				      tSirMacAddr peer,
 				      tDot11fRadioMeasurementRequest *rrm_req,
-				      struct pe_session *session_entry,
-				      enum beacon_report_status_code
-				      error_code)
+				      struct pe_session *session_entry)
 {
 	uint8_t i;
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
@@ -1232,10 +1208,9 @@ rrm_process_radio_measurement_request(struct mac_context *mac_ctx,
 		pe_err("RX: [802.11 RRM] No requestIes in the measurement request, sending incapable report");
 		report->incapable = 1;
 		num_report = 1;
-		error_code = BCN_RPT_ERR_VALIDATION_FAILED_IN_A_REQUEST_FRAME;
 		lim_send_radio_measure_report_action_frame(mac_ctx,
 			rrm_req->DialogToken.token, num_report, true,
-			report, peer, session_entry, error_code);
+			report, peer, session_entry);
 		qdf_mem_free(report);
 		return QDF_STATUS_E_FAILURE;
 	}
@@ -1251,7 +1226,6 @@ rrm_process_radio_measurement_request(struct mac_context *mac_ctx,
 		if (!report)
 			return QDF_STATUS_E_NOMEM;
 		report->incapable = 1;
-		error_code = BCN_RPT_ERR_PREVIOUS_REQUEST_PROGRESS;
 		report->type = rrm_req->MeasurementRequest[0].measurement_type;
 		num_report = 1;
 		goto end;
@@ -1263,7 +1237,7 @@ rrm_process_radio_measurement_request(struct mac_context *mac_ctx,
 			/* Process beacon request. */
 			status = rrm_process_beacon_req(mac_ctx, peer,
 				 session_entry, curr_req, &report, rrm_req,
-				 &num_report, i, &error_code);
+				 &num_report, i);
 			if (QDF_STATUS_SUCCESS != status)
 				return status;
 			break;
@@ -1275,7 +1249,6 @@ rrm_process_radio_measurement_request(struct mac_context *mac_ctx,
 			break;
 		default:
 			/* Send a report with incapabale bit set. */
-			error_code = BCN_RPT_ERR_UNSPECIFIED;
 			status = update_rrm_report(mac_ctx, &report, rrm_req,
 						   &num_report, i);
 			if (QDF_STATUS_SUCCESS != status)
@@ -1288,7 +1261,7 @@ end:
 	if (report) {
 		lim_send_radio_measure_report_action_frame(mac_ctx,
 			rrm_req->DialogToken.token, num_report, true,
-			report, peer, session_entry, error_code);
+			report, peer, session_entry);
 		qdf_mem_free(report);
 	}
 	return status;
