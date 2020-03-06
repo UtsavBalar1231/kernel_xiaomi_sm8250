@@ -460,21 +460,12 @@ struct sde_hw_sspp_ops {
 				enum sde_sspp_multirect_index idx);
 
 	/**
-	 * setup_danger_safe_lut - setup danger safe LUTs
+	 * setup_qos_lut - setup danger, safe, creq LUTs
 	 * @ctx: Pointer to pipe context
 	 * @cfg: Pointer to pipe QoS configuration
 	 *
 	 */
-	void (*setup_danger_safe_lut)(struct sde_hw_pipe *ctx,
-			struct sde_hw_pipe_qos_cfg *cfg);
-
-	/**
-	 * setup_creq_lut - setup CREQ LUT
-	 * @ctx: Pointer to pipe context
-	 * @cfg: Pointer to pipe QoS configuration
-	 *
-	 */
-	void (*setup_creq_lut)(struct sde_hw_pipe *ctx,
+	void (*setup_qos_lut)(struct sde_hw_pipe *ctx,
 			struct sde_hw_pipe_qos_cfg *cfg);
 
 	/**
