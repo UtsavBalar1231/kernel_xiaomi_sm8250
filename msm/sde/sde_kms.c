@@ -713,13 +713,25 @@ no_ops:
 	return 0;
 }
 
-static int _sde_kms_release_splash_buffer(unsigned int mem_addr,
+static void _sde_clear_boot_config(struct sde_boot_config *boot_cfg)
+{
+	if (!boot_cfg)
+		return;
+
+	SDE_IMEM_WRITE(&boot_cfg->header, 0x0);
+	SDE_IMEM_WRITE(&boot_cfg->addr1, 0x0);
+	SDE_IMEM_WRITE(&boot_cfg->addr2, 0x0);
+}
+
+static int _sde_kms_release_splash_buffer(struct sde_kms *sde_kms,
+					unsigned int mem_addr,
 					unsigned int splash_buffer_size,
 					unsigned int ramdump_base,
 					unsigned int ramdump_buffer_size)
 {
 	unsigned long pfn_start, pfn_end, pfn_idx;
 	int ret = 0;
+	struct sde_boot_config *boot_cfg = sde_kms->imem;
 
 	if (!mem_addr || !splash_buffer_size) {
 		SDE_ERROR("invalid params\n");
@@ -732,6 +744,9 @@ static int _sde_kms_release_splash_buffer(unsigned int mem_addr,
 		mem_addr +=  ramdump_buffer_size;
 		splash_buffer_size -= ramdump_buffer_size;
 	}
+
+	if (!ramdump_base)
+		_sde_clear_boot_config(boot_cfg);
 
 	pfn_start = mem_addr >> PAGE_SHIFT;
 	pfn_end = (mem_addr + splash_buffer_size) >> PAGE_SHIFT;
@@ -831,9 +846,9 @@ static int _sde_kms_splash_mem_put(struct sde_kms *sde_kms,
 	if (!splash->ref_cnt) {
 		mmu->funcs->one_to_one_unmap(mmu, splash->splash_buf_base,
 				splash->splash_buf_size);
-		rc = _sde_kms_release_splash_buffer(splash->splash_buf_base,
-				splash->splash_buf_size, splash->ramdump_base,
-				splash->ramdump_size);
+		rc = _sde_kms_release_splash_buffer(sde_kms,
+			splash->splash_buf_base, splash->splash_buf_size,
+			splash->ramdump_base, splash->ramdump_size);
 		splash->splash_buf_base = 0;
 		splash->splash_buf_size = 0;
 	}
@@ -3400,6 +3415,17 @@ static int _sde_kms_hw_init_ioremap(struct sde_kms *sde_kms,
 		if (rc)
 			SDE_ERROR("dbg base register reg_dma failed: %d\n",
 					rc);
+	}
+
+	sde_kms->imem = msm_ioremap(platformdev, "sde_imem_phys",
+							"sde_imem_phys");
+
+	if (IS_ERR(sde_kms->imem)) {
+		sde_kms->imem = NULL;
+		sde_kms->imem_len = 0;
+	} else {
+		sde_kms->imem_len = msm_iomap_size(platformdev,
+							"sde_imem_phys");
 	}
 
 	sde_kms->sid = msm_ioremap(platformdev, "sid_phys",
