@@ -7760,8 +7760,6 @@ static QDF_STATUS hdd_abort_sched_scan_all_adapters(struct hdd_context *hdd_ctx)
 	struct hdd_adapter *adapter;
 	int err;
 
-	hdd_enter();
-
 	hdd_for_each_adapter(hdd_ctx, adapter) {
 		if (adapter->device_mode == QDF_STA_MODE ||
 		    adapter->device_mode == QDF_P2P_CLIENT_MODE ||
@@ -7774,8 +7772,6 @@ static QDF_STATUS hdd_abort_sched_scan_all_adapters(struct hdd_context *hdd_ctx)
 				hdd_err("Unable to stop scheduled scan");
 		}
 	}
-
-	hdd_exit();
 
 	return QDF_STATUS_SUCCESS;
 }
