@@ -146,6 +146,7 @@
 #include "sme_api.h"
 #include "wlan_hdd_thermal.h"
 #include <ol_defines.h>
+#include "wlan_hdd_cfr.h"
 
 #define g_mode_rates_size (12)
 #define a_mode_rates_size (8)
@@ -14958,6 +14959,7 @@ const struct wiphy_vendor_command hdd_wiphy_vendor_commands[] = {
 
 	FEATURE_BSS_TRANSITION_VENDOR_COMMANDS
 	FEATURE_SPECTRAL_SCAN_VENDOR_COMMANDS
+	FEATURE_CFR_VENDOR_COMMANDS
 	FEATURE_11AX_VENDOR_COMMANDS
 
 	{
