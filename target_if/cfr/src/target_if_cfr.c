@@ -26,8 +26,12 @@
 #include <init_deinit_lmac.h>
 #include <wlan_cfr_utils_api.h>
 #include <wlan_objmgr_pdev_obj.h>
-#include <target_if_cfr_8074v2.h>
 #include <target_if_cfr_6018.h>
+#ifdef CFR_USE_FIXED_FOLDER
+#include "target_if_cfr_6490.h"
+#else
+#include <target_if_cfr_8074v2.h>
+#endif
 
 int target_if_cfr_stop_capture(struct wlan_objmgr_pdev *pdev,
 			       struct wlan_objmgr_peer *peer)
@@ -166,6 +170,37 @@ int target_if_cfr_get_target_type(struct wlan_objmgr_psoc *psoc)
 	return target_type;
 }
 
+#ifdef CFR_USE_FIXED_FOLDER
+int target_if_cfr_init_pdev(struct wlan_objmgr_psoc *psoc,
+			    struct wlan_objmgr_pdev *pdev)
+{
+	uint32_t target_type;
+
+	target_type = target_if_cfr_get_target_type(psoc);
+
+	if (target_type == TARGET_TYPE_QCA6490) {
+		return cfr_6490_init_pdev(psoc, pdev);
+	} else {
+		cfr_info("unsupport chip");
+		return QDF_STATUS_SUCCESS;
+	}
+}
+
+int target_if_cfr_deinit_pdev(struct wlan_objmgr_psoc *psoc,
+			      struct wlan_objmgr_pdev *pdev)
+{
+	uint32_t target_type;
+
+	target_type = target_if_cfr_get_target_type(psoc);
+
+	if (target_type == TARGET_TYPE_QCA6490) {
+		return cfr_6490_deinit_pdev(psoc, pdev);
+	} else {
+		cfr_info("unsupport chip");
+		return QDF_STATUS_E_NOSUPPORT;
+	}
+}
+#else
 int target_if_cfr_init_pdev(struct wlan_objmgr_psoc *psoc,
 			    struct wlan_objmgr_pdev *pdev)
 {
@@ -225,6 +260,7 @@ int target_if_cfr_deinit_pdev(struct wlan_objmgr_psoc *psoc,
 	} else
 		return QDF_STATUS_E_NOSUPPORT;
 }
+#endif
 
 #ifdef WLAN_ENH_CFR_ENABLE
 QDF_STATUS target_if_cfr_config_rcc(struct wlan_objmgr_pdev *pdev,
@@ -300,6 +336,17 @@ void target_if_cfr_default_ta_ra_config(struct cfr_rcc_param *rcc_info,
 #endif
 
 #ifdef WLAN_ENH_CFR_ENABLE
+#ifdef CFR_USE_FIXED_FOLDER
+static void target_if_enh_cfr_add_ops(struct wlan_lmac_if_tx_ops *tx_ops)
+{
+	tx_ops->cfr_tx_ops.cfr_subscribe_ppdu_desc =
+				target_if_cfr_subscribe_ppdu_desc;
+}
+#else
+static void target_if_enh_cfr_add_ops(struct wlan_lmac_if_tx_ops *tx_ops)
+{
+}
+#endif /* CFR_USE_FIXED_FOLDER */
 static void target_if_enh_cfr_tx_ops(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 	tx_ops->cfr_tx_ops.cfr_config_rcc =
@@ -316,6 +363,7 @@ static void target_if_enh_cfr_tx_ops(struct wlan_lmac_if_tx_ops *tx_ops)
 		target_if_cfr_rx_tlv_process;
 	tx_ops->cfr_tx_ops.cfr_update_global_cfg =
 		target_if_cfr_update_global_cfg;
+	target_if_enh_cfr_add_ops(tx_ops);
 }
 #else
 static void target_if_enh_cfr_tx_ops(struct wlan_lmac_if_tx_ops *tx_ops)
