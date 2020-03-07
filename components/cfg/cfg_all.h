@@ -41,6 +41,12 @@
 #define CFG_NAN_ALL
 #endif
 
+#ifdef WLAN_CFR_ENABLE
+#include "cfr_cfg.h"
+#else
+#define CFG_CFR_ALL
+#endif
+
 #include "wlan_pmo_cfg.h"
 #include "hdd_config.h"
 #include "hdd_dp_cfg.h"
@@ -63,4 +69,5 @@
 	CFG_P2P_ALL \
 	CFG_PMO_ALL \
 	CFG_TDLS_ALL \
-	CFG_PKT_CAPTURE_MODE_ALL
+	CFG_PKT_CAPTURE_MODE_ALL \
+	CFG_CFR_ALL
