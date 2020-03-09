@@ -3590,7 +3590,7 @@
 
 	rfc_cam_therm {
 		reg = <ADC_GPIO2_PU2>;
-		label = "_therm";
+		label = "rfc_cam_therm";
 		qcom,ratiometric;
 		qcom,hw-settle-time = <200>;
 		qcom,pre-scaling = <1 1>;
@@ -3598,7 +3598,7 @@
 
 	rear_cam_flash_therm {
 		reg = <ADC_GPIO3_PU2>;
-		label = "_therm";
+		label = "rear_cam_flash_therm";
 		qcom,ratiometric;
 		qcom,hw-settle-time = <200>;
 		qcom,pre-scaling = <1 1>;
@@ -3606,7 +3606,7 @@
 
 	quiet_therm {
 		reg = <ADC_GPIO4_PU2>;
-		label = "_therm";
+		label = "quiet_therm";
 		qcom,ratiometric;
 		qcom,hw-settle-time = <200>;
 		qcom,pre-scaling = <1 1>;
