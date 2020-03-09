@@ -208,6 +208,24 @@
 			#pwm-cells = <2>;
 		};
 
+		pm2250_rg_leds: qcom,rg_leds {
+			compatible = "pwm-leds";
+
+			red {
+				label = "red";
+				pwms = <&pm2250_pwm1 0 1000000>;
+				max-brightness = <255>;
+				linux,default-trigger = "timer";
+			};
+
+			green {
+				label = "green";
+				pwms = <&pm2250_pwm2 0 1000000>;
+				max-brightness = <255>;
+				linux,default-trigger = "timer";
+			};
+		};
+
 		pm2250_flash: qcom,flash_led@d300 {
 			compatible = "qcom,pm2250-flash-led";
 			reg = <0xd300>;
