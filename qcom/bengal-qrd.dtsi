@@ -232,6 +232,10 @@
 	qcom,vdd-io-voltage-level = <1800000 2960000>;
 	qcom,vdd-io-current-level = <0 22000>;
 
+	vdd-io-bias-supply = <&L7A>;
+	qcom,vdd-io-bias-voltage-level = <1256000 1256000>;
+	qcom,vdd-io-bias-current-level = <0 6000>;
+
 	pinctrl-names = "active", "sleep";
 	pinctrl-0 = <&sdc2_clk_on  &sdc2_cmd_on &sdc2_data_on &sdc2_cd_on>;
 	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off &sdc2_cd_off>;
@@ -364,5 +368,68 @@
 &thermal_zones {
 	quiet-therm-step {
 		status = "ok";
+	};
+};
+
+&tlmm {
+	fpc_reset_int: fpc_reset_int {
+		fpc_reset_low: reset_low {
+			mux {
+				pins = "gpio104";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio104";
+				drive-strength = <2>;
+				bias-disable;
+				output-low;
+			};
+		};
+
+		fpc_reset_high: reset_high {
+			mux {
+				pins = "gpio104";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio104";
+				drive-strength = <2>;
+				bias-disable;
+				output-high;
+			};
+		};
+
+		fpc_int_low: int_low {
+			mux {
+				pins = "gpio97";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio97";
+				drive-strength = <2>;
+				bias-pull-down;
+				input-enable;
+			};
+		};
+	};
+};
+
+&soc {
+	fingerprint: fpc1020 {
+		compatible = "fpc,fpc1020";
+		interrupt-parent = <&tlmm>;
+		interrupts = <97 0>;
+		fpc,gpio_rst = <&tlmm 104 0>;
+		fpc,gpio_irq = <&tlmm 97 0>;
+		fpc,enable-on-boot;
+		pinctrl-names = "fpc1020_reset_reset",
+				"fpc1020_reset_active",
+				"fpc1020_irq_active";
+		pinctrl-0 = <&fpc_reset_low>;
+		pinctrl-1 = <&fpc_reset_high>;
+		pinctrl-2 = <&fpc_int_low>;
 	};
 };

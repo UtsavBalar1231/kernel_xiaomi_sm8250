@@ -6,8 +6,8 @@
 	qcom,pm6150l@4 {
 		compatible = "qcom,spmi-pmic";
 		reg = <4 SPMI_USID>;
-		#address-cells = <1>;
-		#size-cells = <1>;
+		#address-cells = <2>;
+		#size-cells = <0>;
 
 		pm6150l_revid: qcom,revid@100 {
 			compatible = "qcom,qpnp-revid";
@@ -126,8 +126,8 @@
 	qcom,pm6150l@5 {
 		compatible ="qcom,spmi-pmic";
 		reg = <5 SPMI_USID>;
-		#address-cells = <1>;
-		#size-cells = <1>;
+		#address-cells = <2>;
+		#size-cells = <0>;
 
 		pm6150l_pwm_1: qcom,pwms@bc00 {
 			status = "disabled";

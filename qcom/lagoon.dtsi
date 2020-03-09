@@ -581,6 +581,14 @@
 		qcom,iommu-dma-addr-pool = <0x40000000 0xc0000000>;
 		qcom,iommu-dma = "fastmap";
 		status = "ok";
+
+		/* Slimbus Slave DT for WCN3990 */
+		btfmslim_codec: wcn3990 {
+			compatible = "qcom,btfmslim_slave";
+			elemental-addr = [00 01 20 02 17 02];
+			qcom,btfm-slim-ifd = "btfmslim_slave_ifd";
+			qcom,btfm-slim-ifd-elemental-addr = [00 00 20 02 17 02];
+		};
 	};
 
 	intc: interrupt-controller@17a00000 {
@@ -2045,7 +2053,7 @@
 		glink_npu: npu {
 			qcom,remote-pid = <10>;
 			transport = "smem";
-			mboxes = <&ipcc_mproc IPCC_CLIENT_NPU
+			mboxes = <&msm_npu IPCC_CLIENT_NPU
 				  IPCC_MPROC_SIGNAL_GLINK_QMP>;
 			mbox-names = "npu_smem";
 			interrupt-parent = <&ipcc_mproc>;
@@ -2339,7 +2347,6 @@
 		BW_OPP_ENTRY( 600, 16); /*  9155 MB/s */
 		BW_OPP_ENTRY( 806, 16); /* 12298 MB/s */
 		BW_OPP_ENTRY( 933, 16); /* 14236 MB/s */
-		BW_OPP_ENTRY(1066, 16); /* 16265 MB/s */
 	};
 
 	suspendable_llcc_bw_opp_table: suspendable-llcc-bw-opp-table {
@@ -2351,7 +2358,6 @@
 		BW_OPP_ENTRY( 600, 16); /*  9155 MB/s */
 		BW_OPP_ENTRY( 806, 16); /* 12298 MB/s */
 		BW_OPP_ENTRY( 933, 16); /* 14236 MB/s */
-		BW_OPP_ENTRY(1066, 16); /* 16265 MB/s */
 	};
 
 	cpu_cpu_llcc_bw: qcom,cpu-cpu-llcc-bw {
@@ -2421,7 +2427,7 @@
 		BW_OPP_ENTRY(1353, 4); /* 5161 MB/s */
 		BW_OPP_ENTRY(1555, 4); /* 5931 MB/s */
 		BW_OPP_ENTRY(1804, 4); /* 6881 MB/s */
-		BW_OPP_ENTRY(2092, 4); /* 7980 MB/s */
+		BW_OPP_ENTRY(2092, 4); /* 8136 MB/s */
 	};
 
 	npu_npu_llcc_bw: qcom,npu-npu-llcc-bw {
@@ -2533,11 +2539,12 @@
 			qcom,target-dev = <&cpu0_l3>;
 			qcom,cachemiss-ev = <0x17>;
 			qcom,core-dev-table =
-				<  672000  300000000 >,
-				<  940800  556800000 >,
-				< 1228800  806400000 >,
-				< 1459200  940800000 >,
-				< 1728000 1420000000 >;
+				<  768000  300000000 >,
+				< 1017600  556800000 >,
+				< 1248000  806400000 >,
+				< 1516800  940800000 >,
+				< 1612800 1286000000 >,
+				< 1804800 1459000000 >;
 		};
 
 		cpu0_cpu_llcc_latmon: qcom,cpu0-cpu-llcc-latmon {
@@ -2546,9 +2553,9 @@
 			qcom,target-dev = <&cpu0_cpu_llcc_lat>;
 			qcom,cachemiss-ev = <0x2A>;
 			qcom,core-dev-table =
-				< 1228800 MHZ_TO_MBPS(300, 16) >,
-				< 1459200 MHZ_TO_MBPS(466, 16) >,
-				< 1728000 MHZ_TO_MBPS(600, 16) >;
+				< 1248000 MHZ_TO_MBPS(300, 16) >,
+				< 1516800 MHZ_TO_MBPS(466, 16) >,
+				< 1804800 MHZ_TO_MBPS(600, 16) >;
 		};
 
 		cpu0_llcc_ddr_latmon: qcom,cpu0-llcc-ddr-latmon {
@@ -2557,11 +2564,11 @@
 			qcom,target-dev = <&cpu0_llcc_ddr_lat>;
 			qcom,cachemiss-ev = <0x1000>;
 			qcom,core-dev-table =
-				<  672000 MHZ_TO_MBPS( 300, 4) >,
-				<  940800 MHZ_TO_MBPS( 451, 4) >,
-				< 1228800 MHZ_TO_MBPS( 547, 4) >,
-				< 1459200 MHZ_TO_MBPS( 768, 4) >,
-				< 1728000 MHZ_TO_MBPS(1017, 4) >;
+				<  768000 MHZ_TO_MBPS( 300, 4) >,
+				< 1017600 MHZ_TO_MBPS( 451, 4) >,
+				< 1248000 MHZ_TO_MBPS( 547, 4) >,
+				< 1516800 MHZ_TO_MBPS( 768, 4) >,
+				< 1804800 MHZ_TO_MBPS(1017, 4) >;
 		};
 
 		cpu0_computemon: qcom,cpu0-computemon {
@@ -2569,10 +2576,10 @@
 			qcom,cpulist = <&CPU0 &CPU1 &CPU2 &CPU3 &CPU4 &CPU5>;
 			qcom,target-dev = <&cpu0_cpu_ddr_latfloor>;
 			qcom,core-dev-table =
-				<  672000 MHZ_TO_MBPS( 300, 4) >,
-				< 1228800 MHZ_TO_MBPS( 451, 4) >,
-				< 1459200 MHZ_TO_MBPS( 547, 4) >,
-				< 1728000 MHZ_TO_MBPS( 768, 4) >;
+				<  768000 MHZ_TO_MBPS( 300, 4) >,
+				< 1248000 MHZ_TO_MBPS( 451, 4) >,
+				< 1516800 MHZ_TO_MBPS( 547, 4) >,
+				< 1804800 MHZ_TO_MBPS( 768, 4) >;
 		};
 	};
 
@@ -2613,11 +2620,12 @@
 			qcom,target-dev = <&cpu6_l3>;
 			qcom,cachemiss-ev = <0x17>;
 			qcom,core-dev-table =
-				<  940800  556800000 >,
-				< 1228800  806400000 >,
-				< 1708800 1190400000 >,
-				< 1900800 1382400000 >,
-				< 2323200 1420000000 >;
+				< 1036800  556800000 >,
+				< 1248000  806400000 >,
+				< 1555400  940800000 >,
+				< 1766400 1209600000 >,
+				< 1900800 1290000000 >,
+				< 2246000 1459000000 >;
 		};
 
 		cpu6_cpu_llcc_latmon: qcom,cpu6-cpu-llcc-latmon {
@@ -2626,12 +2634,11 @@
 			qcom,target-dev = <&cpu6_cpu_llcc_lat>;
 			qcom,cachemiss-ev = <0x2A>;
 			qcom,core-dev-table =
-				<  672000 MHZ_TO_MBPS( 300, 16) >,
-				<  940800 MHZ_TO_MBPS( 466, 16) >,
-				< 1228000 MHZ_TO_MBPS( 600, 16) >,
-				< 1708800 MHZ_TO_MBPS( 806, 16) >,
-				< 2350000 MHZ_TO_MBPS( 933, 16) >,
-				< 3000000 MHZ_TO_MBPS(1066, 16) >;
+				<  787200 MHZ_TO_MBPS(300, 16) >,
+				< 1036800 MHZ_TO_MBPS(466, 16) >,
+				< 1248000 MHZ_TO_MBPS(600, 16) >,
+				< 1555200 MHZ_TO_MBPS(806, 16) >,
+				< 2246000 MHZ_TO_MBPS(933, 16) >;
 		};
 
 		cpu6_llcc_ddr_latmon: qcom,cpu6-llcc-ddr-latmon {
@@ -2640,12 +2647,11 @@
 			qcom,target-dev = <&cpu6_llcc_ddr_lat>;
 			qcom,cachemiss-ev = <0x1000>;
 			qcom,core-dev-table =
-				<  672000 MHZ_TO_MBPS( 451, 4) >,
-				<  940800 MHZ_TO_MBPS( 547, 4) >,
-				< 1228000 MHZ_TO_MBPS(1017, 4) >,
-				< 1708800 MHZ_TO_MBPS(1555, 4) >,
-				< 2350000 MHZ_TO_MBPS(1804, 4) >,
-				< 3000000 MHZ_TO_MBPS(2092, 4) >;
+				< 1036800 MHZ_TO_MBPS( 547, 4) >,
+				< 1248000 MHZ_TO_MBPS(1017, 4) >,
+				< 1555200 MHZ_TO_MBPS(1555, 4) >,
+				< 1900800 MHZ_TO_MBPS(1804, 4) >,
+				< 2246000 MHZ_TO_MBPS(2092, 4) >;
 		};
 
 		cpu6_computemon: qcom,cpu6-computemon {
@@ -2653,12 +2659,12 @@
 			qcom,cpulist = <&CPU6 &CPU7>;
 			qcom,target-dev = <&cpu6_cpu_ddr_latfloor>;
 			qcom,core-dev-table =
-				<  672000 MHZ_TO_MBPS( 300, 4) >,
-				< 1228800 MHZ_TO_MBPS( 547, 4) >,
-				< 1516800 MHZ_TO_MBPS( 768, 4) >,
-				< 1708800 MHZ_TO_MBPS(1017, 4) >,
-				< 2350000 MHZ_TO_MBPS(1804, 4) >,
-				< 3000000 MHZ_TO_MBPS(2092, 4) >;
+				< 1248800 MHZ_TO_MBPS( 547, 4) >,
+				< 1401600 MHZ_TO_MBPS( 768, 4) >,
+				< 1555200 MHZ_TO_MBPS(1017, 4) >,
+				< 1766400 MHZ_TO_MBPS(1555, 4) >,
+				< 1900800 MHZ_TO_MBPS(1804, 4) >,
+				< 2246000 MHZ_TO_MBPS(2092, 4) >;
 		};
 	};
 
@@ -2947,6 +2953,367 @@
 			qcom,dump-size = <0x11000>;
 			qcom,dump-id = <0x150>;
 		};
+
+		c0_context {
+			qcom,dump-size = <0x800>;
+			qcom,dump-id = <0x0>;
+		};
+
+		c100_context {
+			qcom,dump-size = <0x800>;
+			qcom,dump-id = <0x1>;
+		};
+
+		c200_context {
+			qcom,dump-size = <0x800>;
+			qcom,dump-id = <0x2>;
+		};
+
+		c300_context {
+			qcom,dump-size = <0x800>;
+			qcom,dump-id = <0x3>;
+		};
+
+		c400_context {
+			qcom,dump-size = <0x800>;
+			qcom,dump-id = <0x4>;
+		};
+
+		c500_context {
+			qcom,dump-size = <0x800>;
+			qcom,dump-id = <0x5>;
+		};
+
+		c600_context {
+			qcom,dump-size = <0x800>;
+			qcom,dump-id = <0x6>;
+		};
+
+		c700_context {
+			qcom,dump-size = <0x800>;
+			qcom,dump-id = <0x7>;
+		};
+
+		c0_scandump {
+			qcom,dump-size = <0x10100>;
+			qcom,dump-id = <0x130>;
+		};
+
+		c100_scandump {
+			qcom,dump-size = <0x10100>;
+			qcom,dump-id = <0x131>;
+		};
+
+		c200_scandump {
+			qcom,dump-size = <0x10100>;
+			qcom,dump-id = <0x132>;
+		};
+
+		c300_scandump {
+			qcom,dump-size = <0x10100>;
+			qcom,dump-id = <0x133>;
+		};
+
+		c400_scandump {
+			qcom,dump-size = <0x10100>;
+			qcom,dump-id = <0x134>;
+		};
+
+		c500_scandump {
+			qcom,dump-size = <0x10100>;
+			qcom,dump-id = <0x135>;
+		};
+
+		c600_scandump {
+			qcom,dump-size = <0x25900>;
+			qcom,dump-id = <0x136>;
+		};
+
+		c700_scandump {
+			qcom,dump-size = <0x25900>;
+			qcom,dump-id = <0x137>;
+		};
+
+		l1_i_cache0 {
+			qcom,dump-size = <0x10800>;
+			qcom,dump-id = <0x60>;
+		};
+
+		l1_icache100 {
+			qcom,dump-size = <0x10800>;
+			qcom,dump-id = <0x61>;
+		};
+
+		l1_icache200 {
+			qcom,dump-size = <0x10800>;
+			qcom,dump-id = <0x62>;
+		};
+
+		l1_icache300 {
+			qcom,dump-size = <0x10800>;
+			qcom,dump-id = <0x63>;
+		};
+
+		l1_icache400 {
+			qcom,dump-size = <0x10800>;
+			qcom,dump-id = <0x64>;
+		};
+
+		l1_icache500 {
+			qcom,dump-size = <0x10800>;
+			qcom,dump-id = <0x65>;
+		};
+
+		l1_icache600 {
+			qcom,dump-size = <0x21000>;
+			qcom,dump-id = <0x66>;
+		};
+
+		l1_icache700 {
+			qcom,dump-size = <0x21000>;
+			qcom,dump-id = <0x67>;
+		};
+
+		l1_dcache0 {
+			qcom,dump-size = <0x9000>;
+			qcom,dump-id = <0x80>;
+		};
+
+		l1_dcache100 {
+			qcom,dump-size = <0x9000>;
+			qcom,dump-id = <0x81>;
+		};
+
+		l1_dcache200 {
+			qcom,dump-size = <0x9000>;
+			qcom,dump-id = <0x82>;
+		};
+
+		l1_dcache300 {
+			qcom,dump-size = <0x9000>;
+			qcom,dump-id = <0x83>;
+		};
+
+		l1_dcache400 {
+			qcom,dump-size = <0x9000>;
+			qcom,dump-id = <0x84>;
+		};
+
+		l1_dcache500 {
+			qcom,dump-size = <0x9000>;
+			qcom,dump-id = <0x85>;
+		};
+
+		l1_dcache600 {
+			qcom,dump-size = <0x12000>;
+			qcom,dump-id = <0x86>;
+		};
+
+		l1_dcache700 {
+			qcom,dump-size = <0x12000>;
+			qcom,dump-id = <0x87>;
+		};
+
+		l1_itlb600 {
+			qcom,dump-size = <0x300>;
+			qcom,dump-id = <0x26>;
+		};
+
+		l1_itlb700 {
+			qcom,dump-size = <0x300>;
+			qcom,dump-id = <0x27>;
+		};
+
+		l1_dtlb600 {
+			qcom,dump-size = <0x480>;
+			qcom,dump-id = <0x46>;
+		};
+
+		l1_dtlb700 {
+			qcom,dump-size = <0x480>;
+			qcom,dump-id = <0x47>;
+		};
+
+		l2_cache600 {
+			qcom,dump-size = <0x48000>;
+			qcom,dump-id = <0xc6>;
+		};
+
+		l2_cache700 {
+			qcom,dump-size = <0x48000>;
+			qcom,dump-id = <0xc7>;
+		};
+
+		l2_tlb0 {
+			qcom,dump-size = <0x5a00>;
+			qcom,dump-id = <0x120>;
+		};
+
+		l2_tlb100 {
+			qcom,dump-size = <0x5a00>;
+			qcom,dump-id = <0x121>;
+		};
+
+		l2_tlb200 {
+			qcom,dump-size = <0x5a00>;
+			qcom,dump-id = <0x122>;
+		};
+
+		l2_tlb300 {
+			qcom,dump-size = <0x5a00>;
+			qcom,dump-id = <0x123>;
+		};
+
+		l2_tlb400 {
+			qcom,dump-size = <0x5a00>;
+			qcom,dump-id = <0x124>;
+		};
+
+		l2_tlb500 {
+			qcom,dump-size = <0x5a00>;
+			qcom,dump-id = <0x125>;
+		};
+
+		l2_tlb600 {
+			qcom,dump-size = <0x7800>;
+			qcom,dump-id = <0x126>;
+		};
+
+		l2_tlb700 {
+			qcom,dump-size = <0x7800>;
+			qcom,dump-id = <0x127>;
+		};
+
+		llcc1_d_cache {
+			qcom,dump-size = <0x1141c0>;
+			qcom,dump-id = <0x140>;
+		};
+	};
+
+	qcom,msm_gsi {
+		compatible = "qcom,msm_gsi";
+	};
+
+	qcom,rmnet-ipa {
+		compatible = "qcom,rmnet-ipa3";
+		qcom,rmnet-ipa-ssr;
+		qcom,ipa-platform-type-msm;
+		qcom,ipa-advertise-sg-support;
+		qcom,ipa-napi-enable;
+	};
+
+	qcom,ipa_fws {
+		compatible = "qcom,pil-tz-generic";
+		qcom,pas-id = <0xf>;
+		qcom,firmware-name = "ipa_fws";
+		qcom,pil-force-shutdown;
+		memory-region = <&pil_ipa_fw_mem>;
+	};
+
+	ipa_hw: qcom,ipa@1e00000 {
+		compatible = "qcom,ipa";
+		reg = <0x1e00000 0x84000>,
+			<0x1e04000 0x23000>;
+		reg-names = "ipa-base", "gsi-base";
+		interrupts = <GIC_SPI 311 IRQ_TYPE_LEVEL_HIGH>,
+				<GIC_SPI 432 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "ipa-irq", "gsi-irq";
+		qcom,ipa-hw-ver = <18>; /* IPA core version = IPAv4.7 */
+		qcom,ipa-hw-mode = <0>;
+		qcom,platform-type = <1>; /* MSM platform */
+		qcom,ee = <0>;
+		qcom,use-ipa-tethering-bridge;
+		qcom,modem-cfg-emb-pipe-flt;
+		qcom,ipa-wdi2;
+		qcom,ipa-wdi2_over_gsi;
+		qcom,use-ipa-pm;
+		qcom,arm-smmu;
+		qcom,smmu-fast-map;
+		qcom,bandwidth-vote-for-ipa;
+		qcom,use-64-bit-dma-mask;
+		qcom,msm-bus,name = "ipa";
+		qcom,wan-use-skb-page;
+		qcom,msm-bus,num-cases = <5>;
+		qcom,msm-bus,num-paths = <5>;
+		qcom,msm-bus,vectors-KBps =
+		/* No vote */
+		<MSM_BUS_MASTER_IPA MSM_BUS_SLAVE_LLCC 0 0>,
+		<MSM_BUS_MASTER_LLCC MSM_BUS_SLAVE_EBI_CH0 0 0>,
+		<MSM_BUS_MASTER_IPA MSM_BUS_SLAVE_OCIMEM 0 0>,
+		<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_IPA_CFG 0 0>,
+		<MSM_BUS_MASTER_IPA_CORE MSM_BUS_SLAVE_IPA_CORE 0 0>,
+
+		/* SVS2 */
+		<MSM_BUS_MASTER_IPA MSM_BUS_SLAVE_LLCC 150000 500000>,
+		<MSM_BUS_MASTER_LLCC MSM_BUS_SLAVE_EBI_CH0 150000 700000>,
+		<MSM_BUS_MASTER_IPA MSM_BUS_SLAVE_OCIMEM 75000 700000>,
+		<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_IPA_CFG 0 76800>,
+		<MSM_BUS_MASTER_IPA_CORE MSM_BUS_SLAVE_IPA_CORE 0 150>,
+
+		/* SVS */
+		<MSM_BUS_MASTER_IPA MSM_BUS_SLAVE_LLCC 625000 1200000>,
+		<MSM_BUS_MASTER_LLCC MSM_BUS_SLAVE_EBI_CH0 625000 1100000>,
+		<MSM_BUS_MASTER_IPA MSM_BUS_SLAVE_OCIMEM 312500 1500000>,
+		<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_IPA_CFG 0 150000>,
+		<MSM_BUS_MASTER_IPA_CORE MSM_BUS_SLAVE_IPA_CORE 0 260>,
+
+		/* NOMINAL */
+		<MSM_BUS_MASTER_IPA MSM_BUS_SLAVE_LLCC 1250000 2400000>,
+		<MSM_BUS_MASTER_LLCC MSM_BUS_SLAVE_EBI_CH0 1250000 1800000>,
+		<MSM_BUS_MASTER_IPA MSM_BUS_SLAVE_OCIMEM 625000 3100000>,
+		<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_IPA_CFG 0 400000>,
+		<MSM_BUS_MASTER_IPA_CORE MSM_BUS_SLAVE_IPA_CORE 0 450>,
+
+		/* TURBO */
+		<MSM_BUS_MASTER_IPA MSM_BUS_SLAVE_LLCC 2000000 3500000>,
+		<MSM_BUS_MASTER_LLCC MSM_BUS_SLAVE_EBI_CH0 2000000 2000000>,
+		<MSM_BUS_MASTER_IPA MSM_BUS_SLAVE_OCIMEM 1000000 4100000>,
+		<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_IPA_CFG 0 400000>,
+		<MSM_BUS_MASTER_IPA_CORE MSM_BUS_SLAVE_IPA_CORE 0 550>;
+
+
+		qcom,bus-vector-names =
+			"MIN", "SVS2", "SVS", "NOMINAL", "TURBO";
+		qcom,throughput-threshold = <310 600 1000>;
+		qcom,scaling-exceptions = <>;
+
+		/* smp2p information */
+		qcom,smp2p_map_ipa_1_out {
+			compatible = "qcom,smp2p-map-ipa-1-out";
+			qcom,smem-states = <&smp2p_ipa_1_out 0>;
+			qcom,smem-state-names = "ipa-smp2p-out";
+		};
+
+		qcom,smp2p_map_ipa_1_in {
+			compatible = "qcom,smp2p-map-ipa-1-in";
+			interrupts-extended = <&smp2p_ipa_1_in 0 0>;
+			interrupt-names = "ipa-smp2p-in";
+		};
+	};
+
+	ipa_smmu_ap: ipa_smmu_ap {
+		compatible = "qcom,ipa-smmu-ap-cb";
+		iommus = <&apps_smmu 0x0440 0x0>;
+		qcom,iommu-dma-addr-pool = <0x20000000 0x40000000>;
+		/* modem tables in IMEM */
+		qcom,additional-mapping = <0x146a8000 0x146a8000 0x2000>;
+		qcom,iommu-dma = "bypass";
+		qcom,ipa-q6-smem-size = <26624>;
+	};
+
+	ipa_smmu_wlan: ipa_smmu_wlan {
+		compatible = "qcom,ipa-smmu-wlan-cb";
+		iommus = <&apps_smmu 0x0441 0x0>;
+		/* ipa-uc ram */
+		qcom,additional-mapping = <0x1ea0000 0x1ea0000 0x80000>;
+		qcom,iommu-dma = "bypass";
+	};
+
+	ipa_smmu_uc: ipa_smmu_uc {
+		compatible = "qcom,ipa-smmu-uc-cb";
+		iommus = <&apps_smmu 0x0442 0x0>;
+		qcom,iommu-dma-addr-pool = <0x40000000 0x20000000>;
+		qcom,iommu-dma = "bypass";
 	};
 };
 

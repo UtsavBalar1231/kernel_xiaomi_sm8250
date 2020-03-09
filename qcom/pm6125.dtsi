@@ -8,8 +8,8 @@
 	qcom,pm6125@0 {
 		compatible = "qcom,spmi-pmic";
 		reg = <0x0 0x0>;
-		#address-cells = <1>;
-		#size-cells = <1>;
+		#address-cells = <2>;
+		#size-cells = <0>;
 
 		pm6125_revid: qcom,revid@100 {
 			compatible = "qcom,qpnp-revid";
@@ -151,8 +151,8 @@
 	qcom,pm6125@1 {
 		compatible ="qcom,spmi-pmic";
 		reg = <0x1 0x0>;
-		#address-cells = <1>;
-		#size-cells = <1>;
+		#address-cells = <2>;
+		#size-cells = <0>;
 
 		pm6125_pwm: qcom,pwms@b300 {
 			status = "disabled";
