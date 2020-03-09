@@ -253,6 +253,7 @@
 
 &qupv3_se8_i2c {
 	status = "okay";
+	qcom,i2c-touch-active="synaptics,tcm-i2c";
 
 	synaptics_tcm@20 {
 		compatible = "synaptics,tcm-i2c";
