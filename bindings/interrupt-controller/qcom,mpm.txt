@@ -29,6 +29,7 @@ Properties:
 		"qcom,mpm-gic-trinket"
 		"qcom,mpm-gic-bengal"
 		"qcom,mpm-gic-scuba"
+		"qcom,mpm-gic-sdm660"
 
 - interrupts:
 	Usage: required
