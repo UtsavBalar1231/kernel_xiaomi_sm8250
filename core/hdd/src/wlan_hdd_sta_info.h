@@ -83,7 +83,7 @@ enum dhcp_nego_status {
  * @rate_flags: Rate Flags for this connection
  * @ecsa_capable: Extended CSA capabilities
  * @max_phy_rate: Calcuated maximum phy rate based on mode, nss, mcs etc.
- * @tx_packets: Packets send to current station
+ * @tx_packets: The number of frames from host to firmware
  * @tx_bytes: Bytes send to current station
  * @rx_packets: Packets received from current station
  * @rx_bytes: Bytes received from current station
@@ -120,6 +120,17 @@ enum dhcp_nego_status {
  * MSB of rx_mc_bc_cnt indicates whether FW supports rx_mc_bc_cnt
  * feature or not, if first bit is 1 it indicates that FW supports this
  * feature, if it is 0 it indicates FW doesn't support this feature
+ * @tx_failed: the number of tx failed frames
+ * @peer_rssi_per_chain: the average value of RSSI (dbm) per chain
+ * @tx_retry_succeed: the number of frames retried but successfully transmit
+ * @rx_last_pkt_rssi: the rssi (dbm) calculate by last packet
+ * @tx_retry: the number of retried frames from host to firmware
+ * @tx_retry_exhaust: the number of frames retried but finally failed
+ *                    from host to firmware
+ * @tx_total_fw: the number of all frames from firmware to remote station
+ * @tx_retry_fw: the number of retried frames from firmware to remote station
+ * @tx_retry_exhaust_fw: the number of frames retried but finally failed from
+ *                    firmware to remote station
  * @sta_info: The sta_info node for the station info list maintained in adapter
  * @assoc_req_ies: Assoc request IEs of the peer station
  */
@@ -169,6 +180,15 @@ struct hdd_station_info {
 	uint8_t support_mode;
 	uint32_t rx_retry_cnt;
 	uint32_t rx_mc_bc_cnt;
+	uint32_t tx_failed;
+	uint32_t peer_rssi_per_chain[WMI_MAX_CHAINS];
+	uint32_t tx_retry_succeed;
+	uint32_t rx_last_pkt_rssi;
+	uint32_t tx_retry;
+	uint32_t tx_retry_exhaust;
+	uint32_t tx_total_fw;
+	uint32_t tx_retry_fw;
+	uint32_t tx_retry_exhaust_fw;
 	struct qdf_ht_entry sta_node;
 	struct wlan_ies assoc_req_ies;
 };

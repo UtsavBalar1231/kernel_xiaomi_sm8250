@@ -856,9 +856,11 @@ struct hdd_mic_work {
  * @tx_bytes: bytes transmitted to this station
  * @rx_packets: packets received from this station
  * @rx_bytes: bytes received from this station
- * @rx_retries: cumulative retry counts
- * @tx_failed: number of failed transmissions
+ * @tx_retries: cumulative retry counts
+ * @tx_failed: the number of failed frames
+ * @tx_succeed: the number of succeed frames
  * @rssi: The signal strength (dbm)
+ * @peer_rssi_per_chain: the average value of RSSI (dbm) per chain
  * @tx_rate: last used tx rate info
  * @rx_rate: last used rx rate info
  *
@@ -871,7 +873,9 @@ struct hdd_fw_txrx_stats {
 	uint64_t rx_bytes;
 	uint32_t tx_retries;
 	uint32_t tx_failed;
+	uint32_t tx_succeed;
 	int8_t rssi;
+	int32_t peer_rssi_per_chain[WMI_MAX_CHAINS];
 	struct hdd_rate_info tx_rate;
 	struct hdd_rate_info rx_rate;
 };

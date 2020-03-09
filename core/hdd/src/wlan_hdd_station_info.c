@@ -35,7 +35,10 @@
 #include <wlan_hdd_station_info.h>
 #include "wlan_mlme_ucfg_api.h"
 #include "wlan_hdd_sta_info.h"
-
+#include <cdp_txrx_handle.h>
+#include <cdp_txrx_stats_struct.h>
+#include <cdp_txrx_peer_ops.h>
+#include <cdp_txrx_host_stats.h>
 /*
  * define short names for the global vendor params
  * used by __wlan_hdd_cfg80211_get_station_cmd()
@@ -104,6 +107,24 @@
 	QCA_WLAN_VENDOR_ATTR_GET_STATION_INFO_REMOTE_RX_RETRY_COUNT
 #define REMOTE_RX_BC_MC_COUNT \
 	QCA_WLAN_VENDOR_ATTR_GET_STATION_INFO_REMOTE_RX_BC_MC_COUNT
+#define REMOTE_TX_FAILURE \
+	QCA_WLAN_VENDOR_ATTR_GET_STATION_INFO_REMOTE_TX_FAILURE
+#define REMOTE_AVG_RSSI_PER_CHAIN \
+	QCA_WLAN_VENDOR_ATTR_GET_STATION_INFO_REMOTE_AVG_RSSI_PER_CHAIN
+#define REMOTE_TX_RETRY_SUCCEED \
+	QCA_WLAN_VENDOR_ATTR_GET_STATION_INFO_REMOTE_TX_RETRY_SUCCEED
+#define REMOTE_RX_LAST_PKT_RSSI \
+	QCA_WLAN_VENDOR_ATTR_GET_STATION_INFO_REMOTE_RX_LAST_PKT_RSSI
+#define REMOTE_TX_RETRY \
+	QCA_WLAN_VENDOR_ATTR_GET_STATION_INFO_REMOTE_TX_RETRY
+#define REMOTE_TX_RETRY_EXHAUST \
+	QCA_WLAN_VENDOR_ATTR_GET_STATION_INFO_REMOTE_TX_RETRY_EXHAUST
+#define REMOTE_TX_TOTAL_FW \
+	QCA_WLAN_VENDOR_ATTR_GET_STATION_INFO_REMOTE_TX_TOTAL_FW
+#define REMOTE_TX_RETRY_FW \
+	QCA_WLAN_VENDOR_ATTR_GET_STATION_INFO_REMOTE_TX_RETRY_FW
+#define REMOTE_TX_RETRY_EXHAUST_FW \
+	QCA_WLAN_VENDOR_ATTR_GET_STATION_INFO_REMOTE_TX_RETRY_EXHAUST_FW
 #define DISCONNECT_REASON \
 	QCA_WLAN_VENDOR_ATTR_GET_STATION_INFO_DRIVER_DISCONNECT_REASON
 #define BEACON_IES \
@@ -1014,6 +1035,37 @@ static uint8_t hdd_decode_ch_width(tSirMacHTChannelWidth ch_width)
 }
 
 /**
+ * hdd_get_peer_stats - get the peer stats
+ * @vdev_id: vdev id
+ * @mac_addr: mac address
+ * @stainfo: station info pointer
+ *
+ * Return: None
+ */
+static void hdd_get_peer_stats(uint8_t vdev_id,
+			       struct qdf_mac_addr mac_addr,
+			       struct hdd_station_info *stainfo)
+{
+	void *soc = cds_get_context(QDF_MODULE_ID_SOC);
+	struct cdp_peer_stats *peer_stats;
+	QDF_STATUS status;
+
+	peer_stats = qdf_mem_malloc(sizeof(*peer_stats));
+	if (!peer_stats)
+		return;
+
+	status = cdp_host_get_peer_stats(soc, vdev_id, mac_addr.bytes,
+					 peer_stats);
+	if (status == QDF_STATUS_SUCCESS) {
+		stainfo->rx_retry_cnt = peer_stats->rx.rx_retries;
+		stainfo->rx_mc_bc_cnt = peer_stats->rx.multicast.num +
+					peer_stats->rx.bcast.num;
+	}
+
+	qdf_mem_free(peer_stats);
+}
+
+/**
  * hdd_get_cached_station_remote() - get cached(deleted) peer's info
  * @hdd_ctx: hdd context
  * @adapter: hostapd interface
@@ -1151,20 +1203,28 @@ static int hdd_get_connected_station_info(struct hdd_context *hdd_ctx,
 					  struct hdd_station_info *stainfo)
 {
 	struct sk_buff *skb = NULL;
+	struct nlattr *attr;
 	uint32_t nl_buf_len;
 	struct sir_peer_info_ext peer_info;
 	bool txrx_rate = true;
 	bool value;
 	QDF_STATUS status;
+	int i;
 
 	nl_buf_len = NLMSG_HDRLEN;
-	nl_buf_len += (sizeof(stainfo->max_phy_rate) + NLA_HDRLEN) +
-		(sizeof(stainfo->tx_packets) + NLA_HDRLEN) +
-		(sizeof(stainfo->tx_bytes) + NLA_HDRLEN) +
-		(sizeof(stainfo->rx_packets) + NLA_HDRLEN) +
-		(sizeof(stainfo->rx_bytes) + NLA_HDRLEN) +
-		(sizeof(stainfo->is_qos_enabled) + NLA_HDRLEN) +
-		(sizeof(stainfo->mode) + NLA_HDRLEN);
+	nl_buf_len += hdd_add_link_standard_info_sap_get_len() +
+		(NLA_ALIGN(sizeof(stainfo->max_phy_rate)) + NLA_HDRLEN) +
+		(NLA_ALIGN(sizeof(stainfo->tx_packets)) + NLA_HDRLEN) +
+		(NLA_ALIGN(sizeof(stainfo->tx_bytes)) + NLA_HDRLEN) +
+		(NLA_ALIGN(sizeof(stainfo->rx_packets)) + NLA_HDRLEN) +
+		(NLA_ALIGN(sizeof(stainfo->rx_bytes)) + NLA_HDRLEN) +
+		(NLA_ALIGN(sizeof(stainfo->rx_mc_bc_cnt)) + NLA_HDRLEN) +
+		(NLA_ALIGN(sizeof(stainfo->is_qos_enabled)) + NLA_HDRLEN) +
+		(NLA_ALIGN(sizeof(stainfo->ch_width)) + NLA_HDRLEN) +
+		(NLA_ALIGN(sizeof(stainfo->dot11_mode)) + NLA_HDRLEN) +
+		(NLA_ALIGN(sizeof(stainfo->mode)) + NLA_HDRLEN);
+
+	hdd_get_peer_stats(adapter->vdev_id, mac_addr, stainfo);
 
 	status = ucfg_mlme_get_sap_get_peer_info(hdd_ctx->psoc, &value);
 	if (status != QDF_STATUS_SUCCESS)
@@ -1174,19 +1234,60 @@ static int hdd_get_connected_station_info(struct hdd_context *hdd_ctx,
 		hdd_err("fail to get tx/rx rate");
 		txrx_rate = false;
 	} else {
+		stainfo->tx_failed = peer_info.tx_failed;
+
+		stainfo->rx_last_pkt_rssi = peer_info.rssi;
+		if (stainfo->rssi == 0)
+			stainfo->rssi = peer_info.rssi;
+
+		for (i = 0; i < WMI_MAX_CHAINS; i++)
+			stainfo->peer_rssi_per_chain[i] =
+					peer_info.peer_rssi_per_chain[i];
+
+		stainfo->tx_retry_succeed =
+				peer_info.tx_retries - peer_info.tx_failed;
+
+		stainfo->tx_retry = 0;
+		stainfo->tx_retry_exhaust = 0;
+
+		stainfo->tx_total_fw = peer_info.tx_packets;
+		stainfo->tx_retry_fw = peer_info.tx_retries;
+		stainfo->tx_retry_exhaust_fw = peer_info.tx_failed;
+
 		stainfo->tx_rate = peer_info.tx_rate;
 		stainfo->rx_rate = peer_info.rx_rate;
-		nl_buf_len += (sizeof(stainfo->tx_rate) + NLA_HDRLEN) +
-			(sizeof(stainfo->rx_rate) + NLA_HDRLEN);
+
+		nl_buf_len +=
+		    (NLA_ALIGN(sizeof(stainfo->rx_retry_cnt)) + NLA_HDRLEN) +
+		    (NLA_ALIGN(sizeof(stainfo->tx_failed)) + NLA_HDRLEN) +
+		    (NLA_ALIGN(sizeof(stainfo->rx_last_pkt_rssi)) +
+								NLA_HDRLEN) +
+		    (NLA_ALIGN(sizeof(stainfo->tx_retry_succeed)) +
+								NLA_HDRLEN) +
+		    (NLA_ALIGN(sizeof(stainfo->tx_retry)) + NLA_HDRLEN) +
+		    (NLA_ALIGN(sizeof(stainfo->tx_retry_exhaust)) +
+								NLA_HDRLEN) +
+		    (NLA_ALIGN(sizeof(stainfo->tx_total_fw)) + NLA_HDRLEN) +
+		    (NLA_ALIGN(sizeof(stainfo->tx_retry_fw)) + NLA_HDRLEN) +
+		    (NLA_ALIGN(sizeof(stainfo->tx_retry_exhaust_fw)) +
+								NLA_HDRLEN) +
+		    (NLA_ALIGN(sizeof(stainfo->tx_rate)) + NLA_HDRLEN) +
+		    (NLA_ALIGN(sizeof(stainfo->rx_rate)) + NLA_HDRLEN);
+
+		nl_buf_len += NLA_HDRLEN;
+		for (i = 0; i < WMI_MAX_CHAINS; i++)
+			nl_buf_len +=
+			  (NLA_ALIGN(sizeof(stainfo->peer_rssi_per_chain[i])) +
+							NLA_HDRLEN);
 	}
 
 	/* below info is only valid for HT/VHT mode */
 	if (stainfo->mode > SIR_SME_PHY_MODE_LEGACY)
-		nl_buf_len += (sizeof(stainfo->ampdu) + NLA_HDRLEN) +
-			(sizeof(stainfo->tx_stbc) + NLA_HDRLEN) +
-			(sizeof(stainfo->rx_stbc) + NLA_HDRLEN) +
-			(sizeof(stainfo->ch_width) + NLA_HDRLEN) +
-			(sizeof(stainfo->sgi_enable) + NLA_HDRLEN);
+		nl_buf_len +=
+			(NLA_ALIGN(sizeof(stainfo->ampdu)) + NLA_HDRLEN) +
+			(NLA_ALIGN(sizeof(stainfo->tx_stbc)) + NLA_HDRLEN) +
+			(NLA_ALIGN(sizeof(stainfo->rx_stbc)) + NLA_HDRLEN) +
+			(NLA_ALIGN(sizeof(stainfo->sgi_enable)) + NLA_HDRLEN);
 
 	hdd_info("buflen %d hdrlen %d", nl_buf_len, NLMSG_HDRLEN);
 
@@ -1214,7 +1315,18 @@ static int hdd_get_connected_station_info(struct hdd_context *hdd_ctx,
 			 stainfo->sgi_enable);
 	}
 
-	if (nla_put_u32(skb, REMOTE_MAX_PHY_RATE, stainfo->max_phy_rate) ||
+	if (hdd_add_link_standard_info_sap(skb, stainfo->rssi, stainfo,
+					   LINK_INFO_STANDARD_NL80211_ATTR)) {
+		hdd_err("link standard put fail");
+		goto fail;
+	}
+
+	if (nla_put_u32(skb, REMOTE_RX_BC_MC_COUNT,
+			(stainfo->rx_mc_bc_cnt &
+			 (~HDD_STATION_INFO_RX_MC_BC_COUNT))) ||
+	    nla_put_u8(skb, REMOTE_CH_WIDTH, stainfo->ch_width) ||
+	    nla_put_u32(skb, WLAN802_11_MODE, stainfo->dot11_mode) ||
+	    nla_put_u32(skb, REMOTE_MAX_PHY_RATE, stainfo->max_phy_rate) ||
 	    nla_put_u32(skb, REMOTE_TX_PACKETS, stainfo->tx_packets) ||
 	    remote_station_put_u64(skb, REMOTE_TX_BYTES, stainfo->tx_bytes) ||
 	    nla_put_u32(skb, REMOTE_RX_PACKETS, stainfo->rx_packets) ||
@@ -1226,21 +1338,48 @@ static int hdd_get_connected_station_info(struct hdd_context *hdd_ctx,
 	}
 
 	if (txrx_rate) {
-		if (nla_put_u32(skb, REMOTE_LAST_TX_RATE, stainfo->tx_rate) ||
+		if (nla_put_u32(skb, REMOTE_TX_FAILURE, stainfo->tx_failed) ||
+		    nla_put_u32(skb, REMOTE_RX_RETRY_COUNT,
+				stainfo->rx_retry_cnt) ||
+		    nla_put_u32(skb, REMOTE_TX_RETRY_SUCCEED,
+				stainfo->tx_retry_succeed) ||
+		    nla_put_u32(skb, REMOTE_RX_LAST_PKT_RSSI,
+				stainfo->rx_last_pkt_rssi) ||
+		    nla_put_u32(skb, REMOTE_TX_RETRY, stainfo->tx_retry) ||
+		    nla_put_u32(skb, REMOTE_TX_RETRY_EXHAUST,
+				stainfo->tx_retry_exhaust) ||
+		    nla_put_u32(skb, REMOTE_TX_TOTAL_FW,
+				stainfo->tx_total_fw) ||
+		    nla_put_u32(skb, REMOTE_TX_RETRY_FW,
+				stainfo->tx_retry_fw) ||
+		    nla_put_u32(skb, REMOTE_TX_RETRY_EXHAUST_FW,
+				stainfo->tx_retry_exhaust_fw) ||
+		    nla_put_u32(skb, REMOTE_LAST_TX_RATE, stainfo->tx_rate) ||
 		    nla_put_u32(skb, REMOTE_LAST_RX_RATE, stainfo->rx_rate)) {
 			hdd_err("put fail");
 			goto fail;
-		} else {
-			hdd_info("tx_rate %x rx_rate %x",
-				 stainfo->tx_rate, stainfo->rx_rate);
 		}
+
+		attr = nla_nest_start(skb, REMOTE_AVG_RSSI_PER_CHAIN);
+		if (!attr)
+			goto fail;
+		for (i = 0; i < WMI_MAX_CHAINS; i++) {
+			if (nla_put_u32(skb, i,
+					stainfo->peer_rssi_per_chain[i])) {
+				hdd_err("Failed to rssi per chain");
+				goto fail;
+			}
+		}
+		nla_nest_end(skb, attr);
+
+		hdd_info("tx_rate %x rx_rate %x",
+			 stainfo->tx_rate, stainfo->rx_rate);
 	}
 
 	if (stainfo->mode > SIR_SME_PHY_MODE_LEGACY) {
 		if (nla_put_u8(skb, REMOTE_AMPDU, stainfo->ampdu) ||
 		    nla_put_u8(skb, REMOTE_TX_STBC, stainfo->tx_stbc) ||
 		    nla_put_u8(skb, REMOTE_RX_STBC, stainfo->rx_stbc) ||
-		    nla_put_u8(skb, REMOTE_CH_WIDTH, stainfo->ch_width) ||
 		    nla_put_u8(skb, REMOTE_SGI_ENABLE, stainfo->sgi_enable)) {
 			hdd_err("put fail");
 			goto fail;
