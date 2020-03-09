@@ -183,6 +183,7 @@ static int cam_ife_notify_safe_lut_scm(bool safe_trigger)
 	if (!rc) {
 		switch (camera_hw_version) {
 		case CAM_CPAS_TITAN_170_V100:
+		case CAM_CPAS_TITAN_170_V200:
 		case CAM_CPAS_TITAN_170_V110:
 		case CAM_CPAS_TITAN_175_V100:
 
@@ -2467,6 +2468,7 @@ static int cam_ife_mgr_acquire_hw_for_ctx(
 	bool crop_enable                          = true;
 
 	is_dual_vfe = in_port->usage_type;
+	ife_ctx->dsp_enabled = (bool)in_port->dsp_mode;
 
 	/* get root node resource */
 	rc = cam_ife_hw_mgr_acquire_res_root(ife_ctx, in_port);
@@ -3540,6 +3542,7 @@ static int cam_ife_mgr_config_hw(void *hw_mgr_priv,
 	struct cam_cdm_bl_request *cdm_cmd;
 	struct cam_ife_hw_mgr_ctx *ctx;
 	struct cam_isp_prepare_hw_update_data *hw_update_data;
+	unsigned long rem_jiffies = 0;
 
 	if (!hw_mgr_priv || !config_hw_args) {
 		CAM_ERR(CAM_ISP,
@@ -3652,21 +3655,18 @@ static int cam_ife_mgr_config_hw(void *hw_mgr_priv,
 		}
 
 		if (cfg->init_packet) {
-			rc = wait_for_completion_timeout(
+			rem_jiffies = wait_for_completion_timeout(
 				&ctx->config_done_complete,
 				msecs_to_jiffies(30));
-			if (rc <= 0) {
+			if (rem_jiffies == 0) {
 				CAM_ERR(CAM_ISP,
-					"config done completion timeout for req_id=%llu rc=%d ctx_index %d",
-					cfg->request_id, rc, ctx->ctx_index);
-				if (rc == 0)
-					rc = -ETIMEDOUT;
-			} else {
-				rc = 0;
+					"config done completion timeout for req_id=%llu ctx_index %d",
+					cfg->request_id, ctx->ctx_index);
+				rc = -ETIMEDOUT;
+			} else
 				CAM_DBG(CAM_ISP,
 					"config done Success for req_id=%llu ctx_index %d",
 					cfg->request_id, ctx->ctx_index);
-			}
 		}
 	} else {
 		CAM_ERR(CAM_ISP, "No commands to config");
@@ -3814,6 +3814,7 @@ static int cam_ife_mgr_stop_hw(void *hw_mgr_priv, void *stop_hw_args)
 	struct cam_ife_hw_mgr_ctx        *ctx;
 	enum cam_ife_csid_halt_cmd        csid_halt_type;
 	uint32_t                          i, master_base_idx = 0;
+	unsigned long                     rem_jiffies = 0;
 
 	if (!hw_mgr_priv || !stop_hw_args) {
 		CAM_ERR(CAM_ISP, "Invalid arguments");
@@ -3830,7 +3831,8 @@ static int cam_ife_mgr_stop_hw(void *hw_mgr_priv, void *stop_hw_args)
 	stop_isp = (struct cam_isp_stop_args    *)stop_args->args;
 
 	/* Set the csid halt command */
-	if (stop_isp->hw_stop_cmd == CAM_ISP_HW_STOP_AT_FRAME_BOUNDARY)
+	if ((stop_isp->hw_stop_cmd == CAM_ISP_HW_STOP_AT_FRAME_BOUNDARY) ||
+		ctx->dsp_enabled)
 		csid_halt_type = CAM_CSID_HALT_AT_FRAME_BOUNDARY;
 	else
 		csid_halt_type = CAM_CSID_HALT_IMMEDIATELY;
@@ -3913,9 +3915,9 @@ static int cam_ife_mgr_stop_hw(void *hw_mgr_priv, void *stop_hw_args)
 
 	cam_ife_mgr_pause_hw(ctx);
 
-	rc = wait_for_completion_timeout(&ctx->config_done_complete,
+	rem_jiffies = wait_for_completion_timeout(&ctx->config_done_complete,
 		msecs_to_jiffies(10));
-	if (rc == 0) {
+	if (rem_jiffies == 0) {
 		CAM_WARN(CAM_ISP,
 			"config done completion timeout for last applied req_id=%llu rc=%d ctx_index %d",
 			ctx->applied_req_id, rc, ctx->ctx_index);
@@ -4378,6 +4380,10 @@ static int cam_ife_mgr_release_hw(void *hw_mgr_priv,
 	ctx->custom_enabled = false;
 	ctx->use_frame_header_ts = false;
 	ctx->num_reg_dump_buf = 0;
+	ctx->is_dual = false;
+	ctx->dsp_enabled = false;
+	ctx->is_fe_enabled = false;
+	ctx->is_offline = false;
 	atomic_set(&ctx->overflow_pending, 0);
 	for (i = 0; i < CAM_IFE_HW_NUM_MAX; i++) {
 		ctx->sof_cnt[i] = 0;
@@ -6147,6 +6153,7 @@ static int cam_ife_mgr_cmd(void *hw_mgr_priv, void *cmd_args)
 		hw_cmd_args->ctxt_to_hw_map;
 	struct cam_isp_hw_cmd_args *isp_hw_cmd_args = NULL;
 	struct cam_packet          *packet;
+	unsigned long rem_jiffies = 0;
 
 	if (!hw_mgr_priv || !cmd_args) {
 		CAM_ERR(CAM_ISP, "Invalid arguments");
@@ -6220,15 +6227,13 @@ static int cam_ife_mgr_cmd(void *hw_mgr_priv, void *cmd_args)
 		if (ctx->last_dump_flush_req_id == ctx->applied_req_id)
 			return 0;
 
-		rc = wait_for_completion_timeout(
+		rem_jiffies = wait_for_completion_timeout(
 			&ctx->config_done_complete,
 			msecs_to_jiffies(30));
-		if (rc <= 0) {
+		if (rem_jiffies == 0)
 			CAM_ERR(CAM_ISP,
-				"config done completion timeout, Reg dump will be unreliable rc=%d ctx_index %d",
-				rc, ctx->ctx_index);
-			rc = 0;
-		}
+				"config done completion timeout, Reg dump will be unreliable ctx_index %d",
+				ctx->ctx_index);
 
 		ctx->last_dump_flush_req_id = ctx->applied_req_id;
 		rc = cam_ife_mgr_handle_reg_dump(ctx, ctx->reg_dump_buf_desc,

@@ -470,6 +470,13 @@ static int cam_cpas_util_set_camnoc_axi_clk_rate(
 		do_div(intermediate_result, 100);
 		required_camnoc_bw += intermediate_result;
 
+		if (cpas_core->streamon_clients && (required_camnoc_bw == 0)) {
+			CAM_DBG(CAM_CPAS,
+				"Set min vote if streamon_clients is non-zero : streamon_clients=%d",
+				cpas_core->streamon_clients);
+			required_camnoc_bw = CAM_CPAS_DEFAULT_AXI_BW;
+		}
+
 		if ((required_camnoc_bw > 0) &&
 			(required_camnoc_bw <
 			soc_private->camnoc_axi_min_ib_bw))
@@ -642,6 +649,7 @@ static int cam_cpas_update_axi_vote_bw(
 	struct cam_cpas *cpas_core = (struct cam_cpas *) cpas_hw->core_info;
 	struct cam_cpas_private_soc *soc_private =
 		(struct cam_cpas_private_soc *) cpas_hw->soc_info.soc_private;
+	int idx;
 
 	if (cpas_tree_node->axi_port_idx >= CAM_CPAS_MAX_AXI_PORTS) {
 		CAM_ERR(CAM_CPAS, "Invalid axi_port_idx: %d",
@@ -658,9 +666,15 @@ static int cam_cpas_update_axi_vote_bw(
 	if (soc_private->control_camnoc_axi_clk)
 		return 0;
 
-	cpas_core->camnoc_axi_port[cpas_tree_node->axi_port_idx].camnoc_bw =
-		cpas_tree_node->camnoc_bw;
-	camnoc_axi_port_updated[cpas_tree_node->camnoc_axi_port_idx] = true;
+	if (cpas_tree_node->camnoc_axi_port_idx >= CAM_CPAS_MAX_AXI_PORTS) {
+		CAM_ERR(CAM_CPAS, "Invalid camnoc_axi_port_idx: %d",
+			cpas_tree_node->camnoc_axi_port_idx);
+		return -EINVAL;
+	}
+
+	idx = cpas_tree_node->camnoc_axi_port_idx;
+	cpas_core->camnoc_axi_port[idx].camnoc_bw = cpas_tree_node->camnoc_bw;
+	camnoc_axi_port_updated[idx] = true;
 	return 0;
 }
 
@@ -706,8 +720,12 @@ static int cam_cpas_camnoc_set_vote_axi_clk_rate(
 
 		if (camnoc_axi_port->camnoc_bw)
 			camnoc_bw = camnoc_axi_port->camnoc_bw;
-		else
+		else if (camnoc_axi_port->additional_bw)
 			camnoc_bw = camnoc_axi_port->additional_bw;
+		else if (cpas_core->streamon_clients)
+			camnoc_bw = CAM_CPAS_DEFAULT_AXI_BW;
+		else
+			camnoc_bw = 0;
 
 		rc = cam_cpas_util_vote_bus_client_bw(
 			&camnoc_axi_port->bus_client,
@@ -883,14 +901,20 @@ vote_start_clients:
 		else
 			continue;
 
-		CAM_DBG(CAM_PERF, "Port[%s] : ab=%lld ib=%lld additional=%lld",
+		CAM_DBG(CAM_PERF,
+			"Port[%s] : ab=%lld ib=%lld additional=%lld, streamon_clients=%d",
 			mnoc_axi_port->axi_port_name, mnoc_axi_port->ab_bw,
-			mnoc_axi_port->ib_bw, mnoc_axi_port->additional_bw);
+			mnoc_axi_port->ib_bw, mnoc_axi_port->additional_bw,
+			cpas_core->streamon_clients);
 
 		if (mnoc_axi_port->ab_bw)
 			mnoc_ab_bw = mnoc_axi_port->ab_bw;
-		else
+		else if (mnoc_axi_port->additional_bw)
 			mnoc_ab_bw = mnoc_axi_port->additional_bw;
+		else if (cpas_core->streamon_clients)
+			mnoc_ab_bw = CAM_CPAS_DEFAULT_AXI_BW;
+		else
+			mnoc_ab_bw = 0;
 
 		if (cpas_core->axi_port[i].ib_bw_voting_needed)
 			mnoc_ib_bw = mnoc_axi_port->ib_bw;

@@ -753,6 +753,8 @@ int cam_fd_hw_init(void *hw_priv, void *init_hw_args, uint32_t arg_size)
 			CAM_ERR(CAM_FD, "Reset Failed, rc=%d", rc);
 			goto disable_soc;
 		}
+
+		init_args->is_hw_reset = true;
 	}
 
 	cam_fd_hw_util_enable_power_on_settings(fd_hw);

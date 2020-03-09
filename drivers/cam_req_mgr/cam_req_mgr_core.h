@@ -408,10 +408,12 @@ struct cam_req_mgr_core_session {
  * - Core camera request manager data struct
  * @session_head : list head holding sessions
  * @crm_lock     : mutex lock to protect session creation & destruction
+ * @recovery_on_apply_fail : Recovery on apply failure using debugfs.
  */
 struct cam_req_mgr_core_device {
 	struct list_head             session_head;
 	struct mutex                 crm_lock;
+	bool                         recovery_on_apply_fail;
 };
 
 /**
