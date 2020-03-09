@@ -15,7 +15,11 @@
 		#size-cells = <1>;
 		ranges;
 
-		interrupts = <0 494 0>, <0 130 0>, <0 497 0>, <0 495 0>;
+		interrupts-exchanged = <&pdc 14 IRQ_TYPE_LEVEL_HIGH >,
+				<&intc 130 IRQ_TYPE_LEVEL_HIGH>,
+				<&pdc 17 IRQ_TYPE_LEVEL_HIGH>,
+				<&pdc 15 IRQ_TYPE_LEVEL_HIGH>;
+
 		interrupt-names = "dp_hs_phy_irq", "pwr_event_irq",
 				"ss_phy_irq", "dm_hs_phy_irq";
 		qcom,use-pdc-interrupts;
@@ -76,7 +80,7 @@
 		dwc3@a600000 {
 			compatible = "snps,dwc3";
 			reg = <0x0a600000 0xe000>;
-			interrupts = <0 133 0>;
+			interrupts = <GIC_SPI 133 IRQ_TYPE_LEVEL_HIGH>;
 			usb-phy = <&qusb_phy0>, <&usb_qmp_dp_phy>;
 			linux,sysdev_is_parent;
 			snps,disable-clk-gating;
