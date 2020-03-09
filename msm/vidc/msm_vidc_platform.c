@@ -1195,11 +1195,11 @@ static struct msm_vidc_common_data kona_common_data[] = {
 	},
 	{
 		.key = "qcom,max-hq-mbs-per-frame",
-		.value = 34816,		/* 4096x2176 */
+		.value = 8160, /* ((1920x1088)/256) */
 	},
 	{
 		.key = "qcom,max-hq-mbs-per-sec",
-		.value = 1044480,	/* 4096x2176@30fps */
+		.value = 489600, /* ((1920x1088)/256)@60fps */
 	},
 	{
 		.key = "qcom,max-b-frame-mbs-per-frame",
@@ -1929,13 +1929,21 @@ static int msm_vidc_read_efuse(
 static int msm_vidc_read_rank(
 		struct msm_vidc_platform_data *data, struct device *dev)
 {
-	uint32_t num_ranks;
+	uint32_t num_ranks = 0;
+	/*default channel is ch0 for bengal*/
+	uint32_t channel = 0;
 
-	num_ranks = 0;           //TO-DO Read Rank API to be added
+	/*default sku-version*/
 	data->sku_version = SKU_VERSION_0;
+	num_ranks = of_fdt_get_ddrrank(channel);
 
-	if (num_ranks == 1)
+	if (num_ranks == -ENOENT) {
+		d_vpr_e("Failed to get ddr rank of device\n");
+		return num_ranks;
+	} else if (num_ranks == 1)
 		data->sku_version = SKU_VERSION_1;
+
+	d_vpr_h("DDR Rank of device: %u", num_ranks);
 
 	return 0;
 }

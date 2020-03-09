@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef __HFI_IO_COMMON_H__
@@ -122,7 +122,7 @@
  * --------------------------------------------------------------------------
  */
 #define VCODEC_CORE0_VIDEO_NOC_BASE_OFFS		0x00004000
-#define VCODEC_CORE1_VIDEO_NOC_BASE_OFFS		0x0000C000
+#define CVP_NOC_BASE_OFFS				0x0000C000
 #define VCODEC_COREX_VIDEO_NOC_ERR_SWID_LOW_OFFS	0x0500
 #define VCODEC_COREX_VIDEO_NOC_ERR_SWID_HIGH_OFFS	0x0504
 #define VCODEC_COREX_VIDEO_NOC_ERR_MAINCTL_LOW_OFFS	0x0508
