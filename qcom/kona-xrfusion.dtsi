@@ -3,6 +3,7 @@
 #include "kona-sde-display.dtsi"
 #include "kona-audio-overlay.dtsi"
 #include "kona-thermal-overlay.dtsi"
+#include "kona-xr-pinctrl-overlay.dtsi"
 
 &tlmm {
 	display_panel_led1_default: display_panel_led1_default {
@@ -30,6 +31,66 @@
 			drive-strength = <8>;
 			bias-disable = <0>;
 			output-high;
+		};
+	};
+
+	spkr_1_sd_n {
+		spkr_1_sd_n_sleep: spkr_1_sd_n_sleep {
+			mux {
+				pins = "gpio127";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio127";
+				drive-strength = <2>;   /* 2 mA */
+				bias-pull-down;
+				input-enable;
+			};
+		};
+
+		spkr_1_sd_n_active: spkr_1_sd_n_active {
+			mux {
+				pins = "gpio127";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio127";
+				drive-strength = <16>;   /* 16 mA */
+				bias-disable;
+				output-high;
+			};
+		};
+	};
+
+	spkr_2_sd_n {
+		spkr_2_sd_n_sleep: spkr_2_sd_n_sleep {
+			mux {
+				pins = "gpio129";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio129";
+				drive-strength = <2>;   /* 2 mA */
+				bias-pull-down;
+				input-enable;
+			};
+		};
+
+		spkr_2_sd_n_active: spkr_2_sd_n_active {
+			mux {
+				pins = "gpio129";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio129";
+				drive-strength = <16>;   /* 16 mA */
+				bias-disable;
+				output-high;
+			};
 		};
 	};
 
