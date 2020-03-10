@@ -669,6 +669,13 @@
 		0x18020060 0x18030060>;
 	};
 
+	dsu_pmu@0 {
+		compatible = "arm,dsu-pmu";
+		interrupts = <GIC_SPI 50 IRQ_TYPE_LEVEL_HIGH>;
+		cpus = <&CPU0>, <&CPU1>, <&CPU2>, <&CPU3>,
+			<&CPU4>, <&CPU5>, <&CPU6>, <&CPU7>;
+	};
+
 	qcom,chd_gold {
 		compatible = "qcom,core-hang-detect";
 		label = "gold";
