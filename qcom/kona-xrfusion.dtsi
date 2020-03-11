@@ -304,6 +304,10 @@
 	qcom,qbt_handler {
 		status = "disabled";
 	};
+
+	qcom,xr-stdalonevwr-misc {
+		compatible = "qcom,xr-stdalonevwr-misc";
+	};
 };
 
 &vreg_hap_boost {
