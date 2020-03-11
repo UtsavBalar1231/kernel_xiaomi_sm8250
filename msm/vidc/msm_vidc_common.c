@@ -2101,7 +2101,6 @@ static void handle_session_flush(enum hal_command_response cmd, void *data)
 
 	if (flush_type == HAL_FLUSH_ALL) {
 		msm_comm_clear_window_data(inst);
-		msm_comm_release_client_data(inst, false);
 		inst->clk_data.buffer_counter = 0;
 	}
 
@@ -2570,6 +2569,7 @@ static void handle_fbd(enum hal_command_response cmd, void *data)
 	u64 time_usec = 0;
 	u32 planes[VIDEO_MAX_PLANES] = {0};
 	struct v4l2_format *f;
+	int rc = 0;
 
 	if (!response) {
 		d_vpr_e("Invalid response from vidc_hal\n");
@@ -2633,8 +2633,11 @@ static void handle_fbd(enum hal_command_response cmd, void *data)
 
 	vb->timestamp = (time_usec * NSEC_PER_USEC);
 
-	msm_comm_store_input_tag(&inst->fbd_data, vb->index,
-		fill_buf_done->input_tag, fill_buf_done->input_tag2, inst->sid);
+	rc = msm_comm_store_input_tag(&inst->fbd_data, vb->index,
+			fill_buf_done->input_tag,
+			fill_buf_done->input_tag2, inst->sid);
+	if (rc)
+		s_vpr_e(inst->sid, "Failed to store input tag");
 
 	if (inst->session_type == MSM_VIDC_ENCODER) {
 		if (inst->max_filled_len < fill_buf_done->filled_len1)
@@ -7138,120 +7141,16 @@ bool kref_get_mbuf(struct msm_vidc_inst *inst, struct msm_vidc_buffer *mbuf)
 	return ret;
 }
 
-struct msm_vidc_client_data *msm_comm_store_client_data(
-	struct msm_vidc_inst *inst, u32 itag)
-{
-	struct msm_vidc_client_data *data = NULL, *temp = NULL;
-
-	if (!inst) {
-		d_vpr_e("%s: invalid params\n", __func__);
-		return NULL;
-	}
-
-	mutex_lock(&inst->client_data.lock);
-	list_for_each_entry(temp, &inst->client_data.list, list) {
-		if (!temp->id) {
-			data = temp;
-			break;
-		}
-	}
-	if (!data) {
-		data = kzalloc(sizeof(*data), GFP_KERNEL);
-		if (!data) {
-			s_vpr_e(inst->sid, "%s: No memory avilable", __func__);
-			goto exit;
-		}
-		INIT_LIST_HEAD(&data->list);
-		list_add_tail(&data->list, &inst->client_data.list);
-	}
-
-	/**
-	 * Special handling, if etb_counter reaches to 2^32 - 1,
-	 * then start next value from 1 not 0.
-	 */
-	if (!inst->etb_counter)
-		inst->etb_counter = 1;
-
-	data->id =  inst->etb_counter++;
-	data->input_tag = itag;
-
-exit:
-	mutex_unlock(&inst->client_data.lock);
-
-	return data;
-}
-
-void msm_comm_fetch_client_data(struct msm_vidc_inst *inst, bool remove,
-	u32 itag, u32 itag2, u32 *otag, u32 *otag2)
-{
-	struct msm_vidc_client_data *temp, *next;
-	bool found_itag = false, found_itag2 = false;
-
-	if (!inst || !otag || !otag2) {
-		d_vpr_e("%s: invalid params %pK %x %x\n",
-			__func__, inst, otag, otag2);
-		return;
-	}
-	/**
-	 * Some interlace clips, both BF & TF is available in single ETB buffer.
-	 * In that case, firmware copies same input_tag value to both input_tag
-	 * and input_tag2 at FBD.
-	 */
-	if (!itag2 || itag == itag2)
-		found_itag2 = true;
-	mutex_lock(&inst->client_data.lock);
-	list_for_each_entry_safe(temp, next, &inst->client_data.list, list) {
-		if (temp->id == itag) {
-			*otag = temp->input_tag;
-			found_itag = true;
-			if (remove)
-				temp->id = 0;
-		} else if (!found_itag2 && temp->id == itag2) {
-			*otag2 = temp->input_tag;
-			found_itag2 = true;
-			if (remove)
-				temp->id = 0;
-		}
-		if (found_itag && found_itag2)
-			break;
-	}
-	mutex_unlock(&inst->client_data.lock);
-
-	if (!found_itag || !found_itag2) {
-		s_vpr_e(inst->sid, "%s: client data not found - %u, %u\n",
-			__func__, itag, itag2);
-	}
-}
-
-void msm_comm_release_client_data(struct msm_vidc_inst *inst, bool remove)
-{
-	struct msm_vidc_client_data *temp, *next;
-
-	if (!inst) {
-		d_vpr_e("%s: invalid params\n", __func__);
-		return;
-	}
-
-	mutex_lock(&inst->client_data.lock);
-	list_for_each_entry_safe(temp, next, &inst->client_data.list, list) {
-		temp->id = 0;
-		if (remove) {
-			list_del(&temp->list);
-			kfree(temp);
-		}
-	}
-	mutex_unlock(&inst->client_data.lock);
-}
-
-void msm_comm_store_input_tag(struct msm_vidc_list *data_list,
+int msm_comm_store_input_tag(struct msm_vidc_list *data_list,
 		u32 index, u32 itag, u32 itag2, u32 sid)
 {
 	struct msm_vidc_buf_data *pdata = NULL;
 	bool found = false;
+	int rc = 0;
 
 	if (!data_list) {
 		s_vpr_e(sid, "%s: invalid params\n", __func__);
-		return;
+		return -EINVAL;
 	}
 
 	mutex_lock(&data_list->lock);
@@ -7268,6 +7167,7 @@ void msm_comm_store_input_tag(struct msm_vidc_list *data_list,
 		pdata = kzalloc(sizeof(*pdata), GFP_KERNEL);
 		if (!pdata)  {
 			s_vpr_e(sid, "%s: malloc failure.\n", __func__);
+			rc = -ENOMEM;
 			goto exit;
 		}
 		pdata->index = index;
@@ -7278,6 +7178,8 @@ void msm_comm_store_input_tag(struct msm_vidc_list *data_list,
 
 exit:
 	mutex_unlock(&data_list->lock);
+
+	return rc;
 }
 
 int msm_comm_fetch_input_tag(struct msm_vidc_list *data_list,

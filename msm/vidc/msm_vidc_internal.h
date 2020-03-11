@@ -213,12 +213,6 @@ struct msm_vidc_window_data {
 	u32 etb_count;
 };
 
-struct msm_vidc_client_data {
-	struct list_head list;
-	u32 id;
-	u32 input_tag;
-};
-
 struct msm_vidc_common_data {
 	char key[128];
 	int value;
@@ -541,7 +535,6 @@ struct msm_vidc_inst {
 	enum multi_stream stream_output_mode;
 	struct v4l2_ctrl **ctrls;
 	u32 num_ctrls;
-	u32 etb_counter;
 	int bit_depth;
 	struct kref kref;
 	bool in_flush;
