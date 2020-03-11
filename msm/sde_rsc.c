@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
 #define pr_fmt(fmt)	"[sde_rsc:%s:%d]: " fmt, __func__, __LINE__
@@ -1089,7 +1089,6 @@ void sde_rsc_debug_dump(u32 mux_sel)
 	if (rsc->hw_ops.debug_dump)
 		rsc->hw_ops.debug_dump(rsc, mux_sel);
 }
-#endif /* defined(CONFIG_DEBUG_FS) */
 
 static int _sde_debugfs_status_show(struct seq_file *s, void *data)
 {
@@ -1376,6 +1375,11 @@ static void _sde_rsc_init_debugfs(struct sde_rsc_priv *rsc, char *name)
 	debugfs_create_x32("debug_mode", 0600, rsc->debugfs_root,
 							&rsc->debug_mode);
 }
+#else
+static void _sde_rsc_init_debugfs(struct sde_rsc_priv *rsc, char *name)
+{
+}
+#endif /* defined(CONFIG_DEBUG_FS) */
 
 static void sde_rsc_deinit(struct platform_device *pdev,
 					struct sde_rsc_priv *rsc)
