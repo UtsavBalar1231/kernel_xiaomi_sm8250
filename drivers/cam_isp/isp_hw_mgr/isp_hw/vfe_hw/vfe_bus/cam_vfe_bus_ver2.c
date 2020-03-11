@@ -27,6 +27,8 @@ static const char drv_name[] = "vfe_bus";
 #define CAM_VFE_BUS_IRQ_REG2                     2
 #define CAM_VFE_BUS_IRQ_MAX                      3
 
+#define CAM_VFE_BUS_LUT_WORD_SIZE_64             1
+
 #define CAM_VFE_BUS_VER2_PAYLOAD_MAX             256
 
 #define CAM_VFE_BUS_SET_DEBUG_REG                0x82
@@ -100,6 +102,7 @@ struct cam_vfe_bus_ver2_common_data {
 	uint32_t                                    addr_no_sync;
 	cam_hw_mgr_event_cb_func                    event_cb;
 	bool                                        hw_init;
+	struct cam_vfe_bus_ver2_stats_cfg_info     *stats_data;
 };
 
 struct cam_vfe_bus_ver2_wm_resource_data {
@@ -1366,6 +1369,40 @@ static int cam_vfe_bus_handle_wm_done_bottom_half(void *handler_priv,
 	return rc;
 }
 
+static void cam_vfe_bus_dump_dmi_reg(
+	void __iomem    *mem_base,
+	uint32_t        lut_word_size,
+	uint32_t        lut_size,
+	uint32_t        lut_bank_sel,
+	struct cam_vfe_bus_ver2_dmi_offset_common dmi_cfg)
+{
+	uint32_t        i;
+	uint32_t        val_0;
+	uint32_t        val_1;
+
+	val_0 = dmi_cfg.auto_increment | lut_bank_sel;
+	cam_io_w_mb(val_0, mem_base + dmi_cfg.cfg_offset);
+	cam_io_w_mb(0, mem_base + dmi_cfg.addr_offset);
+	for (i = 0; i < lut_size; i++) {
+		if (lut_word_size == CAM_VFE_BUS_LUT_WORD_SIZE_64) {
+			val_0 = cam_io_r_mb(mem_base +
+				dmi_cfg.data_lo_offset);
+			val_1 = cam_io_r_mb(mem_base +
+				dmi_cfg.data_hi_offset);
+			CAM_INFO(CAM_ISP,
+				"Bank%d : 0x%x, LO: 0x%x, HI:0x%x",
+				lut_bank_sel, i, val_0, val_1);
+		} else {
+			val_0 = cam_io_r_mb(mem_base +
+				dmi_cfg.data_lo_offset);
+			CAM_INFO(CAM_ISP, "Bank%d : 0x%x, LO: 0x%x",
+				lut_bank_sel, i, val_0);
+		}
+	}
+	cam_io_w_mb(0, mem_base + dmi_cfg.cfg_offset);
+	cam_io_w_mb(0, mem_base + dmi_cfg.addr_offset);
+}
+
 
 static int cam_vfe_bus_err_bottom_half(void *handler_priv,
 	void *evt_payload_priv)
@@ -1374,6 +1411,8 @@ static int cam_vfe_bus_err_bottom_half(void *handler_priv,
 	struct cam_vfe_bus_ver2_priv *bus_priv = handler_priv;
 	struct cam_vfe_bus_ver2_common_data *common_data;
 	struct cam_isp_hw_event_info evt_info;
+	struct cam_vfe_bus_ver2_stats_cfg_offset *stats_cfg;
+	struct cam_vfe_bus_ver2_dmi_offset_common dmi_cfg;
 	uint32_t val = 0;
 
 	if (!handler_priv || !evt_payload_priv)
@@ -1382,6 +1421,8 @@ static int cam_vfe_bus_err_bottom_half(void *handler_priv,
 	evt_payload = evt_payload_priv;
 	common_data = &bus_priv->common_data;
 
+	stats_cfg = common_data->stats_data->stats_cfg_offset;
+	dmi_cfg = common_data->stats_data->dmi_offset_info;
 	val = evt_payload->debug_status_0;
 	CAM_ERR(CAM_ISP, "Bus Violation: debug_status_0 = 0x%x", val);
 
@@ -1415,35 +1456,158 @@ static int cam_vfe_bus_err_bottom_half(void *handler_priv,
 	if (val & 0x0200)
 		CAM_INFO(CAM_ISP, "RAW DUMP violation");
 
-	if (val & 0x0400)
+	if (val & 0x0400) {
 		CAM_INFO(CAM_ISP, "PDAF violation");
+		cam_vfe_bus_dump_dmi_reg(common_data->mem_base,
+			CAM_VFE_BUS_LUT_WORD_SIZE_64,
+			stats_cfg[
+			CAM_VFE_BUS_VER2_VFE_OUT_PDAF].lut.size,
+			stats_cfg[
+			CAM_VFE_BUS_VER2_VFE_OUT_PDAF].lut.bank_0,
+			dmi_cfg);
+		CAM_INFO(CAM_ISP, "RGN offset cfg 0x%08x",
 
-	if (val & 0x0800)
-		CAM_INFO(CAM_ISP, "STATs HDR BE violation");
+		cam_io_r_mb(common_data->mem_base +
+			stats_cfg[
+			CAM_VFE_BUS_VER2_VFE_OUT_PDAF].cfg_offset));
+	}
 
-	if (val & 0x01000)
+	if (val & 0x0800) {
+		CAM_INFO(CAM_ISP, "STATs HDR BE vltn RGN offset cfg 0x%08x",
+			cam_io_r_mb(common_data->mem_base +
+			stats_cfg[
+			CAM_VFE_BUS_VER2_VFE_OUT_STATS_HDR_BE].cfg_offset));
+
+		CAM_INFO(CAM_ISP, "RGN num cfg 0x%08x",
+			cam_io_r_mb(common_data->mem_base +
+			stats_cfg[
+			CAM_VFE_BUS_VER2_VFE_OUT_STATS_HDR_BE].num_cfg));
+	}
+
+	if (val & 0x01000) {
 		CAM_INFO(CAM_ISP, "STATs HDR BHIST violation");
+		cam_vfe_bus_dump_dmi_reg(common_data->mem_base,
+			CAM_VFE_BUS_LUT_WORD_SIZE_64,
+			stats_cfg[
+			CAM_VFE_BUS_VER2_VFE_OUT_STATS_HDR_BHIST].lut.size,
+			stats_cfg[
+			CAM_VFE_BUS_VER2_VFE_OUT_STATS_HDR_BHIST].lut.bank_0,
+			dmi_cfg);
+
+		cam_vfe_bus_dump_dmi_reg(common_data->mem_base,
+			CAM_VFE_BUS_LUT_WORD_SIZE_64,
+			stats_cfg[
+			CAM_VFE_BUS_VER2_VFE_OUT_STATS_HDR_BHIST].lut.size,
+			stats_cfg[
+			CAM_VFE_BUS_VER2_VFE_OUT_STATS_HDR_BHIST].lut.bank_1,
+			dmi_cfg);
+
+		CAM_INFO(CAM_ISP, "RGN offset cfg 0x%08x",
+		cam_io_r_mb(common_data->mem_base +
+			stats_cfg[
+			CAM_VFE_BUS_VER2_VFE_OUT_STATS_HDR_BHIST].cfg_offset));
+
+		CAM_INFO(CAM_ISP, "RGN num cfg 0x%08x",
+		cam_io_r_mb(common_data->mem_base +
+			stats_cfg[
+			CAM_VFE_BUS_VER2_VFE_OUT_STATS_HDR_BHIST].num_cfg));
+	}
 
 	if (val & 0x02000)
 		CAM_INFO(CAM_ISP, "STATs TINTLESS BG violation");
 
-	if (val & 0x04000)
+	if (val & 0x04000) {
 		CAM_INFO(CAM_ISP, "STATs BF violation");
+		cam_vfe_bus_dump_dmi_reg(common_data->mem_base,
+			CAM_VFE_BUS_LUT_WORD_SIZE_64,
+			stats_cfg[
+			CAM_VFE_BUS_VER2_VFE_OUT_STATS_BF].lut.size,
+			stats_cfg[
+			CAM_VFE_BUS_VER2_VFE_OUT_STATS_BF].lut.bank_0,
+			dmi_cfg);
 
-	if (val & 0x08000)
-		CAM_INFO(CAM_ISP, "STATs AWB BG UBWC violation");
+		cam_vfe_bus_dump_dmi_reg(common_data->mem_base,
+			CAM_VFE_BUS_LUT_WORD_SIZE_64,
+			stats_cfg[
+			CAM_VFE_BUS_VER2_VFE_OUT_STATS_BF].lut.size,
+			stats_cfg[
+			CAM_VFE_BUS_VER2_VFE_OUT_STATS_BF].lut.bank_1,
+			dmi_cfg);
 
-	if (val & 0x010000)
+		CAM_INFO(CAM_ISP, "RGN offset cfg 0x%08x",
+		cam_io_r_mb(common_data->mem_base +
+			stats_cfg[
+			CAM_VFE_BUS_VER2_VFE_OUT_STATS_BF].cfg_offset));
+	}
+
+	if (val & 0x08000) {
+		CAM_INFO(CAM_ISP, "STATs AWB BG UBWC vltn RGN ofst cfg 0x%08x",
+		cam_io_r_mb(common_data->mem_base +
+		stats_cfg[
+		CAM_VFE_BUS_VER2_VFE_OUT_STATS_AWB_BG].cfg_offset));
+
+		CAM_INFO(CAM_ISP, "RGN num cfg 0x%08x",
+		cam_io_r_mb(common_data->mem_base +
+		stats_cfg[
+		CAM_VFE_BUS_VER2_VFE_OUT_STATS_AWB_BG].num_cfg));
+	}
+
+	if (val & 0x010000) {
 		CAM_INFO(CAM_ISP, "STATs BHIST violation");
+		cam_vfe_bus_dump_dmi_reg(common_data->mem_base,
+			CAM_VFE_BUS_LUT_WORD_SIZE_64,
+			stats_cfg[
+			CAM_VFE_BUS_VER2_VFE_OUT_STATS_BHIST].lut.size,
+			stats_cfg[
+			CAM_VFE_BUS_VER2_VFE_OUT_STATS_BHIST].lut.bank_0,
+			dmi_cfg);
 
-	if (val & 0x020000)
-		CAM_INFO(CAM_ISP, "STATs RS violation");
+		CAM_INFO(CAM_ISP, "RGN offset cfg 0x%08x",
+		cam_io_r_mb(common_data->mem_base +
+			stats_cfg[
+			CAM_VFE_BUS_VER2_VFE_OUT_STATS_BHIST].cfg_offset));
 
-	if (val & 0x040000)
-		CAM_INFO(CAM_ISP, "STATs CS violation");
+		CAM_INFO(CAM_ISP, "RGN num cfg 0x%08x",
+		cam_io_r_mb(common_data->mem_base +
+			stats_cfg[
+			CAM_VFE_BUS_VER2_VFE_OUT_STATS_BHIST].num_cfg));
+	}
 
-	if (val & 0x080000)
-		CAM_INFO(CAM_ISP, "STATs IHIST violation");
+	if (val & 0x020000) {
+		CAM_INFO(CAM_ISP, "STATs RS violation RGN offset cfg 0x%08x",
+			cam_io_r_mb(common_data->mem_base +
+			stats_cfg[
+			CAM_VFE_BUS_VER2_VFE_OUT_STATS_RS].cfg_offset));
+
+		CAM_INFO(CAM_ISP, "RGN num cfg 0x%08x",
+		cam_io_r_mb(common_data->mem_base +
+			stats_cfg[
+			CAM_VFE_BUS_VER2_VFE_OUT_STATS_RS].num_cfg));
+	}
+
+	if (val & 0x040000) {
+		CAM_INFO(CAM_ISP, "STATs CS violation RGN offset cfg 0x%08x",
+		cam_io_r_mb(common_data->mem_base +
+			stats_cfg[
+			CAM_VFE_BUS_VER2_VFE_OUT_STATS_CS].cfg_offset));
+
+		CAM_INFO(CAM_ISP, "RGN num cfg 0x%08x",
+		cam_io_r_mb(common_data->mem_base +
+			stats_cfg[
+			CAM_VFE_BUS_VER2_VFE_OUT_STATS_CS].num_cfg));
+	}
+
+	if (val & 0x080000) {
+		CAM_INFO(CAM_ISP, "STATs IHIST vltn RGN offset cfg 0x%08x",
+		cam_io_r_mb(common_data->mem_base +
+			stats_cfg[
+			CAM_VFE_BUS_VER2_VFE_OUT_STATS_IHIST].cfg_offset));
+
+		CAM_INFO(CAM_ISP, "RGN num cfg 0x%08x",
+		cam_io_r_mb(common_data->mem_base +
+			stats_cfg[
+			CAM_VFE_BUS_VER2_VFE_OUT_STATS_IHIST].num_cfg));
+	}
 
 	if (val & 0x0100000)
 		CAM_INFO(CAM_ISP, "DISP Y 1:1 UBWC violation");
@@ -3634,6 +3798,7 @@ int cam_vfe_bus_ver2_init(
 	bus_priv->common_data.addr_no_sync       =
 		CAM_VFE_BUS_ADDR_NO_SYNC_DEFAULT_VAL;
 	bus_priv->common_data.hw_init            = false;
+	bus_priv->common_data.stats_data         = ver2_hw_info->stats_data;
 
 	mutex_init(&bus_priv->common_data.bus_mutex);
 
