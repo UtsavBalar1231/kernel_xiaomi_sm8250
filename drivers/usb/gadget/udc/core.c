@@ -533,15 +533,15 @@ EXPORT_SYMBOL(usb_gsi_ep_op);
 int usb_gadget_func_wakeup(struct usb_gadget *gadget,
 	int interface_id)
 {
-	if (gadget->speed != USB_SPEED_SUPER)
+	if (!gadget || (gadget->speed != USB_SPEED_SUPER))
 		return -EOPNOTSUPP;
 
-	if (!gadget->ops->func_wakeup)
+	if (!gadget->ops || !gadget->ops->func_wakeup)
 		return -EOPNOTSUPP;
 
 	return gadget->ops->func_wakeup(gadget, interface_id);
 }
-EXPORT_SYMBOL(usb_gadget_func_wakeup);
+EXPORT_SYMBOL_GPL(usb_gadget_func_wakeup);
 
 /**
  * usb_gadget_set_selfpowered - sets the device selfpowered feature.
