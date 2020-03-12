@@ -4,7 +4,7 @@
 #include "bengal-idp-low-ram.dtsi"
 
 / {
-	model = "Qualcomm Technologies, Inc. BENGAL IDP 2Gb DDR";
+	model = "Qualcomm Technologies, Inc. BENGAL IDP 2Gb DDR HD+";
 	compatible = "qcom,bengal-idp", "qcom,bengal", "qcom,idp";
-	qcom,board-id = <34 0x400>;
+	qcom,board-id = <34 0x403>;
 };
