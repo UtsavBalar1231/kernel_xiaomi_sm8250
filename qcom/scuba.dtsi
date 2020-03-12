@@ -160,10 +160,10 @@
 		#size-cells = <2>;
 		ranges;
 
-		hyp_region: hyp_region@45a00000 {
+		hyp_region: hyp_region@45700000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0x0 0x45a00000 0x0 0x300000>;
+			reg = <0x0 0x45700000 0x0 0x600000>;
 		};
 
 		xbl_aop_mem: xbl_aop_mem@45e00000 {
@@ -187,49 +187,49 @@
 		pil_modem_mem: modem_region@4ab00000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0x0 0x4ab00000 0x0 0x6400000>;
+			reg = <0x0 0x4ab00000 0x0 0x7300000>;
 		};
 
-		pil_video_mem: pil_video_region@50f00000 {
+		pil_video_mem: pil_video_region@51e00000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0x0 0x50f00000 0x0 0x500000>;
+			reg = <0x0 0x51e00000 0x0 0x500000>;
 		};
 
-		wlan_msa_mem: wlan_msa_region@51400000 {
+		wlan_msa_mem: wlan_msa_region@52300000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0x0 0x51400000 0x0 0x200000>;
+			reg = <0x0 0x52300000 0x0 0x200000>;
 		};
 
-		pil_adsp_mem: adsp_regions@51600000 {
+		pil_adsp_mem: adsp_regions@52500000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0x0 0x51600000 0x0 0x1e00000>;
+			reg = <0x0 0x52500000 0x0 0x1e00000>;
 		};
 
-		pil_ipa_fw_mem: ips_fw_region@53400000 {
+		pil_ipa_fw_mem: ips_fw_region@54300000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0x0 0x53400000 0x0 0x10000>;
+			reg = <0x0 0x54300000 0x0 0x10000>;
 		};
 
-		pil_ipa_gsi_mem: ipa_gsi_region@53410000 {
+		pil_ipa_gsi_mem: ipa_gsi_region@54310000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0x0 0x53410000 0x0 0x5000>;
+			reg = <0x0 0x54310000 0x0 0x5000>;
 		};
 
-		pil_gpu_mem: gpu_region@53415000 {
+		pil_gpu_mem: gpu_region@54315000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0x0 0x53415000 0x0 0x2000>;
+			reg = <0x0 0x54315000 0x0 0x2000>;
 		};
 
-		removed_region: removed_region@5f800000 {
+		removed_region: removed_region@60000000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0x0 0x5f800000 0x0 0x4100000>;
+			reg = <0x0 0x60000000 0x0 0x3900000>;
 		};
 
 		adsp_mem: adsp_region {
