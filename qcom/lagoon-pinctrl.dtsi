@@ -804,7 +804,7 @@
 			mux {
 				/* CLK, DATA */
 				pins = "gpio39", "gpio40";
-				function = "cci_i2c";
+				function = "CCI_I2C";
 			};
 
 			config {
@@ -818,7 +818,7 @@
 			mux {
 				/* CLK, DATA */
 				pins = "gpio39", "gpio40";
-				function = "cci_i2c";
+				function = "CCI_I2C";
 			};
 
 			config {
@@ -832,7 +832,7 @@
 			mux {
 				/* CLK, DATA */
 				pins = "gpio41", "gpio42";
-				function = "cci_i2c";
+				function = "CCI_I2C";
 			};
 
 			config {
@@ -846,7 +846,7 @@
 			mux {
 				/* CLK, DATA */
 				pins = "gpio41", "gpio42";
-				function = "cci_i2c";
+				function = "CCI_I2C";
 			};
 
 			config {
@@ -860,7 +860,7 @@
 			mux {
 				/* CLK, DATA */
 				pins = "gpio43", "gpio44";
-				function = "cci_i2c";
+				function = "CCI_I2C";
 			};
 
 			config {
@@ -874,7 +874,7 @@
 			mux {
 				/* CLK, DATA */
 				pins = "gpio43", "gpio44";
-				function = "cci_i2c";
+				function = "CCI_I2C";
 			};
 
 			config {
@@ -889,7 +889,7 @@
 			/* MCLK0 */
 			mux {
 				pins = "gpio29";
-				function = "cam_mclk";
+				function = "CAM_MCLK0";
 			};
 
 			config {
@@ -903,7 +903,7 @@
 			/* MCLK0 */
 			mux {
 				pins = "gpio29";
-				function = "cam_mclk";
+				function = "CAM_MCLK0";
 			};
 
 			config {
@@ -917,7 +917,7 @@
 			/* MCLK1 */
 			mux {
 				pins = "gpio30";
-				function = "cam_mclk";
+				function = "CAM_MCLK1";
 			};
 
 			config {
@@ -931,7 +931,7 @@
 			/* MCLK1 */
 			mux {
 				pins = "gpio30";
-				function = "cam_mclk";
+				function = "CAM_MCLK1";
 			};
 
 			config {
@@ -945,7 +945,7 @@
 			/* MCLK2 */
 			mux {
 				pins = "gpio31";
-				function = "cam_mclk";
+				function = "CAM_MCLK2";
 			};
 
 			config {
@@ -959,7 +959,7 @@
 			/* MCLK2 */
 			mux {
 				pins = "gpio31";
-				function = "cam_mclk";
+				function = "CAM_MCLK2";
 			};
 
 			config {
@@ -973,7 +973,7 @@
 			/* MCLK3 */
 			mux {
 				pins = "gpio32";
-				function = "cam_mclk";
+				function = "CAM_MCLK3";
 			};
 
 			config {
@@ -987,7 +987,7 @@
 			/* MCLK3 */
 			mux {
 				pins = "gpio32";
-				function = "cam_mclk";
+				function = "CAM_MCLK3";
 			};
 
 			config {
