@@ -530,8 +530,9 @@
 
 		dump_mem: mem_dump_region {
 			compatible = "shared-dma-pool";
+			alloc-ranges = <0x0 0x00000000 0x0 0xffffffff>;
 			reusable;
-			size = <0 0x2400000>;
+			size = <0 0x2800000>;
 		};
 
 		cmd_db: reserved-memory@80860000 {
@@ -2962,6 +2963,21 @@
 			qcom,dump-id = <0xee>;
 		};
 
+		etf_swao {
+			qcom,dump-size = <0x10000>;
+			qcom,dump-id = <0xf1>;
+		};
+
+		etr_reg {
+			qcom,dump-size = <0x1000>;
+			qcom,dump-id = <0x100>;
+		};
+
+		etfswao_reg {
+			qcom,dump-size = <0x1000>;
+			qcom,dump-id = <0x102>;
+		};
+
 		misc_data {
 			qcom,dump-size = <0x1000>;
 			qcom,dump-id = <0xe8>;
@@ -2970,6 +2986,16 @@
 		ipa {
 			qcom,dump-size = <0x11000>;
 			qcom,dump-id = <0x150>;
+		};
+
+		etf_lpass {
+			qcom,dump-size = <0x4000>;
+			qcom,dump-id = <0xf4>;
+		};
+
+		etflpass_reg {
+			qcom,dump-size = <0x1000>;
+			qcom,dump-id = <0x104>;
 		};
 
 		c0_context {
