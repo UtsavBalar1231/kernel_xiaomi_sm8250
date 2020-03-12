@@ -5743,8 +5743,9 @@ static u32 msm_comm_get_memory_limit(struct msm_vidc_core *core)
 {
 	struct memory_limit_table *memory_limits_tbl;
 	u32 memory_limits_tbl_size = 0;
-	u32 i, memory_limit = 0, memory_size = 0;
+	u32 memory_limit = 0, memory_size = 0;
 	u32 memory_limit_mbytes = 0;
+	int i = 0;
 
 	memory_limits_tbl = core->resources.mem_limit_tbl;
 	memory_limits_tbl_size = core->resources.memory_limit_table_size;
