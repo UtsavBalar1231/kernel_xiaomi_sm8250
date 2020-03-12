@@ -2296,6 +2296,7 @@
 		qcom,iommu-dma-addr-pool = <0xa0000000 0x10000000>;
 		qcom,iommu-dma = "fastmap";
 		qcom,iommu-faults = "stall-disable";
+		qcom,iommu-geometry = <0xa0000000 0x10010000>;
 		vdd-cx-mx-supply = <&L8A>;
 		vdd-1.8-xo-supply = <&L16A>;
 		vdd-1.3-rfa-supply = <&L17A>;
