@@ -528,6 +528,11 @@
 			size = <0 0x8c00000>;
 		};
 
+		cont_splash_memory: cont_splash_region {
+			reg = <0x0 0xA0000000 0x0 0x02300000>;
+			label = "cont_splash_region";
+		};
+
 		dump_mem: mem_dump_region {
 			compatible = "shared-dma-pool";
 			reusable;
