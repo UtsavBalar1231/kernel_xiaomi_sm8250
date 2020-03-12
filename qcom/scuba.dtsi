@@ -11,7 +11,7 @@
 	model = "Qualcomm Technologies, Inc. SCUBA";
 	compatible = "qcom,scuba";
 	qcom,msm-id = <441 0x10000>;
-	interrupt-parent = <&intc>;
+	interrupt-parent = <&wakegic>;
 
 	#address-cells = <2>;
 	#size-cells = <2>;
@@ -283,11 +283,32 @@
 		compatible = "arm,gic-v3";
 		#interrupt-cells = <3>;
 		interrupt-controller;
+		interrupt-parent = <&intc>;
 		#redistributor-regions = <1>;
 		redistributor-stride = <0x0 0x20000>;
 		reg = <0xf200000 0x10000>,     /* GICD */
 		      <0xf300000 0x100000>;    /* GICR * 8 */
 		interrupts = <1 9 4>;
+	};
+
+	wakegic: wake-gic {
+		compatible = "qcom,mpm-gic-scuba", "qcom,mpm-gic";
+		interrupts-extended = <&wakegic GIC_SPI 197
+						IRQ_TYPE_EDGE_RISING>;
+		reg = <0x45f01b8 0x1000>,
+			<0xf111008 0x4>;  /* MSM_APCS_GCC_BASE 4K */
+		reg-names = "vmpm", "ipc";
+		qcom,num-mpm-irqs = <96>;
+		interrupt-controller;
+		interrupt-parent = <&intc>;
+		#interrupt-cells = <3>;
+	};
+
+	wakegpio: wake-gpio {
+		compatible = "qcom,mpm-gpio";
+		interrupt-controller;
+		interrupt-parent = <&intc>;
+		#interrupt-cells = <2>;
 	};
 
 	jtag_mm0: jtagmm@9040000 {
