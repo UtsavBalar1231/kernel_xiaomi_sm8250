@@ -1,4 +1,5 @@
 #include "dsi-panel-rm69299-visionox-fhd-plus-video.dtsi"
+#include "dsi-panel-rm69299-visionox-fhd-plus-cmd.dtsi"
 #include "dsi-panel-r66451-dsc-qhd-60hz-cmd.dtsi"
 #include "dsi-panel-r66451-dsc-qhd-90hz-cmd.dtsi"
 #include "dsi-panel-r66451-dsc-qhd-120hz-cmd.dtsi"
@@ -129,6 +130,20 @@
 };
 
 &dsi_rm69299_visionox_amoled_video {
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
+	qcom,mdss-dsi-t-clk-post = <0x0E>;
+	qcom,mdss-dsi-t-clk-pre = <0x31>;
+	qcom,mdss-dsi-display-timings {
+		timing@0 {
+			qcom,mdss-dsi-panel-phy-timings = [00 20 08 08 24 23 08
+							08 05 02 04 00];
+			qcom,display-topology = <1 0 1>;
+			qcom,default-topology-index = <0>;
+		};
+	};
+};
+
+&dsi_rm69299_visionox_amoled_cmd {
 	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
 	qcom,mdss-dsi-t-clk-post = <0x0E>;
 	qcom,mdss-dsi-t-clk-pre = <0x31>;
