@@ -763,7 +763,6 @@ int cam_ife_csid_cid_reserve(struct cam_ife_csid_hw *csid_hw,
 	case CAM_CPAS_TITAN_170_V100:
 	case CAM_CPAS_TITAN_170_V110:
 	case CAM_CPAS_TITAN_170_V120:
-	case CAM_CPAS_TITAN_170_V200:
 		if (cid_reserv->in_port->res_type == CAM_ISP_IFE_IN_RES_PHY_3 &&
 			csid_hw->hw_intf->hw_idx != 2) {
 			rc = -EINVAL;
@@ -2222,7 +2221,8 @@ static int cam_ife_csid_init_config_rdi_path(
 	CAM_DBG(CAM_ISP, "HW version: %x", camera_hw_version);
 
 	if (camera_hw_version == CAM_CPAS_TITAN_480_V100 ||
-		camera_hw_version == CAM_CPAS_TITAN_175_V130) {
+		camera_hw_version == CAM_CPAS_TITAN_175_V130 ||
+		camera_hw_version == CAM_CPAS_TITAN_170_V200) {
 		val |= (path_data->drop_enable <<
 			csid_reg->cmn_reg->drop_h_en_shift_val) |
 			(path_data->drop_enable <<

@@ -290,7 +290,7 @@ static struct cam_camnoc_specific
 			.access_type = CAM_REG_TYPE_READ_WRITE,
 			.masked_value = 0,
 			.offset = 0x2588, /* SPECIFIC_IFE01_ENCCTL_LOW */
-			.value = 1,
+			.value = 5,
 		},
 	},
 	{
@@ -338,7 +338,7 @@ static struct cam_camnoc_specific
 			.access_type = CAM_REG_TYPE_READ_WRITE,
 			.masked_value = 0,
 			.offset = 0x2788, /* SPECIFIC_IFE23_ENCCTL_LOW */
-			.value = 1,
+			.value = 5,
 		},
 	},
 	{
@@ -431,14 +431,14 @@ static struct cam_camnoc_specific
 			.access_type = CAM_REG_TYPE_READ_WRITE,
 			.masked_value = 0,
 			.offset = 0x2A48, /* SPECIFIC_IBL_WR_SAFELUT_LOW */
-			.value = 0x0,
+			.value = 0xFFF,
 		},
 		.ubwc_ctl = {
 			.enable = true,
 			.access_type = CAM_REG_TYPE_READ_WRITE,
 			.masked_value = 0,
 			.offset = 0x2B88, /* SPECIFIC_IBL_WR_ENCCTL_LOW */
-			.value = 1,
+			.value = 5,
 		},
 	},
 	{
