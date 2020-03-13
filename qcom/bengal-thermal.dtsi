@@ -1101,6 +1101,12 @@
 		status = "disabled";
 
 		trips {
+			skin_modem_trip0: modem-trip0 {
+				temperature = <40000>;
+				hysteresis = <4000>;
+				type = "passive";
+			};
+
 			skin_gold_trip: gold-trip {
 				temperature = <40000>;
 				hysteresis = <0>;
@@ -1113,9 +1119,27 @@
 				type = "passive";
 			};
 
+			skin_modem_trip1: modem-trip1 {
+				temperature = <42000>;
+				hysteresis = <4000>;
+				type = "passive";
+			};
+
+			skin_modem_trip2: modem-trip2 {
+				temperature = <43000>;
+				hysteresis = <4000>;
+				type = "passive";
+			};
+
 			skin_gpu_trip: gpu-trip {
 				temperature = <43000>;
 				hysteresis = <0>;
+				type = "passive";
+			};
+
+			skin_modem_trip3: modem-trip3 {
+				temperature = <50000>;
+				hysteresis = <5000>;
 				type = "passive";
 			};
 
@@ -1149,6 +1173,31 @@
 				trip = <&skin_hvx_trip>;
 				cooling-device = <&cdsp_sw THERMAL_MAX_LIMIT
 							THERMAL_MAX_LIMIT>;
+			};
+
+			mdm_cdev0 {
+				trip = <&skin_modem_trip0>;
+				cooling-device = <&modem_proc 1 1>;
+			};
+
+			mdm_cdev1 {
+				trip = <&skin_modem_trip1>;
+				cooling-device = <&modem_pa 1 1>;
+			};
+
+			mdm_cdev2 {
+				trip = <&skin_modem_trip2>;
+				cooling-device = <&modem_pa 2 2>;
+			};
+
+			mdm_cdev3 {
+				trip = <&skin_modem_trip3>;
+				cooling-device = <&modem_pa 3 3>;
+			};
+
+			mdm_cdev4 {
+				trip = <&skin_modem_trip3>;
+				cooling-device = <&modem_proc 3 3>;
 			};
 		};
 	};
