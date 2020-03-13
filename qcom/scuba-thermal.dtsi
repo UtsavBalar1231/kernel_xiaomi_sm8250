@@ -379,6 +379,18 @@
 		};
 
 		cooling-maps {
+			gpu_cdev {
+				trip = <&gpu_step_trip>;
+				cooling-device = <&msm_gpu THERMAL_NO_LIMIT
+							THERMAL_NO_LIMIT>;
+			};
+
+			gpu-cx-cdev0 {
+				trip = <&gpu_cx_mon>;
+				cooling-device = <&msm_gpu THERMAL_MAX_LIMIT
+							THERMAL_MAX_LIMIT>;
+			};
+
 			gpu-cx-cdev1 {
 				trip = <&gpu_cx_mon>;
 				cooling-device = <&modem_proc 3 3>;
@@ -438,6 +450,12 @@
 		};
 
 		cooling-maps {
+			mdm0-cx-cdev0 {
+				trip = <&mdm0_cx_mon>;
+				cooling-device = <&msm_gpu THERMAL_MAX_LIMIT
+							THERMAL_MAX_LIMIT>;
+			};
+
 			mdm0-cx-cdev1 {
 				trip = <&mdm0_cx_mon>;
 				cooling-device = <&modem_proc 3 3>;
@@ -465,6 +483,12 @@
 		};
 
 		cooling-maps {
+			mdm1-cx-cdev0 {
+				trip = <&mdm1_cx_mon>;
+				cooling-device = <&msm_gpu THERMAL_MAX_LIMIT
+							THERMAL_MAX_LIMIT>;
+			};
+
 			mdm1-cx-cdev1 {
 				trip = <&mdm1_cx_mon>;
 				cooling-device = <&modem_proc 3 3>;
