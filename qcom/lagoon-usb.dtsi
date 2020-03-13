@@ -15,8 +15,8 @@
 		#size-cells = <1>;
 		ranges;
 
-		interrupts-exchanged = <&pdc 14 IRQ_TYPE_LEVEL_HIGH >,
-				<&intc 130 IRQ_TYPE_LEVEL_HIGH>,
+		interrupts-extended = <&pdc 14 IRQ_TYPE_LEVEL_HIGH>,
+			<&intc GIC_SPI 130 IRQ_TYPE_LEVEL_HIGH>,
 				<&pdc 17 IRQ_TYPE_LEVEL_HIGH>,
 				<&pdc 15 IRQ_TYPE_LEVEL_HIGH>;
 
@@ -84,6 +84,8 @@
 			usb-phy = <&qusb_phy0>, <&usb_qmp_dp_phy>;
 			linux,sysdev_is_parent;
 			snps,disable-clk-gating;
+			snps,dis_u2_susphy_quirk;
+			snps,dis_enblslpm_quirk;
 			snps,has-lpm-erratum;
 			snps,hird-threshold = /bits/ 8 <0x10>;
 			snps,usb3-u1u2-disable;
