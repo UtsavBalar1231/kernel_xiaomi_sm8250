@@ -1,3 +1,5 @@
+#include "scuba-thermal-overlay.dtsi"
+
 &soc {
 	scuba_batterydata: qcom,battery-data {
 		qcom,batt-id-range-pct = <15>;
