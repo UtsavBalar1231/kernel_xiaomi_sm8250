@@ -1273,6 +1273,7 @@
 #include "scuba-usb.dtsi"
 #include "msm-arm-smmu-scuba.dtsi"
 #include "scuba-bus.dtsi"
+#include "scuba-gpu.dtsi"
 
 &pm2250_vadc {
 	#address-cells = <1>;
