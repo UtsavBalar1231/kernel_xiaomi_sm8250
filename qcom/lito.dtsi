@@ -2528,6 +2528,11 @@
 			qcom,dump-size = <0x1000>;
 			qcom,dump-id = <0x104>;
 		};
+
+		clk_reg {
+			qcom,dump-size = <0x1000>;
+			qcom,dump-id = <0x163>;
+		};
 	};
 
 	qcom,chd_silver {
@@ -3725,7 +3730,7 @@
 		qcom,wlan-msa-fixed-region = <&pil_wlan_fw_mem>;
 		qcom,iommu-dma-addr-pool = <0xa0000000 0x10000000>;
 		qcom,iommu-dma = "fastmap";
-		qcom,iommu-faults = "stall-disable";
+		qcom,iommu-faults = "stall-disable", "non-fatal";
 		vdd-cx-mx-supply = <&L1A>;
 		vdd-1.8-xo-supply = <&L14A>;
 		vdd-1.3-rfa-supply = <&L2C>;

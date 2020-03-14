@@ -1,2 +1,8 @@
+#include "scuba-audio-overlay.dtsi"
+
 &soc {
+};
+
+&pm2250_rg_leds {
+	status = "disabled";
 };

@@ -528,6 +528,11 @@
 			size = <0 0x8c00000>;
 		};
 
+		cont_splash_memory: cont_splash_region {
+			reg = <0x0 0xA0000000 0x0 0x02300000>;
+			label = "cont_splash_region";
+		};
+
 		dump_mem: mem_dump_region {
 			compatible = "shared-dma-pool";
 			reusable;
@@ -589,6 +594,24 @@
 			qcom,btfm-slim-ifd = "btfmslim_slave_ifd";
 			qcom,btfm-slim-ifd-elemental-addr = [00 00 20 02 17 02];
 		};
+	};
+
+	bluetooth: bt_wcn3990 {
+		compatible = "qca,wcn3990";
+		qca,bt-vdd-io-supply =   <&L11A>;  /* IO */
+		qca,bt-vdd-core-supply = <&L2E>; /* RFA */
+		qca,bt-vdd-pa-supply =   <&L10E>; /* CH0 */
+		qca,bt-vdd-xtal-supply = <&L7A>; /* XO */
+
+		qca,bt-vdd-io-voltage-level = <1700000 1900000>;
+		qca,bt-vdd-core-voltage-level = <1304000 1304000>;
+		qca,bt-vdd-pa-voltage-level = <3000000 3312000>;
+		qca,bt-vdd-xtal-voltage-level = <1700000 1900000>;
+
+		qca,bt-vdd-io-current-level = <1>; /* LPM/PFM */
+		qca,bt-vdd-core-current-level = <1>; /* LPM/PFM */
+		qca,bt-vdd-pa-current-level = <1>; /* LPM/PFM */
+		qca,bt-vdd-xtal-current-level = <1>; /* LPM/PFM */
 	};
 
 	intc: interrupt-controller@17a00000 {
@@ -848,7 +871,7 @@
 
 	qcom,rmtfs_sharedmem@0 {
 		compatible = "qcom,sharedmem-uio";
-		reg = <0x0 0x200000>;
+		reg = <0x0 0x280000>;
 		reg-names = "rmtfs";
 		qcom,client-id = <0x00000001>;
 		qcom,guard-memory;
@@ -3486,6 +3509,12 @@
 &qupv3_se9_2uart {
 	status = "ok";
 };
+
+/* HS UART */
+&qupv3_se1_4uart {
+	status = "ok";
+};
+
 #include "lagoon-bus.dtsi"
 #include "lagoon-thermal.dtsi"
 
@@ -3566,7 +3595,7 @@
 
 	rfc_cam_therm {
 		reg = <ADC_GPIO2_PU2>;
-		label = "_therm";
+		label = "rfc_cam_therm";
 		qcom,ratiometric;
 		qcom,hw-settle-time = <200>;
 		qcom,pre-scaling = <1 1>;
@@ -3574,7 +3603,7 @@
 
 	rear_cam_flash_therm {
 		reg = <ADC_GPIO3_PU2>;
-		label = "_therm";
+		label = "rear_cam_flash_therm";
 		qcom,ratiometric;
 		qcom,hw-settle-time = <200>;
 		qcom,pre-scaling = <1 1>;
@@ -3582,7 +3611,7 @@
 
 	quiet_therm {
 		reg = <ADC_GPIO4_PU2>;
-		label = "_therm";
+		label = "quiet_therm";
 		qcom,ratiometric;
 		qcom,hw-settle-time = <200>;
 		qcom,pre-scaling = <1 1>;

@@ -5,6 +5,7 @@
 #include <dt-bindings/spmi/spmi.h>
 #include <dt-bindings/clock/qcom,rpmcc.h>
 #include <dt-bindings/regulator/qcom,rpmh-regulator-levels.h>
+#include <dt-bindings/msm/msm-bus-ids.h>
 
 / {
 	model = "Qualcomm Technologies, Inc. SCUBA";
@@ -19,6 +20,8 @@
 	aliases {
 		sdhc1 = &sdhc_1; /* SDC1 eMMC slot */
 		sdhc2 = &sdhc_2; /* SDC2 SD Card slot */
+		swr0 = &swr0;
+		swr1 = &swr1;
 	};
 
 	cpus {
@@ -158,10 +161,10 @@
 		#size-cells = <2>;
 		ranges;
 
-		hyp_region: hyp_region@45a00000 {
+		hyp_region: hyp_region@45700000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0x0 0x45a00000 0x0 0x300000>;
+			reg = <0x0 0x45700000 0x0 0x600000>;
 		};
 
 		xbl_aop_mem: xbl_aop_mem@45e00000 {
@@ -185,49 +188,49 @@
 		pil_modem_mem: modem_region@4ab00000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0x0 0x4ab00000 0x0 0x6400000>;
+			reg = <0x0 0x4ab00000 0x0 0x7300000>;
 		};
 
-		pil_video_mem: pil_video_region@50f00000 {
+		pil_video_mem: pil_video_region@51e00000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0x0 0x50f00000 0x0 0x500000>;
+			reg = <0x0 0x51e00000 0x0 0x500000>;
 		};
 
-		wlan_msa_mem: wlan_msa_region@51400000 {
+		wlan_msa_mem: wlan_msa_region@52300000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0x0 0x51400000 0x0 0x200000>;
+			reg = <0x0 0x52300000 0x0 0x200000>;
 		};
 
-		pil_adsp_mem: adsp_regions@51600000 {
+		pil_adsp_mem: adsp_regions@52500000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0x0 0x51600000 0x0 0x1e00000>;
+			reg = <0x0 0x52500000 0x0 0x1e00000>;
 		};
 
-		pil_ipa_fw_mem: ips_fw_region@53400000 {
+		pil_ipa_fw_mem: ips_fw_region@54300000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0x0 0x53400000 0x0 0x10000>;
+			reg = <0x0 0x54300000 0x0 0x10000>;
 		};
 
-		pil_ipa_gsi_mem: ipa_gsi_region@53410000 {
+		pil_ipa_gsi_mem: ipa_gsi_region@54310000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0x0 0x53410000 0x0 0x5000>;
+			reg = <0x0 0x54310000 0x0 0x5000>;
 		};
 
-		pil_gpu_mem: gpu_region@53415000 {
+		pil_gpu_mem: gpu_region@54315000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0x0 0x53415000 0x0 0x2000>;
+			reg = <0x0 0x54315000 0x0 0x2000>;
 		};
 
-		removed_region: removed_region@5f800000 {
+		removed_region: removed_region@60000000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0x0 0x5f800000 0x0 0x4100000>;
+			reg = <0x0 0x60000000 0x0 0x3900000>;
 		};
 
 		adsp_mem: adsp_region {
@@ -242,6 +245,14 @@
 			compatible = "shared-dma-pool";
 			reusable;
 			size = <0 0x800000>;
+		};
+
+		secure_display_memory: secure_display_region {
+			compatible = "shared-dma-pool";
+			alloc-ranges = <0 0x00000000 0 0xffffffff>;
+			reusable;
+			alignment = <0 0x400000>;
+			size = <0 0x5c00000>;
 		};
 
 		/* global autoconfigured region for contiguous allocations */
@@ -596,6 +607,35 @@
 		qcom,smem-state-names = "qcom,force-stop";
 	};
 
+	qcom,venus@5ab0000 {
+		compatible = "qcom,pil-tz-generic";
+		reg = <0x5ab0000 0x20000>;
+
+		vdd-supply = <&gcc_venus_gdsc>;
+		qcom,proxy-reg-names = "vdd";
+
+		clocks = <&gcc GCC_VIDEO_VENUS_CTL_CLK>,
+			<&gcc GCC_VENUS_CTL_AXI_CLK>,
+			<&gcc GCC_VIDEO_AHB_CLK>,
+			<&gcc GCC_VIDEO_THROTTLE_CORE_CLK>;
+		clock-names = "core_clk", "bus_clk", "iface_clk", "throttle_clk";
+		qcom,proxy-clock-names = "core_clk", "bus_clk", "iface_clk", "throttle_clk";
+
+		qcom,core-freq = <240000000>;
+		qcom,ahb-freq = <240000000>;
+
+		qcom,pas-id = <9>;
+		qcom,msm-bus,name = "pil-venus";
+		qcom,msm-bus,num-cases = <2>;
+		qcom,msm-bus,num-paths = <1>;
+		qcom,msm-bus,vectors-KBps =
+			<63 512 0 0>,
+			<63 512 0 304000>;
+		qcom,proxy-timeout-ms = <100>;
+		qcom,firmware-name = "venus";
+		memory-region = <&pil_video_mem>;
+	};
+
 	pil_modem: qcom,mss@6080000 {
 		compatible = "qcom,pil-tz-generic";
 		reg = <0x6080000 0x100>;
@@ -637,6 +677,8 @@
 		qcom,smem-state-names = "qcom,force-stop";
 	};
 
+	thermal_zones: thermal-zones { };
+
 	tsens0:tsens@04410000 {
 		compatible = "qcom,tsens24xx";
 		reg = <0x04410000 0x8>,
@@ -646,6 +688,13 @@
 		interrupts = <0 275 0>, <0 190 0>;
 		interrupt-names = "tsens-upper-lower", "tsens-critical";
 		#thermal-sensor-cells = <1>;
+	};
+
+	rpm_bus: qcom,rpm-smd {
+		compatible = "qcom,rpm-smd";
+		rpm-channel-name = "rpm_requests";
+		interrupts = <GIC_SPI 194 IRQ_TYPE_EDGE_RISING>;
+		rpm-channel-type = <15>; /* SMD_APPS_RPM */
 	};
 
 	mem_dump {
@@ -860,15 +909,23 @@
 	};
 
 	gcc: qcom,gcc@1400000 {
-		compatible = "qcom,dummycc";
-		clock-output-names = "gcc_clocks";
+		compatible = "qcom,scuba-gcc", "syscon";
+		reg = <0x1400000 0x1f0000>;
+		reg-names = "cc_base";
+		vdd_cx-supply = <&VDD_CX_LEVEL>;
+		vdd_cx_ao-supply = <&VDD_CX_LEVEL_AO>;
+		vdd_mx-supply = <&VDD_MX_LEVEL>;
 		#clock-cells = <1>;
 		#reset-cells = <1>;
 	};
 
 	dispcc: qcom,dispcc@5f00000 {
-		compatible = "qcom,dummycc";
-		clock-output-names = "dispcc_clocks";
+		compatible = "qcom,scuba-dispcc", "syscon";
+		reg = <0x5f00000 0x20000>;
+		reg-names = "cc_base";
+		clock-names = "cfg_ahb_clk";
+		clocks = <&gcc GCC_DISP_AHB_CLK>;
+		vdd_cx-supply = <&VDD_CX_LEVEL>;
 		#clock-cells = <1>;
 		#reset-cells = <1>;
 	};
@@ -1204,14 +1261,143 @@
 	};
 };
 
+#include "pm2250.dtsi"
+#include "scuba-thermal.dtsi"
 #include "scuba-coresight.dtsi"
 #include "scuba-pinctrl.dtsi"
 #include "scuba-ion.dtsi"
-#include "scuba-stub-regulator.dtsi"
+#include "scuba-regulator.dtsi"
 #include "scuba-gdsc.dtsi"
 #include "scuba-qupv3.dtsi"
+#include "scuba-audio.dtsi"
 #include "scuba-usb.dtsi"
 #include "msm-arm-smmu-scuba.dtsi"
+#include "scuba-bus.dtsi"
+
+&pm2250_vadc {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&conn_therm_default &skin_therm_default>;
+
+	xo_therm {
+		reg = <ADC_XO_THERM_PU2>;
+		label = "xo_therm";
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+		qcom,pre-scaling = <1 1>;
+	};
+
+	pa_therm {
+		reg = <ADC_AMUX_THM1_PU2>;
+		label = "pa_therm";
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+		qcom,pre-scaling = <1 1>;
+	};
+
+	quiet_therm {
+		reg = <ADC_AMUX_THM2_PU2>;
+		label = "quiet_therm";
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+		qcom,pre-scaling = <1 1>;
+	};
+
+	msm_therm {
+		reg = <ADC_AMUX_THM3_PU2>;
+		label = "msm_therm";
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+		qcom,pre-scaling = <1 1>;
+	};
+
+	skin_therm {
+		reg = <ADC_GPIO3_PU2>;
+		label = "skin_therm";
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+		qcom,pre-scaling = <1 1>;
+	};
+
+	conn_therm {
+		reg = <ADC_GPIO4_PU2>;
+		label = "conn_therm";
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+		qcom,pre-scaling = <1 1>;
+	};
+};
+
+&pm2250_gpios {
+	skin_therm {
+		skin_therm_default: skin_therm_default {
+			pins = "gpio5";
+			bias-high-impedance;
+		};
+	};
+
+	conn_therm {
+		conn_therm_default: conn_therm_default {
+			pins = "gpio6";
+			bias-high-impedance;
+		};
+	};
+};
+
+&spmi_bus {
+	qcom,pm2250@0 {
+		pm2250_adc_tm_iio: adc_tm@3400 {
+			compatible = "qcom,adc-tm5-iio";
+			reg = <0x3400 0x100>;
+			#thermal-sensor-cells = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			io-channels = <&pm2250_vadc ADC_XO_THERM_PU2>,
+					<&pm2250_vadc ADC_AMUX_THM1_PU2>,
+					<&pm2250_vadc ADC_AMUX_THM2_PU2>,
+					<&pm2250_vadc ADC_AMUX_THM3_PU2>,
+					<&pm2250_vadc ADC_GPIO3_PU2>,
+					<&pm2250_vadc ADC_GPIO4_PU2>;
+
+			xo_therm {
+				reg = <ADC_XO_THERM_PU2>;
+				qcom,ratiometric;
+				qcom,hw-settle-time = <200>;
+			};
+
+			pa_therm {
+				reg = <ADC_AMUX_THM1_PU2>;
+				qcom,ratiometric;
+				qcom,hw-settle-time = <200>;
+			};
+
+			quiet_therm {
+				reg = <ADC_AMUX_THM2_PU2>;
+				qcom,ratiometric;
+				qcom,hw-settle-time = <200>;
+			};
+
+			msm_therm {
+				reg = <ADC_AMUX_THM3_PU2>;
+				qcom,ratiometric;
+				qcom,hw-settle-time = <200>;
+			};
+
+			skin_therm {
+				reg = <ADC_GPIO3_PU2>;
+				qcom,ratiometric;
+				qcom,hw-settle-time = <200>;
+			};
+
+			conn_therm {
+				reg = <ADC_GPIO4_PU2>;
+				qcom,ratiometric;
+				qcom,hw-settle-time = <200>;
+			};
+		};
+	};
+};
 
 &gcc_camss_top_gdsc {
 	status = "ok";
@@ -1262,3 +1448,5 @@
 &qupv3_se4_2uart {
 	status = "ok";
 };
+
+#include "scuba-pm.dtsi"

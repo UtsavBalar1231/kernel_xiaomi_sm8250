@@ -3,6 +3,7 @@
 #include <dt-bindings/input/linux-event-codes.h>
 #include <dt-bindings/iio/qcom,spmi-vadc.h>
 #include "lagoon-sde-display.dtsi"
+#include "camera/lagoon-camera-sensor-mtp.dtsi"
 
 &soc {
 	gpio_keys {
@@ -27,6 +28,7 @@
 		qcom,batt-id-range-pct = <15>;
 		#include "qg-batterydata-alium-3600mah.dtsi"
 		#include "qg-batterydata-atl466271_3300mAh.dtsi"
+		#include "qg-batterydata-atl436186020H_3780mAh.dtsi"
 	};
 };
 

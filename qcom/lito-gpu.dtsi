@@ -89,8 +89,8 @@
 		qcom,snapshot-size = <2048576>; /* bytes */
 		qcom,gpu-qdss-stm = <0x161c0000 0x40000>; /* base addr, size */
 
-		qcom,tsens-name = "tsens_tz_sensor12";
 		#cooling-cells = <2>;
+		qcom,tzone-name = "gpuss-max-step";
 
 		/* CPU latency parameter */
 		qcom,pm-qos-active-latency = <67>;
