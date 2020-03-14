@@ -3247,6 +3247,7 @@ int msm_comm_update_dpb_bufreqs(struct msm_vidc_inst *inst)
 
 	fmt = &inst->fmts[OUTPUT_PORT];
 	/* For DPB buffers, Always use min count */
+	req->buffer_count_min = req->buffer_count_min_host =
 	req->buffer_count_actual = fmt->count_min;
 
 	hfi_fmt = msm_comm_convert_color_fmt(inst->clk_data.dpb_fourcc,
