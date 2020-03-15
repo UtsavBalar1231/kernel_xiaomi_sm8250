@@ -112,4 +112,12 @@
 		/delete-node/ qcom,ion-heap@14;
 		/delete-node/ qcom,ion-heap@10;
 	};
+
+	qcom_seecom: qseecom@a1700000 {
+		reg = <0xa1700000 0xc00000>;
+	};
+
+	qcom_smcinvoke: smcinvoke@a1700000 {
+		reg = <0xa1700000 0xc00000>;
+	};
 };
