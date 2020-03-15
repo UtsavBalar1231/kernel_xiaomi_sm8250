@@ -5392,10 +5392,6 @@ static int wma_update_hdd_cfg(tp_wma_handle wma_handle)
 		return -EINVAL;
 	}
 
-	wlan_res_cfg->nan_separate_iface_support =
-		ucfg_nan_is_vdev_creation_allowed(wma_handle->psoc) &&
-		ucfg_nan_get_is_separate_nan_iface(wma_handle->psoc);
-
 	service_ext_param =
 			target_psoc_get_service_ext_param(tgt_hdl);
 	wmi_handle = get_wmi_unified_hdl_from_psoc(wma_handle->psoc);
@@ -6686,6 +6682,10 @@ int wma_rx_service_ready_ext_event(void *handle, uint8_t *event,
 		wlan_res_cfg->tstamp64_en = false;
 		cdp_cfg_set_tx_compl_tsf64(soc, false);
 	}
+
+	if (wmi_service_enabled(wma_handle->wmi_handle, wmi_service_nan_vdev) &&
+	    ucfg_nan_get_is_separate_nan_iface(wma_handle->psoc))
+		wlan_res_cfg->nan_separate_iface_support = true;
 
 	wma_init_dbr_params(wma_handle);
 
