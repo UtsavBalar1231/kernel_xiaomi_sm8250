@@ -99,6 +99,7 @@ struct cam_hw_done_event_data {
  * @context_data:          Context data pointer for the callback function
  * @event_cb:              Callback function array
  * @num_acq:               Total number of acquire in the payload
+ * @session_hdl:           Session Handle
  * @acquire_info:          Acquired resource array pointer
  * @ctxt_to_hw_map:        HW context (returned)
  * @custom_enabled:        ctx has custom enabled
@@ -114,6 +115,7 @@ struct cam_hw_acquire_args {
 	void                        *context_data;
 	cam_hw_event_cb_func         event_cb;
 	uint32_t                     num_acq;
+	uint32_t                     session_hdl;
 	uint32_t                     acquire_info_size;
 	uintptr_t                    acquire_info;
 	void                        *ctxt_to_hw_map;

@@ -559,6 +559,7 @@ int32_t cam_context_acquire_dev_to_hw(struct cam_context *ctx,
 	param.event_cb = ctx->irq_cb_intf;
 	param.num_acq = cmd->num_resources;
 	param.acquire_info = cmd->resource_hdl;
+	param.session_hdl = cmd->session_handle;
 
 	/* call HW manager to reserve the resource */
 	rc = ctx->hw_mgr_intf->hw_acquire(ctx->hw_mgr_intf->hw_mgr_priv,
