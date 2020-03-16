@@ -782,6 +782,20 @@ static int cam_cpas_util_apply_client_axi_vote(
 			}
 			mnoc_axi_port_updated[i] = true;
 		}
+
+		for (i = 0; i < cpas_core->num_camnoc_axi_ports; i++) {
+			if (axi_vote->axi_path[0].camnoc_bw) {
+				/* start case */
+				cpas_core->camnoc_axi_port[i].additional_bw +=
+					CAM_CPAS_DEFAULT_AXI_BW;
+			} else {
+				/* stop case */
+				cpas_core->camnoc_axi_port[i].additional_bw -=
+					CAM_CPAS_DEFAULT_AXI_BW;
+			}
+			camnoc_axi_port_updated[i] = true;
+		}
+
 		goto vote_start_clients;
 	}
 
