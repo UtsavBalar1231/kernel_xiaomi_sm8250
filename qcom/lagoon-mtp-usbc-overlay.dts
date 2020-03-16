@@ -7,6 +7,6 @@
 / {
 	model = "Qualcomm Technologies, Inc. Lagoon MTP USBC audio";
 	compatible = "qcom,lagoon-mtp", "qcom,lagoon", "qcom,mtp";
-	qcom,msm-id = <434 0x10000>;
+	qcom,msm-id = <434 0x10000>, <459 0x10000>;
 	qcom,board-id = <8 1>;
 };

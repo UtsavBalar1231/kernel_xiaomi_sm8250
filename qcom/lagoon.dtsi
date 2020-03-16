@@ -18,7 +18,7 @@
 / {
 	model = "Qualcomm Technologies, Inc. Lagoon";
 	compatible = "qcom,lagoon";
-	qcom,msm-id = <434 0x10000>;
+	qcom,msm-id = <434 0x10000>, <459 0x10000>;
 	interrupt-parent = <&intc>;
 
 	#address-cells = <2>;
