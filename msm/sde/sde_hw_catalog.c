@@ -4346,6 +4346,7 @@ static int _sde_hardware_pre_caps(struct sde_mdss_cfg *sde_cfg, uint32_t hw_rev)
 		clear_bit(MDSS_INTR_AD4_1_INTR, sde_cfg->mdss_irqs);
 		sde_cfg->has_hdr = true;
 		sde_cfg->has_vig_p010 = true;
+		sde_cfg->true_inline_rot_rev = SDE_INLINE_ROT_VERSION_2_0_0;
 	} else {
 		SDE_ERROR("unsupported chipset id:%X\n", hw_rev);
 		sde_cfg->perf.min_prefill_lines = 0xffff;
