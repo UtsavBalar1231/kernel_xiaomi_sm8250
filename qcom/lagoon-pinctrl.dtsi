@@ -1,7 +1,7 @@
 &soc {
-	tlmm: pinctrl@f000000 {
+	tlmm: pinctrl@f100000 {
 		compatible = "qcom,lagoon-pinctrl";
-		reg = <0x0f000000 0x1000000>;
+		reg = <0x0f100000 0x300000>;
 		interrupts = <GIC_SPI 208 IRQ_TYPE_LEVEL_HIGH>;
 		gpio-controller;
 		#gpio-cells = <2>;
@@ -176,7 +176,7 @@
 			qupv3_se9_2uart_active: qupv3_se9_2uart_active {
 				mux {
 					pins = "gpio25", "gpio26";
-					function = "qup13";
+					function = "qup13_f2";
 				};
 
 				config {
