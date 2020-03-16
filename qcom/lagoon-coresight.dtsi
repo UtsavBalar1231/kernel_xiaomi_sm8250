@@ -249,13 +249,13 @@
 		};
 	};
 
-	tpdm_dlct0_0: tpdm@6c28000 {
+	tpdm_dlct: tpdm@6c28000 {
 		compatible = "arm,primecell";
 		arm,primecell-periphid = <0x0003b968>;
 		reg = <0x6c28000 0x1000>;
 		reg-names = "tpdm-base";
 
-		coresight-name = "coresight-tpdm-dlct0_0";
+		coresight-name = "coresight-tpdm-dlct";
 
 		clocks = <&aopcc QDSS_CLK>;
 		clock-names = "apb_pclk";
@@ -267,13 +267,13 @@
 		};
 	};
 
-	tpdm_dlct0_1: tpdm@6c29000 {
+	tpdm_ipcc: tpdm@6c29000 {
 		compatible = "arm,primecell";
 		arm,primecell-periphid = <0x0003b968>;
 		reg = <0x6c29000 0x1000>;
 		reg-names = "tpdm-base";
 
-		coresight-name = "coresight-tpdm-dlct0_1";
+		coresight-name = "coresight-tpdm-ipcc";
 
 		clocks = <&aopcc QDSS_CLK>;
 		clock-names = "apb_pclk";
@@ -954,7 +954,7 @@
 				funnel_dlct0_out_tpda21: endpoint {
 					remote-endpoint =
 						<&tpda21_in_funnel_dlct0>;
-					source = <&tpdm_dlct0_0>;
+					source = <&tpdm_dlct>;
 				};
 
 			};
@@ -964,7 +964,7 @@
 				funnel_dlct0_out_tpda22: endpoint {
 					remote-endpoint =
 						<&tpda22_in_funnel_dlct0>;
-					source = <&tpdm_dlct0_1>;
+					source = <&tpdm_ipcc>;
 				};
 
 			};
