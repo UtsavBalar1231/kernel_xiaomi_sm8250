@@ -101,6 +101,9 @@
 		clock-names = "core_clk", "rbbmtimer_clk", "mem_clk",
 				"mem_iface_clk", "gmu_clk";
 
+		/* QDSS_STM base addr, size */
+		qcom,gpu-qdss-stm = <0x161c0000 0x40000>;
+
 		#cooling-cells = <2>;
 
 		/* Bus Scale Settings */
