@@ -1246,8 +1246,8 @@ static void __hdd_tx_timeout(struct net_device *dev)
 
 	hdd_debug("carrier state: %d", netif_carrier_ok(dev));
 
-	wlan_hdd_display_netif_queue_history(hdd_ctx,
-					     QDF_STATS_VERBOSITY_LEVEL_HIGH);
+	wlan_hdd_display_adapter_netif_queue_history(adapter);
+
 	cdp_dump_flow_pool_info(cds_get_context(QDF_MODULE_ID_SOC));
 
 	++adapter->hdd_stats.tx_rx_stats.tx_timeout_cnt;
