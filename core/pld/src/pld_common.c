@@ -2100,6 +2100,7 @@ int pld_pci_read_config_word(struct pci_dev *pdev, int offset, uint16_t *val)
 	case PLD_BUS_TYPE_SNOC_FW_SIM:
 		break;
 	case PLD_BUS_TYPE_PCIE_FW_SIM:
+		ret = pld_pcie_fw_sim_read_config_word(&pdev->dev, offset, val);
 		break;
 	case PLD_BUS_TYPE_IPCI:
 		break;
