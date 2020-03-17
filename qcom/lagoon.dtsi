@@ -1798,10 +1798,6 @@
 			compatible = "qcom,devfreq-fw-voter";
 		};
 
-		cpu7_l3: qcom,cpu7-cpu-l3-lat {
-			compatible = "qcom,devfreq-fw-voter";
-		};
-
 		cdsp_l3: qcom,cdsp-cdsp-l3-lat {
 			compatible = "qcom,devfreq-fw-voter";
 		};
