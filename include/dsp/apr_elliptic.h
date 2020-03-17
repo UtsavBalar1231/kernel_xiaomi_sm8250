@@ -11,7 +11,7 @@
 #define ULTRASOUND_OPCODE				0x0FF10204
 
 /* This need to be updated for all platforms */
-#define ELLIPTIC_PORT_ID				SLIMBUS_2_TX
+#define ELLIPTIC_PORT_ID				AFE_PORT_ID_TX_CODEC_DMA_TX_4
 
 /** Sequence of Elliptic Labs Ultrasound module parameters */
 struct afe_ultrasound_set_params_t {
