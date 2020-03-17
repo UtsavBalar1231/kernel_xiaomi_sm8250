@@ -51,6 +51,8 @@
 			0x1a4>; /* GSI_IF_STS */
 		qcom,dwc-usb3-msm-tx-fifo-size = <21288>;
 
+		qcom,gsi-disable-io-coherency;
+
 		qcom,msm-bus,name = "usb0";
 		qcom,msm-bus,num-cases = <4>;
 		qcom,msm-bus,num-paths = <3>;
