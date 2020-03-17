@@ -1274,6 +1274,59 @@
 #include "msm-arm-smmu-scuba.dtsi"
 #include "scuba-bus.dtsi"
 
+&qupv3_se1_i2c {
+	status = "ok";
+	#include "pm8008.dtsi"
+};
+
+&pm8008_8 {
+	/* PM8008 IRQ STAT */
+	interrupt-parent = <&tlmm>;
+	interrupts = <25 IRQ_TYPE_EDGE_RISING>;
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pm8008_active &pm8008_interrupt>;
+};
+
+&pm8008_regulators {
+	vdd_l1_l2-supply = <&S3A>;
+};
+
+&L1P {
+	regulator-max-microvolt = <1260000>;
+	qcom,min-dropout-voltage = <75000>;
+};
+
+&L2P {
+	regulator-max-microvolt = <1150000>;
+	qcom,min-dropout-voltage = <187500>;
+};
+
+&L3P {
+	regulator-min-microvolt = <2700000>;
+	regulator-max-microvolt = <2900000>;
+};
+
+&L4P {
+	regulator-min-microvolt = <2700000>;
+	regulator-max-microvolt = <2900000>;
+};
+
+&L5P {
+	regulator-min-microvolt = <2700000>;
+	regulator-max-microvolt = <2900000>;
+};
+
+&L6P {
+	regulator-min-microvolt = <2700000>;
+	regulator-max-microvolt = <2900000>;
+};
+
+&L7P {
+	regulator-min-microvolt = <1650000>;
+	regulator-max-microvolt = <1900000>;
+};
+
 &pm2250_vadc {
 	#address-cells = <1>;
 	#size-cells = <0>;

@@ -528,5 +528,31 @@
 			};
 		};
 
+		pm8008_interrupt: pm8008_interrupt {
+			mux {
+				pins = "gpio25";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio25";
+				bias-disable;
+				input-enable;
+			};
+		};
+
+		pm8008_active: pm8008_active {
+			mux {
+				pins = "gpio26";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio26";
+				bias-pull-up;
+				output-high;
+				drive-strength = <2>;
+			};
+		};
 	};
 };
