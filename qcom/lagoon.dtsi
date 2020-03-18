@@ -1788,6 +1788,10 @@
 		};
 	};
 
+	qcom_msmhdcp: qcom,msm_hdcp {
+		compatible = "qcom,msm-hdcp";
+	};
+
 	qcom,mpm2-sleep-counter@0xc221000 {
 		compatible = "qcom,mpm2-sleep-counter";
 		reg = <0xc221000 0x1000>;
