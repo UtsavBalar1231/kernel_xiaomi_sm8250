@@ -131,6 +131,9 @@
 		vddcx-supply = <&gpu_cx_gdsc>;
 		vdd-supply = <&gpu_gx_gdsc>;
 
+		nvmem-cells = <&gpu_gaming_bin>;
+		nvmem-cell-names = "gaming_bin";
+
 		/* CPU latency parameter */
 		qcom,pm-qos-active-latency = <67>;
 		qcom,pm-qos-wakeup-latency = <67>;
