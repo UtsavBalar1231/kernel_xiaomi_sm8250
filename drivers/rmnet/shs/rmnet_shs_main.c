@@ -1,4 +1,4 @@
-/* Copyright (c) 2018-2019 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2018-2020 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -44,6 +44,8 @@
 #define GET_CTIMER(CPU) rmnet_shs_cfg.core_flush[CPU].core_timer
 
 #define SKB_FLUSH 0
+#define INCREMENT 1
+#define DECREMENT 0
 /* Local Definitions and Declarations */
 DEFINE_SPINLOCK(rmnet_shs_ht_splock);
 DEFINE_HASHTABLE(RMNET_SHS_HT, RMNET_SHS_HT_SIZE);
@@ -125,13 +127,21 @@ unsigned int rmnet_shs_cpu_max_coresum[MAX_CPUS];
 module_param_array(rmnet_shs_cpu_max_coresum, uint, 0, 0644);
 MODULE_PARM_DESC(rmnet_shs_cpu_max_coresum, "Max coresum seen of each core");
 
+static void rmnet_shs_change_cpu_num_flows(u16 map_cpu, bool inc)
+{
+	if (map_cpu < MAX_CPUS)
+		(inc) ? cpu_num_flows[map_cpu]++: cpu_num_flows[map_cpu]--;
+	else
+		rmnet_shs_crit_err[RMNET_SHS_CPU_FLOWS_BNDS_ERR]++;
+}
+
 void rmnet_shs_cpu_node_remove(struct rmnet_shs_skbn_s *node)
 {
 	SHS_TRACE_LOW(RMNET_SHS_CPU_NODE, RMNET_SHS_CPU_NODE_FUNC_REMOVE,
 			    0xDEF, 0xDEF, 0xDEF, 0xDEF, NULL, NULL);
 
 	list_del_init(&node->node_id);
-	cpu_num_flows[node->map_cpu]--;
+	rmnet_shs_change_cpu_num_flows(node->map_cpu, DECREMENT);
 
 }
 
@@ -142,7 +152,7 @@ void rmnet_shs_cpu_node_add(struct rmnet_shs_skbn_s *node,
 			    0xDEF, 0xDEF, 0xDEF, 0xDEF, NULL, NULL);
 
 	list_add(&node->node_id, hd);
-	cpu_num_flows[node->map_cpu]++;
+	rmnet_shs_change_cpu_num_flows(node->map_cpu, INCREMENT);
 }
 
 void rmnet_shs_cpu_node_move(struct rmnet_shs_skbn_s *node,
@@ -152,8 +162,8 @@ void rmnet_shs_cpu_node_move(struct rmnet_shs_skbn_s *node,
 			    0xDEF, 0xDEF, 0xDEF, 0xDEF, NULL, NULL);
 
 	list_move(&node->node_id, hd);
-	cpu_num_flows[node->map_cpu]++;
-	cpu_num_flows[oldcpu]--;
+	rmnet_shs_change_cpu_num_flows(node->map_cpu, INCREMENT);
+	rmnet_shs_change_cpu_num_flows((u16) oldcpu, DECREMENT);
 }
 
 static void rmnet_shs_cpu_ooo(u8 cpu, int count)
