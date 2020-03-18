@@ -222,7 +222,7 @@
 		pinctrl-0 = <&ts_active>;
 		pinctrl-1 = <&ts_int_suspend &ts_reset_suspend>;
 		pinctrl-2 = <&pmx_ts_release>;
-		vdd-supply = <&L1E>;
+		vdd-supply = <&L11A>;
 		avdd-supply = <&L6A>;
 		synaptics,pwr-reg-name = "avdd";
 		synaptics,bus-reg-name = "vdd";
