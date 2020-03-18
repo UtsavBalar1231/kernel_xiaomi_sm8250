@@ -3,7 +3,7 @@
 		compatible = "qcom,mdss_dsi_pll_10nm";
 		label = "MDSS DSI 0 PLL";
 		cell-index = <0>;
-		clock-cells = <1>;
+		#clock-cells = <1>;
 		reg = <0xae94a00 0x1e0>,
 			<0xae94400 0x800>,
 			<0xaf03000 0x8>,
