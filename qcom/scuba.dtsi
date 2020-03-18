@@ -594,6 +594,7 @@
 		clocks = <&rpmcc CXO_SMD_PIL_LPASS_CLK>;
 		clock-names = "xo";
 		qcom,proxy-clock-names = "xo";
+		qcom,mas-crypto = <&mas_crypto_c0>;
 
 		vdd_lpi_cx-supply = <&VDD_LPI_CX_LEVEL>;
 		qcom,vdd_lpi_cx-uV-uA = <RPMH_REGULATOR_LEVEL_TURBO 0>;
@@ -664,6 +665,7 @@
 		clocks = <&rpmcc CXO_SMD_PIL_MSS_CLK>;
 		clock-names = "xo";
 		qcom,proxy-clock-names = "xo";
+		qcom,mas-crypto = <&mas_crypto_c0>;
 
 		vdd_cx-supply = <&VDD_CX_LEVEL>;
 		qcom,vdd_cx-uV-uA = <RPMH_REGULATOR_LEVEL_TURBO 100000>;
