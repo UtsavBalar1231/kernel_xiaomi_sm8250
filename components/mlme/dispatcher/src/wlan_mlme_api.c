@@ -455,6 +455,8 @@ wlan_mlme_update_cfg_with_tgt_caps(struct wlan_objmgr_psoc *psoc,
 
 	mlme_obj->cfg.gen.data_stall_recovery_fw_support =
 				tgt_caps->data_stall_recovery_fw_support;
+	mlme_obj->cfg.gen.stop_all_host_scan_support =
+			tgt_caps->stop_all_host_scan_support;
 }
 
 #ifdef WLAN_FEATURE_11AX
@@ -2014,6 +2016,16 @@ QDF_STATUS wlan_mlme_set_go_11ac_override(struct wlan_objmgr_psoc *psoc,
 	mlme_obj->cfg.sap_cfg.go_11ac_override = value;
 
 	return QDF_STATUS_SUCCESS;
+}
+
+bool wlan_mlme_get_host_scan_abort_support(struct wlan_objmgr_psoc *psoc)
+{
+	struct wlan_mlme_psoc_ext_obj *mlme_obj = mlme_get_psoc_ext_obj(psoc);
+
+	if (!mlme_obj)
+		return false;
+
+	return mlme_obj->cfg.gen.stop_all_host_scan_support;
 }
 
 QDF_STATUS wlan_mlme_get_oce_sta_enabled_info(struct wlan_objmgr_psoc *psoc,

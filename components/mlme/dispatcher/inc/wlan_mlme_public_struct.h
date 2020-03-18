@@ -949,12 +949,15 @@ struct wlan_mlme_chain_cfg {
 /**
  * struct mlme_tgt_caps - mlme related capability coming from target (FW)
  * @data_stall_recovery_fw_support: does target supports data stall recovery.
+ * @stop_all_host_scan_support: Target capability that indicates if the target
+ * supports stop all host scan request type.
  *
  * Add all the mlme-tgt related capablities here, and the public API would fill
  * the related capability in the required mlme cfg structure.
  */
 struct mlme_tgt_caps {
 	bool data_stall_recovery_fw_support;
+	bool stop_all_host_scan_support;
 };
 
 /**
@@ -1131,6 +1134,8 @@ struct wlan_mlme_chainmask {
  * candidate is found in partial scan based on channel map
  * @enable_ring_buffer: Decide to enable/disable ring buffer for bug report
  * @enable_peer_unmap_conf_support: Indicate whether to send conf for peer unmap
+ * @stop_all_host_scan_support: Target capability that indicates if the target
+ * supports stop all host scan request type.
  */
 struct wlan_mlme_generic {
 	enum band_info band_capability;
@@ -1166,6 +1171,7 @@ struct wlan_mlme_generic {
 	bool bmiss_skip_full_scan;
 	bool enable_ring_buffer;
 	bool enable_peer_unmap_conf_support;
+	bool stop_all_host_scan_support;
 };
 
 /*
