@@ -45,8 +45,8 @@
 
 #define TX_MACRO_DMIC_UNMUTE_DELAY_MS	40
 #define TX_MACRO_AMIC_UNMUTE_DELAY_MS	100
-#define TX_MACRO_DMIC_HPF_DELAY_MS	300
-#define TX_MACRO_AMIC_HPF_DELAY_MS	300
+#define TX_MACRO_DMIC_HPF_DELAY_MS	100
+#define TX_MACRO_AMIC_HPF_DELAY_MS	100
 
 static int tx_unmute_delay = TX_MACRO_DMIC_UNMUTE_DELAY_MS;
 module_param(tx_unmute_delay, int, 0664);
