@@ -230,7 +230,7 @@
 };
 
 &kona_snd {
-	qcom,model = "kona-qrd-snd-card";
+	qcom,model = "kona-iot-snd-card";
 	qcom,audio-routing =
 		"TX DMIC0", "Digital Mic0",
 		"TX DMIC1", "Digital Mic1",
