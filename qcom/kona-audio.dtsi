@@ -7,10 +7,10 @@
 };
 
 &soc {
-	qcom,avtimer@39ef000 {
+	qcom,avtimer@39f0000 {
 		compatible = "qcom,avtimer";
-		reg = <0x039ef00c 0x4>,
-		      <0x039ef010 0x4>;
+		reg = <0x039f000c 0x4>,
+		      <0x039f0010 0x4>;
 		reg-names = "avtimer_lsb_addr", "avtimer_msb_addr";
 		qcom,clk-div = <192>;
 		qcom,clk-mult = <10>;
