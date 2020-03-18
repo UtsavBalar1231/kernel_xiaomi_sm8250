@@ -13,7 +13,7 @@ endif
 
 AUDIO_CHIPSET := audio
 # Build/Package only in case of supported target
-ifeq ($(call is-board-platform-in-list,$(MSMSTEPPE) $(TRINKET) bengal),true)
+ifeq ($(call is-board-platform-in-list,$(MSMSTEPPE) $(TRINKET) bengal lito),true)
 
 LOCAL_PATH := $(call my-dir)
 
