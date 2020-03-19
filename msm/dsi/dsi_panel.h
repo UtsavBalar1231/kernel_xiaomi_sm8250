@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _DSI_PANEL_H_
@@ -27,6 +27,13 @@
 #define DSI_CMD_PPS_SIZE 135
 
 #define DSI_MODE_MAX 32
+
+/*
+ * Defining custom dsi msg flag,
+ * continued from drm_mipi_dsi.h
+ * Override to use async transfer
+ */
+#define MIPI_DSI_MSG_ASYNC_OVERRIDE BIT(4)
 
 enum dsi_panel_rotation {
 	DSI_PANEL_ROTATE_NONE = 0,
