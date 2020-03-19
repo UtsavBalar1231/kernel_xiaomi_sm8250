@@ -419,7 +419,7 @@ static inline void hal_write32_mb_confirm(struct hal_soc *hal_soc,
  */
 static inline
 void hal_write_address_32_mb(struct hal_soc *hal_soc,
-			     qdf_iomem_t addr, uint32_t value)
+			     qdf_iomem_t addr, uint32_t value, bool wr_confirm)
 {
 	uint32_t offset;
 
@@ -427,7 +427,11 @@ void hal_write_address_32_mb(struct hal_soc *hal_soc,
 		return qdf_iowrite32(addr, value);
 
 	offset = addr - hal_soc->dev_base_addr;
-	hal_write32_mb(hal_soc, offset, value);
+
+	if (qdf_unlikely(wr_confirm))
+		hal_write32_mb_confirm(hal_soc, offset, value);
+	else
+		hal_write32_mb(hal_soc, offset, value);
 }
 #endif
 
@@ -453,7 +457,7 @@ static inline void hal_srng_write_address_32_mb(struct hal_soc *hal_soc,
 						void __iomem *addr,
 						uint32_t value)
 {
-	hal_write_address_32_mb(hal_soc, addr, value);
+	hal_write_address_32_mb(hal_soc, addr, value, false);
 }
 #endif
 
