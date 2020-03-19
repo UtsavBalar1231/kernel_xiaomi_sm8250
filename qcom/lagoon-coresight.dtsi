@@ -655,8 +655,7 @@
 		reg = <0x6800000 0x1000>;
 		reg-names = "tpdm-base";
 
-		status = "disabled";
-		coresight-name = "coresight-tpdm-modem0";
+		coresight-name = "coresight-tpdm-modem-0";
 
 		clocks = <&aopcc QDSS_CLK>;
 		clock-names = "apb_pclk";
@@ -676,12 +675,109 @@
 
 		coresight-name = "coresight-tpdm-modem1";
 
+		status = "disabled";
 		clocks = <&aopcc QDSS_CLK>;
 		clock-names = "apb_pclk";
 		port {
 			tpdm_modem1_out_tpda_modem1: endpoint {
 				remote-endpoint =
 					<&tpda_modem1_in_tpdm_modem1>;
+			};
+		};
+	};
+
+	funnel_modem_q6: funnel@680c000 {
+		compatible = "arm,primecell";
+		arm,primecell-periphid = <0x000bb908>;
+
+		reg = <0x680c000 0x1000>;
+		reg-names = "funnel-base";
+
+		coresight-name = "coresight-funnel-modem-q6";
+
+		clocks = <&aopcc QDSS_CLK>;
+		clock-names = "apb_pclk";
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				funnel_modem_q6_out_funnel_mq6_dup: endpoint {
+					remote-endpoint =
+					<&funnel_mq6_dup_in_funnel_modem_q6>;
+				};
+			};
+
+			port@1 {
+				reg = <0>;
+				funnel_modem_q6_in_modem_etm0: endpoint {
+					slave-mode;
+					remote-endpoint =
+					<&modem_etm0_out_funnel_modem_q6>;
+				};
+			};
+		};
+	};
+
+	funnel_mq6_dup: funnel_1@680c000 {
+		compatible = "arm,primecell";
+		arm,primecell-periphid = <0x000bb908>;
+
+		reg = <0x680b000 0x1000>,
+			<0x680c000 0x1000>;
+
+		reg-names = "funnel-base-dummy", "funnel-base-real";
+
+		coresight-name = "coresight-funnel-modem-q6_dup";
+
+		clocks = <&aopcc QDSS_CLK>;
+		clock-names = "apb_pclk";
+		qcom,duplicate-funnel;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				funnel_mq6_dup_out_funnel_modem: endpoint {
+					remote-endpoint =
+					<&funnel_modem_in_funnel_mq6_dup>;
+				};
+			};
+
+			port@1 {
+				reg = <1>;
+				funnel_mq6_dup_in_funnel_modem_q6: endpoint {
+					slave-mode;
+					remote-endpoint =
+					<&funnel_modem_q6_out_funnel_mq6_dup>;
+				};
+			};
+
+			port@2 {
+				reg = <2>;
+				funnel_mq6_dup_in_modem_diag: endpoint {
+					slave-mode;
+					remote-endpoint =
+					<&modem_diag_out_funnel_mq6_dup>;
+				};
+			};
+		};
+	};
+
+	modem_diag: dummy_source {
+		compatible = "qcom,coresight-dummy";
+
+		coresight-name = "coresight-modem-diag";
+		qcom,dummy-source;
+
+		port {
+			modem_diag_out_funnel_mq6_dup: endpoint {
+				remote-endpoint =
+					<&funnel_mq6_dup_in_modem_diag>;
 			};
 		};
 	};
@@ -693,9 +789,9 @@
 		qcom,inst-id = <2>;
 
 		port {
-			modem_etm0_out_funnel_modem: endpoint {
+			modem_etm0_out_funnel_modem_q6: endpoint {
 				remote-endpoint =
-					<&funnel_modem_in_modem_etm0>;
+					<&funnel_modem_q6_in_modem_etm0>;
 			};
 		};
 	};
@@ -835,19 +931,19 @@
 
 			port@2 {
 				reg = <1>;
-				funnel_modem_in_modem_etm0: endpoint {
+				funnel_modem_in_modem2_etm0: endpoint {
 					slave-mode;
 					remote-endpoint =
-						<&modem_etm0_out_funnel_modem>;
+						<&modem2_etm0_out_funnel_modem>;
 				};
 			};
 
 			port@3 {
 				reg = <3>;
-				funnel_modem_in_modem2_etm0: endpoint {
+				funnel_modem_in_funnel_mq6_dup: endpoint {
 					slave-mode;
 					remote-endpoint =
-						<&modem2_etm0_out_funnel_modem>;
+						<&funnel_mq6_dup_out_funnel_modem>;
 				};
 			};
 
