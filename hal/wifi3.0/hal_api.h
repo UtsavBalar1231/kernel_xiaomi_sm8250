@@ -435,6 +435,7 @@ void hal_write_address_32_mb(struct hal_soc *hal_soc,
 }
 #endif
 
+
 #ifdef DP_HAL_MULTIWINDOW_DIRECT_ACCESS
 static inline void hal_srng_write_address_32_mb(struct hal_soc *hal_soc,
 						struct hal_srng *srng,
@@ -443,7 +444,7 @@ static inline void hal_srng_write_address_32_mb(struct hal_soc *hal_soc,
 {
 	qdf_iowrite32(addr, value);
 }
-#elif defined(FEATURE_HAL_DELAYED_WRITE)
+#elif defined(FEATURE_HAL_DELAYED_REG_WRITE)
 static inline void hal_srng_write_address_32_mb(struct hal_soc *hal_soc,
 						struct hal_srng *srng,
 						void __iomem *addr,
