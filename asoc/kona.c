@@ -7952,7 +7952,7 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 					sizeof(msm_mi2s_be_dai_links));
 				total_links +=
 					ARRAY_SIZE(msm_mi2s_be_dai_links);
-
+#ifdef AUDIO_SM8250_FLAG
 				if (get_hw_version_platform() == HARDWARE_PLATFORM_UMI ||
 				    get_hw_version_platform() == HARDWARE_PLATFORM_CMI ||
 				    get_hw_version_platform() == HARDWARE_PLATFORM_URD ||
@@ -7970,6 +7970,8 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 					total_links += ARRAY_SIZE(pri_mi2s_rx_tfa9874_dai_links);
 					dev_info(dev, "%s: Using pri_mi2s_rx_tfa9874_dai_links\n", __func__);
 				}
+#else
+#endif
 			}
 		}
 
