@@ -22,8 +22,8 @@
 	cx_cdev: cx-cdev-lvl {
 		compatible = "qcom,regulator-cooling-device";
 		regulator-cdev-supply = <&VDD_CX_LEVEL_AO>;
-		regulator-levels = <RPM_SMD_REGULATOR_LEVEL_NOM
-				RPM_SMD_REGULATOR_LEVEL_NONE>;
+		regulator-levels = <RPMH_REGULATOR_LEVEL_NOM
+				RPMH_REGULATOR_LEVEL_RETENTION>;
 		#cooling-cells = <2>;
 	};
 
@@ -48,8 +48,8 @@
 	mx_cdev: mx-cdev-lvl {
 		compatible = "qcom,regulator-cooling-device";
 		regulator-cdev-supply = <&VDD_MX_LEVEL>;
-		regulator-levels = <RPM_SMD_REGULATOR_LEVEL_NOM
-				RPM_SMD_REGULATOR_LEVEL_NONE>;
+		regulator-levels = <RPMH_REGULATOR_LEVEL_NOM
+				RPMH_REGULATOR_LEVEL_RETENTION>;
 		#cooling-cells = <2>;
 	};
 
