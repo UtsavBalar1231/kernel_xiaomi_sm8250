@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/slab.h>
@@ -515,8 +515,8 @@ int cam_irq_controller_unsubscribe_irq(void *irq_controller,
 		}
 	}
 
-	priority = evt_handler->priority;
 	if (found) {
+		priority = evt_handler->priority;
 		for (i = 0; i < controller->num_registers; i++) {
 			irq_register = &controller->irq_register_arr[i];
 			irq_register->top_half_enable_mask[priority] &=
