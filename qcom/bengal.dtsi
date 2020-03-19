@@ -820,9 +820,9 @@
 		reg-names = "pshold-base", "tcsr-boot-misc-detect";
 	};
 
-	qcom_seecom: qseecom@47900000 {
+	qcom_seecom: qseecom@a1700000 {
 		compatible = "qcom,qseecom";
-		reg = <0x47900000 0x2200000>;
+		reg = <0xa1700000 0x2200000>;
 		reg-names = "secapp-region";
 		memory-region = <&qseecom_mem>;
 		qcom,hlos-num-ce-hw-instances = <1>;
@@ -857,9 +857,9 @@
 		qcom,qsee-reentrancy-support = <2>;
 	};
 
-	qcom_smcinvoke: smcinvoke@47900000 {
+	qcom_smcinvoke: smcinvoke@a1700000 {
 		compatible = "qcom,smcinvoke";
-		reg = <0x47900000 0x2200000>;
+		reg = <0xa1700000 0x2200000>;
 		reg-names = "secapp-region";
 	};
 
