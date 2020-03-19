@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/of.h>
@@ -391,6 +391,30 @@ int cam_cpas_start(uint32_t client_handle,
 	return rc;
 }
 EXPORT_SYMBOL(cam_cpas_start);
+
+void cam_cpas_log_votes(void)
+{
+	uint32_t dummy_args;
+	int rc;
+
+	if (!CAM_CPAS_INTF_INITIALIZED()) {
+		CAM_ERR(CAM_CPAS, "cpas intf not initialized");
+		return;
+	}
+
+	if (g_cpas_intf->hw_intf->hw_ops.process_cmd) {
+		rc = g_cpas_intf->hw_intf->hw_ops.process_cmd(
+			g_cpas_intf->hw_intf->hw_priv,
+			CAM_CPAS_HW_CMD_LOG_VOTE, &dummy_args,
+			sizeof(dummy_args));
+		if (rc)
+			CAM_ERR(CAM_CPAS, "Failed in process_cmd, rc=%d", rc);
+	} else {
+		CAM_ERR(CAM_CPAS, "Invalid process_cmd ops");
+	}
+
+}
+EXPORT_SYMBOL(cam_cpas_log_votes);
 
 int cam_cpas_unregister_client(uint32_t client_handle)
 {

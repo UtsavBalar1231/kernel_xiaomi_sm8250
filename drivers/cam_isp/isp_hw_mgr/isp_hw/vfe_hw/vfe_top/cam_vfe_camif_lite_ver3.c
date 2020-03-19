@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/slab.h>
@@ -40,6 +40,10 @@ struct cam_vfe_mux_camif_lite_data {
 	uint32_t                                     camif_debug;
 	struct cam_vfe_top_irq_evt_payload
 		evt_payload[CAM_VFE_CAMIF_LITE_EVT_MAX];
+	struct timeval                               sof_ts;
+	struct timeval                               epoch_ts;
+	struct timeval                               eof_ts;
+	struct timeval                               error_ts;
 };
 
 static int cam_vfe_camif_lite_get_evt_payload(
@@ -137,6 +141,12 @@ static int cam_vfe_camif_lite_err_irq_top_half(
 		return rc;
 
 	cam_isp_hw_get_timestamp(&evt_payload->ts);
+	if (error_flag) {
+		camif_lite_priv->error_ts.tv_sec =
+			evt_payload->ts.mono_time.tv_sec;
+		camif_lite_priv->error_ts.tv_usec =
+			evt_payload->ts.mono_time.tv_usec;
+	}
 
 	for (i = 0; i < th_payload->num_registers; i++)
 		evt_payload->irq_reg_val[i] = th_payload->evt_status_arr[i];
@@ -292,6 +302,15 @@ static int cam_vfe_camif_lite_resource_start(
 	cam_io_w_mb(rsrc_data->reg_data->epoch_line_cfg,
 		rsrc_data->mem_base +
 		rsrc_data->camif_lite_reg->lite_epoch_irq);
+
+	rsrc_data->error_ts.tv_sec = 0;
+	rsrc_data->error_ts.tv_usec = 0;
+	rsrc_data->sof_ts.tv_sec = 0;
+	rsrc_data->sof_ts.tv_usec = 0;
+	rsrc_data->epoch_ts.tv_sec = 0;
+	rsrc_data->epoch_ts.tv_usec = 0;
+	rsrc_data->eof_ts.tv_sec = 0;
+	rsrc_data->eof_ts.tv_usec = 0;
 
 skip_core_cfg:
 
@@ -888,6 +907,7 @@ static void cam_vfe_camif_lite_print_status(uint32_t *status,
 		CAM_INFO(CAM_ISP,
 			"CAMNOC REG ife_linear: 0x%X ife_rdi_wr: 0x%X ife_ubwc_stats: 0x%X",
 			val0, val1, val2);
+		cam_cpas_log_votes();
 	}
 
 	if (err_type == CAM_VFE_IRQ_STATUS_OVERFLOW && !bus_overflow_status) {
@@ -1062,6 +1082,8 @@ static int cam_vfe_camif_lite_handle_irq_bottom_half(
 	struct cam_vfe_soc_private *soc_private = NULL;
 	uint32_t irq_status[CAM_IFE_IRQ_REGISTERS_MAX] = {0};
 	int i = 0;
+	uint32_t status_0 = 0;
+	struct timespec64 ts;
 
 	if (!handler_priv || !evt_payload_priv) {
 		CAM_ERR(CAM_ISP, "Invalid params");
@@ -1097,6 +1119,10 @@ static int cam_vfe_camif_lite_handle_irq_bottom_half(
 		CAM_DBG(CAM_ISP, "VFE:%d CAMIF LITE:%d Received SOF",
 			evt_info.hw_idx, evt_info.res_id);
 		ret = CAM_VFE_IRQ_STATUS_SUCCESS;
+		camif_lite_priv->sof_ts.tv_sec =
+			payload->ts.mono_time.tv_sec;
+		camif_lite_priv->sof_ts.tv_usec =
+			payload->ts.mono_time.tv_usec;
 
 		if (camif_lite_priv->event_cb)
 			camif_lite_priv->event_cb(camif_lite_priv->priv,
@@ -1108,6 +1134,10 @@ static int cam_vfe_camif_lite_handle_irq_bottom_half(
 		CAM_DBG(CAM_ISP, "VFE:%d CAMIF LITE:%d Received EPOCH",
 			evt_info.hw_idx, evt_info.res_id);
 		ret = CAM_VFE_IRQ_STATUS_SUCCESS;
+		camif_lite_priv->epoch_ts.tv_sec =
+			payload->ts.mono_time.tv_sec;
+		camif_lite_priv->epoch_ts.tv_usec =
+			payload->ts.mono_time.tv_usec;
 
 		if (camif_lite_priv->event_cb)
 			camif_lite_priv->event_cb(camif_lite_priv->priv,
@@ -1119,18 +1149,50 @@ static int cam_vfe_camif_lite_handle_irq_bottom_half(
 		CAM_DBG(CAM_ISP, "VFE:%d CAMIF LITE:%d Received EOF",
 			evt_info.hw_idx, evt_info.res_id);
 		ret = CAM_VFE_IRQ_STATUS_SUCCESS;
+		camif_lite_priv->eof_ts.tv_sec =
+			payload->ts.mono_time.tv_sec;
+		camif_lite_priv->eof_ts.tv_usec =
+			payload->ts.mono_time.tv_usec;
 
 		if (camif_lite_priv->event_cb)
 			camif_lite_priv->event_cb(camif_lite_priv->priv,
 				CAM_ISP_HW_EVENT_EOF, (void *)&evt_info);
 	}
 
-	if (irq_status[CAM_IFE_IRQ_CAMIF_REG_STATUS0]
-		& camif_lite_priv->reg_data->error_irq_mask0) {
+	status_0 = irq_status[CAM_IFE_IRQ_CAMIF_REG_STATUS0]
+		& camif_lite_priv->reg_data->error_irq_mask0;
+	if (status_0) {
 		CAM_ERR(CAM_ISP, "VFE:%d Overflow",
 			camif_lite_node->hw_intf->hw_idx);
 
 		evt_info.err_type = CAM_VFE_IRQ_STATUS_OVERFLOW;
+		ktime_get_boottime_ts64(&ts);
+		CAM_INFO(CAM_ISP,
+			"current monotonic time stamp seconds %lld:%lld",
+			ts.tv_sec, ts.tv_nsec/1000);
+		CAM_INFO(CAM_ISP,
+			"ERROR time %lld:%lld",
+			camif_lite_priv->error_ts.tv_sec,
+			camif_lite_priv->error_ts.tv_usec);
+
+		if (camif_lite_node->rdi_only_ctx)
+			CAM_INFO(CAM_ISP,
+				"SOF %lld:%lld EPOCH %lld:%lld EOF %lld:%lld",
+				camif_lite_priv->sof_ts.tv_sec,
+				camif_lite_priv->sof_ts.tv_usec,
+				camif_lite_priv->epoch_ts.tv_sec,
+				camif_lite_priv->epoch_ts.tv_usec,
+				camif_lite_priv->eof_ts.tv_sec,
+				camif_lite_priv->eof_ts.tv_usec);
+
+		if (status_0 & 0x8000000)
+			evt_info.res_id = CAM_ISP_IFE_OUT_RES_RDI_2;
+
+		if (status_0 & 0x10000000)
+			evt_info.res_id = CAM_ISP_IFE_OUT_RES_RDI_1;
+
+		if (status_0 & 0x20000000)
+			evt_info.res_id = CAM_ISP_IFE_OUT_RES_RDI_0;
 
 		if (camif_lite_priv->event_cb)
 			camif_lite_priv->event_cb(camif_lite_priv->priv,
