@@ -2,6 +2,7 @@
 
 #include "scuba.dtsi"
 #include "scuba-idp.dtsi"
+#include "scuba-idp-usbc.dtsi"
 
 / {
 	model = "Qualcomm Technologies, Inc. Scuba IDP USBC Audio";

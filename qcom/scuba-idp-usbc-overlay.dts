@@ -3,6 +3,7 @@
 
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include "scuba-idp.dtsi"
+#include "scuba-idp-usbc.dtsi"
 
 / {
 	model = "Qualcomm Technologies, Inc. Scuba IDP USBC Audio";
