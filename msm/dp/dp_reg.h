@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _DP_REG_H_
@@ -377,7 +377,7 @@
 #define TXn_TRANSCEIVER_BIAS_EN			(0x005C)
 #define TXn_HIGHZ_DRVR_EN			(0x0060)
 
-#define DP_PHY_STATUS				(0x00DC)
+#define DP_PHY_STATUS_V420			(0x00DC)
 #define DP_PHY_AUX_INTERRUPT_MASK_V420		(0x0054)
 #define DP_PHY_AUX_INTERRUPT_CLEAR_V420		(0x0058)
 #define DP_PHY_AUX_INTERRUPT_STATUS_V420	(0x00D8)
@@ -392,8 +392,8 @@
 /* DP MMSS_CC registers */
 #define MMSS_DP_LINK_CMD_RCGR			(0x0138)
 #define MMSS_DP_LINK_CFG_RCGR			(0x013C)
-#define MMSS_DP_PIXEL_M				(0x01B4)
-#define MMSS_DP_PIXEL_N				(0x01B8)
+#define MMSS_DP_PIXEL_M				(0x0134)
+#define MMSS_DP_PIXEL_N				(0x0138)
 #define MMSS_DP_PIXEL1_M			(0x01CC)
 #define MMSS_DP_PIXEL1_N			(0x01D0)
 #define MMSS_DP_PIXEL_M_V200			(0x0130)
