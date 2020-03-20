@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
 /*
@@ -59,7 +59,7 @@
 #include <linux/kernel.h>
 #include <linux/err.h>
 #include <linux/delay.h>
-#include <dt-bindings/clock/mdss-10nm-pll-clk.h>
+#include <dt-bindings/clock/mdss-7nm-pll-clk.h>
 
 #include "pll_drv.h"
 #include "dp_pll.h"
