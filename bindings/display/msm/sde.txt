@@ -433,6 +433,8 @@ Optional properties:
 				order of <real_time>, and <non_real_time>.
 - qcom,sde-qos-cpu-mask:	A u32 value indicating desired PM QoS CPU affine mask.
 - qcom,sde-qos-cpu-dma-latency:	A u32 value indicating desired PM QoS CPU DMA latency in usec.
+- qcom,sde-qos-cpu-irq-latency:	A u32 value indicating desired PM QoS CPU irq latency in usec
+				for 120 fps based targets.
 - qcom,sde-inline-rot-xin:	An integer array of xin-ids related to inline
 				rotation.
 - qcom,sde-inline-rot-xin-type:	A string array indicating the type of xin,
