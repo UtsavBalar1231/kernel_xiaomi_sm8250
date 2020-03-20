@@ -2298,6 +2298,7 @@
 		arm,buffer-size = <0x400000>;
 		arm,scatter-gather;
 
+		qcom,sw-usb;
 		coresight-name = "coresight-tmc-etr";
 		coresight-csr = <&csr>;
 
