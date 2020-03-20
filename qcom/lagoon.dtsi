@@ -2945,8 +2945,8 @@
 		read-only;
 		ranges;
 
-		gpu_speed_bin: gpu_speed_bin@1e1 {
-			reg = <0x1e1 0x1>;
+		gpu_speed_bin: gpu_speed_bin@6015 {
+			reg = <0x6015 0x1>;
 			bits = <0 8>;
 		};
 
