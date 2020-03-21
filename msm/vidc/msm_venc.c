@@ -3098,8 +3098,13 @@ int msm_venc_set_image_properties(struct msm_vidc_inst *inst)
 		return -EINVAL;
 	}
 
-	if (inst->rc_type != V4L2_MPEG_VIDEO_BITRATE_MODE_CQ)
+	if (!is_image_session(inst) && !is_grid_session(inst))
 		return 0;
+
+	if (inst->rc_type != V4L2_MPEG_VIDEO_BITRATE_MODE_CQ) {
+		d_vpr_e("%s: invalid rate control mode\n", __func__);
+		return -EINVAL;
+	}
 
 	rc = msm_venc_set_frame_quality(inst);
 	if (rc) {

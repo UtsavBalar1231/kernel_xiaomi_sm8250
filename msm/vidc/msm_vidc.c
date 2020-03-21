@@ -368,7 +368,6 @@ EXPORT_SYMBOL(msm_vidc_release_buffer);
 int msm_vidc_qbuf(void *instance, struct v4l2_buffer *b)
 {
 	struct msm_vidc_inst *inst = instance;
-	struct msm_vidc_client_data *client_data = NULL;
 	int rc = 0;
 	unsigned int i = 0;
 	struct buf_queue *q = NULL;
@@ -407,16 +406,15 @@ int msm_vidc_qbuf(void *instance, struct v4l2_buffer *b)
 	}
 
 	if (b->type == INPUT_MPLANE) {
-		client_data = msm_comm_store_client_data(inst,
-			b->m.planes[0].reserved[MSM_VIDC_INPUT_TAG_1]);
-		if (!client_data) {
-			s_vpr_e(inst->sid,
-				"%s: failed to store client data\n", __func__);
+		rc = msm_comm_store_input_tag(&inst->etb_data, b->index,
+				b->m.planes[0].reserved[MSM_VIDC_INPUT_TAG_1],
+				0, inst->sid);
+		if (rc) {
+			s_vpr_e(inst->sid, "Failed to store input tag");
 			return -EINVAL;
 		}
-		msm_comm_store_input_tag(&inst->etb_data, b->index,
-			client_data->id, 0, inst->sid);
 	}
+
 	/*
 	 * set perf mode for image session buffers so that
 	 * they will be processed quickly
@@ -447,8 +445,6 @@ int msm_vidc_dqbuf(void *instance, struct v4l2_buffer *b)
 	int rc = 0;
 	unsigned int i = 0;
 	struct buf_queue *q = NULL;
-	u32 input_tag = 0, input_tag2 = 0;
-	bool remove;
 
 	if (!inst || !b || !valid_v4l2_buffer(b, inst)) {
 		d_vpr_e("%s: invalid params, %pK %pK\n",
@@ -479,33 +475,14 @@ int msm_vidc_dqbuf(void *instance, struct v4l2_buffer *b)
 		b->m.planes[i].reserved[MSM_VIDC_DATA_OFFSET] =
 					b->m.planes[i].data_offset;
 	}
-	/**
-	 * Flush handling:
-	 * Don't fetch tag - if flush issued at input/output port.
-	 * Fetch tag - if atleast 1 ebd received after flush. (Flush_done
-	 * event may be notified to userspace even before client
-	 * dequeus all buffers at FBD, to avoid this race condition
-	 * fetch tag atleast 1 ETB is successfully processed after flush)
-	 */
-	if (b->type == OUTPUT_MPLANE && !inst->in_flush &&
-			!inst->out_flush && inst->clk_data.buffer_counter) {
+	if (b->type == OUTPUT_MPLANE) {
 		rc = msm_comm_fetch_input_tag(&inst->fbd_data, b->index,
-				&input_tag, &input_tag2, inst->sid);
+				&b->m.planes[0].reserved[MSM_VIDC_INPUT_TAG_1],
+				&b->m.planes[0].reserved[MSM_VIDC_INPUT_TAG_2],
+				inst->sid);
 		if (rc) {
 			s_vpr_e(inst->sid, "Failed to fetch input tag");
 			return -EINVAL;
-		}
-		/**
-		 * During flush input_tag & input_tag2 will be zero.
-		 * Check before retrieving client data
-		 */
-		if (input_tag) {
-			remove = !(b->flags & V4L2_BUF_FLAG_END_OF_SUBFRAME) &&
-					!(b->flags & V4L2_BUF_FLAG_CODECCONFIG);
-			msm_comm_fetch_client_data(inst, remove,
-				input_tag, input_tag2,
-				&b->m.planes[0].reserved[MSM_VIDC_INPUT_TAG_1],
-				&b->m.planes[0].reserved[MSM_VIDC_INPUT_TAG_2]);
 		}
 	}
 
@@ -1481,7 +1458,6 @@ void *msm_vidc_open(int core_id, int session_type)
 	INIT_MSM_VIDC_LIST(&inst->cvpbufs);
 	INIT_MSM_VIDC_LIST(&inst->refbufs);
 	INIT_MSM_VIDC_LIST(&inst->eosbufs);
-	INIT_MSM_VIDC_LIST(&inst->client_data);
 	INIT_MSM_VIDC_LIST(&inst->etb_data);
 	INIT_MSM_VIDC_LIST(&inst->fbd_data);
 	INIT_MSM_VIDC_LIST(&inst->window_data);
@@ -1599,7 +1575,6 @@ fail_bufq_capture:
 	DEINIT_MSM_VIDC_LIST(&inst->registeredbufs);
 	DEINIT_MSM_VIDC_LIST(&inst->eosbufs);
 	DEINIT_MSM_VIDC_LIST(&inst->input_crs);
-	DEINIT_MSM_VIDC_LIST(&inst->client_data);
 	DEINIT_MSM_VIDC_LIST(&inst->etb_data);
 	DEINIT_MSM_VIDC_LIST(&inst->fbd_data);
 	DEINIT_MSM_VIDC_LIST(&inst->window_data);
@@ -1669,8 +1644,6 @@ static void msm_vidc_cleanup_instance(struct msm_vidc_inst *inst)
 	if (msm_comm_release_input_tag(inst))
 		s_vpr_e(inst->sid, "Failed to release input_tag buffers\n");
 
-	msm_comm_release_client_data(inst, true);
-
 	msm_comm_release_window_data(inst);
 
 	msm_comm_release_eos_buffers(inst);
@@ -1727,7 +1700,6 @@ int msm_vidc_destroy(struct msm_vidc_inst *inst)
 	DEINIT_MSM_VIDC_LIST(&inst->registeredbufs);
 	DEINIT_MSM_VIDC_LIST(&inst->eosbufs);
 	DEINIT_MSM_VIDC_LIST(&inst->input_crs);
-	DEINIT_MSM_VIDC_LIST(&inst->client_data);
 	DEINIT_MSM_VIDC_LIST(&inst->etb_data);
 	DEINIT_MSM_VIDC_LIST(&inst->fbd_data);
 	DEINIT_MSM_VIDC_LIST(&inst->window_data);

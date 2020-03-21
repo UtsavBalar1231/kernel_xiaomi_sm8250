@@ -649,6 +649,12 @@ int msm_vidc_calculate_input_buffer_count(struct msm_vidc_inst *inst)
 		return 0;
 	}
 
+	if (is_grid_session(inst)) {
+		fmt->count_min = fmt->count_min_host = fmt->count_actual =
+			SINGLE_INPUT_BUFFER + 1;
+		return 0;
+	}
+
 	extra_buff_count = msm_vidc_get_extra_buff_count(inst,
 				HAL_BUFFER_INPUT);
 	fmt->count_min = MIN_INPUT_BUFFERS;
