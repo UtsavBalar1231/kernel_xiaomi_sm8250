@@ -1,4 +1,4 @@
-#include "lagoon-audio-overlay.dtsi"
+#include "lagoon-mtp.dtsi"
 
 &soc {
 
