@@ -13,6 +13,7 @@
 		clocks = <&dispcc DISP_CC_MDSS_AHB_CLK>;
 		clock-names = "iface_clk";
 		clock-rate = <0>;
+		memory-region = <&dfps_data_memory>;
 		gdsc-supply = <&mdss_core_gdsc>;
 		qcom,dsi-pll-ssc-en;
 		qcom,dsi-pll-ssc-mode = "down-spread";

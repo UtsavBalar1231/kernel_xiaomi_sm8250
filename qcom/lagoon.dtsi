@@ -533,6 +533,11 @@
 			label = "cont_splash_region";
 		};
 
+		dfps_data_memory: dfps_data_region {
+			reg = <0x0 0xA2300000 0x0 0x0100000>;
+			label = "dfps_data_region";
+		};
+
 		dump_mem: mem_dump_region {
 			compatible = "shared-dma-pool";
 			alloc-ranges = <0x0 0x00000000 0x0 0xffffffff>;
