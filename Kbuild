@@ -2531,10 +2531,10 @@ cppflags-$(CONFIG_LL_DP_SUPPORT) += -DWLAN_FULL_REORDER_OFFLOAD
 # For OOB testing
 cppflags-$(CONFIG_WLAN_FEATURE_WOW_PULSE) += -DWLAN_FEATURE_WOW_PULSE
 
+cppflags-$(CONFIG_AR6320_SUPPORT) += -DCONFIG_AR6320_SUPPORT
 #Enable High Latency related Flags
 ifeq ($(CONFIG_QCA_WIFI_SDIO), y)
-cppflags-y += -DCONFIG_AR6320_SUPPORT \
-            -DSDIO_3_0 \
+cppflags-y += -DSDIO_3_0 \
             -DHIF_SDIO \
             -DCONFIG_DISABLE_CDC_MAX_PERF_WAR=0 \
             -DCONFIG_ATH_PROCFS_DIAG_SUPPORT \
