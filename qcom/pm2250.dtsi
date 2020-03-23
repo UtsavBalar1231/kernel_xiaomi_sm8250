@@ -208,6 +208,118 @@
 				reg = <0xb600 0x100>;
 			};
 		};
+
+		pm2250_charger: qcom,qpnp-smblite {
+			compatible = "qcom,qpnp-smblite";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			#cooling-cells = <2>;
+
+			qcom,pmic-revid = <&pm2250_revid>;
+			qcom,chgr@1000 {
+				reg = <0x1000 0x100>;
+				interrupts =
+					<0x0 0x10 0x1 IRQ_TYPE_EDGE_RISING>,
+					<0x0 0x10 0x0 IRQ_TYPE_EDGE_RISING>,
+					<0x0 0x10 0x4 IRQ_TYPE_EDGE_RISING>,
+					<0x0 0x10 0x7 IRQ_TYPE_EDGE_RISING>;
+
+				interrupt-names = "chgr-error",
+						  "chg-state-change",
+						  "buck-oc",
+						  "vph-ov";
+			};
+
+			qcom,dcdc@1100 {
+				reg = <0x1100 0x100>;
+				interrupts =
+					<0x0 0x11 0x0 IRQ_TYPE_EDGE_RISING>,
+					<0x0 0x11 0x1 IRQ_TYPE_EDGE_RISING>,
+					<0x0 0x11 0x2 IRQ_TYPE_EDGE_RISING>,
+					<0x0 0x11 0x6 IRQ_TYPE_EDGE_RISING>,
+					<0x0 0x11 0x7 IRQ_TYPE_EDGE_BOTH>;
+
+				interrupt-names = "otg-fail",
+						  "otg-fault",
+						  "skip-mode",
+						  "input-current-limiting",
+						  "switcher-power-ok";
+			};
+
+			qcom,batif@1200 {
+				reg = <0x1200 0x100>;
+				interrupts =
+					<0x0 0x12 0x0 IRQ_TYPE_EDGE_BOTH>,
+					<0x0 0x12 0x1 IRQ_TYPE_EDGE_BOTH>,
+					<0x0 0x12 0x2 IRQ_TYPE_EDGE_BOTH>,
+					<0x0 0x12 0x3 IRQ_TYPE_EDGE_BOTH>,
+					<0x0 0x12 0x4 IRQ_TYPE_EDGE_RISING>;
+
+				interrupt-names = "bat-temp",
+						  "bat-therm-or-id-missing",
+						  "bat-low",
+						  "bat-ov",
+						  "bsm-active";
+			};
+
+			qcom,usb@1300 {
+				reg = <0x1300 0x100>;
+				interrupts =
+					<0x0 0x13 0x0 IRQ_TYPE_EDGE_BOTH>,
+					<0x0 0x13 0x1 IRQ_TYPE_EDGE_BOTH>,
+					<0x0 0x13 0x2 IRQ_TYPE_EDGE_BOTH>,
+					<0x0 0x13 0x3 IRQ_TYPE_EDGE_BOTH>,
+					<0x0 0x13 0x4 IRQ_TYPE_EDGE_RISING>,
+					<0x0 0x13 0x6 IRQ_TYPE_EDGE_RISING>;
+
+				interrupt-names = "usbin-plugin",
+						  "usbin-collapse",
+						  "usbin-uv",
+						  "usbin-ov",
+						  "usbin-gtvt",
+						  "usbin-icl-change";
+			};
+
+			qcom,typec@1500 {
+				reg = <0x1500 0x100>;
+				interrupts =
+					<0x0 0x15 0x0 IRQ_TYPE_EDGE_BOTH>,
+					<0x0 0x15 0x1 IRQ_TYPE_EDGE_BOTH>,
+					<0x0 0x15 0x2 IRQ_TYPE_EDGE_RISING>,
+					<0x0 0x15 0x4 IRQ_TYPE_EDGE_BOTH>,
+					<0x0 0x15 0x5 IRQ_TYPE_EDGE_RISING>,
+					<0x0 0x15 0x6 IRQ_TYPE_EDGE_RISING>,
+					<0x0 0x15 0x7 IRQ_TYPE_EDGE_RISING>;
+
+				interrupt-names = "typec-or-rid-detect-change",
+						  "typec-vpd-detect",
+						  "typec-cc-state-change",
+						  "typec-vbus-change",
+						  "typec-attach-detach",
+						  "typec-legacy-cable-detect",
+						  "typec-try-snk-src-detect";
+			};
+
+			qcom,misc@1600 {
+				reg = <0x1600 0x100>;
+				interrupts =
+					<0x0 0x16 0x0 IRQ_TYPE_EDGE_RISING>,
+					<0x0 0x16 0x1 IRQ_TYPE_EDGE_RISING>,
+					<0x0 0x16 0x2 IRQ_TYPE_EDGE_RISING>,
+					<0x0 0x16 0x3 IRQ_TYPE_EDGE_RISING>,
+					<0x0 0x16 0x4 IRQ_TYPE_EDGE_RISING>,
+					<0x0 0x16 0x5 IRQ_TYPE_EDGE_RISING>,
+					<0x0 0x16 0x6 IRQ_TYPE_EDGE_BOTH>;
+
+				interrupt-names = "wdog-snarl",
+						  "wdog-bark",
+						  "aicl-fail",
+						  "aicl-done",
+						  "imp-trigger",
+						  "all-chnl-cond-done",
+						  "temp-change";
+			};
+		};
 	};
 
 	pm2250_1: qcom,pm2250@1 {
