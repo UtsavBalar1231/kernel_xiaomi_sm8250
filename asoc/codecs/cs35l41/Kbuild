@@ -77,6 +77,7 @@ ifdef CONFIG_SND_SOC_CS35L41
 	CS35L41_OBJS += cs35l41-i2c.o
 	CS35L41_OBJS += cs35l41-tables.o
 	CS35L41_OBJS += wm_adsp.o
+	CS35L41_OBJS += send_data_to_xlog.o
 endif
 
 LINUX_INC +=	-Iinclude/linux
