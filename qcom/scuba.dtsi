@@ -1406,6 +1406,7 @@
 #include "msm-arm-smmu-scuba.dtsi"
 #include "scuba-bus.dtsi"
 #include "scuba-gpu.dtsi"
+#include "scuba-vidc.dtsi"
 
 &qupv3_se1_i2c {
 	status = "ok";
