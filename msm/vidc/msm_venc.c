@@ -4366,10 +4366,13 @@ int msm_venc_set_extradata(struct msm_vidc_inst *inst)
 		}
 	}
 
-	if (inst->prop.extradata_ctrls & EXTRADATA_ADVANCED)
+	if (inst->prop.extradata_ctrls & EXTRADATA_ADVANCED) {
 		// Enable Advanced Extradata - LTR Info
 		msm_comm_set_extradata(inst,
 			HFI_PROPERTY_PARAM_VENC_LTR_INFO, 0x1);
+		msm_comm_set_extradata(inst,
+			HFI_PROPERTY_PARAM_VENC_FRAME_QP_EXTRADATA, 0x1);
+	}
 
 	if (inst->prop.extradata_ctrls & EXTRADATA_ENC_INPUT_ROI)
 		// Enable ROIQP Extradata
