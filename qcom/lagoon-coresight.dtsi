@@ -2886,6 +2886,7 @@
 		reg-names = "cti-base";
 
 		coresight-name = "coresight-cti-sierra_a6_cti";
+		status = "disabled";
 
 		clocks = <&aopcc QDSS_CLK>;
 		clock-names = "apb_pclk";
