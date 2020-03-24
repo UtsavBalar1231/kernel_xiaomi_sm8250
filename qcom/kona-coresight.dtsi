@@ -1501,6 +1501,7 @@
 				funnel_dl_center_out_qatb3: endpoint {
 					remote-endpoint =
 					<&qatb3_in_funnel_dl_center>;
+					source = <&npu_etm0>;
 				};
 			};
 
@@ -3194,7 +3195,7 @@
 		};
 	};
 
-	npu_etm0 {
+	npu_etm0: npu_etm0 {
 		compatible = "qcom,coresight-remote-etm";
 
 		coresight-name = "coresight-npu-etm0";
