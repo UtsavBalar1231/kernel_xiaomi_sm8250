@@ -30,6 +30,8 @@ Optional properties:
 - qcom,rt:	Specifies if the framework worker thread for this
 		controller device should have "real-time" priority.
 - qcom,disable-autosuspend: Specifies to disable runtime PM auto suspend.
+- qcom,shared_ee: 	Specifies that this serial engine is shared between
+			execution environments.
 
 SPI slave nodes must be children of the SPI master node and can contain
 the following properties.
