@@ -665,6 +665,13 @@
 						<2 1 1>; /* 3d mux */
 			qcom,default-topology-index = <0>;
 		};
+
+		timing@2 {
+			qcom,mdss-dsi-panel-phy-timings = [00 1a 06 06 22 20 07
+				06 04 02 04 00 16 16];
+			qcom,display-topology = <1 1 1>;
+			qcom,default-topology-index = <0>;
+		};
 	};
 };
 
