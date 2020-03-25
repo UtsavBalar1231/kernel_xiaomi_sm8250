@@ -1,5 +1,6 @@
 #include "scuba-thermal-overlay.dtsi"
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/iio/qcom,spmi-vadc.h>
 
 &soc {
 	scuba_batterydata: qcom,battery-data {
@@ -57,4 +58,15 @@
 	cd-gpios = <&tlmm 88 GPIO_ACTIVE_LOW>;
 
 	status = "ok";
+};
+
+&pm2250_charger {
+	qcom,auto-recharge-soc = <98>;
+	qcom,suspend-input-on-debug-batt;
+	qcom,battery-data = <&scuba_batterydata>;
+	io-channels = <&pm2250_vadc ADC_USB_IN_V_16>,
+			<&pm2250_vadc ADC_CHG_TEMP>;
+	io-channel-names = "usb_in_voltage",
+			"chg_temp";
+	qcom,thermal-mitigation = <2000000 1500000 1000000 500000>;
 };
