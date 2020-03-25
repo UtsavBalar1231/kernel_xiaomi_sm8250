@@ -30,7 +30,7 @@
 
 		qcom,clock-configs = <0x0 0x0 0x1 0x1 0x0>;
 		qcom,allowed-clock-rates = <133330000 240000000
-			300000000 380000000>;
+			300000000 380000000 460000000>;
 
 		qcom,reg-presets = <0xB0084 0x0>,
 			<0xB0088 0x0>;
@@ -138,7 +138,7 @@
 
 		qcom,clock-configs = <0x0 0x0 0x1 0x1 0x0>;
 		qcom,allowed-clock-rates = <133330000 240000000
-			300000000 380000000 460000000>;
+			300000000 380000000>;
 
 		qcom,reg-presets = <0xB0084 0x0>,
 			<0xB0088 0x0>;
