@@ -185,7 +185,6 @@
 		arm,primecell-periphid = <0x0003b968>;
 		reg = <0x6c47000  0x1000>;
 		reg-names = "tpdm-base";
-		status = "disabled";
 
 		coresight-name = "coresight-tpdm-npu";
 
@@ -817,7 +816,6 @@
 		reg-names = "funnel-base";
 
 		coresight-name = "coresight-funnel-npu";
-		status = "disabled";
 
 		clocks = <&aopcc QDSS_CLK>;
 		clock-names = "apb_pclk";
