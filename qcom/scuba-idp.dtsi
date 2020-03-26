@@ -119,3 +119,11 @@
 		panel = <&dsi_nt36525_truly_video>;
 	};
 };
+
+&qusb_phy0 {
+	extcon = <&pm2250_charger>;
+};
+
+&usb0 {
+	extcon = <&qusb_phy0>;
+};
