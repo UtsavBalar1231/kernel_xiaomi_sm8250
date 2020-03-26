@@ -130,3 +130,7 @@
 		status = "okay";
 	};
 };
+
+&pcie1 {
+	status = "disabled";
+};
