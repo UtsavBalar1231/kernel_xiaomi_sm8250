@@ -288,9 +288,39 @@
 		thermal-sensors = <&pm8150_adc_tm ADC_XO_THERM_PU2>;
 		wake-capable-sensor;
 		trips {
+			skin_batt_trip0: skin-batt-trip0 {
+				temperature = <42000>;
+				hysteresis = <2000>;
+				type = "passive";
+			};
+
+			skin_batt_trip1: skin-batt-trip1 {
+				temperature = <44000>;
+				hysteresis = <2000>;
+				type = "passive";
+			};
+
+			skin_batt_trip2: skin-batt-trip2 {
+				temperature = <48000>;
+				hysteresis = <4000>;
+				type = "passive";
+			};
+
+			skin_batt_trip3: skin-batt-trip3 {
+				temperature = <50000>;
+				hysteresis = <2000>;
+				type = "passive";
+			};
+
 			gold_plus_trip: gold-plus-trip {
 				temperature = <50000>;
 				hysteresis = <0>;
+				type = "passive";
+			};
+
+			skin_batt_trip4: skin-batt-trip4 {
+				temperature = <52000>;
+				hysteresis = <2000>;
 				type = "passive";
 			};
 
@@ -374,6 +404,31 @@
 				trip = <&cx_emer_trip>;
 				cooling-device = <&msm_npu THERMAL_MAX_LIMIT
 						THERMAL_MAX_LIMIT>;
+			};
+
+			skin_batt_cdev0 {
+				trip = <&skin_batt_trip0>;
+				cooling-device = <&pm7250b_charger 1 1>;
+			};
+
+			skin_batt_cdev1 {
+				trip = <&skin_batt_trip1>;
+				cooling-device = <&pm7250b_charger 5 5>;
+			};
+
+			skin_batt_cdev2 {
+				trip = <&skin_batt_trip2>;
+				cooling-device = <&pm7250b_charger 7 7>;
+			};
+
+			skin_batt_cdev3 {
+				trip = <&skin_batt_trip3>;
+				cooling-device = <&pm7250b_charger 9 9>;
+			};
+
+			skin_batt_cdev4 {
+				trip = <&skin_batt_trip4>;
+				cooling-device = <&pm7250b_charger 11 11>;
 			};
 		};
 	};
