@@ -3,8 +3,7 @@ Qualcomm Technologies, Inc. Graphics Clock & Reset Controller Binding
 
 Required properties :
 - compatible: shall contain one of the following:
-		"qcom,gpucc-kona",
-		"qcom,gpucc-kona-v2",
+		"qcom,gpucc-kona"
 		"qcom,lito-gpucc".
 		"qcom,bengal-gpucc"
 		"qcom,lagoon-gpucc".
