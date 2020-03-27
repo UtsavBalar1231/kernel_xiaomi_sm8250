@@ -598,7 +598,7 @@ struct adm_cmd_device_open_v8 {
  * In all other use cases this should be set to 0xffff
  */
 
-	u16                  reserved;
+	u16 compressed_data_type;
 } __packed;
 
 /*
@@ -1356,6 +1356,7 @@ struct adm_cmd_connect_afe_port_v5 {
 #define RT_PROXY_PORT_001_RX	0x2000
 #define RT_PROXY_PORT_001_TX	0x2001
 #define AFE_LOOPBACK_TX	0x6001
+#define HDMI_RX_MS			0x6002
 #define DISPLAY_PORT_RX	0x6020
 
 #define AFE_LANE_MASK_INVALID 0
@@ -1385,7 +1386,7 @@ struct adm_cmd_connect_afe_port_v5 {
 #define AFE_PORT_ID_SLIMBUS_RANGE_SIZE	0xA
 
 /* Size of the range of port IDs for real-time proxy ports. */
-#define  AFE_PORT_ID_RT_PROXY_PORT_RANGE_SIZE	0x2
+#define  AFE_PORT_ID_RT_PROXY_PORT_RANGE_SIZE	0x4
 
 /* Size of the range of port IDs for pseudoports. */
 #define AFE_PORT_ID_PSEUDOPORT_RANGE_SIZE	0x5
@@ -1562,6 +1563,8 @@ struct adm_cmd_connect_afe_port_v5 {
 #define AFE_PORT_ID_SLIMBUS_MULTI_CHAN_9_RX      0x4012
 /* SLIMbus Tx port on channel 9. */
 #define AFE_PORT_ID_SLIMBUS_MULTI_CHAN_9_TX      0x4013
+/*AFE Rx port for audio over hdmi*/
+#define AFE_PORT_ID_HDMI_MS					0x6002
 /* AFE Rx port for audio over Display port */
 #define AFE_PORT_ID_HDMI_OVER_DP_RX              0x6020
 /*USB AFE port */
@@ -1663,6 +1666,16 @@ struct adm_cmd_connect_afe_port_v5 {
  */
 #define AFE_PORT_ID_VOICE2_PLAYBACK_TX  0x8002
 #define AFE_PORT_ID_VOICE_PLAYBACK_TX   0x8005
+
+/*
+ * Proxyport used for voice call data processing.
+ * In cases like call-screening feature, where user can communicate
+ * with caller with the help of "call screen" mode, and without
+ * connecting the call with any HW input/output devices in the phon,
+ * voice call can use Pseudo port to start voice data processing.
+ */
+#define RT_PROXY_PORT_002_TX  0x2003
+#define RT_PROXY_PORT_002_RX  0x2002
 
 #define AFE_PORT_ID_PRIMARY_TDM_RX \
 	(AFE_PORT_ID_TDM_PORT_RANGE_START + 0x00)
@@ -2544,6 +2557,7 @@ struct afe_port_data_cmd_rt_proxy_port_read_v2 {
 #define AFE_GENERIC_COMPRESSED           0x8
 #define AFE_LINEAR_PCM_DATA_PACKED_16BIT 0X6
 #define AFE_DSD_DOP_W_MARKER_DATA        0x9
+#define AFE_DSD_DATA                     0xA
 
 /* This param id is used to configure I2S interface */
 #define AFE_PARAM_ID_I2S_CONFIG	0x0001020D
@@ -8868,6 +8882,13 @@ struct asm_data_cmd_remove_silence {
 /* Shift value for the IEC 61937 to 61937 pass-through capture. */
 #define ASM_SHIFT_IEC_61937_PASS_THROUGH_FLAG           0
 
+/* Bitmask for the DSD pass-through capture. */
+#define ASM_BIT_MASK_COMPRESSED_FORMAT_FLAG             (0x00000003UL)
+
+/* Shift value for the DSD pass-through capture. */
+#define ASM_SHIFT_DSD_COMPRESSED_FORMAT_FLAG            0
+
+#define ASM_DSD_FORMAT_FLAG                             2
 struct asm_stream_cmd_open_read_compressed {
 	struct apr_hdr hdr;
 	u32                    mode_flags;
@@ -8879,6 +8900,12 @@ struct asm_stream_cmd_open_read_compressed {
  * - Use #ASM_BIT_MASK_IEC_61937_PASS_THROUGH_FLAG to set the bitmask
  *   and #ASM_SHIFT_IEC_61937_PASS_THROUGH_FLAG to set the shift value
  *   for this bit.
+ * Supported values for bit 1: (DSD native pass-through mode)
+ * 0 -- non DSD operation
+ * 1 -- Pass-through transfer of the DSD format stream
+ * To set this bit, use #ASM_BIT_MASK_DSD_PASS_THROUGH_FLAG and
+ * use #ASM_SHIFT_DSD_PASS_THROUGH_FLAG to set the shift value for
+ * this bit
  * Supported values for bit 4:
  * - 0 -- Return data buffer contains all encoded frames only; it does
  *      not contain frame metadata.
@@ -8895,6 +8922,9 @@ struct asm_stream_cmd_open_read_compressed {
  * Supported values: should be greater than 0 for IEC to RAW compressed
  *                   unpack mode.
  *                   Value is don't care for IEC 61937 pass-through mode.
+ * @values
+ * - >0 -- For IEC 61937-to-RAW Compressed Unpack mode
+ * - 1  -- For IEC 61937 or DSD Pass-through mode
  */
 
 } __packed;

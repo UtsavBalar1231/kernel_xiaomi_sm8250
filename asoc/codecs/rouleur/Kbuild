@@ -16,25 +16,10 @@ ifeq ($(KERNEL_BUILD), 1)
 endif
 
 ifeq ($(KERNEL_BUILD), 0)
-	ifeq ($(CONFIG_ARCH_SM6150), y)
-		include $(AUDIO_ROOT)/config/sm6150auto.conf
-		export
-		INCS    +=  -include $(AUDIO_ROOT)/config/sm6150autoconf.h
-	endif
-	ifeq ($(CONFIG_ARCH_TRINKET), y)
-		include $(AUDIO_ROOT)/config/sm6150auto.conf
-		export
-		INCS    +=  -include $(AUDIO_ROOT)/config/sm6150autoconf.h
-	endif
 	ifeq ($(CONFIG_ARCH_BENGAL), y)
 		include $(AUDIO_ROOT)/config/bengalauto.conf
 		export
 		INCS    +=  -include $(AUDIO_ROOT)/config/bengalautoconf.h
-	endif
-	ifeq ($(CONFIG_ARCH_LITO), y)
-		include $(AUDIO_ROOT)/config/litoauto.conf
-		export
-		INCS    +=  -include $(AUDIO_ROOT)/config/litoautoconf.h
 	endif
 endif
 
@@ -62,18 +47,22 @@ UAPI_INC :=	-I$(AUDIO_ROOT)/include/$(UAPI_DIR)
 COMMON_DIR :=	include
 COMMON_INC :=	-I$(AUDIO_ROOT)/$(COMMON_DIR)
 
-############ WCD937X ############
+############ ROULEUR ############
 
-# for WCD937X Codec
-ifdef CONFIG_SND_SOC_WCD937X
-	WCD937X_OBJS += wcd937x.o
-	WCD937X_OBJS += wcd937x-regmap.o
-	WCD937X_OBJS += wcd937x-tables.o
-	WCD937X_OBJS += wcd937x-mbhc.o
+# for ROULEUR Codec
+ifdef CONFIG_SND_SOC_ROULEUR
+	ROULEUR_OBJS += rouleur.o
+	ROULEUR_OBJS += rouleur-regmap.o
+	ROULEUR_OBJS += rouleur-tables.o
+	ROULEUR_OBJS += rouleur-mbhc.o
 endif
 
-ifdef CONFIG_SND_SOC_WCD937X_SLAVE
-	WCD937X_SLAVE_OBJS += wcd937x_slave.o
+ifdef CONFIG_PM2250_SPMI
+	PM2250_SPMI_OBJS += pm2250_spmi.o
+endif
+
+ifdef CONFIG_SND_SOC_ROULEUR_SLAVE
+	ROULEUR_SLAVE_OBJS += rouleur_slave.o
 endif
 
 LINUX_INC +=	-Iinclude/linux
@@ -118,11 +107,14 @@ KBUILD_EXTRA_SYMBOLS +=$(OUT)/obj/vendor/qcom/opensource/audio-kernel/soc/Module
 endif
 
 # Module information used by KBuild framework
-obj-$(CONFIG_SND_SOC_WCD937X) += wcd937x_dlkm.o
-wcd937x_dlkm-y := $(WCD937X_OBJS)
+obj-$(CONFIG_SND_SOC_ROULEUR) += rouleur_dlkm.o
+rouleur_dlkm-y := $(ROULEUR_OBJS)
 
-obj-$(CONFIG_SND_SOC_WCD937X_SLAVE) += wcd937x_slave_dlkm.o
-wcd937x_slave_dlkm-y := $(WCD937X_SLAVE_OBJS)
+obj-$(CONFIG_SND_SOC_ROULEUR_SLAVE) += rouleur_slave_dlkm.o
+rouleur_slave_dlkm-y := $(ROULEUR_SLAVE_OBJS)
+
+obj-$(CONFIG_PM2250_SPMI) += pm2250_spmi_dlkm.o
+pm2250_spmi_dlkm-y := $(PM2250_SPMI_OBJS)
 
 # inject some build related information
 DEFINES += -DBUILD_TIMESTAMP=\"$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')\"

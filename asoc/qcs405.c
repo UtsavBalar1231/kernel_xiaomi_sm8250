@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/* Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  */
 #include <linux/clk.h>
 #include <linux/delay.h>
@@ -21,6 +21,7 @@
 #include <sound/pcm_params.h>
 #include <sound/info.h>
 #include <dsp/audio_notifier.h>
+#include <dsp/apr_audio-v2.h>
 #include <dsp/q6afe-v2.h>
 #include <dsp/q6core.h>
 #include <dsp/msm_mdf.h>
@@ -148,6 +149,11 @@ enum {
 	SPDIF_TX_MAX,
 };
 
+enum {
+	HDMI_RX_IDX = 0,
+	EXT_HDMI_RX_IDX_MAX,
+};
+
 struct mi2s_conf {
 	struct mutex lock;
 	u32 ref_cnt;
@@ -173,6 +179,7 @@ struct dev_config {
 	u32 sample_rate;
 	u32 bit_format;
 	u32 channels;
+	u32 data_format;
 };
 
 struct msm_wsa881x_dev_info {
@@ -201,6 +208,7 @@ struct msm_asoc_mach_data {
 	u32 tdm_micb_voltage;
 	u32 tdm_micb_current;
 	bool codec_is_csra;
+	void __iomem *mi2s_dsd_mode[MI2S_MAX];
 };
 
 struct msm_asoc_wcd93xx_codec {
@@ -344,7 +352,9 @@ static struct dev_config tdm_tx_cfg[TDM_INTERFACE_MAX][TDM_PORT_MAX] = {
 		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_7 */
 	}
 };
-
+static struct dev_config ext_hdmi_rx_cfg[] = {
+	[HDMI_RX_IDX] =   {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2},
+};
 
 /* Default configuration of slimbus channels */
 static struct dev_config slim_rx_cfg[] = {
@@ -471,6 +481,19 @@ static const char *const slim_tx_ch_text[] = {"One", "Two", "Three", "Four",
 static const char *const vi_feed_ch_text[] = {"One", "Two"};
 static char const *bit_format_text[] = {"S16_LE", "S24_LE", "S24_3LE",
 					  "S32_LE"};
+static const char *const data_format_text[] = {
+	"LPCM",
+	"Compr",
+	"LPCM-60958",
+	"Compr-60958",
+	"NA4",
+	"NA5",
+	"NA6",
+	"NA7",
+	"NA8",
+	"DSD_DOP_W_MARKER",
+	"NATIVE_DSD_DATA"
+};
 static char const *slim_sample_rate_text[] = {"KHZ_8", "KHZ_16",
 					"KHZ_32", "KHZ_44P1", "KHZ_48",
 					"KHZ_88P2", "KHZ_96", "KHZ_176P4",
@@ -488,6 +511,12 @@ static char const *usb_sample_rate_text[] = {"KHZ_8", "KHZ_11P025",
 					"KHZ_32", "KHZ_44P1", "KHZ_48",
 					"KHZ_88P2", "KHZ_96", "KHZ_176P4",
 					"KHZ_192", "KHZ_352P8", "KHZ_384"};
+static char const *ext_hdmi_sample_rate_text[] = {"KHZ_48", "KHZ_96",
+					"KHZ_192", "KHZ_32", "KHZ_44P1",
+					"KHZ_88P2", "KHZ_176P4"};
+static char const *ext_hdmi_bit_format_text[] = {"S16_LE", "S24_LE",
+					"S24_3LE"};
+
 static char const *tdm_ch_text[] = {"One", "Two", "Three", "Four",
 				    "Five", "Six", "Seven", "Eight"};
 static char const *tdm_bit_format_text[] = {"S16_LE", "S24_LE", "S32_LE"};
@@ -539,6 +568,7 @@ static SOC_ENUM_SINGLE_EXT_DECL(slim_6_rx_chs, slim_rx_ch_text);
 static SOC_ENUM_SINGLE_EXT_DECL(usb_rx_chs, usb_ch_text);
 static SOC_ENUM_SINGLE_EXT_DECL(usb_tx_chs, usb_ch_text);
 static SOC_ENUM_SINGLE_EXT_DECL(vi_feed_tx_chs, vi_feed_ch_text);
+static SOC_ENUM_SINGLE_EXT_DECL(ext_hdmi_rx_chs, ch_text);
 static SOC_ENUM_SINGLE_EXT_DECL(proxy_rx_chs, ch_text);
 static SOC_ENUM_SINGLE_EXT_DECL(slim_0_rx_format, bit_format_text);
 static SOC_ENUM_SINGLE_EXT_DECL(slim_5_rx_format, bit_format_text);
@@ -546,6 +576,7 @@ static SOC_ENUM_SINGLE_EXT_DECL(slim_6_rx_format, bit_format_text);
 static SOC_ENUM_SINGLE_EXT_DECL(slim_0_tx_format, bit_format_text);
 static SOC_ENUM_SINGLE_EXT_DECL(usb_rx_format, bit_format_text);
 static SOC_ENUM_SINGLE_EXT_DECL(usb_tx_format, bit_format_text);
+static SOC_ENUM_SINGLE_EXT_DECL(ext_hdmi_rx_format, ext_hdmi_bit_format_text);
 static SOC_ENUM_SINGLE_EXT_DECL(slim_0_rx_sample_rate, slim_sample_rate_text);
 static SOC_ENUM_SINGLE_EXT_DECL(slim_2_rx_sample_rate, slim_sample_rate_text);
 static SOC_ENUM_SINGLE_EXT_DECL(slim_0_tx_sample_rate, slim_sample_rate_text);
@@ -553,6 +584,8 @@ static SOC_ENUM_SINGLE_EXT_DECL(slim_5_rx_sample_rate, slim_sample_rate_text);
 static SOC_ENUM_SINGLE_EXT_DECL(slim_6_rx_sample_rate, slim_sample_rate_text);
 static SOC_ENUM_SINGLE_EXT_DECL(bt_sample_rate, bt_sample_rate_text);
 static SOC_ENUM_SINGLE_EXT_DECL(bt_sample_rate_sink, bt_sample_rate_text);
+static SOC_ENUM_SINGLE_EXT_DECL(ext_hdmi_rx_sample_rate,
+				ext_hdmi_sample_rate_text);
 static SOC_ENUM_SINGLE_EXT_DECL(usb_rx_sample_rate, usb_sample_rate_text);
 static SOC_ENUM_SINGLE_EXT_DECL(usb_tx_sample_rate, usb_sample_rate_text);
 static SOC_ENUM_SINGLE_EXT_DECL(tdm_tx_chs, tdm_ch_text);
@@ -599,6 +632,8 @@ static SOC_ENUM_SINGLE_EXT_DECL(sen_mi2s_rx_chs, mi2s_ch_text);
 static SOC_ENUM_SINGLE_EXT_DECL(sen_mi2s_tx_chs, mi2s_ch_text);
 static SOC_ENUM_SINGLE_EXT_DECL(mi2s_rx_format, bit_format_text);
 static SOC_ENUM_SINGLE_EXT_DECL(mi2s_tx_format, bit_format_text);
+static SOC_ENUM_SINGLE_EXT_DECL(mi2s_rx_data_format, data_format_text);
+static SOC_ENUM_SINGLE_EXT_DECL(mi2s_tx_data_format, data_format_text);
 static SOC_ENUM_SINGLE_EXT_DECL(aux_pcm_rx_format, bit_format_text);
 static SOC_ENUM_SINGLE_EXT_DECL(aux_pcm_tx_format, bit_format_text);
 static SOC_ENUM_SINGLE_EXT_DECL(prim_meta_mi2s_rx_sample_rate, mi2s_rate_text);
@@ -2110,6 +2145,191 @@ static int usb_audio_tx_format_put(struct snd_kcontrol *kcontrol,
 	return rc;
 }
 
+static int ext_hdmi_get_port_idx(struct snd_kcontrol *kcontrol)
+{
+	int idx;
+
+	if (strnstr(kcontrol->id.name, "HDMI_RX",
+		    sizeof("HDMI_RX"))) {
+		idx = HDMI_RX_IDX;
+	} else {
+		pr_err("%s: unsupported BE: %s",
+			__func__, kcontrol->id.name);
+		idx = -EINVAL;
+	}
+
+	return idx;
+}
+
+static int ext_hdmi_rx_format_get(struct snd_kcontrol *kcontrol,
+				  struct snd_ctl_elem_value *ucontrol)
+{
+	int idx = ext_hdmi_get_port_idx(kcontrol);
+
+	if (idx < 0)
+		return idx;
+
+	switch (ext_hdmi_rx_cfg[idx].bit_format) {
+	case SNDRV_PCM_FORMAT_S24_LE:
+		ucontrol->value.integer.value[0] = 1;
+		break;
+
+	case SNDRV_PCM_FORMAT_S16_LE:
+	default:
+		ucontrol->value.integer.value[0] = 0;
+		break;
+	}
+
+	pr_debug("%s: ext_hdmi_rx[%d].format = %d, ucontrol value = %ld\n",
+		 __func__, idx, ext_hdmi_rx_cfg[idx].bit_format,
+		 ucontrol->value.integer.value[0]);
+	return 0;
+}
+
+static int ext_hdmi_rx_format_put(struct snd_kcontrol *kcontrol,
+				  struct snd_ctl_elem_value *ucontrol)
+{
+	int idx = ext_hdmi_get_port_idx(kcontrol);
+
+	if (idx < 0)
+		return idx;
+
+	switch (ucontrol->value.integer.value[0]) {
+	case 1:
+		ext_hdmi_rx_cfg[idx].bit_format = SNDRV_PCM_FORMAT_S24_LE;
+		break;
+	case 0:
+	default:
+		ext_hdmi_rx_cfg[idx].bit_format = SNDRV_PCM_FORMAT_S16_LE;
+		break;
+	}
+	pr_debug("%s: ext_hdmi_rx[%d].format = %d, ucontrol value = %ld\n",
+		 __func__, idx, ext_hdmi_rx_cfg[idx].bit_format,
+		 ucontrol->value.integer.value[0]);
+
+	return 0;
+}
+
+static int ext_hdmi_rx_ch_get(struct snd_kcontrol *kcontrol,
+			      struct snd_ctl_elem_value *ucontrol)
+{
+	int idx = ext_hdmi_get_port_idx(kcontrol);
+
+	if (idx < 0)
+		return idx;
+
+	ucontrol->value.integer.value[0] =
+			ext_hdmi_rx_cfg[idx].channels - 2;
+
+	pr_debug("%s: ext_hdmi_rx[%d].ch = %d\n", __func__,
+		 idx, ext_hdmi_rx_cfg[idx].channels);
+
+	return 0;
+}
+
+static int ext_hdmi_rx_ch_put(struct snd_kcontrol *kcontrol,
+			      struct snd_ctl_elem_value *ucontrol)
+{
+	int idx = ext_hdmi_get_port_idx(kcontrol);
+
+	if (idx < 0)
+		return idx;
+
+	ext_hdmi_rx_cfg[idx].channels =
+			ucontrol->value.integer.value[0] + 2;
+
+	pr_debug("%s: ext_hdmi_rx[%d].ch = %d\n", __func__,
+		 idx, ext_hdmi_rx_cfg[idx].channels);
+	return 0;
+}
+
+static int ext_hdmi_rx_sample_rate_get(struct snd_kcontrol *kcontrol,
+				       struct snd_ctl_elem_value *ucontrol)
+{
+	int sample_rate_val;
+	int idx = ext_hdmi_get_port_idx(kcontrol);
+
+	if (idx < 0)
+		return idx;
+
+	switch (ext_hdmi_rx_cfg[idx].sample_rate) {
+	case SAMPLING_RATE_176P4KHZ:
+		sample_rate_val = 6;
+		break;
+
+	case SAMPLING_RATE_88P2KHZ:
+		sample_rate_val = 5;
+		break;
+
+	case SAMPLING_RATE_44P1KHZ:
+		sample_rate_val = 4;
+		break;
+
+	case SAMPLING_RATE_32KHZ:
+		sample_rate_val = 3;
+		break;
+
+	case SAMPLING_RATE_192KHZ:
+		sample_rate_val = 2;
+		break;
+
+	case SAMPLING_RATE_96KHZ:
+		sample_rate_val = 1;
+		break;
+
+	case SAMPLING_RATE_48KHZ:
+	default:
+		sample_rate_val = 0;
+		break;
+	}
+
+	ucontrol->value.integer.value[0] = sample_rate_val;
+	pr_debug("%s: ext_hdmi_rx[%d].sample_rate = %d\n", __func__,
+		 idx, ext_hdmi_rx_cfg[idx].sample_rate);
+
+	return 0;
+}
+
+
+static int ext_hdmi_rx_sample_rate_put(struct snd_kcontrol *kcontrol,
+				       struct snd_ctl_elem_value *ucontrol)
+{
+	int idx = ext_hdmi_get_port_idx(kcontrol);
+
+	if (idx < 0)
+		return idx;
+
+	switch (ucontrol->value.integer.value[0]) {
+	case 6:
+		ext_hdmi_rx_cfg[idx].sample_rate = SAMPLING_RATE_176P4KHZ;
+		break;
+	case 5:
+		ext_hdmi_rx_cfg[idx].sample_rate = SAMPLING_RATE_88P2KHZ;
+		break;
+	case 4:
+		ext_hdmi_rx_cfg[idx].sample_rate = SAMPLING_RATE_44P1KHZ;
+		break;
+	case 3:
+		ext_hdmi_rx_cfg[idx].sample_rate = SAMPLING_RATE_32KHZ;
+		break;
+	case 2:
+		ext_hdmi_rx_cfg[idx].sample_rate = SAMPLING_RATE_192KHZ;
+		break;
+	case 1:
+		ext_hdmi_rx_cfg[idx].sample_rate = SAMPLING_RATE_96KHZ;
+		break;
+	case 0:
+	default:
+		ext_hdmi_rx_cfg[idx].sample_rate = SAMPLING_RATE_48KHZ;
+		break;
+	}
+
+	pr_debug("%s: control value = %ld, ext_hdmi_rx[%d].sample_rate = %d\n",
+		 __func__, ucontrol->value.integer.value[0], idx,
+		 ext_hdmi_rx_cfg[idx].sample_rate);
+	return 0;
+}
+
 static int proxy_rx_ch_get(struct snd_kcontrol *kcontrol,
 			       struct snd_ctl_elem_value *ucontrol)
 {
@@ -3049,7 +3269,8 @@ static int msm_mi2s_rx_format_put(struct snd_kcontrol *kcontrol,
 		return idx;
 
 	/* check for PRIM_MI2S and CSRAx config to allow 24bit BE config only */
-	if ((PRIM_MI2S == idx) && (true==pdata->codec_is_csra))
+	if ((idx == PRIM_MI2S) && (pdata->codec_is_csra == true)
+			&& mi2s_rx_cfg[idx].data_format != AFE_DSD_DATA)
 	{
 		mi2s_rx_cfg[idx].bit_format = SNDRV_PCM_FORMAT_S24_LE;
 		pr_debug("%s: Keeping default format idx[%d]_rx_format = %d, item = %d\n",
@@ -3099,6 +3320,74 @@ static int msm_mi2s_tx_format_put(struct snd_kcontrol *kcontrol,
 	pr_debug("%s: idx[%d]_tx_format = %d, item = %d\n", __func__,
 		  idx, mi2s_tx_cfg[idx].bit_format,
 		  ucontrol->value.enumerated.item[0]);
+
+	return 0;
+}
+
+static int msm_mi2s_tx_data_format_put(struct snd_kcontrol *kcontrol,
+				struct snd_ctl_elem_value *ucontrol)
+{
+	int idx = mi2s_get_port_idx(kcontrol);
+
+	if (idx < 0)
+		return idx;
+
+	mi2s_tx_cfg[idx].data_format = ucontrol->value.enumerated.item[0];
+
+	pr_debug("%s: idx[%d]_data_format = %d, item = %d\n", __func__,
+		  idx, mi2s_tx_cfg[idx].data_format,
+		  ucontrol->value.enumerated.item[0]);
+
+	return 0;
+}
+
+static int msm_mi2s_rx_data_format_put(struct snd_kcontrol *kcontrol,
+				struct snd_ctl_elem_value *ucontrol)
+{
+	int idx = mi2s_get_port_idx(kcontrol);
+
+	if (idx < 0)
+		return idx;
+
+	mi2s_rx_cfg[idx].data_format = ucontrol->value.enumerated.item[0];
+
+	pr_debug("%s: idx[%d]_data_format = %d, item = %d\n", __func__,
+		  idx, mi2s_rx_cfg[idx].data_format,
+		  ucontrol->value.enumerated.item[0]);
+
+	return 0;
+}
+
+static int msm_mi2s_tx_data_format_get(struct snd_kcontrol *kcontrol,
+				struct snd_ctl_elem_value *ucontrol)
+{
+	int idx = mi2s_get_port_idx(kcontrol);
+
+	if (idx < 0)
+		return idx;
+
+	ucontrol->value.enumerated.item[0] = mi2s_tx_cfg[idx].data_format;
+
+	pr_debug("%s: idx[%d]_tx_format = %d, item = %d\n", __func__,
+		idx, mi2s_tx_cfg[idx].data_format,
+		ucontrol->value.enumerated.item[0]);
+
+	return 0;
+}
+
+static int msm_mi2s_rx_data_format_get(struct snd_kcontrol *kcontrol,
+				struct snd_ctl_elem_value *ucontrol)
+{
+	int idx = mi2s_get_port_idx(kcontrol);
+
+	if (idx < 0)
+		return idx;
+
+	ucontrol->value.enumerated.item[0] = mi2s_rx_cfg[idx].data_format;
+
+	pr_debug("%s: idx[%d]_rx_format = %d, item = %d\n", __func__,
+		idx, mi2s_rx_cfg[idx].data_format,
+		ucontrol->value.enumerated.item[0]);
 
 	return 0;
 }
@@ -3842,6 +4131,14 @@ static const struct snd_kcontrol_new msm_snd_sb_controls[] = {
 			slim_rx_bit_format_get, slim_rx_bit_format_put),
 	SOC_ENUM_EXT("SLIM_0_TX Format", slim_0_tx_format,
 			slim_tx_bit_format_get, slim_tx_bit_format_put),
+	SOC_ENUM_EXT("HDMI_RX Bit Format", ext_hdmi_rx_format,
+			ext_hdmi_rx_format_get, ext_hdmi_rx_format_put),
+	SOC_ENUM_EXT("HDMI_RX SampleRate", ext_hdmi_rx_sample_rate,
+			ext_hdmi_rx_sample_rate_get,
+			ext_hdmi_rx_sample_rate_put),
+	SOC_ENUM_EXT("HDMI_RX Channels", ext_hdmi_rx_chs,
+			ext_hdmi_rx_ch_get,
+			ext_hdmi_rx_ch_put),
 	SOC_ENUM_EXT("SLIM_0_RX SampleRate", slim_0_rx_sample_rate,
 			slim_rx_sample_rate_get, slim_rx_sample_rate_put),
 	SOC_ENUM_EXT("SLIM_2_RX SampleRate", slim_2_rx_sample_rate,
@@ -4125,6 +4422,18 @@ static const struct snd_kcontrol_new msm_snd_controls[] = {
 			msm_mi2s_rx_ch_get, msm_mi2s_rx_ch_put),
 	SOC_ENUM_EXT("SEN_MI2S_TX Channels", sen_mi2s_tx_chs,
 			msm_mi2s_tx_ch_get, msm_mi2s_tx_ch_put),
+	SOC_ENUM_EXT("PRIM_MI2S_TX DataFormat", mi2s_tx_data_format,
+			msm_mi2s_tx_data_format_get,
+				msm_mi2s_tx_data_format_put),
+	SOC_ENUM_EXT("QUAT_MI2S_TX DataFormat", mi2s_tx_data_format,
+			msm_mi2s_tx_data_format_get,
+				msm_mi2s_tx_data_format_put),
+	SOC_ENUM_EXT("PRIM_MI2S_RX DataFormat", mi2s_rx_data_format,
+			msm_mi2s_rx_data_format_get,
+				msm_mi2s_rx_data_format_put),
+	SOC_ENUM_EXT("QUAT_MI2S_RX DataFormat", mi2s_rx_data_format,
+			msm_mi2s_rx_data_format_get,
+				msm_mi2s_rx_data_format_put),
 	SOC_ENUM_EXT("PRIM_MI2S_RX Format", mi2s_rx_format,
 			msm_mi2s_rx_format_get, msm_mi2s_rx_format_put),
 	SOC_ENUM_EXT("PRIM_MI2S_TX Format", mi2s_tx_format,
@@ -4504,6 +4813,23 @@ static int msm_slim_get_ch_from_beid(int32_t be_id)
 	}
 
 	return ch_id;
+}
+
+static int msm_ext_hdmi_get_idx_from_beid(int32_t be_id)
+{
+	int idx;
+
+	switch (be_id) {
+	case MSM_BACKEND_DAI_HDMI_RX_MS:
+		idx = HDMI_RX_IDX;
+		break;
+	default:
+		pr_err("%s: Incorrect ext_hdmi BE id %d\n", __func__, be_id);
+		idx = -EINVAL;
+		break;
+	}
+
+	return idx;
 }
 
 static int msm_cdc_dma_get_idx_from_beid(int32_t be_id)
@@ -5040,11 +5366,27 @@ static int msm_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 		channels->min = channels->max = afe_lb_tx_cfg.channels;
 		break;
 
+	case MSM_BACKEND_DAI_HDMI_RX_MS:
+		idx = msm_ext_hdmi_get_idx_from_beid(dai_link->id);
+
+		if (idx < 0) {
+			pr_err("%s: Incorrect ext hdmi idx %d\n",
+			       __func__, idx);
+			rc = idx;
+			goto done;
+		}
+
+		param_set_mask(params, SNDRV_PCM_HW_PARAM_FORMAT,
+				ext_hdmi_rx_cfg[idx].bit_format);
+		rate->min = rate->max = ext_hdmi_rx_cfg[idx].sample_rate;
+		channels->min = channels->max = ext_hdmi_rx_cfg[idx].channels;
+		break;
+
 	default:
 		rate->min = rate->max = SAMPLING_RATE_48KHZ;
 		break;
 	}
-
+done:
 	return rc;
 }
 
@@ -6104,10 +6446,9 @@ static struct snd_soc_ops msm_fe_qos_ops = {
 	.prepare = msm_fe_qos_prepare,
 };
 
-
 static int msm_mi2s_snd_startup(struct snd_pcm_substream *substream)
 {
-	int ret = 0;
+	int ret = 0, val = 0;
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
 	struct snd_soc_dai_link *dai_link = rtd->dai_link;
@@ -6115,6 +6456,12 @@ static int msm_mi2s_snd_startup(struct snd_pcm_substream *substream)
 	unsigned int fmt = SND_SOC_DAIFMT_CBS_CFS;
 	struct snd_soc_card *card = rtd->card;
 	struct msm_asoc_mach_data *pdata = snd_soc_card_get_drvdata(card);
+	int data_format;
+
+	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
+		data_format = mi2s_rx_cfg[index].data_format;
+	else
+		data_format = mi2s_tx_cfg[index].data_format;
 
 	dev_dbg(rtd->card->dev,
 		"%s: substream = %s  stream = %d, dai name %s, dai ID %d\n",
@@ -6140,6 +6487,9 @@ static int msm_mi2s_snd_startup(struct snd_pcm_substream *substream)
 			mi2s_clk[index].clk_id = mi2s_ebit_clk[index];
 			fmt = SND_SOC_DAIFMT_CBM_CFM;
 		}
+
+		if (data_format == AFE_DSD_DATA)
+			fmt = SND_SOC_DAIFMT_CBM_CFS;
 		ret = msm_mi2s_set_sclk(substream, true);
 		if (ret < 0) {
 			dev_err(rtd->card->dev,
@@ -6154,9 +6504,34 @@ static int msm_mi2s_snd_startup(struct snd_pcm_substream *substream)
 				__func__, index, ret);
 			goto clk_off;
 		}
-		if (pdata->mi2s_gpio_p[index])
-			msm_cdc_pinctrl_select_active_state(
+
+		if (pdata->mi2s_gpio_p[index]) {
+			if ((data_format == AFE_DSD_DATA) &&
+					((index == QUAT_MI2S) ||
+						(index == PRIM_MI2S))) {
+				msm_cdc_pinctrl_select_alt_active_state(
+						pdata->mi2s_gpio_p[index]);
+			} else {
+				msm_cdc_pinctrl_select_active_state(
 					pdata->mi2s_gpio_p[index]);
+			}
+		}
+
+		if (index == QUAT_MI2S || index == PRIM_MI2S) {
+			switch (data_format) {
+			case AFE_DSD_DATA:
+				if (pdata->mi2s_dsd_mode[index]) {
+					val = ioread32(
+						pdata->mi2s_dsd_mode[index]);
+					val = val | 0x1;
+					iowrite32(val,
+						pdata->mi2s_dsd_mode[index]);
+				}
+				break;
+			default:
+				break;
+			}
+		}
 	}
 
 	ret = qcs405_send_island_vad_config(dai_link->id);
@@ -6180,10 +6555,17 @@ err:
 static void msm_mi2s_snd_shutdown(struct snd_pcm_substream *substream)
 {
 	int ret;
+	int val;
+	int data_format;
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	int index = rtd->cpu_dai->id;
 	struct snd_soc_card *card = rtd->card;
 	struct msm_asoc_mach_data *pdata = snd_soc_card_get_drvdata(card);
+
+	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
+		data_format = mi2s_rx_cfg[index].data_format;
+	else
+		data_format = mi2s_tx_cfg[index].data_format;
 
 	pr_debug("%s(): substream = %s  stream = %d\n", __func__,
 		 substream->name, substream->stream);
@@ -6197,6 +6579,22 @@ static void msm_mi2s_snd_shutdown(struct snd_pcm_substream *substream)
 		if (pdata->mi2s_gpio_p[index])
 			msm_cdc_pinctrl_select_sleep_state(
 					pdata->mi2s_gpio_p[index]);
+
+		if (index == QUAT_MI2S || index == PRIM_MI2S) {
+			switch (data_format) {
+			case AFE_DSD_DATA:
+				if (pdata->mi2s_dsd_mode[index]) {
+					val = ioread32(
+						pdata->mi2s_dsd_mode[index]);
+					val = val & ~1;
+					iowrite32(val,
+						pdata->mi2s_dsd_mode[index]);
+				}
+				break;
+			default:
+				break;
+			}
+		}
 
 		ret = msm_mi2s_set_sclk(substream, false);
 		if (ret < 0)
@@ -7298,6 +7696,24 @@ static struct snd_soc_dai_link msm_common_misc_fe_dai_links[] = {
 	},
 };
 
+static struct snd_soc_dai_link ext_hdmi_be_dai_link[] = {
+	/* HDMI RX BACK END DAI Link */
+	{
+		.name = LPASS_BE_HDMI_MS,
+		.stream_name = "HDMI MS Playback",
+		.cpu_dai_name = "msm-dai-q6-hdmi.24578",
+		.platform_name = "msm-pcm-routing",
+		.codec_name = "msm-ext-disp-audio-codec-rx",
+		.codec_dai_name = "msm_hdmi_ms_audio_codec_rx_dai",
+		.no_pcm = 1,
+		.dpcm_playback = 1,
+		.id = MSM_BACKEND_DAI_HDMI_RX_MS,
+		.be_hw_params_fixup = msm_be_hw_params_fixup,
+		.ignore_pmdown_time = 1,
+		.ignore_suspend = 1,
+	},
+};
+
 static struct snd_soc_dai_link msm_common_be_dai_links[] = {
 	/* Backend AFE DAI Links */
 	{
@@ -8305,7 +8721,8 @@ static struct snd_soc_dai_link msm_qcs405_dai_links[
 			 ARRAY_SIZE(msm_wsa_cdc_dma_be_dai_links) +
 			 ARRAY_SIZE(msm_bolero_fe_dai_links) +
 			 ARRAY_SIZE(msm_spdif_be_dai_links) +
-			 ARRAY_SIZE(msm_afe_rxtx_lb_be_dai_link)];
+			 ARRAY_SIZE(msm_afe_rxtx_lb_be_dai_link) +
+			 ARRAY_SIZE(ext_hdmi_be_dai_link)];
 
 static int msm_snd_card_tasha_late_probe(struct snd_soc_card *card)
 {
@@ -8556,6 +8973,7 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 	uint32_t va_bolero_codec = 0, wsa_bolero_codec = 0, mi2s_audio_intf = 0;
 	uint32_t spdif_audio_intf = 0, wcn_audio_intf = 0;
 	uint32_t afe_loopback_intf = 0, meta_mi2s_intf = 0;
+	uint32_t ext_disp_hdmi_rx = 0;
 	const struct of_device_id *match;
 	char __iomem *spdif_cfg, *spdif_pin_ctl;
 	int rc = 0;
@@ -8743,6 +9161,20 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 				ARRAY_SIZE(msm_afe_rxtx_lb_be_dai_link);
 			}
 		}
+		rc = of_property_read_u32(dev->of_node,
+				"qcom,ext-disp-audio-rx", &ext_disp_hdmi_rx);
+		if (rc) {
+			dev_dbg(dev, "%s: No DT match ext disp hdmi rx\n",
+				__func__);
+		} else {
+			if (ext_disp_hdmi_rx) {
+				memcpy(msm_qcs405_dai_links + total_links,
+					ext_hdmi_be_dai_link,
+					sizeof(ext_hdmi_be_dai_link));
+				total_links += ARRAY_SIZE(ext_hdmi_be_dai_link);
+			}
+		}
+
 		dailink = msm_qcs405_dai_links;
 	} else if (!strcmp(match->data, "stub_codec")) {
 		card = &snd_soc_card_stub_msm;
@@ -8756,7 +9188,6 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 		       msm_stub_be_dai_links,
 		       sizeof(msm_stub_be_dai_links));
 		total_links += ARRAY_SIZE(msm_stub_be_dai_links);
-
 		dailink = msm_stub_dai_links;
 	}
 
@@ -9436,6 +9867,7 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	const char *micb_supply_str1 = "tdm-vdd-micb";
 	const char *micb_voltage_str = "qcom,tdm-vdd-micb-voltage";
 	const char *micb_current_str = "qcom,tdm-vdd-micb-current";
+	u32 v_base_addr;
 
 	if (!pdev->dev.of_node) {
 		dev_err(&pdev->dev, "No platform supplied from device tree\n");
@@ -9446,6 +9878,31 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 			sizeof(struct msm_asoc_mach_data), GFP_KERNEL);
 	if (!pdata)
 		return -ENOMEM;
+
+	ret = of_property_read_u32(
+		pdev->dev.of_node, "tcsr_i2s_dsd_prim", &v_base_addr);
+	if (ret) {
+		dev_err(&pdev->dev, "MUX addr invalid for MI2S dsd prim\n");
+	} else {
+		pdata->mi2s_dsd_mode[PRIM_MI2S] =
+			devm_ioremap(&pdev->dev, v_base_addr, 4);
+		if (pdata->mi2s_dsd_mode[PRIM_MI2S] == NULL) {
+			pr_err("%s ioremap failure for muxsel virt addr dsd prim\n",
+				__func__);
+		}
+	}
+	ret = of_property_read_u32(
+		pdev->dev.of_node, "tcsr_i2s_dsd_quat", &v_base_addr);
+	if (ret) {
+		dev_err(&pdev->dev, "MUX addr invalid for MI2S dsd quat\n");
+	} else {
+		pdata->mi2s_dsd_mode[QUAT_MI2S] =
+			devm_ioremap(&pdev->dev, v_base_addr, 4);
+		if (pdata->mi2s_dsd_mode[QUAT_MI2S] == NULL) {
+			pr_err("%s ioremap failure for muxsel virt addr dsd quat\n",
+				__func__);
+		}
+	}
 
 	/* test for ep92 HDMI bridge and update dai links accordingly */
 	ret = msm_detect_ep92_dev(pdev, card);

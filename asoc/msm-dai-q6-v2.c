@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/* Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -329,7 +329,8 @@ static const char *const mi2s_format[] = {
 	"NA6",
 	"NA7",
 	"NA8",
-	"DSD_DOP_W_MARKER"
+	"DSD_DOP_W_MARKER",
+	"NATIVE_DSD_DATA"
 };
 
 static const char *const mi2s_vi_feed_mono[] = {
@@ -338,7 +339,7 @@ static const char *const mi2s_vi_feed_mono[] = {
 };
 
 static const struct soc_enum mi2s_config_enum[] = {
-	SOC_ENUM_SINGLE_EXT(10, mi2s_format),
+	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(mi2s_format), mi2s_format),
 	SOC_ENUM_SINGLE_EXT(2, mi2s_vi_feed_mono),
 };
 
@@ -2621,6 +2622,8 @@ static int msm_dai_q6_hw_params(struct snd_pcm_substream *substream,
 	case RT_PROXY_DAI_001_RX:
 	case RT_PROXY_DAI_002_TX:
 	case RT_PROXY_DAI_002_RX:
+	case RT_PROXY_PORT_002_TX:
+	case RT_PROXY_PORT_002_RX:
 		rc = msm_dai_q6_afe_rtproxy_hw_params(params, dai);
 		break;
 	case VOICE_PLAYBACK_TX:
@@ -4247,6 +4250,42 @@ static struct snd_soc_dai_driver msm_dai_q6_incall_record_dai[] = {
 	},
 };
 
+static struct snd_soc_dai_driver msm_dai_q6_proxy_tx_dai = {
+	.capture = {
+		.stream_name = "Proxy Capture",
+		.aif_name = "PROXY_TX",
+		.rates = SNDRV_PCM_RATE_48000 | SNDRV_PCM_RATE_8000 |
+			 SNDRV_PCM_RATE_16000,
+		.formats = SNDRV_PCM_FMTBIT_S16_LE,
+		.channels_min = 1,
+		.channels_max = 2,
+		.rate_min =     8000,
+		.rate_max =     48000,
+	},
+	.ops = &msm_dai_q6_ops,
+	.id = RT_PROXY_PORT_002_TX,
+	.probe = msm_dai_q6_dai_probe,
+	.remove = msm_dai_q6_dai_remove,
+};
+
+static struct snd_soc_dai_driver msm_dai_q6_proxy_rx_dai = {
+	.playback = {
+		.stream_name = "Proxy Playback",
+		.aif_name = "PROXY_RX",
+		.rates = SNDRV_PCM_RATE_48000 | SNDRV_PCM_RATE_8000 |
+			 SNDRV_PCM_RATE_16000,
+		.formats = SNDRV_PCM_FMTBIT_S16_LE,
+		.channels_min = 1,
+		.channels_max = 2,
+		.rate_min =     8000,
+		.rate_max =     48000,
+	},
+	.ops = &msm_dai_q6_ops,
+	.id = RT_PROXY_PORT_002_RX,
+	.probe = msm_dai_q6_dai_probe,
+	.remove = msm_dai_q6_dai_remove,
+};
+
 static struct snd_soc_dai_driver msm_dai_q6_usb_rx_dai = {
 	.playback = {
 		.stream_name = "USB Audio Playback",
@@ -5586,6 +5625,7 @@ static int msm_dai_q6_mi2s_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
 
 	switch (fmt & SND_SOC_DAIFMT_MASTER_MASK) {
 	case SND_SOC_DAIFMT_CBS_CFS:
+	case SND_SOC_DAIFMT_CBM_CFS:
 		mi2s_dai_data->rx_dai.mi2s_dai_data.port_config.i2s.ws_src = 1;
 		mi2s_dai_data->tx_dai.mi2s_dai_data.port_config.i2s.ws_src = 1;
 		break;
@@ -7287,7 +7327,14 @@ register_uplink_capture:
 			pr_err("%s: Device not found stream name %s\n",
 			__func__, stream_name);
 		break;
-
+	case RT_PROXY_PORT_002_RX:
+		rc = snd_soc_register_component(&pdev->dev,
+			&msm_dai_q6_component, &msm_dai_q6_proxy_rx_dai, 1);
+		break;
+	case RT_PROXY_PORT_002_TX:
+		rc = snd_soc_register_component(&pdev->dev,
+			&msm_dai_q6_component, &msm_dai_q6_proxy_tx_dai, 1);
+		break;
 	default:
 		rc = -ENODEV;
 		break;
