@@ -428,6 +428,10 @@ typedef  enum  {
     WMI_SERVICE_PEER_DELETE_NO_PEER_FLUSH_TIDS_CMD = 237, /* Host should not send WMI_PEER_FLUSH_TIDS_CMD as part of peer delete */
     WMI_SERVICE_NSS_RATIO_TO_HOST_SUPPORT = 238, /* Indicates firmware supports sending NSS ratio info to host */
     WMI_SERVICE_WPA3_SUITEB_ROAM_SUPPORT = 239, /* Indicates FW supports WPA3 SUITE B roaming */
+    WMI_SERVICE_PERIODIC_FRAME_INJECT_SUPPORT = 240, /* Indicates FW supports periodic frame injection */
+    WMI_SERVICE_NDI_NDI_STA_SUPPORT = 241, /* Indicates FW support for STA+NDI+NDI */
+    WMI_SERVICE_BW_TRUE_160_SUPPORT = 242, /* Indicates FW supports true 160 BW */
+    WMI_SERVICE_HOST_SCAN_STOP_VDEV_ALL_SUPPORT = 243, /* Indicates FW supports scan stop mode WMI_SCN_STOP_HOST_VAP_ALL */
 
 
     /******* ADD NEW SERVICES HERE *******/
