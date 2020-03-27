@@ -891,6 +891,16 @@ end:
 }
 
 #ifdef FEATURE_RUNTIME_PM
+static bool hif_pci_pm_runtime_enabled(struct hif_pci_softc *sc)
+{
+	struct hif_softc *scn = HIF_GET_SOFTC(sc);
+
+	if (scn->hif_config.enable_runtime_pm)
+		return true;
+
+	return pm_runtime_enabled(sc->dev);
+}
+
 static const char *hif_pm_runtime_state_to_string(uint32_t state)
 {
 	switch (state) {
@@ -1307,7 +1317,7 @@ int hif_pm_runtime_sync_resume(struct hif_opaque_softc *hif_ctx)
 	if (!sc)
 		return -EINVAL;
 
-	if (!pm_runtime_enabled(sc->dev))
+	if (!hif_pci_pm_runtime_enabled(sc))
 		return 0;
 
 	pm_state = qdf_atomic_read(&sc->pm_state);
@@ -3974,7 +3984,7 @@ int hif_pm_runtime_get_sync(struct hif_opaque_softc *hif_ctx)
 	if (!sc)
 		return -EINVAL;
 
-	if (!pm_runtime_enabled(sc->dev))
+	if (!hif_pci_pm_runtime_enabled(sc))
 		return 0;
 
 	pm_state = qdf_atomic_read(&sc->pm_state);
@@ -4021,7 +4031,7 @@ int hif_pm_runtime_put_sync_suspend(struct hif_opaque_softc *hif_ctx)
 	if (!sc)
 		return -EINVAL;
 
-	if (!pm_runtime_enabled(sc->dev))
+	if (!hif_pci_pm_runtime_enabled(sc))
 		return 0;
 
 	usage_count = atomic_read(&sc->dev->power.usage_count);
@@ -4050,7 +4060,7 @@ int hif_pm_runtime_request_resume(struct hif_opaque_softc *hif_ctx)
 	if (!sc)
 		return -EINVAL;
 
-	if (!pm_runtime_enabled(sc->dev))
+	if (!hif_pci_pm_runtime_enabled(sc))
 		return 0;
 
 	pm_state = qdf_atomic_read(&sc->pm_state);
@@ -4085,7 +4095,7 @@ void hif_pm_runtime_get_noresume(struct hif_opaque_softc *hif_ctx)
 	if (!sc)
 		return;
 
-	if (!pm_runtime_enabled(sc->dev))
+	if (!hif_pci_pm_runtime_enabled(sc))
 		return;
 
 	HIF_PM_STATS_RUNTIME_GET_RECORD(sc);
@@ -4117,7 +4127,7 @@ int hif_pm_runtime_get(struct hif_opaque_softc *hif_ctx)
 		return -EFAULT;
 	}
 
-	if (!pm_runtime_enabled(sc->dev))
+	if (!hif_pci_pm_runtime_enabled(sc))
 		return 0;
 
 	pm_state = qdf_atomic_read(&sc->pm_state);
@@ -4185,7 +4195,7 @@ int hif_pm_runtime_put(struct hif_opaque_softc *hif_ctx)
 		return -EFAULT;
 	}
 
-	if (!pm_runtime_enabled(sc->dev))
+	if (!hif_pci_pm_runtime_enabled(sc))
 		return 0;
 
 	usage_count = atomic_read(&sc->dev->power.usage_count);
@@ -4231,7 +4241,7 @@ int hif_pm_runtime_put_noidle(struct hif_opaque_softc *hif_ctx)
 	if (!sc)
 		return -EINVAL;
 
-	if (!pm_runtime_enabled(sc->dev))
+	if (!hif_pci_pm_runtime_enabled(sc))
 		return 0;
 
 	usage_count = atomic_read(&sc->dev->power.usage_count);
