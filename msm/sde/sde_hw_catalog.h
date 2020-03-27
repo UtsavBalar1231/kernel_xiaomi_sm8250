@@ -1261,6 +1261,8 @@ struct sde_limit_cfg {
  * @update_tcsr_disp_glitch  flag to enable HW workaround to avoid spurious
  *                            transactions during suspend
  * @has_base_layer     Supports staging layer as base layer
+ * @allow_gdsc_toggle  Flag to check if gdsc toggle is needed after crtc is
+ *                           disabled when external vote is present
  * @sc_cfg: system cache configuration
  * @uidle_cfg		Settings for uidle feature
  * @sui_misr_supported  indicate if secure-ui-misr is supported
@@ -1318,6 +1320,7 @@ struct sde_mdss_cfg {
 	bool has_decimation;
 	bool update_tcsr_disp_glitch;
 	bool has_base_layer;
+	bool allow_gdsc_toggle;
 
 	struct sde_sc_cfg sc_cfg;
 
