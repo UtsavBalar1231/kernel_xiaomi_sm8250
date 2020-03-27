@@ -398,7 +398,7 @@
 	};
 
 	chosen {
-		bootargs = "rcupdate.rcu_expedited=1 rcu_nocbs=0-7";
+		bootargs = "rcupdate.rcu_expedited=1 rcu_nocbs=0-7 earlycon=msm_geni_serial,0x98c000";
 	};
 
 	soc: soc { };
@@ -741,23 +741,6 @@
 		qcom,instance-type = "ufs";
 	};
 
-	ufsphy_mem: ufsphy_mem@1d87000 {
-		reg = <0x1d87000 0xe00>; /* PHY regs */
-		reg-names = "phy_mem";
-		#phy-cells = <0>;
-		ufs-qcom-crypto = <&ufs_ice>;
-
-		lanes-per-direction = <2>;
-
-		clock-names = "ref_clk_src",
-			"ref_clk",
-			"ref_aux_clk";
-		clocks = <&rpmhcc RPMH_CXO_CLK>,
-			<&gcc GCC_UFS_MEM_CLKREF_CLK>,
-			<&gcc GCC_UFS_PHY_PHY_AUX_CLK>;
-
-		status = "disabled";
-	};
 
 	ufshc_mem: ufshc@1d84000 {
 		compatible = "qcom,ufshc";
@@ -1009,6 +992,10 @@
 				  <WAKE_TCS    3>,
 				  <CONTROL_TCS 1>;
 
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
 		system_pm {
 			compatible = "qcom,system-pm";
 		};
@@ -1022,6 +1009,26 @@
 			compatible = "qcom,lagoon-rpmh-clk";
 			#clock-cells = <1>;
 		};
+
+		ufsphy_mem: ufsphy_mem@1d87000 {
+			reg = <0x1d87000 0xe00>; /* PHY regs */
+			reg-names = "phy_mem";
+			#phy-cells = <0>;
+			ufs-qcom-crypto = <&ufs_ice>;
+
+			lanes-per-direction = <2>;
+
+			qcom,rpmh-resource-name = "qphy.lvl";
+			clock-names = "ref_clk_src",
+				"ref_clk",
+				"ref_aux_clk";
+			clocks = <&rpmhcc RPMH_CXO_CLK>,
+				<&gcc GCC_UFS_MEM_CLKREF_CLK>,
+				<&gcc GCC_UFS_PHY_PHY_AUX_CLK>;
+
+			status = "disabled";
+		};
+
 	};
 
 	disp_rsc: rsc@af20000 {
@@ -1798,10 +1805,6 @@
 			compatible = "qcom,devfreq-fw-voter";
 		};
 
-		cpu7_l3: qcom,cpu7-cpu-l3-lat {
-			compatible = "qcom,devfreq-fw-voter";
-		};
-
 		cdsp_l3: qcom,cdsp-cdsp-l3-lat {
 			compatible = "qcom,devfreq-fw-voter";
 		};
@@ -1823,6 +1826,14 @@
 		compatible = "qcom,smem";
 		memory-region = <&smem_region>;
 		hwlocks = <&tcsr_mutex 3>;
+	};
+
+	qcom,smp2p_sleepstate {
+		compatible = "qcom,smp2p-sleepstate";
+		qcom,smem-states = <&sleepstate_smp2p_out 0>;
+		interrupt-parent = <&sleepstate_smp2p_in>;
+		interrupts = <0 0>;
+		interrupt-names = "smp2p-sleepstate-in";
 	};
 
 	qcom,msm-cdsp-loader {
@@ -2898,10 +2909,11 @@
 	};
 
 	icnss: qcom,icnss@18800000 {
-		status = "disabled";
 		compatible = "qcom,icnss";
-		reg = <0x18800000 0x800000>;
-		reg-names = "membase";
+		reg = <0x18800000 0x800000>,
+		      <0xb0000000 0x10000>;
+		reg-names = "membase", "smmu_iova_ipa";
+		iommus = <&apps_smmu 0x20 0x1>;
 		interrupts = <GIC_SPI 414 IRQ_TYPE_LEVEL_HIGH /* CE0 */ >,
 			     <GIC_SPI 415 IRQ_TYPE_LEVEL_HIGH /* CE1 */ >,
 			     <GIC_SPI 416 IRQ_TYPE_LEVEL_HIGH /* CE2 */ >,
@@ -2916,6 +2928,15 @@
 			     <GIC_SPI 425 IRQ_TYPE_LEVEL_HIGH /* CE11 */ >;
 		qcom,iommu-dma = "bypass";
 		qcom,wlan-msa-fixed-region = <&wlan_fw_mem>;
+		qcom,iommu-dma-addr-pool = <0xa0000000 0x10000000>;
+		vdd-cx-mx-supply = <&L4A>;
+		vdd-1.8-xo-supply = <&L7A>;
+		vdd-1.3-rfa-supply = <&L2E>;
+		vdd-3.3-ch1-supply = <&L11E>;
+		vdd-3.3-ch0-supply = <&L10E>;
+		qcom,vdd-cx-mx-config = <0 0>;
+		qcom,vdd-3.3-ch1-config = <3000000 3312000>;
+		qcom,vdd-3.3-ch0-config = <3000000 3312000>;
 		qcom,smp2p_map_wlan_1_in {
 			interrupts-extended = <&smp2p_wlan_1_in 0 0>,
 					      <&smp2p_wlan_1_in 1 0>;
@@ -2939,6 +2960,11 @@
 
 		feat_conf8: feat_conf8@6024 {
 			reg = <0x6024 0x4>;
+		};
+
+		gpu_gaming_bin: gpu_gaming_bin@6026 {
+			reg = <0x6026 0x1>;
+			bits = <5 1>;
 		};
 	};
 
@@ -3453,7 +3479,6 @@
 #include "pm7250b.dtsi"
 #include "pm6150l.dtsi"
 #include "pmk8350.dtsi"
-#include "pmr735b.dtsi"
 #include "lagoon-ion.dtsi"
 #include "lagoon-qupv3.dtsi"
 #include "lagoon-audio.dtsi"

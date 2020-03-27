@@ -19,7 +19,7 @@ First Level Node - QGAUGE device
 - compatible
 	Usage:      required
 	Value type: <string>
-	Definition: Should be "qcom,qpnp-qg".
+	Definition: Should be "qcom,qpnp-qg" or "qcom,qpnp-qg-lite".
 
 - qcom,pmic-revid
 	Usage:      required

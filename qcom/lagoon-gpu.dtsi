@@ -57,7 +57,7 @@
 
 		opp-253000000 {
 			opp-hz = /bits/ 64 <253000000>;
-			opp-microvolt = <RPMH_REGULATOR_LEVEL_SVS>;
+			opp-microvolt = <RPMH_REGULATOR_LEVEL_LOW_SVS>;
 		};
 	};
 
@@ -130,6 +130,9 @@
 		/* GDSC oxili regulators */
 		vddcx-supply = <&gpu_cx_gdsc>;
 		vdd-supply = <&gpu_gx_gdsc>;
+
+		nvmem-cells = <&gpu_gaming_bin>;
+		nvmem-cell-names = "gaming_bin";
 
 		/* CPU latency parameter */
 		qcom,pm-qos-active-latency = <67>;

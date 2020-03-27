@@ -173,6 +173,28 @@
 	qcom,dsi-default-panel = <&dsi_r66451_amoled_120hz_video>;
 };
 
+&qupv3_se0_i2c {
+	status = "ok";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	nq@28 {
+		compatible = "qcom,nq-nci";
+		reg = <0x28>;
+		qcom,nq-irq = <&tlmm 9 0x00>;
+		qcom,nq-ven = <&tlmm 6 0x00>;
+		qcom,nq-firm = <&tlmm 8 0x00>;
+		qcom,nq-clkreq = <&tlmm 7 0x00>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <9 0>;
+		interrupt-names = "nfc_irq";
+		pinctrl-names = "nfc_active", "nfc_suspend";
+		pinctrl-0 = <&nfc_int_active &nfc_enable_active
+				&nfc_clk_req_active>;
+		pinctrl-1 = <&nfc_int_suspend &nfc_enable_suspend
+				&nfc_clk_req_suspend>;
+	};
+};
+
 &pm7250b_charger {
 	status = "ok";
 	io-channels = <&pm7250b_vadc ADC_USB_IN_V_16>,
@@ -252,7 +274,7 @@
 &lagoon_snd {
 	qcom,model = "lito-lagoonqrd-snd-card";
 	qcom,msm-mi2s-master = <1>, <1>, <1>, <1>, <1>, <1>;
-	qcom,wcn-btfm = <0>;
+	qcom,wcn-btfm = <1>;
 	qcom,ext-disp-audio-rx = <0>;
 	qcom,audio-routing =
 		"AMIC1", "MIC BIAS1",
@@ -280,7 +302,7 @@
 		"IN3_AUX", "AUX_OUT",
 		"TX SWR_ADC0", "ADC1_OUTPUT",
 		"TX SWR_ADC2", "ADC2_OUTPUT",
-		"TX SWR_ADC2", "ADC3_OUTPUT",
+		"TX SWR_ADC3", "ADC3_OUTPUT",
 		"TX SWR_DMIC0", "DMIC1_OUTPUT",
 		"TX SWR_DMIC1", "DMIC2_OUTPUT",
 		"TX SWR_DMIC2", "DMIC3_OUTPUT",
@@ -326,7 +348,7 @@
 		"VA SWR_MIC7", "VA_SWR_CLK",
 		"VA SWR_ADC0", "ADC1_OUTPUT",
 		"VA SWR_ADC2", "ADC2_OUTPUT",
-		"VA SWR_ADC2", "ADC3_OUTPUT",
+		"VA SWR_ADC3", "ADC3_OUTPUT",
 		"VA SWR_MIC0", "DMIC1_OUTPUT",
 		"VA SWR_MIC1", "DMIC2_OUTPUT",
 		"VA SWR_MIC2", "DMIC3_OUTPUT",

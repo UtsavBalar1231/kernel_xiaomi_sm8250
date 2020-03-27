@@ -147,7 +147,7 @@
 	qcom,mdss-dsi-panel-status-read-length = <1>;
 	qcom,dsi-dyn-clk-enable;
 	qcom,dsi-dyn-clk-list =
-		<1055272072 1037684200 1042081168 1046478136 1050875104>;
+		<944315056 928576464 932511112 936445760 940380400>;
 	qcom,mdss-dsi-display-timings {
 		timing@0 {
 			qcom,mdss-dsi-panel-phy-timings =
