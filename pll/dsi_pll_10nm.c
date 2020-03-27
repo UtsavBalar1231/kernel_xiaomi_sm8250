@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
 #define pr_fmt(fmt)	"%s: " fmt, __func__
@@ -207,6 +207,7 @@ static inline int pll_reg_read(void *context, unsigned int reg,
 					unsigned int *val)
 {
 	int rc = 0;
+	u32 data;
 	struct mdss_pll_resources *rsc = context;
 
 	rc = mdss_pll_resource_enable(rsc, true);
@@ -215,7 +216,19 @@ static inline int pll_reg_read(void *context, unsigned int reg,
 		return rc;
 	}
 
+	/*
+	 * DSI PHY/PLL should be both powered on when reading PLL
+	 * registers. Since PHY power has been enabled in DSI PHY
+	 * driver, only PLL power is needed to enable here.
+	 */
+
+	data = MDSS_PLL_REG_R(rsc->phy_base, PHY_CMN_CTRL_0);
+	MDSS_PLL_REG_W(rsc->phy_base, PHY_CMN_CTRL_0, data | BIT(5));
+	ndelay(250);
 	*val = MDSS_PLL_REG_R(rsc->pll_base, reg);
+
+	MDSS_PLL_REG_W(rsc->phy_base, PHY_CMN_CTRL_0, data);
+
 	(void)mdss_pll_resource_enable(rsc, false);
 
 	return rc;
@@ -387,7 +400,7 @@ static void dsi_pll_config_slave(struct mdss_pll_resources *rsc)
 	rsc->slave = NULL;
 
 	if (!orsc) {
-		pr_warn("slave PLL unavilable, assuming standalone config\n");
+		pr_debug("slave PLL unavilable, assuming standalone config\n");
 		return;
 	}
 
@@ -1148,7 +1161,7 @@ static int vco_10nm_prepare(struct clk_hw *hw)
 	}
 
 	if ((pll->vco_cached_rate != 0) &&
-	    (pll->vco_cached_rate == clk_get_rate(hw->clk))) {
+		(pll->vco_cached_rate == clk_hw_get_rate(hw))) {
 		rc = hw->init->ops->set_rate(hw, pll->vco_cached_rate,
 				pll->vco_cached_rate);
 		if (rc) {
