@@ -1371,17 +1371,17 @@ static inline void hif_config_irq_set_perf_affinity_hint(
 #ifdef HIF_CE_LOG_INFO
 /**
  * hif_log_ce_info() - API to log ce info
- * @hif_ctx: hif opaque handle
+ * @scn: hif handle
  * @data: hang event data buffer
  * @offset: offset at which data needs to be written
  *
  * Return:  None
  */
-void hif_log_ce_info(struct hif_opaque_softc *hif_ctx, uint8_t *data,
+void hif_log_ce_info(struct hif_softc *scn, uint8_t *data,
 		     unsigned int *offset);
 #else
 static inline
-void hif_log_ce_info(struct hif_opaque_softc *hif_ctx, uint8_t *data,
+void hif_log_ce_info(struct hif_softc *scn, uint8_t *data,
 		     unsigned int *offset)
 {
 }

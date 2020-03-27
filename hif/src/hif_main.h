@@ -39,6 +39,9 @@
 #include "hif.h"
 #include "multibus.h"
 #include "hif_unit_test_suspend_i.h"
+#ifdef HIF_CE_LOG_INFO
+#include "qdf_notifier.h"
+#endif
 
 #define HIF_MIN_SLEEP_INACTIVITY_TIME_MS     50
 #define HIF_SLEEP_INACTIVITY_TIMER_PERIOD_MS 60
@@ -242,6 +245,9 @@ struct hif_softc {
 #ifdef HIF_CPU_PERF_AFFINE_MASK
 	/* The CPU hotplug event registration handle */
 	struct qdf_cpuhp_handler *cpuhp_event_handle;
+#endif
+#ifdef HIF_CE_LOG_INFO
+	qdf_notif_block hif_recovery_notifier;
 #endif
 };
 
