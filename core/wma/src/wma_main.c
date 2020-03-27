@@ -7551,7 +7551,12 @@ static void wma_set_arp_req_stats(WMA_HANDLE handle,
 	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(wma_handle->psoc,
 						    req_buf->vdev_id,
 						    WLAN_LEGACY_WMA_ID);
-	if (!wma_is_vdev_started(vdev)) {
+	if (!vdev) {
+		WMA_LOGE("Can't get vdev by vdev_id:%d", req_buf->vdev_id);
+		return;
+	}
+
+	if (!wma_is_vdev_up(req_buf->vdev_id)) {
 		WMA_LOGD("vdev id:%d is not started", req_buf->vdev_id);
 		goto release_ref;
 	}
