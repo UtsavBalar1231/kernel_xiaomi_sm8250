@@ -56,6 +56,9 @@
 /* default ubwc version */
 #define DEFAULT_SDE_UBWC_VERSION SDE_HW_UBWC_VER_10
 
+/* No UBWC */
+#define DEFAULT_SDE_UBWC_NONE 0x0
+
 /* default ubwc static config register value */
 #define DEFAULT_SDE_UBWC_STATIC 0x0
 
@@ -3195,7 +3198,7 @@ static int _sde_parse_prop_check(struct sde_mdss_cfg *cfg,
 	cfg->ubwc_version = SDE_HW_UBWC_VER(PROP_VALUE_ACCESS(prop_value,
 			 UBWC_VERSION, 0));
 	if (!prop_exists[UBWC_VERSION])
-		cfg->ubwc_version = DEFAULT_SDE_UBWC_VERSION;
+		cfg->ubwc_version = DEFAULT_SDE_UBWC_NONE;
 
 	cfg->mdp[0].highest_bank_bit = PROP_VALUE_ACCESS(prop_value,
 			BANK_BIT, 0);

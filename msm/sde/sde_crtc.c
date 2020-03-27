@@ -4769,6 +4769,24 @@ int sde_crtc_vblank(struct drm_crtc *crtc, bool en)
 	return 0;
 }
 
+static void sde_kms_add_ubwc_info(struct sde_kms_info *info,
+				struct sde_mdss_cfg *catalog)
+{
+	sde_kms_info_add_keyint(info, "UBWC version",
+				catalog->ubwc_version);
+	sde_kms_info_add_keyint(info, "UBWC macrotile_mode",
+				catalog->macrotile_mode);
+	sde_kms_info_add_keyint(info, "UBWC highest banking bit",
+				catalog->mdp[0].highest_bank_bit);
+	sde_kms_info_add_keyint(info, "UBWC swizzle",
+				catalog->mdp[0].ubwc_swizzle);
+
+	if (of_fdt_get_ddrtype() == LP_DDR4_TYPE)
+		sde_kms_info_add_keystr(info, "DDR version", "DDR4");
+	else
+		sde_kms_info_add_keystr(info, "DDR version", "DDR5");
+}
+
 /**
  * sde_crtc_install_properties - install all drm properties for crtc
  * @crtc: Pointer to drm crtc structure
@@ -4917,18 +4935,8 @@ static void sde_crtc_install_properties(struct drm_crtc *crtc,
 	if (catalog->qseed_type == SDE_SSPP_SCALER_QSEED3LITE)
 		sde_kms_info_add_keystr(info, "qseed_type", "qseed3lite");
 
-	sde_kms_info_add_keyint(info, "UBWC version", catalog->ubwc_version);
-	sde_kms_info_add_keyint(info, "UBWC macrotile_mode",
-				catalog->macrotile_mode);
-	sde_kms_info_add_keyint(info, "UBWC highest banking bit",
-				catalog->mdp[0].highest_bank_bit);
-	sde_kms_info_add_keyint(info, "UBWC swizzle",
-				catalog->mdp[0].ubwc_swizzle);
-
-	if (of_fdt_get_ddrtype() == LP_DDR4_TYPE)
-		sde_kms_info_add_keystr(info, "DDR version", "DDR4");
-	else
-		sde_kms_info_add_keystr(info, "DDR version", "DDR5");
+	if (catalog->ubwc_version)
+		sde_kms_add_ubwc_info(info, catalog);
 
 	if (sde_is_custom_client()) {
 		/* No support for SMART_DMA_V1 yet */
