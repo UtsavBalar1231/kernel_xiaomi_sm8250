@@ -762,7 +762,7 @@
 		clock-names = "ref_clk_src",
 			"ref_clk",
 			"ref_aux_clk";
-		clocks = <&rpmhcc RPMH_CXO_CLK>,
+		clocks = <&rpmhcc RPMH_QLINK_CLK>,
 			<&gcc GCC_UFS_MEM_CLKREF_CLK>,
 			<&gcc GCC_UFS_PHY_PHY_AUX_CLK>;
 
@@ -797,7 +797,7 @@
 			<&gcc GCC_UFS_PHY_AHB_CLK>,
 			<&gcc GCC_UFS_PHY_UNIPRO_CORE_CLK>,
 			<&gcc GCC_UFS_PHY_ICE_CORE_CLK>,
-			<&rpmhcc RPMH_CXO_CLK>,
+			<&rpmhcc RPMH_QLINK_CLK>,
 			<&gcc GCC_UFS_PHY_TX_SYMBOL_0_CLK>,
 			<&gcc GCC_UFS_PHY_RX_SYMBOL_0_CLK>,
 			<&gcc GCC_UFS_PHY_RX_SYMBOL_1_CLK>;
