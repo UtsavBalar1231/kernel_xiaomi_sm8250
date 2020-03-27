@@ -1,4 +1,4 @@
-/* Copyright (c) 2018-2019 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2018-2020 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -156,6 +156,8 @@ enum rmnet_shs_switch_reason_e {
 	RMNET_SHS_SWITCH_WQ_RATE,
 	RMNET_SHS_OOO_PACKET_SWITCH,
 	RMNET_SHS_OOO_PACKET_TOTAL,
+	RMNET_SHS_SWITCH_PACKET_BURST,
+	RMNET_SHS_SWITCH_CORE_BACKLOG,
 	RMNET_SHS_SWITCH_MAX_REASON
 };
 
@@ -195,6 +197,7 @@ struct rmnet_shs_cpu_node_s {
 	u32 qtail;
 	u32 qdiff;
 	u32 parkedlen;
+	u32 seg;
 	u8 prio;
 	u8 wqprio;
 };

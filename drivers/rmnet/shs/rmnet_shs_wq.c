@@ -1909,14 +1909,18 @@ void rmnet_shs_update_cfg_mask(void)
 
 void rmnet_shs_wq_filter(void)
 {
-	int cpu;
+	int cpu, cur_cpu;
 	int temp;
 	struct rmnet_shs_wq_hstat_s *hnode = NULL;
 
-	for (cpu = 0; cpu < MAX_CPUS; cpu++)
+	for (cpu = 0; cpu < MAX_CPUS; cpu++) {
 		rmnet_shs_cpu_rx_filter_flows[cpu] = 0;
+		rmnet_shs_cpu_node_tbl[cpu].seg = 0;
+	}
 
-	/* Filter out flows with low pkt count */
+	/* Filter out flows with low pkt count and
+	 * mark CPUS with slowstart flows
+	 */
 	list_for_each_entry(hnode, &rmnet_shs_wq_hstat_tbl, hstat_node_id) {
 
 		if (hnode->in_use == 0)
@@ -1927,6 +1931,14 @@ void rmnet_shs_wq_filter(void)
 				temp = hnode->current_cpu;
 				rmnet_shs_cpu_rx_filter_flows[temp]++;
 			}
+		cur_cpu = hnode->current_cpu;
+		if (cur_cpu >= MAX_CPUS) {
+			continue;
+		}
+
+		if (hnode->node->hstats->segment_enable) {
+			rmnet_shs_cpu_node_tbl[cur_cpu].seg++;
+		}
 	}
 }
 
