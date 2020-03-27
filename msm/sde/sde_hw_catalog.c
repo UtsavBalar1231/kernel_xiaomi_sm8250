@@ -1100,6 +1100,9 @@ static void _sde_sspp_setup_vig(struct sde_mdss_cfg *sde_cfg,
 		set_bit(SDE_PERF_SSPP_QOS_8LVL, &sspp->perf_features);
 	(*vig_count)++;
 
+	sblk->format_list = sde_cfg->vig_formats;
+	sblk->virt_format_list = sde_cfg->virt_vig_formats;
+
 	if (!prop_value)
 		return;
 
@@ -1208,8 +1211,6 @@ static void _sde_sspp_setup_vig(struct sde_mdss_cfg *sde_cfg,
 	if (PROP_VALUE_ACCESS(prop_value, VIG_INVERSE_PMA, 0))
 		set_bit(SDE_SSPP_INVERSE_PMA, &sspp->features);
 
-	sblk->format_list = sde_cfg->vig_formats;
-	sblk->virt_format_list = sde_cfg->virt_vig_formats;
 	if (sde_cfg->true_inline_rot_rev > 0) {
 		set_bit(SDE_SSPP_TRUE_INLINE_ROT, &sspp->features);
 		sblk->in_rot_format_list = sde_cfg->inline_rot_formats;
