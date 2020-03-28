@@ -1683,16 +1683,17 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 	case V4L2_CID_MPEG_VIDC_VIDEO_OPERATING_RATE:
 		if (!is_valid_operating_rate(inst, ctrl->val))
 			break;
-		inst->clk_data.operating_rate = ctrl->val;
+		inst->flags &= ~VIDC_TURBO;
+		if (ctrl->val == INT_MAX)
+			inst->flags |= VIDC_TURBO;
+		else
+			inst->clk_data.operating_rate = ctrl->val;
 		/* For HEIC image encode, set operating rate to 1 */
 		if (is_grid_session(inst)) {
 			s_vpr_h(sid, "%s: set operating rate to 1 for HEIC\n",
 					__func__);
 			inst->clk_data.operating_rate = 1 << 16;
 		}
-		inst->flags &= ~VIDC_TURBO;
-		if (ctrl->val == INT_MAX)
-			inst->flags |= VIDC_TURBO;
 		if (inst->state < MSM_VIDC_LOAD_RESOURCES)
 			msm_vidc_calculate_buffer_counts(inst);
 		if (inst->state == MSM_VIDC_START_DONE) {
