@@ -3956,6 +3956,7 @@ static int __protect_cp_mem(struct venus_hfi_device *device)
 	memprot.cp_nonpixel_start = 0x0;
 	memprot.cp_nonpixel_size = 0x0;
 
+	mutex_lock(&device->res->cb_lock);
 	list_for_each_entry(cb, &device->res->context_banks, list) {
 		if (!strcmp(cb->name, "venus_ns")) {
 			desc.args[1] = memprot.cp_size =
@@ -3974,6 +3975,7 @@ static int __protect_cp_mem(struct venus_hfi_device *device)
 				memprot.cp_nonpixel_size);
 		}
 	}
+	mutex_unlock(&device->res->cb_lock);
 
 	desc.arginfo = SCM_ARGS(4);
 	rc = scm_call2(SCM_SIP_FNID(SCM_SVC_MP,

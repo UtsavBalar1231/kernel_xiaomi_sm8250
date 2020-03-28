@@ -295,6 +295,7 @@ int msm_comm_ctrl_deinit(struct msm_vidc_inst *inst);
 void msm_comm_cleanup_internal_buffers(struct msm_vidc_inst *inst);
 bool msm_comm_turbo_session(struct msm_vidc_inst *inst);
 void msm_comm_print_inst_info(struct msm_vidc_inst *inst);
+void msm_comm_print_insts_info(struct msm_vidc_core *core);
 int msm_comm_v4l2_to_hfi(int id, int value, u32 sid);
 int msm_comm_hfi_to_v4l2(int id, int value, u32 sid);
 int msm_comm_get_v4l2_profile(int fourcc, int profile, u32 sid);
