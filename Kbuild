@@ -1362,6 +1362,10 @@ WMI_OBJS += $(WMI_OBJ_DIR)/wmi_unified_cfr_tlv.o
 WMI_OBJS += $(WMI_OBJ_DIR)/wmi_unified_cfr_api.o
 endif
 
+ifeq ($(CONFIG_WLAN_HANG_EVENT), y)
+WMI_OBJS += $(WMI_OBJ_DIR)/wmi_hang_event.o
+endif
+
 ########### FWLOG ###########
 FWLOG_DIR := $(WLAN_COMMON_ROOT)/utils/fwlog
 
