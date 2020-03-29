@@ -9,6 +9,7 @@ Required properties:
 		qca,qca6174
 		qca,wcn3990
                 qca,qca6390
+		qca,wcn6750
 	- qca,bt-reset-gpio: GPIO pin to bring BT Controller out of reset
 
 Optional properties:
