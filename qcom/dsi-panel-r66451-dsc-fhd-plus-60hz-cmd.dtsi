@@ -1,7 +1,7 @@
 &mdss_mdp {
-	dsi_r66451_amoled_90hz_cmd: qcom,mdss_dsi_r66451_qhd_90hz_cmd {
+	dsi_r66451_amoled_60hz_cmd: qcom,mdss_dsi_r66451_fhd_plus_60hz_cmd {
 		qcom,mdss-dsi-panel-name =
-			"r66451 amoled cmd mode dsi visionx panel with DSC";
+			"r66451 amoled cmd mode dsi visionox 60HZ panel with DSC";
 		qcom,mdss-dsi-panel-type = "dsi_cmd_mode";
 		qcom,mdss-dsi-panel-physical-type = "oled";
 		qcom,mdss-dsi-virtual-channel-id = <0>;
@@ -34,7 +34,7 @@
 		qcom,mdss-dsi-te-using-te-pin;
 		qcom,mdss-dsi-display-timings {
 			timing@0 {
-				qcom,mdss-dsi-panel-framerate = <90>;
+				qcom,mdss-dsi-panel-framerate = <60>;
 				qcom,mdss-dsi-panel-width = <1080>;
 				qcom,mdss-dsi-panel-height = <2340>;
 				qcom,mdss-dsi-h-front-porch = <95>;
@@ -50,6 +50,10 @@
 				qcom,mdss-dsi-v-bottom-border = <0>;
 				qcom,mdss-dsi-panel-jitter = <0x4 0x1>;
 				qcom,mdss-dsi-on-command = [
+					39 01 00 00 00 00 02 b0 00
+					39 01 00 00 00 00 13 d8 00 00 00 00 00
+					   00 00 00 00 5b 00 5b 00 5b 00 5b 00
+					   5b
 					39 01 00 00 00 00 02 b0 80
 					39 01 00 00 00 00 02 e6 00
 					39 01 00 00 00 00 02 b0 00
