@@ -239,6 +239,10 @@ struct hif_softc {
 #endif
 	struct hif_cfg ini_cfg;
 	struct wlan_srng_cfg *wlan_ce_srng_cfg;
+#ifdef HIF_CPU_PERF_AFFINE_MASK
+	/* The CPU hotplug event registration handle */
+	struct qdf_cpuhp_handler *cpuhp_event_handle;
+#endif
 };
 
 static inline
