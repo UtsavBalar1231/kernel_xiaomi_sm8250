@@ -251,7 +251,7 @@
 				reg = <0>;
 				qcom,supply-name = "vdda-1p2";
 				qcom,supply-min-voltage = <1232000>;
-				qcom,supply-max-voltage = <1232000>;
+				qcom,supply-max-voltage = <1312000>;
 				qcom,supply-enable-load = <21800>;
 				qcom,supply-disable-load = <0>;
 			};
