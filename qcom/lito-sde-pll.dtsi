@@ -16,18 +16,6 @@
 		memory-region = <&dfps_data_memory>;
 		qcom,dsi-pll-ssc-en;
 		qcom,dsi-pll-ssc-mode = "down-spread";
-		qcom,platform-supply-entries {
-			#address-cells = <1>;
-			#size-cells = <0>;
-			qcom,platform-supply-entry@0 {
-				reg = <0>;
-				qcom,supply-name = "gdsc";
-				qcom,supply-min-voltage = <0>;
-				qcom,supply-max-voltage = <0>;
-				qcom,supply-enable-load = <0>;
-				qcom,supply-disable-load = <0>;
-			};
-		};
 	};
 
 	mdss_dsi1_pll: qcom,mdss_dsi1_pll {
@@ -46,18 +34,6 @@
 		clock-rate = <0>;
 		qcom,dsi-pll-ssc-en;
 		qcom,dsi-pll-ssc-mode = "down-spread";
-		qcom,platform-supply-entries {
-			#address-cells = <1>;
-			#size-cells = <0>;
-			qcom,platform-supply-entry@0 {
-				reg = <0>;
-				qcom,supply-name = "gdsc";
-				qcom,supply-min-voltage = <0>;
-				qcom,supply-max-voltage = <0>;
-				qcom,supply-enable-load = <0>;
-				qcom,supply-disable-load = <0>;
-			};
-		};
 	};
 	 mdss_dp_pll: qcom,mdss_dp_pll@c011000 {
 		compatible = "qcom,mdss_dp_pll_7nm_v2";
