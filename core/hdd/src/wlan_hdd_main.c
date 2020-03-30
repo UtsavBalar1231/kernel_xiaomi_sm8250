@@ -6291,8 +6291,10 @@ QDF_STATUS hdd_stop_adapter(struct hdd_context *hdd_ctx,
 	case QDF_SAP_MODE:
 		wlan_hdd_scan_abort(adapter);
 		/* Diassociate with all the peers before stop ap post */
-		if (test_bit(SOFTAP_BSS_STARTED, &adapter->event_flags))
-			wlan_hdd_del_station(adapter);
+		if (test_bit(SOFTAP_BSS_STARTED, &adapter->event_flags)) {
+			if (wlan_hdd_del_station(adapter))
+				hdd_sap_indicate_disconnect_for_sta(adapter);
+		}
 		sap_config = &adapter->session.ap.sap_config;
 		wlansap_reset_sap_config_add_ie(sap_config, eUPDATE_IE_ALL);
 
