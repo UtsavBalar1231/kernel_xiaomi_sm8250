@@ -24,7 +24,6 @@
  * @cpas_version:            Has cpas version read from Hardware
  * @ubwc_static_ctrl:        UBWC static control configuration
  * @is_ife_lite:             Flag to indicate full vs lite IFE
- * @ife_clk_src:             IFE source clock
  */
 struct cam_vfe_soc_private {
 	uint32_t    cpas_handle;
@@ -34,7 +33,6 @@ struct cam_vfe_soc_private {
 	int32_t     dsp_clk_rate;
 	uint32_t    ubwc_static_ctrl[UBWC_STATIC_CONFIG_MAX];
 	bool        is_ife_lite;
-	uint64_t    ife_clk_src;
 };
 
 /*
