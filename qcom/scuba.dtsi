@@ -748,11 +748,6 @@
 			qcom,dump-id = <0x3>;
 		};
 
-		c_scandump {
-			qcom,dump-size = <0x40000>;
-			qcom,dump-id = <0xeb>;
-		};
-
 		l1_icache0 {
 			qcom,dump-size = <0x9040>;
 			qcom,dump-id = <0x60>;
