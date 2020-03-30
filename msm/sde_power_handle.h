@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _SDE_POWER_HANDLE_H_
@@ -129,6 +129,8 @@ struct sde_power_event {
  * @rsc_client: sde rsc client pointer
  * @rsc_client_init: boolean to control rsc client create
  * @dss_cx_ipeak: client pointer for cx ipeak driver
+ * @is_ext_vote_en: flag to check if external vote is present
+ * @ext_client_lock: external client vote mutex
  */
 struct sde_power_handle {
 	struct dss_module_power mp;
@@ -143,6 +145,8 @@ struct sde_power_handle {
 	struct sde_rsc_client *rsc_client;
 	bool rsc_client_init;
 	struct cx_ipeak_client *dss_cx_ipeak;
+	bool is_ext_vote_en;
+	struct mutex ext_client_lock;
 };
 
 /**

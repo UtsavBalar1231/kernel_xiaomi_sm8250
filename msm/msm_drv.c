@@ -1590,17 +1590,24 @@ int msm_ioctl_power_ctrl(struct drm_device *dev, void *data,
 		pr_err("ignoring, unbalanced disable\n");
 	}
 
+	mutex_lock(&priv->phandle.ext_client_lock);
+
 	if (vote_req) {
-		if (power_ctrl->enable)
+		if (power_ctrl->enable) {
 			rc = pm_runtime_get_sync(dev->dev);
-		else
+			priv->phandle.is_ext_vote_en = true;
+		} else {
 			pm_runtime_put_sync(dev->dev);
+			 priv->phandle.is_ext_vote_en = false;
+		}
 
 		if (rc < 0)
 			ctx->enable_refcnt = old_cnt;
 		else
 			rc = 0;
 	}
+
+	mutex_unlock(&priv->phandle.ext_client_lock);
 
 	pr_debug("pid %d enable %d, refcnt %d, vote_req %d\n",
 			current->pid, power_ctrl->enable, ctx->enable_refcnt,
