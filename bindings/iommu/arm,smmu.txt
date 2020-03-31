@@ -230,7 +230,9 @@ conditions.
 --- "stall-disable":
 		Iommu faults do not stall the client while the fault
 		interrupt is being handled.
-
+--- "HUPCF":
+		Iommu may process other transactions while a fault is
+		in the process of being handled.
 - qcom,iommu-vmid:
 		Optional, Int.
 		An identifier indicating the security state of the client.
