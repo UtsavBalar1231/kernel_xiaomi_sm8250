@@ -852,6 +852,11 @@
 		memory-region = <&pil_video_mem>;
 	};
 
+	cx_ipeak_lm: cx_ipeak@3ed000 {
+		compatible = "qcom,cx-ipeak-v2";
+		reg = <0x3ed000 0xe008>;
+	};
+
 	pil_modem: qcom,mss@6080000 {
 		compatible = "qcom,pil-tz-generic";
 		reg = <0x6080000 0x100>;
