@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_VFE_LITE17X_H_
@@ -87,6 +87,14 @@ static struct cam_vfe_rdi_reg_data  vfe17x_rdi_3_data = {
 	.reg_update_irq_mask      = 0x100,
 };
 
+static struct cam_vfe_rdi_overflow_status vfe17x_rdi_irq_status = {
+	.rdi0_overflow_mask = 0x8,
+	.rdi1_overflow_mask = 0x10,
+	.rdi2_overflow_mask = 0x18,
+	.rdi3_overflow_mask = 0x20,
+	.rdi_overflow_mask  = 0x3c,
+};
+
 static struct cam_vfe_top_ver2_hw_info vfe17x_top_hw_info = {
 	.common_reg = &vfe17x_top_common_reg,
 	.camif_hw_info = {
@@ -104,6 +112,7 @@ static struct cam_vfe_top_ver2_hw_info vfe17x_top_hw_info = {
 			&vfe17x_rdi_2_data,
 			&vfe17x_rdi_3_data,
 			},
+		.rdi_irq_status  = &vfe17x_rdi_irq_status,
 		},
 	.num_mux = 4,
 	.mux_type = {

@@ -212,6 +212,19 @@ static int cam_vfe_top_ver3_mux_get_reg_update(
 	return -EINVAL;
 }
 
+static int cam_vfe_top_ver3_get_data(
+	struct cam_vfe_top_ver3_priv *top_priv,
+	void *cmd_args, uint32_t arg_size)
+{
+	struct cam_isp_resource_node  *res = cmd_args;
+
+	if (res->process_cmd)
+		return res->process_cmd(res,
+			CAM_ISP_HW_CMD_CAMIF_DATA, cmd_args, arg_size);
+
+	return -EINVAL;
+}
+
 int cam_vfe_top_ver3_get_hw_caps(void *device_priv,
 	void *get_hw_cap_args, uint32_t arg_size)
 {
@@ -571,6 +584,10 @@ int cam_vfe_top_ver3_process_cmd(void *device_priv, uint32_t cmd_type,
 		break;
 	case CAM_ISP_HW_CMD_GET_REG_UPDATE:
 		rc = cam_vfe_top_ver3_mux_get_reg_update(top_priv, cmd_args,
+			arg_size);
+		break;
+	case CAM_ISP_HW_CMD_CAMIF_DATA:
+		rc = cam_vfe_top_ver3_get_data(top_priv, cmd_args,
 			arg_size);
 		break;
 	case CAM_ISP_HW_CMD_CLOCK_UPDATE:

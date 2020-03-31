@@ -83,8 +83,11 @@ static int cam_vfe_top_set_hw_clk_rate(
 	struct cam_hw_soc_info        *soc_info = NULL;
 	int                            i, rc = 0;
 	unsigned long                  max_clk_rate = 0;
+	struct cam_vfe_soc_private    *soc_private = NULL;
 
 	soc_info = top_priv->common_data.soc_info;
+	soc_private =
+		(struct cam_vfe_soc_private *)soc_info->soc_private;
 
 	for (i = 0; i < top_priv->top_common.num_mux; i++) {
 		if (top_priv->req_clk_rate[i] > max_clk_rate)
@@ -96,7 +99,7 @@ static int cam_vfe_top_set_hw_clk_rate(
 	CAM_DBG(CAM_PERF, "VFE: Clock name=%s idx=%d clk=%llu",
 		soc_info->clk_name[soc_info->src_clk_idx],
 		soc_info->src_clk_idx, max_clk_rate);
-
+	soc_private->ife_clk_src = max_clk_rate;
 	rc = cam_soc_util_set_src_clk_rate(soc_info, max_clk_rate);
 
 	if (!rc)
@@ -175,6 +178,19 @@ static int cam_vfe_top_mux_get_reg_update(
 	if (cmd_update->res->process_cmd)
 		return cmd_update->res->process_cmd(cmd_update->res,
 			CAM_ISP_HW_CMD_GET_REG_UPDATE, cmd_args, arg_size);
+
+	return -EINVAL;
+}
+
+static int cam_vfe_top_get_data(
+	struct cam_vfe_top_ver2_priv *top_priv,
+	void *cmd_args, uint32_t arg_size)
+{
+	struct cam_isp_resource_node  *res = cmd_args;
+
+	if (res->process_cmd)
+		return res->process_cmd(res,
+			CAM_ISP_HW_CMD_CAMIF_DATA, cmd_args, arg_size);
 
 	return -EINVAL;
 }
@@ -543,6 +559,8 @@ int cam_vfe_top_stop(void *device_priv,
 	struct cam_vfe_top_ver2_priv            *top_priv;
 	struct cam_isp_resource_node            *mux_res;
 	struct cam_hw_info                      *hw_info = NULL;
+	struct cam_hw_soc_info                  *soc_info = NULL;
+	struct cam_vfe_soc_private              *soc_private = NULL;
 	int i, rc = 0;
 
 	if (!device_priv || !stop_args) {
@@ -553,6 +571,8 @@ int cam_vfe_top_stop(void *device_priv,
 	top_priv = (struct cam_vfe_top_ver2_priv   *)device_priv;
 	mux_res = (struct cam_isp_resource_node *)stop_args;
 	hw_info = (struct cam_hw_info  *)mux_res->hw_intf->hw_priv;
+	soc_info = top_priv->common_data.soc_info;
+	soc_private = soc_info->soc_private;
 
 	if ((mux_res->res_id == CAM_ISP_HW_VFE_IN_CAMIF) ||
 		(mux_res->res_id == CAM_ISP_HW_VFE_IN_PDLIB) ||
@@ -583,7 +603,7 @@ int cam_vfe_top_stop(void *device_priv,
 			}
 		}
 	}
-
+	soc_private->ife_clk_src = 0;
 	return rc;
 }
 
@@ -660,6 +680,10 @@ int cam_vfe_top_process_cmd(void *device_priv, uint32_t cmd_type,
 		break;
 	case CAM_ISP_HW_CMD_GET_REG_UPDATE:
 		rc = cam_vfe_top_mux_get_reg_update(top_priv, cmd_args,
+			arg_size);
+		break;
+	case CAM_ISP_HW_CMD_CAMIF_DATA:
+		rc = cam_vfe_top_get_data(top_priv, cmd_args,
 			arg_size);
 		break;
 	case CAM_ISP_HW_CMD_CLOCK_UPDATE:

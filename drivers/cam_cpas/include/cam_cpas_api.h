@@ -624,5 +624,15 @@ const char *cam_cpas_axi_util_path_type_to_string(
 const char *cam_cpas_axi_util_trans_type_to_string(
 	uint32_t path_data_type);
 
+/**
+ * cam_cpas_log_votes()
+ *
+ * @brief: API to print the all bw votes of axi client. It also print the
+ *     applied camnoc axi clock vote value and ahb vote value
+ *
+ * @return 0 on success.
+ *
+ */
+void cam_cpas_log_votes(void);
 
 #endif /* _CAM_CPAS_API_H_ */
