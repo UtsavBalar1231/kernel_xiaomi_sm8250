@@ -304,6 +304,7 @@ static int target_if_vdev_mgr_start_response_handler(ol_scn_t scn,
 	rsp.mac_id = vdev_start_resp.mac_id;
 	rsp.cfgd_tx_streams = vdev_start_resp.cfgd_tx_streams;
 	rsp.cfgd_rx_streams = vdev_start_resp.cfgd_rx_streams;
+	rsp.max_allowed_tx_power = vdev_start_resp.max_allowed_tx_power;
 
 	status = rx_ops->vdev_mgr_start_response(psoc, &rsp);
 

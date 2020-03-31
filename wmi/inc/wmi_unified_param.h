@@ -5386,6 +5386,7 @@ typedef enum {
  *          VDEV is bound to. The valid range is 0 to (num_macs-1).
  * @cfgd_tx_streams: Configured Transmit Streams
  * @cfgd_rx_streams: Configured Receive Streams
+ * @max_allowed_tx_power: max tx power allowed
  */
 typedef struct {
 	uint32_t vdev_id;
@@ -5397,6 +5398,7 @@ typedef struct {
 	uint32_t mac_id;
 	uint32_t cfgd_tx_streams;
 	uint32_t cfgd_rx_streams;
+	uint32_t max_allowed_tx_power;
 } wmi_host_vdev_start_resp;
 
 /**
