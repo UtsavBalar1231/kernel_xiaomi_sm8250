@@ -104,7 +104,7 @@
 		qcom,initial-pwrlevel = <6>;
 		qcom,idle-timeout = <80>;
 
-		qcom,ubwc-mode = <1>;
+		qcom,ubwc-mode = <2>;
 		qcom,min-access-length = <64>;
 		qcom,highest-bank-bit = <14>;
 
