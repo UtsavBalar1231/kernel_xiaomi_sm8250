@@ -97,7 +97,7 @@ module_param(rmnet_shs_fall_back_timer, uint, 0644);
 MODULE_PARM_DESC(rmnet_shs_fall_back_timer,
 		 "Option to enable fall back limit for parking");
 
-unsigned int rmnet_shs_backlog_max_pkts __read_mostly = 1200;
+unsigned int rmnet_shs_backlog_max_pkts __read_mostly = 1100;
 module_param(rmnet_shs_backlog_max_pkts, uint, 0644);
 MODULE_PARM_DESC(rmnet_shs_backlog_max_pkts,
 		 "Max pkts in backlog prioritizing");
