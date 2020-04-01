@@ -1524,6 +1524,16 @@ static int cam_ife_hw_mgr_acquire_csid_hw(
 			if (!ife_hw_mgr->csid_devices[i])
 				continue;
 
+			if (csid_acquire->in_port->dsp_mode) {
+				rc = ife_hw_mgr->ife_devices[i]->hw_ops
+					.process_cmd(
+					ife_hw_mgr->ife_devices[i]->hw_priv,
+					CAM_ISP_HW_CMD_QUERY_DSP_MODE,
+					NULL, 0);
+				if (rc)
+					continue;
+			}
+
 			hw_intf = ife_hw_mgr->csid_devices[i];
 			rc = hw_intf->hw_ops.reserve(hw_intf->hw_priv,
 				csid_acquire,
@@ -1538,6 +1548,15 @@ static int cam_ife_hw_mgr_acquire_csid_hw(
 	for (i = CAM_IFE_CSID_HW_NUM_MAX - 1; i >= 0; i--) {
 		if (!ife_hw_mgr->csid_devices[i])
 			continue;
+
+		if (csid_acquire->in_port->dsp_mode) {
+			rc = ife_hw_mgr->ife_devices[i]->hw_ops.process_cmd(
+				ife_hw_mgr->ife_devices[i]->hw_priv,
+				CAM_ISP_HW_CMD_QUERY_DSP_MODE,
+				NULL, 0);
+			if (rc)
+				continue;
+		}
 
 		hw_intf = ife_hw_mgr->csid_devices[i];
 		rc = hw_intf->hw_ops.reserve(hw_intf->hw_priv,
