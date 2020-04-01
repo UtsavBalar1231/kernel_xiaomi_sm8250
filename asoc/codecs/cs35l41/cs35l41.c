@@ -791,6 +791,7 @@ static irqreturn_t cs35l41_irq(int irq, void *data)
 	unsigned int status[4];
 	unsigned int masks[4];
 	unsigned int i;
+	char reason[] = "DSP";
 	dev_info(cs35l41->dev, "step into cs35l41 irq handler\n");
 
 	for (i = 0; i < ARRAY_SIZE(status); i++) {
@@ -916,7 +917,7 @@ static irqreturn_t cs35l41_irq(int irq, void *data)
 		//regmap_write(cs35l41->regmap, CS35L41_AMP_OUT_MUTE,
 		//	     1 << CS35L41_AMP_MUTE_SHIFT);
 		cs35l41->dc_current_cnt++;
-		send_DC_data_to_xlog((int)cs35l41->dc_current_cnt);
+		send_DC_data_to_xlog((int)cs35l41->dc_current_cnt, reason);
 		dev_crit(cs35l41->dev, "DC current detected");
 	}
 
