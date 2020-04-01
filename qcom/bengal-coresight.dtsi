@@ -141,6 +141,20 @@
 		};
 	};
 
+	snoc: snoc {
+		compatible = "qcom,coresight-dummy";
+
+		coresight-name = "coresight-snoc";
+		qcom,dummy-source;
+
+		port {
+			snoc_out_funnel_in0: endpoint {
+				remote-endpoint =
+				<&funnel_in0_in_snoc>;
+			};
+		};
+	};
+
 	tpdm_lpass: tpdm@8a26000 {
 		compatible = "qcom,coresight-dummy";
 
@@ -1125,6 +1139,15 @@
 			};
 
 			port@1 {
+				reg = <5>;
+				funnel_in0_in_snoc: endpoint {
+					slave-mode;
+					remote-endpoint =
+					<&snoc_out_funnel_in0>;
+				};
+			};
+
+			port@2 {
 				reg = <6>;
 				funnel_in0_in_funnel_qatb: endpoint {
 					slave-mode;
@@ -1133,7 +1156,7 @@
 				};
 			};
 
-			port@2 {
+			port@3 {
 				reg = <7>;
 				funnel_in0_in_stm: endpoint {
 					slave-mode;
