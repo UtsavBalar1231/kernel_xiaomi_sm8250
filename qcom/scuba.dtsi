@@ -212,7 +212,7 @@
 		pil_modem_mem: modem_region@8ab00000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0x0 0x8ab00000 0x0 0x7300000>;
+			reg = <0x0 0x8ab00000 0x0 0x6900000>;
 		};
 
 		pil_video_mem: pil_video_region@91400000 {
