@@ -78,6 +78,53 @@ int32_t cam_csiphy_mem_dmp(struct cam_hw_soc_info *soc_info)
 	return rc;
 }
 
+int32_t cam_csiphy_status_dmp(struct csiphy_device *csiphy_dev)
+{
+	struct csiphy_reg_parms_t *csiphy_reg = NULL;
+	int32_t                   rc = 0;
+	resource_size_t           size = 0;
+	void __iomem              *phy_base = NULL;
+	int                       reg_id = 0;
+	uint32_t                  irq, status_reg, clear_reg;
+
+	if (!csiphy_dev) {
+		rc = -EINVAL;
+		CAM_ERR(CAM_CSIPHY, "invalid input %d", rc);
+		return rc;
+	}
+
+	csiphy_reg = &csiphy_dev->ctrl_reg->csiphy_reg;
+	phy_base = csiphy_dev->soc_info.reg_map[0].mem_base;
+	status_reg = csiphy_reg->mipi_csiphy_interrupt_status0_addr;
+	clear_reg = csiphy_reg->mipi_csiphy_interrupt_clear0_addr;
+	size = csiphy_reg->csiphy_interrupt_status_size;
+
+	CAM_INFO(CAM_CSIPHY, "PHY base addr=%pK offset=0x%x size=%d",
+			phy_base, status_reg, size);
+
+	if (phy_base != NULL) {
+		for (reg_id = 0; reg_id < size; reg_id++) {
+			uint32_t offset;
+
+			offset = status_reg + (0x4 * reg_id);
+			irq = cam_io_r(phy_base +  offset);
+			offset = clear_reg + (0x4 * reg_id);
+			cam_io_w_mb(irq, phy_base + offset);
+			cam_io_w_mb(0, phy_base + offset);
+
+			CAM_INFO(CAM_CSIPHY,
+				"CSIPHY%d_IRQ_STATUS_ADDR%d = 0x%x",
+				csiphy_dev->soc_info.index, reg_id, irq);
+		}
+	} else {
+		rc = -EINVAL;
+		CAM_ERR(CAM_CSIPHY, "phy base is NULL  %d", rc);
+		return rc;
+	}
+
+	return rc;
+}
+
 enum cam_vote_level get_clk_vote_default(struct csiphy_device *csiphy_dev)
 {
 	CAM_DBG(CAM_CSIPHY, "voting for SVS");

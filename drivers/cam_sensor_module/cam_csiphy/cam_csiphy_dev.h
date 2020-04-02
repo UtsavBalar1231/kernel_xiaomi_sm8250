@@ -87,6 +87,7 @@ enum cam_csiphy_state {
  * @mipi_csiphy_interrupt_clear0_addr:
  *     CSIPhy interrupt clear addr
  * @csiphy_version: CSIPhy Version
+ * @csiphy_interrupt_status_size: CSIPhy status register size
  * @csiphy_common_array_size: CSIPhy common array size
  * @csiphy_reset_array_size: CSIPhy reset array size
  * @csiphy_2ph_config_array_size: 2ph settings size
@@ -108,6 +109,7 @@ struct csiphy_reg_parms_t {
 	uint32_t mipi_csiphy_interrupt_mask_addr;
 	uint32_t mipi_csiphy_interrupt_clear0_addr;
 	uint32_t csiphy_version;
+	uint32_t csiphy_interrupt_status_size;
 	uint32_t csiphy_common_array_size;
 	uint32_t csiphy_reset_array_size;
 	uint32_t csiphy_2ph_config_array_size;
