@@ -16,7 +16,7 @@
 		interrupt-names = "csiphy";
 		regulator-names = "gdscr";
 		gdscr-supply = <&gcc_camss_top_gdsc>;
-		csi-vdd-voltage = <1232000>;
+		csi-vdd-voltage = <1200000>;
 		mipi-csi-vdd-supply = <&L5A>;
 		clocks = <&gcc GCC_CAMSS_TFE_CPHY_RX_CLK_SRC>,
 			<&gcc GCC_CAMSS_CPHY_0_CLK>,
@@ -46,7 +46,7 @@
 		interrupt-names = "csiphy";
 		regulator-names = "gdscr";
 		gdscr-supply = <&gcc_camss_top_gdsc>;
-		csi-vdd-voltage = <1232000>;
+		csi-vdd-voltage = <1200000>;
 		mipi-csi-vdd-supply = <&L5A>;
 		clocks = <&gcc GCC_CAMSS_TFE_CPHY_RX_CLK_SRC>,
 			<&gcc GCC_CAMSS_CPHY_1_CLK>,
