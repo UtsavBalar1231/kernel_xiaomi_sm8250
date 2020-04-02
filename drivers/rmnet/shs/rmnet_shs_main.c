@@ -388,8 +388,49 @@ static void rmnet_shs_deliver_skb_wq(struct sk_buff *skb)
 	gro_cells_receive(&priv->gro_cells, skb);
 }
 
+static struct sk_buff *rmnet_shs_skb_partial_segment(struct sk_buff *skb,
+						     u16 segments_per_skb)
+{
+	struct skb_shared_info *shinfo = skb_shinfo(skb);
+	struct sk_buff *segments, *tmp;
+	u16 gso_size = shinfo->gso_size;
+	u16 gso_segs = shinfo->gso_segs;
+
+	if (segments_per_skb >= gso_segs) {
+		return NULL;
+	}
+
+	/* Update the numbers for the main skb */
+	shinfo->gso_segs = DIV_ROUND_UP(gso_segs, segments_per_skb);
+	shinfo->gso_size = gso_size * segments_per_skb;
+	segments = __skb_gso_segment(skb, NETIF_F_SG, false);
+	if (unlikely(IS_ERR_OR_NULL(segments))) {
+		/* return to the original state */
+		shinfo->gso_size = gso_size;
+		shinfo->gso_segs = gso_segs;
+		return NULL;
+	}
+
+	/* Mark correct number of segments and correct size in the new skbs */
+	for (tmp = segments; tmp; tmp = tmp->next) {
+		struct skb_shared_info *new_shinfo = skb_shinfo(tmp);
+
+		new_shinfo->gso_size = gso_size;
+		if (gso_segs >= segments_per_skb)
+			new_shinfo->gso_segs = segments_per_skb;
+		else
+			new_shinfo->gso_segs = gso_segs;
+
+		gso_segs -= segments_per_skb;
+	}
+
+	return segments;
+}
+
 /* Delivers skbs after segmenting, directly to network stack */
-static void rmnet_shs_deliver_skb_segmented(struct sk_buff *in_skb, u8 ctext)
+static void rmnet_shs_deliver_skb_segmented(struct sk_buff *in_skb,
+					    u8 ctext,
+					    u16 segs_per_skb)
 {
 	struct sk_buff *skb = NULL;
 	struct sk_buff *nxt_skb = NULL;
@@ -399,8 +440,9 @@ static void rmnet_shs_deliver_skb_segmented(struct sk_buff *in_skb, u8 ctext)
 	SHS_TRACE_LOW(RMNET_SHS_DELIVER_SKB, RMNET_SHS_DELIVER_SKB_START,
 			    0x1, 0xDEF, 0xDEF, 0xDEF, in_skb, NULL);
 
-	segs = __skb_gso_segment(in_skb, NETIF_F_SG, false);
-	if (unlikely(IS_ERR_OR_NULL(segs))) {
+	segs = rmnet_shs_skb_partial_segment(in_skb, segs_per_skb);
+
+	if (segs == NULL) {
 		if (ctext == RMNET_RX_CTXT)
 			netif_receive_skb(in_skb);
 		else
@@ -409,7 +451,7 @@ static void rmnet_shs_deliver_skb_segmented(struct sk_buff *in_skb, u8 ctext)
 		return;
 	}
 
-	/* Send segmeneted skb */
+	/* Send segmented skb */
 	for ((skb = segs); skb != NULL; skb = nxt_skb) {
 		nxt_skb = skb->next;
 
@@ -926,7 +968,7 @@ void rmnet_shs_flush_node(struct rmnet_shs_skbn_s *node, u8 ctext)
 	u32 skb_bytes_delivered = 0;
 	u32 hash2stamp = 0; /* the default value of skb->hash*/
 	u8 map = 0, maplen = 0;
-	u8 segment_enable = 0;
+	u16 segs_per_skb = 0;
 
 	if (!node->skb_list.head)
 		return;
@@ -948,7 +990,7 @@ void rmnet_shs_flush_node(struct rmnet_shs_skbn_s *node, u8 ctext)
 			     node->skb_list.num_parked_bytes,
 			     node, node->skb_list.head);
 
-	segment_enable = node->hstats->segment_enable;
+	segs_per_skb = (u16) node->hstats->segs_per_skb;
 
 	for ((skb = node->skb_list.head); skb != NULL; skb = nxt_skb) {
 
@@ -960,8 +1002,9 @@ void rmnet_shs_flush_node(struct rmnet_shs_skbn_s *node, u8 ctext)
 		skbs_delivered += 1;
 		skb_bytes_delivered += skb->len;
 
-		if (segment_enable) {
-			rmnet_shs_deliver_skb_segmented(skb, ctext);
+		if (segs_per_skb > 0) {
+			rmnet_shs_deliver_skb_segmented(skb, ctext,
+							segs_per_skb);
 		} else {
 			if (ctext == RMNET_RX_CTXT)
 				rmnet_shs_deliver_skb(skb);

@@ -55,7 +55,7 @@ struct rmnet_shs_wq_sugg_info {
 
 struct rmnet_shs_wq_seg_info {
 	uint32_t hash_to_set;
-	uint32_t segment_enable;
+	uint32_t segs_per_skb;
 };
 
 /* Function Prototypes */
