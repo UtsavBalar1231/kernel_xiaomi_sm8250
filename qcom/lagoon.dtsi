@@ -1019,10 +1019,6 @@
 				  <WAKE_TCS    3>,
 				  <CONTROL_TCS 1>;
 
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges;
-
 		system_pm {
 			compatible = "qcom,system-pm";
 		};
