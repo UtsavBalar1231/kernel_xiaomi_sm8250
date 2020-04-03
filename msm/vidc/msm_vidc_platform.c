@@ -1120,7 +1120,7 @@ static struct msm_vidc_common_data lagoon_common_data_v0[] = {
 	},
 	{
 		.key = "qcom,max-b-frame-mbs-per-sec",
-		.value = 244800, /* ((1920x1088)/256) MBs@30fps */
+		.value = 489600, /* ((1920x1088)/256) MBs@60fps */
 	},
 	{
 		.key = "qcom,power-collapse-delay",
@@ -1200,7 +1200,7 @@ static struct msm_vidc_common_data lagoon_common_data_v1[] = {
 	},
 	{
 		.key = "qcom,max-b-frame-mbs-per-sec",
-		.value = 244800, /* ((1920x1088)/256) MBs@30fps */
+		.value = 489600, /* ((1920x1088)/256) MBs@60fps */
 	},
 	{
 		.key = "qcom,power-collapse-delay",
