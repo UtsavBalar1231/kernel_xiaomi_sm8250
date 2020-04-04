@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
  *
@@ -37,9 +37,74 @@ struct msm_framebuffer {
 };
 #define to_msm_framebuffer(x) container_of(x, struct msm_framebuffer, base)
 
+int msm_framebuffer_dirty(struct drm_framebuffer *fb,
+		struct drm_file *file_priv, unsigned int flags,
+		unsigned int color, struct drm_clip_rect *clips,
+		unsigned int num_clips)
+{
+	struct drm_modeset_acquire_ctx ctx;
+	struct drm_atomic_state *state;
+	struct drm_plane *plane;
+	int ret = 0;
+
+	if (!num_clips || !clips)
+		return 0;
+
+	drm_modeset_acquire_init(&ctx,
+			file_priv ? DRM_MODESET_ACQUIRE_INTERRUPTIBLE : 0);
+
+	state = drm_atomic_state_alloc(fb->dev);
+	if (!state) {
+		ret = -ENOMEM;
+		goto out_drop_locks;
+	}
+	state->acquire_ctx = &ctx;
+
+retry:
+	drm_for_each_plane(plane, fb->dev) {
+		struct drm_plane_state *plane_state;
+
+		ret = drm_modeset_lock(&plane->mutex, state->acquire_ctx);
+		if (ret)
+			goto out;
+
+		if (plane->state->fb != fb) {
+			drm_modeset_unlock(&plane->mutex);
+			continue;
+		}
+
+		plane_state = drm_atomic_get_plane_state(state, plane);
+		if (IS_ERR(plane_state)) {
+			ret = PTR_ERR(plane_state);
+			goto out;
+		}
+
+		plane_state->visible = true;
+	}
+
+	ret = drm_atomic_commit(state);
+
+out:
+	if (ret == -EDEADLK) {
+		drm_atomic_state_clear(state);
+		ret = drm_modeset_backoff(&ctx);
+		if (!ret)
+			goto retry;
+	}
+
+	drm_atomic_state_put(state);
+
+out_drop_locks:
+	drm_modeset_drop_locks(&ctx);
+	drm_modeset_acquire_fini(&ctx);
+
+	return ret;
+}
+
 static const struct drm_framebuffer_funcs msm_framebuffer_funcs = {
 	.create_handle = drm_gem_fb_create_handle,
 	.destroy = drm_gem_fb_destroy,
+	.dirty = msm_framebuffer_dirty,
 };
 
 #ifdef CONFIG_DEBUG_FS
