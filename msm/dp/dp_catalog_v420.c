@@ -3,6 +3,8 @@
  * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
+#include <linux/iopoll.h>
+#include <linux/iopoll.h>
 
 #include "dp_catalog.h"
 #include "dp_reg.h"
@@ -23,6 +25,7 @@
 	catalog->sub.write(catalog->dpc, io_data, x, y); \
 })
 
+#define DP_PHY_READY BIT(1)
 #define MAX_VOLTAGE_LEVELS 4
 #define MAX_PRE_EMP_LEVELS 4
 
@@ -294,6 +297,108 @@ static void dp_catalog_ctrl_update_vx_px_v420(struct dp_catalog_ctrl *ctrl,
 	}
 }
 
+static bool dp_catalog_ctrl_wait_for_phy_ready_v420(
+		struct dp_catalog_private_v420 *catalog)
+{
+	u32 reg = DP_PHY_STATUS_V420, state;
+	void __iomem *base = catalog->io->dp_phy->io.base;
+	bool success = true;
+	u32 const poll_sleep_us = 500;
+	u32 const pll_timeout_us = 10000;
+
+	if (readl_poll_timeout_atomic((base + reg), state,
+			((state & DP_PHY_READY) > 0),
+			poll_sleep_us, pll_timeout_us)) {
+		DP_ERR("PHY status failed, status=%x\n", state);
+
+		success = false;
+	}
+
+	return success;
+}
+
+static int dp_catalog_ctrl_late_phy_init_v420(struct dp_catalog_ctrl *ctrl,
+					u8 lane_cnt, bool flipped)
+{
+	int rc = 0;
+	u32 bias0_en, drvr0_en, bias1_en, drvr1_en;
+	struct dp_catalog_private_v420 *catalog;
+	struct dp_io_data *io_data;
+
+	if (!ctrl) {
+		DP_ERR("invalid input\n");
+		return -EINVAL;
+	}
+
+	catalog = dp_catalog_get_priv_v420(ctrl);
+
+	switch (lane_cnt) {
+	case 1:
+		drvr0_en = flipped ? 0x13 : 0x10;
+		bias0_en = flipped ? 0x3E : 0x15;
+		drvr1_en = flipped ? 0x10 : 0x13;
+		bias1_en = flipped ? 0x15 : 0x3E;
+		break;
+	case 2:
+		drvr0_en = flipped ? 0x10 : 0x10;
+		bias0_en = flipped ? 0x3F : 0x15;
+		drvr1_en = flipped ? 0x10 : 0x10;
+		bias1_en = flipped ? 0x15 : 0x3F;
+		break;
+	case 4:
+	default:
+		drvr0_en = 0x10;
+		bias0_en = 0x3F;
+		drvr1_en = 0x10;
+		bias1_en = 0x3F;
+		break;
+	}
+
+	io_data = catalog->io->dp_ln_tx0;
+	dp_write(TXn_HIGHZ_DRVR_EN_V420, drvr0_en);
+	dp_write(TXn_TRANSCEIVER_BIAS_EN_V420, bias0_en);
+
+	io_data = catalog->io->dp_ln_tx1;
+	dp_write(TXn_HIGHZ_DRVR_EN_V420, drvr1_en);
+	dp_write(TXn_TRANSCEIVER_BIAS_EN_V420, bias1_en);
+
+	io_data = catalog->io->dp_phy;
+	dp_write(DP_PHY_CFG, 0x18);
+	/* add hardware recommended delay */
+	udelay(2000);
+	dp_write(DP_PHY_CFG, 0x19);
+
+	/*
+	 * Make sure all the register writes are completed before
+	 * doing any other operation
+	 */
+	wmb();
+
+	if (!dp_catalog_ctrl_wait_for_phy_ready_v420(catalog)) {
+		rc = -EINVAL;
+		goto lock_err;
+	}
+
+	io_data = catalog->io->dp_ln_tx0;
+	dp_write(TXn_TX_POL_INV_V420, 0x0a);
+	io_data = catalog->io->dp_ln_tx1;
+	dp_write(TXn_TX_POL_INV_V420, 0x0a);
+
+	io_data = catalog->io->dp_ln_tx0;
+	dp_write(TXn_TX_DRV_LVL_V420, 0x27);
+	io_data = catalog->io->dp_ln_tx1;
+	dp_write(TXn_TX_DRV_LVL_V420, 0x27);
+
+	io_data = catalog->io->dp_ln_tx0;
+	dp_write(TXn_TX_EMP_POST1_LVL, 0x20);
+	io_data = catalog->io->dp_ln_tx1;
+	dp_write(TXn_TX_EMP_POST1_LVL, 0x20);
+	/* Make sure the PHY register writes are done */
+	wmb();
+lock_err:
+	return rc;
+}
+
 static void dp_catalog_ctrl_lane_pnswap_v420(struct dp_catalog_ctrl *ctrl,
 						u8 ln_pnswap)
 {
@@ -356,6 +461,7 @@ struct dp_catalog_sub *dp_catalog_get_v420(struct device *dev,
 	catalog->ctrl.phy_lane_cfg = dp_catalog_ctrl_phy_lane_cfg_v420;
 	catalog->ctrl.update_vx_px = dp_catalog_ctrl_update_vx_px_v420;
 	catalog->ctrl.lane_pnswap = dp_catalog_ctrl_lane_pnswap_v420;
+	catalog->ctrl.late_phy_init = dp_catalog_ctrl_late_phy_init_v420;
 
 	return &catalog_priv->sub;
 }
