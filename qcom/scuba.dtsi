@@ -1266,6 +1266,7 @@
 #include "scuba-coresight.dtsi"
 #include "scuba-pinctrl.dtsi"
 #include "scuba-ion.dtsi"
+#include "pm2250-rpm-regulator.dtsi"
 #include "scuba-regulator.dtsi"
 #include "scuba-gdsc.dtsi"
 #include "scuba-qupv3.dtsi"
