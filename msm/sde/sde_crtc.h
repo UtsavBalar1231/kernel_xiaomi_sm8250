@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2020 The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
  *
@@ -480,17 +480,6 @@ static inline int sde_crtc_get_mixer_height(struct sde_crtc *sde_crtc,
 }
 
 /**
- * sde_crtc_get_num_datapath - get the number of datapath active
- * @crtc: Pointer to drm crtc object
- */
-static inline int sde_crtc_get_num_datapath(struct drm_crtc *crtc)
-{
-	struct sde_crtc *sde_crtc = to_sde_crtc(crtc);
-
-	return sde_crtc ? sde_crtc->num_mixers : 0;
-}
-
-/**
  * sde_crtc_frame_pending - retun the number of pending frames
  * @crtc: Pointer to drm crtc object
  */
@@ -833,5 +822,14 @@ void sde_crtc_misr_setup(struct drm_crtc *crtc, bool enable, u32 frame_count);
  */
 void sde_crtc_get_misr_info(struct drm_crtc *crtc,
 		struct sde_crtc_misr_info *crtc_misr_info);
+
+/**
+ * sde_crtc_get_num_datapath - get the number of datapath active
+ *				of primary connector
+ * @crtc: Pointer to DRM crtc object
+ * @connector: Pointer to DRM connector object of WB in CWB case
+ */
+int sde_crtc_get_num_datapath(struct drm_crtc *crtc,
+		struct drm_connector *connector);
 
 #endif /* _SDE_CRTC_H_ */

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2014-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
  */
 
 #define pr_fmt(fmt)	"[drm:%s:%d]: " fmt, __func__, __LINE__
@@ -590,6 +590,7 @@ int sde_power_resource_init(struct platform_device *pdev,
 	phandle->rsc_client_init = false;
 
 	mutex_init(&phandle->phandle_lock);
+	mutex_init(&phandle->ext_client_lock);
 
 	return rc;
 

@@ -55,6 +55,7 @@
 #define SDE_HW_VER_610	SDE_HW_VER(6, 1, 0) /* sm7250 */
 #define SDE_HW_VER_630	SDE_HW_VER(6, 3, 0) /* bengal */
 #define SDE_HW_VER_640	SDE_HW_VER(6, 4, 0) /* lagoon */
+#define SDE_HW_VER_650	SDE_HW_VER(6, 5, 0) /* scuba */
 
 #define IS_MSM8996_TARGET(rev) IS_SDE_MAJOR_MINOR_SAME((rev), SDE_HW_VER_170)
 #define IS_MSM8998_TARGET(rev) IS_SDE_MAJOR_MINOR_SAME((rev), SDE_HW_VER_300)
@@ -69,6 +70,7 @@
 #define IS_SAIPAN_TARGET(rev) IS_SDE_MAJOR_MINOR_SAME((rev), SDE_HW_VER_610)
 #define IS_BENGAL_TARGET(rev) IS_SDE_MAJOR_MINOR_SAME((rev), SDE_HW_VER_630)
 #define IS_LAGOON_TARGET(rev) IS_SDE_MAJOR_MINOR_SAME((rev), SDE_HW_VER_640)
+#define IS_SCUBA_TARGET(rev) IS_SDE_MAJOR_MINOR_SAME((rev), SDE_HW_VER_650)
 
 #define SDE_HW_BLK_NAME_LEN	16
 
@@ -599,8 +601,10 @@ enum sde_qos_lut_usage {
  * @in_rot_maxdwnscale_rt_denom: max downscale ratio for inline rotation
  *                                 rt clients - denominator
  * @in_rot_maxdwnscale_nrt: max downscale ratio for inline rotation nrt clients
- * @in_rot_minpredwnscale_num: min downscale ratio to enable pre-downscale
- * @in_rot_minpredwnscale_denom: min downscale ratio to enable pre-downscale
+ * @in_rot_maxdwnscale_rt_nopd_num: downscale threshold for when pre-downscale
+ *                                    must be enabled on HW with this support.
+ * @in_rot_maxdwnscale_rt_nopd_denom: downscale threshold for when pre-downscale
+ *                                    must be enabled on HW with this support.
  * @in_rot_maxheight: max pre rotated height for inline rotation
  * @llcc_scid: scid for the system cache
  * @llcc_slice size: slice size of the system cache
@@ -637,8 +641,8 @@ struct sde_sspp_sub_blks {
 	u32 in_rot_maxdwnscale_rt_num;
 	u32 in_rot_maxdwnscale_rt_denom;
 	u32 in_rot_maxdwnscale_nrt;
-	u32 in_rot_minpredwnscale_num;
-	u32 in_rot_minpredwnscale_denom;
+	u32 in_rot_maxdwnscale_rt_nopd_num;
+	u32 in_rot_maxdwnscale_rt_nopd_denom;
 	u32 in_rot_maxheight;
 	int llcc_scid;
 	size_t llcc_slice_size;
@@ -1140,6 +1144,7 @@ struct sde_sc_cfg {
  * @cdp_cfg            cdp use case configurations
  * @cpu_mask:          pm_qos cpu mask value
  * @cpu_dma_latency:   pm_qos cpu dma latency value
+ * @cpu_irq_latency:   pm_qos cpu irq latency value
  * @axi_bus_width:     axi bus width value in bytes
  * @num_mnoc_ports:    number of mnoc ports
  */
@@ -1170,6 +1175,7 @@ struct sde_perf_cfg {
 	struct sde_perf_cdp_cfg cdp_cfg[SDE_PERF_CDP_USAGE_MAX];
 	u32 cpu_mask;
 	u32 cpu_dma_latency;
+	u32 cpu_irq_latency;
 	u32 axi_bus_width;
 	u32 num_mnoc_ports;
 };
@@ -1261,6 +1267,8 @@ struct sde_limit_cfg {
  * @update_tcsr_disp_glitch  flag to enable HW workaround to avoid spurious
  *                            transactions during suspend
  * @has_base_layer     Supports staging layer as base layer
+ * @allow_gdsc_toggle  Flag to check if gdsc toggle is needed after crtc is
+ *                           disabled when external vote is present
  * @sc_cfg: system cache configuration
  * @uidle_cfg		Settings for uidle feature
  * @sui_misr_supported  indicate if secure-ui-misr is supported
@@ -1318,6 +1326,7 @@ struct sde_mdss_cfg {
 	bool has_decimation;
 	bool update_tcsr_disp_glitch;
 	bool has_base_layer;
+	bool allow_gdsc_toggle;
 
 	struct sde_sc_cfg sc_cfg;
 
