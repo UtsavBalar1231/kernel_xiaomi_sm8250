@@ -18,7 +18,7 @@
 / {
 	model = "Qualcomm Technologies, Inc. Lagoon";
 	compatible = "qcom,lagoon";
-	qcom,msm-id = <434 0x10000>;
+	qcom,msm-id = <434 0x10000>, <459 0x10000>;
 	interrupt-parent = <&intc>;
 
 	#address-cells = <2>;
@@ -531,6 +531,16 @@
 		cont_splash_memory: cont_splash_region {
 			reg = <0x0 0xA0000000 0x0 0x02300000>;
 			label = "cont_splash_region";
+		};
+
+		disp_rdump_memory: disp_rdump_region@0xa0000000 {
+			reg = <0x0 0xA0000000 0x0 0x02300000>;
+			label = "disp_rdump_region";
+		};
+
+		dfps_data_memory: dfps_data_region {
+			reg = <0x0 0xA2300000 0x0 0x0100000>;
+			label = "dfps_data_region";
 		};
 
 		dump_mem: mem_dump_region {
@@ -1106,6 +1116,14 @@
 			compatible = "qcom,msm-imem-diag-dload";
 			reg = <0xc8 0xc8>;
 		};
+	};
+
+	dcc: dcc_v2@109f000 {
+		compatible = "qcom,dcc-v2";
+		reg = <0x109f000 0x1000>,
+		      <0x1026000 0x2000>;
+		reg-names = "dcc-base", "dcc-ram-base";
+		dcc-ram-offset = <0x6000>;
 	};
 
 	restart@c264000 {
@@ -1860,7 +1878,7 @@
 			label = "cdsprpc-smd";
 			iommus = <&apps_smmu 0x1401 0x0020>;
 			qcom,iommu-dma-addr-pool = <0x80000000 0x78000000>;
-			qcom,iommu-faults = "stall-disable";
+			qcom,iommu-faults = "stall-disable", "HUPCF";
 			dma-coherent;
 		};
 
@@ -1869,7 +1887,7 @@
 			label = "cdsprpc-smd";
 			iommus = <&apps_smmu 0x1402 0x0020>;
 			qcom,iommu-dma-addr-pool = <0x80000000 0x78000000>;
-			qcom,iommu-faults = "stall-disable";
+			qcom,iommu-faults = "stall-disable", "HUPCF";
 			dma-coherent;
 		};
 
@@ -1878,7 +1896,7 @@
 			label = "cdsprpc-smd";
 			iommus = <&apps_smmu 0x1403 0x0020>;
 			qcom,iommu-dma-addr-pool = <0x80000000 0x78000000>;
-			qcom,iommu-faults = "stall-disable";
+			qcom,iommu-faults = "stall-disable", "HUPCF";
 			dma-coherent;
 		};
 
@@ -1887,7 +1905,7 @@
 			label = "cdsprpc-smd";
 			iommus = <&apps_smmu 0x1404 0x0020>;
 			qcom,iommu-dma-addr-pool = <0x80000000 0x78000000>;
-			qcom,iommu-faults = "stall-disable";
+			qcom,iommu-faults = "stall-disable", "HUPCF";
 			dma-coherent;
 		};
 
@@ -1896,7 +1914,7 @@
 			label = "cdsprpc-smd";
 			iommus = <&apps_smmu 0x1405 0x0020>;
 			qcom,iommu-dma-addr-pool = <0x80000000 0x78000000>;
-			qcom,iommu-faults = "stall-disable";
+			qcom,iommu-faults = "stall-disable", "HUPCF";
 			dma-coherent;
 		};
 
@@ -1905,7 +1923,7 @@
 			label = "cdsprpc-smd";
 			iommus = <&apps_smmu 0x1406 0x0020>;
 			qcom,iommu-dma-addr-pool = <0x80000000 0x78000000>;
-			qcom,iommu-faults = "stall-disable";
+			qcom,iommu-faults = "stall-disable", "HUPCF";
 			dma-coherent;
 		};
 
@@ -1914,7 +1932,7 @@
 			label = "cdsprpc-smd";
 			iommus = <&apps_smmu 0x1407 0x0020>;
 			qcom,iommu-dma-addr-pool = <0x80000000 0x78000000>;
-			qcom,iommu-faults = "stall-disable";
+			qcom,iommu-faults = "stall-disable", "HUPCF";
 			dma-coherent;
 		};
 
@@ -1923,7 +1941,7 @@
 			label = "cdsprpc-smd";
 			iommus = <&apps_smmu 0x1408 0x0020>;
 			qcom,iommu-dma-addr-pool = <0x80000000 0x78000000>;
-			qcom,iommu-faults = "stall-disable";
+			qcom,iommu-faults = "stall-disable", "HUPCF";
 			dma-coherent;
 		};
 
@@ -1933,7 +1951,7 @@
 			qcom,secure-context-bank;
 			iommus = <&apps_smmu 0x1409 0x0020>;
 			qcom,iommu-dma-addr-pool = <0x80000000 0x78000000>;
-			qcom,iommu-faults = "stall-disable";
+			qcom,iommu-faults = "stall-disable", "HUPCF";
 			qcom,iommu-vmid = <0xA>;
 			dma-coherent;
 		};
@@ -1943,7 +1961,7 @@
 			label = "adsprpc-smd";
 			iommus = <&apps_smmu 0x1003 0x0>;
 			qcom,iommu-dma-addr-pool = <0x80000000 0x78000000>;
-			qcom,iommu-faults = "stall-disable";
+			qcom,iommu-faults = "stall-disable", "HUPCF";
 			dma-coherent;
 		};
 
@@ -1952,7 +1970,7 @@
 			label = "adsprpc-smd";
 			iommus = <&apps_smmu 0x1004 0x0>;
 			qcom,iommu-dma-addr-pool = <0x80000000 0x78000000>;
-			qcom,iommu-faults = "stall-disable";
+			qcom,iommu-faults = "stall-disable", "HUPCF";
 			dma-coherent;
 		};
 
@@ -1962,7 +1980,7 @@
 			iommus = <&apps_smmu 0x1005 0x0>;
 			shared-cb  = <5>;
 			qcom,iommu-dma-addr-pool = <0x80000000 0x78000000>;
-			qcom,iommu-faults = "stall-disable";
+			qcom,iommu-faults = "stall-disable", "HUPCF";
 			dma-coherent;
 		};
 	};
@@ -2278,7 +2296,7 @@
 		interrupt-parent = <&ipcc_mproc>;
 		interrupts = <IPCC_CLIENT_NPU IPCC_MPROC_SIGNAL_SMP2P
 			      IRQ_TYPE_EDGE_RISING>;
-		mboxes = <&ipcc_mproc IPCC_CLIENT_NPU IPCC_MPROC_SIGNAL_SMP2P>;
+		mboxes = <&msm_npu IPCC_CLIENT_NPU IPCC_MPROC_SIGNAL_SMP2P>;
 		qcom,local-pid = <0>;
 		qcom,remote-pid = <10>;
 
@@ -2953,8 +2971,8 @@
 		read-only;
 		ranges;
 
-		gpu_speed_bin: gpu_speed_bin@1e1 {
-			reg = <0x1e1 0x1>;
+		gpu_speed_bin: gpu_speed_bin@6015 {
+			reg = <0x6015 0x1>;
 			bits = <0 8>;
 		};
 
@@ -3443,7 +3461,7 @@
 };
 
 &gpu_gx_gdsc {
-	parent-supply = <&VDD_CX_LEVEL>;
+	parent-supply = <&VDD_GFX_LEVEL>;
 	status = "ok";
 };
 

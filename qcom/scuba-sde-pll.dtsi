@@ -1,19 +1,17 @@
 &soc {
 	mdss_dsi0_pll: qcom,mdss_dsi0_pll {
-		compatible = "qcom,mdss_dsi_pll_10nm";
+		compatible = "qcom,mdss_dsi_pll_14nm";
 		label = "MDSS DSI 0 PLL";
 		cell-index = <0>;
 		#clock-cells = <1>;
-		reg = <0xae94a00 0x1e0>,
-			<0xae94400 0x800>,
-			<0xaf03000 0x8>,
-			<0xae94200 0x100>;
-		reg-names = "pll_base", "phy_base", "gdsc_base",
+		reg = <0x5e94400 0x588>,
+		      <0x5f03000 0x8>,
+		      <0x5e94200 0x100>;
+		reg-names = "pll_base", "gdsc_base",
 			"dynamic_pll_base";
 		clocks = <&dispcc DISP_CC_MDSS_AHB_CLK>;
 		clock-names = "iface_clk";
 		clock-rate = <0>;
-		memory-region = <&dfps_data_memory>;
 		gdsc-supply = <&mdss_core_gdsc>;
 		qcom,dsi-pll-ssc-en;
 		qcom,dsi-pll-ssc-mode = "down-spread";

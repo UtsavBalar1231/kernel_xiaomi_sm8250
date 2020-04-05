@@ -1,4 +1,7 @@
+#include "scuba-audio-overlay.dtsi"
 #include "scuba-thermal-overlay.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/iio/qcom,spmi-vadc.h>
 
 &soc {
 	scuba_batterydata: qcom,battery-data {
@@ -18,4 +21,109 @@
 	qcom,fvss-enable;
 	qcom,fvss-vbatt-mv = <3500>;
 	qcom,bass-enable;
+};
+
+&sdhc_1 {
+	vdd-supply = <&L20A>;
+	qcom,vdd-voltage-level = <2856000 2856000>;
+	qcom,vdd-current-level = <0 570000>;
+
+	vdd-io-supply = <&L14A>;
+	qcom,vdd-io-always-on;
+	qcom,vdd-io-lpm-sup;
+	qcom,vdd-io-voltage-level = <1800000 1800000>;
+	qcom,vdd-io-current-level = <0 325000>;
+
+	pinctrl-names = "active", "sleep";
+	pinctrl-0 = <&sdc1_clk_on &sdc1_cmd_on &sdc1_data_on
+					&sdc1_rclk_on>;
+	pinctrl-1 = <&sdc1_clk_off &sdc1_cmd_off &sdc1_data_off
+					&sdc1_rclk_off>;
+
+	status = "ok";
+};
+
+&scuba_snd {
+	qcom,model = "bengal-scubaqrd-snd-card";
+	qcom,msm-mi2s-master = <1>, <1>, <1>, <1>;
+	qcom,wcn-btfm = <1>;
+	qcom,ext-disp-audio-rx = <0>;
+	qcom,audio-routing =
+		"AMIC1", "MIC BIAS1",
+		"MIC BIAS1", "Analog Mic1",
+		"AMIC2", "MIC BIAS2",
+		"MIC BIAS2", "Analog Mic2",
+		"AMIC3", "MIC BIAS3",
+		"MIC BIAS3", "Analog Mic3",
+		"AMIC4", "MIC BIAS3",
+		"MIC BIAS3", "Analog Mic4",
+		"IN1_HPHL", "HPHL_OUT",
+		"IN2_HPHR", "HPHR_OUT",
+		"IN3_AUX", "AUX_OUT",
+		"SpkrMono WSA_IN", "AUX",
+		"TX SWR_MIC0", "ADC1_OUTPUT",
+		"TX SWR_MIC1", "ADC2_OUTPUT",
+		"TX SWR_MIC5", "ADC3_OUTPUT",
+		"TX SWR_MIC0", "VA_TX_SWR_CLK",
+		"TX SWR_MIC1", "VA_TX_SWR_CLK",
+		"TX SWR_MIC2", "VA_TX_SWR_CLK",
+		"TX SWR_MIC3", "VA_TX_SWR_CLK",
+		"TX SWR_MIC4", "VA_TX_SWR_CLK",
+		"TX SWR_MIC5", "VA_TX_SWR_CLK",
+		"TX SWR_MIC6", "VA_TX_SWR_CLK",
+		"TX SWR_MIC7", "VA_TX_SWR_CLK",
+		"TX SWR_MIC8", "VA_TX_SWR_CLK",
+		"TX SWR_MIC9", "VA_TX_SWR_CLK",
+		"TX SWR_MIC10", "VA_TX_SWR_CLK",
+		"TX SWR_MIC11", "VA_TX_SWR_CLK",
+		"RX_TX DEC0_INP", "TX DEC0 MUX",
+		"RX_TX DEC1_INP", "TX DEC1 MUX",
+		"RX_TX DEC2_INP", "TX DEC2 MUX",
+		"RX_TX DEC3_INP", "TX DEC3 MUX",
+		"TX_AIF1 CAP", "VA_TX_SWR_CLK",
+		"TX_AIF2 CAP", "VA_TX_SWR_CLK",
+		"TX_AIF3 CAP", "VA_TX_SWR_CLK",
+		"VA SWR_MIC0", "ADC1_OUTPUT",
+		"VA SWR_MIC1", "ADC2_OUTPUT",
+		"VA SWR_MIC5", "ADC3_OUTPUT";
+	qcom,msm-mbhc-hphl-swh = <1>;
+	qcom,msm-mbhc-gnd-swh = <1>;
+	asoc-codec  = <&stub_codec>, <&bolero>;
+	asoc-codec-names = "msm-stub-codec.1", "bolero_codec";
+	qcom,wsa-max-devs = <1>;
+	qcom,wsa-devs = <&wsa881x_i2c_e>;
+	qcom,wsa-aux-dev-prefix = "SpkrMono";
+	qcom,codec-max-aux-devs = <1>;
+	qcom,codec-aux-devs = <&rouleur_codec>;
+	qcom,msm_audio_ssr_devs = <&audio_apr>, <&q6core>, <&bolero>,
+				<&lpi_tlmm>;
+};
+
+&sdhc_2 {
+	vdd-supply = <&L21A>;
+	qcom,vdd-voltage-level = <2960000 2960000>;
+	qcom,vdd-current-level = <0 800000>;
+
+	vdd-io-supply = <&L4A>;
+	qcom,vdd-io-voltage-level = <1800000 2960000>;
+	qcom,vdd-io-current-level = <0 22000>;
+
+	pinctrl-names = "active", "sleep";
+	pinctrl-0 = <&sdc2_clk_on  &sdc2_cmd_on &sdc2_data_on &sdc2_cd_on>;
+	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off &sdc2_cd_off>;
+
+	cd-gpios = <&tlmm 88 GPIO_ACTIVE_LOW>;
+
+	status = "ok";
+};
+
+&pm2250_charger {
+	qcom,auto-recharge-soc = <98>;
+	qcom,suspend-input-on-debug-batt;
+	qcom,battery-data = <&scuba_batterydata>;
+	io-channels = <&pm2250_vadc ADC_USB_IN_V_16>,
+			<&pm2250_vadc ADC_CHG_TEMP>;
+	io-channel-names = "usb_in_voltage",
+			"chg_temp";
+	qcom,thermal-mitigation = <2000000 1500000 1000000 500000>;
 };

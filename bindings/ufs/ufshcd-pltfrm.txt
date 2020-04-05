@@ -25,6 +25,8 @@ Optional properties:
 - vcc-supply            : phandle to VCC supply regulator node
 - vcc-voltage-level     : specifies voltage levels for VCC supply.
                           Should be specified in pairs (min, max), units uV.
+- vccq2-voltage-level   : specifies voltage levels for VCCQ2 supply.
+                          Should be specified in pairs (min, max), units uV.
 - vcc-low-voltage-sup   : If specified, treats min voltage from vcc-voltage-level as
                           low voltage level different from max voltage.
 - vccq-supply           : phandle to VCCQ supply regulator node

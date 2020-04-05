@@ -1825,7 +1825,7 @@
 			label = "cdsprpc-smd";
 			iommus = <&apps_smmu 0x0C01 0x0>;
 			qcom,iommu-dma-addr-pool = <0x80000000 0x78000000>;
-			qcom,iommu-faults = "stall-disable";
+			qcom,iommu-faults = "stall-disable", "HUPCF";
 		};
 
 		qcom,msm_fastrpc_compute_cb2 {
@@ -1833,7 +1833,7 @@
 			label = "cdsprpc-smd";
 			iommus = <&apps_smmu 0x0C02 0x0>;
 			qcom,iommu-dma-addr-pool = <0x80000000 0x78000000>;
-			qcom,iommu-faults = "stall-disable";
+			qcom,iommu-faults = "stall-disable", "HUPCF";
 		};
 
 		qcom,msm_fastrpc_compute_cb3 {
@@ -1841,7 +1841,7 @@
 			label = "cdsprpc-smd";
 			iommus = <&apps_smmu 0x0C03 0x0>;
 			qcom,iommu-dma-addr-pool = <0x80000000 0x78000000>;
-			qcom,iommu-faults = "stall-disable";
+			qcom,iommu-faults = "stall-disable", "HUPCF";
 		};
 
 		qcom,msm_fastrpc_compute_cb4 {
@@ -1849,7 +1849,7 @@
 			label = "cdsprpc-smd";
 			iommus = <&apps_smmu 0x0C04 0x0>;
 			qcom,iommu-dma-addr-pool = <0x80000000 0x78000000>;
-			qcom,iommu-faults = "stall-disable";
+			qcom,iommu-faults = "stall-disable", "HUPCF";
 		};
 
 		qcom,msm_fastrpc_compute_cb5 {
@@ -1857,7 +1857,7 @@
 			label = "cdsprpc-smd";
 			iommus = <&apps_smmu 0x0C05 0x0>;
 			qcom,iommu-dma-addr-pool = <0x80000000 0x78000000>;
-			qcom,iommu-faults = "stall-disable";
+			qcom,iommu-faults = "stall-disable", "HUPCF";
 		};
 
 		qcom,msm_fastrpc_compute_cb6 {
@@ -1865,7 +1865,7 @@
 			label = "cdsprpc-smd";
 			iommus = <&apps_smmu 0x0C06 0x0>;
 			qcom,iommu-dma-addr-pool = <0x80000000 0x78000000>;
-			qcom,iommu-faults = "stall-disable";
+			qcom,iommu-faults = "stall-disable", "HUPCF";
 		};
 
 		qcom,msm_fastrpc_compute_cb9 {
@@ -1874,7 +1874,7 @@
 			qcom,secure-context-bank;
 			iommus = <&apps_smmu 0x0C09 0x0>;
 			qcom,iommu-dma-addr-pool = <0x80000000 0x78000000>;
-			qcom,iommu-faults = "stall-disable";
+			qcom,iommu-faults = "stall-disable", "HUPCF";
 		};
 
 		qcom,msm_fastrpc_compute_cb10 {
@@ -1882,7 +1882,7 @@
 			label = "adsprpc-smd";
 			iommus = <&apps_smmu 0x01C3 0x0>;
 			qcom,iommu-dma-addr-pool = <0x80000000 0x78000000>;
-			qcom,iommu-faults = "stall-disable";
+			qcom,iommu-faults = "stall-disable", "HUPCF";
 		};
 
 		qcom,msm_fastrpc_compute_cb11 {
@@ -1890,7 +1890,7 @@
 			label = "adsprpc-smd";
 			iommus = <&apps_smmu 0x01C4 0x0>;
 			qcom,iommu-dma-addr-pool = <0x80000000 0x78000000>;
-			qcom,iommu-faults = "stall-disable";
+			qcom,iommu-faults = "stall-disable", "HUPCF";
 		};
 
 		qcom,msm_fastrpc_compute_cb12 {
@@ -1898,7 +1898,7 @@
 			label = "adsprpc-smd";
 			iommus = <&apps_smmu 0x01C5 0x0>;
 			qcom,iommu-dma-addr-pool = <0x80000000 0x78000000>;
-			qcom,iommu-faults = "stall-disable";
+			qcom,iommu-faults = "stall-disable", "HUPCF";
 		};
 
 		qcom,msm_fastrpc_compute_cb13 {
@@ -1906,7 +1906,7 @@
 			label = "adsprpc-smd";
 			iommus = <&apps_smmu 0x01C6 0x0>;
 			qcom,iommu-dma-addr-pool = <0x80000000 0x78000000>;
-			qcom,iommu-faults = "stall-disable";
+			qcom,iommu-faults = "stall-disable", "HUPCF";
 		};
 
 		qcom,msm_fastrpc_compute_cb14 {
@@ -1914,7 +1914,7 @@
 			label = "adsprpc-smd";
 			iommus = <&apps_smmu 0x01C7 0x0>;
 			qcom,iommu-dma-addr-pool = <0x80000000 0x78000000>;
-			qcom,iommu-faults = "stall-disable";
+			qcom,iommu-faults = "stall-disable", "HUPCF";
 		};
 
 	};
@@ -2296,7 +2296,7 @@
 		qcom,wlan-msa-fixed-region = <&wlan_msa_mem>;
 		qcom,iommu-dma-addr-pool = <0xa0000000 0x10000000>;
 		qcom,iommu-dma = "fastmap";
-		qcom,iommu-faults = "stall-disable";
+		qcom,iommu-faults = "stall-disable", "HUPCF";
 		qcom,iommu-geometry = <0xa0000000 0x10010000>;
 		vdd-cx-mx-supply = <&L8A>;
 		vdd-1.8-xo-supply = <&L16A>;
