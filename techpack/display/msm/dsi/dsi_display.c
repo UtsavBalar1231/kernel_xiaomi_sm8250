@@ -5445,6 +5445,14 @@ static struct attribute_group dynamic_dsi_clock_fs_attrs_group = {
 	.attrs = dynamic_dsi_clock_fs_attrs,
 };
 
+static struct attribute *display_fs_attrs[] = {
+	NULL,
+};
+
+static struct attribute_group display_fs_attrs_group = {
+	.attrs = display_fs_attrs,
+};
+
 static int dsi_display_sysfs_init(struct dsi_display *display)
 {
 	int rc = 0;
@@ -5453,9 +5461,16 @@ static int dsi_display_sysfs_init(struct dsi_display *display)
 	if (display->panel->panel_mode == DSI_OP_CMD_MODE)
 		rc = sysfs_create_group(&dev->kobj,
 			&dynamic_dsi_clock_fs_attrs_group);
+	if (rc) {
+		pr_err("failed to create dynamic dsi clock attributes");
+		return rc;
+	}
+
+	rc = sysfs_create_group(&dev->kobj, &display_fs_attrs_group);
+	if (rc)
+		pr_err("failed to create display device attributes");
 
 	return rc;
-
 }
 
 static int dsi_display_sysfs_deinit(struct dsi_display *display)
@@ -5466,8 +5481,10 @@ static int dsi_display_sysfs_deinit(struct dsi_display *display)
 		sysfs_remove_group(&dev->kobj,
 			&dynamic_dsi_clock_fs_attrs_group);
 
-	return 0;
+	sysfs_remove_group(&dev->kobj,
+		&display_fs_attrs_group);
 
+	return 0;
 }
 
 /**
