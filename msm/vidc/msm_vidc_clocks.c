@@ -16,6 +16,8 @@
 #define MSM_VIDC_MIN_UBWC_COMPRESSION_RATIO (1 << 16)
 #define MSM_VIDC_MAX_UBWC_COMPRESSION_RATIO (5 << 16)
 
+#define MSM_VIDC_SESSION_INACTIVE_THRESHOLD_MS 1000
+
 static int msm_vidc_decide_work_mode_ar50(struct msm_vidc_inst *inst);
 static unsigned long msm_vidc_calc_freq_ar50(struct msm_vidc_inst *inst,
 	u32 filled_len);
@@ -172,6 +174,19 @@ int msm_vidc_get_fps(struct msm_vidc_inst *inst)
 	return fps;
 }
 
+static inline bool is_active_session(u64 prev, u64 curr)
+{
+	u64 ts_delta;
+
+	if (!prev || !curr)
+		return true;
+
+	ts_delta = (prev < curr) ? curr - prev : prev - curr;
+
+	return ((ts_delta / NSEC_PER_MSEC) <=
+			MSM_VIDC_SESSION_INACTIVE_THRESHOLD_MS);
+}
+
 void update_recon_stats(struct msm_vidc_inst *inst,
 	struct recon_stats_type *recon_stats)
 {
@@ -265,12 +280,14 @@ int msm_comm_set_buses(struct msm_vidc_core *core, u32 sid)
 	struct msm_vidc_inst *inst = NULL;
 	struct hfi_device *hdev;
 	unsigned long total_bw_ddr = 0, total_bw_llcc = 0;
+	u64 curr_time_ns;
 
 	if (!core || !core->device) {
 		s_vpr_e(sid, "%s: Invalid args: %pK\n", __func__, core);
 		return -EINVAL;
 	}
 	hdev = core->device;
+	curr_time_ns = ktime_get_ns();
 
 	mutex_lock(&core->lock);
 	list_for_each_entry(inst, &core->instances, list) {
@@ -292,6 +309,12 @@ int msm_comm_set_buses(struct msm_vidc_core *core, u32 sid)
 		if ((!filled_len || !device_addr) &&
 			(inst->session_type != MSM_VIDC_CVP)) {
 			s_vpr_l(sid, "%s: no input\n", __func__);
+			continue;
+		}
+
+		/* skip inactive session bus bandwidth */
+		if (!is_active_session(inst->last_qbuf_time_ns, curr_time_ns)) {
+			inst->active = false;
 			continue;
 		}
 
@@ -865,8 +888,10 @@ int msm_vidc_set_clocks(struct msm_vidc_core *core, u32 sid)
 	int rc = 0, i = 0;
 	struct allowed_clock_rates_table *allowed_clks_tbl = NULL;
 	bool increment, decrement;
+	u64 curr_time_ns;
 
 	hdev = core->device;
+	curr_time_ns = ktime_get_ns();
 	allowed_clks_tbl = core->resources.allowed_clks_tbl;
 	if (!allowed_clks_tbl) {
 		s_vpr_e(sid, "%s: Invalid parameters\n", __func__);
@@ -892,6 +917,12 @@ int msm_vidc_set_clocks(struct msm_vidc_core *core, u32 sid)
 
 		if (!filled_len || !device_addr) {
 			s_vpr_l(sid, "%s: no input\n", __func__);
+			continue;
+		}
+
+		/* skip inactive session clock rate */
+		if (!is_active_session(inst->last_qbuf_time_ns, curr_time_ns)) {
+			inst->active = false;
 			continue;
 		}
 
@@ -1018,6 +1049,12 @@ int msm_comm_scale_clocks_and_bus(struct msm_vidc_inst *inst, bool do_bw_calc)
 	core = inst->core;
 	hdev = core->device;
 
+	if (!inst->active) {
+		/* do not skip bw voting for inactive -> active session */
+		do_bw_calc = true;
+		inst->active = true;
+	}
+
 	if (msm_comm_scale_clocks(inst)) {
 		s_vpr_e(inst->sid,
 			"Failed to scale clocks. May impact performance\n");
@@ -1029,6 +1066,7 @@ int msm_comm_scale_clocks_and_bus(struct msm_vidc_inst *inst, bool do_bw_calc)
 				"Failed to scale DDR bus. May impact perf\n");
 		}
 	}
+
 	return 0;
 }
 
