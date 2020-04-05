@@ -155,6 +155,32 @@ static struct cam_vfe_rdi_reg_data  vfe_170_150_rdi_2_data = {
 	.reg_update_irq_mask      = 0x80,
 };
 
+struct cam_vfe_top_dump_data vfe170_150_dump_data = {
+	.num_reg_dump_entries  =  2,
+	.num_lut_dump_entries  =  1,
+	.dmi_cfg               =  0xc24,
+	.dmi_addr              =  0xc28,
+	.dmi_data_path_hi      =  0xc2C,
+	.dmi_data_path_lo      =  0xc30,
+	.reg_entry = {
+		{
+			.reg_dump_start = 0x0,
+			.reg_dump_end   = 0xF94,
+		},
+		{
+			.reg_dump_start = 0x2000,
+			.reg_dump_end   = 0x3578,
+		},
+	},
+	.lut_entry = {
+		{
+			.lut_word_size = 64,
+			.lut_bank_sel  = 0x40,
+			.lut_addr_size = 180,
+		},
+	},
+};
+
 static struct cam_vfe_top_ver2_hw_info vfe170_150_top_hw_info = {
 	.common_reg = &vfe170_150_top_common_reg,
 	.camif_hw_info = {
@@ -185,6 +211,7 @@ static struct cam_vfe_top_ver2_hw_info vfe170_150_top_hw_info = {
 		CAM_VFE_RDI_VER_1_0,
 		CAM_VFE_RDI_VER_1_0,
 	},
+	.dump_data = &vfe170_150_dump_data,
 };
 
 static struct cam_irq_register_set vfe170_150_bus_irq_reg[3] = {
