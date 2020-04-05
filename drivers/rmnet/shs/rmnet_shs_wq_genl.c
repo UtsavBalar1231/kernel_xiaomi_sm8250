@@ -1,4 +1,4 @@
-/* Copyright (c) 2019 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2019-2020 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -348,6 +348,8 @@ int rmnet_shs_wq_genl_init(void)
 int rmnet_shs_wq_genl_deinit(void)
 {
 	int ret;
+
+	rmnet_shs_genl_send_int_to_userspace_no_info(RMNET_SHS_SYNC_WQ_EXIT);
 
 	ret = genl_unregister_family(&rmnet_shs_genl_family);
 	if(ret != 0){

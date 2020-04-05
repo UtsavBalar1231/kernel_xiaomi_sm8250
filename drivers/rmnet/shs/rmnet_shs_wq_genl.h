@@ -1,4 +1,4 @@
-/* Copyright (c) 2019 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2019-2020 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -23,6 +23,7 @@
 #define RMNET_SHS_GENL_VERSION 1
 #define RMNET_SHS_GENL_FAMILY_NAME "RMNET_SHS"
 #define RMNET_SHS_SYNC_RESP_INT 828 /* Any number, sent after mem update */
+#define RMNET_SHS_SYNC_WQ_EXIT  42
 
 extern int rmnet_shs_userspace_connected;
 
