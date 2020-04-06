@@ -43,13 +43,13 @@ script:
  - make -j$((`nproc`+1)) fs/exfat/exfat.ko
 
  # Compile with latest Torvalds' kernel
- - cd ../linux
- - yes "" | make oldconfig > /dev/null
- - echo 'obj-$(CONFIG_EXFAT) += exfat/' >> fs/Makefile
- - echo 'source "fs/exfat/Kconfig"' >> fs/Kconfig
- - echo 'CONFIG_EXFAT_FS=m' >> .config
- - echo 'CONFIG_EXFAT_DEFAULT_IOCHARSET="utf8"' >> .config
- - make -j$((`nproc`+1)) fs/exfat/exfat.ko
+# - cd ../linux
+# - yes "" | make oldconfig > /dev/null
+# - echo 'obj-$(CONFIG_EXFAT) += exfat/' >> fs/Makefile
+# - echo 'source "fs/exfat/Kconfig"' >> fs/Kconfig
+# - echo 'CONFIG_EXFAT_FS=m' >> .config
+# - echo 'CONFIG_EXFAT_DEFAULT_IOCHARSET="utf8"' >> .config
+# - make -j$((`nproc`+1)) fs/exfat/exfat.ko
 
  # Run xfstests testsuite
  - cd ../exfat_oot
