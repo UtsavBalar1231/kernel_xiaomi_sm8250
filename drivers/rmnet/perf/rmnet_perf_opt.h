@@ -1,4 +1,4 @@
-/* Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -17,7 +17,7 @@
 #include "rmnet_perf_core.h"
 
 #define RMNET_PERF_FLOW_HASH_TABLE_BITS        4
-#define RMNET_PERF_NUM_FLOW_NODES              8
+#define RMNET_PERF_NUM_FLOW_NODES             50
 
 struct rmnet_perf_opt_pkt_node {
 	unsigned char *header_start;
