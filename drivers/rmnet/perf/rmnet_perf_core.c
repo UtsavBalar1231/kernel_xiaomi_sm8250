@@ -498,6 +498,10 @@ rmnet_perf_core_handle_map_control_start(struct rmnet_map_dl_ind_hdr *dlhdr)
 	struct rmnet_perf *perf = rmnet_perf_config_get_perf();
 	struct rmnet_perf_core_burst_marker_state *bm_state;
 
+	/* If handling deaggregation, we're already locked */
+	if (!rmnet_perf_core_is_deag_mode())
+		rmnet_perf_core_grab_lock();
+
 	bm_state = perf->core_meta->bm_state;
 	/* if we get two starts in a row, without an end, then we flush
 	 * and carry on
@@ -516,6 +520,9 @@ rmnet_perf_core_handle_map_control_start(struct rmnet_map_dl_ind_hdr *dlhdr)
 	trace_rmnet_perf_low(RMNET_PERF_MODULE, RMNET_PERF_START_DL_MRK,
 			     bm_state->expect_packets, 0xDEF, 0xDEF, 0xDEF,
 			     NULL, NULL);
+
+	if (!rmnet_perf_core_is_deag_mode())
+		rmnet_perf_core_release_lock();
 }
 
 void rmnet_perf_core_handle_map_control_end_v2(struct rmnet_map_dl_ind_trl *dltrl,
@@ -529,6 +536,10 @@ void rmnet_perf_core_handle_map_control_end(struct rmnet_map_dl_ind_trl *dltrl)
 	struct rmnet_perf *perf = rmnet_perf_config_get_perf();
 	struct rmnet_perf_core_burst_marker_state *bm_state;
 
+	/* If handling deaggregation, we're already locked */
+	if (!rmnet_perf_core_is_deag_mode())
+		rmnet_perf_core_grab_lock();
+
 	bm_state = perf->core_meta->bm_state;
 	rmnet_perf_opt_flush_all_flow_nodes();
 	rmnet_perf_core_flush_reason_cnt[RMNET_PERF_CORE_DL_MARKER_FLUSHES]++;
@@ -537,6 +548,9 @@ void rmnet_perf_core_handle_map_control_end(struct rmnet_map_dl_ind_trl *dltrl)
 	bm_state->expect_packets = 0;
 	trace_rmnet_perf_low(RMNET_PERF_MODULE, RMNET_PERF_END_DL_MRK, 0xDEF,
 			     0xDEF, 0xDEF, 0xDEF, NULL, NULL);
+
+	if (!rmnet_perf_core_is_deag_mode())
+		rmnet_perf_core_release_lock();
 }
 
 int rmnet_perf_core_validate_pkt_csum(struct sk_buff *skb,
