@@ -64,12 +64,12 @@ script:
  - sudo cp lib/.libs/libexfat.so* /lib/
  - sudo mkdir -p /mnt/scratch
  - sudo mkdir -p /mnt/test
- - time dd if=/dev/zero bs=1G count=10 of=test.img
- - time dd if=/dev/zero bs=1G count=10 of=scratch.img
+ - truncate -s 100G test.img
+ - truncate -s 100G scratch.img
  - sudo losetup /dev/loop20 test.img
  - sudo losetup /dev/loop21 scratch.img
- - sudo mkfs.exfat -c 4k /dev/loop20
- - sudo mkfs.exfat -c 4k /dev/loop21
+ - sudo mkfs.exfat /dev/loop20
+ - sudo mkfs.exfat /dev/loop21
  - cd ..
  - cd exfat-testsuites/
  - tar xzvf xfstests-exfat.tgz > /dev/null
