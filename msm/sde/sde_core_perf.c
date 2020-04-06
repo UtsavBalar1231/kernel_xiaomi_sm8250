@@ -90,8 +90,8 @@ static void _sde_core_perf_calc_doze_suspend(struct drm_crtc *crtc,
 {
 	struct sde_crtc_state *new_cstate, *old_cstate;
 	struct sde_core_perf_params *old_perf;
-	struct drm_connector *conn;
-	struct sde_connector *c_conn;
+	struct drm_connector *conn = NULL;
+	struct sde_connector *c_conn = NULL;
 	bool is_doze_suspend = false;
 	int i;
 
@@ -130,7 +130,7 @@ static void _sde_core_perf_calc_doze_suspend(struct drm_crtc *crtc,
 				is_doze_suspend = true;
 		}
 
-		if (!is_doze_suspend) {
+		if (!is_doze_suspend && conn && c_conn) {
 			SDE_DEBUG("No BW, planes:%x dpms_mode:%d lpmode:%d\n",
 				state->plane_mask, c_conn->dpms_mode,
 				sde_connector_get_lp(conn));
@@ -816,6 +816,9 @@ static void _sde_core_perf_crtc_update_check(struct drm_crtc *crtc,
 	struct sde_core_perf_params *old = &sde_crtc->cur_perf;
 	struct sde_core_perf_params *new = &sde_crtc->new_perf;
 	int i;
+
+	if (!kms)
+		return;
 
 	/*
 	 * cases for the llcc update.
