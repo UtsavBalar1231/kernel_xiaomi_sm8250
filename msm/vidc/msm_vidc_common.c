@@ -824,7 +824,8 @@ int msm_comm_get_inst_load_per_core(struct msm_vidc_inst *inst,
 }
 
 int msm_comm_get_device_load(struct msm_vidc_core *core,
-	enum session_type type, enum load_calc_quirks quirks)
+	enum session_type sess_type, enum load_type load_type,
+	enum load_calc_quirks quirks)
 {
 	struct msm_vidc_inst *inst = NULL;
 	int num_mbs_per_sec = 0;
@@ -836,7 +837,12 @@ int msm_comm_get_device_load(struct msm_vidc_core *core,
 
 	mutex_lock(&core->lock);
 	list_for_each_entry(inst, &core->instances, list) {
-		if (inst->session_type != type)
+		if (inst->session_type != sess_type)
+			continue;
+
+		if (load_type == MSM_VIDC_VIDEO && !is_video_session(inst))
+			continue;
+		else if (load_type == MSM_VIDC_IMAGE && !is_grid_session(inst))
 			continue;
 
 		num_mbs_per_sec += msm_comm_get_inst_load(inst, quirks);
@@ -3448,8 +3454,9 @@ static int msm_vidc_load_resources(int flipped_state,
 {
 	int rc = 0;
 	struct hfi_device *hdev;
-	int num_mbs_per_sec = 0, max_load_adj = 0;
 	struct msm_vidc_core *core;
+	int max_video_load = 0, max_image_load = 0;
+	int video_load = 0, image_load = 0;
 	enum load_calc_quirks quirks = LOAD_ADMISSION_CONTROL;
 
 	if (!inst || !inst->core || !inst->core->device) {
@@ -3468,18 +3475,33 @@ static int msm_vidc_load_resources(int flipped_state,
 	}
 	core = inst->core;
 
-	num_mbs_per_sec =
-		msm_comm_get_device_load(core, MSM_VIDC_DECODER, quirks) +
-		msm_comm_get_device_load(core, MSM_VIDC_ENCODER, quirks);
+	image_load = msm_comm_get_device_load(core,
+					MSM_VIDC_ENCODER, MSM_VIDC_IMAGE,
+					quirks);
+	video_load = msm_comm_get_device_load(core,
+					MSM_VIDC_DECODER, MSM_VIDC_VIDEO,
+					quirks);
+	video_load += msm_comm_get_device_load(core,
+					MSM_VIDC_ENCODER, MSM_VIDC_VIDEO,
+					quirks);
 
-	max_load_adj = core->resources.max_load +
-		inst->capability.cap[CAP_MBS_PER_FRAME].max;
+	max_video_load = inst->core->resources.max_load +
+				inst->capability.cap[CAP_MBS_PER_FRAME].max;
+	max_image_load = inst->core->resources.max_image_load;
 
-	if (num_mbs_per_sec > max_load_adj) {
-		s_vpr_e(inst->sid, "HW is overloaded, needed: %d max: %d\n",
-			num_mbs_per_sec, max_load_adj);
-		msm_vidc_print_running_insts(core);
-		msm_comm_kill_session(inst);
+	if (video_load > max_video_load) {
+		s_vpr_e(inst->sid,
+			"H/W is overloaded. needed: %d max: %d\n",
+			video_load, max_video_load);
+		msm_vidc_print_running_insts(inst->core);
+		return -EBUSY;
+	}
+
+	if (video_load + image_load > max_video_load + max_image_load) {
+		s_vpr_e(inst->sid,
+			"H/W is overloaded. needed: [video + image][%d + %d], max: [video + image][%d + %d]\n",
+			video_load, image_load, max_video_load, max_image_load);
+		msm_vidc_print_running_insts(inst->core);
 		return -EBUSY;
 	}
 
@@ -5854,19 +5876,37 @@ int msm_comm_check_memory_supported(struct msm_vidc_inst *vidc_inst)
 
 static int msm_vidc_check_mbps_supported(struct msm_vidc_inst *inst)
 {
-	int num_mbs_per_sec = 0, max_load_adj = 0;
+	int max_video_load = 0, max_image_load = 0;
+	int video_load = 0, image_load = 0;
 	enum load_calc_quirks quirks = LOAD_ADMISSION_CONTROL;
 
 	if (inst->state == MSM_VIDC_OPEN_DONE) {
-		max_load_adj = inst->core->resources.max_load;
-		num_mbs_per_sec = msm_comm_get_device_load(inst->core,
-					MSM_VIDC_DECODER, quirks);
-		num_mbs_per_sec += msm_comm_get_device_load(inst->core,
-					MSM_VIDC_ENCODER, quirks);
-		if (num_mbs_per_sec > max_load_adj) {
+		image_load = msm_comm_get_device_load(inst->core,
+					MSM_VIDC_ENCODER, MSM_VIDC_IMAGE,
+					quirks);
+		video_load = msm_comm_get_device_load(inst->core,
+					MSM_VIDC_DECODER, MSM_VIDC_VIDEO,
+					quirks);
+		video_load += msm_comm_get_device_load(inst->core,
+					MSM_VIDC_ENCODER, MSM_VIDC_VIDEO,
+					quirks);
+
+		max_video_load = inst->core->resources.max_load;
+		max_image_load = inst->core->resources.max_image_load;
+
+		if (video_load > max_video_load) {
 			s_vpr_e(inst->sid,
 				"H/W is overloaded. needed: %d max: %d\n",
-				num_mbs_per_sec, max_load_adj);
+				video_load, max_video_load);
+			msm_vidc_print_running_insts(inst->core);
+			return -EBUSY;
+		}
+
+		if (video_load + image_load > max_video_load + max_image_load) {
+			s_vpr_e(inst->sid,
+				"H/W is overloaded. needed: [video + image][%d + %d], max: [video + image][%d + %d]\n",
+				video_load, image_load,
+				max_video_load, max_image_load);
 			msm_vidc_print_running_insts(inst->core);
 			return -EBUSY;
 		}
