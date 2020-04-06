@@ -824,8 +824,8 @@ static struct dentry *exfat_lookup(struct inode *dir, struct dentry *dentry,
 		if (d_unhashed(alias)) {
 			WARN_ON(alias->d_name.hash_len !=
 				dentry->d_name.hash_len);
-			exfat_msg(sb, KERN_INFO,
-				"rehashed a dentry(%p) in read lookup", alias);
+			exfat_info(sb, "rehashed a dentry(%p) in read lookup",
+				   alias);
 			d_drop(dentry);
 			d_rehash(alias);
 		} else if (!S_ISDIR(i_mode)) {
@@ -874,7 +874,7 @@ static int exfat_unlink(struct inode *dir, struct dentry *dentry)
 	exfat_chain_dup(&cdir, &ei->dir);
 	entry = ei->entry;
 	if (ei->dir.dir == DIR_DELETED) {
-		exfat_msg(sb, KERN_ERR, "abnormal access to deleted dentry");
+		exfat_err(sb, "abnormal access to deleted dentry");
 		err = -ENOENT;
 		goto unlock;
 	}
@@ -1060,7 +1060,7 @@ static int exfat_rmdir(struct inode *dir, struct dentry *dentry)
 	entry = ei->entry;
 
 	if (ei->dir.dir == DIR_DELETED) {
-		exfat_msg(sb, KERN_ERR, "abnormal access to deleted dentry");
+		exfat_err(sb, "abnormal access to deleted dentry");
 		err = -ENOENT;
 		goto unlock;
 	}
@@ -1072,9 +1072,8 @@ static int exfat_rmdir(struct inode *dir, struct dentry *dentry)
 	err = exfat_check_dir_empty(sb, &clu_to_free);
 	if (err) {
 		if (err == -EIO)
-			exfat_msg(sb, KERN_ERR,
-				"failed to exfat_check_dir_empty : err(%d)",
-				err);
+			exfat_err(sb, "failed to exfat_check_dir_empty : err(%d)",
+				  err);
 		goto unlock;
 	}
 
@@ -1095,9 +1094,7 @@ static int exfat_rmdir(struct inode *dir, struct dentry *dentry)
 
 	err = exfat_remove_entries(dir, &cdir, entry, 0, num_entries);
 	if (err) {
-		exfat_msg(sb, KERN_ERR,
-				"failed to exfat_remove_entries : err(%d)",
-				err);
+		exfat_err(sb, "failed to exfat_remove_entries : err(%d)", err);
 		goto unlock;
 	}
 	ei->dir.dir = DIR_DELETED;
@@ -1340,8 +1337,7 @@ static int __exfat_rename(struct inode *old_parent_inode,
 		return -EINVAL;
 
 	if (ei->dir.dir == DIR_DELETED) {
-		exfat_msg(sb, KERN_ERR,
-				"abnormal access to deleted source dentry");
+		exfat_err(sb, "abnormal access to deleted source dentry");
 		return -ENOENT;
 	}
 
@@ -1363,8 +1359,7 @@ static int __exfat_rename(struct inode *old_parent_inode,
 		new_ei = EXFAT_I(new_inode);
 
 		if (new_ei->dir.dir == DIR_DELETED) {
-			exfat_msg(sb, KERN_ERR,
-				"abnormal access to deleted target dentry");
+			exfat_err(sb, "abnormal access to deleted target dentry");
 			goto out;
 		}
 
@@ -1549,8 +1544,7 @@ static int exfat_rename(struct inode *old_dir, struct dentry *old_dentry,
 			if (S_ISDIR(new_inode->i_mode))
 				drop_nlink(new_inode);
 		} else {
-			exfat_msg(sb, KERN_WARNING,
-					"abnormal access to an inode dropped");
+			exfat_warn(sb, "abnormal access to an inode dropped");
 			WARN_ON(new_inode->i_nlink == 0);
 		}
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
