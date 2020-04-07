@@ -2646,6 +2646,9 @@ blk_qc_t submit_bio(struct bio *bio)
 	if (workingset_read)
 		psi_memstall_enter(&pflags);
 
+	if (bio->bi_alloc_ts)
+		mm_event_end(BLK_READ_SUBMIT_BIO, bio->bi_alloc_ts);
+
 	ret = generic_make_request(bio);
 
 	if (workingset_read)

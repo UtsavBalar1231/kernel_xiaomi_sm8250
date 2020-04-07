@@ -751,6 +751,11 @@ struct ufs_stats {
 	u32 dme_err_cnt;
 };
 
+static inline bool is_read_opcode(u8 opcode)
+{
+	return opcode == READ_10 || opcode == READ_16;
+}
+
 /* UFS Host Controller debug print bitmask */
 #define UFSHCD_DBG_PRINT_CLK_FREQ_EN		UFS_BIT(0)
 #define UFSHCD_DBG_PRINT_UIC_ERR_HIST_EN	UFS_BIT(1)

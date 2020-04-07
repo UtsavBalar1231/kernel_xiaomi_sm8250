@@ -108,6 +108,7 @@ void mm_event_end(enum mm_event_type event, ktime_t start)
 		current->mm_event[event].max_lat = elapsed;
 	record_stat();
 }
+EXPORT_SYMBOL_GPL(mm_event_end);
 
 void mm_event_count(enum mm_event_type event, int count)
 {

@@ -20,7 +20,12 @@ struct mm_event_vmstat;
 	{ MM_COMPACTION, "compaction" },                                \
 	{ MM_RECLAIM, "reclaim" },					\
 	{ MM_SWP_FAULT, "swp_flt" },					\
-	{ MM_KERN_ALLOC, "kern_alloc" })
+	{ MM_KERN_ALLOC, "kern_alloc" },                                \
+	{ BLK_READ_SUBMIT_BIO, "blk_read_submit_bio" },                 \
+	{ UFS_READ_QUEUE_CMD, "ufs_read_queue_cmd" },                   \
+	{ UFS_READ_SEND_CMD, "ufs_read_send_cmd" },                     \
+	{ UFS_READ_COMPL_CMD, "ufs_read_compl_cmd" },                   \
+	{ F2FS_READ_DATA, "f2fs_read_data" })
 
 TRACE_EVENT(mm_event_record,
 

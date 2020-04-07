@@ -67,8 +67,28 @@ static int ufshcd_wb_toggle_flush_during_h8(struct ufs_hba *hba, bool set);
 static unsigned int storage_mfrid;
 #define MANUFACTURER_SAMSUNG 0x1CE
 #define IS_SAMSUNG_DEVICE(mfrid)   (MANUFACTURER_SAMSUNG == mfrid)
-#ifdef CONFIG_DEBUG_FS
 
+static void ufshcd_event_record(struct scsi_cmnd *cmd, enum mm_event_type event)
+{
+	struct bio *bio;
+
+	if (!cmd || !cmd->request || !cmd->request->bio)
+		return;
+
+	if (likely(!is_read_opcode(*cmd->cmnd)))
+		return;
+
+	bio = cmd->request->bio;
+	while (bio) {
+		if (bio->bi_alloc_ts)
+			mm_event_end(event, bio->bi_alloc_ts);
+		bio = bio->bi_next;
+		if (bio == cmd->request->bio)
+			break;
+	}
+}
+
+#ifdef CONFIG_DEBUG_FS
 static int ufshcd_tag_req_type(struct request *rq)
 {
 	int rq_type = TS_WRITE;
@@ -3234,6 +3254,7 @@ int ufshcd_send_command(struct ufs_hba *hba, unsigned int task_tag)
 	/* Make sure that doorbell is committed immediately */
 	wmb();
 	ufshcd_update_tag_stats(hba, task_tag);
+	ufshcd_event_record(hba->lrb[task_tag].cmd, UFS_READ_SEND_CMD);
 	return 0;
 }
 
@@ -3941,6 +3962,7 @@ static int ufshcd_queuecommand(struct Scsi_Host *host, struct scsi_cmnd *cmd)
 	ufs_spin_unlock_irqrestore(hba->host->host_lock, flags);
 
 	hba->req_abort_count = 0;
+	ufshcd_event_record(cmd, UFS_READ_QUEUE_CMD);
 
 	if (!oops_in_progress) {
 		/* acquire the tag to make sure device cmds don't use it */
@@ -6833,6 +6855,7 @@ static void __ufshcd_transfer_req_compl(struct ufs_hba *hba,
 			cmd->result = result;
 			lrbp->compl_time_stamp = ktime_get();
 			update_req_stats(hba, lrbp);
+			ufshcd_event_record(cmd, UFS_READ_COMPL_CMD);
 			ufshcd_complete_lrbp_crypto(hba, cmd, lrbp);
 			/* Mark completed command as NULL in LRB */
 			lrbp->cmd = NULL;
