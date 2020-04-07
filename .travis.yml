@@ -79,21 +79,25 @@ script:
  - sudo ./check generic/006
  - sudo ./check generic/007
  - sudo ./check generic/011
+ - sudo ./check generic/013
  - sudo ./check generic/014
  - sudo ./check generic/028
  - sudo ./check generic/029
  - sudo ./check generic/030
+ - sudo ./check generic/034
  - sudo ./check generic/035
  - sudo ./check generic/036
  - sudo ./check generic/069
- - sudo ./check generic/071
+ - sudo ./check generic/073
  - sudo ./check generic/074
  - sudo ./check generic/075
+ - sudo ./check generic/076
  - sudo ./check generic/080
  - sudo ./check generic/084
- - sudo ./check generic/086
  - sudo ./check generic/095
  - sudo ./check generic/098
+ - sudo ./check generic/100
+ - sudo ./check generic/101
  - sudo ./check generic/112
  - sudo ./check generic/113
  - sudo ./check generic/114
@@ -101,8 +105,11 @@ script:
  - sudo ./check generic/123
  - sudo ./check generic/124
  - sudo ./check generic/127
+ - sudo ./check generic/129
+ - sudo ./check generic/130
  - sudo ./check generic/131
  - sudo ./check generic/132
+ - sudo ./check generic/133
  - sudo ./check generic/135
  - sudo ./check generic/141
  - sudo ./check generic/169
@@ -111,8 +118,53 @@ script:
  - sudo ./check generic/208
  - sudo ./check generic/209
  - sudo ./check generic/210
+ - sudo ./check generic/211
  - sudo ./check generic/212
- - sudo ./check generic/214
  - sudo ./check generic/215
  - sudo ./check generic/221
- - sudo ./check generic/228
+ - sudo ./check generic/239
+ - sudo ./check generic/240
+ - sudo ./check generic/241
+ - sudo ./check generic/245
+ - sudo ./check generic/246
+ - sudo ./check generic/247
+ - sudo ./check generic/248
+ - sudo ./check generic/249
+ - sudo ./check generic/257
+ - sudo ./check generic/285
+ - sudo ./check generic/286
+ - sudo ./check generic/308
+ - sudo ./check generic/309
+ - sudo ./check generic/310
+ - sudo ./check generic/313
+ - sudo ./check generic/322
+ - sudo ./check generic/323
+ - sudo ./check generic/325
+ - sudo ./check generic/338
+ - sudo ./check generic/339
+ - sudo ./check generic/340
+ - sudo ./check generic/342
+ - sudo ./check generic/344
+ - sudo ./check generic/345
+ - sudo ./check generic/346
+ - sudo ./check generic/347
+ - sudo ./check generic/354
+ - sudo ./check generic/376
+ - sudo ./check generic/393
+ - sudo ./check generic/394
+ - sudo ./check generic/405
+ - sudo ./check generic/406
+ - sudo ./check generic/409
+ - sudo ./check generic/410
+ - sudo ./check generic/411
+ - sudo ./check generic/412
+ - sudo ./check generic/418
+ - sudo ./check generic/428
+ - sudo ./check generic/437
+ - sudo ./check generic/438
+ - sudo ./check generic/441
+ - sudo ./check generic/443
+ - sudo ./check generic/448
+ - sudo ./check generic/450
+ - sudo ./check generic/451
+ - sudo ./check generic/452
