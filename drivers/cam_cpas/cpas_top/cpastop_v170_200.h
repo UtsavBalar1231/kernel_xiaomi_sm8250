@@ -253,7 +253,7 @@ static struct cam_camnoc_specific
 			.access_type = CAM_REG_TYPE_READ_WRITE,
 			.masked_value = 0,
 			.offset = 0x2430, /* SPECIFIC_IFE01_PRIORITYLUT_LOW */
-			.value = 0x66665643,
+			.value = 0x66665433,
 		},
 		.priority_lut_high = {
 			.enable = true,
@@ -301,7 +301,7 @@ static struct cam_camnoc_specific
 			.access_type = CAM_REG_TYPE_READ_WRITE,
 			.masked_value = 0,
 			.offset = 0x2630, /* SPECIFIC_IFE23_PRIORITYLUT_LOW */
-			.value = 0x66665643,
+			.value = 0x66665433,
 		},
 		.priority_lut_high = {
 			.enable = true,
@@ -366,7 +366,7 @@ static struct cam_camnoc_specific
 			/* SPECIFIC_IBL_RD_URGENCY_LOW_READ_MASK */
 			.mask = 0x7,
 			/* SPECIFIC_IBL_RD_URGENCY_LOW_READ_SHIFT */
-			.shift = 0x4,
+			.shift = 0,
 			.value = 3,
 		},
 		.danger_lut = {
