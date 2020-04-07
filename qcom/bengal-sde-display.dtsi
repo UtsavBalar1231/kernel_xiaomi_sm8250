@@ -137,7 +137,6 @@
 	qcom,mdss-dsi-t-clk-post = <0x0e>;
 	qcom,mdss-dsi-t-clk-pre = <0x36>;
 	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
-	qcom,ulps-enabled;
 	qcom,esd-check-enabled;
 	qcom,mdss-dsi-panel-status-check-mode = "reg_read";
 	qcom,mdss-dsi-panel-status-command = [06 01 00 01 00 00 01 0a];
@@ -160,6 +159,17 @@
 			qcom,default-topology-index = <0>;
 			qcom,partial-update-enabled = "single_roi";
 			qcom,panel-roi-alignment = <40 40 40 40 40 40>;
+		};
+
+		timing@1 {
+			qcom,mdss-dsi-panel-phy-timings =
+				[25 20 09 0A 06 03 04 a0
+				25 20 09 0A 06 03 04 a0
+				25 20 09 0A 06 03 04 a0
+				25 20 09 0A 06 03 04 a0
+				25 1F 09 0A 06 03 04 a0];
+			qcom,display-topology = <1 0 1>;
+			qcom,default-topology-index = <0>;
 		};
 	};
 };
