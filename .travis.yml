@@ -64,6 +64,23 @@ script:
  - sudo cp lib/.libs/libexfat.so* /lib/
  - sudo mkdir -p /mnt/scratch
  - sudo mkdir -p /mnt/test
+ - sudo mkdir -p /mnt/full_test
+ # create file/director test
+ - truncate -s 10G full_test.img
+ - sudo losetup /dev/loop22 full_test.img
+ - sudo mkfs.exfat /dev/loop22
+ - sudo mount -t exfat /dev/loop22 /mnt/full_test/
+ - cd /mnt/full_test/
+ - i=1;while [ $i -le 10000 ];do sudo touch file$i;if [ $? != 0 ]; then exit 1; fi; i=$(($i + 1));done
+ - sync
+ - sudo rm -rf *
+ - i=1;while [ $i -le 10000 ];do sudo mkdir file$i;if [ $? != 0 ]; then exit 1; fi; i=$(($i + 1));done
+ - sync
+ - sudo rm -rf *
+ - sudo fsck.exfat /dev/loop22
+ - cd -
+ - sudo umount /mnt/full_test/
+ # run xfstests test
  - truncate -s 100G test.img
  - truncate -s 100G scratch.img
  - sudo losetup /dev/loop20 test.img
