@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef __SDE_RM_H__
@@ -323,8 +323,10 @@ int sde_rm_ext_blk_destroy(struct sde_rm *rm,
  * @mr: sde rm object
  * @drm_enc: drm encoder object
  * @avail_res: out parameter, available resource object
+ * @display_type: type of the display in usage
  */
 void sde_rm_get_resource_info(struct sde_rm *rm,
 		struct drm_encoder *drm_enc,
-		struct msm_resource_caps_info *avail_res);
+		struct msm_resource_caps_info *avail_res,
+		int display_type);
 #endif /* __SDE_RM_H__ */
