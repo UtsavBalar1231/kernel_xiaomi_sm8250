@@ -38,6 +38,7 @@
 #include <target_if.h>
 #include <qdf_debugfs.h>
 #include "wmi_filtered_logging.h"
+#include <wmi_hang_event.h>
 
 /* This check for CONFIG_WIN temporary added due to redeclaration compilation
 error in MCL. Error is caused due to inclusion of wmi.h in wmi_unified_api.h
@@ -2829,6 +2830,8 @@ void *wmi_unified_attach(void *scn_handle,
 
 	wmi_wbuff_register(wmi_handle);
 
+	wmi_hang_event_notifier_register(wmi_handle);
+
 	return wmi_handle;
 
 error:
@@ -2850,6 +2853,8 @@ void wmi_unified_detach(struct wmi_unified *wmi_handle)
 	wmi_buf_t buf;
 	struct wmi_soc *soc;
 	uint8_t i;
+
+	wmi_hang_event_notifier_unregister();
 
 	wmi_wbuff_deregister(wmi_handle);
 
