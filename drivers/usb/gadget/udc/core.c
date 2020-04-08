@@ -515,12 +515,12 @@ EXPORT_SYMBOL_GPL(usb_gadget_wakeup);
 int usb_gsi_ep_op(struct usb_ep *ep,
 		struct usb_gsi_request *req, enum gsi_ep_op op)
 {
-	if (ep->ops->gsi_ep_op)
+	if (ep && ep->ops && ep->ops->gsi_ep_op)
 		return ep->ops->gsi_ep_op(ep, req, op);
 
 	return -EOPNOTSUPP;
 }
-EXPORT_SYMBOL(usb_gsi_ep_op);
+EXPORT_SYMBOL_GPL(usb_gsi_ep_op);
 
 /**
  * usb_gadget_func_wakeup - send a function remote wakeup up notification
