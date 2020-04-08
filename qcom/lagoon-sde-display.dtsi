@@ -166,6 +166,14 @@
 		label = "wb_display";
 	};
 
+	msm_notifier: qcom,msm_notifier@0 {
+		compatible = "qcom,msm-notifier";
+		panel = <&dsi_rm69299_visionox_amoled_video
+			 &dsi_rm69299_visionox_amoled_cmd
+			 &dsi_r66451_amoled_120hz_video
+			 &dsi_r66451_amoled_120hz_cmd>;
+	};
+
 	ext_disp: qcom,msm-ext-disp {
 		compatible = "qcom,msm-ext-disp";
 
