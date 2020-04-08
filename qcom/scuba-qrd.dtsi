@@ -101,7 +101,7 @@
 
 &sdhc_2 {
 	vdd-supply = <&L21A>;
-	qcom,vdd-voltage-level = <2960000 2960000>;
+	qcom,vdd-voltage-level = <2960000 3300000>;
 	qcom,vdd-current-level = <0 800000>;
 
 	vdd-io-supply = <&L4A>;
