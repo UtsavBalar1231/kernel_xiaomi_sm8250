@@ -1285,6 +1285,33 @@ static int sde_encoder_phys_wb_wait_for_commit_done(
 	return _sde_encoder_phys_wb_wait_for_commit_done(phys_enc, false);
 }
 
+static int sde_encoder_phys_wb_wait_for_cwb_done(
+		struct sde_encoder_phys *phys_enc)
+{
+	struct sde_encoder_phys_wb *wb_enc = to_sde_encoder_phys_wb(phys_enc);
+	struct sde_encoder_wait_info wait_info = {0};
+	int rc = 0;
+
+	if (!phys_enc->in_clone_mode)
+		return 0;
+
+	SDE_EVT32(atomic_read(&phys_enc->pending_retire_fence_cnt));
+
+	wait_info.wq = &phys_enc->pending_kickoff_wq;
+	wait_info.atomic_cnt = &phys_enc->pending_retire_fence_cnt;
+	wait_info.timeout_ms = max_t(u32, wb_enc->wbdone_timeout,
+				KICKOFF_TIMEOUT_MS);
+
+	rc = sde_encoder_helper_wait_for_irq(phys_enc, INTR_IDX_WB_DONE,
+		&wait_info);
+
+	if (rc == -ETIMEDOUT)
+		SDE_EVT32(DRMID(phys_enc->parent), WBID(wb_enc),
+			wb_enc->frame_count, SDE_EVTLOG_ERROR);
+
+	return rc;
+}
+
 /**
  * sde_encoder_phys_wb_prepare_for_kickoff - pre-kickoff processing
  * @phys_enc:	Pointer to physical encoder
@@ -1718,6 +1745,7 @@ static void sde_encoder_phys_wb_init_ops(struct sde_encoder_phys_ops *ops)
 	ops->trigger_start = sde_encoder_helper_trigger_start;
 	ops->hw_reset = sde_encoder_helper_hw_reset;
 	ops->irq_control = sde_encoder_phys_wb_irq_ctrl;
+	ops->wait_for_tx_complete = sde_encoder_phys_wb_wait_for_cwb_done;
 }
 
 /**
