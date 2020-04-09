@@ -356,6 +356,7 @@ void wlan_set_ce_srng_cfg(struct wlan_srng_cfg **wlan_cfg)
 #else
 void wlan_set_ce_srng_cfg(struct wlan_srng_cfg **wlan_cfg)
 {
+	*wlan_cfg = g_wlan_ce_srng_cfg;
 }
 #endif
 
