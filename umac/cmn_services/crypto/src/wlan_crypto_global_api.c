@@ -4158,11 +4158,15 @@ QDF_STATUS wlan_crypto_save_key(struct wlan_objmgr_vdev *vdev,
 		crypto_err("Invalid Key index %d", key_index);
 		return QDF_STATUS_E_FAILURE;
 	}
-	if (key_index < WLAN_CRYPTO_MAXKEYIDX)
+	if (key_index < WLAN_CRYPTO_MAXKEYIDX) {
 		crypto_priv->key[key_index] = crypto_key;
-	else
+	} else {
 		crypto_priv->igtk_key[key_index - WLAN_CRYPTO_MAXKEYIDX] =
 			crypto_key;
+		crypto_priv->def_igtk_tx_keyid =
+				key_index - WLAN_CRYPTO_MAXKEYIDX;
+		crypto_priv->igtk_key_type = crypto_key->cipher_type;
+	}
 
 	return QDF_STATUS_SUCCESS;
 }
