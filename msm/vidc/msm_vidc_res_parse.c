@@ -1034,7 +1034,6 @@ int msm_vidc_smmu_fault_handler(struct iommu_domain *domain,
 		struct device *dev, unsigned long iova, int flags, void *token)
 {
 	struct msm_vidc_core *core = token;
-	struct msm_vidc_inst *inst;
 
 	if (!domain || !core) {
 		d_vpr_e("%s: invalid params %pK %pK\n",
@@ -1054,7 +1053,7 @@ int msm_vidc_smmu_fault_handler(struct iommu_domain *domain,
 	d_vpr_e("%s: faulting address: %lx\n", __func__, iova);
 
 	core->smmu_fault_handled = true;
-	msm_comm_print_insts_info(inst->core);
+	msm_comm_print_insts_info(core);
 	/*
 	 * Return -EINVAL to elicit the default behaviour of smmu driver.
 	 * If we return -EINVAL, then smmu driver assumes page fault handler
