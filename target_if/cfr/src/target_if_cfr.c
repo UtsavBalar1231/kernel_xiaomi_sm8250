@@ -176,30 +176,36 @@ int target_if_cfr_init_pdev(struct wlan_objmgr_psoc *psoc,
 			    struct wlan_objmgr_pdev *pdev)
 {
 	uint32_t target_type;
+	QDF_STATUS status;
 
 	target_type = target_if_cfr_get_target_type(psoc);
 
 	if (target_type == TARGET_TYPE_QCA6490) {
-		return cfr_6490_init_pdev(psoc, pdev);
+		status = cfr_6490_init_pdev(psoc, pdev);
 	} else {
 		cfr_info("unsupport chip");
-		return QDF_STATUS_SUCCESS;
+		status = QDF_STATUS_SUCCESS;
 	}
+
+	return qdf_status_to_os_return(status);
 }
 
 int target_if_cfr_deinit_pdev(struct wlan_objmgr_psoc *psoc,
 			      struct wlan_objmgr_pdev *pdev)
 {
 	uint32_t target_type;
+	QDF_STATUS status;
 
 	target_type = target_if_cfr_get_target_type(psoc);
 
 	if (target_type == TARGET_TYPE_QCA6490) {
-		return cfr_6490_deinit_pdev(psoc, pdev);
+		status = cfr_6490_deinit_pdev(psoc, pdev);
 	} else {
 		cfr_info("unsupport chip");
-		return QDF_STATUS_E_NOSUPPORT;
+		status = QDF_STATUS_SUCCESS;
 	}
+
+	return qdf_status_to_os_return(status);
 }
 #else
 int target_if_cfr_init_pdev(struct wlan_objmgr_psoc *psoc,
@@ -264,10 +270,8 @@ int target_if_cfr_deinit_pdev(struct wlan_objmgr_psoc *psoc,
 #endif
 
 #ifdef WLAN_ENH_CFR_ENABLE
-#ifdef CFR_USE_FIXED_FOLDER
-#define CFR_MAC_ID_24G 1
-#define CFR_MAC_ID_5G  0
-uint8_t target_if_cfr_get_mac_id(struct wlan_objmgr_pdev *pdev)
+#ifdef QCA_WIFI_QCA6490
+static uint8_t target_if_cfr_get_mac_id(struct wlan_objmgr_pdev *pdev)
 {
 	struct wlan_objmgr_vdev *vdev;
 	struct wlan_channel *bss_chan;
@@ -281,7 +285,7 @@ uint8_t target_if_cfr_get_mac_id(struct wlan_objmgr_pdev *pdev)
 
 	mac_id = wlan_objmgr_pdev_get_pdev_id(pdev);
 	pcfr = wlan_objmgr_pdev_get_comp_private_obj(pdev, WLAN_UMAC_COMP_CFR);
-	if (pcfr == NULL)  {
+	if (!pcfr)  {
 		cfr_err("null pcfr");
 		return mac_id;
 	}
@@ -310,6 +314,7 @@ uint8_t target_if_cfr_get_mac_id(struct wlan_objmgr_pdev *pdev)
 	else
 		mac_id = CFR_MAC_ID_5G;
 
+	pcfr->rcc_param.srng_id = mac_id;
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_CFR_ID);
 
 	return mac_id;
@@ -320,16 +325,11 @@ static uint8_t target_if_cfr_get_pdev_id(struct wlan_objmgr_pdev *pdev)
 	return target_if_cfr_get_mac_id(pdev);
 }
 #else
-uint8_t target_if_cfr_get_mac_id(struct wlan_objmgr_pdev *pdev)
-{
-	return 0;
-}
-
 static uint8_t target_if_cfr_get_pdev_id(struct wlan_objmgr_pdev *pdev)
 {
 	return wlan_objmgr_pdev_get_pdev_id(pdev);
 }
-#endif /* CFR_USE_FIXED_FOLDER */
+#endif /* QCA_WIFI_QCA6490 */
 
 QDF_STATUS target_if_cfr_config_rcc(struct wlan_objmgr_pdev *pdev,
 				    struct cfr_rcc_param *rcc_info)

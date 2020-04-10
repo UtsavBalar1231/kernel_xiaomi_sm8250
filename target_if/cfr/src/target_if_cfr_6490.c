@@ -51,8 +51,11 @@ static void target_cfr_callback(void *pdev_obj, enum WDI_EVENT event,
 		return;
 	}
 
-	if (event != WDI_EVENT_RX_PPDU_DESC)
+	if (event != WDI_EVENT_RX_PPDU_DESC) {
+		cfr_debug("event is %d", event);
+		qdf_nbuf_free(nbuf);
 		return;
+	}
 
 	data_clone = qdf_nbuf_clone(nbuf);
 	if (data_clone)
@@ -120,11 +123,11 @@ QDF_STATUS cfr_6490_init_pdev(struct wlan_objmgr_psoc *psoc,
 	struct pdev_cfr *cfr_pdev;
 	struct psoc_cfr *cfr_psoc;
 	struct wmi_unified *wmi_handle = NULL;
-	bool is_cfr_disaled;
+	bool is_cfr_disabled;
 	bool cfr_capable;
 
 	if (!psoc || !pdev) {
-		cfr_err("null pdev or psc");
+		cfr_err("null pdev or psoc");
 		return QDF_STATUS_E_FAILURE;
 	}
 
@@ -149,8 +152,8 @@ QDF_STATUS cfr_6490_init_pdev(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	is_cfr_disaled = cfg_get(psoc, CFG_CFR_DISABLE);
-	if (is_cfr_disaled) {
+	is_cfr_disabled = cfg_get(psoc, CFG_CFR_DISABLE);
+	if (is_cfr_disabled) {
 		cfr_pdev->is_cfr_capable = 0;
 		cfr_psoc->is_cfr_capable = 0;
 		cfr_info("cfr disabled");
@@ -175,7 +178,7 @@ QDF_STATUS cfr_6490_deinit_pdev(struct wlan_objmgr_psoc *psoc,
 	struct pdev_cfr *pcfr;
 
 	if (!psoc || !pdev) {
-		cfr_err("null pdev or psc");
+		cfr_err("null pdev or psoc");
 		return QDF_STATUS_E_FAILURE;
 	}
 
@@ -191,5 +194,5 @@ QDF_STATUS cfr_6490_deinit_pdev(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_SUCCESS;
 	}
 
-	return cfr_6018_init_pdev(psoc, pdev);
+	return cfr_6018_deinit_pdev(psoc, pdev);
 }

@@ -636,8 +636,7 @@ void target_if_cfr_rx_tlv_process(struct wlan_objmgr_pdev *pdev, void *nbuf)
 	buf_addr = (cfr_info->rtt_che_buffer_pointer_low32 |
 		    ((uint64_t)buf_addr_extn << 32));
 
-
-	srng_id = target_if_cfr_get_mac_id(pdev);
+	srng_id = pcfr->rcc_param.srng_id;
 	if (target_if_dbr_cookie_lookup(pdev, DBR_MODULE_CFR, buf_addr,
 					&cookie, srng_id)) {
 		cfr_debug("Cookie lookup failure for addr: 0x%pK",
@@ -1062,7 +1061,7 @@ target_if_peer_capture_event(ol_scn_t sc, uint8_t *data, uint32_t datalen)
 	struct wlan_lmac_if_cfr_rx_ops *cfr_rx_ops = NULL;
 
 	if (!sc || !data) {
-		cfr_err("sc: 0x%pK, data: 0x%pK", sc, data);
+		cfr_err("sc or data is null");
 		return -EINVAL;
 	}
 
@@ -1363,7 +1362,7 @@ static os_timer_func(lut_ageout_timer_task)
 		return;
 	}
 
-	srng_id = target_if_cfr_get_mac_id(pdev);
+	srng_id = pcfr->rcc_param.srng_id;
 	if (wlan_objmgr_pdev_try_get_ref(pdev, WLAN_CFR_ID)
 	    != QDF_STATUS_SUCCESS) {
 		cfr_err("failed to get pdev reference");
@@ -1543,6 +1542,7 @@ QDF_STATUS cfr_6018_init_pdev(struct wlan_objmgr_psoc *psoc,
 	pcfr->rcc_param.modified_in_curr_session = MAX_RESET_CFG_ENTRY;
 	pcfr->rcc_param.num_grp_tlvs = MAX_TA_RA_ENTRIES;
 	pcfr->rcc_param.vdev_id = CFR_INVALID_VDEV_ID;
+	pcfr->rcc_param.srng_id = 0;
 
 	target_if_cfr_default_ta_ra_config(&pcfr->rcc_param,
 					   true, MAX_RESET_CFG_ENTRY);

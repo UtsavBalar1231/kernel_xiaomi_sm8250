@@ -164,13 +164,4 @@ QDF_STATUS cfr_wifi2_0_init_pdev(struct wlan_objmgr_psoc *psoc,
  */
 QDF_STATUS cfr_wifi2_0_deinit_pdev(struct wlan_objmgr_psoc *psoc,
 				   struct wlan_objmgr_pdev *pdev);
-
-#ifdef WLAN_ENH_CFR_ENABLE
-/**
- * target_if_cfr_get_mac_id() - Function to get pdev id
- * @pdev: pointer to pdev object
- *
- */
-uint8_t target_if_cfr_get_mac_id(struct wlan_objmgr_pdev *pdev);
-#endif
 #endif

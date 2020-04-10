@@ -374,6 +374,7 @@ struct ta_ra_cfr_cfg {
  * struct cfr_rcc_param - structure to store cfr config param
  * pdev_id: pdev_id for identifying the MAC
  * vdev_id: vdev_id of current rcc configures
+ * srng_id: srng id of current rcc configures
  * capture_duration: Capture Duration field for which CFR capture has to happen,
  * in microsecond units
  * capture_interval: Capture interval field which is time in between
@@ -402,6 +403,7 @@ struct ta_ra_cfr_cfg {
 struct cfr_rcc_param {
 	uint8_t pdev_id;
 	uint8_t vdev_id;
+	uint8_t srng_id;
 	uint32_t capture_duration;
 	uint32_t capture_interval;
 	uint32_t ul_mu_user_mask_lower;
