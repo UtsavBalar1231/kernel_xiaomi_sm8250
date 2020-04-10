@@ -1505,7 +1505,8 @@ static int __cam_isp_ctx_epoch_in_applied(struct cam_isp_context *ctx_isp,
 	CAM_DBG(CAM_REQ, "move request %lld to active list(cnt = %d), ctx %u",
 		req->request_id, ctx_isp->active_req_cnt, ctx->ctx_id);
 
-	if (req->request_id > ctx_isp->reported_req_id) {
+	if ((req->request_id > ctx_isp->reported_req_id)
+		&& !req_isp->bubble_report) {
 		request_id = req->request_id;
 		ctx_isp->reported_req_id = request_id;
 	}
