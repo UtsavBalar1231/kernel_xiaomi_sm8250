@@ -38,6 +38,7 @@
 
 #define WQ_DELAY 2000000
 #define MIN_MS 5
+#define BACKLOG_CHECK 1
 
 #define GET_QTAIL(SD, CPU) (per_cpu(SD, CPU).input_queue_tail)
 #define GET_QHEAD(SD, CPU) (per_cpu(SD, CPU).input_queue_head)
@@ -1128,7 +1129,6 @@ void rmnet_shs_flush_lock_table(u8 flsh, u8 ctxt)
 	u32 total_cpu_gro_flushed = 0;
 	u32 total_node_gro_flushed = 0;
 	u8 is_flushed = 0;
-	u8 cpu_segment = 0;
 
 	/* Record a qtail + pkts flushed or move if reqd
 	 * currently only use qtail for non TCP flows
@@ -1142,7 +1142,6 @@ void rmnet_shs_flush_lock_table(u8 flsh, u8 ctxt)
 	for (cpu_num = 0; cpu_num < MAX_CPUS; cpu_num++) {
 
 		cpu_tail = rmnet_shs_get_cpu_qtail(cpu_num);
-		cpu_segment = 0;
 		total_cpu_gro_flushed = 0;
 		skb_seg_pending = 0;
 		list_for_each_safe(ptr, next,
@@ -1151,8 +1150,7 @@ void rmnet_shs_flush_lock_table(u8 flsh, u8 ctxt)
 			skb_seg_pending += n->skb_list.skb_load;
 		}
 		if (rmnet_shs_inst_rate_switch) {
-			cpu_segment = rmnet_shs_cpu_node_tbl[cpu_num].seg;
-			rmnet_shs_core_prio_check(cpu_num, cpu_segment,
+			rmnet_shs_core_prio_check(cpu_num, BACKLOG_CHECK,
 						  skb_seg_pending);
 		}
 
@@ -1195,7 +1193,7 @@ void rmnet_shs_flush_lock_table(u8 flsh, u8 ctxt)
 				rmnet_shs_update_core_load(cpu_num,
 				total_cpu_gro_flushed);
 
-			rmnet_shs_core_prio_check(cpu_num, cpu_segment, 0);
+			rmnet_shs_core_prio_check(cpu_num, BACKLOG_CHECK, 0);
 
 		}
 
