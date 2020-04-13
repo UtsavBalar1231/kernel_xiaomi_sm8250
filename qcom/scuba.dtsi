@@ -1205,7 +1205,7 @@
 	};
 
 	debugcc: qcom,cc-debug {
-		compatible = "qcom,bengal-debugcc";
+		compatible = "qcom,scuba-debugcc";
 		qcom,gcc = <&gcc>;
 		qcom,dispcc = <&dispcc>;
 		qcom,gpucc = <&gpucc>;
