@@ -4,6 +4,8 @@
 #include "lagoon-audio-overlay.dtsi"
 #include "lagoon-sde-display.dtsi"
 #include "camera/lagoon-camera-sensor-mtp.dtsi"
+#include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
+#include <dt-bindings/iio/qcom,spmi-vadc.h>
 
 &soc {
 	gpio_keys {
@@ -406,3 +408,52 @@
 	};
 };
 
+&pm7250b_vadc {
+	smb1390_therm@e {
+		qcom,scale-fn-type = <ADC_SCALE_HW_CALIB_PM5_SMB1398_TEMP>;
+	};
+};
+
+&pm7250b_gpios {
+	smb_stat {
+		smb_stat_default: smb_stat_default {
+			pins = "gpio6";
+			function = "normal";
+			input-enable;
+			bias-pull-up;
+			qcom,pull-up-strength = <PMIC_GPIO_PULL_UP_30>;
+			power-source = <0>;
+		};
+	};
+};
+
+&qupv3_se10_i2c {
+	qcom,clk-freq-out = <100000>;
+	status = "ok";
+	#include "smb1398.dtsi"
+};
+
+&smb1396 {
+	interrupts = <0x2 0xc5 0x0 IRQ_TYPE_LEVEL_LOW>;
+	interrupt-parent = <&spmi_bus>;
+	interrupt-names = "smb1396";
+	pinctrl-names = "default";
+	pinctrl-0 = <&smb_stat_default>;
+	status = "ok";
+};
+
+&smb1396_div2_cp_master {
+	io-channels = <&pm7250b_vadc ADC_AMUX_THM2>;
+	qcom,parallel-input-mode = <1>; /* USBIN */
+	qcom,parallel-output-mode = <2>; /* VBAT */
+	qcom,min-ilim-ua = <750000>;
+	status = "ok";
+};
+
+&smb1396_slave {
+	status = "ok";
+};
+
+&smb1396_div2_cp_slave {
+	status = "ok";
+};
