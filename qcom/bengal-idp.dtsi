@@ -280,6 +280,7 @@
 	vccq2-supply = <&L11A>;
 	vcc-max-microamp = <600000>;
 	vccq2-max-microamp = <600000>;
+	vccq2-pwr-collapse-sup;
 
 	qcom,vddp-ref-clk-supply = <&L18A>;
 	qcom,vddp-ref-clk-max-microamp = <100>;
