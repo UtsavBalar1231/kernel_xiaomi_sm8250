@@ -3321,6 +3321,7 @@
 		qcom,arm-smmu;
 		qcom,smmu-fast-map;
 		qcom,bandwidth-vote-for-ipa;
+		qcom,ipa-endp-delay-wa;
 		qcom,use-64-bit-dma-mask;
 		qcom,msm-bus,name = "ipa";
 		qcom,use-gsi-ipa-fw = "lagoon_ipa_fws";
