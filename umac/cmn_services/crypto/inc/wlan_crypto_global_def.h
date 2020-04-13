@@ -222,6 +222,7 @@ enum wlan_crypto_key_type {
  * @pmkid: pmkid info
  * @pmk: pmk info
  * @pmk_len: pmk len
+ * @single_pmk_supported: SAE single pmk supported BSS
  */
 struct wlan_crypto_pmksa {
 	struct qdf_mac_addr bssid;
@@ -231,6 +232,9 @@ struct wlan_crypto_pmksa {
 	uint8_t    ssid_len;
 	uint8_t    ssid[WLAN_SSID_MAX_LEN];
 	uint8_t    cache_id[WLAN_CACHE_ID_LEN];
+#if defined(WLAN_SAE_SINGLE_PMK) && defined(WLAN_FEATURE_ROAM_OFFLOAD)
+	bool       single_pmk_supported;
+#endif
 };
 
 /**
