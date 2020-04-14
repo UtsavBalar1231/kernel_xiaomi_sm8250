@@ -797,6 +797,10 @@
 		#size-cells = <1>;
 		read-only;
 		ranges;
+
+		feat_conf5: feat_conf5@6018 {
+			reg = <0x6018 0x4>;
+		};
 	};
 
 	qcom,sps {
