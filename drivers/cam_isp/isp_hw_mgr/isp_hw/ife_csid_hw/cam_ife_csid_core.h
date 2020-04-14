@@ -553,6 +553,7 @@ struct cam_ife_csid_path_cfg {
  * @clk_rate                  Clock rate
  * @sof_irq_triggered:        Flag is set on receiving event to enable sof irq
  *                            incase of SOF freeze.
+ * @is_resetting:             informs whether reset is started or not.
  * @irq_debug_cnt:            Counter to track sof irq's when above flag is set.
  * @error_irq_count           Error IRQ count, if continuous error irq comes
  *                            need to stop the CSID and mask interrupts.
@@ -591,6 +592,7 @@ struct cam_ife_csid_hw {
 	uint32_t                         hbi;
 	uint32_t                         vbi;
 	bool                             sof_irq_triggered;
+	bool                             is_resetting;
 	uint32_t                         irq_debug_cnt;
 	uint32_t                         error_irq_count;
 	uint32_t                         device_enabled;
