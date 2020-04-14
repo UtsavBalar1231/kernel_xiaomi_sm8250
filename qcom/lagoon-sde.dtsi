@@ -478,6 +478,7 @@
 		qcom,aux-cfg9-settings = [44 03];
 
 		qcom,max-pclk-frequency-khz = <337500>;
+		qcom,no-mst-encoder;
 
 	clocks =	<&dispcc DISP_CC_MDSS_DP_AUX_CLK>,
 			<&gcc GCC_USB3_PRIM_PHY_PIPE_CLK>,
