@@ -1072,6 +1072,18 @@
 			qcom,prio = <2>;
 		};
 
+		mas_xm_gic: mas-xm-gic {
+			cell-id = <MSM_BUS_MASTER_GIC>;
+			label = "mas-xm-gic";
+			qcom,buswidth = <8>;
+			qcom,agg-ports = <1>;
+			qcom,qport = <0>;
+			qcom,connections = <&slv_qns_gemnoc_gc>;
+			qcom,bus-dev = <&fab_system_noc>;
+			qcom,ap-owned;
+			qcom,prio = <3>;
+		};
+
 		mas_qnm_mnoc_hf_display: mas-qnm-mnoc-hf_display {
 			cell-id = <MSM_BUS_MASTER_MNOC_HF_MEM_NOC_DISPLAY>;
 			label = "mas-qnm-mnoc-hf_display";
