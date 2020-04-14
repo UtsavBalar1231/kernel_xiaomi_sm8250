@@ -246,3 +246,15 @@
 			&dsi_rm69299_visionox_amoled_cmd>;
 	};
 };
+
+&sde_dp {
+	status = "disabled";
+};
+
+&mdss_dp_pll {
+	status = "disabled";
+};
+
+&mdss_mdp {
+	connectors = <&sde_wb &sde_dsi &sde_rscc>;
+};
