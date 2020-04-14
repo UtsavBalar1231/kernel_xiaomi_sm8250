@@ -134,7 +134,6 @@ struct zram {
 	 * zram is claimed so open request will be failed
 	 */
 	bool claim; /* Protected by bdev->bd_mutex */
-	bool use_dedup;
 	struct file *backing_dev;
 #ifdef CONFIG_ZRAM_WRITEBACK
 	spinlock_t wb_limit_lock;
@@ -149,15 +148,6 @@ struct zram {
 	struct dentry *debugfs_dir;
 #endif
 };
-
-static inline bool zram_dedup_enabled(struct zram *zram)
-{
-#ifdef CONFIG_ZRAM_DEDUP
-	return zram->use_dedup;
-#else
-	return false;
-#endif
-}
 
 void zram_entry_free(struct zram *zram, struct zram_entry *entry);
 #endif
