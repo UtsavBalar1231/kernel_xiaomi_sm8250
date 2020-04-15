@@ -94,6 +94,9 @@ Optional properties:
                      be specified if a group of flash LED channels are connected
                      to a single LED.
 
+- qcom,ibatt-ocp-threshold-ua : Integer property for flash current predictive mitigation.
+				  Default value is 2500000 uA.
+
 Example:
 
 qcom,leds@ee00 {
