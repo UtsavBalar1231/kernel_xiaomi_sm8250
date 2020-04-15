@@ -124,7 +124,6 @@
 
 		qcom,sde-qos-cpu-mask = <0x3>;
 		qcom,sde-qos-cpu-dma-latency = <300>;
-		qcom,sde-qos-cpu-irq-latency = <300>;
 
 		qcom,sde-secure-sid-mask = <0x0000421>;
 		qcom,sde-num-mnoc-ports = <1>;
