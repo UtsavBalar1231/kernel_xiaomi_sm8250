@@ -1015,5 +1015,19 @@
 				output-low;
 			};
 		};
+
+		gpio_vol_up: gpio_vol_up {
+			mux {
+				pins = "gpio96";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio96";
+				drive-strength = <2>;
+				bias-pull-up;
+				input-enable;
+			};
+		};
 	};
 };
