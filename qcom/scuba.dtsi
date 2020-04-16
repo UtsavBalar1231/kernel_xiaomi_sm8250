@@ -448,7 +448,6 @@
 			<0x1bee000 0x2000>;
 		reg-names = "dcc-base", "dcc-ram-base";
 		dcc-ram-offset = <0x2000>;
-		status = "disabled";
 	};
 
 	timer@f120000 {
