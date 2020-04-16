@@ -1710,6 +1710,7 @@ static void mlme_init_lfr_cfg(struct wlan_objmgr_psoc *psoc,
 	lfr->roam_scan_period_after_inactivity =
 		cfg_get(psoc, CFG_POST_INACTIVITY_ROAM_SCAN_PERIOD);
 	lfr->fw_akm_bitmap = 0;
+	lfr->is_ft_im_for_deauth = cfg_get(psoc, CFG_FT_IM_FOR_DEAUTH);
 
 	mlme_init_roam_offload_cfg(psoc, lfr);
 	mlme_init_ese_cfg(psoc, lfr);
