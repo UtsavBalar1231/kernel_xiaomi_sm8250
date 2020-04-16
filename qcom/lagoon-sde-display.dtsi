@@ -140,12 +140,7 @@
 	qcom,dp-usbpd-detection = <&pm7250b_pdphy>;
 	qcom,ext-disp = <&ext_disp>;
 
-	qcom,usbplug-cc-gpio = <&tlmm 124 0>;
 	qcom,dp-aux-switch = <&fsa4480>;
-
-	pinctrl-names = "mdss_dp_active", "mdss_dp_sleep";
-	pinctrl-0 = <&sde_dp_usbplug_cc_active>;
-	pinctrl-1 = <&sde_dp_usbplug_cc_suspend>;
 };
 
 &mdss_mdp {
