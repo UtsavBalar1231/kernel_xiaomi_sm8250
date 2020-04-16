@@ -323,7 +323,7 @@ static void _sde_encoder_phys_cmd_setup_irq_hw_idx(
 		struct sde_encoder_phys *phys_enc)
 {
 	struct sde_encoder_irq *irq;
-	struct sde_kms *sde_kms = phys_enc->sde_kms;
+	struct sde_kms *sde_kms;
 	int ret = 0;
 
 	if (!phys_enc || !phys_enc->hw_pp || !phys_enc->hw_ctl) {
@@ -337,6 +337,7 @@ static void _sde_encoder_phys_cmd_setup_irq_hw_idx(
 		return;
 	}
 
+	sde_kms = phys_enc->sde_kms;
 	mutex_lock(&sde_kms->vblank_ctl_global_lock);
 
 	if (atomic_read(&phys_enc->vblank_refcount)) {
