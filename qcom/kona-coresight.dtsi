@@ -103,6 +103,7 @@
 		reg-names = "tmc-base";
 
 		coresight-name = "coresight-tmc-etf";
+		coresight-ctis = <&cti0_swao &cti3_swao>;
 		coresight-csr = <&swao_csr>;
 		clocks = <&clock_aop QDSS_CLK>;
 		clock-names = "apb_pclk";
@@ -303,7 +304,7 @@
 		arm,scatter-gather;
 
 		coresight-name = "coresight-tmc-etr";
-		coresight-ctis = <&cti0 &cti0>;
+		coresight-ctis = <&cti0 &cti3_swao>;
 		coresight-csr = <&csr>;
 
 		clocks = <&clock_aop QDSS_CLK>;
