@@ -935,6 +935,9 @@ static void _sde_kms_drm_check_dpms(struct drm_atomic_state *old_state,
 		if ((old_mode != new_mode) || (old_fps != new_fps)) {
 			struct drm_panel_notifier notifier_data;
 
+			SDE_EVT32(old_mode, new_mode, old_fps, new_fps,
+				connector->panel, crtc->state->active,
+				old_conn_state->crtc, event);
 			pr_debug("change detected (power mode %d->%d, fps %d->%d)\n",
 				old_mode, new_mode, old_fps, new_fps);
 
