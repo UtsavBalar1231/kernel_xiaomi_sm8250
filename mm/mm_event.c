@@ -114,6 +114,7 @@ void mm_event_count(enum mm_event_type event, int count)
 	current->mm_event[event].count += count;
 	record_stat();
 }
+EXPORT_SYMBOL_GPL(mm_event_count);
 
 static struct dentry *mm_event_root;
 
