@@ -64,6 +64,7 @@
 		qcom,npubw-dev-names = "npu_llcc_bw", "llcc_ddr_bw", "dsp_ddr_bw";
 		qcom,src-dst-ports = <MSM_BUS_MASTER_NPU MSM_BUS_SLAVE_EBI_CH0>,
 				<MSM_BUS_MASTER_NPU MSM_BUS_SLAVE_CLK_CTL>;
+		qcom,npu-cxlimit-enable;
 		qcom,npu-pwrlevels {
 			#address-cells = <1>;
 			#size-cells = <0>;
