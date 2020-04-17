@@ -1205,6 +1205,7 @@
 		reg = <0x5990000 0x9000>;
 		reg-names = "cc_base";
 		vdd_cx-supply = <&VDD_CX_LEVEL>;
+		qcom,gpu_cc_gx_gfx3d_clk_src-opp-handle = <&msm_gpu>;
 		#clock-cells = <1>;
 		#reset-cells = <1>;
 	};
