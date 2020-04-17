@@ -547,6 +547,7 @@ static int exfat_read_root(struct inode *inode)
 	inode->i_mtime = inode->i_atime = inode->i_ctime = ei->i_crtime =
 		CURRENT_TIME_SEC;
 #endif
+	exfat_truncate_atime(&inode->i_atime);
 	exfat_cache_init_inode(inode);
 	return 0;
 }

@@ -300,6 +300,7 @@ int exfat_getattr(struct vfsmount *mnt, struct dentry *dentry,
 #endif
 
 	generic_fillattr(inode, stat);
+	exfat_truncate_atime(&stat->atime);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 	stat->result_mask |= STATX_BTIME;
 	stat->btime.tv_sec = ei->i_crtime.tv_sec;
@@ -374,6 +375,7 @@ int exfat_setattr(struct dentry *dentry, struct iattr *attr)
 	}
 
 	setattr_copy(inode, attr);
+	exfat_truncate_atime(&inode->i_atime);
 	mark_inode_dirty(inode);
 
 out:
