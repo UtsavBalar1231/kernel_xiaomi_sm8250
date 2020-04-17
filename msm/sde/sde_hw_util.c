@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  */
 #define pr_fmt(fmt)	"[drm:%s:%d] " fmt, __func__, __LINE__
 
@@ -549,9 +549,10 @@ uint32_t sde_copy_formats(
 /**
  * sde_get_linetime   - returns the line time for a given mode
  * @mode:          pointer to drm mode to calculate the line time
+ * @comp_ratio:    compression ratio
  * Return:         line time of display mode in nS
  */
-uint32_t sde_get_linetime(struct drm_display_mode *mode)
+uint32_t sde_get_linetime(struct drm_display_mode *mode, int comp_ratio)
 {
 	u64 pclk_rate;
 	u32 pclk_period;
@@ -570,10 +571,11 @@ uint32_t sde_get_linetime(struct drm_display_mode *mode)
 	}
 
 	/*
-	 * Line time calculation based on Pixel clock and HTOTAL.
+	 * Line time calculation based on Pixel clock, HTOTAL, and comp_ratio.
 	 * Final unit is in ns.
 	 */
-	line_time = (pclk_period * mode->htotal) / 1000;
+	line_time = DIV_ROUND_UP(mult_frac(pclk_period, mode->htotal,
+			comp_ratio), 1000);
 	if (line_time == 0) {
 		SDE_ERROR("line time calculation is 0\n");
 		return 0;
