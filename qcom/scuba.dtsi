@@ -1231,6 +1231,13 @@
 		#freq-domain-cells = <2>;
 	};
 
+	qcom,cpufreq-hw-debug@f521000 {
+		compatible = "qcom,cpufreq-hw-debug";
+		reg = <0xf521000 0x1400>;
+		reg-names = "domain-top";
+		qcom,freq-hw-domain = <&cpufreq_hw 0>;
+	};
+
 	ddr_bw_opp_table: ddr-bw-opp-table {
 		compatible = "operating-points-v2";
 		BW_OPP_ENTRY_DDR( 200, 8, 0xA0); /* 1525 MB/s */
