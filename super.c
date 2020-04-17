@@ -762,7 +762,7 @@ static int exfat_fill_super(struct super_block *sb, void *data, int silent)
 	sb->s_op = &exfat_sops;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
-	sb->s_time_gran = 1;
+	sb->s_time_gran = 10 * NSEC_PER_MSEC;
 	sb->s_time_min = EXFAT_MIN_TIMESTAMP_SECS;
 	sb->s_time_max = EXFAT_MAX_TIMESTAMP_SECS;
 #endif
