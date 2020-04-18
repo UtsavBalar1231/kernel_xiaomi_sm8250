@@ -14,7 +14,7 @@
 
 &pm2250_qg {
 	qcom,battery-data = <&scuba_batterydata>;
-	qcom,qg-iterm-ma = <100>;
+	qcom,qg-iterm-ma = <150>;
 	qcom,hold-soc-while-full;
 	qcom,linearize-soc;
 	qcom,cl-feedback-on;
