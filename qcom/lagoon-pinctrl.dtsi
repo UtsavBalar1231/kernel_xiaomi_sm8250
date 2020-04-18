@@ -623,33 +623,6 @@
 			};
 		};
 
-		sde_dp_usbplug_cc_suspend: sde_dp_cc_suspend {
-			mux {
-				pins = "gpio124";
-				function = "gpio";
-
-			};
-
-			config {
-				pins = "gpio124";
-				bias-pull-down;
-				drive-strength = <2>;
-			};
-		};
-
-		sde_dp_usbplug_cc_active: sde_dp_usbplug_cc_active {
-			mux {
-				pins = "gpio124";
-				function = "gpio";
-			};
-
-			config {
-				pins = "gpio124";
-				bias-disable;
-				drive-strength = <16>;
-			};
-		};
-
 		/* WSA speaker reset pins */
 		spkr_1_sd_n {
 			spkr_1_sd_n_sleep: spkr_1_sd_n_sleep {
