@@ -84,7 +84,7 @@
 		      <&pm7250b_vadc ADC_BAT_ID_PU2>;
 	io-channel-names = "batt-therm",
 			   "batt-id";
-	qcom,qg-iterm-ma = <100>;
+	qcom,qg-iterm-ma = <150>;
 	qcom,hold-soc-while-full;
 	qcom,linearize-soc;
 	qcom,cl-feedback-on;
@@ -109,7 +109,9 @@
 	vccq2-supply = <&L12A>;
 	vccq2-voltage-level = <1800000 1800000>;
 	vcc-max-microamp = <800000>;
+	vccq2-min-microamp = <0>;
 	vccq2-max-microamp = <800000>;
+	vccq2-pwr-collapse-sup;
 
 	qcom,vddp-ref-clk-supply = <&L22A>;
 	qcom,vddp-ref-clk-max-microamp = <100>;
@@ -244,4 +246,16 @@
 		panel = <&dsi_rm69299_visionox_amoled_video
 			&dsi_rm69299_visionox_amoled_cmd>;
 	};
+};
+
+&sde_dp {
+	status = "disabled";
+};
+
+&mdss_dp_pll {
+	status = "disabled";
+};
+
+&mdss_mdp {
+	connectors = <&sde_wb &sde_dsi &sde_rscc>;
 };

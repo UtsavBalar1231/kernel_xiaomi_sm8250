@@ -59,6 +59,7 @@
 				<4 LO 0x1>, <5 DSD_L 0x1>,
 				<5 DSD_R 0x2>;
 			qcom,swr-num-dev = <1>;
+			qcom,disable-div2-clk-switch = <1>;
 			qcom,swr-clock-stop-mode0 = <1>;
 			wcd937x_rx_slave: wcd937x-rx-slave {
 				compatible = "qcom,wcd937x-slave";

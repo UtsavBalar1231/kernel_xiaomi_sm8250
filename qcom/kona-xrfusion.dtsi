@@ -214,11 +214,22 @@
 				<&bolero>;
 };
 
+&pm8150_l10 {
+	regulator-max-microvolt = <3304000>;
+	qcom,init-voltage = <3304000>;
+};
+
 &qupv3_se1_i2c {
 	status = "ok";
 	qcom,clk-freq-out = <1000000>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+	xrfancontroller: xrfancontroller@50 {
+		compatible = "maxim,xrfancontroller";
+		reg = <0x50>;
+		qcom,fan-pwr-en = <&tlmm 38 0x00>;
+		qcom,fan-pwr-bp = <&tlmm 39 0x00>;
+	};
 };
 
 &qupv3_se13_i2c {

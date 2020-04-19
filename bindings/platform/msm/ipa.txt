@@ -114,6 +114,8 @@ memory allocation over a PCIe bridge
 				collection upon system crash
 - qcom,skip-ieob-mask-wa: Boolean context flag to indicate ieob mask workaround
 				supported or not.
+- qcom,use-gsi-ipa-fw: string to indicate which GSI firmware file to use.
+- qcom,use-uc-ipa-fw: string to indicate which uC firmware file to use.
 
 Optional properties:
 -qcom,ipa-pipe-mem: Specifies the base physical address and the

@@ -38,7 +38,9 @@ Optional properties:
 			  always 2.7-3.6V.
 - vcc-max-microamp      : specifies max. load that can be drawn from vcc supply
 - vccq-max-microamp     : specifies max. load that can be drawn from vccq supply
+- vccq-min-microamp     : specifies min. load that can be drawn from vccq supply
 - vccq2-max-microamp    : specifies max. load that can be drawn from vccq2 supply
+- vccq2-min-microamp    : specifies min. load that can be drawn from vccq2 supply
 - <name>-fixed-regulator : boolean property specifying that <name>-supply is a fixed regulator
 
 - clocks                : List of phandle and clock specifier pairs

@@ -348,7 +348,7 @@
 
 		clocks = <&gcc GCC_USB3_PRIM_PHY_AUX_CLK>,
 			<&gcc GCC_USB3_PRIM_PHY_PIPE_CLK>,
-			<&rpmhcc RPMH_CXO_CLK>,
+			<&rpmhcc RPMH_QLINK_CLK>,
 			<&gcc GCC_USB3_PRIM_CLKREF_CLK>,
 			<&gcc GCC_USB3_PRIM_PHY_COM_AUX_CLK>;
 		clock-names = "aux_clk", "pipe_clk", "ref_clk_src",

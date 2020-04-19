@@ -100,6 +100,9 @@ Required properties:
 			 required to be configured to receive interrupts
 			 in BCL block of WSA macro
 
+Optional properties:
+ - qcom,disable-div2-clk-switch: u32 int to disable clock switch for rx master.
+
 Example:
 
 &bolero {

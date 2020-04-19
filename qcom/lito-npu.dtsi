@@ -16,7 +16,8 @@
 				<GIC_SPI 365 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "error_irq", "wdg_bite_irq", "ipc_irq",
 					"general_irq";
-		iommus = <&apps_smmu 0x1861 0x400>, <&apps_smmu 0x1862 0x400>;
+		iommus = <&apps_smmu 0x1861 0x400>, <&apps_smmu 0x1862 0x400>,
+			<&apps_smmu 0x1881 0x400>, <&apps_smmu 0x1882 0x400>;
 
 		clocks = <&npucc NPU_CC_XO_CLK>,
 				<&npucc NPU_CC_CORE_CLK>,
