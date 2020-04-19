@@ -955,6 +955,70 @@ unlock_tree:
 	return rc;
 }
 
+static int cam_cpas_util_apply_default_axi_vote(
+	struct cam_hw_info *cpas_hw, bool enable)
+{
+	struct cam_cpas *cpas_core = (struct cam_cpas *) cpas_hw->core_info;
+	struct cam_cpas_axi_port *axi_port = NULL;
+	uint64_t mnoc_ab_bw = 0, mnoc_ib_bw = 0;
+	uint64_t camnoc_ab_bw = 0, camnoc_ib_bw = 0;
+	int rc = 0, i = 0;
+
+	mutex_lock(&cpas_core->tree_lock);
+	for (i = 0; i < cpas_core->num_axi_ports; i++) {
+		if (!cpas_core->axi_port[i].ab_bw ||
+			!cpas_core->axi_port[i].ib_bw)
+			axi_port = &cpas_core->axi_port[i];
+		else
+			continue;
+
+		if (enable)
+			mnoc_ib_bw = CAM_CPAS_DEFAULT_AXI_BW;
+		else
+			mnoc_ib_bw = 0;
+
+		CAM_DBG(CAM_CPAS, "Port=[%s] :ab[%llu] ib[%llu]",
+			axi_port->axi_port_name, mnoc_ab_bw, mnoc_ib_bw);
+
+		rc = cam_cpas_util_vote_bus_client_bw(&axi_port->bus_client,
+			mnoc_ab_bw, mnoc_ib_bw, false);
+		if (rc) {
+			CAM_ERR(CAM_CPAS,
+				"Failed in mnoc vote ab[%llu] ib[%llu] rc=%d",
+				mnoc_ab_bw, mnoc_ib_bw, rc);
+			goto unlock_tree;
+		}
+	}
+
+	for (i = 0; i < cpas_core->num_camnoc_axi_ports; i++) {
+		if (!cpas_core->camnoc_axi_port[i].ab_bw ||
+			!cpas_core->camnoc_axi_port[i].ib_bw)
+			axi_port = &cpas_core->camnoc_axi_port[i];
+		else
+			continue;
+
+		if (enable)
+			camnoc_ib_bw = CAM_CPAS_DEFAULT_AXI_BW;
+		else
+			camnoc_ib_bw = 0;
+
+		CAM_DBG(CAM_CPAS, "Port=[%s] :ab[%llu] ib[%llu]",
+			axi_port->axi_port_name, camnoc_ab_bw, camnoc_ib_bw);
+
+		rc = cam_cpas_util_vote_bus_client_bw(&axi_port->bus_client,
+			camnoc_ab_bw, camnoc_ib_bw, false);
+		if (rc) {
+			CAM_ERR(CAM_CPAS,
+				"Failed in camnoc vote ab[%llu] ib[%llu] rc=%d",
+				camnoc_ab_bw, camnoc_ib_bw, rc);
+			goto unlock_tree;
+		}
+	}
+unlock_tree:
+	mutex_unlock(&cpas_core->tree_lock);
+	return rc;
+}
+
 static int cam_cpas_hw_update_axi_vote(struct cam_hw_info *cpas_hw,
 	uint32_t client_handle, struct cam_axi_vote *client_axi_vote)
 {
@@ -1334,6 +1398,10 @@ static int cam_cpas_hw_start(void *hw_priv, void *start_args,
 		goto remove_ahb_vote;
 
 	if (cpas_core->streamon_clients == 0) {
+		rc = cam_cpas_util_apply_default_axi_vote(cpas_hw, true);
+		if (rc)
+			goto remove_ahb_vote;
+
 		atomic_set(&cpas_core->irq_count, 1);
 		rc = cam_cpas_soc_enable_resources(&cpas_hw->soc_info,
 			applied_level);
@@ -1513,6 +1581,11 @@ static int cam_cpas_hw_stop(void *hw_priv, void *stop_args,
 
 	rc = cam_cpas_util_apply_client_axi_vote(cpas_hw,
 		cpas_client, &axi_vote);
+	if (rc)
+		goto done;
+
+	if (cpas_core->streamon_clients == 0)
+		rc = cam_cpas_util_apply_default_axi_vote(cpas_hw, false);
 done:
 	mutex_unlock(&cpas_core->client_mutex[client_indx]);
 	mutex_unlock(&cpas_hw->hw_mutex);
