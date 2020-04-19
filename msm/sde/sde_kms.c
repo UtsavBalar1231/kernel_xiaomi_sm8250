@@ -1620,6 +1620,7 @@ static int _sde_kms_setup_displays(struct drm_device *dev,
 
 		/* update display cap to MST_MODE for DP MST encoders */
 		info.capabilities |= MSM_DISPLAY_CAP_MST_MODE;
+		sde_kms->dp_stream_count = dp_display_get_num_of_streams();
 		for (idx = 0; idx < sde_kms->dp_stream_count; idx++) {
 			info.h_tile_instance[0] = idx;
 			encoder = sde_encoder_init(dev, &info);
@@ -3149,6 +3150,8 @@ static int _sde_kms_mmu_init(struct sde_kms *sde_kms)
 			goto early_map_fail;
 		}
 	}
+
+	sde_kms->base.aspace = sde_kms->aspace[0];
 
 	return 0;
 

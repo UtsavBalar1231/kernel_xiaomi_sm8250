@@ -165,6 +165,7 @@ static void _sde_crtc_deinit_events(struct sde_crtc *sde_crtc)
 		return;
 }
 
+#ifdef CONFIG_DEBUG_FS
 static int _sde_debugfs_fps_status_show(struct seq_file *s, void *data)
 {
 	struct sde_crtc *sde_crtc;
@@ -211,6 +212,7 @@ static int _sde_debugfs_fps_status(struct inode *inode, struct file *file)
 	return single_open(file, _sde_debugfs_fps_status_show,
 			inode->i_private);
 }
+#endif
 
 static ssize_t fps_periodicity_ms_store(struct device *device,
 		struct device_attribute *attr, const char *buf, size_t count)
@@ -1775,9 +1777,11 @@ int sde_crtc_get_secure_transition_ops(struct drm_crtc *crtc,
 	struct sde_kms *sde_kms;
 	struct sde_mdss_cfg *catalog;
 	struct sde_kms_smmu_state_data *smmu_state;
+	struct drm_device *dev;
 	uint32_t translation_mode = 0, secure_level;
 	int ops  = 0;
 	bool post_commit = false;
+	bool clone_mode = false;
 
 	if (!crtc || !crtc->state) {
 		SDE_ERROR("invalid crtc\n");
@@ -1795,6 +1799,17 @@ int sde_crtc_get_secure_transition_ops(struct drm_crtc *crtc,
 	sde_crtc = to_sde_crtc(crtc);
 	secure_level = sde_crtc_get_secure_level(crtc, crtc->state);
 	catalog = sde_kms->catalog;
+	dev = sde_kms->dev;
+
+	/*
+	 * Loop through encoder list to find out if clone mode is
+	 * enabled on any of the encoders. If clone mode is enabled,
+	 * wait for the cwb commit to be completed, before making
+	 * the secure transition.
+	 */
+	list_for_each_entry(encoder, &crtc->dev->mode_config.encoder_list, head)
+		if (sde_encoder_in_clone_mode(encoder))
+			clone_mode = true;
 
 	/*
 	 * SMMU operations need to be delayed in case of video mode panels
@@ -1836,6 +1851,8 @@ int sde_crtc_get_secure_transition_ops(struct drm_crtc *crtc,
 	case SDE_DRM_FB_SEC_DIR_TRANS:
 		_sde_drm_fb_sec_dir_trans(smmu_state, secure_level,
 				catalog, old_valid_fb, &ops);
+		if (clone_mode && (ops & SDE_KMS_OPS_SECURE_STATE_CHANGE))
+			ops |= SDE_KMS_OPS_WAIT_FOR_TX_DONE;
 		break;
 
 	case SDE_DRM_FB_SEC:

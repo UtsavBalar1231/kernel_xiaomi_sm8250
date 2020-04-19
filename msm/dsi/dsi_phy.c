@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/of_device.h>
@@ -330,9 +330,6 @@ static int dsi_phy_settings_init(struct platform_device *pdev,
 	of_property_read_u32(pdev->dev.of_node,
 			"qcom,dsi-phy-regulator-min-datarate-bps",
 			&phy->regulator_min_datarate_bps);
-
-	phy->cfg.force_clk_lane_hs = of_property_read_bool(pdev->dev.of_node,
-			"qcom,panel-force-clock-lane-hs");
 
 	return 0;
 err:
