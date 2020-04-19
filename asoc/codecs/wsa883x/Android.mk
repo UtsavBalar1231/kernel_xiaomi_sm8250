@@ -9,7 +9,7 @@ endif
 
 AUDIO_CHIPSET := audio
 # Build/Package only in case of supported target
-ifeq ($(call is-board-platform-in-list,lahaina),true)
+ifeq ($(call is-board-platform-in-list,lahaina lito),true)
 
 LOCAL_PATH := $(call my-dir)
 

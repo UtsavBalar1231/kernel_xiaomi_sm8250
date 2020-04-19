@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef __Q6_INIT_H__
@@ -80,5 +80,19 @@ static inline void voice_mhi_exit(void)
 	return;
 }
 #endif
+
+#ifdef CONFIG_DIGITAL_CDC_RSC_MGR
+void digital_cdc_rsc_mgr_init(void);
+void digital_cdc_rsc_mgr_exit(void);
+#else
+static inline void digital_cdc_rsc_mgr_init(void)
+{
+}
+
+static inline void digital_cdc_rsc_mgr_exit(void)
+{
+}
+#endif /* CONFIG_DIGITAL_CDC_RSC_MGR */
+
 #endif
 
