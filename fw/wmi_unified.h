@@ -1186,6 +1186,7 @@ typedef enum {
     WMI_MDNS_SET_FQDN_CMDID,
     WMI_MDNS_SET_RESPONSE_CMDID,
     WMI_MDNS_GET_STATS_CMDID,
+    WMI_MDNS_SET_STAIP_CMDID,
 
     /* enable/disable AP Authentication offload */
     WMI_SAP_OFL_ENABLE_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_SAP_OFL),
@@ -4573,9 +4574,19 @@ typedef struct {
 } wmi_roam_fils_synch_tlv_param;
 
 /*
-* If FW has multiple active channels due to MCC(multi channel concurrency),
-* then these stats are combined stats for all the active channels.
-*/
+ * FW sends PMK cache of roamed candidate to host to sync pmk cache with host
+ */
+typedef struct {
+    A_UINT32  tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_roam_pmk_cache_synch_tlv_param */
+    A_UINT32  pmk_len;
+    A_UINT8  pmk[WMI_MAX_PMK_LEN];
+    A_UINT8  pmkid[WMI_MAX_PMKID_LEN];
+} wmi_roam_pmk_cache_synch_tlv_param;
+
+/*
+ * If FW has multiple active channels due to MCC(multi channel concurrency),
+ * then these stats are combined stats for all the active channels.
+ */
 typedef struct {
     A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_update_whal_mib_stats_event_fixed_param */
     /** ack count, it is an incremental number, not accumulated number */
@@ -7976,6 +7987,8 @@ typedef struct {
     /** peer MAC address */
     wmi_mac_addr peer_macaddr;
     A_UINT32 key_type; /* use standard cipher types - see WMI_CIPHER_ defs */
+    /** key index **/
+    A_UINT32 key_ix;
 } wmi_peer_tx_pn_request_cmd_fixed_param;
 
 typedef struct {
@@ -7992,6 +8005,8 @@ typedef struct {
     * how many bytes within pn[] are filled with valid data.
     */
     A_UINT8 pn[16];
+    /** key index **/
+    A_UINT32 key_ix;
 } wmi_peer_tx_pn_response_event_fixed_param;
 
 typedef struct {
@@ -13641,6 +13656,7 @@ typedef struct {
     A_UINT32 max_mlme_sw_retries; /* maximum number of software retries for preauth and reassoc req */
     A_UINT32 no_ack_timeout; /* In msec. duration to wait before another SW retry made if no ack seen for previous frame */
     A_UINT32 roam_candidate_validity_time; /* In msec. validity duration of each entry in roam cache.  If the value is 0x0, this field should be disregarded. */
+    A_UINT32 roam_to_current_bss_disable; /* Disable roaming to current bss */
 } wmi_roam_offload_tlv_param;
 
 
@@ -20660,6 +20676,12 @@ typedef struct {
 } wmi_mdns_set_resp_cmd_fixed_param;
 
 typedef struct {
+    A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_mdns_set_staIP_cmd_fixed_param */
+    A_UINT32 vdev_id;
+    A_UINT32 staIP; /* IPv4 address for STA mode */
+} wmi_mdns_set_staIP_cmd_fixed_param;
+
+typedef struct {
     A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_mdns_get_stats_cmd_fixed_param */
     A_UINT32 vdev_id;
 } wmi_mdns_get_stats_cmd_fixed_param;
@@ -25482,6 +25504,7 @@ static INLINE A_UINT8 *wmi_id_to_name(A_UINT32 wmi_command)
         WMI_RETURN_STRING(WMI_MDNS_SET_FQDN_CMDID);
         WMI_RETURN_STRING(WMI_MDNS_SET_RESPONSE_CMDID);
         WMI_RETURN_STRING(WMI_MDNS_GET_STATS_CMDID);
+        WMI_RETURN_STRING(WMI_MDNS_SET_STAIP_CMDID);
         WMI_RETURN_STRING(WMI_ROAM_INVOKE_CMDID);
         WMI_RETURN_STRING(WMI_SET_ANTENNA_DIVERSITY_CMDID);
         WMI_RETURN_STRING(WMI_SAP_OFL_ENABLE_CMDID);
