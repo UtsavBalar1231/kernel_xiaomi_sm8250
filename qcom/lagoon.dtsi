@@ -4061,12 +4061,14 @@
 
 &L1P {
 	regulator-max-microvolt = <1056000>;
-	qcom,min-dropout-voltage = <225000>;
+	/* Reduced the headroom by 16mV for AHC */
+	qcom,min-dropout-voltage = <209000>;
 };
 
 &L2P {
 	regulator-max-microvolt = <1104000>;
-	qcom,min-dropout-voltage = <225000>;
+	/* Reduced the headroom by 16mV for AHC */
+	qcom,min-dropout-voltage = <209000>;
 };
 
 &L3P {
