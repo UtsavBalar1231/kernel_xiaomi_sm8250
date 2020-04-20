@@ -1741,6 +1741,7 @@ static int cam_icp_mgr_ipe_bps_power_collapse(struct cam_icp_hw_mgr *hw_mgr,
 			bps_dev_intf->hw_ops.deinit
 				(bps_dev_intf->hw_priv, NULL, 0);
 			hw_mgr->bps_clk_state = false;
+			hw_mgr->clk_info[ICP_CLK_HW_BPS].curr_clk = 0;
 		}
 	} else {
 		CAM_DBG(CAM_PERF, "ipe ctx cnt %d", hw_mgr->ipe_ctxt_cnt);
@@ -1776,6 +1777,7 @@ static int cam_icp_mgr_ipe_bps_power_collapse(struct cam_icp_hw_mgr *hw_mgr,
 		}
 
 		hw_mgr->ipe_clk_state = false;
+		hw_mgr->clk_info[ICP_CLK_HW_IPE].curr_clk = 0;
 	}
 
 end:
