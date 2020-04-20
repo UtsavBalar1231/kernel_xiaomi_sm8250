@@ -3471,8 +3471,7 @@ int dsi_pre_clkon_cb(void *priv,
 		 * Enable DSI core power
 		 * 1.> PANEL_PM are controlled as part of
 		 *     panel_power_ctrl. Needed not be handled here.
-		 * 2.> CORE_PM are controlled by dsi clk manager.
-		 * 3.> CTRL_PM need to be enabled/disabled
+		 * 2.> CTRL_PM need to be enabled/disabled
 		 *     only during unblank/blank. Their state should
 		 *     not be changed during static screen.
 		 */
@@ -5101,6 +5100,7 @@ static int dsi_display_bind(struct device *dev,
 
 	display_for_each_ctrl(i, display) {
 		display_ctrl = &display->ctrl[i];
+		display_ctrl->ctrl->drm_dev = drm;
 
 		if (!display_ctrl->phy || !display_ctrl->ctrl)
 			continue;
