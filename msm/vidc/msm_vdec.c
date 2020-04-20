@@ -632,7 +632,7 @@ int msm_vdec_s_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 		if (f->fmt.pix_mp.pixelformat == V4L2_PIX_FMT_VP9) {
 			if (msm_vidc_check_for_vp9d_overload(inst->core)) {
 				s_vpr_e(inst->sid, "VP9 Decode overload\n");
-				rc = -ENOTSUPP;
+				rc = -ENOMEM;
 				goto err_invalid_fmt;
 			}
 		}
