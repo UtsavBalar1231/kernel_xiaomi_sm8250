@@ -560,6 +560,8 @@ struct msm_vidc_inst {
 	bool is_perf_eligible_session;
 	u32 max_filled_len;
 	int full_range;
+	u64 last_qbuf_time_ns;
+	bool active;
 };
 
 extern struct msm_vidc_drv *vidc_driver;

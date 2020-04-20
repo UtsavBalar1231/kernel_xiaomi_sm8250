@@ -391,6 +391,8 @@ int msm_vidc_qbuf(void *instance, struct v4l2_buffer *b)
 		return -EINVAL;
 	}
 
+	inst->last_qbuf_time_ns = ktime_get_ns();
+
 	for (i = 0; i < b->length; i++) {
 		b->m.planes[i].m.fd =
 				b->m.planes[i].reserved[MSM_VIDC_BUFFER_FD];
@@ -1483,6 +1485,7 @@ void *msm_vidc_open(int core_id, int session_type)
 	inst->max_filled_len = 0;
 	inst->entropy_mode = HFI_H264_ENTROPY_CABAC;
 	inst->full_range = COLOR_RANGE_UNSPECIFIED;
+	inst->active = true;
 
 	for (i = SESSION_MSG_INDEX(SESSION_MSG_START);
 		i <= SESSION_MSG_INDEX(SESSION_MSG_END); i++) {
