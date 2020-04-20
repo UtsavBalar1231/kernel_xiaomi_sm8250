@@ -1974,9 +1974,19 @@ void msm_comm_validate_output_buffers(struct msm_vidc_inst *inst)
 {
 	struct internal_buf *binfo;
 	u32 buffers_owned_by_driver = 0;
-	struct msm_vidc_format *fmt;
+	struct hal_buffer_requirements *dpb = NULL;
+	u32 i;
 
-	fmt = &inst->fmts[OUTPUT_PORT];
+	for (i = 0; i < HAL_BUFFER_MAX; i++) {
+		if (inst->buff_req.buffer[i].buffer_type == HAL_BUFFER_OUTPUT) {
+			dpb = &inst->buff_req.buffer[i];
+			break;
+		}
+	}
+	if (!dpb) {
+		s_vpr_e(inst->sid, "Couldn't retrieve dpb buf req\n");
+		return;
+	}
 
 	mutex_lock(&inst->outputbufs.lock);
 	if (list_empty(&inst->outputbufs.list)) {
@@ -1995,11 +2005,10 @@ void msm_comm_validate_output_buffers(struct msm_vidc_inst *inst)
 	}
 	mutex_unlock(&inst->outputbufs.lock);
 
-	/* Only minimum number of DPBs are allocated */
-	if (buffers_owned_by_driver != fmt->count_min) {
+	if (buffers_owned_by_driver != dpb->buffer_count_actual) {
 		s_vpr_e(inst->sid, "OUTPUT Buffer count mismatch %d of %d\n",
 			buffers_owned_by_driver,
-			fmt->count_min);
+			dpb->buffer_count_actual);
 		msm_vidc_handle_hw_error(inst->core);
 	}
 }
