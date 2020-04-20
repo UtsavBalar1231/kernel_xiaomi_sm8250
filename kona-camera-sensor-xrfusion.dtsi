@@ -373,7 +373,7 @@
 
 	/* 6DOF Left (Slave) */
 	qcom,cam-sensor4 {
-		cell-index = <4>;
+		cell-index = <0>;
 		compatible = "qcom,cam-sensor";
 		csiphy-sd-index = <4>;
 		sensor-position-roll = <90>;
@@ -424,7 +424,7 @@
 
 	/* 6DOF Left (Master) */
 	qcom,cam-sensor5 {
-		cell-index = <5>;
+		cell-index = <1>;
 		compatible = "qcom,cam-sensor";
 		csiphy-sd-index = <5>;
 		sensor-position-roll = <90>;
@@ -598,7 +598,7 @@
 
 	/* ET LEFT (Master) */
 	qcom,cam-sensor0 {
-		cell-index = <0>;
+		cell-index = <4>;
 		compatible = "qcom,cam-sensor";
 		csiphy-sd-index = <0>;
 		sensor-position-roll = <90>;
@@ -646,7 +646,7 @@
 
 	/* ET RIGHT (Slave) Combo mode */
 	qcom,cam-sensor1 {
-		cell-index = <1>;
+		cell-index = <5>;
 		compatible = "qcom,cam-sensor";
 		csiphy-sd-index = <0>;
 		sensor-position-roll = <90>;
