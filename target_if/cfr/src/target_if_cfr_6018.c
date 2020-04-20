@@ -31,6 +31,8 @@
 #include <target_if_cfr_6018.h>
 #include "cdp_txrx_ctrl.h"
 
+#define NUM_CHAINS_FW_TO_HOST(n) ((1 << ((n) + 1)) - 1)
+
 static u_int32_t end_magic = 0xBEAFDEAD;
 /**
  * get_lut_entry() - Retrieve LUT entry using cookie number
@@ -869,7 +871,7 @@ static bool enh_cfr_dbr_event_handler(struct wlan_objmgr_pdev *pdev,
 	header = &lut->header;
 	meta = &header->u.meta_v3;
 	meta->channel_bw = dma_hdr.upload_pkt_bw;
-	meta->num_rx_chain = dma_hdr.num_chains;
+	meta->num_rx_chain = NUM_CHAINS_FW_TO_HOST(dma_hdr.num_chains);
 	meta->length = length;
 	/* For Tx based captures, capture type is sent from FW */
 	if (capture_type != CFR_TYPE_METHOD_ACK_RESP_TO_TM_FTM) {
