@@ -922,13 +922,22 @@ u32 msm_vidc_calculate_dec_input_frame_size(struct msm_vidc_inst *inst)
 		div_factor = 4;
 		base_res_mbs = inst->capability.cap[CAP_MBS_PER_FRAME].max;
 	} else {
-		base_res_mbs = min_t(unsigned int,
-				inst->capability.cap[CAP_MBS_PER_FRAME].max,
-				NUM_MBS_4k);
+		base_res_mbs = NUM_MBS_4k;
 		if (f->fmt.pix_mp.pixelformat == V4L2_PIX_FMT_VP9)
 			div_factor = 1;
 		else
 			div_factor = 2;
+	}
+
+	if (is_secure_session(inst))
+		div_factor = div_factor << 1;
+
+	/* For targets that doesn't support 4k, consider max mb's for that
+	 * target and allocate max input buffer size for the same
+	 */
+	if (base_res_mbs > inst->capability.cap[CAP_MBS_PER_FRAME].max) {
+		base_res_mbs = inst->capability.cap[CAP_MBS_PER_FRAME].max;
+		div_factor = 1;
 	}
 
 	frame_size = base_res_mbs * MB_SIZE_IN_PIXEL * 3 / 2 / div_factor;
@@ -937,9 +946,6 @@ u32 msm_vidc_calculate_dec_input_frame_size(struct msm_vidc_inst *inst)
 	if ((f->fmt.pix_mp.pixelformat == V4L2_PIX_FMT_VP9) ||
 		(f->fmt.pix_mp.pixelformat == V4L2_PIX_FMT_HEVC))
 		frame_size = frame_size + (frame_size >> 2);
-
-	if (is_secure_session(inst))
-		frame_size /= 2;
 
 	if (inst->buffer_size_limit &&
 		(inst->buffer_size_limit < frame_size)) {
