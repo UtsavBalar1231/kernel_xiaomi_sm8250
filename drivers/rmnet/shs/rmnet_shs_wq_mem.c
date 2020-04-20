@@ -955,7 +955,16 @@ void rmnet_shs_wq_mem_update_cached_netdevs(void)
 /* Creates the proc folder and files for shs shared memory */
 void rmnet_shs_wq_mem_init(void)
 {
+	kuid_t shs_uid;
+	kgid_t shs_gid;
+
 	shs_proc_dir = proc_mkdir("shs", NULL);
+
+	shs_uid = make_kuid(&init_user_ns, 1001);
+	shs_gid = make_kgid(&init_user_ns, 1001);
+
+	if (uid_valid(shs_uid) && gid_valid(shs_gid))
+		proc_set_user(shs_proc_dir, shs_uid, shs_gid);
 
 	proc_create(RMNET_SHS_PROC_CAPS, 0644, shs_proc_dir, &rmnet_shs_caps_fops);
 	proc_create(RMNET_SHS_PROC_G_FLOWS, 0644, shs_proc_dir, &rmnet_shs_g_flows_fops);
