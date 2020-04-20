@@ -10,7 +10,8 @@ registers.
 
 Required Properties:
 - compatible: shall contain the following:
-		"qcom,cpufreq-hw-debug-trace" or "qcom,cpufreq-hw-epss-debug".
+		"qcom,cpufreq-hw-debug-trace" or "qcom,cpufreq-hw-debug"
+		 or "qcom,cpufreq-hw-epss-debug".
 - reg: shall contain base register location and length.
 - reg-names: shall contain the frequency domain name.
 
