@@ -2769,6 +2769,35 @@ bool dp_reo_remap_config(struct dp_soc *soc, uint32_t *remap1, uint32_t *remap2)
 
 	return true;
 }
+
+/**
+ * dp_ipa_get_tx_ring_size() - Get Tx ring size for IPA
+ *
+ * @tx_ring_num: Tx ring number
+ * @tx_ipa_ring_sz: Return param only updated for IPA.
+ *
+ * Return: None
+ */
+static void dp_ipa_get_tx_ring_size(int tx_ring_num, int *tx_ipa_ring_sz)
+{
+	if (tx_ring_num == WLAN_CFG_IPA_TX_N_TXCMPL_RING)
+		*tx_ipa_ring_sz = WLAN_CFG_IPA_TX_RING_SIZE;
+}
+
+/**
+ * dp_ipa_get_tx_comp_ring_size() - Get Tx comp ring size for IPA
+ *
+ * @tx_comp_ring_num: Tx comp ring number
+ * @tx_comp_ipa_ring_sz: Return param only updated for IPA.
+ *
+ * Return: None
+ */
+static void dp_ipa_get_tx_comp_ring_size(int tx_comp_ring_num,
+					 int *tx_comp_ipa_ring_sz)
+{
+	if (tx_comp_ring_num == WLAN_CFG_IPA_TX_N_TXCMPL_RING)
+		*tx_comp_ipa_ring_sz = WLAN_CFG_IPA_TX_COMP_RING_SIZE;
+}
 #else
 static bool dp_reo_remap_config(struct dp_soc *soc,
 				uint32_t *remap1,
@@ -2847,6 +2876,15 @@ static bool dp_reo_remap_config(struct dp_soc *soc,
 	dp_debug("remap1 %x remap2 %x offload_radio %u",
 		 *remap1, *remap2, offload_radio);
 	return true;
+}
+
+static void dp_ipa_get_tx_ring_size(int ring_num, int *tx_ipa_ring_sz)
+{
+}
+
+static void dp_ipa_get_tx_comp_ring_size(int tx_comp_ring_num,
+					 int *tx_comp_ipa_ring_sz)
+{
 }
 #endif /* IPA_OFFLOAD */
 
@@ -2976,6 +3014,8 @@ static int dp_soc_cmn_setup(struct dp_soc *soc)
 		tx_ring_size =
 			wlan_cfg_tx_ring_size(soc_cfg_ctx);
 		for (i = 0; i < soc->num_tcl_data_rings; i++) {
+			dp_ipa_get_tx_ring_size(i, &tx_ring_size);
+
 			if (dp_srng_setup(soc, &soc->tcl_data_ring[i],
 					  TCL_DATA, i, 0, tx_ring_size, 0)) {
 				QDF_TRACE(QDF_MODULE_ID_DP,
@@ -2988,6 +3028,8 @@ static int dp_soc_cmn_setup(struct dp_soc *soc)
 			cached = WLAN_CFG_DST_RING_CACHED_DESC;
 			if (wlan_cfg_get_dp_soc_nss_cfg(soc_cfg_ctx))
 				cached = 0;
+
+			dp_ipa_get_tx_comp_ring_size(i, &tx_comp_ring_size);
 			/*
 			 * TBD: Set IPA WBM ring size with ini IPA UC tx buffer
 			 * count

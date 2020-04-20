@@ -56,12 +56,19 @@
 #define WLAN_LRO_ENABLE 0
 #define WLAN_CFG_MAC_PER_TARGET 2
 #ifdef IPA_OFFLOAD
+/* Using TCL data ring 2 for IPA Tx And
+ * WBM2SW ring 2 for Tx completion
+ */
+#define WLAN_CFG_IPA_TX_N_TXCMPL_RING 2
 /* Size of TCL TX Ring */
 #if defined(TX_TO_NPEERS_INC_TX_DESCS)
 #define WLAN_CFG_TX_RING_SIZE 2048
 #else
 #define WLAN_CFG_TX_RING_SIZE 1024
 #endif
+#define WLAN_CFG_IPA_TX_RING_SIZE 1024
+#define WLAN_CFG_IPA_TX_COMP_RING_SIZE 1024
+
 #define WLAN_CFG_PER_PDEV_TX_RING 0
 #define WLAN_CFG_IPA_UC_TX_BUF_SIZE 2048
 #define WLAN_CFG_IPA_UC_TX_PARTITION_BASE 3000
