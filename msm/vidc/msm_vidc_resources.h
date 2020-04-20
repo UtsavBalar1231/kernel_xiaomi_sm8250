@@ -158,6 +158,7 @@ struct msm_vidc_platform_resources {
 	struct addr_set qdss_addr_set;
 	struct buffer_usage_set buffer_usage_set;
 	uint32_t max_load;
+	uint32_t max_image_load;
 	uint32_t max_mbpf;
 	uint32_t max_hq_mbs_per_frame;
 	uint32_t max_hq_mbs_per_sec;
