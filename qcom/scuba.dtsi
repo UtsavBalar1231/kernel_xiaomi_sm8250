@@ -1172,6 +1172,10 @@
 
 		qcom,ice-clk-rates = <300000000 100000000>;
 
+		/* Add support for gcc hw reset */
+		resets = <&gcc GCC_SDCC1_BCR>;
+		reset-names = "core_reset";
+
 		/* DLL HSR settings. Refer go/hsr - <Target> DLL settings */
 		qcom,dll-hsr-list = <0x000f642c 0x0 0x0 0x00010800 0x80040868>;
 		qcom,nonremovable;
