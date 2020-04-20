@@ -2340,6 +2340,13 @@
 		#freq-domain-cells = <2>;
 	};
 
+	qcom,cpufreq-hw-debug@18320000 {
+		compatible = "qcom,cpufreq-hw-debug";
+		reg = <0x18320000 0x800>;
+		reg-names = "domain-top";
+		qcom,freq-hw-domain = <&cpufreq_hw 0>, <&cpufreq_hw 1>;
+	};
+
 	qcom,devfreq-l3 {
 		compatible = "qcom,devfreq-fw";
 		reg = <0x18321000 0x4>, <0x18321110 0x500>, <0x18321920 0x4>;
