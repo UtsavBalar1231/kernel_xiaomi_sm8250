@@ -825,39 +825,6 @@ extern void hal_detach(void *hal_soc)
 }
 qdf_export_symbol(hal_detach);
 
-#ifdef QCA_WIFI_QCA6490
-/**
- * hal_ce_src_setup - Initialize CE source ring registers
- * @hal_soc: HAL SOC handle
- * @srng: SRNG ring pointer
- */
-static inline void hal_ce_src_setup(struct hal_soc *hal, struct hal_srng *srng,
-				    int ring_num)
-{
-	uint32_t reg_val = 0;
-	uint32_t reg_addr;
-	struct hal_hw_srng_config *ring_config =
-		HAL_SRNG_CONFIG(hal, CE_SRC);
-
-	if (srng->prefetch_timer) {
-		reg_addr = HWIO_WFSS_CE_CHANNEL_SRC_R0_SRC_RING_CONSUMER_PREFETCH_TIMER_ADDR(
-				ring_config->reg_start[R0_INDEX] +
-				(ring_num * ring_config->reg_size[R0_INDEX]));
-
-		reg_val = HAL_REG_READ(hal, reg_addr);
-		reg_val &= ~HWIO_WFSS_CE_CHANNEL_SRC_R0_SRC_RING_CONSUMER_PREFETCH_TIMER_RMSK;
-		reg_val |= srng->prefetch_timer;
-		HAL_REG_WRITE(hal, reg_addr, reg_val);
-		reg_val = HAL_REG_READ(hal, reg_addr);
-	}
-}
-#else
-static inline void hal_ce_src_setup(struct hal_soc *hal, struct hal_srng *srng,
-				    int ring_num)
-{
-}
-#endif
-
 /**
  * hal_ce_dst_setup - Initialize CE destination ring registers
  * @hal_soc: HAL SOC handle

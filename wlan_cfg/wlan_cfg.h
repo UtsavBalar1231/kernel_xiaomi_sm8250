@@ -96,7 +96,6 @@ struct wlan_srng_cfg {
 	uint32_t timer_threshold;
 	uint32_t batch_count_threshold;
 	uint32_t low_threshold;
-	uint32_t prefetch_timer;
 };
 
 /**
@@ -1152,14 +1151,6 @@ wlan_cfg_get_dp_caps(struct wlan_cfg_dp_soc_ctxt *cfg,
  * Return: None
  */
 void wlan_set_srng_cfg(struct wlan_srng_cfg **wlan_cfg);
-
-/**
- * wlan_set_ce_srng_cfg() - Fill per CE ring specific configuration parameters
- * @wlan_cfg: global srng configuration table
- *
- * Return: None
- */
-void wlan_set_ce_srng_cfg(struct wlan_srng_cfg **wlan_cfg);
 
 #ifdef QCA_LL_TX_FLOW_CONTROL_V2
 int wlan_cfg_get_tx_flow_stop_queue_th(struct wlan_cfg_dp_soc_ctxt *cfg);

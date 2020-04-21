@@ -290,7 +290,6 @@ static const int reo_status_ring_mask_integrated[WLAN_CFG_INT_NUM_CONTEXTS] = {
  *
  */
 struct wlan_srng_cfg g_wlan_srng_cfg[MAX_RING_TYPES];
-struct wlan_srng_cfg g_wlan_ce_srng_cfg[MAX_RING_TYPES];
 
 /* REO_DST ring configuration */
 struct wlan_srng_cfg wlan_srng_reo_cfg = {
@@ -333,32 +332,6 @@ struct wlan_srng_cfg wlan_srng_default_cfg = {
 	.batch_count_threshold = WLAN_CFG_INT_BATCH_THRESHOLD_OTHER,
 	.low_threshold = 0,
 };
-
-#if defined(CONFIG_CNSS_QCA6490)
-/* CE ring configuration */
-static struct wlan_srng_cfg wlan_srng_ce_cfg = {
-/* we can only set non zero value */
-	.prefetch_timer = 1,
-};
-
-/**
- * wlan_set_ce_srng_cfg() - Save CE srng configuration
- * @wlan_cfg: Return CE srng configuration
- *
- * Return: None
- */
-void wlan_set_ce_srng_cfg(struct wlan_srng_cfg **wlan_cfg)
-{
-	g_wlan_ce_srng_cfg[CE_SRC] = wlan_srng_ce_cfg;
-	g_wlan_ce_srng_cfg[CE_DST] = wlan_srng_ce_cfg;
-	*wlan_cfg = g_wlan_ce_srng_cfg;
-}
-#else
-void wlan_set_ce_srng_cfg(struct wlan_srng_cfg **wlan_cfg)
-{
-	*wlan_cfg = g_wlan_ce_srng_cfg;
-}
-#endif
 
 void wlan_set_srng_cfg(struct wlan_srng_cfg **wlan_cfg)
 {

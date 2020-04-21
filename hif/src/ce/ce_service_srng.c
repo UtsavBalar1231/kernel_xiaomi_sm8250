@@ -29,7 +29,6 @@
 #include "pld_common.h"
 #include "qdf_module.h"
 #include "hif.h"
-#include "wlan_cfg.h"
 
 /*
  * Support for Copy Engine hardware, which is mainly used for
@@ -744,8 +743,6 @@ static void ce_srng_src_ring_setup(struct hif_softc *scn, uint32_t ce_id,
 				   struct CE_attr *attr)
 {
 	struct hal_srng_params ring_params = {0};
-	struct wlan_srng_cfg *wlan_ce_srng_cfg =
-					&scn->wlan_ce_srng_cfg[CE_SRC];
 
 	hif_debug("%s: ce_id %d", __func__, ce_id);
 
@@ -762,16 +759,9 @@ static void ce_srng_src_ring_setup(struct hif_softc *scn, uint32_t ce_id,
 	if (!(CE_ATTR_DISABLE_INTR & attr->flags)) {
 		ce_srng_msi_ring_params_setup(scn, ce_id, &ring_params);
 
-		ring_params.intr_timer_thres_us =
-			wlan_ce_srng_cfg->timer_threshold ?
-				wlan_ce_srng_cfg->timer_threshold : 0;
-		ring_params.intr_batch_cntr_thres_entries =
-			wlan_ce_srng_cfg->batch_count_threshold ?
-			wlan_ce_srng_cfg->batch_count_threshold : 1;
-		ring_params.prefetch_timer =
-			wlan_ce_srng_cfg->prefetch_timer ?
-			wlan_ce_srng_cfg->prefetch_timer : 0 /* default */;
-
+		ring_params.intr_timer_thres_us = 0;
+		ring_params.intr_batch_cntr_thres_entries = 1;
+		ring_params.prefetch_timer = HAL_SRNG_PREFETCH_TIMER;
 	}
 
 	src_ring->srng_ctx = hal_srng_setup(scn->hal_soc, CE_SRC, ce_id, 0,
@@ -797,17 +787,15 @@ static void ce_srng_src_ring_setup(struct hif_softc *scn, uint32_t ce_id,
  * fails to post the last entry due to the race condition.
  */
 static void ce_srng_initialize_dest_timer_interrupt_war(
-		struct wlan_srng_cfg *wlan_ce_srng_cfg,
-		struct CE_ring_state *dest_ring,
-		struct hal_srng_params *ring_params) {
+					struct CE_ring_state *dest_ring,
+					struct hal_srng_params *ring_params)
+{
 	int num_buffers_when_fully_posted = dest_ring->nentries - 2;
 
-	ring_params->low_threshold = wlan_ce_srng_cfg->low_threshold ?
-	  wlan_ce_srng_cfg->low_threshold : num_buffers_when_fully_posted - 1;
-	ring_params->intr_timer_thres_us = wlan_ce_srng_cfg->timer_threshold ?
-			wlan_ce_srng_cfg->timer_threshold : 1024;
-	ring_params->prefetch_timer = wlan_ce_srng_cfg->prefetch_timer ?
-		wlan_ce_srng_cfg->prefetch_timer : 3 /* default */;
+	ring_params->low_threshold = num_buffers_when_fully_posted - 1;
+	ring_params->intr_timer_thres_us = 1024;
+	ring_params->intr_batch_cntr_thres_entries = 0;
+	ring_params->flags |= HAL_SRNG_LOW_THRES_INTR_ENABLE;
 }
 
 static void ce_srng_dest_ring_setup(struct hif_softc *scn,
@@ -817,8 +805,6 @@ static void ce_srng_dest_ring_setup(struct hif_softc *scn,
 {
 	struct hal_srng_params ring_params = {0};
 	bool status_ring_timer_thresh_work_arround = true;
-	struct wlan_srng_cfg *wlan_ce_srng_cfg =
-					&scn->wlan_ce_srng_cfg[CE_DST];
 
 	HIF_INFO("%s: ce_id %d", __func__, ce_id);
 
@@ -831,26 +817,15 @@ static void ce_srng_dest_ring_setup(struct hif_softc *scn,
 		ce_srng_msi_ring_params_setup(scn, ce_id, &ring_params);
 		if (status_ring_timer_thresh_work_arround) {
 			ce_srng_initialize_dest_timer_interrupt_war(
-					wlan_ce_srng_cfg,
 					dest_ring, &ring_params);
 		} else {
 			/* normal behavior for future chips */
-			ring_params.low_threshold =
-				wlan_ce_srng_cfg->low_threshold ?
-				wlan_ce_srng_cfg->low_threshold :
-				dest_ring->nentries >> 3;
-			ring_params.intr_timer_thres_us =
-				wlan_ce_srng_cfg->timer_threshold ?
-				wlan_ce_srng_cfg->timer_threshold : 100000;
-
+			ring_params.low_threshold = dest_ring->nentries >> 3;
+			ring_params.intr_timer_thres_us = 100000;
+			ring_params.intr_batch_cntr_thres_entries = 0;
+			ring_params.flags |= HAL_SRNG_LOW_THRES_INTR_ENABLE;
 		}
-		ring_params.intr_batch_cntr_thres_entries =
-			wlan_ce_srng_cfg->batch_count_threshold ?
-			wlan_ce_srng_cfg->batch_count_threshold : 0;
-		ring_params.prefetch_timer =
-			wlan_ce_srng_cfg->prefetch_timer ?
-			wlan_ce_srng_cfg->prefetch_timer : 0 /* default */;
-		ring_params.flags |= HAL_SRNG_LOW_THRES_INTR_ENABLE;
+		ring_params.prefetch_timer = HAL_SRNG_PREFETCH_TIMER;
 	}
 
 	/*Dest ring is also source ring*/

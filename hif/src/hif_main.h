@@ -241,7 +241,6 @@ struct hif_softc {
 	qdf_shared_mem_t *ipa_ce_ring;
 #endif
 	struct hif_cfg ini_cfg;
-	struct wlan_srng_cfg *wlan_ce_srng_cfg;
 #ifdef HIF_CPU_PERF_AFFINE_MASK
 	/* The CPU hotplug event registration handle */
 	struct qdf_cpuhp_handler *cpuhp_event_handle;
