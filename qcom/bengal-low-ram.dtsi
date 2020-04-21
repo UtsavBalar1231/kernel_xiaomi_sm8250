@@ -138,11 +138,11 @@
 		/delete-node/ qcom,ion-heap@26;
 	};
 
-	qcom_seecom: qseecom@a1700000 {
-		reg = <0xa1700000 0xc00000>;
+	qcom_seecom: qseecom@a1800000 {
+		reg = <0xa1800000 0xb00000>;
 	};
 
-	qcom_smcinvoke: smcinvoke@a1700000 {
-		reg = <0xa1700000 0xc00000>;
+	qcom_smcinvoke: smcinvoke@a1800000 {
+		reg = <0xa1800000 0xb00000>;
 	};
 };
