@@ -177,6 +177,10 @@
 						  "temp-change",
 						  "temp-change-smb";
 			};
+
+			qcom,chg-sdam@b000 {
+				reg = <0xb000 0x100>;
+			};
 		};
 
 		pm7250b_pdphy: qcom,usb-pdphy@1700 {
