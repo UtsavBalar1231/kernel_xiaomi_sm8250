@@ -282,7 +282,7 @@
 		pinctrl-1 = <&tx_swr_clk_sleep &tx_swr_data1_sleep
 			    &tx_swr_data2_sleep>;
 		qcom,lpi-gpios;
-		qcom,chip-wakeup-reg = <0x003ca04c>;
+		qcom,chip-wakeup-reg = <0x003ca064>;
 		qcom,chip-wakeup-maskbit = <0>;
 		qcom,chip-wakeup-default-val = <0x1>;
 	};
