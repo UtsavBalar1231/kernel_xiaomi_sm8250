@@ -1052,7 +1052,8 @@ static void wma_peer_send_phymode(struct wlan_objmgr_vdev *vdev,
 	peer_mac_addr = wlan_peer_get_macaddr(peer);
 
 	if (WLAN_REG_IS_24GHZ_CH_FREQ(vdev_chan->ch_freq)) {
-		if (vdev_chan->ch_phymode == WLAN_PHYMODE_11B)
+		if (vdev_chan->ch_phymode == WLAN_PHYMODE_11B ||
+		    old_peer_phymode == WLAN_PHYMODE_11B)
 			nw_type = eSIR_11B_NW_TYPE;
 		else
 			nw_type = eSIR_11G_NW_TYPE;
