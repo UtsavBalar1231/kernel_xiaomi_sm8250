@@ -2687,7 +2687,7 @@ bool csr_is_pmkid_found_for_peer(struct mac_context *mac,
 				 uint8_t *pmkid,
 				 uint16_t pmkid_count)
 {
-	uint32_t i, index;
+	uint32_t i;
 	uint8_t *session_pmkid;
 	tPmkidCacheInfo *pmkid_cache;
 
@@ -2698,7 +2698,7 @@ bool csr_is_pmkid_found_for_peer(struct mac_context *mac,
 	qdf_mem_copy(pmkid_cache->BSSID.bytes, peer_mac_addr,
 		     QDF_MAC_ADDR_SIZE);
 
-	if (!csr_lookup_pmkid_using_bssid(mac, session, pmkid_cache, &index)) {
+	if (!csr_lookup_pmkid_using_bssid(mac, session, pmkid_cache)) {
 		qdf_mem_free(pmkid_cache);
 		return false;
 	}
@@ -2720,8 +2720,7 @@ bool csr_is_pmkid_found_for_peer(struct mac_context *mac,
 
 bool csr_lookup_pmkid_using_bssid(struct mac_context *mac,
 				  struct csr_roam_session *session,
-				  tPmkidCacheInfo *pmk_cache,
-				  uint32_t *index)
+				  tPmkidCacheInfo *pmk_cache)
 {
 	struct wlan_crypto_pmksa *pmksa;
 	struct wlan_objmgr_vdev *vdev;
