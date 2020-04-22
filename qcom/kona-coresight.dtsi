@@ -2254,6 +2254,7 @@
 
 		coresight-name = "coresight-tpdm-ddr";
 
+		status = "disabled";
 		clocks = <&clock_aop QDSS_CLK>;
 		clock-names = "apb_pclk";
 
