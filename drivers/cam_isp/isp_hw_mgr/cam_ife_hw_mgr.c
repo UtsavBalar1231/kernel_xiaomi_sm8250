@@ -870,6 +870,10 @@ static int cam_ife_hw_mgr_release_hw_for_ctx(
 	struct cam_ife_hw_mgr_res        *hw_mgr_res;
 	struct cam_ife_hw_mgr_res        *hw_mgr_res_temp;
 
+	/* clean up the callback function */
+	ife_ctx->common.cb_priv = NULL;
+	memset(ife_ctx->common.event_cb, 0, sizeof(ife_ctx->common.event_cb));
+
 	/* ife leaf resource */
 	for (i = 0; i < CAM_IFE_HW_OUT_RES_MAX; i++)
 		cam_ife_hw_mgr_free_hw_res(&ife_ctx->res_list_ife_out[i]);
@@ -905,10 +909,6 @@ static int cam_ife_hw_mgr_release_hw_for_ctx(
 	/* ife root node */
 	if (ife_ctx->res_list_ife_in.res_type != CAM_IFE_HW_MGR_RES_UNINIT)
 		cam_ife_hw_mgr_free_hw_res(&ife_ctx->res_list_ife_in);
-
-	/* clean up the callback function */
-	ife_ctx->common.cb_priv = NULL;
-	memset(ife_ctx->common.event_cb, 0, sizeof(ife_ctx->common.event_cb));
 
 	CAM_DBG(CAM_ISP, "release context completed ctx id:%d",
 		ife_ctx->ctx_index);
@@ -6777,6 +6777,11 @@ static int cam_ife_hw_mgr_handle_hw_rup(
 	cam_hw_event_cb_func                     ife_hwr_irq_rup_cb;
 	struct cam_isp_hw_reg_update_event_data  rup_event_data;
 
+	if (!ife_hw_mgr_ctx->common.event_cb[CAM_ISP_HW_EVENT_REG_UPDATE]) {
+		CAM_ERR(CAM_ISP, "event_cb[HW_EVENT_REG_UPDATE] is null");
+		return 0;
+	}
+
 	ife_hwr_irq_rup_cb =
 		ife_hw_mgr_ctx->common.event_cb[CAM_ISP_HW_EVENT_REG_UPDATE];
 
@@ -6888,6 +6893,11 @@ static int cam_ife_hw_mgr_handle_hw_epoch(
 	struct cam_isp_hw_epoch_event_data    epoch_done_event_data;
 	int                                   rc = 0;
 
+	if (!ife_hw_mgr_ctx->common.event_cb[CAM_ISP_HW_EVENT_EPOCH]) {
+		CAM_ERR(CAM_ISP, "event_cb[CAM_ISP_HW_EVENT_EPOCH] is null");
+		return 0;
+	}
+
 	ife_hw_irq_epoch_cb =
 		ife_hw_mgr_ctx->common.event_cb[CAM_ISP_HW_EVENT_EPOCH];
 
@@ -6936,6 +6946,11 @@ static int cam_ife_hw_mgr_handle_hw_sof(
 	cam_hw_event_cb_func                  ife_hw_irq_sof_cb;
 	struct cam_isp_hw_sof_event_data      sof_done_event_data;
 	int                                   rc = 0;
+
+	if (!ife_hw_mgr_ctx->common.event_cb[CAM_ISP_HW_EVENT_SOF]) {
+		CAM_ERR(CAM_ISP, "event_cb[CAM_ISP_HW_EVENT_SOF] is null");
+		return 0;
+	}
 
 	memset(&sof_done_event_data, 0, sizeof(sof_done_event_data));
 
@@ -7012,6 +7027,11 @@ static int cam_ife_hw_mgr_handle_hw_eof(
 	struct cam_isp_hw_eof_event_data      eof_done_event_data;
 	int                                   rc = 0;
 
+	if (!ife_hw_mgr_ctx->common.event_cb[CAM_ISP_HW_EVENT_EOF]) {
+		CAM_ERR(CAM_ISP, "event_cb[CAM_ISP_HW_EVENT_EOF] is null");
+		return 0;
+	}
+
 	ife_hw_irq_eof_cb =
 		ife_hw_mgr_ctx->common.event_cb[CAM_ISP_HW_EVENT_EOF];
 
@@ -7056,6 +7076,11 @@ static int cam_ife_hw_mgr_handle_hw_buf_done(
 	struct cam_ife_hw_mgr_ctx           *ife_hw_mgr_ctx = ctx;
 	struct cam_isp_hw_done_event_data    buf_done_event_data = {0};
 	struct cam_isp_hw_event_info        *event_info = evt_info;
+
+	if (!ife_hw_mgr_ctx->common.event_cb[CAM_ISP_HW_EVENT_DONE]) {
+		CAM_ERR(CAM_ISP, "event_cb[CAM_ISP_HW_EVENT_DONE] is null");
+		return 0;
+	}
 
 	ife_hwr_irq_wm_done_cb =
 		ife_hw_mgr_ctx->common.event_cb[CAM_ISP_HW_EVENT_DONE];
