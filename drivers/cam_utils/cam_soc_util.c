@@ -1029,6 +1029,53 @@ static int cam_soc_util_get_dt_gpio_req_tbl(struct device_node *of_node,
 			gconf->cam_gpio_req_tbl[i].label);
 	}
 
+	if (!of_get_property(of_node, "gpio-req-tbl-delay", &count)) {
+		CAM_DBG(CAM_UTIL, "no gpio-req-tbl-delay");
+		kfree(val_array);
+		return rc;
+	}
+
+	count /= sizeof(uint32_t);
+	if (!count) {
+		CAM_ERR(CAM_UTIL, "Invalid gpio count for gpio-req-tbl-delay");
+		kfree(val_array);
+		return rc;
+	}
+
+	if (count != gconf->cam_gpio_req_tbl_size) {
+		CAM_ERR(CAM_UTIL,
+			"Invalid number of gpio-req-tbl-delay entries: %d",
+			count);
+		goto free_val_array;
+	}
+
+	gconf->gpio_delay_tbl = kcalloc(count, sizeof(uint32_t),
+		GFP_KERNEL);
+	if (!gconf->gpio_delay_tbl) {
+		CAM_ERR(CAM_UTIL,
+			"Failed to allocate memory for gpio_delay_tbl");
+		rc = -ENOMEM;
+		goto free_val_array;
+	}
+
+	gconf->gpio_delay_tbl_size = count;
+
+	rc = of_property_read_u32_array(of_node, "gpio-req-tbl-delay",
+		val_array, count);
+	if (rc) {
+		CAM_ERR(CAM_UTIL, "Failed to read gpio-req-tbl-delay entry");
+		kfree(gconf->gpio_delay_tbl);
+		gconf->gpio_delay_tbl_size = 0;
+		kfree(val_array);
+		return rc;
+	}
+
+	for (i = 0; i < count; i++) {
+		gconf->gpio_delay_tbl[i] = val_array[i];
+		CAM_DBG(CAM_UTIL, "gpio_delay_tbl[%d] = %ld", i,
+			gconf->gpio_delay_tbl[i]);
+	}
+
 	kfree(val_array);
 
 	return rc;
