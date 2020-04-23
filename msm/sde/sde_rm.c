@@ -203,17 +203,36 @@ static void _sde_rm_dec_resource_info(struct sde_rm *rm,
 
 void sde_rm_get_resource_info(struct sde_rm *rm,
 		struct drm_encoder *drm_enc,
-		struct msm_resource_caps_info *avail_res)
+		struct msm_resource_caps_info *avail_res,
+		 int display_type)
 {
 	struct sde_rm_hw_blk *blk;
 	enum sde_hw_blk_type type;
 	struct sde_rm_rsvp rsvp;
+	const struct sde_lm_cfg *lm_cfg;
 
+	mutex_lock(&rm->rm_lock);
 	memcpy(avail_res, &rm->avail_res,
 			sizeof(rm->avail_res));
 
+	/**
+	 * Layer Mixers which are primary display, secondary
+	 * display preferred and are available must not be provided
+	 * for connectors which are neither primary nor secondary.
+	 */
+	if (display_type != SDE_CONNECTOR_PRIMARY &&
+		display_type != SDE_CONNECTOR_SECONDARY) {
+		list_for_each_entry(blk, &rm->hw_blks[SDE_HW_BLK_LM], list) {
+			lm_cfg = to_sde_hw_mixer(blk->hw)->cap;
+			if (!blk->rsvp && (lm_cfg->features &
+					 (BIT(SDE_DISP_PRIMARY_PREF)
+					 | BIT(SDE_DISP_SECONDARY_PREF))))
+				avail_res->num_lm--;
+		}
+	}
+
 	if (!drm_enc)
-		return;
+		goto end;
 
 	rsvp.enc_id = drm_enc->base.id;
 
@@ -221,6 +240,9 @@ void sde_rm_get_resource_info(struct sde_rm *rm,
 		list_for_each_entry(blk, &rm->hw_blks[type], list)
 			if (blk->rsvp && blk->rsvp->enc_id == rsvp.enc_id)
 				_sde_rm_inc_resource_info(rm, avail_res, blk);
+end:
+	mutex_unlock(&rm->rm_lock);
+	return;
 }
 
 static void _sde_rm_print_rsvps(
@@ -2107,7 +2129,7 @@ int sde_rm_reserve(
 	 * comes again after earlier commit gets processed.
 	 */
 
-	if (test_only && rsvp_nxt) {
+	if (test_only && rsvp_cur && rsvp_nxt) {
 		SDE_ERROR("cur %d nxt %d enc %d conn %d\n", rsvp_cur->seq,
 			 rsvp_nxt->seq, enc->base.id,
 			 conn_state->connector->base.id);
