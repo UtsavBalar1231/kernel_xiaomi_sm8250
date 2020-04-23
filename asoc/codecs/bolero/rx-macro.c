@@ -1750,16 +1750,16 @@ static int rx_macro_config_compander(struct snd_soc_component *component,
 	if (interp_n == INTERP_AUX)
 		return 0;
 
+	comp = interp_n;
+	dev_dbg(component->dev, "%s: event %d compander %d, enabled %d\n",
+		__func__, event, comp + 1, rx_priv->comp_enabled[comp]);
+
 	rx_path_cfg3_reg = BOLERO_CDC_RX_RX0_RX_PATH_CFG3 +
 					(comp * RX_MACRO_RX_PATH_OFFSET);
 	rx0_path_ctl_reg = BOLERO_CDC_RX_RX0_RX_PATH_CTL +
 					(comp * RX_MACRO_RX_PATH_OFFSET);
 	pcm_rate = (snd_soc_component_read32(component, rx0_path_ctl_reg)
 						& 0x0F);
-
-	dev_err(component->dev, "%s: pcm_rate %d\n",
-		__func__, pcm_rate);
-
 	if (pcm_rate < 0x06)
 		val = 0x03;
 	else if (pcm_rate < 0x08)
@@ -1768,12 +1768,6 @@ static int rx_macro_config_compander(struct snd_soc_component *component,
 		val = 0x02;
 	else
 		val = 0x00;
-	snd_soc_component_update_bits(component, rx_path_cfg3_reg,
-					0x03, val);
-
-	comp = interp_n;
-	dev_dbg(component->dev, "%s: event %d compander %d, enabled %d\n",
-		__func__, event, comp + 1, rx_priv->comp_enabled[comp]);
 
 	rx_path_cfg3_reg = BOLERO_CDC_RX_RX0_RX_PATH_CFG3 +
 					(comp * RX_MACRO_RX_PATH_OFFSET);
