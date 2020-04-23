@@ -1526,8 +1526,8 @@ QDF_STATUS wma_peer_unmap_conf_cb(uint8_t vdev_id,
 	return qdf_status;
 }
 
-static bool wma_objmgr_peer_exist(tp_wma_handle wma, uint8_t vdev_id,
-				  uint8_t *peer_addr, uint8_t *peer_vdev_id)
+bool wma_objmgr_peer_exist(tp_wma_handle wma,
+			   uint8_t *peer_addr, uint8_t *peer_vdev_id)
 {
 	struct wlan_objmgr_peer *peer;
 
@@ -1580,7 +1580,7 @@ QDF_STATUS wma_remove_peer(tp_wma_handle wma, uint8_t *mac_addr,
 		return QDF_STATUS_E_INVAL;
 	}
 
-	if (!wma_objmgr_peer_exist(wma, vdev_id, peer_addr, NULL)) {
+	if (!wma_objmgr_peer_exist(wma, peer_addr, NULL)) {
 		wma_err("peer doesn't exist peer_addr %pM vdevid %d peer_count %d",
 			 peer_addr, vdev_id,
 			 wma->interfaces[vdev_id].peer_count);
@@ -1724,6 +1724,17 @@ static struct wlan_objmgr_peer *wma_create_objmgr_peer(tp_wma_handle wma,
 	struct wlan_objmgr_peer *obj_peer = NULL;
 	struct wlan_objmgr_vdev *obj_vdev = NULL;
 	struct wlan_objmgr_psoc *psoc = wma->psoc;
+	uint8_t peer_vdev_id;
+
+	/*
+	 * Check if peer with same MAC exist on any Vdev, If so avoid
+	 * adding this peer.
+	 */
+	if (wma_objmgr_peer_exist(wma, peer_addr, &peer_vdev_id)) {
+		wma_info("Peer %pM already exist on vdev %d, current vdev %d",
+			  peer_addr, peer_vdev_id, vdev_id);
+		return NULL;
+	}
 
 	obj_peer_type = wma_get_obj_mgr_peer_type(wma, vdev_id, peer_addr,
 						  wma_peer_type);
