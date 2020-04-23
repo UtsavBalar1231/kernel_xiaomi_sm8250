@@ -3,3 +3,8 @@
 	qcom,msm-mbhc-hphl-swh = <1>;
 	qcom,msm-mbhc-gnd-swh = <1>;
 };
+
+&adsp_loader {
+	adsp-fuse-not-supported = <1>;
+	adsp-fw-name = "adsp2";
+};
