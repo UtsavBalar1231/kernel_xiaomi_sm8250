@@ -170,7 +170,7 @@
 			interrupts = <0x0 0x61 0x1 IRQ_TYPE_NONE>;
 		};
 
-		pm2250_spmi: qcom,pm2250-spmi {
+		pm2250_cdc: qcom,pm2250-cdc {
 			compatible = "qcom,pm2250-spmi";
 		};
 
