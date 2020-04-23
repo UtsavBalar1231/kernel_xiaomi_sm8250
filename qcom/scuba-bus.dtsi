@@ -337,6 +337,10 @@
 			qcom,buswidth = <4>;
 			qcom,agg-ports = <1>;
 			qcom,ap-owned;
+			/* QoS priority for snoc_cnoc master */
+			qcom,prio = <2>;
+			qcom,qport = <8>;
+			qcom,qos-mode = "fixed";
 			qcom,connections = <&slv_qxs_pimem &slv_qxs_imem
 				 &slv_qhs_apss &slv_snoc_bimc &slv_snoc_cnoc
 				 &slv_xs_sys_tcu_cfg &slv_xs_qdss_stm>;
@@ -483,6 +487,9 @@
 			qcom,buswidth = <4>;
 			qcom,agg-ports = <1>;
 			qcom,ap-owned;
+			qcom,prio = <2>;
+			qcom,qport = <1>;
+			qcom,qos-mode = "fixed";
 			qcom,connections = <&slv_anoc_snoc>;
 			qcom,bus-dev = <&fab_sys_noc>;
 			qcom,mas-rpm-id = <ICBID_MASTER_USB3_0>;
@@ -887,9 +894,6 @@
 			label = "slv-snoc-cnoc";
 			qcom,buswidth = <8>;
 			qcom,agg-ports = <1>;
-			qcom,qport = <8>;
-			qcom,qos-mode = "fixed";
-			qcom,prio = <2>;
 			qcom,bus-dev = <&fab_sys_noc>;
 			qcom,connections = <&mas_snoc_cnoc>;
 			qcom,slv-rpm-id = <ICBID_SLAVE_SNOC_CNOC>;
