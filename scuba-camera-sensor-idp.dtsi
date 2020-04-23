@@ -230,11 +230,11 @@
 		gpio-no-mux = <0>;
 		pinctrl-names = "cam_default", "cam_suspend";
 		pinctrl-0 = <&cam_sensor_mclk1_active
-				&cam_sensor_rear1_reset_active>
+				&cam_sensor_rear1_reset_active
 				&cam_sensor_csi_mux_oe_active
 				&cam_sensor_csi_mux_sel_active>;
 		pinctrl-1 = <&cam_sensor_mclk1_suspend
-				&cam_sensor_rear1_reset_suspend>
+				&cam_sensor_rear1_reset_suspend
 				&cam_sensor_csi_mux_oe_suspend
 				&cam_sensor_csi_mux_sel_suspend>;
 		gpios = <&tlmm 21 0>,
