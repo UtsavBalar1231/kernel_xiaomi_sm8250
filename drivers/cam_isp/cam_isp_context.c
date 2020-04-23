@@ -3375,7 +3375,7 @@ static int __cam_isp_ctx_rdi_only_sof_in_bubble_state(
 static int __cam_isp_ctx_rdi_only_reg_upd_in_bubble_applied_state(
 	struct cam_isp_context *ctx_isp, void *evt_data)
 {
-	struct cam_ctx_request  *req;
+	struct cam_ctx_request  *req = NULL;
 	struct cam_context      *ctx = ctx_isp->base;
 	struct cam_isp_ctx_req  *req_isp;
 	struct cam_req_mgr_trigger_notify  notify;
