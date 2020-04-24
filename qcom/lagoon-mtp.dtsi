@@ -5,7 +5,6 @@
 #include "lagoon-sde-display.dtsi"
 #include "camera/lagoon-camera-sensor-mtp.dtsi"
 #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
-#include <dt-bindings/iio/qcom,spmi-vadc.h>
 
 &soc {
 	gpio_keys {
@@ -297,7 +296,7 @@
 	io-channels = <&pm7250b_vadc ADC_AMUX_THM2>;
 	qcom,parallel-input-mode = <1>; /* USBIN */
 	qcom,parallel-output-mode = <2>; /* VBAT */
-	qcom,min-ilim-ua = <750000>;
+	qcom,div2-cp-min-ilim-ua = <750000>;
 	status = "ok";
 };
 
