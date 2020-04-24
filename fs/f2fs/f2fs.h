@@ -1519,6 +1519,7 @@ struct f2fs_sb_info {
 	struct f2fs_gc_kthread	*gc_thread;	/* GC thread */
 	unsigned int cur_victim_sec;		/* current victim section num */
 	unsigned int gc_mode;			/* current GC state */
+	bool gc_booster;			/* boost background gc */
 	unsigned int next_victim_seg[2];	/* next segment in victim section */
 	/* for skip statistic */
 	unsigned int atomic_files;              /* # of opened atomic file */
@@ -3529,7 +3530,7 @@ struct f2fs_stat_info {
 	int nats, dirty_nats, sits, dirty_sits;
 	int free_nids, avail_nids, alloc_nids;
 	int total_count, utilization;
-	int bg_gc, nr_wb_cp_data, nr_wb_data;
+	int gc_booster, bg_gc, nr_wb_cp_data, nr_wb_data;
 	int nr_rd_data, nr_rd_node, nr_rd_meta;
 	int nr_dio_read, nr_dio_write;
 	unsigned int io_skip_bggc, other_skip_bggc;
