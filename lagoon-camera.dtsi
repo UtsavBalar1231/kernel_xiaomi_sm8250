@@ -512,7 +512,6 @@
 		reg = <0xac48000 0x1000>;
 		reg-names = "cpas-cdm";
 		reg-cam-base = <0x48000>;
-		cam_hw_fuse = <CAM_CPAS_SECURE_CAMERA_ENABLE 0x007801f0 23>;
 		interrupts = <GIC_SPI 469 IRQ_TYPE_EDGE_RISING>;
 		interrupt-names = "cpas-cdm";
 		regulator-names = "camss";
