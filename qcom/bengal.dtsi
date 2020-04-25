@@ -54,8 +54,6 @@
 			capacity-dmips-mhz = <1024>;
 			dynamic-power-coefficient = <100>;
 			enable-method = "psci";
-			d-cache-size = <0x8000>;
-			i-cache-size = <0x8000>;
 			next-level-cache = <&L2_0>;
 			qcom,freq-domain = <&cpufreq_hw 0 7>;
 			qcom,lmh-dcvs = <&lmh_dcvs0>;
@@ -81,8 +79,6 @@
 			capacity-dmips-mhz = <1024>;
 			dynamic-power-coefficient = <100>;
 			enable-method = "psci";
-			d-cache-size = <0x8000>;
-			i-cache-size = <0x8000>;
 			next-level-cache = <&L2_0>;
 			qcom,freq-domain = <&cpufreq_hw 0 7>;
 			qcom,lmh-dcvs = <&lmh_dcvs0>;
@@ -103,8 +99,6 @@
 			capacity-dmips-mhz = <1024>;
 			dynamic-power-coefficient = <100>;
 			enable-method = "psci";
-			d-cache-size = <0x8000>;
-			i-cache-size = <0x8000>;
 			next-level-cache = <&L2_0>;
 			qcom,freq-domain = <&cpufreq_hw 0 7>;
 			qcom,lmh-dcvs = <&lmh_dcvs0>;
@@ -125,8 +119,6 @@
 			capacity-dmips-mhz = <1024>;
 			dynamic-power-coefficient = <100>;
 			enable-method = "psci";
-			d-cache-size = <0x8000>;
-			i-cache-size = <0x8000>;
 			next-level-cache = <&L2_0>;
 			qcom,freq-domain = <&cpufreq_hw 0 7>;
 			qcom,lmh-dcvs = <&lmh_dcvs0>;
@@ -147,8 +139,6 @@
 			enable-method = "psci";
 			capacity-dmips-mhz = <1638>;
 			dynamic-power-coefficient = <282>;
-			d-cache-size = <0x10000>;
-			i-cache-size = <0x10000>;
 			next-level-cache = <&L2_1>;
 			qcom,freq-domain = <&cpufreq_hw 1 7>;
 			qcom,lmh-dcvs = <&lmh_dcvs1>;
@@ -174,8 +164,6 @@
 			capacity-dmips-mhz = <1638>;
 			dynamic-power-coefficient = <282>;
 			enable-method = "psci";
-			d-cache-size = <0x10000>;
-			i-cache-size = <0x10000>;
 			next-level-cache = <&L2_1>;
 			qcom,freq-domain = <&cpufreq_hw 1 7>;
 			qcom,lmh-dcvs = <&lmh_dcvs1>;
@@ -196,8 +184,6 @@
 			capacity-dmips-mhz = <1638>;
 			dynamic-power-coefficient = <282>;
 			enable-method = "psci";
-			d-cache-size = <0x10000>;
-			i-cache-size = <0x10000>;
 			next-level-cache = <&L2_1>;
 			qcom,freq-domain = <&cpufreq_hw 1 7>;
 			qcom,lmh-dcvs = <&lmh_dcvs1>;
@@ -218,8 +204,6 @@
 			capacity-dmips-mhz = <1638>;
 			dynamic-power-coefficient = <282>;
 			enable-method = "psci";
-			d-cache-size = <0x10000>;
-			i-cache-size = <0x10000>;
 			next-level-cache = <&L2_1>;
 			qcom,freq-domain = <&cpufreq_hw 1 7>;
 			qcom,lmh-dcvs = <&lmh_dcvs1>;
