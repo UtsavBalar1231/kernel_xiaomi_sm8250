@@ -3,7 +3,6 @@
 #include <dt-bindings/sound/audio-codec-port-types.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include "scuba-lpi.dtsi"
-#include "pm2250.dtsi"
 
 &bolero {
 	qcom,num-macros = <3>;
@@ -115,7 +114,7 @@
 	rouleur_codec: rouleur-codec {
 		compatible = "qcom,rouleur-codec";
 		qcom,split-codec = <1>;
-		qcom,pmic-spmi-node = <&pm2250_spmi>;
+		qcom,pmic-spmi-node = <&pm2250_cdc>;
 		qcom,wcd-reset-reg = <0x0000F3DB>;
 		qcom,rx_swr_ch_map = <0 HPH_L 0x1 0 HPH_L>,
 			<0 HPH_R 0x2 0 HPH_R>,
@@ -282,7 +281,7 @@
 		pinctrl-1 = <&tx_swr_clk_sleep &tx_swr_data1_sleep
 			    &tx_swr_data2_sleep>;
 		qcom,lpi-gpios;
-		qcom,chip-wakeup-reg = <0x003ca04c>;
+		qcom,chip-wakeup-reg = <0x003ca064>;
 		qcom,chip-wakeup-maskbit = <0>;
 		qcom,chip-wakeup-default-val = <0x1>;
 	};
