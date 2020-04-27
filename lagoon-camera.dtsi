@@ -740,6 +740,7 @@
 		clock-names-option =  "ife_dsp_clk";
 		clocks-option = <&camcc CAM_CC_IFE_2_DSP_CLK>;
 		clock-rates-option = <600000000>;
+		dsp-disabled;
 		status = "ok";
 	};
 
