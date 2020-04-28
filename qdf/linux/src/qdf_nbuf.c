@@ -2408,7 +2408,7 @@ void qdf_net_buf_debug_exit(void)
 				 p_prev->func_name, p_prev->line_num,
 				 p_prev->size, p_prev->net_buf);
 			qdf_info(
-				 "Map %s, line %d, unmap %s line %d mapped=%d",
+				 "SKB leak map %s, line %d, unmap %s line %d mapped=%d",
 				 p_prev->map_func_name,
 				 p_prev->map_line_num,
 				 p_prev->unmap_func_name,
