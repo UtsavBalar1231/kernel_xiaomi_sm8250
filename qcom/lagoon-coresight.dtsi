@@ -49,6 +49,9 @@
 
 		clocks = <&aopcc QDSS_CLK>;
 		clock-names = "apb_pclk";
+
+		qcom,msr-fix-req;
+
 		port {
 			tpdm_swao_1_out_tpda_swao1: endpoint {
 				remote-endpoint = <&tpda_swao1_in_tpdm_swao_1>;
@@ -158,6 +161,9 @@
 
 		clocks = <&aopcc QDSS_CLK>;
 		clock-names = "apb_pclk";
+
+		qcom,msr-fix-req;
+
 		port {
 			tpdm_lpass_out_tpda0: endpoint {
 				remote-endpoint =
@@ -352,6 +358,9 @@
 
 		clocks = <&aopcc QDSS_CLK>;
 		clock-names = "apb_pclk";
+
+		qcom,msr-fix-req;
+
 		port {
 			tpdm_ddr_out_funnel_ddr0: endpoint {
 				remote-endpoint =
@@ -370,6 +379,9 @@
 
 		clocks = <&aopcc QDSS_CLK>;
 		clock-names = "apb_pclk";
+
+		qcom,msr-fix-req;
+
 		port {
 			tpdm_turing_out_funnel_turing: endpoint {
 				remote-endpoint =
@@ -658,6 +670,9 @@
 
 		clocks = <&aopcc QDSS_CLK>;
 		clock-names = "apb_pclk";
+
+		qcom,msr-fix-req;
+
 		port {
 			tpdm_modem0_out_tpda_modem0: endpoint {
 				remote-endpoint =
@@ -677,6 +692,9 @@
 		status = "disabled";
 		clocks = <&aopcc QDSS_CLK>;
 		clock-names = "apb_pclk";
+
+		qcom,msr-fix-req;
+
 		port {
 			tpdm_modem1_out_tpda_modem1: endpoint {
 				remote-endpoint =
