@@ -31,6 +31,7 @@
 		reset-names = "core_reset";
 
 		USB3_GDSC-supply = <&gcc_usb30_prim_gdsc>;
+		dpdm-supply = <&qusb_phy0>;
 
 		qcom,core-clk-rate = <133333333>;
 		qcom,core-clk-rate-hs = <66666667>;
