@@ -331,6 +331,8 @@ void __noc_error_info_iris2(struct venus_hfi_device *device)
 	u32 val = 0;
 	u32 sid = DEFAULT_SID;
 
+	if (device->res->vpu_ver == VPU_VERSION_IRIS2_1)
+		return;
 	val = __read_register(device, VCODEC_NOC_ERL_MAIN_SWID_LOW, sid);
 	d_vpr_e("VCODEC_NOC_ERL_MAIN_SWID_LOW:     %#x\n", val);
 	val = __read_register(device, VCODEC_NOC_ERL_MAIN_SWID_HIGH, sid);
