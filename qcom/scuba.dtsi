@@ -2232,3 +2232,8 @@
 #include "scuba-sde.dtsi"
 #include "scuba-sde-pll.dtsi"
 #include "camera/scuba-camera.dtsi"
+
+&msm_vidc {
+	qcom,cx-ipeak-data = <&cx_ipeak_lm 6>;
+	qcom,clock-freq-threshold = <240000000>;
+};
