@@ -438,6 +438,7 @@
 	interrupt-parent = <&spmi_bus>;
 	interrupt-names = "smb1396";
 	pinctrl-names = "default";
+	qcom,enable-toggle-stat;
 	pinctrl-0 = <&smb_stat_default>;
 	status = "ok";
 };
