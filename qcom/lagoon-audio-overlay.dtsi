@@ -150,6 +150,7 @@
 				cdc-vdd-1p8-supply = <&L11A>;
 				qcom,cdc-vdd-1p8-voltage = <1800000 1800000>;
 				qcom,cdc-vdd-1p8-current = <20000>;
+				qcom,cdc-vdd-1p8-lpm-supported = <1>;
 				qcom,cdc-static-supplies = "cdc-vdd-1p8";
 			};
 
@@ -162,6 +163,7 @@
 				cdc-vdd-1p8-supply = <&L11A>;
 				qcom,cdc-vdd-1p8-voltage = <1800000 1800000>;
 				qcom,cdc-vdd-1p8-current = <20000>;
+				qcom,cdc-vdd-1p8-lpm-supported = <1>;
 				qcom,cdc-static-supplies = "cdc-vdd-1p8";
 			};
 		};
@@ -202,10 +204,12 @@
 		cdc-vdd-rxtx-supply = <&L11A>;
 		qcom,cdc-vdd-rxtx-voltage = <1800000 1800000>;
 		qcom,cdc-vdd-rxtx-current = <30000>;
+		qcom,cdc-vdd-rxtx-lpm-supported = <1>;
 
 		cdc-vddio-supply = <&L11A>;
 		qcom,cdc-vddio-voltage = <1800000 1800000>;
 		qcom,cdc-vddio-current = <30000>;
+		qcom,cdc-vddio-lpm-supported = <1>;
 
 		cdc-vdd-buck-supply = <&L14A>;
 		qcom,cdc-vdd-buck-voltage = <1800000 1800000>;
