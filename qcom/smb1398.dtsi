@@ -8,7 +8,6 @@ smb1396: qcom,smb1396@34 {
 	interrupt-controller;
 	#interrupt-cells = <3>;
 	qcom,periph-map = <0x6 0x26 0x27>;
-	qcom,enable-toggle-stat;
 	status = "disabled";
 
 	smb1396_revid: qcom,revid {
