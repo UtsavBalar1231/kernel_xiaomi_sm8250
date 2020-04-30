@@ -129,11 +129,11 @@
 };
 
 &qusb_phy0 {
-	extcon = <&pm2250_charger>, <&eud>;
+	extcon = <&pm2250_charger>;
 };
 
 &usb0 {
-	extcon = <&qusb_phy0>;
+	extcon = <&qusb_phy0>, <&eud>;
 };
 
 &qupv3_se1_i2c {
