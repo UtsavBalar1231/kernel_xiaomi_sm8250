@@ -914,7 +914,7 @@
 		compatible = "qcom,lagoon-pdc";
 		reg = <0xb220000 0x30000>, <0x17c000f0 0x64>;
 		qcom,pdc-ranges = <0 480 94>, <94 609 31>, <125 63 1>,
-				  <126 657 12>, <138 139 15>;
+				  <126 655 12>, <138 139 15>;
 		#interrupt-cells = <2>;
 		interrupt-parent = <&intc>;
 		interrupt-controller;
