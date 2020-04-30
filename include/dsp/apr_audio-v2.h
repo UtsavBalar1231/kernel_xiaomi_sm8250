@@ -3965,6 +3965,7 @@ struct afe_param_id_device_hw_delay_cfg {
 } __packed;
 
 #define AFE_PARAM_ID_SET_TOPOLOGY    0x0001025A
+#define AFE_PARAM_ID_DEREGISTER_TOPOLOGY	0x000102E8
 #define AFE_API_VERSION_TOPOLOGY_V1 0x1
 
 struct afe_param_id_set_topology_cfg {

@@ -3264,6 +3264,54 @@ unlock:
 	return ret;
 }
 
+static int afe_port_topology_deregister(u16 port_id)
+{
+	struct param_hdr_v3 param_info;
+	int ret = 0;
+	uint32_t build_major_version = 0;
+	uint32_t build_minor_version = 0;
+	uint32_t build_branch_version = 0;
+	uint32_t afe_api_version = 0;
+
+	ret = q6core_get_avcs_avs_build_version_info(
+			&build_major_version, &build_minor_version,
+			&build_branch_version);
+	if (ret < 0)
+		goto done;
+
+	ret = q6core_get_avcs_api_version_per_service(
+			APRV2_IDS_SERVICE_ID_ADSP_AFE_V);
+	if (ret < 0)
+		goto done;
+	afe_api_version = ret;
+	pr_debug("%s: mjor: %u, mnor: %u, brnch: %u, afe_api: %u\n",
+		__func__, build_major_version, build_minor_version,
+		build_branch_version, afe_api_version);
+	if ((build_major_version != AVS_BUILD_MAJOR_VERSION_V2) ||
+			(build_minor_version != AVS_BUILD_MINOR_VERSION_V9) ||
+			(build_branch_version !=
+				AVS_BUILD_BRANCH_VERSION_V3) ||
+				(afe_api_version < AFE_API_VERSION_V9)) {
+		ret = 0;
+		goto done;
+	}
+
+	memset(&param_info, 0, sizeof(param_info));
+	param_info.module_id = AFE_MODULE_AUDIO_DEV_INTERFACE;
+	param_info.instance_id = INSTANCE_ID_0;
+	param_info.param_id = AFE_PARAM_ID_DEREGISTER_TOPOLOGY;
+	param_info.param_size =  0;
+	ret = q6afe_pack_and_set_param_in_band(port_id,
+			q6audio_get_port_index(port_id),
+			param_info, NULL);
+
+	return ret;
+done:
+	pr_debug("%s build ver mismatch - leaving function %d\n",
+		__func__, ret);
+	return ret;
+}
+
 static int afe_send_port_topology_id(u16 port_id)
 {
 	struct afe_param_id_set_topology_cfg topology;
@@ -3271,6 +3319,13 @@ static int afe_send_port_topology_id(u16 port_id)
 	u32 topology_id = 0;
 	int index = 0;
 	int ret = 0;
+
+	ret = afe_port_topology_deregister(port_id);
+	if (ret < 0) {
+		pr_err("%s: AFE deregister topology for port 0x%x failed %d\n",
+			__func__, port_id, ret);
+		goto done;
+	}
 
 	memset(&topology, 0, sizeof(topology));
 	memset(&param_info, 0, sizeof(param_info));
