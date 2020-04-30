@@ -1543,7 +1543,7 @@ static int cam_jpeg_mgr_hw_dump(void *hw_mgr_priv, void *dump_hw_args)
 
 hw_dump:
 	cur_time = ktime_get();
-	diff = ktime_us_delta(p_cfg_req->submit_timestamp, cur_time);
+	diff = ktime_us_delta(cur_time, p_cfg_req->submit_timestamp);
 	cur_ts = ktime_to_timespec64(cur_time);
 	req_ts = ktime_to_timespec64(p_cfg_req->submit_timestamp);
 
