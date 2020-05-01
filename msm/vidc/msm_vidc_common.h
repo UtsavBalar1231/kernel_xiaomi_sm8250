@@ -120,6 +120,11 @@ static inline bool is_grid_session(struct msm_vidc_inst *inst)
 	}
 	return 0;
 }
+
+static inline bool is_video_session(struct msm_vidc_inst *inst)
+{
+	return !is_grid_session(inst);
+}
 static inline bool is_realtime_session(struct msm_vidc_inst *inst)
 {
 	struct v4l2_ctrl *ctrl;
@@ -282,7 +287,9 @@ int msm_comm_get_inst_load(struct msm_vidc_inst *inst,
 int msm_comm_get_inst_load_per_core(struct msm_vidc_inst *inst,
 			enum load_calc_quirks quirks);
 int msm_comm_get_device_load(struct msm_vidc_core *core,
-			enum session_type type, enum load_calc_quirks quirks);
+			enum session_type sess_type,
+			enum load_type load_type,
+			enum load_calc_quirks quirks);
 int msm_comm_set_color_format(struct msm_vidc_inst *inst,
 		enum hal_buffer buffer_type, int fourcc);
 int msm_comm_g_ctrl(struct msm_vidc_inst *inst, struct v4l2_control *ctrl);

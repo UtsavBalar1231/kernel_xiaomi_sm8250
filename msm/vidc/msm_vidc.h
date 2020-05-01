@@ -96,6 +96,11 @@ enum session_type {
 	MSM_VIDC_MAX_DEVICES = MSM_VIDC_UNKNOWN,
 };
 
+enum load_type {
+	MSM_VIDC_VIDEO = 0,
+	MSM_VIDC_IMAGE,
+};
+
 union msm_v4l2_cmd {
 	struct v4l2_decoder_cmd dec;
 	struct v4l2_encoder_cmd enc;
