@@ -1947,8 +1947,14 @@ end:
 		if (notify.error == CRM_KMD_ERR_FATAL) {
 			req_msg.session_hdl = ctx_isp->base->session_hdl;
 			req_msg.u.err_msg.device_hdl = ctx_isp->base->dev_hdl;
-			req_msg.u.err_msg.error_type =
-				CAM_REQ_MGR_ERROR_TYPE_RECOVERY;
+
+			if (error_type == CAM_ISP_HW_ERROR_CSID_FATAL)
+				req_msg.u.err_msg.error_type =
+					CAM_REQ_MGR_ERROR_TYPE_FULL_RECOVERY;
+			else
+				req_msg.u.err_msg.error_type =
+					CAM_REQ_MGR_ERROR_TYPE_RECOVERY;
+
 			req_msg.u.err_msg.link_hdl = ctx_isp->base->link_hdl;
 			req_msg.u.err_msg.request_id = error_request_id;
 			req_msg.u.err_msg.resource_size = 0x0;
@@ -3369,7 +3375,7 @@ static int __cam_isp_ctx_rdi_only_sof_in_bubble_state(
 static int __cam_isp_ctx_rdi_only_reg_upd_in_bubble_applied_state(
 	struct cam_isp_context *ctx_isp, void *evt_data)
 {
-	struct cam_ctx_request  *req;
+	struct cam_ctx_request  *req = NULL;
 	struct cam_context      *ctx = ctx_isp->base;
 	struct cam_isp_ctx_req  *req_isp;
 	struct cam_req_mgr_trigger_notify  notify;

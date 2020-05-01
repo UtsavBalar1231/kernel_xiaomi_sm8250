@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #include "cam_sync_util.h"
@@ -72,6 +72,12 @@ int cam_sync_init_group_object(struct sync_table_row *table,
 	 * If any child state is ERROR or SUCCESS, it will not be added to list.
 	 */
 	for (i = 0; i < num_objs; i++) {
+		if (idx == sync_objs[i]) {
+			CAM_ERR(CAM_SYNC,
+				"Invalid, same as parent fence : %i", idx);
+			rc = -EINVAL;
+			goto clean_children_info;
+		}
 		child_row = table + sync_objs[i];
 		spin_lock_bh(&sync_dev->row_spinlocks[sync_objs[i]]);
 

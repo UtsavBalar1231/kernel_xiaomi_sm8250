@@ -341,12 +341,12 @@ struct cam_mem_alloc_out_params {
 /**
  * struct cam_mem_map_out_params
  * @buf_handle: buffer handle
- * @reserved: reserved for future
+ * @size: size of the buffer being mapped
  * @vaddr: virtual address pointer
  */
 struct cam_mem_map_out_params {
 	uint32_t buf_handle;
-	uint32_t reserved;
+	uint32_t size;
 	uint64_t vaddr;
 };
 

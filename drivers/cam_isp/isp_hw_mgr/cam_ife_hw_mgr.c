@@ -1787,6 +1787,8 @@ static int cam_ife_hw_mgr_acquire_res_ife_csid_pxl(
 		csid_acquire.in_port = in_port;
 		csid_acquire.out_port = in_port->data;
 		csid_acquire.node_res = NULL;
+		csid_acquire.event_cb = cam_ife_hw_mgr_event_handler;
+		csid_acquire.priv = ife_ctx;
 		csid_acquire.crop_enable = crop_enable;
 		csid_acquire.drop_enable = false;
 
@@ -1916,6 +1918,8 @@ static int cam_ife_hw_mgr_acquire_res_ife_csid_rdi(
 		csid_acquire.in_port = in_port;
 		csid_acquire.out_port = out_port;
 		csid_acquire.node_res = NULL;
+		csid_acquire.event_cb = cam_ife_hw_mgr_event_handler;
+		csid_acquire.priv = ife_ctx;
 
 		/*
 		 * Enable RDI pixel drop by default. CSID will enable only for
@@ -5518,7 +5522,8 @@ static int cam_isp_packet_generic_blob_handler(void *user_data,
 
 		bw_config = (struct cam_isp_bw_config_v2 *)blob_data;
 
-		if (bw_config->num_paths > CAM_ISP_MAX_PER_PATH_VOTES) {
+		if ((bw_config->num_paths > CAM_ISP_MAX_PER_PATH_VOTES) ||
+			!bw_config->num_paths) {
 			CAM_ERR(CAM_ISP, "Invalid num paths %d",
 				bw_config->num_paths);
 			return -EINVAL;
@@ -6793,6 +6798,12 @@ static int  cam_ife_hw_mgr_find_affected_ctx(
 			affected_core, CAM_IFE_HW_NUM_MAX))
 			continue;
 
+		if (atomic_read(&ife_hwr_mgr_ctx->overflow_pending)) {
+			CAM_INFO(CAM_ISP, "CTX:%d already error reported",
+				ife_hwr_mgr_ctx->ctx_index);
+			continue;
+		}
+
 		atomic_set(&ife_hwr_mgr_ctx->overflow_pending, 1);
 		notify_err_cb = ife_hwr_mgr_ctx->common.event_cb[event_type];
 
@@ -6822,6 +6833,33 @@ static int  cam_ife_hw_mgr_find_affected_ctx(
 	return 0;
 }
 
+static int cam_ife_hw_mgr_handle_csid_event(
+	struct cam_isp_hw_event_info *event_info)
+{
+	struct cam_isp_hw_error_event_data  error_event_data = {0};
+	struct cam_hw_event_recovery_data     recovery_data = {0};
+
+	/* this can be extended based on the types of error
+	 * received from CSID
+	 */
+	switch (event_info->err_type) {
+	case CAM_ISP_HW_ERROR_CSID_FATAL: {
+
+		if (!g_ife_hw_mgr.debug_cfg.enable_csid_recovery)
+			break;
+
+		error_event_data.error_type = event_info->err_type;
+		cam_ife_hw_mgr_find_affected_ctx(&error_event_data,
+			event_info->hw_idx,
+			&recovery_data);
+		break;
+	}
+	default:
+		break;
+	}
+	return 0;
+}
+
 static int cam_ife_hw_mgr_handle_hw_err(
 	void                                *evt_info)
 {
@@ -6837,6 +6875,13 @@ static int cam_ife_hw_mgr_handle_hw_err(
 		error_event_data.error_type = CAM_ISP_HW_ERROR_OVERFLOW;
 	else if (event_info->res_type == CAM_ISP_RESOURCE_VFE_OUT)
 		error_event_data.error_type = CAM_ISP_HW_ERROR_BUSIF_OVERFLOW;
+
+	spin_lock(&g_ife_hw_mgr.ctx_lock);
+	if (event_info->err_type == CAM_ISP_HW_ERROR_CSID_FATAL) {
+		rc = cam_ife_hw_mgr_handle_csid_event(event_info);
+		spin_unlock(&g_ife_hw_mgr.ctx_lock);
+		return rc;
+	}
 
 	core_idx = event_info->hw_idx;
 
@@ -6855,6 +6900,7 @@ static int cam_ife_hw_mgr_handle_hw_err(
 		recovery_data.error_type = CAM_ISP_HW_ERROR_OVERFLOW;
 
 	cam_ife_hw_mgr_do_error_recovery(&recovery_data);
+	spin_unlock(&g_ife_hw_mgr.ctx_lock);
 
 	return rc;
 }
@@ -7315,6 +7361,14 @@ static int cam_ife_hw_mgr_debug_register(void)
 		g_ife_hw_mgr.debug_cfg.dentry,
 		&g_ife_hw_mgr.debug_cfg.enable_recovery)) {
 		CAM_ERR(CAM_ISP, "failed to create enable_recovery");
+		goto err;
+	}
+
+	if (!debugfs_create_u32("enable_csid_recovery",
+		0644,
+		g_ife_hw_mgr.debug_cfg.dentry,
+		&g_ife_hw_mgr.debug_cfg.enable_csid_recovery)) {
+		CAM_ERR(CAM_ISP, "failed to create enable_csid_recovery");
 		goto err;
 	}
 
