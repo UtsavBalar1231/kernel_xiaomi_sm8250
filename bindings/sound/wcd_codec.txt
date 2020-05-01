@@ -457,7 +457,7 @@ Required properties:
  -compatible: "qcom,pm2250-spmi";
 
 &spmi_bus {
-                pm2250_spmi: qcom,pm2250-spmi {
+                pm2250_cdc: qcom,pm2250-cdc {
                         compatible = "qcom,pm2250-spmi";
                 };
 };
@@ -512,7 +512,7 @@ Example:
 	rouleur_codec: rouleur-codec {
 		compatible = "qcom,rouleur-codec";
 		qcom,split-codec = <1>;
-		qcom,pmic-spmi-node = <&pm2250_spmi>;
+		qcom,pmic-spmi-node = <&pm2250_cdc>;
 		qcom,wcd-reset-reg = <0x0000F3DB>;
 		qcom,rx_swr_ch_map = <0 HPH_L 0x1 0 HPH_L>,
 			<0 HPH_R 0x2 0 HPH_R>, <1 CLSH 0x1 0 CLSH>,

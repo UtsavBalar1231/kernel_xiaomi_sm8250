@@ -352,6 +352,98 @@
 			};
 		};
 
+		nfc {
+			nfc_int_active: nfc_int_active {
+				/* active state */
+				mux {
+					/* GPIO 70 NFC Read Interrupt */
+					pins = "gpio70";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio70";
+					drive-strength = <2>; /* 2 MA */
+					bias-pull-up;
+				};
+			};
+
+			nfc_int_suspend: nfc_int_suspend {
+				/* sleep state */
+				mux {
+					/* GPIO 70 NFC Read Interrupt */
+					pins = "gpio70";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio70";
+					drive-strength = <2>; /* 2 MA */
+					bias-pull-up;
+				};
+			};
+
+			nfc_enable_active: nfc_enable_active {
+				/* active state */
+				mux {
+					/* 69: Enable 31: Firmware */
+					pins = "gpio69", "gpio31";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio69", "gpio31";
+					drive-strength = <2>; /* 2 MA */
+					bias-pull-up;
+				};
+			};
+
+			nfc_enable_suspend: nfc_enable_suspend {
+				/* sleep state */
+				mux {
+					/* 69: Enable 31: Firmware */
+					pins = "gpio69", "gpio31";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio69", "gpio31";
+					drive-strength = <2>; /* 2 MA */
+					bias-disable;
+				};
+			};
+
+			nfc_clk_req_active: nfc_clk_req_active {
+				/* active state */
+				mux {
+					/* GPIO 86: NFC CLOCK REQUEST */
+					pins = "gpio86";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio86";
+					drive-strength = <2>; /* 2 MA */
+					bias-pull-up;
+				};
+			};
+
+			nfc_clk_req_suspend: nfc_clk_req_suspend {
+				/* sleep state */
+				mux {
+					/* GPIO 86: NFC CLOCK REQUEST */
+					pins = "gpio86";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio86";
+					drive-strength = <2>; /* 2 MA */
+					bias-disable;
+				};
+			};
+		};
+
 		qupv3_se1_spi_pins: qupv3_se1_spi_pins {
 			qupv3_se1_spi_active: qupv3_se1_spi_active {
 				mux {
@@ -1025,6 +1117,19 @@
 			config {
 				pins = "gpio96";
 				drive-strength = <2>;
+				bias-pull-up;
+				input-enable;
+			};
+		};
+
+		usb_id_interrupt: usb_id_interrupt {
+			mux {
+				pins = "gpio89";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio89";
 				bias-pull-up;
 				input-enable;
 			};

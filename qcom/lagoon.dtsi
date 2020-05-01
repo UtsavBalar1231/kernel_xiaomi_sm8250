@@ -752,6 +752,23 @@
 		qcom,instance-type = "ufs";
 	};
 
+	ufsphy_mem: ufsphy_mem@1d87000 {
+		reg = <0x1d87000 0xe00>; /* PHY regs */
+		reg-names = "phy_mem";
+		#phy-cells = <0>;
+		ufs-qcom-crypto = <&ufs_ice>;
+
+		lanes-per-direction = <2>;
+
+		clock-names = "ref_clk_src",
+			"ref_clk",
+			"ref_aux_clk";
+		clocks = <&rpmhcc RPMH_QLINK_CLK>,
+			<&gcc GCC_UFS_MEM_CLKREF_CLK>,
+			<&gcc GCC_UFS_PHY_PHY_AUX_CLK>;
+
+		status = "disabled";
+	};
 
 	ufshc_mem: ufshc@1d84000 {
 		compatible = "qcom,ufshc";
@@ -781,7 +798,7 @@
 			<&gcc GCC_UFS_PHY_AHB_CLK>,
 			<&gcc GCC_UFS_PHY_UNIPRO_CORE_CLK>,
 			<&gcc GCC_UFS_PHY_ICE_CORE_CLK>,
-			<&rpmhcc RPMH_CXO_CLK>,
+			<&rpmhcc RPMH_QLINK_CLK>,
 			<&gcc GCC_UFS_PHY_TX_SYMBOL_0_CLK>,
 			<&gcc GCC_UFS_PHY_RX_SYMBOL_0_CLK>,
 			<&gcc GCC_UFS_PHY_RX_SYMBOL_1_CLK>;
@@ -1003,10 +1020,6 @@
 				  <WAKE_TCS    3>,
 				  <CONTROL_TCS 1>;
 
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges;
-
 		system_pm {
 			compatible = "qcom,system-pm";
 		};
@@ -1020,26 +1033,6 @@
 			compatible = "qcom,lagoon-rpmh-clk";
 			#clock-cells = <1>;
 		};
-
-		ufsphy_mem: ufsphy_mem@1d87000 {
-			reg = <0x1d87000 0xe00>; /* PHY regs */
-			reg-names = "phy_mem";
-			#phy-cells = <0>;
-			ufs-qcom-crypto = <&ufs_ice>;
-
-			lanes-per-direction = <2>;
-
-			qcom,rpmh-resource-name = "qphy.lvl";
-			clock-names = "ref_clk_src",
-				"ref_clk",
-				"ref_aux_clk";
-			clocks = <&rpmhcc RPMH_CXO_CLK>,
-				<&gcc GCC_UFS_MEM_CLKREF_CLK>,
-				<&gcc GCC_UFS_PHY_PHY_AUX_CLK>;
-
-			status = "disabled";
-		};
-
 	};
 
 	disp_rsc: rsc@af20000 {
@@ -2347,6 +2340,13 @@
 		#freq-domain-cells = <2>;
 	};
 
+	qcom,cpufreq-hw-debug@18320000 {
+		compatible = "qcom,cpufreq-hw-debug";
+		reg = <0x18320000 0x800>;
+		reg-names = "domain-top";
+		qcom,freq-hw-domain = <&cpufreq_hw 0>, <&cpufreq_hw 1>;
+	};
+
 	qcom,devfreq-l3 {
 		compatible = "qcom,devfreq-fw";
 		reg = <0x18321000 0x4>, <0x18321110 0x500>, <0x18321920 0x4>;
@@ -3133,7 +3133,7 @@
 				< 1017600  556800000 >,
 				< 1248000  806400000 >,
 				< 1516800  940800000 >,
-				< 1612800 1286000000 >,
+				< 1612800 1209600000 >,
 				< 1804800 1459000000 >;
 		};
 
@@ -3214,7 +3214,7 @@
 				< 1248000  806400000 >,
 				< 1555400  940800000 >,
 				< 1766400 1209600000 >,
-				< 1900800 1290000000 >,
+				< 1900800 1401600000 >,
 				< 2246000 1459000000 >;
 		};
 
@@ -4068,12 +4068,14 @@
 
 &L1P {
 	regulator-max-microvolt = <1056000>;
-	qcom,min-dropout-voltage = <225000>;
+	/* Reduced the headroom by 16mV for AHC */
+	qcom,min-dropout-voltage = <209000>;
 };
 
 &L2P {
 	regulator-max-microvolt = <1104000>;
-	qcom,min-dropout-voltage = <225000>;
+	/* Reduced the headroom by 16mV for AHC */
+	qcom,min-dropout-voltage = <209000>;
 };
 
 &L3P {

@@ -2187,6 +2187,7 @@
 		reg-names = "tmc-base";
 
 		coresight-name = "coresight-tmc-etf";
+		coresight-ctis = <&cti_swao_cti0 &cti_swao_cti3>;
 		coresight-csr = <&swao_csr>;
 
 		clocks = <&aopcc QDSS_CLK>;
@@ -2298,6 +2299,7 @@
 
 		qcom,sw-usb;
 		coresight-name = "coresight-tmc-etr";
+		coresight-ctis = <&cti0 &cti_swao_cti3>;
 		coresight-csr = <&csr>;
 
 		interrupts = <GIC_SPI 270 IRQ_TYPE_EDGE_RISING>;

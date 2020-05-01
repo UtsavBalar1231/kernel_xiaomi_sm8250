@@ -14,7 +14,7 @@
 
 &pm2250_qg {
 	qcom,battery-data = <&scuba_batterydata>;
-	qcom,qg-iterm-ma = <100>;
+	qcom,qg-iterm-ma = <150>;
 	qcom,hold-soc-while-full;
 	qcom,linearize-soc;
 	qcom,cl-feedback-on;
@@ -113,7 +113,7 @@
 	pinctrl-0 = <&sdc2_clk_on  &sdc2_cmd_on &sdc2_data_on &sdc2_cd_on>;
 	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off &sdc2_cd_off>;
 
-	cd-gpios = <&tlmm 88 GPIO_ACTIVE_LOW>;
+	cd-gpios = <&tlmm 88 GPIO_ACTIVE_HIGH>;
 
 	status = "ok";
 };
@@ -167,5 +167,35 @@
 		novatek,irq-gpio = <&tlmm 80 0x2008>;
 
 		panel = <&dsi_nt36525_truly_video>;
+	};
+};
+
+&qusb_phy0 {
+	extcon = <&pm2250_charger>;
+};
+
+&usb0 {
+	extcon = <&qusb_phy0>;
+};
+
+&qupv3_se1_i2c {
+	status = "ok";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	nq@28 {
+		compatible = "qcom,nq-nci";
+		reg = <0x28>;
+		qcom,nq-irq = <&tlmm 70 0x00>;
+		qcom,nq-ven = <&tlmm 69 0x00>;
+		qcom,nq-firm = <&tlmm 31 0x00>;
+		qcom,nq-clkreq = <&tlmm 86 0x00>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <70 0>;
+		interrupt-names = "nfc_irq";
+		pinctrl-names = "nfc_active", "nfc_suspend";
+		pinctrl-0 = <&nfc_int_active &nfc_enable_active
+				&nfc_clk_req_active>;
+		pinctrl-1 = <&nfc_int_suspend &nfc_enable_suspend
+				&nfc_clk_req_suspend>;
 	};
 };

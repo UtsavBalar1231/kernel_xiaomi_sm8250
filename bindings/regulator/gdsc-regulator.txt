@@ -73,6 +73,9 @@ Optional properties:
 			[1] for details.
  - qcom,msm-bus,vectors-KBps: Required if qcom,msm-bus,name is specified.  See
 			[1] for an explanation of the data format.
+ - qcom,skip-disable-before-sw-enable : Presence denotes a hardware requirement
+					to leave the GDSC on that has been
+					enabled by an entity external to HLOS.
 
 [1]: Documentation/devicetree/bindings/arm/msm/msm_bus.txt
 
