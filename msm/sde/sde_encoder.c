@@ -1804,12 +1804,18 @@ static void _sde_encoder_dsc_disable(struct sde_encoder_virt *sde_enc)
 	if (!_sde_encoder_is_dsc_enabled(&sde_enc->base))
 		return;
 
-	if (!sde_enc || !sde_enc->phys_encs[0] ||
-			!sde_enc->phys_encs[0]->connector) {
+	if (!sde_enc || !sde_enc->phys_encs[0]) {
 		SDE_ERROR("invalid params %d %d\n",
 			!sde_enc, sde_enc ? !sde_enc->phys_encs[0] : -1);
 		return;
 	}
+
+	/*
+	 * Connector can be null if the first virt modeset after suspend
+	 * is called with dynamic clock or dms enabled.
+	 */
+	if (!sde_enc->phys_encs[0]->connector)
+		return;
 
 	if (sde_enc->cur_master)
 		hw_ctl = sde_enc->cur_master->hw_ctl;
@@ -2914,6 +2920,8 @@ static void sde_encoder_virt_mode_set(struct drm_encoder *drm_enc,
 
 	/* store the mode_info */
 	sde_connector_state_get_mode_info(conn->state, &sde_enc->mode_info);
+
+	sde_crtc_set_compression_ratio(sde_enc->mode_info, sde_enc->crtc);
 
 	/* release resources before seamless mode change */
 	if (msm_is_mode_seamless_dms(adj_mode) ||

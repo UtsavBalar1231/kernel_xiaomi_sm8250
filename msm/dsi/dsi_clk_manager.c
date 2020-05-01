@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/of.h>
@@ -604,16 +604,10 @@ static int dsi_display_core_clk_enable(struct dsi_core_clks *clks,
 
 	m_clks = &clks[master_ndx];
 
-	rc = pm_runtime_get_sync(m_clks->clks.drm->dev);
-	if (rc < 0) {
-		DSI_ERR("Power resource enable failed, rc=%d\n", rc);
-		goto error;
-	}
-
 	rc = dsi_core_clk_start(m_clks);
 	if (rc) {
 		DSI_ERR("failed to turn on master clocks, rc=%d\n", rc);
-		goto error_disable_master_resource;
+		goto error;
 	}
 
 	/* Turn on rest of the core clocks */
@@ -622,16 +616,9 @@ static int dsi_display_core_clk_enable(struct dsi_core_clks *clks,
 		if (!clk || (clk == m_clks))
 			continue;
 
-		rc = pm_runtime_get_sync(m_clks->clks.drm->dev);
-		if (rc < 0) {
-			DSI_ERR("Power resource enable failed, rc=%d\n", rc);
-			goto error_disable_master;
-		}
-
 		rc = dsi_core_clk_start(clk);
 		if (rc) {
 			DSI_ERR("failed to turn on clocks, rc=%d\n", rc);
-			pm_runtime_put_sync(m_clks->clks.drm->dev);
 			goto error_disable_master;
 		}
 	}
@@ -639,8 +626,6 @@ static int dsi_display_core_clk_enable(struct dsi_core_clks *clks,
 error_disable_master:
 	(void)dsi_core_clk_stop(m_clks);
 
-error_disable_master_resource:
-	pm_runtime_put_sync(m_clks->clks.drm->dev);
 error:
 	return rc;
 }
@@ -741,8 +726,6 @@ static int dsi_display_core_clk_disable(struct dsi_core_clks *clks,
 			DSI_DEBUG("failed to turn off clocks, rc=%d\n", rc);
 			goto error;
 		}
-
-		pm_runtime_put_sync(m_clks->clks.drm->dev);
 	}
 
 	rc = dsi_core_clk_stop(m_clks);
@@ -751,7 +734,6 @@ static int dsi_display_core_clk_disable(struct dsi_core_clks *clks,
 		goto error;
 	}
 
-	pm_runtime_put_sync(m_clks->clks.drm->dev);
 error:
 	return rc;
 }
