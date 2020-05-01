@@ -42,6 +42,8 @@ MODULE_PARM_DESC(rmnet_shs_cpu_prio_dur, "Priority ignore duration (wq intervals
 
 #define PRIO_BACKOFF ((!rmnet_shs_cpu_prio_dur) ? 2 : rmnet_shs_cpu_prio_dur)
 
+#define RMNET_SHS_SEGS_PER_SKB_DEFAULT (2)
+
 unsigned int rmnet_shs_wq_interval_ms __read_mostly = RMNET_SHS_WQ_INTERVAL_MS;
 module_param(rmnet_shs_wq_interval_ms, uint, 0644);
 MODULE_PARM_DESC(rmnet_shs_wq_interval_ms, "Interval between wq runs (ms)");
@@ -411,7 +413,7 @@ void rmnet_shs_wq_create_new_flow(struct rmnet_shs_skbn_s *node_p)
 		/* Start TCP flows with segmentation if userspace connected */
 		if (rmnet_shs_userspace_connected &&
 		    node_p->hstats->skb_tport_proto == IPPROTO_TCP)
-			node_p->hstats->segment_enable = 1;
+			node_p->hstats->segs_per_skb = RMNET_SHS_SEGS_PER_SKB_DEFAULT;
 
 		node_p->hstats->node = node_p;
 		node_p->hstats->c_epoch = RMNET_SHS_SEC_TO_NSEC(time.tv_sec) +
@@ -1291,7 +1293,7 @@ int rmnet_shs_wq_try_to_move_flow(u16 cur_cpu, u16 dest_cpu, u32 hash_to_move,
 }
 
 /* Change flow segmentation, return 1 if set, 0 otherwise */
-int rmnet_shs_wq_set_flow_segmentation(u32 hash_to_set, u8 seg_enable)
+int rmnet_shs_wq_set_flow_segmentation(u32 hash_to_set, u8 segs_per_skb)
 {
 	struct rmnet_shs_skbn_s *node_p;
 	struct rmnet_shs_wq_hstat_s *hstat_p;
@@ -1311,22 +1313,22 @@ int rmnet_shs_wq_set_flow_segmentation(u32 hash_to_set, u8 seg_enable)
 		if (hstat_p->hash != hash_to_set)
 			continue;
 
-		rm_err("SHS_HT: >> segmentation on hash 0x%x enable %u",
-		       hash_to_set, seg_enable);
+		rm_err("SHS_HT: >> segmentation on hash 0x%x segs_per_skb %u",
+		       hash_to_set, segs_per_skb);
 
 		trace_rmnet_shs_wq_high(RMNET_SHS_WQ_FLOW_STATS,
 				RMNET_SHS_WQ_FLOW_STATS_SET_FLOW_SEGMENTATION,
-				hstat_p->hash, seg_enable,
+				hstat_p->hash, segs_per_skb,
 				0xDEF, 0xDEF, hstat_p, NULL);
 
-		node_p->hstats->segment_enable = seg_enable;
+		node_p->hstats->segs_per_skb = segs_per_skb;
 		spin_unlock_irqrestore(&rmnet_shs_ht_splock, ht_flags);
 		return 1;
 	}
 	spin_unlock_irqrestore(&rmnet_shs_ht_splock, ht_flags);
 
-	rm_err("SHS_HT: >> segmentation on hash 0x%x enable %u not set - hash not found",
-	       hash_to_set, seg_enable);
+	rm_err("SHS_HT: >> segmentation on hash 0x%x segs_per_skb %u not set - hash not found",
+	       hash_to_set, segs_per_skb);
 	return 0;
 }
 
@@ -1966,7 +1968,7 @@ void rmnet_shs_wq_filter(void)
 			continue;
 		}
 
-		if (hnode->node->hstats->segment_enable) {
+		if (hnode->node->hstats->segs_per_skb > 0) {
 			rmnet_shs_cpu_node_tbl[cur_cpu].seg++;
 		}
 	}
@@ -2003,7 +2005,7 @@ void rmnet_shs_wq_update_stats(void)
 				}
 			} else {
 				/* Disable segmentation if userspace gets disconnected connected */
-				hnode->node->hstats->segment_enable = 0;
+				hnode->node->hstats->segs_per_skb = 0;
 			}
 		}
 	}

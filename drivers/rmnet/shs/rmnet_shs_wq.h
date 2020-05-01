@@ -100,7 +100,7 @@ struct rmnet_shs_wq_hstat_s {
 	u8 in_use;
 	u8 is_perm;
 	u8 is_new_flow;
-	u8 segment_enable; /* segment coalesces packets */
+	u8 segs_per_skb; /* segments per skb */
 };
 
 struct rmnet_shs_wq_cpu_rx_pkt_q_s {
@@ -288,7 +288,7 @@ void rmnet_shs_wq_refresh_new_flow_list(void);
 int rmnet_shs_wq_try_to_move_flow(u16 cur_cpu, u16 dest_cpu, u32 hash_to_move,
 				  u32 sugg_type);
 
-int rmnet_shs_wq_set_flow_segmentation(u32 hash_to_set, u8 seg_enable);
+int rmnet_shs_wq_set_flow_segmentation(u32 hash_to_set, u8 segs_per_skb);
 
 void rmnet_shs_wq_ep_lock_bh(void);
 

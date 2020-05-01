@@ -209,24 +209,24 @@ int rmnet_shs_genl_set_flow_segmentation(struct sk_buff *skb_2, struct genl_info
 	if (na) {
 		if (nla_memcpy(&seg_info, na, sizeof(seg_info)) > 0) {
 			rm_err("SHS_GNL: recv segmentation req "
-			       "hash_to_set = 0x%x segment_enable = %u",
+			       "hash_to_set = 0x%x segs_per_skb = %u",
 			       seg_info.hash_to_set,
-			       seg_info.segment_enable);
+			       seg_info.segs_per_skb);
 
 			rc = rmnet_shs_wq_set_flow_segmentation(seg_info.hash_to_set,
-								seg_info.segment_enable);
+								seg_info.segs_per_skb);
 
 			if (rc == 1) {
 				rmnet_shs_genl_send_int_to_userspace(info, 0);
 				trace_rmnet_shs_wq_high(RMNET_SHS_WQ_SHSUSR,
 					RMNET_SHS_WQ_FLOW_SEG_SET_PASS,
-					seg_info.hash_to_set, seg_info.segment_enable,
+					seg_info.hash_to_set, seg_info.segs_per_skb,
 					0xDEF, 0xDEF, NULL, NULL);
 			} else {
 				rmnet_shs_genl_send_int_to_userspace(info, -1);
 				trace_rmnet_shs_wq_high(RMNET_SHS_WQ_SHSUSR,
 					RMNET_SHS_WQ_FLOW_SEG_SET_FAIL,
-					seg_info.hash_to_set, seg_info.segment_enable,
+					seg_info.hash_to_set, seg_info.segs_per_skb,
 					0xDEF, 0xDEF, NULL, NULL);
 				return 0;
 			}
