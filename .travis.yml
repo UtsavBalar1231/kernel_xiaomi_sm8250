@@ -61,7 +61,6 @@ script:
  - ./configure > /dev/null
  - make -j$((`nproc`+1)) > /dev/null
  - sudo make install > /dev/null
- - sudo cp lib/.libs/libexfat.so* /lib/
  - sudo mkdir -p /mnt/scratch
  - sudo mkdir -p /mnt/test
  - sudo mkdir -p /mnt/full_test
