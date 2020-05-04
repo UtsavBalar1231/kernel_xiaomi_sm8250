@@ -3353,7 +3353,8 @@ int cam_ife_csid_release(void *hw_priv,
 			csid_hw->ipp_path_config.measure_enabled = 0;
 		else if (res->res_id == CAM_IFE_PIX_PATH_RES_PPP)
 			csid_hw->ppp_path_config.measure_enabled = 0;
-		else
+		else if (res->res_id >= CAM_IFE_PIX_PATH_RES_RDI_0 &&
+				res->res_id <= CAM_IFE_PIX_PATH_RES_RDI_3)
 			csid_hw->rdi_path_config[res->res_id].measure_enabled
 				= 0;
 		break;
@@ -4514,6 +4515,8 @@ irqreturn_t cam_ife_csid_irq(int irq_num, void *data)
 			csid_hw->error_irq_count++;
 		}
 	}
+
+handle_fatal_error:
 	spin_unlock_irqrestore(&csid_hw->lock_state, flags);
 
 	if (csid_hw->error_irq_count >
@@ -4521,8 +4524,6 @@ irqreturn_t cam_ife_csid_irq(int irq_num, void *data)
 		fatal_err_detected = true;
 		csid_hw->error_irq_count = 0;
 	}
-
-handle_fatal_error:
 
 	if (fatal_err_detected) {
 		cam_ife_csid_halt_csi2(csid_hw);
