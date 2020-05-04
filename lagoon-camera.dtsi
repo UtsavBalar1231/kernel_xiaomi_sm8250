@@ -22,7 +22,7 @@
 		mipi-csi-vdd2-supply = <&L22A>;
 		rgltr-cntrl-support;
 		rgltr-min-voltage = <0 0 880000 1200000>;
-		rgltr-max-voltage = <0 0 880000 1200000>;
+		rgltr-max-voltage = <0 0 1049000 1305000>;
 		rgltr-load-current = <0 0 80000 80000>;
 		clocks = <&camcc CAM_CC_CPHY_RX_CLK_SRC>,
 			<&camcc CAM_CC_CSIPHY0_CLK>,
@@ -57,7 +57,7 @@
 		mipi-csi-vdd2-supply = <&L22A>;
 		rgltr-cntrl-support;
 		rgltr-min-voltage = <0 0 880000 1200000>;
-		rgltr-max-voltage = <0 0 880000 1200000>;
+		rgltr-max-voltage = <0 0 1049000 1305000>;
 		rgltr-load-current = <0 0 80000 80000>;
 		clocks = <&camcc CAM_CC_CPHY_RX_CLK_SRC>,
 			<&camcc CAM_CC_CSIPHY1_CLK>,
@@ -92,7 +92,7 @@
 		mipi-csi-vdd2-supply = <&L22A>;
 		rgltr-cntrl-support;
 		rgltr-min-voltage = <0 0 880000 1200000>;
-		rgltr-max-voltage = <0 0 880000 1200000>;
+		rgltr-max-voltage = <0 0 1049000 1305000>;
 		rgltr-load-current = <0 0 80000 80000>;
 		clocks = <&camcc CAM_CC_CPHY_RX_CLK_SRC>,
 			<&camcc CAM_CC_CSIPHY2_CLK>,
@@ -127,7 +127,7 @@
 		mipi-csi-vdd2-supply = <&L22A>;
 		rgltr-cntrl-support;
 		rgltr-min-voltage = <0 0 880000 1200000>;
-		rgltr-max-voltage = <0 0 880000 1200000>;
+		rgltr-max-voltage = <0 0 1049000 1305000>;
 		rgltr-load-current = <0 0 80000 80000>;
 		clocks = <&camcc CAM_CC_CPHY_RX_CLK_SRC>,
 			<&camcc CAM_CC_CSIPHY3_CLK>,
