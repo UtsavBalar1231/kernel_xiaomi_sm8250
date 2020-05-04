@@ -410,6 +410,8 @@
 				03 02 02 04 00];
 			qcom,display-topology = <1 1 1>;
 			qcom,default-topology-index = <0>;
+			qcom,partial-update-enabled = "single_roi";
+			qcom,panel-roi-alignment = <540 8 8 8 1080 8>;
 			qcom,mdss-dsi-on-command = [
 				39 01 00 00 00 00 02 ff d0
 				39 01 00 00 00 00 02 75 40
@@ -583,6 +585,8 @@
 				05 06 02 04 00];
 			qcom,display-topology = <1 1 1>;
 			qcom,default-topology-index = <0>;
+			qcom,partial-update-enabled = "single_roi";
+			qcom,panel-roi-alignment = <540 8 8 8 1080 8>;
 			qcom,mdss-dsi-on-command = [
 				39 01 00 00 00 00 02 ff d0
 				39 01 00 00 00 00 02 75 40
@@ -651,6 +655,8 @@
 				04 03 02 04 00];
 			qcom,display-topology = <1 1 1>;
 			qcom,default-topology-index = <0>;
+			qcom,partial-update-enabled = "single_roi";
+			qcom,panel-roi-alignment = <540 8 8 8 1080 8>;
 			qcom,mdss-dsi-on-command = [
 				39 01 00 00 00 00 02 ff d0
 				39 01 00 00 00 00 02 75 40
