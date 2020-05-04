@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* Copyright (c) 2014-2019, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
  */
 #ifndef __WCD_MBHC_V2_H__
 #define __WCD_MBHC_V2_H__
@@ -451,6 +451,12 @@ struct wcd_mbhc_register {
 };
 
 struct wcd_mbhc_cb {
+	void (*mbhc_micb_pullup_control)
+		(struct snd_soc_component *component, bool enable);
+	void (*get_micbias_val)
+		(struct wcd_mbhc *mbhc, int *mb);
+	void (*hs_vref_max_update)
+		(struct wcd_mbhc *mbhc);
 	void (*bcs_enable)
 		(struct wcd_mbhc *mbhc, bool bcs_enable);
 	int (*enable_mb_source)(struct wcd_mbhc *mbhc, bool turn_on);
