@@ -22,39 +22,6 @@
 static struct cam_mem_table tbl;
 static atomic_t cam_mem_mgr_state = ATOMIC_INIT(CAM_MEM_MGR_UNINITIALIZED);
 
-static void cam_mem_mgr_print_tbl(void)
-{
-	int i;
-	uint64_t ms, tmp, hrs, min, sec;
-	struct timespec64 *ts =  NULL;
-	struct timespec64 current_ts;
-
-	ktime_get_real_ts64(&(current_ts));
-	tmp = current_ts.tv_sec;
-	ms = (current_ts.tv_nsec) / 1000000;
-	sec = do_div(tmp, 60);
-	min = do_div(tmp, 60);
-	hrs = do_div(tmp, 24);
-
-	CAM_INFO(CAM_MEM, "***%llu:%llu:%llu:%llu Mem mgr table dump***",
-		hrs, min, sec, ms);
-	for (i = 1; i < CAM_MEM_BUFQ_MAX; i++) {
-		if (tbl.bufq[i].active) {
-			ts = &tbl.bufq[i].timestamp;
-			tmp = ts->tv_sec;
-			ms = (ts->tv_nsec) / 1000000;
-			sec = do_div(tmp, 60);
-			min = do_div(tmp, 60);
-			hrs = do_div(tmp, 24);
-			CAM_INFO(CAM_MEM,
-				"%llu:%llu:%llu:%llu idx %d fd %d size %llu",
-				hrs, min, sec, ms, i, tbl.bufq[i].fd,
-				tbl.bufq[i].len);
-		}
-	}
-
-}
-
 static int cam_mem_util_get_dma_dir(uint32_t flags)
 {
 	int rc = -EINVAL;
@@ -218,7 +185,6 @@ static int32_t cam_mem_get_slot(void)
 
 	set_bit(idx, tbl.bitmap);
 	tbl.bufq[idx].active = true;
-	ktime_get_real_ts64(&(tbl.bufq[idx].timestamp));
 	mutex_init(&tbl.bufq[idx].q_lock);
 	mutex_unlock(&tbl.m_lock);
 
@@ -230,7 +196,6 @@ static void cam_mem_put_slot(int32_t idx)
 	mutex_lock(&tbl.m_lock);
 	mutex_lock(&tbl.bufq[idx].q_lock);
 	tbl.bufq[idx].active = false;
-	memset(&tbl.bufq[idx].timestamp, 0, sizeof(struct timespec64));
 	mutex_unlock(&tbl.bufq[idx].q_lock);
 	mutex_destroy(&tbl.bufq[idx].q_lock);
 	clear_bit(idx, tbl.bitmap);
@@ -678,7 +643,6 @@ int cam_mem_mgr_alloc_and_map(struct cam_mem_mgr_alloc_cmd *cmd)
 		CAM_ERR(CAM_MEM,
 			"Ion Alloc failed, len=%llu, align=%llu, flags=0x%x, num_hdl=%d",
 			cmd->len, cmd->align, cmd->flags, cmd->num_hdl);
-		cam_mem_mgr_print_tbl();
 		return rc;
 	}
 
@@ -715,14 +679,9 @@ int cam_mem_mgr_alloc_and_map(struct cam_mem_mgr_alloc_cmd *cmd)
 
 		if (rc) {
 			CAM_ERR(CAM_MEM,
-				"Failed in map_hw_va, [Size cmdlen=%llu dma %llu smmu %llu], flags=0x%x, fd=%d, region=%d, num_hdl=%d, rc=%d",
-				cmd->len, dmabuf->size, len, cmd->flags,
-				fd, region, cmd->num_hdl, rc);
-			if (rc == -EALREADY) {
-				if ((size_t)dmabuf->size != len)
-					rc = -EBADR;
-				cam_mem_mgr_print_tbl();
-			}
+				"Failed in map_hw_va, len=%llu, flags=0x%x, fd=%d, region=%d, num_hdl=%d, rc=%d",
+				cmd->len, cmd->flags, fd, region,
+				cmd->num_hdl, rc);
 			goto map_hw_fail;
 		}
 	}
@@ -821,15 +780,9 @@ int cam_mem_mgr_map(struct cam_mem_mgr_map_cmd *cmd)
 			CAM_SMMU_REGION_IO);
 		if (rc) {
 			CAM_ERR(CAM_MEM,
-				"Failed in map_hw_va, flags=0x%x, fd=%d, [Size smmu %llu dma %llu], region=%d, num_hdl=%d, rc=%d",
-				cmd->flags, cmd->fd, len, dmabuf->size,
-				CAM_SMMU_REGION_IO, cmd->num_hdl, rc);
-			if (rc == -EALREADY) {
-				if ((size_t)dmabuf->size != len) {
-					rc = -EBADR;
-					cam_mem_mgr_print_tbl();
-				}
-			}
+				"Failed in map_hw_va, flags=0x%x, fd=%d, region=%d, num_hdl=%d, rc=%d",
+				cmd->flags, cmd->fd, CAM_SMMU_REGION_IO,
+				cmd->num_hdl, rc);
 			goto map_fail;
 		}
 	}
@@ -864,7 +817,7 @@ int cam_mem_mgr_map(struct cam_mem_mgr_map_cmd *cmd)
 
 	cmd->out.buf_handle = tbl.bufq[idx].buf_handle;
 	cmd->out.vaddr = 0;
-	cmd->out.size = (uint32_t)len;
+
 	CAM_DBG(CAM_MEM,
 		"fd=%d, flags=0x%x, num_hdl=%d, idx=%d, buf handle=%x, len=%zu",
 		cmd->fd, cmd->flags, cmd->num_hdl, idx, cmd->out.buf_handle,
@@ -1084,7 +1037,6 @@ static int cam_mem_util_unmap(int32_t idx,
 	tbl.bufq[idx].len = 0;
 	tbl.bufq[idx].num_hdl = 0;
 	tbl.bufq[idx].active = false;
-	memset(&tbl.bufq[idx].timestamp, 0, sizeof(struct timespec64));
 	mutex_unlock(&tbl.bufq[idx].q_lock);
 	mutex_destroy(&tbl.bufq[idx].q_lock);
 	clear_bit(idx, tbl.bitmap);
