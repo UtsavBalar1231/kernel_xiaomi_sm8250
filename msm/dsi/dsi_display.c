@@ -5100,10 +5100,11 @@ static int dsi_display_bind(struct device *dev,
 
 	display_for_each_ctrl(i, display) {
 		display_ctrl = &display->ctrl[i];
-		display_ctrl->ctrl->drm_dev = drm;
 
 		if (!display_ctrl->phy || !display_ctrl->ctrl)
 			continue;
+
+		display_ctrl->ctrl->drm_dev = drm;
 
 		rc = dsi_phy_set_clk_freq(display_ctrl->phy,
 				&display_ctrl->ctrl->clk_freq);
