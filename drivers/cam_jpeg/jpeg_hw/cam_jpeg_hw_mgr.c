@@ -1285,6 +1285,16 @@ copy_error:
 	return rc;
 }
 
+static void cam_req_mgr_process_workq_jpeg_command_queue(struct work_struct *w)
+{
+	cam_req_mgr_process_workq(w);
+}
+
+static void cam_req_mgr_process_workq_jpeg_message_queue(struct work_struct *w)
+{
+	cam_req_mgr_process_workq(w);
+}
+
 static int cam_jpeg_setup_workqs(void)
 {
 	int rc, i;
@@ -1293,7 +1303,8 @@ static int cam_jpeg_setup_workqs(void)
 		"jpeg_command_queue",
 		CAM_JPEG_WORKQ_NUM_TASK,
 		&g_jpeg_hw_mgr.work_process_frame,
-		CRM_WORKQ_USAGE_NON_IRQ, 0);
+		CRM_WORKQ_USAGE_NON_IRQ, 0,
+		cam_req_mgr_process_workq_jpeg_command_queue);
 	if (rc) {
 		CAM_ERR(CAM_JPEG, "unable to create a worker %d", rc);
 		goto work_process_frame_failed;
@@ -1303,7 +1314,8 @@ static int cam_jpeg_setup_workqs(void)
 		"jpeg_message_queue",
 		CAM_JPEG_WORKQ_NUM_TASK,
 		&g_jpeg_hw_mgr.work_process_irq_cb,
-		CRM_WORKQ_USAGE_IRQ, 0);
+		CRM_WORKQ_USAGE_IRQ, 0,
+		cam_req_mgr_process_workq_jpeg_message_queue);
 	if (rc) {
 		CAM_ERR(CAM_JPEG, "unable to create a worker %d", rc);
 		goto work_process_irq_cb_failed;
