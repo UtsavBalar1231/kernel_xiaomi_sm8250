@@ -402,6 +402,9 @@ static int memlat_hp_restart_events(unsigned int cpu, bool cpu_up)
 	unsigned int idx;
 	struct event_data *common_evs;
 
+	if (!attr)
+		return -ENOMEM;
+
 	if (!cpu_grp)
 		goto exit;
 
