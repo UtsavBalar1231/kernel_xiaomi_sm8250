@@ -422,6 +422,10 @@ typedef enum {
      *    RNR TBTT offset calculation.
      */
     WMI_PDEV_TBTT_OFFSET_SYNC_CMDID,
+    /** Bss color bitmap for SRG based spatial reuse feature */
+    WMI_PDEV_SET_SRG_BSS_COLOR_BITMAP_CMDID,
+    /** Partial BSSID bitmap for SRG based spatial reuse feature */
+    WMI_PDEV_SET_SRG_PARTIAL_BSSID_BITMAP_CMDID,
 
     /* VDEV (virtual device) specific commands */
     /** vdev create */
@@ -1055,6 +1059,8 @@ typedef enum {
     WMI_FWTEST_CMDID,
     /* Q-Boost configuration test commands */
     WMI_QBOOST_CFG_CMDID,
+    /* Simulation Test command  */
+    WMI_SIMULATION_TEST_CMDID,
 
     /** TDLS Configuration */
     /** enable/disable TDLS */
@@ -1295,6 +1301,7 @@ typedef enum {
     WMI_AUDIO_AGGR_UPDATE_STA_GROUP_INFO_CMDID,
     WMI_AUDIO_AGGR_GET_STATISTICS_CMDID,
     WMI_AUDIO_AGGR_RESET_STATISTICS_CMDID,
+    WMI_AUDIO_AGGR_SET_RTSCTS_CONFIG_CMDID,
 
     /** WMI commands related to Channel Frequency Response Capture **/
     WMI_CFR_CAPTURE_FILTER_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_CFR_CAPTURE),
@@ -6522,11 +6529,12 @@ typedef enum {
     WMI_PDEV_PARAM_SET_TEST_CMD_TWT_SCHED_CONFIG,
 
     /* Parameter used to configure OBSS Packet Detect threshold
-     * for Spatial Reuse feature.
+     * for Non-SRG / SRG based Spatial Reuse feature.
+     * (SRG = Spatial Reuse Group)
      * The accepted values are in between 0x00 and 0xFF, inclusive.
-     * The parameter value is programmed into the spatial reuse register,
-     * to specify how low the background signal strength from neighboring
-     * BSS cells must be, for this AP to employ spatial reuse.
+     * The parameter value is programmed into the appropriate spatial reuse
+     * regsiter, to specify how low the background signal strength from
+     * neighboring BSS cells must be, for this AP to employ spatial reuse.
      *
      * The value of the parameter is compared against the OBSS RSSI in dB.
      * It is a 8-bit value whose
@@ -6539,10 +6547,14 @@ typedef enum {
      * BSS cells is no more than 10 dB.
      *
      * bit    | purpose
-     * -------------
-     * 0 - 7  | Param Value
-     * 8 - 30 | reserved
-     * 31     | Enable/Disable. If set to 0, ignore bits 0-7.
+     * -----------------
+     * 0  - 7 | Param Value for non-SRG based Spatial Reuse
+     * 8  - 15| Param value for SRG based Spatial Reuse
+     * 16 - 29| Reserved
+     * 30     | Enable/Disable SRG based spatial reuse.
+     *        | If set to 0, ignore bits 8-15.
+     * 31     | Enable/Disable Non-SRG based spatial reuse.
+     *        | If set to 0, ignore bits 0-7.
      */
     WMI_PDEV_PARAM_SET_CMD_OBSS_PD_THRESHOLD,
 
@@ -6550,16 +6562,22 @@ typedef enum {
     WMI_PDEV_PARAM_ENABLE_NON_WLAN_COEX_FROM_BOOT,
 
     /* Parameter used to configure OBSS Packet Detection per Access Category
-     * for Spatial Reuse feature.
+     * for SRP based and OBSS_PD based spatial reuse feature.
+     * (SRP = Spatial Reuse Parameter)
      * Based on the bits set, the corresponding Access Category Queues will have
      * spatial reuse enabled / disabled.
-     * bit    | AC
-     * -----------
-     * 0      | BK
-     * 1      | BE
-     * 2      | VI
-     * 3      | VO
-     * 4 - 31 | Reserved
+     * bit     | AC
+     * ------------
+     * 0       | BK for SRG/Non-SRG
+     * 1       | BE for SRG/Non-SRG
+     * 2       | VI for SRG/Non-SRG
+     * 3       | VO for SRG/Non-SRG
+     * 4 - 15  | Reserved
+     * 16      | BK for SRP
+     * 17      | BE for SRP
+     * 18      | VI for SRP
+     * 19      | VO for SRP
+     * 20 - 31 | Reserved
      */
     WMI_PDEV_PARAM_SET_CMD_OBSS_PD_PER_AC,
 
@@ -6607,6 +6625,12 @@ typedef enum {
 
     /* Parameter used for enabling/disabling xlna bypass for SAP mode*/
     WMI_PDEV_PARAM_SET_SAP_XLNA_BYPASS,
+
+    /* Parameter used to enable/disable SRP feature */
+    WMI_PDEV_PARAM_ENABLE_SRP,
+
+    /* Parameter used to enable/disable SR prohibit feature */
+    WMI_PDEV_PARAM_ENABLE_SR_PROHIBIT,
 
 } WMI_PDEV_PARAM;
 
@@ -10688,6 +10712,64 @@ typedef enum {
      */
     WMI_VDEV_PARAM_ENABLE_DISABLE_ROAM_REASON_VSIE, /* 0x9D */
 
+    /* Parameter used to configure OBSS Packet Detect threshold
+     * for Non-SRG / SRG based Spatial Reuse feature.
+     * (SRG = Spatial Reuse Group)
+     * The accepted values are in between 0x00 and 0xFF, inclusive.
+     * The parameter value is programmed into the appropriate spatial reuse
+     * regsiter, to specify how low the background signal strength from
+     * neighboring BSS cells must be, for this AP to employ spatial reuse.
+     *
+     * The value of the parameter is compared against the OBSS RSSI in dB.
+     * It is a 8-bit value whose
+     * range is -128 to 127 (after two's complement operation).
+     * For example, if the parameter value is 0xF5, the target will
+     * allow spatial reuse if the RSSI detected from other BSS
+     * is below -10 dB.
+     * Similarly, if the parameter value is 0x0A, the target will
+     * allow spatial reuse only if the RSSI detected from neighboring
+     * BSS cells is no more than 10 dB.
+     *
+     * bit    | purpose
+     * -----------------
+     * 0  - 7 | Param Value for non-SRG based Spatial Reuse
+     * 8  - 15| Param value for SRG based Spatial Reuse
+     * 16 - 29| Reserved
+     * 30     | Enable/Disable SRG based spatial reuse.
+     *        | If set to 0, ignore bits 8-15.
+     * 31     | Enable/Disable Non-SRG based spatial reuse.
+     *        | If set to 0, ignore bits 0-7.
+     *
+     * The WMI_VDEV_PARAM_SET_CMD_OBSS_PD_THRESHOLD setting will only
+     * take effect if the WMI_PDEV_PARAM_SET_CMD_OBSS_PD_THRESHOLD
+     * setting is also set for the pdev that the vdev belongs to.
+     */
+    WMI_VDEV_PARAM_SET_CMD_OBSS_PD_THRESHOLD,
+
+    /* Parameter used to configure OBSS Packet Detection per Access Category
+     * for SRP based and OBSS_PD based spatial reuse feature.
+     * (SRP = Spatial Reuse Parameter)
+     * Based on the bits set, the corresponding Access Category Queues will have
+     * spatial reuse enabled / disabled.
+     * bit     | AC
+     * ------------
+     * 0       | BK for SRG/Non-SRG
+     * 1       | BE for SRG/Non-SRG
+     * 2       | VI for SRG/Non-SRG
+     * 3       | VO for SRG/Non-SRG
+     * 4 - 15  | Reserved
+     * 16      | BK for SRP
+     * 17      | BE for SRP
+     * 18      | VI for SRP
+     * 19      | VO for SRP
+     * 20 - 31 | Reserved
+     *
+     * The WMI_VDEV_PARAM_SET_CMD_OBSS_PD_PER_AC setting will only take effect
+     * if the WMI_PDEV_PARAM_SET_CMD_OBSS_PD_PER_AC setting is also set for
+     * the pdev that the vdev belongs to.
+     */
+    WMI_VDEV_PARAM_SET_CMD_OBSS_PD_PER_AC,
+
 
     /*=== ADD NEW VDEV PARAM TYPES ABOVE THIS LINE ===
      * The below vdev param types are used for prototyping, and are
@@ -13790,12 +13872,14 @@ typedef struct {
     ((flag) & (1 << WMI_ROAM_OFFLOAD_FLAG_PMK_CACHE_DISABLED))
 
 
-/* This TLV will be  filled only in case of wpa-psk/wpa2-psk */
+/* This TLV will be filled only in case of wpa-psk/wpa2-psk/wpa3 */
 typedef struct {
     A_UINT32 tlv_header;     /** TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_roam_11i_offload_fixed_param */
     A_UINT32 flags;          /** flags. see WMI_ROAM_OFFLOAD_FLAG_ above */
     A_UINT32 pmk[ROAM_OFFLOAD_PMK_BYTES>>2]; /* pmk offload. As this 4 byte aligned, we don't declare it as tlv array */
     A_UINT32 pmk_len; /**the length of pmk. in normal case it should be 32, but for LEAP, is should be 16*/
+    A_UINT32 pmk_ext_len; /** the length of extended pmk. in normal case it should be 0, but for suiteB, it should be 16*/
+    A_UINT32 pmk_ext[ROAM_OFFLOAD_PMK_BYTES>>2]; /* pmk ext offload. 16 bytes for suiteB */
 } wmi_roam_11i_offload_tlv_param;
 
 /* This TLV will be  filled only in case of 11R*/
@@ -13810,6 +13894,13 @@ typedef struct {
     A_UINT32 psk_msk_ext_len; /**length of psk_msk_ext*/
     A_UINT32 psk_msk_ext[ROAM_OFFLOAD_PSK_MSK_BYTES>>2];
     A_UINT32 adaptive_11r; /* FW needs to perform adaptive 11r roaming */
+    /*
+     * FW needs to perform FT initial moiblity association instead of
+     * FT roaming for deauth roam trigger
+     *     0 - To disable FT-IM
+     *     1 - To enable FT-IM
+     */
+    A_UINT32 ft_im_for_deauth;
 } wmi_roam_11r_offload_tlv_param;
 
 /* This TLV will be filled only in case of ESE */
@@ -25825,6 +25916,8 @@ static INLINE A_UINT8 *wmi_id_to_name(A_UINT32 wmi_command)
         WMI_RETURN_STRING(WMI_AUDIO_AGGR_GET_STATISTICS_CMDID);
         WMI_RETURN_STRING(WMI_AUDIO_AGGR_RESET_STATISTICS_CMDID);
         WMI_RETURN_STRING(WMI_ANT_CONTROLLER_CMDID);
+        WMI_RETURN_STRING(WMI_SIMULATION_TEST_CMDID);
+        WMI_RETURN_STRING(WMI_AUDIO_AGGR_SET_RTSCTS_CONFIG_CMDID);
     }
 
     return "Invalid WMI cmd";
@@ -29464,6 +29557,22 @@ typedef struct {
 } wmi_audio_aggr_reset_statistics_cmd_fixed_param;
 
 typedef struct {
+    /** TLV tag and len **/
+    A_UINT32 tlv_header;
+    /* VDEV identifier */
+    A_UINT32 vdev_id;
+
+    /*
+     * The user_mode and user_profile fields are passed through
+     * the host driver to the target FW, but are never interpreted
+     * by the host driver. The values for these fields are opaque
+     * to the host, and are only interpreted by the FW.
+     */
+    A_UINT32 user_mode;
+    A_UINT32 user_profile;
+} wmi_audio_aggr_set_rtscts_config_cmd_fixed_param;
+
+typedef struct {
     /** TLV tag and len; tag equals
      * WMITLV_TAG_STRUC_wmi_set_ocl_cmd_fixed_param */
     A_UINT32 tlv_header;
@@ -30071,6 +30180,137 @@ typedef struct {
      */
     A_UINT32 null_frame_tx_lost;
 } wmi_audio_aggr_peer_stats;
+
+typedef struct {
+    /** TLV tag and len; tag equals
+    *WMITLV_TAG_STRUC_wmi_pdev_srg_bss_color_bitmap_cmd_fixed_param */
+    A_UINT32 tlv_header;
+    /** pdev_id for identifying the MAC
+     * See macros starting with WMI_PDEV_ID_ for values.
+     * In non-DBDC case host should set it to 0
+     */
+    A_UINT32 pdev_id;
+    /* 64 bit bss color bitmap used by SRG based spatial reuse feature
+     * bitmap[0] contains lower 32 bits and bitmap[1] contains
+     * upper 32 bits.
+     */
+    A_UINT32 srg_bss_color_bitmap[2];
+} wmi_pdev_srg_bss_color_bitmap_cmd_fixed_param;
+
+typedef struct {
+    /** TLV tag and len; tag equals
+    *WMITLV_TAG_STRUC_wmi_pdev_srg_partial_bssid_bitmap_cmd_fixed_param */
+    A_UINT32 tlv_header;
+    /** pdev_id for identifying the MAC
+     * See macros starting with WMI_PDEV_ID_ for values.
+     * In non-DBDC case host should set it to 0
+     */
+    A_UINT32 pdev_id;
+    /* 64 bit partial bssid bitmap used by SRG based spatial reuse feature
+     * bitmap[0] contains lower 32 bits and bitmap[1] contains
+     * upper 32 bits.
+     */
+    A_UINT32 srg_partial_bssid_bitmap[2];
+} wmi_pdev_srg_partial_bssid_bitmap_cmd_fixed_param;
+
+typedef enum {
+    /* Simulation test command types */
+    WMI_SIM_TEST_FRAME_CONTENT_CHANGE_CMD,
+    WMI_SIM_TEST_DROP_FRAME_CMD,
+    WMI_SIM_TEST_DELAY_FRAME_CMD,
+    WMI_SIM_TEST_CONFIGURATION_CMD,
+
+    WMI_SIM_TEST_CMD_UNKNOWN = 255,
+} WMI_SIMULATION_TEST_CMD_TYPE;
+
+typedef enum {
+    /* Simulation test sub-command types */
+    WMI_SIM_TEST_SUB_CMD_UNKNOWN = 255,
+} WMI_SIMULATION_TEST_SUB_CMD_TYPE;
+
+#define WMI_SIM_FRAME_TYPE_BIT_POS      0
+#define WMI_SIM_FRAME_SUBTYPE_BIT_POS   8
+#define WMI_SIM_FRAME_SEQ_BIT_POS       16
+#define WMI_SIM_FRAME_OFFSET_BIT_POS    0
+#define WMI_SIM_FRAME_LENGTH_BIT_POS    16
+
+#define WMI_SIM_FRAME_TYPE_SET(param, value) \
+    WMI_SET_BITS(param, WMI_SIM_FRAME_TYPE_BIT_POS, 8, value)
+#define WMI_SIM_FRAME_TYPE_GET(param)     \
+    WMI_GET_BITS(param, WMI_SIM_FRAME_TYPE_BIT_POS, 8)
+
+#define WMI_SIM_FRAME_SUBTYPE_SET(param, value) \
+    WMI_SET_BITS(param, WMI_SIM_FRAME_SUBTYPE_BIT_POS, 8, value)
+#define WMI_SIM_FRAME_SUBTYPE_GET(param)     \
+    WMI_GET_BITS(param, WMI_SIM_FRAME_SUBTYPE_BIT_POS, 8)
+
+#define WMI_SIM_FRAME_SEQ_SET(param, value) \
+    WMI_SET_BITS(param, WMI_SIM_FRAME_SEQ_BIT_POS, 8, value)
+#define WMI_SIM_FRAME_SEQ_GET(param)     \
+    WMI_GET_BITS(param, WMI_SIM_FRAME_SEQ_BIT_POS, 8)
+
+#define WMI_SIM_FRAME_OFFSET_SET(param, value) \
+    WMI_SET_BITS(param, WMI_SIM_FRAME_OFFSET_BIT_POS, 16, value)
+#define WMI_SIM_FRAME_OFFSET_GET(param)     \
+    WMI_GET_BITS(param, WMI_SIM_FRAME_OFFSET_BIT_POS, 16)
+
+#define WMI_SIM_FRAME_LENGTH_SET(param, value) \
+    WMI_SET_BITS(param, WMI_SIM_FRAME_LENGTH_BIT_POS, 16, value)
+#define WMI_SIM_FRAME_LENGTH_GET(param)     \
+    WMI_GET_BITS(param, WMI_SIM_FRAME_LENGTH_BIT_POS, 16)
+
+typedef struct {
+    /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_simulation_test_cmd_fixed_param  */
+    A_UINT32 tlv_header;
+    /** pdev_id for identifying the MAC.
+     * See macros starting with WMI_PDEV_ID_ for values.
+     * In non-DBDC case host should set it to 0.
+     */
+    A_UINT32 pdev_id;
+    /** vdev_id for identifying the vap simulation command needs to be applied.
+     * This is for future purpose, currently only 1 vap is supported for
+     * simulation test mode.
+     * Host will always set it to 0 for now.
+     */
+    A_UINT32 vdev_id;
+    /** peer MAC address for identifying the peer for which the simulation
+     * command needs to be applied.
+     * peer_macaddr needs to be set to '0' for simulation commands which
+     * needs to be applied at pdev or vdev level.
+     */
+    wmi_mac_addr peer_macaddr;
+    /** test command type, as per WMI_SIMULATION_TEST_CMD_TYPE */
+    A_UINT32 test_cmd_type;
+    /** test command type, as per WMI_SIMULATION_TEST_SUB_CMD_TYPE */
+    A_UINT32 test_subcmd_type;
+    /**
+     * The frame type, frame subtype, and frame sequence number
+     * are stored as bitfields within the below A_UINT32 "word".
+     * Use the WMI_SIM_xxx_GET/SET macros to read and
+     * write these bitfields.
+     **/
+    A_UINT32 frame_type_subtype_seq;
+    /**
+     * The frame offset and frame length,
+     * are stored as bitfields within the below A_UINT32 "word".
+     * Use the WMI_SIM_xxx_GET/SET macros to read and
+     * write these bitfields.
+     **/
+    A_UINT32 frame_offset_length;
+    /** buf_len: Buffer length in bytes
+     * In some cases buf_len == frame_length, but not always.
+     * For example, a DELAY_FRAME command will not involve any frame
+     * contents, so frame_length will be zero, but buf_len will be
+     * non-zero because it will contain command-specific parameters.
+     */
+    A_UINT32 buf_len;
+/* This TLV is followed by array of bytes:
+ *   A_UINT8 bufp[];
+ *       For FRAME_CONTENT_CHANGE commands, bufp contains the first 64 bytes
+ *       of the frame.
+ */
+} wmi_simulation_test_cmd_fixed_param;
+
 
 
 /* ADD NEW DEFS HERE */
