@@ -3429,7 +3429,7 @@ static void msm_vidc_print_running_insts(struct msm_vidc_core *core)
 		inp_f = &temp->fmts[INPUT_PORT].v4l2_fmt;
 		if (temp->state >= MSM_VIDC_OPEN_DONE &&
 				temp->state < MSM_VIDC_STOP_DONE) {
-			char properties[4] = "";
+			char properties[5] = "";
 
 			if (is_thumbnail_session(temp))
 				strlcat(properties, "N", sizeof(properties));
@@ -3439,6 +3439,9 @@ static void msm_vidc_print_running_insts(struct msm_vidc_core *core)
 
 			if (is_realtime_session(temp))
 				strlcat(properties, "R", sizeof(properties));
+
+			if (is_grid_session(temp))
+				strlcat(properties, "I", sizeof(properties));
 
 			if (temp->clk_data.operating_rate)
 				op_rate = temp->clk_data.operating_rate >> 16;
