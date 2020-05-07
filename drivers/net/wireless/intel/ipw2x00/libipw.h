@@ -338,7 +338,7 @@ struct libipw_hdr_1addr {
 	__le16 frame_ctl;
 	__le16 duration_id;
 	u8 addr1[ETH_ALEN];
-	u8 payload[0];
+	u8 payload[];
 } __packed;
 
 struct libipw_hdr_2addr {
@@ -346,7 +346,7 @@ struct libipw_hdr_2addr {
 	__le16 duration_id;
 	u8 addr1[ETH_ALEN];
 	u8 addr2[ETH_ALEN];
-	u8 payload[0];
+	u8 payload[];
 } __packed;
 
 struct libipw_hdr_3addr {
@@ -356,7 +356,7 @@ struct libipw_hdr_3addr {
 	u8 addr2[ETH_ALEN];
 	u8 addr3[ETH_ALEN];
 	__le16 seq_ctl;
-	u8 payload[0];
+	u8 payload[];
 } __packed;
 
 struct libipw_hdr_4addr {
@@ -367,7 +367,7 @@ struct libipw_hdr_4addr {
 	u8 addr3[ETH_ALEN];
 	__le16 seq_ctl;
 	u8 addr4[ETH_ALEN];
-	u8 payload[0];
+	u8 payload[];
 } __packed;
 
 struct libipw_hdr_3addrqos {
@@ -384,7 +384,7 @@ struct libipw_hdr_3addrqos {
 struct libipw_info_element {
 	u8 id;
 	u8 len;
-	u8 data[0];
+	u8 data[];
 } __packed;
 
 /*
@@ -410,7 +410,7 @@ struct libipw_auth {
 	__le16 transaction;
 	__le16 status;
 	/* challenge */
-	struct libipw_info_element info_element[0];
+	struct libipw_info_element info_element[];
 } __packed;
 
 struct libipw_channel_switch {
@@ -446,7 +446,7 @@ struct libipw_disassoc {
 struct libipw_probe_request {
 	struct libipw_hdr_3addr header;
 	/* SSID, supported rates */
-	struct libipw_info_element info_element[0];
+	struct libipw_info_element info_element[];
 } __packed;
 
 struct libipw_probe_response {
@@ -456,7 +456,7 @@ struct libipw_probe_response {
 	__le16 capability;
 	/* SSID, supported rates, FH params, DS params,
 	 * CF params, IBSS params, TIM (if beacon), RSN */
-	struct libipw_info_element info_element[0];
+	struct libipw_info_element info_element[];
 } __packed;
 
 /* Alias beacon for probe_response */
@@ -467,7 +467,7 @@ struct libipw_assoc_request {
 	__le16 capability;
 	__le16 listen_interval;
 	/* SSID, supported rates, RSN */
-	struct libipw_info_element info_element[0];
+	struct libipw_info_element info_element[];
 } __packed;
 
 struct libipw_reassoc_request {
@@ -475,7 +475,7 @@ struct libipw_reassoc_request {
 	__le16 capability;
 	__le16 listen_interval;
 	u8 current_ap[ETH_ALEN];
-	struct libipw_info_element info_element[0];
+	struct libipw_info_element info_element[];
 } __packed;
 
 struct libipw_assoc_response {
@@ -484,7 +484,7 @@ struct libipw_assoc_response {
 	__le16 status;
 	__le16 aid;
 	/* supported rates */
-	struct libipw_info_element info_element[0];
+	struct libipw_info_element info_element[];
 } __packed;
 
 struct libipw_txb {
@@ -494,7 +494,7 @@ struct libipw_txb {
 	u8 reserved;
 	u16 frag_size;
 	u16 payload_size;
-	struct sk_buff *fragments[0];
+	struct sk_buff *fragments[];
 };
 
 /* SWEEP TABLE ENTRIES NUMBER */
@@ -598,7 +598,7 @@ struct libipw_ibss_dfs {
 	struct libipw_info_element ie;
 	u8 owner[ETH_ALEN];
 	u8 recovery_interval;
-	struct libipw_channel_map channel_map[0];
+	struct libipw_channel_map channel_map[];
 };
 
 struct libipw_csa {
@@ -834,7 +834,7 @@ struct libipw_device {
 
 	/* This must be the last item so that it points to the data
 	 * allocated beyond this structure by alloc_libipw */
-	u8 priv[0];
+	u8 priv[];
 };
 
 #define IEEE_A            (1<<0)
