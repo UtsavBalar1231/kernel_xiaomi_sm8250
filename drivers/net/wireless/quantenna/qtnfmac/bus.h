@@ -67,7 +67,7 @@ struct qtnf_bus {
 	struct mutex bus_lock; /* lock during command/event processing */
 	struct dentry *dbg_dir;
 	/* bus private data */
-	char bus_priv[0] __aligned(sizeof(void *));
+	char bus_priv[] __aligned(sizeof(void *));
 };
 
 static inline void *get_bus_priv(struct qtnf_bus *bus)
