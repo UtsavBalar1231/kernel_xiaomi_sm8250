@@ -1377,8 +1377,7 @@ static int wcd938x_codec_enable_dmic(struct snd_soc_dapm_widget *w,
 		/* enable clock scaling */
 		snd_soc_component_update_bits(component,
 				WCD938X_DIGITAL_CDC_DMIC_CTL, 0x06, 0x06);
-		wcd938x_tx_connect_port(component, DMIC0 + (w->shift),
-					SWR_CLK_RATE_2P4MHZ, true);
+		wcd938x_tx_connect_port(component, DMIC0 + (w->shift), 0, true);
 		break;
 	case SND_SOC_DAPM_POST_PMD:
 		wcd938x_tx_connect_port(component, DMIC0 + (w->shift), 0,
