@@ -128,7 +128,29 @@ obj-$(CONFIG_RSEQ) += rseq.o
 $(obj)/configs.o: $(obj)/config_data.h
 
 targets += config_data.gz
+ifeq ($(CONFIG_BOARD_ALIOTH),y)
+$(obj)/config_data.gz: arch/arm64/configs/alioth_stock-defconfig FORCE
+else ifeq ($(CONFIG_BOARD_APOLLO),y)
+$(obj)/config_data.gz: arch/arm64/configs/apollo_stock-defconfig FORCE
+else ifeq ($(CONFIG_BOARD_CAS),y)
+$(obj)/config_data.gz: arch/arm64/configs/cas_stock-defconfig FORCE
+else ifeq ($(CONFIG_BOARD_CMI),y)
+$(obj)/config_data.gz: arch/arm64/configs/cmi_stock-defconfig FORCE
+else ifeq ($(CONFIG_BOARD_ELISH),y)
+$(obj)/config_data.gz: arch/arm64/configs/elish_stock-defconfig FORCE
+else ifeq ($(CONFIG_BOARD_ENUMA),y)
+$(obj)/config_data.gz: arch/arm64/configs/enuma_stock-defconfig FORCE
+else ifeq ($(CONFIG_BOARD_LMI),y)
+$(obj)/config_data.gz: arch/arm64/configs/lmi_stock-defconfig FORCE
+else ifeq ($(CONFIG_BOARD_PSYCHE),y)
+$(obj)/config_data.gz: arch/arm64/configs/psyche_stock-defconfig FORCE
+else ifeq ($(CONFIG_BOARD_THYME),y)
+$(obj)/config_data.gz: arch/arm64/configs/thyme_stock-defconfig FORCE
+else ifeq ($(CONFIG_BOARD_UMI),y)
+$(obj)/config_data.gz: arch/arm64/configs/umi_stock-defconfig FORCE
+else
 $(obj)/config_data.gz: $(KCONFIG_CONFIG) FORCE
+endif
 	$(call if_changed,gzip)
 
       filechk_ikconfiggz = (echo "static const char kernel_config_data[] __used = MAGIC_START"; cat $< | scripts/bin2c; echo "MAGIC_END;")
