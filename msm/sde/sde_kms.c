@@ -935,6 +935,9 @@ static void _sde_kms_drm_check_dpms(struct drm_atomic_state *old_state,
 		if ((old_mode != new_mode) || (old_fps != new_fps)) {
 			struct drm_panel_notifier notifier_data;
 
+			SDE_EVT32(old_mode, new_mode, old_fps, new_fps,
+				connector->panel, crtc->state->active,
+				old_conn_state->crtc, event);
 			pr_debug("change detected (power mode %d->%d, fps %d->%d)\n",
 				old_mode, new_mode, old_fps, new_fps);
 
@@ -1621,7 +1624,8 @@ static int _sde_kms_setup_displays(struct drm_device *dev,
 		/* update display cap to MST_MODE for DP MST encoders */
 		info.capabilities |= MSM_DISPLAY_CAP_MST_MODE;
 		sde_kms->dp_stream_count = dp_display_get_num_of_streams();
-		for (idx = 0; idx < sde_kms->dp_stream_count; idx++) {
+		for (idx = 0; idx < sde_kms->dp_stream_count &&
+				priv->num_encoders < max_encoders; idx++) {
 			info.h_tile_instance[0] = idx;
 			encoder = sde_encoder_init(dev, &info);
 			if (IS_ERR_OR_NULL(encoder)) {
