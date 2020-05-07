@@ -325,7 +325,7 @@ struct iwl_mcc_update_resp_v1  {
 	u8 cap;
 	u8 source_id;
 	__le32 n_channels;
-	__le32 channels[0];
+	__le32 channels[];
 } __packed; /* LAR_UPDATE_MCC_CMD_RESP_S_VER_1 */
 
 /**
@@ -364,7 +364,7 @@ struct iwl_mcc_update_resp {
 	__le16 time;
 	__le16 geo_info;
 	__le32 n_channels;
-	__le32 channels[0];
+	__le32 channels[];
 } __packed; /* LAR_UPDATE_MCC_CMD_RESP_S_VER_3 */
 
 /**
