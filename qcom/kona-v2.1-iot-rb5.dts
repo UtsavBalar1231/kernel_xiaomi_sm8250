@@ -8,3 +8,7 @@
 	compatible = "qcom,kona-iot", "qcom,kona", "qcom,iot";
 	qcom,board-id = <11 3>;
 };
+
+&pm8150a_l11 {
+	regulator-always-on;
+};
