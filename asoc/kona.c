@@ -7989,6 +7989,11 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 		       sizeof(msm_common_dai_links));
 		total_links += ARRAY_SIZE(msm_common_dai_links);
 
+		memcpy(msm_kona_dai_links + total_links,
+			msm_bolero_fe_dai_links,
+			sizeof(msm_bolero_fe_dai_links));
+		total_links += ARRAY_SIZE(msm_bolero_fe_dai_links);
+
 		rc = of_property_read_u32(dev->of_node, "qcom,wsa-bolero-codec",
 					  &wsa_bolero_codec);
 		if (rc) {
