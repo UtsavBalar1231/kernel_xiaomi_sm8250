@@ -424,7 +424,7 @@ struct asd_manuf_sec {
 	u8    sas_addr[SAS_ADDR_SIZE];
 	u8    pcba_sn[ASD_PCBA_SN_SIZE];
 	/* Here start the other segments */
-	u8    linked_list[0];
+	u8    linked_list[];
 } __attribute__ ((packed));
 
 struct asd_manuf_phy_desc {
@@ -467,7 +467,7 @@ struct asd_ms_sb_desc {
 	u8    type;
 	u8    node_desc_index;
 	u8    conn_desc_index;
-	u8    _recvd[0];
+	u8    _recvd[];
 } __attribute__ ((packed));
 
 #if 0
@@ -496,12 +496,12 @@ struct asd_ms_conn_desc {
 	u8    size_sideband_desc;
 	u32   _resvd;
 	u8    name[16];
-	struct asd_ms_sb_desc sb_desc[0];
+	struct asd_ms_sb_desc sb_desc[];
 } __attribute__ ((packed));
 
 struct asd_nd_phy_desc {
 	u8    vp_attch_type;
-	u8    attch_specific[0];
+	u8    attch_specific[];
 } __attribute__ ((packed));
 
 #if 0
@@ -521,7 +521,7 @@ struct asd_ms_node_desc {
 	u8    size_phy_desc;
 	u8    _resvd;
 	u8    name[16];
-	struct asd_nd_phy_desc phy_desc[0];
+	struct asd_nd_phy_desc phy_desc[];
 } __attribute__ ((packed));
 
 struct asd_ms_conn_map {
@@ -536,7 +536,7 @@ struct asd_ms_conn_map {
 	u8    usage_model_id;
 	u32   _resvd;
 	struct asd_ms_conn_desc conn_desc[0];
-	struct asd_ms_node_desc node_desc[0];
+	struct asd_ms_node_desc node_desc[];
 } __attribute__ ((packed));
 
 struct asd_ctrla_phy_entry {
@@ -560,7 +560,7 @@ struct asd_ll_el {
 	u8   id0;
 	u8   id1;
 	__le16  next;
-	u8   something_here[0];
+	u8   something_here[];
 } __attribute__ ((packed));
 
 static int asd_poll_flash(struct asd_ha_struct *asd_ha)
