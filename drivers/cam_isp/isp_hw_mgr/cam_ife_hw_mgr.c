@@ -824,6 +824,47 @@ static void cam_ife_hw_mgr_dump_acq_data(
 	}
 }
 
+static int cam_ife_mgr_csid_change_halt_mode(struct list_head  *halt_list,
+	uint32_t  base_idx, enum cam_ife_csid_halt_mode halt_mode)
+{
+	struct cam_ife_hw_mgr_res      *hw_mgr_res;
+	struct cam_isp_resource_node   *isp_res;
+	struct cam_csid_hw_halt_args    halt;
+	struct cam_hw_intf             *hw_intf;
+	uint32_t i;
+	int rc = 0;
+
+	list_for_each_entry(hw_mgr_res, halt_list, list) {
+		for (i = 0; i < CAM_ISP_HW_SPLIT_MAX; i++) {
+			if (!hw_mgr_res->hw_res[i] ||
+				(hw_mgr_res->hw_res[i]->res_state !=
+				CAM_ISP_RESOURCE_STATE_STREAMING))
+				continue;
+
+			isp_res = hw_mgr_res->hw_res[i];
+			if (isp_res->hw_intf->hw_idx != base_idx)
+				continue;
+
+			if ((isp_res->res_type == CAM_ISP_RESOURCE_PIX_PATH) &&
+				(isp_res->res_id == CAM_IFE_PIX_PATH_RES_IPP)) {
+				hw_intf         = isp_res->hw_intf;
+				halt.node_res   = isp_res;
+				halt.halt_mode  = halt_mode;
+				rc = hw_intf->hw_ops.process_cmd(
+					hw_intf->hw_priv,
+					CAM_ISP_HW_CMD_CSID_CHANGE_HALT_MODE,
+					&halt,
+					sizeof(struct cam_csid_hw_halt_args));
+				if (rc)
+					CAM_ERR(CAM_ISP, "Halt update failed");
+				break;
+			}
+		}
+	}
+
+	return rc;
+}
+
 static int cam_ife_mgr_csid_stop_hw(
 	struct cam_ife_hw_mgr_ctx *ctx, struct list_head  *stop_list,
 		uint32_t  base_idx, uint32_t stop_cmd)
@@ -3864,6 +3905,19 @@ static int cam_ife_mgr_stop_hw(void *hw_mgr_priv, void *stop_hw_args)
 	 */
 	if (i == ctx->num_base)
 		master_base_idx = ctx->base[0].idx;
+
+	/*Change slave mode*/
+	if (csid_halt_type == CAM_CSID_HALT_IMMEDIATELY) {
+		for (i = 0; i < ctx->num_base; i++) {
+			if (ctx->base[i].idx == master_base_idx)
+				continue;
+			cam_ife_mgr_csid_change_halt_mode(
+				&ctx->res_list_ife_csid,
+				ctx->base[i].idx,
+				CAM_CSID_HALT_MODE_INTERNAL);
+		}
+	}
+
 	CAM_DBG(CAM_ISP, "Stopping master CSID idx %d", master_base_idx);
 
 	/* Stop the master CSID path first */
@@ -6954,7 +7008,6 @@ static int cam_ife_hw_mgr_handle_hw_rup(
 
 	CAM_DBG(CAM_ISP, "RUP done for VFE:%d source %d", event_info->hw_idx,
 		event_info->res_id);
-
 	return 0;
 }
 

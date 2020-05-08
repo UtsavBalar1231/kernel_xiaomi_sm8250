@@ -154,6 +154,33 @@ enum cam_ife_csid_halt_cmd {
 };
 
 /**
+ *  enum cam_ife_csid_halt_mode_cmd - Specify the halt command type
+ */
+enum cam_ife_csid_halt_mode {
+	CAM_CSID_HALT_MODE_INTERNAL,
+	CAM_CSID_HALT_MODE_GLOBAL,
+	CAM_CSID_HALT_MODE_MASTER,
+	CAM_CSID_HALT_MODE_SLAVE,
+	CAM_CSID_HALT_MODE_MAX,
+};
+
+/**
+ * struct cam_csid_hw_halt_args
+ * @halt_mode : Applicable only for PATH resources
+ * 0 Internal : The CSID responds to the HALT_CMD
+ * 1 Global : The CSID responds to the GLOBAL_HALT_CMD
+ * 2 Master : The CSID responds to the HALT_CMD
+ * 3 Slave : The CSID responds to the external halt command
+ * and not the HALT_CMD register
+ * @node_res : reource pointer array( ie cid or CSID)
+ *
+ */
+struct cam_csid_hw_halt_args {
+	enum cam_ife_csid_halt_mode   halt_mode;
+	struct cam_isp_resource_node *node_res;
+};
+
+/**
  * struct cam_csid_hw_stop- stop all resources
  * @stop_cmd : Applicable only for PATH resources
  *             if stop command set to Halt immediately,driver will stop
