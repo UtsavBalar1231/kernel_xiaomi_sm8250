@@ -221,6 +221,8 @@
 		smmu_mdp_unsec: qcom,smmu_mdp_unsec_cb {
 			compatible = "qcom,smmu_mdp_unsec";
 			iommus = <&mmss_bimc_smmu 0>;
+			qcom,iommu-dma-addr-pool = <0x00020000 0xfffe0000>;
+			qcom,iommu-earlymap; /* for cont-splash */
 			gdsc-mmagic-mdss-supply = <&gdsc_bimc_smmu>;
 			clocks = <&clock_rpmcc  RPM_SMD_MMSSNOC_AXI_CLK>,
 				<&clock_mmss MMSS_MNOC_AHB_CLK>,
@@ -235,6 +237,8 @@
 		smmu_mdp_sec: qcom,smmu_mdp_sec_cb {
 			compatible = "qcom,smmu_mdp_sec";
 			iommus = <&mmss_bimc_smmu 1>;
+			qcom,iommu-dma-addr-pool = <0x00020000 0xfffe0000>;
+			qcom,iommu-vmid = <0xa>;
 			gdsc-mmagic-mdss-supply = <&gdsc_bimc_smmu>;
 			clocks = <&clock_rpmcc  RPM_SMD_MMSSNOC_AXI_CLK>,
 				<&clock_mmss MMSS_MNOC_AHB_CLK>,
