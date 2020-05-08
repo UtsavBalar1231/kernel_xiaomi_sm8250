@@ -49,6 +49,9 @@
 #define AFE_API_VERSION_V8		8
 /* for Speaker Protection V4 */
 #define AFE_API_VERSION_V9		9
+#define AFE_API_VERSION_V10		10
+
+#define AFE_SAMPLING_RATE_8KHZ 8000
 
 typedef int (*routing_cb)(int port);
 
@@ -536,6 +539,8 @@ enum {
 	AFE_LPASS_CORE_HW_VOTE_MAX
 };
 
+int afe_set_source_clk(u16 port_id, const char *clk_src);
+void afe_set_clk_src_array(const char *clk_src[CLK_SRC_MAX]);
 int afe_set_mclk_src_cfg(u16 port_id, uint32_t mclk_src_id, uint32_t mclk_freq);
 
 typedef int (*afe_enable_mclk_and_get_info_cb_func) (void *private_data,
