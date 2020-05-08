@@ -1213,6 +1213,7 @@ struct acs_weight_range {
 };
 
 #define MAX_ACS_WEIGHT_RANGE              10
+#define MLME_GET_DFS_CHAN_WEIGHT(np_chan_weight) (np_chan_weight & 0x000000FF)
 
 /*
  * struct wlan_mlme_acs - All acs related cfg items
@@ -1226,6 +1227,7 @@ struct acs_weight_range {
  * @normalize_weight_range: Frequency range for weight normalization
  * @num_weight_range: num of ranges provided by user
  * @force_sap_start: Force SAP start when no channel is found suitable
+ * @np_chan_weightage: Weightage to be given to non preferred channels.
  */
 struct wlan_mlme_acs {
 	bool is_acs_with_more_param;
@@ -1238,6 +1240,7 @@ struct wlan_mlme_acs {
 	struct acs_weight_range normalize_weight_range[MAX_ACS_WEIGHT_RANGE];
 	uint16_t num_weight_range;
 	bool force_sap_start;
+	uint32_t np_chan_weightage;
 };
 
 /*
