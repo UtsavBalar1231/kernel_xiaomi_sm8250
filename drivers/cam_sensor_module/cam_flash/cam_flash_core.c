@@ -347,7 +347,6 @@ int cam_flash_pmic_gpio_flush_request(
 			if ((flash_data->opcode ==
 				CAMERA_SENSOR_FLASH_OP_OFF) &&
 				(flash_data->cmn_attr.request_id > 0) &&
-				(flash_data->cmn_attr.request_id <= req_id) &&
 				flash_data->cmn_attr.is_settings_valid) {
 				is_off_needed = true;
 				CAM_DBG(CAM_FLASH,
@@ -558,7 +557,7 @@ int cam_flash_off(struct cam_flash_ctrl *flash_ctrl)
 		CAM_ERR(CAM_FLASH, "Flash control Null");
 		return -EINVAL;
 	}
-
+	CAM_DBG(CAM_FLASH, "Flash OFF Triggered");
 	if (flash_ctrl->switch_trigger)
 		cam_res_mgr_led_trigger_event(flash_ctrl->switch_trigger,
 			(enum led_brightness)LED_SWITCH_OFF);
@@ -1613,6 +1612,8 @@ int cam_flash_pmic_gpio_pkt_parser(
 				flash_data->led_current_ma[i]
 				= flash_operation_info->led_current_ma[i];
 
+			CAM_DBG(CAM_FLASH,
+				"FLASH_CMD_TYPE op:%d", flash_data->opcode);
 			if (flash_data->opcode == CAMERA_SENSOR_FLASH_OP_OFF)
 				add_req.skip_before_applying |= SKIP_NEXT_FRAME;
 		}
