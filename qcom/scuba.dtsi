@@ -838,10 +838,12 @@
 		memory-region = <&pil_adsp_mem>;
 		qcom,proxy-timeout-ms = <10000>;
 		qcom,sysmon-id = <1>;
+		qcom,minidump-id = <5>;
 		qcom,ssctl-instance-id = <0x14>;
 		qcom,pas-id = <1>;
 		qcom,smem-id = <423>;
 		qcom,complete-ramdump;
+		qcom,minidump-as-elf32;
 
 		/* Inputs from lpass */
 		interrupts-extended = <&intc 0 282 IRQ_TYPE_LEVEL_HIGH>,
