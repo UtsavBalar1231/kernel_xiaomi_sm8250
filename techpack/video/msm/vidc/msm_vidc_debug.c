@@ -10,8 +10,7 @@
 #include "vidc_hfi_api.h"
 #include <linux/of_fdt.h>
 
-int msm_vidc_debug = VIDC_ERR | VIDC_PRINTK |
-	FW_ERROR | FW_FATAL | FW_FTRACE;
+int msm_vidc_debug = 0;
 EXPORT_SYMBOL(msm_vidc_debug);
 
 bool msm_vidc_lossless_encode = !true;
