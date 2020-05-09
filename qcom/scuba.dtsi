@@ -1047,6 +1047,23 @@
 		hyplog-size-offset = <0x414>;
 	};
 
+	qcom_rng: qrng@4453000 {
+		compatible = "qcom,msm-rng";
+		reg = <0x4453000 0x1000>;
+		qcom,msm-rng-hwkm-clk;
+		qcom,no-qrng-config;
+		qcom,msm-bus,name = "msm-rng-noc";
+		qcom,msm-bus,num-cases = <2>;
+		qcom,msm-bus,num-paths = <1>;
+		qcom,msm-bus,vectors-KBps =
+			<MSM_BUS_MASTER_AMPSS_M0
+			 MSM_BUS_SLAVE_HWKM 0 0>,    /* No vote */
+			<MSM_BUS_MASTER_AMPSS_M0
+			 MSM_BUS_SLAVE_HWKM 0 300000>;  /* 75 MHz */
+		clock-names = "km_clk_src";
+		clocks = <&rpmcc RPM_SMD_HWKM_CLK>;
+	};
+
 	qcom_cedev: qcedev@1b20000 {
 		compatible = "qcom,qcedev";
 		reg = <0x1b20000 0x20000>,
