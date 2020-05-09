@@ -900,6 +900,12 @@ Optional properties:
 	will load LPASS Q6 for other targets as expected.
 	"adsp" option need not be explicitly mentioned in
 	DTSI file, as it is default option.
+ - adsp-fuse-not-supported:
+	When ADSP variant read from fuse register is not
+	supported, set this to true to check if image with different fw image
+	name needs to be loaded
+ - adsp-fw-name:
+	ADSP fw name with which PIL API to load DSP needs to be called
 
 Example:
 
@@ -907,6 +913,8 @@ qcom,msm-adsp-loader {
 	compatible = "qcom,adsp-loader";
 	qcom,adsp-state = <2>;
 	qcom,proc-img-to-load = "modem";
+	adsp-fuse-not-supported = <1>;
+	adsp-fw-name = "adsp2";
 };
 
 * msm-audio-ion
