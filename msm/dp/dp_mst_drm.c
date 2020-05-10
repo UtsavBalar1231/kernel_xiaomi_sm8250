@@ -78,7 +78,6 @@ struct dp_drm_mst_fw_helper_ops {
 			struct drm_dp_mst_port *port);
 	void (*deallocate_vcpi)(struct drm_dp_mst_topology_mgr *mgr,
 			struct drm_dp_mst_port *port);
-	int (*get_avail_slots)(struct drm_dp_mst_topology_mgr *mgr);
 };
 
 struct dp_mst_sim_port_data {
@@ -548,11 +547,6 @@ static void dp_mst_sim_handle_hpd_irq(void *dp_display,
 	}
 }
 
-static int _dp_mst_get_avail_slots(struct drm_dp_mst_topology_mgr *mgr)
-{
-	return to_dp_mst_topology_state(mgr->base.state)->avail_slots;
-}
-
 static void _dp_mst_get_vcpi_info(
 		struct drm_dp_mst_topology_mgr *mgr,
 		int vcpi, int *start_slot, int *num_slots)
@@ -618,7 +612,6 @@ static const struct dp_drm_mst_fw_helper_ops drm_dp_mst_fw_helper_ops = {
 	.atomic_release_vcpi_slots = drm_dp_atomic_release_vcpi_slots,
 	.reset_vcpi_slots          = drm_dp_mst_reset_vcpi_slots,
 	.deallocate_vcpi           = drm_dp_mst_deallocate_vcpi,
-	.get_avail_slots           = _dp_mst_get_avail_slots,
 };
 
 static const struct dp_drm_mst_fw_helper_ops drm_dp_sim_mst_fw_helper_ops = {
@@ -636,7 +629,6 @@ static const struct dp_drm_mst_fw_helper_ops drm_dp_sim_mst_fw_helper_ops = {
 	.atomic_release_vcpi_slots = drm_dp_atomic_release_vcpi_slots,
 	.reset_vcpi_slots          = drm_dp_mst_reset_vcpi_slots,
 	.deallocate_vcpi           = drm_dp_mst_deallocate_vcpi,
-	.get_avail_slots           = _dp_mst_get_avail_slots,
 };
 
 /* DP MST Bridge OPs */
@@ -1289,6 +1281,9 @@ enum drm_mode_status dp_mst_connector_mode_valid(
 	struct dp_display_mode dp_mode;
 	uint16_t available_pbn, required_pbn;
 	int available_slots, required_slots;
+	struct dp_mst_bridge_state *dp_bridge_state;
+	int i, slots_in_use = 0, active_enc_cnt = 0;
+	const u32 tot_slots = 63;
 
 	if (!connector || !mode || !display) {
 		DP_ERR("invalid input\n");
@@ -1299,8 +1294,23 @@ enum drm_mode_status dp_mst_connector_mode_valid(
 	c_conn = to_sde_connector(connector);
 	mst_port = c_conn->mst_port;
 
-	available_pbn = mst_port->available_pbn;
-	available_slots = mst->mst_fw_cbs->get_avail_slots(&mst->mst_mgr);
+	/* dp bridge state is protected by drm_mode_config.connection_mutex */
+	for (i = 0; i < MAX_DP_MST_DRM_BRIDGES; i++) {
+		dp_bridge_state = to_dp_mst_bridge_state(&mst->mst_bridge[i]);
+		if (dp_bridge_state->connector &&
+				dp_bridge_state->connector != connector) {
+			active_enc_cnt++;
+			slots_in_use += dp_bridge_state->num_slots;
+		}
+	}
+
+	if (active_enc_cnt < DP_STREAM_MAX) {
+		available_pbn = mst_port->available_pbn;
+		available_slots = tot_slots - slots_in_use;
+	} else {
+		pr_debug("all mst streams are active\n");
+		return MODE_BAD;
+	}
 
 	dp_display->convert_to_dp_mode(dp_display, c_conn->drv_panel,
 			mode, &dp_mode);
