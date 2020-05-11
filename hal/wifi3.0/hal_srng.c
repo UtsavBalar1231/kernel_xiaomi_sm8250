@@ -663,7 +663,7 @@ static void hal_reg_write_enqueue(struct hal_soc *hal_soc,
 	uint32_t write_idx;
 
 	if (srng->reg_write_in_progress) {
-		hal_verbose_debug("Already in progress srng ring id 0x%x addr 0x%x val %u",
+		hal_verbose_debug("Already in progress srng ring id 0x%x addr 0x%pK val %u",
 				  srng->ring_id, addr, value);
 		qdf_atomic_inc(&hal_soc->stats.wstats.coalesces);
 		srng->wstats.coalesces++;
@@ -715,7 +715,7 @@ static void hal_reg_write_enqueue(struct hal_soc *hal_soc,
 	srng->reg_write_in_progress  = true;
 	qdf_atomic_inc(&hal_soc->active_work_cnt);
 
-	hal_verbose_debug("write_idx %u srng ring id 0x%x addr 0x%x val %u",
+	hal_verbose_debug("write_idx %u srng ring id 0x%x addr 0x%pK val %u",
 			  write_idx, srng->ring_id, addr, value);
 
 	qdf_queue_work(hal_soc->qdf_dev, hal_soc->reg_write_wq,
