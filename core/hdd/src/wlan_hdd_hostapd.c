@@ -5767,21 +5767,21 @@ static int __wlan_hdd_cfg80211_stop_ap(struct wiphy *wiphy,
 	 * interval in not reset.
 	 */
 	if (ret)
-		return 0;
+		goto exit;
 
 	if (QDF_GLOBAL_FTM_MODE == hdd_get_conparam()) {
 		hdd_err("Command not allowed in FTM mode");
-		return 0;
+		goto exit;
 	}
 
 	if (hdd_ctx->driver_status == DRIVER_MODULES_CLOSED) {
 		hdd_err("Driver module is closed; dropping request");
-		return 0;
+		goto exit;
 	}
 
 	if (wlan_hdd_validate_vdev_id(adapter->vdev_id)) {
 		hdd_err("vdev is invalid. Hence return");
-		return 0;
+		goto exit;
 	}
 
 	qdf_mtrace(QDF_MODULE_ID_HDD, QDF_MODULE_ID_HDD,
@@ -5791,7 +5791,7 @@ static int __wlan_hdd_cfg80211_stop_ap(struct wiphy *wiphy,
 	if (!(adapter->device_mode == QDF_SAP_MODE ||
 	      adapter->device_mode == QDF_P2P_GO_MODE)) {
 		hdd_err("stop ap is given on device modes other than SAP/GO. Hence return");
-		return 0;
+		goto exit;
 	}
 
 	/* Clear SOFTAP_INIT_DONE flag to mark stop_ap deinit. So that we do
@@ -5877,7 +5877,7 @@ static int __wlan_hdd_cfg80211_stop_ap(struct wiphy *wiphy,
 	} else {
 		hdd_debug("SAP already down");
 		mutex_unlock(&hdd_ctx->sap_lock);
-		return 0;
+		goto exit;
 	}
 
 	mutex_unlock(&hdd_ctx->sap_lock);
@@ -5888,7 +5888,7 @@ static int __wlan_hdd_cfg80211_stop_ap(struct wiphy *wiphy,
 
 	if (status != QDF_STATUS_SUCCESS) {
 		hdd_err("Stopping the BSS");
-		return -EINVAL;
+		goto exit;
 	}
 
 	qdf_copy_macaddr(&update_ie.bssid, &adapter->mac_addr);
@@ -5914,9 +5914,15 @@ static int __wlan_hdd_cfg80211_stop_ap(struct wiphy *wiphy,
 
 	ucfg_p2p_status_stop_bss(adapter->vdev);
 
+exit:
+	if (adapter->session.ap.beacon) {
+		qdf_mem_free(adapter->session.ap.beacon);
+		adapter->session.ap.beacon = NULL;
+	}
+
 	hdd_exit();
 
-	return ret;
+	return 0;
 }
 
 /**
@@ -6541,7 +6547,8 @@ static int __wlan_hdd_cfg80211_start_ap(struct wiphy *wiphy,
 					sizeof(*sta_inactivity_timer));
 			if (!sta_inactivity_timer) {
 				hdd_err("Failed to allocate Memory");
-				return QDF_STATUS_E_FAILURE;
+				status = QDF_STATUS_E_FAILURE;
+				goto err_start_bss;
 			}
 			sta_inactivity_timer->session_id = adapter->vdev_id;
 			sta_inactivity_timer->sta_inactivity_timeout =
