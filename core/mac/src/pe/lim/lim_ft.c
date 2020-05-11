@@ -524,14 +524,18 @@ void lim_fill_ft_session(struct mac_context *mac,
 	ft_session->limRFBand = lim_get_rf_band(ft_session->curr_op_freq);
 
 	lim_fill_dot11mode(mac, ft_session, pe_session, pBeaconStruct);
-
 	pe_debug("dot11mode: %d", ft_session->dot11mode);
+
 	ft_session->vhtCapability =
 		(IS_DOT11_MODE_VHT(ft_session->dot11mode)
 		 && IS_BSS_VHT_CAPABLE(pBeaconStruct->VHTCaps));
 	ft_session->htCapability =
 		(IS_DOT11_MODE_HT(ft_session->dot11mode)
 		 && pBeaconStruct->HTCaps.present);
+
+	if (IS_DOT11_MODE_HE(ft_session->dot11mode) &&
+	    pBeaconStruct->he_cap.present)
+		lim_update_session_he_capable(mac, ft_session);
 
 	/* Assign default configured nss value in the new session */
 	if (wlan_reg_is_5ghz_ch_freq(ft_session->curr_op_freq))
