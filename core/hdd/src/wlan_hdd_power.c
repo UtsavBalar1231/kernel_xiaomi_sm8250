@@ -1750,8 +1750,6 @@ static int __wlan_hdd_cfg80211_resume_wlan(struct wiphy *wiphy)
 		goto exit_with_code;
 	}
 
-	pld_request_bus_bandwidth(hdd_ctx->parent_dev, PLD_BUS_WIDTH_MEDIUM);
-
 	status = hdd_resume_wlan();
 	if (status != QDF_STATUS_SUCCESS) {
 		exit_code = 0;
@@ -2000,8 +1998,6 @@ static int __wlan_hdd_cfg80211_suspend_wlan(struct wiphy *wiphy,
 	}
 
 	hdd_ctx->is_wiphy_suspended = true;
-
-	pld_request_bus_bandwidth(hdd_ctx->parent_dev, PLD_BUS_WIDTH_NONE);
 
 	hdd_exit();
 	return 0;
