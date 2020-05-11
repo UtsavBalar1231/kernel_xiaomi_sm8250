@@ -149,9 +149,9 @@
 		qcom,cdc-micbias3-mv = <1800>;
 
 		qcom,cdc-static-supplies = "cdc-vdd-cp",
-					   "cdc-vdd-io";
-		qcom,cdc-on-demand-supplies = "cdc-pa-vpos",
-					      "cdc-vdd-mic-bias";
+					   "cdc-vdd-io",
+					   "cdc-vdd-mic-bias";
+		qcom,cdc-on-demand-supplies = "cdc-pa-vpos";
 	};
 };
 
