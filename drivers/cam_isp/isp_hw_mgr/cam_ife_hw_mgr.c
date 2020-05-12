@@ -6911,8 +6911,13 @@ static int  cam_ife_hw_mgr_find_affected_ctx(
 		 * In the call back function corresponding ISP context
 		 * will update CRM about fatal Error
 		 */
-		notify_err_cb(ife_hwr_mgr_ctx->common.cb_priv,
-			CAM_ISP_HW_EVENT_ERROR, error_event_data);
+		if (notify_err_cb) {
+			notify_err_cb(ife_hwr_mgr_ctx->common.cb_priv,
+				CAM_ISP_HW_EVENT_ERROR, error_event_data);
+		} else {
+			CAM_WARN(CAM_ISP, "Error call back is not set");
+			goto end;
+		}
 	}
 
 	/* fill the affected_core in recovery data */
@@ -6921,7 +6926,7 @@ static int  cam_ife_hw_mgr_find_affected_ctx(
 		CAM_DBG(CAM_ISP, "Vfe core %d is affected (%d)",
 			 i, recovery_data->affected_core[i]);
 	}
-
+end:
 	return 0;
 }
 
@@ -6985,6 +6990,8 @@ static int cam_ife_hw_mgr_handle_hw_err(
 
 	rc = cam_ife_hw_mgr_find_affected_ctx(&error_event_data,
 		core_idx, &recovery_data);
+	if ((rc != 0) || !(recovery_data.no_of_context))
+		goto end;
 
 	if (event_info->err_type == CAM_VFE_IRQ_STATUS_VIOLATION)
 		recovery_data.error_type = CAM_ISP_HW_ERROR_VIOLATION;
@@ -6992,8 +6999,8 @@ static int cam_ife_hw_mgr_handle_hw_err(
 		recovery_data.error_type = CAM_ISP_HW_ERROR_OVERFLOW;
 
 	cam_ife_hw_mgr_do_error_recovery(&recovery_data);
+end:
 	spin_unlock(&g_ife_hw_mgr.ctx_lock);
-
 	return rc;
 }
 
