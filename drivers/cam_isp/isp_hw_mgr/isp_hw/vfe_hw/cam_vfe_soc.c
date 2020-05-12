@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/slab.h>
@@ -84,6 +84,9 @@ static int cam_vfe_get_dt_properties(struct cam_hw_soc_info *soc_info)
 	default:
 		break;
 	}
+
+	vfe_soc_private->dsp_disabled = of_property_read_bool(of_node,
+		"dsp-disabled");
 
 end:
 	return rc;
