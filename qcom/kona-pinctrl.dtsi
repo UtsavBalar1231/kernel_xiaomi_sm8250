@@ -3205,6 +3205,19 @@
 					bias-pull-up;
 				};
 			};
+
+			qupv3_se0_i3c_disable: qupv3_se0_i3c_disable {
+				mux {
+					pins = "gpio28", "gpio29";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio28", "gpio29";
+					drive-strength = <2>;
+					bias-pull-down;
+				};
+			};
 		};
 
 		/* QUPv3_0 North SE1 mappings */
@@ -3232,6 +3245,19 @@
 					pins = "gpio4", "gpio5";
 					drive-strength = <16>;
 					bias-pull-up;
+				};
+			};
+
+			qupv3_se1_i3c_disable: qupv3_se1_i3c_disable {
+				mux {
+					pins = "gpio4", "gpio5";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio4", "gpio5";
+					drive-strength = <2>;
+					bias-pull-down;
 				};
 			};
 		};
