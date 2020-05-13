@@ -138,10 +138,10 @@
 		};
 	};
 
-	tpdm_lpass: tpdm@8a26000 {
+	tpdm_lpass_lpi: tpdm@8a26000 {
 		compatible = "qcom,coresight-dummy";
 
-		coresight-name = "coresight-tpdm-lpass";
+		coresight-name = "coresight-tpdm-lpass-lpi";
 		qcom,dummy-source;
 
 		port {
