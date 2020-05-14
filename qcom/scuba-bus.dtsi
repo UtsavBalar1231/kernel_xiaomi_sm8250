@@ -185,10 +185,11 @@
 				&slv_qhs_gpu_cfg &slv_qhs_imem_cfg
 				&slv_snoc_cfg &slv_srvc_cnoc
 				&slv_qhs_venus_throttle_cfg
+				&slv_qhs_pka_wrapper &slv_qhs_hwkm
 				&slv_qhs_prng &slv_qhs_vsense_ctrl_cfg
 				&slv_qhs_crypto0_cfg &slv_qhs_pimem_cfg
 				&slv_qhs_qup0 &slv_qhs_camera_ss_cfg
-				&slv_qhs_clk_ctl>;
+				&slv_qhs_clk_ctl &slv_qhs_qpic>;
 			qcom,bus-dev = <&fab_config_noc>;
 			qcom,mas-rpm-id = <ICBID_MASTER_SNOC_CNOC>;
 		};
@@ -212,10 +213,11 @@
 				&slv_qhs_gpu_cfg &slv_qhs_imem_cfg
 				&slv_snoc_cfg &slv_srvc_cnoc
 				&slv_qhs_venus_throttle_cfg
+				&slv_qhs_pka_wrapper &slv_qhs_hwkm
 				&slv_qhs_prng &slv_qhs_vsense_ctrl_cfg
 				&slv_qhs_crypto0_cfg &slv_qhs_pimem_cfg
 				&slv_qhs_qup0 &slv_qhs_camera_ss_cfg
-				&slv_qhs_clk_ctl>;
+				&slv_qhs_clk_ctl &slv_qhs_qpic>;
 			qcom,bus-dev = <&fab_config_noc>;
 			qcom,mas-rpm-id = <ICBID_MASTER_QDSS_DAP>;
 		};
@@ -636,6 +638,16 @@
 			qcom,slv-rpm-id = <ICBID_SLAVE_GPU_CFG>;
 		};
 
+		slv_qhs_hwkm:slv-qhs-hwkm {
+			cell-id = <MSM_BUS_SLAVE_HWKM>;
+			label = "slv-qhs-hwkm";
+			qcom,buswidth = <4>;
+			qcom,agg-ports = <1>;
+			qcom,ap-owned;
+			qcom,bus-dev = <&fab_config_noc>;
+			qcom,slv-rpm-id = <ICBID_SLAVE_HWKM>;
+		};
+
 		slv_qhs_imem_cfg:slv-qhs-imem-cfg {
 			cell-id = <MSM_BUS_SLAVE_IMEM_CFG>;
 			label = "slv-qhs-imem-cfg";
@@ -696,6 +708,16 @@
 			qcom,slv-rpm-id = <ICBID_SLAVE_PIMEM_CFG>;
 		};
 
+		slv_qhs_pka_wrapper:slv-qhs-pka-wrapper {
+			cell-id = <MSM_BUS_SLAVE_PKA_WRAPPER>;
+			label = "slv-qhs-pka-wrapper";
+			qcom,buswidth = <4>;
+			qcom,agg-ports = <1>;
+			qcom,ap-owned;
+			qcom,bus-dev = <&fab_config_noc>;
+			qcom,slv-rpm-id = <ICBID_SLAVE_PKA_WRAPPER>;
+		};
+
 		slv_qhs_pmic_arb:slv-qhs-pmic-arb {
 			cell-id = <MSM_BUS_SLAVE_PMIC_ARB>;
 			label = "slv-qhs-pmic-arb";
@@ -744,6 +766,16 @@
 			qcom,ap-owned;
 			qcom,bus-dev = <&fab_config_noc>;
 			qcom,slv-rpm-id = <ICBID_SLAVE_QM_MPU_CFG>;
+		};
+
+		slv_qhs_qpic:slv-qhs-qpic {
+			cell-id = <MSM_BUS_SLAVE_QPIC>;
+			label = "slv-qhs-qpic";
+			qcom,buswidth = <4>;
+			qcom,agg-ports = <1>;
+			qcom,ap-owned;
+			qcom,bus-dev = <&fab_config_noc>;
+			qcom,slv-rpm-id = <ICBID_SLAVE_QPIC>;
 		};
 
 		slv_qhs_qup0:slv-qhs-qup0 {
