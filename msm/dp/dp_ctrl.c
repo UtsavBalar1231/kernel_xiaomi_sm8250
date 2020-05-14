@@ -1170,6 +1170,11 @@ static int dp_ctrl_stream_on(struct dp_ctrl *dp_ctrl, struct dp_panel *panel)
 
 	ctrl = container_of(dp_ctrl, struct dp_ctrl_private, dp_ctrl);
 
+	if (!ctrl->power_on) {
+		DP_ERR("ctrl off\n");
+		return -EINVAL;
+	}
+
 	rc = dp_ctrl_enable_stream_clocks(ctrl, panel);
 	if (rc) {
 		DP_ERR("failure on stream clock enable\n");
