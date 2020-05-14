@@ -11,6 +11,7 @@
 #include "dsi-panel-nt35695b-truly-fhd-cmd.dtsi"
 #include "dsi-panel-nt35695b-truly-fhd-video.dtsi"
 #include "dsi-panel-ext-bridge-1080p.dtsi"
+#include "dsi-panel-ext-bridge-4k-video.dtsi"
 #include "dsi-panel-sim-cmd.dtsi"
 #include "dsi-panel-sim-video.dtsi"
 #include "dsi-panel-sim-dsc375-cmd.dtsi"
@@ -283,6 +284,18 @@
 			qcom,mdss-dsi-panel-phy-timings = [00 1e 08 07 24 22 08
 				08 05 02 04 00 19 17];
 			qcom,display-topology = <1 0 1>;
+			qcom,default-topology-index = <0>;
+		};
+	};
+};
+
+&dsi_ext_bridge_4k_vid {
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
+	qcom,mdss-dsi-display-timings {
+		timing@0 {
+			qcom,mdss-dsi-panel-phy-timings = [00 3a 0f 0f 2e 2b 0f
+				10 0b 02 04 00 2e 1e];
+			qcom,display-topology = <2 0 2>;
 			qcom,default-topology-index = <0>;
 		};
 	};
