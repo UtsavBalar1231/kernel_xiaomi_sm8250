@@ -613,7 +613,7 @@ static int msm_transcode_loopback_get_caps(struct snd_compr_stream *cstream,
 }
 
 static int msm_transcode_set_render_mode(struct msm_transcode_loopback *prtd,
-					 uint32_t render_mode)
+					 uint32_t render_mode, int dir)
 {
 	int ret = -EINVAL;
 	struct audio_client *ac = prtd->audio_client;
@@ -639,7 +639,7 @@ static int msm_transcode_set_render_mode(struct msm_transcode_loopback *prtd,
 		goto exit;
 	}
 
-	ret = q6asm_send_mtmx_strtr_render_mode(ac, render_mode);
+	ret = q6asm_send_mtmx_strtr_render_mode(ac, render_mode, dir);
 	if (ret) {
 		pr_err("%s: Render mode can't be set error %d\n", __func__,
 			ret);
@@ -705,7 +705,8 @@ static int msm_transcode_loopback_set_metadata(struct snd_compr_stream *cstream,
 	}
 	case SNDRV_COMPRESS_RENDER_MODE:
 	{
-		rc = msm_transcode_set_render_mode(prtd, metadata->value[0]);
+		rc = msm_transcode_set_render_mode(prtd, metadata->value[0],
+						   cstream->direction);
 		if (rc)
 			pr_err("%s: error setting render mode %d\n", __func__,
 				rc);

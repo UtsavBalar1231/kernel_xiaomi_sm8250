@@ -225,7 +225,7 @@ static int msm_compr_send_dec_params(struct snd_compr_stream *cstream,
 				     int stream_id);
 
 static int msm_compr_set_render_mode(struct msm_compr_audio *prtd,
-				     uint32_t render_mode) {
+				     uint32_t render_mode, int dir) {
 	int ret = -EINVAL;
 	struct audio_client *ac = prtd->audio_client;
 
@@ -250,7 +250,7 @@ static int msm_compr_set_render_mode(struct msm_compr_audio *prtd,
 		goto exit;
 	}
 
-	ret = q6asm_send_mtmx_strtr_render_mode(ac, render_mode);
+	ret = q6asm_send_mtmx_strtr_render_mode(ac, render_mode, dir);
 	if (ret) {
 		pr_err("%s, Render mode can't be set error %d\n", __func__,
 			ret);
@@ -321,6 +321,29 @@ static int msm_compr_set_render_window(struct audio_client *ac,
 	}
 
 exit:
+	return ret;
+}
+
+static int msm_compr_set_ttp_offset(struct audio_client *ac,
+		uint32_t offset_lsw, uint32_t offset_msw, int dir)
+{
+	int ret = -EINVAL;
+	struct asm_session_mtmx_strtr_param_ttp_offset_t ttp_offset;
+	uint32_t param_id;
+
+	pr_debug("%s, ttp offset lsw 0x%x  ttp offset msw 0x%x\n",
+		 __func__, offset_lsw, offset_msw);
+
+	memset(&ttp_offset, 0,
+	       sizeof(struct asm_session_mtmx_strtr_param_ttp_offset_t));
+	ttp_offset.ttp_offset_lsw = offset_lsw;
+	ttp_offset.ttp_offset_msw = offset_msw;
+	param_id = ASM_SESSION_MTMX_STRTR_PARAM_TTP_OFFSET;
+	ret = q6asm_send_mtmx_strtr_ttp_offset(ac, &ttp_offset, param_id, dir);
+	if (ret)
+		pr_err("%s, ttp offset can't be set error %d\n", __func__,
+			ret);
+
 	return ret;
 }
 
@@ -3221,7 +3244,8 @@ static int msm_compr_set_metadata(struct snd_compr_stream *cstream,
 			 __func__, metadata->value[0]);
 		prtd->gapless_state.initial_samples_drop = metadata->value[0];
 	} else if (metadata->key == SNDRV_COMPRESS_RENDER_MODE) {
-		return msm_compr_set_render_mode(prtd, metadata->value[0]);
+		return msm_compr_set_render_mode(prtd, metadata->value[0],
+				cstream->direction);
 	} else if (metadata->key == SNDRV_COMPRESS_CLK_REC_MODE) {
 		return msm_compr_set_clk_rec_mode(ac, metadata->value[0]);
 	} else if (metadata->key == SNDRV_COMPRESS_RENDER_WINDOW) {
@@ -3242,6 +3266,9 @@ static int msm_compr_set_metadata(struct snd_compr_stream *cstream,
 		return msm_compr_adjust_session_clock(ac,
 				metadata->value[0],
 				metadata->value[1]);
+	} else if (metadata->key == SNDRV_COMPRESS_IN_TTP_OFFSET) {
+		return msm_compr_set_ttp_offset(ac, metadata->value[0],
+				metadata->value[1], cstream->direction);
 	}
 
 	return 0;
