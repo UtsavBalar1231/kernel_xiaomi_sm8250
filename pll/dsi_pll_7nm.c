@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
 #define pr_fmt(fmt)	"%s: " fmt, __func__
@@ -425,6 +425,12 @@ static inline int pclk_mux_read_sel(void *context, unsigned int reg,
 {
 	int rc = 0;
 	struct mdss_pll_resources *rsc = context;
+
+	/* Return cached cfg1 as its updated with cached cfg1 in pll_enable */
+	if (!rsc->handoff_resources) {
+		*val = (rsc->cached_cfg1) & 0x3;
+		return rc;
+	}
 
 	rc = mdss_pll_resource_enable(rsc, true);
 	if (rc)
