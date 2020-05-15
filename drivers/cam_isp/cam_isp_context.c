@@ -4640,7 +4640,7 @@ static int __cam_isp_ctx_start_dev_in_ready(struct cam_context *ctx,
 		ctx->state = CAM_CTX_READY;
 		trace_cam_context_state("ISP", ctx);
 		if (rc == -ETIMEDOUT)
-			rc = cam_isp_ctx_dump_req(req_isp, 0, 0, NULL, false);
+			cam_isp_ctx_dump_req(req_isp, 0, 0, NULL, false);
 		list_del_init(&req->list);
 		list_add(&req->list, &ctx->pending_req_list);
 		goto end;
