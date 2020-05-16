@@ -48,19 +48,16 @@
 			capacity-dmips-mhz = <1024>;
 			dynamic-power-coefficient = <100>;
 			qcom,freq-domain = <&cpufreq_hw 0 6>;
-			cache-size = <0x8000>;
 			next-level-cache = <&L2_0>;
 			qcom,lmh-dcvs = <&lmh_dcvs0>;
 			#cooling-cells = <2>;
 			L2_0: l2-cache {
 			      compatible = "arm,arch-cache";
-			      cache-size = <0x10000>;
 			      cache-level = <2>;
 			      next-level-cache = <&L3_0>;
 
 				L3_0: l3-cache {
 				      compatible = "arm,arch-cache";
-				      cache-size = <0x100000>;
 				      cache-level = <3>;
 				};
 			};
@@ -88,12 +85,10 @@
 			capacity-dmips-mhz = <1024>;
 			dynamic-power-coefficient = <100>;
 			qcom,freq-domain = <&cpufreq_hw 0 6>;
-			cache-size = <0x8000>;
 			next-level-cache = <&L2_100>;
 			qcom,lmh-dcvs = <&lmh_dcvs0>;
 			L2_100: l2-cache {
 				compatible = "arm,arch-cache";
-				cache-size = <0x10000>;
 				cache-level = <2>;
 				next-level-cache = <&L3_0>;
 			};
@@ -121,12 +116,10 @@
 			capacity-dmips-mhz = <1024>;
 			dynamic-power-coefficient = <100>;
 			qcom,freq-domain = <&cpufreq_hw 0 6>;
-			cache-size = <0x8000>;
 			next-level-cache = <&L2_200>;
 			qcom,lmh-dcvs = <&lmh_dcvs0>;
 			L2_200: l2-cache {
 				compatible = "arm,arch-cache";
-				cache-size = <0x10000>;
 				cache-level = <2>;
 				next-level-cache = <&L3_0>;
 			};
@@ -154,12 +147,10 @@
 			capacity-dmips-mhz = <1024>;
 			dynamic-power-coefficient = <100>;
 			qcom,freq-domain = <&cpufreq_hw 0 6>;
-			cache-size = <0x8000>;
 			next-level-cache = <&L2_300>;
 			qcom,lmh-dcvs = <&lmh_dcvs0>;
 			L2_300: l2-cache {
 				compatible = "arm,arch-cache";
-				cache-size = <0x10000>;
 				cache-level = <2>;
 				next-level-cache = <&L3_0>;
 			};
@@ -188,12 +179,10 @@
 			capacity-dmips-mhz = <1024>;
 			dynamic-power-coefficient = <100>;
 			qcom,freq-domain = <&cpufreq_hw 0 6>;
-			cache-size = <0x8000>;
 			next-level-cache = <&L2_400>;
 			qcom,lmh-dcvs = <&lmh_dcvs0>;
 			L2_400: l2-cache {
 				compatible = "arm,arch-cache";
-				cache-size = <0x10000>;
 				cache-level = <2>;
 				next-level-cache = <&L3_0>;
 			};
@@ -221,12 +210,10 @@
 			capacity-dmips-mhz = <1024>;
 			dynamic-power-coefficient = <100>;
 			qcom,freq-domain = <&cpufreq_hw 0 6>;
-			cache-size = <0x8000>;
 			next-level-cache = <&L2_500>;
 			qcom,lmh-dcvs = <&lmh_dcvs0>;
 			L2_500: l2-cache {
 				compatible = "arm,arch-cache";
-				cache-size = <0x10000>;
 				cache-level = <2>;
 				next-level-cache = <&L3_0>;
 			};
@@ -254,13 +241,11 @@
 			capacity-dmips-mhz = <1894>;
 			dynamic-power-coefficient = <703>;
 			qcom,freq-domain = <&cpufreq_hw 1 2>;
-			cache-size = <0x10000>;
 			next-level-cache = <&L2_600>;
 			qcom,lmh-dcvs = <&lmh_dcvs1>;
 			#cooling-cells = <2>;
 			L2_600: l2-cache {
 				compatible = "arm,arch-cache";
-				cache-size = <0x40000>;
 				cache-level = <2>;
 				next-level-cache = <&L3_0>;
 				qcom,dump-size = <0x48000>;
@@ -297,12 +282,10 @@
 			capacity-dmips-mhz = <1894>;
 			dynamic-power-coefficient = <703>;
 			qcom,freq-domain = <&cpufreq_hw 1 2>;
-			cache-size = <0x10000>;
 			next-level-cache = <&L2_700>;
 			qcom,lmh-dcvs = <&lmh_dcvs1>;
 			L2_700: l2-cache {
 				compatible = "arm,arch-cache";
-				cache-size = <0x40000>;
 				cache-level = <2>;
 				next-level-cache = <&L3_0>;
 				qcom,dump-size = <0x48000>;
@@ -1788,6 +1771,10 @@
 		};
 	};
 
+	qcom_msmhdcp: qcom,msm_hdcp {
+		compatible = "qcom,msm-hdcp";
+	};
+
 	qcom,mpm2-sleep-counter@0xc221000 {
 		compatible = "qcom,mpm2-sleep-counter";
 		reg = <0xc221000 0x1000>;
@@ -2898,6 +2885,11 @@
 		memory-region = <&pil_video_mem>;
 	};
 
+	cx_ipeak_lm: cx_ipeak@1fed000 {
+		compatible = "qcom,cx-ipeak-v2";
+		reg = <0x1fed000 0x9000>;
+	};
+
 	qcom,npu@9800000 {
 		compatible = "qcom,pil-tz-generic";
 		reg = <0x9800000 0x800000>;
@@ -3483,7 +3475,8 @@
 			     <GIC_SPI 423 IRQ_TYPE_LEVEL_HIGH /* CE9 */ >,
 			     <GIC_SPI 424 IRQ_TYPE_LEVEL_HIGH /* CE10 */ >,
 			     <GIC_SPI 425 IRQ_TYPE_LEVEL_HIGH /* CE11 */ >;
-		qcom,iommu-dma = "bypass";
+		qcom,iommu-dma = "fastmap";
+		qcom,iommu-faults = "stall-disable", "non-fatal";
 		qcom,wlan-msa-fixed-region = <&wlan_fw_mem>;
 		qcom,iommu-dma-addr-pool = <0xa0000000 0x10000000>;
 		vdd-cx-mx-supply = <&L4A>;
@@ -3929,7 +3922,7 @@
 		qcom,iommu-dma-addr-pool = <0x20000000 0x40000000>;
 		/* modem tables in IMEM */
 		qcom,additional-mapping = <0x146a8000 0x146a8000 0x2000>;
-		qcom,iommu-dma = "bypass";
+		qcom,iommu-dma = "fastmap";
 		qcom,ipa-q6-smem-size = <26624>;
 	};
 
@@ -3938,14 +3931,13 @@
 		iommus = <&apps_smmu 0x0441 0x0>;
 		/* ipa-uc ram */
 		qcom,additional-mapping = <0x1ea0000 0x1ea0000 0x80000>;
-		qcom,iommu-dma = "bypass";
+		qcom,iommu-dma = "fastmap";
 	};
 
 	ipa_smmu_uc: ipa_smmu_uc {
 		compatible = "qcom,ipa-smmu-uc-cb";
 		iommus = <&apps_smmu 0x0442 0x0>;
 		qcom,iommu-dma-addr-pool = <0x40000000 0x20000000>;
-		qcom,iommu-dma = "bypass";
 	};
 };
 
@@ -4331,11 +4323,22 @@
 };
 
 &usb0 {
-	extcon = <&pm7250b_pdphy>, <&pm7250b_charger>;
+	extcon = <&pm7250b_pdphy>, <&pm7250b_charger>, <&eud>;
 };
 
 &usb_qmp_dp_phy {
 	extcon = <&pm7250b_pdphy>;
 };
+
+&msm_vidc0 {
+	qcom,cx-ipeak-data = <&cx_ipeak_lm 5>;
+	qcom,clock-freq-threshold = <460000000>;
+};
+
+&msm_vidc1 {
+	qcom,cx-ipeak-data = <&cx_ipeak_lm 5>;
+	qcom,clock-freq-threshold = <380000000>;
+};
+
 #include "lagoon-sde.dtsi"
 #include "lagoon-sde-pll.dtsi"

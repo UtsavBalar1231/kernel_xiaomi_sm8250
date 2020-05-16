@@ -259,6 +259,25 @@
 	qcom,platform-reset-gpio = <&pm6150l_gpios 9 0>;
 };
 
+&dsi_sharp_qsync_fhd_video {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_no_labibb>;
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_external";
+	qcom,mdss-dsi-bl-min-level = <1>;
+	qcom,mdss-dsi-bl-max-level = <4095>;
+	qcom,platform-reset-gpio = <&pm6150l_gpios 9 0>;
+	qcom,platform-bklight-en-gpio = <&pm6350_gpios 6 0>;
+};
+
+&dsi_sharp_qsync_fhd_cmd {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_no_labibb>;
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_external";
+	qcom,mdss-dsi-bl-min-level = <1>;
+	qcom,mdss-dsi-bl-max-level = <4095>;
+	qcom,platform-te-gpio = <&tlmm 23 0>;
+	qcom,platform-reset-gpio = <&pm6150l_gpios 9 0>;
+	qcom,platform-bklight-en-gpio = <&pm6350_gpios 6 0>;
+};
+
 &dsi_sim_cmd {
 	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_no_labibb>;
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
@@ -328,5 +347,33 @@
 
 		panel = <&dsi_rm69299_visionox_amoled_video
 			&dsi_rm69299_visionox_amoled_cmd>;
+	};
+
+	synaptics_dsx@22 {
+		compatible = "synaptics,dsx-i2c";
+		reg = <0x22>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <39 0x2008>;
+		vdd-supply = <&L11A>;
+		avdd-supply = <&L6A>;
+		pinctrl-names = "pmx_ts_active", "pmx_ts_suspend",
+						"pmx_ts_release";
+		pinctrl-0 = <&ts_active>;
+		pinctrl-1 = <&ts_int_suspend &ts_reset_suspend>;
+		pinctrl-2 = <&pmx_ts_release>;
+		synaptics,pwr-reg-name = "avdd";
+		synaptics,bus-reg-name = "vdd";
+		synaptics,ub-i2c-addr = <0x22>;
+		synaptics,max-y-for-2d = <1859>;
+		synaptics,irq-gpio = <&tlmm 22 0x2008>;
+		synaptics,reset-gpio = <&tlmm 21 0x0>;
+		synaptics,irq-on-state = <0>;
+		synaptics,power-delay-ms = <200>;
+		synaptics,reset-delay-ms = <200>;
+		synaptics,reset-on-state = <0>;
+		synaptics,reset-active-ms = <20>;
+
+		panel = <&dsi_sharp_qsync_fhd_video
+			&dsi_sharp_qsync_fhd_cmd>;
 	};
 };

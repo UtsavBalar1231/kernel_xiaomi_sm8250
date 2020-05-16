@@ -3,6 +3,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/iio/qcom,spmi-vadc.h>
 #include "scuba-sde-display.dtsi"
+#include "camera/scuba-camera-sensor-idp.dtsi"
 
 &soc {
 	scuba_batterydata: qcom,battery-data {
@@ -132,7 +133,7 @@
 };
 
 &usb0 {
-	extcon = <&qusb_phy0>;
+	extcon = <&qusb_phy0>, <&eud>;
 };
 
 &qupv3_se1_i2c {

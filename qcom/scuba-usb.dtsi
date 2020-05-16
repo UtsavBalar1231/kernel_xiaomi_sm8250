@@ -31,6 +31,7 @@
 		reset-names = "core_reset";
 
 		USB3_GDSC-supply = <&gcc_usb30_prim_gdsc>;
+		dpdm-supply = <&qusb_phy0>;
 
 		qcom,core-clk-rate = <133333333>;
 		qcom,core-clk-rate-hs = <66666667>;
@@ -56,7 +57,7 @@
 
 			/*  nominal vote */
 			<MSM_BUS_MASTER_USB3
-				MSM_BUS_SLAVE_EBI_CH0 1000000 2500000>,
+				MSM_BUS_SLAVE_EBI_CH0 1000000 1550000>,
 			<MSM_BUS_MASTER_USB3 MSM_BUS_SLAVE_IPA_CFG 0 2400>,
 			<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_USB3 0 40000>,
 
@@ -140,7 +141,7 @@
 		qcom,tune2-efuse-num-bits = <4>;
 		qcom,qusb-phy-init-seq = <0xf8 0x80
 					0xb3 0x84
-					0x81 0x88
+					0x83 0x88
 					0xc0 0x8c
 					0x30 0x08
 					0x79 0x0c

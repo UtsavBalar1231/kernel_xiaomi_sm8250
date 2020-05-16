@@ -139,6 +139,7 @@
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
 	qcom,mdss-dsi-bl-min-level = <1>;
 	qcom,mdss-dsi-bl-max-level = <255>;
+	qcom,mdss-dsi-bl-inverted-dbv;
 	qcom,mdss-dsi-bl-max-level = <4095>;
 	qcom,platform-reset-gpio = <&pm6150l_gpios 9 0>;
 };
@@ -169,6 +170,7 @@
 	qcom,mdss-dsi-bl-min-level = <1>;
 	qcom,mdss-dsi-bl-max-level = <255>;
 	qcom,mdss-dsi-bl-max-level = <4095>;
+	qcom,mdss-dsi-bl-inverted-dbv;
 	qcom,platform-te-gpio = <&tlmm 23 0>;
 	qcom,platform-reset-gpio = <&pm6150l_gpios 9 0>;
 };
@@ -438,6 +440,7 @@
 	interrupt-parent = <&spmi_bus>;
 	interrupt-names = "smb1396";
 	pinctrl-names = "default";
+	qcom,enable-toggle-stat;
 	pinctrl-0 = <&smb_stat_default>;
 	status = "ok";
 };
@@ -456,4 +459,67 @@
 
 &smb1396_div2_cp_slave {
 	status = "ok";
+};
+
+&tlmm {
+	fpc_reset_int: fpc_reset_int {
+		fpc_reset_low: reset_low {
+			mux {
+				pins = "gpio18";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio18";
+				drive-strength = <2>;
+				bias-disable;
+				output-low;
+			};
+		};
+
+		fpc_reset_high: reset_high {
+			mux {
+				pins = "gpio18";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio18";
+				drive-strength = <2>;
+				bias-disable;
+				output-high;
+			};
+		};
+
+		fpc_int_low: int_low {
+			mux {
+				pins = "gpio17";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio17";
+				drive-strength = <2>;
+				bias-pull-down;
+				input-enable;
+			};
+		};
+	};
+};
+
+&soc {
+	fingerprint: fpc1020 {
+		compatible = "fpc,fpc1020";
+		interrupt-parent = <&tlmm>;
+		interrupts = <17 0>;
+		fpc,gpio_rst = <&tlmm 18 0>;
+		fpc,gpio_irq = <&tlmm 17 0>;
+		fpc,enable-on-boot;
+		pinctrl-names = "fpc1020_reset_reset",
+				"fpc1020_reset_active",
+				"fpc1020_irq_active";
+		pinctrl-0 = <&fpc_reset_low>;
+		pinctrl-1 = <&fpc_reset_high>;
+		pinctrl-2 = <&fpc_int_low>;
+	};
 };
