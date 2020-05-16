@@ -1850,10 +1850,10 @@ typedef enum {
     HTT_TX_SELFGEN_SCH_TSFLAG_RESP_CBF_BW_MISMATCH_ERR,
     HTT_TX_SELFGEN_SCH_TSFLAG_RETRY_COUNT_FAIL_ERR,
     HTT_TX_SELFGEN_SCH_TSFLAG_RESP_TOO_LATE_RECEIVED_ERR,
-    HTT_TX_SELFGEN_SCH_TSFLAG_ERR_RESERVED,
+    HTT_TX_SELFGEN_SCH_TSFLAG_SIFS_STALL_NO_NEXT_CMD_ERR,
 
-    HTT_TX_SELFGEN_NUM_SCH_TSFLAG_ERROR_STATS = 8,  /* includes RESERVED */
-    HTT_TX_SELFGEN_SCH_TSFLAG_ERROR_STATS_VALID = 7 /* not incl. RESERVED */
+    HTT_TX_SELFGEN_NUM_SCH_TSFLAG_ERROR_STATS = 8,
+    HTT_TX_SELFGEN_SCH_TSFLAG_ERROR_STATS_VALID = 8
 } htt_tx_selfgen_sch_tsflag_error_stats;
 
 #define HTT_TX_PDEV_STATS_NUM_AC_MUMIMO_USER_STATS 4
@@ -1941,6 +1941,7 @@ typedef struct {
     A_UINT32 ax_mu_mimo_ndpa_queued;
     A_UINT32 ax_mu_mimo_ndp_queued;
     A_UINT32 ax_mu_mimo_brpoll_queued[HTT_TX_PDEV_STATS_NUM_AX_MUMIMO_USER_STATS - 1];
+    A_UINT32 ax_ul_mumimo_trigger[HTT_TX_PDEV_STATS_NUM_AX_MUMIMO_USER_STATS];
 } htt_tx_selfgen_ax_stats_tlv;
 
 typedef struct {
@@ -2059,6 +2060,7 @@ typedef struct {
     A_UINT32 ax_mu_mimo_ndpa_flushed;
     A_UINT32 ax_mu_mimo_ndp_flushed;
     A_UINT32 ax_mu_mimo_brpoll_flushed[HTT_TX_PDEV_STATS_NUM_AX_MUMIMO_USER_STATS - 1];
+    A_UINT32 ax_ul_mumimo_trigger_err[HTT_TX_PDEV_STATS_NUM_AX_MUMIMO_USER_STATS];
 } htt_tx_selfgen_ax_err_stats_tlv;
 
 typedef struct {

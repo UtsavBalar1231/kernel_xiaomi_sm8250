@@ -202,9 +202,12 @@
  * 3.78 Add htt_ppdu_id def.
  * 3.79 Add HTT_NUM_AC_WMM def.
  * 3.80 Add add WDS_FREE_COUNT bitfield in T2H PEER_UNMAP_V2 msg.
+ * 3.81 Add ppdu_start_tsf field in HTT_TX_WBM_COMPLETION_V2.
+ * 3.82 Add WIN_SIZE field to HTT_T2H_MSG_TYPE_RX_DELBA msg.
+ * 3.83 Shrink seq_idx field in HTT PPDU ID from 3 bits to 2.
  */
 #define HTT_CURRENT_VERSION_MAJOR 3
-#define HTT_CURRENT_VERSION_MINOR 80
+#define HTT_CURRENT_VERSION_MINOR 83
 
 #define HTT_NUM_TX_FRAG_DESC  1024
 
@@ -2446,7 +2449,9 @@ PREPACK struct htt_tx_wbm_transmit_status {
                               */
        reserved0:        8;
    A_UINT32
-       reserved1:       32;
+       ppdu_start_tsf:  32;  /* PPDU Start timestamp added for multicast
+                              * packets in the wbm completion path
+                              */
 } POSTPACK;
 
 /* DWORD 4 */
@@ -9674,7 +9679,7 @@ PREPACK struct htt_tx_offload_deliver_ind_hdr_t
  *
  * |31                      20|19  16|15         10|9 8|7               0|
  * |---------------------------------------------------------------------|
- * |          peer ID         |  TID |   reserved  | IR|     msg type    |
+ * |          peer ID         |  TID | window size | IR|     msg type    |
  * |---------------------------------------------------------------------|
  *
  * The following field definitions describe the format of the rx ADDBA
@@ -9693,10 +9698,10 @@ PREPACK struct htt_tx_offload_deliver_ind_hdr_t
  *         2 - recipient (a.k.a. responder)
  *         3 - unused / reserved
  *   - WIN_SIZE
- *     Bits 15:8 (ADDBA only)
+ *     Bits 15:8 for ADDBA, bits 15:10 for DELBA
  *     Purpose: Specifies the length of the block ack window (max = 64).
  *     Value:
- *         block ack window length specified by the received ADDBA
+ *         block ack window length specified by the received ADDBA/DELBA
  *         management message.
  *   - TID
  *     Bits 19:16
@@ -9746,6 +9751,8 @@ PREPACK struct htt_tx_offload_deliver_ind_hdr_t
 
 #define HTT_RX_DELBA_INITIATOR_M   0x00000300
 #define HTT_RX_DELBA_INITIATOR_S   8
+#define HTT_RX_DELBA_WIN_SIZE_M    0x0000FC00
+#define HTT_RX_DELBA_WIN_SIZE_S    10
 #define HTT_RX_DELBA_TID_M         HTT_RX_ADDBA_TID_M
 #define HTT_RX_DELBA_TID_S         HTT_RX_ADDBA_TID_S
 #define HTT_RX_DELBA_PEER_ID_M     HTT_RX_ADDBA_PEER_ID_M
@@ -9763,6 +9770,14 @@ PREPACK struct htt_tx_offload_deliver_ind_hdr_t
     } while (0)
 #define HTT_RX_DELBA_INITIATOR_GET(word) \
     (((word) & HTT_RX_DELBA_INITIATOR_M) >> HTT_RX_DELBA_INITIATOR_S)
+
+#define HTT_RX_DELBA_WIN_SIZE_SET(word, value)                     \
+    do {                                                           \
+        HTT_CHECK_SET_VAL(HTT_RX_DELBA_WIN_SIZE, value);           \
+        (word) |= (value)  << HTT_RX_DELBA_WIN_SIZE_S;             \
+    } while (0)
+#define HTT_RX_DELBA_WIN_SIZE_GET(word) \
+    (((word) & HTT_RX_DELBA_WIN_SIZE_M) >> HTT_RX_DELBA_WIN_SIZE_S)
 
 #define HTT_RX_DELBA_BYTES 4
 
@@ -14030,10 +14045,10 @@ PREPACK struct htt_chan_caldata_msg {
  *    The following field definitions describe the format of the PPDU ID.
  *    The PPDU ID is truncated to 24 bits for TLVs from TQM.
  *
- *  |31 30|29        24|     23|    22|21   19|18  17|16     12|11            0|
- *  +---------------------------------------------------------------------------
- *  |rsvd |seq_cmd_type|tqm_cmd| rsvd |seq_idx|mac_id| hwq_ id |      sch id   |
- *  +---------------------------------------------------------------------------
+ *  |31 30|29        24|     23|22 21|20   19|18  17|16     12|11            0|
+ *  +--------------------------------------------------------------------------
+ *  |rsvd |seq_cmd_type|tqm_cmd|rsvd |seq_idx|mac_id| hwq_ id |      sch id   |
+ *  +--------------------------------------------------------------------------
  *
  *   sch id :Schedule command id
  *   Bits [11 : 0] : monotonically increasing counter to track the
@@ -14061,8 +14076,8 @@ PREPACK struct htt_ppdu_id {
         sch_id:         12,
         hwq_id:          5,
         mac_id:          2,
-        seq_idx:         3,
-        reserved1:       1,
+        seq_idx:         2,
+        reserved1:       2,
         tqm_cmd:         1,
         seq_cmd_type:    6,
         reserved2:       2;
@@ -14102,7 +14117,7 @@ PREPACK struct htt_ppdu_id {
     } while (0)
 
 #define HTT_PPDU_ID_SEQ_IDX_S    19
-#define HTT_PPDU_ID_SEQ_IDX_M    0x00380000
+#define HTT_PPDU_ID_SEQ_IDX_M    0x00180000
 #define HTT_PPDU_ID_SEQ_IDX_GET(_var) \
     (((_var) & HTT_PPDU_ID_SEQ_IDX_M) >> HTT_PPDU_ID_SEQ_IDX_S)
 
