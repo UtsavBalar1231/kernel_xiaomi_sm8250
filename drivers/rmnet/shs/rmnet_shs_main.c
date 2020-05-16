@@ -16,6 +16,7 @@
 #include <net/sock.h>
 #include <linux/netlink.h>
 #include <linux/ip.h>
+#include <linux/oom.h>
 #include <net/ip.h>
 
 #include <linux/ipv6.h>
@@ -40,14 +41,22 @@
 #define MIN_MS 5
 #define BACKLOG_CHECK 1
 
+#define GET_PQUEUE(CPU) (per_cpu(softnet_data, CPU).input_pkt_queue)
+#define GET_IQUEUE(CPU) (per_cpu(softnet_data, CPU).process_queue)
 #define GET_QTAIL(SD, CPU) (per_cpu(SD, CPU).input_queue_tail)
 #define GET_QHEAD(SD, CPU) (per_cpu(SD, CPU).input_queue_head)
 #define GET_CTIMER(CPU) rmnet_shs_cfg.core_flush[CPU].core_timer
 
+/* Specific CPU RMNET runs on */
+#define RMNET_CPU 1
 #define SKB_FLUSH 0
 #define INCREMENT 1
 #define DECREMENT 0
 /* Local Definitions and Declarations */
+unsigned int rmnet_oom_pkt_limit __read_mostly = 5000;
+module_param(rmnet_oom_pkt_limit, uint, 0644);
+MODULE_PARM_DESC(rmnet_oom_pkt_limit, "Max rmnet pre-backlog");
+
 DEFINE_SPINLOCK(rmnet_shs_ht_splock);
 DEFINE_HASHTABLE(RMNET_SHS_HT, RMNET_SHS_HT_SIZE);
 struct rmnet_shs_cpu_node_s rmnet_shs_cpu_node_tbl[MAX_CPUS];
@@ -1482,6 +1491,64 @@ unsigned int rmnet_shs_rx_wq_exit(void)
 	return cpu_switch;
 }
 
+int rmnet_shs_drop_backlog(struct sk_buff_head *list, int cpu)
+{
+	struct sk_buff *skb;
+	struct softnet_data *sd = &per_cpu(softnet_data, cpu);
+
+	rtnl_lock();
+	while ((skb = skb_dequeue_tail(list)) != NULL) {
+		if (rmnet_is_real_dev_registered(skb->dev)) {
+			rmnet_shs_crit_err[RMNET_SHS_OUT_OF_MEM_ERR]++;
+			/* Increment sd and netdev drop stats*/
+			atomic_long_inc(&skb->dev->rx_dropped);
+			input_queue_head_incr(sd);
+			sd->dropped++;
+			kfree_skb(skb);
+		}
+	}
+	rtnl_unlock();
+
+	return 0;
+}
+
+static int rmnet_shs_oom_notify(struct notifier_block *self,
+			    unsigned long emtpy, void *free)
+{
+	int input_qlen, process_qlen, cpu;
+	int *nfree = (int*)free;
+	struct sk_buff_head *process_q;
+	struct sk_buff_head *input_q;
+
+	local_bh_disable();
+	for_each_possible_cpu(cpu) {
+
+		process_q = &GET_PQUEUE(cpu);
+		input_q = &GET_IQUEUE(cpu);
+		input_qlen = skb_queue_len(process_q);
+		process_qlen = skb_queue_len(input_q);
+
+		if (rmnet_oom_pkt_limit &&
+		    (input_qlen + process_qlen) >= rmnet_oom_pkt_limit) {
+			rmnet_shs_drop_backlog(&per_cpu(softnet_data,
+							cpu).input_pkt_queue, cpu);
+			input_qlen = skb_queue_len(process_q);
+			process_qlen = skb_queue_len(input_q);
+			if (process_qlen >= rmnet_oom_pkt_limit) {
+				rmnet_shs_drop_backlog(process_q, cpu);
+			}
+			/* Let oom_killer know memory was freed */
+			(*nfree)++;
+		}
+	}
+	local_bh_enable();
+	return 0;
+}
+
+static struct notifier_block rmnet_oom_nb = {
+	.notifier_call = rmnet_shs_oom_notify,
+};
+
 void rmnet_shs_ps_on_hdlr(void *port)
 {
 	rmnet_shs_wq_pause();
@@ -1540,6 +1607,7 @@ void rmnet_shs_dl_trl_handler(struct rmnet_map_dl_ind_trl *dltrl)
 void rmnet_shs_init(struct net_device *dev, struct net_device *vnd)
 {
 	struct rps_map *map;
+	int rc;
 	u8 num_cpu;
 	u8 map_mask;
 	u8 map_len;
@@ -1563,6 +1631,10 @@ void rmnet_shs_init(struct net_device *dev, struct net_device *vnd)
 		INIT_LIST_HEAD(&rmnet_shs_cpu_node_tbl[num_cpu].node_list_id);
 
 	rmnet_shs_freq_init();
+	rc = register_oom_notifier(&rmnet_oom_nb);
+	if (rc < 0) {
+		pr_info("Rmnet_shs_oom register failure");
+	}
 
 	rmnet_shs_cfg.rmnet_shs_init_complete = 1;
 }
@@ -1846,6 +1918,8 @@ void rmnet_shs_exit(unsigned int cpu_switch)
 	rmnet_map_dl_ind_deregister(rmnet_shs_cfg.port,
 				    &rmnet_shs_cfg.dl_mrk_ind_cb);
 	rmnet_shs_cfg.is_reg_dl_mrk_ind = 0;
+	unregister_oom_notifier(&rmnet_oom_nb);
+
 	if (rmnet_shs_cfg.is_timer_init)
 		hrtimer_cancel(&rmnet_shs_cfg.hrtimer_shs);
 
