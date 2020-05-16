@@ -2127,6 +2127,64 @@ static int cam_ife_csid_enable_pxl_path(
 	return 0;
 }
 
+
+static void cam_ife_csid_change_pxl_halt_mode(
+	struct cam_ife_csid_hw          *csid_hw,
+	struct cam_isp_resource_node    *res,
+	enum cam_ife_csid_halt_mode      halt_mode)
+{
+	uint32_t val = 0;
+	const struct cam_ife_csid_reg_offset       *csid_reg;
+	struct cam_hw_soc_info                     *soc_info;
+	struct cam_ife_csid_path_cfg               *path_data;
+	const struct cam_ife_csid_pxl_reg_offset   *pxl_reg;
+	bool                                        is_ipp;
+
+	path_data = (struct cam_ife_csid_path_cfg *) res->res_priv;
+	csid_reg = csid_hw->csid_info->csid_reg;
+	soc_info = &csid_hw->hw_info->soc_info;
+
+	if (res->res_id >= CAM_IFE_PIX_PATH_RES_MAX) {
+		CAM_ERR(CAM_ISP, "CSID:%d Invalid res id%d",
+			csid_hw->hw_intf->hw_idx, res->res_id);
+		goto end;
+	}
+
+	if (res->res_state == CAM_ISP_RESOURCE_STATE_INIT_HW ||
+		res->res_state == CAM_ISP_RESOURCE_STATE_RESERVED) {
+		CAM_ERR(CAM_ISP, "CSID:%d Res:%d already in stopped state:%d",
+			csid_hw->hw_intf->hw_idx, res->res_id, res->res_state);
+		goto end;
+	}
+
+	if (res->res_id == CAM_IFE_PIX_PATH_RES_IPP) {
+		is_ipp = true;
+		pxl_reg = csid_reg->ipp_reg;
+	} else {
+		goto end;
+	}
+
+	if (res->res_state != CAM_ISP_RESOURCE_STATE_STREAMING) {
+		CAM_ERR(CAM_ISP, "CSID:%d %s path Res:%d Invalid state%d",
+			csid_hw->hw_intf->hw_idx, (is_ipp) ? "IPP" : "PPP",
+			res->res_id, res->res_state);
+		goto end;
+	}
+
+	cam_io_w_mb(0, soc_info->reg_map[0].mem_base +
+		pxl_reg->csid_pxl_irq_mask_addr);
+
+	/* configure Halt for slave */
+	val = cam_io_r_mb(soc_info->reg_map[0].mem_base +
+		pxl_reg->csid_pxl_ctrl_addr);
+	val &= ~0xC;
+	val |= (halt_mode << 2);
+	cam_io_w_mb(val, soc_info->reg_map[0].mem_base +
+		pxl_reg->csid_pxl_ctrl_addr);
+end:
+	return;
+}
+
 static int cam_ife_csid_disable_pxl_path(
 	struct cam_ife_csid_hw          *csid_hw,
 	struct cam_isp_resource_node    *res,
@@ -3353,7 +3411,8 @@ int cam_ife_csid_release(void *hw_priv,
 			csid_hw->ipp_path_config.measure_enabled = 0;
 		else if (res->res_id == CAM_IFE_PIX_PATH_RES_PPP)
 			csid_hw->ppp_path_config.measure_enabled = 0;
-		else
+		else if (res->res_id >= CAM_IFE_PIX_PATH_RES_RDI_0 &&
+				res->res_id <= CAM_IFE_PIX_PATH_RES_RDI_3)
 			csid_hw->rdi_path_config[res->res_id].measure_enabled
 				= 0;
 		break;
@@ -3689,6 +3748,41 @@ int cam_ife_csid_start(void *hw_priv, void *start_args,
 	}
 end:
 	return rc;
+}
+
+int cam_ife_csid_halt(struct cam_ife_csid_hw *csid_hw,
+		void *halt_args)
+{
+	struct cam_isp_resource_node         *res;
+	struct cam_csid_hw_halt_args         *csid_halt;
+
+	if (!csid_hw || !halt_args) {
+		CAM_ERR(CAM_ISP, "CSID: Invalid args");
+		return -EINVAL;
+	}
+
+	csid_halt = (struct cam_csid_hw_halt_args *)halt_args;
+
+	/* Change the halt mode */
+	res = csid_halt->node_res;
+	CAM_DBG(CAM_ISP, "CSID:%d res_type %d res_id %d",
+		csid_hw->hw_intf->hw_idx,
+		res->res_type, res->res_id);
+
+	switch (res->res_type) {
+	case CAM_ISP_RESOURCE_PIX_PATH:
+		if (res->res_id == CAM_IFE_PIX_PATH_RES_IPP)
+			cam_ife_csid_change_pxl_halt_mode(csid_hw, res,
+				csid_halt->halt_mode);
+		break;
+	default:
+		CAM_ERR(CAM_ISP, "CSID:%d Invalid res type%d",
+			csid_hw->hw_intf->hw_idx,
+			res->res_type);
+		break;
+	}
+
+	return 0;
 }
 
 int cam_ife_csid_stop(void *hw_priv,
@@ -4087,6 +4181,9 @@ static int cam_ife_csid_process_cmd(void *hw_priv,
 		break;
 	case CAM_IFE_CSID_SET_SENSOR_DIMENSION_CFG:
 		rc = cam_ife_csid_set_sensor_dimension(csid_hw, cmd_args);
+		break;
+	case CAM_ISP_HW_CMD_CSID_CHANGE_HALT_MODE:
+		rc = cam_ife_csid_halt(csid_hw, cmd_args);
 		break;
 	default:
 		CAM_ERR(CAM_ISP, "CSID:%d unsupported cmd:%d",
@@ -4514,6 +4611,8 @@ irqreturn_t cam_ife_csid_irq(int irq_num, void *data)
 			csid_hw->error_irq_count++;
 		}
 	}
+
+handle_fatal_error:
 	spin_unlock_irqrestore(&csid_hw->lock_state, flags);
 
 	if (csid_hw->error_irq_count >
@@ -4521,8 +4620,6 @@ irqreturn_t cam_ife_csid_irq(int irq_num, void *data)
 		fatal_err_detected = true;
 		csid_hw->error_irq_count = 0;
 	}
-
-handle_fatal_error:
 
 	if (fatal_err_detected) {
 		cam_ife_csid_halt_csi2(csid_hw);

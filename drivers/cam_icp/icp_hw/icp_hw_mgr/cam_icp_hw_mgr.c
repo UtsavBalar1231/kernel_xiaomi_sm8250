@@ -5225,7 +5225,7 @@ static int cam_icp_mgr_hw_dump(void *hw_priv, void *hw_dump_args)
 	return 0;
 hw_dump:
 	cur_time = ktime_get();
-	diff = ktime_us_delta(frm_process->submit_timestamp[i], cur_time);
+	diff = ktime_us_delta(cur_time, frm_process->submit_timestamp[i]);
 	cur_ts = ktime_to_timespec64(cur_time);
 	req_ts = ktime_to_timespec64(frm_process->submit_timestamp[i]);
 

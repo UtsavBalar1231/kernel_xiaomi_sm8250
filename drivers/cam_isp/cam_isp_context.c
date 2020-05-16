@@ -2748,9 +2748,8 @@ hw_dump:
 	ctx_isp = (struct cam_isp_context *) ctx->ctx_priv;
 	req_isp = (struct cam_isp_ctx_req *) req->req_priv;
 	cur_time = ktime_get();
-	diff = ktime_us_delta(
-		req_isp->event_timestamp[CAM_ISP_CTX_EVENT_APPLY],
-		cur_time);
+	diff = ktime_us_delta(cur_time,
+		req_isp->event_timestamp[CAM_ISP_CTX_EVENT_APPLY]);
 	if (diff < CAM_ISP_CTX_RESPONSE_TIME_THRESHOLD) {
 		CAM_INFO(CAM_ISP, "req %lld found no error",
 			req->request_id);
