@@ -935,6 +935,9 @@ static void _sde_kms_drm_check_dpms(struct drm_atomic_state *old_state,
 		if ((old_mode != new_mode) || (old_fps != new_fps)) {
 			struct drm_panel_notifier notifier_data;
 
+			SDE_EVT32(old_mode, new_mode, old_fps, new_fps,
+				connector->panel, crtc->state->active,
+				old_conn_state->crtc, event);
 			pr_debug("change detected (power mode %d->%d, fps %d->%d)\n",
 				old_mode, new_mode, old_fps, new_fps);
 
@@ -1621,7 +1624,8 @@ static int _sde_kms_setup_displays(struct drm_device *dev,
 		/* update display cap to MST_MODE for DP MST encoders */
 		info.capabilities |= MSM_DISPLAY_CAP_MST_MODE;
 		sde_kms->dp_stream_count = dp_display_get_num_of_streams();
-		for (idx = 0; idx < sde_kms->dp_stream_count; idx++) {
+		for (idx = 0; idx < sde_kms->dp_stream_count &&
+				priv->num_encoders < max_encoders; idx++) {
 			info.h_tile_instance[0] = idx;
 			encoder = sde_encoder_init(dev, &info);
 			if (IS_ERR_OR_NULL(encoder)) {
@@ -3195,32 +3199,43 @@ static void _sde_kms_set_lutdma_vbif_remap(struct sde_kms *sde_kms)
 	sde_vbif_set_qos_remap(sde_kms, &qos_params);
 }
 
-static void sde_kms_update_pm_qos_irq_request(struct sde_kms *sde_kms)
+void sde_kms_update_pm_qos_irq_request(struct sde_kms *sde_kms,
+			 bool enable, bool skip_lock)
 {
-	struct pm_qos_request *req;
-	u32 cpu_irq_latency;
+	struct msm_drm_private *priv;
 
-	req = &sde_kms->pm_qos_irq_req;
-	req->type = PM_QOS_REQ_AFFINE_CORES;
-	req->cpus_affine = sde_kms->irq_cpu_mask;
-	cpu_irq_latency = sde_kms->catalog->perf.cpu_irq_latency;
+	priv = sde_kms->dev->dev_private;
 
-	if (pm_qos_request_active(req))
-		pm_qos_update_request(req, cpu_irq_latency);
-	else if (!cpumask_empty(&req->cpus_affine)) {
-		/** If request is not active yet and mask is not empty
-		 *  then it needs to be added initially
-		 */
-		pm_qos_add_request(req, PM_QOS_CPU_DMA_LATENCY,
+	if (!skip_lock)
+		mutex_lock(&priv->phandle.phandle_lock);
+
+	if (enable) {
+		struct pm_qos_request *req;
+		u32 cpu_irq_latency;
+
+		req = &sde_kms->pm_qos_irq_req;
+		req->type = PM_QOS_REQ_AFFINE_CORES;
+		req->cpus_affine = sde_kms->irq_cpu_mask;
+		cpu_irq_latency = sde_kms->catalog->perf.cpu_irq_latency;
+
+		if (pm_qos_request_active(req))
+			pm_qos_update_request(req, cpu_irq_latency);
+		else if (!cpumask_empty(&req->cpus_affine)) {
+			/** If request is not active yet and mask is not empty
+			 *  then it needs to be added initially
+			 */
+			pm_qos_add_request(req, PM_QOS_CPU_DMA_LATENCY,
 					cpu_irq_latency);
-	}
-}
-
-static void sde_kms_set_default_pm_qos_irq_request(struct sde_kms *sde_kms)
-{
-	if (pm_qos_request_active(&sde_kms->pm_qos_irq_req))
+		}
+	} else if (!enable && pm_qos_request_active(&sde_kms->pm_qos_irq_req)) {
 		pm_qos_update_request(&sde_kms->pm_qos_irq_req,
-					PM_QOS_DEFAULT_VALUE);
+				PM_QOS_DEFAULT_VALUE);
+	}
+
+	sde_kms->pm_qos_irq_req_en = enable;
+
+	if (!skip_lock)
+		mutex_unlock(&priv->phandle.phandle_lock);
 }
 
 static void sde_kms_irq_affinity_notify(
@@ -3242,8 +3257,8 @@ static void sde_kms_irq_affinity_notify(
 	sde_kms->irq_cpu_mask = *mask;
 
 	// request vote with updated irq cpu mask
-	if (sde_kms->irq_enabled)
-		sde_kms_update_pm_qos_irq_request(sde_kms);
+	if (sde_kms->pm_qos_irq_req_en)
+		sde_kms_update_pm_qos_irq_request(sde_kms, true, true);
 
 	mutex_unlock(&priv->phandle.phandle_lock);
 }
@@ -3268,9 +3283,9 @@ static void sde_kms_handle_power_event(u32 event_type, void *usr)
 		sde_kms_init_shared_hw(sde_kms);
 		_sde_kms_set_lutdma_vbif_remap(sde_kms);
 		sde_kms->first_kickoff = true;
-		sde_kms_update_pm_qos_irq_request(sde_kms);
+		sde_kms_update_pm_qos_irq_request(sde_kms, true, true);
 	} else if (event_type == SDE_POWER_EVENT_PRE_DISABLE) {
-		sde_kms_set_default_pm_qos_irq_request(sde_kms);
+		sde_kms_update_pm_qos_irq_request(sde_kms, false, true);
 		sde_irq_update(msm_kms, false);
 		sde_kms->first_kickoff = false;
 	}
