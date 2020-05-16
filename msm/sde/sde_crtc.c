@@ -4839,6 +4839,7 @@ int sde_crtc_vblank(struct drm_crtc *crtc, bool en)
 	}
 	sde_crtc = to_sde_crtc(crtc);
 
+	mutex_lock(&sde_crtc->vblank_modeset_ctrl_lock);
 	mutex_lock(&sde_crtc->crtc_lock);
 	SDE_EVT32(DRMID(&sde_crtc->base), en, sde_crtc->enabled);
 	ret = _sde_crtc_vblank_enable_no_lock(sde_crtc, en);
@@ -4847,6 +4848,7 @@ int sde_crtc_vblank(struct drm_crtc *crtc, bool en)
 				sde_crtc->name, ret);
 
 	mutex_unlock(&sde_crtc->crtc_lock);
+	mutex_unlock(&sde_crtc->vblank_modeset_ctrl_lock);
 
 	return 0;
 }
@@ -6132,6 +6134,7 @@ struct drm_crtc *sde_crtc_init(struct drm_device *dev, struct drm_plane *plane)
 	mutex_init(&sde_crtc->crtc_lock);
 	spin_lock_init(&sde_crtc->spin_lock);
 	atomic_set(&sde_crtc->frame_pending, 0);
+	mutex_init(&sde_crtc->vblank_modeset_ctrl_lock);
 
 	sde_crtc->enabled = false;
 
