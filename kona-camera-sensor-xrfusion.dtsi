@@ -1,7 +1,7 @@
 #include <dt-bindings/clock/qcom,camcc-kona.h>
 
 &soc {
-	led_flash_rear: qcom,camera-flash0 {
+	led_flash_rear: qcom,camera-flash@0 {
 		cell-index = <0>;
 		compatible = "qcom,camera-flash";
 		flash-source = <&pm8150l_flash0 &pm8150l_flash1>;
@@ -10,13 +10,28 @@
 		status = "disabled";
 	};
 
-	led_flash_rear_aux: qcom,camera-flash1 {
+	led_flash_rear_aux: qcom,camera-flash@1 {
 		cell-index = <1>;
 		compatible = "qcom,camera-flash";
 		flash-source = <&pm8150l_flash0 &pm8150l_flash1>;
 		torch-source = <&pm8150l_torch0 &pm8150l_torch1>;
 		switch-source = <&pm8150l_switch2>;
 		status = "disabled";
+	};
+
+	led_flash_eye_track: qcom,camera-flash@2 {
+		cell-index = <2>;
+		compatible = "qcom,camera-flash";
+		gpios = <&tlmm 22 0>,
+				<&tlmm 23 0>,
+				<&tlmm 24 0>;
+		gpio-req-tbl-num = <0 1 2>;
+		gpio-req-tbl-flags = <0 0 0>;
+		gpio-req-tbl-label = "TCKING_LED_1V2_EN",
+							"TCKING_LED_3V3_EN",
+							"TCKING_LED_EN";
+		gpio-req-tbl-delay = <20 20 20>;
+		status = "ok";
 	};
 
 	led_flash_triple_rear: qcom,camera-flash@4 {
@@ -59,7 +74,6 @@
 				&cam_sensor_rgb_vana_active
 				&cam_sensor_rgb_vio_active
 				&cam_sensor_rgb_vdig_active>;
-
 		pinctrl-1 = <&cam_sensor_6dof_vana_suspend
 				&cam_sensor_6dof_vdig_suspend
 				&cam_sensor_6dof_vio_suspend
@@ -373,7 +387,7 @@
 
 	/* 6DOF Left (Slave) */
 	qcom,cam-sensor4 {
-		cell-index = <4>;
+		cell-index = <0>;
 		compatible = "qcom,cam-sensor";
 		csiphy-sd-index = <4>;
 		sensor-position-roll = <90>;
@@ -422,9 +436,9 @@
 		clock-rates = <24000000>;
 	};
 
-	/* 6DOF Left (Master) */
+	/* 6DOF Right (Master) */
 	qcom,cam-sensor5 {
-		cell-index = <5>;
+		cell-index = <1>;
 		compatible = "qcom,cam-sensor";
 		csiphy-sd-index = <5>;
 		sensor-position-roll = <90>;
@@ -596,9 +610,9 @@
 		clock-rates = <24000000>;
 	};
 
-	/* ET LEFT (Master) */
+	/* ET Left (Master): Combo Mode */
 	qcom,cam-sensor0 {
-		cell-index = <0>;
+		cell-index = <4>;
 		compatible = "qcom,cam-sensor";
 		csiphy-sd-index = <0>;
 		sensor-position-roll = <90>;
@@ -644,18 +658,19 @@
 		clock-rates = <24000000>;
 	};
 
-	/* ET RIGHT (Slave) Combo mode */
+	/* ET Right (Slave): Combo Mode */
 	qcom,cam-sensor1 {
-		cell-index = <1>;
+		cell-index = <5>;
 		compatible = "qcom,cam-sensor";
 		csiphy-sd-index = <0>;
 		sensor-position-roll = <90>;
 		sensor-position-pitch = <0>;
 		sensor-position-yaw = <180>;
-		cam_bob-supply = <&pm8150a_bob>;
-		cam_vdig-supply = <&pm8009_l2>;
+		led-flash-src = <&led_flash_eye_track>;
 		cam_vio-supply = <&pm8009_l7>;
+		cam_bob-supply = <&pm8150a_bob>;
 		cam_vana-supply = <&pm8009_l6>;
+		cam_vdig-supply = <&pm8009_l2>;
 		cam_clk-supply = <&titan_top_gdsc>;
 		regulator-names = "cam_vio", "cam_vana", "cam_vdig",
 			"cam_clk", "cam_bob";
