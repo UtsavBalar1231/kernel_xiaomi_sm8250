@@ -231,12 +231,19 @@ static int msm_compr_set_render_mode(struct msm_compr_audio *prtd,
 
 	pr_debug("%s, got render mode %u\n", __func__, render_mode);
 
-	if (render_mode == SNDRV_COMPRESS_RENDER_MODE_AUDIO_MASTER) {
+	switch (render_mode) {
+	case SNDRV_COMPRESS_RENDER_MODE_AUDIO_MASTER:
 		render_mode = ASM_SESSION_MTMX_STRTR_PARAM_RENDER_DEFAULT;
-	} else if (render_mode == SNDRV_COMPRESS_RENDER_MODE_STC_MASTER) {
+		break;
+	case SNDRV_COMPRESS_RENDER_MODE_STC_MASTER:
 		render_mode = ASM_SESSION_MTMX_STRTR_PARAM_RENDER_LOCAL_STC;
 		prtd->run_mode = ASM_SESSION_CMD_RUN_STARTIME_RUN_WITH_DELAY;
-	} else {
+		break;
+	case SNDRV_COMPRESS_RENDER_MODE_TTP:
+		render_mode = ASM_SESSION_MTMX_STRTR_PARAM_RENDER_LOCAL_STC;
+		prtd->run_mode = ASM_SESSION_CMD_RUN_STARTIME_RUN_WITH_TTP;
+		break;
+	default:
 		pr_err("%s, Invalid render mode %u\n", __func__,
 			render_mode);
 		ret = -EINVAL;
@@ -1974,6 +1981,9 @@ static int msm_compr_playback_free(struct snd_compr_stream *cstream)
 	if (pdata->dec_params[soc_prtd->dai_link->id] != NULL) {
 		kfree(pdata->dec_params[soc_prtd->dai_link->id]);
 		pdata->dec_params[soc_prtd->dai_link->id] = NULL;
+	}
+	if (pdata->ch_map[soc_prtd->dai_link->id]) {
+		pdata->ch_map[soc_prtd->dai_link->id]->set_ch_map = false;
 	}
 	pdata->is_in_use[soc_prtd->dai_link->id] = false;
 	kfree(prtd);

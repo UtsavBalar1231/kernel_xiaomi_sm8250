@@ -107,6 +107,9 @@ static int rouleur_handle_post_irq(void *data)
 
 static int rouleur_init_reg(struct snd_soc_component *component)
 {
+	/* Disable HPH OCP */
+	snd_soc_component_update_bits(component, ROULEUR_ANA_HPHPA_CNP_CTL_2,
+					0x03, 0x00);
 	/* Enable surge protection */
 	snd_soc_component_update_bits(component, ROULEUR_ANA_SURGE_EN,
 					0xC0, 0xC0);
@@ -354,7 +357,7 @@ static int rouleur_rx_clk_enable(struct snd_soc_component *component)
 		usleep_range(5000, 5100);
 		rouleur_global_mbias_enable(component);
 		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_HPHPA_FSM_CLK, 0x11, 0x11);
+				ROULEUR_ANA_HPHPA_FSM_CLK, 0x7F, 0x11);
 		snd_soc_component_update_bits(component,
 				ROULEUR_ANA_HPHPA_FSM_CLK, 0x80, 0x80);
 		snd_soc_component_update_bits(component,
@@ -382,14 +385,14 @@ static int rouleur_rx_clk_disable(struct snd_soc_component *component)
 		snd_soc_component_update_bits(component,
 				ROULEUR_ANA_HPHPA_FSM_CLK, 0x80, 0x00);
 		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_HPHPA_FSM_CLK, 0x11, 0x00);
+				ROULEUR_ANA_HPHPA_FSM_CLK, 0x7F, 0x00);
 		snd_soc_component_update_bits(component,
 				ROULEUR_ANA_NCP_EN, 0x01, 0x00);
-		rouleur_global_mbias_disable(component);
 		snd_soc_component_update_bits(component,
 				ROULEUR_DIG_SWR_CDC_RX_CLK_CTL, 0x20, 0x00);
 		snd_soc_component_update_bits(component,
 				ROULEUR_DIG_SWR_CDC_RX_CLK_CTL, 0x10, 0x00);
+		rouleur_global_mbias_disable(component);
 
 	}
 	mutex_unlock(&rouleur->rx_clk_lock);
@@ -475,17 +478,18 @@ static int rouleur_codec_hphl_dac_event(struct snd_soc_dapm_widget *w,
 				0x04, 0x04);
 		snd_soc_component_update_bits(component,
 				ROULEUR_DIG_SWR_CDC_RX_CLK_CTL, 0x01, 0x01);
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_PDM_WD_CTL0,
-				0x03, 0x03);
 		break;
 	case SND_SOC_DAPM_POST_PMD:
 		snd_soc_component_update_bits(component,
-			ROULEUR_DIG_SWR_PDM_WD_CTL0,
-			0x03, 0x00);
+				ROULEUR_DIG_SWR_CDC_RX_CLK_CTL,
+				0x01, 0x00);
 		snd_soc_component_update_bits(component,
-			ROULEUR_DIG_SWR_CDC_RX_CLK_CTL,
-			0x01, 0x00);
+				ROULEUR_DIG_SWR_CDC_RX_GAIN_CTL,
+				0x04, 0x00);
+		if (rouleur->comp1_enable)
+			snd_soc_component_update_bits(component,
+					ROULEUR_DIG_SWR_CDC_COMP_CTL_0,
+					0x02, 0x00);
 		break;
 	}
 
@@ -546,16 +550,17 @@ static int rouleur_codec_hphr_dac_event(struct snd_soc_dapm_widget *w,
 				0x08, 0x08);
 		snd_soc_component_update_bits(component,
 				ROULEUR_DIG_SWR_CDC_RX_CLK_CTL, 0x02, 0x02);
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_PDM_WD_CTL1,
-				0x03, 0x03);
 		break;
 	case SND_SOC_DAPM_POST_PMD:
 		snd_soc_component_update_bits(component,
-			ROULEUR_DIG_SWR_PDM_WD_CTL1,
-			0x03, 0x00);
-		snd_soc_component_update_bits(component,
 			ROULEUR_DIG_SWR_CDC_RX_CLK_CTL, 0x02, 0x00);
+		snd_soc_component_update_bits(component,
+				ROULEUR_DIG_SWR_CDC_RX_GAIN_CTL,
+				0x08, 0x00);
+		if (rouleur->comp2_enable)
+			snd_soc_component_update_bits(component,
+					ROULEUR_DIG_SWR_CDC_COMP_CTL_0,
+					0x01, 0x00);
 		break;
 
 	}
@@ -580,23 +585,20 @@ static int rouleur_codec_ear_lo_dac_event(struct snd_soc_dapm_widget *w,
 				ROULEUR_DIG_SWR_CDC_RX0_CTL,
 				0x7C, 0x7C);
 		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_CDC_RX_CLK_CTL,
-				0x01, 0x01);
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_PDM_WD_CTL0,
-				0x03, 0x03);
-		snd_soc_component_update_bits(component,
 				ROULEUR_DIG_SWR_CDC_RX_GAIN_CTL,
 				0x04, 0x04);
+		snd_soc_component_update_bits(component,
+				ROULEUR_DIG_SWR_CDC_RX_CLK_CTL,
+				0x01, 0x01);
 
 		break;
 	case SND_SOC_DAPM_POST_PMD:
 		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_PDM_WD_CTL0,
-				0x03, 0x00);
-		snd_soc_component_update_bits(component,
 				ROULEUR_DIG_SWR_CDC_RX_CLK_CTL,
 				0x01, 0x00);
+		snd_soc_component_update_bits(component,
+				ROULEUR_DIG_SWR_CDC_RX_GAIN_CTL,
+				0x04, 0x00);
 
 		break;
 	};
@@ -622,14 +624,11 @@ static int rouleur_codec_enable_hphr_pa(struct snd_soc_dapm_widget *w,
 				    rouleur->rx_swr_dev->dev_num,
 				    true);
 
-		snd_soc_component_update_bits(component,
-					ROULEUR_ANA_HPHPA_CNP_CTL_2,
-					0x40, 0x40);
 		set_bit(HPH_PA_DELAY, &rouleur->status_mask);
-		/* TODO: WHY SECOND TIME */
-		ret = swr_slvdev_datapath_control(rouleur->rx_swr_dev,
-					    rouleur->rx_swr_dev->dev_num,
-					    true);
+		usleep_range(5000, 5100);
+		snd_soc_component_update_bits(component,
+			ROULEUR_DIG_SWR_PDM_WD_CTL1,
+			0x03, 0x03);
 		break;
 	case SND_SOC_DAPM_POST_PMU:
 		/*
@@ -676,8 +675,8 @@ static int rouleur_codec_enable_hphr_pa(struct snd_soc_dapm_widget *w,
 					     WCD_EVENT_POST_HPHR_PA_OFF,
 					     &rouleur->mbhc->wcd_mbhc);
 		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_HPHPA_CNP_CTL_2,
-				0x40, 0x00);
+				ROULEUR_DIG_SWR_PDM_WD_CTL1,
+				0x03, 0x00);
 		break;
 	};
 	return ret;
@@ -700,10 +699,11 @@ static int rouleur_codec_enable_hphl_pa(struct snd_soc_dapm_widget *w,
 		ret = swr_slvdev_datapath_control(rouleur->rx_swr_dev,
 				    rouleur->rx_swr_dev->dev_num,
 				    true);
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_HPHPA_CNP_CTL_2,
-				0x80, 0x80);
 		set_bit(HPH_PA_DELAY, &rouleur->status_mask);
+		usleep_range(5000, 5100);
+		snd_soc_component_update_bits(component,
+				ROULEUR_DIG_SWR_PDM_WD_CTL0,
+				0x03, 0x03);
 		break;
 	case SND_SOC_DAPM_POST_PMU:
 		/*
@@ -748,8 +748,8 @@ static int rouleur_codec_enable_hphl_pa(struct snd_soc_dapm_widget *w,
 					     WCD_EVENT_POST_HPHL_PA_OFF,
 					     &rouleur->mbhc->wcd_mbhc);
 		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_HPHPA_CNP_CTL_2,
-				0x80, 0x00);
+			ROULEUR_DIG_SWR_PDM_WD_CTL0,
+			0x03, 0x00);
 
 		break;
 	};
@@ -773,10 +773,10 @@ static int rouleur_codec_enable_ear_pa(struct snd_soc_dapm_widget *w,
 		ret = swr_slvdev_datapath_control(rouleur->rx_swr_dev,
 			    rouleur->rx_swr_dev->dev_num,
 			    true);
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_COMBOPA_CTL,
-				0x80, 0x80);
 		usleep_range(5000, 5100);
+		snd_soc_component_update_bits(component,
+				ROULEUR_DIG_SWR_PDM_WD_CTL0,
+				0x03, 0x03);
 		break;
 	case SND_SOC_DAPM_POST_PMU:
 		if (rouleur->update_wcd_event)
@@ -795,10 +795,10 @@ static int rouleur_codec_enable_ear_pa(struct snd_soc_dapm_widget *w,
 						(WCD_RX1 << 0x10 | 0x1));
 		break;
 	case SND_SOC_DAPM_POST_PMD:
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_COMBOPA_CTL,
-				0x80, 0x00);
 		usleep_range(5000, 5100);
+		snd_soc_component_update_bits(component,
+				ROULEUR_DIG_SWR_PDM_WD_CTL0,
+				0x03, 0x00);
 	};
 	return ret;
 }
@@ -823,10 +823,10 @@ static int rouleur_codec_enable_lo_pa(struct snd_soc_dapm_widget *w,
 		snd_soc_component_update_bits(component,
 				ROULEUR_ANA_COMBOPA_CTL,
 				0x40, 0x40);
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_COMBOPA_CTL,
-				0x80, 0x80);
 		usleep_range(5000, 5100);
+		snd_soc_component_update_bits(component,
+				ROULEUR_DIG_SWR_PDM_WD_CTL0,
+				0x03, 0x03);
 		break;
 	case SND_SOC_DAPM_POST_PMU:
 		if (rouleur->update_wcd_event)
@@ -847,11 +847,11 @@ static int rouleur_codec_enable_lo_pa(struct snd_soc_dapm_widget *w,
 	case SND_SOC_DAPM_POST_PMD:
 		snd_soc_component_update_bits(component,
 				ROULEUR_ANA_COMBOPA_CTL,
-				0x80, 0x00);
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_COMBOPA_CTL,
 				0x40, 0x00);
 		usleep_range(5000, 5100);
+		snd_soc_component_update_bits(component,
+				ROULEUR_DIG_SWR_PDM_WD_CTL0,
+				0x03, 0x00);
 	};
 	return ret;
 }
@@ -1118,7 +1118,7 @@ int rouleur_mbhc_micb_adjust_voltage(struct snd_soc_component *component,
 	 */
 	cur_vout_ctl = (snd_soc_component_read32(component,
 				ROULEUR_ANA_MICBIAS_LDO_1_SETTING)) & 0xF8;
-
+	cur_vout_ctl = cur_vout_ctl >> 3;
 	req_vout_ctl = rouleur_get_micb_vout_ctl_val(req_volt);
 	if (req_vout_ctl < 0) {
 		ret = -EINVAL;
@@ -1138,7 +1138,7 @@ int rouleur_mbhc_micb_adjust_voltage(struct snd_soc_component *component,
 					      pullup_mask);
 
 	snd_soc_component_update_bits(component,
-		ROULEUR_ANA_MICBIAS_LDO_1_SETTING, 0xF8, req_vout_ctl);
+		ROULEUR_ANA_MICBIAS_LDO_1_SETTING, 0xF8, req_vout_ctl << 3);
 
 	if (micb_en == 0x1) {
 		snd_soc_component_update_bits(component, micb_reg,
@@ -1166,6 +1166,7 @@ int rouleur_micbias_control(struct snd_soc_component *component,
 	int post_on_event = 0, post_dapm_off = 0;
 	int post_dapm_on = 0;
 	u8 pullup_mask = 0, enable_mask = 0;
+	int ret = 0;
 
 	if ((micb_index < 0) || (micb_index > ROULEUR_MAX_MICBIAS - 1)) {
 		dev_err(component->dev, "%s: Invalid micbias index, micb_ind:%d\n",
@@ -1201,6 +1202,12 @@ int rouleur_micbias_control(struct snd_soc_component *component,
 
 	switch (req) {
 	case MICB_PULLUP_ENABLE:
+		if (!rouleur->dev_up) {
+			dev_dbg(component->dev, "%s: enable req %d wcd device down\n",
+				__func__, req);
+			ret = -ENODEV;
+			goto done;
+		}
 		rouleur->pullup_ref[micb_index]++;
 		if ((rouleur->pullup_ref[micb_index] == 1) &&
 		    (rouleur->micb_ref[micb_index] == 0))
@@ -1208,6 +1215,12 @@ int rouleur_micbias_control(struct snd_soc_component *component,
 				pullup_mask, pullup_mask);
 		break;
 	case MICB_PULLUP_DISABLE:
+		if (!rouleur->dev_up) {
+			dev_dbg(component->dev, "%s: enable req %d wcd device down\n",
+				__func__, req);
+			ret = -ENODEV;
+			goto done;
+		}
 		if (rouleur->pullup_ref[micb_index] > 0)
 			rouleur->pullup_ref[micb_index]--;
 		if ((rouleur->pullup_ref[micb_index] == 0) &&
@@ -1216,11 +1229,15 @@ int rouleur_micbias_control(struct snd_soc_component *component,
 				pullup_mask, 0x00);
 		break;
 	case MICB_ENABLE:
+		if (!rouleur->dev_up) {
+			dev_dbg(component->dev, "%s: enable req %d wcd device down\n",
+				__func__, req);
+			ret = -ENODEV;
+			goto done;
+		}
 		rouleur->micb_ref[micb_index]++;
 		if (rouleur->micb_ref[micb_index] == 1) {
 			rouleur_global_mbias_enable(component);
-			snd_soc_component_update_bits(component, micb_reg,
-				0x80, 0x80);
 			snd_soc_component_update_bits(component,
 				micb_reg, enable_mask, enable_mask);
 			if (post_on_event)
@@ -1236,16 +1253,27 @@ int rouleur_micbias_control(struct snd_soc_component *component,
 	case MICB_DISABLE:
 		if (rouleur->micb_ref[micb_index] > 0)
 			rouleur->micb_ref[micb_index]--;
+		if (!rouleur->dev_up) {
+			dev_dbg(component->dev, "%s: enable req %d wcd device down\n",
+				__func__, req);
+			ret = -ENODEV;
+			goto done;
+		}
 		if ((rouleur->micb_ref[micb_index] == 0) &&
-			 (rouleur->pullup_ref[micb_index] == 0)) {
+		    (rouleur->pullup_ref[micb_index] > 0)) {
+			snd_soc_component_update_bits(component, micb_reg,
+				pullup_mask, pullup_mask);
+                        snd_soc_component_update_bits(component, micb_reg,
+                                enable_mask, 0x00);
+			rouleur_global_mbias_disable(component);
+		} else if ((rouleur->micb_ref[micb_index] == 0) &&
+			   (rouleur->pullup_ref[micb_index] == 0)) {
 			if (pre_off_event && rouleur->mbhc)
 				blocking_notifier_call_chain(
 					&rouleur->mbhc->notifier, pre_off_event,
 					&rouleur->mbhc->wcd_mbhc);
                         snd_soc_component_update_bits(component, micb_reg,
                                 enable_mask, 0x00);
-			snd_soc_component_update_bits(component, micb_reg,
-				0x80, 0x00);
 			rouleur_global_mbias_disable(component);
 			if (post_off_event && rouleur->mbhc)
 				blocking_notifier_call_chain(
@@ -1263,8 +1291,8 @@ int rouleur_micbias_control(struct snd_soc_component *component,
 	dev_dbg(component->dev, "%s: micb_num:%d, micb_ref: %d, pullup_ref: %d\n",
 		__func__, micb_num, rouleur->micb_ref[micb_index],
 		rouleur->pullup_ref[micb_index]);
+done:
 	mutex_unlock(&rouleur->micb_lock);
-
 	return 0;
 }
 EXPORT_SYMBOL(rouleur_micbias_control);
@@ -1333,6 +1361,7 @@ static int rouleur_event_notify(struct notifier_block *block,
 				0x80, 0x00);
 		break;
 	case BOLERO_WCD_EVT_SSR_DOWN:
+		rouleur->dev_up = false;
 		rouleur->mbhc->wcd_mbhc.deinit_in_progress = true;
 		mbhc = &rouleur->mbhc->wcd_mbhc;
 		rouleur_mbhc_ssr_down(rouleur->mbhc, component);
@@ -1358,6 +1387,7 @@ static int rouleur_event_notify(struct notifier_block *block,
 			rouleur_mbhc_hs_detect(component, mbhc->mbhc_cfg);
 		}
 		rouleur->mbhc->wcd_mbhc.deinit_in_progress = false;
+		rouleur->dev_up = true;
 		break;
 	default:
 		dev_err(component->dev, "%s: invalid event %d\n", __func__,
@@ -1552,6 +1582,9 @@ static int rouleur_codec_enable_pa_vpos(struct snd_soc_dapm_widget *w,
 		break;
 	case SND_SOC_DAPM_POST_PMD:
 		set_bit(ALLOW_VPOS_DISABLE, &rouleur->status_mask);
+		ret = swr_slvdev_datapath_control(rouleur->rx_swr_dev,
+				rouleur->rx_swr_dev->dev_num,
+				false);
 		break;
 	}
 	return 0;
@@ -1822,7 +1855,7 @@ static ssize_t rouleur_version_read(struct snd_info_entry *entry,
 
 	switch (priv->version) {
 	case ROULEUR_VERSION_1_0:
-		len = snprintf(buffer, sizeof(buffer), "rouleur_1_0\n");
+		len = snprintf(buffer, sizeof(buffer), "ROULEUR_1_0\n");
 		break;
 	default:
 		len = snprintf(buffer, sizeof(buffer), "VER_UNDEFINED\n");
@@ -1911,7 +1944,7 @@ static int rouleur_set_micbias_data(struct rouleur_priv *rouleur,
 		goto done;
 	}
 	regmap_update_bits(rouleur->regmap, ROULEUR_ANA_MICBIAS_LDO_1_SETTING,
-			   0xF8, vout_ctl);
+			   0xF8, vout_ctl << 3);
 done:
 	return rc;
 }
@@ -1986,6 +2019,7 @@ static int rouleur_soc_codec_probe(struct snd_soc_component *component)
 			return ret;
 		}
 	}
+	rouleur->dev_up = true;
 done:
 	return ret;
 }

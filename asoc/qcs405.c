@@ -6552,6 +6552,36 @@ err:
 	return ret;
 }
 
+static int msm_mi2s_snd_hw_free(struct snd_pcm_substream *substream)
+{
+	int i, data_format = 0;
+	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+	int index = rtd->cpu_dai->id;
+	struct snd_soc_card *card = rtd->card;
+	struct snd_soc_component *component;
+
+	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
+		data_format = mi2s_rx_cfg[index].data_format;
+	else
+		data_format = mi2s_tx_cfg[index].data_format;
+
+	pr_debug("%s(): substream = %s  stream = %d\n", __func__,
+		 substream->name, substream->stream);
+
+	/* Call csra mute function if data format is DSD, else return */
+	if (data_format != AFE_DSD_DATA)
+		return 0;
+
+	for (i = 0; i < card->num_aux_devs; i++) {
+		component =
+			soc_find_component(card->aux_dev[i].codec_of_node,
+					NULL);
+		csra66x0_hw_free_mute(component);
+	}
+
+	return 0;
+}
+
 static void msm_mi2s_snd_shutdown(struct snd_pcm_substream *substream)
 {
 	int ret;
@@ -6677,6 +6707,7 @@ static int msm_meta_mi2s_snd_startup(struct snd_pcm_substream *substream)
 	unsigned int fmt = SND_SOC_DAIFMT_CBS_CFS;
 	struct snd_soc_card *card = rtd->card;
 	struct msm_asoc_mach_data *pdata = snd_soc_card_get_drvdata(card);
+	u16 port_id = 0;
 
 	dev_dbg(rtd->card->dev,
 		"%s: substream = %s  stream = %d, dai name %s, dai ID %d\n",
@@ -6710,6 +6741,13 @@ static int msm_meta_mi2s_snd_startup(struct snd_pcm_substream *substream)
 		meta_mi2s_intf_conf[index].clk_enable[i] = true;
 
 		if (i == 0) {
+			port_id = msm_get_port_id(rtd->dai_link->id);
+			ret = afe_set_clk_id(port_id,
+					     mi2s_clk[member_port].clk_id);
+			if (ret < 0)
+				pr_err("%s: afe_set_clk_id fail %d\n",
+					 __func__, ret);
+
 			ret = snd_soc_dai_set_fmt(cpu_dai, fmt);
 			if (ret < 0) {
 				pr_err("%s: set fmt cpu dai failed for META_MI2S (%d), err:%d\n",
@@ -6902,6 +6940,7 @@ static void msm_spdif_snd_shutdown(struct snd_pcm_substream *substream)
 
 static struct snd_soc_ops msm_mi2s_be_ops = {
 	.startup = msm_mi2s_snd_startup,
+	.hw_free = msm_mi2s_snd_hw_free,
 	.shutdown = msm_mi2s_snd_shutdown,
 };
 

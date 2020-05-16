@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/* Copyright (c) 2016-2017, 2019 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2016-2017, 2019-2020 The Linux Foundation. All rights reserved.
  */
 
 #include <linux/types.h>
@@ -10,6 +10,7 @@
 static struct miscdevice audio_g711alaw_misc;
 static struct ws_mgr audio_g711_ws_mgr;
 
+#ifdef CONFIG_DEBUG_FS
 static const struct file_operations audio_g711_debug_fops = {
 	.read = audio_aio_debug_read,
 	.open = audio_aio_debug_open,
@@ -20,6 +21,7 @@ static struct dentry *config_debugfs_create_file(const char *name, void *data)
 	return debugfs_create_file(name, S_IFREG | 0444,
 				NULL, (void *)data, &audio_g711_debug_fops);
 }
+#endif
 
 static int g711_channel_map(u8 *channel_mapping, uint32_t channels);
 
@@ -278,10 +280,12 @@ static int audio_open(struct inode *inode, struct file *file)
 	}
 
 	snprintf(name, sizeof(name), "msm_g711_%04x", audio->ac->session);
+#ifdef CONFIG_DEBUG_FS
 	audio->dentry = config_debugfs_create_file(name, (void *)audio);
 
 	if (IS_ERR_OR_NULL(audio->dentry))
 		pr_debug("%s: debugfs_create_file failed\n", __func__);
+#endif
 	pr_debug("%s: g711dec success mode[%d]session[%d]\n", __func__,
 						audio->feedback,
 						audio->ac->session);
