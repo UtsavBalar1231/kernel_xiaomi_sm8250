@@ -2601,7 +2601,7 @@
 
 /*
  * <ini>
- * is_ft_im_for_deauth - FW needs to perform FT initial moiblity association
+ * enable_ft_im_roaming - FW needs to perform FT initial moiblity association
  * instead of FT roaming for deauth roam trigger
  * @Min: 0
  * @Max: 1
@@ -2615,12 +2615,12 @@
  *
  * Supported Feature: Roaming
  *
- * Usage: External
+ * Usage: Internal
  *
  * </ini>
  */
-#define CFG_FT_IM_FOR_DEAUTH CFG_INI_BOOL( \
-		"is_ft_im_for_deauth", \
+#define CFG_FT_IM_ROAMING CFG_INI_BOOL( \
+		"enable_ft_im_roaming", \
 		1, \
 		"FT roaming for deauth roam trigger")
 
@@ -2830,7 +2830,7 @@
 	CFG(CFG_LFR_ROAM_FORCE_RSSI_TRIGGER) \
 	CFG(CFG_ROAM_SCAN_SCAN_POLICY) \
 	CFG(CFG_ROAM_SCAN_INACTIVITY_TIME) \
-	CFG(CFG_FT_IM_FOR_DEAUTH) \
+	CFG(CFG_FT_IM_ROAMING) \
 	CFG(CFG_ROAM_INACTIVE_COUNT) \
 	CFG(CFG_POST_INACTIVITY_ROAM_SCAN_PERIOD) \
 	CFG(CFG_BSS_LOAD_TRIG_5G_RSSI_THRES) \
