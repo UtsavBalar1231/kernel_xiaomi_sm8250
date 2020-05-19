@@ -449,6 +449,12 @@ First Level Node - QGAUGE device
 		    when there is variation in system-SOC due to
 		    changes in the load.
 
+- qcom,use-cp-iin-sns
+	Usage:      optional
+	Value type: bool
+	Definition: Enable SMB-sensing for CP. Enabling this property
+		    will enable QG summing the SMB current.
+
 ==========================================================
 Second Level Nodes - Peripherals managed by QGAUGE driver
 ==========================================================
