@@ -7570,6 +7570,11 @@ err:
 	return -ENOMEM;
 }
 
+static void cam_req_mgr_process_workq_cam_ife_worker(struct work_struct *w)
+{
+	cam_req_mgr_process_workq(w);
+}
+
 int cam_ife_hw_mgr_init(struct cam_hw_mgr_intf *hw_mgr_intf, int *iommu_hdl)
 {
 	int rc = -EFAULT;
@@ -7718,7 +7723,8 @@ int cam_ife_hw_mgr_init(struct cam_hw_mgr_intf *hw_mgr_intf, int *iommu_hdl)
 
 	/* Create Worker for ife_hw_mgr with 10 tasks */
 	rc = cam_req_mgr_workq_create("cam_ife_worker", 10,
-			&g_ife_hw_mgr.workq, CRM_WORKQ_USAGE_NON_IRQ, 0);
+			&g_ife_hw_mgr.workq, CRM_WORKQ_USAGE_NON_IRQ, 0,
+			cam_req_mgr_process_workq_cam_ife_worker);
 	if (rc < 0) {
 		CAM_ERR(CAM_ISP, "Unable to create worker");
 		goto end;
