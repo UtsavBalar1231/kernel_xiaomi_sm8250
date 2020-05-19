@@ -25,6 +25,7 @@
 #include "cam_common_util.h"
 
 #define CAM_IFE_HW_ENTRIES_MAX  20
+#define CAM_IFE_HW_CONFIG_WAIT_MAX_TRY  3
 
 #define TZ_SVC_SMMU_PROGRAM 0x15
 #define TZ_SAFE_SYSCALL_ID  0x3
@@ -3756,23 +3757,45 @@ static int cam_ife_mgr_config_hw(void *hw_mgr_priv,
 			return rc;
 		}
 
-		if (cfg->init_packet) {
+		if (!cfg->init_packet)
+			goto end;
+
+		for (i = 0; i < CAM_IFE_HW_CONFIG_WAIT_MAX_TRY; i++) {
 			rem_jiffies = wait_for_completion_timeout(
 				&ctx->config_done_complete,
 				msecs_to_jiffies(30));
 			if (rem_jiffies == 0) {
+				if (!cam_cdm_detect_hang_error(
+						ctx->cdm_handle)) {
+					CAM_INFO(CAM_ISP,
+						"CDM workqueue delay detected, wait for some more time req_id=%llu rc=%d ctx_index %d",
+						cfg->request_id, rc,
+						ctx->ctx_index);
+					continue;
+				}
 				CAM_ERR(CAM_ISP,
 					"config done completion timeout for req_id=%llu ctx_index %d",
 					cfg->request_id, ctx->ctx_index);
 				rc = -ETIMEDOUT;
-			} else
+				goto end;
+			} else {
+				rc = 0;
 				CAM_DBG(CAM_ISP,
 					"config done Success for req_id=%llu ctx_index %d",
 					cfg->request_id, ctx->ctx_index);
+				break;
+			}
+		}
+		if ((i == CAM_IFE_HW_CONFIG_WAIT_MAX_TRY) && (rc == 0)) {
+			CAM_ERR(CAM_ISP,
+				"config done completion timeout for req_id=%llu ctx_index %d",
+				cfg->request_id, ctx->ctx_index);
+			rc = -ETIMEDOUT;
 		}
 	} else {
 		CAM_ERR(CAM_ISP, "No commands to config");
 	}
+end:
 	CAM_DBG(CAM_ISP, "Exit: Config Done: %llu",  cfg->request_id);
 
 	return rc;

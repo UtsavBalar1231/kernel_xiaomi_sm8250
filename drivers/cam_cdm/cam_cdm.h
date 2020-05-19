@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_CDM_H_
@@ -52,6 +52,7 @@ enum cam_cdm_hw_process_intf_cmd {
 	CAM_CDM_HW_INTF_CMD_RELEASE,
 	CAM_CDM_HW_INTF_CMD_SUBMIT_BL,
 	CAM_CDM_HW_INTF_CMD_RESET_HW,
+	CAM_CDM_HW_INTF_CMD_HANG_DETECT,
 	CAM_CDM_HW_INTF_CMD_INVALID,
 };
 
@@ -217,6 +218,7 @@ struct cam_cdm {
 	atomic_t bl_done;
 	struct cam_cdm_hw_mem gen_irq;
 	uint32_t cpas_handle;
+	atomic_t work_record;
 };
 
 /* struct cam_cdm_private_dt_data - CDM hw custom dt data */

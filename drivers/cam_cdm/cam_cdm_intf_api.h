@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_CDM_API_H_
@@ -199,4 +199,13 @@ int cam_cdm_stream_off(uint32_t handle);
  */
 int cam_cdm_reset_hw(uint32_t handle);
 
+/**
+ * @brief : API to detect hang in previously acquired CDM,
+ *          this should be only performed only if the CDM is private.
+ *
+ * @handle : Input handle of the CDM to detect hang
+ *
+ * @return 0 on success
+ */
+int cam_cdm_detect_hang_error(uint32_t handle);
 #endif /* _CAM_CDM_API_H_ */
