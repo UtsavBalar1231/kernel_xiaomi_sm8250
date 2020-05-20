@@ -404,6 +404,12 @@ static int q6afe_load_avcs_modules(int num_modules, u16 port_id,
 					goto load_unload;
 				}
 
+				if (format_id == ENC_CODEC_TYPE_LHDC) {
+					pm[i]->payload->load_unload_info[0].id1 =
+						AVS_MODULE_ID_DEPACKETIZER_COP_V1;
+					goto load_unload;
+				}
+
 				pm[i]->payload->load_unload_info[1].module_type =
 						AMDB_MODULE_TYPE_DECODER;
 				pm[i]->payload->load_unload_info[1].id1 =
@@ -4998,6 +5004,7 @@ static int q6afe_send_enc_config(u16 port_id,
 	if (format != ASM_MEDIA_FMT_SBC && format != ASM_MEDIA_FMT_AAC_V2 &&
 		format != ASM_MEDIA_FMT_APTX && format != ASM_MEDIA_FMT_APTX_HD &&
 		format != ASM_MEDIA_FMT_CELT && format != ASM_MEDIA_FMT_LDAC &&
+		format != ASM_MEDIA_FMT_LHDC &&
 		format != ASM_MEDIA_FMT_APTX_ADAPTIVE &&
 		format != ASM_MEDIA_FMT_APTX_AD_SPEECH) {
 		pr_err("%s:Unsuppported enc format. Ignore AFE config\n",
@@ -5211,6 +5218,8 @@ static int q6afe_send_enc_config(u16 port_id,
 
 	if ((format == ASM_MEDIA_FMT_LDAC &&
 	     cfg->ldac_config.abr_config.is_abr_enabled) ||
+	     (format == ASM_MEDIA_FMT_LHDC &&
+	     cfg->lhdc_config.abr_config.is_abr_enabled) ||
 	     format == ASM_MEDIA_FMT_APTX_ADAPTIVE ||
 	     format == ASM_MEDIA_FMT_APTX_AD_SPEECH) {
 		if (format != ASM_MEDIA_FMT_APTX_AD_SPEECH) {
@@ -5219,8 +5228,12 @@ static int q6afe_send_enc_config(u16 port_id,
 			param_hdr.param_id = AFE_ENCODER_PARAM_ID_BIT_RATE_LEVEL_MAP;
 			param_hdr.param_size =
 				sizeof(struct afe_enc_level_to_bitrate_map_param_t);
-			map_param.mapping_table =
-				cfg->ldac_config.abr_config.mapping_info;
+			if (format == ASM_MEDIA_FMT_LHDC)
+				map_param.mapping_table =
+					cfg->lhdc_config.abr_config.mapping_info;
+			else
+				map_param.mapping_table =
+					cfg->ldac_config.abr_config.mapping_info;
 			ret = q6afe_pack_and_set_param_in_band(port_id,
 							q6audio_get_port_index(port_id),
 							param_hdr,
@@ -5244,6 +5257,9 @@ static int q6afe_send_enc_config(u16 port_id,
 		else if (format == ASM_MEDIA_FMT_APTX_AD_SPEECH)
 			imc_info_param.imc_info =
 			cfg->aptx_ad_speech_config.imc_info;
+		else if (format == ASM_MEDIA_FMT_LHDC)
+			imc_info_param.imc_info =
+			cfg->lhdc_config.abr_config.imc_info;
 		else
 			imc_info_param.imc_info =
 			cfg->ldac_config.abr_config.imc_info;
@@ -5266,6 +5282,9 @@ static int q6afe_send_enc_config(u16 port_id,
 	if (format == ASM_MEDIA_FMT_LDAC)
 		media_type.sample_rate =
 			cfg->ldac_config.custom_config.sample_rate;
+	else if (format == ASM_MEDIA_FMT_LHDC)
+		media_type.sample_rate =
+			cfg->lhdc_config.custom_config.sample_rate;
 	else if (format == ASM_MEDIA_FMT_APTX_ADAPTIVE)
 		media_type.sample_rate =
 			cfg->aptx_ad_config.custom_cfg.sample_rate;
@@ -5698,6 +5717,7 @@ static int __afe_port_start(u16 port_id, union afe_port_config *afe_config,
 				 * Only loading de-packetizer module.
 				 */
 				if (codec_format == ENC_CODEC_TYPE_LDAC ||
+				    codec_format == ENC_CODEC_TYPE_LHDC ||
 					codec_format == ASM_MEDIA_FMT_APTX_ADAPTIVE)
 					ret = q6afe_load_avcs_modules(1, port_id,
 						DECODER_CASE, codec_format);

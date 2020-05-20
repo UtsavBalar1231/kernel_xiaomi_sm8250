@@ -61,6 +61,7 @@ enum {
 	ENC_FMT_APTX_HD = ASM_MEDIA_FMT_APTX_HD,
 	ENC_FMT_CELT = ASM_MEDIA_FMT_CELT,
 	ENC_FMT_LDAC = ASM_MEDIA_FMT_LDAC,
+	ENC_FMT_LHDC = ASM_MEDIA_FMT_LHDC,
 	ENC_FMT_APTX_ADAPTIVE = ASM_MEDIA_FMT_APTX_ADAPTIVE,
 	DEC_FMT_APTX_ADAPTIVE = ASM_MEDIA_FMT_APTX_ADAPTIVE,
 	DEC_FMT_MP3 = ASM_MEDIA_FMT_MP3,
@@ -3100,6 +3101,11 @@ static int msm_dai_q6_afe_enc_cfg_get(struct snd_kcontrol *kcontrol,
 				&dai_data->enc_config.data,
 				sizeof(struct asm_ldac_enc_cfg_t));
 			break;
+		case ENC_FMT_LHDC:
+			memcpy(ucontrol->value.bytes.data + format_size,
+				&dai_data->enc_config.data,
+				sizeof(struct asm_lhdc_enc_cfg_t));
+			break;
 		case ENC_FMT_APTX_ADAPTIVE:
 			memcpy(ucontrol->value.bytes.data + format_size,
 				&dai_data->enc_config.data,
@@ -3168,6 +3174,11 @@ static int msm_dai_q6_afe_enc_cfg_put(struct snd_kcontrol *kcontrol,
 			memcpy(&dai_data->enc_config.data,
 				ucontrol->value.bytes.data + format_size,
 				sizeof(struct asm_ldac_enc_cfg_t));
+			break;
+		case ENC_FMT_LHDC:
+			memcpy(&dai_data->enc_config.data,
+				ucontrol->value.bytes.data + format_size,
+				sizeof(struct asm_lhdc_enc_cfg_t));
 			break;
 		case ENC_FMT_APTX_ADAPTIVE:
 			memcpy(&dai_data->enc_config.data,
