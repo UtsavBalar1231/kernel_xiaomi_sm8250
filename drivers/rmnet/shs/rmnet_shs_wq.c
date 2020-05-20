@@ -2149,7 +2149,8 @@ void rmnet_shs_wq_init(struct net_device *dev)
 		return;
 	}
 
-	rmnet_shs_wq_mem_init();
+	if( rmnet_shs_wq_mem_init() )
+		rmnet_shs_wq_genl_deinit();
 
 	trace_rmnet_shs_wq_high(RMNET_SHS_WQ_INIT, RMNET_SHS_WQ_INIT_START,
 				0xDEF, 0xDEF, 0xDEF, 0xDEF, NULL, NULL);
