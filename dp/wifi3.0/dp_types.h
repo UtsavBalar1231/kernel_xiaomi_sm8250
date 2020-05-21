@@ -1823,6 +1823,9 @@ struct dp_vdev {
 	/* physical device that is the parent of this virtual device */
 	struct dp_pdev *pdev;
 
+	/* HW TX Checksum Enabled Flag */
+	uint8_t csum_enabled;
+
 	/* Handle to the OS shim SW's virtual device */
 	ol_osif_vdev_handle osif_vdev;
 
