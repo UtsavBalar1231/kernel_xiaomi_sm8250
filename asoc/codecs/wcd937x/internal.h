@@ -87,6 +87,7 @@ struct wcd937x_priv {
 	int ear_rx_path;
 	int ana_clk_count;
 	struct mutex ana_tx_clk_lock;
+	bool usbc_hs_status;
 };
 
 struct wcd937x_micbias_setting {
