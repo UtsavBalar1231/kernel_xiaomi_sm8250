@@ -1340,6 +1340,10 @@
 	cx_ipeak_lm: cx_ipeak@3ed000 {
 		compatible = "qcom,cx-ipeak-v2";
 		reg = <0x3ed000 0xe008>;
+		interrupts = <0 415 IRQ_TYPE_EDGE_RISING>,
+			     <0 416 IRQ_TYPE_EDGE_RISING>;
+		interrupt-names = "cx_ipeak_danger", "cx_ipeak_safe";
+		victims_table = <1 0 844800000>;
 	};
 
 	pil_modem: qcom,mss@6080000 {
