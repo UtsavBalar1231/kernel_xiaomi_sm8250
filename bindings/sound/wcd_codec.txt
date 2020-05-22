@@ -210,10 +210,12 @@ Optional properties:
  - cdc-vdd-rxtx-supply: phandle of rxtx supply's regulator device tree node.
  - qcom,cdc-vdd-rxtx-voltage: rxtx supply's voltage level min and max in mV.
  - qcom,cdc-vdd-rxtx-current: rxtx supply's max current in mA.
+ - qcom,cdc-vdd-rxtx-lpm-supported: rxtx supply's LPM mode.
 
  - cdc-vddio-supply: phandle of io supply's regulator device tree node.
  - qcom,cdc-vddio-voltage: io supply's voltage level min and max in mV.
  - qcom,cdc-vddio-current: io supply's max current in mA.
+ - qcom,cdc-vddio-lpm-supported: io supply's LPM mode.
 
  - cdc-vdd-buck-supply: phandle of buck supply's regulator device tree node.
  - qcom,cdc-vdd-buck-voltage: buck supply's voltage level min and max in mV.
@@ -431,6 +433,7 @@ Optional properties:
  - cdc-vdd-1p8-supply: phandle of VDD 1.8V supply's regulator device tree node.
  - qcom,cdc-vdd-1p8-voltage: VDD 1.8V supply's voltage level min and max in mV.
  - qcom,cdc-vdd-1p8-current: VDD 1.8V supply's max current in mA.
+ - qcom,cdc-vdd-qp8-lpm-supported: VDD 1.8V supply's LPM mode.
  - qcom,cdc-static-supplies: List of supplies to be enabled prior to codec
 			     hardware probe.  Supplies in this list will be
 			     stay enabled.
