@@ -1553,6 +1553,7 @@ static int cam_ife_hw_mgr_acquire_csid_hw(
 	int i;
 	int rc = -1;
 	struct cam_hw_intf  *hw_intf;
+	struct cam_isp_hw_cmd_query vfe_query;
 
 	if (!ife_hw_mgr || !csid_acquire) {
 		CAM_ERR(CAM_ISP,
@@ -1567,11 +1568,13 @@ static int cam_ife_hw_mgr_acquire_csid_hw(
 				continue;
 
 			if (csid_acquire->in_port->dsp_mode) {
+				vfe_query.query_cmd =
+					CAM_ISP_HW_CMD_QUERY_DSP_MODE;
 				rc = ife_hw_mgr->ife_devices[i]->hw_ops
 					.process_cmd(
 					ife_hw_mgr->ife_devices[i]->hw_priv,
-					CAM_ISP_HW_CMD_QUERY_DSP_MODE,
-					NULL, 0);
+					CAM_ISP_HW_CMD_QUERY,
+					&vfe_query, sizeof(vfe_query));
 				if (rc)
 					continue;
 			}
@@ -1592,10 +1595,12 @@ static int cam_ife_hw_mgr_acquire_csid_hw(
 			continue;
 
 		if (csid_acquire->in_port->dsp_mode) {
+			vfe_query.query_cmd =
+				CAM_ISP_HW_CMD_QUERY_DSP_MODE;
 			rc = ife_hw_mgr->ife_devices[i]->hw_ops.process_cmd(
 				ife_hw_mgr->ife_devices[i]->hw_priv,
-				CAM_ISP_HW_CMD_QUERY_DSP_MODE,
-				NULL, 0);
+				CAM_ISP_HW_CMD_QUERY,
+				&vfe_query, sizeof(vfe_query));
 			if (rc)
 				continue;
 		}

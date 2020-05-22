@@ -104,11 +104,23 @@ enum cam_isp_hw_cmd_type {
 	CAM_ISP_HW_CMD_WM_CONFIG_UPDATE,
 	CAM_ISP_HW_CMD_CSID_QCFA_SUPPORTED,
 	CAM_ISP_HW_CMD_QUERY_REGSPACE_DATA,
+	CAM_ISP_HW_CMD_QUERY,
 	CAM_ISP_HW_CMD_QUERY_DSP_MODE,
 	CAM_ISP_HW_CMD_DUMP_HW,
 	CAM_ISP_HW_CMD_FE_TRIGGER_CMD,
 	CAM_ISP_HW_CMD_CSID_CHANGE_HALT_MODE,
 	CAM_ISP_HW_CMD_MAX,
+};
+
+/*
+ * struct cam_isp_hw_cmd_query
+ *
+ * @Brief:              Structure representing query command to HW
+ *
+ * @query_cmd:          Command identifier
+ */
+struct cam_isp_hw_cmd_query {
+	int query_cmd;
 };
 
 /*
