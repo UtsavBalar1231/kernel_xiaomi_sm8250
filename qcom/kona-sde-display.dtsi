@@ -178,6 +178,8 @@
 			 <&mdss_dsi0_pll CPHY_PCLK_SRC_0_CLK>,
 			 <&mdss_dsi0_pll SHADOW_BYTECLK_SRC_0_CLK>,
 			 <&mdss_dsi0_pll SHADOW_PCLK_SRC_0_CLK>,
+			 <&mdss_dsi0_pll SHADOW_CPHY_BYTECLK_SRC_0_CLK>,
+			 <&mdss_dsi0_pll SHADOW_CPHY_PCLK_SRC_0_CLK>,
 			 <&mdss_dsi1_pll BYTECLK_MUX_1_CLK>,
 			 <&mdss_dsi1_pll PCLK_MUX_1_CLK>,
 			 <&mdss_dsi1_pll BYTECLK_SRC_1_CLK>,
@@ -185,16 +187,20 @@
 			 <&mdss_dsi1_pll CPHY_BYTECLK_SRC_1_CLK>,
 			 <&mdss_dsi1_pll CPHY_PCLK_SRC_1_CLK>,
 			 <&mdss_dsi1_pll SHADOW_BYTECLK_SRC_1_CLK>,
-			 <&mdss_dsi1_pll SHADOW_PCLK_SRC_1_CLK>;
+			 <&mdss_dsi1_pll SHADOW_PCLK_SRC_1_CLK>,
+			 <&mdss_dsi1_pll SHADOW_CPHY_BYTECLK_SRC_1_CLK>,
+			 <&mdss_dsi1_pll SHADOW_CPHY_PCLK_SRC_1_CLK>;
 
 		clock-names = "mux_byte_clk0", "mux_pixel_clk0",
 				"src_byte_clk0", "src_pixel_clk0",
 				"cphy_byte_clk0", "cphy_pixel_clk0",
 				"shadow_byte_clk0", "shadow_pixel_clk0",
+				"shadow_cphybyte_clk0", "shadow_cphypixel_clk0",
 				"mux_byte_clk1", "mux_pixel_clk1",
 				"src_byte_clk1", "src_pixel_clk1",
 				"cphy_byte_clk1", "cphy_pixel_clk1",
-				"shadow_byte_clk1", "shadow_pixel_clk1";
+				"shadow_byte_clk1", "shadow_pixel_clk1",
+				"shadow_cphybyte_clk1", "shadow_cphypixel_clk1";
 
 		pinctrl-names = "panel_active", "panel_suspend";
 		pinctrl-0 = <&sde_dsi_active &sde_te_active>;
