@@ -281,6 +281,12 @@
 	};
 };
 
+&thermal_zones {
+	quiet-therm-step {
+		status = "disabled";
+	};
+};
+
 &qupv3_se10_i2c {
 	qcom,clk-freq-out = <100000>;
 	status = "ok";
