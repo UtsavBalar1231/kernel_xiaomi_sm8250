@@ -135,3 +135,102 @@
 &pcie1 {
 	status = "disabled";
 };
+
+&thermal_zones {
+	/delete-node/ modem-lte-sub6-pa1;
+	/delete-node/ modem-lte-sub6-pa2;
+	/delete-node/ modem-mmw0-usr;
+	/delete-node/ modem-mmw1-usr;
+	/delete-node/ modem-mmw2-usr;
+	/delete-node/ modem-mmw3-usr;
+	/delete-node/ modem-skin-usr;
+	/delete-node/ modem-wifi-usr;
+	/delete-node/ modem-ambient-usr;
+	/delete-node/ modem-0-usr;
+	/delete-node/ modem-1-usr;
+	/delete-node/ modem-streamer-usr;
+	/delete-node/ modem-mmw0-mod-usr;
+	/delete-node/ modem-mmw1-mod-usr;
+	/delete-node/ modem-mmw2-mod-usr;
+	/delete-node/ modem-mmw3-mod-usr;
+
+	/delete-node/ skin-therm-usr;
+	/delete-node/ skin-therm-step;
+	/delete-node/ camera-therm-usr;
+
+	/delete-node/ mmw-pa1-usr;
+	/delete-node/ mmw-pa1-step;
+	/delete-node/ mmw-pa2-usr;
+	/delete-node/ mmw-pa2-step;
+	/delete-node/ xo-therm-step;
+	/delete-node/ xo-therm-usr;
+	/delete-node/ skin-msm-therm-step;
+
+	pm8250-wifi-usr {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-governor = "user_space";
+		thermal-sensors = <&pm8150_adc_tm ADC_AMUX_THM2_PU2>;
+		wake-capable-sensor;
+		trips {
+			active-config0 {
+				temperature = <52000>;
+				hysteresis = <4000>;
+				type = "passive";
+			};
+		};
+	};
+
+	pm8150l-therm-usr {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-governor = "user_space";
+		thermal-sensors = <&pm8150l_adc_tm ADC_AMUX_THM3_PU2>;
+		wake-capable-sensor;
+		trips {
+			active-config0 {
+				temperature = <50000>;
+				hysteresis = <4000>;
+				type = "passive";
+			};
+		};
+	};
+
+	pm8250-xo-therm-usr {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-governor = "user_space";
+		thermal-sensors = <&pm8150_adc_tm ADC_XO_THERM_PU2>;
+		wake-capable-sensor;
+		trips {
+			active-config0 {
+				temperature = <50000>;
+				hysteresis = <4000>;
+				type = "passive";
+			};
+
+		};
+	};
+
+	pm8150l-skin-step {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-governor = "step_wise";
+		thermal-sensors = <&pm8150l_adc_tm ADC_AMUX_THM2_PU2>;
+		wake-capable-sensor;
+		trips {
+			skin_trip: skin-config0 {
+				temperature = <50000>;
+				hysteresis = <48000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			lcd_cdev {
+				trip = <&skin_trip>;
+				cooling-device = <&mdss_mdp 153 153>;
+			};
+		};
+	};
+};
