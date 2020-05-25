@@ -361,4 +361,6 @@ void dp_peer_set_tx_capture_enabled(struct dp_peer *peer_handle, bool value)
 {
 }
 #endif
+void dp_tx_desc_flush(struct dp_pdev *pdev, struct dp_vdev *vdev,
+		      bool force_free);
 #endif

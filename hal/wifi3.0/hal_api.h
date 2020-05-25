@@ -563,6 +563,16 @@ void hal_dump_reg_write_srng_stats(hal_soc_handle_t hal_soc_hdl);
  * Return: none
  */
 void hal_dump_reg_write_stats(hal_soc_handle_t hal_soc_hdl);
+
+/**
+ * hal_get_reg_write_pending_work() - get the number of entries
+ *		pending in the workqueue to be processed.
+ * @hal_soc: HAL soc handle
+ *
+ * Returns: the number of entries pending to be processed
+ */
+int hal_get_reg_write_pending_work(void *hal_soc);
+
 #else
 static inline void hal_dump_reg_write_srng_stats(hal_soc_handle_t hal_soc_hdl)
 {
@@ -570,6 +580,11 @@ static inline void hal_dump_reg_write_srng_stats(hal_soc_handle_t hal_soc_hdl)
 
 static inline void hal_dump_reg_write_stats(hal_soc_handle_t hal_soc_hdl)
 {
+}
+
+static inline int hal_get_reg_write_pending_work(void *hal_soc)
+{
+	return 0;
 }
 #endif
 
