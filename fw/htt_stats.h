@@ -357,6 +357,17 @@ enum htt_dbg_ext_stats_type {
      */
     HTT_DBG_EXT_STA_11AX_UL_STATS = 33,
 
+    /* HTT_DBG_EXT_VDEV_RTT_RESP_STATS
+     * PARAMS:
+     *   - config_param0:
+     *      [Bit7 : Bit0]   vdev_id:8
+     *      [Bit31 : Bit8]  rsvd:24
+     * RESP MSG:
+     *   -
+     */
+    HTT_DBG_EXT_VDEV_RTT_RESP_STATS = 34,
+
+
     /* keep this last */
     HTT_DBG_NUM_EXT_STATS = 256,
 };
@@ -499,6 +510,7 @@ typedef enum {
     HTT_STATS_TXBF_OFDMA_BRP_STATS_TAG             = 115, /* htt_txbf_ofdma_brp_stats_tlv */
     HTT_STATS_TXBF_OFDMA_STEER_STATS_TAG           = 116, /* htt_txbf_ofdma_steer_stats_tlv */
     HTT_STATS_STA_UL_OFDMA_STATS_TAG               = 117, /* htt_sta_ul_ofdma_stats_tlv */
+    HTT_STATS_VDEV_RTT_RESP_STATS_TAG              = 118, /* htt_vdev_rtt_resp_stats_tlv */
 
     HTT_STATS_MAX_TAG,
 } htt_tlv_tag_t;
@@ -759,6 +771,10 @@ typedef struct {
     A_UINT32 num_mu_peer_blacklisted;
     /* Num of times mu_ofdma seq posted */
     A_UINT32 mu_ofdma_seq_posted;
+    /* Num of times UL MU MIMO seq posted */
+    A_UINT32 ul_mumimo_seq_posted;
+    /* Num of times UL OFDMA seq posted */
+    A_UINT32 ul_ofdma_seq_posted;
 } htt_tx_pdev_stats_cmn_tlv;
 
 #define HTT_TX_PDEV_STATS_URRN_TLV_SZ(_num_elems) (sizeof(A_UINT32) * (_num_elems))
@@ -2657,6 +2673,9 @@ typedef struct {
     A_UINT32 desc_threshold;
     A_UINT32 hwsch_tqm_invalid_status;
     A_UINT32 missed_tqm_gen_mpdus;
+    A_UINT32 tqm_active_tids;
+    A_UINT32 tqm_inactive_tids;
+    A_UINT32 tqm_active_msduq_flows;
 } htt_tx_tqm_cmn_stats_tlv;
 
 typedef struct {
@@ -4619,6 +4638,48 @@ typedef struct {
          */
         A_UINT32 num_sr_rx_ge_pd_rssi_thr;
     };
+
+    /*
+     * Count of number of times OBSS frames were aborted and non-SRG
+     * opportunities were created. Non-SRG opportunities are created when
+     * incoming OBSS RSSI is lesser than the global configured non-SRG RSSI
+     * threshold and non-SRG OBSS color / non-SRG OBSS BSSID registers
+     * allow non-SRG TX.
+     */
+    A_UINT32 num_non_srg_opportunities;
+    /*
+     * Count of number of times TX PPDU were transmitted using non-SRG
+     * opportunities created. Incoming OBSS frame RSSI is compared with per
+     * PPDU non-SRG RSSI threshold configured in each PPDU. If incoming OBSS
+     * RSSI < non-SRG RSSI threshold configured in each PPDU, then non-SRG
+     * tranmission happens.
+     */
+    A_UINT32 num_non_srg_ppdu_tried;
+    /*
+     * Count of number of times non-SRG based TX transmissions were successful
+     */
+    A_UINT32 num_non_srg_ppdu_success;
+    /*
+     * Count of number of times OBSS frames were aborted and SRG opportunities
+     * were created. Srg opportunities are created when incoming OBSS RSSI
+     * is less than the global configured SRG RSSI threshold and SRC OBSS
+     * color / SRG OBSS BSSID / SRG partial bssid / SRG BSS color bitmap
+     * registers allow SRG TX.
+     */
+    A_UINT32 num_srg_opportunities;
+    /*
+     * Count of number of times TX PPDU were transmitted using SRG
+     * opportunities created.
+     * Incoming OBSS frame RSSI is compared with per PPDU SRG RSSI
+     * threshold configured in each PPDU.
+     * If incoming OBSS RSSI < SRG RSSI threshold configured in each PPDU,
+     * then SRG tranmission happens.
+     */
+    A_UINT32 num_srg_ppdu_tried;
+    /*
+     * Count of number of times SRG based TX transmissions were successful
+     */
+    A_UINT32 num_srg_ppdu_success;
 } htt_pdev_obss_pd_stats_tlv;
 
 /* NOTE:
@@ -4987,6 +5048,28 @@ typedef struct {
 typedef struct {
     htt_sta_ul_ofdma_stats_tlv ul_ofdma_sta_stats;
 } htt_sta_11ax_ul_stats_t;
+
+typedef struct {
+    htt_tlv_hdr_t tlv_hdr;
+    /* No of Fine Timing Measurement frames transmitted successfully */
+    A_UINT32 tx_ftm_suc;
+    /* No of Fine Timing Measurement frames transmitted successfully after retry */
+    A_UINT32 tx_ftm_suc_retry;
+    /* No of Fine Timing Measurement frames not transmitted successfully */
+    A_UINT32 tx_ftm_fail;
+    /* No of Fine Timing Measurement Request frames received, including initial, non-initial, and duplicates */
+    A_UINT32 rx_ftmr_cnt;
+    /* No of duplicate Fine Timing Measurement Request frames received, including both initial and non-initial */
+    A_UINT32 rx_ftmr_dup_cnt;
+    /* No of initial Fine Timing Measurement Request frames received */
+    A_UINT32 rx_iftmr_cnt;
+    /* No of duplicate initial Fine Timing Measurement Request frames received */
+    A_UINT32 rx_iftmr_dup_cnt;
+} htt_vdev_rtt_resp_stats_tlv;
+
+typedef struct {
+    htt_vdev_rtt_resp_stats_tlv vdev_rtt_resp_stats;
+} htt_vdev_rtt_resp_stats_t;
 
 
 #endif /* __HTT_STATS_H__ */
