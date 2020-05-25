@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_CSIPHY_DEV_H_
@@ -53,6 +53,7 @@
 #define CSIPHY_DNP_PARAMS                4
 #define CSIPHY_2PH_REGS                  5
 #define CSIPHY_3PH_REGS                  6
+#define CSIPHY_SKEW_CAL                  7
 
 #define CSIPHY_MAX_INSTANCES     2
 
@@ -219,7 +220,7 @@ struct csiphy_ctrl_t {
  * @data_rate     :  Data rate in mbps
  * @data_rate_combo_sensor: data rate of combo sensor
  *                          in the the same phy
- *
+ * @mipi_flags    :  Mipi flags
  */
 struct cam_csiphy_param {
 	uint16_t    lane_mask;
@@ -232,6 +233,7 @@ struct cam_csiphy_param {
 	uint64_t    settle_time_combo_sensor;
 	uint64_t    data_rate;
 	uint64_t    data_rate_combo_sensor;
+	uint32_t    mipi_flags;
 };
 
 /**
