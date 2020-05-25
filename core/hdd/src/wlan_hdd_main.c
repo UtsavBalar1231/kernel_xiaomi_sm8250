@@ -3177,6 +3177,9 @@ static bool hdd_is_cac_in_progress(void)
 {
 	struct hdd_context *hdd_ctx = cds_get_context(QDF_MODULE_ID_HDD);
 
+	if (!hdd_ctx)
+		return false;
+
 	return (hdd_ctx->dev_dfs_cac_status == DFS_CAC_IN_PROGRESS);
 }
 
@@ -6090,6 +6093,7 @@ struct hdd_adapter *hdd_open_adapter(struct hdd_context *hdd_ctx, uint8_t sessio
 	qdf_list_create(&adapter->blocked_scan_request_q, WLAN_MAX_SCAN_COUNT);
 	qdf_mutex_create(&adapter->blocked_scan_request_q_lock);
 	qdf_event_create(&adapter->acs_complete_event);
+	qdf_event_create(&adapter->peer_cleanup_done);
 	hdd_sta_info_init(&adapter->sta_info_list);
 	hdd_sta_info_init(&adapter->cache_sta_info_list);
 
@@ -6136,8 +6140,6 @@ struct hdd_adapter *hdd_open_adapter(struct hdd_context *hdd_ctx, uint8_t sessio
 	return adapter;
 
 err_free_netdev:
-	wlan_hdd_release_intf_addr(hdd_ctx, adapter->mac_addr.bytes);
-
 	if (ndev)
 		free_netdev(ndev);
 
@@ -6152,6 +6154,7 @@ static void __hdd_close_adapter(struct hdd_context *hdd_ctx,
 	qdf_mutex_destroy(&adapter->blocked_scan_request_q_lock);
 	policy_mgr_clear_concurrency_mode(hdd_ctx->psoc, adapter->device_mode);
 	qdf_event_destroy(&adapter->acs_complete_event);
+	qdf_event_destroy(&adapter->peer_cleanup_done);
 	hdd_cleanup_adapter(hdd_ctx, adapter, rtnl_held);
 
 	if (hdd_ctx->current_intf_count != 0)
@@ -6265,6 +6268,28 @@ void hdd_ipa_ap_disconnect_evt(struct hdd_context *hdd_ctx,
 	}
 }
 
+static void
+hdd_peer_cleanup(struct hdd_context *hdd_ctx, struct hdd_adapter *adapter)
+{
+	QDF_STATUS qdf_status = QDF_STATUS_E_FAILURE;
+
+	/* Check if there is any peer present on the adapter */
+	if (!hdd_any_valid_peer_present(adapter))
+		return;
+
+	if (adapter->device_mode == QDF_NDI_MODE)
+		qdf_status = ucfg_nan_disable_ndi(hdd_ctx->psoc,
+						  adapter->vdev_id);
+
+	if (QDF_IS_STATUS_ERROR(qdf_status))
+		return;
+
+	qdf_status = qdf_wait_for_event_completion(&adapter->peer_cleanup_done,
+						   WLAN_WAIT_PEER_CLEANUP);
+	if (QDF_IS_STATUS_ERROR(qdf_status))
+		hdd_debug("peer_cleanup_done wait fail");
+}
+
 QDF_STATUS hdd_stop_adapter(struct hdd_context *hdd_ctx,
 			    struct hdd_adapter *adapter)
 {
@@ -6319,13 +6344,14 @@ QDF_STATUS hdd_stop_adapter(struct hdd_context *hdd_ctx,
 				reason = eSIR_MAC_DEVICE_RECOVERY;
 
 			/* For NDI do not use roam_profile */
-			if (adapter->device_mode == QDF_NDI_MODE)
+			if (adapter->device_mode == QDF_NDI_MODE) {
+				hdd_peer_cleanup(hdd_ctx, adapter);
 				status = sme_roam_disconnect(
 					mac_handle,
 					adapter->vdev_id,
 					eCSR_DISCONNECT_REASON_NDI_DELETE,
 					reason);
-			else if (roam_profile->BSSType ==
+			} else if (roam_profile->BSSType ==
 						eCSR_BSS_TYPE_START_IBSS)
 				status = sme_roam_disconnect(
 					mac_handle,
@@ -9196,7 +9222,11 @@ void hdd_bus_bandwidth_deinit(struct hdd_context *hdd_ctx)
 {
 	hdd_enter();
 
+	/* it is expecting the timer has been stopped or not started
+	 * when coming deinit.
+	 */
 	QDF_BUG(!qdf_periodic_work_stop_sync(&hdd_ctx->bus_bw_work));
+
 	qdf_periodic_work_destroy(&hdd_ctx->bus_bw_work);
 	qdf_spinlock_destroy(&hdd_ctx->bus_bw_lock);
 	hdd_pm_qos_remove_request(hdd_ctx);
@@ -13088,6 +13118,9 @@ static QDF_STATUS hdd_open_p2p_interface(struct hdd_context *hdd_ctx)
 					   "p2p%d",
 					   hdd_ctx->p2p_device_address.bytes);
 	if (QDF_IS_STATUS_ERROR(status)) {
+		if (!is_p2p_locally_administered)
+			wlan_hdd_release_intf_addr(hdd_ctx,
+					hdd_ctx->p2p_device_address.bytes);
 		hdd_err("Failed to open p2p interface");
 		return QDF_STATUS_E_INVAL;
 	}
@@ -13107,10 +13140,15 @@ static QDF_STATUS hdd_open_ocb_interface(struct hdd_context *hdd_ctx)
 	uint8_t *mac_addr;
 
 	mac_addr = wlan_hdd_get_intf_addr(hdd_ctx, QDF_OCB_MODE);
+	if (!mac_addr)
+		return QDF_STATUS_E_INVAL;
+
 	status = hdd_open_adapter_no_trans(hdd_ctx, QDF_OCB_MODE,
 					   "wlanocb%d", mac_addr);
-	if (QDF_IS_STATUS_ERROR(status))
+	if (QDF_IS_STATUS_ERROR(status)) {
+		wlan_hdd_release_intf_addr(hdd_ctx, mac_addr);
 		hdd_err("Failed to open 802.11p interface");
+	}
 
 	return status;
 }
@@ -13126,10 +13164,15 @@ static QDF_STATUS hdd_open_concurrent_interface(struct hdd_context *hdd_ctx)
 
 	iface_name = hdd_ctx->config->enable_concurrent_sta;
 	mac_addr = wlan_hdd_get_intf_addr(hdd_ctx, QDF_STA_MODE);
+	if (!mac_addr)
+		return QDF_STATUS_E_INVAL;
+
 	status = hdd_open_adapter_no_trans(hdd_ctx, QDF_STA_MODE,
 					   iface_name, mac_addr);
-	if (QDF_IS_STATUS_ERROR(status))
+	if (QDF_IS_STATUS_ERROR(status)) {
+		wlan_hdd_release_intf_addr(hdd_ctx, mac_addr);
 		hdd_err("Failed to open concurrent station interface");
+	}
 
 	return status;
 }
@@ -13148,10 +13191,15 @@ hdd_open_adapters_for_mission_mode(struct hdd_context *hdd_ctx)
 		return hdd_open_ocb_interface(hdd_ctx);
 
 	mac_addr = wlan_hdd_get_intf_addr(hdd_ctx, QDF_STA_MODE);
+	if (!mac_addr)
+		return QDF_STATUS_E_INVAL;
+
 	status = hdd_open_adapter_no_trans(hdd_ctx, QDF_STA_MODE,
 					   "wlan%d", mac_addr);
-	if (QDF_IS_STATUS_ERROR(status))
+	if (QDF_IS_STATUS_ERROR(status)) {
+		wlan_hdd_release_intf_addr(hdd_ctx, mac_addr);
 		return status;
+	}
 
 	/* opening concurrent STA is best effort, continue on error */
 	hdd_open_concurrent_interface(hdd_ctx);
@@ -13164,13 +13212,17 @@ hdd_open_adapters_for_mission_mode(struct hdd_context *hdd_ctx)
 	 * Create separate interface (wifi-aware0) for NAN. All NAN commands
 	 * should go on this new interface.
 	 */
-	if (ucfg_nan_is_vdev_creation_allowed(hdd_ctx->psoc) &&
-	    ucfg_nan_get_is_separate_nan_iface(hdd_ctx->psoc)) {
+	if (ucfg_nan_is_vdev_creation_allowed(hdd_ctx->psoc)) {
 		mac_addr = wlan_hdd_get_intf_addr(hdd_ctx, QDF_NAN_DISC_MODE);
+		if (!mac_addr)
+			goto err_close_adapters;
+
 		status = hdd_open_adapter_no_trans(hdd_ctx, QDF_NAN_DISC_MODE,
 						   "wifi-aware%d", mac_addr);
-		if (status)
+		if (status) {
+			wlan_hdd_release_intf_addr(hdd_ctx, mac_addr);
 			goto err_close_adapters;
+		}
 	}
 	/* Open 802.11p Interface */
 	if (dot11p_mode == CFG_11P_CONCURRENT) {
@@ -13189,19 +13241,43 @@ err_close_adapters:
 
 static QDF_STATUS hdd_open_adapters_for_ftm_mode(struct hdd_context *hdd_ctx)
 {
-	uint8_t *mac_addr = wlan_hdd_get_intf_addr(hdd_ctx, QDF_FTM_MODE);
+	QDF_STATUS status;
+	uint8_t *mac_addr;
 
-	return hdd_open_adapter_no_trans(hdd_ctx, QDF_FTM_MODE,
-					 "wlan%d", mac_addr);
+	mac_addr = wlan_hdd_get_intf_addr(hdd_ctx, QDF_FTM_MODE);
+	if (!mac_addr)
+		return QDF_STATUS_E_INVAL;
+
+	status = hdd_open_adapter_no_trans(hdd_ctx, QDF_FTM_MODE,
+					   "wlan%d", mac_addr);
+
+	if (QDF_IS_STATUS_ERROR(status)) {
+		wlan_hdd_release_intf_addr(hdd_ctx, mac_addr);
+		return status;
+	}
+
+	return QDF_STATUS_SUCCESS;
 }
 
 static QDF_STATUS
 hdd_open_adapters_for_monitor_mode(struct hdd_context *hdd_ctx)
 {
-	uint8_t *mac_addr = wlan_hdd_get_intf_addr(hdd_ctx, QDF_MONITOR_MODE);
+	QDF_STATUS status;
+	uint8_t *mac_addr;
 
-	return hdd_open_adapter_no_trans(hdd_ctx, QDF_MONITOR_MODE,
-					 "wlan%d", mac_addr);
+	mac_addr = wlan_hdd_get_intf_addr(hdd_ctx, QDF_MONITOR_MODE);
+	if (!mac_addr)
+		return QDF_STATUS_E_INVAL;
+
+	status = hdd_open_adapter_no_trans(hdd_ctx, QDF_MONITOR_MODE,
+					   "wlan%d", mac_addr);
+
+	if (QDF_IS_STATUS_ERROR(status)) {
+		wlan_hdd_release_intf_addr(hdd_ctx, mac_addr);
+		return status;
+	}
+
+	return QDF_STATUS_SUCCESS;
 }
 
 static QDF_STATUS hdd_open_adapters_for_epping_mode(struct hdd_context *hdd_ctx)
@@ -15331,6 +15407,20 @@ static void hdd_driver_unload(void)
 	pr_info("%s: Unloading driver v%s\n", WLAN_MODULE_NAME,
 		QWLAN_VERSIONSTR);
 
+	/*
+	 * Wait for any trans to complete and then start the driver trans
+	 * for the unload. This will ensure that the driver trans proceeds only
+	 * after all trans have been completed. As a part of this trans, set
+	 * the driver load/unload flag to further ensure that any upcoming
+	 * trans are rejected via wlan_hdd_validate_context.
+	 */
+	status = osif_driver_sync_trans_start_wait(&driver_sync);
+	QDF_BUG(QDF_IS_STATUS_SUCCESS(status));
+	if (QDF_IS_STATUS_ERROR(status)) {
+		hdd_err("Unable to unload wlan; status:%u", status);
+		return;
+	}
+
 	hif_ctx = cds_get_context(QDF_MODULE_ID_HIF);
 	if (hif_ctx) {
 		/*
@@ -15351,6 +15441,12 @@ static void hdd_driver_unload(void)
 		 */
 		hdd_bus_bw_compute_timer_stop(hdd_ctx);
 	}
+
+	/*
+	 * Stop the trans before calling unregister_driver as that involves a
+	 * call to pld_remove which in itself is a psoc transaction
+	 */
+	osif_driver_sync_trans_stop(driver_sync);
 
 	/* trigger SoC remove */
 	wlan_hdd_unregister_driver();

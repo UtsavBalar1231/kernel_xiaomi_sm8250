@@ -581,6 +581,8 @@ int hdd_ndi_open(char *iface_name)
 	adapter = hdd_open_adapter(hdd_ctx, QDF_NDI_MODE, iface_name,
 				   ndi_mac_addr, NET_NAME_UNKNOWN, true);
 	if (!adapter) {
+		if (!cfg_nan_get_ndi_mac_randomize(hdd_ctx->psoc))
+			wlan_hdd_release_intf_addr(hdd_ctx, ndi_mac_addr);
 		hdd_err("hdd_open_adapter failed");
 		return -EINVAL;
 	}
@@ -813,7 +815,6 @@ void hdd_ndi_drv_ndi_delete_rsp_handler(uint8_t vdev_id)
 		return;
 	}
 
-	hdd_roam_deregister_sta(adapter, adapter->mac_addr);
 	hdd_delete_peer(sta_ctx, &bc_mac_addr);
 
 	wlan_hdd_netif_queue_control(adapter,
@@ -950,11 +951,11 @@ void hdd_ndp_peer_departed_handler(uint8_t vdev_id, uint16_t sta_id,
 		return;
 	}
 
-	hdd_roam_deregister_sta(adapter, *peer_mac_addr);
 	hdd_delete_peer(sta_ctx, peer_mac_addr);
 
 	if (last_peer) {
 		hdd_debug("No more ndp peers.");
 		hdd_cleanup_ndi(hdd_ctx, adapter);
+		qdf_event_set(&adapter->peer_cleanup_done);
 	}
 }

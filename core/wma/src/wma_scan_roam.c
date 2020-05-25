@@ -367,6 +367,8 @@ static void wma_roam_scan_offload_set_params(
 	params->rct_validity_timer = roam_req->rct_validity_timer;
 	params->is_adaptive_11r = roam_req->is_adaptive_11r_connection;
 	params->is_sae_same_pmk = roam_req->is_sae_single_pmk;
+	params->is_ft_im_for_deauth = roam_req->is_ft_im_for_deauth;
+
 	wma_debug("qos_caps %d, qos_enabled %d, ho_delay_for_rx %d, roam_scan_mode %d SAE single pmk %d roam_preauth: retrycount %d, no_ack_timeout %d",
 		 params->roam_offload_params.qos_caps,
 		 params->roam_offload_params.qos_enabled,
@@ -1890,14 +1892,10 @@ QDF_STATUS wma_process_roaming_config(tp_wma_handle wma_handle,
 				break;
 
 			mode = WMI_ROAM_SCAN_MODE_PERIODIC;
-			/* Don't use rssi triggered roam scans if external app
-			 * is in control of channel list.
-			 */
-			if (roam_req->ChannelCacheType != CHANNEL_LIST_STATIC ||
-			    roam_req->roam_force_rssi_trigger)
+			if (roam_req->roam_force_rssi_trigger)
 				mode |= WMI_ROAM_SCAN_MODE_RSSI_CHANGE;
 
-		} else {
+		} else if (roam_req->roam_force_rssi_trigger) {
 			mode = WMI_ROAM_SCAN_MODE_RSSI_CHANGE;
 		}
 
@@ -2191,14 +2189,10 @@ QDF_STATUS wma_process_roaming_config(tp_wma_handle wma_handle,
 				break;
 
 			mode = WMI_ROAM_SCAN_MODE_PERIODIC;
-			/* Don't use rssi triggered roam scans if external app
-			 * is in control of channel list.
-			 */
-			if (roam_req->ChannelCacheType != CHANNEL_LIST_STATIC ||
-			    roam_req->roam_force_rssi_trigger)
+			if (roam_req->roam_force_rssi_trigger)
 				mode |= WMI_ROAM_SCAN_MODE_RSSI_CHANGE;
 
-		} else {
+		} else if (roam_req->roam_force_rssi_trigger) {
 			mode = WMI_ROAM_SCAN_MODE_RSSI_CHANGE;
 		}
 
@@ -2499,6 +2493,7 @@ static int wma_fill_roam_synch_buffer(tp_wma_handle wma,
 	wmi_key_material_ext *key_ft;
 	struct wma_txrx_node *iface = NULL;
 	wmi_roam_fils_synch_tlv_param *fils_info;
+	wmi_roam_pmk_cache_synch_tlv_param *pmk_cache_info;
 	int status = -EINVAL;
 	uint8_t kck_len;
 	uint8_t kek_len;
@@ -2638,6 +2633,22 @@ static int wma_fill_roam_synch_buffer(tp_wma_handle wma,
 		WMA_LOGD("Update ERP Seq Num %d, Next ERP Seq Num %d",
 			 roam_synch_ind_ptr->update_erp_next_seq_num,
 			 roam_synch_ind_ptr->next_erp_seq_num);
+	}
+
+	pmk_cache_info = param_buf->roam_pmk_cache_synch_info;
+	if (pmk_cache_info && (pmk_cache_info->pmk_len)) {
+		if (pmk_cache_info->pmk_len > SIR_PMK_LEN) {
+			WMA_LOGE("%s: Invalid pmk_len %d", __func__,
+				 pmk_cache_info->pmk_len);
+			wma_free_roam_synch_frame_ind(iface);
+			return status;
+		}
+
+		roam_synch_ind_ptr->pmk_len = pmk_cache_info->pmk_len;
+		qdf_mem_copy(roam_synch_ind_ptr->pmk,
+			     pmk_cache_info->pmk, pmk_cache_info->pmk_len);
+		qdf_mem_copy(roam_synch_ind_ptr->pmkid,
+			     pmk_cache_info->pmkid, PMKID_LEN);
 	}
 	wma_free_roam_synch_frame_ind(iface);
 	return 0;
@@ -6237,6 +6248,7 @@ QDF_STATUS wma_send_ht40_obss_scanind(tp_wma_handle wma,
 				sizeof(uint32_t));
 	WMITLV_SET_HDR(buf_ptr, WMITLV_TAG_ARRAY_BYTE,
 			qdf_roundup(1, sizeof(uint32_t)));
+	buf_ptr += WMI_TLV_HDR_SIZE;
 
 	buf_ptr += qdf_roundup(sizeof(uint8_t) * 1, sizeof(uint32_t));
 

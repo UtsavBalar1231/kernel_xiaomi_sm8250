@@ -87,9 +87,13 @@ static inline void hdd_remove_pm_qos(struct device *dev)
  */
 static int hdd_get_bandwidth_level(void *data)
 {
+	int ret = PLD_BUS_WIDTH_NONE;
 	struct hdd_context *hdd_ctx = cds_get_context(QDF_MODULE_ID_HDD);
 
-	return hdd_get_current_throughput_level(hdd_ctx);
+	if (hdd_ctx)
+		ret = hdd_get_current_throughput_level(hdd_ctx);
+
+	return ret;
 }
 
 /**
@@ -1450,7 +1454,7 @@ static int wlan_hdd_runtime_resume(struct device *dev)
 		hdd_err("PMO Runtime resume failed: %d", status);
 	} else {
 		if (policy_mgr_get_connection_count(hdd_ctx->psoc))
-			hdd_bus_bw_compute_timer_start(hdd_ctx);
+			hdd_bus_bw_compute_timer_try_start(hdd_ctx);
 	}
 
 	hdd_debug("Runtime resume done");

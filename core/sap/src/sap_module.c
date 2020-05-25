@@ -1664,29 +1664,36 @@ wlansap_set_cac_required_for_chan(struct mac_context *mac_ctx,
 {
 	bool is_ch_dfs = false;
 	bool cac_required;
-	uint32_t channel;
+	uint32_t chan_freq;
 	uint8_t vdev_id_list[MAX_NUMBER_OF_CONC_CONNECTIONS];
 	uint32_t freq_list[MAX_NUMBER_OF_CONC_CONNECTIONS];
 	uint8_t sta_cnt, i;
 
-	channel = wlan_reg_freq_to_chan(mac_ctx->pdev, sap_ctx->chan_freq);
-
+	chan_freq = sap_ctx->chan_freq;
 	if (sap_ctx->ch_params.ch_width == CH_WIDTH_160MHZ) {
 		is_ch_dfs = true;
 	} else if (sap_ctx->ch_params.ch_width == CH_WIDTH_80P80MHZ) {
-		if ((wlan_reg_get_channel_state(mac_ctx->pdev, channel) ==
-						CHANNEL_STATE_DFS) ||
-		    (wlan_reg_get_channel_state(mac_ctx->pdev,
-					sap_ctx->ch_params.center_freq_seg1 -
-					SIR_80MHZ_START_CENTER_CH_DIFF) ==
-					CHANNEL_STATE_DFS))
+		if (wlan_reg_get_channel_state_for_freq(
+						mac_ctx->pdev,
+						sap_ctx->chan_freq) ==
+		    CHANNEL_STATE_DFS ||
+		    wlan_reg_get_channel_state_for_freq(
+					mac_ctx->pdev,
+					sap_ctx->ch_params.mhz_freq_seg1) ==
+				CHANNEL_STATE_DFS)
 			is_ch_dfs = true;
-	} else if (wlan_reg_get_channel_state(mac_ctx->pdev, channel) ==
-					      CHANNEL_STATE_DFS) {
-		is_ch_dfs = true;
+	} else {
+		if (wlan_reg_get_channel_state_for_freq(
+						mac_ctx->pdev,
+						sap_ctx->chan_freq) ==
+		    CHANNEL_STATE_DFS)
+			is_ch_dfs = true;
 	}
+	if (WLAN_REG_IS_6GHZ_CHAN_FREQ(sap_ctx->chan_freq))
+		is_ch_dfs = false;
+
 	sap_debug("vdev id %d chan %d is_ch_dfs %d pre_cac_complete %d ignore_cac %d cac_state %d",
-		  sap_ctx->sessionId, channel, is_ch_dfs,
+		  sap_ctx->sessionId, chan_freq, is_ch_dfs,
 		  sap_ctx->pre_cac_complete, mac_ctx->sap.SapDfsInfo.ignore_cac,
 		  mac_ctx->sap.SapDfsInfo.cac_state);
 
@@ -2990,6 +2997,11 @@ qdf_freq_t wlansap_get_chan_band_restrict(struct sap_context *sap_ctx)
 		return 0;
 
 	mac = cds_get_context(QDF_MODULE_ID_PE);
+	if (!mac) {
+		sap_err("Invalid MAC context");
+		return 0;
+	}
+
 	if (ucfg_reg_get_curr_band(mac->pdev, &band) != QDF_STATUS_SUCCESS) {
 		sap_err("Failed to get current band config");
 		return 0;

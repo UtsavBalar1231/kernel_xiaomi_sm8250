@@ -2513,7 +2513,7 @@ static QDF_STATUS sap_fsm_state_starting(struct sap_context *sap_ctx,
 		if (sap_ctx->ch_params.ch_width == CH_WIDTH_160MHZ) {
 			is_dfs = wlan_reg_get_5g_bonded_channel_state_for_freq(
 					mac_ctx->pdev, sap_chan_freq,
-					CH_WIDTH_160MHZ);
+					CH_WIDTH_160MHZ) == CHANNEL_STATE_DFS;
 		} else if (sap_ctx->ch_params.ch_width == CH_WIDTH_80P80MHZ) {
 			if (wlan_reg_get_channel_state_for_freq(
 							mac_ctx->pdev,
@@ -3375,14 +3375,21 @@ static QDF_STATUS sap_get_freq_list(struct sap_context *sap_ctx,
 		 * As it can result in SAP starting on DFS channel
 		 * resulting  MCC on DFS channel
 		 */
-		if (wlan_reg_is_dfs_for_freq(
-				mac_ctx->pdev,
-				WLAN_REG_CH_TO_FREQ(loop_count)) &&
-		    (policy_mgr_disallow_mcc(mac_ctx->psoc,
-			WLAN_REG_CH_TO_FREQ(loop_count)) ||
-		    !dfs_master_enable))
-			continue;
 
+		if (wlan_reg_is_dfs_for_freq(
+					mac_ctx->pdev,
+					WLAN_REG_CH_TO_FREQ(loop_count))) {
+			if (!dfs_master_enable)
+				continue;
+			else if (policy_mgr_disallow_mcc(
+					mac_ctx->psoc,
+					WLAN_REG_CH_TO_FREQ(loop_count)))
+				continue;
+			normalize_factor =
+				MLME_GET_DFS_CHAN_WEIGHT(
+				mac_ctx->mlme_cfg->acs.np_chan_weightage);
+			freq_present_in_list = true;
+		}
 		/* Dont scan ETSI13 SRD channels if the ETSI13 SRD channels
 		 * are not enabled in master mode
 		 */

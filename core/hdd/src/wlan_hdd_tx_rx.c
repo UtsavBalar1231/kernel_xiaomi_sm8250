@@ -1104,7 +1104,7 @@ static void __hdd_hard_start_xmit(struct sk_buff *skb,
 			sizeof(qdf_nbuf_data(skb)),
 			QDF_TX));
 
-	if (!hdd_is_tx_allowed(skb, wlan_vdev_get_id(vdev),
+	if (!hdd_is_tx_allowed(skb, adapter->vdev_id,
 			       mac_addr_tx_allowed.bytes)) {
 		QDF_TRACE(QDF_MODULE_ID_HDD_DATA,
 			  QDF_TRACE_LEVEL_INFO_HIGH,
@@ -1190,8 +1190,11 @@ netdev_tx_t hdd_hard_start_xmit(struct sk_buff *skb, struct net_device *net_dev)
 {
 	struct osif_vdev_sync *vdev_sync;
 
-	if (osif_vdev_sync_op_start(net_dev, &vdev_sync))
+	if (osif_vdev_sync_op_start(net_dev, &vdev_sync)) {
+		hdd_debug_rl("Operation on net_dev is not permitted");
+		kfree_skb(skb);
 		return NETDEV_TX_OK;
+	}
 
 	__hdd_hard_start_xmit(skb, net_dev);
 
@@ -2050,6 +2053,10 @@ QDF_STATUS hdd_rx_flush_packet_cbk(void *adapter_context, uint8_t vdev_id)
 		return QDF_STATUS_E_FAILURE;
 	}
 
+	/* do fisa flush for this vdev */
+	if (hdd_ctx->config->fisa_enable)
+		hdd_rx_fisa_flush_by_vdev_id(soc, vdev_id);
+
 	if (hdd_ctx->enable_dp_rx_threads)
 		dp_txrx_flush_pkts_by_vdev_id(soc, vdev_id);
 
@@ -2065,9 +2072,14 @@ QDF_STATUS hdd_rx_fisa_cbk(void *dp_soc, void *dp_vdev, qdf_nbuf_t nbuf_list)
 			  nbuf_list);
 }
 
-QDF_STATUS hdd_rx_fisa_flush(void *dp_soc, int ring_num)
+QDF_STATUS hdd_rx_fisa_flush_by_ctx_id(void *dp_soc, int ring_num)
 {
-	return dp_rx_fisa_flush((struct dp_soc *)dp_soc, ring_num);
+	return dp_rx_fisa_flush_by_ctx_id((struct dp_soc *)dp_soc, ring_num);
+}
+
+QDF_STATUS hdd_rx_fisa_flush_by_vdev_id(void *dp_soc, uint8_t vdev_id)
+{
+	return dp_rx_fisa_flush_by_vdev_id((struct dp_soc *)dp_soc, vdev_id);
 }
 #endif
 

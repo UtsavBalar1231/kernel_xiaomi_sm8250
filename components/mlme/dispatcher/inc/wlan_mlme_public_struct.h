@@ -1213,6 +1213,7 @@ struct acs_weight_range {
 };
 
 #define MAX_ACS_WEIGHT_RANGE              10
+#define MLME_GET_DFS_CHAN_WEIGHT(np_chan_weight) (np_chan_weight & 0x000000FF)
 
 /*
  * struct wlan_mlme_acs - All acs related cfg items
@@ -1226,6 +1227,7 @@ struct acs_weight_range {
  * @normalize_weight_range: Frequency range for weight normalization
  * @num_weight_range: num of ranges provided by user
  * @force_sap_start: Force SAP start when no channel is found suitable
+ * @np_chan_weightage: Weightage to be given to non preferred channels.
  */
 struct wlan_mlme_acs {
 	bool is_acs_with_more_param;
@@ -1238,6 +1240,7 @@ struct wlan_mlme_acs {
 	struct acs_weight_range normalize_weight_range[MAX_ACS_WEIGHT_RANGE];
 	uint16_t num_weight_range;
 	bool force_sap_start;
+	uint32_t np_chan_weightage;
 };
 
 /*
@@ -1520,6 +1523,7 @@ struct bss_load_trigger {
  * @enable_adaptive_11r             Flag to check if adaptive 11r ini is enabled
  * @tgt_adaptive_11r_cap:           Flag to check if target supports adaptive
  * 11r
+ * @is_ft_im_for_deauth:            Flag to enable/disable FT-IM
  * @roam_scan_home_away_time:       The home away time to firmware
  * @roam_scan_n_probes:    The number of probes to be sent for firmware roaming
  * @delay_before_vdev_stop:Wait time for tx complete before vdev stop
@@ -1630,6 +1634,7 @@ struct wlan_mlme_lfr_cfg {
 	bool enable_adaptive_11r;
 	bool tgt_adaptive_11r_cap;
 #endif
+	bool is_ft_im_for_deauth;
 	uint16_t roam_scan_home_away_time;
 	uint32_t roam_scan_n_probes;
 	uint8_t delay_before_vdev_stop;

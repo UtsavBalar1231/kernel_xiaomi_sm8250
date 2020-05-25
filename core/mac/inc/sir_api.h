@@ -2250,7 +2250,7 @@ struct roam_offload_scan_req {
 	struct pmkid_mode_bits pmkid_modes;
 	bool is_adaptive_11r_connection;
 	bool is_sae_single_pmk;
-
+	bool is_ft_im_for_deauth;
 	/* Idle/Disconnect roam parameters */
 	struct wmi_idle_roam_params idle_roam_params;
 	struct wmi_disconnect_roam_params disconnect_roam_params;
@@ -2997,6 +2997,7 @@ struct roam_offload_synch_ind {
 	struct qdf_mac_addr src_mac;
 	uint16_t hlp_data_len;
 	uint8_t hlp_data[FILS_MAX_HLP_DATA_LEN];
+	bool is_ft_im_roam;
 };
 
 #ifdef WLAN_FEATURE_ROAM_OFFLOAD
