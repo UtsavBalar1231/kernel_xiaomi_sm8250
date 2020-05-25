@@ -537,6 +537,16 @@
 				};
 			};
 		};
+
+		qcom,cpu-to-gpu-cfg-path {
+			qcom,msm-bus,name = "gpu_cfg";
+			qcom,msm-bus,num-cases = <3>;
+			qcom,msm-bus,num-paths = <1>;
+			qcom,msm-bus,vectors-KBps =
+				<1 598 0 0>,            // off
+				<1 598 0 100>,          // min freq
+				<1 598 0 9999999>;      // max freq
+		};
 	};
 
 	kgsl_msm_iommu: qcom,kgsl-iommu@3d40000 {

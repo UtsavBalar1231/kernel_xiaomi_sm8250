@@ -29,6 +29,14 @@
 	#size-cells = <2>;
 	memory { device_type = "memory"; reg = <0 0 0 0>; };
 
+	mem-offline {
+		compatible = "qcom,mem-offline";
+		offline-sizes = <0x1 0x40000000 0x0 0x40000000>,
+				<0x1 0xc0000000 0x0 0x80000000>,
+				<0x2 0xc0000000 0x1 0x40000000>;
+		granule = <512>;
+	};
+
 	aliases {
 		sdhc1 = &sdhc_1; /* SDC1 eMMC slot */
 		sdhc2 = &sdhc_2; /* SDC2 SD Card slot */
@@ -1037,6 +1045,23 @@
 		qcom,hyplog-enabled;
 		hyplog-address-offset = <0x410>;
 		hyplog-size-offset = <0x414>;
+	};
+
+	qcom_rng: qrng@4453000 {
+		compatible = "qcom,msm-rng";
+		reg = <0x4453000 0x1000>;
+		qcom,msm-rng-hwkm-clk;
+		qcom,no-qrng-config;
+		qcom,msm-bus,name = "msm-rng-noc";
+		qcom,msm-bus,num-cases = <2>;
+		qcom,msm-bus,num-paths = <1>;
+		qcom,msm-bus,vectors-KBps =
+			<MSM_BUS_MASTER_AMPSS_M0
+			 MSM_BUS_SLAVE_HWKM 0 0>,    /* No vote */
+			<MSM_BUS_MASTER_AMPSS_M0
+			 MSM_BUS_SLAVE_HWKM 0 300000>;  /* 75 MHz */
+		clock-names = "km_clk_src";
+		clocks = <&rpmcc RPM_SMD_HWKM_CLK>;
 	};
 
 	qcom_cedev: qcedev@1b20000 {

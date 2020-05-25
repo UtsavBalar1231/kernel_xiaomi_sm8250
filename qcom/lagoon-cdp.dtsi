@@ -305,6 +305,9 @@
 		qcom,nq-ven = <&tlmm 6 0x00>;
 		qcom,nq-firm = <&tlmm 8 0x00>;
 		qcom,nq-clkreq = <&tlmm 7 0x00>;
+		qcom,nq-vdd-1p8-supply = <&L11A>;
+		qcom,nq-vdd-1p8-voltage = <1800000 1800000>;
+		qcom,nq-vdd-1p8-current = <157000>;
 		interrupt-parent = <&tlmm>;
 		interrupts = <9 0>;
 		interrupt-names = "nfc_irq";

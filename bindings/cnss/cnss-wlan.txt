@@ -75,6 +75,8 @@ Optional properties:
   - qcom,set-wlaon-pwr-ctrl: Boolean property to indicate if set
                              WLAON_QFPROM_PWR_CTRL_REG register during power on
                              and off sequences.
+  - qcom,converged-dt: Boolean property to decide whether it supports multiple
+                       WLAN devices.
 
 Example:
 
