@@ -817,8 +817,8 @@ int32_t cam_sensor_driver_cmd(struct cam_sensor_ctrl_t *s_ctrl,
 		if ((s_ctrl->is_probe_succeed == 0) ||
 			(s_ctrl->sensor_state != CAM_SENSOR_INIT)) {
 			CAM_WARN(CAM_SENSOR,
-				"Not in right state to aquire %d",
-				s_ctrl->sensor_state);
+				"Not in right state to aquire %d， probe %d",
+				s_ctrl->sensor_state, s_ctrl->is_probe_succeed);
 			rc = -EINVAL;
 			goto release_mutex;
 		}

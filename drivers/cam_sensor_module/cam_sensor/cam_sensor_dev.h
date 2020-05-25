@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_SENSOR_DEV_H_
@@ -111,6 +111,7 @@ struct cam_sensor_ctrl_t {
 	bool bob_pwm_switch;
 	uint32_t last_flush_req;
 	uint16_t pipeline_delay;
+	int32_t open_cnt;
 };
 
 #endif /* _CAM_SENSOR_DEV_H_ */

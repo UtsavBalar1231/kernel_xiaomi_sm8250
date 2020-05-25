@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #include "cam_sensor_dev.h"
@@ -27,6 +27,26 @@ static long cam_sensor_subdev_ioctl(struct v4l2_subdev *sd,
 	return rc;
 }
 
+static int cam_sensor_subdev_open(struct v4l2_subdev *sd,
+	struct v4l2_subdev_fh *fh)
+{
+	struct cam_sensor_ctrl_t *s_ctrl =
+		v4l2_get_subdevdata(sd);
+
+	if (!s_ctrl) {
+		CAM_ERR(CAM_SENSOR, "s_ctrl ptr is NULL");
+		return -EINVAL;
+	}
+
+	mutex_lock(&(s_ctrl->cam_sensor_mutex));
+	s_ctrl->open_cnt++;
+	mutex_unlock(&(s_ctrl->cam_sensor_mutex));
+
+	CAM_DBG(CAM_SENSOR, "sensor Subdev open count %d", s_ctrl->open_cnt);
+
+	return 0;
+}
+
 static int cam_sensor_subdev_close(struct v4l2_subdev *sd,
 	struct v4l2_subdev_fh *fh)
 {
@@ -39,7 +59,16 @@ static int cam_sensor_subdev_close(struct v4l2_subdev *sd,
 	}
 
 	mutex_lock(&(s_ctrl->cam_sensor_mutex));
-	cam_sensor_shutdown(s_ctrl);
+	if (s_ctrl->open_cnt <= 0) {
+		mutex_unlock(&(s_ctrl->cam_sensor_mutex));
+		return -EINVAL;
+	}
+
+	s_ctrl->open_cnt--;
+	CAM_DBG(CAM_SENSOR, "sensor Subdev open count %d", s_ctrl->open_cnt);
+
+	if (s_ctrl->open_cnt == 0)
+		cam_sensor_shutdown(s_ctrl);
 	mutex_unlock(&(s_ctrl->cam_sensor_mutex));
 
 	return 0;
@@ -97,6 +126,7 @@ static struct v4l2_subdev_ops cam_sensor_subdev_ops = {
 };
 
 static const struct v4l2_subdev_internal_ops cam_sensor_internal_ops = {
+	.open  = cam_sensor_subdev_open,
 	.close = cam_sensor_subdev_close,
 };
 
@@ -155,6 +185,7 @@ static int32_t cam_sensor_driver_i2c_probe(struct i2c_client *client,
 	s_ctrl->of_node = client->dev.of_node;
 	s_ctrl->io_master_info.master_type = I2C_MASTER;
 	s_ctrl->is_probe_succeed = 0;
+	s_ctrl->open_cnt = 0;
 	s_ctrl->last_flush_req = 0;
 
 	rc = cam_sensor_parse_dt(s_ctrl);
@@ -283,6 +314,7 @@ static int32_t cam_sensor_driver_platform_probe(
 	/* Initialize sensor device type */
 	s_ctrl->of_node = pdev->dev.of_node;
 	s_ctrl->is_probe_succeed = 0;
+	s_ctrl->open_cnt = 0;
 	s_ctrl->last_flush_req = 0;
 
 	/*fill in platform device*/
