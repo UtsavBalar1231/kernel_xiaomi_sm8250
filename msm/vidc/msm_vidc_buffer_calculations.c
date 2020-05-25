@@ -1615,6 +1615,8 @@ static inline u32 calculate_enc_scratch1_size(struct msm_vidc_inst *inst,
 	u32 output_mv_bufsize = 0, temp_scratch_mv_bufsize = 0;
 	u32 size, bit_depth, num_LCUMB;
 	u32 vpss_lineBufferSize_1 = 0;
+	u32 width_mb_num = ((width + 15) >> 4);
+	u32 height_mb_num = ((height + 15) >> 4);
 
 	width_lcu_num = ((width)+(lcu_size)-1) / (lcu_size);
 	height_lcu_num = ((height)+(lcu_size)-1) / (lcu_size);
@@ -1680,8 +1682,8 @@ static inline u32 calculate_enc_scratch1_size(struct msm_vidc_inst *inst,
 		BUFFER_ALIGNMENT_SIZE(32)));
 	col_mv_buf_size = ALIGN(col_mv_buf_size, VENUS_DMA_ALIGNMENT)
 		* (num_ref + 1);
-	h265e_colrcbuf_size = (((width_lcu_num + 7) >> 3) *
-		16 * 2 * height_lcu_num);
+	h265e_colrcbuf_size = (((width_mb_num + 7) >> 3) *
+			16 * 2 * height_mb_num);
 	if (num_vpp_pipes > 1)
 		h265e_colrcbuf_size = ALIGN(h265e_colrcbuf_size,
 			VENUS_DMA_ALIGNMENT) * num_vpp_pipes;
