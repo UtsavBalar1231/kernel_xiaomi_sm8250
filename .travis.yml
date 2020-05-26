@@ -52,7 +52,7 @@ script:
 # - make -j$((`nproc`+1)) fs/exfat/exfat.ko
 
  # Run xfstests testsuite
- - cd ../exfat_oot
+ - cd ../linux-exfat-oot
  - make > /dev/null
  - sudo make install > /dev/null
  - sudo modprobe exfat
