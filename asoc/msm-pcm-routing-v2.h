@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
  */
 #ifndef _MSM_PCM_ROUTING_H
 #define _MSM_PCM_ROUTING_H
@@ -212,6 +212,7 @@
 
 #define LPASS_BE_WSA_CDC_DMA_RX_0 "WSA_CDC_DMA_RX_0"
 #define LPASS_BE_WSA_CDC_DMA_TX_0 "WSA_CDC_DMA_TX_0"
+#define LPASS_BE_WSA_CDC_DMA_TX_0_VI "WSA_CDC_DMA_TX_0_VI"
 #define LPASS_BE_WSA_CDC_DMA_RX_1 "WSA_CDC_DMA_RX_1"
 #define LPASS_BE_WSA_CDC_DMA_TX_1 "WSA_CDC_DMA_TX_1"
 #define LPASS_BE_WSA_CDC_DMA_TX_2 "WSA_CDC_DMA_TX_2"
