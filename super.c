@@ -362,6 +362,7 @@ enum {
 	Opt_err_ro,
 	Opt_err,
 	Opt_discard,
+	Opt_time_offset,
 	Opt_fs,
 };
 
@@ -451,6 +452,17 @@ static int parse_options(struct super_block *sb, char *options, int silent,
 				break;
 			case Opt_discard:
 				opts->discard = 1;
+				break;
+			case Opt_time_offset:
+				if (match_int(&args[0], &option))
+					return -EINVAL;
+				/*
+				 * Make the limit 24 just in case someone
+				 * invents something unusual.
+				 */
+				if (option < -24 * 60 || option > 24 * 60)
+					return -EINVAL;
+				opts->time_offset = option;
 				break;
 			default:
 				if (!silent) {
