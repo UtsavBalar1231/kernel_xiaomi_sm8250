@@ -4122,3 +4122,4 @@
 
 #include "lagoon-sde.dtsi"
 #include "lagoon-sde-pll.dtsi"
+#include "msm-rdbg.dtsi"
