@@ -1072,9 +1072,17 @@ int msm_comm_scale_clocks_and_bus(struct msm_vidc_inst *inst, bool do_bw_calc)
 
 int msm_dcvs_try_enable(struct msm_vidc_inst *inst)
 {
+	bool disable_hfr_dcvs = false;
+
 	if (!inst || !inst->core) {
 		d_vpr_e("%s: Invalid args: %pK\n", __func__, inst);
 		return -EINVAL;
+	}
+	if (inst->core->platform_data->vpu_ver == VPU_VERSION_IRIS2_1) {
+		/* 720p@240 encode */
+		if (is_encode_session(inst) && msm_vidc_get_fps(inst) >= 240
+			&& msm_vidc_get_mbs_per_frame(inst) >= 3600)
+			disable_hfr_dcvs = true;
 	}
 
 	inst->clk_data.dcvs_mode =
@@ -1085,7 +1093,8 @@ int msm_dcvs_try_enable(struct msm_vidc_inst *inst)
 			inst->clk_data.low_latency_mode ||
 			inst->batch.enable ||
 			is_turbo_session(inst) ||
-		  inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_CQ);
+			inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_CQ ||
+			disable_hfr_dcvs);
 
 	s_vpr_hp(inst->sid, "DCVS %s: %pK\n",
 		inst->clk_data.dcvs_mode ? "enabled" : "disabled", inst);
