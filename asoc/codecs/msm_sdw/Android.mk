@@ -2,22 +2,14 @@
 
 # Assume no targets will be supported
 
-# Check if this driver needs be built for current target
-ifeq ($(call is-board-platform,msmnile),true)
-AUDIO_SELECT  := CONFIG_SND_SOC_SM8150=m
-endif
-
-ifeq ($(call is-board-platform,$(MSMSTEPPE) $(TRINKET)),true)
-AUDIO_SELECT  := CONFIG_SND_SOC_SM6150=m
-endif
+AUDIO_CHIPSET := audio
+# Build/Package only in case of supported target
 
 ifeq ($(call is-board-platform,sdm660),true)
 AUDIO_SELECT  := CONFIG_SND_SOC_SDM660=m
 endif
 
-AUDIO_CHIPSET := audio
-# Build/Package only in case of supported target
-ifeq ($(call is-board-platform-in-list,msmnile $(MSMSTEPPE) $(TRINKET) sdm660),true)
+ifeq ($(call is-board-platform-in-list, sdm660),true)
 
 LOCAL_PATH := $(call my-dir)
 
@@ -39,14 +31,14 @@ KBUILD_OPTIONS := AUDIO_ROOT=$(AUDIO_BLD_DIR)
 # requirement we are specifying <chipset>_audio.ko as LOCAL_MODULE.
 # This means we need to rename the module to <chipset>_audio.ko
 # after audio.ko is built.
-KBUILD_OPTIONS += MODNAME=wcd934x_dlkm
+KBUILD_OPTIONS += MODNAME=msm_sdw_dlkm
 KBUILD_OPTIONS += BOARD_PLATFORM=$(TARGET_BOARD_PLATFORM)
 KBUILD_OPTIONS += $(AUDIO_SELECT)
 
 ###########################################################
 include $(CLEAR_VARS)
-LOCAL_MODULE              := $(AUDIO_CHIPSET)_wcd934x.ko
-LOCAL_MODULE_KBUILD_NAME  := wcd934x_dlkm.ko
+LOCAL_MODULE              := $(AUDIO_CHIPSET)_msm_sdw.ko
+LOCAL_MODULE_KBUILD_NAME  := msm_sdw_dlkm.ko
 LOCAL_MODULE_TAGS         := optional
 LOCAL_MODULE_DEBUG_ENABLE := true
 LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)

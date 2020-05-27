@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2015-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2018, 2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/regmap.h>
 #include <linux/device.h>
 #include <asoc/core.h>
 #include <asoc/wcd9xxx-regmap.h>
-#include <asoc/wcd9335_registers.h>
+#include "wcd9335_registers.h"
 
 static const struct reg_sequence wcd9335_1_x_defaults[] = {
 	{ WCD9335_CODEC_RPM_CLK_GATE,                     0x03,  0x00 },

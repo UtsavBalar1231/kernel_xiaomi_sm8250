@@ -1,10 +1,11 @@
 # We can build either as part of a standalone Kernel build or as
 # an external module.  Determine which mechanism is being used
-ifeq ($(MODNAME), )
+ifeq ($(MODNAME),)
 	KERNEL_BUILD := 1
 else
 	KERNEL_BUILD := 0
 endif
+
 
 ifeq ($(KERNEL_BUILD), 1)
 	# These are configurable via Kconfig for kernel-based builds
@@ -14,50 +15,6 @@ ifeq ($(KERNEL_BUILD), 1)
 endif
 
 ifeq ($(KERNEL_BUILD), 0)
-	ifeq ($(CONFIG_ARCH_SM6150), y)
-		include $(AUDIO_ROOT)/config/sm6150auto.conf
-		export
-		INCS    +=  -include $(AUDIO_ROOT)/config/sm6150autoconf.h
-	endif
-	ifeq ($(CONFIG_ARCH_TRINKET), y)
-		include $(AUDIO_ROOT)/config/sm6150auto.conf
-		export
-		INCS    +=  -include $(AUDIO_ROOT)/config/sm6150autoconf.h
-	endif
-	ifeq ($(CONFIG_ARCH_KONA), y)
-		include $(AUDIO_ROOT)/config/konaauto.conf
-		INCS    +=  -include $(AUDIO_ROOT)/config/konaautoconf.h
-	endif
-	ifeq ($(CONFIG_ARCH_LITO), y)
-		include $(AUDIO_ROOT)/config/litoauto.conf
-		export
-		INCS    +=  -include $(AUDIO_ROOT)/config/litoautoconf.h
-	endif
-	ifeq ($(CONFIG_ARCH_BENGAL), y)
-		include $(AUDIO_ROOT)/config/bengalauto.conf
-		export
-		INCS    +=  -include $(AUDIO_ROOT)/config/bengalautoconf.h
-	endif
-	ifeq ($(CONFIG_ARCH_SM8150), y)
-		include $(AUDIO_ROOT)/config/sm8150auto.conf
-		export
-		INCS    +=  -include $(AUDIO_ROOT)/config/sm8150autoconf.h
-	endif
-	ifeq ($(CONFIG_ARCH_SDMSHRIKE), y)
-		include $(AUDIO_ROOT)/config/sm8150auto.conf
-		export
-		INCS    +=  -include $(AUDIO_ROOT)/config/sm8150autoconf.h
-	endif
-	ifeq ($(CONFIG_ARCH_QCS405), y)
-		include $(AUDIO_ROOT)/config/qcs405auto.conf
-		export
-		INCS    +=  -include $(AUDIO_ROOT)/config/qcs405autoconf.h
-	endif
-	ifeq ($(CONFIG_QTI_GVM), y)
-		include $(AUDIO_ROOT)/config/gvmauto.conf
-		export
-		INCS    +=  -include $(AUDIO_ROOT)/config/gvmautoconf.h
-	endif
 	ifeq ($(CONFIG_ARCH_SDM660), y)
 		include $(AUDIO_ROOT)/config/sdm660auto.conf
 		export
@@ -89,37 +46,18 @@ UAPI_INC :=	-I$(AUDIO_ROOT)/include/$(UAPI_DIR)
 COMMON_DIR :=	include
 COMMON_INC :=	-I$(AUDIO_ROOT)/$(COMMON_DIR)
 
-############ Native Enc/Dec ############
+############ SDM660_CDC ############
 
-ifdef CONFIG_MSM_QDSP6V2_CODECS
-	NATIVE_OBJS += q6audio_v2.o q6audio_v2_aio.o
-	NATIVE_OBJS += audio_utils_aio.o
-	NATIVE_OBJS += audio_utils.o
-	NATIVE_OBJS += audio_native.o
-	NATIVE_OBJS += aac_in.o
-	NATIVE_OBJS += amrnb_in.o
-	NATIVE_OBJS += amrwb_in.o
-	NATIVE_OBJS += audio_aac.o
-	NATIVE_OBJS += audio_alac.o
-	NATIVE_OBJS += audio_amrnb.o
-	NATIVE_OBJS += audio_amrwb.o
-	NATIVE_OBJS += audio_amrwbplus.o
-	NATIVE_OBJS += audio_ape.o
-	NATIVE_OBJS += audio_evrc.o
-	NATIVE_OBJS += audio_g711alaw.o
-	NATIVE_OBJS += audio_g711mlaw.o
-	NATIVE_OBJS += audio_hwacc_effects.o
-	NATIVE_OBJS += audio_mp3.o
-	NATIVE_OBJS += audio_multi_aac.o
-	NATIVE_OBJS += audio_qcelp.o
-	NATIVE_OBJS += audio_wma.o
-	NATIVE_OBJS += audio_wmapro.o
-	NATIVE_OBJS += evrc_in.o
-	NATIVE_OBJS += g711alaw_in.o
-	NATIVE_OBJS += g711mlaw_in.o
-	NATIVE_OBJS += qcelp_in.o
+# for SDM660_CDC Codec
+ifdef CONFIG_SND_SOC_ANALOG_CDC
+	ANALOG_CDC_OBJS += msm-analog-cdc.o
+	ANALOG_CDC_OBJS += sdm660-cdc-irq.o
 endif
 
+ifdef CONFIG_SND_SOC_DIGITAL_CDC
+	DIGITAL_CDC_OBJS += msm-digital-cdc.o
+	DIGITAL_CDC_OBJS += msm-digital-cdc-regmap.o
+endif
 LINUX_INC +=	-Iinclude/linux
 
 INCS +=		$(COMMON_INC) \
@@ -153,14 +91,25 @@ ifeq ($(call cc-option-yn, -Wheader-guard),y)
 EXTRA_CFLAGS += -Wheader-guard
 endif
 
+
 ifeq ($(KERNEL_BUILD), 0)
+KBUILD_EXTRA_SYMBOLS +=$(OUT)/obj/vendor/qcom/opensource/audio-kernel/ipc/Module.symvers
 KBUILD_EXTRA_SYMBOLS +=$(OUT)/obj/vendor/qcom/opensource/audio-kernel/dsp/Module.symvers
 KBUILD_EXTRA_SYMBOLS +=$(OUT)/obj/vendor/qcom/opensource/audio-kernel/asoc/Module.symvers
+KBUILD_EXTRA_SYMBOLS +=$(OUT)/obj/vendor/qcom/opensource/audio-kernel/asoc/codecs/Module.symvers
+KBUILD_EXTRA_SYMBOLS +=$(OUT)/obj/vendor/qcom/opensource/audio-kernel/soc/Module.symvers
+endif
+
+ifeq ($(CONFIG_SND_SOC_GCOV), y)
+GCOV_PROFILE := y
 endif
 
 # Module information used by KBuild framework
-obj-$(CONFIG_MSM_QDSP6V2_CODECS) += native_dlkm.o
-native_dlkm-y := $(NATIVE_OBJS)
+obj-$(CONFIG_SND_SOC_ANALOG_CDC) += analog_cdc_dlkm.o
+analog_cdc_dlkm-y := $(ANALOG_CDC_OBJS)
+
+obj-$(CONFIG_SND_SOC_DIGITAL_CDC) += digital_cdc_dlkm.o
+digital_cdc_dlkm-y := $(DIGITAL_CDC_OBJS)
 
 # inject some build related information
 DEFINES += -DBUILD_TIMESTAMP=\"$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')\"
