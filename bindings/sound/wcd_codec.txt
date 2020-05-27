@@ -501,6 +501,7 @@ Optional properties:
  - cdc-vdd-mic-bias-supply: phandle of mic bias supply's regulator device tree node.
  - qcom,cdc-vdd-mic-bias-voltage: mic bias supply's voltage level min and max in mV.
  - qcom,cdc-vdd-mic-bias-current: mic bias supply's max current in mA.
+ - qcom,cdc-vdd-mic-bias-lpm-supported: mic bias supply's LPM mode.
 
  - qcom,cdc-static-supplies: List of supplies to be enabled prior to codec
 			     hardware probe.  Supplies in this list will be
@@ -546,6 +547,7 @@ Example:
 		cdc-vdd-mic-bias-supply = <&L22A>;
 		qcom,cdc-vdd-mic-bias-voltage = <3304000 3304000>;
 		qcom,cdc-vdd-mic-bias-current = <50000>;
+		qcom,cdc-vdd-mic-bias-lpm-supported = <1>;
 
 		qcom,cdc-micbias1-mv = <1800>;
 		qcom,cdc-micbias2-mv = <1800>;
