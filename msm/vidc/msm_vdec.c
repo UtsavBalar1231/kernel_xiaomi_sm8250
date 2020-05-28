@@ -1328,6 +1328,9 @@ int msm_vdec_set_seqchng_at_syncframe(struct msm_vidc_inst *inst)
 	hdev = inst->core->device;
 	hfi_property.enable = is_low_latency_hint(inst);
 
+	if (!hfi_property.enable)
+		return 0;
+
 	s_vpr_h(inst->sid, "%s: %#x\n", __func__, hfi_property.enable);
 	rc = call_hfi_op(hdev, session_set_property, inst->session,
 		HFI_PROPERTY_PARAM_VDEC_SEQCHNG_AT_SYNCFRM, &hfi_property,
