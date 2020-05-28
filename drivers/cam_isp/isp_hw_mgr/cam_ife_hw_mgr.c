@@ -686,7 +686,7 @@ static void cam_ife_hw_mgr_print_acquire_info(
 		goto fail;
 
 	CAM_INFO(CAM_ISP,
-		"Acquired %s IFE[%d %d] with [%u pix] [%u pd] [%u rdi] ports for ctx:%u",
+		"Successfully acquire %s IFE[%d %d] with [%u pix] [%u pd] [%u rdi] ports for ctx:%u",
 		(hw_mgr_ctx->is_dual) ? "dual" : "single",
 		hw_idx[CAM_ISP_HW_SPLIT_LEFT], hw_idx[CAM_ISP_HW_SPLIT_RIGHT],
 		num_pix_port, num_pd_port, num_rdi_port, hw_mgr_ctx->ctx_index);
@@ -696,7 +696,7 @@ static void cam_ife_hw_mgr_print_acquire_info(
 fail:
 	CAM_ERR(CAM_ISP, "Acquire HW failed for ctx:%u", hw_mgr_ctx->ctx_index);
 	CAM_INFO(CAM_ISP,
-		"Previously acquired %s IFE[%d %d] with [%u pix] [%u pd] [%u rdi] ports for ctx:%u",
+		"Fail to acquire %s IFE[%d %d] with [%u pix] [%u pd] [%u rdi] ports for ctx:%u",
 		(hw_mgr_ctx->is_dual) ? "dual" : "single",
 		hw_idx[CAM_ISP_HW_SPLIT_LEFT], hw_idx[CAM_ISP_HW_SPLIT_RIGHT],
 		num_pix_port, num_pd_port, num_rdi_port, hw_mgr_ctx->ctx_index);
@@ -7060,6 +7060,9 @@ static int cam_ife_hw_mgr_handle_hw_rup(
 		return 0;
 	}
 
+	if (atomic_read(&ife_hw_mgr_ctx->overflow_pending))
+		return 0;
+
 	ife_hwr_irq_rup_cb =
 		ife_hw_mgr_ctx->common.event_cb[CAM_ISP_HW_EVENT_REG_UPDATE];
 
@@ -7070,8 +7073,6 @@ static int cam_ife_hw_mgr_handle_hw_rup(
 			ife_hw_mgr_ctx->master_hw_idx))
 			break;
 
-		if (atomic_read(&ife_hw_mgr_ctx->overflow_pending))
-			break;
 		ife_hwr_irq_rup_cb(ife_hw_mgr_ctx->common.cb_priv,
 			CAM_ISP_HW_EVENT_REG_UPDATE, &rup_event_data);
 		break;
@@ -7081,8 +7082,6 @@ static int cam_ife_hw_mgr_handle_hw_rup(
 	case CAM_ISP_HW_VFE_IN_RDI2:
 	case CAM_ISP_HW_VFE_IN_RDI3:
 		if (!ife_hw_mgr_ctx->is_rdi_only_context)
-			break;
-		if (atomic_read(&ife_hw_mgr_ctx->overflow_pending))
 			break;
 		ife_hwr_irq_rup_cb(ife_hw_mgr_ctx->common.cb_priv,
 			CAM_ISP_HW_EVENT_REG_UPDATE, &rup_event_data);
@@ -7175,6 +7174,9 @@ static int cam_ife_hw_mgr_handle_hw_epoch(
 		return 0;
 	}
 
+	if (atomic_read(&ife_hw_mgr_ctx->overflow_pending))
+		return 0;
+
 	ife_hw_irq_epoch_cb =
 		ife_hw_mgr_ctx->common.event_cb[CAM_ISP_HW_EVENT_EPOCH];
 
@@ -7184,9 +7186,6 @@ static int cam_ife_hw_mgr_handle_hw_epoch(
 		rc = cam_ife_hw_mgr_check_irq_for_dual_vfe(ife_hw_mgr_ctx,
 			CAM_ISP_HW_EVENT_EPOCH);
 		if (!rc) {
-			if (atomic_read(&ife_hw_mgr_ctx->overflow_pending))
-				break;
-
 			epoch_done_event_data.frame_id_meta =
 				event_info->th_reg_val;
 			ife_hw_irq_epoch_cb(ife_hw_mgr_ctx->common.cb_priv,
@@ -7229,6 +7228,9 @@ static int cam_ife_hw_mgr_handle_hw_sof(
 		return 0;
 	}
 
+	if (atomic_read(&ife_hw_mgr_ctx->overflow_pending))
+		return 0;
+
 	memset(&sof_done_event_data, 0, sizeof(sof_done_event_data));
 
 	ife_hw_irq_sof_cb =
@@ -7255,9 +7257,6 @@ static int cam_ife_hw_mgr_handle_hw_sof(
 			if (ife_hw_mgr_ctx->use_frame_header_ts)
 				sof_done_event_data.timestamp = 0x0;
 
-			if (atomic_read(&ife_hw_mgr_ctx->overflow_pending))
-				break;
-
 			ife_hw_irq_sof_cb(ife_hw_mgr_ctx->common.cb_priv,
 				CAM_ISP_HW_EVENT_SOF, &sof_done_event_data);
 		}
@@ -7272,8 +7271,6 @@ static int cam_ife_hw_mgr_handle_hw_sof(
 		cam_ife_mgr_cmd_get_sof_timestamp(ife_hw_mgr_ctx,
 			&sof_done_event_data.timestamp,
 			&sof_done_event_data.boot_time);
-		if (atomic_read(&ife_hw_mgr_ctx->overflow_pending))
-			break;
 		ife_hw_irq_sof_cb(ife_hw_mgr_ctx->common.cb_priv,
 			CAM_ISP_HW_EVENT_SOF, &sof_done_event_data);
 		break;
@@ -7309,6 +7306,9 @@ static int cam_ife_hw_mgr_handle_hw_eof(
 		return 0;
 	}
 
+	if (atomic_read(&ife_hw_mgr_ctx->overflow_pending))
+		return  0;
+
 	ife_hw_irq_eof_cb =
 		ife_hw_mgr_ctx->common.event_cb[CAM_ISP_HW_EVENT_EOF];
 
@@ -7318,8 +7318,6 @@ static int cam_ife_hw_mgr_handle_hw_eof(
 		rc = cam_ife_hw_mgr_check_irq_for_dual_vfe(ife_hw_mgr_ctx,
 			CAM_ISP_HW_EVENT_EOF);
 		if (!rc) {
-			if (atomic_read(&ife_hw_mgr_ctx->overflow_pending))
-				break;
 			ife_hw_irq_eof_cb(ife_hw_mgr_ctx->common.cb_priv,
 				CAM_ISP_HW_EVENT_EOF, &eof_done_event_data);
 		}
