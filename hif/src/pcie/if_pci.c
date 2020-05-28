@@ -3658,8 +3658,8 @@ int hif_pci_configure_grp_irq(struct hif_softc *scn,
 	for (j = 0; j < hif_ext_group->numirq; j++) {
 		irq = hif_ext_group->irq[j];
 
-		hif_info("request_irq = %d for grp %d",
-			 irq, hif_ext_group->grp_id);
+		hif_debug("request_irq = %d for grp %d",
+			  irq, hif_ext_group->grp_id);
 		ret = pfrm_request_irq(
 				scn->qdf_dev->dev, irq,
 				hif_ext_group_interrupt_handler,
