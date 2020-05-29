@@ -82,6 +82,8 @@ static void dsi_catalog_cmn_init(struct dsi_ctrl_hw *ctrl,
 		ctrl->ops.kickoff_command_non_embedded_mode = NULL;
 		ctrl->ops.config_clk_gating = NULL;
 		ctrl->ops.map_mdp_regs = NULL;
+		ctrl->ops.configure_cmddma_window = NULL;
+		ctrl->ops.reset_trig_ctrl = NULL;
 		ctrl->ops.log_line_count = NULL;
 		break;
 	case DSI_CTRL_VERSION_2_0:
@@ -99,6 +101,8 @@ static void dsi_catalog_cmn_init(struct dsi_ctrl_hw *ctrl,
 		ctrl->ops.kickoff_command_non_embedded_mode = NULL;
 		ctrl->ops.config_clk_gating = NULL;
 		ctrl->ops.map_mdp_regs = NULL;
+		ctrl->ops.configure_cmddma_window = NULL;
+		ctrl->ops.reset_trig_ctrl = NULL;
 		ctrl->ops.log_line_count = NULL;
 		break;
 	case DSI_CTRL_VERSION_2_2:
@@ -121,6 +125,10 @@ static void dsi_catalog_cmn_init(struct dsi_ctrl_hw *ctrl,
 		ctrl->ops.kickoff_command_non_embedded_mode =
 			dsi_ctrl_hw_kickoff_non_embedded_mode;
 		ctrl->ops.map_mdp_regs = dsi_ctrl_hw_22_map_mdp_regs;
+		ctrl->ops.configure_cmddma_window =
+			dsi_ctrl_hw_22_configure_cmddma_window;
+		ctrl->ops.reset_trig_ctrl =
+			dsi_ctrl_hw_22_reset_trigger_controls;
 		ctrl->ops.log_line_count = dsi_ctrl_hw_22_log_line_count;
 		break;
 	default:

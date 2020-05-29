@@ -274,5 +274,10 @@ int dsi_phy_hw_v4_0_cache_phy_timings(struct dsi_phy_per_lane_cfgs *timings,
 int dsi_ctrl_hw_22_map_mdp_regs(struct platform_device *pdev,
 		struct dsi_ctrl_hw *ctrl);
 
+void dsi_ctrl_hw_22_configure_cmddma_window(struct dsi_ctrl_hw *ctrl,
+		struct dsi_ctrl_cmd_dma_info *cmd,
+		u32 line_no, u32 window);
+void dsi_ctrl_hw_22_reset_trigger_controls(struct dsi_ctrl_hw *ctrl,
+				       struct dsi_host_common_cfg *cfg);
 u32 dsi_ctrl_hw_22_log_line_count(struct dsi_ctrl_hw *ctrl, bool cmd_mode);
 #endif /* _DSI_CATALOG_H_ */
