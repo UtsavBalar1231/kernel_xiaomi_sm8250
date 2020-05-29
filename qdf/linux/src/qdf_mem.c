@@ -35,11 +35,7 @@
 #include <linux/seq_file.h>
 #include <linux/string.h>
 
-#if defined(CONFIG_CNSS)
-#include <net/cnss.h>
-#endif
-
-#ifdef CONFIG_WCNSS_MEM_PRE_ALLOC
+#if IS_ENABLED(CONFIG_WCNSS_MEM_PRE_ALLOC)
 #include <net/cnss_prealloc.h>
 #endif
 
@@ -1035,7 +1031,7 @@ void __qdf_mempool_free(qdf_device_t osdev, __qdf_mempool_t pool, void *buf)
 }
 qdf_export_symbol(__qdf_mempool_free);
 
-#ifdef CONFIG_WCNSS_MEM_PRE_ALLOC
+#if IS_ENABLED(CONFIG_WCNSS_MEM_PRE_ALLOC)
 /**
  * qdf_mem_prealloc_get() - conditionally pre-allocate memory
  * @size: the number of bytes to allocate
