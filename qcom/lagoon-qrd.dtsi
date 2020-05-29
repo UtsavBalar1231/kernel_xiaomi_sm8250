@@ -32,6 +32,10 @@
 	};
 };
 
+&pm6150a_l1 {
+	qcom,init-voltage = <1800000>;
+};
+
 &pm6350_gpios {
 	key_vol_up {
 		key_vol_up_default: key_vol_up_default {
