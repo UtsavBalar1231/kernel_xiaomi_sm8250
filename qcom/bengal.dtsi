@@ -1351,9 +1351,10 @@
 		      <0x4748000 0x8000>;
 		reg-names = "hc_mem", "cqhci_mem", "cqhci_ice";
 
-		interrupts = <GIC_SPI 348 IRQ_TYPE_LEVEL_HIGH>,
-				<GIC_SPI 352 IRQ_TYPE_LEVEL_HIGH>;
-		interrupt-names = "hc_irq", "pwr_irq";
+		interrupts-extended = <&intc GIC_SPI 348 IRQ_TYPE_LEVEL_HIGH>,
+				<&intc GIC_SPI 352 IRQ_TYPE_LEVEL_HIGH>,
+				<&tlmm 19 IRQ_TYPE_EDGE_RISING>;
+		interrupt-names = "hc_irq", "pwr_irq", "tb_trig_irq";
 
 		qcom,bus-width = <8>;
 		qcom,large-address-bus;
