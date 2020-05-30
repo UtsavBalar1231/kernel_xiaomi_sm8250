@@ -1012,6 +1012,8 @@ void rmnet_shs_flush_node(struct rmnet_shs_skbn_s *node, u8 ctext)
 		skb_bytes_delivered += skb->len;
 
 		if (segs_per_skb > 0) {
+			if (node->skb_tport_proto == IPPROTO_UDP)
+				rmnet_shs_crit_err[RMNET_SHS_UDP_SEGMENT]++;
 			rmnet_shs_deliver_skb_segmented(skb, ctext,
 							segs_per_skb);
 		} else {
