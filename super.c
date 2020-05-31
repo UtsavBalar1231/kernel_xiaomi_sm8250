@@ -238,6 +238,12 @@ enum {
 	Opt_errors,
 	Opt_discard,
 	Opt_time_offset,
+
+	/* Deprecated options */
+	Opt_utf8,
+	Opt_debug,
+	Opt_namecase,
+	Opt_codepage,
 };
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0)
@@ -275,6 +281,14 @@ static const struct fs_parameter_spec exfat_param_specs[] = {
 #endif
 	fsparam_flag("discard",			Opt_discard),
 	fsparam_s32("time_offset",		Opt_time_offset),
+	__fsparam(NULL, "utf8",			Opt_utf8, fs_param_deprecated,
+		  NULL),
+	__fsparam(NULL, "debug",		Opt_debug, fs_param_deprecated,
+		  NULL),
+	__fsparam(fs_param_is_u32, "namecase",	Opt_namecase,
+		  fs_param_deprecated, NULL),
+	__fsparam(fs_param_is_u32, "codepage",	Opt_codepage,
+		  fs_param_deprecated, NULL),
 	{}
 };
 
@@ -342,6 +356,11 @@ static int exfat_parse_param(struct fs_context *fc, struct fs_parameter *param)
 			return -EINVAL;
 		opts->time_offset = result.int_32;
 		break;
+	case Opt_utf8:
+	case Opt_debug:
+	case Opt_namecase:
+	case Opt_codepage:
+		break;
 	default:
 		return -EINVAL;
 	}
@@ -363,6 +382,12 @@ enum {
 	Opt_err,
 	Opt_discard,
 	Opt_time_offset,
+
+	/* Deprecated options */
+	Opt_utf8,
+	Opt_debug,
+	Opt_namecase,
+	Opt_codepage,
 	Opt_fs,
 };
 
@@ -378,6 +403,10 @@ static const match_table_t exfat_tokens = {
 	{Opt_err_panic, "errors=panic"},
 	{Opt_err_ro, "errors=remount-ro"},
 	{Opt_discard, "discard"},
+	{Opt_codepage, "codepage=%u"},
+	{Opt_namecase, "namecase=%u"},
+	{Opt_debug, "debug"},
+	{Opt_utf8, "utf8"},
 	{Opt_err, NULL}
 };
 
@@ -463,6 +492,11 @@ static int parse_options(struct super_block *sb, char *options, int silent,
 				if (option < -24 * 60 || option > 24 * 60)
 					return -EINVAL;
 				opts->time_offset = option;
+				break;
+			case Opt_utf8:
+			case Opt_debug:
+			case Opt_namecase:
+			case Opt_codepage:
 				break;
 			default:
 				if (!silent) {
