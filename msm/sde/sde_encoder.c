@@ -3339,7 +3339,8 @@ static void sde_encoder_virt_enable(struct drm_encoder *drm_enc)
 
 	_sde_encoder_input_handler_register(drm_enc);
 
-	if ((drm_enc->crtc->state->connectors_changed &&
+	if ((drm_enc->crtc && drm_enc->crtc->state &&
+			drm_enc->crtc->state->connectors_changed &&
 			sde_encoder_in_clone_mode(drm_enc)) ||
 			!(msm_is_mode_seamless_vrr(cur_mode)
 			|| msm_is_mode_seamless_dms(cur_mode)
