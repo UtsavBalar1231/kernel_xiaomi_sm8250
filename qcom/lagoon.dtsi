@@ -4037,20 +4037,14 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	io-channels = <&pm6150l_vadc ADC_AMUX_THM1_PU2>,
-			<&pm6150l_vadc ADC_AMUX_THM2_PU2>,
 			<&pm6150l_vadc ADC_AMUX_THM3_PU2>,
-			<&pm6150l_vadc ADC_GPIO3_PU2>;
+			<&pm6150l_vadc ADC_GPIO3_PU2>,
+			<&pm6150l_vadc ADC_GPIO4_PU2>;
 
 	/* Channel nodes */
 
 	pa_therm1 {
 		reg = <ADC_AMUX_THM1_PU2>;
-		qcom,ratiometric;
-		qcom,hw-settle-time = <200>;
-	};
-
-	msm_therm {
-		reg = <ADC_AMUX_THM2_PU2>;
 		qcom,ratiometric;
 		qcom,hw-settle-time = <200>;
 	};
@@ -4063,6 +4057,12 @@
 
 	rear_cam_flash_therm {
 		reg = <ADC_GPIO3_PU2>;
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+	};
+
+	quiet_therm {
+		reg = <ADC_GPIO4_PU2>;
 		qcom,ratiometric;
 		qcom,hw-settle-time = <200>;
 	};
@@ -4088,17 +4088,17 @@
 			#thermal-sensor-cells = <1>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			io-channels = <&pm6150l_vadc ADC_GPIO2_PU2>,
-					<&pm6150l_vadc ADC_GPIO4_PU2>;
+			io-channels = <&pm6150l_vadc ADC_AMUX_THM2_PU2>,
+					<&pm6150l_vadc ADC_GPIO2_PU2>;
 
-			rfc_cam_therm {
-				reg = <ADC_GPIO2_PU2>;
+			msm_therm {
+				reg = <ADC_AMUX_THM2_PU2>;
 				qcom,ratiometric;
 				qcom,hw-settle-time = <200>;
 			};
 
-			quiet_therm {
-				reg = <ADC_GPIO4_PU2>;
+			rfc_cam_therm {
+				reg = <ADC_GPIO2_PU2>;
 				qcom,ratiometric;
 				qcom,hw-settle-time = <200>;
 			};
