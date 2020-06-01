@@ -32,6 +32,8 @@
 		qcom,mdss-dsi-te-dcs-command = <1>;
 		qcom,mdss-dsi-te-check-enable;
 		qcom,mdss-dsi-te-using-te-pin;
+		qcom,mdss-pan-physical-width-dimension = <72>;
+		qcom,mdss-pan-physical-height-dimension = <157>;
 		qcom,mdss-dsi-display-timings {
 			timing@0 {
 				qcom,mdss-dsi-panel-framerate = <120>;
