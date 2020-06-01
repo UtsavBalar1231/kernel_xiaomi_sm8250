@@ -94,20 +94,26 @@
 #define WCN_CDC_SLIM_TX_CH_MAX_LITO 3
 
 //static atomic_t cs35l41_mclk_rsc_ref;
-
+#ifdef AUDIO_SM8250_FLAG
 #define CS35L41_SPEAKER_NAME "cs35l41.1-0040"
 #define CS35L41_RECEIVER_NAME "cs35l41.1-0042"
+#else
+#define CS35L41_SPEAKER_NAME "cs35l41.2-0040"
+#define CS35L41_RECEIVER_NAME "cs35l41.2-0042"
+#endif
 struct snd_soc_dai_link_component cs35l41_codec_components[] = {
 	{
 		.name = CS35L41_SPEAKER_NAME,
 		//.dai_name = "cs35l41-pcm",
 		.dai_name = CS35L41_SPEAKER_NAME,
 	},
+#ifdef AUDIO_SM8250_FLAG
 	{
 		.name = CS35L41_RECEIVER_NAME,
 		//.dai_name = "cs35l41-pcm",
 		.dai_name = CS35L41_RECEIVER_NAME,
 	},
+#endif
 };
 
 static struct snd_soc_codec_conf cs35l41_codec_conf[] = {
@@ -115,10 +121,12 @@ static struct snd_soc_codec_conf cs35l41_codec_conf[] = {
 		.dev_name	= CS35L41_SPEAKER_NAME,
 		.name_prefix	= "SPK",
 	},
+#ifdef AUDIO_SM8250_FLAG
 	{
 		.dev_name	= CS35L41_RECEIVER_NAME,
 		.name_prefix	= "RCV",
 	},
+#endif
 };
 
 #define SWR_MAX_SLAVE_DEVICES 6
