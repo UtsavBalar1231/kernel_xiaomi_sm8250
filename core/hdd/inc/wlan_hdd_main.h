@@ -4396,4 +4396,11 @@ hdd_monitor_mode_qdf_create_event(struct hdd_adapter *adapter,
 }
 #endif
 
+/**
+ * hdd_init_start_completion() - Init the completion variable to wait on ON/OFF
+ *
+ * Return: None
+ */
+void hdd_init_start_completion(void);
+
 #endif /* end #if !defined(WLAN_HDD_MAIN_H) */
