@@ -3781,20 +3781,15 @@ static void sde_encoder_frame_done_callback(
 			if (sde_enc->phys_encs[i] == ready_phys) {
 				SDE_EVT32_VERBOSE(DRMID(drm_enc), i,
 				     atomic_read(&sde_enc->frame_done_cnt[i]));
-				if (!atomic_add_unless(
-					&sde_enc->frame_done_cnt[i], 1, 1)) {
+				if (atomic_inc_return(
+					&sde_enc->frame_done_cnt[i]) > 1)
 					SDE_EVT32(DRMID(drm_enc), event,
 						ready_phys->intf_idx,
 						SDE_EVTLOG_ERROR);
-					SDE_ERROR_ENC(sde_enc,
-						"intf idx:%d, event:%d\n",
-						ready_phys->intf_idx, event);
-					return;
-				}
 			}
 
 			if (topology != SDE_RM_TOPOLOGY_PPSPLIT &&
-			    atomic_read(&sde_enc->frame_done_cnt[i]) != 1)
+			    !atomic_read(&sde_enc->frame_done_cnt[i]))
 				trigger = false;
 		}
 
@@ -3807,7 +3802,7 @@ static void sde_encoder_frame_done_callback(
 					&sde_enc->crtc_frame_event_cb_data,
 					event);
 			for (i = 0; i < sde_enc->num_phys_encs; i++)
-				atomic_set(&sde_enc->frame_done_cnt[i], 0);
+				atomic_dec(&sde_enc->frame_done_cnt[i]);
 		}
 	} else if (sde_enc->crtc_frame_event_cb) {
 		if (!is_cmd_mode)
