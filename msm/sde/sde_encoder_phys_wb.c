@@ -548,6 +548,13 @@ static void sde_encoder_phys_wb_setup_cdp(struct sde_encoder_phys *phys_enc,
 		intf_cfg_v1->wb_count = num_wb;
 		intf_cfg_v1->wb[0] = hw_wb->idx;
 		if (SDE_FORMAT_IS_YUV(format)) {
+			if (!phys_enc->hw_cdm) {
+				SDE_ERROR("Format:YUV but no cdm allocated\n");
+				SDE_EVT32(DRMID(phys_enc->parent),
+							 SDE_EVTLOG_ERROR);
+				return;
+			}
+
 			intf_cfg_v1->cdm_count = num_wb;
 			intf_cfg_v1->cdm[0] = hw_cdm->idx;
 		}
