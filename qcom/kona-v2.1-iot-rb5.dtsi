@@ -117,6 +117,10 @@
 	};
 };
 
+&usb0 {
+	qcom,charging-disabled;
+};
+
 
 &pm8150b_charger {
 	qcom,batteryless-platform;
