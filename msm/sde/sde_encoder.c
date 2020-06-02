@@ -82,6 +82,11 @@
 		((x) == SDE_RM_TOPOLOGY_DUALPIPE_3DMERGE) || \
 		((x) == SDE_RM_TOPOLOGY_DUALPIPE_3DMERGE_DSC))
 
+#define REQ_SEAMLESS_MODESET_LOCK(adj_mode, is_cmd_mode) \
+		(msm_is_mode_seamless_dms(adj_mode) || \
+		(msm_is_mode_seamless_dyn_clk(adj_mode) && \
+		is_cmd_mode) || msm_is_mode_seamless_poms(adj_mode))
+
 /**
  * enum sde_enc_rc_events - events for resource control state machine
  * @SDE_ENC_RC_EVENT_KICKOFF:
@@ -2878,9 +2883,12 @@ static void sde_encoder_virt_mode_set(struct drm_encoder *drm_enc,
 	enum sde_intf_mode intf_mode;
 	bool is_cmd_mode = false;
 	int i = 0, ret;
+	struct sde_crtc *sde_crtc;
+	bool modeset_lock = false;
 
-	if (!drm_enc) {
-		SDE_ERROR("invalid encoder\n");
+	if (!drm_enc || !drm_enc->crtc) {
+		SDE_ERROR("invalid params %d %d\n",
+			!drm_enc, drm_enc ? !drm_enc->crtc : -1);
 		return;
 	}
 
@@ -2901,25 +2909,16 @@ static void sde_encoder_virt_mode_set(struct drm_encoder *drm_enc,
 
 	SDE_EVT32(DRMID(drm_enc));
 
-	/*
-	 * cache the crtc in sde_enc on enable for duration of use case
-	 * for correctly servicing asynchronous irq events and timers
-	 */
-	if (!drm_enc->crtc) {
-		SDE_ERROR("invalid crtc\n");
-		return;
-	}
 	sde_enc->crtc = drm_enc->crtc;
+	sde_crtc = to_sde_crtc(sde_enc->crtc);
 
 	list_for_each_entry(conn_iter, connector_list, head)
 		if (conn_iter->encoder == drm_enc)
 			conn = conn_iter;
 
-	if (!conn) {
-		SDE_ERROR_ENC(sde_enc, "failed to find attached connector\n");
-		return;
-	} else if (!conn->state) {
-		SDE_ERROR_ENC(sde_enc, "invalid connector state\n");
+	if (!conn || !conn->state) {
+		SDE_ERROR_ENC(sde_enc, "invalid connector %d %d\n",
+			!conn, conn ? !conn->state : -1);
 		return;
 	}
 
@@ -2930,6 +2929,10 @@ static void sde_encoder_virt_mode_set(struct drm_encoder *drm_enc,
 
 	sde_crtc_set_compression_ratio(sde_enc->mode_info, sde_enc->crtc);
 
+	modeset_lock = REQ_SEAMLESS_MODESET_LOCK(adj_mode,
+					is_cmd_mode);
+	if (modeset_lock)
+		mutex_lock(&sde_crtc->vblank_modeset_ctrl_lock);
 	/* release resources before seamless mode change */
 	if (msm_is_mode_seamless_dms(adj_mode) ||
 			(msm_is_mode_seamless_dyn_clk(adj_mode) &&
@@ -2941,7 +2944,7 @@ static void sde_encoder_virt_mode_set(struct drm_encoder *drm_enc,
 			SDE_ERROR_ENC(sde_enc,
 					"sde resource control failed: %d\n",
 					ret);
-			return;
+			goto exit;
 		}
 
 		/*
@@ -2961,7 +2964,7 @@ static void sde_encoder_virt_mode_set(struct drm_encoder *drm_enc,
 	if (ret) {
 		SDE_ERROR_ENC(sde_enc,
 				"failed to reserve hw resources, %d\n", ret);
-		return;
+		goto exit;
 	}
 
 	sde_rm_init_hw_iter(&pp_iter, drm_enc->base.id, SDE_HW_BLK_PINGPONG);
@@ -3017,7 +3020,7 @@ static void sde_encoder_virt_mode_set(struct drm_encoder *drm_enc,
 			if (!sde_enc->hw_pp[i] && sde_enc->topology.num_intf) {
 				SDE_ERROR_ENC(sde_enc,
 				    "invalid pingpong block for the encoder\n");
-				return;
+				goto exit;
 			}
 			phys->hw_pp = sde_enc->hw_pp[i];
 			phys->connector = conn->state->connector;
@@ -3035,6 +3038,9 @@ static void sde_encoder_virt_mode_set(struct drm_encoder *drm_enc,
 	else if (msm_is_mode_seamless_poms(adj_mode))
 		_sde_encoder_modeset_helper_locked(drm_enc,
 						SDE_ENC_RC_EVENT_POST_MODESET);
+exit:
+	if (modeset_lock)
+		mutex_unlock(&sde_crtc->vblank_modeset_ctrl_lock);
 }
 
 void sde_encoder_control_te(struct drm_encoder *drm_enc, bool enable)

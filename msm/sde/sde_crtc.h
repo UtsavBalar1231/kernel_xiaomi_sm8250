@@ -236,6 +236,8 @@ struct sde_crtc_misr_info {
  * @ad_dirty      : list containing ad properties that are dirty
  * @ad_active     : list containing ad properties that are active
  * @crtc_lock     : crtc lock around create, destroy and access.
+ * @vblank_modeset_ctrl_lock     : lock used for controlling vblank
+				during modeset
  * @frame_pending : Whether or not an update is pending
  * @frame_events  : static allocation of in-flight frame events
  * @frame_event_list : available frame event list
@@ -309,6 +311,7 @@ struct sde_crtc {
 
 	struct mutex crtc_lock;
 	struct mutex crtc_cp_lock;
+	struct mutex vblank_modeset_ctrl_lock;
 
 	atomic_t frame_pending;
 	struct sde_crtc_frame_event frame_events[SDE_CRTC_FRAME_EVENT_SIZE];
