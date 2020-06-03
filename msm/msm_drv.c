@@ -1021,10 +1021,11 @@ static void msm_lastclose(struct drm_device *dev)
 
 	/* check for splash status before triggering cleanup
 	 * if we end up here with splash status ON i.e before first
-	 * commit then ignore the last close call
+	 * commit then ignore the last close call. Also, ignore
+	 * if kms module is not yet initialized.
 	 */
-	if (kms && kms->funcs && kms->funcs->check_for_splash
-		&& kms->funcs->check_for_splash(kms))
+	if (!kms || (kms && kms->funcs && kms->funcs->check_for_splash
+		&& kms->funcs->check_for_splash(kms)))
 		return;
 
 	/*
