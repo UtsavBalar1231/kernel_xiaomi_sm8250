@@ -2149,12 +2149,12 @@ void rmnet_shs_wq_init(struct net_device *dev)
 		return;
 	}
 
-	rmnet_shs_wq_mem_init();
+	if( rmnet_shs_wq_mem_init() )
+		rmnet_shs_wq_genl_deinit();
 
 	trace_rmnet_shs_wq_high(RMNET_SHS_WQ_INIT, RMNET_SHS_WQ_INIT_START,
 				0xDEF, 0xDEF, 0xDEF, 0xDEF, NULL, NULL);
-	rmnet_shs_wq = alloc_workqueue("rmnet_shs_wq",
-					WQ_MEM_RECLAIM | WQ_CPU_INTENSIVE, 1);
+	rmnet_shs_wq = alloc_workqueue("rmnet_shs_wq", WQ_CPU_INTENSIVE, 1);
 	if (!rmnet_shs_wq) {
 		rmnet_shs_crit_err[RMNET_SHS_WQ_ALLOC_WQ_ERR]++;
 		return;
