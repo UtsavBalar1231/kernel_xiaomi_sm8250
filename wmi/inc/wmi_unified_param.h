@@ -5255,6 +5255,7 @@ struct wmi_host_fw_abi_ver {
  * @nan_separate_iface_support: Separate iface creation for NAN
  * @time_sync_ftm: enable ftm based time sync
  * @max_ndp_sessions: Max ndp sessions support
+ * @max_ndi: max number of ndi host supports
  */
 typedef struct {
 	uint32_t num_vdevs;
@@ -5354,6 +5355,7 @@ typedef struct {
 	bool nan_separate_iface_support;
 	bool time_sync_ftm;
 	uint32_t max_ndp_sessions;
+	uint32_t max_ndi;
 } target_resource_config;
 
 /**
