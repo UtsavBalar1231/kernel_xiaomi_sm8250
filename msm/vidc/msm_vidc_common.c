@@ -1701,6 +1701,15 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 		} else {
 			inst->entropy_mode = event_notify->entropy_mode;
 
+			/* configure work mode considering low latency*/
+			if (is_low_latency_hint(inst)) {
+				rc = call_core_op(inst->core, decide_work_mode,
+						  inst);
+				if (rc)
+					s_vpr_e(inst->sid,
+						"%s: Failed to decide work mode\n",
+						__func__);
+			}
 			s_vpr_h(inst->sid,
 				"seq: No parameter change continue session\n");
 			rc = call_hfi_op(hdev, session_continue,
@@ -2860,6 +2869,7 @@ bool is_batching_allowed(struct msm_vidc_inst *inst)
 	 */
 	return (inst->batch.enable &&
 		inst->core->resources.decode_batching &&
+		!is_low_latency_hint(inst) &&
 		is_single_session(inst, ignore_flags) &&
 		is_decode_session(inst) &&
 		!is_thumbnail_session(inst) &&

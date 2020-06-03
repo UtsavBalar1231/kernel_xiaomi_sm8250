@@ -90,12 +90,12 @@ static struct msm_vidc_codec_data kona_codec_data[] =  {
 };
 
 static struct msm_vidc_codec_data lagoon_codec_data[] =  {
-	CODEC_ENTRY(V4L2_PIX_FMT_H264, MSM_VIDC_ENCODER, 0, 675, 320),
-	CODEC_ENTRY(V4L2_PIX_FMT_HEVC, MSM_VIDC_ENCODER, 0, 675, 320),
-	CODEC_ENTRY(V4L2_PIX_FMT_MPEG2, MSM_VIDC_DECODER, 0, 200, 200),
-	CODEC_ENTRY(V4L2_PIX_FMT_H264, MSM_VIDC_DECODER, 0, 200, 200),
-	CODEC_ENTRY(V4L2_PIX_FMT_HEVC, MSM_VIDC_DECODER, 0, 200, 200),
-	CODEC_ENTRY(V4L2_PIX_FMT_VP9, MSM_VIDC_DECODER, 0, 200, 200),
+	CODEC_ENTRY(V4L2_PIX_FMT_H264, MSM_VIDC_ENCODER, 25, 675, 320),
+	CODEC_ENTRY(V4L2_PIX_FMT_HEVC, MSM_VIDC_ENCODER, 25, 675, 320),
+	CODEC_ENTRY(V4L2_PIX_FMT_MPEG2, MSM_VIDC_DECODER, 25, 200, 200),
+	CODEC_ENTRY(V4L2_PIX_FMT_H264, MSM_VIDC_DECODER, 25, 200, 200),
+	CODEC_ENTRY(V4L2_PIX_FMT_HEVC, MSM_VIDC_DECODER, 25, 200, 200),
+	CODEC_ENTRY(V4L2_PIX_FMT_VP9, MSM_VIDC_DECODER, 60, 200, 200),
 };
 
 /* Update with SM6150 data */
@@ -2194,9 +2194,6 @@ void *vidc_get_drv_data(struct device *dev)
 			ddr_type, driver_data->ubwc_config ?
 			driver_data->ubwc_config->highest_bank_bit : -1);
 	} else if (!strcmp(match->compatible, "qcom,bengal-vidc")) {
-		d_vpr_h("Disable NOC error recovery");
-		msm_vidc_err_recovery_disable =
-				VIDC_DISABLE_NOC_ERR_RECOV;
 		rc = msm_vidc_read_rank(driver_data, dev);
 		if (rc) {
 			d_vpr_e("Failed to get ddr rank, use Dual Rank DDR\n");

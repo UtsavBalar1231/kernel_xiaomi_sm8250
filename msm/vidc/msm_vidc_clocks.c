@@ -1081,6 +1081,7 @@ int msm_dcvs_try_enable(struct msm_vidc_inst *inst)
 		!(msm_vidc_clock_voting ||
 			!inst->core->resources.dcvs ||
 			inst->flags & VIDC_THUMBNAIL ||
+			is_low_latency_hint(inst) ||
 			inst->clk_data.low_latency_mode ||
 			inst->batch.enable ||
 			is_turbo_session(inst) ||
