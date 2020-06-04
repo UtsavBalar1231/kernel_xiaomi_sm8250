@@ -30,7 +30,6 @@ script:
  - mv linux ../
  - mkdir ../linux-stable/fs/exfat
  - cp -ar * ../linux-stable/fs/exfat/
- - mkdir ../linux/fs/exfat
  - cp -ar * ../linux/fs/exfat/
 
  # Compile with 4.1 kernel
