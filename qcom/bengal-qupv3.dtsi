@@ -12,7 +12,7 @@
 		qcom,vote-for-bw;
 		iommus = <&apps_smmu 0xe3 0x0>;
 		qcom,iommu-dma-addr-pool = <0x40000000 0xc0000000>;
-		qcom,iommu-dma = "atomic";
+		qcom,iommu-dma = "fastmap";
 	};
 
 	/* GPI Instance */
