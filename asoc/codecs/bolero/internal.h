@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _BOLERO_INTERNAL_H
@@ -16,6 +16,7 @@ enum {
 	BOLERO_WCD_EVT_SSR_DOWN,
 	BOLERO_WCD_EVT_SSR_UP,
 	BOLERO_WCD_EVT_PA_ON_POST_FSCLK,
+	BOLERO_WCD_EVT_PA_ON_POST_FSCLK_ADIE_LB,
 };
 
 enum {
