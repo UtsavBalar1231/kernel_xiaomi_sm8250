@@ -333,6 +333,11 @@
 			qcom,skip-enable-check;
 
 			#freq-domain-cells = <2>;
+
+			cpu7_notify: cpu7-notify {
+				qcom,cooling-cpu = <&CPU7>;
+				#cooling-cells = <2>;
+			};
 		};
 	};
 
