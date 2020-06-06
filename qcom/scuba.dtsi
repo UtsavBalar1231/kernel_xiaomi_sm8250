@@ -1256,6 +1256,11 @@
 			reg = <0x6006 0x2>;
 			bits = <5 8>;
 		};
+
+		adsp_variant: adsp_variant@6011 {
+			reg = <0x6011 0x1>;
+			bits = <3 1>;
+		};
 	};
 
 	qcom,sps {
