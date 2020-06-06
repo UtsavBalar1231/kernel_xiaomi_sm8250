@@ -165,6 +165,15 @@
 	};
 };
 
+&usb0 {
+	qcom,charging-disabled;
+};
+
+
+&pm8150b_charger {
+	qcom,batteryless-platform;
+};
+
 &qupv3_se0_spi {
 	status = "okay";
 	can@0 {
