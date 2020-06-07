@@ -143,17 +143,20 @@ ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
 		scuba-rumi-overlay.dtbo \
 		scuba-idp-overlay.dtbo \
 		scuba-idp-usbc-overlay.dtbo \
-		scuba-qrd-overlay.dtbo
+		scuba-qrd-eldo-overlay.dtbo \
+		scuba-qrd-non-eldo-overlay.dtbo
 
 scuba-rumi-overlay.dtbo-base := scuba.dtb
 scuba-idp-overlay.dtbo-base := scuba.dtb
-scuba-qrd-overlay.dtbo-base := scuba.dtb
+scuba-qrd-eldo-overlay.dtbo-base := scuba.dtb
+scuba-qrd-non-eldo-overlay.dtbo-base := scuba.dtb
 scuba-idp-usbc-overlay.dtbo-base := scuba.dtb
 else
 dtb-$(CONFIG_ARCH_SCUBA) += scuba-rumi.dtb \
 	scuba-idp.dtb \
 	scuba-idp-usbc.dtb \
-	scuba-qrd.dtb
+	scuba-qrd-eldo.dtb \
+	scuba-qrd-non-eldo.dtb
 endif
 
 always		:= $(dtb-y)
