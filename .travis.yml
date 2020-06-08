@@ -71,6 +71,7 @@ script:
  - cd /mnt/full_test/
  - i=1;while [ $i -le 10000 ];do sudo touch file$i;if [ $? != 0 ]; then exit 1; fi; i=$(($i + 1));done
  - sync
+ - sudo fsck.exfat /dev/loop22
  - sudo rm -rf *
  - i=1;while [ $i -le 10000 ];do sudo mkdir file$i;if [ $? != 0 ]; then exit 1; fi; i=$(($i + 1));done
  - sync
@@ -78,6 +79,7 @@ script:
  - sudo fsck.exfat /dev/loop22
  - cd -
  - sudo umount /mnt/full_test/
+ - sudo fsck.exfat /dev/loop22
  # run xfstests test
  - truncate -s 100G test.img
  - truncate -s 100G scratch.img
@@ -113,7 +115,6 @@ script:
  - sudo ./check generic/095
  - sudo ./check generic/098
  - sudo ./check generic/100
- - sudo ./check generic/101
  - sudo ./check generic/112
  - sudo ./check generic/113
  - sudo ./check generic/114
@@ -154,13 +155,11 @@ script:
  - sudo ./check generic/309
  - sudo ./check generic/310
  - sudo ./check generic/313
- - sudo ./check generic/322
  - sudo ./check generic/323
  - sudo ./check generic/325
  - sudo ./check generic/338
  - sudo ./check generic/339
  - sudo ./check generic/340
- - sudo ./check generic/342
  - sudo ./check generic/344
  - sudo ./check generic/345
  - sudo ./check generic/346
@@ -184,4 +183,4 @@ script:
  - sudo ./check generic/448
  - sudo ./check generic/450
  - sudo ./check generic/451
- - sudo ./check generic/452
+   # - sudo ./check generic/452
