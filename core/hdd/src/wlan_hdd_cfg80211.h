@@ -128,6 +128,15 @@ struct hdd_context;
 #define TDLS_MGMT_VERSION2 0
 #endif
 
+/**
+ * hdd_convert_cfgdot11mode_to_80211mode() - Function to convert cfg dot11 mode
+ *  to 80211 mode
+ * @mode: cfg dot11 mode
+ *
+ * Return: 80211 mode
+ */
+enum qca_wlan_802_11_mode
+hdd_convert_cfgdot11mode_to_80211mode(enum csr_cfgdot11mode mode);
 #endif
 
 #define HDD_SET_BIT(__param, __val)    ((__param) |= (1 << (__val)))
