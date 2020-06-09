@@ -5254,6 +5254,7 @@ struct wmi_host_fw_abi_ver {
  * @ast_tid_low_mask_enable: enable tid valid mask for low priority flow
  * @nan_separate_iface_support: Separate iface creation for NAN
  * @time_sync_ftm: enable ftm based time sync
+ * @max_ndp_sessions: Max ndp sessions support
  */
 typedef struct {
 	uint32_t num_vdevs;
@@ -5352,6 +5353,7 @@ typedef struct {
 		 ast_tid_low_mask_enable:8;
 	bool nan_separate_iface_support;
 	bool time_sync_ftm;
+	uint32_t max_ndp_sessions;
 } target_resource_config;
 
 /**

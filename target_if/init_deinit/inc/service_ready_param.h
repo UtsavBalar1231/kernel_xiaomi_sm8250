@@ -368,6 +368,7 @@ struct wlan_psoc_host_service_ext_param {
  * bdf_reg_db_version_major: BDF REG DB version major number
  * bdf_reg_db_version_minor: BDF REG DB version minor number
  * @num_dbr_ring_caps: Number of direct buf rx ring capabilities
+ * @max_ndp_sessions: Max number of ndp session fw supports
  */
 struct wlan_psoc_host_service_ext2_param {
 	uint8_t reg_db_version_major;
@@ -375,6 +376,7 @@ struct wlan_psoc_host_service_ext2_param {
 	uint8_t bdf_reg_db_version_major;
 	uint8_t bdf_reg_db_version_minor;
 	uint32_t num_dbr_ring_caps;
+	uint32_t max_ndp_sessions;
 };
 
 #endif /* _SERVICE_READY_PARAM_H_*/
