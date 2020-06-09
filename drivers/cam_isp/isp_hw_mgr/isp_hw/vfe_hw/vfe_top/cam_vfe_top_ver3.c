@@ -508,28 +508,38 @@ int cam_vfe_top_ver3_write(void *device_priv,
 	return -EPERM;
 }
 
-int cam_vfe_top_ver3_query_dsp_mode(struct cam_vfe_top_ver3_priv *top_priv,
+int cam_vfe_top_ver3_query(struct cam_vfe_top_ver3_priv *top_priv,
 	void *cmd_args, uint32_t arg_size)
 {
 	int rc = 0;
+	struct cam_isp_hw_cmd_query     *vfe_query;
 	struct cam_hw_soc_info          *soc_info = NULL;
 	struct cam_vfe_soc_private      *soc_private = NULL;
 
-	if (!top_priv) {
+	if (!top_priv || !cmd_args) {
 		CAM_ERR(CAM_ISP, "Error, Invalid arguments");
 		return -EINVAL;
 	}
 
 	soc_info = top_priv->common_data.soc_info;
 	soc_private = soc_info->soc_private;
+	vfe_query = (struct cam_isp_hw_cmd_query *)cmd_args;
 
 	if (!soc_private) {
 		CAM_ERR(CAM_ISP, "Error soc_private NULL");
 		return -EINVAL;
 	}
 
-	if (soc_private->dsp_disabled)
+	switch (vfe_query->query_cmd) {
+	case CAM_ISP_HW_CMD_QUERY_DSP_MODE:
+		if (soc_private->dsp_disabled)
+			rc = -EINVAL;
+		break;
+	default:
 		rc = -EINVAL;
+		CAM_ERR(CAM_ISP, "Error, Invalid cmd:%d", vfe_query->query_cmd);
+		break;
+	}
 	return rc;
 }
 
@@ -586,9 +596,8 @@ int cam_vfe_top_ver3_process_cmd(void *device_priv, uint32_t cmd_type,
 	case CAM_ISP_HW_CMD_CORE_CONFIG:
 		rc = cam_vfe_core_config_control(top_priv, cmd_args, arg_size);
 		break;
-	case CAM_ISP_HW_CMD_QUERY_DSP_MODE:
-		rc = cam_vfe_top_ver3_query_dsp_mode(top_priv, cmd_args,
-			arg_size);
+	case CAM_ISP_HW_CMD_QUERY:
+		rc = cam_vfe_top_ver3_query(top_priv, cmd_args, arg_size);
 		break;
 	default:
 		rc = -EINVAL;
