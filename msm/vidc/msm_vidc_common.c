@@ -799,9 +799,9 @@ int msm_comm_get_inst_load(struct msm_vidc_inst *inst,
 	 * ----------------|----------------------------|
 	 */
 
-	if ((is_thumbnail_session(inst) ||
-		 !is_realtime_session(inst)) &&
-		quirks == LOAD_ADMISSION_CONTROL) {
+	if (is_thumbnail_session(inst) ||
+		(!is_realtime_session(inst) &&
+		 quirks == LOAD_ADMISSION_CONTROL)) {
 		load = 0;
 	} else {
 		load = msm_comm_get_mbs_per_sec(inst, quirks);
