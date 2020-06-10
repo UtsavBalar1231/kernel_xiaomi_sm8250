@@ -2721,6 +2721,23 @@ static int dsi_display_wake_up(struct dsi_display *display)
 	return 0;
 }
 
+static void dsi_display_mask_overflow(struct dsi_display *display, u32 flags,
+						bool enable)
+{
+	struct dsi_display_ctrl *ctrl;
+	int i;
+
+	if (!(flags & DSI_CTRL_CMD_LAST_COMMAND))
+		return;
+
+	display_for_each_ctrl(i, display) {
+		ctrl = &display->ctrl[i];
+		if (!ctrl)
+			continue;
+		dsi_ctrl_mask_overflow(ctrl->ctrl, enable);
+	}
+}
+
 static int dsi_display_broadcast_cmd(struct dsi_display *display,
 				     const struct mipi_dsi_msg *msg)
 {
@@ -2750,6 +2767,7 @@ static int dsi_display_broadcast_cmd(struct dsi_display *display,
 	 * 2. Trigger commands
 	 */
 	m_ctrl = &display->ctrl[display->cmd_master_idx];
+	dsi_display_mask_overflow(display, m_flags, true);
 	rc = dsi_ctrl_cmd_transfer(m_ctrl->ctrl, msg, &m_flags);
 	if (rc) {
 		DSI_ERR("[%s] cmd transfer failed on master,rc=%d\n",
@@ -2785,6 +2803,7 @@ static int dsi_display_broadcast_cmd(struct dsi_display *display,
 	}
 
 error:
+	dsi_display_mask_overflow(display, m_flags, false);
 	return rc;
 }
 
