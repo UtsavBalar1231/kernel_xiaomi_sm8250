@@ -3,7 +3,7 @@ MY_LOCAL_PATH := $(call my-dir)
 
 UAPI_OUT := $(PRODUCT_OUT)/obj/vendor/qcom/opensource/audio-kernel/include
 
-ifeq ($(call is-board-platform-in-list,msmnile $(MSMSTEPPE) $(TRINKET) kona lito bengal sdmshrike),true)
+ifeq ($(call is-board-platform-in-list,msmnile $(MSMSTEPPE) $(TRINKET) kona lito bengal sdmshrike sdm660),true)
 $(shell mkdir -p $(UAPI_OUT)/linux;)
 $(shell mkdir -p $(UAPI_OUT)/sound;)
 $(shell rm -rf $(PRODUCT_OUT)/obj/vendor/qcom/opensource/audio-kernel/ipc/Module.symvers)
