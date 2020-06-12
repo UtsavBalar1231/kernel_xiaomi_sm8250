@@ -404,6 +404,7 @@ static struct sk_buff *rmnet_shs_skb_partial_segment(struct sk_buff *skb,
 	struct sk_buff *segments, *tmp;
 	u16 gso_size = shinfo->gso_size;
 	u16 gso_segs = shinfo->gso_segs;
+	unsigned int gso_type = shinfo->gso_type;
 
 	if (segments_per_skb >= gso_segs) {
 		return NULL;
@@ -420,15 +421,19 @@ static struct sk_buff *rmnet_shs_skb_partial_segment(struct sk_buff *skb,
 		return NULL;
 	}
 
-	/* Mark correct number of segments and correct size in the new skbs */
+	/* Mark correct number of segments, size, and type in the new skbs */
 	for (tmp = segments; tmp; tmp = tmp->next) {
 		struct skb_shared_info *new_shinfo = skb_shinfo(tmp);
 
-		new_shinfo->gso_size = gso_size;
-		if (gso_segs >= segments_per_skb)
-			new_shinfo->gso_segs = segments_per_skb;
-		else
-			new_shinfo->gso_segs = gso_segs;
+		if (tmp->len > gso_size) {
+			new_shinfo->gso_type = gso_type;
+			new_shinfo->gso_size = gso_size;
+
+			if (gso_segs >= segments_per_skb)
+				new_shinfo->gso_segs = segments_per_skb;
+			else
+				new_shinfo->gso_segs = gso_segs;
+		}
 
 		gso_segs -= segments_per_skb;
 	}
