@@ -23,6 +23,8 @@
 #define LANE_MASK_2PH 0x1F
 #define LANE_MASK_3PH 0x7
 
+#define SKEW_CAL_MASK 0x2
+
 static int csiphy_dump;
 module_param(csiphy_dump, int, 0644);
 
@@ -242,7 +244,8 @@ int32_t cam_cmd_buf_parser(struct csiphy_device *csiphy_dev,
 		csiphy_dev->csiphy_info.data_rate =
 			cam_cmd_csiphy_info->data_rate;
 	}
-
+	csiphy_dev->csiphy_info.mipi_flags =
+		cam_cmd_csiphy_info->mipi_flags;
 
 	if (cam_cmd_csiphy_info->secure_mode == 1)
 		cam_csiphy_update_secure_info(csiphy_dev,
@@ -381,6 +384,7 @@ int32_t cam_csiphy_config_dev(struct csiphy_device *csiphy_dev)
 	uint8_t      lane_cnt, lane_pos = 0;
 	uint16_t     settle_cnt = 0;
 	uint64_t     intermediate_var;
+	uint8_t      skew_cal_enable = 0;
 	void __iomem *csiphybase;
 	struct csiphy_reg_t *csiphy_common_reg = NULL;
 	struct csiphy_reg_t (*reg_array)[MAX_SETTINGS_PER_LANE];
@@ -415,6 +419,9 @@ int32_t cam_csiphy_config_dev(struct csiphy_device *csiphy_dev)
 			}
 			mask <<= 1;
 		}
+
+		skew_cal_enable =
+			csiphy_dev->csiphy_info.mipi_flags & SKEW_CAL_MASK;
 	} else {
 		if (csiphy_dev->csiphy_info.combo_mode == 1) {
 			if (csiphy_dev->ctrl_reg->csiphy_2ph_3ph_mode_reg)
@@ -519,6 +526,12 @@ int32_t cam_csiphy_config_dev(struct csiphy_device *csiphy_dev)
 			break;
 			case CSIPHY_SETTLE_CNT_HIGHER_BYTE:
 				cam_io_w_mb((settle_cnt >> 8) & 0xFF,
+					csiphybase +
+					reg_array[lane_pos][i].reg_addr);
+			break;
+			case CSIPHY_SKEW_CAL:
+			if (skew_cal_enable)
+				cam_io_w_mb(reg_array[lane_pos][i].reg_data,
 					csiphybase +
 					reg_array[lane_pos][i].reg_addr);
 			break;
