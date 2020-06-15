@@ -70,6 +70,21 @@
 
 		lt,preferred-mode = "1920x1080";
 
+		totalVoltage-supply = <&pm8150a_l11>;
+		lt,supply-entries {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			lt,supply-entry@0 {
+				reg = <0>;
+				lt,supply-name = "totalVoltage";
+				lt,supply-min-voltage = <3300000>;
+				lt,supply-max-voltage = <3300000>;
+				lt,supply-enable-load = <200000>;
+				lt,supply-post-on-sleep = <50>;
+			};
+		};
+
 		lt,customize-modes {
 			lt,customize-mode-id@0 {
 				lt,mode-h-active = <1920>;
