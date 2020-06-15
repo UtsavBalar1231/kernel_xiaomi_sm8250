@@ -1311,7 +1311,11 @@ static int cs35l41_pcm_hw_params(struct snd_pcm_substream *substream,
 	asp_wl = params_width(params);
 	asp_width = params_physical_width(params);
 
+#if defined(CONFIG_TARGET_PRODUCT_APOLLO) || defined(CONFIG_TARGET_PRODUCT_CAS)
+	cs35l41_component_set_sysclk(dai->component, 0, 0, 8 * rate * asp_width, 0);
+#else
 	cs35l41_component_set_sysclk(dai->component, 0, 0, 2 * rate * asp_width, 0);
+#endif
 
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
 		regmap_update_bits(cs35l41->regmap, CS35L41_SP_FORMAT,
@@ -1376,8 +1380,13 @@ static int cs35l41_pcm_startup(struct snd_pcm_substream *substream,
 	//struct snd_soc_codec *codec = dai->codec;
 	pr_debug("++++>CSPL: %s.\n", __func__);
 
+#if defined(CONFIG_TARGET_PRODUCT_APOLLO) || defined(CONFIG_TARGET_PRODUCT_CAS)
+	cs35l41_set_dai_fmt(dai, SND_SOC_DAIFMT_CBS_CFS|SND_SOC_DAIFMT_DSP_A);
+#else
 	cs35l41_set_dai_fmt(dai, SND_SOC_DAIFMT_CBS_CFS|SND_SOC_DAIFMT_I2S);
-	//cs35l41_codec_set_sysclk(codec, 0, 0, 1536000, 0);
+#endif
+	
+    //cs35l41_codec_set_sysclk(codec, 0, 0, 1536000, 0);
 #if 0
 	if (substream->runtime)
 		return snd_pcm_hw_constraint_list(substream->runtime, 0,

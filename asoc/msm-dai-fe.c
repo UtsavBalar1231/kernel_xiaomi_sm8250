@@ -1596,13 +1596,13 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		.playback = {
 			.stream_name = "Tertiary TDM1 Hostless Playback",
 			.aif_name = "TERT_TDM_RX_1_DL_HL",
-			.rates = SNDRV_PCM_RATE_8000_48000,
+			.rates = SNDRV_PCM_RATE_8000_96000,
 			.formats = (SNDRV_PCM_FMTBIT_S16_LE |
 				    SNDRV_PCM_FMTBIT_S24_LE),
 			.channels_min = 1,
 			.channels_max = 8,
 			.rate_min = 8000,
-			.rate_max = 48000,
+			.rate_max = 96000,
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "TERT_TDM_RX_1_HOSTLESS",
