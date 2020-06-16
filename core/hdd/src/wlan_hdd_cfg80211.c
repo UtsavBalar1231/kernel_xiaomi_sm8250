@@ -11632,6 +11632,26 @@ static int wlan_hdd_cfg80211_get_bus_size(struct wiphy *wiphy,
 	return errno;
 }
 
+const struct nla_policy setband_policy[QCA_WLAN_VENDOR_ATTR_MAX + 1] = {
+	[QCA_WLAN_VENDOR_ATTR_SETBAND_VALUE] = {.type = NLA_U32},
+	[QCA_WLAN_VENDOR_ATTR_SETBAND_MASK] = {.type = NLA_U32},
+};
+
+static uint32_t
+wlan_vendor_bitmap_to_reg_wifi_band_bitmap(uint32_t vendor_bitmap)
+{
+	uint32_t reg_bitmap = 0;
+
+	if (vendor_bitmap & QCA_SETBAND_2G)
+		reg_bitmap |= BIT(REG_BAND_2G);
+	if (vendor_bitmap & QCA_SETBAND_5G)
+		reg_bitmap |= BIT(REG_BAND_5G);
+	if (vendor_bitmap & QCA_SETBAND_6G)
+		reg_bitmap |= BIT(REG_BAND_6G);
+
+	return reg_bitmap;
+}
+
 /**
  *__wlan_hdd_cfg80211_setband() - set band
  * @wiphy: Pointer to wireless phy
@@ -11649,8 +11669,7 @@ static int __wlan_hdd_cfg80211_setband(struct wiphy *wiphy,
 	struct net_device *dev = wdev->netdev;
 	struct nlattr *tb[QCA_WLAN_VENDOR_ATTR_MAX + 1];
 	int ret;
-	static const struct nla_policy policy[QCA_WLAN_VENDOR_ATTR_MAX + 1]
-		= {[QCA_WLAN_VENDOR_ATTR_SETBAND_VALUE] = { .type = NLA_U32 } };
+	uint32_t reg_wifi_band_bitmap = 0, band_val, band_mask;
 
 	hdd_enter();
 
@@ -11659,18 +11678,28 @@ static int __wlan_hdd_cfg80211_setband(struct wiphy *wiphy,
 		return ret;
 
 	if (wlan_cfg80211_nla_parse(tb, QCA_WLAN_VENDOR_ATTR_MAX,
-				    data, data_len, policy)) {
+				    data, data_len, setband_policy)) {
 		hdd_err("Invalid ATTR");
 		return -EINVAL;
 	}
 
-	if (!tb[QCA_WLAN_VENDOR_ATTR_SETBAND_VALUE]) {
+	if (tb[QCA_WLAN_VENDOR_ATTR_SETBAND_MASK]) {
+		band_mask = nla_get_u32(tb[QCA_WLAN_VENDOR_ATTR_SETBAND_MASK]);
+		reg_wifi_band_bitmap =
+			wlan_vendor_bitmap_to_reg_wifi_band_bitmap(band_mask);
+	} else if (tb[QCA_WLAN_VENDOR_ATTR_SETBAND_VALUE]) {
+		band_val = nla_get_u32(tb[QCA_WLAN_VENDOR_ATTR_SETBAND_VALUE]);
+		reg_wifi_band_bitmap =
+			hdd_reg_legacy_setband_to_reg_wifi_band_bitmap(
+								      band_val);
+	}
+
+	if (!reg_wifi_band_bitmap) {
 		hdd_err("attr SETBAND_VALUE failed");
 		return -EINVAL;
 	}
 
-	ret = hdd_reg_set_band(dev,
-		nla_get_u32(tb[QCA_WLAN_VENDOR_ATTR_SETBAND_VALUE]));
+	ret = hdd_reg_set_band(dev, reg_wifi_band_bitmap);
 
 	hdd_exit();
 	return ret;
