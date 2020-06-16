@@ -80,9 +80,9 @@ int exfat_ent_set(struct super_block *sb, unsigned int loc,
 	fat_entry = (__le32 *)&(bh->b_data[off]);
 	*fat_entry = cpu_to_le32(content);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
-	exfat_update_bh(sb, bh, sb->s_flags & SB_SYNCHRONOUS);
+	exfat_update_bh(bh, sb->s_flags & SB_SYNCHRONOUS);
 #else
-	exfat_update_bh(sb, bh, sb->s_flags & MS_SYNCHRONOUS);
+	exfat_update_bh(bh, sb->s_flags & MS_SYNCHRONOUS);
 #endif
 	exfat_mirror_bh(sb, sec, bh);
 	brelse(bh);
@@ -182,7 +182,6 @@ int exfat_free_cluster(struct inode *inode, struct exfat_chain *p_chain)
 		return -EIO;
 	}
 
-	set_bit(EXFAT_SB_DIRTY, &sbi->s_state);
 	clu = p_chain->dir;
 
 	if (p_chain->flags == ALLOC_NO_FAT_CHAIN) {
@@ -282,7 +281,7 @@ int exfat_zeroed_cluster(struct inode *dir, unsigned int clu)
 			goto release_bhs;
 		}
 		memset(bhs[n]->b_data, 0, sb->s_blocksize);
-		exfat_update_bh(sb, bhs[n], 0);
+		exfat_update_bh(bhs[n], 0);
 
 		n++;
 		blknr++;
@@ -365,8 +364,6 @@ int exfat_alloc_cluster(struct inode *inode, unsigned int num_alloc,
 			p_chain->flags = ALLOC_FAT_CHAIN;
 		}
 	}
-
-	set_bit(EXFAT_SB_DIRTY, &sbi->s_state);
 
 	p_chain->dir = EXFAT_EOF_CLUSTER;
 
