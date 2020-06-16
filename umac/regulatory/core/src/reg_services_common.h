@@ -1015,4 +1015,17 @@ QDF_STATUS
 reg_get_unii_5g_bitmap(struct wlan_objmgr_pdev *pdev, uint8_t *bitmap);
 #endif
 
+#ifdef CONFIG_REG_CLIENT
+/**
+ * reg_band_bitmap_to_band_info() - Convert the band_bitmap to a band_info enum.
+ *	Since band_info enum only has combinations for 2G and 5G, 6G is not
+ *	considered in this function.
+ * @band_bitmap: bitmap on top of reg_wifi_band of bands enabled
+ *
+ * Return: BAND_ALL if both 2G and 5G band is enabled
+ *	BAND_2G if 2G is enabled but 5G isn't
+ *	BAND_5G if 5G is enabled but 2G isn't
+ */
+enum band_info reg_band_bitmap_to_band_info(uint32_t band_bitmap);
+#endif
 #endif
