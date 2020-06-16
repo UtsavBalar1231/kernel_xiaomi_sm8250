@@ -207,6 +207,18 @@ static void exfat_destroy_inode(struct inode *inode)
 {
 	call_rcu(&inode->i_rcu, exfat_i_callback);
 }
+
+static int exfat_remount(struct super_block *sb, int *flags, char *data)
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
+	*flags |= SB_NODIRATIME;
+#else
+	*flags |= MS_NODIRATIME;
+#endif
+
+	sync_filesystem(sb);
+	return 0;
+}
 #endif
 
 static const struct super_operations exfat_sops = {
@@ -215,6 +227,7 @@ static const struct super_operations exfat_sops = {
 	.free_inode	= exfat_free_inode,
 #else
 	.destroy_inode	= exfat_destroy_inode,
+	.remount_fs	= exfat_remount,
 #endif
 	.write_inode	= exfat_write_inode,
 	.evict_inode	= exfat_evict_inode,
@@ -963,10 +976,20 @@ static void exfat_free(struct fs_context *fc)
 	kfree(fc->s_fs_info);
 }
 
+static int exfat_reconfigure(struct fs_context *fc)
+{
+	fc->sb_flags |= SB_NODIRATIME;
+
+	/* volume flag will be updated in exfat_sync_fs */
+	sync_filesystem(fc->root->d_sb);
+	return 0;
+}
+
 static const struct fs_context_operations exfat_context_ops = {
 	.parse_param	= exfat_parse_param,
 	.get_tree	= exfat_get_tree,
 	.free		= exfat_free,
+	.reconfigure	= exfat_reconfigure,
 };
 
 static int exfat_init_fs_context(struct fs_context *fc)
