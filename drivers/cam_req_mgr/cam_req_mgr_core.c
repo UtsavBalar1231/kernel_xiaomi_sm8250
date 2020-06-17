@@ -225,6 +225,12 @@ static int __cam_req_mgr_notify_error_on_link(
 	struct cam_req_mgr_message       msg;
 	int rc = 0, pd;
 
+	if (!link || !dev) {
+		CAM_ERR(CAM_CRM, "Invalid Arguments link: 0x%x dev: 0x%x!",
+			link, dev);
+		return -EINVAL;
+	}
+
 	session = (struct cam_req_mgr_core_session *)link->parent;
 
 	pd = dev->dev_info.p_delay;
