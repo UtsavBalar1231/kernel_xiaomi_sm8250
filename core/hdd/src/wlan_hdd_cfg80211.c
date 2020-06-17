@@ -8006,6 +8006,8 @@ static const struct independent_setters independent_setters[] = {
 #endif
 	{QCA_WLAN_VENDOR_ATTR_CONFIG_ROAM_REASON,
 	 hdd_set_roam_reason_vsie_status},
+	{QCA_WLAN_VENDOR_ATTR_CONFIG_OPTIMIZED_POWER_MANAGEMENT,
+	 hdd_config_power},
 };
 
 #ifdef WLAN_FEATURE_ELNA
@@ -8105,6 +8107,39 @@ struct config_getters {
 	config_getter_fn cb;
 };
 
+/**
+ * hdd_get_optimized_power_config() - Get the number of spatial streams
+ * supported by the adapter
+ * @adapter: Pointer to HDD adapter
+ * @skb: sk buffer to hold nl80211 attributes
+ * @attr: Pointer to struct nlattr
+ *
+ * Return: 0 on success; error number otherwise
+ */
+static int hdd_get_optimized_power_config(struct hdd_adapter *adapter,
+					  struct sk_buff *skb,
+					  const struct nlattr *attr)
+{
+	struct hdd_context *hdd_ctx = WLAN_HDD_GET_CTX(adapter);
+	uint8_t optimized_power_cfg;
+	int errno;
+
+	errno = wlan_hdd_validate_context(hdd_ctx);
+	if (errno)
+		return errno;
+
+	optimized_power_cfg  = ucfg_pmo_get_power_save_mode(hdd_ctx->psoc);
+
+	if (nla_put_u8(skb,
+		       QCA_WLAN_VENDOR_ATTR_CONFIG_OPTIMIZED_POWER_MANAGEMENT,
+		       optimized_power_cfg)) {
+		hdd_err("nla_put failure");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 /* vtable for config getters */
 static const struct config_getters config_getters[] = {
 #ifdef WLAN_FEATURE_ELNA
@@ -8115,6 +8150,9 @@ static const struct config_getters config_getters[] = {
 	{QCA_WLAN_VENDOR_ATTR_CONFIG_ROAM_REASON,
 	 sizeof(uint8_t),
 	 hdd_get_roam_reason_vsie_status},
+	{QCA_WLAN_VENDOR_ATTR_CONFIG_OPTIMIZED_POWER_MANAGEMENT,
+	 sizeof(uint8_t),
+	 hdd_get_optimized_power_config},
 };
 
 /**
