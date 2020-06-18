@@ -425,6 +425,7 @@ int exfat_getattr(const struct path *path, struct kstat *stat,
 int exfat_getattr(struct vfsmount *mnt, struct dentry *dentry,
 		struct kstat *stat);
 #endif
+int exfat_file_fsync(struct file *file, loff_t start, loff_t end, int datasync);
 
 
 /* namei.c */
