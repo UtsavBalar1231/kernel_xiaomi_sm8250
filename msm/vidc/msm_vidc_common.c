@@ -1637,7 +1637,6 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 	struct hfi_device *hdev;
 	u32 *ptr = NULL;
 	struct msm_vidc_format *fmt;
-	struct v4l2_format *f;
 	int extra_buff_count = 0;
 	u32 codec;
 
@@ -1690,15 +1689,25 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 			inst->pic_struct == MSM_VIDC_PIC_STRUCT_MAYBE_INTERLACED))
 			event_fields_changed = true;
 
-		f = &inst->fmts[OUTPUT_PORT].v4l2_fmt;
+		fmt = &inst->fmts[OUTPUT_PORT];
 		event_fields_changed |=
-			(f->fmt.pix_mp.height != event_notify->height);
+			(fmt->v4l2_fmt.fmt.pix_mp.height !=
+				event_notify->height);
 		event_fields_changed |=
-			(f->fmt.pix_mp.width != event_notify->width);
+			(fmt->v4l2_fmt.fmt.pix_mp.width != event_notify->width);
 
 		if (event_fields_changed) {
 			event = V4L2_EVENT_SEQ_CHANGED_INSUFFICIENT;
 		} else {
+			if (fmt->count_min < event_notify->fw_min_cnt) {
+				s_vpr_e(inst->sid,
+				"%s: Firmware min count %d cannot be greater than driver min count %d\n",
+					__func__, event_notify->fw_min_cnt,
+					fmt->count_min);
+				msm_vidc_queue_v4l2_event(inst,
+					V4L2_EVENT_MSM_VIDC_HW_UNSUPPORTED);
+				goto err_bad_event;
+			}
 			inst->entropy_mode = event_notify->entropy_mode;
 
 			/* configure work mode considering low latency*/
@@ -1710,6 +1719,12 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 						"%s: Failed to decide work mode\n",
 						__func__);
 			}
+			/* Update driver buffer counts */
+			extra_buff_count = msm_vidc_get_extra_buff_count(inst,
+					HAL_BUFFER_OUTPUT);
+			fmt->count_min = event_notify->fw_min_cnt;
+			fmt->count_min_host = fmt->count_min + extra_buff_count;
+			msm_dcvs_reset(inst);
 			s_vpr_h(inst->sid,
 				"seq: No parameter change continue session\n");
 			rc = call_hfi_op(hdev, session_continue,
@@ -1783,7 +1798,6 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 	ptr[MSM_VIDC_BIT_DEPTH] = event_notify->bit_depth;
 	ptr[MSM_VIDC_PIC_STRUCT] = event_notify->pic_struct;
 	ptr[MSM_VIDC_COLOR_SPACE] = event_notify->colour_space;
-	ptr[MSM_VIDC_FW_MIN_COUNT] = event_notify->fw_min_cnt;
 
 	s_vpr_h(inst->sid, "seq: height = %u width = %u\n",
 		event_notify->height, event_notify->width);
@@ -1826,6 +1840,7 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 			HAL_BUFFER_OUTPUT, fmt->count_min,
 			fmt->count_min_host);
 	}
+	ptr[MSM_VIDC_FW_MIN_COUNT] = fmt->count_min_host;
 
 	rc = msm_vidc_check_session_supported(inst);
 	if (!rc) {
