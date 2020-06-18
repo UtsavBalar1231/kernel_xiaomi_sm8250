@@ -173,6 +173,9 @@
 	qcom,charging-disabled;
 };
 
+&usb2_phy0 {
+	qcom,param-override-seq = <0x43 0x70>;
+};
 
 &pm8150b_charger {
 	qcom,batteryless-platform;
