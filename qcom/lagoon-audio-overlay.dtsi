@@ -226,8 +226,8 @@
 
 		qcom,cdc-static-supplies = "cdc-vdd-rxtx",
 					   "cdc-vddio",
-					   "cdc-vdd-buck",
 					   "cdc-vdd-mic-bias";
+		qcom,cdc-on-demand-supplies = "cdc-vdd-buck";
 	};
 
 	wcd937x_codec: wcd937x-codec {
