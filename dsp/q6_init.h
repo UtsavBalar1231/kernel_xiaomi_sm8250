@@ -26,6 +26,11 @@ int msm_mdf_init(void);
 void msm_mdf_exit(void);
 #else
 int elliptic_driver_init(void);
+/* for mius start */
+#ifdef CONFIG_US_PROXIMITY
+int mius_driver_init(void);
+#endif
+/* for mius end */
 static inline int msm_mdf_init(void)
 {
 	return 0;
@@ -69,6 +74,11 @@ int elliptic_driver_exit(void);
 int audio_slimslave_init(void);
 void audio_slimslave_exit(void);
 #else
+/* for mius start */
+#ifdef CONFIG_US_PROXIMITY
+int mius_driver_exit(void);
+#endif
+/* for mius end */
 static inline int audio_slimslave_init(void)
 {
 	return 0;
