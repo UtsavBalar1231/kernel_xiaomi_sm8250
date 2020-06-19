@@ -421,21 +421,27 @@ static struct sk_buff *rmnet_shs_skb_partial_segment(struct sk_buff *skb,
 		return NULL;
 	}
 
+	/* No need to set gso info if single segments */
+	if (segments_per_skb <= 1)
+		return segments;
+
 	/* Mark correct number of segments, size, and type in the new skbs */
 	for (tmp = segments; tmp; tmp = tmp->next) {
 		struct skb_shared_info *new_shinfo = skb_shinfo(tmp);
 
-		if (tmp->len > gso_size) {
-			new_shinfo->gso_type = gso_type;
-			new_shinfo->gso_size = gso_size;
+		new_shinfo->gso_type = gso_type;
+		new_shinfo->gso_size = gso_size;
 
-			if (gso_segs >= segments_per_skb)
-				new_shinfo->gso_segs = segments_per_skb;
-			else
-				new_shinfo->gso_segs = gso_segs;
-		}
+		if (gso_segs >= segments_per_skb)
+			new_shinfo->gso_segs = segments_per_skb;
+		else
+			new_shinfo->gso_segs = gso_segs;
 
 		gso_segs -= segments_per_skb;
+
+		if (gso_segs <= 1) {
+			break;
+		}
 	}
 
 	return segments;
