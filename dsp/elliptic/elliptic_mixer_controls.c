@@ -758,7 +758,9 @@ int elliptic_system_configuration_param_get(
 		ucontrol->value.integer.value[0] =
 			elliptic_system_configuration_cache.engine_suspend;
 		break;
-	case ELLIPTIC_SYSTEM_CONFIGURATION_INPUT_ENABLED:
+	case ELLIPTIC_SYSTEM_CONFIGURATION_REPORT_NONE:
+		break;	
+    case ELLIPTIC_SYSTEM_CONFIGURATION_INPUT_ENABLED:
 		ucontrol->value.integer.value[0] =
 			elliptic_system_configuration_cache.input_enabled;
 		break;
@@ -911,6 +913,8 @@ int elliptic_system_configuration_param_put(
 		param.type = ESCPT_SUSPEND;
 		param.engine_suspend =
 		elliptic_system_configuration_cache.engine_suspend;
+		break;
+	case ELLIPTIC_SYSTEM_CONFIGURATION_REPORT_NONE:
 		break;
 	case ELLIPTIC_SYSTEM_CONFIGURATION_EXTERNAL_EVENT:
 		elliptic_system_configuration_cache.external_event =
@@ -1211,7 +1215,14 @@ static const struct snd_kcontrol_new ultrasound_filter_mixer_controls[] = {
 	0,
 	elliptic_system_configuration_param_get,
 	elliptic_system_configuration_param_put),
-	SOC_SINGLE_EXT("Ultrasound Input",
+	SOC_SINGLE_EXT("Ultrasound ReportNone",
+	ELLIPTIC_SYSTEM_CONFIGURATION,
+	ELLIPTIC_SYSTEM_CONFIGURATION_REPORT_NONE,
+	1,
+	0,
+	elliptic_system_configuration_param_get,
+	elliptic_system_configuration_param_put),	
+    SOC_SINGLE_EXT("Ultrasound Input",
 	ELLIPTIC_SYSTEM_CONFIGURATION,
 	ELLIPTIC_SYSTEM_CONFIGURATION_INPUT_ENABLED,
 	1,
