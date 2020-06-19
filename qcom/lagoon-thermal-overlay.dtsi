@@ -39,13 +39,6 @@
 						THERMAL_MAX_LIMIT>;
 			};
 
-			trip0_cpu7 {
-				trip = <&pm6150l_trip0>;
-				cooling-device =
-					<&CPU7 THERMAL_MAX_LIMIT
-						THERMAL_MAX_LIMIT>;
-			};
-
 			trip1_cpu1 {
 				trip = <&pm6150l_trip1>;
 				cooling-device = <&cpu1_isolate 1 1>;
