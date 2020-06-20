@@ -1266,6 +1266,8 @@ static int msm_routing_get_adm_topology(int fedai_id, int session_type,
 {
 	int topology = NULL_COPP_TOPOLOGY;
 	int app_type = 0, acdb_dev_id = 0;
+	bool is_afe_proxy;
+	is_afe_proxy = (be_id == MSM_BACKEND_DAI_AFE_PCM_RX);
 
 	pr_debug("%s: fedai_id %d, session_type %d, be_id %d\n",
 	       __func__, fedai_id, session_type, be_id);
@@ -1284,12 +1286,12 @@ static int msm_routing_get_adm_topology(int fedai_id, int session_type,
 					       ADM_LSM_TOPOLOGY_CAL_TYPE_IDX,
 					       true /*exact*/);
 	if (topology < 0) {
-		pr_debug("%s: Check for compatible topology\n", __func__);
+		pr_debug("%s: Check for compatible topology, exact %d\n", __func__, is_afe_proxy);
 		topology = msm_routing_find_topology_on_index(session_type,
 						      app_type,
 						      acdb_dev_id,
 						      ADM_TOPOLOGY_CAL_TYPE_IDX,
-						      false /*exact*/);
+						      is_afe_proxy /*exact*/);
 		if (topology < 0)
 			topology = NULL_COPP_TOPOLOGY;
 	}
