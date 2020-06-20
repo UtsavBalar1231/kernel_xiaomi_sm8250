@@ -207,9 +207,11 @@ static int cs35l41_halo_booted_put(struct snd_kcontrol *kcontrol,
 }
 
 static const char *cs35l41_fast_switch_text[] = {
-	"cs35l41-dsp1-spk-prot-dt-music.txt",
-	"cs35l41-dsp1-spk-prot-dt-handset.txt",
-	"cs35l41-dsp1-spk-prot-dt-handsfree.txt",
+	"spk1_playback_delta.txt",
+	"spk1_voice_delta.txt",
+	"spk2_playback_delta.txt",
+	"spk2_voice_delta.txt",
+	"rcv_voice_delta.txt",
 };
 
 static int cs35l41_fast_switch_en_get(struct snd_kcontrol *kcontrol,
