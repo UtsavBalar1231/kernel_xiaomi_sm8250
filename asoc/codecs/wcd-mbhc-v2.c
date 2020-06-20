@@ -647,7 +647,7 @@ void wcd_mbhc_report_plug(struct wcd_mbhc *mbhc, int insertion,
 				wcd_mbhc_jack_report(mbhc, &mbhc->headset_jack,
 					0, WCD_MBHC_JACK_MASK);
 			}
-			if (mbhc->hph_status == SND_JACK_LINEOUT) {
+			if (mbhc->hph_status == SND_JACK_HEADPHONE) {
 
 				pr_debug("%s: Enable micbias\n", __func__);
 				/* Disable current source and enable micbias */

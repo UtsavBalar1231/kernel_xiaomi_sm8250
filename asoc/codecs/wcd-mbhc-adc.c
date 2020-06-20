@@ -1157,6 +1157,11 @@ static irqreturn_t wcd_mbhc_adc_hs_ins_irq(int irq, void *data)
 	 * get ADC complete interrupt, so connected cable should be
 	 * headset not headphone.
 	 */
+	/* JIRA:UMI-14363
+	 * delete it to fix headset recogition problem when insert
+	 * lineout and then connect headset to lineout.
+	*/
+	/*
 	if (mbhc->current_plug == MBHC_PLUG_TYPE_HEADPHONE) {
 		wcd_mbhc_hs_elec_irq(mbhc, WCD_MBHC_ELEC_HS_INS, false);
 		WCD_MBHC_REG_UPDATE_BITS(WCD_MBHC_DETECTION_DONE, 1);
@@ -1164,6 +1169,7 @@ static irqreturn_t wcd_mbhc_adc_hs_ins_irq(int irq, void *data)
 		WCD_MBHC_RSC_UNLOCK(mbhc);
 		return IRQ_HANDLED;
 	}
+	*/
 
 	if (!mbhc->mbhc_cfg->detect_extn_cable) {
 		pr_debug("%s: Returning as Extension cable feature not enabled\n",
