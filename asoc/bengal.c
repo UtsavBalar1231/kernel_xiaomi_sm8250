@@ -5979,6 +5979,62 @@ static const struct of_device_id bengal_asoc_machine_of_match[]  = {
 	{},
 };
 
+static int msm_snd_card_bengal_late_probe(struct snd_soc_card *card)
+{
+	struct snd_soc_component *component;
+	struct platform_device *pdev = NULL;
+	char *data = NULL;
+	int ret = 0, i = 0;
+	void *mbhc_calibration;
+
+	for (i = 0; i < card->num_aux_devs; i++)
+	{
+		if (msm_aux_dev[i].name != NULL ) {
+			if (strstr(msm_aux_dev[i].name, "wsa"))
+				continue;
+		}
+
+		if (msm_aux_dev[i].codec_of_node) {
+			pdev = of_find_device_by_node(
+					msm_aux_dev[i].codec_of_node);
+			if (pdev) {
+				data = (char*) of_device_get_match_data(
+							&pdev->dev);
+				component = soc_find_component(
+					    msm_aux_dev[i].codec_of_node,
+					    NULL);
+			}
+		}
+	}
+
+	if (data != NULL && component != NULL) {
+		if (!strncmp(data, "wcd937x", sizeof("wcd937x"))) {
+			mbhc_calibration = def_wcd_mbhc_cal();
+			if (!mbhc_calibration)
+				goto err_mbhc_cal;
+			wcd_mbhc_cfg.calibration = mbhc_calibration;
+			ret = wcd937x_mbhc_hs_detect(component, &wcd_mbhc_cfg);
+		} else if (!strncmp( data, "rouleur", sizeof("rouleur"))) {
+			mbhc_calibration = def_rouleur_mbhc_cal();
+			if (!mbhc_calibration)
+				goto err_mbhc_cal;
+			wcd_mbhc_cfg.calibration = mbhc_calibration;
+			ret = rouleur_mbhc_hs_detect(component, &wcd_mbhc_cfg);
+		}
+	}
+
+	if (ret) {
+		dev_err(component->dev, "%s: mbhc hs detect failed, err:%d\n",
+			__func__, ret);
+		goto err_hs_detect;
+	}
+	return 0;
+
+err_hs_detect:
+	kfree(mbhc_calibration);
+err_mbhc_cal:
+	return ret;
+}
 static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 {
 	struct snd_soc_card *card = NULL;
@@ -6137,6 +6193,7 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 	if (card) {
 		card->dai_link = dailink;
 		card->num_links = total_links;
+		card->late_probe = msm_snd_card_bengal_late_probe;
 	}
 
 	return card;
@@ -6147,7 +6204,6 @@ static int msm_aux_codec_init(struct snd_soc_component *component)
 	struct snd_soc_dapm_context *dapm =
 				snd_soc_component_get_dapm(component);
 	int ret = 0;
-	void *mbhc_calibration;
 	struct snd_info_entry *entry;
 	struct snd_card *card = component->card->snd_card;
 	struct msm_asoc_mach_data *pdata;
@@ -6174,7 +6230,7 @@ static int msm_aux_codec_init(struct snd_soc_component *component)
 			dev_dbg(component->dev, "%s: Cannot create codecs module entry\n",
 				 __func__);
 			ret = 0;
-			goto mbhc_cfg_cal;
+			goto err;
 		}
 		pdata->codec_root = entry;
 	}
@@ -6208,33 +6264,7 @@ static int msm_aux_codec_init(struct snd_soc_component *component)
 			}
 		}
 	}
-
-mbhc_cfg_cal:
-        if (data != NULL) {
-		if (!strncmp(data, "wcd937x", sizeof("wcd937x"))) {
-			mbhc_calibration = def_wcd_mbhc_cal();
-			if (!mbhc_calibration)
-				return -ENOMEM;
-			wcd_mbhc_cfg.calibration = mbhc_calibration;
-			ret = wcd937x_mbhc_hs_detect(component, &wcd_mbhc_cfg);
-		} else if (!strncmp( data, "rouleur", sizeof("rouleur"))) {
-			mbhc_calibration = def_rouleur_mbhc_cal();
-			if (!mbhc_calibration)
-				return -ENOMEM;
-			wcd_mbhc_cfg.calibration = mbhc_calibration;
-			ret = rouleur_mbhc_hs_detect(component, &wcd_mbhc_cfg);
-		}
-	}
-
-	if (ret) {
-		dev_err(component->dev, "%s: mbhc hs detect failed, err:%d\n",
-			__func__, ret);
-		goto err_hs_detect;
-	}
-	return 0;
-
-err_hs_detect:
-	kfree(mbhc_calibration);
+err:
 	return ret;
 }
 
@@ -6814,8 +6844,14 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	}
 	buf = nvmem_cell_read(cell, &len);
 	nvmem_cell_put(cell);
-	if (IS_ERR_OR_NULL(buf) || len <= 0 || len > sizeof(32)) {
+	if (IS_ERR_OR_NULL(buf)) {
 		dev_dbg(&pdev->dev, "%s: FAILED to read nvmem cell \n", __func__);
+		goto ret;
+	}
+	if (len <= 0 || len > sizeof(u32)) {
+		dev_dbg(&pdev->dev, "%s: nvmem cell length out of range: %d\n",
+			__func__, len);
+		kfree(buf);
 		goto ret;
 	}
 	memcpy(&adsp_var_idx, buf, len);

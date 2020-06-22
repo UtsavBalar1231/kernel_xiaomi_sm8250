@@ -71,6 +71,7 @@ struct wcd938x_priv {
 	bool comp2_enable;
 	bool ldoh;
 	bool bcs_dis;
+	bool dapm_bias_off;
 	struct irq_domain *virq;
 	struct wcd_irq_info irq_info;
 	u32 rx_clk_cnt;
@@ -101,6 +102,7 @@ struct wcd938x_priv {
 	int flyback_cur_det_disable;
 	int ear_rx_path;
 	bool dev_up;
+	bool usbc_hs_status;
 };
 
 struct wcd938x_micbias_setting {

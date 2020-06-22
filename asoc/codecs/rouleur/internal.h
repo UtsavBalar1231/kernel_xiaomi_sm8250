@@ -50,6 +50,7 @@ struct rouleur_priv {
 
 	bool comp1_enable;
 	bool comp2_enable;
+	bool dapm_bias_off;
 
 	struct irq_domain *virq;
 	struct wcd_irq_info irq_info;
@@ -83,6 +84,7 @@ struct rouleur_priv {
 	struct mutex rx_clk_lock;
 	struct mutex main_bias_lock;
 	bool dev_up;
+	bool usbc_hs_status;
 };
 
 struct rouleur_micbias_setting {

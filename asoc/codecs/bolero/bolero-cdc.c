@@ -735,7 +735,7 @@ void bolero_unregister_macro(struct device *dev, u16 macro_id)
 }
 EXPORT_SYMBOL(bolero_unregister_macro);
 
-void bolero_wsa_pa_on(struct device *dev)
+void bolero_wsa_pa_on(struct device *dev, bool adie_lb)
 {
 	struct bolero_priv *priv;
 
@@ -753,8 +753,12 @@ void bolero_wsa_pa_on(struct device *dev)
 		dev_err(dev, "%s: priv is null\n", __func__);
 		return;
 	}
-
-	bolero_cdc_notifier_call(priv, BOLERO_WCD_EVT_PA_ON_POST_FSCLK);
+	if (adie_lb)
+		bolero_cdc_notifier_call(priv,
+			BOLERO_WCD_EVT_PA_ON_POST_FSCLK_ADIE_LB);
+	else
+		bolero_cdc_notifier_call(priv,
+			BOLERO_WCD_EVT_PA_ON_POST_FSCLK);
 }
 EXPORT_SYMBOL(bolero_wsa_pa_on);
 
@@ -835,11 +839,19 @@ static int bolero_ssr_enable(struct device *dev, void *data)
 				priv->component,
 				BOLERO_MACRO_EVT_CLK_RESET, 0x0);
 	}
+	trace_printk("%s: clk count reset\n", __func__);
 
 	if (priv->rsc_clk_cb)
 		priv->rsc_clk_cb(priv->clk_dev, BOLERO_MACRO_EVT_SSR_GFMUX_UP);
 
-	trace_printk("%s: clk count reset\n", __func__);
+	for (macro_idx = START_MACRO; macro_idx < MAX_MACRO; macro_idx++) {
+		if (!priv->macro_params[macro_idx].event_handler)
+			continue;
+		priv->macro_params[macro_idx].event_handler(
+			priv->component,
+			BOLERO_MACRO_EVT_PRE_SSR_UP, 0x0);
+	}
+
 	regcache_cache_only(priv->regmap, false);
 	mutex_lock(&priv->clk_lock);
 	priv->dev_up = true;
