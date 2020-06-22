@@ -398,6 +398,15 @@ static struct msm_vidc_ctrl msm_vdec_ctrls[] = {
 		.step = 1,
 	},
 	{
+		.id = V4L2_CID_MPEG_VIDC_VIDEO_LOWLATENCY_HINT,
+		.name = "Low Latency Hint",
+		.type = V4L2_CTRL_TYPE_BOOLEAN,
+		.minimum = V4L2_MPEG_MSM_VIDC_DISABLE,
+		.maximum = V4L2_MPEG_MSM_VIDC_ENABLE,
+		.default_value = V4L2_MPEG_MSM_VIDC_DISABLE,
+		.step = 1,
+	},
+	{
 		.id = V4L2_CID_MPEG_VIDC_SUPERFRAME,
 		.name = "Superframe",
 		.type = V4L2_CTRL_TYPE_INTEGER,
@@ -928,6 +937,8 @@ int msm_vdec_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 		inst->clk_data.low_latency_mode = !!ctrl->val;
 		inst->batch.enable = is_batching_allowed(inst);
 		break;
+	case V4L2_CID_MPEG_VIDC_VIDEO_LOWLATENCY_HINT:
+		break;
 	default:
 		s_vpr_e(inst->sid, "Unknown control %#x\n", ctrl->id);
 		break;
@@ -1304,6 +1315,32 @@ int msm_vdec_set_priority(struct msm_vidc_inst *inst)
 	return rc;
 }
 
+int msm_vdec_set_seqchng_at_syncframe(struct msm_vidc_inst *inst)
+{
+	int rc = 0;
+	struct hfi_device *hdev;
+	struct hfi_enable hfi_property;
+
+	if (!inst || !inst->core) {
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
+		return -EINVAL;
+	}
+	hdev = inst->core->device;
+	hfi_property.enable = is_low_latency_hint(inst);
+
+	if (!hfi_property.enable)
+		return 0;
+
+	s_vpr_h(inst->sid, "%s: %#x\n", __func__, hfi_property.enable);
+	rc = call_hfi_op(hdev, session_set_property, inst->session,
+		HFI_PROPERTY_PARAM_VDEC_SEQCHNG_AT_SYNCFRM, &hfi_property,
+		sizeof(hfi_property));
+	if (rc)
+		s_vpr_e(inst->sid, "%s: set property failed\n", __func__);
+
+	return rc;
+}
+
 int msm_vdec_set_conceal_color(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
@@ -1437,6 +1474,9 @@ int msm_vdec_set_properties(struct msm_vidc_inst *inst)
 		if (rc)
 			goto exit;
 		rc = msm_vdec_set_conceal_color(inst);
+		if (rc)
+			goto exit;
+		rc = msm_vdec_set_seqchng_at_syncframe(inst);
 		if (rc)
 			goto exit;
 	}

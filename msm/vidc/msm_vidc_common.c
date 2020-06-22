@@ -799,9 +799,9 @@ int msm_comm_get_inst_load(struct msm_vidc_inst *inst,
 	 * ----------------|----------------------------|
 	 */
 
-	if ((is_thumbnail_session(inst) ||
-		 !is_realtime_session(inst)) &&
-		quirks == LOAD_ADMISSION_CONTROL) {
+	if (is_thumbnail_session(inst) ||
+		(!is_realtime_session(inst) &&
+		 quirks == LOAD_ADMISSION_CONTROL)) {
 		load = 0;
 	} else {
 		load = msm_comm_get_mbs_per_sec(inst, quirks);
@@ -1637,7 +1637,6 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 	struct hfi_device *hdev;
 	u32 *ptr = NULL;
 	struct msm_vidc_format *fmt;
-	struct v4l2_format *f;
 	int extra_buff_count = 0;
 	u32 codec;
 
@@ -1690,17 +1689,42 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 			inst->pic_struct == MSM_VIDC_PIC_STRUCT_MAYBE_INTERLACED))
 			event_fields_changed = true;
 
-		f = &inst->fmts[OUTPUT_PORT].v4l2_fmt;
+		fmt = &inst->fmts[OUTPUT_PORT];
 		event_fields_changed |=
-			(f->fmt.pix_mp.height != event_notify->height);
+			(fmt->v4l2_fmt.fmt.pix_mp.height !=
+				event_notify->height);
 		event_fields_changed |=
-			(f->fmt.pix_mp.width != event_notify->width);
+			(fmt->v4l2_fmt.fmt.pix_mp.width != event_notify->width);
 
 		if (event_fields_changed) {
 			event = V4L2_EVENT_SEQ_CHANGED_INSUFFICIENT;
 		} else {
+			if (fmt->count_min < event_notify->fw_min_cnt) {
+				s_vpr_e(inst->sid,
+				"%s: Firmware min count %d cannot be greater than driver min count %d\n",
+					__func__, event_notify->fw_min_cnt,
+					fmt->count_min);
+				msm_vidc_queue_v4l2_event(inst,
+					V4L2_EVENT_MSM_VIDC_HW_UNSUPPORTED);
+				goto err_bad_event;
+			}
 			inst->entropy_mode = event_notify->entropy_mode;
 
+			/* configure work mode considering low latency*/
+			if (is_low_latency_hint(inst)) {
+				rc = call_core_op(inst->core, decide_work_mode,
+						  inst);
+				if (rc)
+					s_vpr_e(inst->sid,
+						"%s: Failed to decide work mode\n",
+						__func__);
+			}
+			/* Update driver buffer counts */
+			extra_buff_count = msm_vidc_get_extra_buff_count(inst,
+					HAL_BUFFER_OUTPUT);
+			fmt->count_min = event_notify->fw_min_cnt;
+			fmt->count_min_host = fmt->count_min + extra_buff_count;
+			msm_dcvs_reset(inst);
 			s_vpr_h(inst->sid,
 				"seq: No parameter change continue session\n");
 			rc = call_hfi_op(hdev, session_continue,
@@ -1774,7 +1798,6 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 	ptr[MSM_VIDC_BIT_DEPTH] = event_notify->bit_depth;
 	ptr[MSM_VIDC_PIC_STRUCT] = event_notify->pic_struct;
 	ptr[MSM_VIDC_COLOR_SPACE] = event_notify->colour_space;
-	ptr[MSM_VIDC_FW_MIN_COUNT] = event_notify->fw_min_cnt;
 
 	s_vpr_h(inst->sid, "seq: height = %u width = %u\n",
 		event_notify->height, event_notify->width);
@@ -1817,6 +1840,7 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 			HAL_BUFFER_OUTPUT, fmt->count_min,
 			fmt->count_min_host);
 	}
+	ptr[MSM_VIDC_FW_MIN_COUNT] = fmt->count_min_host;
 
 	rc = msm_vidc_check_session_supported(inst);
 	if (!rc) {
@@ -2860,6 +2884,7 @@ bool is_batching_allowed(struct msm_vidc_inst *inst)
 	 */
 	return (inst->batch.enable &&
 		inst->core->resources.decode_batching &&
+		!is_low_latency_hint(inst) &&
 		is_single_session(inst, ignore_flags) &&
 		is_decode_session(inst) &&
 		!is_thumbnail_session(inst) &&
@@ -6743,40 +6768,33 @@ int msm_comm_qbuf_cache_operations(struct msm_vidc_inst *inst,
 		unsigned long offset, size;
 		enum smem_cache_ops cache_op;
 
-		skip = true;
+		offset = vb->planes[i].data_offset;
+		size = vb->planes[i].length - offset;
+		cache_op = SMEM_CACHE_INVALIDATE;
+		skip = false;
+
 		if (inst->session_type == MSM_VIDC_DECODER) {
 			if (vb->type == INPUT_MPLANE) {
 				if (!i) { /* bitstream */
-					skip = false;
-					offset = vb->planes[i].data_offset;
 					size = vb->planes[i].bytesused;
 					cache_op = SMEM_CACHE_CLEAN_INVALIDATE;
 				}
 			} else if (vb->type == OUTPUT_MPLANE) {
 				if (!i) { /* yuv */
-					skip = false;
-					offset = 0;
-					size = vb->planes[i].length;
-					cache_op = SMEM_CACHE_INVALIDATE;
+					/* all values are correct */
 				}
 			}
 		} else if (inst->session_type == MSM_VIDC_ENCODER) {
 			if (vb->type == INPUT_MPLANE) {
 				if (!i) { /* yuv */
-					skip = false;
-					offset = vb->planes[i].data_offset;
 					size = vb->planes[i].bytesused;
+					cache_op = SMEM_CACHE_CLEAN_INVALIDATE;
+				} else { /* extradata */
 					cache_op = SMEM_CACHE_CLEAN_INVALIDATE;
 				}
 			} else if (vb->type == OUTPUT_MPLANE) {
-				if (!i) { /* bitstream */
-					skip = false;
-					offset = 0;
-					size = vb->planes[i].length;
-					if (inst->max_filled_len)
-						size = inst->max_filled_len;
-					cache_op = SMEM_CACHE_INVALIDATE;
-				}
+				if (!i && inst->max_filled_len)
+					size = inst->max_filled_len;
 			}
 		}
 
@@ -6811,26 +6829,26 @@ int msm_comm_dqbuf_cache_operations(struct msm_vidc_inst *inst,
 		unsigned long offset, size;
 		enum smem_cache_ops cache_op;
 
-		skip = true;
+		offset = vb->planes[i].data_offset;
+		size = vb->planes[i].length - offset;
+		cache_op = SMEM_CACHE_INVALIDATE;
+		skip = false;
+
 		if (inst->session_type == MSM_VIDC_DECODER) {
 			if (vb->type == INPUT_MPLANE) {
-				/* bitstream and extradata */
-				/* we do not need cache operations */
+				if (!i) /* bitstream */
+					skip = true;
 			} else if (vb->type == OUTPUT_MPLANE) {
 				if (!i) { /* yuv */
-					skip = false;
-					offset = vb->planes[i].data_offset;
-					size = vb->planes[i].bytesused;
-					cache_op = SMEM_CACHE_INVALIDATE;
+					/* All values are correct */
 				}
 			}
 		} else if (inst->session_type == MSM_VIDC_ENCODER) {
 			if (vb->type == INPUT_MPLANE) {
 				/* yuv and extradata */
-				/* we do not need cache operations */
+				skip = true;
 			} else if (vb->type == OUTPUT_MPLANE) {
 				if (!i) { /* bitstream */
-					skip = false;
 					/*
 					 * Include vp8e header bytes as well
 					 * by making offset equal to zero
@@ -6838,7 +6856,6 @@ int msm_comm_dqbuf_cache_operations(struct msm_vidc_inst *inst,
 					offset = 0;
 					size = vb->planes[i].bytesused +
 						vb->planes[i].data_offset;
-					cache_op = SMEM_CACHE_INVALIDATE;
 				}
 			}
 		}

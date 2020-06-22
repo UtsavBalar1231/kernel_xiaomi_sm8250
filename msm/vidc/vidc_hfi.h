@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
  */
 #ifndef __H_VIDC_HFI_H__
 #define __H_VIDC_HFI_H__
@@ -191,6 +191,8 @@ struct hfi_extradata_header {
 	(HFI_PROPERTY_PARAM_VDEC_OX_START + 0x0022)
 #define HFI_PROPERTY_PARAM_VDEC_HDR10_HIST_EXTRADATA \
 	(HFI_PROPERTY_PARAM_VDEC_OX_START + 0x0023)
+#define HFI_PROPERTY_PARAM_VDEC_SEQCHNG_AT_SYNCFRM \
+	(HFI_PROPERTY_PARAM_VDEC_OX_START + 0x0025)
 
 #define HFI_PROPERTY_CONFIG_VDEC_OX_START				\
 	(HFI_DOMAIN_BASE_VDEC + HFI_ARCH_OX_OFFSET + 0x4000)
