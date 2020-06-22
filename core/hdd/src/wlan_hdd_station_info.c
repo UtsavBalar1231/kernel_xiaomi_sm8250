@@ -1188,11 +1188,13 @@ static int hdd_get_cached_station_remote(struct hdd_context *hdd_ctx,
 		hdd_err("remote ch put fail");
 		goto fail;
 	}
-	if (nla_put_u32(skb, REMOTE_LAST_TX_RATE, stainfo->tx_rate)) {
+	/* Convert the data from kbps to mbps as expected by the user space */
+	if (nla_put_u32(skb, REMOTE_LAST_TX_RATE, stainfo->tx_rate / 1000)) {
 		hdd_err("tx rate put fail");
 		goto fail;
 	}
-	if (nla_put_u32(skb, REMOTE_LAST_RX_RATE, stainfo->rx_rate)) {
+	/* Convert the data from kbps to mbps as expected by the user space */
+	if (nla_put_u32(skb, REMOTE_LAST_RX_RATE, stainfo->rx_rate / 1000)) {
 		hdd_err("rx rate put fail");
 		goto fail;
 	}
@@ -1229,7 +1231,7 @@ static int hdd_get_cached_station_remote(struct hdd_context *hdd_ctx,
 		}
 	}
 	hdd_sta_info_detach(&adapter->cache_sta_info_list, &stainfo);
-	hdd_put_sta_info_ref(&adapter->sta_info_list, &stainfo, true);
+	hdd_put_sta_info_ref(&adapter->cache_sta_info_list, &stainfo, true);
 	qdf_atomic_dec(&adapter->cache_sta_count);
 
 	return cfg80211_vendor_cmd_reply(skb);

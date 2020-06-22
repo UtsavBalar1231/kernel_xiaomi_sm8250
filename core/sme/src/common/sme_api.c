@@ -3919,10 +3919,15 @@ QDF_STATUS sme_oem_req_cmd(mac_handle_t mac_handle,
 
 #ifdef FEATURE_OEM_DATA
 QDF_STATUS sme_oem_data_cmd(mac_handle_t mac_handle,
-			    struct oem_data *oem_data)
+			    void (*oem_data_event_handler_cb)
+			    (const struct oem_data *oem_event_data,
+			     uint8_t vdev_id),
+			     struct oem_data *oem_data,
+			     uint8_t vdev_id)
 {
 	QDF_STATUS status;
 	void *wma_handle;
+	struct mac_context *mac = MAC_CONTEXT(mac_handle);
 
 	SME_ENTER();
 	wma_handle = cds_get_context(QDF_MODULE_ID_WMA);
@@ -3931,6 +3936,12 @@ QDF_STATUS sme_oem_data_cmd(mac_handle_t mac_handle,
 		return QDF_STATUS_E_FAILURE;
 	}
 
+	status = sme_acquire_global_lock(&mac->sme);
+	if (QDF_IS_STATUS_SUCCESS(status)) {
+		mac->sme.oem_data_event_handler_cb = oem_data_event_handler_cb;
+		mac->sme.oem_data_vdev_id = vdev_id;
+		sme_release_global_lock(&mac->sme);
+	}
 	status = wma_start_oem_data_cmd(wma_handle, oem_data);
 	if (!QDF_IS_STATUS_SUCCESS(status))
 		sme_err("fail to call wma_start_oem_data_cmd.");
@@ -10700,7 +10711,7 @@ QDF_STATUS sme_ll_stats_set_thresh(mac_handle_t mac_handle,
 
 #endif /* WLAN_FEATURE_LINK_LAYER_STATS */
 
-#ifdef WLAN_POWER_DEBUGFS
+#ifdef WLAN_POWER_DEBUG
 /**
  * sme_power_debug_stats_req() - SME API to collect Power debug stats
  * @callback_fn: Pointer to the callback function for Power stats event
@@ -11195,7 +11206,6 @@ QDF_STATUS sme_wifi_start_logger(mac_handle_t mac_handle,
 				 struct sir_wifi_start_log start_log)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
-	struct mac_context *mac   = MAC_CONTEXT(mac_handle);
 	struct scheduler_msg message = {0};
 	struct sir_wifi_start_log *req_msg;
 	uint32_t len;
@@ -11213,14 +11223,6 @@ QDF_STATUS sme_wifi_start_logger(mac_handle_t mac_handle,
 	req_msg->size = start_log.size;
 	req_msg->is_pktlog_buff_clear = start_log.is_pktlog_buff_clear;
 
-	status = sme_acquire_global_lock(&mac->sme);
-	if (status != QDF_STATUS_SUCCESS) {
-		sme_err("sme_acquire_global_lock failed(status=%d)", status);
-		qdf_mem_free(req_msg);
-		return status;
-	}
-
-	/* Serialize the req through MC thread */
 	message.bodyptr = req_msg;
 	message.type    = SIR_HAL_START_STOP_LOGGING;
 	status = scheduler_post_message(QDF_MODULE_ID_SME,
@@ -11231,7 +11233,6 @@ QDF_STATUS sme_wifi_start_logger(mac_handle_t mac_handle,
 		qdf_mem_free(req_msg);
 		status = QDF_STATUS_E_FAILURE;
 	}
-	sme_release_global_lock(&mac->sme);
 
 	return status;
 }
@@ -11960,11 +11961,15 @@ int sme_update_he_tx_bfee_nsts(mac_handle_t mac_handle, uint8_t session_id,
 		sme_err("No session for id %d", session_id);
 		return -EINVAL;
 	}
-	if (cfg_in_range(CFG_HE_BFEE_STS_LT80, cfg_val))
+	if (cfg_in_range(CFG_HE_BFEE_STS_LT80, cfg_val)) {
 		mac_ctx->mlme_cfg->he_caps.dot11_he_cap.bfee_sts_lt_80 =
 		cfg_val;
-	else
+		mac_ctx->mlme_cfg->he_caps.dot11_he_cap.bfee_sts_gt_80 =
+		cfg_val;
+	} else {
 		return -EINVAL;
+	}
+
 
 	csr_update_session_he_cap(mac_ctx, session);
 	return 0;
@@ -12125,6 +12130,38 @@ int sme_update_he_twt_req_support(mac_handle_t mac_handle, uint8_t session_id,
 	return 0;
 }
 #endif
+
+QDF_STATUS
+sme_update_session_txq_edca_params(mac_handle_t mac_handle,
+				   uint8_t session_id,
+				   tSirMacEdcaParamRecord *txq_edca_params)
+{
+	QDF_STATUS status;
+	struct mac_context *mac_ctx = MAC_CONTEXT(mac_handle);
+	struct sir_update_session_txq_edca_param *msg;
+
+	status = sme_acquire_global_lock(&mac_ctx->sme);
+	if (QDF_IS_STATUS_ERROR(status))
+		return QDF_STATUS_E_AGAIN;
+
+	msg = qdf_mem_malloc(sizeof(*msg));
+	if (!msg)
+		return QDF_STATUS_E_NOMEM;
+
+	msg->message_type = eWNI_SME_UPDATE_SESSION_EDCA_TXQ_PARAMS;
+	msg->vdev_id = session_id;
+	qdf_mem_copy(&msg->txq_edca_params, txq_edca_params,
+		     sizeof(tSirMacEdcaParamRecord));
+	msg->length = sizeof(*msg);
+
+	status = umac_send_mb_message_to_mac(msg);
+
+	sme_release_global_lock(&mac_ctx->sme);
+	if (status != QDF_STATUS_SUCCESS)
+		return QDF_STATUS_E_IO;
+
+	return QDF_STATUS_SUCCESS;
+}
 
 /**
  * sme_set_nud_debug_stats_cb() - set nud debug stats callback
@@ -16271,42 +16308,6 @@ QDF_STATUS sme_get_ani_level(mac_handle_t mac_handle, uint32_t *freqs,
 	return status;
 }
 #endif /* FEATURE_ANI_LEVEL_REQUEST */
-
-#ifdef FEATURE_OEM_DATA
-QDF_STATUS sme_set_oem_data_event_handler_cb(
-			mac_handle_t mac_handle,
-			void (*oem_data_event_handler_cb)
-					(const struct oem_data *oem_event_data))
-{
-	struct mac_context *mac = MAC_CONTEXT(mac_handle);
-	QDF_STATUS qdf_status;
-
-	qdf_status = sme_acquire_global_lock(&mac->sme);
-	if (QDF_IS_STATUS_SUCCESS(qdf_status)) {
-		mac->sme.oem_data_event_handler_cb = oem_data_event_handler_cb;
-		sme_release_global_lock(&mac->sme);
-	}
-	return qdf_status;
-}
-
-void sme_reset_oem_data_event_handler_cb(mac_handle_t  mac_handle)
-{
-	struct mac_context *pmac;
-	QDF_STATUS qdf_status;
-
-	if (!mac_handle) {
-		sme_err("mac_handle is not valid");
-		return;
-	}
-	pmac = MAC_CONTEXT(mac_handle);
-
-	qdf_status = sme_acquire_global_lock(&pmac->sme);
-	if (QDF_IS_STATUS_SUCCESS(qdf_status)) {
-		pmac->sme.oem_data_event_handler_cb = NULL;
-		sme_release_global_lock(&pmac->sme);
-	}
-}
-#endif
 
 QDF_STATUS sme_get_prev_connected_bss_ies(mac_handle_t mac_handle,
 					  uint8_t vdev_id,

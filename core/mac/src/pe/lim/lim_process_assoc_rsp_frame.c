@@ -156,8 +156,7 @@ void lim_update_assoc_sta_datas(struct mac_context *mac_ctx,
 	else if (assoc_rsp->vendor_vht_ie.VHTCaps.present)
 		vht_caps = &assoc_rsp->vendor_vht_ie.VHTCaps;
 
-	if ((IS_DOT11_MODE_VHT(session_entry->dot11mode)) &&
-	    ((vht_caps) && vht_caps->present)) {
+	if (session_entry->vhtCapability && (vht_caps && vht_caps->present)) {
 		sta_ds->mlmStaContext.vhtCapability =
 			vht_caps->present;
 		/*
@@ -773,19 +772,6 @@ lim_process_assoc_rsp_frame(struct mac_context *mac_ctx,
 #ifdef FEATURE_WLAN_ESE
 	lim_update_ese_tspec(mac_ctx, session_entry, assoc_rsp);
 #endif
-
-	if (assoc_rsp->capabilityInfo.ibss) {
-		/*
-		 * Received Re/Association Response from peer
-		 * with IBSS capability set.
-		 * Ignore the frame and wait until Re/assoc
-		 * failure timeout.
-		 */
-		pe_err("received Re/AssocRsp frame with IBSS capability");
-		qdf_mem_free(assoc_rsp);
-		qdf_mem_free(beacon);
-		return;
-	}
 
 	if (lim_get_capability_info(mac_ctx, &caps, session_entry)
 		!= QDF_STATUS_SUCCESS) {

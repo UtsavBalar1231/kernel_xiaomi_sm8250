@@ -69,6 +69,7 @@
 #endif
 #include "wlan_scan_api.h"
 #include <wlan_crypto_global_api.h>
+#include "cdp_txrx_host_stats.h"
 
 /**
  * WMA_SET_VDEV_IE_SOURCE_HOST - Flag to identify the source of VDEV SET IE
@@ -235,6 +236,34 @@ QDF_STATUS wma_get_snr(tAniGetSnrReq *psnr_req)
 	}
 
 	return QDF_STATUS_SUCCESS;
+}
+
+void wma_get_rx_retry_cnt(struct mac_context *mac, uint8_t vdev_id,
+			  uint8_t *mac_addr)
+{
+	struct cdp_peer_stats *peer_stats;
+	QDF_STATUS status;
+
+	peer_stats = qdf_mem_malloc(sizeof(*peer_stats));
+	if (!peer_stats) {
+		wma_err("Failed to allocate memory for peer stats");
+		return;
+	}
+
+	status = cdp_host_get_peer_stats(cds_get_context(QDF_MODULE_ID_SOC),
+					 vdev_id, mac_addr, peer_stats);
+
+	if (QDF_IS_STATUS_ERROR(status)) {
+		wma_err("Failed to get peer stats");
+		goto exit;
+	}
+
+	mac->rx_retry_cnt = peer_stats->rx.rx_retries;
+	wma_debug("Rx retry count %d, Peer" QDF_MAC_ADDR_STR, mac->rx_retry_cnt,
+		  QDF_MAC_ADDR_ARRAY(mac_addr));
+
+exit:
+	qdf_mem_free(peer_stats);
 }
 
 /**
@@ -4818,7 +4847,7 @@ int wma_get_arp_stats_handler(void *handle, uint8_t *data,
  *
  * Return: 0 on success, error number otherwise
  */
-#ifdef WLAN_POWER_DEBUGFS
+ #ifdef WLAN_POWER_DEBUG
 int wma_unified_power_debug_stats_event_handler(void *handle,
 			uint8_t *cmd_param_info, uint32_t len)
 {
@@ -4894,11 +4923,13 @@ int wma_unified_power_debug_stats_event_handler(void *handle,
 }
 #else
 int wma_unified_power_debug_stats_event_handler(void *handle,
-		uint8_t *cmd_param_info, uint32_t len)
+						uint8_t *cmd_param_info,
+						uint32_t len)
 {
 	return 0;
 }
 #endif
+
 #ifdef WLAN_FEATURE_BEACON_RECEPTION_STATS
 int wma_unified_beacon_debug_stats_event_handler(void *handle,
 						 uint8_t *cmd_param_info,
@@ -5397,8 +5428,10 @@ void wma_update_set_key(uint8_t session_id, bool pairwise,
 		return;
 	}
 	iface = &wma->interfaces[session_id];
-	if (!iface)
-		wma_info("iface not found for session id %d", session_id);
+	if (!iface) {
+		wma_err("iface not found for session id %d", session_id);
+		return;
+	}
 
 	if (cipher_type == WLAN_CRYPTO_CIPHER_AES_GMAC ||
 	    cipher_type == WLAN_CRYPTO_CIPHER_AES_GMAC_256 ||

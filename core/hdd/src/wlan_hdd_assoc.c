@@ -1576,6 +1576,11 @@ static void hdd_send_association_event(struct net_device *dev,
 				       roam_info->tdls_prohibited,
 				       adapter->vdev);
 #endif
+
+		hdd_add_latency_critical_client(
+			hdd_ctx,
+			hdd_convert_cfgdot11mode_to_80211mode(
+				sta_ctx->conn_info.dot11mode));
 		/* start timer in sta/p2p_cli */
 		hdd_bus_bw_compute_prev_txrx_stats(adapter);
 		hdd_bus_bw_compute_timer_start(hdd_ctx);
@@ -1621,6 +1626,10 @@ static void hdd_send_association_event(struct net_device *dev,
 					  false,
 					  adapter->vdev);
 
+		hdd_del_latency_critical_client(
+			hdd_ctx,
+			hdd_convert_cfgdot11mode_to_80211mode(
+				sta_ctx->conn_info.dot11mode));
 		/* stop timer in sta/p2p_cli */
 		hdd_bus_bw_compute_reset_prev_txrx_stats(adapter);
 		hdd_bus_bw_compute_timer_try_stop(hdd_ctx);
@@ -4674,9 +4683,9 @@ static void hdd_roam_channel_switch_handler(struct hdd_adapter *adapter,
 		roam_info->chan_info.ch_width;
 	chan_change.chan_params.sec_ch_offset =
 		roam_info->chan_info.sec_ch_offset;
-	chan_change.chan_params.center_freq_seg0 =
+	chan_change.chan_params.mhz_freq_seg0 =
 		roam_info->chan_info.band_center_freq1;
-	chan_change.chan_params.center_freq_seg1 =
+	chan_change.chan_params.mhz_freq_seg1 =
 		roam_info->chan_info.band_center_freq2;
 
 	bss = wlan_hdd_cfg80211_update_bss_db(adapter, roam_info);

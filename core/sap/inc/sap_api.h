@@ -298,6 +298,7 @@ typedef struct sap_StationDisassocCompleteEvent_s {
 	int tx_rate;
 	int rx_rate;
 	uint32_t rx_mc_bc_cnt;
+	uint32_t rx_retry_cnt;
 } tSap_StationDisassocCompleteEvent;
 
 typedef struct sap_StationSetKeyCompleteEvent_s {
@@ -444,8 +445,8 @@ struct sap_acs_cfg {
 #endif
 
 	uint16_t   ch_width;
-	uint32_t   pcl_chan_freq[QDF_MAX_NUM_CHAN];
-	uint8_t    pcl_channels_weight_list[QDF_MAX_NUM_CHAN];
+	uint32_t   pcl_chan_freq[NUM_CHANNELS];
+	uint8_t    pcl_channels_weight_list[NUM_CHANNELS];
 	uint32_t   pcl_ch_count;
 	uint8_t    is_ht_enabled;
 	uint8_t    is_vht_enabled;

@@ -1343,6 +1343,11 @@ struct hdd_adapter {
 	qdf_mutex_t sta_periodic_stats_lock;
 #endif /* WLAN_FEATURE_PERIODIC_STA_STATS */
 	qdf_event_t peer_cleanup_done;
+#ifdef FEATURE_OEM_DATA
+	bool oem_data_in_progress;
+	void *cookie;
+	bool response_expected;
+#endif
 };
 
 #define WLAN_HDD_GET_STATION_CTX_PTR(adapter) (&(adapter)->session.station)
@@ -1606,6 +1611,7 @@ struct hdd_fw_ver_info {
  * @pdev: object manager pdev context
  * @iftype_data_2g: Interface data for 2g band
  * @iftype_data_5g: Interface data for 5g band
+ * @num_latency_critical_clients: Number of latency critical clients connected
  * @bus_bw_work: work for periodically computing DDR bus bandwidth requirements
  * @g_event_flags: a bitmap of hdd_driver_flags
  * @psoc_idle_timeout_work: delayed work for psoc idle shutdown
@@ -1676,6 +1682,7 @@ struct hdd_context {
 	int32_t oem_pid;
 #endif
 
+	qdf_atomic_t num_latency_critical_clients;
 	/** Concurrency Parameters*/
 	uint32_t concurrency_mode;
 
@@ -2513,6 +2520,63 @@ bool wlan_hdd_validate_modules_state(struct hdd_context *hdd_ctx);
 QDF_STATUS __wlan_hdd_validate_mac_address(struct qdf_mac_addr *mac_addr,
 					   const char *func);
 
+/**
+ * hdd_is_any_adapter_connected() - Check if any adapter is in connected state
+ * @hdd_ctx: the global hdd context
+ *
+ * Returns: true, if any of the adapters is in connected state,
+ *	    false, if none of the adapters is in connected state.
+ */
+bool hdd_is_any_adapter_connected(struct hdd_context *hdd_ctx);
+
+/**
+ * hdd_add_latency_critical_client() - Add latency critical client
+ * @hdd_ctx: Global HDD context
+ * @phymode: the phymode of the connected adapter
+ *
+ * This function adds to the latency critical count if the present
+ * connection is also a latency critical one.
+ *
+ * Returns: None
+ */
+static inline void
+hdd_add_latency_critical_client(struct hdd_context *hdd_ctx,
+				enum qca_wlan_802_11_mode phymode)
+{
+	switch (phymode) {
+	case QCA_WLAN_802_11_MODE_11A:
+	case QCA_WLAN_802_11_MODE_11G:
+		qdf_atomic_inc(&hdd_ctx->num_latency_critical_clients);
+		break;
+	default:
+		break;
+	}
+}
+
+/**
+ * hdd_del_latency_critical_client() - Add tlatency critical client
+ * @hdd_ctx: Global HDD context
+ * @phymode: the phymode of the connected adapter
+ *
+ * This function removes from the latency critical count if the present
+ * connection is also a latency critical one.
+ *
+ * Returns: None
+ */
+static inline void
+hdd_del_latency_critical_client(struct hdd_context *hdd_ctx,
+				enum qca_wlan_802_11_mode phymode)
+{
+	switch (phymode) {
+	case QCA_WLAN_802_11_MODE_11A:
+	case QCA_WLAN_802_11_MODE_11G:
+		qdf_atomic_dec(&hdd_ctx->num_latency_critical_clients);
+		break;
+	default:
+		break;
+	}
+}
+
 #ifdef WLAN_FEATURE_DP_BUS_BANDWIDTH
 /**
  * hdd_bus_bw_compute_prev_txrx_stats() - get tx and rx stats
@@ -2599,6 +2663,24 @@ hdd_get_current_throughput_level(struct hdd_context *hdd_ctx)
 	return hdd_ctx->cur_vote_level;
 }
 
+/**
+ * hdd_set_current_throughput_level() - update the current vote
+ * level
+ * @hdd_ctx: the global hdd context
+ * @next_vote_level: pld_bus_width_type voting level
+ *
+ * This function updates the current vote level to the new level
+ * provided
+ *
+ * Return: None
+ */
+static inline void
+hdd_set_current_throughput_level(struct hdd_context *hdd_ctx,
+				 enum pld_bus_width_type next_vote_level)
+{
+	hdd_ctx->cur_vote_level = next_vote_level;
+}
+
 static inline bool
 hdd_is_low_tput_gro_enable(struct hdd_context *hdd_ctx)
 {
@@ -2654,6 +2736,12 @@ static inline enum pld_bus_width_type
 hdd_get_current_throughput_level(struct hdd_context *hdd_ctx)
 {
 	return PLD_BUS_WIDTH_NONE;
+}
+
+static inline void
+hdd_set_current_throughput_level(struct hdd_context *hdd_ctx,
+				 enum pld_bus_width_type next_vote_level)
+{
 }
 
 static inline bool
@@ -3123,6 +3211,16 @@ static inline void hdd_set_sg_flags(struct hdd_context *hdd_ctx,
 static inline void hdd_set_sg_flags(struct hdd_context *hdd_ctx,
 				struct net_device *wlan_dev){}
 #endif
+
+/**
+ * hdd_set_netdev_flags() - set netdev flags for adapter as per ini config
+ * @adapter: hdd adapter context
+ *
+ * This function sets netdev feature flags for the adapter.
+ *
+ * Return: none
+ */
+void hdd_set_netdev_flags(struct hdd_adapter *adapter);
 
 #ifdef FEATURE_TSO
 /**
@@ -4297,5 +4395,12 @@ hdd_monitor_mode_qdf_create_event(struct hdd_adapter *adapter,
 	return QDF_STATUS_SUCCESS;
 }
 #endif
+
+/**
+ * hdd_init_start_completion() - Init the completion variable to wait on ON/OFF
+ *
+ * Return: None
+ */
+void hdd_init_start_completion(void);
 
 #endif /* end #if !defined(WLAN_HDD_MAIN_H) */

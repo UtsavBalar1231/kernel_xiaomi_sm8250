@@ -789,7 +789,7 @@ __lim_handle_sme_start_bss_request(struct mac_context *mac_ctx, uint32_t *msg_bu
 				sme_start_bss_req->center_freq_seg0;
 			session->ch_center_freq_seg1 =
 				sme_start_bss_req->center_freq_seg1;
-			lim_update_he_bw_cap_mcs(session);
+			lim_update_he_bw_cap_mcs(session, NULL);
 		}
 
 		/* Delete pre-auth list if any */
@@ -3322,6 +3322,65 @@ static void lim_process_sme_update_edca_params(struct mac_context *mac_ctx,
 		pe_err("Self entry missing in Hash Table");
 }
 
+/**
+ * lim_process_sme_update_session_edca_txq_params()
+ * Update the edca tx queue parameters for the vdev
+ *
+ * @mac_ctx: Pointer to Global MAC structure
+ * @msg_buf: Pointer to SME message buffer
+ *
+ * Return: None
+ */
+static void
+lim_process_sme_update_session_edca_txq_params(struct mac_context *mac_ctx,
+					       uint32_t *msg_buf)
+{
+	struct sir_update_session_txq_edca_param *msg;
+	struct pe_session *pe_session;
+	uint8_t ac;
+
+	if (!msg_buf) {
+		pe_err("Buffer is Pointing to NULL");
+		return;
+	}
+
+	msg = (struct sir_update_session_txq_edca_param *)msg_buf;
+
+	pe_session = pe_find_session_by_vdev_id(mac_ctx, msg->vdev_id);
+	if (!pe_session) {
+		pe_warn("Session does not exist for given vdev_id %d",
+			msg->vdev_id);
+		return;
+	}
+
+	ac = msg->txq_edca_params.aci.aci;
+	pe_debug("received SME Session tx queue update for vdev %d queue %d",
+		 msg->vdev_id, ac);
+
+	if ((!LIM_IS_AP_ROLE(pe_session)) ||
+	    (pe_session->limSmeState != eLIM_SME_NORMAL_STATE)) {
+		pe_err("Rcvd edca update req in state %X, in role %X",
+		       pe_session->limSmeState,
+		       GET_LIM_SYSTEM_ROLE(pe_session));
+		return;
+	}
+
+	pe_session->gLimEdcaParams[ac].cw.min =
+			msg->txq_edca_params.cw.min;
+	pe_session->gLimEdcaParams[ac].cw.max =
+			msg->txq_edca_params.cw.max;
+	pe_session->gLimEdcaParams[ac].aci.aci =
+			msg->txq_edca_params.aci.aci;
+	pe_session->gLimEdcaParams[ac].aci.aifsn =
+			msg->txq_edca_params.aci.aifsn;
+	pe_session->gLimEdcaParams[ac].txoplimit =
+			msg->txq_edca_params.txoplimit;
+
+	lim_send_edca_params(mac_ctx,
+			     pe_session->gLimEdcaParams,
+			     pe_session->vdev_id, false);
+}
+
 static void lim_process_sme_update_mu_edca_params(struct mac_context *mac_ctx,
 						  uint32_t vdev_id)
 {
@@ -4718,6 +4777,9 @@ bool lim_process_sme_req_messages(struct mac_context *mac,
 	case WNI_SME_UPDATE_MU_EDCA_PARAMS:
 		lim_process_sme_update_mu_edca_params(mac, pMsg->bodyval);
 		break;
+	case eWNI_SME_UPDATE_SESSION_EDCA_TXQ_PARAMS:
+		lim_process_sme_update_session_edca_txq_params(mac, msg_buf);
+		break;
 	case WNI_SME_CFG_ACTION_FRM_HE_TB_PPDU:
 		lim_process_sme_cfg_action_frm_in_tb_ppdu(mac,
 				(struct  sir_cfg_action_frm_tb_ppdu *)msg_buf);
@@ -5507,10 +5569,11 @@ static void lim_process_sme_dfs_csa_ie_request(struct mac_context *mac_ctx,
 			 dfs_csa_ie_req->ch_switch_mode;
 
 	/*
-	 * Validate if SAP is operating HT or VHT mode and set the Channel
+	 * Validate if SAP is operating HT or VHT/HE mode and set the Channel
 	 * Switch Wrapper element with the Wide Band Switch subelement.
 	 */
-	if (true != session_entry->vhtCapability)
+	if (!(session_entry->vhtCapability ||
+	      lim_is_session_he_capable(session_entry)))
 		goto skip_vht;
 
 	/* Now encode the Wider Ch BW element depending on the ch width */

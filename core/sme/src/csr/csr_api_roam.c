@@ -4004,18 +4004,8 @@ QDF_STATUS csr_roam_call_callback(struct mac_context *mac, uint32_t sessionId,
 		csr_connect_info(mac, pSession, roam_info, u2);
 
 	if (mac->session_roam_complete_cb) {
-		if (roam_info) {
+		if (roam_info)
 			roam_info->sessionId = (uint8_t) sessionId;
-			/*
-			 * the reasonCode will be passed to supplicant by
-			 * cfg80211_disconnected. Based on the document,
-			 * the reason code passed to supplicant needs to set
-			 * to 0 if unknown. eSIR_BEACON_MISSED reason code is
-			 * not recognizable so that we set to 0 instead.
-			 */
-			if (roam_info->reasonCode == eSIR_MAC_BEACON_MISSED)
-				roam_info->reasonCode = 0;
-		}
 		status = mac->session_roam_complete_cb(mac->psoc, sessionId, roam_info,
 						       roamId, u1, u2);
 	}
@@ -6483,6 +6473,8 @@ static void csr_get_peer_rssi(struct mac_context *mac, uint32_t session_id,
 			QDF_MAC_ADDR_ARRAY(peer_mac.bytes));
 		if (QDF_IS_STATUS_ERROR(status))
 			sme_err("stats req failed: %d", status);
+
+		wma_get_rx_retry_cnt(mac, session_id, info.peer_mac_addr);
 		wlan_objmgr_vdev_release_ref(vdev, WLAN_LEGACY_SME_ID);
 	}
 }
@@ -7339,6 +7331,7 @@ static void csr_roam_process_results_default(struct mac_context *mac_ctx,
 		roam_info->tx_rate = mac_ctx->peer_txrate;
 		roam_info->rx_rate = mac_ctx->peer_rxrate;
 		roam_info->rx_mc_bc_cnt = mac_ctx->rx_mc_bc_cnt;
+		roam_info->rx_retry_cnt = mac_ctx->rx_retry_cnt;
 
 		csr_roam_state_change(mac_ctx, eCSR_ROAMING_STATE_JOINED,
 			session_id);
@@ -10783,6 +10776,7 @@ csr_roam_send_disconnect_done_indication(struct mac_context *mac_ctx,
 		roam_info->rx_rate = mac_ctx->peer_rxrate;
 		roam_info->disassoc_reason = discon_ind->reason_code;
 		roam_info->rx_mc_bc_cnt = mac_ctx->rx_mc_bc_cnt;
+		roam_info->rx_retry_cnt = mac_ctx->rx_retry_cnt;
 		vdev = wlan_objmgr_get_vdev_by_id_from_psoc(mac_ctx->psoc,
 							    vdev_id,
 							    WLAN_LEGACY_SME_ID);
@@ -11383,7 +11377,7 @@ void csr_update_connect_n_roam_cmn_filter(struct mac_context *mac_ctx,
 		status = policy_mgr_get_pcl(mac_ctx->psoc, pm_mode,
 					    pcl_freq_list, &num_entries,
 					    filter->pcl_weight_list,
-					    QDF_MAX_NUM_CHAN);
+					    NUM_CHANNELS);
 		if (QDF_IS_STATUS_ERROR(status))
 			return;
 		qdf_mem_copy(filter->pcl_freq_list, pcl_freq_list,
@@ -11544,7 +11538,7 @@ csr_roam_get_scan_filter_from_profile(struct mac_context *mac_ctx,
 	    ch_info->freq_list[0]) {
 		filter->num_of_channels = 0;
 		for (i = 0; i < ch_info->numOfChannels; i++) {
-			if (filter->num_of_channels >= QDF_MAX_NUM_CHAN) {
+			if (filter->num_of_channels >= NUM_CHANNELS) {
 				sme_err("max allowed channel(%d) reached",
 					filter->num_of_channels);
 				break;
@@ -17929,8 +17923,8 @@ csr_update_roam_scan_offload_request(struct mac_context *mac_ctx,
 			mac_ctx->mlme_cfg->lfr.roam_force_rssi_trigger);
 	csr_update_roam_req_adaptive_11r(session, mac_ctx, req_buf);
 
-	req_buf->is_ft_im_for_deauth =
-			mac_ctx->mlme_cfg->lfr.is_ft_im_for_deauth;
+	req_buf->enable_ft_im_roaming =
+			mac_ctx->mlme_cfg->lfr.enable_ft_im_roaming;
 	/* fill bss load triggered roam related configs */
 	req_buf->bss_load_trig_enabled =
 		mac_ctx->mlme_cfg->lfr.bss_load_trig.enabled;
@@ -21795,6 +21789,9 @@ csr_check_and_set_sae_single_pmk_cap(struct mac_context *mac_ctx,
 }
 #endif
 
+#define IS_ROAM_REASON_STA_KICKOUT(reason) ((reason & 0xF) == \
+	WMI_ROAM_TRIGGER_REASON_STA_KICKOUT)
+
 static QDF_STATUS csr_process_roam_sync_callback(struct mac_context *mac_ctx,
 		struct roam_offload_synch_ind *roam_synch_data,
 		struct bss_description *bss_desc, enum sir_roam_op_code reason)
@@ -21856,7 +21853,8 @@ static QDF_STATUS csr_process_roam_sync_callback(struct mac_context *mac_ctx,
 		csr_roam_roaming_offload_timer_action(mac_ctx,
 				0, session_id, ROAMING_OFFLOAD_TIMER_STOP);
 		if (session->discon_in_progress ||
-		    MLME_IS_ROAM_STATE_STOPPED(mac_ctx->psoc, session_id) ||
+		    (MLME_IS_ROAM_STATE_STOPPED(mac_ctx->psoc, session_id) &&
+		    !vdev_roam_params->roam_invoke_in_progress) ||
 		    !CSR_IS_ROAM_JOINED(mac_ctx, session_id)) {
 			QDF_TRACE(QDF_MODULE_ID_SME, QDF_TRACE_LEVEL_DEBUG,
 				FL("LFR3: Session not in connected state or disconnect is in progress %d"),
@@ -22013,6 +22011,14 @@ static QDF_STATUS csr_process_roam_sync_callback(struct mac_context *mac_ctx,
 	wlan_blm_update_bssid_connect_params(mac_ctx->pdev,
 					     session->connectedProfile.bssid,
 					     BLM_AP_DISCONNECTED);
+
+	if (IS_ROAM_REASON_STA_KICKOUT(roam_synch_data->roamReason)) {
+		struct reject_ap_info ap_info;
+
+		ap_info.bssid = session->connectedProfile.bssid;
+		ap_info.reject_ap_type = DRIVER_AVOID_TYPE;
+		wlan_blm_add_bssid_to_reject_list(mac_ctx->pdev, &ap_info);
+	}
 
 	/* Remove old BSSID mlme info from scan cache */
 	csr_update_scan_entry_associnfo(mac_ctx, session,

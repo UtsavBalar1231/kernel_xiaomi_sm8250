@@ -170,6 +170,32 @@
 
 /*
  * <ini>
+ * ndp_max_sessions - To configure max ndp sessions
+ * supported by host.
+ *
+ * @Min: 1
+ * @Max: 8
+ * @Default: 8
+ *
+ * Related: None
+ *
+ * Supported Feature: NAN
+ *
+ * Usage: Internal
+ *
+ * </ini>
+ */
+
+#define CFG_NDP_MAX_SESSIONS CFG_INI_UINT( \
+			"ndp_max_sessions", \
+			1, \
+			8, \
+			8, \
+			CFG_VALUE_OR_DEFAULT, \
+			"max ndp sessions host supports")
+
+/*
+ * <ini>
  * gSupportMp0Discovery - To support discovery of NAN cluster with
  * Master Preference (MP) as 0 when a new device is enabling NAN.
  *
@@ -189,6 +215,29 @@
 			"gSupportMp0Discovery", \
 			1, \
 			"Enable/Disable discovery of NAN cluster with Master Preference (MP) as 0")
+/*
+ * <ini>
+ * ndi_max_support - To configure max number of ndi host supports
+ *
+ * @Min: 1
+ * @Max: 2
+ * @Default: 1
+ *
+ * Related: None
+ *
+ * Supported Feature: NAN
+ *
+ * Usage: Internal
+ *
+ * </ini>
+ */
+#define CFG_NDI_MAX_SUPPORT CFG_INI_UINT( \
+			"ndi_max_support", \
+			1, \
+			2, \
+			1, \
+			CFG_VALUE_OR_DEFAULT, \
+			"Max number of NDI host supports")
 
 #ifdef WLAN_FEATURE_NAN
 #define CFG_NAN_DISC CFG(CFG_NAN_ENABLE) \
@@ -204,6 +253,8 @@
 #endif
 
 #define CFG_NAN_ALL     CFG_NAN_DISC \
-			CFG_NAN_DP
+			CFG_NAN_DP \
+			CFG(CFG_NDP_MAX_SESSIONS) \
+			CFG(CFG_NDI_MAX_SUPPORT)
 
 #endif

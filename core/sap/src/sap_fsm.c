@@ -1617,6 +1617,7 @@ QDF_STATUS sap_signal_hdd_event(struct sap_context *sap_ctx,
 		disassoc_comp->rx_rate = csr_roaminfo->rx_rate;
 		disassoc_comp->tx_rate = csr_roaminfo->tx_rate;
 		disassoc_comp->rx_mc_bc_cnt = csr_roaminfo->rx_mc_bc_cnt;
+		disassoc_comp->rx_retry_cnt = csr_roaminfo->rx_retry_cnt;
 		disassoc_comp->reason_code = csr_roaminfo->disassoc_reason;
 		break;
 
@@ -1726,11 +1727,11 @@ QDF_STATUS sap_signal_hdd_event(struct sap_context *sap_ctx,
 		acs_selected->pri_ch_freq = sap_ctx->chan_freq;
 		acs_selected->ht_sec_ch_freq = sap_ctx->sec_ch_freq;
 		acs_selected->ch_width =
-			sap_ctx->csr_roamProfile.ch_params.ch_width;
+			sap_ctx->acs_cfg->ch_width;
 		acs_selected->vht_seg0_center_ch_freq =
-			sap_ctx->csr_roamProfile.ch_params.mhz_freq_seg0;
+			sap_ctx->acs_cfg->vht_seg0_center_ch_freq;
 		acs_selected->vht_seg1_center_ch_freq =
-			sap_ctx->csr_roamProfile.ch_params.mhz_freq_seg1;
+			sap_ctx->acs_cfg->vht_seg1_center_ch_freq;
 		break;
 
 	case eSAP_ECSA_CHANGE_CHAN_IND:
@@ -1763,7 +1764,15 @@ QDF_STATUS sap_signal_hdd_event(struct sap_context *sap_ctx,
 
 	case eSAP_CHANNEL_CHANGE_RESP:
 		sap_ap_event.sapHddEventCode = eSAP_CHANNEL_CHANGE_RESP;
-		sap_ap_event.sapevt.ch_change_rsp_status = (QDF_STATUS)context;
+		acs_selected = &sap_ap_event.sapevt.sap_ch_selected;
+		acs_selected->pri_ch_freq = sap_ctx->chan_freq;
+		acs_selected->ht_sec_ch_freq = sap_ctx->sec_ch_freq;
+		acs_selected->ch_width =
+			sap_ctx->csr_roamProfile.ch_params.ch_width;
+		acs_selected->vht_seg0_center_ch_freq =
+			sap_ctx->csr_roamProfile.ch_params.mhz_freq_seg0;
+		acs_selected->vht_seg1_center_ch_freq =
+			sap_ctx->csr_roamProfile.ch_params.mhz_freq_seg1;
 		QDF_TRACE(QDF_MODULE_ID_SAP, QDF_TRACE_LEVEL_INFO_HIGH,
 			  "In %s, SAP event callback event = %s",
 			 __func__, "eSAP_CHANNEL_CHANGE_RESP");
@@ -1904,8 +1913,7 @@ static QDF_STATUS sap_cac_start_notify(mac_handle_t mac_handle)
 		    (false == sap_context->isCacStartNotified)) {
 			/* Don't start CAC for non-dfs channel, its violation */
 			profile = &sap_context->csr_roamProfile;
-			ch_freq = wlan_reg_legacy_chan_to_freq(mac->pdev,
-						profile->op_freq);
+			ch_freq = profile->op_freq;
 			if (!wlan_reg_is_dfs_for_freq(mac->pdev,
 						      ch_freq))
 				continue;
@@ -2226,14 +2234,7 @@ static QDF_STATUS sap_goto_starting(struct sap_context *sap_ctx,
 		&sap_ctx->csr_roamProfile.op_freq;
 	sap_ctx->csr_roamProfile.op_freq = sap_ctx->chan_freq;
 
-	sap_ctx->csr_roamProfile.ch_params.ch_width =
-				sap_ctx->ch_params.ch_width;
-	sap_ctx->csr_roamProfile.ch_params.center_freq_seg0 =
-			sap_ctx->ch_params.center_freq_seg0;
-	sap_ctx->csr_roamProfile.ch_params.center_freq_seg1 =
-			sap_ctx->ch_params.center_freq_seg1;
-	sap_ctx->csr_roamProfile.ch_params.sec_ch_offset =
-			sap_ctx->ch_params.sec_ch_offset;
+	sap_ctx->csr_roamProfile.ch_params = sap_ctx->ch_params;
 	sap_get_cac_dur_dfs_region(sap_ctx,
 				   &sap_ctx->csr_roamProfile.cac_duration_ms,
 				   &sap_ctx->csr_roamProfile.dfs_regdomain);

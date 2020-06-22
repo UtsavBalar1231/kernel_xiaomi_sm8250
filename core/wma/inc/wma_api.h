@@ -133,6 +133,16 @@ int wma_cli_set2_command(int vdev_id, int param_id, int sval1,
 			 int sval2, int vpdev);
 
 /**
+ * wma_get_fw_phy_mode_for_freq_cb() - Callback to get current PHY Mode.
+ * @freq: channel freq
+ * @chan_width: maximum channel width possible
+ * @phy_mode: firmware PHY Mode
+ *
+ * Return: None
+ */
+void wma_get_fw_phy_mode_for_freq_cb(uint32_t freq, uint32_t chan_width,
+				     uint32_t  *phy_mode);
+/**
  * wma_get_phy_mode_cb() - Callback to get current PHY Mode.
  * @chan: channel number
  * @chan_width: maximum channel width possible
@@ -401,13 +411,13 @@ QDF_STATUS wma_send_coex_config_cmd(WMA_HANDLE wma_handle,
 				    struct coex_config_params *coex_cfg_params);
 
 /**
- * wma_set_qpower_config() - update qpower config in wma
+ * wma_set_power_config() - update power config in wma
  * @vdev_id:	the Id of the vdev to configure
- * @qpower:	new qpower value
+ * @power:	new power value
  *
  * Return: QDF_STATUS_SUCCESS on success, error number otherwise
  */
-QDF_STATUS wma_set_qpower_config(uint8_t vdev_id, uint8_t qpower);
+QDF_STATUS wma_set_power_config(uint8_t vdev_id, enum powersave_mode power);
 
 #ifdef FEATURE_WLAN_D0WOW
 static inline bool wma_d0_wow_is_supported(void)

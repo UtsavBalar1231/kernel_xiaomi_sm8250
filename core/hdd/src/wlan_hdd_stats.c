@@ -1213,6 +1213,8 @@ static void hdd_debugfs_process_ll_stats(struct hdd_adapter *adapter,
 
 		if (!results->num_peers)
 			priv->request_bitmap &= ~(WMI_LINK_STATS_ALL_PEER);
+
+		priv->request_bitmap &= ~(WMI_LINK_STATS_IFACE);
 	} else if (results->paramId & WMI_LINK_STATS_ALL_PEER) {
 		hdd_debugfs_process_peer_stats(adapter, results->results);
 		if (!results->moreResultToFollow)
@@ -1503,6 +1505,48 @@ static void wlan_hdd_handle_ll_stats(struct hdd_adapter *adapter,
 	}
 }
 
+static void wlan_hdd_dealloc_ll_stats(void *priv)
+{
+	struct hdd_ll_stats_priv *ll_stats_priv = priv;
+	struct hdd_ll_stats *stats = NULL;
+	QDF_STATUS status;
+	qdf_list_node_t *ll_node;
+
+	if (!ll_stats_priv)
+		return;
+
+	qdf_spin_lock(&ll_stats_priv->ll_stats_lock);
+	status = qdf_list_remove_front(&ll_stats_priv->ll_stats_q, &ll_node);
+	qdf_spin_unlock(&ll_stats_priv->ll_stats_lock);
+	while (QDF_IS_STATUS_SUCCESS(status)) {
+		stats =  qdf_container_of(ll_node, struct hdd_ll_stats,
+					  ll_stats_node);
+
+		if (stats->result_param_id == WMI_LINK_STATS_RADIO) {
+			struct wifi_radio_stats *radio_stat = stats->result;
+			int i;
+			int num_radio = stats->stats_nradio_npeer.no_of_radios;
+
+			for (i = 0; i < num_radio; i++) {
+				if (radio_stat->num_channels)
+					qdf_mem_free(radio_stat->channels);
+				if (radio_stat->total_num_tx_power_levels)
+					qdf_mem_free(radio_stat->
+						tx_time_per_power_level);
+				radio_stat++;
+			}
+		}
+
+		qdf_mem_free(stats->result);
+		qdf_mem_free(stats);
+		qdf_spin_lock(&ll_stats_priv->ll_stats_lock);
+		status = qdf_list_remove_front(&ll_stats_priv->ll_stats_q,
+					       &ll_node);
+		qdf_spin_unlock(&ll_stats_priv->ll_stats_lock);
+	}
+	qdf_list_destroy(&ll_stats_priv->ll_stats_q);
+}
+
 static int wlan_hdd_send_ll_stats_req(struct hdd_adapter *adapter,
 				      tSirLLStatsGetReq *req)
 {
@@ -1517,6 +1561,7 @@ static int wlan_hdd_send_ll_stats_req(struct hdd_adapter *adapter,
 	static const struct osif_request_params params = {
 		.priv_size = sizeof(*priv),
 		.timeout_ms = WLAN_WAIT_TIME_LL_STATS,
+		.dealloc = wlan_hdd_dealloc_ll_stats,
 	};
 
 	hdd_enter();
@@ -5183,7 +5228,7 @@ static int __wlan_hdd_cfg80211_dump_survey(struct wiphy *wiphy,
 	int status;
 	bool filled = false;
 
-	if (idx > QDF_MAX_NUM_CHAN - 1)
+	if (idx > NUM_CHANNELS - 1)
 		return -EINVAL;
 
 	hdd_ctx = WLAN_HDD_GET_CTX(adapter);
@@ -5985,6 +6030,12 @@ int wlan_hdd_get_station_stats(struct hdd_adapter *adapter)
 		tx_nss = wlan_vdev_mlme_get_nss(adapter->vdev);
 		rx_nss = wlan_vdev_mlme_get_nss(adapter->vdev);
 	}
+	/* Intersection of self and AP's NSS capability */
+	if (tx_nss > wlan_vdev_mlme_get_nss(adapter->vdev))
+		tx_nss = wlan_vdev_mlme_get_nss(adapter->vdev);
+
+	if (rx_nss > wlan_vdev_mlme_get_nss(adapter->vdev))
+		rx_nss = wlan_vdev_mlme_get_nss(adapter->vdev);
 
 	/* save class a stats to legacy location */
 	adapter->hdd_stats.class_a_stat.tx_nss = tx_nss;
@@ -6177,7 +6228,6 @@ static void hdd_lost_link_cp_stats_info_cb(void *stats_ev)
 	struct hdd_adapter *adapter;
 	struct stats_event *ev = stats_ev;
 	uint8_t i;
-	struct hdd_station_ctx *sta_ctx;
 
 	if (wlan_hdd_validate_context(hdd_ctx))
 		return;
@@ -6190,16 +6240,11 @@ static void hdd_lost_link_cp_stats_info_cb(void *stats_ev)
 			hdd_debug("invalid adapter");
 			continue;
 		}
-		sta_ctx = WLAN_HDD_GET_STATION_CTX_PTR(adapter);
-		if ((sta_ctx) &&
-		    (eConnectionState_Associated !=
-					sta_ctx->conn_info.conn_state)) {
-			adapter->rssi_on_disconnect =
+		adapter->rssi_on_disconnect =
 					ev->vdev_summary_stats[i].stats.rssi;
-			hdd_debug("rssi on disconnect %d for " QDF_MAC_ADDR_STR,
-				  adapter->rssi_on_disconnect,
-				  QDF_MAC_ADDR_ARRAY(adapter->mac_addr.bytes));
-		}
+		hdd_debug("rssi %d for " QDF_MAC_ADDR_STR,
+			  adapter->rssi_on_disconnect,
+			  QDF_MAC_ADDR_ARRAY(adapter->mac_addr.bytes));
 	}
 }
 

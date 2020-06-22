@@ -398,6 +398,7 @@ dp_rx_fisa_add_ft_entry(struct dp_rx_fst *fisa_hdl,
 
 		if (is_same_flow(&sw_ft_entry->rx_flow_tuple_info,
 				 &rx_flow_tuple_info)) {
+			sw_ft_entry->vdev = vdev;
 			dp_fisa_debug("It is same flow fse entry idx %d",
 				      hashed_flow_idx);
 			/* Incoming flow tuple matches with existing
@@ -804,14 +805,14 @@ dp_rx_fisa_flush_udp_flow(struct dp_vdev *vdev,
 	dp_fisa_debug("fisa_flow->curr_aggr %d", fisa_flow->cur_aggr);
 	linear_skb = dp_fisa_rx_linear_skb(vdev, fisa_flow->head_skb, 24000);
 	if (linear_skb) {
-		if (qdf_likely(vdev->osif_rx))
-			vdev->osif_rx(vdev->osif_vdev, linear_skb);
+		if (!vdev->osif_rx || QDF_STATUS_SUCCESS !=
+		    vdev->osif_rx(vdev->osif_vdev, linear_skb))
+			qdf_nbuf_free(linear_skb);
 		/* Free non linear skb */
 		qdf_nbuf_free(fisa_flow->head_skb);
 	} else {
-		if (qdf_likely(vdev->osif_rx))
-			vdev->osif_rx(vdev->osif_vdev, fisa_flow->head_skb);
-		else
+		if (!vdev->osif_rx || QDF_STATUS_SUCCESS !=
+		    vdev->osif_rx(vdev->osif_vdev, fisa_flow->head_skb))
 			qdf_nbuf_free(fisa_flow->head_skb);
 	}
 
@@ -1002,6 +1003,22 @@ static int dp_add_nbuf_to_fisa_flow(struct dp_rx_fst *fisa_hdl,
 }
 
 /**
+ * dp_is_nbuf_bypass_fisa() - FISA bypass check for RX frame
+ * @nbuf: RX nbuf pointer
+ *
+ * Return: true if FISA should be bypassed else false
+ */
+static bool dp_is_nbuf_bypass_fisa(qdf_nbuf_t nbuf)
+{
+	/* RX frame from non-regular path or DHCP packet */
+	if (qdf_nbuf_is_exc_frame(nbuf) ||
+	    qdf_nbuf_is_ipv4_dhcp_pkt(nbuf))
+		return true;
+
+	return false;
+}
+
+/**
  * dp_fisa_rx() - Entry function to FISA to handle aggregation
  * @soc: core txrx main context
  * @vdev: Handle DP vdev
@@ -1023,8 +1040,9 @@ QDF_STATUS dp_fisa_rx(struct dp_soc *soc, struct dp_vdev *vdev,
 	while (head_nbuf) {
 		next_nbuf = head_nbuf->next;
 		qdf_nbuf_set_next(head_nbuf, NULL);
-		/* bypass FISA for non-regular RX frame */
-		if (qdf_nbuf_is_exc_frame(head_nbuf))
+
+		/* bypass FISA check */
+		if (dp_is_nbuf_bypass_fisa(head_nbuf))
 			goto deliver_nbuf;
 
 		qdf_nbuf_push_head(head_nbuf, RX_PKT_TLVS_LEN +
@@ -1061,9 +1079,8 @@ pull_nbuf:
 deliver_nbuf: /* Deliver without FISA */
 		qdf_nbuf_set_next(head_nbuf, NULL);
 		hex_dump_skb_data(head_nbuf, false);
-		if (qdf_likely(vdev->osif_rx))
-			vdev->osif_rx(vdev->osif_vdev, head_nbuf);
-		else
+		if (!vdev->osif_rx || QDF_STATUS_SUCCESS !=
+		    vdev->osif_rx(vdev->osif_vdev, head_nbuf))
 			qdf_nbuf_free(head_nbuf);
 next_msdu:
 		head_nbuf = next_nbuf;

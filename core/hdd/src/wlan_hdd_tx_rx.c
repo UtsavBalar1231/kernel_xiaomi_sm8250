@@ -1934,8 +1934,10 @@ QDF_STATUS hdd_rx_pkt_thread_enqueue_cbk(void *adapter,
 	}
 
 	hdd_adapter = (struct hdd_adapter *)adapter;
-	if (hdd_validate_adapter(hdd_adapter))
+	if (hdd_validate_adapter(hdd_adapter)) {
+		hdd_err_rl("adapter validate failed");
 		return QDF_STATUS_E_FAILURE;
+	}
 
 	vdev_id = hdd_adapter->vdev_id;
 	head_ptr = nbuf_list;
@@ -2038,6 +2040,9 @@ QDF_STATUS hdd_rx_flush_packet_cbk(void *adapter_context, uint8_t vdev_id)
 	struct hdd_adapter *adapter;
 	struct hdd_context *hdd_ctx;
 	ol_txrx_soc_handle soc = cds_get_context(QDF_MODULE_ID_SOC);
+
+	if (qdf_unlikely(!soc))
+		return QDF_STATUS_E_FAILURE;
 
 	hdd_ctx = cds_get_context(QDF_MODULE_ID_HDD);
 	if (unlikely(!hdd_ctx)) {
@@ -3054,6 +3059,8 @@ static void hdd_ini_bus_bandwidth(struct hdd_config *config,
 		cfg_get(psoc, CFG_DP_BUS_BANDWIDTH_COMPUTE_INTERVAL);
 	config->bus_low_cnt_threshold =
 		cfg_get(psoc, CFG_DP_BUS_LOW_BW_CNT_THRESHOLD);
+	config->enable_latency_crit_clients =
+		cfg_get(psoc, CFG_DP_BUS_HANDLE_LATENCY_CRITICAL_CLIENTS);
 }
 
 /**
