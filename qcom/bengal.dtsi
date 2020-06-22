@@ -1419,7 +1419,7 @@
 		reset-names = "core_reset";
 
 		/* DLL HSR settings. Refer go/hsr - <Target> DLL settings */
-		qcom,dll-hsr-list = <0x000f642c 0x0 0x0 0x00010800 0x80040868>;
+		qcom,dll-hsr-list = <0x000f642c 0x0 0x0 0x00010800 0x80040860>;
 
 		qcom,nonremovable;
 		status = "disabled";
