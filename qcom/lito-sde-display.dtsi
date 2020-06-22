@@ -193,6 +193,7 @@
 	qcom,dp-usbpd-detection = <&pm7250b_pdphy>;
 	qcom,ext-disp = <&ext_disp>;
 	qcom,dp-aux-switch = <&fsa4480>;
+	extcon = <&pm7250b_pdphy>;
 
 	qcom,usbplug-cc-gpio = <&tlmm 114 0>;
 

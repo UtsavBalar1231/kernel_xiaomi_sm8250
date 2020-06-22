@@ -243,6 +243,20 @@
 			};
 		};
 
+		tb_trig1_on: tb_trig1_on {
+			mux {
+				pins = "gpio19";
+				function = "SDC1_TB";
+			};
+
+			config {
+				pins = "gpio19";
+				bias-pull-up; /* PULL UP */
+				drive-strength = <8>; /* 8 MA */
+				input-enable;
+			};
+		};
+
 		/* WSA speaker reset pin1 */
 		spkr_1_sd_n {
 			spkr_1_sd_n_sleep: spkr_1_sd_n_sleep {

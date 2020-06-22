@@ -5,8 +5,8 @@
 #include "scuba-qrd.dtsi"
 
 / {
-	model = "Qualcomm Technologies, Inc. Scuba QRD";
+	model = "Qualcomm Technologies, Inc. Scuba QRD NON ELDO";
 	compatible = "qcom,scuba-qrd", "qcom,scuba", "qcom,qrd";
-	qcom,msm-id = <441 0x10000>;
+	qcom,msm-id = <441 0x10000>, <471 0x10000>;
 	qcom,board-id = <0x1000B 0>;
 };

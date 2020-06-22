@@ -45,10 +45,9 @@
 };
 
 &usb2_phy0 {
-	qcom,param-override-seq =
-		<0xa7 0x6c
-		0x0d 0x70
-		0x27 0x74>;
+	qcom,param-override-seq = <0x63 0x6c>,
+				<0xc8 0x70>,
+				<0x17 0x74>;
 };
 
 &sde_dp {
@@ -375,6 +374,141 @@
 				trip = <&cx_emer_trip>;
 				cooling-device = <&msm_npu THERMAL_MAX_LIMIT
 						THERMAL_MAX_LIMIT>;
+			};
+		};
+	};
+
+	mmw-pa1-step {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-governor = "step_wise";
+		thermal-sensors = <&pm8150l_adc_tm ADC_AMUX_THM3_PU2>;
+		wake-capable-sensor;
+
+		trips {
+			mmw_pa1_trip0: mmw-pa1-trip0 {
+				temperature = <46000>;
+				hysteresis = <2000>;
+				type = "passive";
+			};
+
+			mmw_pa1_trip1: mmw-pa1-trip1 {
+				temperature = <49000>;
+				hysteresis = <2000>;
+				type = "passive";
+			};
+
+			mmw_pa1_trip2: mmw-pa1-trip2 {
+				temperature = <56000>;
+				hysteresis = <6000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			mdm_mmw_skin1_cdev0 {
+				trip = <&mmw_pa1_trip0>;
+				cooling-device = <&modem_mmw_skin1 1 1>;
+			};
+
+			mdm_mmw_skin1_cdev1 {
+				trip = <&mmw_pa1_trip1>;
+				cooling-device = <&modem_mmw_skin1 2 2>;
+			};
+
+			mdm_mmw_skin1_cdev2 {
+				trip = <&mmw_pa1_trip2>;
+				cooling-device = <&modem_mmw_skin1 3 3>;
+			};
+		};
+	};
+
+	mmw-pa3-step {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-governor = "step_wise";
+		thermal-sensors = <&pm8150_adc_tm ADC_AMUX_THM2_PU2>;
+		wake-capable-sensor;
+
+		trips {
+			mmw_pa3_trip0: mmw-pa3-trip0 {
+				temperature = <43000>;
+				hysteresis = <3000>;
+				type = "passive";
+			};
+
+			mmw_pa3_trip1: mmw-pa3-trip1 {
+				temperature = <45000>;
+				hysteresis = <1000>;
+				type = "passive";
+			};
+
+			mmw_pa3_trip2: mmw-pa3-trip2 {
+				temperature = <56000>;
+				hysteresis = <6000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			mdm_mmw_skin0_cdev0 {
+				trip = <&mmw_pa3_trip0>;
+				cooling-device = <&modem_mmw_skin0 1 1>;
+			};
+
+			mdm_mmw_skin0_cdev1 {
+				trip = <&mmw_pa3_trip1>;
+				cooling-device = <&modem_mmw_skin0 2 2>;
+			};
+
+			mdm_mmw_skin0_cdev2 {
+				trip = <&mmw_pa3_trip2>;
+				cooling-device = <&modem_mmw_skin0 3 3>;
+			};
+		};
+	};
+
+	mmw-pa2-step {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-governor = "step_wise";
+		thermal-sensors = <&pm7250b_adc_tm ADC_GPIO2_PU2>;
+		wake-capable-sensor;
+
+		trips {
+			mmw_pa2_trip0: mmw-pa2-trip0 {
+				temperature = <43000>;
+				hysteresis = <3000>;
+				type = "passive";
+			};
+
+			mmw_pa2_trip1: mmw-pa2-trip1 {
+				temperature = <46000>;
+				hysteresis = <2000>;
+				type = "passive";
+			};
+
+			mmw_pa2_trip2: mmw-pa2-trip2 {
+				temperature = <56000>;
+				hysteresis = <6000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			mdm_mmw_skin2_cdev0 {
+				trip = <&mmw_pa2_trip0>;
+				cooling-device = <&modem_mmw_skin2 1 1>;
+			};
+
+			mdm_mmw_skin2_cdev1 {
+				trip = <&mmw_pa2_trip1>;
+				cooling-device = <&modem_mmw_skin2 2 2>;
+			};
+
+			mdm_mmw_skin2_cdev2 {
+				trip = <&mmw_pa2_trip2>;
+				cooling-device = <&modem_mmw_skin2 3 3>;
 			};
 		};
 	};

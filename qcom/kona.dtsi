@@ -333,6 +333,11 @@
 			qcom,skip-enable-check;
 
 			#freq-domain-cells = <2>;
+
+			cpu7_notify: cpu7-notify {
+				qcom,cooling-cpu = <&CPU7>;
+				#cooling-cells = <2>;
+			};
 		};
 	};
 
@@ -4694,7 +4699,7 @@
 		pinctrl-0 = <&cnss_wlan_en_active>;
 		pinctrl-1 = <&cnss_wlan_en_sleep>;
 		qcom,wlan-rc-num = <0>;
-		qcom,wlan-ramdump-dynamic = <0x400000>;
+		qcom,wlan-ramdump-dynamic = <0x420000>;
 		qcom,smmu-s1-enable;
 		qcom,converged-dt;
 		cnss-daemon-support;
@@ -4702,7 +4707,7 @@
 		qcom,set-wlaon-pwr-ctrl;
 
 		qcom,msm-bus,name = "msm-cnss";
-		qcom,msm-bus,num-cases = <6>;
+		qcom,msm-bus,num-cases = <7>;
 		qcom,msm-bus,num-paths = <1>;
 		qcom,msm-bus,vectors-KBps =
 		/* no vote */
@@ -4716,7 +4721,9 @@
 		/* high: 240 - 800 Mbps, ddr freq: 451.2 MHz */
 		<MSM_BUS_MASTER_PCIE MSM_BUS_SLAVE_FIRST 100000 1804800>,
 		/* very high: 800 - 1400 Mbps, ddr freq: 1555.2 MHz */
-		<MSM_BUS_MASTER_PCIE MSM_BUS_SLAVE_FIRST 175000 6220800>;
+		<MSM_BUS_MASTER_PCIE MSM_BUS_SLAVE_FIRST 175000 6220800>,
+		/* low (latency critical): 18 - 60 Mbps, ddr freq: 547.2 MHz */
+		<MSM_BUS_MASTER_PCIE MSM_BUS_SLAVE_FIRST 7500 2188800>;
 
 		vdd-wlan-aon-supply = <&pm8150_s6>;
 		qcom,vdd-wlan-aon-config = <950000 950000 0 0 1>;

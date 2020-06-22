@@ -1,0 +1,10 @@
+/dts-v1/;
+
+#include "scuba.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Scubap SoC";
+	compatible = "qcom,scuba";
+	qcom,msm-id = <471 0x10000>;
+	qcom,board-id = <0 0>;
+};

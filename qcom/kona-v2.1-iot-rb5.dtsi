@@ -6,6 +6,10 @@
 	status = "okay";
 };
 
+&qupv3_se1_i2c {
+	status = "disabled";
+};
+
 &qupv3_se6_4uart {
 	status = "ok";
 };
@@ -21,6 +25,18 @@
 		power-source = <0>;
 		};
 	};
+};
+
+&mdss_mdp {
+	connectors = <&sde_dp &sde_dsi &sde_dsi1 &sde_rscc>;
+};
+
+&mdss_dsi0_pll {
+	/delete-property/ qcom,dsi-pll-ssc-en;
+};
+
+&mdss_dsi1_pll {
+	/delete-property/ qcom,dsi-pll-ssc-en;
 };
 
 &lt9611_pins {
@@ -69,6 +85,21 @@
 				lt,mode-refresh-rate = <60>;
 				lt,mode-clock-in-khz = <148500>;
 			};
+
+			lt,customize-mode-id@1 {
+				lt,mode-h-active = <3840>;
+				lt,mode-h-front-porch = <176>;
+				lt,mode-h-pulse-width = <88>;
+				lt,mode-h-back-porch = <400>;
+				lt,mode-h-active-high;
+				lt,mode-v-active = <2160>;
+				lt,mode-v-front-porch = <8>;
+				lt,mode-v-pulse-width = <10>;
+				lt,mode-v-back-porch = <72>;
+				lt,mode-v-active-high;
+				lt,mode-refresh-rate = <60>;
+				lt,mode-clock-in-khz = <608040>;
+			};
 		};
 
 		ports {
@@ -77,8 +108,15 @@
 
 			port@0 {
 				reg = <0>;
-				lt9611_in: endpoint {
-					remote-endpoint = <&ext_dsi_out>;
+				lt9611_in_0: endpoint {
+					remote-endpoint = <&ext_dsi_0_out>;
+				};
+			};
+
+			port@1 {
+				reg = <1>;
+				lt9611_in_1: endpoint {
+					remote-endpoint = <&ext_dsi_1_out>;
 				};
 			};
 
@@ -95,8 +133,22 @@
 
 		port@0 {
 			reg = <0>;
-			ext_dsi_out: endpoint {
-				remote-endpoint = <&lt9611_in>;
+			ext_dsi_0_out: endpoint {
+				remote-endpoint = <&lt9611_in_0>;
+			};
+		};
+	};
+};
+
+&sde_dsi1 {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@1 {
+			reg = <1>;
+			ext_dsi_1_out: endpoint {
+				remote-endpoint = <&lt9611_in_1>;
 			};
 		};
 	};
@@ -117,6 +169,15 @@
 	};
 };
 
+&usb0 {
+	qcom,charging-disabled;
+};
+
+
+&pm8150b_charger {
+	qcom,batteryless-platform;
+};
+
 &qupv3_se0_spi {
 	status = "okay";
 	can@0 {
@@ -134,4 +195,103 @@
 
 &pcie1 {
 	status = "disabled";
+};
+
+&thermal_zones {
+	/delete-node/ modem-lte-sub6-pa1;
+	/delete-node/ modem-lte-sub6-pa2;
+	/delete-node/ modem-mmw0-usr;
+	/delete-node/ modem-mmw1-usr;
+	/delete-node/ modem-mmw2-usr;
+	/delete-node/ modem-mmw3-usr;
+	/delete-node/ modem-skin-usr;
+	/delete-node/ modem-wifi-usr;
+	/delete-node/ modem-ambient-usr;
+	/delete-node/ modem-0-usr;
+	/delete-node/ modem-1-usr;
+	/delete-node/ modem-streamer-usr;
+	/delete-node/ modem-mmw0-mod-usr;
+	/delete-node/ modem-mmw1-mod-usr;
+	/delete-node/ modem-mmw2-mod-usr;
+	/delete-node/ modem-mmw3-mod-usr;
+
+	/delete-node/ skin-therm-usr;
+	/delete-node/ skin-therm-step;
+	/delete-node/ camera-therm-usr;
+
+	/delete-node/ mmw-pa1-usr;
+	/delete-node/ mmw-pa1-step;
+	/delete-node/ mmw-pa2-usr;
+	/delete-node/ mmw-pa2-step;
+	/delete-node/ xo-therm-step;
+	/delete-node/ xo-therm-usr;
+	/delete-node/ skin-msm-therm-step;
+
+	pm8250-wifi-usr {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-governor = "user_space";
+		thermal-sensors = <&pm8150_adc_tm ADC_AMUX_THM2_PU2>;
+		wake-capable-sensor;
+		trips {
+			active-config0 {
+				temperature = <52000>;
+				hysteresis = <4000>;
+				type = "passive";
+			};
+		};
+	};
+
+	pm8150l-therm-usr {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-governor = "user_space";
+		thermal-sensors = <&pm8150l_adc_tm ADC_AMUX_THM3_PU2>;
+		wake-capable-sensor;
+		trips {
+			active-config0 {
+				temperature = <50000>;
+				hysteresis = <4000>;
+				type = "passive";
+			};
+		};
+	};
+
+	pm8250-xo-therm-usr {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-governor = "user_space";
+		thermal-sensors = <&pm8150_adc_tm ADC_XO_THERM_PU2>;
+		wake-capable-sensor;
+		trips {
+			active-config0 {
+				temperature = <50000>;
+				hysteresis = <4000>;
+				type = "passive";
+			};
+
+		};
+	};
+
+	pm8150l-skin-step {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-governor = "step_wise";
+		thermal-sensors = <&pm8150l_adc_tm ADC_AMUX_THM2_PU2>;
+		wake-capable-sensor;
+		trips {
+			skin_trip: skin-config0 {
+				temperature = <50000>;
+				hysteresis = <48000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			lcd_cdev {
+				trip = <&skin_trip>;
+				cooling-device = <&mdss_mdp 153 153>;
+			};
+		};
+	};
 };

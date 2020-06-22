@@ -1017,7 +1017,7 @@
 		polling-delay-passive = <0>;
 		polling-delay = <0>;
 		thermal-governor = "user_space";
-		thermal-sensors = <&pm6150l_adc_tm ADC_AMUX_THM2_PU2>;
+		thermal-sensors = <&pm6150l_adc_tm_iio ADC_AMUX_THM2_PU2>;
 		wake-capable-sensor;
 		trips {
 			active-config0 {
@@ -1062,7 +1062,7 @@
 		polling-delay-passive = <0>;
 		polling-delay = <0>;
 		thermal-governor = "user_space";
-		thermal-sensors = <&pm6150l_adc_tm_iio ADC_GPIO4_PU2>;
+		thermal-sensors = <&pm6150l_adc_tm ADC_GPIO4_PU2>;
 		wake-capable-sensor;
 		trips {
 			active-config0 {

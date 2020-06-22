@@ -11,6 +11,7 @@
 #include "dsi-panel-nt35695b-truly-fhd-cmd.dtsi"
 #include "dsi-panel-nt35695b-truly-fhd-video.dtsi"
 #include "dsi-panel-ext-bridge-1080p.dtsi"
+#include "dsi-panel-ext-bridge-4k-video.dtsi"
 #include "dsi-panel-sim-cmd.dtsi"
 #include "dsi-panel-sim-video.dtsi"
 #include "dsi-panel-sim-dsc375-cmd.dtsi"
@@ -177,6 +178,8 @@
 			 <&mdss_dsi0_pll CPHY_PCLK_SRC_0_CLK>,
 			 <&mdss_dsi0_pll SHADOW_BYTECLK_SRC_0_CLK>,
 			 <&mdss_dsi0_pll SHADOW_PCLK_SRC_0_CLK>,
+			 <&mdss_dsi0_pll SHADOW_CPHY_BYTECLK_SRC_0_CLK>,
+			 <&mdss_dsi0_pll SHADOW_CPHY_PCLK_SRC_0_CLK>,
 			 <&mdss_dsi1_pll BYTECLK_MUX_1_CLK>,
 			 <&mdss_dsi1_pll PCLK_MUX_1_CLK>,
 			 <&mdss_dsi1_pll BYTECLK_SRC_1_CLK>,
@@ -184,16 +187,20 @@
 			 <&mdss_dsi1_pll CPHY_BYTECLK_SRC_1_CLK>,
 			 <&mdss_dsi1_pll CPHY_PCLK_SRC_1_CLK>,
 			 <&mdss_dsi1_pll SHADOW_BYTECLK_SRC_1_CLK>,
-			 <&mdss_dsi1_pll SHADOW_PCLK_SRC_1_CLK>;
+			 <&mdss_dsi1_pll SHADOW_PCLK_SRC_1_CLK>,
+			 <&mdss_dsi1_pll SHADOW_CPHY_BYTECLK_SRC_1_CLK>,
+			 <&mdss_dsi1_pll SHADOW_CPHY_PCLK_SRC_1_CLK>;
 
 		clock-names = "mux_byte_clk0", "mux_pixel_clk0",
 				"src_byte_clk0", "src_pixel_clk0",
 				"cphy_byte_clk0", "cphy_pixel_clk0",
 				"shadow_byte_clk0", "shadow_pixel_clk0",
+				"shadow_cphybyte_clk0", "shadow_cphypixel_clk0",
 				"mux_byte_clk1", "mux_pixel_clk1",
 				"src_byte_clk1", "src_pixel_clk1",
 				"cphy_byte_clk1", "cphy_pixel_clk1",
-				"shadow_byte_clk1", "shadow_pixel_clk1";
+				"shadow_byte_clk1", "shadow_pixel_clk1",
+				"shadow_cphybyte_clk1", "shadow_cphypixel_clk1";
 
 		pinctrl-names = "panel_active", "panel_suspend";
 		pinctrl-0 = <&sde_dsi_active &sde_te_active>;
@@ -283,6 +290,18 @@
 			qcom,mdss-dsi-panel-phy-timings = [00 1e 08 07 24 22 08
 				08 05 02 04 00 19 17];
 			qcom,display-topology = <1 0 1>;
+			qcom,default-topology-index = <0>;
+		};
+	};
+};
+
+&dsi_ext_bridge_4k_vid {
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
+	qcom,mdss-dsi-display-timings {
+		timing@0 {
+			qcom,mdss-dsi-panel-phy-timings = [00 3a 0f 0f 2e 2b 0f
+				10 0b 02 04 00 2e 1e];
+			qcom,display-topology = <2 0 2>;
 			qcom,default-topology-index = <0>;
 		};
 	};

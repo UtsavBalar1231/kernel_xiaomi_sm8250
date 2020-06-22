@@ -50,6 +50,24 @@
 			qcom,supply-disable-load = <0>;
 			qcom,supply-post-on-sleep = <0>;
 		};
+
+		qcom,panel-supply-entry@2 {
+			reg = <2>;
+			qcom,supply-name = "lab";
+			qcom,supply-min-voltage = <4600000>;
+			qcom,supply-max-voltage = <6000000>;
+			qcom,supply-enable-load = <363000>;
+			qcom,supply-disable-load = <100>;
+		};
+
+		qcom,panel-supply-entry@3 {
+			reg = <2>;
+			qcom,supply-name = "ibb";
+			qcom,supply-min-voltage = <4600000>;
+			qcom,supply-max-voltage = <6000000>;
+			qcom,supply-enable-load = <363000>;
+			qcom,supply-disable-load = <20>;
+		};
 	};
 
 	dsi_panel_pwr_supply_avdd: dsi_panel_pwr_supply_avdd {
@@ -73,6 +91,24 @@
 			qcom,supply-max-voltage = <6000000>;
 			qcom,supply-enable-load = <100000>;
 			qcom,supply-disable-load = <100>;
+		};
+
+		qcom,panel-supply-entry@2 {
+			reg = <2>;
+			qcom,supply-name = "lab";
+			qcom,supply-min-voltage = <4600000>;
+			qcom,supply-max-voltage = <6000000>;
+			qcom,supply-enable-load = <363000>;
+			qcom,supply-disable-load = <100>;
+		};
+
+		qcom,panel-supply-entry@3 {
+			reg = <2>;
+			qcom,supply-name = "ibb";
+			qcom,supply-min-voltage = <4600000>;
+			qcom,supply-max-voltage = <6000000>;
+			qcom,supply-enable-load = <363000>;
+			qcom,supply-disable-load = <20>;
 		};
 	};
 
@@ -117,6 +153,8 @@
 
 		vddio-supply = <&L1E>;
 		vdd-supply = <&L8A>;
+		lab-supply = <&ab_vreg>;
+		ibb-supply = <&ibb_vreg>;
 
 		qcom,mdp = <&mdss_mdp>;
 		qcom,dsi-default-panel = <&dsi_rm69299_visionox_amoled_video>;
@@ -364,6 +402,12 @@
 				39 01 00 00 00 00 02 5d 00
 				39 01 00 00 00 00 02 5e 14
 				39 01 00 00 00 00 02 5f eb
+				39 01 00 00 00 00 02 ff 24
+				39 01 00 00 00 00 02 fb 01
+				39 01 00 00 00 00 02 14 00
+				39 01 00 00 00 00 02 15 10
+				39 01 00 00 00 00 02 16 0a
+				39 01 00 00 00 00 02 17 30
 				39 01 00 00 00 00 02 ff 26
 				39 01 00 00 00 00 02 fb 01
 				39 01 00 00 00 00 02 60 00
@@ -387,8 +431,7 @@
 			qcom,cmd-to-video-mode-post-switch-commands = [
 				39 00 00 00 00 00 02 ff 10
 				39 00 00 00 00 00 02 fb 01
-				39 00 00 00 00 00 02 bb 03
-				39 01 00 00 00 00 05 be 00 10 00 10
+				39 01 00 00 00 00 02 bb 03
 			];
 			qcom,cmd-to-video-mode-post-switch-commands-state =
 				"dsi_lp_mode";
@@ -439,6 +482,7 @@
 				39 01 00 00 00 00 02 bb 10
 				39 01 00 00 00 00 02 f6 70
 				39 01 00 00 00 00 02 f7 80
+				39 01 00 00 00 00 05 be 00 10 00 10
 				39 01 00 00 00 00 02 35 00
 				39 01 00 00 00 00 02 44 00
 				39 01 00 00 00 00 02 ff 20
@@ -484,13 +528,7 @@
 			qcom,video-to-cmd-mode-post-switch-commands = [
 				39 00 00 00 00 00 02 ff 10
 				39 00 00 00 00 00 02 fb 01
-				39 00 00 00 00 00 02 bb 10
-				39 00 00 00 00 00 02 ff 24
-				39 00 00 00 00 00 02 fb 01
-				39 00 00 00 00 00 02 14 00
-				39 00 00 00 00 00 02 15 10
-				39 00 00 00 00 00 02 16 0a
-				39 01 00 00 00 00 02 17 30
+				39 01 00 00 00 00 02 bb 10
 			];
 			qcom,video-to-cmd-mode-post-switch-commands-state =
 				"dsi_lp_mode";
