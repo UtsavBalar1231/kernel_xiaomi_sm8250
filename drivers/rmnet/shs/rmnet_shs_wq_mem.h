@@ -107,7 +107,7 @@ void rmnet_shs_wq_mem_update_cached_sorted_gold_flows(struct list_head *gold_flo
 void rmnet_shs_wq_mem_update_cached_sorted_ss_flows(struct list_head *ss_flows);
 void rmnet_shs_wq_mem_update_cached_netdevs(void);
 
-void rmnet_shs_wq_mem_init(void);
+int rmnet_shs_wq_mem_init(void);
 
 void rmnet_shs_wq_mem_deinit(void);
 
