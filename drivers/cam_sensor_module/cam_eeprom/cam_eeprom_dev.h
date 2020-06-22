@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 #ifndef _CAM_EEPROM_DEV_H_
 #define _CAM_EEPROM_DEV_H_
@@ -190,6 +190,7 @@ struct cam_eeprom_ctrl_t {
 	uint16_t is_multimodule_mode;
 	struct i2c_settings_array wr_settings;
 	struct eebin_info eebin_info;
+	uint32_t open_cnt;
 };
 
 int32_t cam_eeprom_update_i2c_info(struct cam_eeprom_ctrl_t *e_ctrl,
