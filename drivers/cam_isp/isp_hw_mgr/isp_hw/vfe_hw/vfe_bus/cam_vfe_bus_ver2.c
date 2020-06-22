@@ -143,6 +143,8 @@ struct cam_vfe_bus_ver2_wm_resource_data {
 	uint32_t             ubwc_lossy_threshold_0;
 	uint32_t             ubwc_lossy_threshold_1;
 	uint32_t             ubwc_bandwidth_limit;
+	uint32_t             acquired_width;
+	uint32_t             acquired_height;
 };
 
 struct cam_vfe_bus_ver2_comp_grp_data {
@@ -986,6 +988,8 @@ static int cam_vfe_bus_acquire_wm(
 
 	rsrc_data->width = out_port_info->width;
 	rsrc_data->height = out_port_info->height;
+	rsrc_data->acquired_width = out_port_info->width;
+	rsrc_data->acquired_height = out_port_info->height;
 	rsrc_data->is_dual = is_dual;
 	/* Set WM offset value to default */
 	rsrc_data->offset  = 0;
@@ -3741,6 +3745,42 @@ static int __cam_vfe_bus_process_cmd(void *priv,
 	return cam_vfe_bus_process_cmd(priv, cmd_type, cmd_args, arg_size);
 }
 
+int cam_vfe_bus_dump_wm_data(void *priv, void *cmd_args, uint32_t arg_size)
+{
+	struct cam_vfe_bus_ver2_priv  *bus_priv =
+		(struct cam_vfe_bus_ver2_priv  *) priv;
+	struct cam_isp_hw_event_info  *event_info =
+		(struct cam_isp_hw_event_info *)cmd_args;
+	struct cam_isp_resource_node              *rsrc_node = NULL;
+	struct cam_vfe_bus_ver2_vfe_out_data      *rsrc_data = NULL;
+	struct cam_vfe_bus_ver2_wm_resource_data  *wm_data   = NULL;
+	int                                        i, wm_idx;
+	enum cam_vfe_bus_ver2_vfe_out_type         vfe_out_res_id;
+
+	vfe_out_res_id = cam_vfe_bus_get_out_res_id(event_info->res_id);
+	rsrc_node = &bus_priv->vfe_out[vfe_out_res_id];
+	rsrc_data = rsrc_node->res_priv;
+	for (i = 0; i < rsrc_data->num_wm; i++) {
+		wm_idx = cam_vfe_bus_get_wm_idx(vfe_out_res_id, i);
+		if (wm_idx < 0 || wm_idx >= bus_priv->num_client) {
+			CAM_ERR(CAM_ISP, "Unsupported VFE out %d",
+				vfe_out_res_id);
+			return -EINVAL;
+		}
+		wm_data = bus_priv->bus_client[wm_idx].res_priv;
+		CAM_INFO(CAM_ISP,
+			"VFE:%d WM:%d width:%u height:%u stride:%u x_init:%u en_cfg:%u acquired width:%u height:%u",
+			wm_data->common_data->core_index, wm_idx,
+			wm_data->width,
+			wm_data->height,
+			wm_data->stride, wm_data->h_init,
+			wm_data->en_cfg,
+			wm_data->acquired_width,
+			wm_data->acquired_height);
+	}
+	return 0;
+}
+
 static int cam_vfe_bus_process_cmd(
 	struct cam_isp_resource_node *priv,
 	uint32_t cmd_type, void *cmd_args, uint32_t arg_size)
@@ -3778,6 +3818,9 @@ static int cam_vfe_bus_process_cmd(
 		break;
 	case CAM_ISP_HW_CMD_UBWC_UPDATE:
 		rc = cam_vfe_bus_update_ubwc_config(cmd_args);
+		break;
+	case CAM_ISP_HW_CMD_DUMP_BUS_INFO:
+		rc = cam_vfe_bus_dump_wm_data(priv, cmd_args, arg_size);
 		break;
 	case CAM_ISP_HW_CMD_UBWC_UPDATE_V2:
 		rc = cam_vfe_bus_update_ubwc_config_v2(cmd_args);

@@ -170,6 +170,14 @@ struct cam_vfe_top_dump_data vfe170_dump_data = {
 	},
 };
 
+static struct cam_vfe_rdi_overflow_status vfe170_rdi_irq_status = {
+	.rdi0_overflow_mask = 0x8,
+	.rdi1_overflow_mask = 0x10,
+	.rdi2_overflow_mask = 0x18,
+	.rdi3_overflow_mask = 0x20,
+	.rdi_overflow_mask  = 0x3c,
+};
+
 static struct cam_vfe_top_ver2_hw_info vfe170_top_hw_info = {
 	.common_reg = &vfe170_top_common_reg,
 	.camif_hw_info = {
@@ -183,8 +191,9 @@ static struct cam_vfe_top_ver2_hw_info vfe170_top_hw_info = {
 		.reg_data       = NULL,
 		},
 	.rdi_hw_info = {
-		.common_reg = &vfe170_top_common_reg,
-		.rdi_reg    = &vfe170_rdi_reg,
+		.common_reg      = &vfe170_top_common_reg,
+		.rdi_reg         = &vfe170_rdi_reg,
+		.rdi_irq_status  = &vfe170_rdi_irq_status,
 		.reg_data = {
 			&vfe_170_rdi_0_data,
 			&vfe_170_rdi_1_data,

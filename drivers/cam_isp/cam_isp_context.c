@@ -1280,7 +1280,9 @@ static int __cam_isp_ctx_notify_sof_in_activated_state(
 		}
 
 		list_for_each_entry(req, &ctx->active_req_list, list) {
-			if (req->request_id > ctx_isp->reported_req_id) {
+			req_isp = (struct cam_isp_ctx_req *) req->req_priv;
+			if ((!req_isp->bubble_detected) &&
+				(req->request_id > ctx_isp->reported_req_id)) {
 				request_id = req->request_id;
 				ctx_isp->reported_req_id = request_id;
 				__cam_isp_ctx_update_event_record(ctx_isp,
@@ -1505,7 +1507,8 @@ static int __cam_isp_ctx_epoch_in_applied(struct cam_isp_context *ctx_isp,
 	CAM_DBG(CAM_REQ, "move request %lld to active list(cnt = %d), ctx %u",
 		req->request_id, ctx_isp->active_req_cnt, ctx->ctx_id);
 
-	if (req->request_id > ctx_isp->reported_req_id) {
+	if ((req->request_id > ctx_isp->reported_req_id)
+		&& !req_isp->bubble_report) {
 		request_id = req->request_id;
 		ctx_isp->reported_req_id = request_id;
 	}

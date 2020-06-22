@@ -526,7 +526,6 @@ static int cam_ife_csid_global_reset(struct cam_ife_csid_hw *csid_hw)
 			csid_hw->hw_intf->hw_idx, val);
 	csid_hw->error_irq_count = 0;
 	csid_hw->prev_boot_timestamp = 0;
-	csid_hw->epd_supported = 0;
 
 end:
 	return rc;
@@ -4714,7 +4713,7 @@ handle_fatal_error:
 		CAM_INFO_RATE_LIMIT(CAM_ISP,
 			"CSID:%d short pkt VC :%d DT:%d LC:%d",
 			csid_hw->hw_intf->hw_idx,
-			(val >> 22), ((val >> 16) & 0x1F), (val & 0xFFFF));
+			(val >> 22), ((val >> 16) & 0x3F), (val & 0xFFFF));
 		val = cam_io_r_mb(soc_info->reg_map[0].mem_base +
 			csi2_reg->csid_csi2_rx_captured_short_pkt_1_addr);
 		CAM_INFO_RATE_LIMIT(CAM_ISP, "CSID:%d short packet ECC :%d",
@@ -4731,7 +4730,7 @@ handle_fatal_error:
 		CAM_INFO_RATE_LIMIT(CAM_ISP,
 			"CSID:%d cphy packet VC :%d DT:%d WC:%d",
 			csid_hw->hw_intf->hw_idx,
-			(val >> 22), ((val >> 16) & 0x1F), (val & 0xFFFF));
+			(val >> 22), ((val >> 16) & 0x3F), (val & 0xFFFF));
 	}
 
 	/*read the IPP errors */

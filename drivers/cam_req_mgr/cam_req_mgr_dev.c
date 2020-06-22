@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/module.h>
@@ -116,6 +116,7 @@ static int cam_req_mgr_open(struct file *filep)
 	spin_unlock_bh(&g_dev.cam_eventq_lock);
 
 	g_dev.open_cnt++;
+	CAM_DBG(CAM_CRM, " CRM open cnt %d", g_dev.open_cnt);
 	rc = cam_mem_mgr_init();
 	if (rc) {
 		g_dev.open_cnt--;
@@ -157,11 +158,19 @@ static int cam_req_mgr_close(struct file *filep)
 
 	CAM_WARN(CAM_CRM,
 		"release invoked associated userspace process has died");
-	mutex_lock(&g_dev.cam_lock);
 
+	mutex_lock(&g_dev.cam_lock);
 	if (g_dev.open_cnt <= 0) {
 		mutex_unlock(&g_dev.cam_lock);
 		return -EINVAL;
+	}
+
+	g_dev.open_cnt--;
+	CAM_DBG(CAM_CRM, "CRM open_cnt %d", g_dev.open_cnt);
+
+	if (g_dev.open_cnt > 0) {
+		mutex_unlock(&g_dev.cam_lock);
+		return 0;
 	}
 
 	cam_req_mgr_handle_core_shutdown();
@@ -176,7 +185,6 @@ static int cam_req_mgr_close(struct file *filep)
 		}
 	}
 
-	g_dev.open_cnt--;
 	v4l2_fh_release(filep);
 
 	spin_lock_bh(&g_dev.cam_eventq_lock);
