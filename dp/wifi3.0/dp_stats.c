@@ -4681,6 +4681,8 @@ void dp_print_soc_cfg_params(struct dp_soc *soc)
 		       soc_cfg_ctx->peer_flow_ctrl_enabled);
 	DP_PRINT_STATS("napi enabled: %u ",
 		       soc_cfg_ctx->napi_enabled);
+	DP_PRINT_STATS("NAN Tcp Udp checksum offload: %u ",
+		       soc_cfg_ctx->nan_tcp_udp_checksumoffload);
 	DP_PRINT_STATS("Tcp Udp checksum offload: %u ",
 		       soc_cfg_ctx->tcp_udp_checksumoffload);
 	DP_PRINT_STATS("Defrag timeout check: %u ",
@@ -4884,7 +4886,8 @@ dp_print_ring_stats(struct dp_pdev *pdev)
 	int mac_id;
 	int lmac_id;
 
-	if (hif_pm_runtime_get_sync(pdev->soc->hif_handle))
+	if (hif_pm_runtime_get_sync(pdev->soc->hif_handle,
+				    RTPM_ID_DP_PRINT_RING_STATS))
 		return;
 
 	dp_print_ring_stat_from_hal(pdev->soc,
@@ -4955,7 +4958,8 @@ dp_print_ring_stats(struct dp_pdev *pdev)
 					    [lmac_id],
 					    RXDMA_DST);
 	}
-	hif_pm_runtime_put(pdev->soc->hif_handle);
+	hif_pm_runtime_put(pdev->soc->hif_handle,
+			   RTPM_ID_DP_PRINT_RING_STATS);
 }
 
 /**

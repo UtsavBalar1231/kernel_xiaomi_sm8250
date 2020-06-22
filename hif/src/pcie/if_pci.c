@@ -933,48 +933,58 @@ static const char *hif_pm_runtime_state_to_string(uint32_t state)
 static void hif_pci_runtime_pm_warn(struct hif_pci_softc *sc, const char *msg)
 {
 	struct hif_pm_runtime_lock *ctx;
+	int i;
 
-	HIF_DBG("%s: usage_count: %d, pm_state: %s, prevent_suspend_cnt: %d",
-		msg, atomic_read(&sc->dev->power.usage_count),
-		hif_pm_runtime_state_to_string(
+	hif_nofl_debug("%s: usage_count: %d, pm_state: %s, prevent_suspend_cnt: %d",
+		       msg, atomic_read(&sc->dev->power.usage_count),
+		       hif_pm_runtime_state_to_string(
 				atomic_read(&sc->pm_state)),
-		sc->prevent_suspend_cnt);
+		       sc->prevent_suspend_cnt);
 
-	HIF_DBG("runtime_status: %d, runtime_error: %d, disable_depth: %d autosuspend_delay: %d",
-		sc->dev->power.runtime_status,
-		sc->dev->power.runtime_error,
-		sc->dev->power.disable_depth,
-		sc->dev->power.autosuspend_delay);
+	hif_nofl_debug("runtime_status: %d, runtime_error: %d, disable_depth: %d autosuspend_delay: %d",
+		       sc->dev->power.runtime_status,
+		       sc->dev->power.runtime_error,
+		       sc->dev->power.disable_depth,
+		       sc->dev->power.autosuspend_delay);
 
-	HIF_DBG("runtime_get: %u, runtime_put: %u, request_resume: %u",
-		qdf_atomic_read(&sc->pm_stats.runtime_get),
-		qdf_atomic_read(&sc->pm_stats.runtime_put),
-		sc->pm_stats.request_resume);
+	hif_nofl_debug("runtime_get: %u, runtime_put: %u, request_resume: %u",
+		       qdf_atomic_read(&sc->pm_stats.runtime_get),
+		       qdf_atomic_read(&sc->pm_stats.runtime_put),
+		       sc->pm_stats.request_resume);
 
-	HIF_DBG("runtime_get_caller_index: %u, runtime_put_caller_index: %u",
-		qdf_atomic_read(&sc->pm_stats.runtime_get_caller_index),
-		qdf_atomic_read(&sc->pm_stats.runtime_put_caller_index));
+	hif_nofl_debug("get     put     get-timestamp put-timestamp :DBGID_NAME");
+	for (i = 0; i < RTPM_ID_MAX; i++) {
+		hif_nofl_debug("%-10d %-10d  0x%-10llx  0x%-10llx :%-30s",
+			       qdf_atomic_read(
+				       &sc->pm_stats.runtime_get_dbgid[i]),
+			       qdf_atomic_read(
+				       &sc->pm_stats.runtime_put_dbgid[i]),
+			       sc->pm_stats.runtime_get_timestamp_dbgid[i],
+			       sc->pm_stats.runtime_put_timestamp_dbgid[i],
+			       rtpm_string_from_dbgid(i));
+	}
 
-	HIF_DBG("allow_suspend: %u, prevent_suspend: %u",
-		qdf_atomic_read(&sc->pm_stats.allow_suspend),
-		qdf_atomic_read(&sc->pm_stats.prevent_suspend));
+	hif_nofl_debug("allow_suspend: %u, prevent_suspend: %u",
+		       qdf_atomic_read(&sc->pm_stats.allow_suspend),
+		       qdf_atomic_read(&sc->pm_stats.prevent_suspend));
 
-	HIF_DBG("prevent_suspend_timeout: %u, allow_suspend_timeout: %u",
-		sc->pm_stats.prevent_suspend_timeout,
-		sc->pm_stats.allow_suspend_timeout);
+	hif_nofl_debug("prevent_suspend_timeout: %u, allow_suspend_timeout: %u",
+		       sc->pm_stats.prevent_suspend_timeout,
+		       sc->pm_stats.allow_suspend_timeout);
 
-	HIF_DBG("Suspended: %u, resumed: %u count",
-		sc->pm_stats.suspended,
-		sc->pm_stats.resumed);
+	hif_nofl_debug("Suspended: %u, resumed: %u count",
+		       sc->pm_stats.suspended,
+		       sc->pm_stats.resumed);
 
-	HIF_DBG("suspend_err: %u, runtime_get_err: %u",
-		sc->pm_stats.suspend_err,
-		sc->pm_stats.runtime_get_err);
+	hif_nofl_debug("suspend_err: %u, runtime_get_err: %u",
+		       sc->pm_stats.suspend_err,
+		       sc->pm_stats.runtime_get_err);
 
-	HIF_DBG("Active Wakeup Sources preventing Runtime Suspend: ");
+	hif_nofl_debug("Active Wakeup Sources preventing Runtime Suspend: ");
 
 	list_for_each_entry(ctx, &sc->prevent_suspend_list, list) {
-		HIF_DBG("source %s; timeout %d ms", ctx->name, ctx->timeout);
+		hif_nofl_debug("source %s; timeout %d ms",
+			       ctx->name, ctx->timeout);
 	}
 
 	if (qdf_is_fw_down()) {
@@ -1004,6 +1014,7 @@ static int hif_pci_pm_runtime_debugfs_show(struct seq_file *s, void *data)
 	int pm_state = atomic_read(&sc->pm_state);
 	unsigned long timer_expires;
 	struct hif_pm_runtime_lock *ctx;
+	int i;
 
 	seq_printf(s, "%30s: %s\n", "Runtime PM state",
 		   autopm_state[pm_state]);
@@ -1036,14 +1047,7 @@ static int hif_pci_pm_runtime_debugfs_show(struct seq_file *s, void *data)
 	HIF_PCI_RUNTIME_PM_STATS(s, sc, suspended);
 	HIF_PCI_RUNTIME_PM_STATS(s, sc, suspend_err);
 	HIF_PCI_RUNTIME_PM_STATS(s, sc, resumed);
-	seq_printf(s, "%30s: %u\n", "runtime_get",
-		   qdf_atomic_read(&sc->pm_stats.runtime_get));
-	seq_printf(s, "%30s: %u\n", "runtime_put",
-		   qdf_atomic_read(&sc->pm_stats.runtime_put));
-	seq_printf(s, "%30s: %u\n", "runtime_get_caller_index",
-		   qdf_atomic_read(&sc->pm_stats.runtime_get_caller_index));
-	seq_printf(s, "%30s: %u\n", "runtime_put_caller_index",
-		   qdf_atomic_read(&sc->pm_stats.runtime_put_caller_index));
+
 	HIF_PCI_RUNTIME_PM_STATS(s, sc, request_resume);
 	seq_printf(s, "%30s: %u\n", "prevent_suspend",
 		   qdf_atomic_read(&sc->pm_stats.prevent_suspend));
@@ -1053,6 +1057,23 @@ static int hif_pci_pm_runtime_debugfs_show(struct seq_file *s, void *data)
 	HIF_PCI_RUNTIME_PM_STATS(s, sc, prevent_suspend_timeout);
 	HIF_PCI_RUNTIME_PM_STATS(s, sc, allow_suspend_timeout);
 	HIF_PCI_RUNTIME_PM_STATS(s, sc, runtime_get_err);
+
+	seq_printf(s, "%30s: %u\n", "runtime_get",
+		   qdf_atomic_read(&sc->pm_stats.runtime_get));
+	seq_printf(s, "%30s: %u\n", "runtime_put",
+		   qdf_atomic_read(&sc->pm_stats.runtime_put));
+	seq_printf(s, "get     put     get-timestamp put-timestamp :DBGID_NAME\n");
+	for (i = 0; i < RTPM_ID_MAX; i++) {
+		seq_printf(s, "%-10d ",
+			   qdf_atomic_read(&sc->pm_stats.runtime_get_dbgid[i]));
+		seq_printf(s, "%-10d ",
+			   qdf_atomic_read(&sc->pm_stats.runtime_put_dbgid[i]));
+		seq_printf(s, "0x%-10llx ",
+			   sc->pm_stats.runtime_get_timestamp_dbgid[i]);
+		seq_printf(s, "0x%-10llx ",
+			   sc->pm_stats.runtime_put_timestamp_dbgid[i]);
+		seq_printf(s, ":%-30s\n", rtpm_string_from_dbgid(i));
+	}
 
 	timer_expires = sc->runtime_timer_expires;
 	if (timer_expires > 0) {
@@ -1217,17 +1238,20 @@ static void hif_pm_runtime_stop(struct hif_pci_softc *sc)
  */
 static void hif_pm_runtime_open(struct hif_pci_softc *sc)
 {
+	int i;
 	spin_lock_init(&sc->runtime_lock);
 
 	qdf_atomic_init(&sc->pm_state);
 	qdf_runtime_lock_init(&sc->prevent_linkdown_lock);
 	qdf_atomic_set(&sc->pm_state, HIF_PM_RUNTIME_STATE_NONE);
-	qdf_atomic_set(&sc->pm_stats.runtime_get, 0);
-	qdf_atomic_set(&sc->pm_stats.runtime_put, 0);
-	qdf_atomic_set(&sc->pm_stats.runtime_get_caller_index, 0);
-	qdf_atomic_set(&sc->pm_stats.runtime_put_caller_index, 0);
-	qdf_atomic_set(&sc->pm_stats.allow_suspend, 0);
-	qdf_atomic_set(&sc->pm_stats.prevent_suspend, 0);
+	qdf_atomic_init(&sc->pm_stats.runtime_get);
+	qdf_atomic_init(&sc->pm_stats.runtime_put);
+	qdf_atomic_init(&sc->pm_stats.allow_suspend);
+	qdf_atomic_init(&sc->pm_stats.prevent_suspend);
+	for (i = 0; i < RTPM_ID_MAX; i++) {
+		qdf_atomic_init(&sc->pm_stats.runtime_get_dbgid[i]);
+		qdf_atomic_init(&sc->pm_stats.runtime_put_dbgid[i]);
+	}
 	INIT_LIST_HEAD(&sc->prevent_suspend_list);
 }
 
@@ -3901,8 +3925,10 @@ QDF_STATUS hif_pci_enable_bus(struct hif_softc *ol_sc,
 		HIF_ERROR("%s: hif_ctx is NULL", __func__);
 		return QDF_STATUS_E_NOMEM;
 	}
-
-	HIF_TRACE("%s: con_mode = 0x%x, device_id = 0x%x",
+	/* Following print is used by various tools to identify
+	 * WLAN SOC (e.g. crash dump analysis and reporting tool).
+	 */
+	HIF_TRACE("%s: con_mode = 0x%x, WLAN_SOC_device_id = 0x%x",
 		  __func__, hif_get_conparam(ol_sc), id->device);
 
 	sc->pdev = pdev;
@@ -4049,18 +4075,67 @@ void hif_pci_irq_disable(struct hif_softc *scn, int ce_id)
 
 #ifdef FEATURE_RUNTIME_PM
 /**
+ * hif_pm_stats_runtime_get_record() - record runtime get statistics
+ * @sc: hif pci context
+ * @rtpm_dbgid: debug id to trace who use it
+ *
+ *
+ * Return: void
+ */
+static void hif_pm_stats_runtime_get_record(struct hif_pci_softc *sc,
+					    wlan_rtpm_dbgid rtpm_dbgid)
+{
+	if (rtpm_dbgid >= RTPM_ID_MAX) {
+		QDF_BUG(0);
+		return;
+	}
+	qdf_atomic_inc(&sc->pm_stats.runtime_get);
+	qdf_atomic_inc(&sc->pm_stats.runtime_get_dbgid[rtpm_dbgid]);
+	sc->pm_stats.runtime_get_timestamp_dbgid[rtpm_dbgid] =
+		qdf_get_log_timestamp();
+}
+
+/**
+ * hif_pm_stats_runtime_put_record() - record runtime put statistics
+ * @sc: hif pci context
+ * @rtpm_dbgid: dbg_id to trace who use it
+ *
+ *
+ * Return: void
+ */
+static void hif_pm_stats_runtime_put_record(struct hif_pci_softc *sc,
+					    wlan_rtpm_dbgid rtpm_dbgid)
+{
+	if (rtpm_dbgid >= RTPM_ID_MAX) {
+		QDF_BUG(0);
+		return;
+	}
+
+	if (atomic_read(&sc->dev->power.usage_count) <= 0) {
+		QDF_BUG(0);
+		return;
+	}
+
+	qdf_atomic_inc(&sc->pm_stats.runtime_put);
+	qdf_atomic_inc(&sc->pm_stats.runtime_put_dbgid[rtpm_dbgid]);
+	sc->pm_stats.runtime_put_timestamp_dbgid[rtpm_dbgid] =
+		qdf_get_log_timestamp();
+}
+
+/**
  * hif_pm_runtime_get_sync() - do a get operation with sync resume
+ * @hif_ctx: pointer of HIF context
+ * @rtpm_dbgid: dbgid to trace who use it
  *
  * A get operation will prevent a runtime suspend until a corresponding
  * put is done. Unlike hif_pm_runtime_get(), this API will do a sync
  * resume instead of requesting a resume if it is runtime PM suspended
  * so it can only be called in non-atomic context.
  *
- * @hif_ctx: pointer of HIF context
- *
  * Return: 0 if it is runtime PM resumed otherwise an error code.
  */
-int hif_pm_runtime_get_sync(struct hif_opaque_softc *hif_ctx)
+int hif_pm_runtime_get_sync(struct hif_opaque_softc *hif_ctx,
+			    wlan_rtpm_dbgid rtpm_dbgid)
 {
 	struct hif_pci_softc *sc = HIF_GET_PCI_SOFTC(hif_ctx);
 	int pm_state;
@@ -4078,7 +4153,7 @@ int hif_pm_runtime_get_sync(struct hif_opaque_softc *hif_ctx)
 		hif_info_high("Runtime PM resume is requested by %ps",
 			      (void *)_RET_IP_);
 
-	HIF_PM_STATS_RUNTIME_GET_RECORD(sc);
+	hif_pm_stats_runtime_get_record(sc, rtpm_dbgid);
 	ret = pm_runtime_get_sync(sc->dev);
 
 	/* Get can return 1 if the device is already active, just return
@@ -4091,7 +4166,7 @@ int hif_pm_runtime_get_sync(struct hif_opaque_softc *hif_ctx)
 		sc->pm_stats.runtime_get_err++;
 		hif_err("Runtime PM Get Sync error in pm_state: %d, ret: %d",
 			qdf_atomic_read(&sc->pm_state), ret);
-		hif_pm_runtime_put(hif_ctx);
+		hif_pm_runtime_put(hif_ctx, rtpm_dbgid);
 	}
 
 	return ret;
@@ -4099,15 +4174,16 @@ int hif_pm_runtime_get_sync(struct hif_opaque_softc *hif_ctx)
 
 /**
  * hif_pm_runtime_put_sync_suspend() - do a put operation with sync suspend
+ * @hif_ctx: pointer of HIF context
+ * @rtpm_dbgid: dbgid to trace who use it
  *
  * This API will do a runtime put operation followed by a sync suspend if usage
  * count is 0 so it can only be called in non-atomic context.
  *
- * @hif_ctx: pointer of HIF context
- *
  * Return: 0 for success otherwise an error code
  */
-int hif_pm_runtime_put_sync_suspend(struct hif_opaque_softc *hif_ctx)
+int hif_pm_runtime_put_sync_suspend(struct hif_opaque_softc *hif_ctx,
+				    wlan_rtpm_dbgid rtpm_dbgid)
 {
 	struct hif_pci_softc *sc = HIF_GET_PCI_SOFTC(hif_ctx);
 	int usage_count, pm_state;
@@ -4133,7 +4209,7 @@ int hif_pm_runtime_put_sync_suspend(struct hif_opaque_softc *hif_ctx)
 		return -EINVAL;
 	}
 
-	HIF_PM_STATS_RUNTIME_PUT_RECORD(sc);
+	hif_pm_stats_runtime_put_record(sc, rtpm_dbgid);
 	return pm_runtime_put_sync_suspend(sc->dev);
 }
 
@@ -4173,7 +4249,8 @@ void hif_pm_runtime_mark_last_busy(struct hif_opaque_softc *hif_ctx)
 	return pm_runtime_mark_last_busy(sc->dev);
 }
 
-void hif_pm_runtime_get_noresume(struct hif_opaque_softc *hif_ctx)
+void hif_pm_runtime_get_noresume(struct hif_opaque_softc *hif_ctx,
+				 wlan_rtpm_dbgid rtpm_dbgid)
 {
 	struct hif_pci_softc *sc = HIF_GET_PCI_SOFTC(hif_ctx);
 
@@ -4183,12 +4260,14 @@ void hif_pm_runtime_get_noresume(struct hif_opaque_softc *hif_ctx)
 	if (!hif_pci_pm_runtime_enabled(sc))
 		return;
 
-	HIF_PM_STATS_RUNTIME_GET_RECORD(sc);
+	hif_pm_stats_runtime_get_record(sc, rtpm_dbgid);
 	pm_runtime_get_noresume(sc->dev);
 }
 
 /**
  * hif_pm_runtime_get() - do a get opperation on the device
+ * @hif_ctx: pointer of HIF context
+ * @rtpm_dbgid: dbgid to trace who use it
  *
  * A get opperation will prevent a runtime suspend until a
  * corresponding put is done.  This api should be used when sending
@@ -4200,7 +4279,8 @@ void hif_pm_runtime_get_noresume(struct hif_opaque_softc *hif_ctx)
  * return: success if the bus is up and a get has been issued
  *   otherwise an error code.
  */
-int hif_pm_runtime_get(struct hif_opaque_softc *hif_ctx)
+int hif_pm_runtime_get(struct hif_opaque_softc *hif_ctx,
+		       wlan_rtpm_dbgid rtpm_dbgid)
 {
 	struct hif_softc *scn = HIF_GET_SOFTC(hif_ctx);
 	struct hif_pci_softc *sc = HIF_GET_PCI_SOFTC(hif_ctx);
@@ -4219,7 +4299,7 @@ int hif_pm_runtime_get(struct hif_opaque_softc *hif_ctx)
 
 	if (pm_state  == HIF_PM_RUNTIME_STATE_ON ||
 			pm_state == HIF_PM_RUNTIME_STATE_NONE) {
-		HIF_PM_STATS_RUNTIME_GET_RECORD(sc);
+		hif_pm_stats_runtime_get_record(sc, rtpm_dbgid);
 		ret = __hif_pm_runtime_get(sc->dev);
 
 		/* Get can return 1 if the device is already active, just return
@@ -4229,7 +4309,7 @@ int hif_pm_runtime_get(struct hif_opaque_softc *hif_ctx)
 			ret = 0;
 
 		if (ret)
-			hif_pm_runtime_put(hif_ctx);
+			hif_pm_runtime_put(hif_ctx, rtpm_dbgid);
 
 		if (ret && ret != -EINPROGRESS) {
 			sc->pm_stats.runtime_get_err++;
@@ -4258,6 +4338,8 @@ int hif_pm_runtime_get(struct hif_opaque_softc *hif_ctx)
 
 /**
  * hif_pm_runtime_put() - do a put operation on the device
+ * @hif_ctx: pointer of HIF context
+ * @rtpm_dbgid: dbgid to trace who use it
  *
  * A put operation will allow a runtime suspend after a corresponding
  * get was done.  This api should be used when sending data.
@@ -4267,7 +4349,8 @@ int hif_pm_runtime_get(struct hif_opaque_softc *hif_ctx)
  *
  * return: QDF_STATUS_SUCCESS if the put is performed
  */
-int hif_pm_runtime_put(struct hif_opaque_softc *hif_ctx)
+int hif_pm_runtime_put(struct hif_opaque_softc *hif_ctx,
+		       wlan_rtpm_dbgid rtpm_dbgid)
 {
 	struct hif_softc *scn = HIF_GET_SOFTC(hif_ctx);
 	struct hif_pci_softc *sc = HIF_GET_PCI_SOFTC(hif_ctx);
@@ -4300,7 +4383,7 @@ int hif_pm_runtime_put(struct hif_opaque_softc *hif_ctx)
 		return -EINVAL;
 	}
 
-	HIF_PM_STATS_RUNTIME_PUT_RECORD(sc);
+	hif_pm_stats_runtime_put_record(sc, rtpm_dbgid);
 
 	hif_pm_runtime_mark_last_busy(hif_ctx);
 	hif_pm_runtime_put_auto(sc->dev);
@@ -4310,14 +4393,15 @@ int hif_pm_runtime_put(struct hif_opaque_softc *hif_ctx)
 
 /**
  * hif_pm_runtime_put_noidle() - do a put operation with no idle
+ * @hif_ctx: pointer of HIF context
+ * @rtpm_dbgid: dbgid to trace who use it
  *
  * This API will do a runtime put no idle operation
  *
- * @hif_ctx: pointer of HIF context
- *
  * Return: 0 for success otherwise an error code
  */
-int hif_pm_runtime_put_noidle(struct hif_opaque_softc *hif_ctx)
+int hif_pm_runtime_put_noidle(struct hif_opaque_softc *hif_ctx,
+			      wlan_rtpm_dbgid rtpm_dbgid)
 {
 	struct hif_pci_softc *sc = HIF_GET_PCI_SOFTC(hif_ctx);
 	int usage_count, pm_state;
@@ -4343,7 +4427,7 @@ int hif_pm_runtime_put_noidle(struct hif_opaque_softc *hif_ctx)
 		return -EINVAL;
 	}
 
-	HIF_PM_STATS_RUNTIME_PUT_RECORD(sc);
+	hif_pm_stats_runtime_put_record(sc, rtpm_dbgid);
 	pm_runtime_put_noidle(sc->dev);
 
 	return 0;
