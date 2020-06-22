@@ -11,10 +11,10 @@
 			reg = <0x0 0xa0000000 0x0 0x100000>;
 		};
 
-		pimem_removed_region: pimem_removed_region@a0e00000 {
+		pimem_removed_region: pimem_removed_region@a0100000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0x0 0xa0e00000 0x0 0x1100000>;
+			reg = <0x0 0xa0100000 0x0 0x1e00000>;
 		};
 
 		qseecom_mem: qseecom_region {
