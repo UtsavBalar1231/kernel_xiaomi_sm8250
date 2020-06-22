@@ -361,21 +361,14 @@ exit:
 static int cs35l41_fast_switch_en_put(struct snd_kcontrol *kcontrol,
 				      struct snd_ctl_elem_value *ucontrol)
 {
-	int			ret = 0;
 
 	struct snd_soc_component *component = snd_soc_kcontrol_component(kcontrol);
 	struct cs35l41_private *cs35l41 = snd_soc_component_get_drvdata(component);
 
-	if (!cs35l41->fast_switch_en && ucontrol->value.integer.value[0])
-		/*
-		 * Rising on fast switch enable
-		 * Perform fast use case switching
-		 */
-		ret = cs35l41_do_fast_switch(cs35l41);
 
 	cs35l41->fast_switch_en = ucontrol->value.integer.value[0];
 
-	return ret;
+	return 0;
 }
 
 static int cs35l41_fast_switch_file_put(struct snd_kcontrol *kcontrol,
@@ -385,12 +378,20 @@ static int cs35l41_fast_switch_file_put(struct snd_kcontrol *kcontrol,
 	struct cs35l41_private *cs35l41 = snd_soc_component_get_drvdata(component);
 	struct soc_enum		*soc_enum;
 	unsigned int		i = ucontrol->value.enumerated.item[0];
+	int			ret = 0;
 
 	soc_enum = (struct soc_enum *)kcontrol->private_value;
 
 	if (i >= soc_enum->items) {
 		dev_err(cs35l41->dev, "Invalid mixer input (%u)\n", i);
 		return -EINVAL;
+	}
+	if ((i != cs35l41->fast_switch_file_idx) && cs35l41->fast_switch_en) {
+		cs35l41->fast_switch_file_idx = i;
+		ret = cs35l41_do_fast_switch(cs35l41);
+	} else {
+		dev_info(cs35l41->dev, "do not need switch to delta (%u),origin delta %d, fast_switch_en %d\n",
+			i, cs35l41->fast_switch_file_idx, cs35l41->fast_switch_en);
 	}
 
 	cs35l41->fast_switch_file_idx = i;
