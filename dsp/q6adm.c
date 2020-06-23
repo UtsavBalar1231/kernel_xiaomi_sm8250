@@ -3214,7 +3214,8 @@ int adm_open(int port_id, int path, int rate, int channel_mode, int topology,
 
 	if ((topology == VPM_TX_VOICE_SMECNS_V2_COPP_TOPOLOGY) ||
 	    (topology == VPM_TX_VOICE_FLUENCE_SM_COPP_TOPOLOGY) ||
-	    (topology == ADM_TOPOLOGY_ID_AUDIO_RX_FVSAM)) {
+	    (topology == ADM_TOPOLOGY_ID_AUDIO_RX_FVSAM) ||
+	    (topology == ADM_TOPOLOGY_ID_AUDIO_RX_MISE)) {
 		pr_debug("%s: set channel_mode as 1 for topology=%d\n", __func__, topology);
 		channel_mode = 1;
 	}
