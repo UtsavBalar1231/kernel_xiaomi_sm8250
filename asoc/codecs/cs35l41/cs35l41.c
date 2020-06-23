@@ -2203,6 +2203,24 @@ static int cs35l41_dsp_init(struct cs35l41_private *cs35l41)
 	return ret;
 }
 
+#if defined(CONFIG_TARGET_PRODUCT_APOLLO) || defined(CONFIG_TARGET_PRODUCT_CAS)
+static int cs35l41_96k_sample_rate_init(struct cs35l41_private *cs35l41)
+{
+	int i;
+	unsigned int rate = 96000;
+
+	// Initialize clock, sample rate, ASP format etc. for ultrasonic
+	for (i = 0; i < ARRAY_SIZE(cs35l41_fs_rates); i++) {
+		if (rate == cs35l41_fs_rates[i].rate)
+			break;
+	}
+	regmap_update_bits(cs35l41->regmap, CS35L41_GLOBAL_CLK_CTRL,
+			CS35L41_GLOBAL_FS_MASK,
+			cs35l41_fs_rates[i].fs_cfg << CS35L41_GLOBAL_FS_SHIFT);
+
+	return 0;
+}
+#endif
 int cs35l41_probe(struct cs35l41_private *cs35l41,
 				struct cs35l41_platform_data *pdata)
 {
@@ -2385,6 +2403,10 @@ int cs35l41_probe(struct cs35l41_private *cs35l41,
 	//init brownout parameter
 	ret = regmap_update_bits(cs35l41->regmap, CS35L41_PWR_CTRL3, 0x1000, 0x1000);
 	ret = regmap_write(cs35l41->regmap, CS35L41_VPBR_CFG, 0x0200530E);
+
+	#if defined(CONFIG_TARGET_PRODUCT_APOLLO) || defined(CONFIG_TARGET_PRODUCT_CAS)
+	cs35l41_96k_sample_rate_init(cs35l41);
+	#endif
 
 	dev_info(cs35l41->dev, "Cirrus Logic CS35L41 (%x), Revision: %02X\n",
 			regid, reg_revid);
