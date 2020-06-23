@@ -2137,8 +2137,6 @@ handle_irq:
 			dev_err(swrm->dev,
 				"%s: SWR read FIFO underflow fifo status 0x%x\n",
 				__func__, value);
-			swr_master_write(swrm, SWRM_COMP_SW_RESET, 0x01);
-			swrm_master_init(swrm);
 			break;
 		case SWRM_INTERRUPT_STATUS_WR_CMD_FIFO_OVERFLOW:
 			value = swr_master_read(swrm, SWRM_CMD_FIFO_STATUS);
@@ -2155,6 +2153,7 @@ handle_irq:
 			"%s: SWR CMD error, fifo status 0x%x, flushing fifo\n",
 					__func__, value);
 			swr_master_write(swrm, SWRM_CMD_FIFO_CMD, 0x1);
+			swrm_enable_slave_irq(swrm);
 			break;
 		case SWRM_INTERRUPT_STATUS_DOUT_PORT_COLLISION:
 			dev_err_ratelimited(swrm->dev,
