@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/delay.h>
@@ -623,6 +624,7 @@ int cam_vfe_process_cmd(void *hw_priv, uint32_t cmd_type,
 	case CAM_ISP_HW_CMD_UBWC_UPDATE_V2:
 	case CAM_ISP_HW_CMD_WM_CONFIG_UPDATE:
 	case CAM_ISP_HW_CMD_DUMP_BUS_INFO:
+	case CAM_ISP_HW_CMD_IS_CONSUMED_ADDR_SUPPORT:
 		rc = core_info->vfe_bus->hw_ops.process_cmd(
 			core_info->vfe_bus->bus_priv, cmd_type, cmd_args,
 			arg_size);

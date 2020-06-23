@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/slab.h>
@@ -1290,7 +1291,7 @@ static int cam_vfe_camif_ver3_handle_irq_top_half(uint32_t evt_id,
 	}
 
 	cam_isp_hw_get_timestamp(&evt_payload->ts);
-	evt_payload->th_reg_val = 0;
+	evt_payload->reg_val = 0;
 
 	for (i = 0; i < th_payload->num_registers; i++)
 		evt_payload->irq_reg_val[i] = th_payload->evt_status_arr[i];
@@ -1300,7 +1301,7 @@ static int cam_vfe_camif_ver3_handle_irq_top_half(uint32_t evt_id,
 		& camif_priv->reg_data->epoch0_irq_mask) {
 		if ((camif_priv->common_reg->custom_frame_idx) &&
 			(camif_priv->cam_common_cfg.input_mux_sel_pp & 0x3))
-			evt_payload->th_reg_val = cam_io_r_mb(
+			evt_payload->reg_val = cam_io_r_mb(
 			camif_priv->mem_base +
 			camif_priv->common_reg->custom_frame_idx);
 	}
@@ -1368,7 +1369,7 @@ static int cam_vfe_camif_ver3_handle_irq_bottom_half(void *handler_priv,
 	evt_info.hw_idx   = camif_node->hw_intf->hw_idx;
 	evt_info.res_id   = camif_node->res_id;
 	evt_info.res_type = camif_node->res_type;
-	evt_info.th_reg_val = 0;
+	evt_info.reg_val = 0;
 
 	if (irq_status[CAM_IFE_IRQ_CAMIF_REG_STATUS1]
 		& camif_priv->reg_data->sof_irq_mask) {
@@ -1404,7 +1405,7 @@ static int cam_vfe_camif_ver3_handle_irq_bottom_half(void *handler_priv,
 	if (irq_status[CAM_IFE_IRQ_CAMIF_REG_STATUS1]
 		& camif_priv->reg_data->epoch0_irq_mask) {
 		CAM_DBG(CAM_ISP, "VFE:%d Received EPOCH", evt_info.hw_idx);
-		evt_info.th_reg_val = payload->th_reg_val;
+		evt_info.reg_val = payload->reg_val;
 		camif_priv->epoch_ts.tv_sec =
 			payload->ts.mono_time.tv_sec;
 		camif_priv->epoch_ts.tv_usec =

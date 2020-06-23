@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_VFE_LITE48x_H_
@@ -394,6 +394,7 @@ static struct cam_vfe_bus_ver3_hw_info vfe48x_bus_hw_info = {
 	},
 	.comp_done_shift = 4,
 	.top_irq_shift   = 4,
+	.support_consumed_addr = true,
 };
 
 static struct cam_vfe_hw_info cam_vfe_lite48x_hw_info = {
