@@ -2483,6 +2483,10 @@
 
 		clocks = <&aopcc QDSS_CLK>;
 		clock-names = "apb_pclk";
+
+		qcom,cti-gpio-trigout = <0>;
+		pinctrl-names = "cti-trigout-pctrl";
+		pinctrl-0 = <&trigout_a>;
 	};
 
 	cti3: cti@6013000 {
