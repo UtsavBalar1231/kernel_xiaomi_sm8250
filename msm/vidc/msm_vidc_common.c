@@ -2086,7 +2086,10 @@ static void handle_session_flush(enum hal_command_response cmd, void *data)
 		return;
 	}
 
-	mutex_lock(&inst->flush_lock);
+	if (response->data.flush_type & HAL_FLUSH_INPUT)
+		mutex_lock(&inst->bufq[INPUT_PORT].lock);
+	if (response->data.flush_type & HAL_FLUSH_OUTPUT)
+		mutex_lock(&inst->bufq[OUTPUT_PORT].lock);
 	if (msm_comm_get_stream_output_mode(inst) ==
 			HAL_VIDEO_DECODER_SECONDARY) {
 
@@ -2136,7 +2139,10 @@ static void handle_session_flush(enum hal_command_response cmd, void *data)
 	v4l2_event_queue_fh(&inst->event_handler, &flush_event);
 
 exit:
-	mutex_unlock(&inst->flush_lock);
+	if (response->data.flush_type & HAL_FLUSH_OUTPUT)
+		mutex_unlock(&inst->bufq[OUTPUT_PORT].lock);
+	if (response->data.flush_type & HAL_FLUSH_INPUT)
+		mutex_unlock(&inst->bufq[INPUT_PORT].lock);
 	s_vpr_l(inst->sid, "handled: SESSION_FLUSH_DONE\n");
 	put_inst(inst);
 }
@@ -2348,7 +2354,7 @@ struct vb2_buffer *msm_comm_get_vb_using_vidc_buffer(
 		return NULL;
 	}
 
-	mutex_lock(&inst->bufq[port].lock);
+	WARN_ON(!mutex_is_locked(&inst->bufq[port].lock));
 	found = false;
 	q = &inst->bufq[port].vb2_bufq;
 	if (!q->streaming) {
@@ -2364,7 +2370,6 @@ struct vb2_buffer *msm_comm_get_vb_using_vidc_buffer(
 		}
 	}
 unlock:
-	mutex_unlock(&inst->bufq[port].lock);
 	if (!found) {
 		print_vidc_buffer(VIDC_ERR, "vb2 not found for", inst, mbuf);
 		return NULL;
@@ -2379,6 +2384,7 @@ int msm_comm_vb2_buffer_done(struct msm_vidc_inst *inst,
 	struct vb2_buffer *vb2;
 	struct vb2_v4l2_buffer *vbuf;
 	u32 i, port;
+	int rc = 0;
 
 	if (!inst || !mbuf) {
 		d_vpr_e("%s: invalid params %pK %pK\n",
@@ -2393,16 +2399,19 @@ int msm_comm_vb2_buffer_done(struct msm_vidc_inst *inst,
 	else
 		return -EINVAL;
 
-	vb2 = msm_comm_get_vb_using_vidc_buffer(inst, mbuf);
-	if (!vb2)
-		return -EINVAL;
-
 	/*
 	 * access vb2 buffer under q->lock and if streaming only to
 	 * ensure the buffer was not free'd by vb2 framework while
 	 * we are accessing it here.
 	 */
 	mutex_lock(&inst->bufq[port].lock);
+	vb2 = msm_comm_get_vb_using_vidc_buffer(inst, mbuf);
+	if (!vb2) {
+		s_vpr_e(inst->sid, "%s: port %d buffer not found\n",
+			__func__, port);
+		rc = -EINVAL;
+		goto unlock;
+	}
 	if (inst->bufq[port].vb2_bufq.streaming) {
 		vbuf = to_vb2_v4l2_buffer(vb2);
 		vbuf->flags = mbuf->vvb.flags;
@@ -2418,9 +2427,10 @@ int msm_comm_vb2_buffer_done(struct msm_vidc_inst *inst,
 		s_vpr_e(inst->sid, "%s: port %d is not streaming\n",
 			__func__, port);
 	}
+unlock:
 	mutex_unlock(&inst->bufq[port].lock);
 
-	return 0;
+	return rc;
 }
 
 static bool is_eos_buffer(struct msm_vidc_inst *inst, u32 device_addr)
@@ -5581,7 +5591,6 @@ int msm_comm_flush(struct msm_vidc_inst *inst, u32 flags)
 
 	ip_flush = !!(flags & V4L2_CMD_FLUSH_OUTPUT);
 	op_flush = !!(flags & V4L2_CMD_FLUSH_CAPTURE);
-
 	if (ip_flush && !op_flush) {
 		s_vpr_e(inst->sid,
 			"Input only flush not supported, making it flush all\n");
@@ -5604,7 +5613,10 @@ int msm_comm_flush(struct msm_vidc_inst *inst, u32 flags)
 		goto exit;
 	}
 
-	mutex_lock(&inst->flush_lock);
+	if (ip_flush)
+		mutex_lock(&inst->bufq[INPUT_PORT].lock);
+	if (op_flush)
+		mutex_lock(&inst->bufq[OUTPUT_PORT].lock);
 	/* enable in flush */
 	inst->in_flush = ip_flush;
 	inst->out_flush = op_flush;
@@ -5660,7 +5672,10 @@ int msm_comm_flush(struct msm_vidc_inst *inst, u32 flags)
 		rc = call_hfi_op(hdev, session_flush, inst->session,
 			HAL_FLUSH_OUTPUT);
 	}
-	mutex_unlock(&inst->flush_lock);
+	if (op_flush)
+		mutex_unlock(&inst->bufq[OUTPUT_PORT].lock);
+	if (ip_flush)
+		mutex_unlock(&inst->bufq[INPUT_PORT].lock);
 	if (rc) {
 		s_vpr_e(inst->sid,
 			"Sending flush to firmware failed, flush out all buffers\n");
@@ -6725,7 +6740,6 @@ int msm_comm_flush_vidc_buffer(struct msm_vidc_inst *inst,
 	else
 		return -EINVAL;
 
-	mutex_lock(&inst->bufq[port].lock);
 	if (inst->bufq[port].vb2_bufq.streaming) {
 		vb->planes[0].bytesused = 0;
 		vb2_buffer_done(vb, VB2_BUF_STATE_DONE);
@@ -6733,7 +6747,6 @@ int msm_comm_flush_vidc_buffer(struct msm_vidc_inst *inst,
 		s_vpr_e(inst->sid, "%s: port %d is not streaming\n",
 			__func__, port);
 	}
-	mutex_unlock(&inst->bufq[port].lock);
 
 	return 0;
 }
@@ -7079,7 +7092,7 @@ void handle_release_buffer_reference(struct msm_vidc_inst *inst,
 	unsigned int i = 0;
 	u32 planes[VIDEO_MAX_PLANES] = {0};
 
-	mutex_lock(&inst->flush_lock);
+	mutex_lock(&inst->bufq[OUTPUT_PORT].lock);
 	mutex_lock(&inst->registeredbufs.lock);
 	found = false;
 	/* check if mbuf was not removed by any chance */
@@ -7168,7 +7181,7 @@ unlock:
 			print_vidc_buffer(VIDC_ERR,
 				"rbr qbuf failed", inst, mbuf);
 	}
-	mutex_unlock(&inst->flush_lock);
+	mutex_unlock(&inst->bufq[OUTPUT_PORT].lock);
 }
 
 int msm_comm_unmap_vidc_buffer(struct msm_vidc_inst *inst,
