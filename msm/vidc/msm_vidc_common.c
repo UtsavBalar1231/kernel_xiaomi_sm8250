@@ -3407,11 +3407,11 @@ static void msm_comm_print_mem_usage(struct msm_vidc_core *core)
 		}
 		sz_i = iplane->plane_fmt[0].sizeimage;
 		sz_i_e = iplane->plane_fmt[1].sizeimage;
-		cnt_i = inp_f->count_actual;
+		cnt_i = inp_f->count_min_host;
 
 		sz_o = oplane->plane_fmt[0].sizeimage;
 		sz_o_e = oplane->plane_fmt[1].sizeimage;
-		cnt_o = out_f->count_actual;
+		cnt_o = out_f->count_min_host;
 
 		total = sz_i * cnt_i + sz_i_e * cnt_i + sz_o * cnt_o +
 			sz_o_e * cnt_o + dpb_cnt * dpb_size + sz_s * cnt_s +
@@ -5843,14 +5843,14 @@ int msm_comm_check_memory_supported(struct msm_vidc_inst *vidc_inst)
 		f = &fmt->v4l2_fmt;
 		for (i = 0; i < f->fmt.pix_mp.num_planes; i++)
 			inst_mem_size += f->fmt.pix_mp.plane_fmt[i].sizeimage *
-							fmt->count_actual;
+							fmt->count_min_host;
 
 		/* output port buffers memory size */
 		fmt = &inst->fmts[OUTPUT_PORT];
 		f = &fmt->v4l2_fmt;
 		for (i = 0; i < f->fmt.pix_mp.num_planes; i++)
 			inst_mem_size += f->fmt.pix_mp.plane_fmt[i].sizeimage *
-							fmt->count_actual;
+							fmt->count_min_host;
 
 		/* dpb buffers memory size */
 		if (msm_comm_get_stream_output_mode(inst) ==
