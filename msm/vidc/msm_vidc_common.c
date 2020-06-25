@@ -1699,15 +1699,6 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 		if (event_fields_changed) {
 			event = V4L2_EVENT_SEQ_CHANGED_INSUFFICIENT;
 		} else {
-			if (fmt->count_min < event_notify->fw_min_cnt) {
-				s_vpr_e(inst->sid,
-				"%s: Firmware min count %d cannot be greater than driver min count %d\n",
-					__func__, event_notify->fw_min_cnt,
-					fmt->count_min);
-				msm_vidc_queue_v4l2_event(inst,
-					V4L2_EVENT_MSM_VIDC_HW_UNSUPPORTED);
-				goto err_bad_event;
-			}
 			inst->entropy_mode = event_notify->entropy_mode;
 
 			/* configure work mode considering low latency*/
@@ -1719,11 +1710,8 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 						"%s: Failed to decide work mode\n",
 						__func__);
 			}
-			/* Update driver buffer counts */
-			extra_buff_count = msm_vidc_get_extra_buff_count(inst,
-					HAL_BUFFER_OUTPUT);
+			/* Update driver buffer count */
 			fmt->count_min = event_notify->fw_min_cnt;
-			fmt->count_min_host = fmt->count_min + extra_buff_count;
 			msm_dcvs_reset(inst);
 			s_vpr_h(inst->sid,
 				"seq: No parameter change continue session\n");
