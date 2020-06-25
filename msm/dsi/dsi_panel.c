@@ -9,6 +9,7 @@
 #include <linux/of_gpio.h>
 #include <linux/pwm.h>
 #include <video/mipi_display.h>
+#include <linux/version.h>
 
 #include "dsi_panel.h"
 #include "dsi_ctrl_hw.h"
@@ -638,7 +639,9 @@ static int dsi_panel_update_backlight(struct dsi_panel *panel,
 {
 	int rc = 0;
 	struct mipi_dsi_device *dsi;
-
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 117))
+	size_t num_params = 1;
+#endif
 	if (!panel || (bl_lvl > 0xffff)) {
 		DSI_ERR("invalid params\n");
 		return -EINVAL;
@@ -646,10 +649,31 @@ static int dsi_panel_update_backlight(struct dsi_panel *panel,
 
 	dsi = &panel->mipi_device;
 
-	if (panel->bl_config.bl_inverted_dbv)
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 117))
+	/* The MIPI DCS specification demands that brightness values are sent in
+	 * big endian byte order i.e. first parameter is high byte and second
+	 * is low byte. But some panels require it in little endian byte order.
+	 * The `bl_inverted_dbv` bool was introduced for the panels
+	 * supporting big endian order, at the time when the driver was sending
+	 * commands in little endian order. We should fix the flag name which
+	 * sounds misleading. But, we can not change it at this moment of time,
+	 * due to some backward compatibility issue in device tree.
+	 */
+	if (panel->bl_config.bl_max_level > 0xff) {
+		num_params = 2;
+		if (!panel->bl_config.bl_inverted_dbv) {
+			/* panel requires bl_lvl in little endian */
+			bl_lvl = (((bl_lvl & 0xff) << 8) | (bl_lvl >> 8));
+		}
+	}
+	rc = mipi_dsi_dcs_set_display_brightness(dsi, bl_lvl, num_params);
+#else
+	if (panel->bl_config.bl_inverted_dbv) {
+		/* panel requires bl_lvl in big endian */
 		bl_lvl = (((bl_lvl & 0xff) << 8) | (bl_lvl >> 8));
-
+	}
 	rc = mipi_dsi_dcs_set_display_brightness(dsi, bl_lvl);
+#endif
 	if (rc < 0)
 		DSI_ERR("failed to update dcs backlight:%d\n", bl_lvl);
 
