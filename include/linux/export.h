@@ -27,12 +27,14 @@ extern struct module __this_module;
 #if defined(CONFIG_MODULE_REL_CRCS)
 #define __CRC_SYMBOL(sym, sec)						\
 	asm("	.section \"___kcrctab" sec "+" #sym "\", \"a\"	\n"	\
+		"   .globl __kstrtab_" #sym	"				\n" \
 	    "	.weak	__crc_" #sym "				\n"	\
 	    "	.long	__crc_" #sym " - .			\n"	\
 	    "	.previous					\n");
 #else
 #define __CRC_SYMBOL(sym, sec)						\
 	asm("	.section \"___kcrctab" sec "+" #sym "\", \"a\"	\n"	\
+		"   .globl __kstrtab_" #sym	"				\n" \
 	    "	.weak	__crc_" #sym "				\n"	\
 	    "	.long	__crc_" #sym "				\n"	\
 	    "	.previous					\n");
@@ -78,7 +80,7 @@ struct kernel_symbol {
 #define ___EXPORT_SYMBOL(sym, sec)					\
 	extern typeof(sym) sym;						\
 	__CRC_SYMBOL(sym, sec)						\
-	static const char __kstrtab_##sym[]				\
+	static const char __visible __kstrtab_##sym[]			\
 	__attribute__((section("__ksymtab_strings"), used, aligned(1)))	\
 	= #sym;								\
 	__KSYMTAB_ENTRY(sym, sec)
