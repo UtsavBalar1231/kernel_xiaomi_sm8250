@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_CSIPHY_1_1_HWREG_H_
@@ -12,6 +12,7 @@ struct csiphy_reg_parms_t csiphy_v1_1 = {
 	.mipi_csiphy_interrupt_status0_addr = 0x8B0,
 	.mipi_csiphy_interrupt_clear0_addr = 0x858,
 	.mipi_csiphy_glbl_irq_cmd_addr = 0x828,
+	.csiphy_interrupt_status_size = 11,
 	.csiphy_common_array_size = 5,
 	.csiphy_reset_array_size = 5,
 	.csiphy_2ph_config_array_size = 14,

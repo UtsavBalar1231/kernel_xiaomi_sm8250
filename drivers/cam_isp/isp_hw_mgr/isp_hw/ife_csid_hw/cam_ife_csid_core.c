@@ -7,7 +7,7 @@
 #include <linux/slab.h>
 #include <uapi/media/cam_isp.h>
 #include <uapi/media/cam_defs.h>
-
+#include <media/cam_req_mgr.h>
 #include <dt-bindings/msm/msm-camera.h>
 
 #include "cam_isp_hw_mgr_intf.h"
@@ -18,6 +18,7 @@
 #include "cam_debug_util.h"
 #include "cam_cpas_api.h"
 #include "cam_tasklet_util.h"
+#include "cam_subdev.h"
 
 /* Timeout value in msec */
 #define IFE_CSID_TIMEOUT                               1000
@@ -1720,6 +1721,9 @@ static void cam_ife_csid_halt_csi2(
 		csid_reg->csi2_reg->csid_csi2_rx_cfg0_addr);
 	cam_io_w_mb(0, soc_info->reg_map[0].mem_base +
 		csid_reg->csi2_reg->csid_csi2_rx_cfg1_addr);
+	cam_subdev_notify_message(CAM_CSIPHY_DEVICE_TYPE,
+		CAM_SUBDEV_MESSAGE_IRQ_ERR,
+		csid_hw->csi2_rx_cfg.phy_sel);
 }
 
 static int cam_ife_csid_init_config_pxl_path(

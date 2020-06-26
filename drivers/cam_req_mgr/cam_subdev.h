@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_SUBDEV_H_
@@ -15,6 +15,10 @@
 #include <media/v4l2-ioctl.h>
 
 #define CAM_SUBDEVICE_EVENT_MAX 30
+
+enum cam_subdev_message_type_t {
+	CAM_SUBDEV_MESSAGE_IRQ_ERR = 0x1
+};
 
 /**
  * struct cam_subdev - describes a camera sub-device
@@ -34,6 +38,7 @@
  * @ent_function:          Media entity function type. Can be:
  *                             %CAM_IFE_DEVICE_TYPE - identifies as IFE device.
  *                             %CAM_ICP_DEVICE_TYPE - identifies as ICP device.
+ * @msg_cb:                Pointer to the callback function to dump PHY status.
  *
  * Each instance of a subdev driver should create this struct, either
  * stand-alone or embedded in a larger struct. This structure should be
@@ -49,7 +54,25 @@ struct cam_subdev {
 	u32                                    sd_flags;
 	void                                  *token;
 	u32                                    ent_function;
+	void                                  (*msg_cb)(
+				struct v4l2_subdev *sd,
+				enum cam_subdev_message_type_t msg_type,
+				uint32_t data);
 };
+
+/**
+  * cam_subdev_notify_message()
+  *
+  * @brief:  Notify message to a subdevs of specific type
+  *
+  * @subdev_type:           Subdev type
+  * @message_type:          message type
+  * @data:                  data to be delivered.
+  *
+  */
+void cam_subdev_notify_message(u32 subdev_type,
+	enum cam_subdev_message_type_t message_type,
+	uint32_t data);
 
 /**
  * cam_subdev_probe()

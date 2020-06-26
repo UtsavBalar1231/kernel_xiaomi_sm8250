@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_CSIPHY_SOC_H_
@@ -69,5 +69,12 @@ int cam_csiphy_disable_hw(struct csiphy_device *csiphy_dev);
  * (needs to be macro enabled before use)
  */
 int cam_csiphy_mem_dmp(struct cam_hw_soc_info *soc_info);
+
+/**
+ * @csiphy_dev: CSIPhy device structure
+ *
+ * This API dumps memory for the entire status region
+ */
+int32_t cam_csiphy_status_dmp(struct csiphy_device *csiphy_dev);
 
 #endif /* _CAM_CSIPHY_SOC_H_ */
