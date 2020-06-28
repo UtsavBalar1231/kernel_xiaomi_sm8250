@@ -8,11 +8,11 @@ ARGS="-nostdlib"
 
 while [ "$1" != "" ] ; do
 	case "$1" in
-	-save-temps|-m32|-m64) N="$1" ;;
+	-save-temps*|-m32|-m64) N="$1" ;;
 	-r) N="$1" ;;
 	-[Wg]*) N="$1" ;;
 	-[olv]|-[Ofd]*|-nostdlib) N="$1" ;;
-	--end-group|--start-group)
+	--end-group|--start-group|--whole-archive|--no-whole-archive)
 		 N="-Wl,$1" ;;
 	-[RTFGhIezcbyYu]*|\
 --script|--defsym|-init|-Map|--oformat|-rpath|\
@@ -26,5 +26,7 @@ while [ "$1" != "" ] ; do
 	ARGS="$ARGS $N"
 	shift
 done
+
+[ -n "$V" ] && echo >&2 $CC $ARGS
 
 exec $CC $ARGS
