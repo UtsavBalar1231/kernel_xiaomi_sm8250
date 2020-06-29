@@ -142,6 +142,10 @@ struct wlan_regulatory_psoc_priv_obj {
 	qdf_spinlock_t cbk_list_lock;
 };
 
+/**
+ * struct wlan_regulatory_pdev_priv_obj - wlan regulatory pdev private object
+ * @pdev_opened: whether pdev has been opened by application
+ */
 struct wlan_regulatory_pdev_priv_obj {
 	struct regulatory_channel cur_chan_list[NUM_CHANNELS];
 	struct regulatory_channel mas_chan_list[NUM_CHANNELS];
@@ -178,6 +182,7 @@ struct wlan_regulatory_pdev_priv_obj {
 	struct reg_rule_info reg_rules;
 	qdf_spinlock_t reg_rules_lock;
 	bool chan_list_recvd;
+	bool pdev_opened;
 };
 
 /**
