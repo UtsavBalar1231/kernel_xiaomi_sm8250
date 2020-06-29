@@ -2216,7 +2216,13 @@ done:
 			tid = qdf_nbuf_get_tid_val(nbuf);
 
 		peer_id =  QDF_NBUF_CB_RX_PEER_ID(nbuf);
-		peer = dp_peer_find_by_id(soc, peer_id);
+
+		if (qdf_unlikely(!peer)) {
+			peer = dp_peer_find_by_id(soc, peer_id);
+		} else if (peer && peer->peer_ids[0] != peer_id) {
+			dp_peer_unref_del_find_by_id(peer);
+			peer = dp_peer_find_by_id(soc, peer_id);
+		}
 
 		if (peer) {
 			QDF_NBUF_CB_DP_TRACE_PRINT(nbuf) = false;
@@ -2241,7 +2247,6 @@ done:
 			qdf_nbuf_free(nbuf);
 			nbuf = next;
 			DP_STATS_INC(soc, rx.err.invalid_vdev, 1);
-			dp_peer_unref_del_find_by_id(peer);
 			continue;
 		}
 
@@ -2329,7 +2334,6 @@ done:
 				dp_info_rl("scatter msdu len %d, dropped",
 					   msdu_len);
 				nbuf = next;
-				dp_peer_unref_del_find_by_id(peer);
 				continue;
 			}
 		} else {
@@ -2351,7 +2355,6 @@ done:
 				DP_STATS_INC(peer, rx.multipass_rx_pkt_drop, 1);
 				qdf_nbuf_free(nbuf);
 				nbuf = next;
-				dp_peer_unref_del_find_by_id(peer);
 				continue;
 			}
 		}
@@ -2365,7 +2368,6 @@ done:
 			qdf_nbuf_free(nbuf);
 			/* Statistics */
 			nbuf = next;
-			dp_peer_unref_del_find_by_id(peer);
 			continue;
 		}
 
@@ -2378,7 +2380,6 @@ done:
 			DP_STATS_INC(peer, rx.nawds_mcast_drop, 1);
 			qdf_nbuf_free(nbuf);
 			nbuf = next;
-			dp_peer_unref_del_find_by_id(peer);
 			continue;
 		}
 
@@ -2407,7 +2408,6 @@ done:
 
 				qdf_nbuf_free(nbuf);
 				nbuf = next;
-				dp_peer_unref_del_find_by_id(peer);
 				continue;
 			}
 			dp_rx_fill_mesh_stats(vdev, nbuf, rx_tlv_hdr, peer);
@@ -2434,7 +2434,6 @@ done:
 				qdf_nbuf_free(nbuf);
 				nbuf = next;
 				DP_STATS_INC(soc, rx.err.invalid_sa_da_idx, 1);
-				dp_peer_unref_del_find_by_id(peer);
 				continue;
 			}
 			/* WDS Source Port Learning */
@@ -2453,7 +2452,6 @@ done:
 							nbuf,
 							msdu_metadata)) {
 					nbuf = next;
-					dp_peer_unref_del_find_by_id(peer);
 					tid_stats->intrabss_cnt++;
 					continue; /* Get next desc */
 				}
@@ -2469,7 +2467,6 @@ done:
 
 		tid_stats->delivered_to_stack++;
 		nbuf = next;
-		dp_peer_unref_del_find_by_id(peer);
 	}
 
 	if (qdf_likely(deliver_list_head)) {
@@ -2487,6 +2484,9 @@ done:
 			}
 		}
 	}
+
+	if (qdf_likely(peer))
+		dp_peer_unref_del_find_by_id(peer);
 
 	if (dp_rx_enable_eol_data_check(soc) && rx_bufs_used) {
 		if (quota) {
