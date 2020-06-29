@@ -1381,7 +1381,7 @@
 			};
 
 			port@1 {
-				reg = <0>;
+				reg = <1>;
 				tpdm_mdss_out_tpda7: endpoint {
 					remote-endpoint =
 					    <&tpda_7_in_tpdm_mdss>;
@@ -1390,7 +1390,7 @@
 			};
 
 			port@2 {
-				reg = <0>;
+				reg = <2>;
 				tpdm_mm_out_tpda9: endpoint {
 					remote-endpoint =
 					    <&tpda_9_in_tpdm_mm>;
@@ -1399,7 +1399,7 @@
 			};
 
 			port@3 {
-				reg = <0>;
+				reg = <3>;
 				funnel_dl_center_out_tpda_10: endpoint {
 					remote-endpoint =
 					    <&tpda_10_in_funnel_dl_center>;
@@ -1408,7 +1408,7 @@
 			};
 
 			port@4 {
-				reg = <0>;
+				reg = <4>;
 				tpdm_ddr_ch02_out_tpda11: endpoint {
 					remote-endpoint =
 					    <&tpda_11_in_tpdm_ddr_ch02>;
@@ -1417,7 +1417,7 @@
 			};
 
 			port@5 {
-				reg = <0>;
+				reg = <5>;
 				tpdm_ddr_ch13_out_tpda12: endpoint {
 					remote-endpoint =
 					    <&tpda_12_in_tpdm_ddr_ch13>;
@@ -1426,7 +1426,7 @@
 			};
 
 			port@6 {
-				reg = <0>;
+				reg = <6>;
 				tpdm_ddr_out_tpda13: endpoint {
 					remote-endpoint =
 					    <&tpda_13_in_tpdm_ddr>;
@@ -1435,7 +1435,7 @@
 			};
 
 			port@7 {
-				reg = <0>;
+				reg = <7>;
 				tpdm_turing_out_tpda14: endpoint {
 					remote-endpoint =
 					    <&tpda_14_in_tpdm_turing>;
@@ -1444,7 +1444,7 @@
 			};
 
 			port@8 {
-				reg = <0>;
+				reg = <8>;
 				tpdm_llm_turing_out_tpda15: endpoint {
 					remote-endpoint =
 					    <&tpda_15_in_tpdm_llm_turing>;
@@ -1453,7 +1453,7 @@
 			};
 
 			port@9 {
-				reg = <0>;
+				reg = <9>;
 				tpdm_npu_out_tpda16: endpoint {
 				remote-endpoint =
 					<&tpda_16_in_tpdm_npu>;
@@ -1462,7 +1462,7 @@
 			};
 
 			port@10 {
-				reg = <0>;
+				reg = <10>;
 				tpdm_npu_llm_out_tpda17: endpoint {
 				remote-endpoint =
 					<&tpda_17_in_tpdm_npu_llm>;
@@ -1471,7 +1471,7 @@
 			};
 
 			port@11 {
-				reg = <0>;
+				reg = <11>;
 				tpdm_npu_dpm_out_tpda18: endpoint {
 					remote-endpoint =
 					    <&tpda_18_in_tpdm_npu_dpm>;
@@ -1480,7 +1480,7 @@
 			};
 
 			port@12 {
-				reg = <0>;
+				reg = <12>;
 				tpdm_dlct_out_tpda19: endpoint {
 					remote-endpoint =
 					    <&tpda_19_in_tpdm_dlct>;
@@ -1489,7 +1489,7 @@
 			};
 
 			port@13 {
-				reg = <0>;
+				reg = <13>;
 				tpdm_ipcc_out_tpda20: endpoint {
 					remote-endpoint =
 					    <&tpda_20_in_tpdm_ipcc>;
@@ -1498,7 +1498,7 @@
 			};
 
 			port@14 {
-				reg = <0>;
+				reg = <14>;
 				funnel_dl_center_out_qatb3: endpoint {
 					remote-endpoint =
 					<&qatb3_in_funnel_dl_center>;
