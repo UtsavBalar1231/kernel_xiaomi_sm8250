@@ -1033,7 +1033,7 @@
 			};
 
 			port@1 {
-				reg = <0>;
+				reg = <1>;
 				funnel_dlct0_out_funnel_qatb4: endpoint {
 					remote-endpoint =
 						<&funnel_qatb4_in_funnel_dlct0>;
@@ -1043,7 +1043,7 @@
 			};
 
 			port@2 {
-				reg = <0>;
+				reg = <2>;
 				funnel_dlct0_out_tpda16: endpoint {
 					remote-endpoint =
 						<&tpda16_in_funnel_dlct0>;
@@ -1053,7 +1053,7 @@
 			};
 
 			port@3 {
-				reg = <0>;
+				reg = <3>;
 				funnel_dlct0_out_tpda17: endpoint {
 					remote-endpoint =
 						<&tpda17_in_funnel_dlct0>;
@@ -1063,7 +1063,7 @@
 			};
 
 			port@4 {
-				reg = <0>;
+				reg = <4>;
 				funnel_dlct0_out_tpda21: endpoint {
 					remote-endpoint =
 						<&tpda21_in_funnel_dlct0>;
@@ -1073,7 +1073,7 @@
 			};
 
 			port@5 {
-				reg = <0>;
+				reg = <5>;
 				funnel_dlct0_out_tpda22: endpoint {
 					remote-endpoint =
 						<&tpda22_in_funnel_dlct0>;
@@ -1212,7 +1212,7 @@
 			};
 
 			port@1 {
-				reg = <0>;
+				reg = <1>;
 				funnel_turing_out_tpda_dl_center6: endpoint {
 					remote-endpoint =
 						<&tpda_dl_center6_in_funnel_turing>;
@@ -1222,7 +1222,7 @@
 			};
 
 			port@2 {
-				reg = <0>;
+				reg = <2>;
 				funnel_turing_out_funnel_dlct1: endpoint {
 					remote-endpoint =
 						<&funnel_dlct1_in_funnel_turing>;
