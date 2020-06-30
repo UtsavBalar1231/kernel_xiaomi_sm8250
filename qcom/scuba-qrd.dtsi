@@ -146,15 +146,39 @@
 		thermal-sensors = <&pm2250_adc_tm_iio ADC_AMUX_THM2_PU2>;
 		wake-capable-sensor;
 		trips {
+			quiet_cpu0_trip: quiet-cpu0-trip {
+				temperature = <40000>;
+				hysteresis = <0>;
+				type = "passive";
+			};
+
+			quiet_modem_trip0: quiet-modem-trip0 {
+				temperature = <40000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+
+			quiet_modem_trip1: quiet-modem-trip1 {
+				temperature = <42000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+
 			quiet_gpu_trip: quiet-gpu-trip {
 				temperature = <43000>;
 				hysteresis = <0>;
 				type = "passive";
 			};
 
-			quiet_cpu0_trip: quiet-cpu0-trip {
-				temperature = <41000>;
-				hysteresis = <0>;
+			quiet_modem_trip2: quiet-modem-trip2 {
+				temperature = <43000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+
+			quiet_modem_trip3: quiet-modem-trip3 {
+				temperature = <50000>;
+				hysteresis = <5000>;
 				type = "passive";
 			};
 		};
@@ -169,7 +193,32 @@
 			cpu0-cdev {
 				trip = <&quiet_cpu0_trip>;
 				cooling-device = <&CPU0 THERMAL_NO_LIMIT
-							(THERMAL_MAX_LIMIT - 5)>;
+							(THERMAL_MAX_LIMIT - 3)>;
+			};
+
+			modem-proc-cdev0 {
+				trip = <&quiet_modem_trip0>;
+				cooling-device = <&modem_proc 1 1>;
+			};
+
+			modem-proc-cdev1 {
+				trip = <&quiet_modem_trip3>;
+				cooling-device = <&modem_proc 3 3>;
+			};
+
+			modem-pa-cdev0 {
+				trip = <&quiet_modem_trip1>;
+				cooling-device = <&modem_pa 1 1>;
+			};
+
+			modem-pa-cdev1 {
+				trip = <&quiet_modem_trip2>;
+				cooling-device = <&modem_pa 2 2>;
+			};
+
+			modem-pa-cdev3 {
+				trip = <&quiet_modem_trip3>;
+				cooling-device = <&modem_pa 3 3>;
 			};
 		};
 	};
