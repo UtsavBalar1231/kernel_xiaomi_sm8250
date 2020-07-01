@@ -11,7 +11,7 @@
  * GNU General Public License for more details.
  */
 
-#define CONFIG_PINCTRL_LPI 1
+#define CONFIG_PINCTRL_LPI_LEGACY 1
 #define CONFIG_PINCTRL_WCD 1
 #define CONFIG_AUDIO_EXT_CLK 1
 #define CONFIG_SND_SOC_WCD9XXX_V2 1

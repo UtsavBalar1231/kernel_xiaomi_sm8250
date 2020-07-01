@@ -119,6 +119,11 @@ ifdef CONFIG_PINCTRL_LPI
 	PINCTRL_LPI_OBJS += pinctrl-lpi.o
 endif
 
+# for pinctrl LPI legacy driver
+ifdef CONFIG_PINCTRL_LPI_LEGACY
+	PINCTRL_LPI_OBJS += pinctrl-lpi-legacy.o
+endif
+
 # for soundwire driver
 ifdef CONFIG_SOUNDWIRE_WCD_CTRL
 	SWR_CTRL_OBJS += swr-wcd-ctrl.o
@@ -189,6 +194,9 @@ obj-$(CONFIG_PINCTRL_WCD) += pinctrl_wcd_dlkm.o
 pinctrl_wcd_dlkm-y := $(PINCTRL_WCD_OBJS)
 
 obj-$(CONFIG_PINCTRL_LPI) += pinctrl_lpi_dlkm.o
+pinctrl_lpi_dlkm-y := $(PINCTRL_LPI_OBJS)
+
+obj-$(CONFIG_PINCTRL_LPI_LEGACY) += pinctrl_lpi_dlkm.o
 pinctrl_lpi_dlkm-y := $(PINCTRL_LPI_OBJS)
 
 obj-$(CONFIG_SOUNDWIRE) += swr_dlkm.o
