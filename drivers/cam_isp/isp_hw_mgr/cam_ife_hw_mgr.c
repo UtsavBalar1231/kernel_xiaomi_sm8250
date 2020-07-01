@@ -7659,6 +7659,7 @@ int cam_ife_hw_mgr_init(struct cam_hw_mgr_intf *hw_mgr_intf, int *iommu_hdl)
 	memset(&g_ife_hw_mgr, 0, sizeof(g_ife_hw_mgr));
 
 	mutex_init(&g_ife_hw_mgr.ctx_mutex);
+	spin_lock_init(&g_ife_hw_mgr.ctx_lock);
 
 	if (CAM_IFE_HW_NUM_MAX != CAM_IFE_CSID_HW_NUM_MAX) {
 		CAM_ERR(CAM_ISP, "CSID num is different then IFE num");
