@@ -441,14 +441,20 @@ int exfat_init_dir_entry(struct inode *inode, struct exfat_chain *p_dir,
 {
 	struct super_block *sb = inode->i_sb;
 	struct exfat_sb_info *sbi = EXFAT_SB(sb);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
-	struct timespec64 ts = current_time(inode);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0)
+	struct timespec64 ts;
 #else
-	struct timespec64 ts = CURRENT_TIME_SEC;
+	struct timespec ts;
 #endif
 	sector_t sector;
 	struct exfat_dentry *ep;
 	struct buffer_head *bh;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
+	ts = current_time(inode);
+#else
+	ts = CURRENT_TIME_SEC;
+#endif
 
 	/*
 	 * We cannot use exfat_get_dentry_set here because file ep is not

@@ -160,7 +160,11 @@ int __exfat_truncate(struct inode *inode, loff_t new_size)
 
 	/* update the directory entry */
 	if (!evict) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0)
 		struct timespec64 ts;
+#else
+		struct timespec ts;
+#endif
 		struct exfat_dentry *ep, *ep2;
 		struct exfat_entry_set_cache *es;
 		int err;
