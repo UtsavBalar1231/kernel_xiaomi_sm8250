@@ -74,7 +74,7 @@
 			label = "cnoc";
 			qcom,bus-master = <MSM_BUS_MASTER_AMPSS_M0>;
 			qcom,bus-slave = <MSM_BUS_SLAVE_VENUS_CFG>;
-			qcom,bus-governor = "performance";
+			qcom,mode = "performance";
 			qcom,bus-range-kbps = <1 1>;
 		};
 
@@ -83,7 +83,7 @@
 			label = "venus-ddr";
 			qcom,bus-master = <MSM_BUS_MASTER_VIDEO_P0>;
 			qcom,bus-slave = <MSM_BUS_SLAVE_EBI_CH0>;
-			qcom,bus-governor = "venus-ddr-gov";
+			qcom,mode = "venus-ddr";
 			qcom,bus-range-kbps = <1000 2365000>;
 		};
 
@@ -92,7 +92,7 @@
 			label = "venus-arm9-ddr";
 			qcom,bus-master = <MSM_BUS_MASTER_VIDEO_P0>;
 			qcom,bus-slave = <MSM_BUS_SLAVE_EBI_CH0>;
-			qcom,bus-governor = "performance";
+			qcom,mode = "performance";
 			qcom,bus-range-kbps = <1 1>;
 		};
 
@@ -196,6 +196,7 @@
 				<&mmss_bimc_smmu 0x42d>,
 				<&mmss_bimc_smmu 0x411>,
 				<&mmss_bimc_smmu 0x431>;
+			qcom,iommu-dma-addr-pool = <0x79000000 0x60000000>;
 			buffer-types = <0xfff>;
 			virtual-addr-pool = <0x79000000 0x60000000>;
 		};
@@ -212,6 +213,7 @@
 				<&mmss_bimc_smmu 0x526>,
 				<&mmss_bimc_smmu 0x529>,
 				<&mmss_bimc_smmu 0x52b>;
+			qcom,iommu-dma-addr-pool = <0x51000000 0x28000000>;
 			buffer-types = <0x241>;
 			virtual-addr-pool = <0x51000000 0x28000000>;
 			qcom,secure-context-bank;
@@ -224,6 +226,7 @@
 				<&mmss_bimc_smmu 0x50c>,
 				<&mmss_bimc_smmu 0x510>,
 				<&mmss_bimc_smmu 0x52c>;
+			qcom,iommu-dma-addr-pool = <0x29000000 0x28000000>;
 			buffer-types = <0x106>;
 			virtual-addr-pool = <0x29000000 0x28000000>;
 			qcom,secure-context-bank;
@@ -241,6 +244,7 @@
 				<&mmss_bimc_smmu 0x528>,
 				<&mmss_bimc_smmu 0x52d>,
 				<&mmss_bimc_smmu 0x540>;
+			qcom,iommu-dma-addr-pool = <0x1000000 0x28000000>;
 			buffer-types = <0x480>;
 			virtual-addr-pool = <0x1000000 0x28000000>;
 			qcom,secure-context-bank;
