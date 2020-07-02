@@ -2,7 +2,6 @@
 #include <dt-bindings/sound/qcom,bolero-clk-rsc.h>
 #include <dt-bindings/sound/audio-codec-port-types.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
-#include "bengal-lpi.dtsi"
 
 &bolero {
 	qcom,num-macros = <3>;
@@ -260,47 +259,6 @@
 	};
 };
 
-&q6core {
-	cdc_dmic01_gpios: cdc_dmic01_pinctrl {
-		compatible = "qcom,msm-cdc-pinctrl";
-		pinctrl-names = "aud_active", "aud_sleep";
-		pinctrl-0 = <&cdc_dmic01_clk_active &cdc_dmic01_data_active>;
-		pinctrl-1 = <&cdc_dmic01_clk_sleep &cdc_dmic01_data_sleep>;
-		qcom,lpi-gpios;
-	};
-
-	cdc_dmic23_gpios: cdc_dmic23_pinctrl {
-		compatible = "qcom,msm-cdc-pinctrl";
-		pinctrl-names = "aud_active", "aud_sleep";
-		pinctrl-0 = <&cdc_dmic23_clk_active &cdc_dmic23_data_active>;
-		pinctrl-1 = <&cdc_dmic23_clk_sleep &cdc_dmic23_data_sleep>;
-		qcom,lpi-gpios;
-	};
-
-	rx_swr_gpios: rx_swr_clk_data_pinctrl {
-		compatible = "qcom,msm-cdc-pinctrl";
-		pinctrl-names = "aud_active", "aud_sleep";
-		pinctrl-0 = <&rx_swr_clk_active &rx_swr_data_active
-				&rx_swr_data1_active>;
-		pinctrl-1 = <&rx_swr_clk_sleep &rx_swr_data_sleep
-				&rx_swr_data1_sleep>;
-		qcom,lpi-gpios;
-	};
-
-	va_swr_gpios: va_swr_clk_data_pinctrl {
-		compatible = "qcom,msm-cdc-pinctrl";
-		pinctrl-names = "aud_active", "aud_sleep";
-		pinctrl-0 = <&tx_swr_clk_active &tx_swr_data1_active
-			    &tx_swr_data2_active>;
-		pinctrl-1 = <&tx_swr_clk_sleep &tx_swr_data1_sleep
-			    &tx_swr_data2_sleep>;
-		qcom,lpi-gpios;
-		qcom,chip-wakeup-reg = <0x003ca04c>;
-		qcom,chip-wakeup-maskbit = <0>;
-		qcom,chip-wakeup-default-val = <0x1>;
-	};
-};
-
 &soc {
 	wcd937x_rst_gpio: msm_cdc_pinctrl@92 {
 		compatible = "qcom,msm-cdc-pinctrl";
@@ -314,13 +272,6 @@
 		pinctrl-names = "aud_active", "aud_sleep";
 		pinctrl-0 = <&spkr_1_sd_n_active>;
 		pinctrl-1 = <&spkr_1_sd_n_sleep>;
-	};
-
-	wsa881x_analog_clk_gpio: msm_cdc_pinctrl@18 {
-		compatible = "qcom,msm-cdc-pinctrl";
-		pinctrl-names = "aud_active", "aud_sleep";
-		pinctrl-0 = <&wsa_mclk_active>;
-		pinctrl-1 = <&wsa_mclk_sleep>;
 	};
 
 	wsa881x_analog_clk: wsa_ana_clk {
