@@ -40,6 +40,16 @@ wlan_hdd_cfg80211_set_thermal_mitigation_policy(struct wiphy *wiphy,
  */
 bool wlan_hdd_thermal_config_support(void);
 
+/**
+ * hdd_restore_thermal_mitigation_config - Restore the saved thermal config
+ * @hdd_ctx: HDD context
+ *
+ * Restore the thermal mitigation config afetr SSR.
+ *
+ * Return: QDF_STATUS
+ */
+QDF_STATUS hdd_restore_thermal_mitigation_config(struct hdd_context *hdd_ctx);
+
 #define FEATURE_THERMAL_VENDOR_COMMANDS				\
 {								\
 	.info.vendor_id = QCA_NL80211_VENDOR_ID,		\
@@ -51,6 +61,12 @@ bool wlan_hdd_thermal_config_support(void);
 #define FEATURE_THERMAL_VENDOR_COMMANDS
 
 static inline bool wlan_hdd_thermal_config_support(void)
+{
+	return false;
+}
+
+static inline
+QDF_STATUS hdd_restore_thermal_mitigation_config(struct hdd_context *hdd_ctx)
 {
 	return false;
 }
