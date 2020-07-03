@@ -141,7 +141,7 @@
 		qcom,cdc-pa-vpos-current = <2400000>;
 
 		cdc-vdd-mic-bias-supply = <&L22A>;
-		qcom,cdc-vdd-mic-bias-voltage = <3304000 3304000>;
+		qcom,cdc-vdd-mic-bias-voltage = <3000000 3000000>;
 		qcom,cdc-vdd-mic-bias-current = <50000>;
 		qcom,cdc-vdd-mic-bias-lpm-supported = <1>;
 
