@@ -686,7 +686,7 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 
-	status = "ok";
+	status = "disabled";
 
 	st_fts@49 {
 		status = "disabled";
