@@ -911,7 +911,7 @@
 			};
 
 			port@1 {
-				reg = <0>;
+				reg = <1>;
 				funnel_turing_out_funnel_qatb: endpoint {
 					remote-endpoint =
 					<&funnel_qatb_in_funnel_turing>;
