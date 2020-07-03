@@ -19,6 +19,7 @@
 		iommus = <&apps_smmu 0x1441 0x00>, <&apps_smmu 0x1442 0x00>,
 				<&apps_smmu 0x1461 0x00>, <&apps_smmu 0x1462 0x00>,
 				<&apps_smmu 0x1481 0x00>, <&apps_smmu 0x1482 0x00>;
+		qcom,qcom,npu-dsp-sid-mapped;
 
 		clocks = <&npucc NPU_CC_XO_CLK>,
 				<&npucc NPU_CC_CORE_CLK>,
