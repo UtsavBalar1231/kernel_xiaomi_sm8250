@@ -134,6 +134,47 @@
 	status = "ok";
 };
 
+&thermal_zones {
+	quiet-therm-usr {
+		polling-delay = <5000>;
+	};
+
+	quiet-therm-step {
+		polling-delay-passive = <2000>;
+		polling-delay = <5000>;
+		thermal-governor = "step_wise";
+		thermal-sensors = <&pm2250_adc_tm_iio ADC_AMUX_THM2_PU2>;
+		wake-capable-sensor;
+		trips {
+			quiet_gpu_trip: quiet-gpu-trip {
+				temperature = <43000>;
+				hysteresis = <0>;
+				type = "passive";
+			};
+
+			quiet_cpu0_trip: quiet-cpu0-trip {
+				temperature = <41000>;
+				hysteresis = <0>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			gpu-cdev {
+				trip = <&quiet_gpu_trip>;
+				cooling-device = <&msm_gpu THERMAL_NO_LIMIT
+							(THERMAL_MAX_LIMIT - 3)>;
+			};
+
+			cpu0-cdev {
+				trip = <&quiet_cpu0_trip>;
+				cooling-device = <&CPU0 THERMAL_NO_LIMIT
+							(THERMAL_MAX_LIMIT - 5)>;
+			};
+		};
+	};
+};
+
 &dsi_nt36525_truly_video {
 	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_no_labibb>;
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_pwm";
