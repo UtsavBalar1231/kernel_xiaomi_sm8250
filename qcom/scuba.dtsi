@@ -988,9 +988,9 @@
 		qcom,op-freq-hz = <75000000>;
 	};
 
-	qcom_seecom: qseecom@a1800000 {
+	qcom_seecom: qseecom@61800000 {
 		compatible = "qcom,qseecom";
-		reg = <0xa1800000 0x2100000>;
+		reg = <0x61800000 0x2100000>;
 		reg-names = "secapp-region";
 		memory-region = <&qseecom_mem>;
 		qcom,hlos-num-ce-hw-instances = <1>;
@@ -1025,9 +1025,9 @@
 		qcom,qsee-reentrancy-support = <2>;
 	};
 
-	qcom_smcinvoke: smcinvoke@a1800000 {
+	qcom_smcinvoke: smcinvoke@61800000 {
 		compatible = "qcom,smcinvoke";
-		reg = <0xa1800000 0x2100000>;
+		reg = <0x61800000 0x2100000>;
 		reg-names = "secapp-region";
 	};
 
