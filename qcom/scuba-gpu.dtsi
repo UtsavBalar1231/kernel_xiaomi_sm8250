@@ -174,7 +174,7 @@
 			compatible = "qcom,gpu-cx-ipeak";
 
 			qcom,gpu-cx-ipeak@0 {
-				qcom,gpu-cx-ipeak = <&cx_ipeak_lm 1>;
+				qcom,gpu-cx-ipeak = <&cx_ipeak_lm 4>;
 				qcom,gpu-cx-ipeak-freq = <1017600000>;
 			};
 		};
