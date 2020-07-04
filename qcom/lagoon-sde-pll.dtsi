@@ -33,7 +33,7 @@
 			"ln_tx1_base", "gdsc_base";
 
 		clocks = <&dispcc DISP_CC_MDSS_AHB_CLK>,
-			 <&rpmhcc RPMH_CXO_CLK>,
+			 <&rpmhcc RPMH_QLINK_CLK>,
 			 <&gcc GCC_USB3_PRIM_CLKREF_CLK>,
 			 <&gcc GCC_USB3_PRIM_PHY_PIPE_CLK>;
 		clock-names = "iface_clk", "ref_clk_src", "ref_clk",

@@ -483,7 +483,7 @@
 
 	clocks =	<&dispcc DISP_CC_MDSS_DP_AUX_CLK>,
 			<&gcc GCC_USB3_PRIM_PHY_PIPE_CLK>,
-			<&rpmhcc RPMH_CXO_CLK>,
+			<&rpmhcc RPMH_QLINK_CLK>,
 			<&gcc GCC_USB3_PRIM_CLKREF_CLK>,
 			<&gcc GCC_USB3_PRIM_PHY_PIPE_CLK>,
 			<&dispcc DISP_CC_MDSS_DP_LINK_CLK>,
