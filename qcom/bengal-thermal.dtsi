@@ -1101,6 +1101,12 @@
 		status = "disabled";
 
 		trips {
+			skin_batt_trip0: batt-trip0 {
+				temperature = <39000>;
+				hysteresis = <2000>;
+				type = "passive";
+			};
+
 			skin_modem_trip0: modem-trip0 {
 				temperature = <40000>;
 				hysteresis = <4000>;
@@ -1110,6 +1116,12 @@
 			skin_gold_trip: gold-trip {
 				temperature = <40000>;
 				hysteresis = <0>;
+				type = "passive";
+			};
+
+			skin_batt_trip1: batt-trip1 {
+				temperature = <41000>;
+				hysteresis = <2000>;
 				type = "passive";
 			};
 
@@ -1131,9 +1143,21 @@
 				type = "passive";
 			};
 
+			skin_batt_trip2: batt-trip2 {
+				temperature = <43000>;
+				hysteresis = <2000>;
+				type = "passive";
+			};
+
 			skin_gpu_trip: gpu-trip {
 				temperature = <43000>;
 				hysteresis = <0>;
+				type = "passive";
+			};
+
+			skin_batt_trip3: batt-trip3 {
+				temperature = <45000>;
+				hysteresis = <2000>;
 				type = "passive";
 			};
 
@@ -1198,6 +1222,26 @@
 			mdm_cdev4 {
 				trip = <&skin_modem_trip3>;
 				cooling-device = <&modem_proc 3 3>;
+			};
+
+			batt_cdev1 {
+				trip = <&skin_batt_trip0>;
+				cooling-device = <&pmi632_charger 2 2>;
+			};
+
+			batt_cdev2 {
+				trip = <&skin_batt_trip1>;
+				cooling-device = <&pmi632_charger 4 4>;
+			};
+
+			batt_cdev3 {
+				trip = <&skin_batt_trip2>;
+				cooling-device = <&pmi632_charger 6 6>;
+			};
+
+			batt_cdev4 {
+				trip = <&skin_batt_trip3>;
+				cooling-device = <&pmi632_charger 7 7>;
 			};
 		};
 	};
