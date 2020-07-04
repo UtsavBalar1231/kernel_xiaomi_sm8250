@@ -5,10 +5,12 @@
 		compatible = "qcom,sde-kms";
 		reg = <0x5e00000 0x8f030>,
 		      <0x5eb0000 0x2008>,
-		      <0x5e8f000 0x02c>;
+		      <0x5e8f000 0x02c>,
+		      <0xc125ba4 0x20>;
 		reg-names = "mdp_phys",
 			   "vbif_phys",
-			   "sid_phys";
+			   "sid_phys",
+			   "sde_imem_phys";
 
 		clocks =
 			<&gcc GCC_DISP_AHB_CLK>,
