@@ -141,21 +141,28 @@
 
 		/* macrotile & macrotile-qseed has the same configs */
 		qcom,sde-danger-lut = <0x0000ffff 0x0000ffff
-			0x00000000 0x00000000 0x0000ffff>;
+			0x00000000 0x00000000 0x0000ffff>, <0x0003ffff
+			0x0003ffff 0x00000000 0x00000000 0x0003ffff>;
 
-		qcom,sde-safe-lut-linear = <0 0xff00>;
-		qcom,sde-safe-lut-macrotile = <0 0xff00>;
+		qcom,sde-safe-lut-linear = <0 0xff00>, <0 0xfe00>;
+		qcom,sde-safe-lut-macrotile = <0 0xff00>, <0 0xfe00>;
 		/* same as safe-lut-macrotile */
-		qcom,sde-safe-lut-macrotile-qseed = <0 0xff00>;
-		qcom,sde-safe-lut-nrt = <0 0xffff>;
-		qcom,sde-safe-lut-cwb = <0 0x3ff>;
+		qcom,sde-safe-lut-macrotile-qseed = <0 0xff00>, <0 0xfe00>;
+		qcom,sde-safe-lut-nrt = <0 0xffff>, <0 0xffff>;
+		qcom,sde-safe-lut-cwb = <0 0x3ff>, <0x3ff>;
 
 		/* creq LUTs */
-		qcom,sde-qos-lut-linear = <0 0x00112233 0x44556677>;
-		qcom,sde-qos-lut-macrotile = <0 0x00112233 0x44556677>;
-		qcom,sde-qos-lut-macrotile-qseed = <0 0x00112233 0x66777777>;
-		qcom,sde-qos-lut-nrt = <0 0x00000000 0x00000000>;
-		qcom,sde-qos-lut-cwb = <0 0x66666541 0x00000000>;
+		qcom,sde-qos-lut-linear = <0 0x00112233 0x44556677>,
+					 <0 0x00112234 0x45566777>;
+		qcom,sde-qos-lut-macrotile = <0 0x00112233 0x44556677>,
+					 <0 0x00112234 0x45566777>;
+		qcom,sde-qos-lut-macrotile-qseed = <0 0x00112233 0x66777777>,
+					 <0 0x00112236 0x67777777>;
+		qcom,sde-qos-lut-nrt = <0 0x00000000 0x00000000>,
+					 <0 0x00000000 0x00000000>;
+		qcom,sde-qos-lut-cwb = <0 0x66666541 0x00000000>,
+					 <0 0x66666541 0x00000000>;
+		qcom,sde-qos-refresh-rates = <60 120>;
 
 		qcom,sde-cdp-setting = <1 1>, <1 0>;
 
