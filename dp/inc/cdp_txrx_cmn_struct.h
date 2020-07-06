@@ -1096,6 +1096,8 @@ enum cdp_pdev_param_type {
  *
  * @cdp_psoc_param_en_rate_stats: set rate stats enable/disable
  * @cdp_psoc_param_en_nss_cfg: set nss cfg
+ *
+ * @cdp_enable_tx_checksum: Flag to specify if HW Tx checksum enabled
  */
 typedef union cdp_config_param_t {
 	/* peer params */
@@ -1156,6 +1158,8 @@ typedef union cdp_config_param_t {
 	/* psoc params */
 	bool cdp_psoc_param_en_rate_stats;
 	int cdp_psoc_param_en_nss_cfg;
+
+	bool cdp_enable_tx_checksum;
 } cdp_config_param_type;
 
 /**
@@ -1249,6 +1253,7 @@ enum cdp_vdev_param_type {
 #endif
 	CDP_SAFEMODE,
 	CDP_DROP_UNENC,
+	CDP_ENABLE_CSUM,
 };
 
 /*
@@ -2142,6 +2147,8 @@ struct cdp_rx_indication_msdu {
  * @p2p_tcp_udp_checksumoffload: Enable/Disable TCP/UDP Checksum Offload for P2P
  * @nan_tcp_udp_checksumoffload: Enable/Disable TCP/UDP Checksum Offload for NAN
  * @tcp_udp_checksumoffload: Enable/Disable TCP/UDP Checksum Offload
+ * @legacy_mode_checksumoffload_disable: Disable TCP/UDP Checksum Offload for
+ *					 legacy modes.
  * @napi_enable: Enable/Disable Napi
  * @ipa_enable: Flag indicating if IPA is enabled or not
  * @tx_flow_stop_queue_threshold: Value to Pause tx queues
@@ -2159,6 +2166,7 @@ struct cdp_config_params {
 	unsigned int p2p_tcp_udp_checksumoffload:1;
 	unsigned int nan_tcp_udp_checksumoffload:1;
 	unsigned int tcp_udp_checksumoffload:1;
+	unsigned int legacy_mode_checksumoffload_disable:1;
 	unsigned int napi_enable:1;
 	unsigned int ipa_enable:1;
 	/* Set when QCA_LL_TX_FLOW_CONTROL_V2 is enabled */
@@ -2237,6 +2245,8 @@ enum cdp_dp_cfg {
 	cfg_dp_enable_p2p_ip_tcp_udp_checksum_offload,
 	cfg_dp_enable_nan_ip_tcp_udp_checksum_offload,
 	cfg_dp_enable_ip_tcp_udp_checksum_offload,
+	/* Disable checksum offload for legacy modes */
+	cfg_dp_disable_legacy_mode_csum_offload,
 	cfg_dp_tso_enable,
 	cfg_dp_lro_enable,
 	cfg_dp_gro_enable,
