@@ -1079,6 +1079,8 @@ struct hdd_context;
  *                          as per enum qca_disconnect_reason_codes
  * @upgrade_udp_qos_threshold: The threshold for user priority upgrade for
 			       any UDP packet.
+ * @handle_feature_update: Handle feature update only if it is triggered
+ *			   by hdd_netdev_feature_update
  */
 struct hdd_adapter {
 	/* Magic cookie for adapter sanity verification.  Note that this
@@ -1375,6 +1377,7 @@ struct hdd_adapter {
 	void *cookie;
 	bool response_expected;
 #endif
+	bool handle_feature_update;
 };
 
 #define WLAN_HDD_GET_STATION_CTX_PTR(adapter) (&(adapter)->session.station)
@@ -3260,6 +3263,36 @@ void hdd_set_netdev_flags(struct hdd_adapter *adapter);
 
 #ifdef FEATURE_TSO
 /**
+ * hdd_get_tso_csum_feature_flags() - Return TSO and csum flags if enabled
+ *
+ * Return: Enabled feature flags set, 0 on failure
+ */
+static inline netdev_features_t hdd_get_tso_csum_feature_flags(void)
+{
+	netdev_features_t netdev_features = 0;
+	ol_txrx_soc_handle soc = cds_get_context(QDF_MODULE_ID_SOC);
+
+	if (!soc) {
+		hdd_err("soc handle is NULL");
+		return 0;
+	}
+
+	if (cdp_cfg_get(soc, cfg_dp_enable_ip_tcp_udp_checksum_offload)) {
+		netdev_features = NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM;
+
+		if (cdp_cfg_get(soc, cfg_dp_tso_enable)) {
+			/*
+			 * Enable TSO only if IP/UDP/TCP TX checksum flag is
+			 * enabled.
+			 */
+			netdev_features |= NETIF_F_TSO | NETIF_F_TSO6 |
+					   NETIF_F_SG;
+		}
+	}
+	return netdev_features;
+}
+
+/**
  * hdd_set_tso_flags() - enable TSO flags in the network device
  * @hdd_ctx: HDD context
  * @wlan_dev: network device structure
@@ -3272,25 +3305,20 @@ void hdd_set_netdev_flags(struct hdd_adapter *adapter);
 static inline void hdd_set_tso_flags(struct hdd_context *hdd_ctx,
 	 struct net_device *wlan_dev)
 {
-	if (cdp_cfg_get(cds_get_context(QDF_MODULE_ID_SOC),
-			cfg_dp_tso_enable) &&
-			cdp_cfg_get(cds_get_context(QDF_MODULE_ID_SOC),
-				    cfg_dp_enable_ip_tcp_udp_checksum_offload)){
-	    /*
-	     * We want to enable TSO only if IP/UDP/TCP TX checksum flag is
-	     * enabled.
-	     */
-		hdd_debug("TSO Enabled");
-		wlan_dev->features |=
-			 NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM |
-			 NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_SG;
-	}
+	hdd_debug("TSO Enabled");
+
+	wlan_dev->features |= hdd_get_tso_csum_feature_flags();
 }
 #else
 static inline void hdd_set_tso_flags(struct hdd_context *hdd_ctx,
 	 struct net_device *wlan_dev)
 {
 	hdd_set_sg_flags(hdd_ctx, wlan_dev);
+}
+
+static inline netdev_features_t hdd_get_tso_csum_feature_flags(void)
+{
+	return 0;
 }
 #endif /* FEATURE_TSO */
 
@@ -4438,5 +4466,15 @@ hdd_monitor_mode_qdf_create_event(struct hdd_adapter *adapter,
  * Return: None
  */
 void hdd_init_start_completion(void);
+
+/**
+ * hdd_netdev_feature_update - Update the netdev features
+ * @net_dev: Handle to net_device
+ *
+ * This func holds the rtnl_lock. Do not call with rtnl_lock held.
+ *
+ * Return: None
+ */
+void hdd_netdev_update_features(struct hdd_adapter *adapter);
 
 #endif /* end #if !defined(WLAN_HDD_MAIN_H) */
