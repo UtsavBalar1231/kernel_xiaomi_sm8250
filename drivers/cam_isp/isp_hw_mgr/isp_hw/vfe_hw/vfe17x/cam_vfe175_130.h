@@ -376,6 +376,10 @@ static struct cam_vfe_top_ver2_reg_offset_common vfe175_130_top_common_reg = {
 	.three_D_cfg              = 0x00000054,
 	.violation_status         = 0x0000007C,
 	.reg_update_cmd           = 0x000004AC,
+	.irq_mask_0               = 0x0000005C,
+	.irq_mask_1               = 0x00000060,
+	.irq_status_0             = 0x0000006C,
+	.irq_status_1             = 0x00000070,
 };
 
 static struct cam_vfe_rdi_ver2_reg vfe175_130_rdi_reg = {

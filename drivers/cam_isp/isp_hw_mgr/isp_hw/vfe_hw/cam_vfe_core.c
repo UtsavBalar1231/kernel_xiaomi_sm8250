@@ -597,6 +597,7 @@ int cam_vfe_process_cmd(void *hw_priv, uint32_t cmd_type,
 	case CAM_ISP_HW_CMD_QUERY:
 	case CAM_ISP_HW_CMD_QUERY_DSP_MODE:
 	case CAM_ISP_HW_CMD_CAMIF_DATA:
+	case CAM_ISP_HW_CMD_GET_IRQ_REGISTER_DUMP:
 		rc = core_info->vfe_top->hw_ops.process_cmd(
 			core_info->vfe_top->top_priv, cmd_type, cmd_args,
 			arg_size);

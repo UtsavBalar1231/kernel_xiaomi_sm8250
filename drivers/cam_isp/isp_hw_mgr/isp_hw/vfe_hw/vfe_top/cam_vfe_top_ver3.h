@@ -38,6 +38,12 @@ struct cam_vfe_top_ver3_reg_offset_common {
 	uint32_t bus_cgc_ovd;
 	uint32_t core_cfg_0;
 	uint32_t core_cfg_1;
+	uint32_t irq_mask_0;
+	uint32_t irq_mask_1;
+	uint32_t irq_mask_2;
+	uint32_t irq_status_0;
+	uint32_t irq_status_1;
+	uint32_t irq_status_2;
 	uint32_t reg_update_cmd;
 	uint32_t trigger_cdm_events;
 	uint32_t violation_status;
