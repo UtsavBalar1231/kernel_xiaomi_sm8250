@@ -4373,6 +4373,7 @@ static int _sde_hardware_pre_caps(struct sde_mdss_cfg *sde_cfg, uint32_t hw_rev)
 		sde_cfg->sui_block_xin_mask = 0x1;
 		sde_cfg->has_hdr = false;
 		sde_cfg->has_sui_blendstage = true;
+		sde_cfg->allow_gdsc_toggle = true;
 		clear_bit(MDSS_INTR_AD4_0_INTR, sde_cfg->mdss_irqs);
 		clear_bit(MDSS_INTR_AD4_1_INTR, sde_cfg->mdss_irqs);
 	} else {
