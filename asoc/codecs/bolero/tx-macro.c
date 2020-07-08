@@ -937,7 +937,7 @@ void bolero_tx_macro_mute_hs(void)
 {
 	struct snd_soc_component *component = NULL;
 	u16 reg_val = 0;
-	int tx_unmute_delay = 550;
+	int tx_unmute_delay = 1200;
 	if (!g_tx_priv)
 		return;
 
