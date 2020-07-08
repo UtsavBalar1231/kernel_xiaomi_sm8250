@@ -651,7 +651,6 @@ void cam_subdev_notify_message(u32 subdev_type,
 	struct cam_subdev *csd = NULL;
 
 	list_for_each_entry(sd, &g_dev.v4l2_dev->subdevs, list) {
-		sd->entity.name = video_device_node_name(sd->devnode);
 		if (sd->entity.function == subdev_type) {
 			csd = container_of(sd, struct cam_subdev, sd);
 			if (csd->msg_cb != NULL)
