@@ -5423,6 +5423,9 @@ static int msm_int_audrx_init(struct snd_soc_pcm_runtime *rtd)
 	struct snd_card *card;
 	struct snd_info_entry *entry;
 	struct snd_soc_component *aux_comp;
+	struct platform_device *pdev = NULL;
+	int i = 0;
+	char *data = NULL;
 	struct msm_asoc_mach_data *pdata =
 				snd_soc_card_get_drvdata(rtd->card);
 
@@ -5499,18 +5502,52 @@ static int msm_int_audrx_init(struct snd_soc_pcm_runtime *rtd)
 						WSA_MACRO_GAIN_OFFSET_M1P5_DB);
 			}
 		}
-		if (pdata->lito_v2_enabled) {
-			/*
-			 * Enable tx data line3 for saipan version v2 amd
-			 * write corresponding lpi register.
-			 */
-			bolero_set_port_map(component, ARRAY_SIZE(sm_port_map_v2),
-					sm_port_map_v2);
-		} else {
-			bolero_set_port_map(component, ARRAY_SIZE(sm_port_map),
-					sm_port_map);
+	}
+
+	for (i = 0; i < rtd->card->num_aux_devs; i++)
+	{
+		if (msm_aux_dev[i].name != NULL ) {
+			if (strstr(msm_aux_dev[i].name, "wsa"))
+				continue;
+		}
+
+		if (msm_aux_dev[i].codec_of_node) {
+			pdev = of_find_device_by_node(
+					msm_aux_dev[i].codec_of_node);
+
+			if (pdev)
+				data = (char*) of_device_get_match_data(
+								&pdev->dev);
+			if (data != NULL) {
+				if (!strncmp(data, "wcd937x",
+						sizeof("wcd937x"))) {
+					bolero_set_port_map(component,
+						ARRAY_SIZE(sm_port_map_wcd937x),
+						sm_port_map_wcd937x);
+					break;
+				} else if (!strncmp( data, "wcd938x",
+							sizeof("wcd938x"))) {
+					if (pdata->lito_v2_enabled) {
+						/*
+						 * Enable tx data line3 for
+						 * saipan version v2 and
+						 * write corresponding
+						 * lpi register.
+						 */
+						bolero_set_port_map(component,
+							ARRAY_SIZE(sm_port_map_v2),
+							sm_port_map_v2);
+					} else {
+						bolero_set_port_map(component,
+							ARRAY_SIZE(sm_port_map),
+							sm_port_map);
+					}
+					break;
+				}
+			}
 		}
 	}
+
 	card = rtd->card->snd_card;
 	if (!pdata->codec_root) {
 		entry = snd_info_create_subdir(card->module, "codecs",
@@ -7859,7 +7896,7 @@ static int msm_init_aux_dev(struct platform_device *pdev,
 			ret = -EINVAL;
 			goto err;
 		}
-		if (soc_find_component(wsa_of_node, NULL)) {
+		if (soc_find_component_locked(wsa_of_node, NULL)) {
 			/* WSA device registered with ALSA core */
 			wsa881x_dev_info[found].of_node = wsa_of_node;
 			wsa881x_dev_info[found].index = i;
@@ -7956,7 +7993,7 @@ codec_aux_dev:
 			ret = -EINVAL;
 			goto err;
 		}
-		if (soc_find_component(aux_codec_of_node, NULL)) {
+		if (soc_find_component_locked(aux_codec_of_node, NULL)) {
 			/* AUX codec registered with ALSA core */
 			aux_cdc_dev_info[codecs_found].of_node =
 						aux_codec_of_node;
