@@ -166,6 +166,7 @@
 	qcom,fvss-enable;
 	qcom,fvss-vbatt-mv = <3300>;
 	qcom,bass-enable;
+	qcom,use-cp-iin-sns;
 };
 
 &dsi_rm69299_visionox_amoled_video {

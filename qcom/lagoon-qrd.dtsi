@@ -258,6 +258,7 @@
 	qcom,fvss-enable;
 	qcom,fvss-vbatt-mv = <3300>;
 	qcom,bass-enable;
+	qcom,use-cp-iin-sns;
 };
 
 &wcd937x_codec {

@@ -1086,7 +1086,6 @@
 
 		iommus = <&apps_smmu 0x0180 0>,
 			<&apps_smmu 0x0160 0>;
-		qcom,iommu-dma = "bypass";
 
 		#address-cells = <1>;
 		#size-cells = <1>;

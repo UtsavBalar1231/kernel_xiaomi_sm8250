@@ -8,3 +8,7 @@
 	adsp-fuse-not-supported = <1>;
 	adsp-fw-name = "adsp2";
 };
+
+&va_cdc_dma_0_tx {
+	qcom,msm-dai-is-island-supported = <0>;
+};
