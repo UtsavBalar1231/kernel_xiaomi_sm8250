@@ -3117,7 +3117,11 @@ int wma_peer_delete_handler(void *handle, uint8_t *cmd_param_info,
 
 		data = (struct del_sta_self_rsp_params *)req_msg->user_data;
 		WMA_LOGD(FL("Calling vdev detach handler"));
-		wma_handle_vdev_detach(wma, data->self_sta_param);
+		status = wma_handle_vdev_detach(wma, data->self_sta_param);
+		if (QDF_IS_STATUS_ERROR(status)) {
+			data->self_sta_param->status = status;
+			wma_send_vdev_del_resp(data->self_sta_param);
+		}
 		qdf_mem_free(data);
 	} else if (req_msg->type == WMA_SET_LINK_PEER_RSP ||
 		   req_msg->type == WMA_DELETE_PEER_RSP) {
@@ -3239,7 +3243,11 @@ void wma_hold_req_timer(void *data)
 			wma_trigger_recovery_assert_on_fw_timeout(
 				WMA_DELETE_STA_REQ,
 				QDF_PEER_DELETION_TIMEDOUT);
-		wma_handle_vdev_detach(wma, del_sta->self_sta_param);
+		status = wma_handle_vdev_detach(wma, del_sta->self_sta_param);
+		if (QDF_IS_STATUS_ERROR(status)) {
+			del_sta->self_sta_param->status = status;
+			wma_send_vdev_del_resp(del_sta->self_sta_param);
+		}
 		qdf_mem_free(tgt_req->user_data);
 	} else if ((tgt_req->msg_type == WMA_DELETE_STA_REQ) &&
 		   (tgt_req->type == WMA_SET_LINK_PEER_RSP ||
