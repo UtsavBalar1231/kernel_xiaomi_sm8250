@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #include "cam_csiphy_dev.h"
@@ -8,6 +8,25 @@
 #include "cam_csiphy_soc.h"
 #include "cam_csiphy_core.h"
 #include <media/cam_sensor.h>
+
+static void cam_csiphy_subdev_handle_message(
+	struct v4l2_subdev *sd,
+	enum cam_subdev_message_type_t message_type,
+	uint32_t data)
+{
+	struct csiphy_device *csiphy_dev = v4l2_get_subdevdata(sd);
+
+	switch (message_type) {
+	case CAM_SUBDEV_MESSAGE_IRQ_ERR:
+		CAM_INFO(CAM_CSIPHY, "subdev index : %d CSIPHY index: %d",
+			csiphy_dev->soc_info.index, data);
+		if (data == csiphy_dev->soc_info.index)
+			cam_csiphy_status_dmp(csiphy_dev);
+		break;
+	default:
+		break;
+	}
+}
 
 static long cam_csiphy_subdev_ioctl(struct v4l2_subdev *sd,
 	unsigned int cmd, void *arg)
@@ -148,6 +167,8 @@ static int32_t cam_csiphy_platform_probe(struct platform_device *pdev)
 		(V4L2_SUBDEV_FL_HAS_DEVNODE | V4L2_SUBDEV_FL_HAS_EVENTS);
 	new_csiphy_dev->v4l2_dev_str.ent_function =
 		CAM_CSIPHY_DEVICE_TYPE;
+	new_csiphy_dev->v4l2_dev_str.msg_cb =
+		cam_csiphy_subdev_handle_message;
 	new_csiphy_dev->v4l2_dev_str.token =
 		new_csiphy_dev;
 
@@ -181,13 +202,16 @@ static int32_t cam_csiphy_platform_probe(struct platform_device *pdev)
 	rc = cam_cpas_register_client(&cpas_parms);
 	if (rc) {
 		CAM_ERR(CAM_CSIPHY, "CPAS registration failed rc: %d", rc);
-		goto csiphy_no_resource;
+		goto csiphy_unregister_subdev;
 	}
 	CAM_DBG(CAM_CSIPHY, "CPAS registration successful handle=%d",
 		cpas_parms.client_handle);
 	new_csiphy_dev->cpas_handle = cpas_parms.client_handle;
 
 	return rc;
+
+csiphy_unregister_subdev:
+	cam_unregister_subdev(&(new_csiphy_dev->v4l2_dev_str));
 csiphy_no_resource:
 	mutex_destroy(&new_csiphy_dev->mutex);
 	kfree(new_csiphy_dev->ctrl_reg);
