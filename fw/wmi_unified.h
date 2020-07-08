@@ -1315,6 +1315,8 @@ typedef enum {
     WMI_AUDIO_AGGR_GET_STATISTICS_CMDID,
     WMI_AUDIO_AGGR_RESET_STATISTICS_CMDID,
     WMI_AUDIO_AGGR_SET_RTSCTS_CONFIG_CMDID,
+    WMI_AUDIO_AGGR_SET_SCHED_METHOD_CMDID,
+    WMI_AUDIO_AGGR_GET_SCHED_METHOD_CMDID,
 
     /** WMI commands related to Channel Frequency Response Capture **/
     WMI_CFR_CAPTURE_FILTER_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_CFR_CAPTURE),
@@ -1518,6 +1520,8 @@ typedef enum {
     WMI_VDEV_SEND_BIG_DATA_P2_EVENTID,
     /** Latency related information received from beacon IE */
     WMI_VDEV_BCN_LATENCY_EVENTID,
+    /** Disconnect request from FW */
+    WMI_VDEV_DISCONNECT_EVENTID,
 
 
     /* peer specific events */
@@ -2009,6 +2013,7 @@ typedef enum {
 
     /** WMI events related to Audio Frame aggregation feature **/
     WMI_AUDIO_AGGR_REPORT_STATISTICS_EVENTID = WMI_EVT_GRP_START_ID(WMI_GRP_AUDIO),
+    WMI_AUDIO_AGGR_SCHED_METHOD_EVENTID,
 
 } WMI_EVT_ID;
 
@@ -2833,6 +2838,16 @@ typedef struct {
      * 0 - not enabled
      */
     A_UINT32 chwidth_num_peer_caps;
+
+    /*
+     * Whether preamble puncturing is supported by FW, and if so, for which
+     * bandwidths.  The possible values for this field are listed below.
+     *   0: preamble puncturing is not supported
+     *  80: puncturing supported within channels of at least 80 MHz bandwidth
+     * 160: puncturing supported within channels of at least 160 MHz bandwidth
+     * 320: puncturing supported within 320 MHz channels
+     */
+    A_UINT32 preamble_puncture_bw;
 } wmi_service_ready_ext2_event_fixed_param;
 
 typedef struct {
@@ -4081,7 +4096,7 @@ typedef struct {
 #define WMI_SET_FLAGS_IN_HINT_FREQ_BSSID(flags, pwmi_hint_freq_bssid_addr) (((pwmi_hint_freq_bssid_addr)->freq_flags) |= (flags))
 
 /** other macro for 6GHZ, TU(time unit), 20TU normally it is 20ms */
-#define MAX_NUM_20TU_EACH_CH      4
+#define MAX_NUM_20TU_EACH_CH      6
 #define MAX_NUM_S_SSID_EACH_20TU  1
 #define MAX_NUM_BSSID_EACH_20TU   3
 
@@ -6817,6 +6832,16 @@ typedef enum {
      *  1  | Enable/Disable mBSSID trigger support for BSR triggers.
      */
     WMI_PDEV_PARAM_ENABLE_MBSSID_CTRL_FRAME,
+
+    /*
+     * Parameter to set preamble punctured band as a bitmask, i.e.
+     * which 20MHz in the 80MHz bandwidth or 40MHz in 160MHz bandwidth.
+     * E.g. if first 20MHz is the primary and preamble puncturing is
+     * desired for 3rd 20Mhz, then the host will send 0x0100.
+     * FW doesn't expect the primary 20MHz to be punctured.
+     * This param is required only for 11ax release.
+     */
+    WMI_PDEV_PARAM_SET_PREAM_PUNCT_BW,
 
 } WMI_PDEV_PARAM;
 
@@ -10392,6 +10417,23 @@ typedef enum {
 /* Control to enable/disable periodic broadcast probe response transmission */
 #define WMI_VDEV_6GHZ_BITMAP_BCAST_PROBE_RSP                            0x10 /* deprecated */
 
+/** ROAM_11KV control params */
+
+/* WMI_VDEV_ROAM_11KV_CTRL_DISABLE_FW_TRIGGER_ROAMING:
+ * Disable all FW-triggered roaming (e.g. low RSSI/final bmiss/BTM/PER)
+ * while still allowing host-invoked roaming.
+ */
+#define WMI_VDEV_ROAM_11KV_CTRL_DISABLE_FW_TRIGGER_ROAMING              0x1
+/* WMI_VDEV_ROAM_11KV_CTRL_KEEP_CONN_RECV_BTM_REQ:
+ * DUT do not scan or roaming when receiving BTM req frame
+ */
+#define WMI_VDEV_ROAM_11KV_CTRL_KEEP_CONN_RECV_BTM_REQ                  0x2
+/* WMI_VDEV_ROAM_11KV_CTRL_DONOT_SEND_DISASSOC_ON_BTM_DI_SET:
+ * DUT do not send disasoc frame to AP when receiving BTM req with
+ * Disassoc Imminent bit set to 1.
+ */
+#define WMI_VDEV_ROAM_11KV_CTRL_DONOT_SEND_DISASSOC_ON_BTM_DI_SET       0x4
+
 /** the definition of different VDEV parameters */
 typedef enum {
     /** RTS Threshold */
@@ -11222,11 +11264,22 @@ typedef enum {
      * This value will be intersection of the local vdev's (STA's)
      * RSN capability and the peer's (AP's) RSN capability.
      */
-    WMI_VDEV_PARAM_RSN_CAPABILITY, /* 0xA0 */
+    WMI_VDEV_PARAM_RSN_CAPABILITY,        /* 0xA0 */
 
     /* Parameter used to enable/disable SRP feature */
-    WMI_VDEV_PARAM_ENABLE_SRP,
+    WMI_VDEV_PARAM_ENABLE_SRP,            /* 0xA1 */
 
+    /*
+     * Parameter used to control roaming/11kv (BTM) / etc. behavior
+     * bit    | purpose
+     * -----------------
+     * 0      | Disable any FW side roaming except host invoke roaming
+     * 1      | Do not trans away on receiving BTM req
+     * 2      | Do not send disassoc to AP when receiving BTM req with
+     *        | Disassoc Imminent bit set to 1
+     * 3 - 31 | Reserved
+     */
+    WMI_VDEV_PARAM_ROAM_11KV_CTRL,        /* 0xA2 */
 
     /*=== ADD NEW VDEV PARAM TYPES ABOVE THIS LINE ===
      * The below vdev param types are used for prototyping, and are
@@ -15178,6 +15231,7 @@ typedef enum event_type_e {
     WOW_ROAM_PREAUTH_START_EVENT,         /* 32 +  6 */
     WOW_ROAM_PMKID_REQUEST_EVENT,         /* 32 +  7 */
     WOW_DFS_CAC_COMPLETE_EVENT,           /* 32 +  8 */
+    WOW_VDEV_DISCONNECT_EVENT,            /* 32 +  9 */
 } WOW_WAKE_EVENT_TYPE;
 
 typedef enum wake_reason_e {
@@ -15246,6 +15300,7 @@ typedef enum wake_reason_e {
     WOW_REASON_ROAM_PMKID_REQUEST,
     WOW_REASON_RFKILL,
     WOW_REASON_DFS_CAC,
+    WOW_REASON_VDEV_DISCONNECT,
 
     /* add new WOW_REASON_ defs before this line */
     WOW_REASON_MAX,
@@ -15977,6 +16032,22 @@ typedef struct {
     /** Event status */
     A_UINT32 status;
 } wmi_vdev_install_key_complete_event_fixed_param;
+
+typedef enum {
+    /* CSA_SA_QUERY_TIMEOUT:
+     * Disconnect due to SA query timeout after moving to new channel
+     * due to CSA in OCV enabled case.
+     */
+    WLAN_DISCONNECT_REASON_CSA_SA_QUERY_TIMEOUT = 1,
+} WMI_VDEV_DISCONNECT_REASON_ID;
+
+typedef struct {
+    A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_vdev_disconnect_event_fixed_param */
+    /** unique id identifying the VDEV, generated by the caller */
+    A_UINT32 vdev_id;
+    /* Disconnect reason from WMI_VDEV_DISCONNECT_REASON_ID */
+    A_UINT32 reason;
+} wmi_vdev_disconnect_event_fixed_param;
 
 typedef enum _WMI_NLO_AUTH_ALGORITHM {
     WMI_NLO_AUTH_ALGO_80211_OPEN = 1,
@@ -26525,6 +26596,8 @@ static INLINE A_UINT8 *wmi_id_to_name(A_UINT32 wmi_command)
         WMI_RETURN_STRING(WMI_AUDIO_AGGR_SET_RTSCTS_CONFIG_CMDID);
         WMI_RETURN_STRING(WMI_REQUEST_CTRL_PATH_STATS_CMDID);
         WMI_RETURN_STRING(WMI_PDEV_GET_TPC_STATS_CMDID);
+        WMI_RETURN_STRING(WMI_AUDIO_AGGR_SET_SCHED_METHOD_CMDID);
+        WMI_RETURN_STRING(WMI_AUDIO_AGGR_GET_SCHED_METHOD_CMDID);
     }
 
     return "Invalid WMI cmd";
@@ -27778,6 +27851,7 @@ typedef enum {
 typedef enum {
     WMI_ROAM_TRIGGER_REASON_STA_KICKOUT = WMI_ROAM_TRIGGER_REASON_MAX,
     WMI_ROAM_TRIGGER_REASON_ESS_RSSI,
+    WMI_ROAM_TRIGGER_REASON_WTC_BTM,
 
     WMI_ROAM_TRIGGER_EXT_REASON_MAX
 } WMI_ROAM_TRIGGER_EXT_REASON_ID;
@@ -28047,6 +28121,12 @@ typedef enum {
     WMI_ROAM_TRIGGER_SUB_REASON_FULL_SCAN,          /* Roam scan triggered due to partial scan failure */
     WMI_ROAM_TRIGGER_SUB_REASON_LOW_RSSI_PERIODIC,  /* Roam scan triggered due to Low rssi periodic timer */
     WMI_ROAM_TRIGGER_SUB_REASON_CU_PERIODIC,        /* Roam scan triggered due to CU periodic timer */
+    /* PERIODIC_TIMER_AFTER_INACTIVITY:
+     * Roam scan triggered due to periodic timer after device in
+     * inactivity state.
+     * This timer is enabled/used for roaming in a vendor-specific manner.
+     */
+    WMI_ROAM_TRIGGER_SUB_REASCON_PERIODIC_TIMER_AFTER_INACTIVITY,
 } WMI_ROAM_TRIGGER_SUB_REASON_ID;
 
 typedef enum wmi_roam_invoke_status_error {
@@ -28121,6 +28201,20 @@ typedef struct {
      * Response status Values are enumerated in the 802.11 spec.
      */
     A_UINT32 btm_response_status_code;
+
+    union {
+        /*
+         * If a definition of these vendor-specific files has been provided,
+         * use the vendor-specific names for these fields as an alias for
+         */
+        #ifdef WMI_ROAM_TRIGGER_REASON_VENDOR_SPECIFIC1
+        WMI_ROAM_TRIGGER_REASON_VENDOR_SPECIFIC1;
+        #endif
+        struct {
+            /* opaque space reservation for vendor-specific fields */
+            A_UINT32 vendor_specific1[7];
+        };
+    };
 } wmi_roam_trigger_reason;
 
 typedef struct {
@@ -28245,6 +28339,29 @@ typedef struct {
 } wmi_roam_neighbor_report_info;
 
 typedef struct {
+    A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_roam_btm_response_info_tlv_param */
+
+    /*enum STATUS_CODE_WNM_BTM defined in ieee80211_defs.h*/
+    A_UINT32 btm_status;
+
+    /* AP MAC address */
+    wmi_mac_addr target_bssid;
+
+    /* vsie_reason value:
+     *  0x00    Will move to Cellular
+     *  0x01    Unspecified
+     *  0x02    Not supported
+     *  0x03    No Cellular Network
+     *  0x04    Controlled by framework
+     *  0x05    Roam to better AP
+     *  0x06    Suspend mode
+     *  0x07    RSSI is strong enough
+     *  0x08-0xFF    TBD
+     */
+    A_UINT32 vsie_reason;
+} wmi_roam_btm_response_info;
+
+typedef struct {
     A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_roam_neighbor_report_channel_info_tlv_param */
     A_UINT32 channel;    /* Channel frequency in MHz */
 } wmi_roam_neighbor_report_channel_info;
@@ -28263,6 +28380,21 @@ typedef struct {
     A_UINT32 frame_info;
     A_UINT32 status_code; /* Status code from 802.11 spec, section 9.4.1.9 */
 } wmi_roam_frame_info;
+
+typedef struct {
+    A_UINT32 tlv_header;     /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_roam_initial_info_tlv_param */
+
+    /* count of full scan */
+    A_UINT32 roam_full_scan_count;
+    A_INT32  rssi_th; /* unit: dBm */
+    A_UINT32 cu_th; /* channel utilization threhold: uses units of percent */
+    /* timer_canceled:
+     * bit0: timer1 canceled
+     * bit1: timer2 canceled
+     * bit2: inactive timer canceled
+     */
+    A_UINT32 timer_canceled;
+} wmi_roam_initial_info;
 
 typedef struct {
     A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_roam_stats_event_fixed_param */
@@ -30209,6 +30341,49 @@ typedef struct {
     A_UINT32 user_profile;
 } wmi_audio_aggr_set_rtscts_config_cmd_fixed_param;
 
+typedef enum {
+    /* audio aggr scheduler method list */
+    WMI_AUDIO_AGGR_SCHED_METHOD_HOST_CONTROL = 1,
+    WMI_AUDIO_AGGR_SCHED_METHOD_HOST_CONTROL_PER_CYCLE = 2,
+
+    WMI_AUDIO_AGGR_SCHED_METHOD_MAX,
+} WMI_AUDIO_AGGR_SCHED_METHOD_TYPE;
+
+typedef enum {
+    /* audio aggr RTS-CTS Config */
+    WMI_AUDIO_AGGR_RTS_CTS_CONFIG_DISABLED = 0,
+    WMI_AUDIO_AGGR_RTS_CTS_CONFIG_PPDU = 1,
+    WMI_AUDIO_AGGR_RTS_CTS_CONFIG_CYCLE = 2,
+
+    WMI_AUDIO_AGGR_RTS_CTS_MAX,
+} WMI_AUDIO_AGGR_RTS_CTS_CONFIG_TYPE;
+
+typedef struct {
+    /* TLV tag and len */
+    A_UINT32 tlv_header;
+
+    /* VDEV identifier */
+    A_UINT32 vdev_id;
+
+    /* selected audio aggr scheduler method
+    *  valid methods can be found in WMI_AUDIO_AGGR_SCHED_METHOD_TYPE
+    */
+    A_UINT32 sched_method;
+
+    /* rts-cts config
+    * valid config can be found in WMI_AUDIO_AGGR_RTS_CTS_CONFIG_TYPE
+    */
+    A_UINT32 rtscts_config;
+} wmi_audio_aggr_set_sched_method_cmd_fixed_param;
+
+typedef struct {
+    /* TLV tag and len */
+    A_UINT32 tlv_header;
+
+    /* VDEV identifier */
+    A_UINT32 vdev_id;
+} wmi_audio_aggr_get_sched_method_cmd_fixed_param;
+
 typedef struct {
     /** TLV tag and len; tag equals
      * WMITLV_TAG_STRUC_wmi_set_ocl_cmd_fixed_param */
@@ -30817,6 +30992,24 @@ typedef struct {
      */
     A_UINT32 null_frame_tx_lost;
 } wmi_audio_aggr_peer_stats;
+
+typedef struct {
+    /** TLV tag and len **/
+    A_UINT32 tlv_header;
+
+    /* ID of the vdev this response belongs to */
+    A_UINT32 vdev_id;
+
+    /* selected audio aggr scheduler method
+    *  valid methods can be found in WMI_AUDIO_AGGR_SCHED_METHOD_TYPE
+    */
+    A_UINT32 sched_method;
+
+    /* rts-cts config
+    * valid config can be found in WMI_AUDIO_AGGR_RTS_CTS_CONFIG_TYPE
+    */
+    A_UINT32 rtscts_config;
+} wmi_audio_aggr_sched_method_event_fixed_param;
 
 typedef struct {
     /** TLV tag and len; tag equals
