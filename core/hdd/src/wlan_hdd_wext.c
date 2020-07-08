@@ -3843,7 +3843,7 @@ int wlan_hdd_update_phymode(struct hdd_adapter *adapter, int new_phymode)
 	enum hdd_dot11_mode hdd_dot11mode = hdd_ctx->config->dot11Mode;
 	enum band_info curr_band = BAND_ALL;
 	int retval = 0;
-	uint8_t band_capability;
+	uint32_t band_capability;
 	QDF_STATUS status;
 	uint32_t channel_bonding_mode;
 
