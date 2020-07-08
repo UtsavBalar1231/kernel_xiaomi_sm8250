@@ -4287,9 +4287,7 @@ static int _sde_crtc_check_secure_blend_config(struct drm_crtc *crtc,
 			}
 
 			if (!old_state->plane_mask &&
-				(!old_cstate->num_dim_layers ||
-				(old_cstate->dim_layer[0].stage !=
-				sde_kms->catalog->sui_supported_blendstage))) {
+				!old_cstate->num_dim_layers) {
 				SDE_ERROR(
 				"crtc%d: no dim layer in nonsecure to secure transition\n",
 					DRMID(crtc));
