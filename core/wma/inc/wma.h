@@ -750,7 +750,7 @@ struct wma_txrx_node {
 	bool vdev_active;
 	uint64_t tsfadjust;
 	tAddStaParams *addBssStaContext;
-	uint8_t aid;
+	uint16_t aid;
 	uint8_t rmfEnabled;
 	wma_igtk_key_t key;
 	uint32_t uapsd_cached_val;
