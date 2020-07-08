@@ -1699,15 +1699,6 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 		if (event_fields_changed) {
 			event = V4L2_EVENT_SEQ_CHANGED_INSUFFICIENT;
 		} else {
-			if (fmt->count_min < event_notify->fw_min_cnt) {
-				s_vpr_e(inst->sid,
-				"%s: Firmware min count %d cannot be greater than driver min count %d\n",
-					__func__, event_notify->fw_min_cnt,
-					fmt->count_min);
-				msm_vidc_queue_v4l2_event(inst,
-					V4L2_EVENT_MSM_VIDC_HW_UNSUPPORTED);
-				goto err_bad_event;
-			}
 			inst->entropy_mode = event_notify->entropy_mode;
 
 			/* configure work mode considering low latency*/
@@ -1719,11 +1710,8 @@ static void handle_event_change(enum hal_command_response cmd, void *data)
 						"%s: Failed to decide work mode\n",
 						__func__);
 			}
-			/* Update driver buffer counts */
-			extra_buff_count = msm_vidc_get_extra_buff_count(inst,
-					HAL_BUFFER_OUTPUT);
+			/* Update driver buffer count */
 			fmt->count_min = event_notify->fw_min_cnt;
-			fmt->count_min_host = fmt->count_min + extra_buff_count;
 			msm_dcvs_reset(inst);
 			s_vpr_h(inst->sid,
 				"seq: No parameter change continue session\n");
@@ -3407,11 +3395,11 @@ static void msm_comm_print_mem_usage(struct msm_vidc_core *core)
 		}
 		sz_i = iplane->plane_fmt[0].sizeimage;
 		sz_i_e = iplane->plane_fmt[1].sizeimage;
-		cnt_i = inp_f->count_actual;
+		cnt_i = inp_f->count_min_host;
 
 		sz_o = oplane->plane_fmt[0].sizeimage;
 		sz_o_e = oplane->plane_fmt[1].sizeimage;
-		cnt_o = out_f->count_actual;
+		cnt_o = out_f->count_min_host;
 
 		total = sz_i * cnt_i + sz_i_e * cnt_i + sz_o * cnt_o +
 			sz_o_e * cnt_o + dpb_cnt * dpb_size + sz_s * cnt_s +
@@ -5775,8 +5763,9 @@ static int msm_vidc_check_mbpf_supported(struct msm_vidc_inst *inst)
 
 	mutex_lock(&core->lock);
 	list_for_each_entry(temp, &core->instances, list) {
-		/* ignore invalid session */
-		if (temp->state == MSM_VIDC_CORE_INVALID)
+		/* ignore invalid and completed session */
+		if (temp->state == MSM_VIDC_CORE_INVALID ||
+			temp->state >= MSM_VIDC_STOP_DONE)
 			continue;
 		/* ignore thumbnail session */
 		if (is_thumbnail_session(temp))
@@ -5842,14 +5831,14 @@ int msm_comm_check_memory_supported(struct msm_vidc_inst *vidc_inst)
 		f = &fmt->v4l2_fmt;
 		for (i = 0; i < f->fmt.pix_mp.num_planes; i++)
 			inst_mem_size += f->fmt.pix_mp.plane_fmt[i].sizeimage *
-							fmt->count_actual;
+							fmt->count_min_host;
 
 		/* output port buffers memory size */
 		fmt = &inst->fmts[OUTPUT_PORT];
 		f = &fmt->v4l2_fmt;
 		for (i = 0; i < f->fmt.pix_mp.num_planes; i++)
 			inst_mem_size += f->fmt.pix_mp.plane_fmt[i].sizeimage *
-							fmt->count_actual;
+							fmt->count_min_host;
 
 		/* dpb buffers memory size */
 		if (msm_comm_get_stream_output_mode(inst) ==
