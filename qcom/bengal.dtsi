@@ -2304,6 +2304,7 @@
 		qcom,minidump-id = <3>;
 		qcom,aux-minidump-ids = <4>;
 		qcom,complete-ramdump;
+		qcom,sequential-fw-load;
 
 		qcom,msm-bus,name = "pil-modem";
 		qcom,msm-bus,num-cases = <2>;
