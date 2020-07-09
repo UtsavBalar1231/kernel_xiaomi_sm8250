@@ -1897,11 +1897,28 @@ lim_send_assoc_req_mgmt_frame(struct mac_context *mac_ctx,
 		return;
 	}
 	add_ie_len = pe_session->lim_join_req->addIEAssoc.length;
-	add_ie = pe_session->lim_join_req->addIEAssoc.addIEdata;
+	if (add_ie_len) {
+		add_ie = qdf_mem_malloc(add_ie_len);
+		if (!add_ie) {
+			qdf_mem_free(mlm_assoc_req);
+			return;
+		} else {
+			/*
+			 * copy the additional ie to local, as this func modify
+			 * the IE, these IE will be required in assoc/re-assoc
+			 * retry. So do not modify the original IE.
+			 */
+			qdf_mem_copy(add_ie, pe_session->lim_join_req->addIEAssoc.addIEdata,
+				     add_ie_len);
+		}
+	} else {
+		add_ie = NULL;
+	}
 
 	frm = qdf_mem_malloc(sizeof(tDot11fAssocRequest));
 	if (!frm) {
 		qdf_mem_free(mlm_assoc_req);
+		qdf_mem_free(add_ie);
 		return;
 	}
 	qdf_mem_zero((uint8_t *) frm, sizeof(tDot11fAssocRequest));
@@ -2445,6 +2462,7 @@ end:
 	/* Free up buffer allocated for mlm_assoc_req */
 	qdf_mem_free(adaptive_11r_ie);
 	qdf_mem_free(mlm_assoc_req);
+	qdf_mem_free(add_ie);
 	mlm_assoc_req = NULL;
 	qdf_mem_free(frm);
 	return;
