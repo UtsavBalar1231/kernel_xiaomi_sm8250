@@ -127,6 +127,12 @@
 		cell-index = <0>;
 		label = "wb_display";
 	};
+
+	msm_notifier: qcom,msm_notifier@0 {
+		compatible = "qcom,msm-notifier";
+		panel = <&dsi_r66451_amoled_hd_90hz_video
+			&dsi_r66451_amoled_hd_90hz_cmd>;
+	};
 };
 
 &mdss_mdp {
