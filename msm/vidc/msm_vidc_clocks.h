@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _MSM_VIDC_CLOCKS_H_
@@ -8,6 +8,7 @@
 #include "msm_vidc_internal.h"
 
 void msm_clock_data_reset(struct msm_vidc_inst *inst);
+void msm_dcvs_reset(struct msm_vidc_inst *inst);
 int msm_vidc_set_clocks(struct msm_vidc_core *core, u32 sid);
 int msm_comm_vote_bus(struct msm_vidc_inst *inst);
 int msm_dcvs_try_enable(struct msm_vidc_inst *inst);

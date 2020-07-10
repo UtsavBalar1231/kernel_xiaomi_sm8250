@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef __H_VIDC_HFI_HELPER_H__
@@ -350,6 +350,8 @@ struct hfi_buffer_info {
 	(HFI_PROPERTY_PARAM_VENC_COMMON_START + 0x038)
 #define HFI_PROPERTY_PARAM_VENC_LOSSLESS_ENCODING \
 	(HFI_PROPERTY_PARAM_VENC_COMMON_START + 0x039)
+#define HFI_PROPERTY_PARAM_HEVC_PPS_CB_CR_OFFSET \
+	(HFI_PROPERTY_PARAM_VENC_COMMON_START + 0x040)
 
 #define HFI_PROPERTY_CONFIG_VENC_COMMON_START				\
 	(HFI_DOMAIN_BASE_VENC + HFI_ARCH_COMMON_OFFSET + 0x6000)
@@ -516,6 +518,11 @@ struct hfi_heic_grid_enable {
 
 struct hfi_operating_rate {
 	u32 operating_rate;
+};
+
+struct hfi_chroma_qp_offset {
+	u32 chroma_offset;
+	u32 reserved;
 };
 
 #define HFI_INTRA_REFRESH_NONE				(HFI_COMMON_BASE + 0x1)

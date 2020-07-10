@@ -1072,9 +1072,17 @@ int msm_comm_scale_clocks_and_bus(struct msm_vidc_inst *inst, bool do_bw_calc)
 
 int msm_dcvs_try_enable(struct msm_vidc_inst *inst)
 {
+	bool disable_hfr_dcvs = false;
+
 	if (!inst || !inst->core) {
 		d_vpr_e("%s: Invalid args: %pK\n", __func__, inst);
 		return -EINVAL;
+	}
+	if (inst->core->platform_data->vpu_ver == VPU_VERSION_IRIS2_1) {
+		/* 720p@240 encode */
+		if (is_encode_session(inst) && msm_vidc_get_fps(inst) >= 240
+			&& msm_vidc_get_mbs_per_frame(inst) >= 3600)
+			disable_hfr_dcvs = true;
 	}
 
 	inst->clk_data.dcvs_mode =
@@ -1085,12 +1093,47 @@ int msm_dcvs_try_enable(struct msm_vidc_inst *inst)
 			inst->clk_data.low_latency_mode ||
 			inst->batch.enable ||
 			is_turbo_session(inst) ||
-		  inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_CQ);
+			inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_CQ ||
+			disable_hfr_dcvs);
 
 	s_vpr_hp(inst->sid, "DCVS %s: %pK\n",
 		inst->clk_data.dcvs_mode ? "enabled" : "disabled", inst);
 
 	return 0;
+}
+
+void msm_dcvs_reset(struct msm_vidc_inst *inst)
+{
+	struct msm_vidc_format *fmt;
+	struct clock_data *dcvs;
+
+	if (!inst) {
+		d_vpr_e("%s: Invalid params\n", __func__);
+		return;
+	}
+
+	dcvs = &inst->clk_data;
+	if (inst->session_type == MSM_VIDC_ENCODER) {
+		fmt = &inst->fmts[INPUT_PORT];
+	} else if (inst->session_type == MSM_VIDC_DECODER) {
+		fmt = &inst->fmts[OUTPUT_PORT];
+	} else {
+		s_vpr_e(inst->sid, "%s: invalid session type %#x\n",
+			__func__, inst->session_type);
+		return;
+	}
+
+	dcvs->min_threshold = fmt->count_min;
+	dcvs->max_threshold =
+		min((fmt->count_min + DCVS_DEC_EXTRA_OUTPUT_BUFFERS),
+			fmt->count_actual);
+
+	dcvs->dcvs_window =
+		dcvs->max_threshold < dcvs->min_threshold ? 0 :
+			dcvs->max_threshold - dcvs->min_threshold;
+	dcvs->nom_threshold = dcvs->min_threshold +
+				(dcvs->dcvs_window ?
+				 (dcvs->dcvs_window / 2) : 0);
 }
 
 int msm_comm_init_clocks_and_bus_data(struct msm_vidc_inst *inst)
@@ -1138,8 +1181,6 @@ void msm_clock_data_reset(struct msm_vidc_inst *inst)
 	struct allowed_clock_rates_table *allowed_clks_tbl = NULL;
 	u64 total_freq = 0, rate = 0, load;
 	int cycles;
-	struct clock_data *dcvs;
-	struct msm_vidc_format *fmt;
 
 	if (!inst || !inst->core || !inst->clk_data.entry) {
 		d_vpr_e("%s: Invalid args: Inst = %pK\n",
@@ -1149,35 +1190,14 @@ void msm_clock_data_reset(struct msm_vidc_inst *inst)
 	s_vpr_h(inst->sid, "Init DCVS Load\n");
 
 	core = inst->core;
-	dcvs = &inst->clk_data;
 	load = msm_comm_get_inst_load_per_core(inst, LOAD_POWER);
 	cycles = inst->clk_data.entry->vpp_cycles;
 	allowed_clks_tbl = core->resources.allowed_clks_tbl;
-	if (inst->session_type == MSM_VIDC_ENCODER) {
-		cycles = inst->flags & VIDC_LOW_POWER ?
-			inst->clk_data.entry->low_power_cycles :
-			cycles;
+	if (inst->session_type == MSM_VIDC_ENCODER &&
+		inst->flags & VIDC_LOW_POWER)
+		cycles = inst->clk_data.entry->low_power_cycles;
 
-		fmt = &inst->fmts[INPUT_PORT];
-	} else if (inst->session_type == MSM_VIDC_DECODER) {
-		fmt = &inst->fmts[OUTPUT_PORT];
-	} else {
-		s_vpr_e(inst->sid, "%s: invalid session type %#x\n",
-			__func__, inst->session_type);
-		return;
-	}
-
-	dcvs->min_threshold = fmt->count_min;
-	dcvs->max_threshold =
-		min((fmt->count_min + DCVS_DEC_EXTRA_OUTPUT_BUFFERS),
-			fmt->count_actual);
-
-	dcvs->dcvs_window =
-		dcvs->max_threshold < dcvs->min_threshold ? 0 :
-			dcvs->max_threshold - dcvs->min_threshold;
-	dcvs->nom_threshold = dcvs->min_threshold +
-				(dcvs->dcvs_window ?
-				 (dcvs->dcvs_window / 2) : 0);
+	msm_dcvs_reset(inst);
 
 	total_freq = cycles * load;
 
