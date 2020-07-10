@@ -764,7 +764,7 @@ static void hdd_clear_sta(struct hdd_adapter *adapter,
 
 	wlansap_populate_del_sta_params(sta_info->sta_mac.bytes,
 					eSIR_MAC_DEAUTH_LEAVING_BSS_REASON,
-					(SIR_MAC_MGMT_DISASSOC >> 4),
+					SIR_MAC_MGMT_DISASSOC,
 					&del_sta_params);
 
 	hdd_softap_sta_disassoc(adapter, &del_sta_params);
@@ -2374,6 +2374,8 @@ QDF_STATUS hdd_hostapd_sap_event_cb(struct sap_event *sap_event,
 			cache_stainfo->rx_rate = disassoc_comp->rx_rate;
 			cache_stainfo->rx_mc_bc_cnt =
 						disassoc_comp->rx_mc_bc_cnt;
+			cache_stainfo->rx_retry_cnt =
+						disassoc_comp->rx_retry_cnt;
 			cache_stainfo->reason_code = disassoc_comp->reason_code;
 			cache_stainfo->disassoc_ts = qdf_system_ticks();
 			hdd_debug("Cache_stainfo rssi %d txrate %d rxrate %d reason_code %d",
@@ -2419,8 +2421,8 @@ QDF_STATUS hdd_hostapd_sap_event_cb(struct sap_event *sap_event,
 					  WMA_DHCP_STOP_IND);
 		stainfo->dhcp_nego_status = DHCP_NEGO_STOP;
 
-		hdd_put_sta_info_ref(&adapter->sta_info_list, &stainfo, true);
 		hdd_softap_deregister_sta(adapter, &stainfo);
+		hdd_put_sta_info_ref(&adapter->sta_info_list, &stainfo, true);
 
 		ap_ctx->ap_active = false;
 
@@ -6742,13 +6744,13 @@ void hdd_sap_indicate_disconnect_for_sta(struct hdd_adapter *adapter)
 		qdf_mem_copy(
 		     &sap_event.sapevt.sapStationDisassocCompleteEvent.staMac,
 		     &sta_info->sta_mac, sizeof(struct qdf_mac_addr));
+		hdd_put_sta_info_ref(&adapter->sta_info_list, &sta_info, true);
 
 		sap_event.sapevt.sapStationDisassocCompleteEvent.reason =
 				eSAP_MAC_INITATED_DISASSOC;
 		sap_event.sapevt.sapStationDisassocCompleteEvent.status_code =
 				QDF_STATUS_E_RESOURCES;
 		hdd_hostapd_sap_event_cb(&sap_event, sap_ctx->user_context);
-		hdd_put_sta_info_ref(&adapter->sta_info_list, &sta_info, true);
 	}
 
 	hdd_exit();

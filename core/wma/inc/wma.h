@@ -750,7 +750,7 @@ struct wma_txrx_node {
 	bool vdev_active;
 	uint64_t tsfadjust;
 	tAddStaParams *addBssStaContext;
-	uint8_t aid;
+	uint16_t aid;
 	uint8_t rmfEnabled;
 	wma_igtk_key_t key;
 	uint32_t uapsd_cached_val;
@@ -841,7 +841,7 @@ struct wma_ini_config {
  */
 struct wma_valid_channels {
 	uint8_t num_channels;
-	uint32_t ch_freq_list[MAX_NUM_CHAN];
+	uint32_t ch_freq_list[NUM_CHANNELS];
 };
 
 #ifdef FEATURE_WLM_STATS

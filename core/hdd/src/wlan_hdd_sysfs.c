@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -33,8 +33,13 @@
 #include "cds_api.h"
 #include <wlan_osif_request_manager.h>
 #include <qdf_mem.h>
+#ifdef WLAN_POWER_DEBUG
 #include <sir_api.h>
+#endif
 #include "osif_sync.h"
+#if defined(WLAN_SUPPORT_RX_FISA)
+#include "dp_fisa_rx.h"
+#endif
 
 #define MAX_PSOC_ID_SIZE 10
 
@@ -48,6 +53,19 @@ static struct kobject *wlan_kobject;
 static struct kobject *driver_kobject;
 static struct kobject *fw_kobject;
 static struct kobject *psoc_kobject;
+
+#if defined(WLAN_SUPPORT_RX_FISA)
+static inline
+void hdd_rx_skip_fisa(ol_txrx_soc_handle dp_soc, uint32_t value)
+{
+	dp_rx_skip_fisa(dp_soc, value);
+}
+#else
+static inline
+void hdd_rx_skip_fisa(ol_txrx_soc_handle dp_soc, uint32_t value)
+{
+}
+#endif
 
 static ssize_t __show_driver_version(char *buf)
 {
@@ -123,6 +141,7 @@ static ssize_t show_fw_version(struct kobject *kobj,
 	return length;
 };
 
+#ifdef WLAN_POWER_DEBUG
 struct power_stats_priv {
 	struct power_stats_response power_stats;
 };
@@ -273,6 +292,7 @@ static ssize_t show_device_power_stats(struct kobject *kobj,
 
 	return length;
 }
+#endif
 
 #ifdef WLAN_FEATURE_BEACON_RECEPTION_STATS
 struct beacon_reception_stats_priv {
@@ -431,8 +451,10 @@ static struct kobj_attribute dr_ver_attribute =
 	__ATTR(driver_version, 0440, show_driver_version, NULL);
 static struct kobj_attribute fw_ver_attribute =
 	__ATTR(version, 0440, show_fw_version, NULL);
+#ifdef WLAN_POWER_DEBUG
 static struct kobj_attribute power_stats_attribute =
 	__ATTR(power_stats, 0444, show_device_power_stats, NULL);
+#endif
 
 void hdd_sysfs_create_version_interface(struct wlan_objmgr_psoc *psoc)
 {
@@ -493,6 +515,163 @@ void hdd_sysfs_destroy_version_interface(void)
 	}
 }
 
+int
+hdd_sysfs_validate_and_copy_buf(char *dest_buf, size_t dest_buf_size,
+				char const *source_buf, size_t source_buf_size)
+{
+	if (source_buf_size > (dest_buf_size - 1)) {
+		hdd_err_rl("Command length is larger than %zu bytes",
+			   dest_buf_size);
+		return -EINVAL;
+	}
+
+	/* sysfs already provides kernel space buffer so copy from user
+	 * is not needed. Doing this extra copy operation just to ensure
+	 * the local buf is properly null-terminated.
+	 */
+	strlcpy(dest_buf, source_buf, dest_buf_size);
+	/* default 'echo' cmd takes new line character to here */
+	if (dest_buf[source_buf_size - 1] == '\n')
+		dest_buf[source_buf_size - 1] = '\0';
+
+	return 0;
+}
+
+static ssize_t
+__hdd_sysfs_dp_aggregation_show(struct hdd_context *hdd_ctx,
+				struct kobj_attribute *attr, char *buf)
+{
+	if (!wlan_hdd_validate_modules_state(hdd_ctx))
+		return -EINVAL;
+
+	hdd_debug("dp_aggregation: %d",
+		  qdf_atomic_read(&hdd_ctx->dp_agg_param.rx_aggregation));
+
+	return 0;
+}
+
+static ssize_t hdd_sysfs_dp_aggregation_show(struct kobject *kobj,
+					     struct kobj_attribute *attr,
+					     char *buf)
+{
+	struct osif_psoc_sync *psoc_sync;
+	struct hdd_context *hdd_ctx = cds_get_context(QDF_MODULE_ID_HDD);
+	ssize_t errno_size;
+	int ret;
+
+	ret = wlan_hdd_validate_context(hdd_ctx);
+	if (ret != 0)
+		return ret;
+
+	errno_size = osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy),
+					     &psoc_sync);
+	if (errno_size)
+		return errno_size;
+
+	errno_size = __hdd_sysfs_dp_aggregation_show(hdd_ctx, attr, buf);
+
+	osif_psoc_sync_op_stop(psoc_sync);
+
+	return errno_size;
+}
+
+static ssize_t
+__hdd_sysfs_dp_aggregation_store(struct hdd_context *hdd_ctx,
+				 struct kobj_attribute *attr, const char *buf,
+				 size_t count)
+{
+	char buf_local[MAX_SYSFS_USER_COMMAND_SIZE_LENGTH + 1];
+	char *sptr, *token;
+	uint32_t value;
+	int ret;
+	ol_txrx_soc_handle dp_soc = cds_get_context(QDF_MODULE_ID_SOC);
+
+	if (!wlan_hdd_validate_modules_state(hdd_ctx) || !dp_soc)
+		return -EINVAL;
+
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
+					      buf, count);
+
+	if (ret) {
+		hdd_err_rl("invalid input");
+		return ret;
+	}
+
+	sptr = buf_local;
+	token = strsep(&sptr, " ");
+	if (!token)
+		return -EINVAL;
+	if (kstrtou32(token, 0, &value))
+		return -EINVAL;
+
+	hdd_debug("dp_aggregation: %d", value);
+
+	hdd_rx_skip_fisa(dp_soc, value);
+	qdf_atomic_set(&hdd_ctx->dp_agg_param.rx_aggregation, !!value);
+
+	return count;
+}
+
+static ssize_t
+hdd_sysfs_dp_aggregation_store(struct kobject *kobj,
+			       struct kobj_attribute *attr,
+			       char const *buf, size_t count)
+{
+	struct osif_psoc_sync *psoc_sync;
+	struct hdd_context *hdd_ctx = cds_get_context(QDF_MODULE_ID_HDD);
+	ssize_t errno_size;
+	int ret;
+
+	ret = wlan_hdd_validate_context(hdd_ctx);
+	if (ret != 0)
+		return ret;
+
+	errno_size = osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy),
+					     &psoc_sync);
+	if (errno_size)
+		return errno_size;
+
+	errno_size = __hdd_sysfs_dp_aggregation_store(hdd_ctx, attr,
+						      buf, count);
+
+	osif_psoc_sync_op_stop(psoc_sync);
+
+	return errno_size;
+}
+
+static struct kobj_attribute dp_aggregation_attribute =
+	__ATTR(dp_aggregation, 0664, hdd_sysfs_dp_aggregation_show,
+	       hdd_sysfs_dp_aggregation_store);
+
+int hdd_sysfs_dp_aggregation_create(void)
+{
+	int error;
+
+	if (!driver_kobject) {
+		hdd_err("could not get driver kobject!");
+		return -EINVAL;
+	}
+
+	error = sysfs_create_file(driver_kobject,
+				  &dp_aggregation_attribute.attr);
+	if (error)
+		hdd_err("could not create dp_aggregation sysfs file");
+
+	return error;
+}
+
+void
+hdd_sysfs_dp_aggregation_destroy(void)
+{
+	if (!driver_kobject) {
+		hdd_err("could not get driver kobject!");
+		return;
+	}
+
+	sysfs_remove_file(driver_kobject, &dp_aggregation_attribute.attr);
+}
+
+#ifdef WLAN_POWER_DEBUG
 void hdd_sysfs_create_powerstats_interface(void)
 {
 	int error;
@@ -544,6 +723,7 @@ void hdd_sysfs_destroy_driver_root_obj(void)
 		driver_kobject = NULL;
 	}
 }
+#endif
 
 #ifdef WLAN_FEATURE_BEACON_RECEPTION_STATS
 static int hdd_sysfs_create_bcn_reception_interface(struct hdd_adapter

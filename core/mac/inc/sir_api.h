@@ -2354,8 +2354,8 @@ struct sir_wifi_start_log {
  */
 struct sir_pcl_list {
 	uint32_t pcl_len;
-	uint8_t pcl_list[128];
-	uint8_t weight_list[128];
+	uint8_t pcl_list[NUM_CHANNELS];
+	uint8_t weight_list[NUM_CHANNELS];
 };
 
 /**
@@ -2371,12 +2371,12 @@ struct sir_pcl_list {
  * @weight_list: Weights assigned by policy manager
  */
 struct sir_pcl_chan_weights {
-	uint8_t pcl_list[128];
+	uint8_t pcl_list[NUM_CHANNELS];
 	uint32_t pcl_len;
-	uint8_t saved_chan_list[128];
+	uint8_t saved_chan_list[NUM_CHANNELS];
 	uint32_t saved_num_chan;
-	uint8_t weighed_valid_list[128];
-	uint8_t weight_list[128];
+	uint8_t weighed_valid_list[NUM_CHANNELS];
+	uint8_t weight_list[NUM_CHANNELS];
 };
 
 /**
@@ -3341,7 +3341,7 @@ struct auto_shutdown_cmd {
 };
 #endif
 
-#ifdef WLAN_POWER_DEBUGFS
+#ifdef WLAN_POWER_DEBUG
 /**
  * struct power_stats_response - Power stats response
  * @cumulative_sleep_time_ms: cumulative sleep time in ms
@@ -3443,6 +3443,8 @@ struct sir_set_ht_vht_cfg {
 #define WIFI_INVALID_PEER_ID            (-1)
 #define WIFI_INVALID_VDEV_ID            (-1)
 #define WIFI_MAX_AC                     (4)
+#define RATE_STAT_MCS_MASK              (0xFF00)
+#define RATE_STAT_GET_MCS_INDEX(x)      (((x) & RATE_STAT_MCS_MASK) >> 8)
 
 typedef struct {
 	uint32_t paramId;
@@ -5404,6 +5406,14 @@ struct ppet_hdr {
 #define HE_MCS_0_11    0x2
 #define HE_MCS_DISABLE 0x3
 
+#define HE_6G_MIN_MPDU_START_SAPCE_BIT_POS 0
+#define HE_6G_MAX_AMPDU_LEN_EXP_BIT_POS 3
+#define HE_6G_MAX_MPDU_LEN_BIT_POS 6
+#define HE_6G_SMPS_BIT_POS 9
+#define HE_6G_RD_RESP_BIT_POS 11
+#define HE_6G_RX_ANT_PATTERN_BIT_POS 12
+#define HE_6G_TX_ANT_PATTERN_BIT_POS 13
+
 /*
  * Following formuala has been arrived at using karnaugh map and unit tested
  * with sample code. Take MCS for each NSS as 2 bit value first and solve for
@@ -5759,4 +5769,18 @@ struct sir_get_mws_coex_info {
 	uint32_t cmd_id;
 };
 #endif /* WLAN_MWS_INFO_DEBUGFS */
+
+/*
+ * struct sir_update_session_txq_edca_param
+ * @message_type: SME message type
+ * @length: size of struct sir_update_session_txq_edca_param
+ * @vdev_id: vdev ID
+ * @txq_edca_params: txq edca parameter to update
+ */
+struct sir_update_session_txq_edca_param {
+	uint16_t message_type;
+	uint16_t length;
+	uint8_t vdev_id;
+	tSirMacEdcaParamRecord txq_edca_params;
+};
 #endif /* __SIR_API_H */

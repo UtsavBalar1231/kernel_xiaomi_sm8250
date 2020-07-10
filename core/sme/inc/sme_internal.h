@@ -299,7 +299,7 @@ struct sme_context {
 	link_layer_stats_cb link_layer_stats_cb;
 	void (*link_layer_stats_ext_cb)(hdd_handle_t callback_ctx,
 					tSirLLStatsResults *rsp);
-#ifdef WLAN_POWER_DEBUGFS
+#ifdef WLAN_POWER_DEBUG
 	void *power_debug_stats_context;
 	void (*power_stats_resp_callback)(struct power_stats_response *rsp,
 						void *callback_context);
@@ -391,7 +391,9 @@ struct sme_context {
 #endif
 #ifdef FEATURE_OEM_DATA
 	void (*oem_data_event_handler_cb)
-			(const struct oem_data *oem_event_data);
+			(const struct oem_data *oem_event_data,
+			 uint8_t vdev_id);
+	uint8_t oem_data_vdev_id;
 #endif
 	sme_get_raom_scan_ch_callback roam_scan_ch_callback;
 	void *roam_scan_ch_get_context;

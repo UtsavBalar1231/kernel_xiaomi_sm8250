@@ -1561,18 +1561,25 @@ static QDF_STATUS hdd_gro_rx_bh_disable(struct hdd_adapter *adapter,
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 	struct hdd_context *hdd_ctx = adapter->hdd_ctx;
 	gro_result_t gro_res;
+	uint32_t rx_aggregation;
+	uint8_t rx_ctx_id = QDF_NBUF_CB_RX_CTX_ID(skb);
+
+	rx_aggregation = qdf_atomic_read(&hdd_ctx->dp_agg_param.rx_aggregation);
 
 	skb_set_hash(skb, QDF_NBUF_CB_RX_FLOW_ID(skb), PKT_HASH_TYPE_L4);
 
 	local_bh_disable();
 	gro_res = napi_gro_receive(napi_to_use, skb);
 
-	if (hdd_get_current_throughput_level(hdd_ctx) == PLD_BUS_WIDTH_IDLE) {
+	if (hdd_get_current_throughput_level(hdd_ctx) == PLD_BUS_WIDTH_IDLE ||
+	    !rx_aggregation) {
 		if (gro_res != GRO_DROP && gro_res != GRO_NORMAL) {
 			adapter->hdd_stats.tx_rx_stats.
 					rx_gro_low_tput_flush++;
 			napi_gro_flush(napi_to_use, false);
 		}
+		if (!rx_aggregation)
+			hdd_ctx->dp_agg_param.gro_force_flush[rx_ctx_id] = 1;
 	}
 	local_bh_enable();
 
@@ -1742,6 +1749,7 @@ static void hdd_register_rx_ol_cb(struct hdd_context *hdd_ctx,
 		hdd_ctx->receive_offload_cb = hdd_lro_rx;
 		hdd_debug("LRO is enabled");
 	} else if (hdd_ctx->ol_enable == CFG_GRO_ENABLED) {
+		qdf_atomic_set(&hdd_ctx->dp_agg_param.rx_aggregation, 1);
 		if (lithium_based_target) {
 		/* no flush registration needed, it happens in DP thread */
 			hdd_ctx->receive_offload_cb = hdd_gro_rx_dp_thread;
@@ -1934,8 +1942,10 @@ QDF_STATUS hdd_rx_pkt_thread_enqueue_cbk(void *adapter,
 	}
 
 	hdd_adapter = (struct hdd_adapter *)adapter;
-	if (hdd_validate_adapter(hdd_adapter))
+	if (hdd_validate_adapter(hdd_adapter)) {
+		hdd_err_rl("adapter validate failed");
 		return QDF_STATUS_E_FAILURE;
+	}
 
 	vdev_id = hdd_adapter->vdev_id;
 	head_ptr = nbuf_list;
@@ -1972,12 +1982,14 @@ QDF_STATUS hdd_rx_deliver_to_stack(struct hdd_adapter *adapter,
 	int status = QDF_STATUS_E_FAILURE;
 	int netif_status;
 	bool skb_receive_offload_ok = false;
+	uint8_t rx_ctx_id = QDF_NBUF_CB_RX_CTX_ID(skb);
 
 	if (QDF_NBUF_CB_RX_TCP_PROTO(skb) &&
 	    !QDF_NBUF_CB_RX_PEER_CACHED_FRM(skb))
 		skb_receive_offload_ok = true;
 
-	if (skb_receive_offload_ok && hdd_ctx->receive_offload_cb) {
+	if (skb_receive_offload_ok && hdd_ctx->receive_offload_cb &&
+	    !hdd_ctx->dp_agg_param.gro_force_flush[rx_ctx_id]) {
 		status = hdd_ctx->receive_offload_cb(adapter, skb);
 
 		if (QDF_IS_STATUS_SUCCESS(status)) {
@@ -1990,6 +2002,15 @@ QDF_STATUS hdd_rx_deliver_to_stack(struct hdd_adapter *adapter,
 			return status;
 		}
 	}
+
+	/*
+	 * The below case handles the scenario when rx_aggregation is
+	 * re-enabled dynamically, in which case gro_force_flush needs
+	 * to be reset to 0 to allow GRO.
+	 */
+	if (qdf_atomic_read(&hdd_ctx->dp_agg_param.rx_aggregation) &&
+	    hdd_ctx->dp_agg_param.gro_force_flush[rx_ctx_id])
+		hdd_ctx->dp_agg_param.gro_force_flush[rx_ctx_id] = 0;
 
 	adapter->hdd_stats.tx_rx_stats.rx_non_aggregated++;
 
@@ -2038,6 +2059,9 @@ QDF_STATUS hdd_rx_flush_packet_cbk(void *adapter_context, uint8_t vdev_id)
 	struct hdd_adapter *adapter;
 	struct hdd_context *hdd_ctx;
 	ol_txrx_soc_handle soc = cds_get_context(QDF_MODULE_ID_SOC);
+
+	if (qdf_unlikely(!soc))
+		return QDF_STATUS_E_FAILURE;
 
 	hdd_ctx = cds_get_context(QDF_MODULE_ID_HDD);
 	if (unlikely(!hdd_ctx)) {
@@ -3054,6 +3078,8 @@ static void hdd_ini_bus_bandwidth(struct hdd_config *config,
 		cfg_get(psoc, CFG_DP_BUS_BANDWIDTH_COMPUTE_INTERVAL);
 	config->bus_low_cnt_threshold =
 		cfg_get(psoc, CFG_DP_BUS_LOW_BW_CNT_THRESHOLD);
+	config->enable_latency_crit_clients =
+		cfg_get(psoc, CFG_DP_BUS_HANDLE_LATENCY_CRITICAL_CLIENTS);
 }
 
 /**

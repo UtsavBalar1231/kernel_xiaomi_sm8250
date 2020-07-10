@@ -1333,8 +1333,8 @@ bool policy_mgr_is_sap_restart_required_after_sta_disconnect(
 	uint32_t op_ch_freq_list[MAX_NUMBER_OF_CONC_CONNECTIONS];
 	uint8_t vdev_id[MAX_NUMBER_OF_CONC_CONNECTIONS];
 	enum policy_mgr_con_mode mode;
-	uint32_t pcl_channels[QDF_MAX_NUM_CHAN + 1];
-	uint8_t pcl_weight[QDF_MAX_NUM_CHAN + 1];
+	uint32_t pcl_channels[NUM_CHANNELS + 1];
+	uint8_t pcl_weight[NUM_CHANNELS + 1];
 	struct policy_mgr_conc_connection_info info = {0};
 	uint8_t num_cxn_del = 0;
 	QDF_STATUS status;
@@ -1738,20 +1738,21 @@ static void __policy_mgr_check_sta_ap_concurrent_ch_intf(void *data)
 	work_info = data;
 	if (!work_info) {
 		policy_mgr_err("Invalid work_info");
-		goto end;
+		return;
 	}
 
 	psoc = work_info->psoc;
 	if (!psoc) {
 		policy_mgr_err("Invalid psoc");
-		goto end;
+		return;
 	}
 
 	pm_ctx = policy_mgr_get_context(psoc);
 	if (!pm_ctx) {
 		policy_mgr_err("Invalid context");
-		goto end;
+		return;
 	}
+
 	mcc_to_scc_switch =
 		policy_mgr_get_mcc_to_scc_switch_mode(psoc);
 

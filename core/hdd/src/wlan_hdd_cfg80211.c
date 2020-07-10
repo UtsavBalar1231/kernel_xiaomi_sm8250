@@ -33,6 +33,7 @@
 #include <wlan_hdd_includes.h>
 #include <net/arp.h>
 #include <net/cfg80211.h>
+#include <net/mac80211.h>
 #include <wlan_hdd_wowl.h>
 #include <ani_global.h>
 #include "sir_params.h"
@@ -2407,7 +2408,7 @@ static int wlan_hdd_sap_get_valid_channellist(struct hdd_adapter *adapter,
 {
 	struct sap_config *sap_config;
 	struct hdd_context *hdd_ctx = WLAN_HDD_GET_CTX(adapter);
-	uint32_t pcl_freqs[QDF_MAX_NUM_CHAN] = {0};
+	uint32_t pcl_freqs[NUM_CHANNELS] = {0};
 	uint32_t chan_count;
 	uint32_t i;
 	QDF_STATUS status;
@@ -2425,7 +2426,7 @@ static int wlan_hdd_sap_get_valid_channellist(struct hdd_adapter *adapter,
 
 	*channel_count = 0;
 	for (i = 0; i < chan_count; i++) {
-		if (*channel_count >= QDF_MAX_NUM_CHAN)
+		if (*channel_count >= NUM_CHANNELS)
 			break;
 
 		if (band == BAND_2G &&
@@ -2540,12 +2541,12 @@ static int hdd_get_external_acs_event_len(uint32_t channel_count)
 int hdd_cfg80211_update_acs_config(struct hdd_adapter *adapter,
 				   uint8_t reason)
 {
-	struct sk_buff *skb;
+	struct sk_buff *skb = NULL;
 	struct sap_config *sap_config;
 	uint32_t channel_count = 0, status = -EINVAL;
-	uint32_t freq_list[QDF_MAX_NUM_CHAN] = {0};
-	uint32_t vendor_pcl_list[QDF_MAX_NUM_CHAN] = {0};
-	uint8_t vendor_weight_list[QDF_MAX_NUM_CHAN] = {0};
+	uint32_t *freq_list;
+	uint32_t vendor_pcl_list[NUM_CHANNELS] = {0};
+	uint8_t vendor_weight_list[NUM_CHANNELS] = {0};
 	struct hdd_vendor_acs_chan_params acs_chan_params;
 	struct hdd_context *hdd_ctx = WLAN_HDD_GET_CTX(adapter);
 	enum band_info band = BAND_2G;
@@ -2592,6 +2593,10 @@ int hdd_cfg80211_update_acs_config(struct hdd_adapter *adapter,
 
 	hdd_get_scan_band(hdd_ctx, &adapter->session.ap.sap_config, &band);
 
+	freq_list = qdf_mem_malloc(sizeof(uint32_t) * NUM_CHANNELS);
+	if (!freq_list)
+		return -ENOMEM;
+
 	if (sap_config->acs_cfg.freq_list) {
 		/* Copy INI or hostapd provided ACS channel range*/
 		for (i = 0; i < sap_config->acs_cfg.ch_list_count; i++)
@@ -2608,8 +2613,10 @@ int hdd_cfg80211_update_acs_config(struct hdd_adapter *adapter,
 	sap_config->channel_info = qdf_mem_malloc(
 					sizeof(struct hdd_channel_info) *
 					channel_count);
-	if (!sap_config->channel_info)
-		return -ENOMEM;
+	if (!sap_config->channel_info) {
+		status = -ENOMEM;
+		goto fail;
+	}
 
 	hdd_update_reg_chan_info(adapter, channel_count, freq_list);
 
@@ -2622,8 +2629,8 @@ int hdd_cfg80211_update_acs_config(struct hdd_adapter *adapter,
 					  len, id, GFP_KERNEL);
 	if (!skb) {
 		hdd_err("cfg80211_vendor_event_alloc failed");
-		qdf_mem_free(sap_config->channel_info);
-		return -ENOMEM;
+		status = -ENOMEM;
+		goto fail;
 	}
 	/*
 	 * Application expects pcl to be a subset of channel list
@@ -2702,11 +2709,14 @@ int hdd_cfg80211_update_acs_config(struct hdd_adapter *adapter,
 		goto fail;
 
 	cfg80211_vendor_event(skb, GFP_KERNEL);
+	qdf_mem_free(freq_list);
 	qdf_mem_free(sap_config->channel_info);
 
 	return 0;
 fail:
-	qdf_mem_free(sap_config->channel_info);
+	qdf_mem_free(freq_list);
+	if (sap_config->channel_info)
+		qdf_mem_free(sap_config->channel_info);
 	if (skb)
 		kfree_skb(skb);
 	return status;
@@ -2855,13 +2865,13 @@ static void wlan_hdd_trim_acs_channel_list(uint32_t *pcl, uint8_t pcl_count,
 {
 	uint16_t i, j, ch_list_count = 0;
 
-	if (*org_ch_list_count >= QDF_MAX_NUM_CHAN) {
+	if (*org_ch_list_count >= NUM_CHANNELS) {
 		hdd_err("org_ch_list_count too big %d",
 			*org_ch_list_count);
 		return;
 	}
 
-	if (pcl_count >= QDF_MAX_NUM_CHAN) {
+	if (pcl_count >= NUM_CHANNELS) {
 		hdd_err("pcl_count is too big %d", pcl_count);
 		return;
 	}
@@ -3167,7 +3177,7 @@ static int __wlan_hdd_cfg80211_do_acs(struct wiphy *wiphy,
 					&sap_config->acs_cfg.pcl_ch_count,
 					sap_config->acs_cfg.
 					pcl_channels_weight_list,
-					QDF_MAX_NUM_CHAN);
+					NUM_CHANNELS);
 
 	sap_config->acs_cfg.band = hw_mode;
 
@@ -7996,6 +8006,8 @@ static const struct independent_setters independent_setters[] = {
 #endif
 	{QCA_WLAN_VENDOR_ATTR_CONFIG_ROAM_REASON,
 	 hdd_set_roam_reason_vsie_status},
+	{QCA_WLAN_VENDOR_ATTR_CONFIG_OPTIMIZED_POWER_MANAGEMENT,
+	 hdd_config_power},
 };
 
 #ifdef WLAN_FEATURE_ELNA
@@ -8095,6 +8107,39 @@ struct config_getters {
 	config_getter_fn cb;
 };
 
+/**
+ * hdd_get_optimized_power_config() - Get the number of spatial streams
+ * supported by the adapter
+ * @adapter: Pointer to HDD adapter
+ * @skb: sk buffer to hold nl80211 attributes
+ * @attr: Pointer to struct nlattr
+ *
+ * Return: 0 on success; error number otherwise
+ */
+static int hdd_get_optimized_power_config(struct hdd_adapter *adapter,
+					  struct sk_buff *skb,
+					  const struct nlattr *attr)
+{
+	struct hdd_context *hdd_ctx = WLAN_HDD_GET_CTX(adapter);
+	uint8_t optimized_power_cfg;
+	int errno;
+
+	errno = wlan_hdd_validate_context(hdd_ctx);
+	if (errno)
+		return errno;
+
+	optimized_power_cfg  = ucfg_pmo_get_power_save_mode(hdd_ctx->psoc);
+
+	if (nla_put_u8(skb,
+		       QCA_WLAN_VENDOR_ATTR_CONFIG_OPTIMIZED_POWER_MANAGEMENT,
+		       optimized_power_cfg)) {
+		hdd_err("nla_put failure");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 /* vtable for config getters */
 static const struct config_getters config_getters[] = {
 #ifdef WLAN_FEATURE_ELNA
@@ -8105,6 +8150,9 @@ static const struct config_getters config_getters[] = {
 	{QCA_WLAN_VENDOR_ATTR_CONFIG_ROAM_REASON,
 	 sizeof(uint8_t),
 	 hdd_get_roam_reason_vsie_status},
+	{QCA_WLAN_VENDOR_ATTR_CONFIG_OPTIMIZED_POWER_MANAGEMENT,
+	 sizeof(uint8_t),
+	 hdd_get_optimized_power_config},
 };
 
 /**
@@ -9249,13 +9297,15 @@ static int __wlan_hdd_cfg80211_wifi_logger_start(struct wiphy *wiphy,
 		return 0;
 	}
 
-	if (hdd_ctx->is_pktlog_enabled &&
-	    (start_log.verbose_level == WLAN_LOG_LEVEL_ACTIVE))
-		return 0;
+	if (start_log.ring_id == RING_ID_PER_PACKET_STATS) {
+		if (hdd_ctx->is_pktlog_enabled &&
+		    (start_log.verbose_level == WLAN_LOG_LEVEL_ACTIVE))
+			return 0;
 
-	if ((!hdd_ctx->is_pktlog_enabled) &&
-	    (start_log.verbose_level != WLAN_LOG_LEVEL_ACTIVE))
-		return 0;
+		if ((!hdd_ctx->is_pktlog_enabled) &&
+		    (start_log.verbose_level != WLAN_LOG_LEVEL_ACTIVE))
+			return 0;
+	}
 
 	mac_handle = hdd_ctx->mac_handle;
 	status = sme_wifi_start_logger(mac_handle, start_log);
@@ -9265,10 +9315,12 @@ static int __wlan_hdd_cfg80211_wifi_logger_start(struct wiphy *wiphy,
 		return -EINVAL;
 	}
 
-	if (start_log.verbose_level != WLAN_LOG_LEVEL_ACTIVE)
-		hdd_ctx->is_pktlog_enabled = true;
-	else
-		hdd_ctx->is_pktlog_enabled = false;
+	if (start_log.ring_id == RING_ID_PER_PACKET_STATS) {
+		if (start_log.verbose_level == WLAN_LOG_LEVEL_ACTIVE)
+			hdd_ctx->is_pktlog_enabled = true;
+		else
+			hdd_ctx->is_pktlog_enabled = false;
+	}
 
 	return 0;
 }
@@ -10043,8 +10095,8 @@ static int __wlan_hdd_cfg80211_get_preferred_freq_list(struct wiphy *wiphy,
 	QDF_STATUS status;
 	uint32_t pcl_len = 0;
 	uint32_t pcl_len_legacy = 0;
-	uint32_t freq_list[QDF_MAX_NUM_CHAN];
-	uint32_t freq_list_legacy[QDF_MAX_NUM_CHAN];
+	uint32_t freq_list[NUM_CHANNELS];
+	uint32_t freq_list_legacy[NUM_CHANNELS];
 	enum policy_mgr_con_mode intf_mode;
 	struct nlattr *tb[QCA_WLAN_VENDOR_ATTR_GET_PREFERRED_FREQ_LIST_MAX + 1];
 	struct sk_buff *reply_skb;
@@ -10104,11 +10156,11 @@ static int __wlan_hdd_cfg80211_get_preferred_freq_list(struct wiphy *wiphy,
 	pcl_len_legacy = chan_weights->pcl_len;
 	for (i = 0; i < pcl_len_legacy; i++)
 		freq_list_legacy[i] = chan_weights->pcl_list[i];
-	chan_weights->saved_num_chan = POLICY_MGR_MAX_CHANNEL_LIST;
+	chan_weights->saved_num_chan = NUM_CHANNELS;
 	sme_get_valid_channels(chan_weights->saved_chan_list,
 			       &chan_weights->saved_num_chan);
 	policy_mgr_get_valid_chan_weights(hdd_ctx->psoc, chan_weights);
-	w_pcl = qdf_mem_malloc(sizeof(struct weighed_pcl) * QDF_MAX_NUM_CHAN);
+	w_pcl = qdf_mem_malloc(sizeof(struct weighed_pcl) * NUM_CHANNELS);
 	if (!w_pcl) {
 		qdf_mem_free(chan_weights);
 		return -ENOMEM;
@@ -11136,7 +11188,7 @@ __wlan_hdd_cfg80211_sap_configuration_set(struct wiphy *wiphy,
 		    tb[QCA_WLAN_VENDOR_ATTR_SAP_MANDATORY_FREQUENCY_LIST])/
 		    sizeof(uint32_t);
 
-		if (freq_len > QDF_MAX_NUM_CHAN) {
+		if (freq_len > NUM_CHANNELS) {
 			hdd_err("insufficient space to hold channels");
 			return -ENOMEM;
 		}
@@ -15458,7 +15510,7 @@ wlan_hdd_iftype_data_mem_free(struct hdd_context *hdd_ctx)
 #endif
 
 #if defined(WLAN_FEATURE_NAN) && \
-	   (KERNEL_VERSION(4, 19, 0) <= LINUX_VERSION_CODE)
+	   (KERNEL_VERSION(4, 14, 0) <= LINUX_VERSION_CODE)
 static void wlan_hdd_set_nan_if_mode(struct wiphy *wiphy)
 {
 	wiphy->interface_modes |= BIT(NL80211_IFTYPE_NAN);
@@ -17376,6 +17428,10 @@ static int __wlan_hdd_cfg80211_set_default_key(struct wiphy *wiphy,
 	if (0 != ret)
 		return ret;
 	crypto_key = wlan_crypto_get_key(adapter->vdev, key_index);
+	if (!crypto_key) {
+		hdd_err("Invalid NULL key info");
+		return -EINVAL;
+	}
 	hdd_debug("unicast %d, cipher %d", unicast, crypto_key->cipher_type);
 	if (!IS_WEP_CIPHER(crypto_key->cipher_type))
 		return 0;
@@ -21244,7 +21300,20 @@ static int wlan_hdd_set_default_mgmt_key(struct wiphy *wiphy,
 }
 
 /**
- * __wlan_hdd_set_txq_params() - dummy implementation of set tx queue params
+ * Default val of cwmin, this value is used to overide the
+ * incorrect user set value
+ */
+#define DEFAULT_CWMIN 15
+
+/**
+ * Default val of cwmax, this value is used to overide the
+ * incorrect user set value
+ */
+#define DEFAULT_CWMAX 1023
+
+/**
+ * __wlan_hdd_set_txq_params() - implementation of set tx queue params
+ *				to configure internal EDCA parameters
  * @wiphy: Pointer to wiphy
  * @dev: Pointer to network device
  * @params: Pointer to tx queue parameters
@@ -21255,8 +21324,44 @@ static int __wlan_hdd_set_txq_params(struct wiphy *wiphy,
 				   struct net_device *dev,
 				   struct ieee80211_txq_params *params)
 {
+	QDF_STATUS status;
+	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(dev);
+	struct hdd_context *hdd_ctx = WLAN_HDD_GET_CTX(adapter);
+	mac_handle_t mac_handle;
+	tSirMacEdcaParamRecord txq_edca_params;
+	static const uint8_t ieee_ac_to_qca_ac[] = {
+		[IEEE80211_AC_VO] = QCA_WLAN_AC_VO,
+		[IEEE80211_AC_VI] = QCA_WLAN_AC_VI,
+		[IEEE80211_AC_BE] = QCA_WLAN_AC_BE,
+		[IEEE80211_AC_BK] = QCA_WLAN_AC_BK,
+	};
+
 	hdd_enter();
-	return 0;
+
+	if (wlan_hdd_validate_context(hdd_ctx))
+		return -EINVAL;
+
+	mac_handle = hdd_ctx->mac_handle;
+	if (params->cwmin == 0 || params->cwmin > DEFAULT_CWMAX)
+		params->cwmin = DEFAULT_CWMIN;
+
+	if (params->cwmax < params->cwmin || params->cwmax > DEFAULT_CWMAX)
+		params->cwmax = DEFAULT_CWMAX;
+
+	txq_edca_params.cw.min = convert_cw(params->cwmin);
+	txq_edca_params.cw.max = convert_cw(params->cwmax);
+	txq_edca_params.aci.aifsn = params->aifs;
+	/* The txop is multiple of 32us units */
+	txq_edca_params.txoplimit = params->txop;
+	txq_edca_params.aci.aci =
+			ieee_ac_to_qca_ac[params->ac];
+
+	status = sme_update_session_txq_edca_params(mac_handle,
+						    adapter->vdev_id,
+						    &txq_edca_params);
+
+	hdd_exit();
+	return qdf_status_to_os_return(status);
 }
 
 /**
@@ -21496,8 +21601,8 @@ int wlan_hdd_del_station(struct hdd_adapter *adapter)
 	struct station_del_parameters del_sta;
 
 	del_sta.mac = NULL;
-	del_sta.subtype = SIR_MAC_MGMT_DEAUTH >> 4;
-	del_sta.reason_code = eCsrForcedDeauthSta;
+	del_sta.subtype = IEEE80211_STYPE_DEAUTH >> 4;
+	del_sta.reason_code = WLAN_REASON_DEAUTH_LEAVING;
 
 	return wlan_hdd_cfg80211_del_station(adapter->wdev.wiphy,
 					     adapter->dev, &del_sta);
@@ -22952,6 +23057,37 @@ static int __wlan_hdd_cfg80211_channel_switch(struct wiphy *wiphy,
 	return ret;
 }
 
+enum qca_wlan_802_11_mode
+hdd_convert_cfgdot11mode_to_80211mode(enum csr_cfgdot11mode mode)
+{
+	switch (mode) {
+	case eCSR_CFG_DOT11_MODE_11A:
+		return QCA_WLAN_802_11_MODE_11A;
+	case eCSR_CFG_DOT11_MODE_11B:
+		return QCA_WLAN_802_11_MODE_11B;
+	case eCSR_CFG_DOT11_MODE_11G:
+		return QCA_WLAN_802_11_MODE_11G;
+	case eCSR_CFG_DOT11_MODE_11N:
+		return QCA_WLAN_802_11_MODE_11N;
+	case eCSR_CFG_DOT11_MODE_11AC:
+		return QCA_WLAN_802_11_MODE_11AC;
+	case eCSR_CFG_DOT11_MODE_11G_ONLY:
+		return QCA_WLAN_802_11_MODE_11G;
+	case eCSR_CFG_DOT11_MODE_11N_ONLY:
+		return QCA_WLAN_802_11_MODE_11N;
+	case eCSR_CFG_DOT11_MODE_11AC_ONLY:
+		return QCA_WLAN_802_11_MODE_11AC;
+	case eCSR_CFG_DOT11_MODE_11AX:
+		return QCA_WLAN_802_11_MODE_11AX;
+	case eCSR_CFG_DOT11_MODE_11AX_ONLY:
+		return QCA_WLAN_802_11_MODE_11AX;
+	case eCSR_CFG_DOT11_MODE_ABG:
+	case eCSR_CFG_DOT11_MODE_AUTO:
+	default:
+		return QCA_WLAN_802_11_MODE_INVALID;
+	}
+}
+
 /**
  * wlan_hdd_cfg80211_channel_switch()- function to switch
  * channel in SAP/GO
@@ -23639,7 +23775,7 @@ wlan_hdd_cfg80211_external_auth(struct wiphy *wiphy,
 #endif
 
 #if defined(WLAN_FEATURE_NAN) && \
-	   (KERNEL_VERSION(4, 19, 0) <= LINUX_VERSION_CODE)
+	   (KERNEL_VERSION(4, 14, 0) <= LINUX_VERSION_CODE)
 static int
 wlan_hdd_cfg80211_start_nan(struct wiphy *wiphy, struct wireless_dev *wdev,
 			    struct cfg80211_nan_conf *conf)
@@ -23737,7 +23873,7 @@ void wlan_hdd_init_chan_info(struct hdd_context *hdd_ctx)
 
 	hdd_ctx->chan_info =
 		qdf_mem_malloc(sizeof(struct scan_chan_info)
-					* QDF_MAX_NUM_CHAN);
+					* NUM_CHANNELS);
 	if (!hdd_ctx->chan_info)
 		return;
 	mutex_init(&hdd_ctx->chan_info_lock);
@@ -23999,7 +24135,7 @@ static struct cfg80211_ops wlan_hdd_cfg80211_ops = {
 	.external_auth = wlan_hdd_cfg80211_external_auth,
 #endif
 #if defined(WLAN_FEATURE_NAN) && \
-	   (KERNEL_VERSION(4, 19, 0) <= LINUX_VERSION_CODE)
+	   (KERNEL_VERSION(4, 14, 0) <= LINUX_VERSION_CODE)
 	.start_nan = wlan_hdd_cfg80211_start_nan,
 	.stop_nan = wlan_hdd_cfg80211_stop_nan,
 	.add_nan_func = wlan_hdd_cfg80211_add_nan_func,

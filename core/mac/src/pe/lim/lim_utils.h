@@ -1203,11 +1203,13 @@ void lim_log_he_cap(struct mac_context *mac, tDot11fIEhe_cap *he_cap);
  * @sta_ds: pointer to sta dph hash table entry
  * @assoc_rsp: pointer to assoc response
  * @session_entry: pointer to PE session
+ * @beacon: pointer to beacon
  *
  * Return: None
  */
 void lim_update_stads_he_caps(tpDphHashNode sta_ds, tpSirAssocRsp assoc_rsp,
-			      struct pe_session *session_entry);
+			      struct pe_session *session_entry,
+			      tSchBeaconStruct *beacon);
 
 /**
  * lim_update_usr_he_cap() - Update HE capability based on userspace
@@ -1252,10 +1254,12 @@ static inline bool lim_is_session_he_capable(struct pe_session *session)
 /**
  * lim_update_he_bw_cap_mcs(): Update he mcs map per bandwidth
  * @session_entry: pointer to PE session
+ * @beacon: pointer to beacon
  *
  * Return: None
  */
-void lim_update_he_bw_cap_mcs(struct pe_session *session);
+void lim_update_he_bw_cap_mcs(struct pe_session *session,
+			      tSirProbeRespBeacon *beacon);
 
 static inline bool lim_is_he_6ghz_band(struct pe_session *session)
 {
@@ -1433,7 +1437,7 @@ static inline void lim_intersect_sta_he_caps(tpSirAssocReq assoc_req,
 }
 
 static inline void lim_update_stads_he_caps(tpDphHashNode sta_ds, tpSirAssocRsp assoc_rsp,
-		struct pe_session *session_entry)
+		struct pe_session *session_entry, tSchBeaconStruct *beacon)
 {
 	return;
 }
@@ -1481,7 +1485,8 @@ static inline bool lim_is_session_he_capable(struct pe_session *session)
 	return false;
 }
 
-static inline void lim_update_he_bw_cap_mcs(struct pe_session *session)
+static inline void lim_update_he_bw_cap_mcs(struct pe_session *session,
+					    tSirProbeRespBeacon *beacon)
 {
 }
 

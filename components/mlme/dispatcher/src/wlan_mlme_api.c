@@ -939,8 +939,8 @@ QDF_STATUS wlan_mlme_configure_chain_mask(struct wlan_objmgr_psoc *psoc,
 			  mlme_obj->cfg.chainmask_cfg.tx_chain_mask_5g,
 			  mlme_obj->cfg.chainmask_cfg.rx_chain_mask_5g);
 
-	if (enable2x2 || !enable_bt_chain_sep || as_enabled ||
-	   (!hw_dbs_2x2_cap && dual_mac_feature != DISABLE_DBS_CXN_AND_SCAN)) {
+	if ((enable2x2 && !enable_bt_chain_sep) || as_enabled ||
+	    (!hw_dbs_2x2_cap && dual_mac_feature != DISABLE_DBS_CXN_AND_SCAN)) {
 		mlme_legacy_debug("Cannot configure chainmask to FW");
 		return QDF_STATUS_E_FAILURE;
 	}
@@ -2101,6 +2101,9 @@ void wlan_mlme_update_oce_flags(struct wlan_objmgr_pdev *pdev)
 	go_connected_peer =
 	wlan_util_get_peer_count_for_mode(pdev, QDF_P2P_GO_MODE);
 	mlme_obj = mlme_get_psoc_ext_obj(psoc);
+
+	if (!mlme_obj)
+		return;
 
 	if (sap_connected_peer || go_connected_peer) {
 		updated_fw_value = mlme_obj->cfg.oce.feature_bitmap;

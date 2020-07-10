@@ -54,6 +54,9 @@ static void nan_cfg_init(struct wlan_objmgr_psoc *psoc,
 	nan_obj->cfg_param.ndp_keep_alive_period =
 					cfg_get(psoc,
 						CFG_NDP_KEEP_ALIVE_PERIOD);
+	nan_obj->cfg_param.max_ndp_sessions = cfg_get(psoc,
+						      CFG_NDP_MAX_SESSIONS);
+	nan_obj->cfg_param.max_ndi = cfg_get(psoc, CFG_NDI_MAX_SUPPORT);
 }
 
 /**
@@ -1099,6 +1102,12 @@ ucfg_nan_is_sta_nan_ndi_4_port_allowed(struct wlan_objmgr_psoc *psoc)
 }
 
 static inline bool
+ucfg_is_nan_enabled(struct nan_psoc_priv_obj *psoc_nan_obj)
+{
+	return psoc_nan_obj->cfg_param.enable;
+}
+
+static inline bool
 ucfg_nan_is_vdev_creation_supp_by_fw(struct nan_psoc_priv_obj *psoc_nan_obj)
 {
 	return psoc_nan_obj->nan_caps.nan_vdev_allowed;
@@ -1147,6 +1156,11 @@ bool ucfg_nan_is_vdev_creation_allowed(struct wlan_objmgr_psoc *psoc)
 	psoc_nan_obj = nan_get_psoc_priv_obj(psoc);
 	if (!psoc_nan_obj) {
 		nan_err("psoc_nan_obj is null");
+		return false;
+	}
+
+	if (!ucfg_is_nan_enabled(psoc_nan_obj)) {
+		nan_debug("NAN is not enabled");
 		return false;
 	}
 

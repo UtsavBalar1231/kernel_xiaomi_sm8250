@@ -6473,6 +6473,8 @@ static void csr_get_peer_rssi(struct mac_context *mac, uint32_t session_id,
 			QDF_MAC_ADDR_ARRAY(peer_mac.bytes));
 		if (QDF_IS_STATUS_ERROR(status))
 			sme_err("stats req failed: %d", status);
+
+		wma_get_rx_retry_cnt(mac, session_id, info.peer_mac_addr);
 		wlan_objmgr_vdev_release_ref(vdev, WLAN_LEGACY_SME_ID);
 	}
 }
@@ -7329,6 +7331,7 @@ static void csr_roam_process_results_default(struct mac_context *mac_ctx,
 		roam_info->tx_rate = mac_ctx->peer_txrate;
 		roam_info->rx_rate = mac_ctx->peer_rxrate;
 		roam_info->rx_mc_bc_cnt = mac_ctx->rx_mc_bc_cnt;
+		roam_info->rx_retry_cnt = mac_ctx->rx_retry_cnt;
 
 		csr_roam_state_change(mac_ctx, eCSR_ROAMING_STATE_JOINED,
 			session_id);
@@ -10773,6 +10776,7 @@ csr_roam_send_disconnect_done_indication(struct mac_context *mac_ctx,
 		roam_info->rx_rate = mac_ctx->peer_rxrate;
 		roam_info->disassoc_reason = discon_ind->reason_code;
 		roam_info->rx_mc_bc_cnt = mac_ctx->rx_mc_bc_cnt;
+		roam_info->rx_retry_cnt = mac_ctx->rx_retry_cnt;
 		vdev = wlan_objmgr_get_vdev_by_id_from_psoc(mac_ctx->psoc,
 							    vdev_id,
 							    WLAN_LEGACY_SME_ID);
@@ -11373,7 +11377,7 @@ void csr_update_connect_n_roam_cmn_filter(struct mac_context *mac_ctx,
 		status = policy_mgr_get_pcl(mac_ctx->psoc, pm_mode,
 					    pcl_freq_list, &num_entries,
 					    filter->pcl_weight_list,
-					    QDF_MAX_NUM_CHAN);
+					    NUM_CHANNELS);
 		if (QDF_IS_STATUS_ERROR(status))
 			return;
 		qdf_mem_copy(filter->pcl_freq_list, pcl_freq_list,
@@ -11534,7 +11538,7 @@ csr_roam_get_scan_filter_from_profile(struct mac_context *mac_ctx,
 	    ch_info->freq_list[0]) {
 		filter->num_of_channels = 0;
 		for (i = 0; i < ch_info->numOfChannels; i++) {
-			if (filter->num_of_channels >= QDF_MAX_NUM_CHAN) {
+			if (filter->num_of_channels >= NUM_CHANNELS) {
 				sme_err("max allowed channel(%d) reached",
 					filter->num_of_channels);
 				break;
@@ -20899,17 +20903,11 @@ void csr_roaming_report_diag_event(struct mac_context *mac_ctx,
 #endif
 
 #ifdef WLAN_FEATURE_ROAM_OFFLOAD
-/*
- * fn csr_process_ho_fail_ind
- * brief  This function will process the Hand Off Failure indication
- *        received from the firmware. It will trigger a disconnect on
- *        the session which the firmware reported a hand off failure
- * param  mac global structure
- * param  msg_buf - Contains the session ID for which the handler should apply
- */
 void csr_process_ho_fail_ind(struct mac_context *mac_ctx, void *msg_buf)
 {
 	struct handoff_failure_ind *pSmeHOFailInd = msg_buf;
+	struct mlme_roam_after_data_stall *vdev_roam_params;
+	struct wlan_objmgr_vdev *vdev;
 	uint32_t sessionId;
 
 	if (!pSmeHOFailInd) {
@@ -20925,6 +20923,22 @@ void csr_process_ho_fail_ind(struct mac_context *mac_ctx, void *msg_buf)
 			sessionId);
 		return;
 	}
+
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(mac_ctx->psoc, sessionId,
+						    WLAN_LEGACY_SME_ID);
+	if (!vdev) {
+		sme_err("LFR3: vdev is NULL");
+		return;
+	}
+
+	vdev_roam_params = mlme_get_roam_invoke_params(vdev);
+	if (vdev_roam_params)
+		vdev_roam_params->roam_invoke_in_progress = false;
+	else
+		sme_err("LFR3: Vdev roam params is NULL");
+
+	wlan_objmgr_vdev_release_ref(vdev, WLAN_LEGACY_SME_ID);
+
 	mac_ctx->sme.set_connection_info_cb(false);
 	csr_roam_roaming_offload_timer_action(mac_ctx, 0, sessionId,
 			ROAMING_OFFLOAD_TIMER_STOP);
@@ -21849,7 +21863,8 @@ static QDF_STATUS csr_process_roam_sync_callback(struct mac_context *mac_ctx,
 		csr_roam_roaming_offload_timer_action(mac_ctx,
 				0, session_id, ROAMING_OFFLOAD_TIMER_STOP);
 		if (session->discon_in_progress ||
-		    MLME_IS_ROAM_STATE_STOPPED(mac_ctx->psoc, session_id) ||
+		    (MLME_IS_ROAM_STATE_STOPPED(mac_ctx->psoc, session_id) &&
+		    !vdev_roam_params->roam_invoke_in_progress) ||
 		    !CSR_IS_ROAM_JOINED(mac_ctx, session_id)) {
 			QDF_TRACE(QDF_MODULE_ID_SME, QDF_TRACE_LEVEL_DEBUG,
 				FL("LFR3: Session not in connected state or disconnect is in progress %d"),

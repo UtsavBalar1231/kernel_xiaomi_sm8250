@@ -1101,7 +1101,7 @@ enum phy_ch_width hdd_map_nl_chan_width(enum nl80211_chan_width ch_width)
 }
 
 #if defined(WLAN_FEATURE_NAN) && \
-	   (KERNEL_VERSION(4, 19, 0) <= LINUX_VERSION_CODE)
+	   (KERNEL_VERSION(4, 14, 0) <= LINUX_VERSION_CODE)
 /**
  * wlan_hdd_convert_nan_type() - Convert nl type to qdf type
  * @nl_type: NL80211 interface type
@@ -1133,6 +1133,11 @@ static void wlan_hdd_set_nan_if_type(struct hdd_adapter *adapter)
 {
 	adapter->wdev.iftype = NL80211_IFTYPE_NAN;
 }
+
+static bool wlan_hdd_is_vdev_creation_allowed(struct wlan_objmgr_psoc *psoc)
+{
+	return ucfg_nan_is_vdev_creation_allowed(psoc);
+}
 #else
 static QDF_STATUS wlan_hdd_convert_nan_type(enum nl80211_iftype nl_type,
 					    enum QDF_OPMODE *out_qdf_type)
@@ -1142,6 +1147,11 @@ static QDF_STATUS wlan_hdd_convert_nan_type(enum nl80211_iftype nl_type,
 
 static void wlan_hdd_set_nan_if_type(struct hdd_adapter *adapter)
 {
+}
+
+static bool wlan_hdd_is_vdev_creation_allowed(struct wlan_objmgr_psoc *psoc)
+{
+	return false;
 }
 #endif
 
@@ -2284,6 +2294,12 @@ int hdd_update_tgt_cfg(hdd_handle_t hdd_handle, struct wma_tgt_cfg *cfg)
 	status = wlan_hdd_update_wiphy_supported_band(hdd_ctx);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		hdd_err("Failed to update wiphy band info");
+		goto pdev_close;
+	}
+
+	status = ucfg_reg_set_band(hdd_ctx->pdev, band_capability);
+	if (QDF_IS_STATUS_ERROR(status)) {
+		hdd_err("Failed to update regulatory band info");
 		goto pdev_close;
 	}
 
@@ -3768,6 +3784,7 @@ int hdd_wlan_start_modules(struct hdd_context *hdd_ctx, bool reinit)
 		hdd_sysfs_create_driver_root_obj();
 		hdd_sysfs_create_version_interface(hdd_ctx->psoc);
 		hdd_sysfs_create_powerstats_interface();
+		hdd_sysfs_dp_aggregation_create();
 		hdd_update_hw_sw_info(hdd_ctx);
 
 		if (QDF_GLOBAL_FTM_MODE == hdd_get_conparam()) {
@@ -3808,6 +3825,7 @@ int hdd_wlan_start_modules(struct hdd_context *hdd_ctx, bool reinit)
 	return 0;
 
 destroy_driver_sysfs:
+	hdd_sysfs_dp_aggregation_destroy();
 	hdd_sysfs_destroy_powerstats_interface();
 	hdd_sysfs_destroy_version_interface();
 	hdd_sysfs_destroy_driver_root_obj();
@@ -4023,7 +4041,7 @@ static int hdd_open(struct net_device *net_dev)
 	int errno;
 	struct osif_vdev_sync *vdev_sync;
 
-	errno = osif_vdev_sync_trans_start_wait(net_dev, &vdev_sync);
+	errno = osif_vdev_sync_trans_start(net_dev, &vdev_sync);
 	if (errno)
 		return errno;
 
@@ -6089,6 +6107,7 @@ struct hdd_adapter *hdd_open_adapter(struct hdd_context *hdd_ctx, uint8_t sessio
 	}
 
 	qdf_spinlock_create(&adapter->vdev_lock);
+	qdf_atomic_init(&hdd_ctx->num_latency_critical_clients);
 
 	hdd_init_completion(adapter);
 	INIT_WORK(&adapter->scan_block_work, wlan_hdd_cfg80211_scan_block_cb);
@@ -6644,6 +6663,62 @@ QDF_STATUS hdd_stop_all_adapters(struct hdd_context *hdd_ctx)
 	hdd_exit();
 
 	return QDF_STATUS_SUCCESS;
+}
+
+void hdd_set_netdev_flags(struct hdd_adapter *adapter)
+{
+	bool enable_csum = false;
+	enum QDF_OPMODE device_mode;
+	struct hdd_context *hdd_ctx;
+	ol_txrx_soc_handle soc;
+	uint64_t temp;
+
+	if (!adapter || !adapter->dev) {
+		hdd_err("invalid input!");
+		return;
+	}
+
+	hdd_ctx = adapter->hdd_ctx;
+	device_mode = adapter->device_mode;
+	soc = cds_get_context(QDF_MODULE_ID_SOC);
+
+	/* Determine device_mode specific configuration */
+	switch (device_mode) {
+	case QDF_NDI_MODE:
+	case QDF_NAN_DISC_MODE:
+		if (cdp_cfg_get(soc,
+				cfg_dp_enable_nan_ip_tcp_udp_checksum_offload))
+			enable_csum = true;
+		break;
+	default:
+		if (cdp_cfg_get(soc,
+				cfg_dp_enable_ip_tcp_udp_checksum_offload))
+			enable_csum = true;
+	}
+
+	/* Set netdev flags */
+
+	/*
+	 * In case of USB tethering, LRO is disabled. If SSR happened
+	 * during that time, then as part of SSR init, do not enable
+	 * the LRO again. Keep the LRO state same as before SSR.
+	 */
+	if (cdp_cfg_get(soc, cfg_dp_lro_enable) &&
+	    !(qdf_atomic_read(&hdd_ctx->vendor_disable_lro_flag)))
+		adapter->dev->features |= NETIF_F_LRO;
+
+	if (enable_csum)
+		adapter->dev->features |=
+			(NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM);
+
+	if (cdp_cfg_get(soc, cfg_dp_tso_enable) && enable_csum)
+		adapter->dev->features |=
+			 (NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_SG);
+
+	adapter->dev->features |= NETIF_F_RXCSUM;
+	temp = (uint64_t)adapter->dev->features;
+
+	hdd_debug("adapter mode %u dev feature 0x%llx", device_mode, temp);
 }
 
 static void hdd_reset_scan_operation(struct hdd_context *hdd_ctx,
@@ -8793,10 +8868,26 @@ static void hdd_pld_request_bus_bandwidth(struct hdd_context *hdd_ctx,
 	if (hdd_ctx->cur_vote_level != next_vote_level) {
 		hdd_debug("BW Vote level %d, tx_packets: %lld, rx_packets: %lld",
 			  next_vote_level, tx_packets, rx_packets);
+
 		hdd_ctx->cur_vote_level = next_vote_level;
 		vote_level_change = true;
 
-		pld_request_bus_bandwidth(hdd_ctx->parent_dev, next_vote_level);
+		/*
+		 * 11g/a clients are latency sensitive, and any delay in DDR
+		 * access for fetching the packet can cause throughput drop.
+		 * For 11g/a clients LOW voting level is not sufficient for
+		 * peak throughput. Vote for higher DDR frequency if latency
+		 * critical connections are present.
+		 */
+		if (hdd_ctx->config->enable_latency_crit_clients &&
+		    (next_vote_level == PLD_BUS_WIDTH_LOW ||
+		     next_vote_level == PLD_BUS_WIDTH_IDLE) &&
+		    qdf_atomic_read(&hdd_ctx->num_latency_critical_clients))
+			pld_request_bus_bandwidth(hdd_ctx->parent_dev,
+						  PLD_BUS_WIDTH_LOW_LATENCY);
+		else
+			pld_request_bus_bandwidth(hdd_ctx->parent_dev,
+						  next_vote_level);
 
 		if ((next_vote_level == PLD_BUS_WIDTH_LOW) ||
 		    (next_vote_level == PLD_BUS_WIDTH_IDLE)) {
@@ -8836,14 +8927,16 @@ static void hdd_pld_request_bus_bandwidth(struct hdd_context *hdd_ctx,
 		else
 			hdd_disable_rx_ol_for_low_tput(hdd_ctx, false);
 
-		if (hdd_ctx->is_pktlog_enabled) {
-			if (next_vote_level >= PLD_BUS_WIDTH_HIGH)
-				hdd_pktlog_enable_disable(hdd_ctx, false,
-							  0, 0);
-			else
-				hdd_pktlog_enable_disable(hdd_ctx, true,
-							  0, 0);
-		}
+		/*
+		 * force disable pktlog and only re-enable based
+		 * on ini config
+		 */
+		if (next_vote_level >= PLD_BUS_WIDTH_HIGH)
+			hdd_pktlog_enable_disable(hdd_ctx, false,
+						  0, 0);
+		else if (cds_is_packet_log_enabled())
+			hdd_pktlog_enable_disable(hdd_ctx, true,
+						  0, 0);
 	}
 
 	qdf_dp_trace_apply_tput_policy(dptrace_high_tput_req);
@@ -12751,6 +12844,7 @@ int hdd_wlan_stop_modules(struct hdd_context *hdd_ctx, bool ftm_mode)
 		goto done;
 	}
 
+	hdd_sysfs_dp_aggregation_destroy();
 	hdd_sysfs_destroy_powerstats_interface();
 	hdd_sysfs_destroy_version_interface();
 	hdd_sysfs_destroy_driver_root_obj();
@@ -13216,7 +13310,7 @@ hdd_open_adapters_for_mission_mode(struct hdd_context *hdd_ctx)
 	 * Create separate interface (wifi-aware0) for NAN. All NAN commands
 	 * should go on this new interface.
 	 */
-	if (ucfg_nan_is_vdev_creation_allowed(hdd_ctx->psoc)) {
+	if (wlan_hdd_is_vdev_creation_allowed(hdd_ctx->psoc)) {
 		mac_addr = wlan_hdd_get_intf_addr(hdd_ctx, QDF_NAN_DISC_MODE);
 		if (!mac_addr)
 			goto err_close_adapters;
@@ -13699,7 +13793,6 @@ int hdd_register_cb(struct hdd_context *hdd_ctx)
 					    hdd_sme_close_session_callback,
 					    hdd_common_roam_callback);
 
-	sme_set_oem_data_event_handler_cb(mac_handle, hdd_oem_event_handler_cb);
 	sme_set_roam_scan_ch_event_cb(mac_handle, hdd_get_roam_scan_ch_cb);
 	status = sme_set_monitor_mode_cb(mac_handle,
 					 hdd_sme_monitor_mode_callback);
@@ -13732,8 +13825,6 @@ void hdd_deregister_cb(struct hdd_context *hdd_ctx)
 	}
 
 	mac_handle = hdd_ctx->mac_handle;
-
-	sme_reset_oem_data_event_handler_cb(mac_handle);
 
 	sme_deregister_tx_queue_cb(mac_handle);
 
@@ -14147,6 +14238,7 @@ exit:
 	 * connected
 	 */
 	if (!hdd_is_any_adapter_connected(hdd_ctx)) {
+		qdf_atomic_set(&hdd_ctx->num_latency_critical_clients, 0);
 		hdd_ctx->cur_vote_level = PLD_BUS_WIDTH_NONE;
 		pld_request_bus_bandwidth(hdd_ctx->parent_dev,
 					  PLD_BUS_WIDTH_NONE);
@@ -14472,6 +14564,11 @@ static void hdd_inform_wifi_off(void)
 	ucfg_blm_wifi_off(hdd_ctx->pdev);
 }
 
+void hdd_init_start_completion(void)
+{
+	INIT_COMPLETION(wlan_start_comp);
+}
+
 static ssize_t wlan_hdd_state_ctrl_param_write(struct file *filp,
 						const char __user *user_buf,
 						size_t count,
@@ -14482,6 +14579,7 @@ static ssize_t wlan_hdd_state_ctrl_param_write(struct file *filp,
 	static const char wlan_on_str[] = "ON";
 	int ret;
 	unsigned long rc;
+	struct hdd_context *hdd_ctx = cds_get_context(QDF_MODULE_ID_HDD);
 
 	if (copy_from_user(buf, user_buf, 3)) {
 		pr_err("Failed to read buffer\n");
@@ -14502,7 +14600,7 @@ static ssize_t wlan_hdd_state_ctrl_param_write(struct file *filp,
 		goto exit;
 	}
 
-	if (!cds_is_driver_loaded()) {
+	if (!cds_is_driver_loaded() || cds_is_driver_recovering()) {
 		rc = wait_for_completion_timeout(&wlan_start_comp,
 				msecs_to_jiffies(HDD_WLAN_START_WAIT_TIME));
 		if (!rc) {
@@ -14511,6 +14609,13 @@ static ssize_t wlan_hdd_state_ctrl_param_write(struct file *filp,
 			return ret;
 		}
 	}
+
+	/*
+	 * Flush idle shutdown work for cases to synchronize the wifi on
+	 * during the idle shutdown.
+	 */
+	if (hdd_ctx)
+		hdd_psoc_idle_timer_stop(hdd_ctx);
 
 exit:
 	return count;
@@ -15221,6 +15326,13 @@ static int __hdd_driver_mode_change(struct hdd_context *hdd_ctx,
 	/* con_mode is a global module parameter */
 	con_mode = next_mode;
 	hdd_info("Driver mode successfully changed to %d", next_mode);
+
+	if (con_mode == QDF_GLOBAL_FTM_MODE)
+		pld_request_bus_bandwidth(hdd_ctx->parent_dev,
+					  PLD_BUS_WIDTH_VERY_HIGH);
+	else if (con_mode == QDF_GLOBAL_MISSION_MODE)
+		pld_request_bus_bandwidth(hdd_ctx->parent_dev,
+					  PLD_BUS_WIDTH_NONE);
 
 	return 0;
 }
@@ -15935,6 +16047,9 @@ static int hdd_update_dp_config(struct hdd_context *hdd_ctx)
 	params.flow_steering_enable =
 		cfg_get(hdd_ctx->psoc, CFG_DP_FLOW_STEERING_ENABLED);
 	params.napi_enable = hdd_ctx->napi_enable;
+	params.nan_tcp_udp_checksumoffload =
+		cfg_get(hdd_ctx->psoc,
+			CFG_DP_NAN_TCP_UDP_CKSUM_OFFLOAD);
 	params.tcp_udp_checksumoffload =
 			cfg_get(hdd_ctx->psoc,
 				CFG_DP_TCP_UDP_CKSUM_OFFLOAD);

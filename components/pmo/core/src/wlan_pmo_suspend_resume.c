@@ -433,14 +433,19 @@ static void pmo_core_enable_runtime_pm_offloads(struct wlan_objmgr_psoc *psoc)
 {
 	uint8_t vdev_id;
 	struct wlan_objmgr_vdev *vdev;
+	QDF_STATUS status;
 
 	/* Iterate through VDEV list */
 	for (vdev_id = 0; vdev_id < WLAN_UMAC_PSOC_MAX_VDEVS; vdev_id++) {
 		vdev = pmo_psoc_get_vdev(psoc, vdev_id);
 		if (!vdev)
 			continue;
+		status = pmo_vdev_get_ref(vdev);
+		if (QDF_IS_STATUS_ERROR(status))
+			continue;
 
 		pmo_register_action_frame_patterns(vdev, QDF_RUNTIME_SUSPEND);
+		pmo_vdev_put_ref(vdev);
 	}
 }
 
@@ -448,14 +453,19 @@ static void pmo_core_disable_runtime_pm_offloads(struct wlan_objmgr_psoc *psoc)
 {
 	uint8_t vdev_id;
 	struct wlan_objmgr_vdev *vdev;
+	QDF_STATUS status;
 
 	/* Iterate through VDEV list */
 	for (vdev_id = 0; vdev_id < WLAN_UMAC_PSOC_MAX_VDEVS; vdev_id++) {
 		vdev = pmo_psoc_get_vdev(psoc, vdev_id);
 		if (!vdev)
 			continue;
+		status = pmo_vdev_get_ref(vdev);
+		if (QDF_IS_STATUS_ERROR(status))
+			continue;
 
 		pmo_clear_action_frame_patterns(vdev);
+		pmo_vdev_put_ref(vdev);
 	}
 }
 
@@ -932,6 +942,12 @@ out:
 }
 
 #ifdef FEATURE_RUNTIME_PM
+#define PMO_CORE_PSOC_RUNTIME_PM_QDF_BUG(__condition) ({ \
+	typeof(__condition) condition = __condition; \
+	if (condition && !qdf_is_fw_down()) \
+		QDF_BUG(0); \
+})
+
 QDF_STATUS pmo_core_psoc_bus_runtime_suspend(struct wlan_objmgr_psoc *psoc,
 					     pmo_pld_auto_suspend_cb pld_cb)
 {
@@ -1026,24 +1042,23 @@ QDF_STATUS pmo_core_psoc_bus_runtime_suspend(struct wlan_objmgr_psoc *psoc,
 	goto dec_psoc_ref;
 
 resume_hif:
-	QDF_BUG(!hif_runtime_resume(hif_ctx));
+	PMO_CORE_PSOC_RUNTIME_PM_QDF_BUG(hif_runtime_resume(hif_ctx));
 
 pmo_bus_resume:
-	QDF_BUG(QDF_STATUS_SUCCESS ==
+	PMO_CORE_PSOC_RUNTIME_PM_QDF_BUG(QDF_STATUS_SUCCESS !=
 		pmo_core_psoc_bus_resume_req(psoc, QDF_RUNTIME_SUSPEND));
 
 pmo_resume_configure:
-	QDF_BUG(QDF_STATUS_SUCCESS ==
+	PMO_CORE_PSOC_RUNTIME_PM_QDF_BUG(QDF_STATUS_SUCCESS !=
 		pmo_core_psoc_configure_resume(psoc, true));
 
 resume_htc:
-	QDF_BUG(QDF_STATUS_SUCCESS ==
+	PMO_CORE_PSOC_RUNTIME_PM_QDF_BUG(QDF_STATUS_SUCCESS !=
 		pmo_tgt_psoc_set_runtime_pm_inprogress(psoc, false));
-
-	QDF_BUG(!htc_runtime_resume(htc_ctx));
+	PMO_CORE_PSOC_RUNTIME_PM_QDF_BUG(htc_runtime_resume(htc_ctx));
 
 cdp_runtime_resume:
-	QDF_BUG(QDF_STATUS_SUCCESS ==
+	PMO_CORE_PSOC_RUNTIME_PM_QDF_BUG(QDF_STATUS_SUCCESS !=
 		cdp_runtime_resume(dp_soc, pdev_id));
 
 runtime_failure:
