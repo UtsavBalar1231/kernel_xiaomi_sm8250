@@ -493,7 +493,8 @@ static int dsi_panel_power_off(struct dsi_panel *panel)
 	if (gpio_is_valid(panel->reset_config.disp_en_gpio))
 		gpio_set_value(panel->reset_config.disp_en_gpio, 0);
 
-	if (gpio_is_valid(panel->reset_config.reset_gpio))
+	if (gpio_is_valid(panel->reset_config.reset_gpio) &&
+					!panel->reset_gpio_always_on)
 		gpio_set_value(panel->reset_config.reset_gpio, 0);
 
 	if (gpio_is_valid(panel->reset_config.lcd_mode_sel_gpio))
@@ -2048,6 +2049,10 @@ static int dsi_panel_parse_misc_features(struct dsi_panel *panel)
 
 	panel->lp11_init = utils->read_bool(utils->data,
 			"qcom,mdss-dsi-lp11-init");
+
+	panel->reset_gpio_always_on = utils->read_bool(utils->data,
+			"qcom,platform-reset-gpio-always-on");
+
 	return 0;
 }
 

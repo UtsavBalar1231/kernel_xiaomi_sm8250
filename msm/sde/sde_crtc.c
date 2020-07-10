@@ -4203,6 +4203,9 @@ static int _sde_crtc_check_secure_blend_config(struct drm_crtc *crtc,
 {
 	struct drm_plane *plane;
 	int i;
+	struct drm_crtc_state *old_state = crtc->state;
+	struct sde_crtc_state *old_cstate = to_sde_crtc_state(old_state);
+
 	if (secure == SDE_DRM_SEC_ONLY) {
 		/*
 		 * validate planes - only fb_sec_dir is allowed during sec_crtc
@@ -4263,6 +4266,8 @@ static int _sde_crtc_check_secure_blend_config(struct drm_crtc *crtc,
 		 * - fail empty commit
 		 * - validate dim_layer or plane is staged in the supported
 		 *   blendstage
+		 * - fail if previous commit has no planes staged and
+		 *   no dim layer at highest blendstage.
 		 */
 		if (sde_kms->catalog->sui_supported_blendstage) {
 			int sec_stage = cnt ? pstates[0].sde_pstate->stage :
@@ -4278,6 +4283,14 @@ static int _sde_crtc_check_secure_blend_config(struct drm_crtc *crtc,
 				  "crtc%d: empty cnt%d/dim%d or bad stage%d\n",
 					DRMID(crtc), cnt,
 					cstate->num_dim_layers, sec_stage);
+				return -EINVAL;
+			}
+
+			if (!old_state->plane_mask &&
+				!old_cstate->num_dim_layers) {
+				SDE_ERROR(
+				"crtc%d: no dim layer in nonsecure to secure transition\n",
+					DRMID(crtc));
 				return -EINVAL;
 			}
 		}
@@ -4839,6 +4852,7 @@ int sde_crtc_vblank(struct drm_crtc *crtc, bool en)
 	}
 	sde_crtc = to_sde_crtc(crtc);
 
+	mutex_lock(&sde_crtc->vblank_modeset_ctrl_lock);
 	mutex_lock(&sde_crtc->crtc_lock);
 	SDE_EVT32(DRMID(&sde_crtc->base), en, sde_crtc->enabled);
 	ret = _sde_crtc_vblank_enable_no_lock(sde_crtc, en);
@@ -4847,6 +4861,7 @@ int sde_crtc_vblank(struct drm_crtc *crtc, bool en)
 				sde_crtc->name, ret);
 
 	mutex_unlock(&sde_crtc->crtc_lock);
+	mutex_unlock(&sde_crtc->vblank_modeset_ctrl_lock);
 
 	return 0;
 }
@@ -6132,6 +6147,7 @@ struct drm_crtc *sde_crtc_init(struct drm_device *dev, struct drm_plane *plane)
 	mutex_init(&sde_crtc->crtc_lock);
 	spin_lock_init(&sde_crtc->spin_lock);
 	atomic_set(&sde_crtc->frame_pending, 0);
+	mutex_init(&sde_crtc->vblank_modeset_ctrl_lock);
 
 	sde_crtc->enabled = false;
 
