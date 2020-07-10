@@ -404,6 +404,7 @@ static struct sk_buff *rmnet_shs_skb_partial_segment(struct sk_buff *skb,
 	struct sk_buff *segments, *tmp;
 	u16 gso_size = shinfo->gso_size;
 	u16 gso_segs = shinfo->gso_segs;
+	unsigned int gso_type = shinfo->gso_type;
 
 	if (segments_per_skb >= gso_segs) {
 		return NULL;
@@ -420,17 +421,27 @@ static struct sk_buff *rmnet_shs_skb_partial_segment(struct sk_buff *skb,
 		return NULL;
 	}
 
-	/* Mark correct number of segments and correct size in the new skbs */
+	/* No need to set gso info if single segments */
+	if (segments_per_skb <= 1)
+		return segments;
+
+	/* Mark correct number of segments, size, and type in the new skbs */
 	for (tmp = segments; tmp; tmp = tmp->next) {
 		struct skb_shared_info *new_shinfo = skb_shinfo(tmp);
 
+		new_shinfo->gso_type = gso_type;
 		new_shinfo->gso_size = gso_size;
+
 		if (gso_segs >= segments_per_skb)
 			new_shinfo->gso_segs = segments_per_skb;
 		else
 			new_shinfo->gso_segs = gso_segs;
 
 		gso_segs -= segments_per_skb;
+
+		if (gso_segs <= 1) {
+			break;
+		}
 	}
 
 	return segments;
@@ -1012,6 +1023,8 @@ void rmnet_shs_flush_node(struct rmnet_shs_skbn_s *node, u8 ctext)
 		skb_bytes_delivered += skb->len;
 
 		if (segs_per_skb > 0) {
+			if (node->skb_tport_proto == IPPROTO_UDP)
+				rmnet_shs_crit_err[RMNET_SHS_UDP_SEGMENT]++;
 			rmnet_shs_deliver_skb_segmented(skb, ctext,
 							segs_per_skb);
 		} else {
@@ -1511,7 +1524,7 @@ int rmnet_shs_drop_backlog(struct sk_buff_head *list, int cpu)
 
 	return 0;
 }
-
+/* This will run in process context, avoid disabling bh */
 static int rmnet_shs_oom_notify(struct notifier_block *self,
 			    unsigned long emtpy, void *free)
 {
@@ -1520,7 +1533,6 @@ static int rmnet_shs_oom_notify(struct notifier_block *self,
 	struct sk_buff_head *process_q;
 	struct sk_buff_head *input_q;
 
-	local_bh_disable();
 	for_each_possible_cpu(cpu) {
 
 		process_q = &GET_PQUEUE(cpu);
@@ -1541,7 +1553,6 @@ static int rmnet_shs_oom_notify(struct notifier_block *self,
 			(*nfree)++;
 		}
 	}
-	local_bh_enable();
 	return 0;
 }
 
