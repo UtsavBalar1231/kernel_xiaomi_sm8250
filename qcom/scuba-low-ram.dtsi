@@ -1,5 +1,9 @@
 #include "scuba.dtsi"
 / {
+	/delete-node/ secure_display_region;
+};
+
+/ {
 	reserved-memory {
 		/delete-node/ removed_region@60000000;
 		/delete-node/ qseecom_region;
