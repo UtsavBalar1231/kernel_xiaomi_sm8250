@@ -2553,8 +2553,8 @@ struct wmi_wifi_start_log {
  * @pcl_len: Number of channels in the PCL
  */
 struct wmi_pcl_list {
-	uint8_t pcl_list[128];
-	uint8_t weight_list[128];
+	uint8_t pcl_list[NUM_CHANNELS];
+	uint8_t weight_list[NUM_CHANNELS];
 	uint32_t pcl_len;
 };
 
@@ -5254,6 +5254,8 @@ struct wmi_host_fw_abi_ver {
  * @ast_tid_low_mask_enable: enable tid valid mask for low priority flow
  * @nan_separate_iface_support: Separate iface creation for NAN
  * @time_sync_ftm: enable ftm based time sync
+ * @max_ndp_sessions: Max ndp sessions support
+ * @max_ndi: max number of ndi host supports
  */
 typedef struct {
 	uint32_t num_vdevs;
@@ -5352,6 +5354,8 @@ typedef struct {
 		 ast_tid_low_mask_enable:8;
 	bool nan_separate_iface_support;
 	bool time_sync_ftm;
+	uint32_t max_ndp_sessions;
+	uint32_t max_ndi;
 } target_resource_config;
 
 /**

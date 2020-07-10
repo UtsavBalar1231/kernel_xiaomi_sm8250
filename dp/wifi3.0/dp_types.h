@@ -1268,6 +1268,14 @@ struct dp_soc {
 	struct dp_rx_fst *rx_fst;
 #ifdef WLAN_SUPPORT_RX_FISA
 	uint8_t fisa_enable;
+
+	/**
+	 * Params used for controlling the fisa aggregation dynamically
+	 */
+	struct {
+		qdf_atomic_t skip_fisa;
+		uint8_t fisa_force_flush[MAX_REO_DEST_RINGS];
+	} skip_fisa_param;
 #endif
 #endif /* WLAN_SUPPORT_RX_FLOW_TAG || WLAN_SUPPORT_RX_FISA */
 };
@@ -1822,6 +1830,9 @@ struct dp_vdev {
 	qdf_device_t osdev;
 	/* physical device that is the parent of this virtual device */
 	struct dp_pdev *pdev;
+
+	/* HW TX Checksum Enabled Flag */
+	uint8_t csum_enabled;
 
 	/* Handle to the OS shim SW's virtual device */
 	ol_osif_vdev_handle osif_vdev;

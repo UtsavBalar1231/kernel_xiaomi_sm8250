@@ -1526,18 +1526,23 @@ target_if_init_spectral_capability(struct target_if_spectral *spectral)
 		pcap->agile_spectral_cap_80p80 = false;
 	}
 
-	for (param_idx = 0; param_idx < num_bin_scaling_params; param_idx++) {
-		if (scaling_params[param_idx].pdev_id == pdev_id) {
-			pcap->is_scaling_params_populated = true;
-			pcap->formula_id = scaling_params[param_idx].formula_id;
-			pcap->low_level_offset =
-				scaling_params[param_idx].low_level_offset;
-			pcap->high_level_offset =
-				scaling_params[param_idx].high_level_offset;
-			pcap->rssi_thr = scaling_params[param_idx].rssi_thr;
-			pcap->default_agc_max_gain =
-				scaling_params[param_idx].default_agc_max_gain;
-			break;
+	if (scaling_params) {
+		for (param_idx = 0; param_idx < num_bin_scaling_params;
+		     param_idx++) {
+			if (scaling_params[param_idx].pdev_id == pdev_id) {
+				pcap->is_scaling_params_populated = true;
+				pcap->formula_id =
+				    scaling_params[param_idx].formula_id;
+				pcap->low_level_offset =
+				    scaling_params[param_idx].low_level_offset;
+				pcap->high_level_offset =
+				    scaling_params[param_idx].high_level_offset;
+				pcap->rssi_thr =
+				    scaling_params[param_idx].rssi_thr;
+				pcap->default_agc_max_gain =
+				 scaling_params[param_idx].default_agc_max_gain;
+				break;
+			}
 		}
 	}
 
@@ -3086,7 +3091,18 @@ target_if_get_spectral_config(struct wlan_objmgr_pdev *pdev,
 	struct target_if_spectral *spectral = NULL;
 
 	spectral = get_target_if_spectral_handle_from_pdev(pdev);
+
+	if (!spectral) {
+		spectral_err("SPECTRAL : Module doesn't exist");
+		return QDF_STATUS_E_FAILURE;
+	}
+
 	p_sops = GET_TARGET_IF_SPECTRAL_OPS(spectral);
+
+	if (!p_sops) {
+		spectral_err("p_sops is null");
+		return QDF_STATUS_E_FAILURE;
+	}
 
 	if (smode >= SPECTRAL_SCAN_MODE_MAX) {
 		spectral_err("Invalid Spectral mode %u", smode);
@@ -3664,6 +3680,11 @@ target_if_start_spectral_scan(struct wlan_objmgr_pdev *pdev,
 	}
 	*err = SPECTRAL_SCAN_ERR_INVALID;
 
+	if (!pdev) {
+		spectral_err("pdev object is NUll");
+		return QDF_STATUS_E_FAILURE;
+	}
+
 	psoc = wlan_pdev_get_psoc(pdev);
 	if (!psoc) {
 		spectral_err("psoc is null");
@@ -3676,10 +3697,6 @@ target_if_start_spectral_scan(struct wlan_objmgr_pdev *pdev,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	if (!pdev) {
-		spectral_err("pdev object is NUll");
-		return QDF_STATUS_E_FAILURE;
-	}
 	spectral = get_target_if_spectral_handle_from_pdev(pdev);
 	if (!spectral) {
 		spectral_err("Spectral LMAC object is NUll");
@@ -3687,6 +3704,10 @@ target_if_start_spectral_scan(struct wlan_objmgr_pdev *pdev,
 	}
 
 	p_sops = GET_TARGET_IF_SPECTRAL_OPS(spectral);
+	if (!p_sops) {
+		spectral_err("p_sops is null");
+		return QDF_STATUS_E_FAILURE;
+	}
 
 	if (smode == SPECTRAL_SCAN_MODE_AGILE) {
 		QDF_STATUS status;
@@ -3886,7 +3907,18 @@ target_if_is_spectral_active(struct wlan_objmgr_pdev *pdev,
 	struct target_if_spectral_ops *p_sops = NULL;
 
 	spectral = get_target_if_spectral_handle_from_pdev(pdev);
+
+	if (!spectral) {
+		spectral_err("SPECTRAL : Module doesn't exist");
+		return QDF_STATUS_E_FAILURE;
+	}
+
 	p_sops = GET_TARGET_IF_SPECTRAL_OPS(spectral);
+
+	if (!p_sops) {
+		spectral_err("p_sops is null");
+		return QDF_STATUS_E_FAILURE;
+	}
 
 	if (smode >= SPECTRAL_SCAN_MODE_MAX) {
 		spectral_err("Invalid Spectral mode %u", smode);
@@ -3913,7 +3945,18 @@ target_if_is_spectral_enabled(struct wlan_objmgr_pdev *pdev,
 	struct target_if_spectral_ops *p_sops = NULL;
 
 	spectral = get_target_if_spectral_handle_from_pdev(pdev);
+
+	if (!spectral) {
+		spectral_err("SPECTRAL : Module doesn't exist");
+		return QDF_STATUS_E_FAILURE;
+	}
+
 	p_sops = GET_TARGET_IF_SPECTRAL_OPS(spectral);
+
+	if (!p_sops) {
+		spectral_err("p_sops is null");
+		return QDF_STATUS_E_FAILURE;
+	}
 
 	if (smode >= SPECTRAL_SCAN_MODE_MAX) {
 		spectral_err("Invalid Spectral mode %u", smode);
@@ -4215,6 +4258,11 @@ target_if_get_spectral_capinfo(struct wlan_objmgr_pdev *pdev,
 	struct target_if_spectral *spectral = NULL;
 
 	spectral = get_target_if_spectral_handle_from_pdev(pdev);
+	if (!spectral) {
+		spectral_err("SPECTRAL : Module doesn't exist");
+		return QDF_STATUS_E_FAILURE;
+	}
+
 	qdf_mem_copy(scaps, &spectral->capability,
 		     sizeof(struct spectral_caps));
 
@@ -4237,6 +4285,11 @@ target_if_get_spectral_diagstats(struct wlan_objmgr_pdev *pdev,
 	struct target_if_spectral *spectral = NULL;
 
 	spectral = get_target_if_spectral_handle_from_pdev(pdev);
+	if (!spectral) {
+		spectral_err("SPECTRAL : Module doesn't exist");
+		return QDF_STATUS_E_FAILURE;
+	}
+
 	qdf_mem_copy(stats, &spectral->diag_stats,
 		     sizeof(struct spectral_diag_stats));
 
@@ -4281,6 +4334,12 @@ target_if_register_netlink_cb(
 	struct target_if_spectral *spectral = NULL;
 
 	spectral = get_target_if_spectral_handle_from_pdev(pdev);
+
+	if (!spectral) {
+		spectral_err("SPECTRAL : Module doesn't exist");
+		return;
+	}
+
 	qdf_mem_copy(&spectral->nl_cb, nl_cb, sizeof(struct spectral_nl_cb));
 
 	if (spectral->use_nl_bcast)
@@ -4302,6 +4361,12 @@ target_if_use_nl_bcast(struct wlan_objmgr_pdev *pdev)
 	struct target_if_spectral *spectral = NULL;
 
 	spectral = get_target_if_spectral_handle_from_pdev(pdev);
+
+	if (!spectral) {
+		spectral_err("SPECTRAL : Module doesn't exist");
+		return false;
+	}
+
 	return spectral->use_nl_bcast;
 }
 
@@ -4333,7 +4398,17 @@ target_if_process_spectral_report(struct wlan_objmgr_pdev *pdev,
 	struct target_if_spectral_ops *p_sops = NULL;
 
 	spectral = get_target_if_spectral_handle_from_pdev(pdev);
+	if (!spectral) {
+		spectral_err("SPECTRAL : Module doesn't exist");
+		return -EPERM;
+	}
+
 	p_sops = GET_TARGET_IF_SPECTRAL_OPS(spectral);
+
+	if (!p_sops) {
+		spectral_err("p_sops is null");
+		return -EPERM;
+	}
 
 	return p_sops->process_spectral_report(pdev, payload);
 }
@@ -4411,6 +4486,18 @@ target_if_spectral_send_intf_found_msg(struct wlan_objmgr_pdev *pdev,
 	struct target_if_spectral *spectral = NULL;
 
 	spectral = get_target_if_spectral_handle_from_pdev(pdev);
+
+	if (!spectral) {
+		spectral_err("SPECTRAL : Module doesn't exist");
+		return;
+	}
+
+	p_sops = GET_TARGET_IF_SPECTRAL_OPS(spectral);
+	if (!p_sops) {
+		spectral_err("p_sops is null");
+		return;
+	}
+
 	msg  = (struct spectral_samp_msg *)spectral->nl_cb.get_sbuff(
 			spectral->pdev_obj,
 			SPECTRAL_MSG_INTERFERENCE_NOTIFICATION,
@@ -4421,7 +4508,6 @@ target_if_spectral_send_intf_found_msg(struct wlan_objmgr_pdev *pdev,
 		    SPECTRAL_DCS_INT_CW : SPECTRAL_DCS_INT_WIFI;
 		msg->dcs_enabled = dcs_enabled;
 		msg->signature = SPECTRAL_SIGNATURE;
-		p_sops = GET_TARGET_IF_SPECTRAL_OPS(spectral);
 		p_sops->get_mac_address(spectral, msg->macaddr);
 		if (spectral->send_phy_data
 				(pdev,
