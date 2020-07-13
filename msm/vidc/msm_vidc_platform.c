@@ -2131,7 +2131,7 @@ static int msm_vidc_read_rank(
 		d_vpr_e("Failed to get ddr rank of device\n");
 		return num_ranks;
 	} else if (num_ranks == 1)
-		data->sku_version = SKU_VERSION_1;
+		data->sku_version = SKU_VERSION_0;
 
 	d_vpr_h("DDR Rank of device: %u", num_ranks);
 
