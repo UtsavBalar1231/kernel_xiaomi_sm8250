@@ -21484,7 +21484,7 @@ QDF_STATUS hdd_softap_deauth_all_sta(struct hdd_adapter *adapter,
 	QDF_STATUS status;
 	bool is_sap_bcast_deauth_enabled = false;
 	struct hdd_context *hdd_ctx;
-	struct hdd_station_info *sta_info;
+	struct hdd_station_info *sta_info, *tmp = NULL;
 
 	hdd_ctx = WLAN_HDD_GET_CTX(adapter);
 	if (!hdd_ctx) {
@@ -21498,7 +21498,7 @@ QDF_STATUS hdd_softap_deauth_all_sta(struct hdd_adapter *adapter,
 	if (is_sap_bcast_deauth_enabled)
 		return QDF_STATUS_E_INVAL;
 
-	hdd_for_each_sta_ref(adapter->sta_info_list, sta_info) {
+	hdd_for_each_sta_ref_safe(adapter->sta_info_list, sta_info, tmp) {
 		if (!sta_info->is_deauth_in_progress) {
 			hdd_debug("Delete STA with MAC:" QDF_MAC_ADDR_STR,
 				  QDF_MAC_ADDR_ARRAY(sta_info->sta_mac.bytes));
@@ -21511,6 +21511,10 @@ QDF_STATUS hdd_softap_deauth_all_sta(struct hdd_adapter *adapter,
 			if (QDF_IS_STATUS_ERROR(status)) {
 				hdd_put_sta_info_ref(&adapter->sta_info_list,
 						     &sta_info, true);
+				if (tmp)
+					hdd_put_sta_info_ref(
+						&adapter->sta_info_list,
+						&tmp, true);
 				return status;
 			}
 		}
