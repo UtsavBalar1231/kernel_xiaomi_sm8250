@@ -3651,6 +3651,7 @@
 		qcom,additional-mapping = <0x146a8000 0x146a8000 0x2000>;
 		qcom,iommu-dma = "fastmap";
 		qcom,ipa-q6-smem-size = <26624>;
+		qcom,geometry-mapping = <0x0 0xF0000000>;
 	};
 
 	ipa_smmu_wlan: ipa_smmu_wlan {
@@ -3658,7 +3659,7 @@
 		iommus = <&apps_smmu 0x0441 0x0>;
 		/* ipa-uc ram */
 		qcom,additional-mapping = <0x1ea0000 0x1ea0000 0x80000>;
-		qcom,iommu-dma = "fastmap";
+		qcom,iommu-dma = "atomic";
 	};
 
 	ipa_smmu_uc: ipa_smmu_uc {
