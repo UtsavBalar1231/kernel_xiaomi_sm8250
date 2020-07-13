@@ -1042,6 +1042,7 @@ static int cs35l41_main_amp_event(struct snd_soc_dapm_widget *w,
 		regmap_multi_reg_write_bypassed(cs35l41->regmap,
 					cs35l41_pdn_patch,
 					ARRAY_SIZE(cs35l41_pdn_patch));
+		cs35l41->extclk_freq = 0;
 		break;
 	default:
 		dev_err(cs35l41->dev, "Invalid event = 0x%x\n", event);
@@ -1409,7 +1410,12 @@ static int cs35l41_component_set_sysclk(struct snd_soc_component *component,
 				       snd_soc_component_get_drvdata(component);
 
 	int val = 0;
-	cs35l41->extclk_freq = freq;
+
+	if (cs35l41->extclk_freq) {
+		dev_info(cs35l41->dev, "%s: clock has beed configured, clk_id=%d, src=%d, freq=%d\n",
+			__func__, clk_id, source, freq);
+		return 0;
+	}
 
 	pr_debug("++++>CSPL: %s: clk_id = %d, src = %d, freq = %d, dir = %d.\n", __func__, clk_id, source, freq, dir);
 	dev_info(cs35l41->dev, "%s: clk_id=%d, src=%d, freq=%d\n", __func__, clk_id, source, freq);
@@ -1461,6 +1467,7 @@ static int cs35l41_component_set_sysclk(struct snd_soc_component *component,
 			CS35L41_PLL_CLK_EN_MASK,
 			1 << CS35L41_PLL_CLK_EN_SHIFT);
 
+	cs35l41->extclk_freq = freq;
 	regmap_read(cs35l41->regmap, CS35L41_PLL_CLK_CTRL, &val);
 	dev_info(cs35l41->dev, "%s: 0x%x <== 0x%x\n",__func__, CS35L41_PLL_CLK_CTRL, val);
 	pr_debug("---->CSPL: %s.\n", __func__);
@@ -2408,6 +2415,9 @@ int cs35l41_probe(struct cs35l41_private *cs35l41,
 	#if defined(CONFIG_TARGET_PRODUCT_APOLLO) || defined(CONFIG_TARGET_PRODUCT_CAS)
 	cs35l41_96k_sample_rate_init(cs35l41);
 	#endif
+	//external clock frequency initialize
+	cs35l41->extclk_freq = 0;
+
 
 	dev_info(cs35l41->dev, "Cirrus Logic CS35L41 (%x), Revision: %02X\n",
 			regid, reg_revid);
