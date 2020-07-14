@@ -2828,13 +2828,14 @@ err_mstr_fail:
 		swrm->reg_irq(swrm->handle, swr_mstr_interrupt,
 				swrm, SWR_IRQ_FREE);
 	} else if (swrm->irq) {
+		if (irq_get_irq_data(swrm->irq) != NULL)
+			irqd_set_trigger_type(
+				irq_get_irq_data(swrm->irq),
+				IRQ_TYPE_NONE);
+		if (swrm->swr_irq_wakeup_capable)
+			irq_set_irq_wake(swrm->irq, 0);
 		free_irq(swrm->irq, swrm);
-		irqd_set_trigger_type(
-			irq_get_irq_data(swrm->irq),
-			IRQ_TYPE_NONE);
 	}
-	if (swrm->swr_irq_wakeup_capable)
-		irq_set_irq_wake(swrm->irq, 0);
 err_irq_fail:
 	mutex_destroy(&swrm->irq_lock);
 	mutex_destroy(&swrm->mlock);
@@ -2858,15 +2859,16 @@ static int swrm_remove(struct platform_device *pdev)
 		swrm->reg_irq(swrm->handle, swr_mstr_interrupt,
 				swrm, SWR_IRQ_FREE);
 	} else if (swrm->irq) {
+		if (irq_get_irq_data(swrm->irq) != NULL)
+			irqd_set_trigger_type(
+				irq_get_irq_data(swrm->irq),
+				IRQ_TYPE_NONE);
+		if (swrm->swr_irq_wakeup_capable)
+			irq_set_irq_wake(swrm->irq, 0);
 		free_irq(swrm->irq, swrm);
-		irqd_set_trigger_type(
-			irq_get_irq_data(swrm->irq),
-			IRQ_TYPE_NONE);
 	} else if (swrm->wake_irq > 0) {
 		free_irq(swrm->wake_irq, swrm);
 	}
-	if (swrm->swr_irq_wakeup_capable)
-		irq_set_irq_wake(swrm->irq, 0);
 	cancel_work_sync(&swrm->wakeup_work);
 	pm_runtime_disable(&pdev->dev);
 	pm_runtime_set_suspended(&pdev->dev);
