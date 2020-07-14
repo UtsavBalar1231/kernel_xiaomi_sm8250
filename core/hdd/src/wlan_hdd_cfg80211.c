@@ -10489,8 +10489,9 @@ static int __wlan_hdd_cfg80211_get_link_properties(struct wiphy *wiphy,
 			return -EINVAL;
 		}
 
-		sta_info = hdd_get_sta_info_by_mac(&adapter->sta_info_list,
-						   peer_mac);
+		sta_info = hdd_get_sta_info_by_mac(
+					&adapter->sta_info_list, peer_mac,
+					STA_INFO_CFG80211_GET_LINK_PROPERTIES);
 
 		if (!sta_info) {
 			hdd_err("No active peer with mac = " QDF_MAC_ADDR_STR,
@@ -10501,7 +10502,8 @@ static int __wlan_hdd_cfg80211_get_link_properties(struct wiphy *wiphy,
 		nss = sta_info->nss;
 		freq = (WLAN_HDD_GET_AP_CTX_PTR(adapter))->operating_chan_freq;
 		rate_flags = sta_info->rate_flags;
-		hdd_put_sta_info_ref(&adapter->sta_info_list, &sta_info, true);
+		hdd_put_sta_info_ref(&adapter->sta_info_list, &sta_info, true,
+				     STA_INFO_CFG80211_GET_LINK_PROPERTIES);
 	} else {
 		hdd_err("Not Associated! with mac "QDF_MAC_ADDR_STR,
 		       QDF_MAC_ADDR_ARRAY(peer_mac));
@@ -21499,7 +21501,8 @@ QDF_STATUS hdd_softap_deauth_all_sta(struct hdd_adapter *adapter,
 	if (is_sap_bcast_deauth_enabled)
 		return QDF_STATUS_E_INVAL;
 
-	hdd_for_each_sta_ref_safe(adapter->sta_info_list, sta_info, tmp) {
+	hdd_for_each_sta_ref_safe(adapter->sta_info_list, sta_info, tmp,
+				  STA_INFO_SOFTAP_DEAUTH_ALL_STA) {
 		if (!sta_info->is_deauth_in_progress) {
 			hdd_debug("Delete STA with MAC:" QDF_MAC_ADDR_STR,
 				  QDF_MAC_ADDR_ARRAY(sta_info->sta_mac.bytes));
@@ -21510,16 +21513,20 @@ QDF_STATUS hdd_softap_deauth_all_sta(struct hdd_adapter *adapter,
 			    hdd_softap_deauth_current_sta(adapter, sta_info,
 							  hapd_state, param);
 			if (QDF_IS_STATUS_ERROR(status)) {
-				hdd_put_sta_info_ref(&adapter->sta_info_list,
-						     &sta_info, true);
+				hdd_put_sta_info_ref(
+						&adapter->sta_info_list,
+						&sta_info, true,
+						STA_INFO_SOFTAP_DEAUTH_ALL_STA);
 				if (tmp)
 					hdd_put_sta_info_ref(
 						&adapter->sta_info_list,
-						&tmp, true);
+						&tmp, true,
+						STA_INFO_SOFTAP_DEAUTH_ALL_STA);
 				return status;
 			}
 		}
-		hdd_put_sta_info_ref(&adapter->sta_info_list, &sta_info, true);
+		hdd_put_sta_info_ref(&adapter->sta_info_list, &sta_info, true,
+				     STA_INFO_SOFTAP_DEAUTH_ALL_STA);
 	}
 
 	return QDF_STATUS_SUCCESS;
@@ -21588,8 +21595,10 @@ int __wlan_hdd_cfg80211_del_station(struct wiphy *wiphy,
 			hdd_softap_check_wait_for_tx_eap_pkt(
 					adapter, (struct qdf_mac_addr *)mac);
 
-		sta_info = hdd_get_sta_info_by_mac(&adapter->sta_info_list,
-						   mac);
+		sta_info = hdd_get_sta_info_by_mac(
+						&adapter->sta_info_list,
+						mac,
+						STA_INFO_CFG80211_DEL_STATION);
 
 		if (!sta_info) {
 			hdd_debug("Skip DEL STA as this is not used::"
@@ -21603,7 +21612,8 @@ int __wlan_hdd_cfg80211_del_station(struct wiphy *wiphy,
 				  QDF_MAC_ADDR_STR,
 				  QDF_MAC_ADDR_ARRAY(mac));
 			hdd_put_sta_info_ref(&adapter->sta_info_list, &sta_info,
-					     true);
+					     true,
+					     STA_INFO_CFG80211_DEL_STATION);
 			return -ENOENT;
 		}
 
@@ -21611,7 +21621,8 @@ int __wlan_hdd_cfg80211_del_station(struct wiphy *wiphy,
 			  QDF_MAC_ADDR_ARRAY(mac));
 		hdd_softap_deauth_current_sta(adapter, sta_info, hapd_state,
 					      param);
-		hdd_put_sta_info_ref(&adapter->sta_info_list, &sta_info, true);
+		hdd_put_sta_info_ref(&adapter->sta_info_list, &sta_info, true,
+				     STA_INFO_CFG80211_DEL_STATION);
 	}
 
 fn_end:
