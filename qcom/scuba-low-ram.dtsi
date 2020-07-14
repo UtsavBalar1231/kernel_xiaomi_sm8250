@@ -1,10 +1,7 @@
 #include "scuba.dtsi"
 / {
-	/delete-node/ secure_display_region;
-};
-
-/ {
 	reserved-memory {
+		/delete-node/ secure_display_region;
 		/delete-node/ removed_region@60000000;
 		/delete-node/ qseecom_region;
 		/delete-node/ qseecom_ta_region;
@@ -47,5 +44,9 @@
 
 	qcom_smcinvoke: smcinvoke@61800000 {
 		reg = <0x61800000 0x700000>;
+	};
+
+	qcom,ion {
+		/delete-node/ qcom,ion-heap@10;
 	};
 };
