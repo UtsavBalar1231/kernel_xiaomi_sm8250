@@ -992,7 +992,7 @@ static void hif_pci_runtime_pm_warn(struct hif_pci_softc *sc, const char *msg)
 		return;
 	}
 
-	QDF_DEBUG_PANIC("hif_pci_runtime_pm_warn");
+	QDF_ASSERT(0);
 }
 
 /**
