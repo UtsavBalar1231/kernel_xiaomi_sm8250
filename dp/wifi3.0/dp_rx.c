@@ -2051,6 +2051,7 @@ more_data:
 		rx_buf_cookie = HAL_RX_REO_BUF_COOKIE_GET(ring_desc);
 		status = dp_rx_cookie_check_and_invalidate(ring_desc);
 		if (qdf_unlikely(QDF_IS_STATUS_ERROR(status))) {
+			DP_STATS_INC(soc, rx.err.stale_cookie, 1);
 			break;
 		}
 
