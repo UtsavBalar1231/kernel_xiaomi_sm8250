@@ -895,10 +895,28 @@ hdd_reset_sta_info_during_reattach(struct hdd_station_info *sta_info)
 	sta_info->support_mode = 0;
 	sta_info->rx_retry_cnt = 0;
 	sta_info->rx_mc_bc_cnt = 0;
-	qdf_mem_zero(&sta_info->assoc_req_ies, sizeof(sta_info->assoc_req_ies));
+
+	if (sta_info->assoc_req_ies.len) {
+		qdf_mem_free(sta_info->assoc_req_ies.data);
+		sta_info->assoc_req_ies.data = NULL;
+		sta_info->assoc_req_ies.len = 0;
+	}
+
 	sta_info->pending_eap_frm_type = 0;
 }
 
+/**
+ * hdd_sta_info_re_attach() - Re-Attach the station info structure into the list
+ * @sta_info_container: The station info container obj that stores and maintains
+ *                      the sta_info obj.
+ * @sta_info: The station info structure that is to be attached to the
+ *            container object.
+ *
+ * This function re-attaches the station if it gets re-connect after
+ * disconnecting and before its all references are released.
+ *
+ * Return: QDF STATUS SUCCESS on successful attach, error code otherwise
+ */
 
 static QDF_STATUS hdd_sta_info_re_attach(
 				struct hdd_sta_info_obj *sta_info_container,
