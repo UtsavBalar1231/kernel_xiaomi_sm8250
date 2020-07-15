@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2021 XiaoMi, Inc.
  */
 
 #include <linux/of_device.h>
@@ -190,6 +191,58 @@ static ssize_t debugfs_reg_dump_read(struct file *file,
 	return len;
 }
 
+static ssize_t debugfs_line_count_read(struct file *file,
+				 char __user *user_buf,
+				 size_t user_len,
+				 loff_t *ppos)
+{
+	struct dsi_ctrl *dsi_ctrl = file->private_data;
+	char *buf;
+	int rc = 0;
+	u32 len = 0;
+	size_t max_len = min_t(size_t, user_len, SZ_4K);
+
+	if (!dsi_ctrl)
+		return -ENODEV;
+
+	if (*ppos)
+		return 0;
+
+	buf = kzalloc(max_len, GFP_KERNEL);
+	if (ZERO_OR_NULL_PTR(buf))
+		return -ENOMEM;
+
+	mutex_lock(&dsi_ctrl->ctrl_lock);
+
+	len += scnprintf(buf, max_len, "Command triggered at line: %04x\n",
+			dsi_ctrl->cmd_trigger_line);
+	len += scnprintf((buf + len), max_len - len,
+			"Command triggered at frame: %04x\n",
+			dsi_ctrl->cmd_trigger_frame);
+	len += scnprintf((buf + len), max_len - len,
+			"Command successful at line: %04x\n",
+			dsi_ctrl->cmd_success_line);
+	len += scnprintf((buf + len), max_len - len,
+			"Command successful at frame: %04x\n",
+			dsi_ctrl->cmd_success_frame);
+
+	mutex_unlock(&dsi_ctrl->ctrl_lock);
+
+	if (len > max_len)
+		len = max_len;
+
+	if (copy_to_user(user_buf, buf, len)) {
+		rc = -EFAULT;
+		goto error;
+	}
+
+	*ppos += len;
+
+error:
+	kfree(buf);
+	return len;
+}
+
 static const struct file_operations state_info_fops = {
 	.open = simple_open,
 	.read = debugfs_state_info_read,
@@ -200,11 +253,16 @@ static const struct file_operations reg_dump_fops = {
 	.read = debugfs_reg_dump_read,
 };
 
+static const struct file_operations cmd_dma_stats_fops = {
+	.open = simple_open,
+	.read = debugfs_line_count_read,
+};
+
 static int dsi_ctrl_debugfs_init(struct dsi_ctrl *dsi_ctrl,
 				 struct dentry *parent)
 {
 	int rc = 0;
-	struct dentry *dir, *state_file, *reg_dump;
+	struct dentry *dir, *state_file, *reg_dump, *cmd_dma_logs;
 	char dbg_name[DSI_DEBUG_NAME_LEN];
 
 	if (!dsi_ctrl || !parent) {
@@ -239,6 +297,30 @@ static int dsi_ctrl_debugfs_init(struct dsi_ctrl *dsi_ctrl,
 	if (IS_ERR_OR_NULL(reg_dump)) {
 		rc = PTR_ERR(reg_dump);
 		DSI_CTRL_ERR(dsi_ctrl, "reg dump file failed, rc=%d\n", rc);
+		goto error_remove_dir;
+	}
+
+	cmd_dma_logs = debugfs_create_bool("enable_cmd_dma_stats",
+				       0600,
+				       dir,
+				       &dsi_ctrl->enable_cmd_dma_stats);
+	if (IS_ERR_OR_NULL(cmd_dma_logs)) {
+		rc = PTR_ERR(cmd_dma_logs);
+		DSI_CTRL_ERR(dsi_ctrl,
+				"enable cmd dma stats failed, rc=%d\n",
+				rc);
+		goto error_remove_dir;
+	}
+
+	cmd_dma_logs = debugfs_create_file("cmd_dma_stats",
+				       0444,
+				       dir,
+				       dsi_ctrl,
+				       &cmd_dma_stats_fops);
+	if (IS_ERR_OR_NULL(cmd_dma_logs)) {
+		rc = PTR_ERR(cmd_dma_logs);
+		DSI_CTRL_ERR(dsi_ctrl, "Line count file failed, rc=%d\n",
+				rc);
 		goto error_remove_dir;
 	}
 
@@ -1294,7 +1376,7 @@ static u32 calculate_schedule_line(struct dsi_ctrl *dsi_ctrl, u32 flags)
 	/* check if custom dma scheduling line needed */
 	if ((dsi_ctrl->host_config.panel_mode == DSI_OP_VIDEO_MODE) &&
 		(flags & DSI_CTRL_CMD_CUSTOM_DMA_SCHED))
-		line_no = dsi_ctrl->host_config.u.video_engine.dma_sched_line;
+		line_no = dsi_ctrl->host_config.common_config.dma_sched_line;
 
 	timing = &(dsi_ctrl->host_config.video_timing);
 
@@ -1314,7 +1396,8 @@ static void dsi_kickoff_msg_tx(struct dsi_ctrl *dsi_ctrl,
 	u32 hw_flags = 0;
 	struct dsi_ctrl_hw_ops dsi_hw_ops = dsi_ctrl->hw.ops;
 
-	SDE_EVT32(dsi_ctrl->cell_index, SDE_EVTLOG_FUNC_ENTRY, flags);
+	SDE_EVT32(dsi_ctrl->cell_index, SDE_EVTLOG_FUNC_ENTRY, flags,
+		msg->flags);
 
 	if (dsi_ctrl->hw.reset_trig_ctrl)
 		dsi_hw_ops.reset_trig_ctrl(&dsi_ctrl->hw,
@@ -1391,6 +1474,17 @@ static void dsi_kickoff_msg_tx(struct dsi_ctrl *dsi_ctrl,
 							      cmd,
 							      hw_flags);
 		}
+
+		if (dsi_ctrl->enable_cmd_dma_stats) {
+			u32 reg = dsi_hw_ops.log_line_count(&dsi_ctrl->hw,
+					dsi_ctrl->cmd_mode);
+			dsi_ctrl->cmd_trigger_line = (reg & 0xFFFF);
+			dsi_ctrl->cmd_trigger_frame = ((reg >> 16) & 0xFFFF);
+			SDE_EVT32(dsi_ctrl->cell_index, SDE_EVTLOG_FUNC_CASE1,
+					dsi_ctrl->cmd_trigger_line,
+					dsi_ctrl->cmd_trigger_frame);
+		}
+
 		if (flags & DSI_CTRL_CMD_ASYNC_WAIT) {
 			dsi_ctrl->dma_wait_queued = true;
 			queue_work(dsi_ctrl->dma_cmd_workq,
@@ -2752,6 +2846,15 @@ static irqreturn_t dsi_ctrl_isr(int irq, void *ptr)
 		dsi_ctrl_handle_error_status(dsi_ctrl, errors);
 
 	if (status & DSI_CMD_MODE_DMA_DONE) {
+		if (dsi_ctrl->enable_cmd_dma_stats) {
+			u32 reg = dsi_ctrl->hw.ops.log_line_count(&dsi_ctrl->hw,
+						dsi_ctrl->cmd_mode);
+			dsi_ctrl->cmd_success_line = (reg & 0xFFFF);
+			dsi_ctrl->cmd_success_frame = ((reg >> 16) & 0xFFFF);
+			SDE_EVT32(dsi_ctrl->cell_index, SDE_EVTLOG_FUNC_CASE1,
+					dsi_ctrl->cmd_success_line,
+					dsi_ctrl->cmd_success_frame);
+		}
 		atomic_set(&dsi_ctrl->dma_irq_trig, 1);
 		dsi_ctrl_disable_status_interrupt(dsi_ctrl,
 					DSI_SINT_CMD_MODE_DMA_DONE);
@@ -3445,8 +3548,18 @@ int dsi_ctrl_cmd_tx_trigger(struct dsi_ctrl *dsi_ctrl, u32 flags)
 		latency_by_line = CEIL(mem_latency_us, line_time);
 	}
 
-	if (!(flags & DSI_CTRL_CMD_BROADCAST_MASTER))
+	if (!(flags & DSI_CTRL_CMD_BROADCAST_MASTER)) {
 		dsi_hw_ops.trigger_command_dma(&dsi_ctrl->hw);
+		if (dsi_ctrl->enable_cmd_dma_stats) {
+			u32 reg = dsi_hw_ops.log_line_count(&dsi_ctrl->hw,
+					dsi_ctrl->cmd_mode);
+			dsi_ctrl->cmd_trigger_line = (reg & 0xFFFF);
+			dsi_ctrl->cmd_trigger_frame = ((reg >> 16) & 0xFFFF);
+			SDE_EVT32(dsi_ctrl->cell_index, SDE_EVTLOG_FUNC_CASE1,
+					dsi_ctrl->cmd_trigger_line,
+					dsi_ctrl->cmd_trigger_frame);
+		}
+	}
 
 	if ((flags & DSI_CTRL_CMD_BROADCAST) &&
 		(flags & DSI_CTRL_CMD_BROADCAST_MASTER)) {
@@ -3486,6 +3599,16 @@ int dsi_ctrl_cmd_tx_trigger(struct dsi_ctrl *dsi_ctrl, u32 flags)
 			}
 		} else
 			dsi_hw_ops.trigger_command_dma(&dsi_ctrl->hw);
+
+		if (dsi_ctrl->enable_cmd_dma_stats) {
+			u32 reg = dsi_hw_ops.log_line_count(&dsi_ctrl->hw,
+					dsi_ctrl->cmd_mode);
+			dsi_ctrl->cmd_trigger_line = (reg & 0xFFFF);
+			dsi_ctrl->cmd_trigger_frame = ((reg >> 16) & 0xFFFF);
+			SDE_EVT32(dsi_ctrl->cell_index, SDE_EVTLOG_FUNC_CASE1,
+					dsi_ctrl->cmd_trigger_line,
+					dsi_ctrl->cmd_trigger_frame);
+		}
 
 		if (flags & DSI_CTRL_CMD_ASYNC_WAIT) {
 			dsi_ctrl->dma_wait_queued = true;
