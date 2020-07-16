@@ -1941,7 +1941,7 @@ void rmnet_shs_update_cfg_mask(void)
 	}
 }
 
-void rmnet_shs_wq_filter(void)
+noinline void rmnet_shs_wq_filter(void)
 {
 	int cpu, cur_cpu;
 	int temp;
@@ -1966,11 +1966,11 @@ void rmnet_shs_wq_filter(void)
 				rmnet_shs_cpu_rx_filter_flows[temp]++;
 			}
 		cur_cpu = hnode->current_cpu;
-		if (cur_cpu >= MAX_CPUS) {
+		if (cur_cpu >= MAX_CPUS || cur_cpu < 0) {
 			continue;
 		}
 
-		if (hnode->node->hstats->segs_per_skb > 0) {
+		if (hnode->segs_per_skb > 0) {
 			rmnet_shs_cpu_node_tbl[cur_cpu].seg++;
 		}
 	}
