@@ -381,6 +381,7 @@ void lim_process_sta_mlm_add_bss_rsp_ft(struct mac_context *mac,
 	tpAddStaParams pAddStaParams = NULL;
 	uint32_t listenInterval = MLME_CFG_LISTEN_INTERVAL;
 	uint32_t selfStaDot11Mode = 0;
+	struct bss_description *bss_desc = NULL;
 
 	/* Sanity Checks */
 
@@ -480,8 +481,12 @@ void lim_process_sta_mlm_add_bss_rsp_ft(struct mac_context *mac,
 
 	pAddStaParams->updateSta = false;
 
+	if (pe_session->lim_join_req)
+		bss_desc = &pe_session->lim_join_req->bssDescription;
+
 	lim_populate_peer_rate_set(mac, &pAddStaParams->supportedRates, NULL,
-				   false, pe_session, NULL, NULL, NULL);
+				   false, pe_session, NULL, NULL, NULL,
+				   bss_desc);
 
 	if (pe_session->htCapability) {
 		pAddStaParams->htCapable = pe_session->htCapability;
