@@ -277,7 +277,7 @@
 		qcom,gpu-pwrlevels-2 {
 			#address-cells = <1>;
 			#size-cells = <0>;
-			qcom,speed-bin = <2>;
+			qcom,speed-bin = <3>;
 			qcom,initial-pwrlevel = <4>;
 			qcom,throttle-pwrlevel = <0>;
 
