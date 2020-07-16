@@ -342,6 +342,25 @@ static int32_t cam_flash_i2c_driver_remove(struct i2c_client *client)
 	return rc;
 }
 
+static int cam_flash_subdev_open(struct v4l2_subdev *sd,
+	struct v4l2_subdev_fh *fh)
+{
+	struct cam_flash_ctrl *fctrl =
+		v4l2_get_subdevdata(sd);
+
+	if (!fctrl) {
+		CAM_ERR(CAM_FLASH, "Flash ctrl ptr is NULL");
+		return -EINVAL;
+	}
+
+	mutex_lock(&fctrl->flash_mutex);
+	fctrl->open_cnt++;
+	CAM_DBG(CAM_FLASH, "Flash open count %d", fctrl->open_cnt);
+	mutex_unlock(&fctrl->flash_mutex);
+
+	return 0;
+}
+
 static int cam_flash_subdev_close(struct v4l2_subdev *sd,
 	struct v4l2_subdev_fh *fh)
 {
@@ -354,7 +373,14 @@ static int cam_flash_subdev_close(struct v4l2_subdev *sd,
 	}
 
 	mutex_lock(&fctrl->flash_mutex);
-	cam_flash_shutdown(fctrl);
+	if (fctrl->open_cnt <= 0) {
+		mutex_unlock(&fctrl->flash_mutex);
+		return -EINVAL;
+	}
+	fctrl->open_cnt--;
+	CAM_DBG(CAM_FLASH, "Flash open count %d", fctrl->open_cnt);
+	if (fctrl->open_cnt == 0)
+		cam_flash_shutdown(fctrl);
 	mutex_unlock(&fctrl->flash_mutex);
 
 	return 0;
@@ -372,6 +398,7 @@ static struct v4l2_subdev_ops cam_flash_subdev_ops = {
 };
 
 static const struct v4l2_subdev_internal_ops cam_flash_internal_ops = {
+	.open  = cam_flash_subdev_open,
 	.close = cam_flash_subdev_close,
 };
 
@@ -518,6 +545,7 @@ static int32_t cam_flash_platform_probe(struct platform_device *pdev)
 	mutex_init(&(fctrl->flash_mutex));
 
 	fctrl->flash_state = CAM_FLASH_STATE_INIT;
+	fctrl->open_cnt = 0;
 	CAM_DBG(CAM_FLASH, "Probe success");
 	return rc;
 
@@ -607,6 +635,7 @@ static int32_t cam_flash_i2c_driver_probe(struct i2c_client *client,
 
 	mutex_init(&(fctrl->flash_mutex));
 	fctrl->flash_state = CAM_FLASH_STATE_INIT;
+	fctrl->open_cnt = 0;
 
 	return rc;
 

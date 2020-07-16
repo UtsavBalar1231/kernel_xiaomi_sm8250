@@ -293,6 +293,7 @@ struct csiphy_device {
 	struct cam_hw_soc_info   soc_info;
 	uint32_t cpas_handle;
 	uint32_t config_count;
+	uint32_t open_cnt;
 	uint64_t csiphy_cpas_cp_reg_mask[CSIPHY_MAX_INSTANCES];
 };
 

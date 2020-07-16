@@ -207,6 +207,7 @@ struct cam_flash_ctrl {
 	struct camera_io_master             io_master_info;
 	struct i2c_data_settings            i2c_data;
 	uint32_t                            last_flush_req;
+	uint32_t                            open_cnt;
 };
 
 int cam_flash_pmic_gpio_pkt_parser(

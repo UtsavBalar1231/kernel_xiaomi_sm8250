@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #include "cam_eeprom_dev.h"
@@ -27,6 +27,26 @@ static long cam_eeprom_subdev_ioctl(struct v4l2_subdev *sd,
 	return rc;
 }
 
+static int cam_eeprom_subdev_open(struct v4l2_subdev *sd,
+	struct v4l2_subdev_fh *fh)
+{
+	struct cam_eeprom_ctrl_t *e_ctrl =
+		v4l2_get_subdevdata(sd);
+
+	if (!e_ctrl) {
+		CAM_ERR(CAM_EEPROM, "e_ctrl ptr is NULL");
+			return -EINVAL;
+	}
+
+	mutex_lock(&(e_ctrl->eeprom_mutex));
+	e_ctrl->open_cnt++;
+	CAM_DBG(CAM_EEPROM, "eeprom Subdev open count %d", e_ctrl->open_cnt);
+	mutex_unlock(&(e_ctrl->eeprom_mutex));
+
+	return 0;
+}
+
+
 static int cam_eeprom_subdev_close(struct v4l2_subdev *sd,
 	struct v4l2_subdev_fh *fh)
 {
@@ -39,7 +59,14 @@ static int cam_eeprom_subdev_close(struct v4l2_subdev *sd,
 	}
 
 	mutex_lock(&(e_ctrl->eeprom_mutex));
-	cam_eeprom_shutdown(e_ctrl);
+	if (e_ctrl->open_cnt <= 0) {
+		mutex_unlock(&(e_ctrl->eeprom_mutex));
+		return -EINVAL;
+	}
+	e_ctrl->open_cnt--;
+	CAM_DBG(CAM_EEPROM, "eeprom Subdev open count %d", e_ctrl->open_cnt);
+	if (e_ctrl->open_cnt == 0)
+		cam_eeprom_shutdown(e_ctrl);
 	mutex_unlock(&(e_ctrl->eeprom_mutex));
 
 	return 0;
@@ -116,6 +143,7 @@ static long cam_eeprom_init_subdev_do_ioctl(struct v4l2_subdev *sd,
 #endif
 
 static const struct v4l2_subdev_internal_ops cam_eeprom_internal_ops = {
+	.open  = cam_eeprom_subdev_open,
 	.close = cam_eeprom_subdev_close,
 };
 
@@ -217,6 +245,7 @@ static int cam_eeprom_i2c_driver_probe(struct i2c_client *client,
 	e_ctrl->bridge_intf.ops.link_setup = NULL;
 	e_ctrl->bridge_intf.ops.apply_req = NULL;
 	e_ctrl->cam_eeprom_state = CAM_EEPROM_INIT;
+	e_ctrl->open_cnt = 0;
 
 	return rc;
 free_soc:
@@ -338,6 +367,7 @@ static int cam_eeprom_spi_setup(struct spi_device *spi)
 	e_ctrl->bridge_intf.ops.get_dev_info = NULL;
 	e_ctrl->bridge_intf.ops.link_setup = NULL;
 	e_ctrl->bridge_intf.ops.apply_req = NULL;
+	e_ctrl->open_cnt = 0;
 
 	v4l2_set_subdevdata(&e_ctrl->v4l2_dev_str.sd, e_ctrl);
 	return rc;
@@ -469,6 +499,7 @@ static int32_t cam_eeprom_platform_driver_probe(
 	e_ctrl->bridge_intf.ops.apply_req = NULL;
 	platform_set_drvdata(pdev, e_ctrl);
 	e_ctrl->cam_eeprom_state = CAM_EEPROM_INIT;
+	e_ctrl->open_cnt = 0;
 
 	return rc;
 free_soc:
