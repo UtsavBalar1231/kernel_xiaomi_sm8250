@@ -29,7 +29,7 @@
 #include "cam_context.h"
 
 #define MAX_CSIPHY                  6
-#define MAX_DPHY_DATA_LN            4
+
 #define MAX_LRME_V4l2_EVENTS        30
 #define CSIPHY_NUM_CLK_MAX          16
 #define MAX_CSIPHY_REG_ARRAY        70
@@ -55,7 +55,7 @@
 #define CSIPHY_3PH_REGS                  6
 #define CSIPHY_SKEW_CAL                  7
 
-#define CSIPHY_MAX_INSTANCES     2
+#define CSIPHY_MAX_INSTANCES_PER_PHY     2
 
 #define CAM_CSIPHY_MAX_DPHY_LANES    4
 #define CAM_CSIPHY_MAX_CPHY_LANES    3
@@ -68,6 +68,17 @@
 #else
 #define CDBG(fmt, args...) pr_debug(fmt, ##args)
 #endif
+
+#define DPHY_LANE_0    BIT(0)
+#define CPHY_LANE_0    BIT(1)
+#define DPHY_LANE_1    BIT(2)
+#define CPHY_LANE_1    BIT(3)
+#define DPHY_LANE_2    BIT(4)
+#define CPHY_LANE_2    BIT(5)
+#define DPHY_LANE_3    BIT(6)
+#define DPHY_CLK_LN    BIT(7)
+
+
 
 enum cam_csiphy_state {
 	CAM_CSIPHY_INIT,
@@ -123,24 +134,19 @@ struct csiphy_reg_parms_t {
 };
 
 /**
- * struct intf_params
+ * struct csiphy_hdl_tbl
  * @device_hdl: Device Handle
  * @session_hdl: Session Handle
- * @ops: KMD operations
- * @crm_cb: Callback API pointers
  */
-struct intf_params {
-	int32_t device_hdl[CSIPHY_MAX_INSTANCES];
-	int32_t session_hdl[CSIPHY_MAX_INSTANCES];
-	int32_t link_hdl[CSIPHY_MAX_INSTANCES];
-	struct cam_req_mgr_kmd_ops ops;
-	struct cam_req_mgr_crm_cb *crm_cb;
+struct csiphy_hdl_tbl {
+	int32_t device_hdl;
+	int32_t session_hdl;
 };
 
 /**
  * struct csiphy_reg_t
- * @reg_addr: Register address
- * @reg_data: Register data
+ * @reg_addr:          Register address
+ * @reg_data:          Register data
  * @delay: Delay
  * @csiphy_param_type: CSIPhy parameter type
  */
@@ -204,38 +210,34 @@ struct csiphy_ctrl_t {
 	struct csiphy_reg_t (*csiphy_2ph_combo_mode_reg)[MAX_SETTINGS_PER_LANE];
 	struct csiphy_reg_t (*csiphy_3ph_reg)[MAX_SETTINGS_PER_LANE];
 	struct csiphy_reg_t (*csiphy_2ph_3ph_mode_reg)[MAX_SETTINGS_PER_LANE];
-	enum   cam_vote_level (*getclockvoting)(struct csiphy_device *phy_dev);
+	enum   cam_vote_level (*getclockvoting)(struct csiphy_device *phy_dev,
+		int32_t index);
 	struct data_rate_settings_t *data_rates_settings_table;
 };
 
-/**
- * cam_csiphy_param: Provides cmdbuffer structre
- * @lane_mask     :  Lane mask details
- * @lane_assign   :  Lane sensor will be using
+/*
+ * cam_csiphy_param            :  Provides cmdbuffer structure
+ * @lane_assign                :  Lane sensor will be using
  * @csiphy_3phase :  Mentions DPHY or CPHY
- * @combo_mode    :  Info regarding combo_mode is enable / disable
- * @lane_cnt      :  Total number of lanes
- * @reserved
- * @3phase        :  Details whether 3Phase / 2Phase operation
- * @settle_time   :  Settling time in ms
- * @settle_time_combo_sensor   :  Settling time in ms
- * @data_rate     :  Data rate in mbps
- * @data_rate_combo_sensor: data rate of combo sensor
- *                          in the the same phy
- * @mipi_flags    :  Mipi flags
+ * @lane_cnt                   :  Total number of lanes
+ * @lane_enable                :  Data Lane selection
+ * @settle_time                :  Settling time in ms
+ * @data_rate                  :  Data rate in mbps
+ * @csiphy_cpas_cp_reg_mask    :  CP reg mask for phy instance
+ * @hdl_data                   :  CSIPHY handle table
+ * @mipi_flags                 :  Mipi flags
  */
 struct cam_csiphy_param {
-	uint16_t    lane_mask;
-	uint16_t    lane_assign;
-	uint8_t     csiphy_3phase;
-	uint8_t     combo_mode;
-	uint8_t     lane_cnt;
-	uint8_t     secure_mode[CSIPHY_MAX_INSTANCES];
-	uint64_t    settle_time;
-	uint64_t    settle_time_combo_sensor;
-	uint64_t    data_rate;
-	uint64_t    data_rate_combo_sensor;
-	uint32_t    mipi_flags;
+	uint16_t                   lane_assign;
+	int                        csiphy_3phase;
+	uint8_t                    lane_cnt;
+	uint8_t                    secure_mode;
+	uint32_t                   lane_enable;
+	uint64_t                   settle_time;
+	uint64_t                   data_rate;
+	uint32_t                   mipi_flags;
+	uint64_t                   csiphy_cpas_cp_reg_mask;
+	struct csiphy_hdl_tbl      hdl_data;
 };
 
 /**
@@ -261,40 +263,47 @@ struct cam_csiphy_param {
  * @clk_lane:                   Clock lane
  * @acquire_count:              Acquire device count
  * @start_dev_count:            Start count
- * @is_acquired_dev_combo_mode: Flag that mentions whether already acquired
- *                              device is for combo mode
  * @soc_info:                   SOC information
  * @cpas_handle:                CPAS handle
  * @config_count:               Config reg count
- * @csiphy_cpas_cp_reg_mask:    CP reg mask for phy instance
+ * @current_data_rate:          Data rate in mbps
+ * @csiphy_3phase:              To identify DPHY or CPHY at top level
+ * @combo_mode:                 Info regarding combo_mode is enable / disable
+ * @ops:                        KMD operations
+ * @crm_cb:                     Callback API pointers
  */
 struct csiphy_device {
-	char device_name[CAM_CTX_DEV_NAME_MAX_LENGTH];
-	struct mutex mutex;
-	uint32_t hw_version;
-	enum cam_csiphy_state csiphy_state;
-	struct csiphy_ctrl_t *ctrl_reg;
-	uint32_t csiphy_max_clk;
-	struct msm_cam_clk_info csiphy_3p_clk_info[2];
-	struct clk *csiphy_3p_clk[2];
-	unsigned char csi_3phase;
-	int32_t ref_count;
-	uint16_t lane_mask[MAX_CSIPHY];
-	uint8_t is_csiphy_3phase_hw;
-	uint8_t is_divisor_32_comp;
-	uint8_t num_irq_registers;
-	struct cam_subdev v4l2_dev_str;
-	struct cam_csiphy_param csiphy_info;
-	struct intf_params bridge_intf;
-	uint32_t clk_lane;
-	uint32_t acquire_count;
-	uint32_t start_dev_count;
-	uint32_t is_acquired_dev_combo_mode;
-	struct cam_hw_soc_info   soc_info;
-	uint32_t cpas_handle;
-	uint32_t config_count;
-	uint32_t open_cnt;
-	uint64_t csiphy_cpas_cp_reg_mask[CSIPHY_MAX_INSTANCES];
+	char                           device_name[CAM_CTX_DEV_NAME_MAX_LENGTH];
+	struct mutex                   mutex;
+	uint32_t                       hw_version;
+	enum cam_csiphy_state          csiphy_state;
+	struct csiphy_ctrl_t          *ctrl_reg;
+	uint32_t                       csiphy_max_clk;
+	struct msm_cam_clk_info        csiphy_3p_clk_info[2];
+	struct clk                    *csiphy_3p_clk[2];
+	unsigned char                  csi_3phase;
+	int32_t                        ref_count;
+	uint16_t                       lane_mask[MAX_CSIPHY];
+	uint8_t                        is_csiphy_3phase_hw;
+	uint8_t                        is_divisor_32_comp;
+	uint8_t                        num_irq_registers;
+	struct cam_subdev              v4l2_dev_str;
+	struct cam_csiphy_param        csiphy_info[
+					CSIPHY_MAX_INSTANCES_PER_PHY];
+	uint32_t                       clk_lane;
+	uint32_t                       acquire_count;
+	uint32_t                       start_dev_count;
+	struct cam_hw_soc_info         soc_info;
+	uint32_t                       cpas_handle;
+	uint32_t                       config_count;
+	uint32_t                       open_cnt;
+	uint64_t                       csiphy_cpas_cp_reg_mask[
+					CSIPHY_MAX_INSTANCES_PER_PHY];
+	uint64_t                       current_data_rate;
+	uint8_t                        session_max_device_support;
+	uint8_t                        combo_mode;
+	struct cam_req_mgr_kmd_ops     ops;
+	struct cam_req_mgr_crm_cb     *crm_cb;
 };
 
 #endif /* _CAM_CSIPHY_DEV_H_ */
