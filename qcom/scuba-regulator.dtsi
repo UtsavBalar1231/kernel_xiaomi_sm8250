@@ -358,7 +358,7 @@
 		L22A: pm2250_l22: regulator-l22 {
 			regulator-min-microvolt = <2850000>;
 			regulator-max-microvolt = <3400000>;
-			qcom,init-voltage = <3200000>;
+			qcom,init-voltage = <2850000>;
 			status = "okay";
 		};
 	};
