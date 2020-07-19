@@ -2082,7 +2082,7 @@ QDF_STATUS reg_get_curr_regdomain(struct wlan_objmgr_pdev *pdev,
 	}
 
 	if (index == num_reg_dmn) {
-		reg_err_rl("invalid regdomain");
+		reg_debug_rl("invalid regdomain");
 		return QDF_STATUS_E_FAILURE;
 	}
 
