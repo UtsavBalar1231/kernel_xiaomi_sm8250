@@ -23,11 +23,9 @@
 		clock-names = "gcc_iface", "gcc_bus",
 				"iface_clk", "core_clk", "vsync_clk",
 				"lut_clk";
-		clock-rate = <0 0 0 300000000 19200000 300000000>;
+		clock-rate = <0 0 0 373333333 19200000 373333333>;
 		clock-max-rate = <0 0 0 560000000 19200000 560000000>;
 		qcom,dss-cx-ipeak = <&cx_ipeak_lm 4>;
-
-		sde-vdd-supply = <&mdss_core_gdsc>;
 
 		/* interrupt config */
 		interrupts = <GIC_SPI 83 IRQ_TYPE_LEVEL_HIGH>;
@@ -139,29 +137,38 @@
 		qcom,sde-vbif-qos-rt-remap = <3 3 4 4 5 5 6 6>;
 		qcom,sde-vbif-qos-nrt-remap = <3 3 3 3 3 3 3 3>;
 		qcom,sde-vbif-qos-cwb-remap = <3 3 4 4 5 5 6 3>;
+		qcom,sde-vbif-qos-lutdma-remap = <3 3 3 3 4 4 4 4>;
 
 		/* macrotile & macrotile-qseed has the same configs */
 		qcom,sde-danger-lut = <0x0000ffff 0x0000ffff
-			0x00000000 0x00000000 0x0000ffff>;
+			0x00000000 0x00000000 0x0000ffff>, <0x0003ffff
+			0x0003ffff 0x00000000 0x00000000 0x0003ffff>;
 
-		qcom,sde-safe-lut-linear = <0 0xff00>;
-		qcom,sde-safe-lut-macrotile = <0 0xff00>;
+		qcom,sde-safe-lut-linear = <0 0xff00>, <0 0xfe00>;
+		qcom,sde-safe-lut-macrotile = <0 0xff00>, <0 0xfe00>;
 		/* same as safe-lut-macrotile */
-		qcom,sde-safe-lut-macrotile-qseed = <0 0xff00>;
-		qcom,sde-safe-lut-nrt = <0 0xffff>;
-		qcom,sde-safe-lut-cwb = <0 0x3ff>;
+		qcom,sde-safe-lut-macrotile-qseed = <0 0xff00>, <0 0xfe00>;
+		qcom,sde-safe-lut-nrt = <0 0xffff>, <0 0xffff>;
+		qcom,sde-safe-lut-cwb = <0 0x3ff>, <0x3ff>;
 
 		/* creq LUTs */
-		qcom,sde-qos-lut-linear = <0 0x00112233 0x44556677>;
-		qcom,sde-qos-lut-macrotile = <0 0x00112233 0x44556677>;
-		qcom,sde-qos-lut-macrotile-qseed = <0 0x00112233 0x66777777>;
-		qcom,sde-qos-lut-nrt = <0 0x00000000 0x00000000>;
-		qcom,sde-qos-lut-cwb = <0 0x66666541 0x00000000>;
+		qcom,sde-qos-lut-linear = <0 0x00112233 0x44556677>,
+					 <0 0x00112234 0x45566777>;
+		qcom,sde-qos-lut-macrotile = <0 0x00112233 0x44556677>,
+					 <0 0x00112234 0x45566777>;
+		qcom,sde-qos-lut-macrotile-qseed = <0 0x00112233 0x66777777>,
+					 <0 0x00112236 0x67777777>;
+		qcom,sde-qos-lut-nrt = <0 0x00000000 0x00000000>,
+					 <0 0x00000000 0x00000000>;
+		qcom,sde-qos-lut-cwb = <0 0x66666541 0x00000000>,
+					 <0 0x66666541 0x00000000>;
+		qcom,sde-qos-refresh-rates = <60 120>;
 
 		qcom,sde-cdp-setting = <1 1>, <1 0>;
 
 		qcom,sde-qos-cpu-mask = <0x3>;
 		qcom,sde-qos-cpu-dma-latency = <300>;
+		qcom,sde-qos-cpu-irq-latency = <300>;
 
 		/* offsets are relative to "mdp_phys + qcom,sde-off */
 
@@ -209,20 +216,6 @@
 			qcom,sde-dspp-pcc = <0x1700 0x00040000>;
 			qcom,sde-dspp-gc = <0x17c0 0x00010008>;
 			qcom,sde-dspp-dither = <0x82c 0x00010007>;
-		};
-
-		qcom,platform-supply-entries {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			qcom,platform-supply-entry@0 {
-				reg = <0>;
-				qcom,supply-name = "sde-vdd";
-				qcom,supply-min-voltage = <0>;
-				qcom,supply-max-voltage = <0>;
-				qcom,supply-enable-load = <0>;
-				qcom,supply-disable-load = <0>;
-			};
 		};
 
 		smmu_sde_unsec: qcom,smmu_sde_unsec_cb {
@@ -302,7 +295,6 @@
 	sde_rscc: qcom,sde_rscc {
 		cell-index = <0>;
 		compatible = "qcom,sde-rsc";
-		status = "disabled";
 		reg = <0xaf20000 0x3c50>,
 			<0xaf30000 0x3fd4>;
 		reg-names = "drv", "wrapper";
@@ -483,7 +475,7 @@
 
 	clocks =	<&dispcc DISP_CC_MDSS_DP_AUX_CLK>,
 			<&gcc GCC_USB3_PRIM_PHY_PIPE_CLK>,
-			<&rpmhcc RPMH_CXO_CLK>,
+			<&rpmhcc RPMH_QLINK_CLK>,
 			<&gcc GCC_USB3_PRIM_CLKREF_CLK>,
 			<&gcc GCC_USB3_PRIM_PHY_PIPE_CLK>,
 			<&dispcc DISP_CC_MDSS_DP_LINK_CLK>,

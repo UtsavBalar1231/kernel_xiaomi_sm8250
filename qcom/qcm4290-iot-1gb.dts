@@ -1,0 +1,9 @@
+/dts-v1/;
+
+#include "qcm4290-iot-low-ram.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. QCM4290 1Gb DDR HD+ SoC";
+	compatible = "qcom,qcm4290";
+	qcom,board-id = <0 0x303>;
+};

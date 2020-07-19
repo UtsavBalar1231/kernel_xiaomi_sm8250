@@ -1,0 +1,8 @@
+#include "bengal.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. QCM4290";
+	compatible = "qcom,qcm4290";
+	qcom,msm-id = <469 0x0>;
+	qcom,msm-name = "QCM4290";
+};

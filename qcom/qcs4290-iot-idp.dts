@@ -1,0 +1,10 @@
+/dts-v1/;
+
+#include "qcs4290.dtsi"
+#include "qcs4290-iot-idp.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. QCS4290 IOT IDP";
+	compatible = "qcom,qcs4290-idp", "qcom,qcs4290", "qcom,idp";
+	qcom,board-id = <34 0>;
+};

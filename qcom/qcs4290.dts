@@ -1,0 +1,9 @@
+/dts-v1/;
+
+#include "qcs4290.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. QCS4290 SoC";
+	compatible = "qcom,qcs4290";
+	qcom,board-id = <0 0>;
+};

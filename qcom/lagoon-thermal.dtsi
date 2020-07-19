@@ -955,8 +955,7 @@
 
 			cdsp-cdev1 {
 				trip = <&q6_hvx_trip1>;
-				cooling-device = <&cdsp_sw THERMAL_MAX_LIMIT
-							THERMAL_MAX_LIMIT>;
+				cooling-device = <&cdsp_sw 4 4>;
 			};
 
 			modem-pa-cdev {
@@ -977,8 +976,8 @@
 
 			gpu-cdev {
 				trip = <&q6_hvx_trip1>;
-				cooling-device = <&msm_gpu (THERMAL_MAX_LIMIT-1)
-							(THERMAL_MAX_LIMIT-1)>;
+				cooling-device = <&msm_gpu (THERMAL_MAX_LIMIT-2)
+							(THERMAL_MAX_LIMIT-2)>;
 			};
 		};
 	};
@@ -1240,6 +1239,90 @@
 			lmh_cpu6_cdev {
 				trip = <&min_temp_1_lowc>;
 				cooling-device = <&lmh_cpu_vdd1 1 1>;
+			};
+		};
+	};
+
+	quiet-therm-step {
+		polling-delay-passive = <2000>;
+		polling-delay = <0>;
+		thermal-governor = "step_wise";
+		thermal-sensors = <&pm6150l_adc_tm ADC_GPIO4_PU2>;
+		wake-capable-sensor;
+
+		trips {
+			gold_trip: gold-trip {
+				temperature = <43000>;
+				hysteresis = <0>;
+				type = "passive";
+			};
+
+			gpu_skin_trip: gpu-skin-trip {
+				temperature = <45000>;
+				hysteresis = <3000>;
+				type = "passive";
+			};
+
+			silver_trip: silver-trip {
+				temperature = <48000>;
+				hysteresis = <0>;
+				type = "passive";
+			};
+
+			cx_emer_trip: cx-emer-trip {
+				temperature = <50000>;
+				hysteresis = <4000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			skin_cpu6 {
+				trip = <&gold_trip>;
+					/* throttle from fmax to 1555200KHz */
+				cooling-device = <&CPU6 THERMAL_NO_LIMIT
+							(THERMAL_MAX_LIMIT-6)>;
+			};
+
+			skin_cpu0 {
+				trip = <&silver_trip>;
+					/* throttle from fmax to 1516800KHz */
+				cooling-device = <&CPU0 THERMAL_NO_LIMIT
+							(THERMAL_MAX_LIMIT-6)>;
+			};
+
+			skin_gpu {
+				trip = <&gpu_skin_trip>;
+					/* throttle to 650000000Hz */
+				cooling-device = <&msm_gpu (THERMAL_MAX_LIMIT-4)
+						(THERMAL_MAX_LIMIT-4)>;
+			};
+
+			skin_gpu_emrg {
+				trip = <&cx_emer_trip>;
+				cooling-device = <&msm_gpu (THERMAL_MAX_LIMIT-2)
+							(THERMAL_MAX_LIMIT-2)>;
+			};
+
+			skin_modem_pa {
+				trip = <&cx_emer_trip>;
+				cooling-device = <&modem_pa 3 3>;
+			};
+
+			skin_modem_proc {
+				trip = <&cx_emer_trip>;
+				cooling-device = <&modem_tj 3 3>;
+			};
+
+			skin_cdsp {
+				trip = <&cx_emer_trip>;
+				cooling-device = <&cdsp_sw 4 4>;
+			};
+
+			skin_npu {
+				trip = <&cx_emer_trip>;
+				cooling-device = <&msm_npu THERMAL_MAX_LIMIT
+							THERMAL_MAX_LIMIT>;
 			};
 		};
 	};

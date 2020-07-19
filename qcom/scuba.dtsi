@@ -281,18 +281,18 @@
 			size = <0 0x5c00000>;
 		};
 
-		cont_splash_memory: cont_splash_region@9c000000 {
-			reg = <0x0 0x9c000000 0x0 0x00f00000>;
+		cont_splash_memory: cont_splash_region@5c000000 {
+			reg = <0x0 0x5c000000 0x0 0x00f00000>;
 			label = "cont_splash_region";
 		};
 
-		dfps_data_memory: dfps_data_region@9cf00000 {
-			reg = <0x0 0x9cf00000 0x0 0x0100000>;
+		dfps_data_memory: dfps_data_region@5cf00000 {
+			reg = <0x0 0x5cf00000 0x0 0x0100000>;
 			label = "dfps_data_region";
 		};
 
-		disp_rdump_memory: disp_rdump_region@9c000000 {
-			reg = <0x0 0x9c000000 0x0 0x00f00000>;
+		disp_rdump_memory: disp_rdump_region@5c000000 {
+			reg = <0x0 0x5c000000 0x0 0x00f00000>;
 			label = "disp_rdump_region";
 		};
 
@@ -988,9 +988,9 @@
 		qcom,op-freq-hz = <75000000>;
 	};
 
-	qcom_seecom: qseecom@a1800000 {
+	qcom_seecom: qseecom@61800000 {
 		compatible = "qcom,qseecom";
-		reg = <0xa1800000 0x2100000>;
+		reg = <0x61800000 0x2100000>;
 		reg-names = "secapp-region";
 		memory-region = <&qseecom_mem>;
 		qcom,hlos-num-ce-hw-instances = <1>;
@@ -1025,9 +1025,9 @@
 		qcom,qsee-reentrancy-support = <2>;
 	};
 
-	qcom_smcinvoke: smcinvoke@a1800000 {
+	qcom_smcinvoke: smcinvoke@61800000 {
 		compatible = "qcom,smcinvoke";
-		reg = <0xa1800000 0x2100000>;
+		reg = <0x61800000 0x2100000>;
 		reg-names = "secapp-region";
 	};
 
@@ -1340,7 +1340,7 @@
 		interrupts = <0 415 IRQ_TYPE_EDGE_RISING>,
 			     <0 416 IRQ_TYPE_EDGE_RISING>;
 		interrupt-names = "cx_ipeak_danger", "cx_ipeak_safe";
-		victims_table = <1 0 844800000>;
+		victims_table = <4 0 844800000>;
 	};
 
 	pil_modem: qcom,mss@6080000 {
@@ -1366,6 +1366,7 @@
 		qcom,minidump-id = <3>;
 		qcom,aux-minidump-ids = <4>;
 		qcom,complete-ramdump;
+		qcom,sequential-fw-load;
 
 		/* Inputs from mss */
 		interrupts-extended = <&intc 0 307 1>,

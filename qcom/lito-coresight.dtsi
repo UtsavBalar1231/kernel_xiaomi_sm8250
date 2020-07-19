@@ -844,7 +844,7 @@
 			};
 
 			port@1 {
-				reg = <0>;
+				reg = <1>;
 				funnel_dl_center_out_tpda4: endpoint {
 					remote-endpoint =
 					    <&tpda4_in_funnel_dl_center>;
@@ -853,7 +853,7 @@
 			};
 
 			port@2 {
-				reg = <0>;
+				reg = <2>;
 				funnel_dl_center_out_tpda6: endpoint {
 					remote-endpoint =
 					    <&tpda6_in_funnel_dl_center>;
@@ -862,7 +862,7 @@
 			};
 
 			port@3 {
-				reg = <0>;
+				reg = <3>;
 				funnel_dl_center_out_tpda9: endpoint {
 					remote-endpoint =
 					    <&tpda9_in_funnel_dl_center>;
@@ -871,7 +871,7 @@
 			};
 
 			port@4 {
-				reg = <0>;
+				reg = <4>;
 				funnel_dl_center_out_tpda10: endpoint {
 					remote-endpoint =
 					    <&tpda10_in_funnel_dl_center>;
@@ -880,7 +880,7 @@
 			};
 
 			port@5 {
-				reg = <0>;
+				reg = <5>;
 				funnel_dl_center_out_tpda11: endpoint {
 					remote-endpoint =
 					    <&tpda11_in_funnel_dl_center>;
@@ -889,7 +889,7 @@
 			};
 
 			port@6 {
-				reg = <0>;
+				reg = <6>;
 				funnel_dl_center_out_tpda12: endpoint {
 					remote-endpoint =
 					    <&tpda12_in_funnel_dl_center>;
@@ -898,7 +898,7 @@
 			};
 
 			port@7 {
-				reg = <0>;
+				reg = <7>;
 				funnel_dl_center_out_tpda13: endpoint {
 					remote-endpoint =
 					    <&tpda13_in_funnel_dl_center>;
@@ -907,7 +907,7 @@
 			};
 
 			port@8 {
-				reg = <0>;
+				reg = <8>;
 				funnel_dl_center_out_tpda14: endpoint {
 					remote-endpoint =
 					    <&tpda14_in_funnel_dl_center>;
@@ -916,7 +916,7 @@
 			};
 
 			port@9 {
-				reg = <0>;
+				reg = <9>;
 				funnel_dl_center_out_tpda15: endpoint {
 					remote-endpoint =
 					    <&tpda15_in_funnel_dl_center>;
@@ -925,7 +925,7 @@
 			};
 
 			port@10 {
-				reg = <0>;
+				reg = <10>;
 				funnel_dl_center_out_tpda16: endpoint {
 					remote-endpoint =
 					    <&tpda16_in_funnel_dl_center>;
@@ -934,7 +934,7 @@
 			};
 
 			port@11 {
-				reg = <0>;
+				reg = <11>;
 				funnel_dl_center_out_tpda19: endpoint {
 					remote-endpoint =
 					    <&tpda19_in_funnel_dl_center>;
@@ -943,7 +943,7 @@
 			};
 
 			port@12 {
-				reg = <0>;
+				reg = <12>;
 				funnel_dl_center_out_tpda20: endpoint {
 					remote-endpoint =
 					    <&tpda20_in_funnel_dl_center>;
@@ -952,7 +952,7 @@
 			};
 
 			port@13 {
-				reg = <0>;
+				reg = <13>;
 				funnel_dl_center_out_qatb3: endpoint {
 					remote-endpoint =
 					<&qatb3_in_funnel_dl_center>;

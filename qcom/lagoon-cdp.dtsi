@@ -2,6 +2,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include "lagoon-sde-display.dtsi"
 #include "camera/lagoon-camera-sensor-cdp.dtsi"
+#include "lagoon-thermal-overlay.dtsi"
 
 &soc {
 };

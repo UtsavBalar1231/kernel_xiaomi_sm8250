@@ -3,6 +3,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/iio/qcom,spmi-vadc.h>
 #include "scuba-sde-display.dtsi"
+#include "camera/scuba-camera-sensor-idp.dtsi"
 
 &soc {
 	scuba_batterydata: qcom,battery-data {
@@ -133,6 +134,47 @@
 	status = "ok";
 };
 
+&thermal_zones {
+	quiet-therm-usr {
+		polling-delay = <5000>;
+	};
+
+	quiet-therm-step {
+		polling-delay-passive = <2000>;
+		polling-delay = <5000>;
+		thermal-governor = "step_wise";
+		thermal-sensors = <&pm2250_adc_tm_iio ADC_AMUX_THM2_PU2>;
+		wake-capable-sensor;
+		trips {
+			quiet_gpu_trip: quiet-gpu-trip {
+				temperature = <43000>;
+				hysteresis = <0>;
+				type = "passive";
+			};
+
+			quiet_cpu0_trip: quiet-cpu0-trip {
+				temperature = <41000>;
+				hysteresis = <0>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			gpu-cdev {
+				trip = <&quiet_gpu_trip>;
+				cooling-device = <&msm_gpu THERMAL_NO_LIMIT
+							(THERMAL_MAX_LIMIT - 3)>;
+			};
+
+			cpu0-cdev {
+				trip = <&quiet_cpu0_trip>;
+				cooling-device = <&CPU0 THERMAL_NO_LIMIT
+							(THERMAL_MAX_LIMIT - 5)>;
+			};
+		};
+	};
+};
+
 &dsi_nt36525_truly_video {
 	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_no_labibb>;
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_pwm";
@@ -174,6 +216,18 @@
 
 &qusb_phy0 {
 	extcon = <&pm2250_charger>;
+
+	qcom,qusb-phy-init-seq = <0xf8 0x80
+				0xb3 0x84
+				0x83 0x88
+				0xc5 0x8c
+				0x30 0x08
+				0x79 0x0c
+				0x21 0x10
+				0x14 0x9c
+				0x80 0x04
+				0x9f 0x1c
+				0x00 0x18>;
 };
 
 &usb0 {
