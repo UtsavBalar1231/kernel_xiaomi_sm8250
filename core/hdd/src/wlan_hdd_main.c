@@ -9546,10 +9546,16 @@ void hdd_bus_bandwidth_deinit(struct hdd_context *hdd_ctx)
 static inline void
 __hdd_adapter_param_update_work(struct hdd_adapter *adapter)
 {
+	struct hdd_context *hdd_ctx = WLAN_HDD_GET_CTX(adapter);
+
 	if (hdd_validate_adapter(adapter)) {
+		hdd_adapter_ops_record_event(hdd_ctx, WLAN_HDD_ADAPTER_OPS_WORK_SCHED,
+					     WLAN_INVALID_VDEV_ID);
 		hdd_err("netdev features update request for invalid adapter");
 		return;
 	}
+	hdd_adapter_ops_record_event(hdd_ctx, WLAN_HDD_ADAPTER_OPS_WORK_SCHED,
+				     adapter->vdev_id);
 
 	hdd_netdev_update_features(adapter);
 
@@ -11308,6 +11314,7 @@ struct hdd_context *hdd_context_create(struct device *dev)
 		goto err_deinit_hdd_context;
 
 	hdd_set_wlan_logging(hdd_ctx);
+	qdf_atomic_init(&hdd_ctx->adapter_ops_history.index);
 
 skip_multicast_logging:
 	hdd_set_trace_level_for_each(hdd_ctx);
