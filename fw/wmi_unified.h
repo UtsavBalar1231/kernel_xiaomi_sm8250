@@ -1991,6 +1991,7 @@ typedef enum {
     WMI_TWT_RESUME_DIALOG_COMPLETE_EVENTID,
     WMI_TWT_BTWT_INVITE_STA_COMPLETE_EVENTID,
     WMI_TWT_BTWT_REMOVE_STA_COMPLETE_EVENTID,
+    WMI_TWT_SESSION_STATS_EVENTID,
 
     /** Events in Prototyping phase */
     WMI_NDI_CAP_RSP_EVENTID = WMI_EVT_GRP_START_ID(WMI_GRP_PROTOTYPE),
@@ -3695,6 +3696,13 @@ typedef struct {
      * specified by the host's ini configuration.
      */
     A_UINT32 max_ndi_interfaces;
+
+    /** @brief max_ap_vaps
+     * Maximum number of AP mode vdevs created at any time.
+     * This value is minimum of the number of AP vdevs supported by
+     * the target and host.
+     */
+    A_UINT32 max_ap_vaps;
 } wmi_resource_config;
 
 #define WMI_MSDU_FLOW_AST_ENABLE_GET(msdu_flow_config0, ast_x) \
@@ -6843,6 +6851,13 @@ typedef enum {
      */
     WMI_PDEV_PARAM_SET_PREAM_PUNCT_BW,
 
+    /*
+     * Parameter used to set the Margin dB value to be included for calculating
+     * the spatial reuse value in common info field of the UL Trigger frame.
+     * Accepted value as per Spec are 0 to 5 dB (inclusive).
+     */
+    WMI_PDEV_PARAM_SR_TRIGGER_MARGIN,
+
 } WMI_PDEV_PARAM;
 
 #define WMI_PDEV_ONLY_BSR_TRIG_IS_ENABLED(trig_type) WMI_GET_BITS(trig_type, 0, 1)
@@ -9485,9 +9500,13 @@ typedef struct {
      * See macros starting with WMI_PDEV_ID_ for values.
      */
     A_UINT32 pdev_id;
-    /** control flags for this vdev */
+    /** control flags for this vdev (DEPRECATED)
+     * Use @mbss_capability_flags in vdev start instead.
+     */
     A_UINT32 flags;
-    /**  vdevid of transmitted AP (mbssid case) */
+    /**  vdevid of transmitted AP (mbssid case) (DEPRECATED)
+     * Use @vdevid_trans in vdev start instead.
+     */
     A_UINT32 vdevid_trans;
 /* This TLV is followed by another TLV of array of structures
  *   wmi_vdev_txrx_streams cfg_txrx_streams[];
@@ -10248,6 +10267,19 @@ typedef struct {
     A_UINT32 regdomain;
     /* min data rate to be used in BSS in Mbps */
     A_UINT32 min_data_rate;
+
+    /** @mbss_capability_flags: Bitmap of vdev's MBSS/EMA capability.
+     *  Capabilities are combination of below flags:
+     *     VDEV_FLAGS_NON_MBSSID_AP
+     *     VDEV_FLAGS_TRANSMIT_AP
+     *     VDEV_FLAGS_NON_TRANSMIT_AP
+     *     VDEV_FLAGS_EMA_MODE
+     */
+    A_UINT32 mbss_capability_flags;
+
+    /** vdevid of transmitting VAP (mbssid case). Ignored for non mbssid case */
+    A_UINT32 vdevid_trans;
+
 /* The TLVs follows this structure:
  *     wmi_channel chan; <-- WMI channel
  *     wmi_p2p_noa_descriptor  noa_descriptors[]; <-- actual p2p NOA descriptor from scan entry
@@ -10433,6 +10465,11 @@ typedef enum {
  * Disassoc Imminent bit set to 1.
  */
 #define WMI_VDEV_ROAM_11KV_CTRL_DONOT_SEND_DISASSOC_ON_BTM_DI_SET       0x4
+
+
+/** NAN vdev config Feature flags */
+#define WMI_VDEV_NAN_ALLOW_DW_CONFIG_CHANGE_IN_SYNC_ROLE                0x1
+
 
 /** the definition of different VDEV parameters */
 typedef enum {
@@ -11280,6 +11317,12 @@ typedef enum {
      * 3 - 31 | Reserved
      */
     WMI_VDEV_PARAM_ROAM_11KV_CTRL,        /* 0xA2 */
+
+    /* vdev param to enable or disable various NAN config features
+     * param value bitmap set to 1 for enable and 0 for disable respectively
+     */
+    WMI_VDEV_PARAM_ENABLE_DISABLE_NAN_CONFIG_FEATURES,  /* 0xA3 */
+
 
     /*=== ADD NEW VDEV PARAM TYPES ABOVE THIS LINE ===
      * The below vdev param types are used for prototyping, and are
@@ -14825,6 +14868,43 @@ typedef struct {
  **/
 } wmi_roam_subnet_change_config_fixed_param;
 
+typedef enum {
+    /** No change in scan mode, use legacy modes */
+    ROAM_TRIGGER_SCAN_MODE_NONE = 0,
+    /** Trigger only partial roam scan */
+    ROAM_TRIGGER_SCAN_MODE_PARTIAL,
+    /** Trigger only FULL roam scan */
+    ROAM_TRIGGER_SCAN_MODE_FULL,
+    /** Don't trigger any roam scan and disconnect from AP */
+    ROAM_TRIGGER_SCAN_MODE_NO_SCAN_DISCONNECTION,
+} WMI_ROAM_TRIGGER_SCAN_MODE;
+
+typedef struct {
+    A_UINT32 tlv_header;     /** TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_configure_roam_trigger_parameters */
+    A_UINT32 trigger_reason; /** Roam trigger reason from WMI_ROAM_TRIGGER_REASON_ID */
+    A_UINT32 enable;         /** 0 - Disable, non-zero - enable */
+    A_UINT32 scan_mode;      /** Scan mode from WMI_ROAM_TRIGGER_SCAN_MODE */
+    /** consider roam trigger if connected AP rssi is worse than trigger_rssi_threshold */
+    A_INT32 trigger_rssi_threshold;      /* Units in dbm*/
+    /*
+     * Consider AP as roam candidate only if AP rssi is better than
+     * cand_ap_min_rssi_threshold
+     */
+    A_INT32 cand_ap_min_rssi_threshold; /* Units in dbm */
+    /* Roam score delta in %.
+     * Consider AP as roam candidate only if AP score is at least
+     * roam_score_delta % better than connected AP score.
+     * Ex: roam_score_delta = 20, and connected AP score is 4000,
+     * then consider candidate AP only if its score is at least
+     * 4800 (= 4000 * 120%)
+     */
+    A_UINT32 roam_score_delta_percentage;
+    /* Reason code to be filled in the response frame from STA.
+       Ex: Reason code in the BTM response frame
+       Valid values are 0 - 255 */
+    A_UINT32 reason_code;
+} wmi_configure_roam_trigger_parameters;
+
 /**
  * WMI_ROAM_ENABLE_DISABLE_TRIGGER_REASON:
  * Enable or disable roaming triggers in FW.
@@ -14840,6 +14920,15 @@ typedef struct {
      * bit value equal 0x0.
      */
     A_UINT32      trigger_reason_bitmask;
+
+/**
+ * The following TLVs will follow this fixed_param TLV:
+ *
+ * wmi_configure_roam_trigger_parameters config_roam_trigger_param[]
+ *     Roam trigger configuration per roam trigger.
+ *     The number of elements in this TLV array is limited to
+ *     WMI_ROAM_TRIGGER_EXT_REASON_MAX
+ */
 } wmi_roam_enable_disable_trigger_reason_fixed_param;
 
 /** WMI_PROFILE_MATCH_EVENT: offload scan
@@ -31204,6 +31293,56 @@ typedef struct {
  *       of the frame.
  */
 } wmi_simulation_test_cmd_fixed_param;
+
+#define WMI_TWT_SESSION_FLAG_FLOW_ID_GET(_var) WMI_GET_BITS(_var, 0, 16)
+#define WMI_TWT_SESSION_FLAG_FLOW_ID_SET(_var, _val) WMI_SET_BITS(_var, 0, 16, _val)
+
+#define WMI_TWT_SESSION_FLAG_BCAST_TWT_GET(_var) WMI_GET_BITS(_var, 16, 1)
+#define WMI_TWT_SESSION_FLAG_BCAST_TWT_SET(_var, _val) WMI_SET_BITS(_var, 16, 1, _val)
+
+#define WMI_TWT_SESSION_FLAG_TRIGGER_TWT_GET(_var) WMI_GET_BITS(_var, 17, 1)
+#define WMI_TWT_SESSION_FLAG_TRIGGER_TWT_SET(_var, _val) WMI_SET_BITS(_var, 17, 1, _val)
+
+#define WMI_TWT_SESSION_FLAG_ANNOUN_TWT_GET(_var) WMI_GET_BITS(_var, 18, 1)
+#define WMI_TWT_SESSION_FLAG_ANNOUN_TWT_SET(_var, _val) WMI_SET_BITS(_var, 18, 1, _val)
+
+typedef struct {
+    /** TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_twt_session_stats_info */
+    A_UINT32 tlv_hdr;
+
+    A_UINT32     vdev_id;
+    wmi_mac_addr peer_mac;
+    A_UINT32 event_type; /* event type - defined in enum wmi_twt_session_stats_type */
+    /*
+     * Flags to provide information on TWT session and session types.
+     * This field is filled with the bitwise combination of the flag values
+     * defined by WMI_TWT_SESSION_FLAG_xxx
+     */
+    A_UINT32     flow_id_flags;
+    A_UINT32     dialog_id;
+    A_UINT32     wake_dura_us;
+    A_UINT32     wake_intvl_us;
+    /* this long time after TWT resumed the 1st Service Period will start */
+    A_UINT32     sp_offset_us;
+} wmi_twt_session_stats_info;
+
+enum wmi_twt_session_stats_type {
+    WMI_TWT_SESSION_SETUP     = 1,
+    WMI_TWT_SESSION_TEARDOWN  = 2,
+    WMI_TWT_SESSION_UPDATE    = 3,
+};
+
+typedef struct {
+    /** TLV tag and len; tag equals
+    * WMITLV_TAG_STRUC_wmi_pdev_twt_session_stats_event_fixed_param */
+    A_UINT32 tlv_header;
+
+    A_UINT32 pdev_id; /* ID of the pdev this response belongs to */
+
+    /* The TLVs follows this structure:
+     * wmi_twt_session_stats_info twt_sessions[]; <--- Array of twt_session.
+     */
+} wmi_pdev_twt_session_stats_event_fixed_param;
 
 
 
