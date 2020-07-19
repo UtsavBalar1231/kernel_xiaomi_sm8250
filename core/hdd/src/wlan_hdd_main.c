@@ -3655,6 +3655,7 @@ int hdd_wlan_start_modules(struct hdd_context *hdd_ctx, bool reinit)
 		}
 
 		hdd_bus_bandwidth_init(hdd_ctx);
+		hdd_init_adapter_ops_wq(hdd_ctx);
 		pld_set_fw_log_mode(hdd_ctx->parent_dev,
 				    hdd_ctx->config->enable_fw_log);
 		ret = hdd_hif_open(qdf_dev->dev, qdf_dev->drv_hdl, qdf_dev->bid,
@@ -3879,6 +3880,7 @@ hif_close:
 	hif_ctx = cds_get_context(QDF_MODULE_ID_HIF);
 	hdd_hif_close(hdd_ctx, hif_ctx);
 power_down:
+	hdd_deinit_adapter_ops_wq(hdd_ctx);
 	hdd_bus_bandwidth_deinit(hdd_ctx);
 	if (!reinit && !unint)
 		pld_power_off(qdf_dev->dev);
@@ -4918,6 +4920,10 @@ hdd_alloc_station_adapter(struct hdd_context *hdd_ctx, tSirMacAddr mac_addr,
 		goto free_net_dev;
 	}
 
+	qdf_status = hdd_adapter_feature_update_work_init(adapter);
+	if (QDF_IS_STATUS_ERROR(qdf_status))
+		goto free_net_dev;
+
 	init_completion(&adapter->vdev_destroy_event);
 
 	adapter->offloads_configured = false;
@@ -5529,6 +5535,7 @@ static void hdd_cleanup_adapter(struct hdd_context *hdd_ctx,
 		hdd_sysfs_destroy_adapter_root_obj(adapter);
 
 	hdd_debugfs_exit(adapter);
+	hdd_adapter_feature_update_work_deinit(adapter);
 
 	/*
 	 * The adapter is marked as closed. When hdd_wlan_exit() call returns,
@@ -9529,6 +9536,98 @@ void hdd_bus_bandwidth_deinit(struct hdd_context *hdd_ctx)
 }
 #endif /*WLAN_FEATURE_DP_BUS_BANDWIDTH*/
 
+/**
+ * __hdd_adapter_param_update_work() - Gist of the work to process
+ *				       netdev feature update.
+ * @adapter: pointer to adapter structure
+ *
+ * Returns: None
+ */
+static inline void
+__hdd_adapter_param_update_work(struct hdd_adapter *adapter)
+{
+	if (hdd_validate_adapter(adapter)) {
+		hdd_err("netdev features update request for invalid adapter");
+		return;
+	}
+
+	hdd_netdev_update_features(adapter);
+
+	hdd_debug("Enabling queues");
+	wlan_hdd_netif_queue_control(adapter, WLAN_WAKE_ALL_NETIF_QUEUE,
+				     WLAN_CONTROL_PATH);
+}
+
+/**
+ * hdd_adapter_param_update_work() - work to process the netdev features
+ *				     update.
+ * @arg: private data passed to work
+ *
+ * Returns: None
+ */
+static void hdd_adapter_param_update_work(void *arg)
+{
+	struct hdd_adapter *adapter = arg;
+	struct osif_vdev_sync *vdev_sync;
+	int errno;
+
+	errno = osif_vdev_sync_op_start(adapter->dev, &vdev_sync);
+	if (errno)
+		return;
+
+	__hdd_adapter_param_update_work(adapter);
+
+	osif_vdev_sync_op_stop(vdev_sync);
+}
+
+QDF_STATUS hdd_init_adapter_ops_wq(struct hdd_context *hdd_ctx)
+{
+	hdd_enter();
+
+	hdd_ctx->adapter_ops_wq =
+		qdf_alloc_high_prior_ordered_workqueue("hdd_adapter_ops_wq");
+	if (!hdd_ctx->adapter_ops_wq)
+		return QDF_STATUS_E_NOMEM;
+
+	hdd_exit();
+
+	return QDF_STATUS_SUCCESS;
+}
+
+void hdd_deinit_adapter_ops_wq(struct hdd_context *hdd_ctx)
+{
+	hdd_enter();
+
+	qdf_flush_workqueue(0, hdd_ctx->adapter_ops_wq);
+	qdf_destroy_workqueue(0, hdd_ctx->adapter_ops_wq);
+
+	hdd_exit();
+}
+
+QDF_STATUS hdd_adapter_feature_update_work_init(struct hdd_adapter *adapter)
+{
+	QDF_STATUS status;
+
+	hdd_enter();
+
+	status = qdf_create_work(0, &adapter->netdev_features_update_work,
+				 hdd_adapter_param_update_work, adapter);
+
+	hdd_exit();
+
+	return status;
+}
+
+void hdd_adapter_feature_update_work_deinit(struct hdd_adapter *adapter)
+{
+	hdd_enter();
+
+	qdf_cancel_work(&adapter->netdev_features_update_work);
+	qdf_flush_work(&adapter->netdev_features_update_work);
+
+	hdd_exit();
+}
+
 static uint8_t *convert_level_to_string(uint32_t level)
 {
 	switch (level) {
@@ -13149,6 +13248,7 @@ int hdd_wlan_stop_modules(struct hdd_context *hdd_ctx, bool ftm_mode)
 	hdd_sap_destroy_ctx_all(hdd_ctx, is_recovery_stop);
 	hdd_sta_destroy_ctx_all(hdd_ctx);
 	pld_request_bus_bandwidth(hdd_ctx->parent_dev, PLD_BUS_WIDTH_NONE);
+	hdd_deinit_adapter_ops_wq(hdd_ctx);
 	hdd_bus_bandwidth_deinit(hdd_ctx);
 	hdd_check_for_leaks(hdd_ctx, is_recovery_stop);
 	hdd_debug_domain_set(QDF_DEBUG_DOMAIN_INIT);
