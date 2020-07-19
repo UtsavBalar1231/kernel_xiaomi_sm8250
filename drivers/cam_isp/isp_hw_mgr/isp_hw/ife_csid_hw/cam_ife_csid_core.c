@@ -4584,16 +4584,19 @@ irqreturn_t cam_ife_csid_irq(int irq_num, void *data)
 			CSID_CSI2_RX_ERROR_CPHY_PH_CRC) {
 			CAM_ERR_RATE_LIMIT(CAM_ISP, "CSID:%d CPHY_PH_CRC",
 				csid_hw->hw_intf->hw_idx);
+			csid_hw->error_irq_count++;
 		}
 		if (irq_status[CAM_IFE_CSID_IRQ_REG_RX] &
 			CSID_CSI2_RX_ERROR_CRC) {
 			CAM_ERR_RATE_LIMIT(CAM_ISP, "CSID:%d ERROR_CRC",
 				csid_hw->hw_intf->hw_idx);
+			csid_hw->error_irq_count++;
 		}
 		if (irq_status[CAM_IFE_CSID_IRQ_REG_RX] &
 			CSID_CSI2_RX_ERROR_ECC) {
 			CAM_ERR_RATE_LIMIT(CAM_ISP, "CSID:%d ERROR_ECC",
 				csid_hw->hw_intf->hw_idx);
+			csid_hw->error_irq_count++;
 		}
 		if (irq_status[CAM_IFE_CSID_IRQ_REG_RX] &
 			CSID_CSI2_RX_ERROR_MMAPPED_VC_DT) {
