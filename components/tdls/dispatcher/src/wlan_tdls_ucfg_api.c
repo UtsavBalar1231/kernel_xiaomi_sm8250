@@ -218,15 +218,58 @@ static QDF_STATUS tdls_object_init_params(
 			cfg_get(psoc, CFG_TDLS_IMPLICIT_TRIGGER);
 	tdls_soc_obj->tdls_configs.tdls_external_control =
 			cfg_get(psoc, CFG_TDLS_EXTERNAL_CONTROL);
+	tdls_soc_obj->max_num_tdls_sta =
+			cfg_get(psoc, CFG_TDLS_MAX_PEER_COUNT);
 
 	tdls_update_feature_flag(tdls_soc_obj);
 
 	return QDF_STATUS_SUCCESS;
 }
 
+#ifdef TDLS_WOW_ENABLED
+/**
+ * tdls_wow_init(): Create/init wake lock for TDLS
+ *
+ * Create/init wake lock for TDLS if DVR isn't supported
+ *
+ * Return None
+ */
+static void tdls_wow_init(struct tdls_soc_priv_obj *soc_obj)
+{
+	soc_obj->is_prevent_suspend = false;
+	soc_obj->is_drv_supported = qdf_is_drv_supported();
+	if (!soc_obj->is_drv_supported) {
+		qdf_wake_lock_create(&soc_obj->wake_lock, "wlan_tdls");
+		qdf_runtime_lock_init(&soc_obj->runtime_lock);
+	}
+}
+
+/**
+ * tdls_wow_deinit(): Destroy/deinit wake lock for TDLS
+ *
+ * Destroy/deinit wake lock for TDLS if DVR isn't supported
+ *
+ * Return None
+ */
+static void tdls_wow_deinit(struct tdls_soc_priv_obj *soc_obj)
+{
+	if (!soc_obj->is_drv_supported) {
+		qdf_runtime_lock_deinit(&soc_obj->runtime_lock);
+		qdf_wake_lock_destroy(&soc_obj->wake_lock);
+	}
+}
+#else
+static void tdls_wow_init(struct tdls_soc_priv_obj *soc_obj)
+{
+}
+
+static void tdls_wow_deinit(struct tdls_soc_priv_obj *soc_obj)
+{
+}
+#endif
+
 static QDF_STATUS tdls_global_init(struct tdls_soc_priv_obj *soc_obj)
 {
-
 	tdls_object_init_params(soc_obj);
 	soc_obj->connected_peer_count = 0;
 	soc_obj->tdls_nss_switch_in_progress = false;
@@ -238,13 +281,16 @@ static QDF_STATUS tdls_global_init(struct tdls_soc_priv_obj *soc_obj)
 	soc_obj->tdls_disable_in_progress = false;
 
 	qdf_spinlock_create(&soc_obj->tdls_ct_spinlock);
+	tdls_wow_init(soc_obj);
 
 	return QDF_STATUS_SUCCESS;
 }
 
 static QDF_STATUS tdls_global_deinit(struct tdls_soc_priv_obj *soc_obj)
 {
+	tdls_wow_deinit(soc_obj);
 	qdf_spinlock_destroy(&soc_obj->tdls_ct_spinlock);
+
 	return QDF_STATUS_SUCCESS;
 }
 
@@ -337,8 +383,6 @@ QDF_STATUS ucfg_tdls_update_config(struct wlan_objmgr_psoc *psoc,
 	    TDLS_IS_OFF_CHANNEL_ENABLED(tdls_feature_flags))
 		soc_obj->max_num_tdls_sta =
 			WLAN_TDLS_STA_P_UAPSD_OFFCHAN_MAX_NUM;
-		else
-			soc_obj->max_num_tdls_sta = WLAN_TDLS_STA_MAX_NUM;
 
 	for (sta_idx = 0; sta_idx < soc_obj->max_num_tdls_sta; sta_idx++) {
 		soc_obj->tdls_conn_info[sta_idx].valid_entry = false;
@@ -857,8 +901,10 @@ QDF_STATUS ucfg_tdls_notify_sta_disconnect(
 	tdls_debug("Enter ");
 
 	notify = qdf_mem_malloc(sizeof(*notify));
-	if (!notify)
+	if (!notify) {
+		wlan_objmgr_vdev_release_ref(notify->vdev, WLAN_TDLS_NB_ID);
 		return QDF_STATUS_E_NULL_VALUE;
+	}
 
 	*notify = *notify_info;
 

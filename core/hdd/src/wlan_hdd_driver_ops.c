@@ -735,12 +735,6 @@ static void hdd_send_hang_data(void *data, size_t data_len)
  */
 static void hdd_psoc_shutdown_notify(struct hdd_context *hdd_ctx)
 {
-	/* Notify external threads currently waiting on firmware by forcefully
-	 * completing waiting events with a "reset" status. This will cause the
-	 * event to fail early instead of timing out.
-	 */
-	qdf_complete_wait_events();
-
 	wlan_cfg80211_cleanup_scan_queue(hdd_ctx->pdev, NULL);
 
 	if (ucfg_ipa_is_enabled()) {
@@ -1767,6 +1761,9 @@ wlan_hdd_pld_uevent(struct device *dev, struct pld_uevent_data *event_data)
 {
 	struct qdf_notifer_data hang_evt_data;
 	enum qdf_hang_reason reason = QDF_REASON_UNSPECIFIED;
+	uint8_t bus_type;
+
+	bus_type = pld_get_bus_type(dev);
 
 	switch (event_data->uevent) {
 	case PLD_FW_DOWN:
@@ -1774,6 +1771,13 @@ wlan_hdd_pld_uevent(struct device *dev, struct pld_uevent_data *event_data)
 
 		cds_set_target_ready(false);
 		cds_set_recovery_in_progress(true);
+
+		/* Notify external threads currently waiting on firmware
+		 * by forcefully completing waiting events with a "reset"
+		 * status. This will cause the event to fail early instead
+		 * of timing out.
+		 */
+		qdf_complete_wait_events();
 
 		/*
 		 * In case of some platforms, uevent will come to the driver in
@@ -1784,7 +1788,7 @@ wlan_hdd_pld_uevent(struct device *dev, struct pld_uevent_data *event_data)
 		 * thus defer the cleanup to be done during
 		 * hdd_soc_recovery_shutdown
 		 */
-		if (qdf_in_interrupt())
+		if (qdf_in_interrupt() || bus_type == PLD_BUS_TYPE_PCIE)
 			break;
 
 		hdd_soc_recovery_cleanup();
