@@ -1251,9 +1251,33 @@
 		wake-capable-sensor;
 
 		trips {
+			modem_skin_trip0: modem-skin-trip0 {
+				temperature = <40000>;
+				hysteresis = <4000>;
+				type = "passive";
+			};
+
+			modem_skin_trip1: modem-skin-trip1 {
+				temperature = <41000>;
+				hysteresis = <4000>;
+				type = "passive";
+			};
+
+			modem_skin_trip2: modem-skin-trip2 {
+				temperature = <42000>;
+				hysteresis = <4000>;
+				type = "passive";
+			};
+
 			gold_trip: gold-trip {
 				temperature = <43000>;
 				hysteresis = <0>;
+				type = "passive";
+			};
+
+			modem_skin_trip3: modem-skin-trip3 {
+				temperature = <43000>;
+				hysteresis = <4000>;
 				type = "passive";
 			};
 
@@ -1271,6 +1295,12 @@
 
 			cx_emer_trip: cx-emer-trip {
 				temperature = <50000>;
+				hysteresis = <4000>;
+				type = "passive";
+			};
+
+			modem_skin_trip4: modem-skin-trip4 {
+				temperature = <56000>;
 				hysteresis = <4000>;
 				type = "passive";
 			};
@@ -1323,6 +1353,51 @@
 				trip = <&cx_emer_trip>;
 				cooling-device = <&msm_npu THERMAL_MAX_LIMIT
 							THERMAL_MAX_LIMIT>;
+			};
+
+			skin_modem_skin_cdev0 {
+				trip = <&modem_skin_trip0>;
+				cooling-device = <&modem_skin 1 1>;
+			};
+
+			skin_modem_skin_cdev1 {
+				trip = <&modem_skin_trip1>;
+				cooling-device = <&modem_skin 2 2>;
+			};
+
+			skin_modem_skin_cdev2 {
+				trip = <&modem_skin_trip4>;
+				cooling-device = <&modem_skin 3 3>;
+			};
+
+			skin_modem_cdev0 {
+				trip = <&modem_skin_trip2>;
+				cooling-device = <&modem_pa 1 1>;
+			};
+
+			skin_modem_cdev1 {
+				trip = <&modem_skin_trip3>;
+				cooling-device = <&modem_pa 2 2>;
+			};
+
+			skin_modem_cdev2 {
+				trip = <&modem_skin_trip4>;
+				cooling-device = <&modem_pa 3 3>;
+			};
+
+			modem_pa_fr1_cdev0 {
+				trip = <&modem_skin_trip2>;
+				cooling-device = <&modem_pa_fr1 1 1>;
+			};
+
+			modem_pa_fr1_cdev1 {
+				trip = <&modem_skin_trip3>;
+				cooling-device = <&modem_pa_fr1 2 2>;
+			};
+
+			modem_pa_fr1_cdev2 {
+				trip = <&modem_skin_trip4>;
+				cooling-device = <&modem_pa_fr1 3 3>;
 			};
 		};
 	};
