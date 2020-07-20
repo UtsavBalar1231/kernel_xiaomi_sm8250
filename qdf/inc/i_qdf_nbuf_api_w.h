@@ -132,4 +132,27 @@ static inline void qdf_nbuf_set_rx_reo_dest_ind(qdf_nbuf_t buf,
 						uint8_t value)
 {
 }
+
+/**
+* qdf_nbuf_set_rx_ipa_smmu_map() - set ipa smmu mapped flag
+ * @buf: Network buffer
+ * @value: 1 - ipa smmu mapped, 0 - ipa smmu unmapped
+ *
+ * Return: none
+ */
+static inline void qdf_nbuf_set_rx_ipa_smmu_map(qdf_nbuf_t buf,
+						uint8_t value)
+{
+}
+
+/**
+ * qdf_nbuf_is_rx_ipa_smmu_map() - check ipa smmu map flag
+ * @buf: Network buffer
+ *
+ * Return 0 or 1
+ */
+static inline uint8_t qdf_nbuf_is_rx_ipa_smmu_map(qdf_nbuf_t buf)
+{
+	return 0;
+}
 #endif /* _QDF_NBUF_W_H */
