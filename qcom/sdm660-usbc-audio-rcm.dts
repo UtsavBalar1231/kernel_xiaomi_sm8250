@@ -1,0 +1,18 @@
+/dts-v1/;
+
+#include "sdm660.dtsi"
+#include "sdm660-cdp.dtsi"
+#include "sdm660-external-codec.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. SDM 660 PM660 + PM660L, USBC
+		Audio, RCM";
+	compatible = "qcom,sdm660-cdp", "qcom,sdm660", "qcom,cdp";
+	qcom,board-id = <21 3>;
+	qcom,pmic-id = <0x0001001b 0x0101011a 0x0 0x0>,
+			<0x0001001b 0x0201011a 0x0 0x0>;
+};
+
+&tavil_snd {
+	qcom,msm-mbhc-usbc-audio-supported = <1>;
+};
