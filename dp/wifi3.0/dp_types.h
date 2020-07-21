@@ -2082,6 +2082,14 @@ struct dp_vdev {
 
 	/* vap bss peer mac addr */
 	uint8_t vap_bss_peer_mac_addr[QDF_MAC_ADDR_SIZE];
+
+#ifdef WLAN_SUPPORT_RX_FISA
+	/**
+	 * Params used for controlling the fisa aggregation dynamically
+	 */
+	uint8_t fisa_disallowed[MAX_REO_DEST_RINGS];
+	uint8_t fisa_force_flushed[MAX_REO_DEST_RINGS];
+#endif
 };
 
 
