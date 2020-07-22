@@ -137,6 +137,9 @@
 		808302432 811656384>;
 	qcom,mdss-dsi-pan-enable-dynamic-fps;
 	qcom,mdss-dsi-pan-fps-update = "dfps_immediate_porch_mode_vfp";
+	qcom,mdss-dsi-tx-eot-append;
+	qcom,mdss-dsi-t-clk-post = <0x0d>;
+	qcom,mdss-dsi-t-clk-pre = <0x2d>;
 };
 
 &dsi_dual_nt35597_truly_cmd {
@@ -153,6 +156,10 @@
 	qcom,mdss-dsi-panel-on-check-value = <0x9c>;
 	qcom,mdss-dsi-panel-status-read-length = <1>;
 	qcom,mdss-dsi-panel-max-error-count = <3>;
+	qcom,mdss-dsi-tx-eot-append;
+	qcom,mdss-dsi-t-clk-post = <0x0d>;
+	qcom,mdss-dsi-t-clk-pre = <0x2d>;
+	qcom,ulps-enabled;
 };
 
 &dsi_dual_nt36850_truly_cmd {
