@@ -15,22 +15,6 @@
 		qcom,blk-size = <1>;
 	};
 
-	qpdi: qpdi@1fc1000 {
-		compatible = "qcom,coresight-qpdi";
-		reg = <0x01fc1000 0x4>;
-		reg-names = "qpdi-base";
-
-		coresight-name = "coresight-qpdi";
-
-		vdd-supply = <&pm660l_l5>;
-		qcom,vdd-voltage-level = <2950000 2950000>;
-		qcom,vdd-current-level = <15000 900000>;
-
-		vdd-io-supply = <&pm660l_l2>;
-		qcom,vdd-io-voltage-level = <1800000 2950000>;
-		qcom,vdd-io-current-level = <200 22000>;
-	};
-
 	tmc_etr: tmc@6048000 {
 		compatible = "arm,primecell";
 		arm,primecell-periphid = <0x0003b961>;
@@ -997,6 +981,7 @@
 		clocks = <&clock_rpmcc RPM_SMD_QDSS_CLK>,
 			 <&clock_rpmcc RPM_SMD_QDSS_A_CLK>;
 		clock-names = "apb_pclk", "core_a_clk";
+		status = "disabled";
 	};
 
 	cti_wcss1: cti@71a5000 {
@@ -1010,6 +995,7 @@
 		clocks = <&clock_rpmcc RPM_SMD_QDSS_CLK>,
 			 <&clock_rpmcc RPM_SMD_QDSS_A_CLK>;
 		clock-names = "apb_pclk", "core_a_clk";
+		status = "disabled";
 	};
 
 	cti_wcss2: cti@71a6000 {
@@ -1023,6 +1009,7 @@
 		clocks = <&clock_rpmcc RPM_SMD_QDSS_CLK>,
 			 <&clock_rpmcc RPM_SMD_QDSS_A_CLK>;
 		clock-names = "apb_pclk", "core_a_clk";
+		status = "disabled";
 	};
 
 	cti_mmss: cti@7188000 {
@@ -1049,6 +1036,7 @@
 		clocks = <&clock_rpmcc RPM_SMD_QDSS_CLK>,
 			 <&clock_rpmcc RPM_SMD_QDSS_A_CLK>;
 		clock-names = "apb_pclk", "core_a_clk";
+		status = "disabled";
 	};
 
 	cti_rpm: cti@7048000 {
