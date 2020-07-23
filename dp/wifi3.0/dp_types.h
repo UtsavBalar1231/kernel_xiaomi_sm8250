@@ -916,6 +916,38 @@ struct htt_t2h_stats {
 	uint32_t num_stats;
 };
 
+#define DP_RX_HIST_MAX 2048
+#define DP_RX_ERR_HIST_MAX 4096
+#define DP_RX_REINJECT_HIST_MAX 1024
+
+struct dp_buf_info_record {
+	struct hal_buf_info hbi;
+	uint64_t timestamp;
+};
+
+struct dp_rx_history {
+	qdf_atomic_t index;
+	struct dp_buf_info_record entry[DP_RX_HIST_MAX];
+};
+
+struct dp_rx_err_history {
+	qdf_atomic_t index;
+	struct dp_buf_info_record entry[DP_RX_ERR_HIST_MAX];
+};
+
+struct dp_rx_reinject_history {
+	qdf_atomic_t index;
+	struct dp_buf_info_record entry[DP_RX_REINJECT_HIST_MAX];
+};
+
+static inline uint32_t dp_history_get_next_index(qdf_atomic_t *curr_idx,
+						 uint32_t max_entries)
+{
+	uint32_t idx = qdf_atomic_inc_return(curr_idx);
+
+	return idx & (max_entries - 1);
+}
+
 /* SOC level structure for data path */
 struct dp_soc {
 	/**
@@ -1163,6 +1195,10 @@ struct dp_soc {
 		unsigned idx_bits;
 		TAILQ_HEAD(, dp_ast_entry) * bins;
 	} ast_hash;
+
+	struct dp_rx_history *rx_ring_history[MAX_REO_DEST_RINGS];
+	struct dp_rx_err_history *rx_err_ring_history;
+	struct dp_rx_reinject_history *rx_reinject_ring_history;
 
 	qdf_spinlock_t ast_lock;
 	/*Timer for AST entry ageout maintainance */

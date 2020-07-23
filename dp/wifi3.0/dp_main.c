@@ -94,6 +94,12 @@ cdp_dump_flow_pool_info(struct cdp_soc_t *soc)
 #define SET_PEER_REF_CNT_ONE(_peer)
 #endif
 
+#ifdef WLAN_FEATURE_DP_RX_RING_HISTORY
+struct dp_rx_history dp_rx_ring_hist[MAX_REO_DEST_RINGS];
+struct dp_rx_reinject_history dp_rx_reinject_ring_hist;
+struct dp_rx_err_history dp_rx_err_ring_hist;
+#endif
+
 /*
  * The max size of cdp_peer_stats_param_t is limited to 16 bytes.
  * If the buffer size is exceeding this size limit,
@@ -10790,6 +10796,28 @@ static void dp_process_wow_ack_rsp(struct cdp_soc_t *soc_hdl, uint8_t pdev_id)
 	}
 }
 
+#ifdef WLAN_FEATURE_DP_RX_RING_HISTORY
+static void dp_soc_rx_history_attach(struct dp_soc *soc)
+{
+	int i;
+
+	for (i = 0; i < MAX_REO_DEST_RINGS; i++) {
+		soc->rx_ring_history[i] = &dp_rx_ring_hist[i];
+		qdf_atomic_init(&soc->rx_ring_history[i]->index);
+	}
+
+	soc->rx_err_ring_history = &dp_rx_err_ring_hist;
+	soc->rx_reinject_ring_history = &dp_rx_reinject_ring_hist;
+
+	qdf_atomic_init(&soc->rx_err_ring_history->index);
+	qdf_atomic_init(&soc->rx_reinject_ring_history->index);
+}
+#else
+static inline void dp_soc_rx_history_attach(struct dp_soc *soc)
+{
+}
+#endif
+
 /**
  * dp_process_target_suspend_req() - process target suspend request
  * @soc_hdl: datapath soc handle
@@ -11001,6 +11029,7 @@ dp_soc_attach(struct cdp_ctrl_objmgr_psoc *ctrl_psoc,
 	soc->osdev = qdf_osdev;
 	soc->num_hw_dscp_tid_map = HAL_MAX_HW_DSCP_TID_MAPS;
 
+	dp_soc_rx_history_attach(soc);
 	wlan_set_srng_cfg(&soc->wlan_srng_cfg);
 	qdf_mem_zero(&soc->vdev_id_map, sizeof(soc->vdev_id_map));
 
