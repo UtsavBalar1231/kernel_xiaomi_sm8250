@@ -1747,6 +1747,9 @@ uint32_t dp_rx_frag_handle(struct dp_soc *soc, hal_ring_desc_t ring_desc,
 	pdev = soc->pdev_list[rx_desc->pool_id];
 	*mac_id = rx_desc->pool_id;
 
+	if (rx_desc->unmapped)
+		return rx_bufs_used;
+
 	msdu = rx_desc->nbuf;
 
 	qdf_nbuf_unmap_single(soc->osdev, msdu,	QDF_DMA_FROM_DEVICE);

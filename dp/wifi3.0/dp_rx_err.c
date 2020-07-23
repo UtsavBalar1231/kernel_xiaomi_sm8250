@@ -1515,6 +1515,30 @@ dp_rx_err_process(struct dp_intr *int_ctx, struct dp_soc *soc,
 						      msdu_list.sw_cookie[0]);
 		qdf_assert_always(rx_desc);
 
+		/*
+		 * this is a unlikely scenario where the host is reaping
+		 * a descriptor which it already reaped just a while ago
+		 * but is yet to replenish it back to HW.
+		 * In this case host will dump the last 128 descriptors
+		 * including the software descriptor rx_desc and assert.
+		 */
+
+		if (qdf_unlikely(!rx_desc->in_use)) {
+			DP_STATS_INC(soc, rx.err.hal_reo_dest_dup, 1);
+			dp_info_rl("Reaping rx_desc not in use!");
+			dp_rx_dump_info_and_assert(soc, hal_ring_hdl,
+						   ring_desc, rx_desc);
+			/* ignore duplicate RX desc and continue to process */
+			/* Pop out the descriptor */
+			goto next_entry;
+		}
+
+		if (!dp_rx_desc_paddr_sanity_check(rx_desc, msdu_list.paddr[0])) {
+			DP_STATS_INC(soc, rx.err.nbuf_sanity_fail, 1);
+			rx_desc->in_err_state = 1;
+			goto next_entry;
+		}
+
 		mac_id = rx_desc->pool_id;
 
 		/* Get the MPDU DESC info */
