@@ -1564,7 +1564,7 @@ unsigned long reclaim_pages(struct list_head *page_list)
 {
 	unsigned long nr_reclaimed;
 	struct page *page;
-	unsigned long nr_isolated[2] = {0, };
+	unsigned long nr_isolated[ANON_AND_FILE] = {0, };
 	struct pglist_data *pgdat = NULL;
 	struct scan_control sc = {
 		.gfp_mask = GFP_KERNEL,
@@ -2353,7 +2353,7 @@ static void get_scan_count(struct lruvec *lruvec, struct mem_cgroup *memcg,
 {
 	int swappiness = mem_cgroup_swappiness(memcg);
 	struct zone_reclaim_stat *reclaim_stat = &lruvec->reclaim_stat;
-	u64 fraction[2];
+	u64 fraction[ANON_AND_FILE];
 	u64 denominator = 0;	/* gcc */
 	struct pglist_data *pgdat = lruvec_pgdat(lruvec);
 	unsigned long anon_prio, file_prio;
@@ -2465,8 +2465,6 @@ static void get_scan_count(struct lruvec *lruvec, struct mem_cgroup *memcg,
 	 * Because workloads change over time (and to avoid overflow)
 	 * we keep these statistics as a floating average, which ends
 	 * up weighing recent references more than old ones.
-	 *
-	 * anon in [0], file in [1]
 	 */
 
 	anon  = lruvec_lru_size(lruvec, LRU_ACTIVE_ANON, MAX_NR_ZONES) +
