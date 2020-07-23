@@ -87,7 +87,6 @@ static const struct wsa_reg_mask_val reg_init[] = {
 	{WSA883X_CDC_SPK_DSM_R7, 0xFF, 0x3F},
 	{WSA883X_DRE_CTL_0, 0xF0, 0x90},
 	{WSA883X_DRE_IDLE_DET_CTL, 0x10, 0x00},
-	{WSA883X_PDM_WD_CTL, 0x01, 0x01},
 	{WSA883X_CURRENT_LIMIT, 0x78, 0x20},
 	{WSA883X_DRE_CTL_0, 0x07, 0x02},
 	{WSA883X_VAGC_TIME, 0x0F, 0x0F},
@@ -981,7 +980,6 @@ static int wsa883x_spkr_event(struct snd_soc_dapm_widget *w,
 		swr_slvdev_datapath_control(wsa883x->swr_slave,
 					    wsa883x->swr_slave->dev_num,
 					    true);
-		wcd_enable_irq(&wsa883x->irq_info, WSA883X_IRQ_INT_PDM_WD);
 		/* Force remove group */
 		swr_remove_from_group(wsa883x->swr_slave,
 				      wsa883x->swr_slave->dev_num);
@@ -990,9 +988,14 @@ static int wsa883x_spkr_event(struct snd_soc_dapm_widget *w,
 				WSA883X_PA_FSM_CTL, 0x01, 0x01);
 		break;
 	case SND_SOC_DAPM_PRE_PMD:
+		if (!test_bit(SPKR_ADIE_LB, &wsa883x->status_mask))
+			wcd_disable_irq(&wsa883x->irq_info,
+					WSA883X_IRQ_INT_PDM_WD);
 		snd_soc_component_update_bits(component, WSA883X_PA_FSM_CTL,
 				0x01, 0x00);
-		wcd_disable_irq(&wsa883x->irq_info, WSA883X_IRQ_INT_PDM_WD);
+		snd_soc_component_update_bits(wsa883x->component,
+					WSA883X_PDM_WD_CTL,
+					0x01, 0x00);
 		clear_bit(SPKR_STATUS, &wsa883x->status_mask);
 		clear_bit(SPKR_ADIE_LB, &wsa883x->status_mask);
 		break;
@@ -1358,10 +1361,16 @@ static int wsa883x_event_notify(struct notifier_block *nb,
 		break;
 
 	case BOLERO_WSA_EVT_PA_ON_POST_FSCLK:
-		if (test_bit(SPKR_STATUS, &wsa883x->status_mask))
+		if (test_bit(SPKR_STATUS, &wsa883x->status_mask)) {
+			snd_soc_component_update_bits(wsa883x->component,
+						WSA883X_PDM_WD_CTL,
+						0x01, 0x01);
 			snd_soc_component_update_bits(wsa883x->component,
 						WSA883X_PA_FSM_CTL,
 						0x01, 0x01);
+			wcd_enable_irq(&wsa883x->irq_info,
+					WSA883X_IRQ_INT_PDM_WD);
+		}
 		break;
 	case BOLERO_WSA_EVT_PA_ON_POST_FSCLK_ADIE_LB:
 		if (test_bit(SPKR_STATUS, &wsa883x->status_mask))
