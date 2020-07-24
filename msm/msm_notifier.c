@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/kernel.h>
@@ -51,10 +51,11 @@ static int msm_notifier_fps_chg_callback(struct notifier_block *nb,
 	/*
 	 * Get ceiling of fps from notifier data to pass to scheduler.
 	 * Default will be FPS60 and sent to scheduler during suspend.
-	 * Currently scheduler expects FPS120 for any fps over 90.
 	 */
 	fps = notifier_data->refresh_rate;
-	if (fps > FPS90)
+	if (fps > FPS120)
+		sched_fps = FPS144;
+	else if (fps > FPS90)
 		sched_fps = FPS120;
 	else if (fps > FPS60)
 		sched_fps = FPS90;
