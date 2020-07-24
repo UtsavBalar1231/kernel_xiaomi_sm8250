@@ -315,4 +315,12 @@ void init_deinit_wakeup_host_wait(
 		 struct wlan_objmgr_psoc *psoc,
 		 struct target_psoc_info *tgt_info);
 
+/**
+ * init_deinit_get_vht_ch_width - return vht channel width
+ * @psoc: PSOC object
+ *
+ * Return: return max vht channel width supported by FW
+ */
+enum phy_ch_width init_deinit_get_vht_ch_width(struct wlan_objmgr_psoc *psoc);
+
 #endif /* _SERVICE_READY_UTIL_H_*/

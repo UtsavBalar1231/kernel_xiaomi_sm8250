@@ -863,3 +863,25 @@ void init_deinit_wakeup_host_wait(
 	}
 	qdf_event_set(&tgt_hdl->info.event);
 }
+
+enum phy_ch_width init_deinit_get_vht_ch_width(struct wlan_objmgr_psoc *psoc)
+{
+	enum phy_ch_width fw_ch_wd = CH_WIDTH_80MHZ;
+	struct target_psoc_info *tgt_hdl;
+	int vht_cap_info;
+
+	if (!psoc)
+		return fw_ch_wd;
+
+	tgt_hdl = wlan_psoc_get_tgt_if_handle(psoc);
+	if (!tgt_hdl)
+		return fw_ch_wd;
+
+	vht_cap_info = target_if_get_vht_cap_info(tgt_hdl);
+	if (vht_cap_info & WMI_VHT_CAP_CH_WIDTH_80P80_160MHZ)
+		fw_ch_wd = CH_WIDTH_80P80MHZ;
+	else if (vht_cap_info & WMI_VHT_CAP_CH_WIDTH_160MHZ)
+		fw_ch_wd = CH_WIDTH_160MHZ;
+
+	return fw_ch_wd;
+}
