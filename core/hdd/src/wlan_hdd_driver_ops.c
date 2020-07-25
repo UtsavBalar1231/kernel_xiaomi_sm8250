@@ -470,6 +470,8 @@ static int __hdd_soc_probe(struct device *dev,
 	if (errno)
 		goto unlock;
 
+	dp_prealloc_init();
+
 	hdd_ctx = hdd_context_create(dev);
 	if (IS_ERR(hdd_ctx)) {
 		errno = PTR_ERR(hdd_ctx);
@@ -680,6 +682,8 @@ static void __hdd_soc_remove(struct device *dev)
 	cds_set_unload_in_progress(false);
 
 	pr_info("%s: Driver De-initialized\n", WLAN_MODULE_NAME);
+
+	dp_prealloc_deinit();
 }
 
 /**

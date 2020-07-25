@@ -409,4 +409,54 @@ QDF_STATUS dp_txrx_set_cpu_mask(ol_txrx_soc_handle soc, qdf_cpu_mask *new_mask)
 }
 
 #endif /* FEATURE_WLAN_DP_RX_THREADS */
+
+#ifdef DP_MEM_PRE_ALLOC
+/**
+ * dp_prealloc_init() - Pre-allocate DP memory
+ *
+ * Return: QDF_STATUS_SUCCESS on success, error qdf status on failure
+ */
+QDF_STATUS dp_prealloc_init(void);
+
+/**
+ * dp_prealloc_deinit() - Free pre-alloced DP memory
+ *
+ * Return: None
+ */
+void dp_prealloc_deinit(void);
+
+/**
+ * dp_prealloc_get_coherent() - gets pre-alloc DP memory
+ * @size: size of memory needed
+ * @base_vaddr_unaligned: Unaligned virtual address.
+ * @paddr_unaligned: Unaligned physical address.
+ * @paddr_aligned: Aligned physical address.
+ * @align: Base address alignment.
+ * @align: alignment needed
+ * @ring_type: HAL ring type
+ *
+ * Return: unaligned virtual address if success or null if memory alloc fails.
+ */
+void *dp_prealloc_get_coherent(uint32_t *size, void **base_vaddr_unaligned,
+			       qdf_dma_addr_t *paddr_unaligned,
+			       qdf_dma_addr_t *paddr_aligned,
+			       uint32_t align,
+			       uint32_t ring_type);
+/**
+ * dp_prealloc_put_coherent() - puts back pre-alloc DP memory
+ * @size: size of memory to be returned
+ * @base_vaddr_unaligned: Unaligned virtual address.
+ * @paddr_unaligned: Unaligned physical address.
+ *
+ * Return: None
+ */
+void dp_prealloc_put_coherent(qdf_size_t size, void *vaddr_unligned,
+			      qdf_dma_addr_t paddr);
+#else
+static inline QDF_STATUS dp_prealloc_init(void) { return QDF_STATUS_SUCCESS; }
+
+static inline void dp_prealloc_deinit(void) { }
+
+#endif
+
 #endif /* _DP_TXRX_H */

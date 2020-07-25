@@ -116,6 +116,10 @@ static struct ol_if_ops  dp_ol_if_ops = {
 	.is_roam_inprogress = wma_is_roam_in_progress,
 	.get_con_mode = cds_get_conparam,
 	.send_delba = cds_send_delba,
+#ifdef DP_MEM_PRE_ALLOC
+	.dp_prealloc_get_consistent = dp_prealloc_get_coherent,
+	.dp_prealloc_put_consistent = dp_prealloc_put_coherent
+#endif
     /* TODO: Add any other control path calls required to OL_IF/WMA layer */
 };
 #else
