@@ -6458,6 +6458,7 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.id = MSM_FRONTEND_DAI_MULTIMEDIA16,
 		.ops = &msm_fe_qos_ops,
 	},
+#ifdef AUDIO_SM8250_FLAG
 	{/* hw:x,30 */
 #if defined(CONFIG_TARGET_PRODUCT_APOLLO) || defined(CONFIG_TARGET_PRODUCT_CAS)
 		.name = "Tertiary TDM1 Hostless Playback",
@@ -6507,6 +6508,39 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.codec_dai_name = "tx_macro_tx2",
 		.ops = &msm_cdc_dma_be_ops,
 	},
+#else
+    {/* hw:x,30 */
+        .name = "CDC_DMA Hostless",
+        .stream_name = "CDC_DMA Hostless",
+        .cpu_dai_name = "CDC_DMA_HOSTLESS",
+        .platform_name = "msm-pcm-hostless",
+        .dynamic = 1,
+        .dpcm_playback = 1,
+        .dpcm_capture = 1,
+        .trigger = {SND_SOC_DPCM_TRIGGER_POST,
+            SND_SOC_DPCM_TRIGGER_POST},
+        .no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
+        .ignore_suspend = 1,
+        /* this dailink has playback support */
+        .ignore_pmdown_time = 1,
+        .codec_dai_name = "snd-soc-dummy-dai",
+        .codec_name = "snd-soc-dummy",
+    },
+    {/* hw:x,31 */
+        .name = "TX3_CDC_DMA Hostless",
+        .stream_name = "TX3_CDC_DMA Hostless",
+        .cpu_dai_name = "TX3_CDC_DMA_HOSTLESS",
+        .platform_name = "msm-pcm-hostless",
+        .dynamic = 1,
+        .dpcm_capture = 1,
+        .trigger = {SND_SOC_DPCM_TRIGGER_POST,
+            SND_SOC_DPCM_TRIGGER_POST},
+        .no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
+        .ignore_suspend = 1,
+        .codec_dai_name = "snd-soc-dummy-dai",
+        .codec_name = "snd-soc-dummy",
+    },
+#endif
 	{/* hw:x,32 */
 		.name = "Tertiary MI2S TX_Hostless",
 		.stream_name = "Tertiary MI2S_TX Hostless Capture",
