@@ -22,6 +22,8 @@
 #include "dp_types.h"
 
 #define RX_BUFFER_SIZE_PKTLOG_LITE 1024
+/* Alignment for consistent memory for DP rings*/
+#define DP_RING_BASE_ALIGN 8
 
 
 #define DP_RSSI_INVAL 0x80
