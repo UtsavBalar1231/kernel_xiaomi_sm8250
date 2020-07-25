@@ -45,7 +45,7 @@ blm_update_ap_info(struct blm_reject_ap *blm_entry, struct blm_config *cfg,
 		entry_add_time =
 			blm_entry->ap_timestamp.userspace_avoid_timestamp;
 
-		if ((cur_timestamp - entry_add_time) >
+		if ((cur_timestamp - entry_add_time) >=
 		     MINUTES_TO_MS(cfg->avoid_list_exipry_time)) {
 			/* Move AP to monitor list as avoid list time is over */
 			blm_entry->userspace_avoidlist = false;
@@ -61,7 +61,7 @@ blm_update_ap_info(struct blm_reject_ap *blm_entry, struct blm_config *cfg,
 	if (BLM_IS_AP_AVOIDED_BY_DRIVER(blm_entry)) {
 		entry_add_time = blm_entry->ap_timestamp.driver_avoid_timestamp;
 
-		if ((cur_timestamp - entry_add_time) >
+		if ((cur_timestamp - entry_add_time) >=
 		     MINUTES_TO_MS(cfg->avoid_list_exipry_time)) {
 			/* Move AP to monitor list as avoid list time is over */
 			blm_entry->driver_avoidlist = false;
@@ -78,7 +78,7 @@ blm_update_ap_info(struct blm_reject_ap *blm_entry, struct blm_config *cfg,
 		entry_add_time =
 			blm_entry->ap_timestamp.driver_blacklist_timestamp;
 
-		if ((cur_timestamp - entry_add_time) >
+		if ((cur_timestamp - entry_add_time) >=
 		     MINUTES_TO_MS(cfg->black_list_exipry_time)) {
 			/* Move AP to monitor list as black list time is over */
 			blm_entry->driver_blacklist = false;
@@ -96,8 +96,8 @@ blm_update_ap_info(struct blm_reject_ap *blm_entry, struct blm_config *cfg,
 			    blm_entry->ap_timestamp.rssi_reject_timestamp;
 
 		if ((blm_entry->rssi_reject_params.retry_delay &&
-		     entry_age > blm_entry->rssi_reject_params.retry_delay) ||
-		    (scan_entry && (scan_entry->rssi_raw > blm_entry->
+		     entry_age >= blm_entry->rssi_reject_params.retry_delay) ||
+		    (scan_entry && (scan_entry->rssi_raw >= blm_entry->
 					   rssi_reject_params.expected_rssi))) {
 			/*
 			 * Remove from the rssi reject list as:-
@@ -132,6 +132,8 @@ blm_update_ap_info(struct blm_reject_ap *blm_entry, struct blm_config *cfg,
 		  blm_entry->reject_ap_type);
 }
 
+#define MAX_BL_TIME 255000
+
 static enum blm_bssid_action
 blm_prune_old_entries_and_get_action(struct blm_reject_ap *blm_entry,
 				     struct blm_config *cfg,
@@ -152,6 +154,15 @@ blm_prune_old_entries_and_get_action(struct blm_reject_ap *blm_entry,
 		return BLM_ACTION_NOP;
 	}
 
+	if (BLM_IS_AP_IN_RSSI_REJECT_LIST(blm_entry) &&
+	    blm_entry->rssi_reject_params.retry_delay > MAX_BL_TIME) {
+		blm_info("Allow BSSID %pM as the retry delay is greater than %d ms, expected RSSI = %d, current RSSI = %d, retry delay = %d ms",
+			 blm_entry->bssid.bytes, MAX_BL_TIME,
+			 blm_entry->rssi_reject_params.expected_rssi,
+			 entry ? entry->rssi_raw : 0,
+			 blm_entry->rssi_reject_params.retry_delay);
+		return BLM_ACTION_NOP;
+	}
 	if (BLM_IS_AP_IN_BLACKLIST(blm_entry))
 		return BLM_REMOVE_FROM_LIST;
 
@@ -453,16 +464,16 @@ blm_get_delta_of_bssid(enum blm_reject_ap_type list_type,
 	 * de-blacklisting the AP from rssi reject list.
 	 */
 	case DRIVER_RSSI_REJECT_TYPE:
-		if (blm_entry->rssi_reject_params.retry_delay) {
-			return blm_entry->rssi_reject_params.retry_delay -
+		if (blm_entry->rssi_reject_params.retry_delay)
+			disallowed_time =
+				blm_entry->rssi_reject_params.retry_delay -
 				(cur_timestamp -
-				 blm_entry->ap_timestamp.rssi_reject_timestamp);
-		} else {
+				blm_entry->ap_timestamp.rssi_reject_timestamp);
+		else
 			disallowed_time = (int32_t)(MINUTES_TO_MS(RSSI_TIMEOUT_VALUE) -
 				(cur_timestamp -
 				 blm_entry->ap_timestamp.rssi_reject_timestamp));
-			return ((disallowed_time < 0) ? 0 : disallowed_time);
-		}
+		return ((disallowed_time < 0) ? 0 : disallowed_time);
 	case DRIVER_MONITOR_TYPE:
 		return cur_timestamp -
 			       blm_entry->ap_timestamp.driver_monitor_timestamp;
@@ -650,8 +661,10 @@ static void blm_fill_reject_list(qdf_list_t *reject_db_list,
 			reject_list[*num_of_reject_bssid].bssid =
 							blm_entry->bssid;
 			(*num_of_reject_bssid)++;
-			blm_debug("Adding BSSID %pM of type %d to reject ap list, total entries added yet = %d",
+			blm_debug("Adding BSSID %pM of type %d retry delay %d expected RSSI %d, entries added = %d",
 				  blm_entry->bssid.bytes, reject_ap_type,
+				  reject_list[*num_of_reject_bssid -1].reject_duration,
+				  blm_entry->rssi_reject_params.expected_rssi,
 				  *num_of_reject_bssid);
 		}
 		cur_node = next_node;
