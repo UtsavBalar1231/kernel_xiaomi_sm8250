@@ -306,6 +306,12 @@
 				type = "passive";
 			};
 
+			modem0_skin_trip: modem0-skin-trip {
+				temperature = <50000>;
+				hysteresis = <4000>;
+				type = "passive";
+			};
+
 			skin_batt_trip3: skin-batt-trip3 {
 				temperature = <50000>;
 				hysteresis = <2000>;
@@ -315,6 +321,12 @@
 			gold_plus_trip: gold-plus-trip {
 				temperature = <50000>;
 				hysteresis = <0>;
+				type = "passive";
+			};
+
+			modem1_skin_trip: modem1-skin-trip {
+				temperature = <52000>;
+				hysteresis = <4000>;
 				type = "passive";
 			};
 
@@ -342,14 +354,8 @@
 				type = "passive";
 			};
 
-			gpu_skin_trip: gpu-skin-trip {
+			gpu_modem2_skin_trip: gpu-modem-skin-trip {
 				temperature = <56000>;
-				hysteresis = <4000>;
-				type = "passive";
-			};
-
-			modem4_skin_trip: modem4-skin-trip {
-				temperature = <60000>;
 				hysteresis = <4000>;
 				type = "passive";
 			};
@@ -380,19 +386,39 @@
 			};
 
 			skin_gpu {
-				trip = <&gpu_skin_trip>;
+				trip = <&gpu_modem2_skin_trip>;
 				cooling-device = <&msm_gpu (THERMAL_MAX_LIMIT-1)
 						(THERMAL_MAX_LIMIT-1)>;
 			};
 
+			skin_modem_pa1 {
+				trip = <&modem0_skin_trip>;
+				cooling-device = <&modem_pa 1 1>;
+			};
+
+			skin_modem_pa2 {
+				trip = <&modem1_skin_trip>;
+				cooling-device = <&modem_pa 2 2>;
+			};
+
 			skin_modem_pa3 {
-				trip = <&modem4_skin_trip>;
+				trip = <&gpu_modem2_skin_trip>;
 				cooling-device = <&modem_pa 3 3>;
 			};
 
-			skin_modem_proce2 {
-				trip = <&modem4_skin_trip>;
-				cooling-device = <&modem_tj 3 3>;
+			skin_modem_pa_fr1_1 {
+				trip = <&modem0_skin_trip>;
+				cooling-device = <&modem_pa_fr1 1 1>;
+			};
+
+			skin_modem_pa_fr1_2 {
+				trip = <&modem1_skin_trip>;
+				cooling-device = <&modem_pa_fr1 2 2>;
+			};
+
+			skin_modem_pa_fr1_3 {
+				trip = <&gpu_modem2_skin_trip>;
+				cooling-device = <&modem_pa_fr1 3 3>;
 			};
 
 			skin_cdsp {
@@ -564,6 +590,40 @@
 			mdm_mmw_skin2_cdev2 {
 				trip = <&mmw_pa2_trip2>;
 				cooling-device = <&modem_mmw_skin2 3 3>;
+			};
+		};
+	};
+
+	msm-s-therm-step {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-governor = "step_wise";
+		thermal-sensors = <&pm8150l_adc_tm ADC_AMUX_THM2_PU2>;
+		wake-capable-sensor;
+
+		trips {
+			skin_msm_trip0: skin-msm-trip0 {
+				temperature = <50000>;
+				hysteresis = <4000>;
+				type = "passive";
+			};
+
+			skin_msm_trip1: skin-msm-trip1 {
+				temperature = <56000>;
+				hysteresis = <4000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			mdm_skin_cdev0 {
+				trip = <&skin_msm_trip0>;
+				cooling-device = <&modem_tj 1 1>;
+			};
+
+			mdm_skin_cdev1 {
+				trip = <&skin_msm_trip1>;
+				cooling-device = <&modem_tj 3 3>;
 			};
 		};
 	};
