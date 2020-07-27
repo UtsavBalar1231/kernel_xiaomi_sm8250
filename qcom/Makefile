@@ -115,14 +115,7 @@ ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
                 bengal-idp-1gb-overlay.dtbo \
                 bengal-idp-2gb-overlay.dtbo \
                 bengal-idp-usbc-1gb-overlay.dtbo \
-                bengal-idp-usbc-2gb-overlay.dtbo \
-                qcm4290-iot-idp-overlay.dtbo \
-                qcs4290-iot-idp-overlay.dtbo \
-                qcm4290-iot-idp-1gb-overlay.dtbo \
-                qcm4290-iot-idp-2gb-overlay.dtbo \
-                qcm4290-iot-idp-usbc-1gb-overlay.dtbo \
-                qcm4290-iot-idp-usbc-2gb-overlay.dtbo \
-                qcm4290-iot-idp-usbc-overlay.dtbo
+                bengal-idp-usbc-2gb-overlay.dtbo
 
 bengal-rumi-overlay.dtbo-base := bengal.dtb
 bengal-qrd-overlay.dtbo-base := bengal.dtb
@@ -133,13 +126,6 @@ bengal-idp-1gb-overlay.dtbo-base := bengal-1gb.dtb
 bengal-idp-2gb-overlay.dtbo-base := bengal-2gb.dtb
 bengal-idp-usbc-1gb-overlay.dtbo-base := bengal-1gb.dtb
 bengal-idp-usbc-2gb-overlay.dtbo-base := bengal-2gb.dtb
-qcm4290-iot-idp-overlay.dtbo-base := qcm4290.dtb
-qcs4290-iot-idp-overlay.dtbo-base := qcs4290.dtb
-qcm4290-iot-idp-1gb-overlay.dtbo-base := qcm4290-iot-1gb.dtb
-qcm4290-iot-idp-2gb-overlay.dtbo-base := qcm4290-iot-2gb.dtb
-qcm4290-iot-idp-usbc-1gb-overlay.dtbo-base := qcm4290-iot-1gb.dtb
-qcm4290-iot-idp-usbc-2gb-overlay.dtbo-base := qcm4290-iot-2gb.dtb
-qcm4290-iot-idp-usbc-overlay.dtbo-base := qcm4290.dtb
 else
 dtb-$(CONFIG_ARCH_BENGAL) += bengal-rumi.dtb \
                 bengal-qrd.dtb \
@@ -149,14 +135,7 @@ dtb-$(CONFIG_ARCH_BENGAL) += bengal-rumi.dtb \
 		bengal-idp-1gb.dtb \
 		bengal-idp-2gb.dtb \
 		bengal-idp-usbc-1gb.dtb \
-		bengal-idp-usbc-2gb.dtb \
-		qcm4290-iot-idp.dtb \
-		qcs4290-iot-idp.dtb \
-		qcm4290-iot-idp-1gb.dtb \
-		qcm4290-iot-idp-2gb.dtb \
-		qcm4290-iot-idp-usbc-1gb.dtb \
-		qcm4290-iot-idp-usbc-2gb.dtb \
-		qcm4290-iot-idp-usbc.dtb
+		bengal-idp-usbc-2gb.dtb
 endif
 
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
