@@ -4907,6 +4907,7 @@ typedef enum {
 	wmi_vdev_param_enable_mcast_rc,
 	wmi_vdev_param_6ghz_params,
 	wmi_vdev_param_enable_disable_roam_reason_vsie,
+	wmi_vdev_param_nan_config_features,
 } wmi_conv_vdev_param_id;
 
 /**

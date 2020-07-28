@@ -557,7 +557,8 @@ more_msdu_link_desc:
 
 	dp_rx_link_desc_return_by_addr(soc, buf_addr_info,
 				       HAL_BM_ACTION_PUT_IN_IDLE_LIST);
-	QDF_BUG(msdu_processed == mpdu_desc_info->msdu_count);
+	if (qdf_unlikely(msdu_processed != mpdu_desc_info->msdu_count))
+		DP_STATS_INC(soc, rx.err.msdu_count_mismatch, 1);
 
 	return rx_bufs_used;
 }
@@ -1116,8 +1117,7 @@ dp_rx_process_rxdma_err(struct dp_soc *soc, qdf_nbuf_t nbuf,
 	 */
 	if (!hal_rx_attn_msdu_done_get(rx_tlv_hdr)) {
 
-		QDF_TRACE(QDF_MODULE_ID_DP, QDF_TRACE_LEVEL_ERROR,
-				FL("MSDU DONE failure"));
+		dp_err_rl("MSDU DONE failure");
 
 		hal_rx_dump_pkt_tlvs(soc->hal_soc, rx_tlv_hdr,
 				     QDF_TRACE_LEVEL_INFO);
@@ -1972,7 +1972,7 @@ dp_rx_err_mpdu_pop(struct dp_soc *soc, uint32_t mac_id,
 		rx_msdu_link_desc =
 			dp_rx_cookie_2_link_desc_va(soc, &buf_info);
 
-		qdf_assert(rx_msdu_link_desc);
+		qdf_assert_always(rx_msdu_link_desc);
 
 		hal_rx_msdu_list_get(soc->hal_soc, rx_msdu_link_desc,
 				     &msdu_list, &num_msdus);

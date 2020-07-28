@@ -1709,7 +1709,7 @@ noinline
 qdf_nbuf_t dp_tx_send_msdu_multiple(struct dp_vdev *vdev, qdf_nbuf_t nbuf,
 				    struct dp_tx_msdu_info_s *msdu_info)
 {
-	uint8_t i;
+	uint32_t i;
 	struct dp_pdev *pdev = vdev->pdev;
 	struct dp_soc *soc = pdev->soc;
 	struct dp_tx_desc_s *tx_desc;
@@ -3794,6 +3794,10 @@ static void dp_tx_vdev_update_feature_flags(struct dp_vdev *vdev)
 
 	if (vdev->opmode == wlan_op_mode_ndi)
 		vdev->csum_enabled = wlan_cfg_get_nan_checksum_offload(cfg);
+	else if ((vdev->subtype == wlan_op_subtype_p2p_device) ||
+		 (vdev->subtype == wlan_op_subtype_p2p_cli) ||
+		 (vdev->subtype == wlan_op_subtype_p2p_go))
+		vdev->csum_enabled = wlan_cfg_get_p2p_checksum_offload(cfg);
 	else
 		vdev->csum_enabled = wlan_cfg_get_checksum_offload(cfg);
 }
