@@ -384,13 +384,21 @@ int msm_vidc_qbuf(void *instance, struct v4l2_buffer *b)
 		return -EINVAL;
 	}
 
+	q = msm_comm_get_vb2q(inst, b->type);
+	if (!q) {
+		s_vpr_e(inst->sid,
+			"Failed to find buffer queue. type %d\n", b->type);
+		return -EINVAL;
+	}
+
+	mutex_lock(&q->lock);
 	if ((inst->out_flush && b->type == OUTPUT_MPLANE) || inst->in_flush) {
 		s_vpr_e(inst->sid,
 			"%s: in flush, discarding qbuf, type %u, index %u\n",
 			__func__, b->type, b->index);
-		return -EINVAL;
+		rc = -EINVAL;
+		goto unlock;
 	}
-
 	inst->last_qbuf_time_ns = ktime_get_ns();
 
 	for (i = 0; i < b->length; i++) {
@@ -413,7 +421,8 @@ int msm_vidc_qbuf(void *instance, struct v4l2_buffer *b)
 				0, inst->sid);
 		if (rc) {
 			s_vpr_e(inst->sid, "Failed to store input tag");
-			return -EINVAL;
+			rc = -EINVAL;
+			goto unlock;
 		}
 	}
 
@@ -425,18 +434,11 @@ int msm_vidc_qbuf(void *instance, struct v4l2_buffer *b)
 		&& b->type == INPUT_MPLANE)
 		b->flags |= V4L2_BUF_FLAG_PERF_MODE;
 
-	q = msm_comm_get_vb2q(inst, b->type);
-	if (!q) {
-		s_vpr_e(inst->sid,
-			"Failed to find buffer queue. type %d\n", b->type);
-		return -EINVAL;
-	}
-
-	mutex_lock(&q->lock);
 	rc = vb2_qbuf(&q->vb2_bufq, b);
-	mutex_unlock(&q->lock);
 	if (rc)
 		s_vpr_e(inst->sid, "Failed to qbuf, %d\n", rc);
+unlock:
+	mutex_unlock(&q->lock);
 
 	return rc;
 }
@@ -1452,7 +1454,6 @@ void *msm_vidc_open(int core_id, int session_type)
 	mutex_init(&inst->bufq[OUTPUT_PORT].lock);
 	mutex_init(&inst->bufq[INPUT_PORT].lock);
 	mutex_init(&inst->lock);
-	mutex_init(&inst->flush_lock);
 
 	INIT_MSM_VIDC_LIST(&inst->scratchbufs);
 	INIT_MSM_VIDC_LIST(&inst->input_crs);
@@ -1571,7 +1572,6 @@ fail_bufq_capture:
 	mutex_destroy(&inst->bufq[OUTPUT_PORT].lock);
 	mutex_destroy(&inst->bufq[INPUT_PORT].lock);
 	mutex_destroy(&inst->lock);
-	mutex_destroy(&inst->flush_lock);
 
 	DEINIT_MSM_VIDC_LIST(&inst->scratchbufs);
 	DEINIT_MSM_VIDC_LIST(&inst->persistbufs);
@@ -1714,7 +1714,6 @@ int msm_vidc_destroy(struct msm_vidc_inst *inst)
 	mutex_destroy(&inst->bufq[OUTPUT_PORT].lock);
 	mutex_destroy(&inst->bufq[INPUT_PORT].lock);
 	mutex_destroy(&inst->lock);
-	mutex_destroy(&inst->flush_lock);
 
 	msm_vidc_debugfs_deinit_inst(inst);
 
