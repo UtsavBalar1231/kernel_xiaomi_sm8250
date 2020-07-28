@@ -49,6 +49,7 @@
 #include "wlan_hdd_main.h"
 #include "wlan_hdd_power.h"
 #include "wlan_hdd_trace.h"
+#include "wlan_hdd_tx_rx.h"
 #include "qdf_str.h"
 #include "qdf_trace.h"
 #include "qdf_types.h"
@@ -903,11 +904,7 @@ static int __wlan_hdd_cfg80211_get_tdls_capabilities(struct wiphy *wiphy,
 					WIFI_TDLS_EXTERNAL_CONTROL_SUPPORT : 0);
 		set = set | (tdls_off_channel ?
 					WIIF_TDLS_OFFCHANNEL_SUPPORT : 0);
-		if (tdls_sleep_sta_enable || tdls_buffer_sta ||
-		    tdls_off_channel)
-			max_num_tdls_sta = HDD_MAX_NUM_TDLS_STA_P_UAPSD_OFFCHAN;
-		else
-			max_num_tdls_sta = HDD_MAX_NUM_TDLS_STA;
+		max_num_tdls_sta = cfg_tdls_get_max_peer_count(hdd_ctx->psoc);
 
 		hdd_debug("TDLS Feature supported value %x", set);
 		if (nla_put_u32(skb, PARAM_MAX_TDLS_SESSION,
@@ -6682,6 +6679,8 @@ wlan_hdd_wifi_config_policy[QCA_WLAN_VENDOR_ATTR_CONFIG_MAX + 1] = {
 		.type = NLA_BINARY,
 		.len = SIR_MAC_MAX_ADD_IE_LENGTH + 2},
 	[QCA_WLAN_VENDOR_ATTR_CONFIG_ROAM_REASON] = {.type = NLA_U8 },
+	[QCA_WLAN_VENDOR_ATTR_CONFIG_UDP_QOS_UPGRADE] = {
+		.type = NLA_U8 },
 
 };
 
@@ -7333,6 +7332,22 @@ static int hdd_config_scan_enable(struct hdd_adapter *adapter,
 					   REASON_USER_SPACE);
 
 	return 0;
+}
+
+/**
+ * hdd_config_udp_qos_upgrade_threshold() - NL attribute handler to parse
+ *					    priority upgrade threshold value.
+ * @adapter: adapter for which this configuration is to be applied
+ * @attr: NL attribute
+ *
+ * Returns: 0 on success, -EINVAL on failure
+ */
+static int hdd_config_udp_qos_upgrade_threshold(struct hdd_adapter *adapter,
+						const struct nlattr *attr)
+{
+	uint8_t priority = nla_get_u8(attr);
+
+	return hdd_set_udp_qos_upgrade_config(adapter, priority);
 }
 
 static int hdd_config_power(struct hdd_adapter *adapter,
@@ -8008,6 +8023,8 @@ static const struct independent_setters independent_setters[] = {
 	 hdd_set_roam_reason_vsie_status},
 	{QCA_WLAN_VENDOR_ATTR_CONFIG_OPTIMIZED_POWER_MANAGEMENT,
 	 hdd_config_power},
+	{QCA_WLAN_VENDOR_ATTR_CONFIG_UDP_QOS_UPGRADE,
+	 hdd_config_udp_qos_upgrade_threshold},
 };
 
 #ifdef WLAN_FEATURE_ELNA
@@ -18579,15 +18596,15 @@ static bool wlan_hdd_fils_data_in_limits(struct cfg80211_connect_params *req)
 		  req->fils_erp_next_seq_num, req->auth_type,
 		  req->fils_erp_username_len, req->fils_erp_rrk_len,
 		  req->fils_erp_realm_len);
-	if (!req->fils_erp_rrk_len || !req->fils_erp_realm_len ||
-	    !req->fils_erp_username_len ||
+	if (req->fils_erp_rrk_len || req->fils_erp_realm_len ||
+	    req->fils_erp_username_len ||
 	    req->fils_erp_rrk_len > FILS_MAX_RRK_LENGTH ||
 	    req->fils_erp_realm_len > FILS_MAX_REALM_LEN ||
 	    req->fils_erp_username_len > FILS_MAX_KEYNAME_NAI_LENGTH) {
 		hdd_err("length incorrect, user=%zu rrk=%zu realm=%zu",
 			req->fils_erp_username_len, req->fils_erp_rrk_len,
 			req->fils_erp_realm_len);
-		return false;
+		return true;
 	}
 
 	if (!req->fils_erp_rrk || !req->fils_erp_realm ||
@@ -18595,7 +18612,6 @@ static bool wlan_hdd_fils_data_in_limits(struct cfg80211_connect_params *req)
 		hdd_err("buffer incorrect, user=%pK rrk=%pK realm=%pK",
 			req->fils_erp_username, req->fils_erp_rrk,
 			req->fils_erp_realm);
-		return false;
 	}
 
 	return true;
@@ -18690,6 +18706,12 @@ static int wlan_hdd_cfg80211_set_fils_config(struct hdd_adapter *adapter,
 			roam_profile->fils_con_info->key_nai_length);
 		goto fils_conn_fail;
 	}
+
+	if (!req->fils_erp_username_len) {
+		hdd_err("FILS_PMKSA: No ERP username, return success");
+		return 0;
+	}
+
 	buf = roam_profile->fils_con_info->keyname_nai;
 	qdf_mem_copy(buf, req->fils_erp_username, req->fils_erp_username_len);
 	buf += req->fils_erp_username_len;
@@ -21421,7 +21443,7 @@ QDF_STATUS hdd_softap_deauth_current_sta(struct hdd_adapter *adapter,
 
 	qdf_event_reset(&hapd_state->qdf_sta_disassoc_event);
 
-	if (!qdf_is_macaddr_broadcast(&sta_info->sta_mac))
+	if (!qdf_is_macaddr_broadcast(&param->peerMacAddr))
 		sme_send_disassoc_req_frame(hdd_ctx->mac_handle,
 					    adapter->vdev_id,
 					    (uint8_t *)&param->peerMacAddr,
@@ -21480,6 +21502,9 @@ QDF_STATUS hdd_softap_deauth_all_sta(struct hdd_adapter *adapter,
 		if (!sta_info->is_deauth_in_progress) {
 			hdd_debug("Delete STA with MAC:" QDF_MAC_ADDR_STR,
 				  QDF_MAC_ADDR_ARRAY(sta_info->sta_mac.bytes));
+			qdf_mem_copy(param->peerMacAddr.bytes,
+				     sta_info->sta_mac.bytes,
+				     QDF_MAC_ADDR_SIZE);
 			status =
 			    hdd_softap_deauth_current_sta(adapter, sta_info,
 							  hapd_state, param);
@@ -23989,6 +24014,7 @@ void hdd_send_update_owe_info_event(struct hdd_adapter *adapter,
 
 	hdd_enter_dev(dev);
 
+	qdf_mem_zero(&owe_info, sizeof(owe_info));
 	qdf_mem_copy(owe_info.peer, sta_addr, ETH_ALEN);
 	owe_info.ie = owe_ie;
 	owe_info.ie_len = owe_ie_len;

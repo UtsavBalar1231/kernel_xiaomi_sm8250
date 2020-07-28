@@ -1624,6 +1624,7 @@ QDF_STATUS wma_remove_peer(tp_wma_handle wma, uint8_t *mac_addr,
 	QDF_STATUS qdf_status = QDF_STATUS_SUCCESS;
 	uint32_t bitmap = 1 << CDP_PEER_DELETE_NO_SPECIAL;
 	bool peer_unmap_conf_support_enabled;
+	uint8_t peer_vdev_id;
 
 	if (!wma->interfaces[vdev_id].peer_count) {
 		WMA_LOGE("%s: Can't remove peer with peer_addr %pM vdevid %d peer_count %d",
@@ -1639,9 +1640,16 @@ QDF_STATUS wma_remove_peer(tp_wma_handle wma, uint8_t *mac_addr,
 		return QDF_STATUS_E_INVAL;
 	}
 
-	if (!wma_objmgr_peer_exist(wma, peer_addr, NULL)) {
+	if (!wma_objmgr_peer_exist(wma, peer_addr, &peer_vdev_id)) {
 		wma_err("peer doesn't exist peer_addr %pM vdevid %d peer_count %d",
 			 peer_addr, vdev_id,
+			 wma->interfaces[vdev_id].peer_count);
+		return QDF_STATUS_E_INVAL;
+	}
+
+	if (peer_vdev_id != vdev_id) {
+		wma_err("peer %pM is on vdev id %d but delete req on vdevid %d peer_count %d",
+			 peer_addr, peer_vdev_id, vdev_id,
 			 wma->interfaces[vdev_id].peer_count);
 		return QDF_STATUS_E_INVAL;
 	}
@@ -3109,7 +3117,11 @@ int wma_peer_delete_handler(void *handle, uint8_t *cmd_param_info,
 
 		data = (struct del_sta_self_rsp_params *)req_msg->user_data;
 		WMA_LOGD(FL("Calling vdev detach handler"));
-		wma_handle_vdev_detach(wma, data->self_sta_param);
+		status = wma_handle_vdev_detach(wma, data->self_sta_param);
+		if (QDF_IS_STATUS_ERROR(status)) {
+			data->self_sta_param->status = status;
+			wma_send_vdev_del_resp(data->self_sta_param);
+		}
 		qdf_mem_free(data);
 	} else if (req_msg->type == WMA_SET_LINK_PEER_RSP ||
 		   req_msg->type == WMA_DELETE_PEER_RSP) {
@@ -3231,7 +3243,11 @@ void wma_hold_req_timer(void *data)
 			wma_trigger_recovery_assert_on_fw_timeout(
 				WMA_DELETE_STA_REQ,
 				QDF_PEER_DELETION_TIMEDOUT);
-		wma_handle_vdev_detach(wma, del_sta->self_sta_param);
+		status = wma_handle_vdev_detach(wma, del_sta->self_sta_param);
+		if (QDF_IS_STATUS_ERROR(status)) {
+			del_sta->self_sta_param->status = status;
+			wma_send_vdev_del_resp(del_sta->self_sta_param);
+		}
 		qdf_mem_free(tgt_req->user_data);
 	} else if ((tgt_req->msg_type == WMA_DELETE_STA_REQ) &&
 		   (tgt_req->type == WMA_SET_LINK_PEER_RSP ||
