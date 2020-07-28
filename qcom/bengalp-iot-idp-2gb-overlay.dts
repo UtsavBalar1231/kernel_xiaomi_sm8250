@@ -2,12 +2,12 @@
 /plugin/;
 
 #include <dt-bindings/interrupt-controller/arm-gic.h>
-#include "qcm4290-iot-idp-low-ram.dtsi"
+#include "bengalp-iot-idp-low-ram.dtsi"
 
 / {
-	model = "Qualcomm Technologies, Inc. QCM4290 IDP 2Gb DDR HD+";
-	compatible = "qcom,qcm4290-idp", "qcom,qcm4290", "qcom,idp";
-	qcom,msm-id = <469 0x10000>;
+	model = "Qualcomm Technologies, Inc. BENGALP-IOT IDP 2Gb DDR HD+";
+	compatible = "qcom,bengalp-iot-idp", "qcom,bengalp-iot", "qcom,idp";
+	qcom,msm-id = <470 0x10000>;
 	qcom,board-id = <34 0x403>;
 };
 

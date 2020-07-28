@@ -83,11 +83,11 @@ SoCs:
 - SDA660
   compatible = "qcom,sda660"
 
-- QCM4290
-  compatible = "qcom,qcm4290"
+- BENGAL_IOT
+  compatible = "qcom,bengal-iot"
 
-- QCS4290
-  compatible = "qcom,qcs4290"
+- BENGALP-IOT
+  compatible = "qcom,bengalp-iot"
 
 Generic board variants:
 
@@ -232,7 +232,7 @@ compatible = "qcom,sdm660-sim"
 compatible = "qcom,sda660-mtp"
 compatible = "qcom,sda660-cdp"
 compatible = "qcom,sda660-qrd"
-compatible = "qcom,qcm4290"
-compatible = "qcom,qcs4290"
-compatible = "qcom,qcm4290-idp"
-compatible = "qcom,qcs4290-idp"
+compatible = "qcom,bengal-iot"
+compatible = "qcom,bengalp-iot"
+compatible = "qcom,bengal-iot-idp"
+compatible = "qcom,bengalp-iot-idp"

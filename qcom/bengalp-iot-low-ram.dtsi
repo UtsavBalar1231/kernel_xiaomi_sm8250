@@ -1,4 +1,4 @@
-#include "qcm4290.dtsi"
+#include "bengalp-iot.dtsi"
 / {
 };
 

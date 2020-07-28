@@ -1,10 +1,10 @@
 #include "bengal.dtsi"
 
 / {
-	model = "Qualcomm Technologies, Inc. QCS4290";
-	compatible = "qcom,qcs4290";
+	model = "Qualcomm Technologies, Inc. BENGALP-IOT";
+	compatible = "qcom,bengalp-iot";
 	qcom,msm-id = <470 0x0>;
-	qcom,msm-name = "QCS4290";
+	qcom,msm-name = "BENGALP-IOT";
 };
 
 &soc {
