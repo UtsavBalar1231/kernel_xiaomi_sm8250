@@ -445,6 +445,9 @@ typedef  enum  {
     WMI_REQUEST_CTRL_PATH_STATS_REQUEST = 250, /* FW supports control path stats */
     WMI_SERVICE_TPC_STATS_EVENT = 251, /* FW support to dump the TPC tables */
     WMI_SERVICE_NO_INTERBAND_MCC_SUPPORT = 252, /* Indicates FW doesn't support interband MCC */
+    WMI_SERVICE_MBSS_PARAM_IN_VDEV_START_SUPPORT = 253, /* FW supports VDEV's MBSS param exchange in VDEV start command */
+    WMI_SERVICE_CONFIGURE_ROAM_TRIGGER_PARAM_SUPPORT = 254, /* FW supports ROAM trigger configuration param TLV */
+    WMI_SERVICE_CFR_TA_RA_AS_FP_SUPPORT = 255, /* indicates FW support to program CFR TA/RA filtered packets as Filter pass */
 
 
     /******* ADD NEW SERVICES UP TO 256 HERE *******/
@@ -469,6 +472,9 @@ typedef  enum  {
 
 
     /******* ADD NEW SERVICES 256 AND BEYOND HERE *******/
+
+    WMI_SERVICE_CFR_CAPTURE_COUNT_SUPPORT = 256, /* indicates FW support to program CFR capture mode and capture count */
+    WMI_SERVICE_OCV_SUPPORT = 257, /* FW supports OCV (Operating Channel Validation) */
 
 
     WMI_MAX_EXT2_SERVICE
