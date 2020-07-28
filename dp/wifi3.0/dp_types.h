@@ -822,6 +822,8 @@ struct dp_soc_stats {
 			uint32_t invalid_link_cookie;
 			/* Nbuf sanity failure */
 			uint32_t nbuf_sanity_fail;
+			/* Duplicate link desc refilled */
+			uint32_t dup_refill_link_desc;
 		} err;
 
 		/* packet count per core - per ring */
@@ -955,6 +957,14 @@ static inline uint32_t dp_history_get_next_index(qdf_atomic_t *curr_idx,
 
 	return idx & (max_entries - 1);
 }
+
+/* structure to record recent operation related variable */
+struct dp_last_op_info {
+	/* last link desc buf info through WBM release ring */
+	struct hal_buf_info wbm_rel_link_desc;
+	/* last link desc buf info through REO reinject ring */
+	struct hal_buf_info reo_reinject_link_desc;
+};
 
 /* SOC level structure for data path */
 struct dp_soc {
@@ -1330,6 +1340,8 @@ struct dp_soc {
 	} skip_fisa_param;
 #endif
 #endif /* WLAN_SUPPORT_RX_FLOW_TAG || WLAN_SUPPORT_RX_FISA */
+	/* Save recent operation related variable */
+	struct dp_last_op_info last_op_info;
 };
 
 #ifdef IPA_OFFLOAD
