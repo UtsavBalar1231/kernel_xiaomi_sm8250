@@ -44,6 +44,28 @@
 		};
 	};
 
+	imu_clkin {
+		imu_clkin_default: imu_clkin_default {
+			pins = "gpio3";
+			function = "func1";
+			output-low;
+			power-source = <0>;
+			bias-disable;
+			qcom,dtest-buffer = <1>;
+			qcom,drive-strength = <1>;
+		};
+
+		imu_clkin_sleep: imu_clkin_sleep {
+			pins = "gpio3";
+			function = "func1";
+			input-enable;
+			bias-pull-down;
+			power-source = <0>;
+			qcom,dtest-buffer = <1>;
+			qcom,drive-strength = <1>;
+		};
+	};
+
 	key_vol_up {
 		key_vol_up_default: key_vol_up_default {
 			pins = "gpio6";
