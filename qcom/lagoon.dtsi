@@ -1884,7 +1884,7 @@
 		qcom,msm-bus,num-paths = <1>;
 		qcom,msm-bus,vectors-KBps =
 				<129 512 0 0>,
-				<129 512 0 1041408>;
+				<129 512 0 8171520>;
 
 		/* Outputs to mss */
 		qcom,smem-states = <&mpss_smp2p_out 0>;
