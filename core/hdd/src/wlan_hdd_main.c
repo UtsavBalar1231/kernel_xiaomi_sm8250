@@ -183,6 +183,7 @@
 #include "cfg_nan_api.h"
 #include <wlan_hdd_hang_event.h>
 #include <cdp_txrx_ctrl.h>
+#include "wlan_global_lmac_if_api.h"
 
 #ifdef MODULE
 #define WLAN_MODULE_NAME  module_name(THIS_MODULE)
@@ -13212,6 +13213,7 @@ int hdd_wlan_stop_modules(struct hdd_context *hdd_ctx, bool ftm_mode)
 			hdd_err("Failed to destroy pdev; errno:%d", ret);
 			QDF_ASSERT(0);
 		}
+		wlan_global_lmac_if_close(hdd_ctx->psoc);
 	}
 
 	/*
