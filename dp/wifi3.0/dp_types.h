@@ -110,13 +110,11 @@
 
 #define REO_CMD_EVENT_HIST_MAX 64
 
-#ifndef REMOVE_PKT_LOG
 enum rx_pktlog_mode {
 	DP_RX_PKTLOG_DISABLED = 0,
 	DP_RX_PKTLOG_FULL,
 	DP_RX_PKTLOG_LITE,
 };
-#endif
 
 struct msdu_list {
 	qdf_nbuf_t head;
@@ -1733,10 +1731,8 @@ struct dp_pdev {
 	/* map this pdev to a particular Reo Destination ring */
 	enum cdp_host_reo_dest_ring reo_dest;
 
-#ifndef REMOVE_PKT_LOG
 	/* Packet log mode */
 	uint8_t rx_pktlog_mode;
-#endif
 
 	/* WDI event handlers */
 	struct wdi_event_subscribe_t **wdi_event_list;
