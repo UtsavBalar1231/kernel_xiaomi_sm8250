@@ -847,7 +847,7 @@ static const struct snd_kcontrol_new wsa883x_snd_controls[] = {
 	SOC_SINGLE_EXT("WSA PA Mute", SND_SOC_NOPM, 0, 1, 0,
 		wsa883x_get_mute, wsa883x_set_mute),
 
-	SOC_SINGLE_EXT("WSA Temp", SND_SOC_NOPM, 0, 1, 0,
+	SOC_SINGLE_EXT("WSA Temp", SND_SOC_NOPM, 0, UINT_MAX, 0,
 			wsa_get_temp, NULL),
 
 	SOC_ENUM_EXT("WSA MODE", wsa_dev_mode_enum,
@@ -1070,7 +1070,19 @@ static int32_t wsa883x_temp_reg_read(struct snd_soc_component *component,
 
 	mutex_lock(&wsa883x->res_lock);
 
-	/* TODO Vote for global PA */
+	snd_soc_component_update_bits(component, WSA883X_PA_FSM_BYP,
+				0x01, 0x01);
+	snd_soc_component_update_bits(component, WSA883X_PA_FSM_BYP,
+				0x04, 0x04);
+	snd_soc_component_update_bits(component, WSA883X_PA_FSM_BYP,
+				0x02, 0x02);
+	snd_soc_component_update_bits(component, WSA883X_PA_FSM_BYP,
+				0x80, 0x80);
+	snd_soc_component_update_bits(component, WSA883X_PA_FSM_BYP,
+				0x20, 0x20);
+	snd_soc_component_update_bits(component, WSA883X_PA_FSM_BYP,
+				0x40, 0x40);
+
 	snd_soc_component_update_bits(component, WSA883X_TADC_VALUE_CTL,
 				0x01, 0x00);
 	wsa_temp_reg->dmeas_msb = snd_soc_component_read32(
@@ -1088,7 +1100,8 @@ static int32_t wsa883x_temp_reg_read(struct snd_soc_component *component,
 	wsa_temp_reg->d2_lsb = snd_soc_component_read32(
 					component, WSA883X_OTP_REG_4);
 
-	/* TODO Unvote for global PA */
+	snd_soc_component_update_bits(component, WSA883X_PA_FSM_BYP,
+				0xE7, 0x00);
 	mutex_unlock(&wsa883x->res_lock);
 
 	return 0;
