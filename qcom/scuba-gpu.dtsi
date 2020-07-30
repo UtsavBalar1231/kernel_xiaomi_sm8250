@@ -131,7 +131,6 @@
 		qcom,gpubw-dev = <&gpubw>;
 		qcom,bus-control;
 		qcom,msm-bus,name = "grp3d";
-		qcom,bus-width = <16>;
 		qcom,msm-bus,num-cases = <12>;
 		qcom,msm-bus,num-paths = <1>;
 		qcom,msm-bus,vectors-KBps =
