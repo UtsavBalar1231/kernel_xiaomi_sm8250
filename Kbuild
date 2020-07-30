@@ -5,7 +5,6 @@ ifeq ($(MODNAME),)
 else
 	KERNEL_BUILD := n
 endif
-
 ifeq ($(KERNEL_BUILD), y)
 	# These are provided in external module based builds
 	# Need to explicitly define for Kernel-based builds
@@ -25,10 +24,17 @@ CONFIG_QCA_CLD_WLAN_PROFILE ?= $(WLAN_PROFILE)
 
 ifeq ($(KERNEL_BUILD), n)
 ifneq ($(ANDROID_BUILD_TOP),)
+      KERNEL_PATH_4.4 :=  $(shell python -c "import os.path; print(os.path.exists('$(ANDROID_BUILD_TOP)/kernel/msm-4.4'))")
+ifeq ($(KERNEL_PATH_4.4), True)
+      override WLAN_ROOT := $(ANDROID_BUILD_TOP)/$(WLAN_ROOT)
+      override WLAN_COMMON_INC := $(ANDROID_BUILD_TOP)/$(WLAN_COMMON_INC)
+      override WLAN_FW_API := $(ANDROID_BUILD_TOP)/$(WLAN_FW_API)
+else
       ANDROID_BUILD_TOP_REL := $(shell python -c "import os.path; print(os.path.relpath('$(ANDROID_BUILD_TOP)'))")
       override WLAN_ROOT := $(ANDROID_BUILD_TOP_REL)/$(WLAN_ROOT)
       override WLAN_COMMON_INC := $(ANDROID_BUILD_TOP_REL)/$(WLAN_COMMON_INC)
       override WLAN_FW_API := $(ANDROID_BUILD_TOP_REL)/$(WLAN_FW_API)
+endif
 endif
 endif
 
