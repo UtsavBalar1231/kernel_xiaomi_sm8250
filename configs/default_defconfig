@@ -393,6 +393,7 @@ endif
 endif #CONFIG_HELIUMPLUS
 
 ifeq ($(CONFIG_LITHIUM), y)
+CONFIG_RX_DEFRAG_DO_NOT_REINJECT := y
 #
 # Enable Shadow V2 for all lithium platform
 #
