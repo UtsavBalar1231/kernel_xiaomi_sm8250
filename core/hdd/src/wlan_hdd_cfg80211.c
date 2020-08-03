@@ -150,6 +150,7 @@
 #include <ol_defines.h>
 #include "wlan_hdd_cfr.h"
 #include <qdf_hang_event_notifier.h>
+#include "hif.h"
 
 #define g_mode_rates_size (12)
 #define a_mode_rates_size (8)
@@ -20309,6 +20310,7 @@ static int wlan_hdd_wait_for_disconnect(mac_handle_t mac_handle,
 	int ret = 0;
 	unsigned long rc;
 	uint32_t wait_time = SME_DISCONNECT_TIMEOUT;
+	void *hif_ctx;
 
 	/* Return if already disconnected */
 	if (sta_ctx->conn_info.conn_state == eConnectionState_NotConnected ||
@@ -20318,6 +20320,14 @@ static int wlan_hdd_wait_for_disconnect(mac_handle_t mac_handle,
 	/* If already in disconnecting state just wait for its completion */
 	if (sta_ctx->conn_info.conn_state == eConnectionState_Disconnecting)
 		goto wait_for_disconnect;
+
+	hif_ctx = cds_get_context(QDF_MODULE_ID_HIF);
+	if (hif_ctx) {
+		/*
+		 * Trigger runtime sync resume before sending disconneciton
+		 */
+		hif_pm_runtime_sync_resume(hif_ctx);
+	}
 
 	INIT_COMPLETION(adapter->disconnect_comp_var);
 	prev_conn_state = sta_ctx->conn_info.conn_state;
