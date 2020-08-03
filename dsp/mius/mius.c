@@ -757,14 +757,13 @@ int __init mius_driver_init(void)
 	if (mius_userspace_ctrl_driver_init())
 		goto fail;
 
-	wake_source = kmalloc(sizeof(struct wakeup_source), GFP_KERNEL);
+	wake_source = wakeup_source_register(NULL, "mius_wake_source");
 
 	if (!wake_source) {
 		MI_PRINT_E("failed to allocate wake source");
 		return -ENOMEM;
 	}
 
-	wakeup_source_init(wake_source, "mius_wake_source");
 
 #ifdef MIUS_LOAD_CALIBRATION_DATA_FROM_FILESYSTEM
 	/* Code to send calibration to engine */
@@ -784,8 +783,7 @@ fail:
 void mius_driver_exit(void)
 {
 	if (wake_source) {
-		wakeup_source_trash(wake_source);
-		kfree(wake_source);
+		wakeup_source_unregister(wake_source);
 	}
 
 	mius_cleanup_sysfs();
