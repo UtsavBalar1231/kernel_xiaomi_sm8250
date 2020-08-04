@@ -33,13 +33,17 @@ struct msm_commit {
 	struct kthread_work commit_work;
 };
 
-static inline bool _msm_seamless_for_crtc(struct drm_atomic_state *state,
+static inline bool _msm_seamless_for_crtc(struct drm_device *dev,
+					struct drm_atomic_state *state,
 			struct drm_crtc_state *crtc_state, bool enable)
 {
 	struct drm_connector *connector = NULL;
 	struct drm_connector_state  *conn_state = NULL;
+	struct msm_drm_private *priv = dev->dev_private;
+	struct msm_kms *kms = priv->kms;
 	int i = 0;
 	int conn_cnt = 0;
+	bool splash_en = false;
 
 	if (msm_is_mode_seamless(&crtc_state->mode) ||
 		msm_is_mode_seamless_vrr(&crtc_state->adjusted_mode) ||
@@ -58,7 +62,11 @@ static inline bool _msm_seamless_for_crtc(struct drm_atomic_state *state,
 					 crtc_state->crtc))
 				conn_cnt++;
 
-			if (MULTIPLE_CONN_DETECTED(conn_cnt))
+			if (kms && kms->funcs && kms->funcs->check_for_splash)
+				splash_en = kms->funcs->check_for_splash(kms,
+							 crtc_state->crtc);
+
+			if (MULTIPLE_CONN_DETECTED(conn_cnt) && !splash_en)
 				return true;
 		}
 	}
@@ -214,7 +222,7 @@ msm_disable_outputs(struct drm_device *dev, struct drm_atomic_state *old_state)
 		if (!old_crtc_state->active)
 			continue;
 
-		if (_msm_seamless_for_crtc(old_state, crtc->state, false))
+		if (_msm_seamless_for_crtc(dev, old_state, crtc->state, false))
 			continue;
 
 		funcs = crtc->helper_private;
@@ -362,7 +370,7 @@ static void msm_atomic_helper_commit_modeset_enables(struct drm_device *dev,
 		if (!new_crtc_state->active)
 			continue;
 
-		if (_msm_seamless_for_crtc(old_state, crtc->state, true))
+		if (_msm_seamless_for_crtc(dev, old_state, crtc->state, true))
 			continue;
 
 		funcs = crtc->helper_private;

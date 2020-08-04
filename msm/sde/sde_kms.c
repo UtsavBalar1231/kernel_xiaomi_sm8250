@@ -2667,9 +2667,10 @@ static int sde_kms_cont_splash_config(struct msm_kms *kms)
 	return rc;
 }
 
-static bool sde_kms_check_for_splash(struct msm_kms *kms)
+static bool sde_kms_check_for_splash(struct msm_kms *kms, struct drm_crtc *crtc)
 {
 	struct sde_kms *sde_kms;
+	struct drm_encoder *encoder;
 
 	if (!kms) {
 		SDE_ERROR("invalid kms\n");
@@ -2677,7 +2678,18 @@ static bool sde_kms_check_for_splash(struct msm_kms *kms)
 	}
 
 	sde_kms = to_sde_kms(kms);
-	return sde_kms->splash_data.num_splash_displays;
+
+	if (!crtc || !sde_kms->splash_data.num_splash_displays)
+		return !!sde_kms->splash_data.num_splash_displays;
+
+	drm_for_each_encoder_mask(encoder, crtc->dev,
+			crtc->state->encoder_mask) {
+		if (sde_encoder_in_cont_splash(encoder))
+			return true;
+	}
+
+	return false;
+
 }
 
 static int sde_kms_get_mixer_count(const struct msm_kms *kms,
