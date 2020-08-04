@@ -89,6 +89,7 @@ QDF_STATUS dp_txrx_deinit(ol_txrx_soc_handle soc)
 }
 
 #ifdef DP_MEM_PRE_ALLOC
+
 /* Num elements in REO ring */
 #define REO_DST_RING_SIZE 1024
 
@@ -138,8 +139,16 @@ static struct  dp_consistent_prealloc g_dp_consistent_allocs[] = {
 	{WBM2SW_RELEASE, (sizeof(struct wbm_release_ring)) * WBM2SW_RELEASE_RING_SIZE, 0, NULL, NULL, 0, 0},
 	{WBM2SW_RELEASE, (sizeof(struct wbm_release_ring)) * WBM2SW_RELEASE_RING_SIZE, 0, NULL, NULL, 0, 0},
 	{WBM2SW_RELEASE, (sizeof(struct wbm_release_ring)) * WBM2SW_RELEASE_RING_SIZE, 0, NULL, 0, 0},
+	/* SW2WBM link descriptor return ring */
+	{SW2WBM_RELEASE, (sizeof(struct wbm_release_ring)) * WLAN_CFG_WBM_RELEASE_RING_SIZE, 0, NULL, 0, 0},
 	/* 1 WBM idle link desc ring */
 	{WBM_IDLE_LINK, (sizeof(struct wbm_link_descriptor_ring)) * WBM_IDLE_LINK_RING_SIZE, 0, NULL, NULL, 0, 0},
+	/* 2 RXDMA DST ERR rings */
+	{RXDMA_DST, (sizeof(struct reo_entrance_ring)) * WLAN_CFG_RXDMA_ERR_DST_RING_SIZE, 0, NULL, NULL, 0, 0},
+	{RXDMA_DST, (sizeof(struct reo_entrance_ring)) * WLAN_CFG_RXDMA_ERR_DST_RING_SIZE, 0, NULL, NULL, 0, 0},
+	/* REFILL ring 0 */
+	{RXDMA_BUF, (sizeof(struct wbm_buffer_ring)) * WLAN_CFG_RXDMA_REFILL_RING_SIZE, 0, NULL, NULL, 0, 0},
+
 };
 
 void dp_prealloc_deinit(void)
@@ -234,10 +243,6 @@ void *dp_prealloc_get_coherent(uint32_t *size, void **base_vaddr_unaligned,
 		}
 	}
 
-	if (i == QDF_ARRAY_SIZE(g_dp_consistent_allocs))
-		dp_info("unable to allocate memory for ring type %s size %d",
-			dp_srng_get_str_from_hal_ring_type(ring_type),
-			p->size);
 	return va_aligned;
 }
 
