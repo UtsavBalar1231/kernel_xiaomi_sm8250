@@ -839,6 +839,16 @@
 		interrupt-names = "slimbus_irq", "slimbus_bam_irq";
 		qcom,apps-ch-pipes = <0x7e0000>;
 		qcom,ea-pc = <0x260>;
+		qcom,arm-smmu;
+		iommus = <&anoc2_smmu 0x188b 0x0>,
+			<&anoc2_smmu 0x188c 0x0>,
+			<&anoc2_smmu 0x1892 0x0>,
+			<&anoc2_smmu 0x1893 0x0>,
+			<&anoc2_smmu 0x1894 0x0>;
+		qcom,iommu-dma-addr-pool = <0x40000000 0xC0000000>;
+		qcom,use-64-bit-dma-mask;
+		qcom,iommu-dma = "bypass";
+		qcom,iommu-s1-bypass;
 		status = "disabled";
 	};
 
