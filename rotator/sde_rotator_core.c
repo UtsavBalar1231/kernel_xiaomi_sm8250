@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  */
 
 #define pr_fmt(fmt)	"%s:%d: " fmt, __func__, __LINE__
@@ -610,7 +610,7 @@ static int sde_rotator_secure_session_ctrl(bool enable)
 
 			sid_info = (uint32_t *) shm.vaddr;
 			desc.args[1] = shm.paddr;
-			desc.args[2] = shm.size;
+			desc.args[2] = sizeof(uint32_t);
 		} else {
 			sid_info = kzalloc(sizeof(uint32_t), GFP_KERNEL);
 			if (!sid_info)
