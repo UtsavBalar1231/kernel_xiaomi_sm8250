@@ -440,8 +440,10 @@ static inline void wma_send_vdev_del_resp(struct del_vdev_params *param)
 	status = scheduler_post_message(QDF_MODULE_ID_WMA,
 					QDF_MODULE_ID_SME,
 					QDF_MODULE_ID_SME, &sme_msg);
-	if (!QDF_IS_STATUS_SUCCESS(status))
+	if (!QDF_IS_STATUS_SUCCESS(status)) {
 		qdf_mem_free(param);
+		wma_err("Fail to send vdev del resp");
+	}
 }
 
 QDF_STATUS wma_vdev_detach_callback(struct vdev_delete_response *rsp)
@@ -491,7 +493,7 @@ QDF_STATUS wma_vdev_detach_callback(struct vdev_delete_response *rsp)
 	param->status = QDF_STATUS_SUCCESS;
 	wma_send_vdev_del_resp(param);
 
-	return param->status;
+	return QDF_STATUS_SUCCESS;
 }
 
 static void
