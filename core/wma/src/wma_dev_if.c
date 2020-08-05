@@ -4577,13 +4577,6 @@ static void wma_del_tdls_sta(tp_wma_handle wma, tpDeleteStaParams del_sta)
 		goto send_del_rsp;
 	}
 
-	if (wma_is_roam_synch_in_progress(wma, del_sta->smesessionId)) {
-		WMA_LOGE("%s: roaming in progress, reject del sta!", __func__);
-		del_sta->status = QDF_STATUS_E_PERM;
-		qdf_mem_free(peer_state);
-		goto send_del_rsp;
-	}
-
 	peer_state->peer_state = TDLS_PEER_STATE_TEARDOWN;
 	peer_state->vdev_id = del_sta->smesessionId;
 	peer_state->resp_reqd = del_sta->respReqd;
@@ -4653,8 +4646,6 @@ static void wma_delete_sta_req_sta_mode(tp_wma_handle wma,
 
 	iface = &wma->interfaces[params->smesessionId];
 	iface->uapsd_cached_val = 0;
-	if (wma_is_roam_synch_in_progress(wma, params->smesessionId))
-		return;
 #ifdef FEATURE_WLAN_TDLS
 	if (STA_ENTRY_TDLS_PEER == params->staType) {
 		wma_del_tdls_sta(wma, params);
@@ -4753,22 +4744,22 @@ void wma_delete_sta(tp_wma_handle wma, tpDeleteStaParams del_sta)
 	if (del_sta->staType == STA_ENTRY_NDI_PEER)
 		oper_mode = BSS_OPERATIONAL_MODE_NDI;
 
-	WMA_LOGD(FL("oper_mode %d"), oper_mode);
+	wma_debug("oper_mode %d", oper_mode);
+	wma_debug("vdev_id %d status %d",
+		  del_sta->smesessionId, del_sta->status);
 
 	switch (oper_mode) {
 	case BSS_OPERATIONAL_MODE_STA:
-		wma_delete_sta_req_sta_mode(wma, del_sta);
 		if (wma_is_roam_synch_in_progress(wma, smesession_id)) {
-			WMA_LOGD(FL("LFR3: Del STA on vdev_id %d"),
-				 del_sta->smesessionId);
+			wma_debug("LFR3: Del STA on vdev_id %d",
+				  del_sta->smesessionId);
 			qdf_mem_free(del_sta);
 			return;
 		}
-		if (!rsp_requested) {
-			WMA_LOGD(FL("vdev_id %d status %d"),
-				 del_sta->smesessionId, del_sta->status);
+		wma_delete_sta_req_sta_mode(wma, del_sta);
+		if (!rsp_requested)
 			qdf_mem_free(del_sta);
-		}
+
 		break;
 
 	case BSS_OPERATIONAL_MODE_IBSS: /* IBSS shares AP code */

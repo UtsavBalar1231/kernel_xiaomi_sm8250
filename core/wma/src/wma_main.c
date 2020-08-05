@@ -3515,6 +3515,7 @@ void wma_send_msg_by_priority(tp_wma_handle wma_handle, uint16_t msg_type,
 	if (!QDF_IS_STATUS_SUCCESS(status)) {
 		if (body_ptr)
 			qdf_mem_free(body_ptr);
+		wma_err("Failed to send msg");
 	}
 }
 
