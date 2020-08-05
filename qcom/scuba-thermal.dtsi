@@ -90,6 +90,15 @@
 		reg =  <0xf550800 0x1000>;
 		#cooling-cells = <2>;
 	};
+
+	cxip_cdev: cxip-cdev@3ed000 {
+		compatible = "qcom,cxip-lm-cooling-device";
+		reg = <0x3ed000 0xe008>;
+		qcom,thermal-client-offset = <0x8000>;
+		/* 5th offset to bypass VICTIM1 */
+		qcom,bypass-client-list = <0x3004 0x4004 0x6004 0xa004 0xc004 0xe004>;
+		#cooling-cells = <2>;
+	};
 };
 
 &thermal_zones {
@@ -400,6 +409,12 @@
 		thermal-sensors = <&tsens0 7>;
 		wake-capable-sensor;
 		trips {
+			gpu_cxip_trip: gpu-cxip-trip {
+				temperature = <95000>;
+				hysteresis = <20000>;
+				type = "passive";
+			};
+
 			gpu_step_trip: gpu-trip {
 				temperature = <95000>;
 				hysteresis = <0>;
@@ -415,6 +430,11 @@
 		};
 
 		cooling-maps {
+			cxip-cdev {
+				trip = <&gpu_cxip_trip>;
+				cooling-device = <&cxip_cdev 1 1>;
+			};
+
 			gpu_cdev {
 				trip = <&gpu_step_trip>;
 				cooling-device = <&msm_gpu THERMAL_NO_LIMIT
