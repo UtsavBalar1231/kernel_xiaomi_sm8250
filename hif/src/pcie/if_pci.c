@@ -3912,7 +3912,8 @@ QDF_STATUS hif_pci_enable_bus(struct hif_softc *ol_sc,
 			  enum hif_enable_type type)
 {
 	int ret = 0;
-	uint32_t hif_type, target_type;
+	uint32_t hif_type;
+	uint32_t target_type = TARGET_TYPE_UNKNOWN;
 	struct hif_pci_softc *sc = HIF_GET_PCI_SOFTC(ol_sc);
 	struct hif_opaque_softc *hif_hdl = GET_HIF_OPAQUE_HDL(ol_sc);
 	uint16_t revision_id = 0;
