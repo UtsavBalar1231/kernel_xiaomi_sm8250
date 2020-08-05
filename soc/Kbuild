@@ -76,6 +76,11 @@ ifeq ($(KERNEL_BUILD), 0)
 		export
 		INCS    +=  -include $(AUDIO_ROOT)/config/gvmautoconf.h
 	endif
+	ifeq ($(CONFIG_ARCH_SDM660), y)
+		include $(AUDIO_ROOT)/config/sdm660auto.conf
+		export
+		INCS    +=  -include $(AUDIO_ROOT)/config/sdm660autoconf.h
+	endif
 endif
 
 # As per target team, build is done as follows:
@@ -112,6 +117,11 @@ endif
 # for pinctrl LPI driver
 ifdef CONFIG_PINCTRL_LPI
 	PINCTRL_LPI_OBJS += pinctrl-lpi.o
+endif
+
+# for pinctrl LPI legacy driver
+ifdef CONFIG_PINCTRL_LPI_LEGACY
+	PINCTRL_LPI_OBJS += pinctrl-lpi-legacy.o
 endif
 
 # for soundwire driver
@@ -184,6 +194,9 @@ obj-$(CONFIG_PINCTRL_WCD) += pinctrl_wcd_dlkm.o
 pinctrl_wcd_dlkm-y := $(PINCTRL_WCD_OBJS)
 
 obj-$(CONFIG_PINCTRL_LPI) += pinctrl_lpi_dlkm.o
+pinctrl_lpi_dlkm-y := $(PINCTRL_LPI_OBJS)
+
+obj-$(CONFIG_PINCTRL_LPI_LEGACY) += pinctrl_lpi_dlkm.o
 pinctrl_lpi_dlkm-y := $(PINCTRL_LPI_OBJS)
 
 obj-$(CONFIG_SOUNDWIRE) += swr_dlkm.o

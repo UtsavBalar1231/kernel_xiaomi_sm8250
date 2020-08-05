@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/* Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2015-2019, 2020, The Linux Foundation. All rights reserved.
  */
 #include <linux/module.h>
 #include <linux/init.h>
@@ -10354,7 +10354,7 @@ static int tavil_post_reset_cb(struct wcd9xxx *wcd9xxx)
 
 	component = (struct snd_soc_component *)(wcd9xxx->ssr_priv);
 	if (!component->card) {
-		dev_err(codec->dev, "%s: sound card is not enumerated.\n",
+		dev_err(component->dev, "%s: sound card is not enumerated.\n",
 			__func__);
 		return -EINVAL;
 	}

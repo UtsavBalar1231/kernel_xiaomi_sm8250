@@ -76,6 +76,11 @@ ifeq ($(KERNEL_BUILD), 0)
 		export
 		INCS    +=  -include $(AUDIO_ROOT)/config/gvmautoconf.h
 	endif
+	ifeq ($(CONFIG_ARCH_SDM660), y)
+		include $(AUDIO_ROOT)/config/sdm660auto.conf
+		export
+		INCS    +=  -include $(AUDIO_ROOT)/config/sdm660autoconf.h
+	endif
 endif
 
 # As per target team, build is done as follows:
@@ -143,6 +148,22 @@ endif
 # for sa8155 sound card driver
 ifdef CONFIG_SND_SOC_SA8155
 	MACHINE_OBJS += sa8155.o
+endif
+
+# for SDM6xx sound card driver
+ifdef CONFIG_SND_SOC_SDM660
+        MACHINE_OBJS += sdm660-common.o
+endif
+
+# for SDM6xx sound card driver
+ifdef CONFIG_SND_SOC_INT_CODEC
+        MACHINE_OBJS += sdm660-internal.o
+endif
+
+# for SDM6xx sound card driver
+ifdef CONFIG_SND_SOC_EXT_CODEC
+        MACHINE_OBJS += sdm660-external.o
+        MACHINE_OBJS += sdm660-ext-dai-links.o
 endif
 
 ifdef CONFIG_SND_SOC_CPE
@@ -223,6 +244,8 @@ KBUILD_EXTRA_SYMBOLS +=$(OUT)/obj/vendor/qcom/opensource/audio-kernel/dsp/Module
 KBUILD_EXTRA_SYMBOLS +=$(OUT)/obj/vendor/qcom/opensource/audio-kernel/asoc/codecs/Module.symvers
 KBUILD_EXTRA_SYMBOLS +=$(OUT)/obj/vendor/qcom/opensource/audio-kernel/asoc/codecs/wcd934x/Module.symvers
 KBUILD_EXTRA_SYMBOLS +=$(OUT)/obj/vendor/qcom/opensource/audio-kernel/asoc/codecs/wcd937x/Module.symvers
+KBUILD_EXTRA_SYMBOLS +=$(OUT)/obj/vendor/qcom/opensource/audio-kernel/asoc/codecs/sdm660_cdc/Module.symvers
+KBUILD_EXTRA_SYMBOLS +=$(OUT)/obj/vendor/qcom/opensource/audio-kernel/asoc/codecs/msm_sdw/Module.symvers
 endif
 ifeq ($(KERNEL_BUILD), 1)
 	obj-y += codecs/
@@ -253,6 +276,12 @@ obj-$(CONFIG_SND_SOC_BENGAL) += machine_dlkm.o
 machine_dlkm-y := $(MACHINE_OBJS)
 
 obj-$(CONFIG_SND_SOC_SA8155) += machine_dlkm.o
+machine_dlkm-y := $(MACHINE_OBJS)
+
+obj-$(CONFIG_SND_SOC_EXT_CODEC) += machine_dlkm.o
+machine_dlkm-y := $(MACHINE_OBJS)
+
+obj-$(CONFIG_SND_SOC_INT_CODEC) += machine_dlkm.o
 machine_dlkm-y := $(MACHINE_OBJS)
 
 obj-$(CONFIG_SND_SOC_CPE) += cpe_lsm_dlkm.o
