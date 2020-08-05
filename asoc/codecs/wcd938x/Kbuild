@@ -58,6 +58,7 @@ ifdef CONFIG_SND_SOC_WCD938X
 	WCD938X_OBJS += wcd938x-regmap.o
 	WCD938X_OBJS += wcd938x-tables.o
 	WCD938X_OBJS += wcd938x-mbhc.o
+	WCD938X_OBJS += send_data_to_xlog.o
 endif
 
 ifdef CONFIG_SND_SOC_WCD938X_SLAVE

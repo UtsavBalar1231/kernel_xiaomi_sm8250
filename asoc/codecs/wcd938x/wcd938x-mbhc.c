@@ -22,6 +22,8 @@
 #include "wcd938x-registers.h"
 #include "internal.h"
 
+#include "send_data_to_xlog.h"//LXY
+
 #define WCD938X_ZDET_SUPPORTED          true
 /* Z value defined in milliohm */
 #define WCD938X_ZDET_VAL_32             32000
@@ -686,6 +688,7 @@ zdet_complete:
 	if (is_fsm_disable)
 		regmap_update_bits(wcd938x->regmap,
 				   WCD938X_ANA_MBHC_ELECT, 0x80, 0x80);
+	send_mbhc_impedance_to_xlog(*zl, *zr);//LXY
 }
 
 static void wcd938x_mbhc_gnd_det_ctrl(struct snd_soc_component *component,
