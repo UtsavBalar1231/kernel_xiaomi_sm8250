@@ -96,6 +96,8 @@
 	};
 
 	cxip_cdev: cxip-cdev@1fed000 {
+		status = "disabled";
+
 		compatible = "qcom,cxip-lm-cooling-device";
 		reg = <0x1fed000 0x10060>;
 		qcom,thermal-client-offset = <0x8000>;
