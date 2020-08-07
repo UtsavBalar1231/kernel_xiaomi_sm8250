@@ -1908,6 +1908,7 @@
 		interrupt-names = "tsens-upper-lower", "tsens-critical",
 				"tsens-0C";
 		0C-sensor-num = <16>;
+		tsens-reinit-wa;
 		#thermal-sensor-cells = <1>;
 	};
 
@@ -1923,6 +1924,7 @@
 		interrupt-names = "tsens-upper-lower", "tsens-critical",
 				"tsens-0C";
 		0C-sensor-num = <16>;
+		tsens-reinit-wa;
 		#thermal-sensor-cells = <1>;
 	};
 
