@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _WCD937X_INTERNAL_H
@@ -16,6 +16,7 @@
 #define  WCD_VOUT_CTL_TO_MICB(v)  (1000 + v * 50)
 #define MAX_PORT 8
 #define MAX_CH_PER_PORT 8
+#define MAX_TX_PWR_CH 2
 
 extern struct regmap_config wcd937x_regmap_config;
 
@@ -88,6 +89,7 @@ struct wcd937x_priv {
 	int ana_clk_count;
 	struct mutex ana_tx_clk_lock;
 	bool usbc_hs_status;
+	u32 tx_ch_pwr[MAX_TX_PWR_CH];
 };
 
 struct wcd937x_micbias_setting {
