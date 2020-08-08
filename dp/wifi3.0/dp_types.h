@@ -495,6 +495,18 @@ struct dp_txrx_pool_stats {
 	uint16_t pkt_drop_no_pool;
 };
 
+/* DP multiple pages allocation source */
+enum dp_desc_type {
+	DP_TX_DESC_TYPE,
+	DP_TX_EXT_DESC_TYPE,
+	DP_TX_EXT_DESC_LINK_TYPE,
+	DP_TX_TSO_DESC_TYPE,
+	DP_TX_TSO_NUM_SEG_TYPE,
+	DP_RX_DESC_BUF_TYPE,
+	DP_HW_LINK_DESC_TYPE,
+};
+
+
 struct dp_srng {
 	hal_ring_handle_t hal_srng;
 	void *base_vaddr_unaligned;
