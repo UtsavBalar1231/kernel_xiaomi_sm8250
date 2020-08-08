@@ -149,6 +149,7 @@
 #include "wlan_hdd_thermal.h"
 #include <ol_defines.h>
 #include "wlan_hdd_cfr.h"
+#include <qdf_hang_event_notifier.h>
 
 #define g_mode_rates_size (12)
 #define a_mode_rates_size (8)
@@ -1131,7 +1132,7 @@ hdd_convert_hang_reason(enum qdf_hang_reason reason)
  * Return: 0 on success or failure reason
  */
 int wlan_hdd_send_hang_reason_event(struct hdd_context *hdd_ctx,
-				    enum qdf_hang_reason reason, void *data,
+				    enum qdf_hang_reason reason, uint8_t *data,
 				    size_t data_len)
 {
 	struct sk_buff *vendor_event;
@@ -1149,6 +1150,7 @@ int wlan_hdd_send_hang_reason_event(struct hdd_context *hdd_ctx,
 	sta_adapter = hdd_get_adapter(hdd_ctx, QDF_STA_MODE);
 	if (sta_adapter)
 		wdev = &(sta_adapter->wdev);
+
 
 	vendor_event = cfg80211_vendor_event_alloc(hdd_ctx->wiphy,
 						   wdev,
