@@ -149,7 +149,7 @@ void htc_log_hang_credit_history(struct notifier_block *block, void *data)
 	qdf_notif_block *notif_block = qdf_container_of(block, qdf_notif_block,
 							notif_block);
 	struct qdf_notifer_data *htc_hang_data = data;
-	uint32_t count = 3, idx, total_len;
+	uint32_t count = 1, idx, total_len;
 	HTC_HANDLE htc;
 	struct htc_hang_data_fixed_param *cmd;
 	uint8_t *htc_buf_ptr;
