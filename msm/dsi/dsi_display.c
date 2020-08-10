@@ -884,6 +884,9 @@ static int dsi_display_cmd_prepare(const char *cmd_buf, u32 cmd_buf_len,
 		return -EINVAL;
 	}
 
+	if (cmd->last_command)
+		cmd->msg.flags |= MIPI_DSI_MSG_LASTCOMMAND;
+
 	for (i = 0; i < cmd->msg.tx_len; i++)
 		payload[i] = cmd_buf[7 + i];
 
