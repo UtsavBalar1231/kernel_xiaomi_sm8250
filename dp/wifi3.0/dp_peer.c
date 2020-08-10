@@ -755,8 +755,8 @@ int dp_peer_add_ast(struct dp_soc *soc,
 			 * packet from station to the root via the repeater
 			 * should not remove the wds entry.
 			 */
-			if ((ast_entry->type == CDP_TXRX_AST_TYPE_WDS) &&
-			    (type == CDP_TXRX_AST_TYPE_MEC) &&
+			else if ((type == CDP_TXRX_AST_TYPE_MEC) &&
+			    (ast_entry->type == CDP_TXRX_AST_TYPE_WDS) &&
 			    (ast_entry->peer == peer)) {
 				ast_entry->is_active = FALSE;
 				dp_peer_del_ast(soc, ast_entry);
