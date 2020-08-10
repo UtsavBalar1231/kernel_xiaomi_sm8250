@@ -286,6 +286,7 @@ QDF_STATUS __dp_rx_buffers_replenish(struct dp_soc *dp_soc, uint32_t mac_id,
 		qdf_assert_always((*desc_list)->rx_desc.in_use == 0);
 
 		(*desc_list)->rx_desc.in_use = 1;
+		(*desc_list)->rx_desc.in_err_state = 0;
 		dp_rx_desc_update_dbg_info(&(*desc_list)->rx_desc,
 					   func_name, RX_DESC_REPLENISHED);
 		dp_verbose_debug("rx_netbuf=%pK, buf=%pK, paddr=0x%llx, cookie=%d",
@@ -1675,21 +1676,24 @@ int dp_wds_rx_policy_check(uint8_t *rx_tlv_hdr,
  * Return: NONE
  */
 static inline
-void dp_rx_desc_nbuf_sanity_check(hal_ring_desc_t ring_desc,
+QDF_STATUS dp_rx_desc_nbuf_sanity_check(hal_ring_desc_t ring_desc,
 				  struct dp_rx_desc *rx_desc)
 {
 	struct hal_buf_info hbi;
 
 	hal_rx_reo_buf_paddr_get(ring_desc, &hbi);
 	/* Sanity check for possible buffer paddr corruption */
-	qdf_assert_always((&hbi)->paddr ==
-			  qdf_nbuf_get_frag_paddr(rx_desc->nbuf, 0));
+	if (dp_rx_desc_paddr_sanity_check(rx_desc, (&hbi)->paddr))
+		return QDF_STATUS_SUCCESS;
+
+	return QDF_STATUS_E_FAILURE;
 }
 #else
 static inline
-void dp_rx_desc_nbuf_sanity_check(hal_ring_desc_t ring_desc,
+QDF_STATUS dp_rx_desc_nbuf_sanity_check(hal_ring_desc_t ring_desc,
 				  struct dp_rx_desc *rx_desc)
 {
+	return QDF_STATUS_SUCCESS;
 }
 #endif
 
@@ -1871,6 +1875,58 @@ void dp_rx_set_hdr_pad(qdf_nbuf_t nbuf, uint32_t l3_padding)
 }
 #endif
 
+#ifdef DP_RX_DROP_RAW_FRM
+/**
+ * dp_rx_is_raw_frame_dropped() - if raw frame nbuf, free and drop
+ * @nbuf: pkt skb pointer
+ *
+ * Return: true - raw frame, dropped
+ *	   false - not raw frame, do nothing
+ */
+static inline
+bool dp_rx_is_raw_frame_dropped(qdf_nbuf_t nbuf)
+{
+	if (qdf_nbuf_is_raw_frame(nbuf)) {
+		qdf_nbuf_free(nbuf);
+		return true;
+	}
+
+	return false;
+}
+#else
+static inline
+bool dp_rx_is_raw_frame_dropped(qdf_nbuf_t nbuf)
+{
+	return false;
+}
+#endif
+
+#ifdef WLAN_FEATURE_DP_RX_RING_HISTORY
+static inline void
+dp_rx_ring_record_entry(struct dp_soc *soc, uint8_t ring_num, hal_ring_desc_t ring_desc)
+{
+	struct dp_buf_info_record *record;
+	uint8_t rbm;
+	struct hal_buf_info hbi;
+	uint32_t idx;
+
+	hal_rx_reo_buf_paddr_get(ring_desc, &hbi);
+	rbm = hal_rx_ret_buf_manager_get(ring_desc);
+
+	idx = dp_history_get_next_index(&soc->rx_ring_history[ring_num]->index, DP_RX_HIST_MAX);
+	record = &soc->rx_ring_history[ring_num]->entry[idx];
+
+	record->timestamp = qdf_get_log_timestamp();
+	record->hbi.paddr = hbi.paddr;
+	record->hbi.sw_cookie = hbi.sw_cookie;
+	record->hbi.rbm = rbm;
+}
+#else
+static inline void
+dp_rx_ring_record_entry(struct dp_soc *soc, uint8_t ring_num, hal_ring_desc_t ring_desc)
+{
+}
+#endif
 
 /**
  * dp_rx_process() - Brain of the Rx processing functionality
@@ -1991,7 +2047,12 @@ more_data:
 			qdf_assert(0);
 		}
 
+		dp_rx_ring_record_entry(soc, reo_ring_num, ring_desc);
 		rx_buf_cookie = HAL_RX_REO_BUF_COOKIE_GET(ring_desc);
+		status = dp_rx_cookie_check_and_invalidate(ring_desc);
+		if (qdf_unlikely(QDF_IS_STATUS_ERROR(status))) {
+			break;
+		}
 
 		rx_desc = dp_rx_cookie_2_va_rxdma_buf(soc, rx_buf_cookie);
 		status = dp_rx_desc_sanity(soc, hal_soc, hal_ring_hdl,
@@ -2032,7 +2093,13 @@ more_data:
 			continue;
 		}
 
-		dp_rx_desc_nbuf_sanity_check(ring_desc, rx_desc);
+		status = dp_rx_desc_nbuf_sanity_check(ring_desc, rx_desc);
+		if (QDF_IS_STATUS_ERROR(status)) {
+			DP_STATS_INC(soc, rx.err.nbuf_sanity_fail, 1);
+			rx_desc->in_err_state = 1;
+			hal_srng_dst_get_next(hal_soc, hal_ring_hdl);
+			continue;
+		}
 
 		if (qdf_unlikely(!dp_rx_desc_check_magic(rx_desc))) {
 			dp_err("Invalid rx_desc cookie=%d", rx_buf_cookie);
@@ -2200,6 +2267,12 @@ done:
 	nbuf = nbuf_head;
 	while (nbuf) {
 		next = nbuf->next;
+		if (qdf_unlikely(dp_rx_is_raw_frame_dropped(nbuf))) {
+			nbuf = next;
+			DP_STATS_INC(soc, rx.err.raw_frm_drop, 1);
+			continue;
+		}
+
 		rx_tlv_hdr = qdf_nbuf_data(nbuf);
 		vdev_id = QDF_NBUF_CB_RX_VDEV_ID(nbuf);
 

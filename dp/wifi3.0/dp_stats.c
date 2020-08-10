@@ -5551,6 +5551,12 @@ void dp_txrx_path_stats(struct dp_soc *soc)
 			       pdev->soc->stats.rx.err.reo_err_oor_drop);
 		DP_PRINT_STATS("Rx err msdu rejected: %d",
 			       soc->stats.rx.err.rejected);
+		DP_PRINT_STATS("Rx raw frame dropped: %d",
+			       soc->stats.rx.err.raw_frm_drop);
+		DP_PRINT_STATS("Rx stale link desc cookie: %d",
+			       pdev->soc->stats.rx.err.invalid_link_cookie);
+		DP_PRINT_STATS("Rx nbuf sanity fails: %d",
+			       pdev->soc->stats.rx.err.nbuf_sanity_fail);
 
 		DP_PRINT_STATS("Reo Statistics");
 		DP_PRINT_STATS("near_full: %u ", soc->stats.rx.near_full);
@@ -6039,6 +6045,7 @@ dp_print_soc_rx_stats(struct dp_soc *soc)
 	DP_PRINT_STATS("RX frags: %d", soc->stats.rx.rx_frags);
 	DP_PRINT_STATS("RX frag wait: %d", soc->stats.rx.rx_frag_wait);
 	DP_PRINT_STATS("RX frag err: %d", soc->stats.rx.rx_frag_err);
+	DP_PRINT_STATS("RX frag OOR: %d", soc->stats.rx.rx_frag_oor);
 
 	DP_PRINT_STATS("RX HP out_of_sync: %d", soc->stats.rx.hp_oos2);
 	DP_PRINT_STATS("RX Ring Near Full: %d", soc->stats.rx.near_full);
@@ -6081,6 +6088,12 @@ dp_print_soc_rx_stats(struct dp_soc *soc)
 
 	DP_PRINT_STATS("Rx err msdu rejected: %d",
 		       soc->stats.rx.err.rejected);
+
+	DP_PRINT_STATS("Rx stale link desc cookie: %d",
+		       soc->stats.rx.err.invalid_link_cookie);
+
+	DP_PRINT_STATS("Rx nbuf sanity fail: %d",
+		       soc->stats.rx.err.nbuf_sanity_fail);
 
 	for (i = 0; i < HAL_RXDMA_ERR_MAX; i++) {
 		index += qdf_snprint(&rxdma_error[index],

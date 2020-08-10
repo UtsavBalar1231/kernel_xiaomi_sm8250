@@ -1343,6 +1343,68 @@ fail:
 	return;
 }
 
+#ifdef DP_RX_DESC_COOKIE_INVALIDATE
+/**
+ * dp_rx_link_cookie_check() - Validate link desc cookie
+ * @ring_desc: ring descriptor
+ *
+ * Return: qdf status
+ */
+static inline QDF_STATUS
+dp_rx_link_cookie_check(hal_ring_desc_t ring_desc)
+{
+	if (qdf_unlikely(HAL_RX_REO_BUF_LINK_COOKIE_INVALID_GET(ring_desc)))
+		return QDF_STATUS_E_FAILURE;
+
+	return QDF_STATUS_SUCCESS;
+}
+
+/**
+ * dp_rx_link_cookie_invalidate() - Invalidate link desc cookie
+ * @ring_desc: ring descriptor
+ *
+ * Return: None
+ */
+static inline void
+dp_rx_link_cookie_invalidate(hal_ring_desc_t ring_desc)
+{
+	HAL_RX_REO_BUF_LINK_COOKIE_INVALID_SET(ring_desc);
+}
+#else
+static inline QDF_STATUS
+dp_rx_link_cookie_check(hal_ring_desc_t ring_desc)
+{
+	return QDF_STATUS_SUCCESS;
+}
+
+static inline void
+dp_rx_link_cookie_invalidate(hal_ring_desc_t ring_desc)
+{
+}
+#endif
+
+#ifdef WLAN_FEATURE_DP_RX_RING_HISTORY
+static inline void
+dp_rx_err_ring_record_entry(struct dp_soc *soc, uint64_t paddr, uint32_t sw_cookie, uint8_t rbm)
+{
+	struct dp_buf_info_record *record;
+	uint32_t idx;
+
+	idx = dp_history_get_next_index(&soc->rx_err_ring_history->index, DP_RX_ERR_HIST_MAX);
+	record = &soc->rx_err_ring_history->entry[idx];
+
+	record->timestamp = qdf_get_log_timestamp();
+	record->hbi.paddr = paddr;
+	record->hbi.sw_cookie = sw_cookie;
+	record->hbi.rbm = rbm;
+}
+#else
+static inline void
+dp_rx_err_ring_record_entry(struct dp_soc *soc, uint64_t paddr, uint32_t sw_cookie, uint8_t rbm)
+{
+}
+#endif
+
 uint32_t
 dp_rx_err_process(struct dp_intr *int_ctx, struct dp_soc *soc,
 		  hal_ring_handle_t hal_ring_hdl, uint32_t quota)
@@ -1365,6 +1427,7 @@ dp_rx_err_process(struct dp_intr *int_ctx, struct dp_soc *soc,
 	struct hal_rx_msdu_list msdu_list; /* MSDU's per MPDU */
 	uint16_t num_msdus;
 	struct dp_rx_desc *rx_desc = NULL;
+	QDF_STATUS status;
 
 	/* Debug -- Remove later */
 	qdf_assert(soc && hal_ring_hdl);
@@ -1388,8 +1451,8 @@ dp_rx_err_process(struct dp_intr *int_ctx, struct dp_soc *soc,
 	}
 
 	while (qdf_likely(quota-- && (ring_desc =
-				hal_srng_dst_get_next(hal_soc,
-						      hal_ring_hdl)))) {
+				hal_srng_dst_peek(hal_soc,
+						  hal_ring_hdl)))) {
 
 		DP_STATS_INC(soc, rx.err_ring_pkts, 1);
 
@@ -1410,6 +1473,12 @@ dp_rx_err_process(struct dp_intr *int_ctx, struct dp_soc *soc,
 		qdf_assert_always((cookie >> LINK_DESC_ID_SHIFT) &
 							LINK_DESC_ID_START);
 
+		status = dp_rx_link_cookie_check(ring_desc);
+		if (qdf_unlikely(QDF_IS_STATUS_ERROR(status))) {
+			DP_STATS_INC(soc, rx.err.invalid_link_cookie, 1);
+			break;
+		}
+
 		/*
 		 * Check if the buffer is to be processed on this processor
 		 */
@@ -1419,7 +1488,9 @@ dp_rx_err_process(struct dp_intr *int_ctx, struct dp_soc *soc,
 		link_desc_va = dp_rx_cookie_2_link_desc_va(soc, &hbi);
 		hal_rx_msdu_list_get(soc->hal_soc, link_desc_va, &msdu_list,
 				     &num_msdus);
-
+		dp_rx_err_ring_record_entry(soc, msdu_list.paddr[0],
+					    msdu_list.sw_cookie[0],
+					    msdu_list.rbm[0]);
 		if (qdf_unlikely((msdu_list.rbm[0] != DP_WBM2SW_RBM) &&
 				(msdu_list.rbm[0] !=
 					HAL_RX_BUF_RBM_WBM_IDLE_DESC_LIST) &&
@@ -1437,12 +1508,36 @@ dp_rx_err_process(struct dp_intr *int_ctx, struct dp_soc *soc,
 			/* Return link descriptor through WBM ring (SW2WBM)*/
 			dp_rx_link_desc_return(soc, ring_desc,
 					HAL_BM_ACTION_RELEASE_MSDU_LIST);
-			continue;
+			goto next_entry;
 		}
 
 		rx_desc = dp_rx_cookie_2_va_rxdma_buf(soc,
 						      msdu_list.sw_cookie[0]);
 		qdf_assert_always(rx_desc);
+
+		/*
+		 * this is a unlikely scenario where the host is reaping
+		 * a descriptor which it already reaped just a while ago
+		 * but is yet to replenish it back to HW.
+		 * In this case host will dump the last 128 descriptors
+		 * including the software descriptor rx_desc and assert.
+		 */
+
+		if (qdf_unlikely(!rx_desc->in_use)) {
+			DP_STATS_INC(soc, rx.err.hal_reo_dest_dup, 1);
+			dp_info_rl("Reaping rx_desc not in use!");
+			dp_rx_dump_info_and_assert(soc, hal_ring_hdl,
+						   ring_desc, rx_desc);
+			/* ignore duplicate RX desc and continue to process */
+			/* Pop out the descriptor */
+			goto next_entry;
+		}
+
+		if (!dp_rx_desc_paddr_sanity_check(rx_desc, msdu_list.paddr[0])) {
+			DP_STATS_INC(soc, rx.err.nbuf_sanity_fail, 1);
+			rx_desc->in_err_state = 1;
+			goto next_entry;
+		}
 
 		mac_id = rx_desc->pool_id;
 
@@ -1460,7 +1555,7 @@ dp_rx_err_process(struct dp_intr *int_ctx, struct dp_soc *soc,
 							 &mpdu_desc_info,
 							 &mac_id, quota);
 				rx_bufs_reaped[mac_id] += count;
-				continue;
+				goto next_entry;
 			}
 
 			count = dp_rx_frag_handle(soc,
@@ -1469,7 +1564,7 @@ dp_rx_err_process(struct dp_intr *int_ctx, struct dp_soc *soc,
 
 			rx_bufs_reaped[mac_id] += count;
 			DP_STATS_INC(soc, rx.rx_frags, 1);
-			continue;
+			goto next_entry;
 		}
 
 		if (hal_rx_reo_is_pn_error(ring_desc)) {
@@ -1488,7 +1583,7 @@ dp_rx_err_process(struct dp_intr *int_ctx, struct dp_soc *soc,
 						      quota);
 
 			rx_bufs_reaped[mac_id] += count;
-			continue;
+			goto next_entry;
 		}
 
 		if (hal_rx_reo_is_2k_jump(ring_desc)) {
@@ -1510,7 +1605,7 @@ dp_rx_err_process(struct dp_intr *int_ctx, struct dp_soc *soc,
 					HAL_REO_ERR_REGULAR_FRAME_2K_JUMP);
 
 			rx_bufs_reaped[mac_id] += count;
-			continue;
+			goto next_entry;
 		}
 
 		if (hal_rx_reo_is_oor_error(ring_desc)) {
@@ -1531,8 +1626,11 @@ dp_rx_err_process(struct dp_intr *int_ctx, struct dp_soc *soc,
 					HAL_REO_ERR_REGULAR_FRAME_OOR);
 
 			rx_bufs_reaped[mac_id] += count;
-			continue;
+			goto next_entry;
 		}
+next_entry:
+		dp_rx_link_cookie_invalidate(ring_desc);
+		hal_srng_dst_get_next(hal_soc, hal_ring_hdl);
 	}
 
 done:

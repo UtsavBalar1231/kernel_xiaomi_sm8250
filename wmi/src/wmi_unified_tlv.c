@@ -485,6 +485,8 @@ static const uint32_t vdev_param_tlv[] = {
 	[wmi_vdev_param_6ghz_params] = WMI_VDEV_PARAM_6GHZ_PARAMS,
 	[wmi_vdev_param_enable_disable_roam_reason_vsie] =
 				WMI_VDEV_PARAM_ENABLE_DISABLE_ROAM_REASON_VSIE,
+	[wmi_vdev_param_nan_config_features] =
+			WMI_VDEV_PARAM_ENABLE_DISABLE_NAN_CONFIG_FEATURES,
 };
 #endif
 
@@ -12796,6 +12798,10 @@ extract_roam_trigger_stats_tlv(wmi_unified_t wmi_handle, void *evt_buf,
 				src_data->candidate_list_count;
 		trig->btm_trig_data.btm_resp_status =
 				src_data->btm_response_status_code;
+		trig->btm_trig_data.btm_bss_termination_timeout =
+				src_data->btm_bss_termination_timeout;
+		trig->btm_trig_data.btm_mbo_assoc_retry_timeout =
+				src_data->btm_mbo_assoc_retry_timeout;
 		return QDF_STATUS_SUCCESS;
 
 	case WMI_ROAM_TRIGGER_REASON_BSS_LOAD:
@@ -12861,6 +12867,10 @@ extract_roam_scan_ap_stats_tlv(wmi_unified_t wmi_handle, void *evt_buf,
 		dst->cu_score = src->cu_score;
 		dst->total_score = src->total_score;
 		dst->timestamp = src->timestamp;
+		dst->bl_reason = src->bl_reason;
+		dst->bl_source = src->bl_source;
+		dst->bl_timestamp = src->bl_timestamp;
+		dst->bl_original_timeout = src->bl_original_timeout;
 
 		src++;
 		dst++;

@@ -315,11 +315,13 @@ struct rx_desc_pool {
  * @next: next extension descriptor pointer
  * @vaddr: hlos virtual address pointer
  * @paddr: physical address pointer for descriptor
+ * @flags: mark features for extension descriptor
  */
 struct dp_tx_ext_desc_elem_s {
 	struct dp_tx_ext_desc_elem_s *next;
 	void *vaddr;
 	qdf_dma_addr_t paddr;
+	uint16_t flags;
 };
 
 /**
@@ -577,6 +579,9 @@ struct dp_rx_tid {
 	uint32_t curr_seq_num;
 	uint32_t curr_frag_num;
 
+	/* head PN number */
+	uint64_t pn128[2];
+
 	uint32_t defrag_timeout_ms;
 	uint16_t dialogtoken;
 	uint16_t statuscode;
@@ -729,6 +734,8 @@ struct dp_soc_stats {
 		uint32_t rx_frag_wait;
 		/* Fragments dropped due to errors */
 		uint32_t rx_frag_err;
+		/* Fragments received OOR causing sequence num mismatch */
+		uint32_t rx_frag_oor;
 		/* Fragments dropped due to len errors in skb */
 		uint32_t rx_frag_err_len_error;
 		/* Fragments dropped due to no peer found */
@@ -808,6 +815,12 @@ struct dp_soc_stats {
 			uint32_t rejected;
 			/* Incorrect msdu count in MPDU desc info */
 			uint32_t msdu_count_mismatch;
+			/* RX raw frame dropped count */
+			uint32_t raw_frm_drop;
+			/* Stale link desc cookie count*/
+			uint32_t invalid_link_cookie;
+			/* Nbuf sanity failure */
+			uint32_t nbuf_sanity_fail;
 		} err;
 
 		/* packet count per core - per ring */
@@ -909,6 +922,38 @@ struct htt_t2h_stats {
 	/* number of completed stats in htt_stats_msg */
 	uint32_t num_stats;
 };
+
+#define DP_RX_HIST_MAX 2048
+#define DP_RX_ERR_HIST_MAX 4096
+#define DP_RX_REINJECT_HIST_MAX 1024
+
+struct dp_buf_info_record {
+	struct hal_buf_info hbi;
+	uint64_t timestamp;
+};
+
+struct dp_rx_history {
+	qdf_atomic_t index;
+	struct dp_buf_info_record entry[DP_RX_HIST_MAX];
+};
+
+struct dp_rx_err_history {
+	qdf_atomic_t index;
+	struct dp_buf_info_record entry[DP_RX_ERR_HIST_MAX];
+};
+
+struct dp_rx_reinject_history {
+	qdf_atomic_t index;
+	struct dp_buf_info_record entry[DP_RX_REINJECT_HIST_MAX];
+};
+
+static inline uint32_t dp_history_get_next_index(qdf_atomic_t *curr_idx,
+						 uint32_t max_entries)
+{
+	uint32_t idx = qdf_atomic_inc_return(curr_idx);
+
+	return idx & (max_entries - 1);
+}
 
 /* SOC level structure for data path */
 struct dp_soc {
@@ -1157,6 +1202,10 @@ struct dp_soc {
 		unsigned idx_bits;
 		TAILQ_HEAD(, dp_ast_entry) * bins;
 	} ast_hash;
+
+	struct dp_rx_history *rx_ring_history[MAX_REO_DEST_RINGS];
+	struct dp_rx_err_history *rx_err_ring_history;
+	struct dp_rx_reinject_history *rx_reinject_ring_history;
 
 	qdf_spinlock_t ast_lock;
 	/*Timer for AST entry ageout maintainance */
@@ -2040,6 +2089,14 @@ struct dp_vdev {
 
 	/* vap bss peer mac addr */
 	uint8_t vap_bss_peer_mac_addr[QDF_MAC_ADDR_SIZE];
+
+#ifdef WLAN_SUPPORT_RX_FISA
+	/**
+	 * Params used for controlling the fisa aggregation dynamically
+	 */
+	uint8_t fisa_disallowed[MAX_REO_DEST_RINGS];
+	uint8_t fisa_force_flushed[MAX_REO_DEST_RINGS];
+#endif
 };
 
 
@@ -2296,6 +2353,11 @@ struct dp_rx_fst {
 #define DP_RX_GET_SW_FT_ENTRY_SIZE sizeof(struct dp_rx_fse)
 #elif WLAN_SUPPORT_RX_FISA
 
+struct dp_fisa_stats {
+	/* flow index invalid from RX HW TLV */
+	uint32_t invalid_flow_index;
+};
+
 enum fisa_aggr_ret {
 	FISA_AGGR_DONE,
 	FISA_AGGR_NOT_ELIGIBLE,
@@ -2380,6 +2442,8 @@ struct dp_rx_fst {
 	qdf_atomic_t fse_cache_flush_posted;
 	qdf_timer_t fse_cache_flush_timer;
 	struct fse_cache_flush_history cache_fl_rec[MAX_FSE_CACHE_FL_HST];
+	/* FISA DP stats */
+	struct dp_fisa_stats stats;
 };
 
 #endif /* WLAN_SUPPORT_RX_FISA */
