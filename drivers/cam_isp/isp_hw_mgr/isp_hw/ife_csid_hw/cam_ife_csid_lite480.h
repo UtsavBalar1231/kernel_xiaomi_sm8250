@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_IFE_CSID_LITE_480_H_
@@ -321,6 +321,10 @@ static struct cam_ife_csid_common_reg_offset
 	.ppp_irq_mask_all                             = 0xFFFF,
 	.measure_en_hbi_vbi_cnt_mask                  = 0xC,
 	.format_measure_en_val                        = 1,
+	.format_measure_height_mask_val               = 0xFFFF,
+	.format_measure_height_shift_val              = 0x10,
+	.format_measure_width_mask_val                = 0xFFFF,
+	.format_measure_width_shift_val               = 0x0,
 };
 
 static struct cam_ife_csid_reg_offset cam_ife_csid_lite_480_reg_offset = {
