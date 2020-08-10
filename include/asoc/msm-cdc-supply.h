@@ -60,4 +60,10 @@ extern int msm_cdc_init_supplies_v2(struct device *dev,
 				 struct cdc_regulator *cdc_vreg,
 				 int num_supplies,
 				 u32 vote_regulator_on_demand);
+extern int msm_cdc_set_supply_min_voltage(struct device *dev,
+				struct regulator_bulk_data *supplies,
+				struct cdc_regulator *cdc_vreg,
+				int num_supplies, char *supply_name,
+				int vval_min, bool override_min_vol);
+
 #endif

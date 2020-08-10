@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2016-2018, 2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef __WCD9XXX_UTILS_H__
@@ -8,8 +8,8 @@
 #include <linux/kernel.h>
 #include <linux/device.h>
 #include <linux/regmap.h>
-#include "pdata.h"
-#include "core.h"
+#include <asoc/pdata.h>
+#include <asoc/core.h>
 
 struct wcd9xxx_pdata *wcd9xxx_populate_dt_data(struct device *dev);
 int wcd9xxx_bringup(struct device *dev);
