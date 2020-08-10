@@ -9,10 +9,12 @@
 #include <linux/of_gpio.h>
 #include <linux/pwm.h>
 #include <video/mipi_display.h>
+#include <linux/version.h>
 
 #include "dsi_panel.h"
 #include "dsi_ctrl_hw.h"
 #include "dsi_parser.h"
+#include "sde_dbg.h"
 
 /**
  * topology is currently defined by a set of following 3 values:
@@ -347,6 +349,7 @@ int dsi_panel_trigger_esd_attack(struct dsi_panel *panel)
 
 	if (gpio_is_valid(r_config->reset_gpio)) {
 		gpio_set_value(r_config->reset_gpio, 0);
+		SDE_EVT32(SDE_EVTLOG_FUNC_CASE1);
 		DSI_INFO("GPIO pulled low to simulate ESD\n");
 		return 0;
 	}
@@ -539,6 +542,7 @@ static int dsi_panel_tx_cmd_set(struct dsi_panel *panel,
 	cmds = mode->priv_info->cmd_sets[type].cmds;
 	count = mode->priv_info->cmd_sets[type].count;
 	state = mode->priv_info->cmd_sets[type].state;
+	SDE_EVT32(type, state, count);
 
 	if (count == 0) {
 		DSI_DEBUG("[%s] No commands to be sent for state(%d)\n",
@@ -639,7 +643,9 @@ static int dsi_panel_update_backlight(struct dsi_panel *panel,
 {
 	int rc = 0;
 	struct mipi_dsi_device *dsi;
-
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 117))
+	size_t num_params = 1;
+#endif
 	if (!panel || (bl_lvl > 0xffff)) {
 		DSI_ERR("invalid params\n");
 		return -EINVAL;
@@ -647,10 +653,31 @@ static int dsi_panel_update_backlight(struct dsi_panel *panel,
 
 	dsi = &panel->mipi_device;
 
-	if (panel->bl_config.bl_inverted_dbv)
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 117))
+	/* The MIPI DCS specification demands that brightness values are sent in
+	 * big endian byte order i.e. first parameter is high byte and second
+	 * is low byte. But some panels require it in little endian byte order.
+	 * The `bl_inverted_dbv` bool was introduced for the panels
+	 * supporting big endian order, at the time when the driver was sending
+	 * commands in little endian order. We should fix the flag name which
+	 * sounds misleading. But, we can not change it at this moment of time,
+	 * due to some backward compatibility issue in device tree.
+	 */
+	if (panel->bl_config.bl_max_level > 0xff) {
+		num_params = 2;
+		if (!panel->bl_config.bl_inverted_dbv) {
+			/* panel requires bl_lvl in little endian */
+			bl_lvl = (((bl_lvl & 0xff) << 8) | (bl_lvl >> 8));
+		}
+	}
+	rc = mipi_dsi_dcs_set_display_brightness(dsi, bl_lvl, num_params);
+#else
+	if (panel->bl_config.bl_inverted_dbv) {
+		/* panel requires bl_lvl in big endian */
 		bl_lvl = (((bl_lvl & 0xff) << 8) | (bl_lvl >> 8));
-
+	}
 	rc = mipi_dsi_dcs_set_display_brightness(dsi, bl_lvl);
+#endif
 	if (rc < 0)
 		DSI_ERR("failed to update dcs backlight:%d\n", bl_lvl);
 
@@ -1194,6 +1221,9 @@ static int dsi_panel_parse_misc_host_config(struct dsi_host_common_cfg *host,
 		host->t_clk_pre = val;
 		DSI_DEBUG("[%s] t_clk_pre = %d\n", name, val);
 	}
+
+	host->t_clk_pre_extend = utils->read_bool(utils->data,
+						"qcom,mdss-dsi-t-clk-pre-extend");
 
 	host->ignore_rx_eot = utils->read_bool(utils->data,
 						"qcom,mdss-dsi-rx-eot-ignore");
@@ -4208,6 +4238,7 @@ int dsi_panel_send_roi_dcs(struct dsi_panel *panel, int ctrl_idx,
 	}
 	DSI_DEBUG("[%s] send roi x %d y %d w %d h %d\n", panel->name,
 			roi->x, roi->y, roi->w, roi->h);
+	SDE_EVT32(roi->x, roi->y, roi->w, roi->h);
 
 	mutex_lock(&panel->panel_lock);
 

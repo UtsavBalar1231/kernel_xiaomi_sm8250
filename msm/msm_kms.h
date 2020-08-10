@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
  *
@@ -121,7 +121,7 @@ struct msm_kms_funcs {
 	/* handle continuous splash  */
 	int (*cont_splash_config)(struct msm_kms *kms);
 	/* check for continuous splash status */
-	bool (*check_for_splash)(struct msm_kms *kms);
+	bool (*check_for_splash)(struct msm_kms *kms, struct drm_crtc *crtc);
 	/* topology information */
 	int (*get_mixer_count)(const struct msm_kms *kms,
 			const struct drm_display_mode *mode,

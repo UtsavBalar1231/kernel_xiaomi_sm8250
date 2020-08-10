@@ -248,6 +248,7 @@ static void _sde_plane_set_qos_lut(struct drm_plane *plane,
 	u32 frame_rate, qos_count, fps_index = 0, lut_index, index;
 	struct sde_perf_cfg *perf;
 	struct sde_plane_state *pstate;
+	struct sde_kms *kms;
 
 	if (!plane || !fb) {
 		SDE_ERROR("invalid arguments\n");
@@ -256,6 +257,11 @@ static void _sde_plane_set_qos_lut(struct drm_plane *plane,
 
 	psde = to_sde_plane(plane);
 	pstate = to_sde_plane_state(plane->state);
+	kms = _sde_plane_get_kms(plane);
+	if (!kms) {
+		SDE_ERROR("invalid kms\n");
+		return;
+	}
 
 	if (!psde->pipe_hw || !psde->pipe_sblk || !psde->catalog) {
 		SDE_ERROR("invalid arguments\n");
@@ -282,7 +288,12 @@ static void _sde_plane_set_qos_lut(struct drm_plane *plane,
 				fb->format->format,
 				fb->modifier);
 
-		if (fmt && SDE_FORMAT_IS_LINEAR(fmt))
+		if (fmt && SDE_FORMAT_IS_LINEAR(fmt) &&
+			pstate->scaler3_cfg.enable &&
+			IS_SDE_MAJOR_MINOR_SAME(kms->catalog->hwversion,
+							 SDE_HW_VER_640))
+			lut_index = SDE_QOS_LUT_USAGE_MACROTILE_QSEED;
+		else if (fmt && SDE_FORMAT_IS_LINEAR(fmt))
 			lut_index = SDE_QOS_LUT_USAGE_LINEAR;
 		else if (pstate->scaler3_cfg.enable)
 			lut_index = SDE_QOS_LUT_USAGE_MACROTILE_QSEED;
