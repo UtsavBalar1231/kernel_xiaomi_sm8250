@@ -62,8 +62,8 @@ target_if_peer_set_default_routing(struct cdp_ctrl_objmgr_psoc *psoc,
 
 	if (wmi_set_peer_param_send(pdev_wmi_handle, peer_macaddr, &param)) {
 		target_if_err("Unable to set default routing for peer "
-				QDF_MAC_ADDR_STR,
-				QDF_MAC_ADDR_ARRAY(peer_macaddr));
+				QDF_MAC_ADDR_FMT,
+				QDF_MAC_ADDR_REF(peer_macaddr));
 	}
 	wlan_objmgr_pdev_release_ref(pdev, WLAN_PDEV_TARGET_IF_ID);
 }
