@@ -624,8 +624,8 @@ static QDF_STATUS wma_self_peer_remove(tp_wma_handle wma_handle,
 	struct wma_target_req *msg = NULL;
 	struct del_sta_self_rsp_params *sta_self_wmi_rsp;
 
-	wma_debug("P2P Device: removing self peer %pM",
-		  del_vdev_req->self_mac_addr);
+	wma_debug("P2P Device: removing self peer "QDF_MAC_ADDR_FMT,
+		  QDF_MAC_ADDR_REF(del_vdev_req->self_mac_addr));
 
 	qdf_status = wma_remove_peer(wma_handle, del_vdev_req->self_mac_addr,
 				     vdev_id, false);
@@ -716,7 +716,8 @@ static void wma_remove_objmgr_peer(tp_wma_handle wma, uint8_t vdev_id,
 		/* Unref to decrement ref happened in find_peer */
 		wlan_objmgr_peer_release_ref(obj_peer, WLAN_LEGACY_WMA_ID);
 	} else {
-		WMA_LOGE("Peer %pM not found", peer_addr);
+		WMA_LOGE("Peer "QDF_MAC_ADDR_FMT" not found",
+			 QDF_MAC_ADDR_REF(peer_addr));
 	}
 
 	wlan_objmgr_vdev_release_ref(obj_vdev, WLAN_LEGACY_WMA_ID);
@@ -1079,9 +1080,9 @@ static void wma_peer_send_phymode(struct wlan_objmgr_vdev *vdev,
 	wma_set_peer_param(wma, peer_mac_addr, WMI_PEER_CHWIDTH,
 			   max_ch_width_supported, vdev_id);
 
-	wma_debug("FW phymode %d old phymode %d new phymode %d bw %d macaddr "QDF_MAC_ADDR_STR,
+	wma_debug("FW phymode %d old phymode %d new phymode %d bw %d macaddr "QDF_MAC_ADDR_FMT,
 		  fw_phymode, old_peer_phymode, new_phymode,
-		  max_ch_width_supported, QDF_MAC_ADDR_ARRAY(peer_mac_addr));
+		  max_ch_width_supported, QDF_MAC_ADDR_REF(peer_mac_addr));
 }
 
 static
@@ -1565,8 +1566,8 @@ QDF_STATUS wma_remove_peer(tp_wma_handle wma, uint8_t *mac_addr,
 	uint8_t peer_vdev_id;
 
 	if (!wma->interfaces[vdev_id].peer_count) {
-		WMA_LOGE("%s: Can't remove peer with peer_addr %pM vdevid %d peer_count %d",
-			 __func__, peer_addr, vdev_id,
+		WMA_LOGE("%s: Can't remove peer with peer_addr "QDF_MAC_ADDR_FMT" vdevid %d peer_count %d",
+			 __func__, QDF_MAC_ADDR_REF(peer_addr), vdev_id,
 			wma->interfaces[vdev_id].peer_count);
 		cds_trigger_recovery(QDF_REASON_UNSPECIFIED);
 		return QDF_STATUS_E_INVAL;
@@ -1579,15 +1580,15 @@ QDF_STATUS wma_remove_peer(tp_wma_handle wma, uint8_t *mac_addr,
 	}
 
 	if (!wma_objmgr_peer_exist(wma, peer_addr, &peer_vdev_id)) {
-		wma_err("peer doesn't exist peer_addr %pM vdevid %d peer_count %d",
-			 peer_addr, vdev_id,
+		wma_err("peer doesn't exist peer_addr "QDF_MAC_ADDR_FMT" vdevid %d peer_count %d",
+			 QDF_MAC_ADDR_REF(peer_addr), vdev_id,
 			 wma->interfaces[vdev_id].peer_count);
 		return QDF_STATUS_E_INVAL;
 	}
 
 	if (peer_vdev_id != vdev_id) {
-		wma_err("peer %pM is on vdev id %d but delete req on vdevid %d peer_count %d",
-			 peer_addr, peer_vdev_id, vdev_id,
+		wma_err("peer "QDF_MAC_ADDR_FMT" is on vdev id %d but delete req on vdevid %d peer_count %d",
+			 QDF_MAC_ADDR_REF(peer_addr), peer_vdev_id, vdev_id,
 			 wma->interfaces[vdev_id].peer_count);
 		return QDF_STATUS_E_INVAL;
 	}
@@ -1622,16 +1623,16 @@ QDF_STATUS wma_remove_peer(tp_wma_handle wma, uint8_t *mac_addr,
 	}
 
 peer_detach:
-	WMA_LOGD("%s: vdevid %d is detaching with peer_addr %pM peer_count %d",
-		__func__, vdev_id, peer_addr,
+	WMA_LOGD("%s: vdevid %d is detaching with peer_addr "QDF_MAC_ADDR_FMT" peer_count %d",
+		__func__, vdev_id, QDF_MAC_ADDR_REF(peer_addr),
 		wma->interfaces[vdev_id].peer_count);
 	/* Copy peer mac to find and delete objmgr peer */
 	qdf_mem_copy(peer_mac, peer_addr, QDF_MAC_ADDR_SIZE);
 	if (roam_synch_in_progress &&
 	    is_cdp_peer_detach_force_delete_supported(soc)) {
 		if (!peer_unmap_conf_support_enabled) {
-			WMA_LOGD("%s: LFR3: trigger force delete for peer %pM",
-				 __func__, peer_addr);
+			WMA_LOGD("%s: LFR3: trigger force delete for peer "QDF_MAC_ADDR_FMT,
+				 __func__, QDF_MAC_ADDR_REF(peer_addr));
 			cdp_peer_detach_force_delete(soc, vdev_id, peer_addr);
 		} else {
 			cdp_peer_delete_sync(soc, vdev_id, peer_addr,
@@ -1640,8 +1641,8 @@ peer_detach:
 		}
 	} else {
 		if (roam_synch_in_progress) {
-			WMA_LOGD("%s: LFR3: normal peer delete for peer %pM",
-				 __func__, peer_addr);
+			WMA_LOGD("%s: LFR3: normal peer delete for peer "QDF_MAC_ADDR_FMT,
+				 __func__, QDF_MAC_ADDR_REF(peer_addr));
 		}
 		if (peer_unmap_conf_support_enabled)
 			cdp_peer_delete_sync(soc, vdev_id, peer_addr,
@@ -1736,8 +1737,8 @@ static struct wlan_objmgr_peer *wma_create_objmgr_peer(tp_wma_handle wma,
 	 * adding this peer.
 	 */
 	if (wma_objmgr_peer_exist(wma, peer_addr, &peer_vdev_id)) {
-		wma_info("Peer %pM already exist on vdev %d, current vdev %d",
-			  peer_addr, peer_vdev_id, vdev_id);
+		wma_info("Peer "QDF_MAC_ADDR_FMT" already exist on vdev %d, current vdev %d",
+			  QDF_MAC_ADDR_REF(peer_addr), peer_vdev_id, vdev_id);
 		return NULL;
 	}
 
@@ -1837,7 +1838,8 @@ QDF_STATUS wma_create_peer(tp_wma_handle wma,
 	 */
 	status = cdp_peer_create(dp_soc, vdev_id, peer_addr);
 	if (QDF_IS_STATUS_ERROR(status)) {
-		WMA_LOGE("%s : Unable to attach peer %pM", __func__, peer_addr);
+		WMA_LOGE("%s : Unable to attach peer "QDF_MAC_ADDR_FMT,
+			 __func__, QDF_MAC_ADDR_REF(peer_addr));
 		wlan_objmgr_peer_obj_delete(obj_peer);
 		goto err;
 	}
@@ -1846,8 +1848,9 @@ QDF_STATUS wma_create_peer(tp_wma_handle wma,
 		cdp_peer_set_peer_as_tdls(dp_soc, vdev_id, peer_addr, true);
 
 	if (roam_synch_in_progress) {
-		WMA_LOGD("%s: LFR3: Created peer %pM vdev_id %d, peer_count %d",
-			 __func__, peer_addr, vdev_id,
+		WMA_LOGD("%s: LFR3: Created peer "QDF_MAC_ADDR_FMT" vdev_id %d, peer_count %d",
+			 __func__,
+			 QDF_MAC_ADDR_REF(peer_addr), vdev_id,
 			 wma->interfaces[vdev_id].peer_count);
 		cdp_peer_setup(dp_soc, vdev_id, peer_addr);
 		return QDF_STATUS_SUCCESS;
@@ -1871,8 +1874,8 @@ QDF_STATUS wma_create_peer(tp_wma_handle wma,
 		goto err;
 	}
 
-	WMA_LOGD("%s: Created peer peer_addr %pM vdev_id %d, peer_count - %d",
-		  __func__, peer_addr, vdev_id,
+	WMA_LOGD("%s: Created peer peer_addr "QDF_MAC_ADDR_FMT" vdev_id %d, peer_count - %d",
+		  __func__, QDF_MAC_ADDR_REF(peer_addr), vdev_id,
 		  wma->interfaces[vdev_id].peer_count);
 
 	wlan_roam_debug_log(vdev_id, DEBUG_PEER_CREATE_SEND,
@@ -1894,8 +1897,8 @@ QDF_STATUS wma_create_peer(tp_wma_handle wma,
 		if (!key_info) {
 			return QDF_STATUS_E_NOMEM;
 		}
-		WMA_LOGD("%s: remote ibss peer %pM key clearing\n", __func__,
-			 peer_addr);
+		WMA_LOGD("%s: remote ibss peer "QDF_MAC_ADDR_FMT" key clearing\n",
+			 __func__, QDF_MAC_ADDR_REF(peer_addr));
 		qdf_mem_zero(key_info, sizeof(*key_info));
 		key_info->vdev_id = vdev_id;
 		qdf_mem_copy(key_info->peer_macaddr.bytes, peer_addr,
@@ -2310,21 +2313,22 @@ __wma_handle_vdev_stop_rsp(struct vdev_stop_response *resp_event)
 		peer_exist = cdp_find_peer_exist(soc, OL_TXRX_PDEV_ID,
 						 bssid.bytes);
 		if (!peer_exist) {
-			WMA_LOGE("%s: Failed to find peer %pM", __func__,
-				 bssid.bytes);
+			WMA_LOGE("%s: Failed to find peer "QDF_MAC_ADDR_FMT,
+				 __func__, QDF_MAC_ADDR_REF(bssid.bytes));
 			status = QDF_STATUS_E_FAILURE;
 			goto free_params;
 		}
 
 		if (!iface->peer_count) {
-			WMA_LOGE("%s: Can't remove peer with peer_addr %pM vdevid %d peer_count %d",
-				 __func__, bssid.bytes, resp_event->vdev_id,
+			WMA_LOGE("%s: Can't remove peer with peer_addr "QDF_MAC_ADDR_FMT" vdevid %d peer_count %d",
+				 __func__, QDF_MAC_ADDR_REF(bssid.bytes),
+				 resp_event->vdev_id,
 				 iface->peer_count);
 			goto free_params;
 		}
 
-		WMA_LOGD("%s: peer_addr %pM to vdev_id %d, peer_count - %d",
-			 __func__, bssid.bytes,
+		WMA_LOGD("%s: peer_addr "QDF_MAC_ADDR_FMT" to vdev_id %d, peer_count - %d",
+			 __func__, QDF_MAC_ADDR_REF(bssid.bytes),
 			 resp_event->vdev_id, iface->peer_count);
 		if (cdp_cfg_get_peer_unmap_conf_support(soc))
 			cdp_peer_delete_sync(soc, resp_event->vdev_id,
@@ -2339,8 +2343,8 @@ __wma_handle_vdev_stop_rsp(struct vdev_stop_response *resp_event)
 				       bssid.bytes);
 		iface->peer_count--;
 
-		WMA_LOGI("%s: Removed peer %pM vdev_id %d, peer_count %d",
-			 __func__, bssid.bytes,
+		WMA_LOGI("%s: Removed peer "QDF_MAC_ADDR_FMT" vdev_id %d, peer_count %d",
+			 __func__, QDF_MAC_ADDR_REF(bssid.bytes),
 			 resp_event->vdev_id, iface->peer_count);
 		vdev_stop_resp->status = status;
 		vdev_stop_resp->vdev_id = resp_event->vdev_id;
@@ -2946,8 +2950,8 @@ int wma_peer_assoc_conf_handler(void *handle, uint8_t *cmd_param_info,
 	}
 
 	WMI_MAC_ADDR_TO_CHAR_ARRAY(&event->peer_macaddr, macaddr);
-	WMA_LOGD(FL("peer assoc conf for vdev:%d mac=%pM"),
-		 event->vdev_id, macaddr);
+	WMA_LOGD(FL("peer assoc conf for vdev:%d mac="QDF_MAC_ADDR_FMT),
+		 event->vdev_id, QDF_MAC_ADDR_REF(macaddr));
 
 	req_msg = wma_find_req(wma, event->vdev_id,
 				    WMA_PEER_ASSOC_CNF_START);
@@ -2972,9 +2976,9 @@ int wma_peer_assoc_conf_handler(void *handle, uint8_t *cmd_param_info,
 
 		/* peer assoc conf event means the cmd succeeds */
 		params->status = event->status;
-		WMA_LOGD(FL("Send ADD_STA_RSP: statype %d vdev_id %d aid %d bssid %pM status %d"),
+		WMA_LOGD(FL("Send ADD_STA_RSP: statype %d vdev_id %d aid %d bssid "QDF_MAC_ADDR_FMT" status %d"),
 			 params->staType, params->smesessionId,
-			 params->assocId, params->bssId,
+			 params->assocId, QDF_MAC_ADDR_REF(params->bssId),
 			 params->status);
 		wma_send_msg_high_priority(wma, WMA_ADD_STA_RSP,
 					   (void *)params, 0);
@@ -3024,8 +3028,8 @@ int wma_peer_delete_handler(void *handle, uint8_t *cmd_param_info,
 	}
 
 	WMI_MAC_ADDR_TO_CHAR_ARRAY(&event->peer_macaddr, macaddr);
-	WMA_LOGD(FL("Peer Delete Response, vdev %d Peer %pM"),
-			event->vdev_id, macaddr);
+	WMA_LOGD(FL("Peer Delete Response, vdev %d Peer "QDF_MAC_ADDR_FMT),
+			event->vdev_id, QDF_MAC_ADDR_REF(macaddr));
 	wlan_roam_debug_log(event->vdev_id, DEBUG_PEER_DELETE_RESP,
 			    DEBUG_INVALID_PEER_ID, macaddr, NULL, 0, 0);
 	req_msg = wma_find_remove_req_msgtype(wma, event->vdev_id,
@@ -3132,8 +3136,8 @@ void wma_hold_req_timer(void *data)
 
 		params->status = QDF_STATUS_E_TIMEOUT;
 		WMA_LOGA(FL("WMA_ADD_STA_REQ timed out"));
-		WMA_LOGD(FL("Sending add sta rsp to umac (mac:%pM, status:%d)"),
-			 params->staMac, params->status);
+		WMA_LOGD(FL("Sending add sta rsp to umac (mac:"QDF_MAC_ADDR_FMT", status:%d)"),
+			 QDF_MAC_ADDR_REF(params->staMac), params->status);
 		if (wma_crash_on_fw_timeout(wma->fw_timeout_crash))
 			wma_trigger_recovery_assert_on_fw_timeout(
 				WMA_ADD_STA_REQ,
@@ -3159,8 +3163,8 @@ void wma_hold_req_timer(void *data)
 				(tpDeleteStaParams) tgt_req->user_data;
 		params->status = QDF_STATUS_E_TIMEOUT;
 		WMA_LOGE(FL("WMA_DEL_STA_REQ timed out"));
-		WMA_LOGE(FL("Sending del sta rsp to umac (mac:%pM, status:%d)"),
-			 params->staMac, params->status);
+		WMA_LOGE(FL("Sending del sta rsp to umac (mac:"QDF_MAC_ADDR_FMT", status:%d)"),
+			 QDF_MAC_ADDR_REF(params->staMac), params->status);
 
 		if (wma_crash_on_fw_timeout(wma->fw_timeout_crash))
 			wma_trigger_recovery_assert_on_fw_timeout(
@@ -3429,13 +3433,14 @@ wma_set_peer_pmf_status(tp_wma_handle wma, uint8_t *peer_mac,
 				    wlan_objmgr_pdev_get_pdev_id(wma->pdev),
 				    peer_mac, WLAN_LEGACY_WMA_ID);
 	if (!peer) {
-		WMA_LOGE("Peer of peer_mac %pM not found",
-			 peer_mac);
+		WMA_LOGE("Peer of peer_mac "QDF_MAC_ADDR_FMT" not found",
+			 QDF_MAC_ADDR_REF(peer_mac));
 		return QDF_STATUS_E_INVAL;
 	}
 	mlme_set_peer_pmf_status(peer, is_pmf_enabled);
 	wlan_objmgr_peer_release_ref(peer, WLAN_LEGACY_WMA_ID);
-	WMA_LOGD("set is_pmf_enabled %d for %pM", is_pmf_enabled, peer_mac);
+	WMA_LOGD("set is_pmf_enabled %d for "QDF_MAC_ADDR_FMT,
+		 is_pmf_enabled, QDF_MAC_ADDR_REF(peer_mac));
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -3493,7 +3498,8 @@ QDF_STATUS wma_pre_vdev_start_setup(uint8_t vdev_id,
 	}
 
 	if (!cdp_find_peer_exist(soc, OL_TXRX_PDEV_ID, mac_addr)) {
-		wma_err("Failed to find peer %pM", mac_addr);
+		wma_err("Failed to find peer "QDF_MAC_ADDR_FMT,
+			 QDF_MAC_ADDR_REF(mac_addr));
 		return QDF_STATUS_E_FAILURE;
 	}
 
@@ -3648,9 +3654,9 @@ QDF_STATUS wma_save_bss_params(tp_wma_handle wma, struct bss_params *add_bss)
 	qdf_mem_copy(add_bss->staContext.staMac, add_bss->bssId,
 		     sizeof(add_bss->staContext.staMac));
 
-	WMA_LOGD("%s: update_bss %d nw_type %d bssid %pM status %d",
-		 __func__, add_bss->updateBss, add_bss->nwType, add_bss->bssId,
-		 status);
+	WMA_LOGD("%s: update_bss %d nw_type %d bssid "QDF_MAC_ADDR_FMT" status %d",
+		 __func__, add_bss->updateBss, add_bss->nwType,
+		 QDF_MAC_ADDR_REF(add_bss->bssId), status);
 
 	return status;
 }
@@ -3684,11 +3690,12 @@ void wma_add_bss_lfr3(tp_wma_handle wma, struct bss_params *add_bss)
 		return;
 
 	if (!wma_cdp_find_peer_by_addr(add_bss->bssId)) {
-		WMA_LOGE("%s Failed to find peer %pM", __func__,
-			 add_bss->bssId);
+		WMA_LOGE("%s Failed to find peer "QDF_MAC_ADDR_FMT, __func__,
+			 QDF_MAC_ADDR_REF(add_bss->bssId));
 		return;
 	}
-	WMA_LOGD("LFR3:%s: bssid %pM", __func__, add_bss->bssId);
+	WMA_LOGD("LFR3:%s: bssid "QDF_MAC_ADDR_FMT, __func__,
+		 QDF_MAC_ADDR_REF(add_bss->bssId));
 }
 
 
@@ -3754,8 +3761,8 @@ QDF_STATUS wma_add_bss_lfr2_vdev_start(struct wlan_objmgr_vdev *vdev,
 
 	peer_exist = wma_cdp_find_peer_by_addr(mlme_obj->mgmt.generic.bssid);
 	if (!peer_exist) {
-		wma_err("Failed to find peer %pM",
-			mlme_obj->mgmt.generic.bssid);
+		wma_err("Failed to find peer "QDF_MAC_ADDR_FMT,
+			QDF_MAC_ADDR_REF(mlme_obj->mgmt.generic.bssid));
 		goto send_fail_resp;
 	}
 
@@ -3826,21 +3833,21 @@ QDF_STATUS wma_send_peer_assoc_req(struct bss_params *add_bss)
 		goto send_resp;
 
 	if (!peer_exist) {
-		WMA_LOGE("%s: %d Failed to find peer %pM",
-			 __func__, __LINE__, add_bss->bssId);
+		WMA_LOGE("%s: %d Failed to find peer "QDF_MAC_ADDR_FMT,
+			 __func__, __LINE__, QDF_MAC_ADDR_REF(add_bss->bssId));
 		status = QDF_STATUS_E_FAILURE;
 		goto send_resp;
 	}
 
 
 	if (add_bss->staContext.encryptType == eSIR_ED_NONE) {
-		WMA_LOGD("%s: Update peer(%pM) state into auth",
-			 __func__, add_bss->bssId);
+		WMA_LOGD("%s: Update peer("QDF_MAC_ADDR_FMT") state into auth",
+			 __func__, QDF_MAC_ADDR_REF(add_bss->bssId));
 		cdp_peer_state_update(soc, add_bss->bssId,
 				      OL_TXRX_PEER_STATE_AUTH);
 	} else {
-		WMA_LOGD("%s: Update peer(%pM) state into conn",
-			 __func__, add_bss->bssId);
+		WMA_LOGD("%s: Update peer("QDF_MAC_ADDR_FMT") state into conn",
+			 __func__, QDF_MAC_ADDR_REF(add_bss->bssId));
 		cdp_peer_state_update(soc, add_bss->bssId,
 				      OL_TXRX_PEER_STATE_CONN);
 		status = wma_set_cdp_vdev_pause_reason(wma, vdev_id);
@@ -3967,8 +3974,8 @@ static void wma_add_sta_req_ap_mode(tp_wma_handle wma, tpAddStaParams add_sta)
 					add_sta->staMac)) {
 		wma_remove_peer(wma, add_sta->staMac, add_sta->smesessionId,
 				false);
-		WMA_LOGE("%s: Peer already exists, Deleted peer with peer_addr %pM",
-			__func__, add_sta->staMac);
+		WMA_LOGE("%s: Peer already exists, Deleted peer with peer_addr "QDF_MAC_ADDR_FMT,
+			__func__, QDF_MAC_ADDR_REF(add_sta->staMac));
 	}
 	/* The code above only checks the peer existence on its own vdev.
 	 * Need to check whether the peer exists on other vDevs because firmware
@@ -3977,8 +3984,9 @@ static void wma_add_sta_req_ap_mode(tp_wma_handle wma, tpAddStaParams add_sta)
 	 * here.
 	 */
 	if (cdp_find_peer_exist(soc, pdev_id, add_sta->staMac)) {
-		WMA_LOGE("%s: My vdev id %d, but Peer exists on other vdev with peer_addr %pM",
-			 __func__, add_sta->smesessionId, add_sta->staMac);
+		WMA_LOGE("%s: My vdev id %d, but Peer exists on other vdev with peer_addr "QDF_MAC_ADDR_FMT,
+			 __func__, add_sta->smesessionId,
+			 QDF_MAC_ADDR_REF(add_sta->staMac));
 		add_sta->status = QDF_STATUS_E_FAILURE;
 		goto send_rsp;
 	}
@@ -3988,16 +3996,16 @@ static void wma_add_sta_req_ap_mode(tp_wma_handle wma, tpAddStaParams add_sta)
 	status = wma_create_peer(wma, add_sta->staMac, WMI_PEER_TYPE_DEFAULT,
 				 add_sta->smesessionId, false);
 	if (status != QDF_STATUS_SUCCESS) {
-		WMA_LOGE("%s: Failed to create peer for %pM",
-			 __func__, add_sta->staMac);
+		WMA_LOGE("%s: Failed to create peer for "QDF_MAC_ADDR_FMT,
+			 __func__, QDF_MAC_ADDR_REF(add_sta->staMac));
 		add_sta->status = status;
 		goto send_rsp;
 	}
 
 	if (!cdp_find_peer_exist_on_vdev(soc, add_sta->smesessionId,
 					 add_sta->staMac)) {
-		WMA_LOGE("%s: Failed to find peer handle using peer mac %pM",
-			 __func__, add_sta->staMac);
+		WMA_LOGE("%s: Failed to find peer handle using peer mac "QDF_MAC_ADDR_FMT,
+			 __func__, QDF_MAC_ADDR_REF(add_sta->staMac));
 		add_sta->status = QDF_STATUS_E_FAILURE;
 		wma_remove_peer(wma, add_sta->staMac, add_sta->smesessionId,
 				false);
@@ -4081,8 +4089,8 @@ static void wma_add_sta_req_ap_mode(tp_wma_handle wma, tpAddStaParams add_sta)
 					    add_sta->staMac,
 					    add_sta->uAPSD, add_sta->maxSPLen);
 		if (QDF_IS_STATUS_ERROR(status)) {
-			WMA_LOGE("Failed to set peer uapsd param for %pM",
-				 add_sta->staMac);
+			WMA_LOGE("Failed to set peer uapsd param for "QDF_MAC_ADDR_FMT,
+				 QDF_MAC_ADDR_REF(add_sta->staMac));
 			add_sta->status = QDF_STATUS_E_FAILURE;
 			wma_remove_peer(wma, add_sta->staMac,
 					add_sta->smesessionId, false);
@@ -4090,8 +4098,8 @@ static void wma_add_sta_req_ap_mode(tp_wma_handle wma, tpAddStaParams add_sta)
 		}
 	}
 
-	WMA_LOGD("%s: Moving peer %pM to state %d",
-		 __func__, add_sta->staMac, state);
+	WMA_LOGD("%s: Moving peer "QDF_MAC_ADDR_FMT" to state %d",
+		 __func__, QDF_MAC_ADDR_REF(add_sta->staMac), state);
 	cdp_peer_state_update(soc, add_sta->staMac, state);
 
 	add_sta->nss    = iface->nss;
@@ -4103,9 +4111,9 @@ send_rsp:
 		return;
 	}
 
-	WMA_LOGD(FL("statype %d vdev_id %d aid %d bssid %pM status %d"),
+	WMA_LOGD(FL("statype %d vdev_id %d aid %d bssid "QDF_MAC_ADDR_FMT" status %d"),
 		 add_sta->staType, add_sta->smesessionId,
-		 add_sta->assocId, add_sta->bssId,
+		 add_sta->assocId, QDF_MAC_ADDR_REF(add_sta->bssId),
 		 add_sta->status);
 	wma_send_msg_high_priority(wma, WMA_ADD_STA_RSP, (void *)add_sta, 0);
 }
@@ -4129,9 +4137,10 @@ static void wma_add_tdls_sta(tp_wma_handle wma, tpAddStaParams add_sta)
 	void *soc = cds_get_context(QDF_MODULE_ID_SOC);
 	uint8_t pdev_id = OL_TXRX_PDEV_ID;
 
-	WMA_LOGD("%s: staType: %d, updateSta: %d, bssId: %pM, staMac: %pM",
+	WMA_LOGD("%s: staType: %d, updateSta: %d, bssId: "QDF_MAC_ADDR_FMT", staMac: "QDF_MAC_ADDR_FMT,
 		 __func__, add_sta->staType,
-		 add_sta->updateSta, add_sta->bssId, add_sta->staMac);
+		 add_sta->updateSta, QDF_MAC_ADDR_REF(add_sta->bssId),
+		 QDF_MAC_ADDR_REF(add_sta->staMac));
 
 	if (wma_is_roam_synch_in_progress(wma, add_sta->smesessionId) ||
 	    wma_is_roam_in_progress(add_sta->smesessionId)) {
@@ -4146,21 +4155,22 @@ static void wma_add_tdls_sta(tp_wma_handle wma, tpAddStaParams add_sta)
 		cdp_peer_copy_mac_addr_raw(soc, add_sta->smesessionId,
 					   add_sta->bssId);
 
-		WMA_LOGD("%s: addSta, calling wma_create_peer for %pM, vdev_id %hu",
-			__func__, add_sta->staMac, add_sta->smesessionId);
+		WMA_LOGD("%s: addSta, calling wma_create_peer for "QDF_MAC_ADDR_FMT", vdev_id %hu",
+			__func__, QDF_MAC_ADDR_REF(add_sta->staMac),
+			add_sta->smesessionId);
 
 		status = wma_create_peer(wma, add_sta->staMac,
 					 WMI_PEER_TYPE_TDLS,
 					 add_sta->smesessionId, false);
 		if (status != QDF_STATUS_SUCCESS) {
-			WMA_LOGE("%s: Failed to create peer for %pM",
-				 __func__, add_sta->staMac);
+			WMA_LOGE("%s: Failed to create peer for "QDF_MAC_ADDR_FMT,
+				 __func__, QDF_MAC_ADDR_REF(add_sta->staMac));
 			add_sta->status = status;
 			goto send_rsp;
 		}
 
-		WMA_LOGD("%s: addSta, after calling cdp_local_peer_id, staMac: %pM",
-			 __func__, add_sta->staMac);
+		WMA_LOGD("%s: addSta, after calling cdp_local_peer_id, staMac: "QDF_MAC_ADDR_FMT,
+			 __func__, QDF_MAC_ADDR_REF(add_sta->staMac));
 
 		peer_state = qdf_mem_malloc(sizeof(*peer_state));
 	if (!peer_state) {
@@ -4222,9 +4232,9 @@ send_rsp:
 	if (peer_assoc_cnf)
 		return;
 
-	WMA_LOGD(FL("statype %d vdev_id %d aid %d bssid %pM status %d"),
+	WMA_LOGD(FL("statype %d vdev_id %d aid %d bssid "QDF_MAC_ADDR_FMT" status %d"),
 		 add_sta->staType, add_sta->smesessionId,
-		 add_sta->assocId, add_sta->bssId,
+		 add_sta->assocId, QDF_MAC_ADDR_REF(add_sta->bssId),
 		 add_sta->status);
 	wma_send_msg_high_priority(wma, WMA_ADD_STA_RSP, (void *)add_sta, 0);
 }
@@ -4310,8 +4320,9 @@ static void wma_add_sta_req_sta_mode(tp_wma_handle wma, tpAddStaParams params)
 	}
 
 	if (wma_is_vdev_up(params->smesessionId)) {
-		WMA_LOGD("%s: vdev id %d is already UP for %pM", __func__,
-			 params->smesessionId, params->bssId);
+		WMA_LOGD("%s: vdev id %d is already UP for "QDF_MAC_ADDR_FMT,
+			 __func__, params->smesessionId,
+			 QDF_MAC_ADDR_REF(params->bssId));
 		status = QDF_STATUS_E_FAILURE;
 		goto out;
 	}
@@ -4326,13 +4337,13 @@ static void wma_add_sta_req_sta_mode(tp_wma_handle wma, tpAddStaParams params)
 
 		/* Update peer state */
 		if (params->encryptType == eSIR_ED_NONE) {
-			WMA_LOGD("%s: Update peer(%pM) state into auth",
-				 __func__, params->bssId);
+			WMA_LOGD("%s: Update peer("QDF_MAC_ADDR_FMT") state into auth",
+				 __func__, QDF_MAC_ADDR_REF(params->bssId));
 			cdp_peer_state_update(soc, params->bssId,
 					      OL_TXRX_PEER_STATE_AUTH);
 		} else {
-			WMA_LOGD("%s: Update peer(%pM) state into conn",
-				 __func__, params->bssId);
+			WMA_LOGD("%s: Update peer("QDF_MAC_ADDR_FMT") state into conn",
+				 __func__, QDF_MAC_ADDR_REF(params->bssId));
 			cdp_peer_state_update(soc, params->bssId,
 					      OL_TXRX_PEER_STATE_CONN);
 		}
@@ -4349,9 +4360,10 @@ static void wma_add_sta_req_sta_mode(tp_wma_handle wma, tpAddStaParams params)
 			qdf_atomic_set(&iface->bss_status,
 				       WMA_BSS_STATUS_STARTED);
 			iface->aid = params->assocId;
-			WMA_LOGD("LFR3:statype %d vdev %d aid %d bssid %pM",
+			WMA_LOGD("LFR3:statype %d vdev %d aid %d bssid "QDF_MAC_ADDR_FMT,
 					params->staType, params->smesessionId,
-					params->assocId, params->bssId);
+					params->assocId,
+					QDF_MAC_ADDR_REF(params->bssId));
 			return;
 		}
 		wmi_unified_send_txbf(wma, params);
@@ -4499,9 +4511,9 @@ out:
 		return;
 
 	params->status = status;
-	wma_debug("vdev_id %d aid %d sta mac " QDF_MAC_ADDR_STR " status %d",
+	wma_debug("vdev_id %d aid %d sta mac " QDF_MAC_ADDR_FMT " status %d",
 		  params->smesessionId, params->assocId,
-		  QDF_MAC_ADDR_ARRAY(params->bssId), params->status);
+		  QDF_MAC_ADDR_REF(params->bssId), params->status);
 	/* Don't send a response during roam sync operation */
 	if (!wma_is_roam_synch_in_progress(wma, params->smesessionId))
 		wma_send_msg_high_priority(wma, WMA_ADD_STA_RSP,
@@ -4586,8 +4598,8 @@ static void wma_del_tdls_sta(tp_wma_handle wma, tpDeleteStaParams del_sta)
 	qdf_mem_copy(&peer_state->peer_macaddr,
 		     &del_sta->staMac, sizeof(tSirMacAddr));
 
-	WMA_LOGD("%s: sending tdls_peer_state for peer mac: %pM, peerState: %d",
-		 __func__, peer_state->peer_macaddr,
+	WMA_LOGD("%s: sending tdls_peer_state for peer mac: "QDF_MAC_ADDR_FMT", peerState: %d",
+		 __func__, QDF_MAC_ADDR_REF(peer_state->peer_macaddr),
 		 peer_state->peer_state);
 
 	status = wma_update_tdls_peer_state(wma, peer_state);
@@ -4685,7 +4697,8 @@ void wma_add_sta(tp_wma_handle wma, tpAddStaParams add_sta)
 		return;
 	}
 
-	wma_debug("Vdev %d BSSID %pM", add_sta->smesessionId, add_sta->bssId);
+	wma_debug("Vdev %d BSSID "QDF_MAC_ADDR_FMT, add_sta->smesessionId,
+		  QDF_MAC_ADDR_REF(add_sta->bssId));
 
 	if (wma_is_vdev_in_ap_mode(wma, add_sta->smesessionId))
 		oper_mode = BSS_OPERATIONAL_MODE_AP;
@@ -4977,8 +4990,8 @@ void wma_delete_bss(tp_wma_handle wma, uint8_t vdev_id)
 	else
 		peer_exist = wma_cdp_find_peer_by_addr(bssid.bytes);
 	if (!peer_exist) {
-		WMA_LOGE("%s: Failed to find peer %pM", __func__,
-			 bssid.bytes);
+		WMA_LOGE("%s: Failed to find peer "QDF_MAC_ADDR_FMT, __func__,
+			 QDF_MAC_ADDR_REF(bssid.bytes));
 		status = QDF_STATUS_E_FAILURE;
 		goto out;
 	}
@@ -5058,8 +5071,8 @@ void wma_delete_bss(tp_wma_handle wma, uint8_t vdev_id)
 		qdf_atomic_set(&iface->bss_status, WMA_BSS_STATUS_STOPPED);
 		goto detach_peer;
 	}
-	WMA_LOGD("%s: bssid %pM vdev_id %d",
-		 __func__, bssid.bytes, vdev_id);
+	WMA_LOGD("%s: bssid "QDF_MAC_ADDR_FMT" vdev_id %d",
+		 __func__, QDF_MAC_ADDR_REF(bssid.bytes), vdev_id);
 
 	return;
 
@@ -5240,7 +5253,8 @@ QDF_STATUS wma_add_bss_peer_sta(uint8_t *self_mac, uint8_t *bssid,
 		goto err;
 	}
 	if (wma_find_vdev_id_by_addr(wma, self_mac, &vdev_id)) {
-		WMA_LOGE("vdev not found for addr: %pM", self_mac);
+		WMA_LOGE("vdev not found for addr: "QDF_MAC_ADDR_FMT,
+			 QDF_MAC_ADDR_REF(self_mac));
 		goto err;
 	}
 	status = wma_create_peer(wma, bssid, WMI_PEER_TYPE_DEFAULT,
