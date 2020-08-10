@@ -2109,6 +2109,23 @@ void dp_set_max_page_size(struct qdf_mem_multi_page_t *pages,
 #endif /* MAX_ALLOC_PAGE_SIZE */
 
 #ifdef DP_MEM_PRE_ALLOC
+/**
+ * dp_desc_multi_pages_mem_alloc() - alloc memory over multiple pages
+ * @soc: datapath soc handle
+ * @desc_type: memory request source type
+ * @pages: multi page information storage
+ * @element_size: each element size
+ * @element_num: total number of elements should be allocated
+ * @memctxt: memory context
+ * @cacheable: coherent memory or cacheable memory
+ *
+ * This function is a wrapper for memory allocation over multiple
+ * pages, if dp prealloc method is registered, then will try prealloc
+ * firstly. if prealloc failed, fall back to regular way over
+ * qdf_mem_multi_pages_alloc().
+ *
+ * Return: None
+ */
 void dp_desc_multi_pages_mem_alloc(struct dp_soc *soc,
 				   enum dp_desc_type desc_type,
 				   struct qdf_mem_multi_page_t *pages,
@@ -2117,6 +2134,20 @@ void dp_desc_multi_pages_mem_alloc(struct dp_soc *soc,
 				   qdf_dma_context_t memctxt,
 				   bool cacheable);
 
+/**
+ * dp_desc_multi_pages_mem_free() - free multiple pages memory
+ * @soc: datapath soc handle
+ * @desc_type: memory request source type
+ * @pages: multi page information storage
+ * @memctxt: memory context
+ * @cacheable: coherent memory or cacheable memory
+ *
+ * This function is a wrapper for multiple pages memory free,
+ * if memory is got from prealloc pool, put it back to pool.
+ * otherwise free by qdf_mem_multi_pages_free().
+ *
+ * Return: None
+ */
 void dp_desc_multi_pages_mem_free(struct dp_soc *soc,
 				  enum dp_desc_type desc_type,
 				  struct qdf_mem_multi_page_t *pages,
