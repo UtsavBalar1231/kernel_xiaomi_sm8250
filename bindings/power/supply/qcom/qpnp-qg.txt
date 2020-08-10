@@ -455,6 +455,12 @@ First Level Node - QGAUGE device
 	Definition: Enable SMB-sensing for CP. Enabling this property
 		    will enable QG summing the SMB current.
 
+- qcom,esr-low-temp-threshold
+	Usage:      optional
+	Value type: <int>
+	Definition: Battery temperature threshold below which ESR is ignored.
+		    The default value is 10degC.
+
 ==========================================================
 Second Level Nodes - Peripherals managed by QGAUGE driver
 ==========================================================

@@ -2229,7 +2229,8 @@
 
 		qca,bt-vdd-io-voltage-level = <1700000 1900000>;
 		qca,bt-vdd-core-voltage-level = <1304000 1304000>;
-		qca,bt-vdd-pa-voltage-level = <3000000 3312000>;
+		/*To support 2.85V level for LDO22 at lower SOC level*/
+		qca,bt-vdd-pa-voltage-level = <2850000 3312000>;
 		qca,bt-vdd-xtal-voltage-level = <1700000 1900000>;
 
 		qca,bt-vdd-io-current-level = <1>; /* LPM/PFM */
@@ -2257,6 +2258,7 @@
 			     <GIC_SPI 368 IRQ_TYPE_LEVEL_HIGH /* CE10 */ >,
 			     <GIC_SPI 369 IRQ_TYPE_LEVEL_HIGH /* CE11 */ >;
 		qcom,iommu-dma = "fastmap";
+		qcom,psf-supported;
 		qcom,iommu-faults = "stall-disable", "HUPCF", "non-fatal";
 		qcom,wlan-msa-fixed-region = <&wlan_msa_mem>;
 		qcom,iommu-dma-addr-pool = <0xa0000000 0x10000000>;
@@ -2265,7 +2267,8 @@
 		vdd-1.3-rfa-supply = <&L10A>;
 		vdd-3.3-ch0-supply = <&L22A>;
 		qcom,vdd-cx-mx-config = <640000 640000>;
-		qcom,vdd-3.3-ch0-config = <3000000 3312000>;
+		/*To support 2.85V level for LDO22 at lower SOC level*/
+		qcom,vdd-3.3-ch0-config = <2850000 3312000>;
 		qcom,smp2p_map_wlan_1_in {
 			interrupts-extended = <&smp2p_wlan_1_in 0 0>,
 					      <&smp2p_wlan_1_in 1 0>;

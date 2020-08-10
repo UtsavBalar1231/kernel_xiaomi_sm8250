@@ -115,6 +115,7 @@
 		qcom,split-codec = <1>;
 		qcom,pmic-spmi-node = <&pm2250_cdc>;
 		qcom,wcd-reset-reg = <0x0000F3DB>;
+		qcom,foundry-id-reg = <0x0000704D>;
 		qcom,rx_swr_ch_map = <0 HPH_L 0x1 0 HPH_L>,
 			<0 HPH_R 0x2 0 HPH_R>,
 			<1 COMP_L 0x1 0 COMP_L>, <1 COMP_R 0x2 0 COMP_R>;
@@ -140,7 +141,7 @@
 		qcom,cdc-pa-vpos-current = <2400000>;
 
 		cdc-vdd-mic-bias-supply = <&L22A>;
-		qcom,cdc-vdd-mic-bias-voltage = <3000000 3000000>;
+		qcom,cdc-vdd-mic-bias-voltage = <3000000 3304000>;
 		qcom,cdc-vdd-mic-bias-current = <50000>;
 		qcom,cdc-vdd-mic-bias-lpm-supported = <1>;
 

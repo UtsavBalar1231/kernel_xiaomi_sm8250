@@ -1,0 +1,29 @@
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/clock/qcom,cpu-osm.h>
+#include <dt-bindings/clock/qcom,rpmcc.h>
+#include <dt-bindings/clock/qcom,mmcc-sdm660.h>
+#include <dt-bindings/regulator/qcom,rpm-smd-regulator.h>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+
+#include "sdm660-cdp.dtsi"
+#include "sdm660-external-codec.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. SDA 660 Ext. Audio Codec RCM";
+	compatible = "qcom,sda660-cdp", "qcom,sda660", "qcom,cdp";
+	qcom,msm-id = <324 0x0>;
+	qcom,board-id = <21 0>;
+};
+
+&tavil_snd {
+	qcom,msm-mbhc-hphl-swh = <0>;
+	qcom,msm-mbhc-gnd-swh = <0>;
+};
+
+&tasha_snd {
+	qcom,msm-mbhc-hphl-swh = <0>;
+	qcom,msm-mbhc-gnd-swh = <0>;
+};
+
