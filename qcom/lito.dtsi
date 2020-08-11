@@ -569,6 +569,7 @@
 
 	bluetooth: bt_wcn3990 {
 		compatible = "qca,wcn3990";
+		qca,bt-sw-ctrl-gpio = <&tlmm 73 0>; /* SW_CTRL */
 		qca,bt-vdd-io-supply = <&pm8150_s4>;
 		qca,bt-vdd-core-supply = <&pm8150a_l2>;
 		qca,bt-vdd-pa-supply = <&pm8150a_l10>;
