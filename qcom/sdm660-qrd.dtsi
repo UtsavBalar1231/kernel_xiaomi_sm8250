@@ -245,10 +245,32 @@
 	};
 };
 
-/delete-node/ &tasha_hph_en0;
-/delete-node/ &tasha_hph_en1;
+&wcd934x_cdc {
+	status = "disabled";
+};
+
+&tavil_snd {
+	status = "disabled";
+};
+
+&clock_audio_lnbb {
+	status = "disabled";
+};
+
+&clock_audio {
+	status = "ok";
+};
+
+&clock_audio_native {
+	status = "ok";
+};
+
+&wcd9335 {
+	status = "ok";
+};
 
 &tasha_snd {
+	status = "ok";
 	qcom,model = "sdm660-tasha-skus-snd-card";
 	qcom,audio-routing =
 		"AIF4 VI", "MCLK",
@@ -264,6 +286,7 @@
 		"MIC BIAS3", "Digital Mic5",
 		"SpkrLeft IN", "SPK1 OUT";
 	qcom,msm-mbhc-hphl-swh = <1>;
+	qcom,msm-mbhc-gnd-swh = <1>;
 	/delete-property/ qcom,us-euro-gpios;
 	/delete-property/ qcom,hph-en0-gpio;
 	/delete-property/ qcom,hph-en1-gpio;
