@@ -140,8 +140,9 @@ blm_update_ap_info(struct blm_reject_ap *blm_entry, struct blm_config *cfg,
 	if (!update_done)
 		return;
 
-	blm_debug("%pM Old %d Updated reject ap type = %x",
-		  blm_entry->bssid.bytes, old_reject_ap_type,
+	blm_debug(QDF_MAC_ADDR_FMT" Old %d Updated reject ap type = %x",
+		  QDF_MAC_ADDR_REF(blm_entry->bssid.bytes),
+		  old_reject_ap_type,
 		  blm_entry->reject_ap_type);
 }
 
@@ -161,7 +162,8 @@ blm_prune_old_entries_and_get_action(struct blm_reject_ap *blm_entry,
 	 * then remove the entry from the reject ap list.
 	 */
 	if (!blm_entry->reject_ap_type) {
-		blm_debug("%pM cleared from list", blm_entry->bssid.bytes);
+		blm_debug(QDF_MAC_ADDR_FMT" cleared from list",
+			 QDF_MAC_ADDR_REF(blm_entry->bssid.bytes));
 		qdf_list_remove_node(reject_ap_list, &blm_entry->node);
 		qdf_mem_free(blm_entry);
 		return BLM_ACTION_NOP;
@@ -170,8 +172,8 @@ blm_prune_old_entries_and_get_action(struct blm_reject_ap *blm_entry,
 	if (BLM_IS_AP_IN_RSSI_REJECT_LIST(blm_entry) &&
 	    !blm_entry->userspace_blacklist && !blm_entry->driver_blacklist &&
 	    blm_entry->rssi_reject_params.original_timeout > MAX_BL_TIME) {
-		blm_info("Allow BSSID %pM as the retry delay is greater than %u ms, expected RSSI = %d, current RSSI = %d, retry delay = %u ms original timeout %u time added %lu source %d reason %d",
-			 blm_entry->bssid.bytes, MAX_BL_TIME,
+		blm_info("Allow BSSID "QDF_MAC_ADDR_FMT" as the retry delay is greater than %u ms, expected RSSI = %d, current RSSI = %d, retry delay = %u ms original timeout %u time added %lu source %d reason %d",
+			 QDF_MAC_ADDR_REF(blm_entry->bssid.bytes), MAX_BL_TIME,
 			 blm_entry->rssi_reject_params.expected_rssi,
 			 entry ? entry->rssi_raw : 0,
 			 blm_entry->rssi_reject_params.retry_delay,
@@ -180,22 +182,23 @@ blm_prune_old_entries_and_get_action(struct blm_reject_ap *blm_entry,
 			 blm_entry->source, blm_entry->reject_ap_reason);
 
 		if (BLM_IS_AP_IN_AVOIDLIST(blm_entry)) {
-			blm_debug("%pM in avoid list, deprioritize it",
-				  blm_entry->bssid.bytes);
+			blm_debug(QDF_MAC_ADDR_FMT" in avoid list, deprioritize it",
+				  QDF_MAC_ADDR_REF(blm_entry->bssid.bytes));
 			return BLM_MOVE_AT_LAST;
 		}
 
 		return BLM_ACTION_NOP;
 	}
 	if (BLM_IS_AP_IN_BLACKLIST(blm_entry)) {
-		blm_debug("%pM in blacklist list, reject ap type %d removing from candidate list",
-			  blm_entry->bssid.bytes, blm_entry->reject_ap_type);
+		blm_debug(QDF_MAC_ADDR_FMT" in blacklist list, reject ap type %d removing from candidate list",
+			  QDF_MAC_ADDR_REF(blm_entry->bssid.bytes),
+			  blm_entry->reject_ap_type);
 		return BLM_REMOVE_FROM_LIST;
 	}
 
 	if (BLM_IS_AP_IN_AVOIDLIST(blm_entry)) {
-		blm_debug("%pM in avoid list, deprioritize it",
-			  blm_entry->bssid.bytes);
+		blm_debug(QDF_MAC_ADDR_FMT" in avoid list, deprioritize it",
+			  QDF_MAC_ADDR_REF(blm_entry->bssid.bytes));
 		return BLM_MOVE_AT_LAST;
 	}
 
@@ -257,7 +260,8 @@ blm_modify_scan_list(qdf_list_t *scan_list,
 		     struct scan_cache_node *scan_node,
 		     enum blm_bssid_action action)
 {
-	blm_debug("%pM Action %d", scan_node->entry->bssid.bytes, action);
+	blm_debug(QDF_MAC_ADDR_FMT" Action %d",
+		  QDF_MAC_ADDR_REF(scan_node->entry->bssid.bytes), action);
 
 	switch (action) {
 	case BLM_REMOVE_FROM_LIST:
@@ -372,12 +376,12 @@ blm_handle_avoid_list(struct blm_reject_ap *entry,
 		entry->driver_blacklist = true;
 		entry->ap_timestamp.driver_blacklist_timestamp = cur_timestamp;
 
-		blm_debug("%pM moved to black list with counter %d",
-			  entry->bssid.bytes, entry->bad_bssid_counter);
+		blm_debug(QDF_MAC_ADDR_FMT" moved to black list with counter %d",
+			  QDF_MAC_ADDR_REF(entry->bssid.bytes), entry->bad_bssid_counter);
 		return;
 	}
-	blm_debug("Added %pM to avoid list type %d, counter %d reason %d updated reject reason %d source %d",
-		  entry->bssid.bytes, ap_info->reject_ap_type,
+	blm_debug("Added "QDF_MAC_ADDR_FMT" to avoid list type %d, counter %d reason %d updated reject reason %d source %d",
+		  QDF_MAC_ADDR_REF(entry->bssid.bytes), ap_info->reject_ap_type,
 		  entry->bad_bssid_counter, ap_info->reject_reason,
 		  entry->reject_ap_reason, entry->source);
 
@@ -401,7 +405,8 @@ blm_handle_blacklist(struct blm_reject_ap *entry,
 
 	entry->source = ADDED_BY_DRIVER;
 	entry->blacklist_userspace = true;
-	blm_debug("%pM added to userspace blacklist", entry->bssid.bytes);
+	blm_debug(QDF_MAC_ADDR_FMT" added to userspace blacklist",
+		  QDF_MAC_ADDR_REF(entry->bssid.bytes));
 }
 
 static void
@@ -462,9 +467,10 @@ blm_handle_rssi_reject_list(struct blm_reject_ap *entry,
 					qdf_mc_timer_get_system_time();
 	entry->rssi_reject_params = ap_info->rssi_reject_params;
 	blm_update_rssi_reject_reason(entry, ap_info->reject_reason);
-	blm_info("%pM %s to rssi reject list, expected RSSI %d retry delay %u source %d original timeout %u received time %lu reject reason %d updated reason %d",
+	blm_info(QDF_MAC_ADDR_FMT" %s to rssi reject list, expected RSSI %d retry delay %u source %d original timeout %u received time %lu reject reason %d updated reason %d",
+		 QDF_MAC_ADDR_REF(entry->bssid.bytes),
 		 bssid_newly_added ? "ADDED" : "UPDATED",
-		 entry->bssid.bytes, entry->rssi_reject_params.expected_rssi,
+		 entry->rssi_reject_params.expected_rssi,
 		 entry->rssi_reject_params.retry_delay,
 		 entry->rssi_reject_params.source,
 		 entry->rssi_reject_params.original_timeout,
@@ -665,8 +671,9 @@ blm_try_delete_bssid_in_list(qdf_list_t *reject_ap_list,
 
 	if (oldest_blm_entry) {
 		/* Remove this entry to make space for the next entry */
-		blm_debug("Removed %pM, type = %d",
-			  oldest_blm_entry->bssid.bytes, list_type);
+		blm_debug("Removed "QDF_MAC_ADDR_FMT", type = %d",
+			  QDF_MAC_ADDR_REF(oldest_blm_entry->bssid.bytes),
+			  list_type);
 		qdf_list_remove_node(reject_ap_list, &oldest_blm_entry->node);
 		qdf_mem_free(oldest_blm_entry);
 		return QDF_STATUS_SUCCESS;
@@ -764,8 +771,8 @@ blm_fill_rssi_reject_params(struct blm_reject_ap *blm_entry,
 	blm_reject_list->received_time =
 			blm_entry->rssi_reject_params.received_time;
 	blm_reject_list->reject_reason = blm_get_rssi_reject_reason(blm_entry);
-	blm_debug("%pM source %d original timeout %u received time %lu reject reason %d",
-		   blm_entry->bssid.bytes, blm_reject_list->source,
+	blm_debug(QDF_MAC_ADDR_FMT" source %d original timeout %u received time %lu reject reason %d",
+		   QDF_MAC_ADDR_REF(blm_entry->bssid.bytes), blm_reject_list->source,
 		   blm_reject_list->original_timeout,
 		   blm_reject_list->received_time,
 		   blm_reject_list->reject_reason);
@@ -795,8 +802,8 @@ static void blm_fill_reject_list(qdf_list_t *reject_db_list,
 
 		blm_update_ap_info(blm_entry, cfg, NULL);
 		if (!blm_entry->reject_ap_type) {
-			blm_debug("%pM cleared from list",
-				  blm_entry->bssid.bytes);
+			blm_debug(QDF_MAC_ADDR_FMT" cleared from list",
+				  QDF_MAC_ADDR_REF(blm_entry->bssid.bytes));
 			qdf_list_remove_node(reject_db_list, &blm_entry->node);
 			qdf_mem_free(blm_entry);
 			cur_node = next_node;
@@ -819,8 +826,9 @@ static void blm_fill_reject_list(qdf_list_t *reject_db_list,
 			blm_reject_list->reject_ap_type = reject_ap_type;
 			blm_reject_list->bssid = blm_entry->bssid;
 			(*num_of_reject_bssid)++;
-			blm_debug("Adding BSSID %pM of type %d retry delay %d expected RSSI %d, entries added = %d reject reason %d",
-				  blm_entry->bssid.bytes, reject_ap_type,
+			blm_debug("Adding BSSID "QDF_MAC_ADDR_FMT" of type %d retry delay %d expected RSSI %d, entries added = %d reject reason %d",
+				  QDF_MAC_ADDR_REF(blm_entry->bssid.bytes),
+				  reject_ap_type,
 				  reject_list[*num_of_reject_bssid -1].reject_duration,
 				  blm_entry->rssi_reject_params.expected_rssi,
 				  *num_of_reject_bssid,
@@ -920,8 +928,8 @@ blm_add_bssid_to_reject_list(struct wlan_objmgr_pdev *pdev,
 		/* Update the AP info to the latest list first */
 		blm_update_ap_info(blm_entry, cfg, NULL);
 		if (!blm_entry->reject_ap_type) {
-			blm_debug("%pM cleared from list",
-				  blm_entry->bssid.bytes);
+			blm_debug(QDF_MAC_ADDR_FMT" cleared from list",
+				  QDF_MAC_ADDR_REF(blm_entry->bssid.bytes));
 			qdf_list_remove_node(&blm_ctx->reject_ap_list,
 					     &blm_entry->node);
 			qdf_mem_free(blm_entry);
@@ -997,13 +1005,14 @@ blm_clear_userspace_blacklist_info(struct wlan_objmgr_pdev *pdev)
 					    node);
 
 		if (IS_AP_IN_USERSPACE_BLACKLIST_ONLY(blm_entry)) {
-			blm_debug("removing bssid: %pM", blm_entry->bssid.bytes);
+			blm_debug("removing bssid: "QDF_MAC_ADDR_FMT,
+				 QDF_MAC_ADDR_REF(blm_entry->bssid.bytes));
 			qdf_list_remove_node(&blm_ctx->reject_ap_list,
 					     &blm_entry->node);
 			qdf_mem_free(blm_entry);
 		} else if (BLM_IS_AP_BLACKLISTED_BY_USERSPACE(blm_entry)) {
-			blm_debug("Clearing userspace blacklist bit for %pM",
-				  blm_entry->bssid.bytes);
+			blm_debug("Clearing userspace blacklist bit for "QDF_MAC_ADDR_FMT,
+				  QDF_MAC_ADDR_REF(blm_entry->bssid.bytes));
 			blm_entry->userspace_blacklist = false;
 			blm_entry->blacklist_userspace = false;
 		}
@@ -1171,8 +1180,9 @@ blm_update_bssid_connect_params(struct wlan_objmgr_pdev *pdev,
 
 		if (!qdf_mem_cmp(blm_entry->bssid.bytes, bssid.bytes,
 				 QDF_MAC_ADDR_SIZE)) {
-			blm_debug("%pM present in BLM reject list, updating connect info con_state = %d",
-				  blm_entry->bssid.bytes, con_state);
+			blm_debug(QDF_MAC_ADDR_FMT" present in BLM reject list, updating connect info con_state = %d",
+				  QDF_MAC_ADDR_REF(blm_entry->bssid.bytes),
+				  con_state);
 			entry_found = true;
 			break;
 		}
@@ -1214,8 +1224,8 @@ blm_update_bssid_connect_params(struct wlan_objmgr_pdev *pdev,
 			blm_debug("updated reject ap type %d ",
 				  blm_entry->reject_ap_type);
 			if (!blm_entry->reject_ap_type) {
-				blm_debug("Bad Bssid timer expired/AP cleared from all blacklisting, removed %pM from list",
-					  blm_entry->bssid.bytes);
+				blm_debug("Bad Bssid timer expired/AP cleared from all blacklisting, removed "QDF_MAC_ADDR_FMT" from list",
+					  QDF_MAC_ADDR_REF(blm_entry->bssid.bytes));
 				qdf_list_remove_node(&blm_ctx->reject_ap_list,
 						     &blm_entry->node);
 				qdf_mem_free(blm_entry);
