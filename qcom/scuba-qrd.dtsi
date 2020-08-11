@@ -234,13 +234,6 @@
 	qcom,platform-reset-gpio = <&tlmm 82 0>;
 	qcom,platform-reset-gpio-always-on;
 	qcom,platform-en-gpio = <&tlmm 105 0>;
-
-	qcom,mdss-dsi-display-timings {
-		timing@0 {
-			qcom,mdss-dsi-h-back-porch = <88>;
-			qcom,mdss-dsi-v-back-porch = <4>;
-		};
-	};
 };
 
 &sde_dsi {
