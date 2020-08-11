@@ -2291,7 +2291,7 @@ static ssize_t _sde_debugfs_conn_esd_test_write(struct file *file,
 	int power_mode;
 	char *input;
 	int rc = 0;
-	const char *sde_power_mode_str[] = {
+	const __maybe_unused char *sde_power_mode_str[] = {
 		[SDE_MODE_DPMS_ON] = "SDE_MODE_DPMS_ON",
 		[SDE_MODE_DPMS_LP1] = "SDE_MODE_DPMS_LP1",
 		[SDE_MODE_DPMS_LP2] = "SDE_MODE_DPMS_LP2",
@@ -2718,7 +2718,7 @@ static irqreturn_t esd_err_irq_handle(int irq, void *data)
 	struct dsi_display *display = c_conn->display;
 	struct drm_event event;
 	int power_mode;
-	const char *sde_power_mode_str[] = {
+	const __maybe_unused char *sde_power_mode_str[] = {
 		[SDE_MODE_DPMS_ON] = "SDE_MODE_DPMS_ON",
 		[SDE_MODE_DPMS_LP1] = "SDE_MODE_DPMS_LP1",
 		[SDE_MODE_DPMS_LP2] = "SDE_MODE_DPMS_LP2",
