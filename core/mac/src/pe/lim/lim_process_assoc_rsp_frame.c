@@ -135,6 +135,7 @@ void lim_update_assoc_sta_datas(struct mac_context *mac_ctx,
 	bool qos_mode;
 	tDot11fIEVHTCaps *vht_caps = NULL;
 	tDot11fIEhe_cap *he_cap = NULL;
+	struct bss_description *bss_desc = NULL;
 
 	lim_get_phy_mode(mac_ctx, &phy_mode, session_entry);
 	sta_ds->staType = STA_ENTRY_SELF;
@@ -191,10 +192,14 @@ void lim_update_assoc_sta_datas(struct mac_context *mac_ctx,
 	if (lim_is_sta_he_capable(sta_ds))
 		he_cap = &assoc_rsp->he_cap;
 
+	if (session_entry->lim_join_req)
+		bss_desc = &session_entry->lim_join_req->bssDescription;
+
 	if (lim_populate_peer_rate_set(mac_ctx, &sta_ds->supportedRates,
 				assoc_rsp->HTCaps.supportedMCSSet,
 				false, session_entry,
-				vht_caps, he_cap, sta_ds) !=
+				vht_caps, he_cap, sta_ds,
+				bss_desc) !=
 				QDF_STATUS_SUCCESS) {
 		pe_err("could not get rateset and extended rate set");
 		return;
@@ -468,47 +473,6 @@ static void lim_stop_reassoc_retry_timer(struct mac_context *mac_ctx)
 	}
 	lim_deactivate_and_change_timer(mac_ctx, eLIM_REASSOC_FAIL_TIMER);
 }
-
-#ifdef WLAN_FEATURE_11W
-static void
-lim_handle_assoc_reject_status(struct mac_context *mac_ctx,
-				struct pe_session *session_entry,
-				tpSirAssocRsp assoc_rsp,
-				tSirMacAddr source_addr)
-{
-	struct sir_rssi_disallow_lst ap_info = {{0}};
-	uint32_t timeout_value =
-		assoc_rsp->TimeoutInterval.timeoutValue;
-
-	if (!(session_entry->limRmfEnabled &&
-		    assoc_rsp->status_code == eSIR_MAC_TRY_AGAIN_LATER &&
-		   (assoc_rsp->TimeoutInterval.present &&
-			(assoc_rsp->TimeoutInterval.timeoutType ==
-				SIR_MAC_TI_TYPE_ASSOC_COMEBACK))))
-		return;
-
-	/*
-	 * Add to rssi reject list, which takes care of retry
-	 * delay too. Fill the RSSI as 0, so the only param
-	 * which will allow the bssid to connect is retry delay.
-	 */
-	ap_info.retry_delay = timeout_value;
-	qdf_mem_copy(ap_info.bssid.bytes, source_addr, QDF_MAC_ADDR_SIZE);
-	ap_info.expected_rssi = LIM_MIN_RSSI;
-	lim_add_bssid_to_reject_list(mac_ctx->pdev, &ap_info);
-
-	pe_debug("ASSOC res with eSIR_MAC_TRY_AGAIN_LATER recvd. Add to time reject list(rssi reject in mac_ctx %d",
-		timeout_value);
-}
-#else
-static void
-lim_handle_assoc_reject_status(struct mac_context *mac_ctx,
-				struct pe_session *session_entry,
-				tpSirAssocRsp assoc_rsp,
-				tSirMacAddr source_addr)
-{
-}
-#endif
 
 /**
  * lim_get_nss_supported_by_ap() - finds out nss from AP's beacons
@@ -845,8 +809,6 @@ lim_process_assoc_rsp_frame(struct mac_context *mac_ctx,
 		return;
 	}
 	lim_copy_u16((uint8_t *) &mac_capab, caps);
-	lim_handle_assoc_reject_status(mac_ctx, session_entry, assoc_rsp,
-				       hdr->sa);
 
 	if (eSIR_MAC_XS_FRAME_LOSS_POOR_CHANNEL_RSSI_STATUS ==
 	   assoc_rsp->status_code &&
@@ -864,6 +826,10 @@ lim_process_assoc_rsp_frame(struct mac_context *mac_ctx,
 		ap_info.retry_delay = assoc_rsp->rssi_assoc_rej.retry_delay *
 							QDF_MC_TIMER_TO_MS_UNIT;
 		qdf_mem_copy(ap_info.bssid.bytes, hdr->sa, QDF_MAC_ADDR_SIZE);
+		ap_info.reject_reason = REASON_ASSOC_REJECT_OCE;
+		ap_info.source = ADDED_BY_DRIVER;
+		ap_info.original_timeout = ap_info.retry_delay;
+		ap_info.received_time = qdf_mc_timer_get_system_time();
 		lim_add_bssid_to_reject_list(mac_ctx->pdev, &ap_info);
 	}
 

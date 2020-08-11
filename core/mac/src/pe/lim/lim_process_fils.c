@@ -976,6 +976,11 @@ static int lim_create_fils_wrapper_data(struct pe_fils_session *fils_info)
 	if (!fils_info)
 		return 0;
 
+	if (!fils_info->keyname_nai_length || !fils_info->fils_rrk_len) {
+		pe_debug("FILS_PMKSA: NO keyname nai/RRK configured. Use PMKSA caching");
+		return 0;
+	}
+
 	buf_len =
 		/* code + identifier */
 		sizeof(uint8_t) * 2 +
@@ -1167,6 +1172,12 @@ void lim_add_fils_data_to_auth_frame(struct pe_session *session,
 	/* dump data */
 	lim_fils_data_dump("Fils Session",
 		fils_info->fils_session, SIR_FILS_SESSION_LENGTH);
+
+	if (!fils_info->fils_erp_reauth_pkt ||
+	    !fils_info->fils_erp_reauth_pkt_len) {
+		pe_debug("FILS: No ERP data. Dont add auth wrapped data");
+		return;
+	}
 
 	/*  ERP Packet  */
 	/* Add element id */
@@ -1520,24 +1531,31 @@ void lim_update_fils_config(struct mac_context *mac_ctx,
 		       FILS_MAX_KEYNAME_NAI_LENGTH);
 		fils_config_info->key_nai_length = FILS_MAX_KEYNAME_NAI_LENGTH;
 	}
-	pe_fils_info->keyname_nai_data =
-		qdf_mem_malloc(fils_config_info->key_nai_length);
-	if (!pe_fils_info->keyname_nai_data)
-		return;
 
-	qdf_mem_copy(pe_fils_info->keyname_nai_data,
-		     fils_config_info->keyname_nai,
-		     fils_config_info->key_nai_length);
-	pe_fils_info->fils_rrk =
-		qdf_mem_malloc(fils_config_info->r_rk_length);
-	if (!pe_fils_info->fils_rrk) {
-		qdf_mem_free(pe_fils_info->keyname_nai_data);
-		return;
+	if (fils_config_info->key_nai_length) {
+		pe_fils_info->keyname_nai_data =
+			qdf_mem_malloc(fils_config_info->key_nai_length);
+		if (!pe_fils_info->keyname_nai_data)
+			return;
+
+		qdf_mem_copy(pe_fils_info->keyname_nai_data,
+			     fils_config_info->keyname_nai,
+			     fils_config_info->key_nai_length);
 	}
 
-	if (fils_config_info->r_rk_length <= FILS_MAX_RRK_LENGTH)
-		qdf_mem_copy(pe_fils_info->fils_rrk, fils_config_info->r_rk,
-			     fils_config_info->r_rk_length);
+	if (fils_config_info->r_rk_length) {
+		pe_fils_info->fils_rrk =
+			qdf_mem_malloc(fils_config_info->r_rk_length);
+		if (!pe_fils_info->fils_rrk) {
+			qdf_mem_free(pe_fils_info->keyname_nai_data);
+			return;
+		}
+
+		if (fils_config_info->r_rk_length <= FILS_MAX_RRK_LENGTH)
+			qdf_mem_copy(pe_fils_info->fils_rrk,
+				     fils_config_info->r_rk,
+				     fils_config_info->r_rk_length);
+	}
 
 	qdf_mem_copy(pe_fils_info->fils_pmkid, fils_config_info->pmkid,
 		     PMKID_LEN);
@@ -1596,41 +1614,49 @@ void lim_update_fils_config(struct mac_context *mac_ctx,
  *
  * Return: length of fils data
  */
-uint32_t lim_create_fils_auth_data(struct mac_context *mac_ctx,
-		tpSirMacAuthFrameBody auth_frame,
-		struct pe_session *session)
+QDF_STATUS lim_create_fils_auth_data(struct mac_context *mac_ctx,
+				     tpSirMacAuthFrameBody auth_frame,
+				     struct pe_session *session,
+				     uint32_t *frame_len)
 {
-	uint32_t frame_len = 0;
+	uint16_t frm_len = 0;
 	int32_t wrapped_data_len;
 
 	if (!session->fils_info)
-		return 0;
+		return QDF_STATUS_SUCCESS;
 
 	/* These memory may already been allocated if auth retry */
 	if (session->fils_info->fils_rik) {
 		qdf_mem_free(session->fils_info->fils_rik);
 		session->fils_info->fils_rik = NULL;
 	}
+
 	if  (session->fils_info->fils_erp_reauth_pkt) {
 		qdf_mem_free(session->fils_info->fils_erp_reauth_pkt);
 		session->fils_info->fils_erp_reauth_pkt = NULL;
 	}
+
 	if (auth_frame->authAlgoNumber == SIR_FILS_SK_WITHOUT_PFS) {
-		frame_len += session->fils_info->rsn_ie_len;
+		frm_len += session->fils_info->rsn_ie_len;
 		/* FILS nounce */
-		frame_len += SIR_FILS_NONCE_LENGTH + EXTENDED_IE_HEADER_LEN;
+		frm_len += SIR_FILS_NONCE_LENGTH + EXTENDED_IE_HEADER_LEN;
 		/* FILS Session */
-		frame_len += SIR_FILS_SESSION_LENGTH + EXTENDED_IE_HEADER_LEN;
+		frm_len += SIR_FILS_SESSION_LENGTH + EXTENDED_IE_HEADER_LEN;
 		/* Calculate data/length for FILS Wrapped Data */
 		wrapped_data_len =
 			lim_create_fils_wrapper_data(session->fils_info);
 		if (wrapped_data_len < 0) {
-			pe_err("failed to create warpped data");
-			return 0;
+			pe_err("failed to allocate wrapped data");
+			return QDF_STATUS_E_FAILURE;
 		}
-		frame_len += wrapped_data_len + EXTENDED_IE_HEADER_LEN;
+
+		if (wrapped_data_len)
+			frm_len += wrapped_data_len + EXTENDED_IE_HEADER_LEN;
 	}
-	return frame_len;
+
+	*frame_len += frm_len;
+
+	return QDF_STATUS_SUCCESS;
 }
 
 void populate_fils_connect_params(struct mac_context *mac_ctx,

@@ -324,7 +324,8 @@ void lim_ft_prepare_add_bss_req(struct mac_context *mac,
 					   pBeaconStruct->HTCaps.supportedMCSSet,
 					   false, ft_session,
 					   &pBeaconStruct->VHTCaps,
-					   &pBeaconStruct->he_cap, NULL);
+					   &pBeaconStruct->he_cap, NULL,
+					   bssDescription);
 	}
 
 	pAddBssParams->maxTxPower = ft_session->maxTxPower;
@@ -408,13 +409,14 @@ static uint8_t lim_calculate_dot11_mode(struct mac_context *mac_ctx,
 					enum reg_wifi_band band)
 {
 	enum mlme_dot11_mode self_dot11_mode;
+	enum mlme_dot11_mode new_dot11_mode;
 
 	self_dot11_mode = mac_ctx->mlme_cfg->dot11_mode.dot11_mode;
 
 	if (band == REG_BAND_2G)
-		return MLME_DOT11_MODE_11G;
+		new_dot11_mode = MLME_DOT11_MODE_11G;
 	else
-		return MLME_DOT11_MODE_11A;
+		new_dot11_mode = MLME_DOT11_MODE_11A;
 
 	switch (self_dot11_mode) {
 	case MLME_DOT11_MODE_11AX:
@@ -439,8 +441,9 @@ static uint8_t lim_calculate_dot11_mode(struct mac_context *mac_ctx,
 		if (bcn->HTCaps.present)
 			return MLME_DOT11_MODE_11N;
 	default:
-		break;
+			return new_dot11_mode;
 	}
+
 }
 
 /**

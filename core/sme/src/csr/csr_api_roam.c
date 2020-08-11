@@ -3804,8 +3804,11 @@ csr_connect_info(struct mac_context *mac_ctx,
 		diag_dot11_mode_from_csr_type(conn_profile->dot11Mode);
 	conn_stats.bss_type =
 	     diag_persona_from_csr_type(session->pCurRoamProfile->csrPersona);
-	conn_stats.operating_channel = wlan_reg_freq_to_chan(mac_ctx->pdev,
-							conn_profile->op_freq);
+	if (conn_profile->op_freq)
+		conn_stats.operating_channel =
+			wlan_reg_freq_to_chan(mac_ctx->pdev,
+					      conn_profile->op_freq);
+
 	conn_stats.qos_capability = conn_profile->qosConnection;
 	conn_stats.auth_type =
 	     diag_auth_type_from_csr_type(conn_profile->AuthType);
@@ -9694,15 +9697,16 @@ static void csr_roam_join_rsp_processor(struct mac_context *mac,
 	tSmeCmd *pCommand = NULL;
 	mac_handle_t mac_handle = MAC_HANDLE(mac);
 	struct csr_roam_session *session_ptr;
-	struct scan_result_list *bss_list = NULL;
 	struct csr_roam_profile *profile = NULL;
 	struct csr_roam_connectedinfo *prev_connect_info;
 	struct wlan_crypto_pmksa *pmksa;
 	uint32_t len = 0, roamId = 0, reason_code = 0;
 	bool is_dis_pending;
 	bool use_same_bss = false;
+	uint8_t max_retry_count = 1;
 	bool retry_same_bss = false;
 	bool attempt_next_bss = true;
+	enum csr_akm_type auth_type = eCSR_AUTH_TYPE_NONE;
 
 	if (!pSmeJoinRsp) {
 		sme_err("Sme Join Response is NULL");
@@ -9788,8 +9792,7 @@ static void csr_roam_join_rsp_processor(struct mac_context *mac,
 	if (pCommand) {
 		roamId = pCommand->u.roamCmd.roamId;
 		profile = &pCommand->u.roamCmd.roamProfile;
-		bss_list =
-			(struct scan_result_list *)pCommand->u.roamCmd.hBSSList;
+		auth_type = profile->AuthType.authType[0];
 	}
 
 	reason_code = pSmeJoinRsp->protStatusCode;
@@ -9836,11 +9839,14 @@ static void csr_roam_join_rsp_processor(struct mac_context *mac,
 	    pSmeJoinRsp->status_code == eSIR_SME_ASSOC_TIMEOUT_RESULT_CODE &&
 	    (mlme_get_reconn_after_assoc_timeout_flag(mac->psoc,
 						     pSmeJoinRsp->vdev_id) ||
-	    (profile && (profile->AuthType.authType[0] == eCSR_AUTH_TYPE_SAE ||
-	      profile->AuthType.authType[0] == eCSR_AUTH_TYPE_FT_SAE) &&
-	    bss_list && (csr_ll_count(&bss_list->List) ==
-	    session_ptr->join_bssid_count))))
+	    (auth_type == eCSR_AUTH_TYPE_SAE ||
+	     auth_type == eCSR_AUTH_TYPE_FT_SAE))) {
 		retry_same_bss = true;
+		if (auth_type == eCSR_AUTH_TYPE_SAE ||
+		    auth_type == eCSR_AUTH_TYPE_FT_SAE)
+			wlan_mlme_get_sae_assoc_retry_count(mac->psoc,
+							    &max_retry_count);
+	}
 
 	if (attempt_next_bss && retry_same_bss &&
 	    pCommand && pCommand->u.roamCmd.pRoamBssEntry) {
@@ -9850,10 +9856,12 @@ static void csr_roam_join_rsp_processor(struct mac_context *mac,
 			GET_BASE_ADDR(pCommand->u.roamCmd.pRoamBssEntry,
 				      struct tag_csrscan_result, Link);
 		/* Retry with same BSSID without PMKID */
-		if (!scan_result->retry_count) {
-			sme_info("Retry once with same BSSID, status %d reason %d",
-				 pSmeJoinRsp->status_code, reason_code);
-			scan_result->retry_count = 1;
+		if (scan_result->retry_count < max_retry_count) {
+			sme_info("Retry once with same BSSID, status %d reason %d auth_type %d retry count %d max count %d",
+				 pSmeJoinRsp->status_code, reason_code,
+				 auth_type, scan_result->retry_count,
+				 max_retry_count);
+			scan_result->retry_count++;
 			use_same_bss = true;
 		}
 	}
@@ -15425,30 +15433,64 @@ static inline void csr_set_mgmt_enc_type(struct csr_roam_profile *profile,
 
 #ifdef WLAN_FEATURE_FILS_SK
 /*
- * csr_update_fils_connection_info: Copy fils connection info to join request
+ * csr_validate_and_update_fils_info: Copy fils connection info to join request
  * @profile: pointer to profile
  * @csr_join_req: csr join request
  *
  * Return: None
  */
-static void csr_update_fils_connection_info(struct csr_roam_profile *profile,
-					    struct join_req *csr_join_req)
+static QDF_STATUS
+csr_validate_and_update_fils_info(struct mac_context *mac,
+				  struct csr_roam_profile *profile,
+				  struct bss_description *bss_desc,
+				  struct join_req *csr_join_req,
+				  uint8_t vdev_id)
 {
-	if (!profile->fils_con_info)
-		return;
+	uint8_t cache_id[CACHE_ID_LEN] = {0};
+	struct qdf_mac_addr bssid;
 
-	if (profile->fils_con_info->is_fils_connection) {
-		qdf_mem_copy(&csr_join_req->fils_con_info,
-			     profile->fils_con_info,
-			     sizeof(struct cds_fils_connection_info));
-	} else {
+	if (!profile->fils_con_info)
+		return QDF_STATUS_SUCCESS;
+
+	if (!profile->fils_con_info->is_fils_connection) {
+		sme_debug("FILS_PMKSA: Not a FILS connection");
 		qdf_mem_zero(&csr_join_req->fils_con_info,
 			     sizeof(struct cds_fils_connection_info));
+		return QDF_STATUS_SUCCESS;
 	}
+
+	if (bss_desc->fils_info_element.is_cache_id_present) {
+		qdf_mem_copy(cache_id, bss_desc->fils_info_element.cache_id,
+			     CACHE_ID_LEN);
+		sme_debug("FILS_PMKSA: cache_id[0]:%d, cache_id[1]:%d",
+			  cache_id[0], cache_id[1]);
+	}
+
+	qdf_mem_copy(bssid.bytes,
+		     csr_join_req->bssDescription.bssId,
+		     QDF_MAC_ADDR_SIZE);
+
+	if ((!profile->fils_con_info->r_rk_length ||
+	     !profile->fils_con_info->key_nai_length) &&
+	    !bss_desc->fils_info_element.is_cache_id_present &&
+	    !csr_lookup_fils_pmkid(mac, vdev_id, cache_id,
+				   csr_join_req->ssId.ssId,
+				   csr_join_req->ssId.length, &bssid))
+		return QDF_STATUS_E_FAILURE;
+
+	qdf_mem_copy(&csr_join_req->fils_con_info,
+		     profile->fils_con_info,
+		     sizeof(struct cds_fils_connection_info));
+
+	return QDF_STATUS_SUCCESS;
 }
 #else
-static void csr_update_fils_connection_info(struct csr_roam_profile *profile,
-					    struct join_req *csr_join_req)
+static QDF_STATUS
+csr_validate_and_update_fils_info(struct mac_context *mac,
+				  struct csr_roam_profile *profile,
+				  struct bss_description *bss_desc,
+				  struct join_req *csr_join_req,
+				  uint8_t vdev_id)
 { }
 #endif
 
@@ -16603,7 +16645,14 @@ QDF_STATUS csr_send_join_req_msg(struct mac_context *mac, uint32_t sessionId,
 		qdf_mem_copy(&csr_join_req->bssDescription, pBssDescription,
 				pBssDescription->length +
 				sizeof(pBssDescription->length));
-		csr_update_fils_connection_info(pProfile, csr_join_req);
+
+		status = csr_validate_and_update_fils_info(mac, pProfile,
+							   pBssDescription,
+							   csr_join_req,
+							   sessionId);
+		if (QDF_IS_STATUS_ERROR(status))
+			return status;
+
 		csr_update_sae_config(csr_join_req, mac, pSession);
 		/*
 		 * conc_custom_rule1:
@@ -22065,6 +22114,8 @@ static QDF_STATUS csr_process_roam_sync_callback(struct mac_context *mac_ctx,
 
 		ap_info.bssid = session->connectedProfile.bssid;
 		ap_info.reject_ap_type = DRIVER_AVOID_TYPE;
+		ap_info.reject_reason = REASON_STA_KICKOUT;
+		ap_info.source = ADDED_BY_DRIVER;
 		wlan_blm_add_bssid_to_reject_list(mac_ctx->pdev, &ap_info);
 	}
 

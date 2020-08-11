@@ -321,6 +321,8 @@ static void mlme_init_generic_cfg(struct wlan_objmgr_psoc *psoc,
 	gen->enable_ring_buffer = cfg_get(psoc, CFG_ENABLE_RING_BUFFER);
 	gen->enable_peer_unmap_conf_support =
 		cfg_get(psoc, CFG_DP_ENABLE_PEER_UMAP_CONF_SUPPORT);
+	gen->sae_connect_retries =
+		cfg_get(psoc, CFG_SAE_CONNECION_RETRIES);
 }
 
 static void mlme_init_edca_ani_cfg(struct wlan_mlme_edca_params *edca_params)
@@ -1210,7 +1212,7 @@ mlme_is_freq_present_in_list(struct acs_weight *normalize_weight_chan_list,
 {
 	uint8_t i;
 
-	for (i = 0; i < num_freq; i++) {
+	for (i = 0; i < num_freq && i < NUM_CHANNELS; i++) {
 		if (normalize_weight_chan_list[i].chan_freq == freq) {
 			*index = i;
 			return true;
@@ -1266,7 +1268,7 @@ mlme_acs_parse_weight_list(struct wlan_objmgr_psoc *psoc,
 		} else {
 			sscanf(str1, "%d", &freq1);
 			strsep(&str1, "=");
-			if (!str1)
+			if (!str1 || !weight_list)
 				goto end;
 			sscanf(str1, "%d", &normalize_factor);
 			if (mlme_is_freq_present_in_list(weight_list,

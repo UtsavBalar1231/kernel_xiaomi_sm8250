@@ -1136,7 +1136,8 @@ static int hdd_get_cached_station_remote(struct hdd_context *hdd_ctx,
 	uint8_t channel_width;
 
 	stainfo = hdd_get_sta_info_by_mac(&adapter->cache_sta_info_list,
-					   mac_addr.bytes);
+					  mac_addr.bytes,
+					  STA_INFO_GET_CACHED_STATION_REMOTE);
 
 	if (!stainfo) {
 		hdd_err("peer " QDF_MAC_ADDR_STR " not found",
@@ -1162,7 +1163,8 @@ static int hdd_get_cached_station_remote(struct hdd_context *hdd_ctx,
 	skb = cfg80211_vendor_cmd_alloc_reply_skb(hdd_ctx->wiphy, nl_buf_len);
 	if (!skb) {
 		hdd_put_sta_info_ref(&adapter->cache_sta_info_list,
-				     &stainfo, true);
+				     &stainfo, true,
+				     STA_INFO_GET_CACHED_STATION_REMOTE);
 		hdd_err("cfg80211_vendor_cmd_alloc_reply_skb failed");
 		return -ENOMEM;
 	}
@@ -1231,12 +1233,14 @@ static int hdd_get_cached_station_remote(struct hdd_context *hdd_ctx,
 		}
 	}
 	hdd_sta_info_detach(&adapter->cache_sta_info_list, &stainfo);
-	hdd_put_sta_info_ref(&adapter->cache_sta_info_list, &stainfo, true);
+	hdd_put_sta_info_ref(&adapter->cache_sta_info_list, &stainfo, true,
+			     STA_INFO_GET_CACHED_STATION_REMOTE);
 	qdf_atomic_dec(&adapter->cache_sta_count);
 
 	return cfg80211_vendor_cmd_reply(skb);
 fail:
-	hdd_put_sta_info_ref(&adapter->cache_sta_info_list, &stainfo, true);
+	hdd_put_sta_info_ref(&adapter->cache_sta_info_list, &stainfo, true,
+			     STA_INFO_GET_CACHED_STATION_REMOTE);
 	if (skb)
 		kfree_skb(skb);
 
@@ -1468,8 +1472,10 @@ static int hdd_get_station_remote(struct hdd_context *hdd_ctx,
 	int status = 0;
 	bool is_associated = false;
 	struct hdd_station_info *stainfo =
-			hdd_get_sta_info_by_mac(&adapter->sta_info_list,
-						mac_addr.bytes);
+			hdd_get_sta_info_by_mac(
+					&adapter->sta_info_list,
+					mac_addr.bytes,
+					STA_INFO_HDD_GET_STATION_REMOTE);
 
 	if (!stainfo) {
 		status = hdd_get_cached_station_remote(hdd_ctx, adapter,
@@ -1481,13 +1487,15 @@ static int hdd_get_station_remote(struct hdd_context *hdd_ctx,
 	if (!is_associated) {
 		status = hdd_get_cached_station_remote(hdd_ctx, adapter,
 						       mac_addr);
-		hdd_put_sta_info_ref(&adapter->sta_info_list, &stainfo, true);
+		hdd_put_sta_info_ref(&adapter->sta_info_list, &stainfo, true,
+				     STA_INFO_HDD_GET_STATION_REMOTE);
 		return status;
 	}
 
 	status = hdd_get_connected_station_info(hdd_ctx, adapter,
 						mac_addr, stainfo);
-	hdd_put_sta_info_ref(&adapter->sta_info_list, &stainfo, true);
+	hdd_put_sta_info_ref(&adapter->sta_info_list, &stainfo, true,
+			     STA_INFO_HDD_GET_STATION_REMOTE);
 	return status;
 }
 

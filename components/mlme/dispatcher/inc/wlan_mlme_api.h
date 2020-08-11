@@ -2431,6 +2431,65 @@ wlan_mlme_get_status_ring_buffer(struct wlan_objmgr_psoc *psoc,
  */
 bool wlan_mlme_get_peer_unmap_conf(struct wlan_objmgr_psoc *psoc);
 
+#ifdef WLAN_FEATURE_SAE
+/**
+ * wlan_mlme_get_sae_assoc_retry_count() - Get the sae assoc retry count
+ * @psoc: pointer to psoc object
+ * @retry_count: assoc retry count
+ *
+ * Return: QDF Status
+ */
+QDF_STATUS
+wlan_mlme_get_sae_assoc_retry_count(struct wlan_objmgr_psoc *psoc,
+				    uint8_t *retry_count);
+/**
+ * wlan_mlme_get_sae_assoc_retry_count() - Get the sae auth retry count
+ * @psoc: pointer to psoc object
+ * @retry_count: auth retry count
+ *
+ * Return: QDF Status
+ */
+QDF_STATUS
+wlan_mlme_get_sae_auth_retry_count(struct wlan_objmgr_psoc *psoc,
+				   uint8_t *retry_count);
+
+/**
+ * wlan_mlme_get_sae_roam_auth_retry_count() - Get the sae roam auth retry count
+ * @psoc: pointer to psoc object
+ * @retry_count: auth retry count
+ *
+ * Return: QDF Status
+ */
+QDF_STATUS
+wlan_mlme_get_sae_roam_auth_retry_count(struct wlan_objmgr_psoc *psoc,
+					uint8_t *retry_count);
+
+#else
+static inline QDF_STATUS
+wlan_mlme_get_sae_assoc_retry_count(struct wlan_objmgr_psoc *psoc,
+				    uint8_t *retry_count)
+{
+	*retry_count = 0;
+	return QDF_STATUS_SUCCESS;
+}
+
+static inline QDF_STATUS
+wlan_mlme_get_sae_auth_retry_count(struct wlan_objmgr_psoc *psoc,
+				    uint8_t *retry_count)
+{
+	*retry_count = 0;
+	return QDF_STATUS_SUCCESS;
+}
+
+static inline QDF_STATUS
+wlan_mlme_get_sae_roam_auth_retry_count(struct wlan_objmgr_psoc *psoc,
+					uint8_t *retry_count)
+{
+	*retry_count = 0;
+	return QDF_STATUS_SUCCESS;
+}
+#endif
+
 #ifdef WLAN_FEATURE_ROAM_OFFLOAD
 /**
  * wlan_mlme_get_roam_reason_vsie_status() - Indicate if roam reason

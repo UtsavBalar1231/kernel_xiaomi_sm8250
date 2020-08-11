@@ -155,6 +155,29 @@ struct hdd_apf_context {
 #define NUM_TX_QUEUES 4
 #endif
 
+/* HDD_IS_RATE_LIMIT_REQ: Macro helper to implement rate limiting
+ * @flag: The flag to determine if limiting is required or not
+ * @rate: The number of seconds within which if multiple commands come, the
+ *	  flag will be set to true
+ *
+ * If the function in which this macro is used is called multiple times within
+ * "rate" number of seconds, the "flag" will be set to true which can be used
+ * to reject/take appropriate action.
+ */
+#define HDD_IS_RATE_LIMIT_REQ(flag, rate)\
+	do {\
+		static ulong __last_ticks;\
+		ulong __ticks = jiffies;\
+		flag = false; \
+		if (!time_after(__ticks,\
+		    __last_ticks + rate * HZ)) {\
+			flag = true; \
+		} \
+		else { \
+			__last_ticks = __ticks;\
+		} \
+	} while (0)
+
 /*
  * API in_compat_syscall() is introduced in 4.6 kernel to check whether we're
  * in a compat syscall or not. It is a new way to query the syscall type, which
@@ -1056,6 +1079,12 @@ struct hdd_context;
  *                          as per enum qca_disconnect_reason_codes
  * @upgrade_udp_qos_threshold: The threshold for user priority upgrade for
 			       any UDP packet.
+ * @handle_feature_update: Handle feature update only if it is triggered
+ *			   by hdd_netdev_feature_update
+ * @netdev_features_update_work: work for handling the netdev features update
+				 for the adapter.
+ * @gro_disallowed: Flag to check if GRO is enabled or disable for adapter
+ * @gro_flushed: Flag to indicate if GRO explicit flush is done or not
  */
 struct hdd_adapter {
 	/* Magic cookie for adapter sanity verification.  Note that this
@@ -1352,6 +1381,11 @@ struct hdd_adapter {
 	void *cookie;
 	bool response_expected;
 #endif
+	bool handle_feature_update;
+
+	qdf_work_t netdev_features_update_work;
+	uint8_t gro_disallowed[DP_MAX_RX_THREADS];
+	uint8_t gro_flushed[DP_MAX_RX_THREADS];
 };
 
 #define WLAN_HDD_GET_STATION_CTX_PTR(adapter) (&(adapter)->session.station)
@@ -1609,6 +1643,40 @@ struct hdd_fw_ver_info {
 	uint32_t crmid;
 };
 
+#define WLAN_HDD_ADAPTER_OPS_HISTORY_MAX 4
+
+/**
+ * enum hdd_adapter_ops_event - events for adapter ops history
+ * @WLAN_HDD_ADAPTER_OPS_WORK_POST: adapter ops work posted
+ * @WLAN_HDD_ADAPTER_OPS_WORK_SCHED: adapter ops work scheduled
+ */
+enum hdd_adapter_ops_event {
+	WLAN_HDD_ADAPTER_OPS_WORK_POST,
+	WLAN_HDD_ADAPTER_OPS_WORK_SCHED,
+};
+
+/**
+ * struct hdd_adapter_ops_record - record of adapter ops history
+ * @timestamp: time of the occurence of event
+ * @event: event
+ * @vdev_id: vdev id corresponding to the event
+ */
+struct hdd_adapter_ops_record {
+	uint64_t timestamp;
+	enum hdd_adapter_ops_event event;
+	int vdev_id;
+};
+
+/**
+ * struct hdd_adapter_ops_history - history of adapter ops
+ * @index: index to store the next event
+ * @entry: array of events
+ */
+struct hdd_adapter_ops_history {
+	qdf_atomic_t index;
+	struct hdd_adapter_ops_record entry[WLAN_HDD_ADAPTER_OPS_HISTORY_MAX];
+};
+
 /**
  * struct hdd_context - hdd shared driver and psoc/device context
  * @psoc: object manager psoc context
@@ -1623,6 +1691,7 @@ struct hdd_fw_ver_info {
  * @sar_cmd_params: SAR command params to be configured to the FW
  * @rx_aggregation: rx aggregation enable or disable state
  * @gro_force_flush: gro force flushed indication flag
+ * @adapter_ops_wq: High priority workqueue for handling adapter operations
  */
 struct hdd_context {
 	struct wlan_objmgr_psoc *psoc;
@@ -1954,6 +2023,9 @@ struct hdd_context {
 #ifdef FW_THERMAL_THROTTLE_SUPPORT
 	uint8_t dutycycle_off_percent;
 #endif
+
+	qdf_workqueue_t *adapter_ops_wq;
+	struct hdd_adapter_ops_history adapter_ops_history;
 };
 
 /**
@@ -2027,6 +2099,50 @@ struct hdd_channel_info {
 /*
  * Function declarations and documentation
  */
+
+/**
+ * wlan_hdd_history_get_next_index() - get next index to store the history
+				       entry
+ * @curr_idx: current index
+ * @max_entries: max entries in the history
+ *
+ * Returns: The index at which record is to be stored in history
+ */
+static inline uint32_t wlan_hdd_history_get_next_index(qdf_atomic_t *curr_idx,
+						       uint32_t max_entries)
+{
+	uint32_t idx = qdf_atomic_inc_return(curr_idx);
+
+	return idx & (max_entries - 1);
+}
+
+/**
+ * hdd_adapter_ops_record_event() - record an entry in the adapter ops history
+ * @hdd_ctx: pointer to hdd context
+ * @event: event
+ * @vdev_id: vdev id corresponding to event
+ *
+ * Returns: None
+ */
+static inline void
+hdd_adapter_ops_record_event(struct hdd_context *hdd_ctx,
+			     enum hdd_adapter_ops_event event,
+			     int vdev_id)
+{
+	struct hdd_adapter_ops_history *adapter_hist;
+	struct hdd_adapter_ops_record *record;
+	uint32_t idx;
+
+	adapter_hist = &hdd_ctx->adapter_ops_history;
+
+	idx = wlan_hdd_history_get_next_index(&adapter_hist->index,
+					      WLAN_HDD_ADAPTER_OPS_HISTORY_MAX);
+
+	record = &adapter_hist->entry[idx];
+	record->event = event;
+	record->vdev_id = vdev_id;
+	record->timestamp = qdf_get_log_timestamp();
+}
 
 /**
  * hdd_validate_channel_and_bandwidth() - Validate the channel-bandwidth combo
@@ -2768,6 +2884,41 @@ hdd_is_low_tput_gro_enable(struct hdd_context *hdd_ctx)
 
 #endif /*WLAN_FEATURE_DP_BUS_BANDWIDTH*/
 
+/**
+ * hdd_init_adapter_ops_wq() - Init global workqueue for adapter operations.
+ * @hdd_ctx: pointer to HDD context
+ *
+ * Return: QDF_STATUS_SUCCESS if workqueue is allocated,
+ *	   QDF_STATUS_E_NOMEM if workqueue aloocation fails.
+ */
+QDF_STATUS hdd_init_adapter_ops_wq(struct hdd_context *hdd_ctx);
+
+/**
+ * hdd_deinit_adapter_ops_wq() - Deinit global workqueue for adapter operations.
+ * @hdd_ctx: pointer to HDD context
+ *
+ * Return: None
+ */
+void hdd_deinit_adapter_ops_wq(struct hdd_context *hdd_ctx);
+
+/**
+ * hdd_adapter_feature_update_work_init() - Init per adapter work for netdev
+ *					    feature update
+ * @adapter: pointer to adapter structure
+ *
+ * Return: QDF_STATUS
+ */
+QDF_STATUS hdd_adapter_feature_update_work_init(struct hdd_adapter *adapter);
+
+/**
+ * hdd_adapter_feature_update_work_deinit() - Deinit per adapter work for
+ *					      netdev feature update
+ * @adapter: pointer to adapter structure
+ *
+ * Return: QDF_STATUS
+ */
+void hdd_adapter_feature_update_work_deinit(struct hdd_adapter *adapter);
+
 int hdd_qdf_trace_enable(QDF_MODULE_ID module_id, uint32_t bitmask);
 
 int hdd_init(void);
@@ -3237,6 +3388,36 @@ void hdd_set_netdev_flags(struct hdd_adapter *adapter);
 
 #ifdef FEATURE_TSO
 /**
+ * hdd_get_tso_csum_feature_flags() - Return TSO and csum flags if enabled
+ *
+ * Return: Enabled feature flags set, 0 on failure
+ */
+static inline netdev_features_t hdd_get_tso_csum_feature_flags(void)
+{
+	netdev_features_t netdev_features = 0;
+	ol_txrx_soc_handle soc = cds_get_context(QDF_MODULE_ID_SOC);
+
+	if (!soc) {
+		hdd_err("soc handle is NULL");
+		return 0;
+	}
+
+	if (cdp_cfg_get(soc, cfg_dp_enable_ip_tcp_udp_checksum_offload)) {
+		netdev_features = NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM;
+
+		if (cdp_cfg_get(soc, cfg_dp_tso_enable)) {
+			/*
+			 * Enable TSO only if IP/UDP/TCP TX checksum flag is
+			 * enabled.
+			 */
+			netdev_features |= NETIF_F_TSO | NETIF_F_TSO6 |
+					   NETIF_F_SG;
+		}
+	}
+	return netdev_features;
+}
+
+/**
  * hdd_set_tso_flags() - enable TSO flags in the network device
  * @hdd_ctx: HDD context
  * @wlan_dev: network device structure
@@ -3249,25 +3430,20 @@ void hdd_set_netdev_flags(struct hdd_adapter *adapter);
 static inline void hdd_set_tso_flags(struct hdd_context *hdd_ctx,
 	 struct net_device *wlan_dev)
 {
-	if (cdp_cfg_get(cds_get_context(QDF_MODULE_ID_SOC),
-			cfg_dp_tso_enable) &&
-			cdp_cfg_get(cds_get_context(QDF_MODULE_ID_SOC),
-				    cfg_dp_enable_ip_tcp_udp_checksum_offload)){
-	    /*
-	     * We want to enable TSO only if IP/UDP/TCP TX checksum flag is
-	     * enabled.
-	     */
-		hdd_debug("TSO Enabled");
-		wlan_dev->features |=
-			 NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM |
-			 NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_SG;
-	}
+	hdd_debug("TSO Enabled");
+
+	wlan_dev->features |= hdd_get_tso_csum_feature_flags();
 }
 #else
 static inline void hdd_set_tso_flags(struct hdd_context *hdd_ctx,
 	 struct net_device *wlan_dev)
 {
 	hdd_set_sg_flags(hdd_ctx, wlan_dev);
+}
+
+static inline netdev_features_t hdd_get_tso_csum_feature_flags(void)
+{
+	return 0;
 }
 #endif /* FEATURE_TSO */
 
@@ -4415,5 +4591,15 @@ hdd_monitor_mode_qdf_create_event(struct hdd_adapter *adapter,
  * Return: None
  */
 void hdd_init_start_completion(void);
+
+/**
+ * hdd_netdev_feature_update - Update the netdev features
+ * @net_dev: Handle to net_device
+ *
+ * This func holds the rtnl_lock. Do not call with rtnl_lock held.
+ *
+ * Return: None
+ */
+void hdd_netdev_update_features(struct hdd_adapter *adapter);
 
 #endif /* end #if !defined(WLAN_HDD_MAIN_H) */

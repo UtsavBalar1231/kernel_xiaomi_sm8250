@@ -48,7 +48,7 @@
 #define TIME_STRING_LEN            24
 
 #define ROAM_CHANNEL_BUF_SIZE      300
-#define LINE_STR "========================================="
+#define LINE_STR "============================================================"
 /*
  * MLME_CFG_VHT_CSN_BEAMFORMEE_ANT_SUPPORTED_FW_DEF + 1 is
  * assumed to be the default fw supported BF antennas, if fw
@@ -1136,6 +1136,7 @@ struct wlan_mlme_chainmask {
  * @enable_peer_unmap_conf_support: Indicate whether to send conf for peer unmap
  * @stop_all_host_scan_support: Target capability that indicates if the target
  * supports stop all host scan request type.
+ * @sae_connect_retries: sae connect retry bitmask
  */
 struct wlan_mlme_generic {
 	enum band_info band_capability;
@@ -1172,6 +1173,7 @@ struct wlan_mlme_generic {
 	bool enable_ring_buffer;
 	bool enable_peer_unmap_conf_support;
 	bool stop_all_host_scan_support;
+	uint32_t sae_connect_retries;
 };
 
 /*

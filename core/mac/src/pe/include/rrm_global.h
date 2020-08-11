@@ -27,7 +27,9 @@
 
    ========================================================================*/
 
-#define MAX_MEASUREMENT_REQUEST 2
+#define MAX_MEASUREMENT_REQUEST      5
+#define MAX_NUM_CHANNELS             255
+
 #define DEFAULT_RRM_IDX 0
 
 typedef enum eRrmRetStatus {
@@ -218,7 +220,10 @@ typedef struct sRrmPEContext {
 	/* Dialog token for the request initiated from station. */
 	uint8_t DialogToken;
 	uint16_t prev_rrm_report_seq_num;
+	uint8_t num_active_request;
 	tpRRMReq pCurrentReq[MAX_MEASUREMENT_REQUEST];
+	uint32_t beacon_rpt_chan_list[MAX_NUM_CHANNELS];
+	uint8_t beacon_rpt_chan_num;
 } tRrmPEContext, *tpRrmPEContext;
 
 /* 2008 11k spec reference: 18.4.8.5 RCPI Measurement */

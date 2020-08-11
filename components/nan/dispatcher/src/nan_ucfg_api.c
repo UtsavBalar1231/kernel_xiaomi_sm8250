@@ -57,6 +57,8 @@ static void nan_cfg_init(struct wlan_objmgr_psoc *psoc,
 	nan_obj->cfg_param.max_ndp_sessions = cfg_get(psoc,
 						      CFG_NDP_MAX_SESSIONS);
 	nan_obj->cfg_param.max_ndi = cfg_get(psoc, CFG_NDI_MAX_SUPPORT);
+	nan_obj->cfg_param.nan_feature_config =
+					cfg_get(psoc, CFG_NAN_FEATURE_CONFIG);
 }
 
 /**
@@ -1194,4 +1196,61 @@ ucfg_nan_set_vdev_creation_supp_by_fw(struct wlan_objmgr_psoc *psoc, bool set)
 	}
 
 	psoc_nan_obj->nan_caps.nan_vdev_allowed = set;
+}
+
+QDF_STATUS ucfg_get_nan_feature_config(struct wlan_objmgr_psoc *psoc,
+				       uint32_t *nan_feature_config)
+{
+	struct nan_psoc_priv_obj *psoc_nan_obj;
+
+	psoc_nan_obj = nan_get_psoc_priv_obj(psoc);
+	if (!psoc_nan_obj) {
+		nan_err("psoc_nan_obj is null");
+		*nan_feature_config = cfg_default(CFG_NAN_FEATURE_CONFIG);
+		return QDF_STATUS_E_INVAL;
+	}
+
+	*nan_feature_config = psoc_nan_obj->cfg_param.nan_feature_config;
+	return QDF_STATUS_SUCCESS;
+}
+
+bool ucfg_is_nan_vdev(struct wlan_objmgr_vdev *vdev)
+{
+	if (wlan_vdev_mlme_get_opmode(vdev) == QDF_NAN_DISC_MODE ||
+	    (!ucfg_nan_is_vdev_creation_allowed(wlan_vdev_get_psoc(vdev)) &&
+	     wlan_vdev_mlme_get_opmode(vdev) == QDF_STA_MODE))
+		return true;
+
+	return false;
+}
+
+QDF_STATUS ucfg_nan_disable_ind_to_userspace(struct wlan_objmgr_psoc *psoc)
+{
+	struct nan_psoc_priv_obj *psoc_nan_obj;
+	struct nan_event_params *disable_ind;
+	struct nan_disable_ind_msg msg = {
+		.msg_hdr.msg_id = NAN_MSG_ID_DISABLE_INDICATION,
+		.reason = 0, /* success */ };
+
+	psoc_nan_obj = nan_get_psoc_priv_obj(psoc);
+	if (!psoc_nan_obj) {
+		nan_err("psoc_nan_obj is null");
+		return QDF_STATUS_E_INVAL;
+	}
+
+	disable_ind = qdf_mem_malloc(sizeof(struct nan_event_params) +
+				     sizeof(msg));
+	if (!disable_ind) {
+		nan_err("failed to alloc disable_ind");
+		return QDF_STATUS_E_NOMEM;
+	}
+	disable_ind->psoc = psoc,
+	disable_ind->evt_type = nan_event_id_disable_ind;
+	disable_ind->buf_len = sizeof(msg);
+	qdf_mem_copy(disable_ind->buf, &msg, disable_ind->buf_len);
+
+	psoc_nan_obj->cb_obj.os_if_nan_event_handler(disable_ind);
+
+	qdf_mem_free(disable_ind);
+	return QDF_STATUS_SUCCESS;
 }

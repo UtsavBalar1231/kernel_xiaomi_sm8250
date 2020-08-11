@@ -474,8 +474,14 @@ dp_rx_get_fisa_flow(struct dp_rx_fst *fisa_hdl, struct dp_vdev *vdev,
 
 	flow_idx_valid = is_flow_idx_valid(flow_invalid, flow_timeout);
 	if (flow_idx_valid) {
-		dp_fisa_debug("flow_idx is valid 0x%x", flow_idx);
-		qdf_assert_always(flow_idx < fisa_hdl->max_entries);
+		/* If flow index is invalid, fail to get flow */
+		if (qdf_unlikely(flow_idx >= fisa_hdl->max_entries)) {
+			dp_info("flow_idx is invalid 0x%x", flow_idx);
+			hal_rx_dump_pkt_tlvs(hal_soc_hdl, rx_tlv_hdr,
+					     QDF_TRACE_LEVEL_INFO_HIGH);
+			DP_STATS_INC(fisa_hdl, invalid_flow_index, 1);
+			return NULL;
+		}
 		sw_ft_entry = &sw_ft_base[flow_idx];
 		sw_ft_entry->vdev = vdev;
 
@@ -1087,6 +1093,65 @@ static bool dp_is_nbuf_bypass_fisa(qdf_nbuf_t nbuf)
 }
 
 /**
+ * dp_rx_fisa_flush_by_vdev_ctx_id() - Flush fisa aggregates per vdev and rx
+ *  context id
+ * @soc: core txrx main context
+ * @vdev: Handle DP vdev
+ * @rx_ctx_id: Rx context id
+ *
+ * Return: Success on flushing the flows for the vdev and rx ctx id
+ */
+static
+QDF_STATUS dp_rx_fisa_flush_by_vdev_ctx_id(struct dp_soc *soc,
+					   struct dp_vdev *vdev,
+					   uint8_t rx_ctx_id)
+{
+	struct dp_rx_fst *fisa_hdl = soc->rx_fst;
+	struct dp_fisa_rx_sw_ft *sw_ft_entry =
+		(struct dp_fisa_rx_sw_ft *)fisa_hdl->base;
+	int ft_size = fisa_hdl->max_entries;
+	int i;
+
+	for (i = 0; i < ft_size; i++) {
+		if (sw_ft_entry[i].is_populated &&
+		    vdev == sw_ft_entry[i].vdev &&
+		    sw_ft_entry[i].napi_id == rx_ctx_id) {
+			dp_fisa_debug("flushing %d %pk vdev %pK napi id:%d", i,
+				      &sw_ft_entry[i], vdev, rx_ctx_id);
+			dp_rx_fisa_flush_flow_wrap(&sw_ft_entry[i]);
+		}
+	}
+
+	return QDF_STATUS_SUCCESS;
+}
+
+/**
+ * dp_fisa_disallowed_for_vdev() - Check if fisa is allowed on vdev
+ * @soc: core txrx main context
+ * @vdev: Handle DP vdev
+ * @rx_ctx_id: Rx context id
+ *
+ * Return: true if fisa is disallowed for vdev else false
+ */
+static bool dp_fisa_disallowed_for_vdev(struct dp_soc *soc,
+					struct dp_vdev *vdev,
+					uint8_t rx_ctx_id)
+{
+	if (!vdev->fisa_disallowed[rx_ctx_id]) {
+		if (vdev->fisa_force_flushed[rx_ctx_id])
+			vdev->fisa_force_flushed[rx_ctx_id] = 0;
+		return false;
+	}
+
+	if (!vdev->fisa_force_flushed[rx_ctx_id]) {
+		dp_rx_fisa_flush_by_vdev_ctx_id(soc, vdev, rx_ctx_id);
+		vdev->fisa_force_flushed[rx_ctx_id] = 1;
+	}
+
+	return true;
+}
+
+/**
  * dp_fisa_rx() - Entry function to FISA to handle aggregation
  * @soc: core txrx main context
  * @vdev: Handle DP vdev
@@ -1112,6 +1177,9 @@ QDF_STATUS dp_fisa_rx(struct dp_soc *soc, struct dp_vdev *vdev,
 
 		/* bypass FISA check */
 		if (dp_is_nbuf_bypass_fisa(head_nbuf))
+			goto deliver_nbuf;
+
+		if (dp_fisa_disallowed_for_vdev(soc, vdev, rx_ctx_id))
 			goto deliver_nbuf;
 
 		if (qdf_atomic_read(&soc->skip_fisa_param.skip_fisa)) {
@@ -1268,4 +1336,17 @@ QDF_STATUS dp_rx_fisa_flush_by_vdev_id(struct dp_soc *soc, uint8_t vdev_id)
 	}
 
 	return QDF_STATUS_SUCCESS;
+}
+
+void dp_set_fisa_disallowed_for_vdev(struct cdp_soc_t *cdp_soc, uint8_t vdev_id,
+				     uint8_t rx_ctx_id, uint8_t val)
+{
+	struct dp_soc *soc = (struct dp_soc *)cdp_soc;
+	struct dp_vdev *vdev;
+
+	vdev = dp_get_vdev_from_soc_vdev_id_wifi3(soc, vdev_id);
+	if (qdf_unlikely(!vdev))
+		return;
+
+	vdev->fisa_disallowed[rx_ctx_id] = val;
 }
