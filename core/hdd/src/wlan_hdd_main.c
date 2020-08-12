@@ -10899,6 +10899,7 @@ static int __hdd_psoc_idle_shutdown(struct hdd_context *hdd_ctx)
 	errno = osif_psoc_sync_trans_start(hdd_ctx->parent_dev, &psoc_sync);
 	if (errno) {
 		hdd_info("psoc busy, abort idle shutdown; errno:%d", errno);
+		errno = -EAGAIN;
 		goto exit;
 	}
 
