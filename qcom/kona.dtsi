@@ -4836,6 +4836,15 @@
 				mhi,priority = <1>;
 				mhi,brstmode = <2>;
 			};
+
+			mhi_event@2 {
+				mhi,num-elements = <32>;
+				mhi,intmod = <1>;
+				mhi,msi = <0>;
+				mhi,priority = <2>;
+				mhi,brstmode = <2>;
+				mhi,data-type = <3>;
+			};
 		};
 
 		mhi_devices {
