@@ -225,9 +225,9 @@
 #define WLAN_CFG_REO_DST_RING_SIZE_MIN 1024
 #define WLAN_CFG_REO_DST_RING_SIZE_MAX 2048
 
-#define WLAN_CFG_REO_REINJECT_RING_SIZE 32
+#define WLAN_CFG_REO_REINJECT_RING_SIZE 128
 #define WLAN_CFG_REO_REINJECT_RING_SIZE_MIN 32
-#define WLAN_CFG_REO_REINJECT_RING_SIZE_MAX 32
+#define WLAN_CFG_REO_REINJECT_RING_SIZE_MAX 128
 
 #define WLAN_CFG_RX_RELEASE_RING_SIZE 1024
 #define WLAN_CFG_RX_RELEASE_RING_SIZE_MIN 8
@@ -854,6 +854,27 @@
 		WLAN_CFG_PKTLOG_BUFFER_SIZE, \
 		CFG_VALUE_OR_DEFAULT, "Packet Log buffer size")
 
+/*
+ * <ini>
+ * legacy_mode_csum_disable - Disable csum offload for legacy 802.11abg modes
+ * @Min: 0
+ * @Max: 1
+ * @Default: 0
+ *
+ * This ini is used to disable HW checksum offload capability for legacy
+ * connections
+ *
+ * Related: gEnableIpTcpUdpChecksumOffload should be enabled
+ *
+ * Usage: Internal
+ *
+ * </ini>
+ */
+
+#define CFG_DP_LEGACY_MODE_CSUM_DISABLE \
+	CFG_INI_BOOL("legacy_mode_csum_disable", false, \
+		     "Enable/Disable legacy mode checksum")
+
 #define CFG_DP \
 		CFG(CFG_DP_HTT_PACKET_TYPE) \
 		CFG(CFG_DP_INT_BATCH_THRESHOLD_OTHER) \
@@ -928,6 +949,6 @@
 		CFG(CFG_DP_RX_MON_PROTOCOL_FLOW_TAG_ENABLE) \
 		CFG(CFG_DP_RXDMA_MONITOR_RX_DROP_THRESHOLD) \
 		CFG(CFG_DP_PKTLOG_BUFFER_SIZE) \
-		CFG(CFG_DP_RX_FISA_ENABLE)
-
+		CFG(CFG_DP_RX_FISA_ENABLE) \
+		CFG(CFG_DP_LEGACY_MODE_CSUM_DISABLE)
 #endif /* _CFG_DP_H_ */

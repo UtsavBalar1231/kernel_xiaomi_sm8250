@@ -25,6 +25,8 @@
 #ifdef WLAN_CONV_SPECTRAL_ENABLE
 #include <wlan_spectral_utils_api.h>
 #endif
+#include <target_if_psoc_wake_lock.h>
+
 /* Function pointer to call DA/OL specific tx_ops registration function */
 QDF_STATUS (*wlan_global_lmac_if_tx_ops_register[MAX_DEV_TYPE])
 				(struct wlan_lmac_if_tx_ops *tx_ops);
@@ -135,6 +137,8 @@ QDF_STATUS wlan_global_lmac_if_open(struct wlan_objmgr_psoc *psoc)
 	/* Function call to register rx-ops handlers */
 	wlan_global_lmac_if_rx_ops_register(&psoc->soc_cb.rx_ops);
 
+	target_if_wake_lock_init(psoc);
+
 	return QDF_STATUS_SUCCESS;
 }
 qdf_export_symbol(wlan_global_lmac_if_open);
@@ -149,6 +153,7 @@ qdf_export_symbol(wlan_global_lmac_if_open);
  */
 QDF_STATUS wlan_global_lmac_if_close(struct wlan_objmgr_psoc *psoc)
 {
+	target_if_wake_lock_deinit(psoc);
 	qdf_mem_zero(&psoc->soc_cb.tx_ops, sizeof(psoc->soc_cb.tx_ops));
 	qdf_mem_zero(&psoc->soc_cb.rx_ops, sizeof(psoc->soc_cb.rx_ops));
 

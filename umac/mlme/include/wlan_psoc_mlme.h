@@ -23,6 +23,9 @@
 #include <wlan_ext_mlme_obj_types.h>
 #include <wlan_vdev_mgr_tgt_if_rx_defs.h>
 #include <qdf_timer.h>
+#ifdef FEATURE_VDEV_RSP_WAKELOCK
+#include <target_if_psoc_wake_lock.h>
+#endif
 
 /* Max RNR size given max vaps are 16 */
 #define MAX_RNR_SIZE 256
