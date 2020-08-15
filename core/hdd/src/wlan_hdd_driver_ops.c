@@ -581,7 +581,17 @@ static int __hdd_soc_recovery_reinit(struct device *dev,
 	}
 
 	re_init_fail_cnt = 0;
-	cds_set_recovery_in_progress(false);
+
+	/*
+	 * In case of SSR within SSR we have seen the race
+	 * where the reinit is successful and fw down is received
+	 * which sets the recovery in progress. Now as reinit is
+	 * successful we reset the recovery in progress here.
+	 * So check if FW is down then don't reset the recovery
+	 * in progress
+	 */
+	if (!qdf_is_fw_down())
+		cds_set_recovery_in_progress(false);
 
 	hdd_soc_load_unlock(dev);
 	hdd_start_complete(0);
@@ -850,7 +860,6 @@ static void hdd_soc_recovery_shutdown(struct device *dev)
 	int errno;
 
 	errno = osif_psoc_sync_trans_start_wait(dev, &psoc_sync);
-	QDF_BUG(!errno);
 	if (errno)
 		return;
 

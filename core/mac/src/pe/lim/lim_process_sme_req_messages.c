@@ -6238,11 +6238,18 @@ void lim_add_roam_blacklist_ap(struct mac_context *mac_ctx,
 	struct sir_rssi_disallow_lst entry;
 	struct roam_blacklist_timeout *blacklist;
 
+	pe_debug("Received Blacklist event from FW num entries %d",
+		 src_lst->num_entries);
 	blacklist = &src_lst->roam_blacklist[0];
 	for (i = 0; i < src_lst->num_entries; i++) {
 
 		entry.bssid = blacklist->bssid;
 		entry.time_during_rejection = blacklist->received_time;
+		entry.reject_reason = blacklist->reject_reason;
+		entry.source = blacklist->source ? blacklist->source :
+						   ADDED_BY_TARGET;
+		entry.original_timeout = blacklist->original_timeout;
+		entry.received_time = blacklist->received_time;
 		/* If timeout = 0 and rssi = 0 ignore the entry */
 		if (!blacklist->timeout && !blacklist->rssi) {
 			continue;

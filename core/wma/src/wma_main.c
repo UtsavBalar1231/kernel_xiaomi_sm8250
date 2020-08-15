@@ -1964,22 +1964,6 @@ static void wma_target_if_open(tp_wma_handle wma_handle)
 }
 
 /**
- * wma_target_if_close() - Detach UMAC modules' interface with wmi layer
- * @wma_handle: wma handle
- *
- * Return: None
- */
-static void wma_target_if_close(tp_wma_handle wma_handle)
-{
-	struct wlan_objmgr_psoc *psoc = wma_handle->psoc;
-
-	if (!psoc)
-		return;
-
-	wlan_global_lmac_if_close(psoc);
-}
-
-/**
  * wma_legacy_service_ready_event_handler() - legacy (ext)service ready handler
  * @event_id: event_id
  * @handle: wma handle
@@ -2041,12 +2025,17 @@ static int wma_flush_complete_evt_handler(void *handle,
 	reason_code = wmi_event->reserved0;
 	WMA_LOGD("Received reason code %d from FW", reason_code);
 
-	buf_ptr = (uint8_t *)wmi_event;
-	buf_ptr = buf_ptr + sizeof(wmi_debug_mesg_flush_complete_fixed_param) +
-		  WMI_TLV_HDR_SIZE;
-	data_stall_event = (wmi_debug_mesg_fw_data_stall_param *) buf_ptr;
+	if (reason_code == WMA_DATA_STALL_TRIGGER) {
+		buf_ptr = (uint8_t *)wmi_event;
+		buf_ptr = buf_ptr +
+			  sizeof(wmi_debug_mesg_flush_complete_fixed_param) +
+			  WMI_TLV_HDR_SIZE;
+		data_stall_event =
+				(wmi_debug_mesg_fw_data_stall_param *)buf_ptr;
+	}
 
-	if (((data_stall_event->tlv_header & 0xFFFF0000) >> 16 ==
+	if (reason_code == WMA_DATA_STALL_TRIGGER &&
+	    ((data_stall_event->tlv_header & 0xFFFF0000) >> 16 ==
 	      WMITLV_TAG_STRUC_wmi_debug_mesg_fw_data_stall_param)) {
 		/**
 		 * Log data stall info received from FW:
@@ -4524,7 +4513,6 @@ QDF_STATUS wma_close(void)
 
 	wlan_objmgr_psoc_release_ref(wma_handle->psoc, WLAN_LEGACY_WMA_ID);
 	wma_handle->psoc = NULL;
-	wma_target_if_close(wma_handle);
 
 	WMA_LOGD("%s: Exit", __func__);
 	return QDF_STATUS_SUCCESS;

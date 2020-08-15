@@ -15447,6 +15447,7 @@ csr_validate_and_update_fils_info(struct mac_context *mac,
 				  uint8_t vdev_id)
 {
 	uint8_t cache_id[CACHE_ID_LEN] = {0};
+	struct qdf_mac_addr bssid;
 
 	if (!profile->fils_con_info)
 		return QDF_STATUS_SUCCESS;
@@ -15465,12 +15466,16 @@ csr_validate_and_update_fils_info(struct mac_context *mac,
 			  cache_id[0], cache_id[1]);
 	}
 
+	qdf_mem_copy(bssid.bytes,
+		     csr_join_req->bssDescription.bssId,
+		     QDF_MAC_ADDR_SIZE);
+
 	if ((!profile->fils_con_info->r_rk_length ||
 	     !profile->fils_con_info->key_nai_length) &&
 	    !bss_desc->fils_info_element.is_cache_id_present &&
 	    !csr_lookup_fils_pmkid(mac, vdev_id, cache_id,
 				   csr_join_req->ssId.ssId,
-				   csr_join_req->ssId.length))
+				   csr_join_req->ssId.length, &bssid))
 		return QDF_STATUS_E_FAILURE;
 
 	qdf_mem_copy(&csr_join_req->fils_con_info,
@@ -22109,6 +22114,8 @@ static QDF_STATUS csr_process_roam_sync_callback(struct mac_context *mac_ctx,
 
 		ap_info.bssid = session->connectedProfile.bssid;
 		ap_info.reject_ap_type = DRIVER_AVOID_TYPE;
+		ap_info.reject_reason = REASON_STA_KICKOUT;
+		ap_info.source = ADDED_BY_DRIVER;
 		wlan_blm_add_bssid_to_reject_list(mac_ctx->pdev, &ap_info);
 	}
 

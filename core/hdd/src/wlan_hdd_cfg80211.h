@@ -713,4 +713,13 @@ QDF_STATUS wlan_hdd_send_sta_authorized_event(
 					struct hdd_adapter *adapter,
 					struct hdd_context *hdd_ctx,
 					const struct qdf_mac_addr *mac_addr);
+
+/**
+ * hdd_is_legacy_connection() - Is adapter connection is legacy
+ * @adapter: Handle to hdd_adapter
+ *
+ * Return: true if connection mode is legacy, false otherwise.
+ */
+bool hdd_is_legacy_connection(struct hdd_adapter *adapter);
+
 #endif

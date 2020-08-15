@@ -191,7 +191,8 @@ static const int beacon_filter_table[] = {
 #endif
 
 #if defined(WLAN_FEATURE_SAE) && \
-		defined(CFG80211_EXTERNAL_AUTH_SUPPORT)
+		(defined(CFG80211_EXTERNAL_AUTH_SUPPORT) || \
+		LINUX_VERSION_CODE >= KERNEL_VERSION(4, 17, 0))
 /**
  * wlan_hdd_sae_callback() - Sends SAE info to supplicant
  * @adapter: pointer adapter context
@@ -2958,6 +2959,36 @@ void hdd_clear_fils_connection_info(struct hdd_adapter *adapter)
 #endif
 
 /**
+ * hdd_netif_queue_enable() - Enable the network queue for a
+ *			      particular adapter.
+ * @adapter: pointer to the adapter structure
+ *
+ * This function schedules a work to update the netdev features
+ * and enable the network queue if the feature "disable checksum/tso
+ * for legacy connections" is enabled via INI. If not, it will
+ * retain the existing behavior by just enabling the network queues.
+ *
+ * Returns: none
+ */
+static inline void hdd_netif_queue_enable(struct hdd_adapter *adapter)
+{
+	ol_txrx_soc_handle soc = cds_get_context(QDF_MODULE_ID_SOC);
+	struct hdd_context *hdd_ctx = WLAN_HDD_GET_CTX(adapter);
+
+	if (cdp_cfg_get(soc, cfg_dp_disable_legacy_mode_csum_offload)) {
+		hdd_adapter_ops_record_event(hdd_ctx,
+					     WLAN_HDD_ADAPTER_OPS_WORK_POST,
+					     adapter->vdev_id);
+		qdf_queue_work(0, hdd_ctx->adapter_ops_wq,
+			       &adapter->netdev_features_update_work);
+	} else {
+		wlan_hdd_netif_queue_control(adapter,
+					     WLAN_WAKE_ALL_NETIF_QUEUE,
+					     WLAN_CONTROL_PATH);
+	}
+}
+
+/**
  * hdd_association_completion_handler() - association completion handler
  * @adapter: pointer to adapter
  * @roam_info: pointer to roam info
@@ -3437,10 +3468,7 @@ hdd_association_completion_handler(struct hdd_adapter *adapter,
 						roam_info,
 						roam_info->bss_desc);
 				hdd_debug("Enabling queues");
-				wlan_hdd_netif_queue_control(adapter,
-						WLAN_WAKE_ALL_NETIF_QUEUE,
-						WLAN_CONTROL_PATH);
-
+				hdd_netif_queue_enable(adapter);
 			}
 			qdf_mem_free(rsp_rsn_ie);
 		} else {
@@ -3510,9 +3538,7 @@ hdd_association_completion_handler(struct hdd_adapter *adapter,
 				hdd_debug("LFR3:netif_tx_wake_all_queues");
 #endif
 			hdd_debug("Enabling queues");
-			wlan_hdd_netif_queue_control(adapter,
-						   WLAN_WAKE_ALL_NETIF_QUEUE,
-						   WLAN_CONTROL_PATH);
+			hdd_netif_queue_enable(adapter);
 		}
 		qdf_mem_free(reqRsnIe);
 
@@ -3856,7 +3882,7 @@ static bool roam_remove_ibss_station(struct hdd_adapter *adapter,
 	if (successful) {
 		if (del_idx == 0) {
 			if (hdd_is_valid_mac_address(
-			    sta_ctx->conn_info.peer_macaddr[idx].bytes)) {
+			    sta_ctx->conn_info.peer_macaddr[valid_idx].bytes)) {
 				qdf_copy_macaddr(&sta_ctx->conn_info.
 						 peer_macaddr[0],
 						 &sta_ctx->conn_info.
