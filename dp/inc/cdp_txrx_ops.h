@@ -1119,6 +1119,8 @@ struct ol_if_ops {
 	void (*dp_put_multi_pages)(uint32_t desc_type,
 				   struct qdf_mem_multi_page_t *pages);
 #endif
+	int (*dp_rx_get_pending)(ol_txrx_soc_handle soc);
+	/* TODO: Add any other control path calls required to OL_IF/WMA layer */
 };
 
 
