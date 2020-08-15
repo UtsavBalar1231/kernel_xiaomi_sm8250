@@ -2371,18 +2371,20 @@ static int venus_hfi_session_end(void *sess)
 	struct venus_hfi_device *device = &venus_hfi_dev;
 	int rc = 0;
 
-	if (!__is_session_valid(device, session, __func__))
-		return -EINVAL;
-
 	mutex_lock(&device->lock);
+	if (!__is_session_valid(device, session, __func__)) {
+		rc = -EINVAL;
+		goto exit;
+	}
+
 	if (msm_vidc_fw_coverage) {
 		if (__sys_set_coverage(device, msm_vidc_fw_coverage,
 				session->sid))
 			s_vpr_e(session->sid, "Fw_coverage msg ON failed\n");
 	}
 	rc = __send_session_cmd(session, HFI_CMD_SYS_SESSION_END);
+exit:
 	mutex_unlock(&device->lock);
-
 	return rc;
 }
 
