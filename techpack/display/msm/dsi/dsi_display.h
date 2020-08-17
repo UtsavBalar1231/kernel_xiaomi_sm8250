@@ -744,4 +744,6 @@ char *dsi_display_get_cmdline_panel_info(void);
 int dsi_display_hbm_set_disp_param(struct drm_connector *connector,
 				u32 param_type);
 
+struct dsi_display *get_main_display(void);
+
 #endif /* _DSI_DISPLAY_H_ */
