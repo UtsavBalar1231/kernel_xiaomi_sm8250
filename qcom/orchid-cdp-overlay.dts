@@ -1,0 +1,13 @@
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include "orchid-cdp.dtsi"
+#include "lito-v2-audio.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Orchid CDP";
+	compatible = "qcom,orchid-cdp", "qcom,orchid", "qcom,cdp";
+	qcom,msm-id = <476 0x10000>;
+	qcom,board-id = <1 0>;
+};

@@ -60,7 +60,9 @@ dtbo-$(CONFIG_ARCH_LITO) += lito-rumi-overlay.dtbo \
                 lito-v2-atp-overlay.dtbo \
                 lito-v2-atp-lcd-overlay.dtbo \
                 lito-qrd-overlay.dtbo \
-                lito-v2-qrd-overlay.dtbo
+                lito-v2-qrd-overlay.dtbo \
+                orchid-mtp-overlay.dtbo \
+                orchid-cdp-overlay.dtbo
 
 lito-rumi-overlay.dtbo-base := lito.dtb lito-v2.dtb
 lito-mtp-overlay.dtbo-base := lito.dtb
@@ -72,6 +74,8 @@ lito-v2-atp-overlay.dtbo-base := lito-v2.dtb
 lito-v2-atp-lcd-overlay.dtbo-base := lito-v2.dtb
 lito-qrd-overlay.dtbo-base := lito.dtb
 lito-v2-qrd-overlay.dtbo-base := lito-v2.dtb
+orchid-mtp-overlay.dtbo-base := orchid.dtb
+orchid-cdp-overlay.dtbo-base := orchid.dtb
 else
 dtb-$(CONFIG_ARCH_LITO) += lito-rumi.dtb \
                 lito-mtp.dtb \
@@ -82,7 +86,9 @@ dtb-$(CONFIG_ARCH_LITO) += lito-rumi.dtb \
                 lito-v2-cdp.dtb \
                 lito-v2-atp.dtb \
                 lito-v2-atp-lcd.dtb \
-                lito-v2-qrd.dtb
+                lito-v2-qrd.dtb \
+                orchid-mtp.dtb \
+                orchid-cdp.dtb
 endif
 
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
