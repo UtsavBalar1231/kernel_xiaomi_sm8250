@@ -874,6 +874,11 @@ bool dc_skip_set_backlight(struct dsi_panel *panel, u32 bl_lvl)
 	}
 }
 
+static u32 dsi_panel_get_backlight(struct dsi_panel *panel)
+{
+	return panel->bl_config.bl_level;
+}
+
 int dsi_panel_set_backlight(struct dsi_panel *panel, u32 bl_lvl)
 {
 	int rc = 0;
