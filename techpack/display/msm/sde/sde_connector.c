@@ -797,6 +797,8 @@ void sde_connector_update_fod_hbm(struct drm_connector *connector)
 	mutex_lock(&display->panel->panel_lock);
 	dsi_panel_set_fod_hbm(display->panel, status);
 	mutex_unlock(&display->panel->panel_lock);
+
+	dsi_display_set_fod_ui(display, status);
 }
 
 struct sde_connector_dyn_hdr_metadata *sde_connector_get_dyn_hdr_meta(
