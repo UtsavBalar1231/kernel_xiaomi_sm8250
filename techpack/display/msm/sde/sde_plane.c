@@ -4025,8 +4025,8 @@ static int sde_plane_atomic_set_property(struct drm_plane *plane,
 		idx = msm_property_index(&psde->property_info,
 				property);
 		if (idx == PLANE_PROP_ZPOS) {
-			if (val & 0x20000000u) {
-				val &= ~0x20000000u;
+			if (val & FOD_PRESSED_LAYER_ZORDER) {
+				val &= ~FOD_PRESSED_LAYER_ZORDER;
 				fod_val = 1;
 			}
 
