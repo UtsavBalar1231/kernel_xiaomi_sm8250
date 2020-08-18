@@ -106,6 +106,8 @@ struct lsm_client {
 	struct lsm_stage_config	stage_cfg[LSM_MAX_STAGES_PER_SESSION];
 	uint64_t	fe_id;
 	uint16_t	unprocessed_data;
+	void		*get_param_payload;
+	size_t		param_size;
 };
 
 struct lsm_stream_cmd_open_tx {
@@ -151,6 +153,18 @@ struct lsm_session_cmd_set_params_v3 {
 	struct mem_mapping_hdr mem_hdr;
 	uint32_t payload_size;
 	u32 param_data[0];
+} __packed;
+
+struct lsm_session_cmd_get_params_v2 {
+	struct apr_hdr apr_hdr;
+	struct mem_mapping_hdr mem_hdr;
+	struct param_hdr_v2 param_info;
+} __packed;
+
+struct lsm_session_cmd_get_params_v3 {
+	struct apr_hdr apr_hdr;
+	struct mem_mapping_hdr mem_hdr;
+	struct param_hdr_v3 param_info;
 } __packed;
 
 struct lsm_param_op_mode {
@@ -288,6 +302,9 @@ int q6lsm_read(struct lsm_client *client, struct lsm_cmd_read *read);
 int q6lsm_lab_buffer_alloc(struct lsm_client *client, bool alloc);
 int q6lsm_set_one_param(struct lsm_client *client,
 			struct lsm_params_info_v2 *p_info, void *data,
+			uint32_t param_type);
+int q6lsm_get_one_param(struct lsm_client *client,
+			struct lsm_params_get_info *p_info,
 			uint32_t param_type);
 void q6lsm_sm_set_param_data(struct lsm_client *client,
 		struct lsm_params_info_v2 *p_info,
