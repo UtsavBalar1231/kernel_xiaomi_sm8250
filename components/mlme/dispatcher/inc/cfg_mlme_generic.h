@@ -729,6 +729,28 @@
 				0, 0x52, 0x49, CFG_VALUE_OR_DEFAULT, \
 				"Bit mask to retry Auth and full connection on assoc timeout to same AP for SAE connection")
 
+/*
+ * <ini>
+ * join_failure_retry_interval - Set join failure retry interval (in ms)
+ *
+ * @Min: 0
+ * @Max: 3000
+ * @Default: 50
+ *
+ * This ini to set the join failure retry interval in ms
+ *
+ * Related: None.
+
+ * Supported Feature: General
+ *
+ * Usage: Internal
+ *
+ * </ini>
+ */
+#define CFG_JOIN_FAILURE_RETRY_INTERVAL CFG_INI_UINT("join_failure_retry_interval", \
+				0, 3000, 50, CFG_VALUE_OR_DEFAULT, \
+				"Set join failure retry time in ms")
+
 #define CFG_GENERIC_ALL \
 	CFG(CFG_ENABLE_DEBUG_PACKET_LOG) \
 	CFG(CFG_PMF_SA_QUERY_MAX_RETRIES) \
@@ -759,5 +781,6 @@
 	CFG(CFG_MGMT_RETRY_MAX) \
 	CFG(CFG_BMISS_SKIP_FULL_SCAN) \
 	CFG(CFG_ENABLE_RING_BUFFER) \
+	CFG(CFG_JOIN_FAILURE_RETRY_INTERVAL) \
 	CFG(CFG_SAE_CONNECION_RETRIES)
 #endif /* __CFG_MLME_GENERIC_H */
