@@ -8967,21 +8967,6 @@ static inline void hdd_pm_qos_update_cpu_mask(cpumask_t *mask,
  *
  * Return: none
  */
-#ifdef FEATURE_RUNTIME_PM
-static inline void hdd_pm_qos_update_request(struct hdd_context *hdd_ctx,
-					     cpumask_t *pm_qos_cpu_mask)
-{
-	COPY_CPU_MASK(&hdd_ctx->pm_qos_req.cpus_affine, pm_qos_cpu_mask);
-
-	/* Latency value to be read from INI */
-	if (cpumask_empty(pm_qos_cpu_mask) &&
-	    hdd_ctx->config->runtime_pm == hdd_runtime_pm_dynamic)
-		pm_qos_update_request(&hdd_ctx->pm_qos_req,
-				      PM_QOS_DEFAULT_VALUE);
-	else
-		pm_qos_update_request(&hdd_ctx->pm_qos_req, 1);
-}
-#else
 static inline void hdd_pm_qos_update_request(struct hdd_context *hdd_ctx,
 					     cpumask_t *pm_qos_cpu_mask)
 {
@@ -8994,7 +8979,6 @@ static inline void hdd_pm_qos_update_request(struct hdd_context *hdd_ctx,
 	else
 		pm_qos_update_request(&hdd_ctx->pm_qos_req, 1);
 }
-#endif
 
 #if defined(CONFIG_SMP) && defined(MSM_PLATFORM)
 /**
