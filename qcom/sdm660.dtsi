@@ -961,7 +961,7 @@
 	};
 
 	clock_mmss: clock-controller@c8c0000 {
-		compatible = "qcom,mmcc-sdm660";
+		compatible = "qcom,mmcc-sdm660", "syscon";
 		reg = <0xc8c0000 0x40000>;
 		vdd_mx_mmss-supply = <&pm660l_s5_level>;
 		vdd_dig_mmss-supply = <&pm660l_s3_level>;
@@ -971,14 +971,14 @@
 	};
 
 	clock_gpu: clock-controller@5065000 {
-		compatible = "qcom,gpu-sdm660";
+		compatible = "qcom,gpu-sdm660", "syscon";
 		reg = <0x5065000 0x10000>;
 		#clock-cells = <1>;
 		#reset-cells = <1>;
 	};
 
 	clock_gfx: gfx@5065000 {
-		compatible = "qcom,gpucc-sdm660";
+		compatible = "qcom,gpucc-sdm660", "syscon";
 		reg = <0x5065000 0x10000>;
 		vdd_dig_gfx-supply = <&pm660l_s3_level>;
 		vdd_mx_gfx-supply = <&pm660l_s5_level>;
@@ -1011,6 +1011,17 @@
 	mmss_debug: syscon@c8c0900 {
 		compatible = "syscon";
 		reg = <0xc8c0900 0x4>;
+	};
+
+	clock_debug: qcom,cc-debug@62000 {
+		compatible = "qcom,sdm660-debugcc";
+		qcom,gcc = <&clock_gcc>;
+		qcom,cpu = <&cpu_debug>;
+		qcom,mmss = <&clock_mmss>;
+		qcom,gpu = <&clock_gfx>;
+		clock-names = "xo_clk_src";
+		clocks = <&clock_rpmcc  RPM_SMD_XO_CLK_SRC>;
+		#clock-cells = <1>;
 	};
 
 	generic_bw_opp_table: generic-bw-opp-table {
