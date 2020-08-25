@@ -1618,7 +1618,7 @@ static int cam_ife_csid_enable_csi2(
 	const struct cam_ife_csid_reg_offset       *csid_reg;
 	struct cam_hw_soc_info                     *soc_info;
 	struct cam_ife_csid_cid_data               *cid_data;
-	uint32_t val = 0;
+	uint32_t val = 0, val2;
 
 	csid_reg = csid_hw->csid_info->csid_reg;
 	soc_info = &csid_hw->hw_info->soc_info;
@@ -1668,6 +1668,19 @@ static int cam_ife_csid_enable_csi2(
 			res->res_state = CAM_ISP_RESOURCE_STATE_RESERVED;
 			return rc;
 		}
+	}
+
+	/* after configuring the csi rx,  reset hw once */
+	rc = cam_ife_csid_reset_regs(csid_hw, true);
+	if (rc < 0) {
+		val = cam_io_r_mb(soc_info->reg_map[0].mem_base +
+			csid_reg->csi2_reg->csid_csi2_rx_cfg0_addr);
+		val2 = cam_io_r_mb(soc_info->reg_map[0].mem_base +
+			csid_reg->csi2_reg->csid_csi2_rx_irq_status_addr);
+		CAM_ERR(CAM_ISP,
+			"Failed in HW reset csid hw:%d top reset failed csi rx cfg:0x%x CSI RX status:0x%x",
+			csid_hw->hw_intf->hw_idx, val, val2);
+		return rc;
 	}
 
 	cam_ife_csid_csi2_irq_ctrl(csid_hw, true);
@@ -3617,12 +3630,14 @@ int cam_ife_csid_init_hw(void *hw_priv,
 		break;
 	}
 
-	rc = cam_ife_csid_reset_regs(csid_hw, true);
-	if (rc < 0)
-		CAM_ERR(CAM_ISP, "CSID: Failed in HW reset");
-
-	if (rc)
-		cam_ife_csid_disable_hw(csid_hw);
+	/* csid hw reset done after configuring the csi2  */
+	if (res->res_type != CAM_ISP_RESOURCE_CID) {
+		rc = cam_ife_csid_reset_regs(csid_hw, true);
+		if (rc) {
+			CAM_ERR(CAM_ISP, "CSID: Failed in HW reset");
+			cam_ife_csid_disable_hw(csid_hw);
+		}
+	}
 
 end:
 	mutex_unlock(&csid_hw->hw_info->hw_mutex);
@@ -4341,10 +4356,14 @@ static int cam_csid_evt_bottom_half_handler(
 		goto end;
 	}
 
-	CAM_ERR_RATE_LIMIT(CAM_ISP, "idx %d err %d phy %d cnt %d",
+	CAM_ERR_RATE_LIMIT(CAM_ISP,
+		"idx %d err %d phy %d  lane type:%d ln num:%d ln cfg:0x%x cnt %d",
 		csid_hw->hw_intf->hw_idx,
 		evt_payload->evt_type,
 		csid_hw->csi2_rx_cfg.phy_sel,
+		csid_hw->csi2_rx_cfg.lane_type,
+		csid_hw->csi2_rx_cfg.lane_num,
+		csid_hw->csi2_rx_cfg.lane_cfg,
 		csid_hw->csi2_cfg_cnt);
 
 	for (i = 0; i < CAM_IFE_CSID_IRQ_REG_MAX; i++)
