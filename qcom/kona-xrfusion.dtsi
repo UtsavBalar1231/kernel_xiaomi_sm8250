@@ -1025,9 +1025,6 @@
 	qcom,mdss-dsi-panel-on-check-value = <0x9c>;
 	qcom,mdss-dsi-panel-status-read-length = <1>;
 	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
-	qcom,dsi-supported-dfps-list = <90 75 60>;
-	qcom,mdss-dsi-pan-enable-dynamic-fps;
-	qcom,mdss-dsi-pan-fps-update = "dfps_immediate_porch_mode_vfp";
 	qcom,mdss-dsi-min-refresh-rate = <60>;
 	qcom,mdss-dsi-max-refresh-rate = <90>;
 	qcom,mdss-dsi-display-timings {
