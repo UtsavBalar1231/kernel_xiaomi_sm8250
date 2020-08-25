@@ -1381,6 +1381,7 @@ static int __cam_req_mgr_process_req(struct cam_req_mgr_core_link *link,
 	struct cam_req_mgr_req_queue        *in_q;
 	struct cam_req_mgr_core_session     *session;
 	struct cam_req_mgr_connected_device *dev;
+	uint32_t                             max_retry = 0;
 
 	in_q = link->req.in_q;
 	session = (struct cam_req_mgr_core_session *)link->parent;
@@ -1496,12 +1497,14 @@ static int __cam_req_mgr_process_req(struct cam_req_mgr_core_link *link,
 	if (rc < 0) {
 		/* Apply req failed retry at next sof */
 		slot->status = CRM_SLOT_STATUS_REQ_PENDING;
-
 		link->retry_cnt++;
-		if (link->retry_cnt == MAXIMUM_RETRY_ATTEMPTS) {
+		max_retry = MAXIMUM_RETRY_ATTEMPTS;
+		if (link->max_delay == 1)
+			max_retry++;
+		if (link->retry_cnt == max_retry) {
 			CAM_DBG(CAM_CRM,
-				"Max retry attempts reached on link[0x%x] for req [%lld]",
-				link->link_hdl,
+				"Max retry attempts (count: %d) reached on link[0x%x] for req [%lld]",
+				link->retry_cnt, link->link_hdl,
 				in_q->slot[in_q->rd_idx].req_id);
 			__cam_req_mgr_notify_error_on_link(link, dev);
 			link->retry_cnt = 0;
@@ -2570,6 +2573,8 @@ static int cam_req_mgr_process_trigger(void *priv, void *data)
 		if (idx >= 0) {
 			if (idx == in_q->last_applied_idx)
 				in_q->last_applied_idx = -1;
+			if (idx == in_q->rd_idx)
+				__cam_req_mgr_dec_idx(&idx, 1, in_q->num_slots);
 			__cam_req_mgr_reset_req_slot(link, idx);
 		}
 	}
@@ -2787,6 +2792,7 @@ static int cam_req_mgr_cb_notify_err(
 	notify_err->link_hdl = err_info->link_hdl;
 	notify_err->dev_hdl = err_info->dev_hdl;
 	notify_err->error = err_info->error;
+	notify_err->trigger = err_info->trigger;
 	task->process_cb = &cam_req_mgr_process_error;
 	rc = cam_req_mgr_workq_enqueue_task(task, link, CRM_TASK_PRIORITY_0);
 
