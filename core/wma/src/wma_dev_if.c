@@ -1547,12 +1547,12 @@ bool wma_objmgr_peer_exist(tp_wma_handle wma,
  * @wma: wma handle
  * @mac_addr: peer mac address, to be removed
  * @vdev_id: vdev id
- * @roam_synch_in_progress: roam in progress flag
+ * @no_fw_peer_delete: If true dont send peer delete to firmware
  *
  * Return: QDF_STATUS
  */
 QDF_STATUS wma_remove_peer(tp_wma_handle wma, uint8_t *mac_addr,
-			   uint8_t vdev_id, bool roam_synch_in_progress)
+			   uint8_t vdev_id, bool no_fw_peer_delete)
 {
 #define PEER_ALL_TID_BITMASK 0xffffffff
 	uint32_t peer_tid_bitmap = PEER_ALL_TID_BITMASK;
@@ -1597,8 +1597,9 @@ QDF_STATUS wma_remove_peer(tp_wma_handle wma, uint8_t *mac_addr,
 
 	cdp_peer_teardown(soc, vdev_id, peer_addr);
 
-	if (roam_synch_in_progress)
+	if (no_fw_peer_delete)
 		goto peer_detach;
+
 	/* Flush all TIDs except MGMT TID for this peer in Target */
 	peer_tid_bitmap &= ~(0x1 << WMI_MGMT_TID);
 	param.peer_tid_bitmap = peer_tid_bitmap;
@@ -1628,7 +1629,7 @@ peer_detach:
 		wma->interfaces[vdev_id].peer_count);
 	/* Copy peer mac to find and delete objmgr peer */
 	qdf_mem_copy(peer_mac, peer_addr, QDF_MAC_ADDR_SIZE);
-	if (roam_synch_in_progress &&
+	if (no_fw_peer_delete &&
 	    is_cdp_peer_detach_force_delete_supported(soc)) {
 		if (!peer_unmap_conf_support_enabled) {
 			WMA_LOGD("%s: LFR3: trigger force delete for peer "QDF_MAC_ADDR_FMT,
@@ -1640,7 +1641,7 @@ peer_detach:
 					     bitmap);
 		}
 	} else {
-		if (roam_synch_in_progress) {
+		if (no_fw_peer_delete) {
 			WMA_LOGD("%s: LFR3: normal peer delete for peer "QDF_MAC_ADDR_FMT,
 				 __func__, QDF_MAC_ADDR_REF(peer_addr));
 		}
@@ -2255,13 +2256,11 @@ QDF_STATUS
 __wma_handle_vdev_stop_rsp(struct vdev_stop_response *resp_event)
 {
 	tp_wma_handle wma = cds_get_context(QDF_MODULE_ID_WMA);
-	bool peer_exist = false;
 	struct wma_txrx_node *iface;
 	int status = QDF_STATUS_SUCCESS;
 	struct qdf_mac_addr bssid;
 	uint32_t vdev_stop_type;
 	struct del_bss_resp *vdev_stop_resp;
-	void *soc = cds_get_context(QDF_MODULE_ID_SOC);
 
 	if (!wma) {
 		WMA_LOGE("%s: wma is null", __func__);
@@ -2310,42 +2309,11 @@ __wma_handle_vdev_stop_rsp(struct vdev_stop_response *resp_event)
 	}
 
 	if (vdev_stop_type == WMA_DELETE_BSS_HO_FAIL_REQ) {
-		peer_exist = cdp_find_peer_exist(soc, OL_TXRX_PDEV_ID,
-						 bssid.bytes);
-		if (!peer_exist) {
-			WMA_LOGE("%s: Failed to find peer "QDF_MAC_ADDR_FMT,
-				 __func__, QDF_MAC_ADDR_REF(bssid.bytes));
-			status = QDF_STATUS_E_FAILURE;
+		status = wma_remove_peer(wma, bssid.bytes,
+					 resp_event->vdev_id, true);
+		if (QDF_IS_STATUS_ERROR(status))
 			goto free_params;
-		}
 
-		if (!iface->peer_count) {
-			WMA_LOGE("%s: Can't remove peer with peer_addr "QDF_MAC_ADDR_FMT" vdevid %d peer_count %d",
-				 __func__, QDF_MAC_ADDR_REF(bssid.bytes),
-				 resp_event->vdev_id,
-				 iface->peer_count);
-			goto free_params;
-		}
-
-		WMA_LOGD("%s: peer_addr "QDF_MAC_ADDR_FMT" to vdev_id %d, peer_count - %d",
-			 __func__, QDF_MAC_ADDR_REF(bssid.bytes),
-			 resp_event->vdev_id, iface->peer_count);
-		if (cdp_cfg_get_peer_unmap_conf_support(soc))
-			cdp_peer_delete_sync(soc, resp_event->vdev_id,
-					     bssid.bytes,
-					     wma_peer_unmap_conf_cb,
-					     1 << CDP_PEER_DELETE_NO_SPECIAL);
-		else
-			cdp_peer_delete(soc, resp_event->vdev_id,
-					bssid.bytes,
-					1 << CDP_PEER_DELETE_NO_SPECIAL);
-		wma_remove_objmgr_peer(wma, resp_event->vdev_id,
-				       bssid.bytes);
-		iface->peer_count--;
-
-		WMA_LOGI("%s: Removed peer "QDF_MAC_ADDR_FMT" vdev_id %d, peer_count %d",
-			 __func__, QDF_MAC_ADDR_REF(bssid.bytes),
-			 resp_event->vdev_id, iface->peer_count);
 		vdev_stop_resp->status = status;
 		vdev_stop_resp->vdev_id = resp_event->vdev_id;
 		wma_send_vdev_down_req(wma, vdev_stop_resp);
@@ -5078,7 +5046,7 @@ void wma_delete_bss(tp_wma_handle wma, uint8_t vdev_id)
 
 detach_peer:
 	wma_remove_peer(wma, bssid.bytes, vdev_id,
-			roam_synch_in_progress);
+			wma_is_roam_synch_in_progress(wma, vdev_id));
 	if (wma_is_roam_synch_in_progress(wma, vdev_id))
 		return;
 
