@@ -1495,20 +1495,26 @@ static int __cam_req_mgr_process_req(struct cam_req_mgr_core_link *link,
 
 	rc = __cam_req_mgr_send_req(link, link->req.in_q, trigger, &dev);
 	if (rc < 0) {
-		/* Apply req failed retry at next sof */
-		slot->status = CRM_SLOT_STATUS_REQ_PENDING;
-		link->retry_cnt++;
-		max_retry = MAXIMUM_RETRY_ATTEMPTS;
-		if (link->max_delay == 1)
-			max_retry++;
-		if (link->retry_cnt == max_retry) {
-			CAM_DBG(CAM_CRM,
-				"Max retry attempts (count: %d) reached on link[0x%x] for req [%lld]",
-				link->retry_cnt, link->link_hdl,
-				in_q->slot[in_q->rd_idx].req_id);
-			__cam_req_mgr_notify_error_on_link(link, dev);
-			link->retry_cnt = 0;
-		}
+		if (in_q->last_applied_idx < in_q->rd_idx) {
+			/* Apply req failed retry at next sof */
+			slot->status = CRM_SLOT_STATUS_REQ_PENDING;
+			link->retry_cnt++;
+			max_retry = MAXIMUM_RETRY_ATTEMPTS;
+			if (link->max_delay == 1)
+				max_retry++;
+			if (link->retry_cnt == max_retry) {
+				CAM_DBG(CAM_CRM,
+					"Max retry attempts (count: %d) reached on link[0x%x] for req [%lld]",
+					link->retry_cnt, link->link_hdl,
+					in_q->slot[in_q->rd_idx].req_id);
+				__cam_req_mgr_notify_error_on_link(link, dev);
+				link->retry_cnt = 0;
+			}
+		} else
+			CAM_WARN(CAM_CRM,
+				"workqueue congestion, last applied idx:%d rd idx:%d",
+				in_q->last_applied_idx,
+				in_q->rd_idx);
 	} else {
 		if (link->retry_cnt)
 			link->retry_cnt = 0;
