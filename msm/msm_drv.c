@@ -1017,7 +1017,7 @@ static void msm_lastclose(struct drm_device *dev)
 	 * if kms module is not yet initialized.
 	 */
 	if (!kms || (kms && kms->funcs && kms->funcs->check_for_splash
-		&& kms->funcs->check_for_splash(kms)))
+		&& kms->funcs->check_for_splash(kms, NULL)))
 		return;
 
 	/*
