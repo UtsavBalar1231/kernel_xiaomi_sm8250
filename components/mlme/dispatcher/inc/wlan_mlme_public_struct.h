@@ -1160,7 +1160,6 @@ struct wlan_mlme_chainmask {
  * @stop_all_host_scan_support: Target capability that indicates if the target
  * supports stop all host scan request type.
  * @sae_connect_retries: sae connect retry bitmask
- * @join_failure_retry_interval: Join failure retry interval
  */
 struct wlan_mlme_generic {
 	enum band_info band_capability;
@@ -1198,7 +1197,6 @@ struct wlan_mlme_generic {
 	bool enable_peer_unmap_conf_support;
 	bool stop_all_host_scan_support;
 	uint32_t sae_connect_retries;
-	uint16_t join_failure_retry_interval;
 };
 
 /*
