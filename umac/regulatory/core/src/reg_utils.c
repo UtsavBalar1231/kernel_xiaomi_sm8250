@@ -802,6 +802,8 @@ QDF_STATUS reg_set_config_vars(struct wlan_objmgr_psoc *psoc,
 		config_vars.enable_srd_chan_in_master_mode;
 	psoc_priv_obj->enable_11d_in_world_mode =
 		config_vars.enable_11d_in_world_mode;
+	psoc_priv_obj->retain_nol_across_regdmn_update =
+		config_vars.retain_nol_across_regdmn_update;
 
 	status = wlan_objmgr_psoc_try_get_ref(psoc, WLAN_REGULATORY_SB_ID);
 	if (QDF_IS_STATUS_ERROR(status)) {
