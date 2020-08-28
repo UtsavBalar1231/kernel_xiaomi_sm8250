@@ -32,6 +32,11 @@ Optional properties:
 - qcom,disable-autosuspend: Specifies to disable runtime PM auto suspend.
 - qcom,shared_ee: 	Specifies that this serial engine is shared between
 			execution environments.
+- qcom,set-cs-sb-delay:	Specifies the SB PIPE delay value in cycles which can be
+			used to achieve CS delay in minicore based targets.
+  Note: Use this property to introduce cs_clk_delay only for minicore QUPs with
+	inter words delay as 0 and CS toggle as 0. For other cases, use the
+	conventional method of using spi_cs_clk_dly register.
 
 SPI slave nodes must be children of the SPI master node and can contain
 the following properties.
