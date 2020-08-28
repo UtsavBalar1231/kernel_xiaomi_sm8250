@@ -104,6 +104,10 @@ ifeq ($(TARGET_PRODUCT), $(filter $(TARGET_PRODUCT),lmi lmiin lmiinpro))
 	CDEFINES += -DNXP_SPEAKERBOOST_V3
 endif
 
+ifeq ($(TARGET_PRODUCT), $(filter $(TARGET_PRODUCT),lmi lmiin lmiinpro cas skuld umi cmi apollo))
+	CDEFINES += -DAUDIO_SM8250_FLAG
+endif
+
 ifneq (,$(filter $(TARGET_PRODUCT), picasso picassoin))
 CDEFINES += -DTFA_NON_DSP_SOLUTION
 endif
