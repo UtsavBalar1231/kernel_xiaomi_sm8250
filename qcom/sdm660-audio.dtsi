@@ -14,6 +14,7 @@
 		qcom,model = "sdm660-snd-card";
 		qcom,mi2s-audio-intf;
 		qcom,auxpcm-audio-intf;
+		qcom,wcn-btfm;
 		qcom,msm-mi2s-master = <1>, <1>, <1>, <1>;
 		qcom,msm-mclk-freq = <9600000>;
 		qcom,msm-mbhc-hphl-swh = <1>;
@@ -125,6 +126,7 @@
 		qcom,model = "sdm660-tavil-snd-card";
 		qcom,mi2s-audio-intf;
 		qcom,auxpcm-audio-intf;
+		qcom,wcn-btfm;
 		qcom,msm-mi2s-master = <1>, <1>, <1>, <1>;
 		qcom,audio-routing =
 			"AIF4 VI", "MCLK",
