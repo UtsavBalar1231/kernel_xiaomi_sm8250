@@ -97,7 +97,7 @@ struct ima_template_entry {
 	u8 digest[TPM_DIGEST_SIZE];	/* sha1 or md5 measurement hash */
 	struct ima_template_desc *template_desc; /* template descriptor */
 	u32 template_data_len;
-	struct ima_field_data template_data[0];	/* template related data */
+	struct ima_field_data template_data[];	/* template related data */
 };
 
 struct ima_queue_entry {
