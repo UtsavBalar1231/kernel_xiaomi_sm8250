@@ -7169,8 +7169,8 @@ static int __iw_get_char_setnone(struct net_device *dev,
 			buf = snprintf
 				      ((extra + length),
 				      WE_MAX_STR_LEN - length,
-				      "\n" QDF_MAC_ADDR_FMT "\n",
-				      QDF_MAC_ADDR_REF(sta_ctx->conn_info.
+				      "\n" QDF_FULL_MAC_FMT "\n",
+				      QDF_FULL_MAC_REF(sta_ctx->conn_info.
 				      peer_macaddr[idx].bytes));
 			length += buf;
 		}

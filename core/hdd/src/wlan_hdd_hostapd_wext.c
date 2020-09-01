@@ -2253,9 +2253,9 @@ static int hdd_softap_get_sta_info(struct hdd_adapter *adapter,
 		}
 
 		written += scnprintf(buf + written, size - written,
-				     QDF_MAC_ADDR_FMT
+				     QDF_FULL_MAC_FMT
 				     " ecsa=%d\n",
-				     QDF_MAC_ADDR_REF(sta->sta_mac.bytes),
+				     QDF_FULL_MAC_REF(sta->sta_mac.bytes),
 				     sta->ecsa_capable);
 		hdd_put_sta_info_ref(&adapter->sta_info_list, &sta, true,
 				     STA_INFO_SOFTAP_GET_STA_INFO);
@@ -2627,8 +2627,8 @@ __iw_get_peer_rssi(struct net_device *dev, struct iw_request_info *info,
 		wrqu->data.length +=
 			scnprintf(extra + wrqu->data.length,
 				  IW_PRIV_SIZE_MASK - wrqu->data.length,
-				  "["QDF_MAC_ADDR_FMT"] [%d]\n",
-				  QDF_MAC_ADDR_REF(rssi_info->peer_stats[i].peer_macaddr),
+				  "["QDF_FULL_MAC_FMT"] [%d]\n",
+				  QDF_FULL_MAC_REF(rssi_info->peer_stats[i].peer_macaddr),
 				  rssi_info->peer_stats[i].peer_rssi);
 
 	wrqu->data.length++;

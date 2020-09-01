@@ -1163,16 +1163,16 @@ static ssize_t __hdd_wlan_tsf_show(struct device *dev,
 
 	if (adapter->device_mode == QDF_STA_MODE ||
 	    adapter->device_mode == QDF_P2P_CLIENT_MODE) {
-		size = scnprintf(buf, PAGE_SIZE, "%s%llu %llu "QDF_MAC_ADDR_FMT" %llu %llu\n",
+		size = scnprintf(buf, PAGE_SIZE, "%s%llu %llu "QDF_FULL_MAC_FMT" %llu %llu\n",
 				 buf, adapter->last_target_time,
 				 tsf_sync_qtime,
-				 QDF_MAC_ADDR_REF(hdd_sta_ctx->conn_info.bssid.bytes),
+				 QDF_FULL_MAC_REF(hdd_sta_ctx->conn_info.bssid.bytes),
 				 qtime, host_time);
 	} else {
-		size = scnprintf(buf, PAGE_SIZE, "%s%llu %llu "QDF_MAC_ADDR_FMT" %llu %llu\n",
+		size = scnprintf(buf, PAGE_SIZE, "%s%llu %llu "QDF_FULL_MAC_FMT" %llu %llu\n",
 				 buf, adapter->last_target_time,
 				 tsf_sync_qtime,
-				 QDF_MAC_ADDR_REF(adapter->mac_addr.bytes),
+				 QDF_FULL_MAC_REF(adapter->mac_addr.bytes),
 				 qtime, host_time);
 	}
 
@@ -1317,13 +1317,13 @@ static ssize_t __hdd_wlan_tsf_show(struct device *dev,
 	} else {
 		if (adapter->device_mode == QDF_STA_MODE ||
 		    adapter->device_mode == QDF_P2P_CLIENT_MODE) {
-			size = scnprintf(buf, PAGE_SIZE, "%s%llu %llu "QDF_MAC_ADDR_FMT"\n",
+			size = scnprintf(buf, PAGE_SIZE, "%s%llu %llu "QDF_FULL_MAC_FMT"\n",
 					 buf, target_time, host_time,
-					 QDF_MAC_ADDR_REF(hdd_sta_ctx->conn_info.bssid.bytes));
+					 QDF_FULL_MAC_REF(hdd_sta_ctx->conn_info.bssid.bytes));
 		} else {
-			size = scnprintf(buf, PAGE_SIZE, "%s%llu %llu "QDF_MAC_ADDR_FMT"\n",
+			size = scnprintf(buf, PAGE_SIZE, "%s%llu %llu "QDF_FULL_MAC_FMT"\n",
 					 buf, target_time, host_time,
-					 QDF_MAC_ADDR_REF(adapter->mac_addr.bytes));
+					 QDF_FULL_MAC_REF(adapter->mac_addr.bytes));
 		}
 	}
 
