@@ -2060,6 +2060,9 @@ more_data:
 		if (QDF_IS_STATUS_ERROR(status)) {
 			if (qdf_unlikely(rx_desc && rx_desc->nbuf)) {
 				qdf_assert_always(rx_desc->unmapped);
+				dp_ipa_handle_rx_buf_smmu_mapping(soc,
+								  rx_desc->nbuf,
+								  false);
 				qdf_nbuf_unmap_single(soc->osdev,
 						      rx_desc->nbuf,
 						      QDF_DMA_FROM_DEVICE);
@@ -2148,6 +2151,7 @@ more_data:
 		 * move unmap after scattered msdu waiting break logic
 		 * in case double skb unmap happened.
 		 */
+		dp_ipa_handle_rx_buf_smmu_mapping(soc, rx_desc->nbuf, false);
 		qdf_nbuf_unmap_single(soc->osdev, rx_desc->nbuf,
 				      QDF_DMA_FROM_DEVICE);
 		rx_desc->unmapped = 1;
