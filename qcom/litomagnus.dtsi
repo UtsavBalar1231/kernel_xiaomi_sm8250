@@ -1,0 +1,6 @@
+#include "lito-v2.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Litomagnus";
+	compatible = "qcom,lito";
+};
