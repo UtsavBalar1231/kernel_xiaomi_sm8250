@@ -39,6 +39,10 @@
 #include "sde_core_irq.h"
 #include "sde_hw_top.h"
 #include "sde_hw_qdss.h"
+#include "dsi_display.h"
+#include "dsi_panel_mi.h"
+#include "dsi_drm.h"
+#include "xiaomi_frame_stat.h"
 
 #define SDE_DEBUG_ENC(e, fmt, ...) SDE_DEBUG("enc%d " fmt,\
 		(e) ? (e)->base.base.id : -1, ##__VA_ARGS__)
@@ -86,6 +90,7 @@
 		(msm_is_mode_seamless_dms(adj_mode) || \
 		(msm_is_mode_seamless_dyn_clk(adj_mode) && \
 		is_cmd_mode) || msm_is_mode_seamless_poms(adj_mode))
+extern struct frame_stat fm_stat;
 
 /**
  * enum sde_enc_rc_events - events for resource control state machine
@@ -282,6 +287,7 @@ struct sde_encoder_virt {
 	struct kthread_delayed_work delayed_off_work;
 	struct kthread_work vsync_event_work;
 	struct kthread_work input_event_work;
+	struct kthread_work touch_notify_work;
 	struct kthread_work esd_trigger_work;
 	struct input_handler *input_handler;
 	struct msm_display_topology topology;
@@ -2315,6 +2321,8 @@ static void sde_encoder_input_event_handler(struct input_handle *handle,
 		return;
 	}
 
+	SDE_DEBUG("%s: type[%d] code[%d] value[%d]\n", __func__, type, code, value);
+
 	drm_enc = (struct drm_encoder *)handle->handler->private;
 	if (!drm_enc->dev || !drm_enc->dev->dev_private) {
 		SDE_ERROR("invalid parameters\n");
@@ -2335,9 +2343,13 @@ static void sde_encoder_input_event_handler(struct input_handle *handle,
 	SDE_EVT32_VERBOSE(DRMID(drm_enc));
 
 	disp_thread = &priv->disp_thread[sde_enc->crtc->index];
-
 	kthread_queue_work(&disp_thread->worker,
-				&sde_enc->input_event_work);
+				&sde_enc->touch_notify_work);
+
+	/* Only consider EV_ABS (touch) events in QC original design */
+	if (type == EV_ABS && sde_encoder_check_curr_mode(drm_enc, MSM_DISPLAY_CMD_MODE))
+		kthread_queue_work(&disp_thread->worker,
+					&sde_enc->input_event_work);
 }
 
 void sde_encoder_control_idle_pc(struct drm_encoder *drm_enc, bool enable)
@@ -3143,6 +3155,8 @@ static int _sde_encoder_input_connect(struct input_handler *handler,
 		goto error_unregister;
 	}
 
+	SDE_EVT32(handle, SDE_EVTLOG_FUNC_ENTRY);
+
 	return 0;
 
 error_unregister:
@@ -3156,9 +3170,10 @@ error:
 
 static void _sde_encoder_input_disconnect(struct input_handle *handle)
 {
-	 input_close_device(handle);
-	 input_unregister_handle(handle);
-	 kfree(handle);
+	SDE_EVT32(handle, SDE_EVTLOG_FUNC_EXIT);
+	input_close_device(handle);
+	input_unregister_handle(handle);
+	kfree(handle);
 }
 
 /**
@@ -3174,6 +3189,10 @@ static const struct input_device_id sde_input_ids[] = {
 					BIT_MASK(ABS_MT_POSITION_X) |
 					BIT_MASK(ABS_MT_POSITION_Y) },
 	},
+	{
+		.flags = INPUT_DEVICE_ID_MATCH_EVBIT,
+		.evbit = { BIT_MASK(EV_KEY) },
+	},
 	{ },
 };
 
@@ -3183,8 +3202,10 @@ static void _sde_encoder_input_handler_register(
 	struct sde_encoder_virt *sde_enc = to_sde_encoder_virt(drm_enc);
 	int rc;
 
+#if 0
 	if (!sde_encoder_check_curr_mode(drm_enc, MSM_DISPLAY_CMD_MODE))
 		return;
+#endif
 
 	if (sde_enc->input_handler && !sde_enc->input_handler->private) {
 		sde_enc->input_handler->private = sde_enc;
@@ -3204,8 +3225,10 @@ static void _sde_encoder_input_handler_unregister(
 {
 	struct sde_encoder_virt *sde_enc = to_sde_encoder_virt(drm_enc);
 
+#if 0
 	if (!sde_encoder_check_curr_mode(drm_enc, MSM_DISPLAY_CMD_MODE))
 		return;
+#endif
 
 	if (sde_enc->input_handler && sde_enc->input_handler->private) {
 		input_unregister_handler(sde_enc->input_handler);
@@ -3749,6 +3772,7 @@ static void sde_encoder_underrun_callback(struct drm_encoder *drm_enc,
 		atomic_read(&phy_enc->underrun_cnt));
 
 	SDE_DBG_CTRL("stop_ftrace");
+	SDE_ERROR("underrun: %d\n", atomic_read(&phy_enc->underrun_cnt));
 	SDE_DBG_CTRL("panic_underrun");
 
 	SDE_ATRACE_END("encoder_underrun_callback");
@@ -4436,9 +4460,32 @@ static void _sde_encoder_setup_dither(struct sde_encoder_phys *phys)
 	struct msm_display_dsc_info *dsc = NULL;
 	struct sde_encoder_virt *sde_enc;
 	struct sde_hw_pingpong *hw_pp;
+	struct dsi_display *dsi_display;
+	struct sde_connector *c_conn;
+	struct dsi_panel_mi_cfg *mi_cfg;
 
 	if (!phys || !phys->connector || !phys->hw_pp ||
 			!phys->hw_pp->ops.setup_dither || !phys->parent)
+		return;
+
+	c_conn = to_sde_connector(phys->connector);
+	if(c_conn->connector_type != DRM_MODE_CONNECTOR_DSI){
+		SDE_DEBUG("connector type is not  dsi, return\n");
+		return;
+	}
+	dsi_display = (struct dsi_display *) c_conn->display;
+	if (!dsi_display || !dsi_display->panel) {
+		SDE_ERROR("invalid display/panel\n");
+		return;
+	}
+
+	mi_cfg = &dsi_display->panel->mi_cfg;
+	if (!mi_cfg) {
+		SDE_ERROR("invalid mi_cfg\n");
+		return;
+	}
+
+	if (!mi_cfg->dither_enabled)
 		return;
 
 	topology = sde_connector_get_topology_name(phys->connector);
@@ -4596,6 +4643,34 @@ static void sde_encoder_input_event_work_handler(struct kthread_work *work)
 
 	sde_encoder_resource_control(&sde_enc->base,
 			SDE_ENC_RC_EVENT_EARLY_WAKEUP);
+}
+
+static void sde_encoder_touch_notify_work_handler(struct kthread_work *work)
+{
+	struct dsi_bridge *c_bridge = NULL;
+	struct dsi_display *dsi_display = NULL;
+	struct drm_encoder *drm_enc = NULL;
+	struct sde_encoder_virt *sde_enc = container_of(work,
+				struct sde_encoder_virt, touch_notify_work);
+
+	if (!sde_enc) {
+		SDE_ERROR("invalid encoder for the touch notify\n");
+		return;
+	}
+
+	drm_enc = &sde_enc->base;
+
+	c_bridge = container_of(drm_enc->bridge, struct dsi_bridge, base);
+	if (c_bridge)
+		dsi_display = c_bridge->display;
+
+	if (dsi_display && dsi_display->is_prim_display && dsi_display->panel
+		&& dsi_display->panel->mi_cfg.smart_fps_restore) {
+		if (dsi_display->panel->mi_cfg.smart_fps_support && fm_stat.enabled) {
+			calc_fps(0, (int)true);
+			dsi_display->panel->mi_cfg.smart_fps_restore = false;
+		}
+	}
 }
 
 static void sde_encoder_vsync_event_work_handler(struct kthread_work *work)
@@ -5774,7 +5849,7 @@ struct drm_encoder *sde_encoder_init_with_ops(
 		sde_enc->rsc_client = NULL;
 	}
 
-	if (disp_info->capabilities & MSM_DISPLAY_CAP_CMD_MODE) {
+	if (disp_info->capabilities & (MSM_DISPLAY_CAP_CMD_MODE | MSM_DISPLAY_CAP_VID_MODE)) {
 		ret = _sde_encoder_input_handler(sde_enc);
 		if (ret)
 			SDE_ERROR(
@@ -5792,6 +5867,9 @@ struct drm_encoder *sde_encoder_init_with_ops(
 
 	kthread_init_work(&sde_enc->input_event_work,
 			sde_encoder_input_event_work_handler);
+
+	kthread_init_work(&sde_enc->touch_notify_work,
+			sde_encoder_touch_notify_work_handler);
 
 	kthread_init_work(&sde_enc->esd_trigger_work,
 			sde_encoder_esd_trigger_work_handler);
@@ -6271,4 +6349,49 @@ void sde_encoder_recovery_events_handler(struct drm_encoder *encoder,
 
 	sde_enc = to_sde_encoder_virt(encoder);
 	sde_enc->recovery_events_enabled = enabled;
+}
+
+void sde_encoder_save_vsync_info(struct sde_encoder_phys *phys_enc)
+{
+	struct sde_encoder_virt *sde_enc;
+	struct msm_mode_info *info;
+	struct calc_hw_vsync *calc_vsync;
+	ktime_t current_ktime;
+	u32 diff_us = 0;
+	u32 config_vsync_period_us = 0;
+
+	if (!phys_enc || !phys_enc->parent)
+		return;
+
+	sde_enc = to_sde_encoder_virt(phys_enc->parent);
+	if (sde_enc->disp_info.display_type == SDE_CONNECTOR_PRIMARY)
+		calc_vsync = get_hw_calc_vsync_struct(DSI_PRIMARY);
+	else if (sde_enc->disp_info.display_type == SDE_CONNECTOR_SECONDARY)
+		calc_vsync = get_hw_calc_vsync_struct(DSI_SECONDARY);
+	else
+		return;
+
+	if (!calc_vsync)
+		return;
+
+	info = &sde_enc->mode_info;
+	config_vsync_period_us = USEC_PER_SEC / info->frame_rate;
+
+	current_ktime = ktime_get();
+	diff_us = (u64)ktime_us_delta(current_ktime, calc_vsync->last_timestamp);
+	if ((diff_us * 10) <= (config_vsync_period_us * 9) ||
+		(diff_us * 10) >= (config_vsync_period_us * 11)) {
+		calc_vsync->last_timestamp = current_ktime;
+		return;
+	}
+
+	calc_vsync->vsyc_info[calc_vsync->vsync_count].config_fps = info->frame_rate;
+	calc_vsync->vsyc_info[calc_vsync->vsync_count].timestamp = current_ktime;
+	calc_vsync->vsyc_info[calc_vsync->vsync_count].real_vsync_period_ns =
+			ktime_to_ns(ktime_sub(current_ktime, calc_vsync->last_timestamp));
+
+	calc_vsync->last_timestamp = current_ktime;
+
+	calc_vsync->vsync_count++;
+	calc_vsync->vsync_count %= MAX_VSYNC_COUNT;
 }
