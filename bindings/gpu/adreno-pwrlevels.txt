@@ -21,6 +21,11 @@ Properties:
 				This value indicates which qcom,gpu-pwrlevel
 				to jump on in case of context aware power level
 				jump.
+
+- qcom,gpu-bimc-interface-clk-freq:
+				To specify the bimc-interface-clk set rate value,
+				which is done at the time of GPU fmax vote.
+
 Required Properties:
 - reg:				Index of the powerlevel (0 = highest perf)
 - qcom,gpu-freq			GPU frequency for the powerlevel (in Hz)
