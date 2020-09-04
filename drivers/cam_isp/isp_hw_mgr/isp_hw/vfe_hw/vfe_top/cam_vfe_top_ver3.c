@@ -116,6 +116,9 @@ static int cam_vfe_top_ver3_set_hw_clk_rate(
 			rc = 0;
 			goto end;
 		}
+
+		soc_private->ife_clk_src = max_clk_rate;
+
 		ahb_vote.type = CAM_VOTE_ABSOLUTE;
 		ahb_vote.vote.level = clk_lvl;
 		cam_cpas_update_ahb_vote(soc_private->cpas_handle, &ahb_vote);
@@ -474,6 +477,8 @@ int cam_vfe_top_ver3_stop(void *device_priv,
 	struct cam_vfe_top_ver3_priv            *top_priv;
 	struct cam_isp_resource_node            *mux_res;
 	struct cam_hw_info                      *hw_info = NULL;
+	struct cam_hw_soc_info                  *soc_info = NULL;
+	struct cam_vfe_soc_private              *soc_private = NULL;
 	int i, rc = 0;
 
 	if (!device_priv || !stop_args) {
@@ -484,6 +489,8 @@ int cam_vfe_top_ver3_stop(void *device_priv,
 	top_priv = (struct cam_vfe_top_ver3_priv   *)device_priv;
 	mux_res = (struct cam_isp_resource_node *)stop_args;
 	hw_info = (struct cam_hw_info  *)mux_res->hw_intf->hw_priv;
+	soc_info = top_priv->common_data.soc_info;
+	soc_private = soc_info->soc_private;
 
 	if (mux_res->res_id < CAM_ISP_HW_VFE_IN_MAX) {
 		rc = mux_res->stop(mux_res);
@@ -506,6 +513,7 @@ int cam_vfe_top_ver3_stop(void *device_priv,
 		}
 	}
 
+	soc_private->ife_clk_src = 0;
 	return rc;
 }
 

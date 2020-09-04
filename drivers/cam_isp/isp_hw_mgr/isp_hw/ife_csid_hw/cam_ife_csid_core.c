@@ -4036,6 +4036,19 @@ static int cam_ife_csid_set_csid_clock(
 	return 0;
 }
 
+static int cam_ife_csid_dump_csid_clock(
+	struct cam_ife_csid_hw *csid_hw, void *cmd_args)
+{
+	if (!csid_hw)
+		return -EINVAL;
+
+	CAM_INFO(CAM_ISP, "CSID:%d clock rate %llu",
+		csid_hw->hw_intf->hw_idx,
+		csid_hw->clk_rate);
+
+	return 0;
+}
+
 static int cam_ife_csid_set_sensor_dimension(
 	struct cam_ife_csid_hw *csid_hw, void *cmd_args)
 {
@@ -4219,6 +4232,9 @@ static int cam_ife_csid_process_cmd(void *hw_priv,
 		break;
 	case CAM_ISP_HW_CMD_CSID_CLOCK_UPDATE:
 		rc = cam_ife_csid_set_csid_clock(csid_hw, cmd_args);
+		break;
+	case CAM_ISP_HW_CMD_CSID_CLOCK_DUMP:
+		rc = cam_ife_csid_dump_csid_clock(csid_hw, cmd_args);
 		break;
 	case CAM_ISP_HW_CMD_CSID_QCFA_SUPPORTED:
 		rc = cam_ife_csid_set_csid_qcfa(csid_hw, cmd_args);
