@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CPASTOP_V170_110_H_
@@ -523,6 +523,11 @@ static struct cam_cpas_hw_errata_wa_list cam170_cpas110_errata_wa_list = {
 	},
 };
 
+struct cam_camnoc_fifo_lvl_info cam170_cpas110_camnoc_fifo_info = {
+	.IFE02_MAXWR_LOW = 0x420,
+	.IFE13_MAXWR_LOW = 0x820,
+};
+
 static struct cam_camnoc_info cam170_cpas110_camnoc_info = {
 	.specific = &cam_cpas110_camnoc_specific[0],
 	.specific_size = sizeof(cam_cpas110_camnoc_specific) /
@@ -533,6 +538,7 @@ static struct cam_camnoc_info cam170_cpas110_camnoc_info = {
 		sizeof(cam_cpas110_irq_err[0]),
 	.err_logger = &cam170_cpas110_err_logger_offsets,
 	.errata_wa_list = &cam170_cpas110_errata_wa_list,
+	.fill_lvl_register = &cam170_cpas110_camnoc_fifo_info,
 };
 
 #endif /* _CPASTOP_V170_110_H_ */
