@@ -961,8 +961,8 @@ lim_ibss_search_and_delete_peer(struct mac_context *mac_ctx,
 
 	prev_node = temp_node = mac_ctx->lim.gLimIbssPeerList;
 
-	pe_debug(" PEER ADDR :" QDF_MAC_ADDR_STR,
-		QDF_MAC_ADDR_ARRAY(mac_addr));
+	pe_debug(" PEER ADDR :" QDF_MAC_ADDR_FMT,
+		QDF_MAC_ADDR_REF(mac_addr));
 
 	/** Compare Peer */
 	while (temp_node) {
@@ -1023,8 +1023,8 @@ lim_ibss_delete_peer(struct mac_context *mac_ctx,
 	tpDphHashNode sta = NULL;
 	uint16_t peer_idx = 0;
 
-	pe_debug("Delete peer :" QDF_MAC_ADDR_STR,
-		QDF_MAC_ADDR_ARRAY(mac_addr));
+	pe_debug("Delete peer :" QDF_MAC_ADDR_FMT,
+		QDF_MAC_ADDR_REF(mac_addr));
 
 	sta = dph_lookup_hash_entry(mac_ctx, mac_addr,
 			&peer_idx,
@@ -1032,8 +1032,8 @@ lim_ibss_delete_peer(struct mac_context *mac_ctx,
 			dphHashTable);
 
 	if (!sta) {
-		pe_err("DPH Entry for STA %pM is missing",
-			mac_addr);
+		pe_err("DPH Entry for STA "QDF_MAC_ADDR_FMT" is missing",
+			QDF_MAC_ADDR_REF(mac_addr));
 		return;
 	}
 
@@ -1088,9 +1088,9 @@ void lim_process_ibss_del_sta_rsp(struct mac_context *mac_ctx,
 		status = eSIR_SME_REFUSED;
 		goto skip_event;
 	}
-	pe_debug("Deleted STA associd %d MAC " QDF_MAC_ADDR_STR,
+	pe_debug("Deleted STA associd %d MAC " QDF_MAC_ADDR_FMT,
 		sta_ds->assocId,
-		QDF_MAC_ADDR_ARRAY(sta_ds->staAddr));
+		QDF_MAC_ADDR_REF(sta_ds->staAddr));
 
 	lim_delete_dph_hash_entry(mac_ctx, sta_ds->staAddr,
 			  del_sta_params->assocId, pe_session);
@@ -1128,16 +1128,16 @@ lim_ibss_add_sta_rsp(struct mac_context *mac, void *msg, struct pe_session *pe_s
 		dph_lookup_hash_entry(mac, pAddStaParams->staMac, &peerIdx,
 				      &pe_session->dph.dphHashTable);
 	if (!sta) {
-		pe_err("IBSS: ADD_STA_RSP for unknown MAC addr: "QDF_MAC_ADDR_STR,
-			QDF_MAC_ADDR_ARRAY(pAddStaParams->staMac));
+		pe_err("IBSS: ADD_STA_RSP for unknown MAC addr: "QDF_MAC_ADDR_FMT,
+			QDF_MAC_ADDR_REF(pAddStaParams->staMac));
 		qdf_mem_free(pAddStaParams);
 		return QDF_STATUS_E_FAILURE;
 	}
 
 	if (pAddStaParams->status != QDF_STATUS_SUCCESS) {
-		pe_err("IBSS: ADD_STA_RSP error: %x for MAC:"QDF_MAC_ADDR_STR,
+		pe_err("IBSS: ADD_STA_RSP error: %x for MAC:"QDF_MAC_ADDR_FMT,
 			pAddStaParams->status,
-			QDF_MAC_ADDR_ARRAY(pAddStaParams->staMac));
+			QDF_MAC_ADDR_REF(pAddStaParams->staMac));
 		lim_ibss_delete_peer(mac,
 			pe_session, pAddStaParams->staMac, false);
 		qdf_mem_free(pAddStaParams);
@@ -1314,9 +1314,9 @@ lim_ibss_coalesce(struct mac_context *mac,
 
 	sir_copy_mac_addr(currentBssId, pe_session->bssId);
 
-	pe_debug("Current BSSID :" QDF_MAC_ADDR_STR " Received BSSID :"
-		   QDF_MAC_ADDR_STR, QDF_MAC_ADDR_ARRAY(currentBssId),
-		QDF_MAC_ADDR_ARRAY(pHdr->bssId));
+	pe_debug("Current BSSID :" QDF_MAC_ADDR_FMT " Received BSSID :"
+		   QDF_MAC_ADDR_FMT, QDF_MAC_ADDR_REF(currentBssId),
+		QDF_MAC_ADDR_REF(pHdr->bssId));
 
 	/* Check for IBSS Coalescing only if Beacon is from different BSS */
 	if (qdf_mem_cmp(currentBssId, pHdr->bssId, sizeof(tSirMacAddr))
@@ -1350,8 +1350,8 @@ lim_ibss_coalesce(struct mac_context *mac,
 		 */
 		mac->lim.gLimIbssCoalescingHappened = true;
 		ibss_coalesce_save(mac, pHdr, pBeacon);
-		pe_debug("IBSS Coalescing happened Delete BSSID :" QDF_MAC_ADDR_STR,
-			QDF_MAC_ADDR_ARRAY(currentBssId));
+		pe_debug("IBSS Coalescing happened Delete BSSID :" QDF_MAC_ADDR_FMT,
+			QDF_MAC_ADDR_REF(currentBssId));
 		lim_ibss_bss_delete(mac, pe_session);
 
 		return QDF_STATUS_SUCCESS;

@@ -142,8 +142,12 @@ tdls_update_feature_flag(struct tdls_soc_priv_obj *tdls_soc_obj)
 		  1 << TDLS_FEATURE_ENABLE : 0) |
 		 (tdls_soc_obj->tdls_configs.tdls_implicit_trigger_enable ?
 		  1 << TDLS_FEAUTRE_IMPLICIT_TRIGGER : 0) |
-		 (tdls_soc_obj->tdls_configs.tdls_external_control ?
-		  1 << TDLS_FEATURE_EXTERNAL_CONTROL : 0));
+		 (tdls_soc_obj->tdls_configs.tdls_external_control &
+		  TDLS_STRICT_EXTERNAL_CONTROL ?
+		  1 << TDLS_FEATURE_EXTERNAL_CONTROL : 0) |
+		 (tdls_soc_obj->tdls_configs.tdls_external_control &
+		  TDLS_LIBERAL_EXTERNAL_CONTROL ?
+		  1 << TDLS_FEATURE_LIBERAL_EXTERNAL_CONTROL : 0));
 }
 
 /**
@@ -599,9 +603,9 @@ QDF_STATUS ucfg_tdls_oper(struct wlan_objmgr_vdev *vdev,
 		return QDF_STATUS_E_NULL_VALUE;
 	}
 
-	tdls_debug("%s for peer " QDF_MAC_ADDR_STR,
+	tdls_debug("%s for peer " QDF_MAC_ADDR_FMT,
 		   tdls_get_oper_str(cmd),
-		   QDF_MAC_ADDR_ARRAY(macaddr));
+		   QDF_MAC_ADDR_REF(macaddr));
 
 	req = qdf_mem_malloc(sizeof(*req));
 	if (!req) {

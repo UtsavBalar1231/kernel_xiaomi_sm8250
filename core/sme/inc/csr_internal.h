@@ -544,7 +544,6 @@ struct csr_roam_session {
 	struct qdf_mac_addr self_mac_addr;
 
 	eCsrConnectState connectState;
-	struct rsn_caps rsn_caps;
 	tCsrRoamConnectedProfile connectedProfile;
 	struct csr_roam_connectedinfo connectedInfo;
 	struct csr_roam_connectedinfo prev_assoc_ap_info;
@@ -681,7 +680,10 @@ struct csr_roamstruct {
 	uint32_t deauthRspStatus;
 	uint8_t *pReassocResp;          /* reassociation response from new AP */
 	uint16_t reassocRespLen;        /* length of reassociation response */
+#if defined(WLAN_LOGGING_SOCK_SVC_ENABLE) && \
+	defined(FEATURE_PKTLOG) && !defined(REMOVE_PKT_LOG)
 	qdf_mc_timer_t packetdump_timer;
+#endif
 	spinlock_t roam_state_lock;
 };
 

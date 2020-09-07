@@ -590,11 +590,11 @@ rrm_process_beacon_report_req(struct mac_context *mac,
 
 	measDuration = pBeaconReq->measurement_request.Beacon.meas_duration;
 
-	pe_nofl_info("RX: [802.11 BCN_RPT] seq:%d SSID:%.*s BSSID:%pM Token:%d op_class:%d ch:%d meas_mode:%d meas_duration:%d max_dur: %d sign: %d max_meas_dur: %d",
+	pe_nofl_info("RX: [802.11 BCN_RPT] seq:%d SSID:%.*s BSSID:"QDF_MAC_ADDR_FMT" Token:%d op_class:%d ch:%d meas_mode:%d meas_duration:%d max_dur: %d sign: %d max_meas_dur: %d",
 		     mac->rrm.rrmPEContext.prev_rrm_report_seq_num,
 		     pBeaconReq->measurement_request.Beacon.SSID.num_ssid,
 		     pBeaconReq->measurement_request.Beacon.SSID.ssid,
-		     pBeaconReq->measurement_request.Beacon.BSSID,
+		     QDF_MAC_ADDR_REF(pBeaconReq->measurement_request.Beacon.BSSID),
 		     pBeaconReq->measurement_token,
 		     pBeaconReq->measurement_request.Beacon.regClass,
 		     pBeaconReq->measurement_request.Beacon.channel,
@@ -910,9 +910,7 @@ rrm_process_beacon_report_xmit(struct mac_context *mac_ctx,
 	tSirMacRadioMeasureReport *report = NULL;
 	tSirMacBeaconReport *beacon_report;
 	struct bss_description *bss_desc;
-	tpRRMReq curr_req =
-		mac_ctx->rrm.rrmPEContext.
-		pCurrentReq[beacon_xmit_ind->measurement_idx];
+	tpRRMReq curr_req;
 	struct pe_session *session_entry;
 	uint8_t session_id, counter;
 	uint8_t i, j, offset = 0;
@@ -929,6 +927,16 @@ rrm_process_beacon_report_xmit(struct mac_context *mac_ctx,
 		return QDF_STATUS_E_FAILURE;
 	}
 
+	if (beacon_xmit_ind->measurement_idx >=
+	    QDF_ARRAY_SIZE(mac_ctx->rrm.rrmPEContext.pCurrentReq)) {
+		pe_err("Received measurement_idx is out of range: %u - %lu",
+		       beacon_xmit_ind->measurement_idx,
+		       QDF_ARRAY_SIZE(mac_ctx->rrm.rrmPEContext.pCurrentReq));
+		return QDF_STATUS_E_FAILURE;
+	}
+
+	curr_req = mac_ctx->rrm.rrmPEContext.
+		pCurrentReq[beacon_xmit_ind->measurement_idx];
 	if (!curr_req) {
 		pe_err("Received report xmit while there is no request pending in PE");
 		status = QDF_STATUS_E_FAILURE;
@@ -954,8 +962,8 @@ rrm_process_beacon_report_xmit(struct mac_context *mac_ctx,
 		session_entry = pe_find_session_by_bssid(mac_ctx,
 				beacon_xmit_ind->bssId, &session_id);
 		if (!session_entry) {
-			pe_err("TX: [802.11 BCN_RPT] Session does not exist for bssId:%pM",
-			       beacon_xmit_ind->bssId);
+			pe_err("TX: [802.11 BCN_RPT] Session does not exist for bssId:"QDF_MAC_ADDR_FMT"",
+			       QDF_MAC_ADDR_REF(beacon_xmit_ind->bssId));
 			status = QDF_STATUS_E_FAILURE;
 			goto end;
 		}
@@ -1199,13 +1207,13 @@ QDF_STATUS rrm_process_beacon_req(struct mac_context *mac_ctx, tSirMacAddr peer,
 				  uint8_t *num_report, int index)
 {
 	tRrmRetStatus rrm_status = eRRM_SUCCESS;
-	tpSirMacRadioMeasureReport report;
+	tpSirMacRadioMeasureReport report = NULL;
 	tpRRMReq curr_req;
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 
 	if (index  >= MAX_MEASUREMENT_REQUEST) {
 		status = rrm_reject_req(&report, rrm_req, num_report, index,
-			       rrm_req->MeasurementRequest[index].
+			       rrm_req->MeasurementRequest[0].
 							measurement_type);
 		return status;
 	}

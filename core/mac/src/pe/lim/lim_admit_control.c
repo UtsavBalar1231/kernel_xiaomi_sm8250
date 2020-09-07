@@ -605,9 +605,9 @@ lim_validate_access_policy(struct mac_context *mac,
 
 	if (retval != QDF_STATUS_SUCCESS)
 		pe_warn("accPol: %d lle: %d wme: %d wsm: %d sta mac "
-			QDF_MAC_ADDR_STR, accessPolicy, pSta->lleEnabled,
+			QDF_MAC_ADDR_FMT, accessPolicy, pSta->lleEnabled,
 			pSta->wmeEnabled, pSta->wsmEnabled,
-			QDF_MAC_ADDR_ARRAY(pSta->staAddr));
+			QDF_MAC_ADDR_REF(pSta->staAddr));
 
 	return retval;
 }

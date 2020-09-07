@@ -79,7 +79,7 @@
 #include <qdf_notifier.h>
 
 struct pe_hang_event_fixed_param {
-	uint32_t tlv_header;
+	uint16_t tlv_header;
 	uint8_t vdev_id;
 	uint8_t limmlmstate;
 	uint8_t limprevmlmstate;
@@ -677,6 +677,7 @@ static bool is_mgmt_protected(uint32_t vdev_id,
 
 	return protected;
 }
+
 #else
 /**
  * is_mgmt_protected - check RMF enabled for the peer
@@ -1898,6 +1899,65 @@ void lim_fill_join_rsp_ht_caps(struct pe_session *session,
 #endif
 
 #ifdef WLAN_FEATURE_ROAM_OFFLOAD
+#ifdef WLAN_FEATURE_11W
+static void pe_set_rmf_caps(struct mac_context *mac_ctx,
+			    struct pe_session *ft_session,
+			    struct roam_offload_synch_ind *roam_synch)
+{
+	uint8_t *assoc_body;
+	uint16_t len;
+	tDot11fReAssocRequest *assoc_req;
+	uint32_t status;
+	tSirMacRsnInfo rsn_ie;
+
+	assoc_body = (uint8_t *)roam_synch + roam_synch->reassoc_req_offset +
+			sizeof(tSirMacMgmtHdr);
+	len = roam_synch->reassoc_req_length - sizeof(tSirMacMgmtHdr);
+
+	assoc_req = qdf_mem_malloc(sizeof(*assoc_req));
+	if (!assoc_req)
+		return;
+
+	/* delegate to the framesc-generated code, */
+	status = dot11f_unpack_re_assoc_request(mac_ctx, assoc_body, len,
+						assoc_req, false);
+	if (DOT11F_FAILED(status)) {
+		pe_err("Failed to parse a Re-association Request (0x%08x, %d bytes):",
+		       status, len);
+		QDF_TRACE_HEX_DUMP(QDF_MODULE_ID_PE, QDF_TRACE_LEVEL_INFO,
+				   assoc_body, len);
+		qdf_mem_free(assoc_req);
+		return;
+	} else if (DOT11F_WARNED(status)) {
+		pe_debug("There were warnings while unpacking a Re-association Request (0x%08x, %d bytes):",
+			 status, len);
+	}
+	ft_session->limRmfEnabled = false;
+	if (!assoc_req->RSNOpaque.present) {
+		qdf_mem_free(assoc_req);
+		return;
+	}
+	rsn_ie.info[0] = WLAN_ELEMID_RSN;
+	rsn_ie.info[1] = assoc_req->RSNOpaque.num_data;
+
+	rsn_ie.length = assoc_req->RSNOpaque.num_data + 2;
+	qdf_mem_copy(&rsn_ie.info[2], assoc_req->RSNOpaque.data,
+		     assoc_req->RSNOpaque.num_data);
+	qdf_mem_free(assoc_req);
+	wlan_set_vdev_crypto_prarams_from_ie(ft_session->vdev, rsn_ie.info,
+					     rsn_ie.length);
+
+	ft_session->limRmfEnabled =
+		lim_get_vdev_rmf_capable(mac_ctx, ft_session);
+}
+#else
+static inline void pe_set_rmf_caps(struct mac_context *mac_ctx,
+				   struct pe_session *ft_session,
+				   struct roam_offload_synch_ind *roam_synch)
+{
+}
+#endif
+
 /**
  * sir_parse_bcn_fixed_fields() - Parse fixed fields in Beacon IE's
  *
@@ -1970,8 +2030,8 @@ lim_roam_gen_mbssid_beacon(struct mac_context *mac,
 		scan_entry = scan_node->entry;
 		if (qdf_is_macaddr_equal(&roam_ind->bssid,
 					 &scan_entry->bssid)) {
-			pe_debug("matched BSSID %pM bcn len %d profiles %d",
-				 scan_entry->bssid.bytes,
+			pe_debug("matched BSSID "QDF_MAC_ADDR_FMT" bcn len %d profiles %d",
+				 QDF_MAC_ADDR_REF(scan_entry->bssid.bytes),
 				 scan_entry->raw_frame.len,
 				 list_count);
 			nontx_bcn_prbrsp = scan_entry->raw_frame.ptr;
@@ -2066,17 +2126,17 @@ lim_roam_gen_beacon_descr(struct mac_context *mac,
 	ie_offset = SIR_MAC_HDR_LEN_3A + SIR_MAC_B_PR_SSID_OFFSET;
 
 	if (qdf_is_macaddr_zero((struct qdf_mac_addr *)mac_hdr->bssId)) {
-		pe_debug("bssid is 0 in beacon/probe update it with bssId %pM in sync ind",
-			roam_ind->bssid.bytes);
+		pe_debug("bssid is 0 in beacon/probe update it with bssId "QDF_MAC_ADDR_FMT" in sync ind",
+			QDF_MAC_ADDR_REF(roam_ind->bssid.bytes));
 		qdf_mem_copy(mac_hdr->bssId, roam_ind->bssid.bytes,
 			     sizeof(tSirMacAddr));
 	}
 
 	if (qdf_mem_cmp(&roam_ind->bssid.bytes,
 			&mac_hdr->bssId, QDF_MAC_ADDR_SIZE) != 0) {
-		pe_debug("LFR3:MBSSID Beacon/Prb Rsp: %d bssid %pM",
+		pe_debug("LFR3:MBSSID Beacon/Prb Rsp: %d bssid "QDF_MAC_ADDR_FMT,
 			 roam_ind->isBeacon,
-			 mac_hdr->bssId);
+			 QDF_MAC_ADDR_REF(mac_hdr->bssId));
 		/*
 		 * Its a MBSSID non-tx BSS roaming scenario.
 		 * Generate non tx BSS beacon/probe response
@@ -2160,10 +2220,10 @@ lim_roam_fill_bss_descr(struct mac_context *mac,
 		qdf_mem_free(parsed_frm_ptr);
 		return QDF_STATUS_E_FAILURE;
 	}
-	pe_debug("LFR3:Beacon/Prb Rsp: %d bssid %pM beacon %pM",
+	pe_debug("LFR3:Beacon/Prb Rsp: %d bssid "QDF_MAC_ADDR_FMT" beacon "QDF_MAC_ADDR_FMT,
 		 roam_synch_ind_ptr->isBeacon,
-		 roam_synch_ind_ptr->bssid.bytes,
-		 mac_hdr->bssId);
+		 QDF_MAC_ADDR_REF(roam_synch_ind_ptr->bssid.bytes),
+		 QDF_MAC_ADDR_REF(mac_hdr->bssId));
 
 	status = lim_roam_gen_beacon_descr(mac,
 					   roam_synch_ind_ptr,
@@ -2554,8 +2614,9 @@ pe_roam_synch_callback(struct mac_context *mac_ctx,
 		return status;
 	}
 
-	pe_debug("LFR3:Received ROAM_OFFLOAD_SYNCH_IND bssid %pM auth: %d vdevId: %d",
-		 roam_sync_ind_ptr->bssid.bytes, roam_sync_ind_ptr->authStatus,
+	pe_debug("LFR3:Received ROAM_OFFLOAD_SYNCH_IND bssid "QDF_MAC_ADDR_FMT" auth: %d vdevId: %d",
+		 QDF_MAC_ADDR_REF(roam_sync_ind_ptr->bssid.bytes),
+		 roam_sync_ind_ptr->authStatus,
 		 roam_sync_ind_ptr->roamed_vdev_id);
 
 	/*
@@ -2599,7 +2660,7 @@ pe_roam_synch_callback(struct mac_context *mac_ctx,
 	/* Next routine will update nss and vdev_nss with AP's capabilities */
 	lim_fill_ft_session(mac_ctx, bss_desc, ft_session_ptr,
 			    session_ptr, roam_sync_ind_ptr->phy_mode);
-
+	pe_set_rmf_caps(mac_ctx, ft_session_ptr, roam_sync_ind_ptr);
 	/* Next routine may update nss based on dot11Mode */
 	lim_ft_prepare_add_bss_req(mac_ctx, ft_session_ptr, bss_desc);
 	if (session_ptr->is11Rconnection)
@@ -2627,8 +2688,8 @@ pe_roam_synch_callback(struct mac_context *mac_ctx,
 					 DPH_STA_HASH_INDEX_PEER,
 					 &ft_session_ptr->dph.dphHashTable);
 	if (!curr_sta_ds) {
-		pe_err("LFR3:failed to add hash entry for %pM",
-		       add_bss_params->staContext.staMac);
+		pe_err("LFR3:failed to add hash entry for "QDF_MAC_ADDR_FMT,
+		       QDF_MAC_ADDR_REF(add_bss_params->staContext.staMac));
 		ft_session_ptr->bRoamSynchInProgress = false;
 		return status;
 	}
