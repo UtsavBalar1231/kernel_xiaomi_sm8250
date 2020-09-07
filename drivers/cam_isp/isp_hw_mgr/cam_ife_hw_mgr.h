@@ -146,6 +146,8 @@ struct cam_ife_hw_mgr_debug {
  * @ts                      captured timestamp when the ctx is acquired
  * @is_offline              Indicate whether context is for offline IFE
  * @dsp_enabled             Indicate whether dsp is enabled in this context
+ * @dual_ife_irq_mismatch_cnt   irq mismatch count value per core, used for
+ *                              dual VFE
  */
 struct cam_ife_hw_mgr_ctx {
 	struct list_head                list;
@@ -197,6 +199,7 @@ struct cam_ife_hw_mgr_ctx {
 	struct timespec64               ts;
 	bool                            is_offline;
 	bool                            dsp_enabled;
+	uint32_t                        dual_ife_irq_mismatch_cnt;
 };
 
 /**

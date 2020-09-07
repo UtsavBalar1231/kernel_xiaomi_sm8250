@@ -113,6 +113,8 @@
 #define CAM_ISP_IFE0_LITE_HW     0x4
 #define CAM_ISP_IFE1_LITE_HW     0x8
 #define CAM_ISP_IFE2_LITE_HW     0x10
+#define CAM_ISP_IFE3_LITE_HW     0x20
+#define CAM_ISP_IFE4_LITE_HW     0x40
 #define CAM_ISP_IFE2_HW          0x100
 
 #define CAM_ISP_PXL_PATH          0x1
