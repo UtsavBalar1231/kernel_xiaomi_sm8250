@@ -1074,6 +1074,8 @@ typedef enum {
     WMI_QBOOST_CFG_CMDID,
     /* Simulation Test command  */
     WMI_SIMULATION_TEST_CMDID,
+    /* WFA test config command */
+    WMI_WFA_CONFIG_CMDID,
 
     /** TDLS Configuration */
     /** enable/disable TDLS */
@@ -2080,6 +2082,7 @@ typedef enum {
 #define WMI_CHAN_FLAG_DFS_CFREQ2  16 /* Enable radar event reporting for sec80 in VHT80p80 */
 #define WMI_CHAN_FLAG_ALLOW_HE    17 /* HE (11ax) is allowed on this channel */
 #define WMI_CHAN_FLAG_PSC         18 /* Indicate it is a PSC (preferred scanning channel) */
+#define WMI_CHAN_FLAG_NAN_DISABLED 19 /* Indicates that NAN operations are disabled on this channel */
 
 #define WMI_SET_CHANNEL_FLAG(pwmi_channel,flag) do { \
         (pwmi_channel)->info |=  (1 << flag);      \
@@ -2800,6 +2803,35 @@ typedef struct {
 #define WMI_HW_MAX_TX_POWER_SET(dword, value) \
     WMI_SET_BITS(dword, WMI_HW_MAX_TX_POWER_BITPOS, 16, value)
 
+#define WMI_MAX_USER_PER_PPDU_UL_OFDMA_GET(dword) \
+        WMI_GET_BITS(dword, 0, 16)
+
+#define WMI_MAX_USER_PER_PPDU_UL_OFDMA_SET(dword, value) \
+        WMI_SET_BITS(dword, 0, 16, value)
+
+#define WMI_MAX_USER_PER_PPDU_DL_OFDMA_GET(dword) \
+        WMI_GET_BITS(dword, 16, 16)
+
+#define WMI_MAX_USER_PER_PPDU_DL_OFDMA_SET(dword, value) \
+        WMI_SET_BITS(dword, 16, 16, value)
+
+#define WMI_MAX_USER_PER_PPDU_UL_MUMIMO_GET(dword) \
+        WMI_GET_BITS(dword, 0, 16)
+
+#define WMI_MAX_USER_PER_PPDU_UL_MUMIMO_SET(dword, value) \
+        WMI_SET_BITS(dword, 0, 16, value)
+
+#define WMI_MAX_USER_PER_PPDU_DL_MUMIMO_GET(dword) \
+        WMI_GET_BITS(dword, 16, 16)
+
+#define WMI_MAX_USER_PER_PPDU_DL_MUMIMO_SET(dword, value) \
+        WMI_SET_BITS(dword, 16, 16, value)
+
+#define WMI_TARGET_CAP_FLAGS_RX_PEER_METADATA_VERSION_GET(target_cap_flags) \
+        WMI_GET_BITS(target_cap_flags, 0, 2)
+#define WMI_TARGET_CAP_FLAGS_RX_PEER_METADATA_VERSION_SET(target_cap_flags, value) \
+        WMI_SET_BITS(target_cap_flags, 0, 2, value)
+
 typedef struct {
     A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_service_ready_ext2_event_fixed_param.*/
 
@@ -2849,6 +2881,32 @@ typedef struct {
      * 320: puncturing supported within 320 MHz channels
      */
     A_UINT32 preamble_puncture_bw;
+
+    /*
+     * [15:0]  - ULOFDMA Refer WMI_MAX_USER_PER_PPDU_UL_OFDMA_GET & SET
+     * [31:16] - DLOFDMA Refer WMI_MAX_USER_PER_PPDU_DL_OFDMA_GET & SET
+     * If max_user_per_ppdu_ofdma == 0 the UL/DL max users are unspecified.
+     */
+    A_UINT32 max_user_per_ppdu_ofdma;
+
+    /*
+     * [15:0]  - ULMUMIMO Refer WMI_MAX_USER_PER_PPDU_UL_MUMIMO_GET & SET
+     * [31:16] - DLMUMIMO Refer WMI_MAX_USER_PER_PPDU_DL_MUMIMO_GET & SET
+     * If max_user_per_ppdu_mumimo == 0 the UL/DL max users are unspecified.
+     */
+    A_UINT32 max_user_per_ppdu_mumimo;
+
+    /**
+     * @brief target_cap_flags - flags containing information about target capabilities.
+     * Bits 1:0
+     *    Rx peer metadata version number used by target
+     *    0-> legacy case
+     *    1-> MLO support
+     *    2,3-> reserved
+     *    Refer to WMI_TARGET_CAP_FLAGS_PEER_METADATA_VERSION macros.
+     * Bits 31:2 - Reserved
+     */
+    A_UINT32 target_cap_flags;
 } wmi_service_ready_ext2_event_fixed_param;
 
 typedef struct {
@@ -3645,7 +3703,17 @@ typedef struct {
      *
      *      Refer to the below WMI_RSRC_CFG_FLAGS2_RE_ULRESP_PDEV_CFG_GET/SET
      *      macros.
-     *  Bits 31:4 - Reserved
+     *  Bits 5:4
+     *      HTT rx peer metadata version number that host supports.
+     *      Firmware intially sends the target supported version number
+     *      as part of service_ready_ext2 message.
+     *      Host can ack the version number that it is using as part of
+     *      this message.
+     *      0-> legacy case
+     *      1-> MLO support
+     *      2-3-> Reserved
+     *      Refer to the WMI_RSRC_CFG_FLAGS2_RX_PEER_METADATA_VERSION macros.
+     *  Bits 31:6 - Reserved
      */
     A_UINT32 flags2;
     /** @brief host_service_flags - can be used by Host to indicate
@@ -3703,6 +3771,12 @@ typedef struct {
      * the target and host.
      */
     A_UINT32 max_ap_vaps;
+
+    /** @brief cbc_flow_ena
+     * When cbc_flow_ena is se, halphy will do Cold Boot Calibration flow.
+     * Otherwise, halphy will do normal flow.
+     */
+    A_UINT32 cbc_flow_ena;
 } wmi_resource_config;
 
 #define WMI_MSDU_FLOW_AST_ENABLE_GET(msdu_flow_config0, ast_x) \
@@ -3901,6 +3975,11 @@ typedef struct {
     WMI_GET_BITS(flags2, pdev_id, 1)
 #define WMI_RSRC_CFG_FLAGS2_RE_ULRESP_PDEV_CFG_SET(flags2, pdev_id, value) \
     WMI_SET_BITS(flags2, pdev_id, 1, value)
+
+#define WMI_RSRC_CFG_FLAGS2_RX_PEER_METADATA_VERSION_GET(flags2) \
+    WMI_GET_BITS(flags2, 4, 2)
+#define WMI_RSRC_CFG_FLAGS2_RX_PEER_METADATA_VERSION_SET(flags2, value) \
+    WMI_SET_BITS(flags2, 4, 2, value)
 
 #define WMI_RSRC_CFG_HOST_SERVICE_FLAG_NAN_IFACE_SUPPORT_GET(host_service_flags) \
     WMI_GET_BITS(host_service_flags, 0, 1)
@@ -6748,11 +6827,19 @@ typedef enum {
      * allow spatial reuse only if the RSSI detected from neighboring
      * BSS cells is no more than 10 dB.
      *
+     * If Bit 29 is set, then input value will be in dBm. This is used
+     * for chipsets that uses dBm for comparision across MAC/Phy blocks.
+     * Older chipsets support input in dB units. For newer chipsets, dBm
+     * units will be used.
+     * The host will use the WMI_SERVICE_SRG_SRP_SPATIAL_REUSE_SUPPORT
+     * service ready bit to differentiate between providing input as dB or dBm.
+     *
      * bit    | purpose
      * -----------------
      * 0  - 7 | Param Value for non-SRG based Spatial Reuse
      * 8  - 15| Param value for SRG based Spatial Reuse
-     * 16 - 29| Reserved
+     * 16 - 28| Reserved
+     * 29     | Param value is in dBm units rather than dB units
      * 30     | Enable/Disable SRG based spatial reuse.
      *        | If set to 0, ignore bits 8-15.
      * 31     | Enable/Disable Non-SRG based spatial reuse.
@@ -6861,6 +6948,9 @@ typedef enum {
      */
     WMI_PDEV_PARAM_SR_TRIGGER_MARGIN,
 
+    /* Param to enable/disable PCIE HW ILP */
+    WMI_PDEV_PARAM_PCIE_HW_ILP,
+
 } WMI_PDEV_PARAM;
 
 #define WMI_PDEV_ONLY_BSR_TRIG_IS_ENABLED(trig_type) WMI_GET_BITS(trig_type, 0, 1)
@@ -6911,6 +7001,9 @@ typedef enum {
 #define WMI_PDEV_SRG_DISABLE(pd_threshold_cfg) WMI_SET_BITS(pd_threshold_cfg, 30, 1, 0)
 #define WMI_PDEV_SRG_PD_THRESHOLD_SET(pd_threshold_cfg, value) WMI_SET_BITS(pd_threshold_cfg, 8, 8, value)
 #define WMI_PDEV_SRG_PD_THRESHOLD_GET(pd_threshold_cfg) WMI_GET_BITS(pd_threshold_cfg, 8, 8)
+
+#define WMI_PDEV_IS_PD_THRESHOLD_IN_DBM(pd_threshold_cfg) WMI_GET_BITS(pd_threshold_cfg, 29, 1)
+#define WMI_PDEV_SET_PD_THRESHOLD_IN_DBM(pd_threshold_cfg) WMI_SET_BITS(pd_threshold_cfg, 29, 1, 1)
 
 #define WMI_PDEV_OBSS_PD_ENABLE_PER_AC_SET(per_ac_cfg, value) WMI_SET_BITS(per_ac_cfg, 0, 4, value)
     #define WMI_PDEV_OBSS_PD_ENABLE_PER_AC_GET(per_ac_cfg) WMI_GET_BITS(per_ac_cfg, 0, 4)
@@ -8060,6 +8153,12 @@ typedef struct {
     A_UINT32 tx_time;
     /** msecs the radio is in active receive (32 bits number accruing over time) */
     A_UINT32 rx_time;
+    /*** NOTE ***
+     * Be cautious about adding new fields in wmi_channel_stats.
+     * STA-centric targets may instantiate many instances of per-channel
+     * stats, and consequently may consume a non-trivial amount of on-chip
+     * memory for storing the channel stats.
+     */
 } wmi_channel_stats;
 
 /*
@@ -9515,6 +9614,16 @@ typedef struct {
                                                     * VDEV_FLAGS_NON_TRANSMIT_AP classify it as either Tx vap
                                                     * or non Tx vap.
                                                     */
+#define VDEV_FLAGS_SCAN_MODE_VAP      0x00000010   /* for Scan Radio vdev will be special vap.
+                                                    * There will not be WMI_VDEV_UP_CMD, there will be only WMI_VDEV_CREATE_CMD
+                                                    * and WMI_VDEV_START_REQUEST_CMD. Based on this parameter need to make decision like
+                                                    * vdev Pause/Unpause at WMI_VDEV_START_REQUEST_CMD.
+                                                    */
+/* get/set/check macros for VDEV_FLAGS_SCAN_MODE_VAP flag */
+#define WMI_SCAN_MODE_VDEV_FLAG_GET(flag)            WMI_GET_BITS(flag, 4, 1)
+#define WMI_SCAN_MODE_VDEV_FLAG_SET(flag, val)       WMI_SET_BITS(flag, 4, 1, val)
+
+#define WMI_SCAN_MODE_VDEV_FLAG_ENABLED(flag)        ((flag & VDEV_FLAGS_SCAN_MODE_VAP) ? 1 : 0)
 
 typedef struct {
     A_UINT32 tlv_header; /** TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_vdev_create_cmd_fixed_param */
@@ -10313,6 +10422,7 @@ typedef struct {
      *     VDEV_FLAGS_TRANSMIT_AP
      *     VDEV_FLAGS_NON_TRANSMIT_AP
      *     VDEV_FLAGS_EMA_MODE
+     *     VDEV_FLAGS_SCAN_MODE_VAP - if the vdev is used for scan radio
      */
     A_UINT32 mbss_capability_flags;
 
@@ -11295,11 +11405,19 @@ typedef enum {
      * allow spatial reuse only if the RSSI detected from neighboring
      * BSS cells is no more than 10 dB.
      *
+     * If Bit 29 is set, then input value will be in dBm. This is used
+     * for chipsets that uses dBm for comparision across MAC/Phy blocks.
+     * Older chipsets support input in dB units. For newer chipsets, dBm
+     * units will be used.
+     * The host will use the WMI_SERVICE_SRG_SRP_SPATIAL_REUSE_SUPPORT
+     * service ready bit to differentiate between providing input as dB or dBm.
+     *
      * bit    | purpose
      * -----------------
      * 0  - 7 | Param Value for non-SRG based Spatial Reuse
      * 8  - 15| Param value for SRG based Spatial Reuse
-     * 16 - 29| Reserved
+     * 16 - 28| Reserved
+     * 29     | Param value is in dBm units rather than dB units
      * 30     | Enable/Disable SRG based spatial reuse.
      *        | If set to 0, ignore bits 8-15.
      * 31     | Enable/Disable Non-SRG based spatial reuse.
@@ -11774,6 +11892,10 @@ typedef struct {
     A_UINT32 frame_inject_period;
     /** Destination address of frame */
     wmi_mac_addr frame_addr1;
+    /** Frame control duration field to be set in CTS_TO_SELF.
+     * Applicable to frame_type WMI_FRAME_INJECT_TYPE_CTS_TO_SELF only.
+     */
+    A_UINT32 fc_duration;
     /** variable buffer length. Can be used for frame template.
      * data is in TLV data[]
      */
@@ -25913,6 +26035,42 @@ typedef struct {
     A_UINT32 wireless_modes_ext;
 } WMI_HAL_REG_CAPABILITIES_EXT2;
 
+/*
+ * This TLV used for Scan Radio RDP
+ * We have an RDP which supports Multiband-Frequency (2Ghz, 5Ghz and 6Ghz)
+ * on a single radio.
+ * The AP acts as a special VAP. There will not be WMI_VDEV_UP_CMD.
+ * This radio is used only for scanning purpose and to send few MGMT frames.
+ * The DFS feature is disabled on this scan radio, since there will not be
+ * much TX traffic.
+ * The Host has to disable CAC timer because DFS feature not supported here.
+ * In order to know about the scan radio RDP and DFS disabled case,
+ * the target has to send this information to Host per pdev via
+ * WMI_SERVICE_READY_EXT2_EVENT.
+ * The target is notified of the special scan VAP by the flags variable
+ * in the WMI_CREATE_CMD.
+ */
+typedef struct {
+    A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_WMI_SCAN_RADIO_CAPABILITIES_EXT2 */
+    A_UINT32 phy_id;
+    /*
+     * Bit 0:
+     *     1 - SCAN_RADIO supported  0 - SCAN_RADIO  not supported
+     *     Refer to WMI_SCAN_RADIO_CAP_SCAN_RADIO_FLAG_SET, GET macros
+     * Bit 1:
+     *     1 - DFS enabled           0 - DFS disabled
+     *     Refer to WMI_SCAN_RADIO_CAP_DFS_FLAG_SET, GET macros
+     * [2:31] reserved
+     */
+    A_UINT32 flags;
+} WMI_SCAN_RADIO_CAPABILITIES_EXT2;
+
+#define WMI_SCAN_RADIO_CAP_SCAN_RADIO_FLAG_GET(flag)         WMI_GET_BITS(flag, 0, 1)
+#define WMI_SCAN_RADIO_CAP_SCAN_RADIO_FLAG_SET(flag, val)    WMI_SET_BITS(flag, 0, 1, val)
+
+#define WMI_SCAN_RADIO_CAP_DFS_FLAG_GET(flag)                WMI_GET_BITS(flag, 1, 1)
+#define WMI_SCAN_RADIO_CAP_DFS_FLAG_SET(flag, val)           WMI_SET_BITS(flag, 1, 1, val)
+
 typedef struct {
     A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_WMI_SOC_HAL_REG_CAPABILITIES */
     A_UINT32 num_phy;
@@ -26035,6 +26193,16 @@ typedef struct {
     A_UINT32 prio;
 } wmi_therm_throt_level_config_info;
 
+typedef enum {
+    WMI_THERMAL_CLIENT_UNSPECIFIED = 0,
+    WMI_THERMAL_CLIENT_APPS        = 1,
+    WMI_THERMAL_CLIENT_WPSS        = 2,
+    WMI_THERMAL_CLIENT_FW          = 3,
+    WMI_THERMAL_CLIENT_MAX
+} WMI_THERMAL_MITIGATION_CLIENTS;
+
+#define WMI_THERMAL_CLIENT_MAX_PRIORITY 10
+
 typedef struct {
     A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_therm_throt_config_request_fixed_param */
     A_UINT32 pdev_id;          /* config for each pdev */
@@ -26042,6 +26210,8 @@ typedef struct {
     A_UINT32 dc;               /* duty cycle in ms */
     A_UINT32 dc_per_event;     /* how often (after how many duty cycles) the FW sends stats to host */
     A_UINT32 therm_throt_levels; /* Indicates the number of thermal zone configuration */
+    A_UINT32 client_id;        /* Indicates the client from whom the request is being forwarded to FW. Refer to WMI_THERMAL_MITIGATION_CLIENTS. */
+    A_UINT32 priority;         /* Indicates the priority, higher the value, higher the priority. Varies from 1 to WMI_THERMAL_CLIENT_MAX_PRIORITY. */
     /*
      * Following this structure is the TLV:
      * struct wmi_therm_throt_level_config_info therm_throt_level_config_info[therm_throt_levels];
@@ -31509,6 +31679,75 @@ typedef struct {
  *       of the frame.
  */
 } wmi_simulation_test_cmd_fixed_param;
+
+typedef struct {
+    /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_wfa_config_rsnxe */
+    A_UINT32 tlv_header;
+    /* rsnxe_param
+     * Override RSNXE Used bit in FT reassoc request.
+     *   Possible values from host are:
+     *   0  use default value based on capability
+     *   1  override with 1
+     *   2  override with 0
+     */
+    A_UINT32 rsnxe_param;
+} wmi_wfa_config_rsnxe;
+
+typedef struct {
+    /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_wfa_config_csa */
+    A_UINT32 tlv_header;
+    /* ignore_csa
+     * Ignore CSA from AP and keep STA in current channel and don't deauth AP.
+     *   Possible values from host are:
+     *   0  default behavior
+     *   1  ignore CSA
+     */
+    A_UINT32 ignore_csa;
+} wmi_wfa_config_csa;
+
+typedef enum {
+    WMI_WFA_CONFIG_OCV_FRMTYPE_SAQUERY_REQ          = 0x00000001,
+    WMI_WFA_CONFIG_OCV_FRMTYPE_SAQUERY_RSP          = 0x00000002,
+    WMI_WFA_CONFIG_OCV_FRMTYPE_FT_REASSOC_REQ       = 0x00000004,
+    WMI_WFA_CONFIG_OCV_FRMTYPE_FILS_REASSOC_REQ     = 0x00000008,
+} WMI_WFA_CONFIG_OCV_FRMTYPE;
+
+typedef struct {
+    /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_wfa_config_ocv */
+    A_UINT32 tlv_header;
+    /* frame_types
+     * Override OCI channel number in specified frames.
+     * Possible frame types from host are enum WMI_WFA_CONFIG_OCV_FRMTYPE.
+     */
+    A_UINT32 frame_types;
+    /* Frequency value in mhz to override in specified frame type */
+    A_UINT32 chan_freq;
+} wmi_wfa_config_ocv;
+
+typedef struct {
+    /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_wfa_config_saquery */
+    A_UINT32 tlv_header;
+    /* remain_connect_on_saquery_timeout
+     * Don't send deauth on SA Query response timeout.
+     *   Possible values from host are:
+     *   0  default behavior
+     *   1  don't send deauth on SA Query response timeout
+     */
+    A_UINT32 remain_connect_on_saquery_timeout;
+} wmi_wfa_config_saquery;
+
+typedef struct {
+    /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_wfa_config_cmd_fixed_param */
+    A_UINT32 tlv_header;
+    /** VDEV identifier */
+    A_UINT32 vdev_id;
+    /* The below TLV arrays follow this structure:
+     * wmi_wfa_config_rsnxe   wfa_config_rsnxe[];   (0 or 1 elements)
+     * wmi_wfa_config_csa     wfa_config_csa[];     (0 or 1 elements)
+     * wmi_wfa_config_ocv     wfa_config_ocv[];     (0 or 1 elements)
+     * wmi_wfa_config_saquery wfa_config_saquery[]; (0 or 1 elements)
+     */
+} wmi_wfa_config_cmd_fixed_param;
 
 #define WMI_TWT_SESSION_FLAG_FLOW_ID_GET(_var) WMI_GET_BITS(_var, 0, 16)
 #define WMI_TWT_SESSION_FLAG_FLOW_ID_SET(_var, _val) WMI_SET_BITS(_var, 0, 16, _val)
