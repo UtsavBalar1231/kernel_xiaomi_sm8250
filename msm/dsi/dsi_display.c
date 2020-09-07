@@ -884,6 +884,9 @@ static int dsi_display_cmd_prepare(const char *cmd_buf, u32 cmd_buf_len,
 		return -EINVAL;
 	}
 
+	if (cmd->last_command)
+		cmd->msg.flags |= MIPI_DSI_MSG_LASTCOMMAND;
+
 	for (i = 0; i < cmd->msg.tx_len; i++)
 		payload[i] = cmd_buf[7 + i];
 
@@ -2801,6 +2804,19 @@ static int dsi_display_broadcast_cmd(struct dsi_display *display,
 		DSI_ERR("[%s] cmd trigger failed for master, rc=%d\n",
 		       display->name, rc);
 		goto error;
+	}
+
+	display_for_each_ctrl(i, display) {
+		ctrl = &display->ctrl[i];
+		if (ctrl == m_ctrl)
+			continue;
+
+		rc = dsi_ctrl_clear_slave_dma_status(ctrl->ctrl, flags);
+		if (rc) {
+			DSI_ERR("[%s] clear interrupt status failed, rc=%d\n",
+				display->name, rc);
+			goto error;
+		}
 	}
 
 error:
