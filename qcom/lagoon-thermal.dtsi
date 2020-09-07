@@ -96,6 +96,8 @@
 	};
 
 	cxip_cdev: cxip-cdev@1fed000 {
+		status = "disabled";
+
 		compatible = "qcom,cxip-lm-cooling-device";
 		reg = <0x1fed000 0x10060>;
 		qcom,thermal-client-offset = <0x8000>;
@@ -1263,6 +1265,12 @@
 				type = "passive";
 			};
 
+			skin_batt_trip0: batt-skin-trip0 {
+				temperature = <41000>;
+				hysteresis = <2000>;
+				type = "passive";
+			};
+
 			modem_skin_trip2: modem-skin-trip2 {
 				temperature = <42000>;
 				hysteresis = <4000>;
@@ -1275,9 +1283,15 @@
 				type = "passive";
 			};
 
-			modem_skin_trip3: modem-skin-trip3 {
+			skin_batt_modem_trip: batt-modem-skin-trip {
 				temperature = <43000>;
 				hysteresis = <4000>;
+				type = "passive";
+			};
+
+			skin_batt_trip2: batt-skin-trip2 {
+				temperature = <45000>;
+				hysteresis = <2000>;
 				type = "passive";
 			};
 
@@ -1287,20 +1301,26 @@
 				type = "passive";
 			};
 
+			skin_batt_trip3: batt-skin-trip3 {
+				temperature = <47000>;
+				hysteresis = <2000>;
+				type = "passive";
+			};
+
 			silver_trip: silver-trip {
 				temperature = <48000>;
 				hysteresis = <0>;
 				type = "passive";
 			};
 
-			cx_emer_trip: cx-emer-trip {
-				temperature = <50000>;
-				hysteresis = <4000>;
+			skin_batt_trip4: batt-skin-trip4 {
+				temperature = <48000>;
+				hysteresis = <1000>;
 				type = "passive";
 			};
 
-			modem_skin_trip4: modem-skin-trip4 {
-				temperature = <56000>;
+			cx_emer_trip: cx-emer-trip {
+				temperature = <50000>;
 				hysteresis = <4000>;
 				type = "passive";
 			};
@@ -1334,16 +1354,6 @@
 							(THERMAL_MAX_LIMIT-2)>;
 			};
 
-			skin_modem_pa {
-				trip = <&cx_emer_trip>;
-				cooling-device = <&modem_pa 3 3>;
-			};
-
-			skin_modem_proc {
-				trip = <&cx_emer_trip>;
-				cooling-device = <&modem_tj 3 3>;
-			};
-
 			skin_cdsp {
 				trip = <&cx_emer_trip>;
 				cooling-device = <&cdsp_sw 4 4>;
@@ -1366,7 +1376,7 @@
 			};
 
 			skin_modem_skin_cdev2 {
-				trip = <&modem_skin_trip4>;
+				trip = <&cx_emer_trip>;
 				cooling-device = <&modem_skin 3 3>;
 			};
 
@@ -1376,12 +1386,12 @@
 			};
 
 			skin_modem_cdev1 {
-				trip = <&modem_skin_trip3>;
+				trip = <&skin_batt_modem_trip>;
 				cooling-device = <&modem_pa 2 2>;
 			};
 
 			skin_modem_cdev2 {
-				trip = <&modem_skin_trip4>;
+				trip = <&cx_emer_trip>;
 				cooling-device = <&modem_pa 3 3>;
 			};
 
@@ -1391,13 +1401,38 @@
 			};
 
 			modem_pa_fr1_cdev1 {
-				trip = <&modem_skin_trip3>;
+				trip = <&skin_batt_modem_trip>;
 				cooling-device = <&modem_pa_fr1 2 2>;
 			};
 
 			modem_pa_fr1_cdev2 {
-				trip = <&modem_skin_trip4>;
+				trip = <&cx_emer_trip>;
 				cooling-device = <&modem_pa_fr1 3 3>;
+			};
+
+			batt_cdev0 {
+				trip = <&skin_batt_trip0>;
+				cooling-device = <&pm7250b_charger 8 8>;
+			};
+
+			batt_cdev1 {
+				trip = <&skin_batt_modem_trip>;
+				cooling-device = <&pm7250b_charger 12 12>;
+			};
+
+			batt_cdev2 {
+				trip = <&skin_batt_trip2>;
+				cooling-device = <&pm7250b_charger 14 14>;
+			};
+
+			batt_cdev3 {
+				trip = <&skin_batt_trip3>;
+				cooling-device = <&pm7250b_charger 16 16>;
+			};
+
+			batt_cdev4 {
+				trip = <&skin_batt_trip4>;
+				cooling-device = <&pm7250b_charger 18 18>;
 			};
 		};
 	};

@@ -101,12 +101,17 @@
 			qcom,buswidth = <16>;
 			qcom,agg-ports = <1>;
 			qcom,ap-owned;
+			qcom,util-fact = <159>;
+			qcom,vrail-comp = <96>;
 			qcom,qport = <0>;
 			qcom,qos-mode = "fixed";
 			qcom,connections = <&slv_ebi &slv_bimc_snoc>;
 			qcom,prio-lvl = <0>;
 			qcom,prio-rd = <0>;
 			qcom,prio-wr = <0>;
+			clock-names = "node_clk", "node_a_clk";
+			clocks = <&rpmcc RPM_SMD_CPUSS_GNOC_CLK>,
+				<&rpmcc RPM_SMD_CPUSS_GNOC_A_CLK>;
 			qcom,bus-dev = <&fab_bimc>;
 			qcom,mas-rpm-id = <ICBID_MASTER_APPSS_PROC>;
 		};

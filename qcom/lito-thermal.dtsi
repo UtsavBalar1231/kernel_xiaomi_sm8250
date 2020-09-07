@@ -1280,4 +1280,8 @@
 			};
 		};
 	};
+
+	/delete-node/ modem-mmw-pa1-usr;
+	/delete-node/ modem-mmw-pa2-usr;
+	/delete-node/ modem-mmw-pa3-usr;
 };

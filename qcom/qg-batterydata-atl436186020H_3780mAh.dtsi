@@ -12,12 +12,16 @@ qcom,ATL436186_020H_3780mAh {
 
 	qcom,jeita-fcc-ranges = <0  100  1890000
 				101 200  3780000
-				201 450  10000000
+				201 420  10000000
+				421 434  8000000
+				435 450  7000000
 				451 550  1890000>;
 
 	qcom,jeita-fv-ranges = <0   100  4400000
 				101 200  4400000
-				201 450  4400000
+				201 420  4400000
+				421 434  4400000
+				435 450  4400000
 				451 550  4050000>;
 
 	qcom,step-chg-ranges = <3500000  4000000  10000000
@@ -25,6 +29,8 @@ qcom,ATL436186_020H_3780mAh {
 				4200001  4400000  6000000>;
 	qcom,ocv-based-step-chg;
 
+	/* Rise-Hys = 1 DeciDegC, Fall-Hys=10 deciDegC */
+	qcom,qcom,step-jeita-hysteresis = <1 10>;
 	/* COOL = 10 degc, WARM = 45 degC */
 	qcom,jeita-soft-thresholds = <0x4ccc 0x20b8>;
 	/* COLD = 0 degC, HOT = 55 degC*/

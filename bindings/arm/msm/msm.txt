@@ -50,6 +50,9 @@ SoCs:
 - LITO
   compatible = "qcom,lito"
 
+- ORCHID
+  compatible = "qcom,orchid"
+
 - LAGOON
   compatible = "qcom,lagoon"
 
@@ -58,6 +61,12 @@ SoCs:
 
 - SCUBA
   compatible = "qcom,scuba"
+
+- SCUBAIOT
+  compatible = "qcom,scuba-iot"
+
+- SCUBAPIOT
+  compatible = "qcom,scubap-iot"
 
 - SDMSHRIKE
   compatible = "qcom,sdmshrike"
@@ -193,6 +202,8 @@ compatible = "qcom,lito-mtp"
 compatible = "qcom,lito-cdp"
 compatible = "qcom,lito-atp"
 compatible = "qcom,lito-qrd"
+compatible = "qcom,orchid-mtp"
+compatible = "qcom,orchid-cdp"
 compatible = "qcom,lagoon-rumi"
 compatible = "qcom,lagoon-mtp"
 compatible = "qcom,lagoon-cdp"

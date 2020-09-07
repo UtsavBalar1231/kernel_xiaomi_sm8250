@@ -147,7 +147,12 @@ Profile data node optional properties:
 			proper functionality.
 			Element 0 - SOH minimum level.
 			Element 1 - SOH maximum level.
-
+- qcom,step-jeita-hysteresis: A tuple entry to allow configuring the rising
+			and falling hysteresis for better fine tuning of the
+			charge current across battery temperature thresholds.
+			This should be in decidegree and if not specified
+			default select value is 10 DeciDegC.
+			<RISE_HYS_DECIDEG_C, FALL_HYS_DECIDEG_C>
 Profile data node required subnodes:
 - qcom,fcc-temp-lut : An 1-dimensional lookup table node that encodes
 			temperature to fcc lookup. The units for this lookup

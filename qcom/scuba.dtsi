@@ -2543,7 +2543,8 @@
 					<&pm2250_vadc ADC_AMUX_THM2_PU2>,
 					<&pm2250_vadc ADC_AMUX_THM3_PU2>,
 					<&pm2250_vadc ADC_GPIO3_PU2>,
-					<&pm2250_vadc ADC_GPIO4_PU2>;
+					<&pm2250_vadc ADC_GPIO4_PU2>,
+					<&pm2250_vadc ADC_SBUx>;
 
 			xo_therm {
 				reg = <ADC_XO_THERM_PU2>;
@@ -2579,6 +2580,10 @@
 				reg = <ADC_GPIO4_PU2>;
 				qcom,ratiometric;
 				qcom,hw-settle-time = <200>;
+			};
+
+			s3_die_temp {
+				reg = <ADC_SBUx>;
 			};
 		};
 	};
@@ -2665,3 +2670,5 @@
 	qcom,cx-ipeak-data = <&cx_ipeak_lm 6>;
 	qcom,clock-freq-threshold = <240000000>;
 };
+
+#include "msm-rdbg-scuba.dtsi"
