@@ -20,7 +20,7 @@
 #include <qdf_trace.h>
 
 struct wmi_hang_data_fixed_param {
-	uint32_t tlv_header; /* tlv tag and length */
+	uint16_t tlv_header; /* tlv tag and length */
 	uint32_t event;
 	uint32_t data;
 	uint64_t time;
@@ -36,7 +36,7 @@ static void wmi_log_history(struct notifier_block *block, void *data,
 							notif_block);
 	struct qdf_notifer_data *wmi_hang_data = data;
 	int nread, pos, total_len;
-	unsigned int wmi_ring_size = 3;
+	unsigned int wmi_ring_size = 1;
 	uint64_t secs, usecs;
 	struct wmi_event_debug *wmi_evt;
 	struct wmi_unified *wmi_handle;

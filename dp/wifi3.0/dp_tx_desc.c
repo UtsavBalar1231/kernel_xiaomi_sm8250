@@ -102,15 +102,14 @@ QDF_STATUS dp_tx_desc_pool_alloc(struct dp_soc *soc, uint8_t pool_id,
 	desc_size = DP_TX_DESC_SIZE(sizeof(*tx_desc_elem));
 	tx_desc_pool->elem_size = desc_size;
 	if (!dp_is_soc_reinit(soc))
-		qdf_mem_multi_pages_alloc(soc->osdev,
-					  &tx_desc_pool->desc_pages,
-					  desc_size, num_elem,
-					  0, true);
+		dp_desc_multi_pages_mem_alloc(soc, DP_TX_DESC_TYPE,
+					      &tx_desc_pool->desc_pages,
+					      desc_size, num_elem,
+					      0, true);
 	if (!tx_desc_pool->desc_pages.num_pages) {
 		dp_err("Multi page alloc fail, tx desc");
 		goto fail_exit;
 	}
-
 
 	num_desc_per_page =
 		tx_desc_pool->desc_pages.num_element_per_page;
@@ -144,8 +143,8 @@ QDF_STATUS dp_tx_desc_pool_alloc(struct dp_soc *soc, uint8_t pool_id,
 	return QDF_STATUS_SUCCESS;
 
 free_tx_desc:
-	qdf_mem_multi_pages_free(soc->osdev,
-		&tx_desc_pool->desc_pages, 0, true);
+	dp_desc_multi_pages_mem_free(soc, DP_TX_DESC_TYPE,
+				     &tx_desc_pool->desc_pages, 0, true);
 
 fail_exit:
 	return QDF_STATUS_E_FAULT;
@@ -164,8 +163,9 @@ QDF_STATUS dp_tx_desc_pool_free(struct dp_soc *soc, uint8_t pool_id)
 	struct dp_tx_desc_pool_s *tx_desc_pool =
 				&((soc)->tx_desc[(pool_id)]);
 
-	qdf_mem_multi_pages_free(soc->osdev,
-		&tx_desc_pool->desc_pages, 0, true);
+	dp_desc_multi_pages_mem_free(soc, DP_TX_DESC_TYPE,
+				     &tx_desc_pool->desc_pages,
+				     0, true);
 	TX_DESC_LOCK_DESTROY(&tx_desc_pool->lock);
 	TX_DESC_POOL_MEMBER_CLEAN(tx_desc_pool);
 	return QDF_STATUS_SUCCESS;
@@ -194,12 +194,13 @@ QDF_STATUS dp_tx_ext_desc_pool_alloc(struct dp_soc *soc, uint8_t pool_id,
 	soc->tx_ext_desc[pool_id].elem_count = num_elem;
 	memctx = qdf_get_dma_mem_context((&soc->tx_ext_desc[pool_id]), memctx);
 	if (!dp_is_soc_reinit(soc)) {
-		qdf_mem_multi_pages_alloc(soc->osdev,
-					  &soc->tx_ext_desc[pool_id].
-					  desc_pages,
-					  soc->tx_ext_desc[pool_id].elem_size,
-					  soc->tx_ext_desc[pool_id].elem_count,
-					  memctx, false);
+		dp_desc_multi_pages_mem_alloc(soc,
+					      DP_TX_EXT_DESC_TYPE,
+					      &soc->tx_ext_desc[pool_id].
+					      desc_pages,
+					      soc->tx_ext_desc[pool_id].elem_size,
+					      soc->tx_ext_desc[pool_id].elem_count,
+					      memctx, false);
 	}
 	if (!soc->tx_ext_desc[pool_id].desc_pages.num_pages) {
 		QDF_TRACE(QDF_MODULE_ID_DP, QDF_TRACE_LEVEL_ERROR,
@@ -218,14 +219,12 @@ QDF_STATUS dp_tx_ext_desc_pool_alloc(struct dp_soc *soc, uint8_t pool_id,
 	soc->tx_ext_desc[pool_id].link_elem_size =
 		sizeof(struct dp_tx_ext_desc_elem_s);
 	if (!dp_is_soc_reinit(soc)) {
-		qdf_mem_multi_pages_alloc(soc->osdev,
-					  &soc->tx_ext_desc[pool_id].
-					  desc_link_pages,
-					  soc->tx_ext_desc[pool_id].
-					  link_elem_size,
-					  soc->tx_ext_desc[pool_id].
-					  elem_count,
-					  0, true);
+		dp_desc_multi_pages_mem_alloc(soc,
+					      DP_TX_EXT_DESC_LINK_TYPE,
+					      &soc->tx_ext_desc[pool_id].desc_link_pages,
+					      soc->tx_ext_desc[pool_id].link_elem_size,
+					      soc->tx_ext_desc[pool_id].elem_count,
+					      0, true);
 	}
 	if (!soc->tx_ext_desc[pool_id].desc_link_pages.num_pages) {
 		QDF_TRACE(QDF_MODULE_ID_DP, QDF_TRACE_LEVEL_ERROR,
@@ -285,11 +284,11 @@ QDF_STATUS dp_tx_ext_desc_pool_alloc(struct dp_soc *soc, uint8_t pool_id,
 	return QDF_STATUS_SUCCESS;
 
 free_ext_link_desc_page:
-	qdf_mem_multi_pages_free(soc->osdev,
+	dp_desc_multi_pages_mem_free(soc, DP_TX_EXT_DESC_LINK_TYPE,
 		&soc->tx_ext_desc[pool_id].desc_link_pages, 0, true);
 
 free_ext_desc_page:
-	qdf_mem_multi_pages_free(soc->osdev,
+	dp_desc_multi_pages_mem_free(soc, DP_TX_EXT_DESC_TYPE,
 		&soc->tx_ext_desc[pool_id].desc_pages,
 		qdf_get_dma_mem_context((&soc->tx_ext_desc[pool_id]), memctx),
 		false);
@@ -308,10 +307,10 @@ fail_exit:
  */
 QDF_STATUS dp_tx_ext_desc_pool_free(struct dp_soc *soc, uint8_t pool_id)
 {
-	qdf_mem_multi_pages_free(soc->osdev,
+	dp_desc_multi_pages_mem_free(soc, DP_TX_EXT_DESC_LINK_TYPE,
 		&soc->tx_ext_desc[pool_id].desc_link_pages, 0, true);
 
-	qdf_mem_multi_pages_free(soc->osdev,
+	dp_desc_multi_pages_mem_free(soc, DP_TX_EXT_DESC_TYPE,
 		&soc->tx_ext_desc[pool_id].desc_pages,
 		qdf_get_dma_mem_context((&soc->tx_ext_desc[pool_id]), memctx),
 		false);
@@ -339,10 +338,11 @@ QDF_STATUS dp_tx_tso_desc_pool_alloc(struct dp_soc *soc, uint8_t pool_id,
 	tso_desc_pool->num_free = 0;
 	desc_size = DP_TX_DESC_SIZE(sizeof(struct qdf_tso_seg_elem_t));
 	if (!dp_is_soc_reinit(soc))
-		qdf_mem_multi_pages_alloc(soc->osdev,
-					  &tso_desc_pool->desc_pages,
-					  desc_size,
-					  num_elem, 0, true);
+		dp_desc_multi_pages_mem_alloc(soc,
+					      DP_TX_TSO_DESC_TYPE,
+					      &tso_desc_pool->desc_pages,
+					      desc_size,
+					      num_elem, 0, true);
 
 	if (!tso_desc_pool->desc_pages.num_pages) {
 		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
@@ -369,8 +369,8 @@ QDF_STATUS dp_tx_tso_desc_pool_alloc(struct dp_soc *soc, uint8_t pool_id,
 	return QDF_STATUS_SUCCESS;
 
 free_tso_desc:
-	qdf_mem_multi_pages_free(soc->osdev,
-				 &tso_desc_pool->desc_pages, 0, true);
+	dp_desc_multi_pages_mem_free(soc, DP_TX_TSO_DESC_TYPE,
+				     &tso_desc_pool->desc_pages, 0, true);
 
 	return QDF_STATUS_E_FAULT;
 }
@@ -390,8 +390,8 @@ void dp_tx_tso_desc_pool_free(struct dp_soc *soc, uint8_t pool_id)
 
 	qdf_spin_lock_bh(&tso_desc_pool->lock);
 
-	qdf_mem_multi_pages_free(soc->osdev,
-				 &tso_desc_pool->desc_pages, 0, true);
+	dp_desc_multi_pages_mem_free(soc, DP_TX_TSO_DESC_TYPE,
+				     &tso_desc_pool->desc_pages, 0, true);
 	tso_desc_pool->freelist = NULL;
 	tso_desc_pool->num_free = 0;
 	tso_desc_pool->pool_size = 0;
@@ -417,10 +417,11 @@ QDF_STATUS dp_tx_tso_num_seg_pool_alloc(struct dp_soc *soc, uint8_t pool_id,
 	tso_num_seg_pool->num_free = 0;
 	desc_size = DP_TX_DESC_SIZE(sizeof(struct qdf_tso_num_seg_elem_t));
 	if (!dp_is_soc_reinit(soc))
-		qdf_mem_multi_pages_alloc(soc->osdev,
-					  &tso_num_seg_pool->desc_pages,
-					  desc_size,
-					  num_elem, 0, true);
+		dp_desc_multi_pages_mem_alloc(soc,
+					      DP_TX_TSO_NUM_SEG_TYPE,
+					      &tso_num_seg_pool->desc_pages,
+					      desc_size,
+					      num_elem, 0, true);
 	if (!tso_num_seg_pool->desc_pages.num_pages) {
 		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
 			  FL("Alloc Failed %pK pool_id %d"),
@@ -447,8 +448,8 @@ QDF_STATUS dp_tx_tso_num_seg_pool_alloc(struct dp_soc *soc, uint8_t pool_id,
 	return QDF_STATUS_SUCCESS;
 
 fail:
-	qdf_mem_multi_pages_free(soc->osdev,
-				 &tso_num_seg_pool->desc_pages, 0, true);
+	dp_desc_multi_pages_mem_free(soc, DP_TX_TSO_NUM_SEG_TYPE,
+				     &tso_num_seg_pool->desc_pages, 0, true);
 
 	return QDF_STATUS_E_NOMEM;
 }
@@ -468,8 +469,8 @@ void dp_tx_tso_num_seg_pool_free(struct dp_soc *soc, uint8_t pool_id)
 	tso_num_seg_pool = &soc->tx_tso_num_seg[pool_id];
 	qdf_spin_lock_bh(&tso_num_seg_pool->lock);
 
-	qdf_mem_multi_pages_free(soc->osdev,
-				 &tso_num_seg_pool->desc_pages, 0, true);
+	dp_desc_multi_pages_mem_free(soc, DP_TX_TSO_NUM_SEG_TYPE,
+				     &tso_num_seg_pool->desc_pages, 0, true);
 	tso_num_seg_pool->freelist = NULL;
 	tso_num_seg_pool->num_free = 0;
 	tso_num_seg_pool->num_seg_pool_size = 0;

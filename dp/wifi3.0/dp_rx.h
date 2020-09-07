@@ -1325,4 +1325,17 @@ void dp_rx_deliver_to_stack(struct dp_soc *soc,
 			    qdf_nbuf_t nbuf_head,
 			    qdf_nbuf_t nbuf_tail);
 
+/*
+ * dp_rx_link_desc_refill_duplicate_check() - check if link desc duplicate
+					      to refill
+ * @soc: DP SOC handle
+ * @buf_info: the last link desc buf info
+ * @ring_buf_info: current buf address pointor including link desc
+ *
+ * return: none.
+ */
+void dp_rx_link_desc_refill_duplicate_check(
+				struct dp_soc *soc,
+				struct hal_buf_info *buf_info,
+				hal_buff_addrinfo_t ring_buf_info);
 #endif /* _DP_RX_H */
