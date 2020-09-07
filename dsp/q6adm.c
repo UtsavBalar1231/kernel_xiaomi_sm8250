@@ -1848,7 +1848,7 @@ static int32_t adm_callback(struct apr_client_data *data, void *priv)
 				pr_debug("%s:usb port need be closed\n", __func__);
 				close_usb = true;
 			}
-			if (close_usb && (IDX_AFE_PORT_ID_TERTIARY_MI2S_RX == port_idx)) {
+			if (close_usb && (IDX_AFE_PORT_ID_USB_RX != port_idx)) {
 				pr_debug("%s: enable usb port\n", __func__);
 				is_usb_timeout = false;
 			}
