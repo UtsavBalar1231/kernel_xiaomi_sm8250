@@ -5995,7 +5995,7 @@ static int cam_icp_mgr_create_wq(void)
 	int i;
 
 	rc = cam_req_mgr_workq_create("icp_command_queue", ICP_WORKQ_NUM_TASK,
-		&icp_hw_mgr.cmd_work, CRM_WORKQ_USAGE_NON_IRQ, 0,
+		&icp_hw_mgr.cmd_work, CRM_WORKQ_USAGE_NON_IRQ, 0, false,
 		cam_req_mgr_process_workq_icp_command_queue);
 	if (rc) {
 		CAM_ERR(CAM_ICP, "unable to create a command worker");
@@ -6003,7 +6003,7 @@ static int cam_icp_mgr_create_wq(void)
 	}
 
 	rc = cam_req_mgr_workq_create("icp_message_queue", ICP_WORKQ_NUM_TASK,
-		&icp_hw_mgr.msg_work, CRM_WORKQ_USAGE_IRQ, 0,
+		&icp_hw_mgr.msg_work, CRM_WORKQ_USAGE_IRQ, 0, false,
 		cam_req_mgr_process_workq_icp_message_queue);
 	if (rc) {
 		CAM_ERR(CAM_ICP, "unable to create a message worker");
@@ -6011,7 +6011,7 @@ static int cam_icp_mgr_create_wq(void)
 	}
 
 	rc = cam_req_mgr_workq_create("icp_timer_queue", ICP_WORKQ_NUM_TASK,
-		&icp_hw_mgr.timer_work, CRM_WORKQ_USAGE_IRQ, 0,
+		&icp_hw_mgr.timer_work, CRM_WORKQ_USAGE_IRQ, 0, false,
 		cam_req_mgr_process_workq_icp_timer_queue);
 	if (rc) {
 		CAM_ERR(CAM_ICP, "unable to create a timer worker");

@@ -70,6 +70,7 @@ struct crm_workq_task {
  * task -
  * @lock_bh    : lock for task structs
  * @in_irq     : set true if workque can be used in irq context
+ * @is_static_payload : set true if payload is statically allocated
  * @free_cnt   : num of free/available tasks
  * @empty_head : list  head of available taska which can be used
  *               or acquired in order to enqueue a task to workq
@@ -82,6 +83,7 @@ struct cam_req_mgr_core_workq {
 	struct workqueue_struct   *job;
 	spinlock_t                 lock_bh;
 	uint32_t                   in_irq;
+	bool                       is_static_payload;
 
 	/* tasks */
 	struct {
@@ -112,13 +114,14 @@ void cam_req_mgr_process_workq(struct work_struct *w);
  * @in_irq   : Set to one if workq might be used in irq context
  * @flags    : Bitwise OR of Flags for workq behavior.
  *             e.g. CAM_REQ_MGR_WORKQ_HIGH_PRIORITY | CAM_REQ_MGR_WORKQ_SERIAL
+ * @is_static_payload : set to true if payload is statically allocated.
  * @func     : function pointer for cam_req_mgr_process_workq wrapper function
  * This function will allocate and create workqueue and pass
  * the workq pointer to caller.
  */
 int cam_req_mgr_workq_create(char *name, int32_t num_tasks,
 	struct cam_req_mgr_core_workq **workq, enum crm_workq_context in_irq,
-	int flags, void (*func)(struct work_struct *w));
+	int flags, bool is_static_payload, void (*func)(struct work_struct *w));
 
 /**
  * cam_req_mgr_workq_destroy()
