@@ -3,3 +3,11 @@
 &soc {
 
 };
+
+&pm8150_rtc {
+	status = "disabled";
+};
+
+&pmk8350_adc_tm {
+	status = "disabled";
+};
