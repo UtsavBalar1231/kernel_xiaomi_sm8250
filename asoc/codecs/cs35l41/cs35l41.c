@@ -1771,7 +1771,11 @@ static int cs35l41_component_probe(struct snd_soc_component *component)
 	}
 
 	wm_adsp2_component_probe(&cs35l41->dsp, component);
+#if defined(CONFIG_TARGET_PRODUCT_MONET) || defined(CONFIG_TARGET_PRODUCT_VANGOGH)
+        if (0 == cs35l41->pdata.right_channel) {
+#else
 	if (cs35l41->pdata.right_channel) {
+#endif
 		snd_soc_dapm_ignore_suspend(dapm, "AMP Playback");
 		snd_soc_dapm_ignore_suspend(dapm, "AMP Capture");
 		snd_soc_dapm_ignore_suspend(dapm, "Main AMP");
