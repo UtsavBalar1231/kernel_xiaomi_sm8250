@@ -1143,3 +1143,7 @@
 		};
 	};
 };
+
+&pcie0 {
+	qcom,target-link-speed = <0x2>;
+};
