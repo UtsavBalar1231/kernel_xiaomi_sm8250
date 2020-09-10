@@ -2414,7 +2414,14 @@ int cs35l41_probe(struct cs35l41_private *cs35l41,
 	}
 	//init brownout parameter
 	ret = regmap_update_bits(cs35l41->regmap, CS35L41_PWR_CTRL3, 0x1000, 0x1000);
+#if defined(CONFIG_TARGET_PRODUCT_APOLLO)
+	ret = regmap_write(cs35l41->regmap, CS35L41_VPBR_CFG, 0x0200530C);
+#else
 	ret = regmap_write(cs35l41->regmap, CS35L41_VPBR_CFG, 0x0200530E);
+#endif
+#if defined(CONFIG_TARGET_PRODUCT_CAS)
+	ret = regmap_write(cs35l41->regmap, CS35L41_DAC_MSM_CFG, 0x00100000);
+#endif
 
 	#if defined(CONFIG_TARGET_PRODUCT_APOLLO) || defined(CONFIG_TARGET_PRODUCT_CAS)
 	cs35l41_96k_sample_rate_init(cs35l41);
