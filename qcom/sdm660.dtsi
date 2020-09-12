@@ -1464,23 +1464,25 @@
 		qcom,bus-vector-names = "MIN", "SVS", "PERF", "TURBO";
 		qcom,rx-polling-sleep-ms = <1>; /* Polling sleep interval */
 		qcom,ipa-polling-iteration = <40>; /* Polling Iteration */
-
 		ipa_smmu_ap: ipa_smmu_ap {
 			compatible = "qcom,ipa-smmu-ap-cb";
-			iommus = <&anoc2_smmu 0x19C0>;
-			qcom,iova-mapping = <0x10000000 0x40000000>;
+			iommus = <&anoc2_smmu 0x19C0 0x0>;
+			qcom,iommu-dma-addr-pool = <0x10000000 0x40000000>;
+			qcom,iommu-dma = "bypass";
 		};
 
 		ipa_smmu_wlan: ipa_smmu_wlan {
 			status = "disabled";
 			compatible = "qcom,ipa-smmu-wlan-cb";
-			iommus = <&anoc2_smmu 0x19C1>;
+			iommus = <&anoc2_smmu 0x19C1 0x0>;
+			qcom,iommu-dma = "bypass";
 		};
 
 		ipa_smmu_uc: ipa_smmu_uc {
 			compatible = "qcom,ipa-smmu-uc-cb";
-			iommus = <&anoc2_smmu 0x19C2>;
-			qcom,iova-mapping = <0x40000000 0x20000000>;
+			iommus = <&anoc2_smmu 0x19C2 0x0>;
+			qcom,iommu-dma-addr-pool = <0x40000000 0x20000000>;
+			qcom,iommu-dma = "bypass";
 		};
 	};
 
