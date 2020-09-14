@@ -38,7 +38,6 @@
 #include "ce_assignment.h"
 #include "ce_tasklet.h"
 #include "qdf_module.h"
-#include "hal_api.h"
 
 #define CE_POLL_TIMEOUT 10      /* ms */
 
@@ -56,6 +55,10 @@
 #if (defined(QCA_WIFI_QCA8074) || defined(QCA_WIFI_QCA6290) || \
 	defined(QCA_WIFI_QCA6018)) && !defined(QCA_WIFI_SUPPORT_SRNG)
 #define QCA_WIFI_SUPPORT_SRNG
+#endif
+
+#ifdef QCA_WIFI_SUPPORT_SRNG
+#include <hal_api.h>
 #endif
 
 /* Forward references */
