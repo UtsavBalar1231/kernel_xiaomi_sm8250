@@ -4722,6 +4722,7 @@
 		cnss-daemon-support;
 		qcom,cmd_db_name = "smpf2";
 		qcom,set-wlaon-pwr-ctrl;
+		cnss-enable-self-recovery;
 
 		qcom,msm-bus,name = "msm-cnss";
 		qcom,msm-bus,num-cases = <7>;
