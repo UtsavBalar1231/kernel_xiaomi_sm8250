@@ -956,7 +956,8 @@ static int cs35l41_main_amp_event(struct snd_soc_dapm_widget *w,
 	int i;
 	bool pdn;
 	unsigned int val;
-	pr_debug("++++>CSPL: %s, event = %d, DC counter = %d.\n", __func__, event, cs35l41->dc_current_cnt);
+	dev_info(cs35l41->dev, "%s: event = %d, DC counter = %d.\n",
+		__func__, event, cs35l41->dc_current_cnt);
 	switch (event) {
 	case SND_SOC_DAPM_POST_PMU:
 		regmap_multi_reg_write_bypassed(cs35l41->regmap,
@@ -1019,6 +1020,9 @@ static int cs35l41_main_amp_event(struct snd_soc_dapm_widget *w,
 			}
 			ret = cs35l41_set_csplmboxcmd(cs35l41, mboxcmd);
 		}
+		regmap_update_bits(cs35l41->regmap,
+				CS35L41_PLL_CLK_CTRL,
+				CS35L41_PLL_FORCE_EN_MASK, 0);
 
 		regmap_update_bits(cs35l41->regmap, CS35L41_PWR_CTRL1,
 				CS35L41_GLOBAL_EN_MASK, 0);
@@ -1049,7 +1053,7 @@ static int cs35l41_main_amp_event(struct snd_soc_dapm_widget *w,
 		dev_err(cs35l41->dev, "Invalid event = 0x%x\n", event);
 		ret = -EINVAL;
 	}
-	pr_debug("----CSPL: %s.\n", __func__);
+
 	return ret;
 }
 
@@ -1079,7 +1083,7 @@ static const struct snd_soc_dapm_widget cs35l41_dapm_widgets[] = {
 
 	SND_SOC_DAPM_OUT_DRV_E("Main AMP", CS35L41_PWR_CTRL2, 0, 0, NULL, 0,
 				cs35l41_main_amp_event,
-				SND_SOC_DAPM_POST_PMD |	SND_SOC_DAPM_POST_PMU),
+				SND_SOC_DAPM_POST_PMD | SND_SOC_DAPM_POST_PMU),
 
 	SND_SOC_DAPM_INPUT("VP"),
 	SND_SOC_DAPM_INPUT("VBST"),
@@ -1296,6 +1300,41 @@ static const struct cs35l41_global_fs_config cs35l41_fs_rates[] = {
 	{ 32000,	0x13 },
 };
 
+#define SPK_DAI_NAME "cs35l41.1-0040"
+#define RCV_DAI_NAME "cs35l41.1-0042"
+#define HANDSET_TUNING "rcv_voice_delta.txt"
+
+static int cs35l41_is_speaker_in_handset(struct snd_pcm_substream *substream,
+		struct snd_soc_dai *dai)
+{
+	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+	struct snd_soc_dai *rcv_dai = NULL;//rtd->codec_dais[1];
+	struct cs35l41_private *cs35l41 = NULL;
+	const char *fw_name = NULL;
+	int i = 0;
+
+	/* Only care about speaker ops*/
+	if (strcmp(dai->name, SPK_DAI_NAME))
+		return 0;
+
+	for (i = 0; i < rtd->num_codecs; i++) {
+		if(!strcmp(RCV_DAI_NAME, rtd->codec_dais[i]->name))
+			rcv_dai = rtd->codec_dais[i];
+	}
+
+	/* Check the tuning on RCV amp */
+	cs35l41 = snd_soc_component_get_drvdata(rcv_dai->component);
+	fw_name = cs35l41->fast_switch_names[cs35l41->fast_switch_file_idx];
+
+	if (!strcmp(fw_name, HANDSET_TUNING)) {
+		dev_info(cs35l41->dev, "%s: '%s'[%d] = '%s'\n",
+				__func__, rcv_dai->name,
+				cs35l41->fast_switch_file_idx, fw_name);
+		return 1;
+	}
+
+	return 0;
+}
 static int cs35l41_pcm_hw_params(struct snd_pcm_substream *substream,
 				 struct snd_pcm_hw_params *params,
 				 struct snd_soc_dai *dai)
@@ -1305,8 +1344,17 @@ static int cs35l41_pcm_hw_params(struct snd_pcm_substream *substream,
 	int i;
 	unsigned int rate = params_rate(params);
 	u8 asp_width, asp_wl;
+	int val = 0;
 
-	pr_debug("++++>CSPL: %s.\n", __func__);
+	if(cs35l41_is_speaker_in_handset(substream, dai)) {
+		dev_info(cs35l41->dev, "%s: speaker amp"
+				" hw_parmas in handset mode\n", __func__);
+		return 0;
+	}
+
+	regmap_read(cs35l41->regmap, CS35L41_PLL_CLK_CTRL, &val);
+	dev_info(cs35l41->dev, "%s: Before 0x2c04 <= 0x%x\n",
+			__func__, val);
 	for (i = 0; i < ARRAY_SIZE(cs35l41_fs_rates); i++) {
 		if (rate == cs35l41_fs_rates[i].rate)
 			break;
@@ -1323,6 +1371,9 @@ static int cs35l41_pcm_hw_params(struct snd_pcm_substream *substream,
 #else
 	cs35l41_component_set_sysclk(dai->component, 0, 0, 2 * rate * asp_width, 0);
 #endif
+	regmap_read(cs35l41->regmap, CS35L41_PLL_CLK_CTRL, &val);
+	dev_info(cs35l41->dev, "%s: After 0x2c04 <= 0x%x\n",
+			__func__, val);
 
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
 		regmap_update_bits(cs35l41->regmap, CS35L41_SP_FORMAT,
@@ -1352,7 +1403,7 @@ static int cs35l41_pcm_hw_params(struct snd_pcm_substream *substream,
 				asp_wl << CS35L41_ASP_TX_WL_SHIFT);
 	}
 
-	pr_debug("---->CSPL: %s.\n", __func__);
+
 	return 0;
 }
 
@@ -1410,7 +1461,6 @@ static int cs35l41_component_set_sysclk(struct snd_soc_component *component,
 	struct cs35l41_private *cs35l41 =
 				       snd_soc_component_get_drvdata(component);
 
-	int val = 0;
 
 	if (cs35l41->extclk_freq) {
 		dev_info(cs35l41->dev, "%s: clock has beed configured, clk_id=%d, src=%d, freq=%d\n",
@@ -1418,8 +1468,8 @@ static int cs35l41_component_set_sysclk(struct snd_soc_component *component,
 		return 0;
 	}
 
-	pr_debug("++++>CSPL: %s: clk_id = %d, src = %d, freq = %d, dir = %d.\n", __func__, clk_id, source, freq, dir);
-	dev_info(cs35l41->dev, "%s: clk_id=%d, src=%d, freq=%d\n", __func__, clk_id, source, freq);
+	dev_info(cs35l41->dev, "%s: clk_id=%d, src=%d, freq=%d, dir=%d\n",
+			__func__, clk_id, source, freq, dir);
 
 	switch (clk_id) {
 	case 0:
@@ -1467,11 +1517,13 @@ static int cs35l41_component_set_sysclk(struct snd_soc_component *component,
 	regmap_update_bits(cs35l41->regmap, CS35L41_PLL_CLK_CTRL,
 			CS35L41_PLL_CLK_EN_MASK,
 			1 << CS35L41_PLL_CLK_EN_SHIFT);
+	regmap_update_bits(cs35l41->regmap,
+			CS35L41_PLL_CLK_CTRL,
+			CS35L41_PLL_FORCE_EN_MASK,
+			1 << CS35L41_PLL_FORCE_EN_SHIFT);
 
 	cs35l41->extclk_freq = freq;
-	regmap_read(cs35l41->regmap, CS35L41_PLL_CLK_CTRL, &val);
-	dev_info(cs35l41->dev, "%s: 0x%x <== 0x%x\n",__func__, CS35L41_PLL_CLK_CTRL, val);
-	pr_debug("---->CSPL: %s.\n", __func__);
+
 
 	return 0;
 }
@@ -1769,6 +1821,10 @@ static int cs35l41_component_probe(struct snd_soc_component *component)
 					CS35L41_CH_WKFET_THLD_MASK,
 					classh->classh_wk_fet_thld <<
 					CS35L41_CH_WKFET_THLD_SHIFT);
+		regmap_update_bits(cs35l41->regmap,
+				CS35L41_PLL_CLK_CTRL,
+				CS35L41_PLL_FORCE_EN_MASK,
+				1 << CS35L41_PLL_FORCE_EN_SHIFT);
 	}
 
 	wm_adsp2_component_probe(&cs35l41->dsp, component);
