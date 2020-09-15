@@ -53,3 +53,11 @@
 	qcom,wsa-devs = <&wsa883x_0221>, <&wsa883x_0222>;
 	qcom,wsa-aux-dev-prefix = "SpkrLeft", "SpkrRight";
 };
+
+&pm8150_rtc {
+	status = "disabled";
+};
+
+&pmk8350_adc_tm {
+	status = "disabled";
+};
