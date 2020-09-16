@@ -1,7 +1,12 @@
 #include "lito-v2.dtsi"
+#include "pmk8350.dtsi"
 
 / {
 	model = "Qualcomm Technologies, Inc. Orchid";
 	compatible = "qcom,orchid";
 	qcom,msm-id = <476 0x10000>;
+};
+
+&pm8008_regulators {
+	vdd_l6-supply = <&BOB>;
 };
