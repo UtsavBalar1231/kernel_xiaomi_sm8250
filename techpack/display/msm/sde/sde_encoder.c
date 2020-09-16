@@ -6523,7 +6523,8 @@ void sde_encoder_trigger_early_wakeup(struct drm_encoder *drm_enc)
 		return;
 	}
 
-	if (sde_enc->rc_state == SDE_ENC_RC_STATE_IDLE) {
+	if (sde_enc->rc_state == SDE_ENC_RC_STATE_IDLE ||
+		sde_enc->rc_state == SDE_ENC_RC_STATE_ON) {
 		SDE_ATRACE_BEGIN("sde_encoder_resource_control");
 		sde_encoder_resource_control(drm_enc,
 					SDE_ENC_RC_EVENT_EARLY_WAKEUP);
