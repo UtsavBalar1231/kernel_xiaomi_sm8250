@@ -87,7 +87,7 @@ INCS +=		$(COMMON_INC) \
 
 EXTRA_CFLAGS += $(INCS)
 
-ifeq ($(TARGET_PRODUCT), $(filter $(TARGET_PRODUCT), umi cmi urd skuld cas apollo))
+ifeq ($(TARGET_PRODUCT), $(filter $(TARGET_PRODUCT), umi cmi urd skuld cas apollo alioth))
        CDEFINES += -DCONFIG_AUDIO_SMARTPA_STEREO
 endif
 
