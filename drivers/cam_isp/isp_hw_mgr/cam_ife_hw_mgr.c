@@ -39,6 +39,9 @@
 #define CAM_ISP_GENERIC_BLOB_TYPE_MAX               \
 	(CAM_ISP_GENERIC_BLOB_TYPE_CSID_QCFA_CONFIG + 1)
 
+static int cam_ife_hw_mgr_handle_hw_dump_bus_info(
+	void *ctx, void *evt_info);
+
 static uint32_t blob_type_hw_cmd_map[CAM_ISP_GENERIC_BLOB_TYPE_MAX] = {
 	CAM_ISP_HW_CMD_GET_HFR_UPDATE,
 	CAM_ISP_HW_CMD_CLOCK_UPDATE,
@@ -6386,13 +6389,14 @@ static void cam_ife_mgr_print_io_bufs(struct cam_packet *packet,
 
 static int cam_ife_mgr_cmd(void *hw_mgr_priv, void *cmd_args)
 {
-	int rc = 0;
+	int i, rc = 0;
 	struct cam_hw_cmd_args *hw_cmd_args = cmd_args;
 	struct cam_ife_hw_mgr  *hw_mgr = hw_mgr_priv;
 	struct cam_ife_hw_mgr_ctx *ctx = (struct cam_ife_hw_mgr_ctx *)
 		hw_cmd_args->ctxt_to_hw_map;
-	struct cam_isp_hw_cmd_args *isp_hw_cmd_args = NULL;
-	struct cam_packet          *packet;
+	struct cam_isp_hw_cmd_args      *isp_hw_cmd_args = NULL;
+	struct cam_packet               *packet;
+	struct cam_isp_hw_event_info     event_info;
 	unsigned long rem_jiffies = 0;
 
 	if (!hw_mgr_priv || !cmd_args) {
@@ -6462,6 +6466,15 @@ static int cam_ife_mgr_cmd(void *hw_mgr_priv, void *cmd_args)
 			hw_mgr->mgr_common.img_iommu_hdl_secure,
 			hw_cmd_args->u.pf_args.buf_info,
 			hw_cmd_args->u.pf_args.mem_found);
+		event_info.err_type = CAM_ISP_HW_ERROR_BUSIF_OVERFLOW;
+		event_info.res_type = CAM_ISP_RESOURCE_VFE_OUT;
+		event_info.hw_idx = 0;
+		for (i = 0; i < CAM_IFE_HW_OUT_RES_MAX; i++) {
+			event_info.res_id =
+				CAM_ISP_IFE_OUT_RES_BASE + (i & 0xFF);
+			cam_ife_hw_mgr_handle_hw_dump_bus_info(ctx,
+				&event_info);
+		}
 		break;
 	case CAM_HW_MGR_CMD_REG_DUMP_ON_FLUSH:
 		if (ctx->last_dump_flush_req_id == ctx->applied_req_id)
@@ -7008,6 +7021,38 @@ static int cam_ife_hw_mgr_handle_csid_event(
 		break;
 	}
 	return 0;
+}
+
+static int cam_ife_hw_mgr_handle_hw_dump_bus_info(
+	void                                 *ctx,
+	void                                 *evt_info)
+{
+	struct cam_ife_hw_mgr_ctx     *ife_hw_mgr_ctx =
+		(struct cam_ife_hw_mgr_ctx *)ctx;
+	struct cam_isp_hw_event_info  *event_info =
+		(struct cam_isp_hw_event_info *)evt_info;
+	struct cam_ife_hw_mgr_res     *hw_mgr_res = NULL;
+	struct cam_hw_intf            *hw_intf;
+	uint32_t i, out_port_id;
+	int rc = 0;
+
+	out_port_id = event_info->res_id & 0xFF;
+	hw_mgr_res =
+		&ife_hw_mgr_ctx->res_list_ife_out[out_port_id];
+	for (i = 0; i < CAM_ISP_HW_SPLIT_MAX; i++) {
+		if (!hw_mgr_res->hw_res[i])
+			continue;
+		hw_intf = hw_mgr_res->hw_res[i]->hw_intf;
+		if (hw_intf->hw_ops.process_cmd) {
+			rc = hw_intf->hw_ops.process_cmd(
+				hw_intf->hw_priv,
+				CAM_ISP_HW_CMD_DUMP_BUS_INFO,
+				(void *)event_info,
+				sizeof(struct cam_isp_hw_event_info));
+		}
+	}
+
+	return rc;
 }
 
 static int cam_ife_hw_mgr_handle_hw_dump_info(

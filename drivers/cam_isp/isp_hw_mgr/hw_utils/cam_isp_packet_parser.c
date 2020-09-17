@@ -480,6 +480,8 @@ int cam_isp_add_io_buffers(
 	uint32_t                            i, j, num_out_buf, num_in_buf;
 	uint32_t                            res_id_out, res_id_in, plane_id;
 	uint32_t                            io_cfg_used_bytes, num_ent;
+	uint32_t                           *image_buf_addr;
+	uint32_t                           *image_buf_offset;
 	uint64_t                            iova_addr;
 	size_t                              size;
 	int32_t                             hdl;
@@ -682,6 +684,10 @@ int cam_isp_add_io_buffers(
 			wm_update.num_buf   = plane_id;
 			wm_update.io_cfg    = &io_cfg[i];
 			wm_update.frame_header = 0;
+			for (plane_id = 0; plane_id < CAM_PACKET_MAX_PLANES;
+				plane_id++)
+				wm_update.image_buf_offset[plane_id] = 0;
+
 			iova_addr = frame_header_info->frame_header_iova_addr;
 			if ((frame_header_info->frame_header_enable) &&
 				!(frame_header_info->frame_header_res_id)) {
@@ -714,6 +720,18 @@ int cam_isp_add_io_buffers(
 				return rc;
 			}
 			io_cfg_used_bytes += update_buf.cmd.used_bytes;
+			image_buf_addr =
+				out_map_entries->image_buf_addr;
+			image_buf_offset =
+				wm_update.image_buf_offset;
+			if (j == CAM_ISP_HW_SPLIT_LEFT) {
+				for (plane_id = 0;
+					plane_id < CAM_PACKET_MAX_PLANES;
+					plane_id++)
+					image_buf_addr[plane_id] =
+						io_addr[plane_id] +
+						image_buf_offset[plane_id];
+			}
 		}
 		for (j = 0; j < CAM_ISP_HW_SPLIT_MAX &&
 			io_cfg[i].direction == CAM_BUF_INPUT; j++) {
