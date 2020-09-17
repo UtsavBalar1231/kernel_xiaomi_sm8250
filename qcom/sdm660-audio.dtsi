@@ -15,6 +15,7 @@
 		qcom,mi2s-audio-intf;
 		qcom,auxpcm-audio-intf;
 		qcom,wcn-btfm;
+		qcom,ext-disp-audio-rx;
 		qcom,msm-mi2s-master = <1>, <1>, <1>, <1>;
 		qcom,msm-mclk-freq = <9600000>;
 		qcom,msm-mbhc-hphl-swh = <1>;
@@ -87,7 +88,7 @@
 				<&dai_quat_tdm_rx_0>, <&dai_quat_tdm_tx_0>,
 				<&dai_quin_tdm_rx_0>, <&dai_quin_tdm_tx_0>,
 				<&proxy_rx>, <&proxy_tx>;
-		asoc-cpu-names = "msm-dai-q6-dp.24608",
+		asoc-cpu-names = "msm-dai-q6-dp.0",
 				"msm-dai-q6-mi2s.0", "msm-dai-q6-mi2s.1",
 				"msm-dai-q6-mi2s.2", "msm-dai-q6-mi2s.3",
 				"msm-dai-q6-mi2s.4", "msm-dai-q6-mi2s.7",
@@ -129,6 +130,7 @@
 		qcom,mi2s-audio-intf;
 		qcom,auxpcm-audio-intf;
 		qcom,wcn-btfm;
+		qcom,ext-disp-audio-rx;
 		qcom,msm-mi2s-master = <1>, <1>, <1>, <1>;
 		qcom,audio-routing =
 			"AIF4 VI", "MCLK",
@@ -197,7 +199,7 @@
 				<&dai_quat_tdm_rx_0>, <&dai_quat_tdm_tx_0>,
 				<&dai_quin_tdm_rx_0>, <&dai_quin_tdm_tx_0>,
 				<&proxy_rx>, <&proxy_tx>;
-		asoc-cpu-names = "msm-dai-q6-dp.24608", "msm-dai-q6-mi2s.0",
+		asoc-cpu-names = "msm-dai-q6-dp.0", "msm-dai-q6-mi2s.0",
 				"msm-dai-q6-mi2s.1", "msm-dai-q6-mi2s.2",
 				"msm-dai-q6-mi2s.3", "msm-dai-q6-mi2s.4",
 				"msm-dai-q6-auxpcm.1", "msm-dai-q6-auxpcm.2",
