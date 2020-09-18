@@ -4,6 +4,11 @@
 
 };
 
+&usb_qmp_dp_phy {
+	/delete-property/vdd-supply;
+	vdd-supply = <&L11A>;
+};
+
 &wsa_macro {
 	wsa883x_0221: wsa883x@02170221 {
 		compatible = "qcom,wsa883x";
