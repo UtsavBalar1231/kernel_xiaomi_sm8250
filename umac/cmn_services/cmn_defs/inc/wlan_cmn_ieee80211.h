@@ -709,7 +709,6 @@ struct wlan_rsn_ie {
 };
 
 #define WLAN_WAPI_IE_MIN_LEN            20
-#define WLAN_RSNX_CAPA_SAE_PK BIT(6)
 
 /**
  * struct wlan_wpa_ie_hdr: wpa ie header
@@ -1846,42 +1845,6 @@ static inline QDF_STATUS wlan_parse_rsn_ie(uint8_t *rsn_ie,
 	}
 
 	return QDF_STATUS_SUCCESS;
-}
-
-/**
- * wlan_parse_rsnxe_ie() - parse oce RSNXE IE
- * @rsnxe_ie: RSNXE IE pointer
- * @cap_len: pointer to hold len of ext capability
- *
- * While parsing beacon IEs, util_scan_populate_bcn_ie_list() validates
- * length and element ID of RSNXE IE and then stores in scan cache.
- * It is a callers responsiblity to get the rsnxe ie pointer
- * using util_scan_entry_rsnxe() API, which points to rsnxe ie
- * stored in scan cache. Thus caller is responsible for ensuring
- * the length of the IE is consistent with the embedded length.
- *
- * Return: pointer to RSNXE capability or NULL
- */
-
-static inline uint8_t *
-wlan_parse_rsnxe_ie(uint8_t *rsnxe_ie, uint8_t *cap_len)
-{
-	uint8_t len;
-	uint8_t *ie;
-
-	if (!rsnxe_ie)
-		return NULL;
-
-	ie = rsnxe_ie;
-	len = ie[1];
-	ie += 2;
-
-	if (!len)
-		return NULL;
-
-	*cap_len = ie[0] & 0xf;
-
-	return ie;
 }
 
 /**
