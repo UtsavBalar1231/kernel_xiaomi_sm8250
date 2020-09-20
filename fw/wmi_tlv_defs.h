@@ -1106,6 +1106,8 @@ typedef enum {
     WMITLV_TAG_STRUC_wmi_wfa_config_csa,
     WMITLV_TAG_STRUC_wmi_wfa_config_ocv,
     WMITLV_TAG_STRUC_wmi_wfa_config_saquery,
+    WMITLV_TAG_STRUC_wmi_roam_data_rssi_roaming_param,
+    WMITLV_TAG_STRUC_wmi_request_unified_ll_get_sta_cmd_fixed_param,
 } WMITLV_TAG_ID;
 
 /*
@@ -1555,6 +1557,7 @@ typedef enum {
     OP(WMI_AUDIO_AGGR_SET_SCHED_METHOD_CMDID) \
     OP(WMI_AUDIO_AGGR_GET_SCHED_METHOD_CMDID) \
     OP(WMI_WFA_CONFIG_CMDID) \
+    OP(WMI_REQUEST_UNIFIED_LL_GET_STA_CMDID) \
     /* add new CMD_LIST elements above this line */
 
 
@@ -1978,7 +1981,8 @@ WMITLV_CREATE_PARAM_STRUC(WMI_ROAM_SCAN_MODE);
     WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_roam_scan_extended_threshold_param, extended_param, WMITLV_SIZE_VAR) \
     WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_roam_earlystop_rssi_thres_param, earlystop_param, WMITLV_SIZE_VAR) \
     WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_roam_dense_thres_param, dense_param, WMITLV_SIZE_VAR) \
-    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_roam_bg_scan_roaming_param, bg_scan_param, WMITLV_SIZE_VAR)
+    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_roam_bg_scan_roaming_param, bg_scan_param, WMITLV_SIZE_VAR) \
+    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_roam_data_rssi_roaming_param, data_rssi_param, WMITLV_SIZE_VAR)
 
 WMITLV_CREATE_PARAM_STRUC(WMI_ROAM_SCAN_RSSI_THRESHOLD);
 
@@ -2472,6 +2476,13 @@ WMITLV_CREATE_PARAM_STRUC(WMI_CLEAR_LINK_STATS_CMDID);
     WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_STRUC_wmi_request_link_stats_cmd_fixed_param, wmi_request_link_stats_cmd_fixed_param, fixed_param, WMITLV_SIZE_FIX)
 
 WMITLV_CREATE_PARAM_STRUC(WMI_REQUEST_LINK_STATS_CMDID);
+
+/* Request for unified Link Layer and get station stats Cmd */
+#define WMITLV_TABLE_WMI_REQUEST_UNIFIED_LL_GET_STA_CMDID(id,op,buf,len) \
+    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_STRUC_wmi_request_unified_ll_get_sta_cmd_fixed_param, wmi_request_unified_ll_get_sta_cmd_fixed_param, fixed_param, WMITLV_SIZE_FIX) \
+    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_inst_rssi_stats_params, inst_rssi_params, WMITLV_SIZE_VAR)
+
+WMITLV_CREATE_PARAM_STRUC(WMI_REQUEST_UNIFIED_LL_GET_STA_CMDID);
 
 /* Request wlm stats Cmd */
 #define WMITLV_TABLE_WMI_REQUEST_WLM_STATS_CMDID(id,op,buf,len) \
