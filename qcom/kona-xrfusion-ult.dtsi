@@ -7,6 +7,34 @@
 #include "camera/kona-camera-sensor-xrfusion.dtsi"
 
 &tlmm {
+	mag_rst_gpio_default: mag_rst_gpio_default {
+		mux {
+			pins = "gpio125";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio125";
+			drive-strength = <8>;
+			bias-disable = <0>;
+			output-high;
+		};
+	};
+
+	mag_rst_gpio_sleep: mag_rst_gpio_sleep {
+		mux {
+			pins = "gpio125";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio125";
+			drive-strength = <8>;
+			bias-pull-down;
+			input-enable;
+		};
+	};
+
 	display_panel_led1_default: display_panel_led1_default {
 		mux {
 			pins = "gpio144";
@@ -223,10 +251,6 @@
 		"MIC BIAS4", "Analog Mic4",
 		"AMIC5", "MIC BIAS5",
 		"MIC BIAS5", "Analog Mic5",
-		"AMIC6", "MIC BIAS6",
-		"MIC BIAS6", "Analog Mic6",
-		"DMIC0", "MIC BIAS1",
-		"MIC BIAS1", "Digital Mic0",
 		"DMIC1", "MIC BIAS1",
 		"MIC BIAS1", "Digital Mic1",
 		"DMIC2", "MIC BIAS1",
@@ -235,12 +259,12 @@
 		"MIC BIAS1", "Digital Mic3",
 		"DMIC4", "MIC BIAS3",
 		"MIC BIAS3", "Digital Mic4",
-		"DMIC5", "MIC BIAS4",
-		"MIC BIAS4", "Digital Mic5",
-		"DMIC6", "MIC BIAS3",
-		"MIC BIAS3", "Digital Mic6",
-		"DMIC7", "MIC BIAS3",
-		"MIC BIAS3", "Digital Mic7",
+		"DMIC5", "MIC BIAS3",
+		"MIC BIAS3", "Digital Mic5",
+		"DMIC6", "MIC BIAS4",
+		"MIC BIAS4", "Digital Mic6",
+		"DMIC7", "MIC BIAS4",
+		"MIC BIAS4", "Digital Mic7",
 		"IN1_HPHL", "HPHL_OUT",
 		"IN2_HPHR", "HPHR_OUT",
 		"IN3_AUX", "AUX_OUT",
@@ -327,6 +351,12 @@
 	xrfancontroller: xrfancontroller@50 {
 		compatible = "maxim,xrfancontroller";
 		reg = <0x50>;
+		/* Manetometer gpio */
+		mag_rst_gpio = <&tlmm 125 0>;
+		enable-active-high;
+		pinctrl-names = "default", "sleep";
+		pinctrl-0 = <&mag_rst_gpio_default>;
+		pinctrl-1 = <&mag_rst_gpio_sleep>;
 		qcom,fan-pwr-en = <&tlmm 38 0x00>;
 		qcom,fan-pwr-bp = <&tlmm 39 0x00>;
 	};
@@ -984,6 +1014,7 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&bt_en_sleep>;
 		qca,bt-reset-gpio = <&tlmm 21 0>; /* BT_EN */
+		qca,bt-sw-ctrl-gpio = <&tlmm 124 0>; /* SW_CTRL */
 		qca,bt-vdd-aon-supply = <&pm8150_s6>;
 		qca,bt-vdd-dig-supply = <&pm8009_s2>;
 		qca,bt-vdd-rfa1-supply = <&pm8150_s5>;
@@ -1111,4 +1142,8 @@
 
 		};
 	};
+};
+
+&pcie0 {
+	qcom,target-link-speed = <0x2>;
 };

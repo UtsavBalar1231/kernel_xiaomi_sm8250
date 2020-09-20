@@ -121,11 +121,12 @@
 			<&gpucc GPU_CC_AHB_CLK>,
 			<&gcc GCC_GPU_MEMNOC_GFX_CLK>,
 			<&gpucc GPU_CC_CX_GMU_CLK>,
-			<&gpucc GPU_CC_HLOS1_VOTE_GPU_SMMU_CLK>;
+			<&gpucc GPU_CC_HLOS1_VOTE_GPU_SMMU_CLK>,
+			<&gcc GCC_BIMC_GPU_AXI_CLK>;
 
 		clock-names = "core_clk", "rbbmtimer_clk", "mem_clk",
 				"iface_clk", "mem_iface_clk", "gmu_clk",
-				"smmu_vote";
+				"smmu_vote", "bimc_gpu_clk";
 
 		/* Bus Scale Settings */
 		qcom,gpubw-dev = <&gpubw>;
@@ -266,6 +267,8 @@
 
 				qcom,initial-pwrlevel = <6>;
 				qcom,ca-target-pwrlevel = <5>;
+				qcom,gpu-bimc-interface-clk-freq = <768000000>;
+
 				/* TURBO_L1 */
 				qcom,gpu-pwrlevel@0 {
 					reg = <0>;
@@ -347,6 +350,7 @@
 
 				qcom,initial-pwrlevel = <6>;
 				qcom,ca-target-pwrlevel = <5>;
+				qcom,gpu-bimc-interface-clk-freq = <768000000>;
 
 				/* TURBO_L1 */
 				qcom,gpu-pwrlevel@0 {

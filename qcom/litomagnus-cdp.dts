@@ -1,0 +1,15 @@
+/dts-v1/;
+
+#include "litomagnus.dtsi"
+#include "litomagnus-cdp.dtsi"
+#include "lito-v2-audio.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Litomagnus CDP";
+	compatible = "qcom,lito-cdp", "qcom,lito", "qcom,cdp";
+	qcom,board-id = <1 1>;
+};
+
+&ufsphy_mem {
+	/delete-property/ vdda-phy-always-on;
+};

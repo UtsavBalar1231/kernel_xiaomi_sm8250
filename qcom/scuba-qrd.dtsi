@@ -146,15 +146,15 @@
 		thermal-sensors = <&pm2250_adc_tm_iio ADC_AMUX_THM2_PU2>;
 		wake-capable-sensor;
 		trips {
-			quiet_cpu0_trip: quiet-cpu0-trip {
-				temperature = <40000>;
-				hysteresis = <0>;
-				type = "passive";
-			};
-
 			quiet_modem_trip0: quiet-modem-trip0 {
 				temperature = <40000>;
 				hysteresis = <5000>;
+				type = "passive";
+			};
+
+			quiet_batt_trip0: quiet-batt-trip0 {
+				temperature = <41000>;
+				hysteresis = <3000>;
 				type = "passive";
 			};
 
@@ -164,15 +164,39 @@
 				type = "passive";
 			};
 
-			quiet_gpu_trip: quiet-gpu-trip {
+			quiet_batt_trip1: quiet-batt-trip1 {
 				temperature = <43000>;
-				hysteresis = <0>;
+				hysteresis = <4000>;
 				type = "passive";
 			};
 
 			quiet_modem_trip2: quiet-modem-trip2 {
 				temperature = <43000>;
 				hysteresis = <5000>;
+				type = "passive";
+			};
+
+			quiet_cpu0_trip: quiet-cpu0-trip {
+				temperature = <44000>;
+				hysteresis = <0>;
+				type = "passive";
+			};
+
+			quiet_batt_trip2: quiet-batt-trip2 {
+				temperature = <45000>;
+				hysteresis = <2000>;
+				type = "passive";
+			};
+
+			quiet_gpu_trip: quiet-gpu-trip {
+				temperature = <46000>;
+				hysteresis = <0>;
+				type = "passive";
+			};
+
+			quiet_batt_trip3: quiet-batt-trip3 {
+				temperature = <47000>;
+				hysteresis = <2000>;
 				type = "passive";
 			};
 
@@ -186,14 +210,16 @@
 		cooling-maps {
 			gpu-cdev {
 				trip = <&quiet_gpu_trip>;
+				/* throttle from fmax to 921600000Hz */
 				cooling-device = <&msm_gpu THERMAL_NO_LIMIT
-							(THERMAL_MAX_LIMIT - 3)>;
+							(THERMAL_MAX_LIMIT - 4)>;
 			};
 
 			cpu0-cdev {
 				trip = <&quiet_cpu0_trip>;
+				/* throttle from fmax to 1420800KHz */
 				cooling-device = <&CPU0 THERMAL_NO_LIMIT
-							(THERMAL_MAX_LIMIT - 3)>;
+							(THERMAL_MAX_LIMIT - 5)>;
 			};
 
 			modem-proc-cdev0 {
@@ -219,6 +245,26 @@
 			modem-pa-cdev3 {
 				trip = <&quiet_modem_trip3>;
 				cooling-device = <&modem_pa 3 3>;
+			};
+
+			batt-cdev0 {
+				trip = <&quiet_batt_trip0>;
+				cooling-device = <&pm2250_charger 1 1>;
+			};
+
+			batt-cdev1 {
+				trip = <&quiet_batt_trip1>;
+				cooling-device = <&pm2250_charger 2 2>;
+			};
+
+			batt-cdev2 {
+				trip = <&quiet_batt_trip2>;
+				cooling-device = <&pm2250_charger 3 3>;
+			};
+
+			batt-cdev3 {
+				trip = <&quiet_batt_trip3>;
+				cooling-device = <&pm2250_charger 4 4>;
 			};
 		};
 	};
