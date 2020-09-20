@@ -377,6 +377,7 @@ static int msm_cvp_register_buffer(struct msm_vidc_inst *inst,
 		goto exit;
 	}
 
+	mutex_lock(&inst->cvpbufs.lock);
 	memset(&vbuf, 0, sizeof(struct vidc_register_buffer));
 	vbuf.index = buf->index;
 	vbuf.type = get_hal_buftype(__func__, buf->type, inst->sid);
@@ -388,9 +389,9 @@ static int msm_cvp_register_buffer(struct msm_vidc_inst *inst,
 			(void *)inst->session, &vbuf);
 	if (rc) {
 		print_cvp_buffer(VIDC_ERR, "register failed", inst, cbuf);
+		mutex_unlock(&inst->cvpbufs.lock);
 		goto exit;
 	}
-	mutex_lock(&inst->cvpbufs.lock);
 	list_add_tail(&cbuf->list, &inst->cvpbufs.list);
 	mutex_unlock(&inst->cvpbufs.lock);
 	return rc;
