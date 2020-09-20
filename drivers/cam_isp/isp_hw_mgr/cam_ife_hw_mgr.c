@@ -7022,6 +7022,7 @@ static int cam_ife_hw_mgr_handle_hw_dump_info(
 	struct cam_isp_resource_node  *rsrc_node = NULL;
 	struct cam_hw_intf            *hw_intf;
 	uint32_t i, out_port_id;
+	uint64_t dummy_args;
 	int rc = 0;
 
 	list_for_each_entry(hw_mgr_res,
@@ -7041,6 +7042,25 @@ static int cam_ife_hw_mgr_handle_hw_dump_info(
 					CAM_ISP_HW_CMD_CAMIF_DATA,
 					rsrc_node,
 					sizeof(struct cam_isp_resource_node));
+			}
+		}
+	}
+
+	list_for_each_entry(hw_mgr_res,
+		&ife_hw_mgr_ctx->res_list_ife_csid, list) {
+		for (i = 0; i < CAM_ISP_HW_SPLIT_MAX; i++) {
+			if (!hw_mgr_res->hw_res[i])
+				continue;
+			hw_intf = hw_mgr_res->hw_res[i]->hw_intf;
+			if (hw_intf->hw_ops.process_cmd) {
+				rc = hw_intf->hw_ops.process_cmd(
+					hw_intf->hw_priv,
+					CAM_ISP_HW_CMD_CSID_CLOCK_DUMP,
+					&dummy_args,
+					sizeof(uint64_t));
+				if (rc)
+					CAM_ERR(CAM_ISP,
+						"CSID Clock Dump failed");
 			}
 		}
 	}
