@@ -2815,14 +2815,12 @@ static void lim_process_switch_channel_join_req(
 		&session_entry->lim_join_req->addIEScan.length,
 		session_entry->lim_join_req->addIEScan.addIEdata);
 
-	if (session_entry->opmode == QDF_P2P_CLIENT_MODE) {
-		/* Activate Join Periodic Probe Req timer */
-		if (tx_timer_activate
-			(&mac_ctx->lim.lim_timers.gLimPeriodicJoinProbeReqTimer)
-			!= TX_SUCCESS) {
-			pe_err("Periodic JoinReq timer activate failed");
-			goto error;
-		}
+	/* Activate Join Periodic Probe Req timer */
+	if (tx_timer_activate
+		(&mac_ctx->lim.lim_timers.gLimPeriodicJoinProbeReqTimer)
+		!= TX_SUCCESS) {
+		pe_err("Periodic JoinReq timer activate failed");
+		goto error;
 	}
 
 	return;
@@ -2965,7 +2963,6 @@ void lim_process_switch_channel_rsp(struct mac_context *mac,
 		 */
 		policy_mgr_update_connection_info(mac->psoc,
 						pe_session->smeSessionId);
-		policy_mgr_set_do_hw_mode_change_flag(mac->psoc, true);
 		break;
 	case LIM_SWITCH_CHANNEL_MONITOR:
 		lim_handle_mon_switch_channel_rsp(pe_session, status);

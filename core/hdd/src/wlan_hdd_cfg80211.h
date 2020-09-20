@@ -722,4 +722,17 @@ QDF_STATUS wlan_hdd_send_sta_authorized_event(
  */
 bool hdd_is_legacy_connection(struct hdd_adapter *adapter);
 
+/**
+ * hdd_set_dynamic_antenna_mode() - set dynamic antenna mode
+ * @adapter: Pointer to network adapter
+ * @num_rx_chains: number of chains to be used for receiving data
+ * @num_tx_chains: number of chains to be used for transmitting data
+ *
+ * This function will set dynamic antenna mode
+ *
+ * Return: 0 for success
+ */
+int hdd_set_dynamic_antenna_mode(struct hdd_adapter *adapter,
+				 uint8_t num_rx_chains,
+				 uint8_t num_tx_chains);
 #endif

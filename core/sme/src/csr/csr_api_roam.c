@@ -9917,6 +9917,20 @@ static void csr_roam_join_rsp_processor(struct mac_context *mac,
 							    &max_retry_count);
 	}
 
+	if (pSmeJoinRsp->messageType == eWNI_SME_JOIN_RSP &&
+	    pSmeJoinRsp->status_code == eSIR_SME_JOIN_TIMEOUT_RESULT_CODE &&
+	    pCommand && pCommand->u.roamCmd.hBSSList) {
+		struct scan_result_list *bss_list =
+		   (struct scan_result_list *)pCommand->u.roamCmd.hBSSList;
+
+		if (csr_ll_count(&bss_list->List) == 1) {
+			retry_same_bss = true;
+			sme_err("retry_same_bss is set");
+			wlan_mlme_get_sae_assoc_retry_count(mac->psoc,
+							    &max_retry_count);
+		}
+	}
+
 	if (attempt_next_bss && retry_same_bss &&
 	    pCommand && pCommand->u.roamCmd.pRoamBssEntry) {
 		struct tag_csrscan_result *scan_result;
@@ -9959,8 +9973,8 @@ static void csr_roam_join_rsp_processor(struct mac_context *mac,
 	}
 
 	if (pCommand && attempt_next_bss) {
-		csr_roam(mac, pCommand, use_same_bss);
-		return;
+			csr_roam(mac, pCommand, use_same_bss);
+			return;
 	}
 
 	/*
@@ -17490,6 +17504,11 @@ QDF_STATUS csr_setup_vdev_session(struct vdev_mlme_obj *vdev_mlme)
 				   &session->roamingTimerInfo);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		sme_err("mem fail for roaming timer");
+		return status;
+	}
+
+	if (QDF_IS_STATUS_ERROR(status)) {
+		sme_err("timer init failed for join failure timer");
 		return status;
 	}
 
