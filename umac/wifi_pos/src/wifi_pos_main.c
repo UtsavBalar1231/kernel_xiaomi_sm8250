@@ -35,7 +35,6 @@
 #include "wlan_ptt_sock_svc.h"
 
 #include "wlan_reg_services_api.h"
-#include "service_ready_util.h"
 /* forward declartion */
 struct regulatory_channel;
 
@@ -340,6 +339,26 @@ QDF_STATUS wifi_pos_send_report_resp(struct wlan_objmgr_psoc *psoc,
 	return QDF_STATUS_SUCCESS;
 }
 
+static QDF_STATUS wifi_pos_get_vht_ch_width(struct wlan_objmgr_psoc *psoc,
+					    enum phy_ch_width *ch_width)
+{
+	struct wlan_lmac_if_wifi_pos_tx_ops *tx_ops;
+
+	tx_ops = wifi_pos_get_tx_ops(psoc);
+	if (!tx_ops) {
+		qdf_print("tx ops null");
+		return QDF_STATUS_E_NULL_VALUE;
+	}
+
+	if (!tx_ops->wifi_pos_get_vht_ch_width) {
+		wifi_pos_err("wifi pos get vht ch width is null");
+		return QDF_STATUS_E_NULL_VALUE;
+	}
+
+	return tx_ops->wifi_pos_get_vht_ch_width(
+			psoc, ch_width);
+}
+
 static void wifi_update_channel_bw_info(struct wlan_objmgr_psoc *psoc,
 					struct wlan_objmgr_pdev *pdev,
 					uint16_t freq,
@@ -350,13 +369,19 @@ static void wifi_update_channel_bw_info(struct wlan_objmgr_psoc *psoc,
 	struct wifi_pos_psoc_priv_obj *wifi_pos_psoc =
 		wifi_pos_get_psoc_priv_obj(psoc);
 	uint32_t phy_mode;
+	QDF_STATUS status;
 
 	if (!wifi_pos_psoc) {
 		wifi_pos_err("wifi_pos priv obj is null");
 		return;
 	}
 
-	ch_params.ch_width = init_deinit_get_vht_ch_width(psoc);
+	status = wifi_pos_get_vht_ch_width(psoc, &ch_params.ch_width);
+
+	if (QDF_IS_STATUS_ERROR(status)) {
+		wifi_pos_err("can not get vht ch width");
+		return;
+	}
 
 	wlan_reg_set_channel_params_for_freq(pdev, freq,
 					     sec_ch_2g, &ch_params);
