@@ -1597,6 +1597,7 @@
 		compatible = "qcom,aop-qmp-clk";
 		mboxes = <&qmp_aop 0>;
 		mbox-names = "qdss_clk";
+		qcom,clk-stop-bimc-log;
 		#clock-cells = <1>;
 	};
 
