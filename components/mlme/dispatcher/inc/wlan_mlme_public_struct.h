@@ -28,6 +28,9 @@
 #include <wmi_unified_param.h>
 #include <sir_api.h>
 
+#define OWE_TRANSITION_OUI_TYPE "\x50\x6f\x9a\x1c"
+#define OWE_TRANSITION_OUI_SIZE 4
+
 #define CFG_PMKID_MODES_OKC                        (0x1)
 #define CFG_PMKID_MODES_PMKSA_CACHING              (0x2)
 
