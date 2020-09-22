@@ -4,6 +4,11 @@
 
 };
 
+&usb_qmp_dp_phy {
+	/delete-property/vdd-supply;
+	vdd-supply = <&L11A>;
+};
+
 &pm8150_rtc {
 	status = "disabled";
 };
