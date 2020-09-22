@@ -475,26 +475,6 @@ static void dp_pkt_log_con_service(struct cdp_soc_t *soc_hdl,
 }
 
 /**
- * dp_get_num_rx_contexts() - get number of RX contexts
- * @soc_hdl: cdp opaque soc handle
- *
- * Return: number of RX contexts
- */
-static int dp_get_num_rx_contexts(struct cdp_soc_t *soc_hdl)
-{
-	int i;
-	int num_rx_contexts = 0;
-
-	struct dp_soc *soc = (struct dp_soc *)soc_hdl;
-
-	for (i = 0; i < wlan_cfg_get_num_contexts(soc->wlan_cfg_ctx); i++)
-		if (wlan_cfg_get_rx_ring_mask(soc->wlan_cfg_ctx, i))
-			num_rx_contexts++;
-
-	return num_rx_contexts;
-}
-
-/**
  * dp_pktlogmod_exit() - API to cleanup pktlog info
  * @pdev: Pdev handle
  *
@@ -518,7 +498,34 @@ static void dp_pktlogmod_exit(struct dp_pdev *pdev)
 	pktlogmod_exit(scn);
 	pdev->pkt_log_init = false;
 }
+#else
+static void dp_pkt_log_con_service(struct cdp_soc_t *soc_hdl,
+				   uint8_t pdev_id, void *scn)
+{
+}
+
+static void dp_pktlogmod_exit(struct dp_pdev *handle) { }
 #endif
+/**
+ * dp_get_num_rx_contexts() - get number of RX contexts
+ * @soc_hdl: cdp opaque soc handle
+ *
+ * Return: number of RX contexts
+ */
+static int dp_get_num_rx_contexts(struct cdp_soc_t *soc_hdl)
+{
+	int i;
+	int num_rx_contexts = 0;
+
+	struct dp_soc *soc = (struct dp_soc *)soc_hdl;
+
+	for (i = 0; i < wlan_cfg_get_num_contexts(soc->wlan_cfg_ctx); i++)
+		if (wlan_cfg_get_rx_ring_mask(soc->wlan_cfg_ctx, i))
+			num_rx_contexts++;
+
+	return num_rx_contexts;
+}
+
 #else
 static void dp_pktlogmod_exit(struct dp_pdev *handle) { }
 
@@ -1188,8 +1195,8 @@ void dp_print_ast_stats(struct dp_soc *soc)
 		DP_PDEV_ITERATE_VDEV_LIST(pdev, vdev) {
 			DP_VDEV_ITERATE_PEER_LIST(vdev, peer) {
 				DP_PEER_ITERATE_ASE_LIST(peer, ase, tmp_ase) {
-				    DP_PRINT_STATS("%6d mac_addr = %pM"
-					    " peer_mac_addr = %pM"
+				    DP_PRINT_STATS("%6d mac_addr = "QDF_MAC_ADDR_FMT
+					    " peer_mac_addr = "QDF_MAC_ADDR_FMT
 					    " peer_id = %u"
 					    " type = %s"
 					    " next_hop = %d"
@@ -1200,8 +1207,8 @@ void dp_print_ast_stats(struct dp_soc *soc)
 					    " pdev_id = %d"
 					    " vdev_id = %d",
 					    ++num_entries,
-					    ase->mac_addr.raw,
-					    ase->peer->mac_addr.raw,
+					    QDF_MAC_ADDR_REF(ase->mac_addr.raw),
+					    QDF_MAC_ADDR_REF(ase->peer->mac_addr.raw),
 					    ase->peer->peer_ids[0],
 					    type[ase->type],
 					    ase->next_hop,
@@ -1242,7 +1249,7 @@ static void dp_print_peer_table(struct dp_vdev *vdev)
 			DP_PRINT_STATS("Invalid Peer");
 			return;
 		}
-		DP_PRINT_STATS("    peer_mac_addr = %pM"
+		DP_PRINT_STATS("    peer_mac_addr = "QDF_MAC_ADDR_FMT
 			       " nawds_enabled = %d"
 			       " bss_peer = %d"
 			       " wds_enabled = %d"
@@ -1250,7 +1257,7 @@ static void dp_print_peer_table(struct dp_vdev *vdev)
 			       " rx_cap_enabled = %d"
 			       " delete in progress = %d"
 			       " peer id = %d",
-			       peer->mac_addr.raw,
+			       QDF_MAC_ADDR_REF(peer->mac_addr.raw),
 			       peer->nawds_enabled,
 			       peer->bss_peer,
 			       peer->wds_enabled,
@@ -1341,6 +1348,149 @@ dp_srng_configure_interrupt_thresholds(struct dp_soc *soc,
 }
 #endif
 
+
+#ifdef DP_MEM_PRE_ALLOC
+static inline
+void *dp_srng_aligned_mem_alloc_consistent(struct dp_soc *soc,
+					   struct dp_srng *srng,
+					   struct hal_srng_params *ring_params,
+					   uint32_t ring_type)
+{
+	void *mem;
+
+	qdf_assert(!srng->is_mem_prealloc);
+
+	if (!soc->cdp_soc.ol_ops->dp_prealloc_get_consistent) {
+		dp_warn("dp_prealloc_get_consistent is null!");
+		goto qdf;
+	}
+
+	mem =
+		soc->cdp_soc.ol_ops->dp_prealloc_get_consistent
+						(&srng->alloc_size,
+						&srng->base_vaddr_unaligned,
+						&srng->base_paddr_unaligned,
+						&ring_params->ring_base_paddr,
+						DP_RING_BASE_ALIGN, ring_type);
+
+	if (mem) {
+		srng->is_mem_prealloc = true;
+		goto end;
+	}
+qdf:
+	mem =  qdf_aligned_mem_alloc_consistent(soc->osdev, &srng->alloc_size,
+						&srng->base_vaddr_unaligned,
+						&srng->base_paddr_unaligned,
+						&ring_params->ring_base_paddr,
+						DP_RING_BASE_ALIGN);
+end:
+	dp_info("%s memory %pK dp_srng %pK alloc_size %d num_entries %d",
+		srng->is_mem_prealloc ? "pre-alloc" : "dynamic-alloc", mem,
+		srng, srng->alloc_size, srng->num_entries);
+	return mem;
+}
+
+static inline void dp_srng_mem_free_consistent(struct dp_soc *soc,
+					       struct dp_srng *srng)
+{
+	if (srng->is_mem_prealloc) {
+		if (!soc->cdp_soc.ol_ops->dp_prealloc_put_consistent) {
+			dp_warn("dp_prealloc_put_consistent is null!");
+			QDF_BUG(0);
+			return;
+		}
+		soc->cdp_soc.ol_ops->dp_prealloc_put_consistent
+						(srng->alloc_size,
+						 srng->base_vaddr_unaligned,
+						 srng->base_paddr_unaligned);
+
+	} else {
+		qdf_mem_free_consistent(soc->osdev, soc->osdev->dev,
+					srng->alloc_size,
+					srng->base_vaddr_unaligned,
+					srng->base_paddr_unaligned, 0);
+	}
+}
+
+void dp_desc_multi_pages_mem_alloc(struct dp_soc *soc,
+				   enum dp_desc_type desc_type,
+				   struct qdf_mem_multi_page_t *pages,
+				   size_t element_size,
+				   uint16_t element_num,
+				   qdf_dma_context_t memctxt,
+				   bool cacheable)
+{
+	if (!soc->cdp_soc.ol_ops->dp_get_multi_pages) {
+		dp_warn("dp_get_multi_pages is null!");
+		goto qdf;
+	}
+
+	pages->num_pages = 0;
+	pages->is_mem_prealloc = 0;
+	soc->cdp_soc.ol_ops->dp_get_multi_pages(desc_type,
+						element_size,
+						element_num,
+						pages,
+						cacheable);
+	if (pages->num_pages)
+		goto end;
+
+qdf:
+	qdf_mem_multi_pages_alloc(soc->osdev, pages, element_size,
+				  element_num, memctxt, cacheable);
+end:
+	dp_info("%s desc_type %d element_size %d element_num %d cacheable %d",
+		pages->is_mem_prealloc ? "pre-alloc" : "dynamic-alloc",
+		desc_type, element_size, element_num, cacheable);
+}
+
+void dp_desc_multi_pages_mem_free(struct dp_soc *soc,
+				  enum dp_desc_type desc_type,
+				  struct qdf_mem_multi_page_t *pages,
+				  qdf_dma_context_t memctxt,
+				  bool cacheable)
+{
+	if (pages->is_mem_prealloc) {
+		if (!soc->cdp_soc.ol_ops->dp_put_multi_pages) {
+			dp_warn("dp_put_multi_pages is null!");
+			QDF_BUG(0);
+			return;
+		}
+
+		soc->cdp_soc.ol_ops->dp_put_multi_pages(desc_type, pages);
+		qdf_mem_zero(pages, sizeof(*pages));
+	} else {
+		qdf_mem_multi_pages_free(soc->osdev, pages,
+					 memctxt, cacheable);
+	}
+}
+
+#else
+
+static inline
+void *dp_srng_aligned_mem_alloc_consistent(struct dp_soc *soc,
+					   struct dp_srng *srng,
+					   struct hal_srng_params *ring_params,
+					   uint32_t ring_type)
+
+{
+	return qdf_aligned_mem_alloc_consistent(soc->osdev, &srng->alloc_size,
+						&srng->base_vaddr_unaligned,
+						&srng->base_paddr_unaligned,
+						&ring_params->ring_base_paddr,
+						DP_RING_BASE_ALIGN);
+}
+
+static inline void dp_srng_mem_free_consistent(struct dp_soc *soc,
+					       struct dp_srng *srng)
+{
+	qdf_mem_free_consistent(soc->osdev, soc->osdev->dev,
+				srng->alloc_size,
+				srng->base_vaddr_unaligned,
+				srng->base_paddr_unaligned, 0);
+}
+
+#endif /* DP_MEM_PRE_ALLOC */
 /**
  * dp_srng_setup() - Internal function to setup SRNG rings used by data path
  * @soc: datapath soc handle
@@ -1357,15 +1507,13 @@ static int dp_srng_setup(struct dp_soc *soc, struct dp_srng *srng,
 {
 	hal_soc_handle_t hal_soc = soc->hal_soc;
 	uint32_t entry_size = hal_srng_get_entrysize(hal_soc, ring_type);
-	/* TODO: See if we should get align size from hal */
-	uint32_t ring_base_align = 8;
 	struct hal_srng_params ring_params;
 	uint32_t max_entries = hal_srng_max_entries(hal_soc, ring_type);
 
 	/* TODO: Currently hal layer takes care of endianness related settings.
 	 * See if these settings need to passed from DP layer
 	 */
-	ring_params.flags = 0;
+	qdf_mem_zero(&ring_params, sizeof(struct hal_srng_params));
 
 	num_entries = (num_entries > max_entries) ? max_entries : num_entries;
 	srng->hal_srng = NULL;
@@ -1375,19 +1523,16 @@ static int dp_srng_setup(struct dp_soc *soc, struct dp_srng *srng,
 	if (!dp_is_soc_reinit(soc)) {
 		if (!cached) {
 			ring_params.ring_base_vaddr =
-			    qdf_aligned_mem_alloc_consistent(
-						soc->osdev, &srng->alloc_size,
-						&srng->base_vaddr_unaligned,
-						&srng->base_paddr_unaligned,
-						&ring_params.ring_base_paddr,
-						ring_base_align);
+			    dp_srng_aligned_mem_alloc_consistent(soc, srng,
+								 &ring_params,
+								 ring_type);
 		} else {
 			ring_params.ring_base_vaddr = qdf_aligned_malloc(
 					&srng->alloc_size,
 					&srng->base_vaddr_unaligned,
 					&srng->base_paddr_unaligned,
 					&ring_params.ring_base_paddr,
-					ring_base_align);
+					DP_RING_BASE_ALIGN);
 		}
 
 		if (!ring_params.ring_base_vaddr) {
@@ -1399,7 +1544,7 @@ static int dp_srng_setup(struct dp_soc *soc, struct dp_srng *srng,
 
 	ring_params.ring_base_paddr = (qdf_dma_addr_t)qdf_align(
 			(unsigned long)(srng->base_paddr_unaligned),
-			ring_base_align);
+			DP_RING_BASE_ALIGN);
 
 	ring_params.ring_base_vaddr = (void *)(
 			(unsigned long)(srng->base_vaddr_unaligned) +
@@ -1410,11 +1555,11 @@ static int dp_srng_setup(struct dp_soc *soc, struct dp_srng *srng,
 
 	ring_params.num_entries = num_entries;
 
-	dp_verbose_debug("Ring type: %d, num:%d vaddr %pK paddr %pK entries %u",
-			 ring_type, ring_num,
-			 (void *)ring_params.ring_base_vaddr,
-			 (void *)ring_params.ring_base_paddr,
-			 ring_params.num_entries);
+	dp_info("Ring type: %d, num:%d vaddr %pK paddr %pK entries %u",
+		ring_type, ring_num,
+		(void *)ring_params.ring_base_vaddr,
+		(void *)ring_params.ring_base_paddr,
+		ring_params.num_entries);
 
 	if (soc->intr_mode == DP_INTR_MSI) {
 		dp_srng_msi_setup(soc, &ring_params, ring_type, ring_num);
@@ -1444,10 +1589,7 @@ static int dp_srng_setup(struct dp_soc *soc, struct dp_srng *srng,
 		if (cached) {
 			qdf_mem_free(srng->base_vaddr_unaligned);
 		} else {
-			qdf_mem_free_consistent(soc->osdev, soc->osdev->dev,
-						srng->alloc_size,
-						srng->base_vaddr_unaligned,
-						srng->base_paddr_unaligned, 0);
+			dp_srng_mem_free_consistent(soc, srng);
 		}
 	}
 
@@ -1501,10 +1643,7 @@ static void dp_srng_cleanup(struct dp_soc *soc, struct dp_srng *srng,
 
 	if (srng->alloc_size && srng->base_vaddr_unaligned) {
 		if (!srng->cached) {
-			qdf_mem_free_consistent(soc->osdev, soc->osdev->dev,
-						srng->alloc_size,
-						srng->base_vaddr_unaligned,
-						srng->base_paddr_unaligned, 0);
+			dp_srng_mem_free_consistent(soc, srng);
 		} else {
 			qdf_mem_free(srng->base_vaddr_unaligned);
 		}
@@ -1626,8 +1765,14 @@ static int dp_process_lmac_rings(struct dp_intr *int_ctx, int total_budget)
 					(1 << mac_for_pdev)) {
 			union dp_rx_desc_list_elem_t *desc_list = NULL;
 			union dp_rx_desc_list_elem_t *tail = NULL;
-			struct dp_srng *rx_refill_buf_ring =
-				&soc->rx_refill_buf_ring[mac_for_pdev];
+			struct dp_srng *rx_refill_buf_ring;
+
+			if (wlan_cfg_per_pdev_lmac_ring(soc->wlan_cfg_ctx))
+				rx_refill_buf_ring =
+					&soc->rx_refill_buf_ring[mac_for_pdev];
+			else
+				rx_refill_buf_ring =
+					&soc->rx_refill_buf_ring[pdev->lmac_id];
 
 			intr_stats->num_host2rxdma_ring_masks++;
 			DP_STATS_INC(pdev, replenish.low_thresh_intrs,
@@ -2153,7 +2298,6 @@ static QDF_STATUS dp_soc_interrupt_attach(struct cdp_soc_t *txrx_soc)
 	}
 
 	hif_configure_ext_group_interrupts(soc->hif_handle);
-	hif_config_irq_set_perf_affinity_hint(soc->hif_handle);
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -2265,11 +2409,11 @@ static int dp_hw_link_desc_pool_setup(struct dp_soc *soc)
 	pages = &soc->link_desc_pages;
 	dp_set_max_page_size(pages, max_alloc_size);
 	if (!dp_is_soc_reinit(soc)) {
-		qdf_mem_multi_pages_alloc(soc->osdev,
-					  pages,
-					  link_desc_size,
-					  total_link_descs,
-					  0, false);
+		dp_desc_multi_pages_mem_alloc(soc, DP_HW_LINK_DESC_TYPE,
+					      pages,
+					      link_desc_size,
+					      total_link_descs,
+					      0, false);
 		if (!pages->num_pages) {
 			dp_err("Multi page alloc fail for hw link desc pool");
 			goto fail_page_alloc;
@@ -2436,8 +2580,8 @@ fail:
 	pages = &soc->link_desc_pages;
 	qdf_minidump_remove(
 		(void *)pages->dma_pages->page_v_addr_start);
-	qdf_mem_multi_pages_free(soc->osdev,
-				 pages, 0, false);
+	dp_desc_multi_pages_mem_free(soc, DP_HW_LINK_DESC_TYPE,
+				     pages, 0, false);
 	return QDF_STATUS_E_FAILURE;
 
 fail_page_alloc:
@@ -2472,8 +2616,8 @@ static void dp_hw_link_desc_pool_cleanup(struct dp_soc *soc)
 	pages = &soc->link_desc_pages;
 	qdf_minidump_remove(
 		(void *)pages->dma_pages->page_v_addr_start);
-	qdf_mem_multi_pages_free(soc->osdev,
-				 pages, 0, false);
+	dp_desc_multi_pages_mem_free(soc, DP_HW_LINK_DESC_TYPE,
+				     pages, 0, false);
 }
 
 #ifdef IPA_OFFLOAD
@@ -5195,7 +5339,8 @@ static QDF_STATUS dp_vdev_attach_wifi3(struct cdp_soc_t *cdp_soc,
 	if (pdev->vdev_count == 1)
 		dp_lro_hash_setup(soc, pdev);
 
-	dp_info("Created vdev %pK (%pM)", vdev, vdev->mac_addr.raw);
+	dp_info("Created vdev %pK ("QDF_MAC_ADDR_FMT")", vdev,
+		QDF_MAC_ADDR_REF(vdev->mac_addr.raw));
 	DP_STATS_INIT(vdev);
 
 	if (wlan_op_mode_sta == vdev->opmode)
@@ -5346,8 +5491,8 @@ static void dp_vdev_flush_peers(struct cdp_vdev *vdev_handle, bool unmap_only)
 		for (m = 0; m < n ; m++) {
 			peer = peer_array[m];
 
-			dp_info("peer: %pM is getting deleted",
-				peer->mac_addr.raw);
+			dp_info("peer: "QDF_MAC_ADDR_FMT" is getting deleted",
+				QDF_MAC_ADDR_REF(peer->mac_addr.raw));
 			/* only if peer valid is true */
 			if (peer->valid)
 				dp_peer_delete_wifi3((struct cdp_soc_t *)soc,
@@ -5369,8 +5514,8 @@ static void dp_vdev_flush_peers(struct cdp_vdev *vdev_handle, bool unmap_only)
 		 * with ref count leak
 		 */
 		SET_PEER_REF_CNT_ONE(peer);
-		dp_info("peer: %pM is getting unmap",
-			peer->mac_addr.raw);
+		dp_info("peer: "QDF_MAC_ADDR_FMT" is getting unmap",
+			QDF_MAC_ADDR_REF(peer->mac_addr.raw));
 		/* free AST entries of peer */
 		dp_peer_flush_ast_entry(soc, peer,
 					peer_ids[i],
@@ -5438,8 +5583,8 @@ static QDF_STATUS dp_vdev_detach_wifi3(struct cdp_soc_t *cdp_soc,
 	/* check that the vdev has no peers allocated */
 	if (!TAILQ_EMPTY(&vdev->peer_list)) {
 		/* debug print - will be removed later */
-		dp_warn("not deleting vdev object %pK (%pM) until deletion finishes for all its peers",
-			vdev, vdev->mac_addr.raw);
+		dp_warn("not deleting vdev object %pK ("QDF_MAC_ADDR_FMT") until deletion finishes for all its peers",
+			vdev, QDF_MAC_ADDR_REF(vdev->mac_addr.raw));
 
 		if (vdev->vdev_dp_ext_handle) {
 			qdf_mem_free(vdev->vdev_dp_ext_handle);
@@ -5493,7 +5638,8 @@ free_vdev:
 		vdev->vdev_dp_ext_handle = NULL;
 	}
 
-	dp_info("deleting vdev object %pK (%pM)", vdev, vdev->mac_addr.raw);
+	dp_info("deleting vdev object %pK ("QDF_MAC_ADDR_FMT")", vdev,
+		QDF_MAC_ADDR_REF(vdev->mac_addr.raw));
 
 	qdf_mem_free(vdev);
 
@@ -5738,8 +5884,8 @@ dp_peer_create_wifi3(struct cdp_soc_t *soc_hdl, uint8_t vdev_id,
 	/* Initialize the peer state */
 	peer->state = OL_TXRX_PEER_STATE_DISC;
 
-	dp_info("vdev %pK created peer %pK (%pM) ref_cnt: %d",
-		vdev, peer, peer->mac_addr.raw,
+	dp_info("vdev %pK created peer %pK ("QDF_MAC_ADDR_FMT") ref_cnt: %d",
+		vdev, peer, QDF_MAC_ADDR_REF(peer->mac_addr.raw),
 		qdf_atomic_read(&peer->ref_cnt));
 	/*
 	 * For every peer MAp message search and set if bss_peer
@@ -6393,8 +6539,8 @@ static void dp_delete_pending_vdev(struct dp_pdev *pdev, struct dp_vdev *vdev,
 	vdev_delete_cb = vdev->delete.callback;
 	vdev_delete_context = vdev->delete.context;
 
-	dp_info("deleting vdev object %pK (%pM)- its last peer is done",
-		vdev, vdev->mac_addr.raw);
+	dp_info("deleting vdev object %pK ("QDF_MAC_ADDR_FMT")- its last peer is done",
+		vdev, QDF_MAC_ADDR_REF(vdev->mac_addr.raw));
 	/* all peers are gone, go ahead and delete it */
 	dp_tx_flow_pool_unmap_handler(pdev, vdev_id,
 			FLOW_TYPE_VDEV, vdev_id);
@@ -6410,8 +6556,8 @@ static void dp_delete_pending_vdev(struct dp_pdev *pdev, struct dp_vdev *vdev,
 		qdf_spin_unlock_bh(&pdev->vdev_list_lock);
 	}
 
-	dp_info("deleting vdev object %pK (%pM)",
-		vdev, vdev->mac_addr.raw);
+	dp_info("deleting vdev object %pK ("QDF_MAC_ADDR_FMT")",
+		vdev, QDF_MAC_ADDR_REF(vdev->mac_addr.raw));
 	qdf_mem_free(vdev);
 	vdev = NULL;
 
@@ -6461,7 +6607,8 @@ void dp_peer_unref_delete(struct dp_peer *peer)
 			soc->peer_id_to_obj_map[peer_id] = NULL;
 
 		QDF_TRACE(QDF_MODULE_ID_DP, QDF_TRACE_LEVEL_DEBUG,
-			  "Deleting peer %pK (%pM)", peer, peer->mac_addr.raw);
+			  "Deleting peer %pK ("QDF_MAC_ADDR_FMT")", peer,
+			  QDF_MAC_ADDR_REF(peer->mac_addr.raw));
 
 		/* remove the reference to the peer from the hash table */
 		dp_peer_find_hash_remove(soc, peer);
@@ -6581,14 +6728,16 @@ static QDF_STATUS dp_peer_delete_wifi3(struct cdp_soc_t *soc_hdl,
 
 	if (!peer->valid) {
 		dp_peer_unref_delete(peer);
-		dp_err("Invalid peer: %pM", peer_mac);
+		dp_err("Invalid peer: "QDF_MAC_ADDR_FMT,
+			QDF_MAC_ADDR_REF(peer_mac));
 		return QDF_STATUS_E_ALREADY;
 	}
 
 	peer->valid = 0;
 
 	QDF_TRACE(QDF_MODULE_ID_DP, QDF_TRACE_LEVEL_INFO_HIGH,
-		FL("peer %pK (%pM)"),  peer, peer->mac_addr.raw);
+		FL("peer %pK ("QDF_MAC_ADDR_FMT")"),  peer,
+		  QDF_MAC_ADDR_REF(peer->mac_addr.raw));
 
 	dp_local_peer_id_free(peer->vdev->pdev, peer);
 
@@ -8703,7 +8852,8 @@ dp_txrx_get_peer_stats_param(struct cdp_soc_t *soc, uint8_t vdev_id,
 
 	if (!peer || peer->delete_in_progress) {
 		QDF_TRACE(QDF_MODULE_ID_DP, QDF_TRACE_LEVEL_ERROR,
-			  "Invalid Peer for Mac %pM", peer_mac);
+			  "Invalid Peer for Mac "QDF_MAC_ADDR_FMT,
+			  QDF_MAC_ADDR_REF(peer_mac));
 		ret = QDF_STATUS_E_FAILURE;
 	} else if (type < cdp_peer_stats_max) {
 		switch (type) {
@@ -10486,7 +10636,8 @@ dp_peer_get_ref_find_by_addr(struct cdp_pdev *dev, uint8_t *peer_mac_addr,
 		return NULL;
 	}
 
-	dp_info_rl("peer %pK mac: %pM", peer, peer->mac_addr.raw);
+	dp_info_rl("peer %pK mac: "QDF_MAC_ADDR_FMT, peer,
+		   QDF_MAC_ADDR_REF(peer->mac_addr.raw));
 
 	return peer;
 }
@@ -10587,6 +10738,8 @@ dp_request_rx_hw_stats(struct cdp_soc_t *soc_hdl, uint8_t vdev_id)
 	QDF_STATUS status;
 	struct dp_req_rx_hw_stats_t *rx_hw_stats;
 	int rx_stats_sent_cnt = 0;
+	uint32_t last_rx_mpdu_received;
+	uint32_t last_rx_mpdu_missed;
 
 	if (!vdev) {
 		dp_err("vdev is null for vdev_id: %u", vdev_id);
@@ -10611,6 +10764,12 @@ dp_request_rx_hw_stats(struct cdp_soc_t *soc_hdl, uint8_t vdev_id)
 
 	qdf_event_reset(&soc->rx_hw_stats_event);
 	qdf_spin_lock_bh(&soc->rx_hw_stats_lock);
+	/* save the last soc cumulative stats and reset it to 0 */
+	last_rx_mpdu_received = soc->ext_stats.rx_mpdu_received;
+	last_rx_mpdu_missed = soc->ext_stats.rx_mpdu_missed;
+	soc->ext_stats.rx_mpdu_received = 0;
+	soc->ext_stats.rx_mpdu_missed = 0;
+
 	rx_stats_sent_cnt =
 		dp_peer_rxtid_stats(peer, dp_rx_hw_stats_cb, rx_hw_stats);
 	if (!rx_stats_sent_cnt) {
@@ -10634,6 +10793,12 @@ dp_request_rx_hw_stats(struct cdp_soc_t *soc_hdl, uint8_t vdev_id)
 		dp_info("rx hw stats event timeout");
 		if (soc->is_last_stats_ctx_init)
 			rx_hw_stats->is_query_timeout = true;
+		/**
+		 * If query timeout happened, use the last saved stats
+		 * for this time query.
+		 */
+		soc->ext_stats.rx_mpdu_received = last_rx_mpdu_received;
+		soc->ext_stats.rx_mpdu_missed = last_rx_mpdu_missed;
 	}
 	qdf_spin_unlock_bh(&soc->rx_hw_stats_lock);
 	dp_peer_unref_delete(peer);
@@ -11686,7 +11851,7 @@ static uint8_t dp_bucket_index(uint32_t delay, uint16_t *array)
 {
 	uint8_t i = CDP_DELAY_BUCKET_0;
 
-	for (; i < CDP_DELAY_BUCKET_MAX; i++) {
+	for (; i < CDP_DELAY_BUCKET_MAX - 1; i++) {
 		if (delay >= array[i] && delay <= array[i + 1])
 			return i;
 	}

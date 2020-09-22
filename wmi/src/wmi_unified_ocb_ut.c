@@ -286,7 +286,7 @@ static QDF_STATUS fake_ocb_set_config_cmd_tlv(wmi_unified_t wmi_handle,
 			" max_pwr=%d, min_pwr=%d, reg_pwr=%d, antenna_max=%d, "
 			"flags=%d", __func__, i, config->channels[i].chan_freq,
 			config->channels[i].bandwidth,
-			QDF_MAC_ADDR_ARRAY(
+			QDF_MAC_ADDR_REF(
 				config->channels[i].mac_address.bytes),
 			config->channels[i].max_pwr,
 			config->channels[i].min_pwr,

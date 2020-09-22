@@ -815,7 +815,7 @@ QDF_STATUS dp_ipa_enable_autonomy(struct cdp_soc_t *soc_hdl, uint8_t pdev_id)
 	/* Call HAL API to remap REO rings to REO2IPA ring */
 	ix0 = HAL_REO_REMAP_IX0(REO_REMAP_TCL, 0) |
 	      HAL_REO_REMAP_IX0(REO_REMAP_SW4, 1) |
-	      HAL_REO_REMAP_IX0(REO_REMAP_SW4, 2) |
+	      HAL_REO_REMAP_IX0(REO_REMAP_SW1, 2) |
 	      HAL_REO_REMAP_IX0(REO_REMAP_SW4, 3) |
 	      HAL_REO_REMAP_IX0(REO_REMAP_SW4, 4) |
 	      HAL_REO_REMAP_IX0(REO_REMAP_RELEASE, 5) |
@@ -1258,7 +1258,8 @@ QDF_STATUS dp_ipa_setup_iface(char *ifname, uint8_t *mac_addr,
 	struct dp_ipa_uc_tx_hdr uc_tx_hdr_v6;
 	int ret = -EINVAL;
 
-	dp_debug("Add Partial hdr: %s, %pM", ifname, mac_addr);
+	dp_debug("Add Partial hdr: %s, "QDF_MAC_ADDR_FMT, ifname,
+		 QDF_MAC_ADDR_REF(mac_addr));
 	qdf_mem_zero(&hdr_info, sizeof(qdf_ipa_wdi_hdr_info_t));
 	qdf_ether_addr_copy(uc_tx_hdr.eth.h_source, mac_addr);
 
@@ -1513,8 +1514,8 @@ QDF_STATUS dp_ipa_setup_iface(char *ifname, uint8_t *mac_addr,
 	int ret = -EINVAL;
 
 	QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_DEBUG,
-		  "%s: Add Partial hdr: %s, %pM",
-		  __func__, ifname, mac_addr);
+		  "%s: Add Partial hdr: %s, "QDF_MAC_ADDR_FMT,
+		  __func__, ifname, QDF_MAC_ADDR_REF(mac_addr));
 
 	qdf_mem_zero(&hdr_info, sizeof(qdf_ipa_wdi_hdr_info_t));
 	qdf_ether_addr_copy(uc_tx_hdr.eth.h_source, mac_addr);

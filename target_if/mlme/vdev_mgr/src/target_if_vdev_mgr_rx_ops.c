@@ -31,6 +31,7 @@
 #include <target_if.h>
 #include <wlan_vdev_mlme_main.h>
 #include <wmi_unified_vdev_api.h>
+#include <target_if_psoc_wake_lock.h>
 
 static inline
 void target_if_vdev_mgr_handle_recovery(struct wlan_objmgr_psoc *psoc,
@@ -435,7 +436,7 @@ static int target_if_vdev_mgr_delete_response_handler(ol_scn_t scn,
 
 	rsp.vdev_id = vdev_del_resp.vdev_id;
 	status = rx_ops->vdev_mgr_delete_response(psoc, &rsp);
-
+	target_if_wake_lock_timeout_release(psoc, DELETE_WAKELOCK);
 err:
 	return qdf_status_to_os_return(status);
 }

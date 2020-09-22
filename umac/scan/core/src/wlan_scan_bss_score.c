@@ -834,8 +834,9 @@ int scm_calculate_bss_score(struct wlan_objmgr_psoc *psoc,
 		       score_config->beamformee_cap, score_config->cb_mode_24G,
 		       score_config->cb_mode_5G, sta_nss);
 
-	scm_nofl_debug("Candidate(%pM freq %d): rssi %d HT %d VHT %d HE %d su bfer %d phy %d  air time frac %d qbss %d cong_pct %d NSS %d",
-		       entry->bssid.bytes, entry->channel.chan_freq,
+	scm_nofl_debug("Candidate("QDF_MAC_ADDR_FMT" freq %d): rssi %d HT %d VHT %d HE %d su bfer %d phy %d  air time frac %d qbss %d cong_pct %d NSS %d",
+		       QDF_MAC_ADDR_REF(entry->bssid.bytes),
+		       entry->channel.chan_freq,
 		       entry->rssi_raw, util_scan_entry_htcap(entry) ? 1 : 0,
 		       util_scan_entry_vhtcap(entry) ? 1 : 0,
 		       util_scan_entry_hecap(entry) ? 1 : 0, ap_su_beam_former,

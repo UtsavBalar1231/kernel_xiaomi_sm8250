@@ -4153,6 +4153,7 @@ void dp_peer_stats_update_protocol_cnt(struct cdp_soc_t *soc,
 }
 #endif
 
+#ifdef WDI_EVENT_ENABLE
 QDF_STATUS dp_peer_stats_notify(struct dp_pdev *dp_pdev, struct dp_peer *peer)
 {
 	struct cdp_interface_peer_stats peer_stats_intf;
@@ -4187,6 +4188,7 @@ QDF_STATUS dp_peer_stats_notify(struct dp_pdev *dp_pdev, struct dp_peer *peer)
 
 	return QDF_STATUS_SUCCESS;
 }
+#endif
 
 #ifdef QCA_ENH_V3_STATS_SUPPORT
 /**
@@ -5557,6 +5559,8 @@ void dp_txrx_path_stats(struct dp_soc *soc)
 			       pdev->soc->stats.rx.err.invalid_link_cookie);
 		DP_PRINT_STATS("Rx nbuf sanity fails: %d",
 			       pdev->soc->stats.rx.err.nbuf_sanity_fail);
+		DP_PRINT_STATS("Rx refill duplicate link desc: %d",
+			       pdev->soc->stats.rx.err.dup_refill_link_desc);
 
 		DP_PRINT_STATS("Reo Statistics");
 		DP_PRINT_STATS("near_full: %u ", soc->stats.rx.near_full);

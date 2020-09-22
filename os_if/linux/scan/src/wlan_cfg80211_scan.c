@@ -86,8 +86,8 @@ static void wlan_fill_scan_rand_attrs(struct wlan_objmgr_vdev *vdev,
 	*randomize = true;
 	memcpy(addr, mac_addr, QDF_MAC_ADDR_SIZE);
 	memcpy(mask, mac_addr_mask, QDF_MAC_ADDR_SIZE);
-	osif_debug("Random mac addr: %pM and Random mac mask: %pM",
-		   addr, mask);
+	osif_debug("Random mac addr: "QDF_MAC_ADDR_FMT" and Random mac mask: "QDF_MAC_ADDR_FMT,
+		   QDF_MAC_ADDR_REF(addr), QDF_MAC_ADDR_REF(mask));
 }
 
 /**
@@ -649,20 +649,22 @@ wlan_copy_bssid_scan_request(struct scan_start_request *scan_req,
 #endif
 
 /**
- * wlan_scan_request_enqueue() - enqueue Scan Request
+ * wlan_schedule_scan_start_request() - Schedule scan start request
  * @pdev: pointer to pdev object
  * @req: Pointer to the scan request
  * @source: source of the scan request
- * @scan_id: scan identifier
+ * @scan_start_req: pointer to scan start request
  *
- * Enqueue scan request in the global  scan list.This list
- * stores the active scan request information.
+ * Schedule scan start request and enqueue scan request in the global scan
+ * list. This list stores the active scan request information.
  *
  * Return: 0 on success, error number otherwise
  */
-static int wlan_scan_request_enqueue(struct wlan_objmgr_pdev *pdev,
-			struct cfg80211_scan_request *req,
-			uint8_t source, uint32_t scan_id)
+static int
+wlan_schedule_scan_start_request(struct wlan_objmgr_pdev *pdev,
+				 struct cfg80211_scan_request *req,
+				 uint8_t source,
+				 struct scan_start_request *scan_start_req)
 {
 	struct scan_req *scan_req;
 	QDF_STATUS status;
@@ -670,23 +672,36 @@ static int wlan_scan_request_enqueue(struct wlan_objmgr_pdev *pdev,
 	struct osif_scan_pdev *osif_scan;
 
 	scan_req = qdf_mem_malloc(sizeof(*scan_req));
-	if (!scan_req)
+	if (!scan_req) {
+		ucfg_scm_scan_free_scan_request_mem(scan_start_req);
 		return -ENOMEM;
+	}
 
 	/* Get NL global context from objmgr*/
 	osif_ctx = wlan_pdev_get_ospriv(pdev);
 	osif_scan = osif_ctx->osif_scan;
 	scan_req->scan_request = req;
 	scan_req->source = source;
-	scan_req->scan_id = scan_id;
+	scan_req->scan_id = scan_start_req->scan_req.scan_id;
 	scan_req->dev = req->wdev->netdev;
+	scan_req->scan_start_timestamp = qdf_get_time_of_the_day_ms();
 
 	qdf_mutex_acquire(&osif_scan->scan_req_q_lock);
-	if (qdf_list_size(&osif_scan->scan_req_q) < WLAN_MAX_SCAN_COUNT)
-		status = qdf_list_insert_back(&osif_scan->scan_req_q,
-					      &scan_req->node);
-	else
+	if (qdf_list_size(&osif_scan->scan_req_q) < WLAN_MAX_SCAN_COUNT) {
+		status = ucfg_scan_start(scan_start_req);
+		if (QDF_IS_STATUS_SUCCESS(status)) {
+			qdf_list_insert_back(&osif_scan->scan_req_q,
+					     &scan_req->node);
+		} else {
+			osif_err("scan req failed with error %d", status);
+			if (status == QDF_STATUS_E_RESOURCES)
+				osif_err("HO is in progress.So defer the scan by informing busy");
+		}
+	} else {
+		ucfg_scm_scan_free_scan_request_mem(scan_start_req);
 		status = QDF_STATUS_E_RESOURCES;
+	}
+
 	qdf_mutex_release(&osif_scan->scan_req_q_lock);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		osif_rl_debug("Failed to enqueue Scan Req as max scan %d already queued",
@@ -711,7 +726,8 @@ static int wlan_scan_request_enqueue(struct wlan_objmgr_pdev *pdev,
 static QDF_STATUS wlan_scan_request_dequeue(
 	struct wlan_objmgr_pdev *pdev,
 	uint32_t scan_id, struct cfg80211_scan_request **req,
-	uint8_t *source, struct net_device **dev)
+	uint8_t *source, struct net_device **dev,
+	qdf_time_t *scan_start_timestamp)
 {
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
 	struct scan_req *scan_req;
@@ -755,6 +771,8 @@ static QDF_STATUS wlan_scan_request_dequeue(
 				*req = scan_req->scan_request;
 				*source = scan_req->source;
 				*dev = scan_req->dev;
+				*scan_start_timestamp =
+					scan_req->scan_start_timestamp;
 				qdf_mem_free(scan_req);
 				qdf_mutex_release(&scan_priv->scan_req_q_lock);
 				osif_debug("removed Scan id: %d, req = %pK, pending scans %d",
@@ -952,6 +970,36 @@ void wlan_scan_release_wake_lock(struct wlan_objmgr_psoc *psoc,
 }
 #endif
 
+static
+uint32_t wlan_scan_get_bss_count_for_scan(struct wlan_objmgr_pdev *pdev,
+					  qdf_time_t scan_start_ts)
+{
+	struct scan_filter *filter;
+	qdf_list_t *list = NULL;
+	uint32_t count = 0;
+
+	if (!scan_start_ts)
+		return count;
+
+	filter = qdf_mem_malloc(sizeof(*filter));
+	if (!filter)
+		return count;
+
+	filter->ignore_auth_enc_type = true;
+	filter->age_threshold = qdf_get_time_of_the_day_ms() - scan_start_ts;
+
+	list = ucfg_scan_get_result(pdev, filter);
+
+	qdf_mem_free(filter);
+
+	if (list) {
+		count = qdf_list_size(list);
+		ucfg_scan_purge_results(list);
+	}
+
+	return count;
+}
+
 /**
  * wlan_cfg80211_scan_done_callback() - scan done callback function called after
  * scan is finished
@@ -968,28 +1016,35 @@ static void wlan_cfg80211_scan_done_callback(
 {
 	struct cfg80211_scan_request *req = NULL;
 	bool success = false;
-	uint32_t scan_id = event->scan_id;
+	uint32_t scan_id;
 	uint8_t source = NL_SCAN;
 	struct wlan_objmgr_pdev *pdev;
 	struct pdev_osif_priv *osif_priv;
 	struct net_device *netdev = NULL;
 	QDF_STATUS status;
+	qdf_time_t scan_start_timestamp = 0;
+	uint32_t unique_bss_count = 0;
+
+	if (!event) {
+		osif_nofl_err("Invalid scan event received");
+		return;
+	}
+
+	scan_id = event->scan_id;
 
 	qdf_mtrace(QDF_MODULE_ID_SCAN, QDF_MODULE_ID_OS_IF, event->type,
-		   event->vdev_id, event->scan_id);
+		   event->vdev_id, scan_id);
+
+	if (event->type == SCAN_EVENT_TYPE_STARTED)
+		osif_nofl_info("scan start scan id %d", scan_id);
 
 	if (!util_is_scan_completed(event, &success))
 		return;
 
-	osif_debug("vdev %d, scan id %d type %s(%d) reason %s(%d)",
-		   event->vdev_id, scan_id,
-		   util_scan_get_ev_type_name(event->type), event->type,
-		   util_scan_get_ev_reason_name(event->reason),
-		   event->reason);
-
 	pdev = wlan_vdev_get_pdev(vdev);
 	status = wlan_scan_request_dequeue(
-			pdev, scan_id, &req, &source, &netdev);
+			pdev, scan_id, &req, &source, &netdev,
+			&scan_start_timestamp);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		osif_err("Dequeue of scan request failed ID: %d", scan_id);
 		goto allow_suspend;
@@ -1020,6 +1075,14 @@ static void wlan_cfg80211_scan_done_callback(
 		wlan_vendor_scan_callback(req, !success);
 
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_OSIF_ID);
+
+	unique_bss_count = wlan_scan_get_bss_count_for_scan(pdev,
+							  scan_start_timestamp);
+	osif_nofl_info("vdev %d, scan id %d type %s(%d) reason %s(%d) scan found %d bss",
+		       event->vdev_id, scan_id,
+		       util_scan_get_ev_type_name(event->type), event->type,
+		       util_scan_get_ev_reason_name(event->reason),
+		       event->reason, unique_bss_count);
 allow_suspend:
 	osif_priv = wlan_pdev_get_ospriv(pdev);
 	if (qdf_list_empty(&osif_priv->osif_scan->scan_req_q)) {
@@ -1042,6 +1105,7 @@ allow_suspend:
 					&osif_priv->osif_scan->scan_wake_lock,
 					SCAN_WAKE_LOCK_CONNECT_DURATION);
 	}
+
 }
 
 QDF_STATUS wlan_scan_runtime_pm_init(struct wlan_objmgr_pdev *pdev)
@@ -1291,7 +1355,6 @@ int wlan_cfg80211_scan(struct wlan_objmgr_vdev *vdev,
 	wlan_scan_id scan_id;
 	bool is_p2p_scan = false;
 	enum wlan_band band;
-	struct net_device *netdev = NULL;
 	QDF_STATUS qdf_status;
 	enum QDF_OPMODE opmode;
 	uint32_t extra_ie_len = 0;
@@ -1345,14 +1408,6 @@ int wlan_cfg80211_scan(struct wlan_objmgr_vdev *vdev,
 	req->scan_req.vdev_id = wlan_vdev_get_id(vdev);
 	req->scan_req.scan_id = scan_id;
 	req->scan_req.scan_req_id = req_id;
-
-	/* Enqueue the scan request */
-	ret = wlan_scan_request_enqueue(pdev, request, params->source,
-					req->scan_req.scan_id);
-	if (ret) {
-		qdf_mem_free(req);
-		return ret;
-	}
 
 	/* Update scan policy type flags according to cfg scan request */
 	wlan_cfg80211_update_scan_policy_type_flags(request,
@@ -1561,18 +1616,15 @@ int wlan_cfg80211_scan(struct wlan_objmgr_vdev *vdev,
 	qdf_runtime_pm_prevent_suspend(
 		&osif_priv->osif_scan->runtime_pm_lock);
 
-	qdf_status = ucfg_scan_start(req);
+	qdf_status = wlan_schedule_scan_start_request(pdev, request,
+						      params->source, req);
 	if (QDF_IS_STATUS_ERROR(qdf_status)) {
-		osif_err("scan req failed with error %d", qdf_status);
-		if (qdf_status == QDF_STATUS_E_RESOURCES)
-			osif_err("HO is in progress.So defer the scan by informing busy");
-		wlan_scan_request_dequeue(pdev, scan_id, &request,
-					  &params->source, &netdev);
 		if (qdf_list_empty(&osif_priv->osif_scan->scan_req_q)) {
 			qdf_runtime_pm_allow_suspend(
-				&osif_priv->osif_scan->runtime_pm_lock);
-			wlan_scan_release_wake_lock(psoc,
-				&osif_priv->osif_scan->scan_wake_lock);
+					&osif_priv->osif_scan->runtime_pm_lock);
+			wlan_scan_release_wake_lock(
+					psoc,
+					&osif_priv->osif_scan->scan_wake_lock);
 		}
 	}
 
@@ -1580,8 +1632,6 @@ int wlan_cfg80211_scan(struct wlan_objmgr_vdev *vdev,
 
 err:
 	qdf_mem_free(req);
-	wlan_scan_request_dequeue(pdev, scan_id, &request,
-				  &params->source, &netdev);
 	return ret;
 }
 
@@ -1915,8 +1965,8 @@ void wlan_cfg80211_inform_bss_frame(struct wlan_objmgr_pdev *pdev,
 	bss_data.frame_len = wlan_get_frame_len(scan_params);
 	bss_data.mgmt = qdf_mem_malloc_atomic(bss_data.frame_len);
 	if (!bss_data.mgmt) {
-		osif_err("mem alloc failed for bss %pM seq %d",
-			 bss_data.mgmt->bssid, scan_params->seq_num);
+		osif_err("bss mem alloc failed for seq %d",
+			 scan_params->seq_num);
 		return;
 	}
 	qdf_mem_copy(bss_data.mgmt,
@@ -1937,8 +1987,9 @@ void wlan_cfg80211_inform_bss_frame(struct wlan_objmgr_pdev *pdev,
 	bss_data.chan = wlan_get_ieee80211_channel(wiphy, pdev,
 		scan_params->channel.chan_freq);
 	if (!bss_data.chan) {
-		osif_err("Channel not found for bss %pM seq %d chan_freq %d",
-			 bss_data.mgmt->bssid, scan_params->seq_num,
+		osif_err("Channel not found for bss "QDF_MAC_ADDR_FMT" seq %d chan_freq %d",
+			 QDF_MAC_ADDR_REF(bss_data.mgmt->bssid),
+			 scan_params->seq_num,
 			 scan_params->channel.chan_freq);
 		qdf_mem_free(bss_data.mgmt);
 		return;
@@ -1957,8 +2008,9 @@ void wlan_cfg80211_inform_bss_frame(struct wlan_objmgr_pdev *pdev,
 
 	bss = wlan_cfg80211_inform_bss_frame_data(wiphy, &bss_data);
 	if (!bss)
-		osif_err("failed to inform bss %pM seq %d",
-			 bss_data.mgmt->bssid, scan_params->seq_num);
+		osif_err("failed to inform bss "QDF_MAC_ADDR_FMT" seq %d",
+			 QDF_MAC_ADDR_REF(bss_data.mgmt->bssid),
+			 scan_params->seq_num);
 	else
 		wlan_cfg80211_put_bss(wiphy, bss);
 
@@ -1998,10 +2050,11 @@ void __wlan_cfg80211_unlink_bss_list(struct wiphy *wiphy, uint8_t *bssid,
 	bss = wlan_cfg80211_get_bss(wiphy, NULL, bssid,
 				    ssid, ssid_len);
 	if (!bss) {
-		osif_info("BSS %pM not found", bssid);
+		osif_info("BSS "QDF_MAC_ADDR_FMT" not found",
+			  QDF_MAC_ADDR_REF(bssid));
 	} else {
-		osif_debug("unlink entry for ssid:%.*s and BSSID %pM",
-			   ssid_len, ssid, bssid);
+		osif_debug("unlink entry for ssid:%.*s and BSSID "QDF_MAC_ADDR_FMT,
+			   ssid_len, ssid, QDF_MAC_ADDR_REF(bssid));
 		cfg80211_unlink_bss(wiphy, bss);
 		wlan_cfg80211_put_bss(wiphy, bss);
 	}
@@ -2017,11 +2070,11 @@ void __wlan_cfg80211_unlink_bss_list(struct wiphy *wiphy, uint8_t *bssid,
 	 */
 	bss = wlan_cfg80211_get_bss(wiphy, NULL, bssid, NULL, 0);
 	if (!bss) {
-		osif_debug("Hidden bss not found for Ssid:%.*s BSSID: %pM sid_len %d",
-			   ssid_len, ssid, bssid, ssid_len);
+		osif_debug("Hidden bss not found for Ssid:%.*s BSSID: "QDF_MAC_ADDR_FMT" sid_len %d",
+			   ssid_len, ssid, QDF_MAC_ADDR_REF(bssid), ssid_len);
 	} else {
-		osif_debug("unlink entry for Hidden ssid:%.*s and BSSID %pM",
-			   ssid_len, ssid, bssid);
+		osif_debug("unlink entry for Hidden ssid:%.*s and BSSID "QDF_MAC_ADDR_FMT,
+			   ssid_len, ssid, QDF_MAC_ADDR_REF(bssid));
 
 		cfg80211_unlink_bss(wiphy, bss);
 		/* cfg80211_get_bss get bss with ref count so release it */

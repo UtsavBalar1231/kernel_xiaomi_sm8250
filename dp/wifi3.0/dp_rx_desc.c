@@ -36,8 +36,9 @@ QDF_STATUS dp_rx_desc_pool_alloc(struct dp_soc *soc, uint32_t pool_id,
 	desc_size = sizeof(*rx_desc_elem);
 	rx_desc_pool->elem_size = desc_size;
 	if (!dp_is_soc_reinit(soc)) {
-		qdf_mem_multi_pages_alloc(soc->osdev, &rx_desc_pool->desc_pages,
-					  desc_size, num_elem, 0, true);
+		dp_desc_multi_pages_mem_alloc(soc, DP_RX_DESC_BUF_TYPE,
+					      &rx_desc_pool->desc_pages,
+					      desc_size, num_elem, 0, true);
 		if (!rx_desc_pool->desc_pages.num_pages) {
 			qdf_err("Multi page alloc fail,size=%d, elem=%d",
 				desc_size, num_elem);
@@ -163,8 +164,8 @@ void dp_rx_desc_pool_free(struct dp_soc *soc,
 {
 	if (qdf_unlikely(!(rx_desc_pool->desc_pages.cacheable_pages)))
 		return;
-	qdf_mem_multi_pages_free(soc->osdev,
-				 &rx_desc_pool->desc_pages, 0, true);
+	dp_desc_multi_pages_mem_free(soc, DP_RX_DESC_BUF_TYPE,
+				     &rx_desc_pool->desc_pages, 0, true);
 }
 #else
 QDF_STATUS dp_rx_desc_pool_alloc(struct dp_soc *soc, uint32_t pool_id,

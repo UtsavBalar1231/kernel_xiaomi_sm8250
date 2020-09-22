@@ -1359,7 +1359,7 @@ static void dp_tx_get_tid(struct dp_vdev *vdev, qdf_nbuf_t nbuf,
 	DP_TX_TID_OVERRIDE(msdu_info, nbuf);
 	if (qdf_likely(vdev->tx_encap_type != htt_cmn_pkt_type_raw)) {
 		eh = (qdf_ether_header_t *)nbuf->data;
-		hdr_ptr = eh->ether_dhost;
+		hdr_ptr = (uint8_t *)(eh->ether_dhost);
 		L3datap = hdr_ptr + sizeof(qdf_ether_header_t);
 	} else {
 		qdf_dot3_qosframe_t *qos_wh =
@@ -2133,7 +2133,8 @@ dp_tx_send_exception(struct cdp_soc_t *soc, uint8_t vdev_id, qdf_nbuf_t nbuf,
 	msdu_info.tid = tx_exc_metadata->tid;
 
 	eh = (qdf_ether_header_t *)qdf_nbuf_data(nbuf);
-	dp_verbose_debug("skb %pM", nbuf->data);
+	dp_verbose_debug("skb "QDF_MAC_ADDR_FMT,
+			 QDF_MAC_ADDR_REF(nbuf->data));
 
 	DP_STATS_INC_PKT(vdev, tx_i.rcvd, 1, qdf_nbuf_len(nbuf));
 
@@ -2334,7 +2335,8 @@ qdf_nbuf_t dp_tx_send(struct cdp_soc_t *soc, uint8_t vdev_id, qdf_nbuf_t nbuf)
 
 	eh = (qdf_ether_header_t *)qdf_nbuf_data(nbuf);
 
-	dp_verbose_debug("skb %pM", nbuf->data);
+	dp_verbose_debug("skb "QDF_MAC_ADDR_FMT,
+			 QDF_MAC_ADDR_REF(nbuf->data));
 
 	/*
 	 * Set Default Host TID value to invalid TID

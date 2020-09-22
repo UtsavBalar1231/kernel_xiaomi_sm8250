@@ -1780,6 +1780,8 @@ dp_rx_mon_status_process(struct dp_soc *soc, uint32_t mac_id, uint32_t quota) {
 
 	return work_done;
 }
+
+#ifndef DISABLE_MON_CONFIG
 /**
  * dp_mon_process() - Main monitor mode processing roution.
  *	This call monitor status ring process then monitor
@@ -1795,6 +1797,12 @@ uint32_t
 dp_mon_process(struct dp_soc *soc, uint32_t mac_id, uint32_t quota) {
 	return dp_rx_mon_status_process(soc, mac_id, quota);
 }
+#else
+uint32_t
+dp_mon_process(struct dp_soc *soc, uint32_t mac_id, uint32_t quota) {
+	return 0;
+}
+#endif
 
 /**
  * dp_rx_pdev_mon_status_detach() - detach dp rx for status ring
