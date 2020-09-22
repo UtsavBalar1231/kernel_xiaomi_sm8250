@@ -2445,6 +2445,7 @@
 		#clock-cells = <1>;
 		mboxes = <&qmp_aop 0>;
 		mbox-names = "qdss_clk";
+		qcom,clk-stop-bimc-log;
 	};
 
 	clock_gcc: qcom,gcc@100000 {
