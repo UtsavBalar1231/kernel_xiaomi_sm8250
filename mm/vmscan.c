@@ -1114,6 +1114,7 @@ static unsigned long shrink_page_list(struct list_head *page_list,
 	unsigned nr_immediate = 0;
 	unsigned nr_ref_keep = 0;
 	unsigned nr_unmap_fail = 0;
+	unsigned nr_lazyfree_fail = 0;
 
 	cond_resched();
 
@@ -1321,11 +1322,15 @@ static unsigned long shrink_page_list(struct list_head *page_list,
 		 */
 		if (page_mapped(page)) {
 			enum ttu_flags flags = ttu_flags | TTU_BATCH_FLUSH;
+			bool was_swapbacked = PageSwapBacked(page);
 
 			if (unlikely(PageTransHuge(page)))
 				flags |= TTU_SPLIT_HUGE_PMD;
+
 			if (!try_to_unmap(page, flags)) {
 				nr_unmap_fail++;
+				if (!was_swapbacked && PageSwapBacked(page))
+					nr_lazyfree_fail++;
 				goto activate_locked;
 			}
 		}
@@ -1499,6 +1504,7 @@ keep:
 		stat->nr_activate = pgactivate;
 		stat->nr_ref_keep = nr_ref_keep;
 		stat->nr_unmap_fail = nr_unmap_fail;
+		stat->nr_lazyfree_fail = nr_lazyfree_fail;
 	}
 	return nr_reclaimed;
 }
@@ -1513,8 +1519,9 @@ unsigned long reclaim_clean_pages_from_list(struct zone *zone,
 		/* Doesn't allow to write out dirty page */
 		.may_writepage = 0,
 	};
-	unsigned long ret;
 	struct page *page, *next;
+	struct reclaim_stat stat;
+	unsigned long nr_reclaimed;
 	LIST_HEAD(clean_pages);
 
 	list_for_each_entry_safe(page, next, page_list, lru) {
@@ -1525,11 +1532,21 @@ unsigned long reclaim_clean_pages_from_list(struct zone *zone,
 		}
 	}
 
-	ret = shrink_page_list(&clean_pages, zone->zone_pgdat, &sc,
-			TTU_IGNORE_ACCESS, NULL, true);
+	nr_reclaimed = shrink_page_list(&clean_pages, zone->zone_pgdat, &sc,
+			TTU_IGNORE_ACCESS, &stat, true);
 	list_splice(&clean_pages, page_list);
-	mod_node_page_state(zone->zone_pgdat, NR_ISOLATED_FILE, -ret);
-	return ret;
+	mod_node_page_state(zone->zone_pgdat, NR_ISOLATED_FILE, -nr_reclaimed);
+	/*
+	 * Since lazyfree pages are isolated from file LRU from the beginning,
+	 * they will rotate back to anonymous LRU in the end if it failed to
+	 * discard so isolated count will be mismatched.
+	 * Compensate the isolated count for both LRU lists.
+	 */
+	mod_node_page_state(zone->zone_pgdat, NR_ISOLATED_ANON,
+			    stat.nr_lazyfree_fail);
+	mod_node_page_state(zone->zone_pgdat, NR_ISOLATED_FILE,
+			    -stat.nr_lazyfree_fail);
+	return nr_reclaimed;
 }
 
 #ifdef CONFIG_PROCESS_RECLAIM
