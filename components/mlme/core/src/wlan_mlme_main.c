@@ -109,7 +109,8 @@ QDF_STATUS mlme_get_peer_mic_len(struct wlan_objmgr_psoc *psoc, uint8_t pdev_id,
 	peer = wlan_objmgr_get_peer(psoc, pdev_id,
 				    peer_mac, WLAN_LEGACY_MAC_ID);
 	if (!peer) {
-		mlme_legacy_debug("Peer of peer_mac %pM not found", peer_mac);
+		mlme_legacy_debug("Peer of peer_mac "QDF_MAC_ADDR_FMT" not found",
+				  QDF_MAC_ADDR_REF(peer_mac));
 		return QDF_STATUS_E_INVAL;
 	}
 
@@ -126,8 +127,9 @@ QDF_STATUS mlme_get_peer_mic_len(struct wlan_objmgr_psoc *psoc, uint8_t pdev_id,
 		*mic_hdr_len = IEEE80211_CCMP_HEADERLEN;
 		*mic_len = IEEE80211_CCMP_MICLEN;
 	}
-	mlme_legacy_debug("peer %pM hdr_len %d mic_len %d key_cipher 0x%x",
-			  peer_mac, *mic_hdr_len, *mic_len, key_cipher);
+	mlme_legacy_debug("peer "QDF_MAC_ADDR_FMT" hdr_len %d mic_len %d key_cipher 0x%x",
+			  QDF_MAC_ADDR_REF(peer_mac),
+			  *mic_hdr_len, *mic_len, key_cipher);
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -1388,6 +1390,7 @@ static void mlme_init_sta_cfg(struct wlan_objmgr_psoc *psoc,
 		cfg_get(psoc, CFG_QCN_IE_SUPPORT);
 	sta->fils_max_chan_guard_time =
 		cfg_get(psoc, CFG_FILS_MAX_CHAN_GUARD_TIME);
+	sta->deauth_retry_cnt = cfg_get(psoc, CFG_DEAUTH_RETRY_CNT);
 	sta->single_tid =
 		cfg_get(psoc, CFG_SINGLE_TID_RC);
 	sta->sta_miracast_mcc_rest_time =
@@ -2361,9 +2364,11 @@ static void mlme_init_reg_cfg(struct wlan_objmgr_psoc *psoc,
 }
 
 static void
-mlme_init_dot11_mode_cfg(struct wlan_mlme_dot11_mode *dot11_mode)
+mlme_init_dot11_mode_cfg(struct wlan_objmgr_psoc *psoc,
+			 struct wlan_mlme_dot11_mode *dot11_mode)
 {
 	dot11_mode->dot11_mode = cfg_default(CFG_DOT11_MODE);
+	dot11_mode->vdev_type_dot11_mode = cfg_get(psoc, CFG_VDEV_DOT11_MODE);
 }
 
 QDF_STATUS mlme_cfg_on_psoc_enable(struct wlan_objmgr_psoc *psoc)
@@ -2404,7 +2409,7 @@ QDF_STATUS mlme_cfg_on_psoc_enable(struct wlan_objmgr_psoc *psoc)
 	mlme_init_ibss_cfg(psoc, &mlme_cfg->ibss);
 	mlme_init_feature_flag_in_cfg(psoc, &mlme_cfg->feature_flags);
 	mlme_init_scoring_cfg(psoc, &mlme_cfg->scoring);
-	mlme_init_dot11_mode_cfg(&mlme_cfg->dot11_mode);
+	mlme_init_dot11_mode_cfg(psoc, &mlme_cfg->dot11_mode);
 	mlme_init_threshold_cfg(psoc, &mlme_cfg->threshold);
 	mlme_init_acs_cfg(psoc, &mlme_cfg->acs);
 	mlme_init_power_cfg(psoc, &mlme_cfg->power);

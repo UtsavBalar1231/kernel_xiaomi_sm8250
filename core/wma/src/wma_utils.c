@@ -3089,7 +3089,8 @@ static void dump_peer_stats_info(wmi_peer_stats_info_event_fixed_param *event,
 
 	for (i = 0; i < event->num_peers; i++) {
 		WMI_MAC_ADDR_TO_CHAR_ARRAY(&stats->peer_macaddr, mac);
-		WMA_LOGI("%s mac %pM", __func__, mac);
+		WMA_LOGI("%s mac "QDF_MAC_ADDR_FMT, __func__,
+			 QDF_MAC_ADDR_REF(mac));
 		WMA_LOGI("%s tx_bytes %d %d tx_packets %d %d",
 			 __func__,
 			 stats->tx_bytes.low_32,
@@ -4360,8 +4361,8 @@ void wma_remove_bss_peer_on_vdev_start_failure(tp_wma_handle wma,
 	WMA_LOGE("%s: ADD BSS failure for vdev %d", __func__, vdev_id);
 
 	if (!cdp_find_peer_exist(soc, pdev_id, bss_peer.bytes)) {
-		WMA_LOGE("%s Failed to find peer %pM",
-			 __func__, bss_peer.bytes);
+		WMA_LOGE("%s Failed to find peer "QDF_MAC_ADDR_FMT,
+			 __func__, QDF_MAC_ADDR_REF(bss_peer.bytes));
 		return;
 	}
 
@@ -4389,8 +4390,6 @@ QDF_STATUS wma_sta_vdev_up_send(struct vdev_mlme_obj *vdev_mlme,
 	if (QDF_IS_STATUS_ERROR(status)) {
 		WMA_LOGE("%s: Failed to send vdev up cmd: vdev %d",
 			 __func__, vdev_id);
-		policy_mgr_set_do_hw_mode_change_flag(
-			wma->psoc, false);
 		status = QDF_STATUS_E_FAILURE;
 	} else {
 		wma_set_vdev_mgmt_rate(wma, vdev_id);

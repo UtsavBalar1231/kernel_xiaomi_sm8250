@@ -41,6 +41,13 @@
 #define CFG_VHT_TX_MCS_MAP_STAMAX    0xFFFF
 #define CFG_VHT_TX_MCS_MAP_STADEF    0xFFFE
 
+#define STA_DOT11_MODE_INDX       0
+#define P2P_DEV_DOT11_MODE_INDX   4
+#define NAN_DISC_DOT11_MODE_INDX  8
+#define OCB_DOT11_MODE_INDX       12
+#define TDLS_DOT11_MODE_INDX      16
+#define NDI_DOT11_MODE_INDX       20
+
 /* Roam debugging related macro defines */
 #define MAX_ROAM_DEBUG_BUF_SIZE    250
 #define MAX_ROAM_EVENTS_SUPPORTED  5
@@ -48,7 +55,7 @@
 #define TIME_STRING_LEN            24
 
 #define ROAM_CHANNEL_BUF_SIZE      300
-#define LINE_STR "============================================================"
+#define LINE_STR "=============================================================="
 /*
  * MLME_CFG_VHT_CSN_BEAMFORMEE_ANT_SUPPORTED_FW_DEF + 1 is
  * assumed to be the default fw supported BF antennas, if fw
@@ -194,12 +201,28 @@ enum mlme_dot11_mode {
 };
 
 /**
+ * enum mlme_vdev_dot11_mode - Dot11 mode of the vdev
+ * MLME_VDEV_DOT11_MODE_AUTO: vdev uses mlme_dot11_mode
+ * MLME_VDEV_DOT11_MODE_11N: vdev supports 11N mode
+ * MLME_VDEV_DOT11_MODE_11AC: vdev supports 11AC mode
+ * MLME_VDEV_DOT11_MODE_11AX: vdev supports 11AX mode
+ */
+enum mlme_vdev_dot11_mode {
+	MLME_VDEV_DOT11_MODE_AUTO,
+	MLME_VDEV_DOT11_MODE_11N,
+	MLME_VDEV_DOT11_MODE_11AC,
+	MLME_VDEV_DOT11_MODE_11AX,
+};
+
+/**
  * struct wlan_mlme_dot11_mode - dot11 mode
  *
  * @dot11_mode: dot11 mode supported
+ * @vdev_type_dot11_mode: dot11 mode supported by different vdev types
  */
 struct wlan_mlme_dot11_mode {
 	enum mlme_dot11_mode dot11_mode;
+	uint32_t vdev_type_dot11_mode;
 };
 
 /**
@@ -1349,6 +1372,7 @@ enum station_keepalive_method {
  * @dot11p_mode:                    Set 802.11p mode
  * @fils_max_chan_guard_time:       Set maximum channel guard time
  * @current_rssi:                   Current rssi
+ * @deauth_retry_cnt:               Deauth retry count
  * @ignore_peer_erp_info:           Ignore peer infrormation
  * @sta_prefer_80mhz_over_160mhz:   Set Sta preference to connect in 80HZ/160HZ
  * @enable_5g_ebt:                  Set default 5G early beacon termination
@@ -1368,6 +1392,7 @@ struct wlan_mlme_sta_cfg {
 	enum dot11p_mode dot11p_mode;
 	uint8_t fils_max_chan_guard_time;
 	uint8_t current_rssi;
+	uint8_t deauth_retry_cnt;
 	bool ignore_peer_erp_info;
 	bool sta_prefer_80mhz_over_160mhz;
 	bool enable_5g_ebt;

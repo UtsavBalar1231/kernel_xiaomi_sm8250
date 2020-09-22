@@ -3352,8 +3352,8 @@ static QDF_STATUS hdd_wlan_get_ibss_peer_info_all(struct hdd_adapter *adapter)
 				peer_info->peerInfoParams[i].mac_addr,
 				sizeof(mac_addr));
 
-			hdd_debug(" PEER ADDR : %pM TxRate: %d Mbps RSSI: %d",
-				mac_addr, (int)tx_rate,
+			hdd_debug(" PEER ADDR : "QDF_MAC_ADDR_FMT" TxRate: %d Mbps RSSI: %d",
+				QDF_MAC_ADDR_REF(mac_addr), (int)tx_rate,
 				(int)peer_info->peerInfoParams[i].rssi);
 		}
 	} else {
@@ -7169,20 +7169,9 @@ static int __iw_get_char_setnone(struct net_device *dev,
 			buf = snprintf
 				      ((extra + length),
 				      WE_MAX_STR_LEN - length,
-				      "\n" QDF_MAC_ADDR_STR "\n",
-				      sta_ctx->conn_info.
-				      peer_macaddr[idx].bytes[0],
-				      sta_ctx->conn_info.
-				      peer_macaddr[idx].bytes[1],
-				      sta_ctx->conn_info.
-				      peer_macaddr[idx].bytes[2],
-				      sta_ctx->conn_info.
-				      peer_macaddr[idx].bytes[3],
-				      sta_ctx->conn_info.
-				      peer_macaddr[idx].bytes[4],
-				      sta_ctx->conn_info.
-				      peer_macaddr[idx].bytes[5]
-				      );
+				      "\n" QDF_MAC_ADDR_FMT "\n",
+				      QDF_MAC_ADDR_REF(sta_ctx->conn_info.
+				      peer_macaddr[idx].bytes));
 			length += buf;
 		}
 		wrqu->data.length = strlen(extra) + 1;
@@ -8076,8 +8065,8 @@ static int __iw_set_var_ints_getnone(struct net_device *dev,
 
 		if (apps_args[0] == CDP_TXRX_STATS_28) {
 			if (sta_ctx->conn_info.is_authenticated) {
-				hdd_debug("ap mac addr: %pM",
-					  (void *)&sta_ctx->conn_info.bssid);
+				hdd_debug("ap mac addr: "QDF_MAC_ADDR_FMT,
+					  QDF_MAC_ADDR_REF(sta_ctx->conn_info.bssid.bytes));
 				req.peer_addr =
 					(char *)&sta_ctx->conn_info.bssid;
 			}
@@ -8851,8 +8840,8 @@ static int __iw_set_keepalive_params(struct net_device *dev,
 		       request->destIpv4Addr[0], request->destIpv4Addr[1],
 		       request->destIpv4Addr[2], request->destIpv4Addr[3]);
 
-		hdd_debug("Dest MAC address: "QDF_MAC_ADDR_STR,
-		       QDF_MAC_ADDR_ARRAY(request->dest_macaddr.bytes));
+		hdd_debug("Dest MAC address: "QDF_MAC_ADDR_FMT,
+		       QDF_MAC_ADDR_REF(request->dest_macaddr.bytes));
 		break;
 	}
 

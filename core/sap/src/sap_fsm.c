@@ -1078,7 +1078,6 @@ static QDF_STATUS sap_clear_global_dfs_param(mac_handle_t mac_handle)
 	}
 	mac_ctx->sap.SapDfsInfo.cac_state = eSAP_DFS_DO_NOT_SKIP_CAC;
 	sap_cac_reset_notify(mac_handle);
-	qdf_mem_zero(&mac_ctx->sap, sizeof(mac_ctx->sap));
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -1165,11 +1164,9 @@ QDF_STATUS sap_clear_session_param(mac_handle_t mac_handle,
 		QDF_MAX_NO_OF_MODE;
 	sap_clear_global_dfs_param(mac_handle);
 	sap_free_roam_profile(&sapctx->csr_roamProfile);
+	sap_err("Set sapCtxList null for session %d", sapctx->sessionId);
 	qdf_mem_zero(sapctx, sizeof(*sapctx));
 	sapctx->sessionId = WLAN_UMAC_VDEV_ID_MAX;
-	QDF_TRACE(QDF_MODULE_ID_SAP, QDF_TRACE_LEVEL_DEBUG,
-		"%s: Initializing State: %d, sap_ctx value = %pK", __func__,
-		sapctx->fsm_state, sapctx);
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -1775,8 +1772,9 @@ QDF_STATUS sap_signal_hdd_event(struct sap_context *sap_ctx,
 	case eSAP_STOP_BSS_DUE_TO_NO_CHNL:
 		sap_ap_event.sapHddEventCode = eSAP_STOP_BSS_DUE_TO_NO_CHNL;
 		QDF_TRACE(QDF_MODULE_ID_SAP, QDF_TRACE_LEVEL_DEBUG,
-			  FL("stopping session_id:%d, bssid:%pM, chan_freq:%d"),
-			     sap_ctx->sessionId, sap_ctx->self_mac_addr,
+			  FL("stopping session_id:%d, bssid:"QDF_MAC_ADDR_FMT", chan_freq:%d"),
+			     sap_ctx->sessionId,
+			     QDF_MAC_ADDR_REF(sap_ctx->self_mac_addr),
 			     sap_ctx->chan_freq);
 		break;
 
@@ -2509,10 +2507,10 @@ static QDF_STATUS sap_fsm_state_starting(struct sap_context *sap_ctx,
 
 		if (sap_ctx->is_chan_change_inprogress) {
 			/* SAP channel change request processing is completed */
-			sap_ctx->is_chan_change_inprogress = false;
 			qdf_status = sap_signal_hdd_event(sap_ctx, roam_info,
 						eSAP_CHANNEL_CHANGE_EVENT,
 						(void *)eSAP_STATUS_SUCCESS);
+			sap_ctx->is_chan_change_inprogress = false;
 		} else {
 			/* Action code for transition */
 			qdf_status = sap_signal_hdd_event(sap_ctx, roam_info,
@@ -2621,6 +2619,34 @@ static inline QDF_STATUS
 sap_fsm_send_csa_restart_req(struct mac_context *mac_ctx,
 			     struct sap_context *sap_ctx)
 {
+	QDF_STATUS status;
+
+	status = policy_mgr_check_and_set_hw_mode_for_channel_switch(
+				mac_ctx->psoc, sap_ctx->sessionId,
+				mac_ctx->sap.SapDfsInfo.target_chan_freq,
+				POLICY_MGR_UPDATE_REASON_CHANNEL_SWITCH_SAP);
+
+	/*
+	 * If hw_mode_status is QDF_STATUS_E_FAILURE, mean HW
+	 * mode change was required but driver failed to set HW
+	 * mode so ignore CSA for the channel.
+	 */
+	if (status == QDF_STATUS_E_FAILURE) {
+		sap_err("HW change required but failed to set hw mode");
+		return status;
+	}
+
+	/*
+	 * If hw_mode_status is QDF_STATUS_SUCCESS mean HW mode
+	 * change was required and was successfully requested so
+	 * the channel switch will continue after HW mode change
+	 * completion.
+	 */
+	if (QDF_IS_STATUS_SUCCESS(status)) {
+		sap_info("Channel change will continue after HW mode change");
+		return QDF_STATUS_SUCCESS;
+	}
+
 	return sme_csa_restart(mac_ctx, sap_ctx->sessionId);
 }
 
@@ -3189,8 +3215,8 @@ void sap_print_acl(struct qdf_mac_addr *macList, uint8_t size)
 	for (i = 0; i < size; i++) {
 		macArray = (macList + i)->bytes;
 		QDF_TRACE(QDF_MODULE_ID_SAP, QDF_TRACE_LEVEL_INFO_HIGH,
-			  "** ACL entry %i - " QDF_MAC_ADDR_STR, i,
-			  QDF_MAC_ADDR_ARRAY(macArray));
+			  "** ACL entry %i - " QDF_MAC_ADDR_FMT, i,
+			  QDF_MAC_ADDR_REF(macArray));
 	}
 	return;
 }
@@ -3208,8 +3234,8 @@ QDF_STATUS sap_is_peer_mac_allowed(struct sap_context *sap_ctx,
 	if (sap_search_mac_list
 		    (sap_ctx->denyMacList, sap_ctx->nDenyMac, peerMac, NULL)) {
 		QDF_TRACE(QDF_MODULE_ID_SAP, QDF_TRACE_LEVEL_INFO_HIGH,
-			  "In %s, Peer " QDF_MAC_ADDR_STR " in deny list",
-			  __func__, QDF_MAC_ADDR_ARRAY(peerMac));
+			  "In %s, Peer " QDF_MAC_ADDR_FMT " in deny list",
+			  __func__, QDF_MAC_ADDR_REF(peerMac));
 		return QDF_STATUS_E_FAILURE;
 	}
 	/* A new station CAN associate, unless in deny list. Less stringent mode */
@@ -3219,9 +3245,9 @@ QDF_STATUS sap_is_peer_mac_allowed(struct sap_context *sap_ctx,
 	/* A new station CANNOT associate, unless in accept list. More stringent mode */
 	if (eSAP_DENY_UNLESS_ACCEPTED == sap_ctx->eSapMacAddrAclMode) {
 		QDF_TRACE(QDF_MODULE_ID_SAP, QDF_TRACE_LEVEL_INFO_HIGH,
-			  "In %s, Peer " QDF_MAC_ADDR_STR
+			  "In %s, Peer " QDF_MAC_ADDR_FMT
 			  " denied, Mac filter mode is eSAP_DENY_UNLESS_ACCEPTED",
-			  __func__, QDF_MAC_ADDR_ARRAY(peerMac));
+			  __func__, QDF_MAC_ADDR_REF(peerMac));
 		return QDF_STATUS_E_FAILURE;
 	}
 
@@ -3232,9 +3258,9 @@ QDF_STATUS sap_is_peer_mac_allowed(struct sap_context *sap_ctx,
 		sap_signal_hdd_event(sap_ctx, NULL, eSAP_UNKNOWN_STA_JOIN,
 				     (void *) peerMac);
 		QDF_TRACE(QDF_MODULE_ID_SAP, QDF_TRACE_LEVEL_INFO_HIGH,
-			  "In %s, Peer " QDF_MAC_ADDR_STR
+			  "In %s, Peer " QDF_MAC_ADDR_FMT
 			  " denied, Mac filter mode is eSAP_SUPPORT_ACCEPT_AND_DENY",
-			  __func__, QDF_MAC_ADDR_ARRAY(peerMac));
+			  __func__, QDF_MAC_ADDR_REF(peerMac));
 		return QDF_STATUS_E_FAILURE;
 	}
 	return QDF_STATUS_SUCCESS;

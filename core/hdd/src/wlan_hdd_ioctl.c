@@ -766,8 +766,8 @@ static int drv_cmd_get_ibss_peer_info_all(struct hdd_adapter *adapter,
 
 			length += scnprintf(extra + length,
 				user_size - length,
-				QDF_MAC_ADDR_STR" %d %d ",
-				QDF_MAC_ADDR_ARRAY(mac_addr),
+				QDF_MAC_ADDR_FMT" %d %d ",
+				QDF_MAC_ADDR_REF(mac_addr),
 				tx_rate, rssi);
 			/*
 			 * cdf_trace_msg has limitation of 512 bytes for the
@@ -2357,8 +2357,8 @@ static QDF_STATUS hdd_parse_plm_cmd(uint8_t *command,
 			req->mac_addr.bytes[count] = content;
 		}
 
-		hdd_debug("MAC addr " QDF_MAC_ADDR_STR,
-			  QDF_MAC_ADDR_ARRAY(req->mac_addr.bytes));
+		hdd_debug("MAC addr " QDF_MAC_ADDR_FMT,
+			  QDF_MAC_ADDR_REF(req->mac_addr.bytes));
 
 		in_ptr = strpbrk(in_ptr, " ");
 
@@ -2598,8 +2598,9 @@ static int hdd_set_app_type1_parser(struct hdd_adapter *adapter,
 	params.pass_length = strlen(password);
 	qdf_mem_copy(params.password, password, params.pass_length);
 
-	hdd_debug("%d %pM %.8s %u %.16s %u",
-		  params.vdev_id, params.wakee_mac_addr.bytes,
+	hdd_debug("%d "QDF_MAC_ADDR_FMT" %.8s %u %.16s %u",
+		  params.vdev_id,
+		  QDF_MAC_ADDR_REF(params.wakee_mac_addr.bytes),
 		  params.identification_id, params.id_length,
 		  params.password, params.pass_length);
 
@@ -2659,7 +2660,7 @@ static int hdd_set_app_type2_parser(struct hdd_adapter *adapter,
 		return -EINVAL;
 	}
 
-	if (6 != sscanf(mac_addr, QDF_MAC_ADDR_STR,
+	if (6 != sscanf(mac_addr, "%02x:%02x:%02x:%02x:%02x:%02x",
 			&gateway_mac[0], &gateway_mac[1], &gateway_mac[2],
 			&gateway_mac[3], &gateway_mac[4], &gateway_mac[5])) {
 		hdd_err("Invalid MacAddress Input %s", mac_addr);
@@ -2712,8 +2713,8 @@ static int hdd_set_app_type2_parser(struct hdd_adapter *adapter,
 		params.tcp_rx_timeout_val =
 		  ucfg_pmo_extwow_app2_tcp_rx_timeout(hdd_ctx->psoc);
 
-	hdd_debug("%pM %.16s %u %u %u %u %u %u %u %u %u %u %u %u %u",
-		  gateway_mac, rc4_key, params.ip_id,
+	hdd_debug(QDF_MAC_ADDR_FMT" %.16s %u %u %u %u %u %u %u %u %u %u %u %u %u",
+		  QDF_MAC_ADDR_REF(gateway_mac), rc4_key, params.ip_id,
 		  params.ip_device_ip, params.ip_server_ip, params.tcp_seq,
 		  params.tcp_ack_seq, params.tcp_src_port, params.tcp_dst_port,
 		  params.keepalive_init, params.keepalive_min,
@@ -3292,8 +3293,9 @@ int wlan_hdd_set_mc_rate(struct hdd_adapter *adapter, int target_rate)
 	rate_update.mcastDataRate5GHz = target_rate;
 	rate_update.bcastDataRate = -1;
 	qdf_copy_macaddr(&rate_update.bssid, &adapter->mac_addr);
-	hdd_debug("MC Target rate %d, mac = %pM, dev_mode %s(%d)",
-		  rate_update.mcastDataRate24GHz, rate_update.bssid.bytes,
+	hdd_debug("MC Target rate %d, mac = "QDF_MAC_ADDR_FMT", dev_mode %s(%d)",
+		  rate_update.mcastDataRate24GHz,
+		  QDF_MAC_ADDR_REF(rate_update.bssid.bytes),
 		  qdf_opmode_str(adapter->device_mode), adapter->device_mode);
 	status = sme_send_rate_update_ind(hdd_ctx->mac_handle, &rate_update);
 	if (QDF_STATUS_SUCCESS != status) {
@@ -6106,10 +6108,10 @@ static int drv_cmd_max_tx_power(struct hdd_adapter *adapter,
 				 &adapter->mac_addr);
 
 		hdd_debug("Device mode %d max tx power %d selfMac: "
-			  QDF_MAC_ADDR_STR " bssId: " QDF_MAC_ADDR_STR,
+			  QDF_MAC_ADDR_FMT " bssId: " QDF_MAC_ADDR_FMT,
 			  adapter->device_mode, tx_power,
-			  QDF_MAC_ADDR_ARRAY(selfmac.bytes),
-			  QDF_MAC_ADDR_ARRAY(bssid.bytes));
+			  QDF_MAC_ADDR_REF(selfmac.bytes),
+			  QDF_MAC_ADDR_REF(bssid.bytes));
 
 		status = sme_set_max_tx_power(hdd_ctx->mac_handle,
 					      bssid, selfmac, tx_power);
@@ -6562,9 +6564,9 @@ static int hdd_set_rx_filter(struct hdd_adapter *adapter, bool action,
 					sizeof(adapter->mc_addr_list.addr[i]));
 
 				hdd_debug("%s RX filter : addr ="
-				    QDF_MAC_ADDR_STR,
+				    QDF_MAC_ADDR_FMT,
 				    action ? "setting" : "clearing",
-				    QDF_MAC_ADDR_ARRAY(filter->multicastAddr[j].bytes));
+				    QDF_MAC_ADDR_REF(filter->multicastAddr[j].bytes));
 				j++;
 			}
 			if (j == SIR_MAX_NUM_MULTICAST_ADDRESS)
@@ -6856,79 +6858,6 @@ wlan_hdd_soc_set_antenna_mode_cb(enum set_antenna_mode_status status,
 	osif_request_put(request);
 }
 
-static QDF_STATUS
-hdd_populate_vdev_chains(struct wlan_mlme_nss_chains *nss_chains_cfg,
-			 uint8_t tx_chains,
-			 uint8_t rx_chains,
-			 enum nss_chains_band_info band,
-			 struct wlan_objmgr_vdev *vdev)
-{
-	struct wlan_mlme_nss_chains *dynamic_cfg;
-
-	nss_chains_cfg->num_rx_chains[band] = rx_chains;
-	nss_chains_cfg->num_tx_chains[band] = tx_chains;
-
-	dynamic_cfg = ucfg_mlme_get_dynamic_vdev_config(vdev);
-	if (!dynamic_cfg) {
-		hdd_err("nss chain dynamic config NULL");
-		return QDF_STATUS_E_FAILURE;
-	}
-	/*
-	 * If user gives any nss value, then chains will be adjusted based on
-	 * nss (in SME func sme_validate_user_nss_chain_params).
-	 * If Chains are not suitable as per current NSS then, we need to
-	 * return, and the below logic is added for the same.
-	 */
-
-	if ((dynamic_cfg->rx_nss[band] > rx_chains) ||
-	    (dynamic_cfg->tx_nss[band] > tx_chains)) {
-		hdd_err("Chains less than nss, configure correct nss first.");
-		return QDF_STATUS_E_FAILURE;
-	}
-
-	return QDF_STATUS_SUCCESS;
-}
-
-static int
-hdd_set_dynamic_antenna_mode(struct hdd_adapter *adapter,
-			     uint8_t num_rx_chains,
-			     uint8_t num_tx_chains)
-{
-	enum nss_chains_band_info band;
-	struct wlan_mlme_nss_chains user_cfg;
-	QDF_STATUS status;
-	mac_handle_t mac_handle;
-	struct hdd_context *hdd_ctx = WLAN_HDD_GET_CTX(adapter);
-
-	mac_handle = hdd_ctx->mac_handle;
-	if (!mac_handle) {
-		hdd_err("NULL MAC handle");
-		return -EINVAL;
-	}
-
-	if (!hdd_is_vdev_in_conn_state(adapter)) {
-		hdd_debug("Vdev (id %d) not in connected/started state, cannot accept command",
-			  adapter->vdev_id);
-		return -EINVAL;
-	}
-
-	qdf_mem_zero(&user_cfg, sizeof(user_cfg));
-	for (band = NSS_CHAINS_BAND_2GHZ; band < NSS_CHAINS_BAND_MAX; band++) {
-		status = hdd_populate_vdev_chains(&user_cfg,
-						  num_rx_chains,
-						  num_tx_chains, band,
-						  adapter->vdev);
-		if (QDF_IS_STATUS_ERROR(status))
-			return -EINVAL;
-	}
-	status = sme_nss_chains_update(mac_handle,
-				       &user_cfg,
-				       adapter->vdev_id);
-	if (QDF_IS_STATUS_ERROR(status))
-		return -EINVAL;
-
-	return 0;
-}
 int hdd_set_antenna_mode(struct hdd_adapter *adapter,
 				  struct hdd_context *hdd_ctx, int mode)
 {

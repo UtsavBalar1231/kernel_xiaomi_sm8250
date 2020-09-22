@@ -998,8 +998,8 @@ static void lim_process_mlm_deauth_ind(struct mac_context *mac_ctx,
 					   deauth_ind->peerMacAddr,
 					   &session_id);
 	if (!session) {
-		pe_err("session does not exist for Addr:" QDF_MAC_ADDR_STR,
-		       QDF_MAC_ADDR_ARRAY(deauth_ind->peerMacAddr));
+		pe_err("session does not exist for Addr:" QDF_MAC_ADDR_FMT,
+		       QDF_MAC_ADDR_REF(deauth_ind->peerMacAddr));
 		return;
 	}
 	role = GET_LIM_SYSTEM_ROLE(session);
@@ -1452,9 +1452,9 @@ void lim_process_sta_mlm_add_sta_rsp(struct mac_context *mac_ctx,
 	if (true == session_entry->fDeauthReceived) {
 		pe_err("Received Deauth frame in ADD_STA_RESP state");
 		if (QDF_STATUS_SUCCESS == add_sta_params->status) {
-			pe_err("ADD_STA success, send update result code with eSIR_SME_JOIN_DEAUTH_FROM_AP_DURING_ADD_STA limMlmState: %d bssid %pM",
+			pe_err("ADD_STA success, send update result code with eSIR_SME_JOIN_DEAUTH_FROM_AP_DURING_ADD_STA limMlmState: %d bssid "QDF_MAC_ADDR_FMT,
 				session_entry->limMlmState,
-				add_sta_params->staMac);
+				QDF_MAC_ADDR_REF(add_sta_params->staMac));
 
 			if (session_entry->limSmeState ==
 					eLIM_SME_WT_REASSOC_STATE)
@@ -1605,7 +1605,8 @@ void lim_process_sta_mlm_del_bss_rsp(struct mac_context *mac,
 			status_code = eSIR_SME_REFUSED;
 			goto end;
 		}
-		pe_debug("STA AssocID %d MAC %pM", sta->assocId, sta->staAddr);
+		pe_debug("STA AssocID %d MAC "QDF_MAC_ADDR_FMT, sta->assocId,
+			 QDF_MAC_ADDR_REF(sta->staAddr));
 	} else {
 		pe_err("DEL BSS failed!");
 		status_code = eSIR_SME_STOP_BSS_FAILURE;
@@ -1778,8 +1779,8 @@ void lim_process_ap_mlm_del_sta_rsp(struct mac_context *mac_ctx,
 	}
 
 	pe_debug("AP received the DEL_STA_RSP for assocID: %X sta mac "
-		QDF_MAC_ADDR_STR, del_sta_params->assocId,
-		QDF_MAC_ADDR_ARRAY(sta_ds->staAddr));
+		QDF_MAC_ADDR_FMT, del_sta_params->assocId,
+		QDF_MAC_ADDR_REF(sta_ds->staAddr));
 	if ((eLIM_MLM_WT_DEL_STA_RSP_STATE != sta_ds->mlmStaContext.mlmState) &&
 	    (eLIM_MLM_WT_ASSOC_DEL_STA_RSP_STATE !=
 	     sta_ds->mlmStaContext.mlmState)) {
@@ -1931,8 +1932,8 @@ void lim_process_ap_mlm_add_sta_rsp(struct mac_context *mac,
 	/* if the AssocRsp frame is not acknowledged, then keep alive timer will take care of the state */
 	sta->valid = 1;
 	sta->mlmStaContext.mlmState = eLIM_MLM_WT_ASSOC_CNF_STATE;
-	pe_debug("AddStaRsp Success.STA AssocID %d sta mac" QDF_MAC_ADDR_STR,
-		 sta->assocId, QDF_MAC_ADDR_ARRAY(sta->staAddr));
+	pe_debug("AddStaRsp Success.STA AssocID %d sta mac" QDF_MAC_ADDR_FMT,
+		 sta->assocId, QDF_MAC_ADDR_REF(sta->staAddr));
 	lim_print_mac_addr(mac, sta->staAddr, LOGD);
 
 	/* For BTAMP-AP, the flow sequence shall be:
@@ -2739,11 +2740,11 @@ static void lim_process_switch_channel_join_req(
 				mac_ctx->lim.gLimHeartBeatApMac[apCount], sizeof(tSirMacAddr))) {
 
 				pe_err("Index %d Sessionid: %d Send deauth on "
-				"channel freq %d to BSSID: " QDF_MAC_ADDR_STR,
+				"channel freq %d to BSSID: " QDF_MAC_ADDR_FMT,
 				apCount,
 				session_entry->peSessionId,
 				session_entry->curr_op_freq,
-				QDF_MAC_ADDR_ARRAY(
+				QDF_MAC_ADDR_REF(
 				session_entry->pLimMlmJoinReq->bssDescription.bssId));
 
 				lim_send_deauth_mgmt_frame(mac_ctx, eSIR_MAC_UNSPEC_FAILURE_REASON,
@@ -2783,9 +2784,9 @@ static void lim_process_switch_channel_join_req(
 	/* assign appropriate sessionId to the timer object */
 	mac_ctx->lim.lim_timers.gLimPeriodicJoinProbeReqTimer.sessionId =
 		session_entry->peSessionId;
-	pe_debug("vdev %d Send Probe req on freq %d %.*s  " QDF_MAC_ADDR_STR, session_entry->vdev_id,
+	pe_debug("vdev %d Send Probe req on freq %d %.*s  " QDF_MAC_ADDR_FMT, session_entry->vdev_id,
 		 session_entry->curr_op_freq, ssId.length, ssId.ssId,
-		 QDF_MAC_ADDR_ARRAY(
+		 QDF_MAC_ADDR_REF(
 		 session_entry->pLimMlmJoinReq->bssDescription.bssId));
 
 	/*
@@ -2814,14 +2815,12 @@ static void lim_process_switch_channel_join_req(
 		&session_entry->lim_join_req->addIEScan.length,
 		session_entry->lim_join_req->addIEScan.addIEdata);
 
-	if (session_entry->opmode == QDF_P2P_CLIENT_MODE) {
-		/* Activate Join Periodic Probe Req timer */
-		if (tx_timer_activate
-			(&mac_ctx->lim.lim_timers.gLimPeriodicJoinProbeReqTimer)
-			!= TX_SUCCESS) {
-			pe_err("Periodic JoinReq timer activate failed");
-			goto error;
-		}
+	/* Activate Join Periodic Probe Req timer */
+	if (tx_timer_activate
+		(&mac_ctx->lim.lim_timers.gLimPeriodicJoinProbeReqTimer)
+		!= TX_SUCCESS) {
+		pe_err("Periodic JoinReq timer activate failed");
+		goto error;
 	}
 
 	return;
@@ -2964,7 +2963,6 @@ void lim_process_switch_channel_rsp(struct mac_context *mac,
 		 */
 		policy_mgr_update_connection_info(mac->psoc,
 						pe_session->smeSessionId);
-		policy_mgr_set_do_hw_mode_change_flag(mac->psoc, true);
 		break;
 	case LIM_SWITCH_CHANNEL_MONITOR:
 		lim_handle_mon_switch_channel_rsp(pe_session, status);

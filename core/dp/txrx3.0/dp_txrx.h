@@ -409,4 +409,89 @@ QDF_STATUS dp_txrx_set_cpu_mask(ol_txrx_soc_handle soc, qdf_cpu_mask *new_mask)
 }
 
 #endif /* FEATURE_WLAN_DP_RX_THREADS */
+
+#ifdef DP_MEM_PRE_ALLOC
+/**
+ * dp_prealloc_init() - Pre-allocate DP memory
+ *
+ * Return: QDF_STATUS_SUCCESS on success, error qdf status on failure
+ */
+QDF_STATUS dp_prealloc_init(void);
+
+/**
+ * dp_prealloc_deinit() - Free pre-alloced DP memory
+ *
+ * Return: None
+ */
+void dp_prealloc_deinit(void);
+
+/**
+ * dp_prealloc_get_coherent() - gets pre-alloc DP memory
+ * @size: size of memory needed
+ * @base_vaddr_unaligned: Unaligned virtual address.
+ * @paddr_unaligned: Unaligned physical address.
+ * @paddr_aligned: Aligned physical address.
+ * @align: Base address alignment.
+ * @align: alignment needed
+ * @ring_type: HAL ring type
+ *
+ * Return: unaligned virtual address if success or null if memory alloc fails.
+ */
+void *dp_prealloc_get_coherent(uint32_t *size, void **base_vaddr_unaligned,
+			       qdf_dma_addr_t *paddr_unaligned,
+			       qdf_dma_addr_t *paddr_aligned,
+			       uint32_t align,
+			       uint32_t ring_type);
+/**
+ * dp_prealloc_put_coherent() - puts back pre-alloc DP memory
+ * @size: size of memory to be returned
+ * @base_vaddr_unaligned: Unaligned virtual address.
+ * @paddr_unaligned: Unaligned physical address.
+ *
+ * Return: None
+ */
+void dp_prealloc_put_coherent(qdf_size_t size, void *vaddr_unligned,
+			      qdf_dma_addr_t paddr);
+
+/**
+ * dp_prealloc_get_multi_page() - gets pre-alloc DP multi-pages memory
+ * @src_type: the source that do memory allocation
+ * @element_size: single element size
+ * @element_num: total number of elements should be allocated
+ * @pages: multi page information storage
+ * @cacheable: coherent memory or cacheable memory
+ *
+ * Return: None.
+ */
+void dp_prealloc_get_multi_pages(uint32_t src_type,
+				 size_t element_size,
+				 uint16_t element_num,
+				 struct qdf_mem_multi_page_t *pages,
+				 bool cacheable);
+
+/**
+ * dp_prealloc_put_multi_pages() - puts back pre-alloc DP multi-pages memory
+ * @src_type: the source that do memory freement
+ * @pages: multi page information storage
+ *
+ * Return: None
+ */
+void dp_prealloc_put_multi_pages(uint32_t src_type,
+				 struct qdf_mem_multi_page_t *pages);
+
+#else
+static inline QDF_STATUS dp_prealloc_init(void) { return QDF_STATUS_SUCCESS; }
+
+static inline void dp_prealloc_deinit(void) { }
+
+#endif
+
+/**
+ * dp_rx_tm_get_pending() - get number of frame in thread
+ * nbuf queue pending
+ * @soc: ol_txrx_soc_handle object
+ *
+ * Return: number of frames
+ */
+int dp_rx_tm_get_pending(ol_txrx_soc_handle soc);
 #endif /* _DP_TXRX_H */
