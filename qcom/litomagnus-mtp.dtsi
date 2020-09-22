@@ -9,6 +9,10 @@
 	vdd-supply = <&L11A>;
 };
 
+&sde_dp {
+	vdda-0p9-supply = <&L11A>;
+};
+
 &pm8150_rtc {
 	status = "disabled";
 };
