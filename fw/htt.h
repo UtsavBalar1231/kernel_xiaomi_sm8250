@@ -206,9 +206,10 @@
  * 3.82 Add WIN_SIZE field to HTT_T2H_MSG_TYPE_RX_DELBA msg.
  * 3.83 Shrink seq_idx field in HTT PPDU ID from 3 bits to 2.
  * 3.84 Add fisa_control_bits_v2 def.
+ * 3.85 Add HTT_RX_PEER_META_DATA defs.
  */
 #define HTT_CURRENT_VERSION_MAJOR 3
-#define HTT_CURRENT_VERSION_MINOR 84
+#define HTT_CURRENT_VERSION_MINOR 85
 
 #define HTT_NUM_TX_FRAG_DESC  1024
 
@@ -250,42 +251,6 @@
  * updated.
  */
 #define HTT_T2H_MSG_TYPE_RC_UPDATE_IND DEPRECATED_HTT_T2H_MSG_TYPE_RC_UPDATE_IND
-
-/* HTT Access Category values */
-enum HTT_AC_WMM {
-    /* WMM Access Categories */
-    HTT_AC_WMM_BE         = 0x0,
-    HTT_AC_WMM_BK         = 0x1,
-    HTT_AC_WMM_VI         = 0x2,
-    HTT_AC_WMM_VO         = 0x3,
-
-    HTT_NUM_AC_WMM        = 0x4,
-
-    /* extension Access Categories */
-    HTT_AC_EXT_NON_QOS    = 0x4,
-    HTT_AC_EXT_UCAST_MGMT = 0x5,
-    HTT_AC_EXT_MCAST_DATA = 0x6,
-    HTT_AC_EXT_MCAST_MGMT = 0x7,
-};
-enum HTT_AC_WMM_MASK {
-    /* WMM Access Categories */
-    HTT_AC_WMM_BE_MASK = (1 << HTT_AC_WMM_BE),
-    HTT_AC_WMM_BK_MASK = (1 << HTT_AC_WMM_BK),
-    HTT_AC_WMM_VI_MASK = (1 << HTT_AC_WMM_VI),
-    HTT_AC_WMM_VO_MASK = (1 << HTT_AC_WMM_VO),
-    /* extension Access Categories */
-    HTT_AC_EXT_NON_QOS_MASK    = (1 << HTT_AC_EXT_NON_QOS),
-    HTT_AC_EXT_UCAST_MGMT_MASK = (1 << HTT_AC_EXT_UCAST_MGMT),
-    HTT_AC_EXT_MCAST_DATA_MASK = (1 << HTT_AC_EXT_MCAST_DATA),
-    HTT_AC_EXT_MCAST_MGMT_MASK = (1 << HTT_AC_EXT_MCAST_MGMT),
-};
-#define HTT_AC_MASK_WMM \
-    (HTT_AC_WMM_BE_MASK | HTT_AC_WMM_BK_MASK | \
-     HTT_AC_WMM_VI_MASK | HTT_AC_WMM_VO_MASK)
-#define HTT_AC_MASK_EXT \
-    (HTT_AC_EXT_NON_QOS_MASK | HTT_AC_EXT_UCAST_MGMT_MASK | \
-    HTT_AC_EXT_MCAST_DATA_MASK | HTT_AC_EXT_MCAST_MGMT_MASK)
-#define HTT_AC_MASK_ALL (HTT_AC_MASK_WMM | HTT_AC_MASK_EXT)
 
 /*
  * htt_dbg_stats_type -
@@ -12662,14 +12627,6 @@ typedef enum {
     HTT_PEER_TYPE_ROAMOFFLOAD_TEMP = 128, /* Temporarily created during offload roam */
 } HTT_PEER_TYPE;
 
-/** 2 word representation of MAC addr */
-typedef struct {
-    /** upper 4 bytes of  MAC address */
-    A_UINT32 mac_addr31to0;
-    /** lower 2 bytes of  MAC address */
-    A_UINT32 mac_addr47to32;
-} htt_mac_addr;
-
 /** macro to convert MAC address from char array to HTT word format */
 #define HTT_CHAR_ARRAY_TO_MAC_ADDR(c_macaddr, phtt_mac_addr)  do { \
     (phtt_mac_addr)->mac_addr31to0 = \
@@ -14180,6 +14137,127 @@ PREPACK struct htt_ppdu_id {
     do {                                                 \
         HTT_CHECK_SET_VAL(HTT_PPDU_ID_SEQ_CMD_TYPE, _val);  \
         ((_var) |= ((_val) << HTT_PPDU_ID_SEQ_CMD_TYPE_S)); \
+    } while (0)
+
+/**
+ * @brief target -> RX PEER METADATA V0 format
+ * Host will know the peer metadata version from the wmi_service_ready_ext2
+ * message from target, and will confirm to the target which peer metadata
+ * version to use in the wmi_init message.
+ *
+ * The following diagram shows the format of the RX PEER METADATA.
+ *
+ * |31             24|23             16|15              8|7               0|
+ * |-----------------------------------------------------------------------|
+ * |    Reserved     |     VDEV ID     |              PEER ID              |
+ * |-----------------------------------------------------------------------|
+ */
+PREPACK struct htt_rx_peer_metadata_v0 {
+    A_UINT32
+        peer_id:         16,
+        vdev_id:         8,
+        reserved1:       8;
+} POSTPACK;
+
+#define HTT_RX_PEER_META_DATA_V0_PEER_ID_S    0
+#define HTT_RX_PEER_META_DATA_V0_PEER_ID_M    0x0000ffff
+#define HTT_RX_PEER_META_DATA_V0_PEER_ID_GET(_var) \
+    (((_var) & HTT_RX_PEER_META_DATA_V0_PEER_ID_M) >> HTT_RX_PEER_META_DATA_V0_PEER_ID_S)
+
+#define HTT_RX_PEER_META_DATA_V0_PEER_ID_SET(_var, _val) \
+    do {                                             \
+        HTT_CHECK_SET_VAL(HTT_RX_PEER_META_DATA_V0_PEER_ID, _val);  \
+        ((_var) |= ((_val) << HTT_RX_PEER_META_DATA_V0_PEER_ID_S)); \
+    } while (0)
+
+#define HTT_RX_PEER_META_DATA_V0_VDEV_ID_S    16
+#define HTT_RX_PEER_META_DATA_V0_VDEV_ID_M    0x00ff0000
+#define HTT_RX_PEER_META_DATA_V0_VDEV_ID_GET(_var) \
+    (((_var) & HTT_RX_PEER_META_DATA_V0_VDEV_ID_M) >> HTT_RX_PEER_META_DATA_V0_VDEV_ID_S)
+
+#define HTT_RX_PEER_META_DATA_V0_VDEV_ID_SET(_var, _val) \
+    do {                                             \
+        HTT_CHECK_SET_VAL(HTT_RX_PEER_META_DATA_V0_VDEV_ID, _val);  \
+        ((_var) |= ((_val) << HTT_RX_PEER_META_DATA_V0_VDEV_ID_S)); \
+    } while (0)
+
+/**
+ * @brief target -> RX PEER METADATA V1 format
+ * Host will know the peer metadata version from the wmi_service_ready_ext2
+ * message from target, and will confirm to the target which peer metadata
+ * version to use in the wmi_init message.
+ *
+ * The following diagram shows the format of the RX PEER METADATA V1 format.
+ *
+ * |31 29|28   26|25   24|23        16|15 14|   13  |12                   0|
+ * |-----------------------------------------------------------------------|
+ * |Rsvd2|CHIP ID|LMAC ID|  VDEV ID   |Rsvd1|ML PEER| SW PEER ID/ML PEER ID|
+ * |-----------------------------------------------------------------------|
+ */
+PREPACK struct htt_rx_peer_metadata_v1 {
+    A_UINT32
+        peer_id:         13,
+        ml_peer_valid:   1,
+        reserved1:       2,
+        vdev_id:         8,
+        lmac_id:         2,
+        chip_id:         3,
+        reserved2:       3;
+} POSTPACK;
+
+#define HTT_RX_PEER_META_DATA_V1_PEER_ID_S    0
+#define HTT_RX_PEER_META_DATA_V1_PEER_ID_M    0x00001fff
+#define HTT_RX_PEER_META_DATA_V1_PEER_ID_GET(_var) \
+    (((_var) & HTT_RX_PEER_META_DATA_V1_PEER_ID_M) >> HTT_RX_PEER_META_DATA_V1_PEER_ID_S)
+
+#define HTT_RX_PEER_META_DATA_V1_PEER_ID_SET(_var, _val) \
+    do {                                             \
+        HTT_CHECK_SET_VAL(HTT_RX_PEER_META_DATA_V1_PEER_ID, _val);  \
+        ((_var) |= ((_val) << HTT_RX_PEER_META_DATA_V1_PEER_ID_S)); \
+    } while (0)
+
+#define HTT_RX_PEER_META_DATA_V1_ML_PEER_VALID_S    13
+#define HTT_RX_PEER_META_DATA_V1_ML_PEER_VALID_M    0x00002000
+#define HTT_RX_PEER_META_DATA_V1_ML_PEER_VALID_GET(_var) \
+    (((_var) & HTT_RX_PEER_META_DATA_V1_ML_PEER_VALID_M) >> HTT_RX_PEER_META_DATA_V1_ML_PEER_VALID_S)
+
+#define HTT_RX_PEER_META_DATA_V1_ML_PEER_VALID_SET(_var, _val) \
+    do {                                             \
+        HTT_CHECK_SET_VAL(HTT_RX_PEER_META_DATA_V1_ML_PEER_VALID, _val);  \
+        ((_var) |= ((_val) << HTT_RX_PEER_META_DATA_V1_ML_PEER_VALID_S)); \
+    } while (0)
+
+#define HTT_RX_PEER_META_DATA_V1_VDEV_ID_S    16
+#define HTT_RX_PEER_META_DATA_V1_VDEV_ID_M    0x00ff0000
+#define HTT_RX_PEER_META_DATA_V1_VDEV_ID_GET(_var) \
+    (((_var) & HTT_RX_PEER_META_DATA_V1_VDEV_ID_M) >> HTT_RX_PEER_META_DATA_V1_VDEV_ID_S)
+
+#define HTT_RX_PEER_META_DATA_V1_VDEV_ID_SET(_var, _val) \
+    do {                                             \
+        HTT_CHECK_SET_VAL(HTT_RX_PEER_META_DATA_V1_VDEV_ID, _val);  \
+        ((_var) |= ((_val) << HTT_RX_PEER_META_DATA_V1_VDEV_ID_S)); \
+    } while (0)
+
+#define HTT_RX_PEER_META_DATA_V1_LMAC_ID_S    24
+#define HTT_RX_PEER_META_DATA_V1_LMAC_ID_M    0x03000000
+#define HTT_RX_PEER_META_DATA_V1_LMAC_ID_GET(_var) \
+    (((_var) & HTT_RX_PEER_META_DATA_V1_LMAC_ID_M) >> HTT_RX_PEER_META_DATA_V1_LMAC_ID_S)
+
+#define HTT_RX_PEER_META_DATA_V1_LMAC_ID_SET(_var, _val) \
+    do {                                             \
+        HTT_CHECK_SET_VAL(HTT_RX_PEER_META_DATA_V1_LMAC_ID, _val);  \
+        ((_var) |= ((_val) << HTT_RX_PEER_META_DATA_V1_LMAC_ID_S)); \
+    } while (0)
+
+#define HTT_RX_PEER_META_DATA_V1_CHIP_ID_S    26
+#define HTT_RX_PEER_META_DATA_V1_CHIP_ID_M    0x1c000000
+#define HTT_RX_PEER_META_DATA_V1_CHIP_ID_GET(_var) \
+    (((_var) & HTT_RX_PEER_META_DATA_V1_CHIP_ID_M) >> HTT_RX_PEER_META_DATA_V1_CHIP_ID_S)
+
+#define HTT_RX_PEER_META_DATA_V1_CHIP_ID_SET(_var, _val) \
+    do {                                             \
+        HTT_CHECK_SET_VAL(HTT_RX_PEER_META_DATA_V1_CHIP_ID, _val);  \
+        ((_var) |= ((_val) << HTT_RX_PEER_META_DATA_V1_CHIP_ID_S)); \
     } while (0)
 
 
