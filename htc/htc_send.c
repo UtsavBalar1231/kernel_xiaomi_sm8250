@@ -170,8 +170,25 @@ static void log_packet_info(HTC_TARGET *target, HTC_PACKET *pPacket)
 		qdf_nbuf_push_head(netbuf, sizeof(HTC_FRAME_HDR));
 	}
 }
+
+/**
+ * htc_inc_runtime_cnt: Increment htc runtime count
+ * @target: handle of HTC context
+ *
+ * Return: None
+ */
+static inline
+void htc_inc_runtime_cnt(HTC_TARGET *target)
+{
+	qdf_atomic_inc(&target->htc_runtime_cnt);
+}
 #else
 static void log_packet_info(HTC_TARGET *target, HTC_PACKET *pPacket)
+{
+}
+
+static inline
+void htc_inc_runtime_cnt(HTC_TARGET *target)
 {
 }
 #endif
@@ -710,6 +727,7 @@ static QDF_STATUS htc_issue_packets(HTC_TARGET *target,
 	uint8_t *buf = NULL;
 	int (*update_ep_padding_credit)(void *, int);
 	void *ctx = NULL;
+	bool rt_put_in_resp;
 
 	update_ep_padding_credit =
 			pEndpoint->EpCallBacks.ep_padding_credit_update;
@@ -720,6 +738,7 @@ static QDF_STATUS htc_issue_packets(HTC_TARGET *target,
 			("+htc_issue_packets: Queue: %pK, Pkts %d\n", pPktQueue,
 			 HTC_PACKET_QUEUE_DEPTH(pPktQueue)));
 	while (true) {
+		rt_put_in_resp = false;
 		if (HTC_TX_BUNDLE_ENABLED(target) &&
 		    HTC_PACKET_QUEUE_DEPTH(pPktQueue) >=
 		    HTC_MIN_MSG_PER_BUNDLE) {
@@ -831,6 +850,10 @@ static QDF_STATUS htc_issue_packets(HTC_TARGET *target,
 		 */
 		if (pPacket->PktInfo.AsTx.Tag == HTC_TX_PACKET_TAG_RUNTIME_PUT)
 			rt_put = true;
+		else if (pPacket->PktInfo.AsTx.Tag ==
+			 HTC_TX_PACKET_TAG_RTPM_PUT_RC)
+			rt_put_in_resp = true;
+
 #if DEBUG_BUNDLE
 		qdf_print(" Send single EP%d buffer size:0x%x, total:0x%x.",
 			  pEndpoint->Id,
@@ -907,6 +930,9 @@ static QDF_STATUS htc_issue_packets(HTC_TARGET *target,
 					   RTPM_ID_HTC);
 			rt_put = false;
 		}
+
+		if (rt_put_in_resp)
+			htc_inc_runtime_cnt(target);
 	}
 	if (qdf_unlikely(QDF_IS_STATUS_ERROR(status))) {
 		AR_DEBUG_PRINTF(ATH_DEBUG_ERR,
