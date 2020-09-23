@@ -346,9 +346,9 @@
 	rpm-regulator-ldoa21 {
 		status = "okay";
 		L21A: pm2250_l21: regulator-l21 {
-			regulator-min-microvolt = <2921000>;
+			regulator-min-microvolt = <2900000>;
 			regulator-max-microvolt = <3300000>;
-			qcom,init-voltage = <2921000>;
+			qcom,init-voltage = <2900000>;
 			status = "okay";
 		};
 	};
