@@ -17,13 +17,14 @@
 	qcom,dsi-default-panel = <&dsi_sw43404_amoled_fhd_plus_cmd>;
 };
 
-&wsa_macro {
+&swr0 {
 	wsa883x_0221: wsa883x@02170221 {
 		compatible = "qcom,wsa883x";
 		reg = <0x02 0x02170221>;
 		qcom,spkr-sd-n-node = <&wsa_spkr_en1>;
 		qcom,bolero-handle = <&bolero>;
-		cdc-vdd-1p8-supply = <&L11A>;
+		cdc-vdd-1p8-supply = <&S4A>;
+
 		qcom,cdc-vdd-1p8-voltage = <1800000 1800000>;
 		qcom,cdc-vdd-1p8-current = <20000>;
 		qcom,cdc-vdd-1p8-lpm-supported = <1>;
@@ -36,7 +37,7 @@
 		qcom,spkr-sd-n-node = <&wsa_spkr_en2>;
 		qcom,bolero-handle = <&bolero>;
 
-		cdc-vdd-1p8-supply = <&L11A>;
+		cdc-vdd-1p8-supply = <&S4A>;
 		qcom,cdc-vdd-1p8-voltage = <1800000 1800000>;
 		qcom,cdc-vdd-1p8-current = <20000>;
 		qcom,cdc-vdd-1p8-lpm-supported = <1>;

@@ -11,3 +11,11 @@
 	qcom,msm-id = <400 0x20000>, <440 0x20000>;
 	qcom,board-id = <8 1>;
 };
+
+/*
+ * overriding adsp-fw-names with empty string
+ * to allow default adsp img load
+ */
+&adsp_loader {
+	adsp-fw-names="";
+};
