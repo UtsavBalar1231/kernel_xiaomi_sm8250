@@ -13,6 +13,10 @@
 	vdda-0p9-supply = <&L11A>;
 };
 
+&sde_dsi {
+	qcom,dsi-default-panel = <&dsi_sw43404_amoled_fhd_plus_cmd>;
+};
+
 &wsa_macro {
 	wsa883x_0221: wsa883x@02170221 {
 		compatible = "qcom,wsa883x";
