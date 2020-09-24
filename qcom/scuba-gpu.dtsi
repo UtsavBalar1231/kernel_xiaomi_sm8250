@@ -122,7 +122,7 @@
 			<&gcc GCC_GPU_MEMNOC_GFX_CLK>,
 			<&gpucc GPU_CC_CX_GMU_CLK>,
 			<&gpucc GPU_CC_HLOS1_VOTE_GPU_SMMU_CLK>,
-			<&gcc GCC_BIMC_GPU_AXI_CLK>;
+			<&rpmcc RPM_SMD_BIMC_GPU_CLK>;
 
 		clock-names = "core_clk", "rbbmtimer_clk", "mem_clk",
 				"iface_clk", "mem_iface_clk", "gmu_clk",
