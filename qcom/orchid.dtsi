@@ -10,3 +10,7 @@
 &pm8008_regulators {
 	vdd_l6-supply = <&BOB>;
 };
+
+&apps_rsc {
+	/delete-node/ rpmh-regulator-ldoa7;
+};
