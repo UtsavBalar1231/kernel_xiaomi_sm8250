@@ -938,6 +938,8 @@ u32 msm_vidc_calculate_dec_input_frame_size(struct msm_vidc_inst *inst)
 	if (base_res_mbs > inst->capability.cap[CAP_MBS_PER_FRAME].max) {
 		base_res_mbs = inst->capability.cap[CAP_MBS_PER_FRAME].max;
 		div_factor = 1;
+		if (num_mbs < NUM_MBS_720P)
+			base_res_mbs = base_res_mbs * 2;
 	}
 
 	frame_size = base_res_mbs * MB_SIZE_IN_PIXEL * 3 / 2 / div_factor;
