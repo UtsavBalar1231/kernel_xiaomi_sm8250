@@ -1587,6 +1587,26 @@ end:
 
 #if defined(QCA_WIFI_QCA6290) || defined(QCA_WIFI_QCA6390) || \
     defined(QCA_WIFI_QCA6490) || defined(QCA_WIFI_QCA6750)
+
+#ifdef IPA_LAN_RX_NAPI_SUPPORT
+void ipa_set_rps(struct wlan_ipa_priv *ipa_ctx, enum QDF_OPMODE mode,
+		 bool enable)
+{
+	struct wlan_ipa_iface_context *iface_ctx;
+	wlan_ipa_rps_enable cb = ipa_ctx->rps_enable;
+	int i;
+
+	if (!cb)
+		return;
+
+	for (i = 0; i < WLAN_IPA_MAX_IFACE; i++) {
+		iface_ctx = &ipa_ctx->iface_context[i];
+		if (iface_ctx->device_mode == mode)
+			cb(iface_ctx->session_id, enable);
+	}
+}
+#endif
+
 /**
  * wlan_ipa_uc_handle_first_con() - Handle first uC IPA connection
  * @ipa_ctx: IPA context
@@ -1601,6 +1621,9 @@ static QDF_STATUS wlan_ipa_uc_handle_first_con(struct wlan_ipa_priv *ipa_ctx)
 		ipa_debug("Multiple SAP connected. Not enabling pipes. Exit");
 		return QDF_STATUS_E_PERM;
 	}
+
+	if (qdf_ipa_get_lan_rx_napi() && ipa_ctx->sta_connected)
+		ipa_set_rps(ipa_ctx, QDF_STA_MODE, true);
 
 	if (wlan_ipa_uc_enable_pipes(ipa_ctx) != QDF_STATUS_SUCCESS) {
 		ipa_err("IPA WDI Pipe activation failed");
@@ -1619,6 +1642,9 @@ void wlan_ipa_uc_handle_last_discon(struct wlan_ipa_priv *ipa_ctx,
 	ipa_debug("enter");
 
 	wlan_ipa_uc_disable_pipes(ipa_ctx, force_disable);
+
+	if (qdf_ipa_get_lan_rx_napi() && ipa_ctx->sta_connected)
+		ipa_set_rps(ipa_ctx, QDF_STA_MODE, false);
 
 	ipa_debug("exit: IPA WDI Pipes deactivated");
 }
@@ -2197,6 +2223,9 @@ static QDF_STATUS __wlan_ipa_wlan_evt(qdf_netdev_t net_dev, uint8_t device_mode,
 
 		ipa_ctx->sta_connected++;
 
+		if (qdf_ipa_get_lan_rx_napi() && ipa_ctx->sap_num_connected_sta)
+			ipa_set_rps_per_vdev(ipa_ctx, session_id, true);
+
 		qdf_mutex_release(&ipa_ctx->event_lock);
 
 		ipa_debug("sta_connected=%d vdev_to_iface[%u] %u",
@@ -2322,6 +2351,9 @@ static QDF_STATUS __wlan_ipa_wlan_evt(qdf_netdev_t net_dev, uint8_t device_mode,
 							      QDF_STA_MODE);
 		if (iface_ctx)
 			wlan_ipa_cleanup_iface(iface_ctx);
+
+		if (qdf_ipa_get_lan_rx_napi())
+			ipa_set_rps_per_vdev(ipa_ctx, session_id, false);
 
 		qdf_mutex_release(&ipa_ctx->event_lock);
 
