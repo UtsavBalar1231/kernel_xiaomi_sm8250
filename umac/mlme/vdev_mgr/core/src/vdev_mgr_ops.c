@@ -126,7 +126,7 @@ static QDF_STATUS vdev_mgr_start_param_update(
 	if ((op_mode == QDF_SAP_MODE || op_mode == QDF_P2P_GO_MODE) &&
 	    (WLAN_REG_IS_5GHZ_CH_FREQ(des_chan->ch_freq) ||
 	     WLAN_REG_IS_49GHZ_FREQ(des_chan->ch_freq) ||
-	     WLAN_REG_IS_6GHZ_CHAN_FREQ(des_chan->ch_freq)))
+	     WLAN_REG_IS_6GHZ_CHAN_FREQ(des_chan->ch_freq))) {
 		tgt_dfs_set_current_channel_for_freq(pdev, des_chan->ch_freq,
 						     des_chan->ch_flags,
 						     des_chan->ch_flagext,
@@ -135,7 +135,10 @@ static QDF_STATUS vdev_mgr_start_param_update(
 						     des_chan->ch_freq_seg2,
 						     des_chan->ch_cfreq1,
 						     des_chan->ch_cfreq2);
-
+		if (des_chan->ch_cfreq2)
+			param->channel.dfs_set_cfreq2 =
+				utils_is_dfs_cfreq2_ch(pdev);
+	}
 	param->beacon_interval = mlme_obj->proto.generic.beacon_interval;
 	param->dtim_period = mlme_obj->proto.generic.dtim_period;
 	param->disable_hw_ack = mlme_obj->mgmt.generic.disable_hw_ack;
@@ -155,7 +158,6 @@ static QDF_STATUS vdev_mgr_start_param_update(
 	param->channel.quarter_rate = mlme_obj->mgmt.rate_info.quarter_rate;
 	param->channel.dfs_set = wlan_reg_is_dfs_for_freq(pdev,
 							  des_chan->ch_freq);
-	param->channel.dfs_set_cfreq2 = utils_is_dfs_cfreq2_ch(pdev);
 	param->channel.is_chan_passive =
 		utils_is_dfs_chan_for_freq(pdev, param->channel.mhz);
 	param->channel.allow_ht = mlme_obj->proto.ht_info.allow_ht;
