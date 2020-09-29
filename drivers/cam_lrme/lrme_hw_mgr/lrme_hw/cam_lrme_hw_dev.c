@@ -118,7 +118,7 @@ static int cam_lrme_hw_dev_probe(struct platform_device *pdev)
 
 	rc = cam_req_mgr_workq_create("cam_lrme_hw_worker",
 		CAM_LRME_HW_WORKQ_NUM_TASK,
-		&lrme_core->work, CRM_WORKQ_USAGE_IRQ, 0,
+		&lrme_core->work, CRM_WORKQ_USAGE_IRQ, 0, false,
 		cam_req_mgr_process_workq_cam_lrme_hw_worker);
 	if (rc) {
 		CAM_ERR(CAM_LRME, "Unable to create a workq, rc=%d", rc);
