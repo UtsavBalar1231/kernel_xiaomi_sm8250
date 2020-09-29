@@ -17,6 +17,14 @@
 	qcom,dsi-default-panel = <&dsi_sw43404_amoled_fhd_plus_cmd>;
 };
 
+&sde_dsi1 {
+	status = "disabled";
+};
+
+&mdss_mdp {
+	connectors = <&sde_wb &sde_dsi &sde_dp &sde_rscc>;
+};
+
 &swr0 {
 	wsa883x_0221: wsa883x@02170221 {
 		compatible = "qcom,wsa883x";
