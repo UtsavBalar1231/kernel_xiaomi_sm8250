@@ -1425,7 +1425,9 @@ static inline u32 calculate_enc_scratch_size(struct msm_vidc_inst *inst,
 		bitstream_size = aligned_width * aligned_height * 3;
 		bitbin_size = ALIGN(bitstream_size, VENUS_DMA_ALIGNMENT);
 	}
-	if (num_vpp_pipes > 2)
+	if (aligned_width * aligned_height >= 7680 * 4320)
+		size_singlePipe = bitbin_size / 4;
+	else if (num_vpp_pipes > 2)
 		size_singlePipe = bitbin_size / 2;
 	else
 		size_singlePipe = bitbin_size;
@@ -1833,7 +1835,7 @@ static inline u32 calculate_enc_scratch2_size(struct msm_vidc_inst *inst,
 			metadata_stride, meta_buf_height);
 		size = (aligned_height + chroma_height) * aligned_width +
 			meta_size_y + meta_size_c;
-		size = (size * (num_ref+3)) + 4096;
+		size = (size * (num_ref + 2)) + 4096;
 	} else {
 		ref_buf_height = (height + (HFI_VENUS_HEIGHT_ALIGNMENT - 1))
 			& (~(HFI_VENUS_HEIGHT_ALIGNMENT - 1));
