@@ -794,3 +794,6 @@ CONFIG_WLAN_FW_OFFLOAD := y
 #Enable Desc Debug Check
 CONFIG_RX_DESC_DEBUG_CHECK := y
 
+#Enable Power Debug
+CONFIG_WLAN_POWER_DEBUG := y
+
