@@ -1210,6 +1210,24 @@ static inline uint32_t hal_rx_msdu_flow_idx_get_6490(uint8_t *buf)
 }
 
 /**
+ * hal_rx_msdu_get_reo_destination_indication_6490: API to get
+ * reo_destination_indication from rx_msdu_end TLV
+ * @buf: pointer to the start of RX PKT TLV headers
+ * @reo_destination_indication: pointer to return value of reo_destination_indication
+ *
+ * Return: none
+ */
+static inline void
+hal_rx_msdu_get_reo_destination_indication_6490(uint8_t *buf,
+						uint32_t *reo_destination_indication)
+{
+	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
+	struct rx_msdu_end *msdu_end = &pkt_tlvs->msdu_end_tlv.rx_msdu_end;
+
+	*reo_destination_indication = HAL_RX_MSDU_END_REO_DEST_IND_GET(msdu_end);
+}
+
+/**
  * hal_rx_msdu_flow_idx_invalid_6490: API to get flow index invalid
  * from rx_msdu_end TLV
  * @buf: pointer to the start of RX PKT TLV headers
@@ -1570,6 +1588,7 @@ struct hal_hw_txrx_ops qca6490_hal_hw_txrx_ops = {
 	hal_rx_get_flow_agg_continuation_6490,
 	hal_rx_get_flow_agg_count_6490,
 	hal_rx_get_fisa_timeout_6490,
+	hal_rx_msdu_get_reo_destination_indication_6490
 };
 
 struct hal_hw_srng_config hw_srng_table_6490[] = {
