@@ -791,3 +791,6 @@ CONFIG_SAP_DHCP_FW_IND := y
 #Enable FW Offload
 CONFIG_WLAN_FW_OFFLOAD := y
 
+#Enable Desc Debug Check
+CONFIG_RX_DESC_DEBUG_CHECK := y
+
