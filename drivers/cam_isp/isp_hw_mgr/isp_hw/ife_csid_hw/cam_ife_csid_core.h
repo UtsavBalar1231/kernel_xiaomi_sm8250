@@ -514,10 +514,13 @@ struct cam_ife_csid_cid_data {
  *                  Reserving the path for master IPP or slave IPP
  *                  master (set value 1), Slave ( set value 2)
  *                  for RDI, set  mode to none
+ * @usage_type:     dual or single IFE information
  * @master_idx:     For Slave reservation, Give master IFE instance Index.
  *                  Slave will synchronize with master Start and stop operations
  * @clk_rate        Clock rate
  * @num_bytes_out:  Number of output bytes per cycle
+ * @init_frame_drop init frame drop value. In dual ife case rdi need to drop one
+ *                  more frame than pix.
  *
  */
 struct cam_ife_csid_path_cfg {
@@ -538,11 +541,13 @@ struct cam_ife_csid_path_cfg {
 	uint32_t                        end_line;
 	uint32_t                        height;
 	enum cam_isp_hw_sync_mode       sync_mode;
+	uint32_t                        usage_type;
 	uint32_t                        master_idx;
 	uint64_t                        clk_rate;
 	uint32_t                        horizontal_bin;
 	uint32_t                        qcfa_bin;
 	uint32_t                        num_bytes_out;
+	uint32_t                        init_frame_drop;
 };
 
 /**
@@ -597,6 +602,9 @@ struct cam_csid_evt_payload {
  * @irq_debug_cnt:            Counter to track sof irq's when above flag is set.
  * @error_irq_count           Error IRQ count, if continuous error irq comes
  *                            need to stop the CSID and mask interrupts.
+ * @device_enabled            Device enabled will set once CSID powered on and
+ *                            initial configuration are done.
+ * @lock_state                csid spin lock
  * @binning_enable            Flag is set if hardware supports QCFA binning
  * @binning_supported         Flag is set if sensor supports QCFA binning
  * @first_sof_ts              first bootime stamp at the start
@@ -604,6 +612,8 @@ struct cam_csid_evt_payload {
  * @epd_supported             Flag is set if sensor supports EPD
  * @fatal_err_detected        flag to indicate fatal errror is reported
  * @event_cb                  Callback to hw manager if CSID event reported
+ * @res_sof_cnt               path resource sof count value. it used for initial
+ *                            frame drop
  */
 struct cam_ife_csid_hw {
 	struct cam_hw_intf              *hw_intf;
@@ -650,6 +660,7 @@ struct cam_ife_csid_hw {
 	uint32_t                         epd_supported;
 	bool                             fatal_err_detected;
 	cam_hw_mgr_event_cb_func         event_cb;
+	uint32_t                         res_sof_cnt[CAM_IFE_PIX_PATH_RES_MAX];
 };
 
 int cam_ife_csid_hw_probe_init(struct cam_hw_intf  *csid_hw_intf,
