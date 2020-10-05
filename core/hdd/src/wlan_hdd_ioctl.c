@@ -766,8 +766,8 @@ static int drv_cmd_get_ibss_peer_info_all(struct hdd_adapter *adapter,
 
 			length += scnprintf(extra + length,
 				user_size - length,
-				QDF_MAC_ADDR_FMT" %d %d ",
-				QDF_MAC_ADDR_REF(mac_addr),
+				QDF_FULL_MAC_FMT" %d %d ",
+				QDF_FULL_MAC_REF(mac_addr),
 				tx_rate, rssi);
 			/*
 			 * cdf_trace_msg has limitation of 512 bytes for the

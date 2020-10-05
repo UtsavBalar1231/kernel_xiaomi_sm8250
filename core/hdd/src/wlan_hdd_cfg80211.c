@@ -128,6 +128,7 @@
 #include "wlan_pmo_cfg.h"
 #include "cfg_ucfg_api.h"
 
+#include "wlan_crypto_def_i.h"
 #include "wlan_crypto_global_api.h"
 #include "wlan_nl_to_crypto_params.h"
 #include "wlan_crypto_global_def.h"
@@ -446,15 +447,17 @@ static const u32 hdd_sta_akm_suites[] = {
 	WLAN_AKM_SUITE_TDLS,
 	WLAN_AKM_SUITE_SAE,
 	WLAN_AKM_SUITE_FT_OVER_SAE,
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0))
-	WLAN_AKM_SUITE_8021X_SUITE_B,
-	WLAN_AKM_SUITE_8021X_SUITE_B_192,
-#endif
+	WLAN_AKM_SUITE_EAP_SHA256,
+	WLAN_AKM_SUITE_EAP_SHA384,
 	WLAN_AKM_SUITE_FILS_SHA256,
 	WLAN_AKM_SUITE_FILS_SHA384,
 	WLAN_AKM_SUITE_FT_FILS_SHA256,
 	WLAN_AKM_SUITE_FT_FILS_SHA384,
 	WLAN_AKM_SUITE_OWE,
+	WLAN_AKM_SUITE_DPP_RSN,
+	WLAN_AKM_SUITE_FT_EAP_SHA_384,
+	RSN_AUTH_KEY_MGMT_CCKM,
+	RSN_AUTH_KEY_MGMT_OSEN,
 };
 
 /*akm suits supported by AP*/
@@ -17890,8 +17893,8 @@ wlan_hdd_cfg80211_roam_metrics_preauth(struct hdd_adapter *adapter,
 	wrqu.data.pointer = metrics_notification;
 	wrqu.data.length = scnprintf(metrics_notification,
 				     sizeof(metrics_notification),
-				     "QCOM: LFR_PREAUTH_INIT " QDF_MAC_ADDR_FMT,
-				     QDF_MAC_ADDR_REF(roam_info->bssid.bytes));
+				     "QCOM: LFR_PREAUTH_INIT " QDF_FULL_MAC_FMT,
+				     QDF_FULL_MAC_REF(roam_info->bssid.bytes));
 
 	wireless_send_event(adapter->dev, IWEVCUSTOM, &wrqu,
 			    metrics_notification);
@@ -17931,8 +17934,8 @@ wlan_hdd_cfg80211_roam_metrics_preauth_status(struct hdd_adapter *adapter,
 	memset(metrics_notification, 0, sizeof(metrics_notification));
 
 	scnprintf(metrics_notification, sizeof(metrics_notification),
-		  "QCOM: LFR_PREAUTH_STATUS " QDF_MAC_ADDR_FMT,
-		  QDF_MAC_ADDR_REF(roam_info->bssid.bytes));
+		  "QCOM: LFR_PREAUTH_STATUS " QDF_FULL_MAC_FMT,
+		  QDF_FULL_MAC_REF(roam_info->bssid.bytes));
 
 	if (1 == preauth_status)
 		strlcat(metrics_notification, " true",
@@ -17983,8 +17986,8 @@ wlan_hdd_cfg80211_roam_metrics_handover(struct hdd_adapter *adapter,
 	wrqu.data.length = scnprintf(metrics_notification,
 				     sizeof(metrics_notification),
 				     "QCOM: LFR_PREAUTH_HANDOVER "
-				     QDF_MAC_ADDR_FMT,
-				     QDF_MAC_ADDR_REF(roam_info->bssid.bytes));
+				     QDF_FULL_MAC_FMT,
+				     QDF_FULL_MAC_REF(roam_info->bssid.bytes));
 
 	wireless_send_event(adapter->dev, IWEVCUSTOM, &wrqu,
 			    metrics_notification);
@@ -21574,9 +21577,6 @@ QDF_STATUS hdd_softap_deauth_current_sta(struct hdd_adapter *adapter,
 		hdd_err("hdd_ctx is NULL");
 		return QDF_STATUS_E_INVAL;
 	}
-
-	if (hdd_ctx->dev_dfs_cac_status == DFS_CAC_IN_PROGRESS)
-		return QDF_STATUS_E_INVAL;
 
 	qdf_event_reset(&hapd_state->qdf_sta_disassoc_event);
 
