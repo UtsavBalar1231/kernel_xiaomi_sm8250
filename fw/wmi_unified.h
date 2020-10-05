@@ -3730,7 +3730,18 @@ typedef struct {
      *
      *      Refer to WMI_RSRC_CFG_HOST_SERVICE_FLAG_NAN_IFACE_SUPPORT_GET/SET
      *      macros defined below.
-     *  Bits 31:1 - Reserved
+     *  Bit 1
+     *      The bit will be set when HOST is capable of processing multiple
+     *      radio events per radio. More specifically whenever Firmware is
+     *      sending multiple radio events (WMI_RADIO_LINK_STATS_EVENTID
+     *      = 0x16004) for a single radio,
+     *      Through this flag Firmware will know that HOST is able to support
+     *      delivery of RADIO_LINK_STATS across multiple event messages,
+     *      and Firmware can send multiple radio events.
+     *
+     *      Refer to WMI_RSRC_CFG_HOST_SERVICE_FLAG_HOST_SUPPORT_MULTI_RADIO_EVTS_PER_RADIO_GET/SET
+     *      macros defined below.
+     *  Bits 31:2 - Reserved
      */
     A_UINT32 host_service_flags;
 
@@ -3988,6 +3999,11 @@ typedef struct {
     WMI_GET_BITS(host_service_flags, 0, 1)
 #define WMI_RSRC_CFG_HOST_SERVICE_FLAG_NAN_IFACE_SUPPORT_SET(host_service_flags, val) \
     WMI_SET_BITS(host_service_flags, 0, 1, val)
+
+#define WMI_RSRC_CFG_HOST_SERVICE_FLAG_HOST_SUPPORT_MULTI_RADIO_EVTS_PER_RADIO_GET(host_service_flags) \
+    WMI_GET_BITS(host_service_flags, 1, 1)
+#define WMI_RSRC_CFG_HOST_SERVICE_FLAG_HOST_SUPPORT_MULTI_RADIO_EVTS_PER_RADIO_SET(host_service_flags, val) \
+    WMI_SET_BITS(host_service_flags, 1, 1, val)
 
 typedef struct {
     A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_init_cmd_fixed_param */
@@ -8263,6 +8279,18 @@ typedef struct {
     A_UINT32 num_radio;
     /** more_data will be set depending on the number of radios */
     A_UINT32 more_radio_events;
+    /*
+     * For the event WMI_RADIO_LINK_STATS_EVENTID = 0x16004,
+     * FW may not be able to send all the channels (2Ghz, 5Ghz & 6Ghz)
+     * together in one event message, due to buffer size limitations.
+     * To avoid this limitation, FW will send multiple events to HOST
+     * depending upon the number of channels.
+     * If more_channels is set to 0 means FW has indicated all the
+     * channels for this radio.
+     * If more_channels is set to 1, it indicates FW will send another
+     * event having additional channels for the same radio.
+     */
+    A_UINT32 more_channels;
 /*
  * This TLV is followed by another TLV of array of bytes
  *   size of(struct wmi_radio_link_stats);
@@ -17286,9 +17314,26 @@ typedef struct {
 
 /* WMI_GPIO_CONFIG_CMDID */
 enum {
-    WMI_GPIO_PULL_NONE,
-    WMI_GPIO_PULL_UP,
-    WMI_GPIO_PULL_DOWN,
+    WMI_GPIO_PULL_NONE,   /** Do not specify a pull. */
+    WMI_GPIO_PULL_UP,     /** Pull the GPIO up. */
+    WMI_GPIO_PULL_DOWN,   /** Pull the GPIO down. */
+    WMI_GPIO_PULL_KEEPER, /** Designate as a keeper. */
+};
+
+enum wmi_gpio_drive_strength {
+    WMI_GPIO_2MA,  /** Specify a 2 mA drive. */
+    WMI_GPIO_4MA,  /** Specify a 4 mA drive. */
+    WMI_GPIO_6MA,  /** Specify a 6 mA drive. */
+    WMI_GPIO_8MA,  /** Specify an 8 mA drive. */
+    WMI_GPIO_10MA, /** Specify a 10 mA drive. */
+    WMI_GPIO_12MA, /** Specify a 12 mA drive. */
+    WMI_GPIO_14MA, /** Specify a 14 mA drive. */
+    WMI_GPIO_16MA, /** Specify a 16 mA drive. */
+};
+
+enum wmi_tlmm_gpio_config {
+  WMI_TLMM_GPIO_DISABLE, /** Use the internal inactive configuration. */
+  WMI_TLMM_GPIO_ENABLE,  /** Use the configuration passed as parameter. */
 };
 
 enum {
@@ -17313,6 +17358,17 @@ typedef struct {
      *     0x4 - use the pin as GPIO (rather than UART)
      */
     A_UINT32 mux_config_val;
+    /*
+     * The drive strength to use in the configuration of a GPIO.
+     * Refer to the wmi_gpio_drive_strength enum.
+     */
+    A_UINT32 drive;
+    /*
+     * Use the internal inactive configuration or configuration passed
+     * as parameter.
+     * Refer to the wmi_tlmm_gpio_config enum.
+     */
+    A_UINT32 init_enable;
 } wmi_gpio_config_cmd_fixed_param;
 
 /* WMI_GPIO_OUTPUT_CMDID */
