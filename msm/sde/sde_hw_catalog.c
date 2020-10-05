@@ -3209,11 +3209,22 @@ static int _sde_parse_prop_check(struct sde_mdss_cfg *cfg,
 			of_fdt_get_ddrtype() == LP_DDR4_TYPE)
 		cfg->mdp[0].highest_bank_bit = 0x02;
 
+	cfg->mdp[0].ubwc_static = PROP_VALUE_ACCESS(prop_value, UBWC_STATIC, 0);
+	if (!prop_exists[UBWC_STATIC])
+		cfg->mdp[0].ubwc_static = DEFAULT_SDE_UBWC_STATIC;
+
 	if (IS_SDE_MAJOR_MINOR_SAME(cfg->hwversion, SDE_HW_VER_630)) {
 		ret = _sde_get_ubwc_hbb(prop_exists, prop_value);
 
-		if (ret >= 0)
+		if (ret >= 0) {
+			u32 ubwc_static, hbb;
+
 			cfg->mdp[0].highest_bank_bit = ret;
+			ubwc_static = cfg->mdp[0].ubwc_static;
+			hbb = ((cfg->mdp[0].highest_bank_bit & 0x7) << 4);
+			ubwc_static = ((ubwc_static & 0xff8f) | hbb);
+			cfg->mdp[0].ubwc_static = ubwc_static;
+		}
 	}
 
 	cfg->macrotile_mode = PROP_VALUE_ACCESS(prop_value, MACROTILE_MODE, 0);
@@ -3222,10 +3233,6 @@ static int _sde_parse_prop_check(struct sde_mdss_cfg *cfg,
 
 	cfg->ubwc_bw_calc_version =
 		PROP_VALUE_ACCESS(prop_value, UBWC_BW_CALC_VERSION, 0);
-
-	cfg->mdp[0].ubwc_static = PROP_VALUE_ACCESS(prop_value, UBWC_STATIC, 0);
-	if (!prop_exists[UBWC_STATIC])
-		cfg->mdp[0].ubwc_static = DEFAULT_SDE_UBWC_STATIC;
 
 	cfg->mdp[0].ubwc_swizzle = PROP_VALUE_ACCESS(prop_value,
 			UBWC_SWIZZLE, 0);
