@@ -4,13 +4,27 @@
 
 };
 
-&wsa_macro {
+&usb_qmp_dp_phy {
+	/delete-property/vdd-supply;
+	vdd-supply = <&L11A>;
+};
+
+&sde_dp {
+	vdda-0p9-supply = <&L11A>;
+};
+
+&sde_dsi {
+	qcom,dsi-default-panel = <&dsi_sw43404_amoled_fhd_plus_cmd>;
+};
+
+&swr0 {
 	wsa883x_0221: wsa883x@02170221 {
 		compatible = "qcom,wsa883x";
 		reg = <0x02 0x02170221>;
 		qcom,spkr-sd-n-node = <&wsa_spkr_en1>;
 		qcom,bolero-handle = <&bolero>;
-		cdc-vdd-1p8-supply = <&L11A>;
+		cdc-vdd-1p8-supply = <&S4A>;
+
 		qcom,cdc-vdd-1p8-voltage = <1800000 1800000>;
 		qcom,cdc-vdd-1p8-current = <20000>;
 		qcom,cdc-vdd-1p8-lpm-supported = <1>;
@@ -23,7 +37,7 @@
 		qcom,spkr-sd-n-node = <&wsa_spkr_en2>;
 		qcom,bolero-handle = <&bolero>;
 
-		cdc-vdd-1p8-supply = <&L11A>;
+		cdc-vdd-1p8-supply = <&S4A>;
 		qcom,cdc-vdd-1p8-voltage = <1800000 1800000>;
 		qcom,cdc-vdd-1p8-current = <20000>;
 		qcom,cdc-vdd-1p8-lpm-supported = <1>;
@@ -52,4 +66,13 @@
 	qcom,wsa-max-devs = <2>;
 	qcom,wsa-devs = <&wsa883x_0221>, <&wsa883x_0222>;
 	qcom,wsa-aux-dev-prefix = "SpkrLeft", "SpkrRight";
+};
+
+
+&pm8150_rtc {
+	status = "disabled";
+};
+
+&pmk8350_adc_tm {
+	status = "disabled";
 };

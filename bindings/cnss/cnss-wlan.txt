@@ -77,6 +77,8 @@ Optional properties:
                              and off sequences.
   - qcom,converged-dt: Boolean property to decide whether it supports multiple
                        WLAN devices.
+  - cnss-enable-self-recovery: Boolean property to enable self recovery when
+                               recovery is trigeered with reason link down.
 
 Example:
 

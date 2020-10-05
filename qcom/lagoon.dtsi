@@ -325,7 +325,7 @@
 	};
 
 	chosen {
-		bootargs = "rcupdate.rcu_expedited=1 rcu_nocbs=0-7 earlycon=msm_geni_serial,0x98c000";
+		bootargs = "rcupdate.rcu_expedited=1 rcu_nocbs=0-7 earlycon=msm_geni_serial,0x98c000 kpti=off";
 	};
 
 	soc: soc { };
@@ -536,6 +536,7 @@
 
 	bluetooth: bt_wcn3990 {
 		compatible = "qca,wcn3990";
+		qca,bt-sw-ctrl-gpio = <&tlmm 69 0>; /* SW_CTRL */
 		qca,bt-vdd-io-supply =   <&L11A>;  /* IO */
 		qca,bt-vdd-core-supply = <&L2E>; /* RFA */
 		qca,bt-vdd-pa-supply =   <&L10E>; /* CH0 */
