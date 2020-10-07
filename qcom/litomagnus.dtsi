@@ -18,3 +18,7 @@
 &apps_rsc {
 	/delete-node/ rpmh-regulator-ldoa7;
 };
+
+&llcc {
+	compatible = "qcom,llcc-v2";
+};
