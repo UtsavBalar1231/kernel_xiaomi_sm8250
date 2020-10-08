@@ -2,6 +2,19 @@
 	status = "okay";
 };
 
+&pm660_gpios {
+	pmi_clk {
+		pmi_clk_default: pmi_clk_default {
+			status = "ok";
+			pins = "gpio3";
+			function = "func1";
+			output-enable;
+			output-low;
+			qcom,drive-strength = <2>;
+		};
+	};
+};
+
 &soc {
 	pcm0: qcom,msm-pcm {
 		compatible = "qcom,msm-pcm-dsp";
@@ -661,12 +674,13 @@
 	};
 
 	tasha_snd: sound-9335 {
+		status = "disabled";
 		compatible = "qcom,sdm660-asoc-snd-tasha";
 		qcom,model = "sdm660-tasha-snd-card";
-		qcom,wcn-btfm;
 		qcom,mi2s-audio-intf;
 		qcom,auxpcm-audio-intf;
 		qcom,ext-disp-audio-rx;
+		qcom,wcn-btfm;
 		qcom,msm-mi2s-master = <1>, <1>, <1>, <1>;
 		qcom,audio-routing =
 			"AIF4 VI", "MCLK",
@@ -696,7 +710,6 @@
 			"MIC BIAS4", "Digital Mic5",
 			"SpkrLeft IN", "SPK1 OUT",
 			"SpkrRight IN", "SPK2 OUT";
-
 		qcom,msm-mbhc-hphl-swh = <1>;
 		qcom,msm-mbhc-gnd-swh = <1>;
 		qcom,us-euro-gpios = <&us_euro_gpio>;
@@ -715,11 +728,12 @@
 				      "msm-pcm-routing", "msm-cpe-lsm",
 				      "msm-compr-dsp", "msm-pcm-dsp-noirq",
 				      "msm-cpe-lsm.3";
-		asoc-cpu = <&dai_dp>, <&dai_mi2s0>,
-				<&dai_mi2s1>,
-				<&dai_mi2s2>, <&dai_mi2s3>,
+		asoc-cpu =	<&dai_dp>,
+				<&dai_mi2s0>, <&dai_mi2s1>, <&dai_mi2s2>,
+				<&dai_mi2s3>, <&dai_mi2s4>,
 				<&dai_pri_auxpcm>, <&dai_sec_auxpcm>,
 				<&dai_tert_auxpcm>, <&dai_quat_auxpcm>,
+				<&dai_quin_auxpcm>,
 				<&sb_0_rx>, <&sb_0_tx>, <&sb_1_rx>, <&sb_1_tx>,
 				<&sb_2_rx>, <&sb_2_tx>, <&sb_3_rx>, <&sb_3_tx>,
 				<&sb_4_rx>, <&sb_4_tx>, <&sb_5_tx>,
@@ -732,12 +746,16 @@
 				<&dai_pri_tdm_rx_0>, <&dai_pri_tdm_tx_0>,
 				<&dai_sec_tdm_rx_0>, <&dai_sec_tdm_tx_0>,
 				<&dai_tert_tdm_rx_0>, <&dai_tert_tdm_tx_0>,
-				<&dai_quat_tdm_rx_0>, <&dai_quat_tdm_tx_0>;
-		asoc-cpu-names = "msm-dai-q6-dp.24608", "msm-dai-q6-mi2s.0",
-				"msm-dai-q6-mi2s.1",
-				"msm-dai-q6-mi2s.2", "msm-dai-q6-mi2s.3",
+				<&dai_quat_tdm_rx_0>, <&dai_quat_tdm_tx_0>,
+				<&dai_quin_tdm_rx_0>, <&dai_quin_tdm_tx_0>,
+				<&proxy_rx>, <&proxy_tx>;
+
+		asoc-cpu-names = "msm-dai-q6-dp.0", "msm-dai-q6-mi2s.0",
+				"msm-dai-q6-mi2s.1", "msm-dai-q6-mi2s.2",
+				"msm-dai-q6-mi2s.3", "msm-dai-q6-mi2s.4",
 				"msm-dai-q6-auxpcm.1", "msm-dai-q6-auxpcm.2",
 				"msm-dai-q6-auxpcm.3", "msm-dai-q6-auxpcm.4",
+				"msm-dai-q6-auxpcm.5",
 				"msm-dai-q6-dev.16384", "msm-dai-q6-dev.16385",
 				"msm-dai-q6-dev.16386", "msm-dai-q6-dev.16387",
 				"msm-dai-q6-dev.16388", "msm-dai-q6-dev.16389",
@@ -755,15 +773,17 @@
 				"msm-dai-q6-tdm.36865", "msm-dai-q6-tdm.36880",
 				"msm-dai-q6-tdm.36881", "msm-dai-q6-tdm.36896",
 				"msm-dai-q6-tdm.36897", "msm-dai-q6-tdm.36912",
-				"msm-dai-q6-tdm.36913";
+				"msm-dai-q6-tdm.36913", "msm-dai-q6-tdm.36928",
+				"msm-dai-q6-tdm.36929",
+				"msm-dai-q6-dev.8194", "msm-dai-q6-dev.8195";
 		asoc-codec = <&stub_codec>, <&ext_disp_audio_codec>;
 		asoc-codec-names = "msm-stub-codec.1",
-					"msm-ext-disp-audio-codec-rx";
+				"msm-ext-disp-audio-codec-rx";
 		qcom,wsa-max-devs = <2>;
 		qcom,wsa-devs = <&wsa881x_211>, <&wsa881x_212>,
 				<&wsa881x_213>, <&wsa881x_214>;
 		qcom,wsa-aux-dev-prefix = "SpkrLeft", "SpkrRight",
-					  "SpkrLeft", "SpkrRight";
+					"SpkrLeft", "SpkrRight";
 	};
 
 	us_euro_gpio: msm_cdc_pinctrl@75 {
@@ -784,10 +804,22 @@
 	clock_audio: audio_ext_clk {
 		status = "disabled";
 		compatible = "qcom,audio-ref-clk";
+		qcom,codec-ext-clk-src = <13>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pmi_clk_default>;
 		qcom,audio-ref-clk-gpio = <&pm660_gpios 3 0>;
 		clock-names = "osr_clk";
 		clocks = <&clock_rpmcc RPM_SMD_DIV_CLK1>;
 		qcom,node_has_rpm_clock;
+		#clock-cells = <1>;
+	};
+
+	clock_audio_native: audio_ext_clk_native {
+		status = "disabled";
+		compatible = "qcom,audio-ref-clk";
+		qcom,codec-ext-clk-src = <3>;
+		qcom,use-pinctrl = <1>;
+		clock-names = "osr_clk";
 		#clock-cells = <1>;
 		qcom,codec-mclk-clk-freq = <11289600>;
 		qcom,mclk-clk-reg = <0x15020018 0x0>;

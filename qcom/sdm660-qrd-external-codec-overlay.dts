@@ -7,7 +7,6 @@
 #include <dt-bindings/regulator/qcom,rpm-smd-regulator.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 
-#include "sdm660-wcd.dtsi"
 #include "sdm660-qrd.dtsi"
 
 / {
