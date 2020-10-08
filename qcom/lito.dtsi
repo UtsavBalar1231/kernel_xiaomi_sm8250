@@ -352,6 +352,12 @@
 			no-map;
 		};
 
+		reserved_xbl_uefi_log: res_xbl_uefi_log_region@80880000 {
+			compatible = "removed-dma-pool";
+			no-map;
+			reg = <0x0 0x80880000 0x0 0x14000>;
+		};
+
 		sec_apps_mem: sec_apps_region@808ff000 {
 			compatible = "removed-dma-pool";
 			no-map;
