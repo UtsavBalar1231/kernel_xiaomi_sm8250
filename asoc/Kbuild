@@ -249,6 +249,10 @@ ifeq ($(TARGET_PRODUCT), cas)
 		CDEFINES += -DCONFIG_TARGET_PRODUCT_CAS
 endif
 
+ifeq ($(TARGET_PRODUCT), alioth)
+		CDEFINES += -DCONFIG_TARGET_PRODUCT_ALIOTH
+endif
+
 KBUILD_CPPFLAGS += $(CDEFINES)
 
 # Currently, for versions of gcc which support it, the kernel Makefile

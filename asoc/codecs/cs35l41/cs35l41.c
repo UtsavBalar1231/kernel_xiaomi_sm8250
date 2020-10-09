@@ -1299,9 +1299,14 @@ static const struct cs35l41_global_fs_config cs35l41_fs_rates[] = {
 	{ 16000,	0x12 },
 	{ 32000,	0x13 },
 };
-
+#if defined (CONFIG_TARGET_PRODUCT_ALIOTH)
+#define SPK_DAI_NAME "cs35l41.1-0040"
+#define RCV_DAI_NAME "cs35l41.1-0041"
+#else
 #define SPK_DAI_NAME "cs35l41.1-0040"
 #define RCV_DAI_NAME "cs35l41.1-0042"
+#endif
+
 #define HANDSET_TUNING "rcv_voice_delta.txt"
 
 static int cs35l41_is_speaker_in_handset(struct snd_pcm_substream *substream,
@@ -1366,7 +1371,7 @@ static int cs35l41_pcm_hw_params(struct snd_pcm_substream *substream,
 	asp_wl = params_width(params);
 	asp_width = params_physical_width(params);
 
-#if defined(CONFIG_TARGET_PRODUCT_APOLLO) || defined(CONFIG_TARGET_PRODUCT_CAS)
+#if defined(CONFIG_TARGET_PRODUCT_APOLLO) || defined(CONFIG_TARGET_PRODUCT_CAS) || defined (CONFIG_TARGET_PRODUCT_ALIOTH)
 	cs35l41_component_set_sysclk(dai->component, 0, 0, 8 * rate * asp_width, 0);
 #else
 	cs35l41_component_set_sysclk(dai->component, 0, 0, 2 * rate * asp_width, 0);
@@ -1438,7 +1443,7 @@ static int cs35l41_pcm_startup(struct snd_pcm_substream *substream,
 	//struct snd_soc_codec *codec = dai->codec;
 	pr_debug("++++>CSPL: %s.\n", __func__);
 
-#if defined(CONFIG_TARGET_PRODUCT_APOLLO) || defined(CONFIG_TARGET_PRODUCT_CAS)
+#if defined(CONFIG_TARGET_PRODUCT_APOLLO) || defined(CONFIG_TARGET_PRODUCT_CAS) || defined (CONFIG_TARGET_PRODUCT_ALIOTH)
 	cs35l41_set_dai_fmt(dai, SND_SOC_DAIFMT_CBS_CFS|SND_SOC_DAIFMT_DSP_A);
 #else
 	cs35l41_set_dai_fmt(dai, SND_SOC_DAIFMT_CBS_CFS|SND_SOC_DAIFMT_I2S);
@@ -2272,7 +2277,7 @@ static int cs35l41_dsp_init(struct cs35l41_private *cs35l41)
 	return ret;
 }
 
-#if defined(CONFIG_TARGET_PRODUCT_APOLLO) || defined(CONFIG_TARGET_PRODUCT_CAS)
+#if defined(CONFIG_TARGET_PRODUCT_APOLLO) || defined(CONFIG_TARGET_PRODUCT_CAS) || defined (CONFIG_TARGET_PRODUCT_ALIOTH)
 static int cs35l41_96k_sample_rate_init(struct cs35l41_private *cs35l41)
 {
 	int i;
@@ -2476,11 +2481,11 @@ int cs35l41_probe(struct cs35l41_private *cs35l41,
 #else
 	ret = regmap_write(cs35l41->regmap, CS35L41_VPBR_CFG, 0x0200530E);
 #endif
-#if defined(CONFIG_TARGET_PRODUCT_CAS)
+#if defined(CONFIG_TARGET_PRODUCT_CAS) || defined (CONFIG_TARGET_PRODUCT_ALIOTH)
 	ret = regmap_write(cs35l41->regmap, CS35L41_DAC_MSM_CFG, 0x00100000);
 #endif
 
-	#if defined(CONFIG_TARGET_PRODUCT_APOLLO) || defined(CONFIG_TARGET_PRODUCT_CAS)
+	#if defined(CONFIG_TARGET_PRODUCT_APOLLO) || defined(CONFIG_TARGET_PRODUCT_CAS) || defined (CONFIG_TARGET_PRODUCT_ALIOTH)
 	cs35l41_96k_sample_rate_init(cs35l41);
 	#endif
 	//external clock frequency initialize
