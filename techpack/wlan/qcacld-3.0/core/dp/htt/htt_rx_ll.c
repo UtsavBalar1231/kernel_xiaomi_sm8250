@@ -2291,6 +2291,7 @@ void htt_rx_detach(struct htt_pdev_t *pdev)
 	qdf_spinlock_destroy(&pdev->rx_ring.refill_lock);
 }
 
+#ifndef REMOVE_PKT_LOG
 static QDF_STATUS htt_rx_hash_smmu_map(bool map, struct htt_pdev_t *pdev)
 {
 	uint32_t i;
@@ -2351,3 +2352,4 @@ QDF_STATUS htt_rx_update_smmu_map(struct htt_pdev_t *pdev, bool map)
 
 	return status;
 }
+#endif

@@ -235,7 +235,7 @@ void hal_rx_proc_phyrx_other_receive_info_tlv_6490(void *rx_tlv_hdr,
  */
 static void hal_rx_dump_msdu_start_tlv_6490(void *msdustart, uint8_t dbg_level)
 {
-	struct rx_msdu_start *msdu_start = (struct rx_msdu_start *)msdustart;
+	__maybe_unused struct rx_msdu_start *msdu_start = (struct rx_msdu_start *)msdustart;
 
 	__QDF_TRACE_RL(dbg_level, QDF_MODULE_ID_DP,
 		       "rx_msdu_start tlv (1/2) - "
@@ -313,7 +313,7 @@ static void hal_rx_dump_msdu_start_tlv_6490(void *msdustart, uint8_t dbg_level)
 static void hal_rx_dump_msdu_end_tlv_6490(void *msduend,
 					  uint8_t dbg_level)
 {
-	struct rx_msdu_end *msdu_end = (struct rx_msdu_end *)msduend;
+	__maybe_unused struct rx_msdu_end *msdu_end = (struct rx_msdu_end *)msduend;
 
 	__QDF_TRACE_RL(dbg_level, QDF_MODULE_ID_DP,
 		       "rx_msdu_end tlv (1/3) - "
