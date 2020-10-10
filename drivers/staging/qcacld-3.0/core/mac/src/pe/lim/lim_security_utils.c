@@ -510,7 +510,7 @@ lim_encrypt_auth_frame(struct mac_context *mac, uint8_t keyId, uint8_t *pKey,
 		       uint8_t *pPlainText, uint8_t *pEncrBody,
 		       uint32_t keyLength)
 {
-	uint8_t seed[LIM_SEED_LENGTH], icv[SIR_MAC_WEP_ICV_LENGTH];
+	uint8_t seed[LIM_SEED_LENGTH] = { 0, }, icv[SIR_MAC_WEP_ICV_LENGTH];
 	uint16_t frame_len;
 
 	frame_len = ((tpSirMacAuthFrameBody)pPlainText)->length +
