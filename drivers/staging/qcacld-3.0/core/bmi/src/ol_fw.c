@@ -616,7 +616,9 @@ int ol_copy_ramdump(struct hif_opaque_softc *scn)
 
 static void __ramdump_work_handler(void *data)
 {
+#ifdef WLAN_DEBUG
 	int ret;
+#endif
 	uint32_t host_interest_address;
 	uint32_t dram_dump_values[4];
 	uint32_t target_type;
