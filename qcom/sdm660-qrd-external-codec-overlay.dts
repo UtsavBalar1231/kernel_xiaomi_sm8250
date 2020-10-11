@@ -52,6 +52,11 @@
 	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
 };
 
+&pm660l_wled {
+	qcom,string-cfg = <3>;
+	status = "ok";
+};
+
 &soc {
 	hbtp {
 		compatible = "qcom,hbtp-input";
