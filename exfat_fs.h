@@ -11,7 +11,7 @@
 #include <linux/ratelimit.h>
 #include <linux/nls.h>
 
-#define EXFAT_VERSION		"5.8.7"
+#define EXFAT_VERSION		"5.10.1"
 
 #define EXFAT_SUPER_MAGIC       0x2011BAB0UL
 #define EXFAT_ROOT_INO		1
@@ -131,7 +131,7 @@ enum {
 
 struct exfat_dentry_namebuf {
 	char *lfn;
-	int lfnbuf_len; /* usally MAX_UNINAME_BUF_SIZE */
+	int lfnbuf_len; /* usually MAX_UNINAME_BUF_SIZE */
 };
 
 /* unicode name structure */
@@ -233,7 +233,8 @@ struct exfat_sb_info {
 	unsigned int num_FAT_sectors; /* num of FAT sectors */
 	unsigned int root_dir; /* root dir cluster */
 	unsigned int dentries_per_clu; /* num of dentries per cluster */
-	unsigned int vol_flag; /* volume dirty flag */
+	unsigned int vol_flags; /* volume flags */
+	unsigned int vol_flags_persistent; /* volume flags to retain */
 	struct buffer_head *boot_bh; /* buffer_head of BOOT sector */
 
 	unsigned int map_clu; /* allocation bitmap start cluster */
@@ -256,6 +257,8 @@ struct exfat_sb_info {
 	struct rcu_head rcu;
 };
 
+#define EXFAT_CACHE_VALID	0
+
 /*
  * EXFAT file system inode in-memory data
  */
@@ -271,8 +274,6 @@ struct exfat_inode_info {
 	 * the validation of hint_stat.
 	 */
 	unsigned int version;
-	/* file offset or dentry index for readdir */
-	loff_t rwoffset;
 
 	/* hint for cluster last accessed */
 	struct exfat_hint hint_bmap;
@@ -393,7 +394,8 @@ static inline int exfat_sector_to_cluster(struct exfat_sb_info *sbi,
 }
 
 /* super.c */
-int exfat_set_vol_flags(struct super_block *sb, unsigned short new_flag);
+int exfat_set_volume_dirty(struct super_block *sb);
+int exfat_clear_volume_dirty(struct super_block *sb);
 
 /* fatent.c */
 #define exfat_get_next_cluster(sb, pclu) exfat_ent_get(sb, *(pclu), pclu)
@@ -445,7 +447,6 @@ extern const struct dentry_operations exfat_utf8_dentry_ops;
 /* cache.c */
 int exfat_cache_init(void);
 void exfat_cache_shutdown(void);
-void exfat_cache_init_inode(struct inode *inode);
 void exfat_cache_inval_inode(struct inode *inode);
 int exfat_get_cluster(struct inode *inode, unsigned int cluster,
 		unsigned int *fclus, unsigned int *dclus,
