@@ -223,6 +223,7 @@ static inline bool is_valid_operating_rate(struct msm_vidc_inst *inst, s32 val)
 	return true;
 }
 
+bool vidc_scalar_enabled(struct msm_vidc_inst *inst);
 bool is_single_session(struct msm_vidc_inst *inst, u32 ignore_flags);
 int msm_comm_get_num_perf_sessions(struct msm_vidc_inst *inst);
 bool is_batching_allowed(struct msm_vidc_inst *inst);
