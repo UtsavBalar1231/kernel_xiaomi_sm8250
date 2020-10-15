@@ -935,7 +935,7 @@ u32 msm_vidc_calculate_dec_input_frame_size(struct msm_vidc_inst *inst)
 	/* For targets that doesn't support 4k, consider max mb's for that
 	 * target and allocate max input buffer size for the same
 	 */
-	if (base_res_mbs > inst->capability.cap[CAP_MBS_PER_FRAME].max) {
+	if (inst->core->platform_data->vpu_ver == VPU_VERSION_AR50_LITE) {
 		base_res_mbs = inst->capability.cap[CAP_MBS_PER_FRAME].max;
 		div_factor = 1;
 		if (num_mbs < NUM_MBS_720P)
