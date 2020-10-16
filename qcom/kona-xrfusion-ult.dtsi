@@ -238,7 +238,7 @@
 };
 
 &kona_snd {
-	qcom,model = "kona-xrfusion-ult-snd-card";
+	qcom,model = "kona-xrfusionult-snd-card";
 	qcom,mi2s-audio-intf = <0>;
 	qcom,audio-routing =
 		"AMIC1", "MIC BIAS1",
@@ -249,24 +249,24 @@
 		"MIC BIAS3", "Analog Mic3",
 		"AMIC4", "MIC BIAS4",
 		"MIC BIAS4", "Analog Mic4",
-		"AMIC5", "MIC BIAS5",
-		"MIC BIAS5", "Analog Mic5",
+		"AMIC5", "MIC BIAS4",
+		"MIC BIAS4", "Analog Mic5",
 		"DMIC1", "MIC BIAS1",
-		"MIC BIAS1", "Digital Mic1",
+		"MIC BIAS1", "Digital Mic0",
 		"DMIC2", "MIC BIAS1",
-		"MIC BIAS1", "Digital Mic2",
+		"MIC BIAS1", "Digital Mic1",
 		"DMIC3", "MIC BIAS1",
-		"MIC BIAS1", "Digital Mic3",
+		"MIC BIAS1", "Digital Mic2",
 		"DMIC4", "MIC BIAS1",
-		"MIC BIAS1", "Digital Mic4",
+		"MIC BIAS1", "Digital Mic3",
 		"DMIC5", "MIC BIAS3",
-		"MIC BIAS3", "Digital Mic5",
+		"MIC BIAS3", "Digital Mic4",
 		"DMIC6", "MIC BIAS3",
-		"MIC BIAS3", "Digital Mic6",
+		"MIC BIAS3", "Digital Mic5",
 		"DMIC7", "MIC BIAS4",
-		"MIC BIAS4", "Digital Mic7",
+		"MIC BIAS4", "Digital Mic6",
 		"DMIC8", "MIC BIAS4",
-		"MIC BIAS4", "Digital Mic8",
+		"MIC BIAS4", "Digital Mic7",
 		"IN1_HPHL", "HPHL_OUT",
 		"IN2_HPHR", "HPHR_OUT",
 		"IN3_AUX", "AUX_OUT",
