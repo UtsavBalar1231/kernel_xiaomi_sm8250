@@ -2415,6 +2415,8 @@ extern unsigned long do_mmap(struct file *file, unsigned long addr,
 extern int do_munmap(struct mm_struct *, unsigned long, size_t,
 		     struct list_head *uf);
 
+extern int do_madvise(struct mm_struct *mm, unsigned long start, size_t len_in, int behavior);
+
 #ifdef CONFIG_MMU
 extern int __mm_populate(unsigned long addr, unsigned long len,
 			 int ignore_errors);
