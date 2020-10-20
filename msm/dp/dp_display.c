@@ -2315,7 +2315,6 @@ static enum drm_mode_status dp_display_validate_mode(
 		const struct msm_resource_caps_info *avail_res)
 {
 	struct dp_display_private *dp;
-	struct drm_dp_link *link_info;
 	u32 mode_rate_khz = 0, supported_rate_khz = 0, mode_bpp = 0;
 	struct dp_panel *dp_panel;
 	struct dp_debug *debug;
@@ -2344,8 +2343,6 @@ static enum drm_mode_status dp_display_validate_mode(
 		goto end;
 	}
 
-	link_info = &dp->panel->link_info;
-
 	debug = dp->debug;
 	if (!debug)
 		goto end;
@@ -2358,7 +2355,7 @@ static enum drm_mode_status dp_display_validate_mode(
 
 	mode_rate_khz = mode->clock * mode_bpp;
 	rate = drm_dp_bw_code_to_link_rate(dp->link->link_params.bw_code);
-	supported_rate_khz = link_info->num_lanes * rate * 8;
+	supported_rate_khz = dp->link->link_params.lane_count * rate * 8;
 	tmds_max_clock = dp_panel->connector->display_info.max_tmds_clock;
 
 	if (mode_rate_khz > supported_rate_khz) {
