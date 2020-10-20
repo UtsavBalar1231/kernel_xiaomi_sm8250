@@ -586,6 +586,21 @@ int cam_cpas_get_cpas_hw_version(
 	uint32_t				 *hw_version);
 
 /**
+ * cam_cpas_get_camnoc_fifo_fill_level_info()
+ *
+ * @brief: API to get camera camnoc hw version
+ *
+ * @cpas_version: hw version
+ * @client_handle: cpas client handle
+ *
+ * @return 0 on success.
+ *
+ */
+int cam_cpas_get_camnoc_fifo_fill_level_info(
+	uint32_t                               cpas_version,
+	uint32_t                               client_handle);
+
+/**
  * cam_cpas_is_feature_supported()
  *
  * @brief: API to get camera features
@@ -634,5 +649,20 @@ const char *cam_cpas_axi_util_trans_type_to_string(
  *
  */
 void cam_cpas_log_votes(void);
+
+/**
+ * cam_cpas_hw_get_camnoc_fill_level_info()
+ *
+ * @brief: API to get camnoc info
+ *
+ * @cpas_version: cpas hw version
+ * @client_handle: cpas client handle
+ *
+ * @return 0 on success.
+ *
+ */
+int cam_cpas_hw_get_camnoc_fill_level_info(
+	uint32_t cpas_version,
+	uint32_t client_handle);
 
 #endif /* _CAM_CPAS_API_H_ */
