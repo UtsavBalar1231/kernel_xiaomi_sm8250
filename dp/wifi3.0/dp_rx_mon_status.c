@@ -2016,6 +2016,7 @@ dp_rx_pdev_mon_status_attach(struct dp_pdev *pdev, int ring_id) {
 	dp_info("Mon RX Status Pool[%d] entries=%d",
 		ring_id, num_entries);
 
+	rx_desc_pool->desc_type = DP_RX_DESC_STATUS_TYPE;
 	status = dp_rx_desc_pool_alloc(soc, ring_id, num_entries + 1,
 				       rx_desc_pool);
 	if (!QDF_IS_STATUS_SUCCESS(status))

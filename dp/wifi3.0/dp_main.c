@@ -1441,7 +1441,7 @@ qdf:
 end:
 	dp_info("%s desc_type %d element_size %d element_num %d cacheable %d",
 		pages->is_mem_prealloc ? "pre-alloc" : "dynamic-alloc",
-		desc_type, element_size, element_num, cacheable);
+		desc_type, (int)element_size, element_num, cacheable);
 }
 
 void dp_desc_multi_pages_mem_free(struct dp_soc *soc,

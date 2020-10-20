@@ -2857,6 +2857,7 @@ dp_rx_pdev_attach(struct dp_pdev *pdev)
 	rx_desc_pool = &soc->rx_desc_buf[mac_for_pdev];
 	rx_sw_desc_weight = wlan_cfg_get_dp_soc_rx_sw_desc_weight(soc->wlan_cfg_ctx);
 
+	rx_desc_pool->desc_type = DP_RX_DESC_BUF_TYPE;
 	dp_rx_desc_pool_alloc(soc, mac_for_pdev,
 			      rx_sw_desc_weight * rxdma_entries,
 			      rx_desc_pool);

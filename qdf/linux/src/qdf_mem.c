@@ -35,11 +35,7 @@
 #include <linux/seq_file.h>
 #include <linux/string.h>
 
-#if defined(CONFIG_CNSS)
-#include <net/cnss.h>
-#endif
-
-#ifdef CONFIG_WCNSS_MEM_PRE_ALLOC
+#if IS_ENABLED(CONFIG_WCNSS_MEM_PRE_ALLOC)
 #include <net/cnss_prealloc.h>
 #endif
 
@@ -1035,7 +1031,7 @@ void __qdf_mempool_free(qdf_device_t osdev, __qdf_mempool_t pool, void *buf)
 }
 qdf_export_symbol(__qdf_mempool_free);
 
-#ifdef CONFIG_WCNSS_MEM_PRE_ALLOC
+#if IS_ENABLED(CONFIG_WCNSS_MEM_PRE_ALLOC)
 /**
  * qdf_mem_prealloc_get() - conditionally pre-allocate memory
  * @size: the number of bytes to allocate
@@ -1649,6 +1645,31 @@ void qdf_mem_multi_pages_free(qdf_device_t osdev,
 }
 qdf_export_symbol(qdf_mem_multi_pages_free);
 #endif
+
+void qdf_mem_multi_pages_zero(struct qdf_mem_multi_page_t *pages,
+			      bool cacheable)
+{
+	unsigned int page_idx;
+	struct qdf_mem_dma_page_t *dma_pages;
+
+	if (!pages->page_size)
+		pages->page_size = qdf_page_size;
+
+	if (cacheable) {
+		for (page_idx = 0; page_idx < pages->num_pages; page_idx++)
+			qdf_mem_zero(pages->cacheable_pages[page_idx],
+				     pages->page_size);
+	} else {
+		dma_pages = pages->dma_pages;
+		for (page_idx = 0; page_idx < pages->num_pages; page_idx++) {
+			qdf_mem_zero(dma_pages->page_v_addr_start,
+				     pages->page_size);
+			dma_pages++;
+		}
+	}
+}
+
+qdf_export_symbol(qdf_mem_multi_pages_zero);
 
 void __qdf_mem_free(void *ptr)
 {
