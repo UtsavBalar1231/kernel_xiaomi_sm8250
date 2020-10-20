@@ -436,6 +436,8 @@ typedef enum {
     WMI_PDEV_SET_NON_SRG_OBSS_BSSID_ENABLE_BITMAP_CMDID,
     /** TPC stats display command */
     WMI_PDEV_GET_TPC_STATS_CMDID,
+    /** ENABLE/DISABLE Duration based tx mode selection */
+    WMI_PDEV_ENABLE_DURATION_BASED_TX_MODE_SELECTION_CMDID,
 
     /* VDEV (virtual device) specific commands */
     /** vdev create */
@@ -660,6 +662,8 @@ typedef enum {
     WMI_VDEV_BCN_OFFLOAD_QUIET_CONFIG_CMDID,
     /** set FILS Discovery frame template for FW to generate FD frames */
     WMI_FD_TMPL_CMDID,
+    /** Transmit QoS null Frame over wmi interface */
+    WMI_QOS_NULL_FRAME_TX_SEND_CMDID,
 
     /** commands to directly control ba negotiation directly from host. only used in test mode */
 
@@ -1357,6 +1361,10 @@ typedef enum {
     /** Spectral scan FW params to host */
     WMI_PDEV_SSCAN_FW_PARAM_EVENTID,
 
+    /** Spectral scan related event start/stop trigger to host  */
+    WMI_SSCAN_EVT_MESSAGE_EVENTID,
+
+
     /* PDEV specific events */
     /** TPC config for the current operating channel */
     WMI_PDEV_TPC_CONFIG_EVENTID = WMI_EVT_GRP_START_ID(WMI_GRP_PDEV),
@@ -1633,6 +1641,10 @@ typedef enum {
     /** software beacon alert event to Host requesting host to Queue a beacon for transmission.
      *   Used only in host beacon mode. */
     WMI_HOST_SWBA_V2_EVENTID,
+
+    /** Event for QoS null frame TX completion  */
+    WMI_QOS_NULL_FRAME_TX_COMPLETION_EVENTID,
+
 
     /* ADDBA Related WMI Events*/
     /** Indication the completion of the prior
@@ -4453,6 +4465,15 @@ typedef enum {
 #define WMI_SCAN_FLAG_EXT_6GHZ_EXTEND_MEASURE_TIME    0x00000400
 
 /**
+ * Currently passive scan has higher priority than beacon and
+ * beacon miss would happen irrespective of dwell time.
+ * Below flag ensures there would not be beacon miss if the dwell
+ * time is lesser than beacon interval - channel switch time combined.
+ * For dwell time greater than beacon interval, bmiss is expected.
+ */
+#define WMI_SCAN_FLAG_EXT_PASSIVE_SCAN_START_TIME_ENHANCE   0x00000800
+
+/**
  * new 6 GHz flags per chan (short ssid or bssid) in struct
  * wmi_hint_freq_short_ssid or wmi_hint_freq_bssid
  */
@@ -5522,6 +5543,22 @@ typedef struct {
 } wmi_offchan_data_tx_send_cmd_fixed_param;
 
 typedef struct {
+    A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_qos_null_frame_tx_send_cmd_fixed_param */
+    A_UINT32 vdev_id;
+    A_UINT32 desc_id;  /* echoed in tx_compl_event */
+    A_UINT32 paddr_lo; /* paddr_lo and padd_hi will hold the address of remote/host buffer, which is physical address of frame */
+    A_UINT32 paddr_hi;
+    A_UINT32 frame_len; /* Actual length of frame in bytes*/
+    A_UINT32 buf_len;  /** Buffer length in bytes, length of data DMA'ed to FW from host */
+
+/* This fixed_param TLV is followed by the TLVs listed below:
+ * 1.  ARRAY_BYTE TLV: First buf_len (expected to be 64) bytes of frame
+ *     A_UINT8 bufp[];
+ * 2.  wmi_tx_send_params tx_send_params;
+ */
+} wmi_qos_null_frame_tx_send_cmd_fixed_param;
+
+typedef struct {
     A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_echo_event_fixed_param */
     A_UINT32 value;
 } wmi_echo_event_fixed_param;
@@ -6011,6 +6048,28 @@ typedef struct {
      */
     A_UINT32 mid_5mhz_bins;
 } wmi_pdev_sscan_fft_bin_index;
+
+typedef enum {
+    /** Enum to indicate bmsk of spectral scan stop evt on scan count max out */
+    WMI_SSCAN_EVT_BMSK_SCAN_STOP_SCOUNT = 0X00000001,
+
+
+    /** Add more event code bmsks above this */
+    WMI_SSCAN_EVT_BMSK_MAX = 0Xffffffff,
+} wmi_sscan_evt_message_code;
+
+/**
+ * The below structure is used to send the start/stop triggers
+ * for events related to spectral scan activity from
+ * FW to host
+ */
+typedef struct {
+    A_UINT32 tlv_header; /** TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_sscan_evt_message_fixed_param */
+    A_UINT32 pdev_id;
+
+    /** Refer Enum wmi_sscan_evt_message_code */
+    A_UINT32 sscan_evt_code;
+} wmi_sscan_evt_message_fixed_param;
 
 #define WMI_BEACON_CTRL_TX_DISABLE  0
 #define WMI_BEACON_CTRL_TX_ENABLE   1
@@ -7449,6 +7508,27 @@ typedef struct {
      */
     A_UINT32    ppdu_id;
 } wmi_offchan_data_tx_compl_event_fixed_param;
+
+typedef struct {
+    A_UINT32    tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_qos_null_frame_tx_compl_event_fixed_param */
+    A_UINT32    desc_id; /* echoed from tx_send_cmd */
+    A_UINT32    status;  /* same status as WMI_MGMT_TX_COMP_STATUS_TYPE */
+    /** pdev_id for identifying the MAC that transmitted the QoS NULL frame
+     * See macros starting with WMI_PDEV_ID_ for values.
+     */
+    A_UINT32    pdev_id;
+    /* ppdu_id
+     * Hardware PPDU ID for tracking the completion stats
+     * A ppdu_id value of 0x0 is invalid, and should be ignored.
+     */
+    A_UINT32    ppdu_id;
+    /* ack_rssi
+     * TX mgmt ack RSSI report to host.
+     * Only valid when status == COMPLETE_OK and the ACK_RSSI report is enabled
+     * ack_rssi is reported in dBm.
+     */
+    A_INT32    ack_rssi;
+} wmi_qos_null_frame_tx_compl_event_fixed_param;
 
 typedef struct {
     A_UINT32    tlv_header;
@@ -11526,6 +11606,13 @@ typedef enum {
      * param value bitmap set to 1 for enable and 0 for disable respectively
      */
     WMI_VDEV_PARAM_ENABLE_DISABLE_NAN_CONFIG_FEATURES,  /* 0xA3 */
+
+    /* vdev param to enable the SAP HW offload
+     *  Bit : 0     - enable/disable SHO
+     *  Bit : 1     - enable for Sta connected state as well.
+     *  Bit : 2-31  - reserved
+     */
+    WMI_VDEV_PARAM_SHO_CONFIG,          /* 0xA4  */
 
 
     /*=== ADD NEW VDEV PARAM TYPES ABOVE THIS LINE ===
@@ -15748,6 +15835,16 @@ enum {
     WMI_WOW_FLAG_DO_HTC_WAKEUP              = 0x00000008,
     /* Enable L1SS sleep for PCIE DRV case */
     WMI_WOW_FLAG_ENABLE_DRV_PCIE_L1SS_SLEEP = 0x00000010,
+    /*
+     * To differentiate system suspend Vs RTPM BIT set -
+     * Sytem Suspend WOW, BIT Reset- RTPM (DRV)
+     */
+    WMI_WOW_FLAG_SYSTEM_SUSPEND_WOW         = 0x00000020,
+    /*
+     * Feature flag for INI enable_mod_dtim_on_system_suspend
+     * This flag/bit will be set if INI settings enable mod_dtim_on_sys_suspend.
+     */
+    WMI_WOW_FLAG_MOD_DTIM_ON_SYS_SUSPEND    = 0x00000040,
 };
 
 typedef struct {
@@ -16669,6 +16766,12 @@ typedef struct wmi_nlo_config {
     A_UINT32 num_vendor_oui;
     /** Number of connected NLO band preferences **/
     A_UINT32 num_cnlo_band_pref;
+    /** dwell time in msec on active 2GHz channels */
+    A_UINT32 active_dwell_time_2ghz;
+    /** dwell time in msec when 6 GHz channel (PSC or non-PSC) is marked as an active channel */
+    A_UINT32 active_dwell_time_6ghz;
+    /** dwell time in msec when 6 GHz channel (PSC or non-PSC) is marked as a passive channel */
+    A_UINT32 passive_dwell_time_6ghz;
 /* The TLVs will follow.
  * nlo_configured_parameters nlo_list[];
  * A_UINT32 channel_list[num_of_channels]; // in MHz
@@ -16939,6 +17042,7 @@ typedef enum {
     WMI_STA_KEEPALIVE_METHOD_UNSOLICITED_ARP_RESPONSE = 2, /* ARP response */
     WMI_STA_KEEPALIVE_METHOD_ETHERNET_LOOPBACK = 3, /*ETHERNET LOOPBACK*/
     WMI_STA_KEEPALIVE_METHOD_GRATUITOUS_ARP_REQUEST = 4, /* gratuitous ARP req*/
+    WMI_STA_KEEPALIVE_METHOD_MGMT_VENDOR_ACTION = 5, /* vendor action frame */
 } WMI_STA_KEEPALIVE_METHOD;
 
 typedef struct {
@@ -17083,6 +17187,9 @@ typedef enum
 
     /* Disable burst and assist, and restrict A-MPDU size to 32 */
     WMI_VENDOR_OUI_ACTION_DISABLE_AGGRESSIVE_TX = 6,
+
+    /* Disable FW triggered TWT if vendor OUI is received in beacon */
+    WMI_VENDOR_OUI_ACTION_DISABLE_FW_TRIGGERED_TWT = 7,
 
     /* Add any action before this line */
     WMI_VENDOR_OUI_ACTION_MAX_ACTION_ID
@@ -26365,19 +26472,28 @@ typedef struct {
      */
 } wmi_therm_throt_config_request_fixed_param;
 
+typedef enum {
+    /* no throttling */
+    WMI_THERMAL_FULLPERF        = 0,
+    /* throttling tx to do thermal mitigation */
+    WMI_THERMAL_MITIGATION      = 1,
+    /* shut down the tx completely */
+    WMI_THERMAL_SHUTOFF         = 2,
+} WMI_THERMAL_THROT_LEVEL;
+
 /** FW response with the stats event id for every pdev and zones */
 typedef struct {
     /*  TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_therm_throt_stats_event_fixed_param */
     A_UINT32 tlv_header;
     A_UINT32 pdev_id;            /* stats for corresponding pdev*/
     A_UINT32 temp;               /* Temperature reading in celsius */
-    A_UINT32 level;              /* current thermal throttling level */
+    A_UINT32 level;              /* Current thermal throttling level -
+                                  * contains a WMI_THERMAL_THROT_LEVEL value. */
     A_UINT32 therm_throt_levels; /* number of levels in therm_throt_level_stats_info */
     /* This TLV is followed by another TLV of array of structs
      * wmi_therm_throt_level_stats_info therm_throt_level_stats_info[therm_throt_levels];
      */
 } wmi_therm_throt_stats_event_fixed_param;
-
 
 
 typedef struct {
@@ -27107,6 +27223,8 @@ static INLINE A_UINT8 *wmi_id_to_name(A_UINT32 wmi_command)
         WMI_RETURN_STRING(WMI_AUDIO_AGGR_SET_SCHED_METHOD_CMDID);
         WMI_RETURN_STRING(WMI_AUDIO_AGGR_GET_SCHED_METHOD_CMDID);
         WMI_RETURN_STRING(WMI_REQUEST_UNIFIED_LL_GET_STA_CMDID);
+        WMI_RETURN_STRING(WMI_QOS_NULL_FRAME_TX_SEND_CMDID);
+        WMI_RETURN_STRING(WMI_PDEV_ENABLE_DURATION_BASED_TX_MODE_SELECTION_CMDID);
     }
 
     return "Invalid WMI cmd";
@@ -27994,6 +28112,7 @@ typedef enum _WMI_PAUSE_TWT_STATUS_T {
     WMI_PAUSE_TWT_STATUS_NO_RESOURCE,         /* FW resource exhausted */
     WMI_PAUSE_TWT_STATUS_NO_ACK,              /* peer AP/STA did not ACK the request/response frame */
     WMI_PAUSE_TWT_STATUS_UNKNOWN_ERROR,       /* pausing TWT dialog failed with an unknown reason */
+    WMI_PAUSE_TWT_STATUS_ALREADY_PAUSED,      /* The TWT dialog is already paused */
 } WMI_PAUSE_TWT_STATUS_T;
 
 typedef struct {
@@ -30504,6 +30623,21 @@ typedef struct {
      * A band value of 0x80 (-128) is invalid.
      */
     A_UINT32 chain_rssi[WMI_MAX_CHAINS];
+    /* Carrier frequency offset
+       It is Difference between down conversion oscillator frequency at the receiver
+       versus carrier frequency of the received signal. To convert to ppm, below
+       equation needs to be used. Here, Fc is carrier frequency (primary 20 channel frequency) in Hz:
+
+       PPM = cfo_measurement(13 bits)/((2^13)/(800e-9)/2/Fc*1e6)
+       PPM ranges from -40 to +40
+
+       Bits 0  : 0   Set to 1 to indicate cfo mesurement value is valid
+       Bits 1  : 14  14 bits cfo measurement raw data. 14 bit is signed bit.
+                     For the above ppm equation , use the first 13 bits to calculate.
+     */
+    A_UINT32 cfo_measurement_valid :1,
+             cfo_measurement :14,
+             reserved :17;
 } wmi_peer_cfr_capture_event_fixed_param;
 
 #define WMI_UNIFIED_CHAIN_PHASE_MASK 0x0000ffff
@@ -31730,6 +31864,20 @@ typedef struct {
      */
     A_UINT32 non_srg_obss_en_bssid_bitmap[2];
 } wmi_pdev_non_srg_obss_bssid_enable_bitmap_cmd_fixed_param;
+
+typedef struct {
+    /** TLV tag and len; tag equals
+     * WMITLV_TAG_STRUC_wmi_pdev_enable_duration_based_tx_mode_selection_cmd_fixed_param
+     */
+    A_UINT32 tlv_header;
+    /** pdev_id for identifying the MAC
+     * See macros starting with WMI_PDEV_ID_ for values.
+     * In non-DBDC case host should set it to 0
+     */
+    A_UINT32 pdev_id;
+    /* enable/disable Duration based Tx Mode selection */
+    A_UINT32 duration_based_tx_mode_selection;
+} wmi_pdev_enable_duration_based_tx_mode_selection_cmd_fixed_param;
 
 typedef enum {
     /* Simulation test command types */
