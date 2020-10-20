@@ -234,7 +234,6 @@
 		qcom,wsa-aux-dev-prefix = "SpkrLeft", "SpkrRight",
 					"SpkrLeft", "SpkrRight";
 	};
-
 };
 
 &slim_aud {
@@ -245,6 +244,7 @@
 	};
 
 	wcd9335: tasha_codec {
+		status = "disabled";
 		compatible = "qcom,tasha-slim-pgd";
 		elemental-addr = [00 01 a0 01 17 02];
 
@@ -256,8 +256,8 @@
 		qcom,wcd-rst-gpio-node = <&wcd_rst_gpio>;
 
 		clock-names = "wcd_clk", "wcd_native_clk";
-		clocks = <&clock_audio AUDIO_PMI_CLK>,
-			<&clock_audio AUDIO_LPASS_MCLK_2>;
+		clocks = <&clock_audio 0>,
+			<&clock_audio_native 0>;
 
 		cdc-vdd-mic-bias-supply = <&pm660l_bob>;
 		qcom,cdc-vdd-mic-bias-voltage = <3300000 3300000>;
@@ -487,17 +487,5 @@
 				qcom,spkr-sd-n-node = <&wsa_spkr_en2>;
 			};
 		};
-	};
-};
-
-&pm660_gpios {
-	gpio@c200 {
-		status = "ok";
-		qcom,mode = <1>;
-		qcom,pull = <4>;
-		qcom,vin-sel = <0>;
-		qcom,src-sel = <2>;
-		qcom,master-en = <1>;
-		qcom,out-strength = <2>;
 	};
 };

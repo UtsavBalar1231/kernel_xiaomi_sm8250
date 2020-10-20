@@ -7,7 +7,6 @@
 #include <dt-bindings/regulator/qcom,rpm-smd-regulator.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 
-#include "sdm660-wcd.dtsi"
 #include "sdm660-qrd.dtsi"
 
 / {
@@ -51,6 +50,11 @@
 	qcom,mdss-dsi-bl-min-level = <1>;
 	qcom,mdss-dsi-bl-max-level = <4095>;
 	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
+};
+
+&pm660l_wled {
+	qcom,string-cfg = <3>;
+	status = "ok";
 };
 
 &soc {
