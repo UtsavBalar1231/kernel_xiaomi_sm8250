@@ -56,6 +56,11 @@ struct hif_tasklet_entry {
 	void *hif_handler; /* struct hif_pci_softc */
 };
 
+struct hang_event_bus_info {
+	uint16_t tlv_header;
+	uint16_t dev_id;
+} qdf_packed;
+
 /**
  * enum hif_pm_runtime_state - Driver States for Runtime Power Management
  * HIF_PM_RUNTIME_STATE_NONE: runtime pm is off
