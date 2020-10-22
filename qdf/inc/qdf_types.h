@@ -1311,6 +1311,7 @@ enum qdf_suspend_type {
  * @QDF_VDEV_STOP_RESPONSE_TIMED_OUT: Stop response timeout from FW
  * @QDF_VDEV_DELETE_RESPONSE_TIMED_OUT: Delete response timeout from FW
  * @QDF_VDEV_PEER_DELETE_ALL_RESPONSE_TIMED_OUT: Peer delete all resp timeout
+ * @QDF_WMI_BUF_SEQUENCE_MISMATCH: WMI Tx completion buffer sequence mismatch
  * @QDF_HAL_REG_WRITE_FAILURE: HAL register writing failures
  * @QDF_SUSPEND_NO_CREDIT: host lack of credit after suspend
  */
@@ -1335,6 +1336,7 @@ enum qdf_hang_reason {
 	QDF_VDEV_STOP_RESPONSE_TIMED_OUT,
 	QDF_VDEV_DELETE_RESPONSE_TIMED_OUT,
 	QDF_VDEV_PEER_DELETE_ALL_RESPONSE_TIMED_OUT,
+	QDF_WMI_BUF_SEQUENCE_MISMATCH,
 	QDF_HAL_REG_WRITE_FAILURE,
 	QDF_SUSPEND_NO_CREDIT,
 };
