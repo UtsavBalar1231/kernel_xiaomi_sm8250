@@ -51,6 +51,7 @@ enum {
 	SWR_MSTR_UP,
 	SWR_MSTR_DOWN,
 	SWR_MSTR_SSR,
+	SWR_MSTR_SSR_RESET,
 };
 
 enum swrm_pm_state {
