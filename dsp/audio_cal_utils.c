@@ -10,7 +10,7 @@
 #include <linux/mutex.h>
 #include <dsp/audio_cal_utils.h>
 
-spinlock_t cal_lock;
+struct mutex cal_lock;
 
 static int unmap_memory(struct cal_type_data *cal_type,
 			struct cal_block_data *cal_block);
@@ -901,7 +901,6 @@ int cal_utils_dealloc_cal(size_t data_size, void *data,
 	int ret = 0;
 	struct cal_block_data *cal_block;
 	struct audio_cal_type_dealloc *dealloc_data = data;
-	unsigned long flags = 0;
 
 	pr_debug("%s\n", __func__);
 
@@ -949,9 +948,9 @@ int cal_utils_dealloc_cal(size_t data_size, void *data,
 	if (ret < 0)
 		goto err;
 
-	spin_lock_irqsave(&cal_lock, flags);
+	mutex_lock(&cal_lock);
 	delete_cal_block(cal_block);
-	spin_unlock_irqrestore(&cal_lock, flags);
+	mutex_unlock(&cal_lock);
 err:
 	mutex_unlock(&cal_type->lock);
 done:
@@ -1068,7 +1067,7 @@ EXPORT_SYMBOL(cal_utils_mark_cal_used);
 
 int __init cal_utils_init(void)
 {
-	spin_lock_init(&cal_lock);
+	mutex_init(&cal_lock);
 	return 0;
 }
 /**
@@ -1076,22 +1075,13 @@ int __init cal_utils_init(void)
  *
  * @cal_block: pointer to cal block
  *
- * @cal_type: pointer to the cal type
- *
  * Returns true if cal block is stale, false otherwise
  */
-bool cal_utils_is_cal_stale(struct cal_block_data *cal_block, struct cal_type_data *cal_type)
+bool cal_utils_is_cal_stale(struct cal_block_data *cal_block)
 {
 	bool ret = false;
-	unsigned long flags = 0;
 
-	if (!cal_type) {
-		pr_err("%s: cal_type is Null", __func__);
-		goto done;
-	}
-
-	spin_lock_irqsave(&cal_lock, flags);
-	cal_block = cal_utils_get_only_cal_block(cal_type);
+	mutex_lock(&cal_lock);
 	if (!cal_block) {
 		pr_err("%s: cal_block is Null", __func__);
 		goto unlock;
@@ -1101,8 +1091,7 @@ bool cal_utils_is_cal_stale(struct cal_block_data *cal_block, struct cal_type_da
 	    ret = true;
 
 unlock:
-	spin_unlock_irqrestore(&cal_lock, flags);
-done:
+	mutex_unlock(&cal_lock);
 	return ret;
 }
 EXPORT_SYMBOL(cal_utils_is_cal_stale);
