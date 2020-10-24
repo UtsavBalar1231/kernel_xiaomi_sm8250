@@ -938,6 +938,8 @@ u32 msm_vidc_calculate_dec_input_frame_size(struct msm_vidc_inst *inst)
 	if (base_res_mbs > inst->capability.cap[CAP_MBS_PER_FRAME].max) {
 		base_res_mbs = inst->capability.cap[CAP_MBS_PER_FRAME].max;
 		div_factor = 1;
+		if (num_mbs < NUM_MBS_720P)
+			base_res_mbs = base_res_mbs * 2;
 	}
 
 	frame_size = base_res_mbs * MB_SIZE_IN_PIXEL * 3 / 2 / div_factor;
@@ -1423,7 +1425,9 @@ static inline u32 calculate_enc_scratch_size(struct msm_vidc_inst *inst,
 		bitstream_size = aligned_width * aligned_height * 3;
 		bitbin_size = ALIGN(bitstream_size, VENUS_DMA_ALIGNMENT);
 	}
-	if (num_vpp_pipes > 2)
+	if (aligned_width * aligned_height >= 7680 * 4320)
+		size_singlePipe = bitbin_size / 4;
+	else if (num_vpp_pipes > 2)
 		size_singlePipe = bitbin_size / 2;
 	else
 		size_singlePipe = bitbin_size;
@@ -1831,7 +1835,7 @@ static inline u32 calculate_enc_scratch2_size(struct msm_vidc_inst *inst,
 			metadata_stride, meta_buf_height);
 		size = (aligned_height + chroma_height) * aligned_width +
 			meta_size_y + meta_size_c;
-		size = (size * (num_ref+3)) + 4096;
+		size = (size * (num_ref + 2)) + 4096;
 	} else {
 		ref_buf_height = (height + (HFI_VENUS_HEIGHT_ALIGNMENT - 1))
 			& (~(HFI_VENUS_HEIGHT_ALIGNMENT - 1));
