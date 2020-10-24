@@ -96,6 +96,31 @@ static int hdd_get_bandwidth_level(void *data)
 	return ret;
 }
 
+#ifdef DP_MEM_PRE_ALLOC
+
+/**
+ * hdd_get_consistent_mem_unaligned() - API to get consistent unaligned mem
+ * @size: Size of memory required
+ * @paddr: Pointer to paddr to be filled in by API
+ * @ring_type: Pointer to ring type for which consistent memory is needed
+ *
+ * Return: Virtual address of consistent memory on success, else null
+ */
+static inline
+void *hdd_get_consistent_mem_unaligned(size_t size,
+				       qdf_dma_addr_t *paddr,
+				       uint32_t ring_type)
+{
+	return hdd_get_prealloc_dma_mem_unaligned(size, paddr, ring_type);
+}
+
+static inline
+void hdd_put_consistent_mem_unaligned(void *vaddr)
+{
+	hdd_put_prealloc_dma_mem_unaligned(vaddr);
+}
+#endif
+
 /**
  * hdd_set_recovery_in_progress() - API to set recovery in progress
  * @data: Context
@@ -173,6 +198,12 @@ static void hdd_hif_init_driver_state_callbacks(void *data,
 	cbk->is_driver_unloading = hdd_is_driver_unloading;
 	cbk->is_target_ready = hdd_is_target_ready;
 	cbk->get_bandwidth_level = hdd_get_bandwidth_level;
+#ifdef DP_MEM_PRE_ALLOC
+	cbk->prealloc_get_consistent_mem_unaligned =
+		hdd_get_consistent_mem_unaligned;
+	cbk->prealloc_put_consistent_mem_unaligned =
+		hdd_put_consistent_mem_unaligned;
+#endif
 }
 
 #ifdef FORCE_WAKE
@@ -655,6 +686,7 @@ static int hdd_soc_recovery_reinit(struct device *dev,
 static void __hdd_soc_remove(struct device *dev)
 {
 	struct hdd_context *hdd_ctx = cds_get_context(QDF_MODULE_ID_HDD);
+	void *hif_ctx;
 
 	QDF_BUG(hdd_ctx);
 	if (!hdd_ctx)
@@ -662,6 +694,15 @@ static void __hdd_soc_remove(struct device *dev)
 
 	pr_info("%s: Removing driver v%s\n", WLAN_MODULE_NAME,
 		QWLAN_VERSIONSTR);
+
+	hif_ctx = cds_get_context(QDF_MODULE_ID_HIF);
+	if (hif_ctx) {
+		/*
+		 * Trigger runtime sync resume before setting unload in progress
+		 * such that resume can happen successfully
+		 */
+		hif_pm_runtime_sync_resume(hif_ctx);
+	}
 
 	cds_set_driver_loaded(false);
 	cds_set_unload_in_progress(true);
@@ -1498,8 +1539,12 @@ static int wlan_hdd_runtime_resume(struct device *dev)
 	hdd_debug("Starting runtime resume");
 
 	hdd_ctx = cds_get_context(QDF_MODULE_ID_HDD);
-	if (wlan_hdd_validate_context(hdd_ctx))
+
+	if (cds_is_driver_recovering()) {
+		hdd_debug("Recovery in progress, state:0x%x",
+			  cds_get_driver_state());
 		return 0;
+	}
 
 	if (hdd_ctx->driver_status != DRIVER_MODULES_ENABLED) {
 		hdd_debug("Driver module closed skipping runtime resume");

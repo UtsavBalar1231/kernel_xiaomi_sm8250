@@ -476,16 +476,16 @@ wlan_hdd_update_roam_stats(struct hdd_context *hdd_ctx,
 			ret = scnprintf(buf + length,
 					buf_avail_len - length,
 					"\nSTA roamed from "
-					QDF_MAC_ADDR_FMT " to "
-					QDF_MAC_ADDR_FMT "\n",
-					QDF_MAC_ADDR_REF(scan->old_bssid),
-					QDF_MAC_ADDR_REF(scan->new_bssid));
+					QDF_FULL_MAC_FMT " to "
+					QDF_FULL_MAC_FMT "\n",
+					QDF_FULL_MAC_REF(scan->old_bssid),
+					QDF_FULL_MAC_REF(scan->new_bssid));
 		} else {
 			ret = scnprintf(buf + length,
 					buf_avail_len - length,
-					"\nSTA is connected to " QDF_MAC_ADDR_FMT
+					"\nSTA is connected to " QDF_FULL_MAC_FMT
 					" before and after scan, not roamed\n",
-					QDF_MAC_ADDR_REF(scan->old_bssid));
+					QDF_FULL_MAC_REF(scan->old_bssid));
 		}
 		if (ret <= 0)
 			goto free_mem;
@@ -526,8 +526,8 @@ wlan_hdd_update_roam_stats(struct hdd_context *hdd_ctx,
 
 			ret = scnprintf(buf + length,
 					buf_avail_len - length,
-					QDF_MAC_ADDR_FMT " %4u  %3u   %3u\n",
-					QDF_MAC_ADDR_REF(bssid),
+					QDF_FULL_MAC_FMT " %4u  %3u   %3u\n",
+					QDF_FULL_MAC_REF(bssid),
 					scan->cand[rci].freq,
 					scan->cand[rci].score,
 					scan->cand[rci].rssi);

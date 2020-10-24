@@ -1643,7 +1643,14 @@ struct hdd_fw_ver_info {
 	uint32_t crmid;
 };
 
+/**
+ * The logic for get current index of history is dependent on this
+ * value being power of 2.
+ */
 #define WLAN_HDD_ADAPTER_OPS_HISTORY_MAX 4
+QDF_COMPILE_TIME_ASSERT(adapter_ops_history_size,
+			(WLAN_HDD_ADAPTER_OPS_HISTORY_MAX &
+			 (WLAN_HDD_ADAPTER_OPS_HISTORY_MAX - 1)) == 0);
 
 /**
  * enum hdd_adapter_ops_event - events for adapter ops history
@@ -2791,6 +2798,23 @@ hdd_get_current_throughput_level(struct hdd_context *hdd_ctx)
 {
 	return hdd_ctx->cur_vote_level;
 }
+
+#ifdef DP_MEM_PRE_ALLOC
+static inline
+void *hdd_get_prealloc_dma_mem_unaligned(size_t size,
+					 qdf_dma_addr_t *paddr,
+					 uint32_t ring_type)
+{
+	return dp_prealloc_get_consistent_mem_unaligned(size, paddr,
+							ring_type);
+}
+
+static inline
+void hdd_put_prealloc_dma_mem_unaligned(void *vaddr)
+{
+	dp_prealloc_put_consistent_mem_unaligned(vaddr);
+}
+#endif
 
 /**
  * hdd_set_current_throughput_level() - update the current vote

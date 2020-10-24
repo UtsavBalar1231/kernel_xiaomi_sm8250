@@ -2526,8 +2526,8 @@ QDF_STATUS hdd_hostapd_sap_event_cb(struct sap_event *sap_event,
 			return QDF_STATUS_E_NOMEM;
 
 		snprintf(unknownSTAEvent, IW_CUSTOM_MAX,
-			 "JOIN_UNKNOWN_STA-"QDF_MAC_ADDR_FMT,
-			 QDF_MAC_ADDR_REF(sap_event->sapevt.sapUnknownSTAJoin.macaddr.bytes));
+			 "JOIN_UNKNOWN_STA-"QDF_FULL_MAC_FMT,
+			 QDF_FULL_MAC_REF(sap_event->sapevt.sapUnknownSTAJoin.macaddr.bytes));
 		we_event = IWEVCUSTOM;  /* Discovered a new node (AP mode). */
 		wrqu.data.pointer = unknownSTAEvent;
 		wrqu.data.length = strlen(unknownSTAEvent);
@@ -2541,10 +2541,10 @@ QDF_STATUS hdd_hostapd_sap_event_cb(struct sap_event *sap_event,
 			return QDF_STATUS_E_NOMEM;
 
 		snprintf(maxAssocExceededEvent, IW_CUSTOM_MAX,
-			 "Peer "QDF_MAC_ADDR_FMT" denied"
+			 "Peer "QDF_FULL_MAC_FMT" denied"
 			 " assoc due to Maximum Mobile Hotspot connections reached. Please disconnect"
 			 " one or more devices to enable the new device connection",
-			 QDF_MAC_ADDR_REF(sap_event->sapevt.sapMaxAssocExceeded.macaddr.bytes));
+			 QDF_FULL_MAC_REF(sap_event->sapevt.sapMaxAssocExceeded.macaddr.bytes));
 		we_event = IWEVCUSTOM;  /* Discovered a new node (AP mode). */
 		wrqu.data.pointer = maxAssocExceededEvent;
 		wrqu.data.length = strlen(maxAssocExceededEvent);
@@ -2678,6 +2678,10 @@ QDF_STATUS hdd_hostapd_sap_event_cb(struct sap_event *sap_event,
 		policy_mgr_set_chan_switch_complete_evt(hdd_ctx->psoc);
 		wlan_hdd_enable_roaming(adapter,
 					RSO_SAP_CHANNEL_CHANGE);
+		if (CHANNEL_STATE_DFS !=
+		    wlan_reg_get_channel_state_for_freq(hdd_ctx->pdev,
+						ap_ctx->operating_chan_freq))
+			ap_ctx->dfs_cac_block_tx = false;
 
 		/* Check any other sap need restart */
 		if (ap_ctx->sap_context->csa_reason ==
