@@ -282,6 +282,28 @@ enum dp_cpu_ring_map_types {
 };
 
 /**
+ * enum dp_desc_type - source type for multiple pages allocation
+ * @DP_TX_DESC_TYPE: DP SW TX descriptor
+ * @DP_TX_EXT_DESC_TYPE: DP TX msdu extension descriptor
+ * @DP_TX_EXT_DESC_LINK_TYPE: DP link descriptor for msdu ext_desc
+ * @DP_TX_TSO_DESC_TYPE: DP TX TSO descriptor
+ * @DP_TX_TSO_NUM_SEG_TYPE: DP TX number of segments
+ * @DP_RX_DESC_BUF_TYPE: DP RX SW descriptor
+ * @DP_RX_DESC_STATUS_TYPE: DP RX SW descriptor for monitor status
+ * @DP_HW_LINK_DESC_TYPE: DP HW link descriptor
+ */
+enum dp_desc_type {
+	DP_TX_DESC_TYPE,
+	DP_TX_EXT_DESC_TYPE,
+	DP_TX_EXT_DESC_LINK_TYPE,
+	DP_TX_TSO_DESC_TYPE,
+	DP_TX_TSO_NUM_SEG_TYPE,
+	DP_RX_DESC_BUF_TYPE,
+	DP_RX_DESC_STATUS_TYPE,
+	DP_HW_LINK_DESC_TYPE,
+};
+
+/**
  * struct rx_desc_pool
  * @pool_size: number of RX descriptor in the pool
  * @elem_size: Element size
@@ -292,6 +314,7 @@ enum dp_cpu_ring_map_types {
  * @owner: owner for nbuf
  * @buf_size: Buffer size
  * @buf_alignment: Buffer alignment
+ * @desc_type: type of desc this pool serves
  */
 struct rx_desc_pool {
 	uint32_t pool_size;
@@ -306,6 +329,7 @@ struct rx_desc_pool {
 	uint8_t owner;
 	uint16_t buf_size;
 	uint8_t buf_alignment;
+	enum dp_desc_type desc_type;
 };
 
 /**
@@ -494,18 +518,6 @@ struct dp_txrx_pool_stats {
 	uint16_t pool_unmap_count;
 	uint16_t pkt_drop_no_pool;
 };
-
-/* DP multiple pages allocation source */
-enum dp_desc_type {
-	DP_TX_DESC_TYPE,
-	DP_TX_EXT_DESC_TYPE,
-	DP_TX_EXT_DESC_LINK_TYPE,
-	DP_TX_TSO_DESC_TYPE,
-	DP_TX_TSO_NUM_SEG_TYPE,
-	DP_RX_DESC_BUF_TYPE,
-	DP_HW_LINK_DESC_TYPE,
-};
-
 
 struct dp_srng {
 	hal_ring_handle_t hal_srng;
@@ -813,6 +825,8 @@ struct dp_soc_stats {
 			uint32_t scatter_msdu;
 			/* RX msdu drop count due to invalid cookie */
 			uint32_t invalid_cookie;
+			/* Count of stale cookie read in RX path */
+			uint32_t stale_cookie;
 			/* Delba sent count due to RX 2k jump */
 			uint32_t rx_2k_jump_delba_sent;
 			/* RX 2k jump msdu indicated to stack count */
