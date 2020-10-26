@@ -931,6 +931,29 @@ bool sde_encoder_in_clone_mode(struct drm_encoder *drm_enc)
 	return false;
 }
 
+bool sde_encoder_is_cwb_disabling(struct drm_encoder *drm_enc,
+	struct drm_crtc *crtc)
+{
+	struct sde_encoder_virt *sde_enc;
+	int i;
+
+	if (!drm_enc)
+		return false;
+
+	sde_enc = to_sde_encoder_virt(drm_enc);
+	if (sde_enc->disp_info.intf_type != DRM_MODE_CONNECTOR_VIRTUAL)
+		return false;
+
+	for (i = 0; i < sde_enc->num_phys_encs; i++) {
+		struct sde_encoder_phys *phys = sde_enc->phys_encs[i];
+
+		if (sde_encoder_phys_is_cwb_disabling(phys, crtc))
+			return true;
+	}
+
+	return false;
+}
+
 static int _sde_encoder_atomic_check_phys_enc(struct sde_encoder_virt *sde_enc,
 	struct drm_crtc_state *crtc_state,
 	struct drm_connector_state *conn_state)
@@ -2003,8 +2026,13 @@ static int _sde_encoder_update_rsc_client(
 		qsync_mode = sde_connector_get_qsync_mode(
 				sde_enc->cur_master->connector);
 
-	if (sde_encoder_in_clone_mode(drm_enc) ||
-			(disp_info->display_type != SDE_CONNECTOR_PRIMARY) ||
+	/* left primary encoder keep vote */
+	if (sde_encoder_in_clone_mode(drm_enc)) {
+		SDE_EVT32(rsc_state, SDE_EVTLOG_FUNC_CASE1);
+		return 0;
+	}
+
+	if ((disp_info->display_type != SDE_CONNECTOR_PRIMARY) ||
 			(disp_info->display_type && qsync_mode))
 		rsc_state = enable ? SDE_RSC_CLK_STATE : SDE_RSC_IDLE_STATE;
 	else if (sde_encoder_check_curr_mode(drm_enc, MSM_DISPLAY_CMD_MODE))
@@ -3410,6 +3438,33 @@ static void sde_encoder_virt_enable(struct drm_encoder *drm_enc)
 	_sde_encoder_virt_enable_helper(drm_enc);
 }
 
+void sde_encoder_virt_reset(struct drm_encoder *drm_enc)
+{
+	struct sde_encoder_virt *sde_enc = to_sde_encoder_virt(drm_enc);
+	struct sde_kms *sde_kms = sde_encoder_get_kms(drm_enc);
+	int i = 0;
+
+	for (i = 0; i < sde_enc->num_phys_encs; i++) {
+		if (sde_enc->phys_encs[i]) {
+			sde_enc->phys_encs[i]->cont_splash_enabled = false;
+			sde_enc->phys_encs[i]->connector = NULL;
+		}
+		atomic_set(&sde_enc->frame_done_cnt[i], 0);
+	}
+
+	sde_enc->cur_master = NULL;
+	/*
+	 * clear the cached crtc in sde_enc on use case finish, after all the
+	 * outstanding events and timers have been completed
+	 */
+	sde_enc->crtc = NULL;
+	memset(&sde_enc->mode_info, 0, sizeof(sde_enc->mode_info));
+
+	SDE_DEBUG_ENC(sde_enc, "encoder disabled\n");
+
+	sde_rm_release(&sde_kms->rm, drm_enc, false);
+}
+
 static void sde_encoder_virt_disable(struct drm_encoder *drm_enc)
 {
 	struct sde_encoder_virt *sde_enc = NULL;
@@ -3444,7 +3499,8 @@ static void sde_encoder_virt_disable(struct drm_encoder *drm_enc)
 	SDE_EVT32(DRMID(drm_enc));
 
 	/* wait for idle */
-	sde_encoder_wait_for_event(drm_enc, MSM_ENC_TX_COMPLETE);
+	if (!sde_encoder_in_clone_mode(drm_enc))
+		sde_encoder_wait_for_event(drm_enc, MSM_ENC_TX_COMPLETE);
 
 	_sde_encoder_input_handler_unregister(drm_enc);
 
@@ -3487,25 +3543,8 @@ static void sde_encoder_virt_disable(struct drm_encoder *drm_enc)
 
 	sde_encoder_resource_control(drm_enc, SDE_ENC_RC_EVENT_STOP);
 
-	for (i = 0; i < sde_enc->num_phys_encs; i++) {
-		if (sde_enc->phys_encs[i]) {
-			sde_enc->phys_encs[i]->cont_splash_enabled = false;
-			sde_enc->phys_encs[i]->connector = NULL;
-		}
-		atomic_set(&sde_enc->frame_done_cnt[i], 0);
-	}
-
-	sde_enc->cur_master = NULL;
-	/*
-	 * clear the cached crtc in sde_enc on use case finish, after all the
-	 * outstanding events and timers have been completed
-	 */
-	sde_enc->crtc = NULL;
-	memset(&sde_enc->mode_info, 0, sizeof(sde_enc->mode_info));
-
-	SDE_DEBUG_ENC(sde_enc, "encoder disabled\n");
-
-	sde_rm_release(&sde_kms->rm, drm_enc, false);
+	if (!sde_encoder_in_clone_mode(drm_enc))
+		sde_encoder_virt_reset(drm_enc);
 }
 
 void sde_encoder_helper_phys_disable(struct sde_encoder_phys *phys_enc,
