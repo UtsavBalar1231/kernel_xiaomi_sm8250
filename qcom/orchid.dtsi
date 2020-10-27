@@ -51,3 +51,7 @@
 	compatible = "qcom,litomagnus-rpmh-clk";
 	#clock-cells = <1>;
 };
+
+&llcc {
+	compatible = "qcom,llcc-v2";
+};
