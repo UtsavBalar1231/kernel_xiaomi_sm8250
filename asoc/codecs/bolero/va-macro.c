@@ -671,22 +671,25 @@ done:
 
 static int va_macro_core_vote(void *handle, bool enable)
 {
+	int rc = 0;
 	struct va_macro_priv *va_priv = (struct va_macro_priv *) handle;
 
 	if (va_priv == NULL) {
 		pr_err("%s: va priv data is NULL\n", __func__);
 		return -EINVAL;
 	}
+
 	if (enable) {
 		pm_runtime_get_sync(va_priv->dev);
+		if (bolero_check_core_votes(va_priv->dev))
+			rc = 0;
+		else
+			rc = -ENOTSYNC;
+	} else {
 		pm_runtime_put_autosuspend(va_priv->dev);
 		pm_runtime_mark_last_busy(va_priv->dev);
 	}
-
-	if (bolero_check_core_votes(va_priv->dev))
-		return 0;
-	else
-		return -EINVAL;
+	return rc;
 }
 
 static int va_macro_swrm_clock(void *handle, bool enable)
