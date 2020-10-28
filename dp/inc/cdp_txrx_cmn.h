@@ -2557,6 +2557,9 @@ cdp_rx_get_pending(ol_txrx_soc_handle soc)
 	    !soc->ol_ops->dp_rx_get_pending)
 		return 0;
 
-	return soc->ol_ops->dp_rx_get_pending(soc);
+	if (cdp_cfg_get(soc, cfg_dp_wow_check_rx_pending))
+		return soc->ol_ops->dp_rx_get_pending(soc);
+	else
+		return 0;
 }
 #endif /* _CDP_TXRX_CMN_H_ */
