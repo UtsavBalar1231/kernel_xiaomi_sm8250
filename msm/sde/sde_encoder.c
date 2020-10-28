@@ -1358,6 +1358,7 @@ static int _sde_encoder_dsc_n_lm_1_enc_1_intf(struct sde_encoder_virt *sde_enc)
 	struct msm_display_dsc_info *dsc = NULL;
 	struct sde_hw_ctl *hw_ctl;
 	struct sde_ctl_dsc_cfg cfg;
+	bool half_panel_partial_update;
 
 	if (hw_dsc == NULL || hw_pp == NULL || !enc_master) {
 		SDE_ERROR_ENC(sde_enc, "invalid params for DSC\n");
@@ -1376,15 +1377,19 @@ static int _sde_encoder_dsc_n_lm_1_enc_1_intf(struct sde_encoder_virt *sde_enc)
 
 	enc_ip_w = intf_ip_w;
 	_sde_encoder_dsc_initial_line_calc(dsc, enc_ip_w);
+	half_panel_partial_update = (sde_enc->cur_conn_roi.w <=
+			sde_enc->cur_master->cached_mode.hdisplay / 2);
 
-	ich_res = _sde_encoder_dsc_ich_reset_override_needed(false, dsc);
+	ich_res = _sde_encoder_dsc_ich_reset_override_needed(
+			half_panel_partial_update, dsc);
 
 	if (enc_master->intf_mode == INTF_MODE_VIDEO)
 		dsc_common_mode = DSC_MODE_VIDEO;
 
-	SDE_DEBUG_ENC(sde_enc, "pic_w: %d pic_h: %d mode:%d\n",
-		roi->w, roi->h, dsc_common_mode);
-	SDE_EVT32(DRMID(&sde_enc->base), roi->w, roi->h, dsc_common_mode);
+	SDE_DEBUG_ENC(sde_enc, "pic_w: %d pic_h: %d mode:%d ich_res:%d\n",
+		roi->w, roi->h, dsc_common_mode, ich_res);
+	SDE_EVT32(DRMID(&sde_enc->base), roi->w, roi->h,
+		 dsc_common_mode, ich_res, half_panel_partial_update);
 
 	_sde_encoder_dsc_pipe_cfg(hw_dsc, hw_pp, dsc, dsc_common_mode,
 			ich_res, true, hw_dsc_pp, false);
