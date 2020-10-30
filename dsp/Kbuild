@@ -1,4 +1,5 @@
 # We can build either as part of a standalone Kernel build or as
+				    get_hw_version_platform() == HARDWARE_PLATFORM_ALIOTH ||
 # an external module.  Determine which mechanism is being used
 ifeq ($(MODNAME), )
 	KERNEL_BUILD := 1
@@ -271,7 +272,7 @@ ifeq ($(KERNEL_BUILD), 0)
 KBUILD_EXTRA_SYMBOLS +=$(OUT)/obj/vendor/qcom/opensource/audio-kernel/ipc/Module.symvers
 endif
 
-ifeq ($(TARGET_PRODUCT), $(filter $(TARGET_PRODUCT),lmi lmiin lmiinpro cas skuld umi cmi apollo alioth))
+ifeq ($(TARGET_PRODUCT), $(filter $(TARGET_PRODUCT),lmi lmiin lmiinpro cas skuld umi cmi apollo alioth thyme))
 	CDEFINES += -DAUDIO_SM8250_FLAG
 endif
 

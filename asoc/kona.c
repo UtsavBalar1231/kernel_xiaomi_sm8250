@@ -8174,6 +8174,7 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 				    get_hw_version_platform() == HARDWARE_PLATFORM_SKULD ||
 				    get_hw_version_platform() == HARDWARE_PLATFORM_APOLLO ||
 				    get_hw_version_platform() == HARDWARE_PLATFORM_ALIOTH ||
+				    get_hw_version_platform() == HARDWARE_PLATFORM_THYME ||
 					get_hw_version_platform() == HARDWARE_PLATFORM_CAS) {
 					memcpy(msm_kona_dai_links + total_links,
 						tert_mi2s_rx_cs35l41_dai_links,
