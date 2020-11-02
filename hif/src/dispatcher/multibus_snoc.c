@@ -75,6 +75,7 @@ QDF_STATUS hif_initialize_snoc_ops(struct hif_bus_ops *bus_ops)
 	bus_ops->hif_map_ce_to_irq = &hif_snoc_map_ce_to_irq;
 	bus_ops->hif_addr_in_boundary = &hif_dummy_addr_in_boundary;
 	bus_ops->hif_needs_bmi = &hif_snoc_needs_bmi;
+	bus_ops->hif_log_bus_info = &hif_dummy_log_bus_info;
 
 	return QDF_STATUS_SUCCESS;
 }
