@@ -2480,6 +2480,33 @@ static void hif_pci_deconfigure_grp_irq(struct hif_softc *scn)
 	}
 }
 
+#ifdef HIF_BUS_LOG_INFO
+void hif_log_pcie_info(struct hif_softc *scn, uint8_t *data,
+		       unsigned int *offset)
+{
+	struct hif_pci_softc *sc = HIF_GET_PCI_SOFTC(scn);
+	struct hang_event_bus_info info = {0};
+	size_t size;
+
+	if (!sc) {
+		hif_err("HIF Bus Context is Invalid");
+		return;
+	}
+
+	pfrm_read_config_word(sc->pdev, PCI_DEVICE_ID, &info.dev_id);
+
+	size = sizeof(info);
+	QDF_HANG_EVT_SET_HDR(&info.tlv_header, HANG_EVT_TAG_BUS_INFO,
+			     size - QDF_HANG_EVENT_TLV_HDR_SIZE);
+
+	if (*offset + size > QDF_WLAN_HANG_FW_OFFSET)
+		return;
+
+	qdf_mem_copy(data + *offset, &info, size);
+	*offset = *offset + size;
+}
+#endif
+
 /**
  * hif_nointrs(): disable IRQ
  *
