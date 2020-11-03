@@ -1703,8 +1703,12 @@ int sde_crtc_state_find_plane_fb_modes(struct drm_crtc_state *state,
 
 static void _sde_drm_fb_sec_dir_trans(
 	struct sde_kms_smmu_state_data *smmu_state, uint32_t secure_level,
-	struct sde_mdss_cfg *catalog, bool old_valid_fb, int *ops)
+	struct sde_mdss_cfg *catalog, bool old_valid_fb, int *ops,
+	struct drm_crtc_state *old_crtc_state)
 {
+	struct sde_crtc_state *old_cstate = to_sde_crtc_state(old_crtc_state);
+	int old_secure_session = old_cstate->secure_session;
+
 	/* secure display usecase */
 	if ((smmu_state->state == ATTACHED)
 			&& (secure_level == SDE_DRM_SEC_ONLY)) {
@@ -1725,6 +1729,10 @@ static void _sde_drm_fb_sec_dir_trans(
 		smmu_state->secure_level = secure_level;
 		smmu_state->transition_type = PRE_COMMIT;
 		*ops |= SDE_KMS_OPS_SECURE_STATE_CHANGE;
+		if (old_secure_session ==
+			SDE_SECURE_VIDEO_SESSION)
+			*ops |= (SDE_KMS_OPS_WAIT_FOR_TX_DONE  |
+					SDE_KMS_OPS_CLEANUP_PLANE_FB);
 	}
 }
 
@@ -1850,7 +1858,7 @@ int sde_crtc_get_secure_transition_ops(struct drm_crtc *crtc,
 	switch (translation_mode) {
 	case SDE_DRM_FB_SEC_DIR_TRANS:
 		_sde_drm_fb_sec_dir_trans(smmu_state, secure_level,
-				catalog, old_valid_fb, &ops);
+			catalog, old_valid_fb, &ops, old_crtc_state);
 		if (clone_mode && (ops & SDE_KMS_OPS_SECURE_STATE_CHANGE))
 			ops |= SDE_KMS_OPS_WAIT_FOR_TX_DONE;
 		break;
@@ -4319,6 +4327,48 @@ static int _sde_crtc_check_secure_single_encoder(struct drm_crtc *crtc,
 	return 0;
 }
 
+static int _sde_crtc_check_secure_transition(struct drm_crtc *crtc,
+	struct drm_crtc_state *state, bool is_video_mode)
+{
+	struct sde_crtc_state *old_cstate = to_sde_crtc_state(crtc->state);
+	struct sde_crtc_state *new_cstate = to_sde_crtc_state(state);
+	int old_secure_session = old_cstate->secure_session;
+	int new_secure_session = new_cstate->secure_session;
+
+	/*
+	 * Direct transition from Secure Camera to Secure UI(&viceversa)
+	 * is not allowed
+	 */
+	if ((old_secure_session == SDE_SECURE_CAMERA_SESSION &&
+			new_secure_session == SDE_SECURE_UI_SESSION) ||
+		(old_secure_session == SDE_SECURE_UI_SESSION &&
+			new_secure_session == SDE_SECURE_CAMERA_SESSION)) {
+		SDE_EVT32(DRMID(crtc), old_secure_session,
+			new_secure_session, SDE_EVTLOG_ERROR);
+		return -EINVAL;
+	}
+
+	/*
+	 * In video mode, null commit is required for transition between
+	 * secure video & secure camera
+	 */
+	if (is_video_mode &&
+		((old_secure_session == SDE_SECURE_CAMERA_SESSION &&
+			new_secure_session == SDE_SECURE_VIDEO_SESSION) ||
+		(old_secure_session == SDE_SECURE_VIDEO_SESSION &&
+			new_secure_session == SDE_SECURE_CAMERA_SESSION))) {
+		SDE_EVT32(DRMID(crtc), old_secure_session,
+			new_secure_session, SDE_EVTLOG_ERROR);
+		return -EINVAL;
+	}
+
+	if (old_secure_session != new_secure_session)
+		SDE_EVT32(DRMID(crtc), old_secure_session,
+						new_secure_session);
+
+	return 0;
+}
+
 static int _sde_crtc_check_secure_state_smmu_translation(struct drm_crtc *crtc,
 	struct drm_crtc_state *state, struct sde_kms *sde_kms, int secure,
 	int fb_ns, int fb_sec, int fb_sec_dir)
@@ -4333,17 +4383,8 @@ static int _sde_crtc_check_secure_state_smmu_translation(struct drm_crtc *crtc,
 						MSM_DISPLAY_VIDEO_MODE);
 	}
 
-	/*
-	 * Secure display to secure camera needs without direct
-	 * transition is currently not allowed
-	 */
-	if (fb_sec_dir && secure == SDE_DRM_SEC_NON_SEC &&
-		smmu_state->state != ATTACHED &&
-		smmu_state->secure_level == SDE_DRM_SEC_ONLY) {
-
-		SDE_EVT32(DRMID(crtc), fb_ns, fb_sec_dir,
-			smmu_state->state, smmu_state->secure_level,
-			secure);
+	if (_sde_crtc_check_secure_transition(crtc, state, is_video_mode)) {
+		SDE_ERROR("Invalid transition between secure & nonsecure\n");
 		goto sec_err;
 	}
 
@@ -4411,6 +4452,29 @@ static int _sde_crtc_check_secure_conn(struct drm_crtc *crtc,
 	return 0;
 }
 
+static int _sde_crtc_populate_secure_session(struct drm_crtc_state *state,
+	int secure, int fb_ns, int fb_sec, int fb_sec_dir)
+{
+	struct sde_crtc_state *cstate = to_sde_crtc_state(state);
+
+	if (secure == SDE_DRM_SEC_ONLY && fb_sec_dir && !fb_sec && !fb_ns)
+		cstate->secure_session = SDE_SECURE_UI_SESSION;
+	else if (secure == SDE_DRM_SEC_NON_SEC && fb_sec_dir && !fb_sec)
+		cstate->secure_session = SDE_SECURE_CAMERA_SESSION;
+	else if (secure == SDE_DRM_SEC_NON_SEC && !fb_sec_dir && fb_sec)
+		cstate->secure_session = SDE_SECURE_VIDEO_SESSION;
+	else if (secure == SDE_DRM_SEC_NON_SEC && !fb_sec_dir &&
+			!fb_sec && fb_ns)
+		cstate->secure_session = SDE_NON_SECURE_SESSION;
+	else if (secure == SDE_DRM_SEC_NON_SEC && !fb_sec_dir &&
+			!fb_sec && !fb_ns)
+		cstate->secure_session = SDE_NULL_SESSION;
+	else
+		return -EINVAL;
+
+	return 0;
+}
+
 static int _sde_crtc_check_secure_state(struct drm_crtc *crtc,
 		struct drm_crtc_state *state, struct plane_state pstates[],
 		int cnt)
@@ -4438,6 +4502,11 @@ static int _sde_crtc_check_secure_state(struct drm_crtc *crtc,
 
 	rc = sde_crtc_state_find_plane_fb_modes(state, &fb_ns,
 					&fb_sec, &fb_sec_dir);
+	if (rc)
+		return rc;
+
+	rc = _sde_crtc_populate_secure_session(state, secure,
+				fb_ns, fb_sec, fb_sec_dir);
 	if (rc)
 		return rc;
 
