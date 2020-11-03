@@ -3325,12 +3325,16 @@ static int sde_kms_pd_enable(struct generic_pm_domain *genpd)
 static int sde_kms_pd_disable(struct generic_pm_domain *genpd)
 {
 	struct sde_kms *sde_kms = genpd_to_sde_kms(genpd);
+	struct msm_drm_private *priv;
 
 	SDE_DEBUG("\n");
 
 	pm_runtime_put_sync(sde_kms->dev->dev);
 
 	SDE_EVT32(genpd->device_count);
+
+	priv = sde_kms->dev->dev_private;
+	sde_kms_check_for_ext_vote(sde_kms, &priv->phandle);
 
 	return 0;
 }
