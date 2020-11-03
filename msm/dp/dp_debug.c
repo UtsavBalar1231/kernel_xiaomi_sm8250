@@ -154,7 +154,7 @@ static ssize_t dp_debug_write_edid(struct file *file,
 	edid = debug->edid;
 bail:
 	kfree(buf);
-	debug->panel->set_edid(debug->panel, edid);
+	debug->panel->set_edid(debug->panel, edid, debug->edid_size);
 
 	/*
 	 * print edid status as this code is executed
@@ -1628,7 +1628,7 @@ static void dp_debug_set_sim_mode(struct dp_debug_private *debug, bool sim)
 		debug->aux->set_sim_mode(debug->aux, false, NULL, NULL);
 		debug->dp_debug.sim_mode = false;
 
-		debug->panel->set_edid(debug->panel, 0);
+		debug->panel->set_edid(debug->panel, 0, 0);
 		if (debug->edid) {
 			devm_kfree(debug->dev, debug->edid);
 			debug->edid = NULL;
