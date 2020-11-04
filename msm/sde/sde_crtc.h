@@ -36,22 +36,6 @@
 #define SDE_CRTC_FRAME_EVENT_SIZE	(4 * 2)
 
 /**
- * enum sde_session_type: session type
- * @SDE_SECURE_UI_SESSION:     secure UI usecase
- * @SDE_SECURE_CAMERA_SESSION: secure camera usecase
- * @SDE_SECURE_VIDEO_SESSION:  secure video usecase
- * @SDE_NON_SECURE_SESSION:    non secure usecase
- * @SDE_NULL_SESSION:          null commit usecase
- */
-enum sde_session_type {
-	SDE_SECURE_UI_SESSION,
-	SDE_SECURE_CAMERA_SESSION,
-	SDE_SECURE_VIDEO_SESSION,
-	SDE_NON_SECURE_SESSION,
-	SDE_NULL_SESSION,
-};
-
-/**
  * enum sde_crtc_client_type: crtc client type
  * @RT_CLIENT:	RealTime client like video/cmd mode display
  *              voting through apps rsc
@@ -396,7 +380,6 @@ struct sde_crtc {
  * @ds_cfg: Destination scaler config
  * @scl3_lut_cfg: QSEED3 lut config
  * @new_perf: new performance state being requested
- * @secure_session: Indicates the type of secure session
  */
 struct sde_crtc_state {
 	struct drm_crtc_state base;
@@ -426,7 +409,6 @@ struct sde_crtc_state {
 	struct sde_hw_scaler3_lut_cfg scl3_lut_cfg;
 
 	struct sde_core_perf_params new_perf;
-	int secure_session;
 };
 
 enum sde_crtc_irq_state {
