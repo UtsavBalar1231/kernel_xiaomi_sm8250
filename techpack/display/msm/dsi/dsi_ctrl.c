@@ -552,6 +552,7 @@ static int dsi_ctrl_init_regmap(struct platform_device *pdev,
 		}
 		ctrl->hw.mmss_misc_base = ptr;
 		ctrl->hw.disp_cc_base = NULL;
+		ctrl->hw.mdp_intf_base = NULL;
 		break;
 	case DSI_CTRL_VERSION_2_2:
 	case DSI_CTRL_VERSION_2_3:
@@ -564,6 +565,10 @@ static int dsi_ctrl_init_regmap(struct platform_device *pdev,
 		}
 		ctrl->hw.disp_cc_base = ptr;
 		ctrl->hw.mmss_misc_base = NULL;
+
+		ptr = msm_ioremap(pdev, "mdp_intf_base", ctrl->name);
+		if (!IS_ERR(ptr))
+			ctrl->hw.mdp_intf_base = ptr;
 		break;
 	default:
 		break;
@@ -2066,9 +2071,6 @@ static int dsi_ctrl_dev_probe(struct platform_device *pdev)
 	if (rc)
 		DSI_CTRL_DEBUG(dsi_ctrl, "failed to init axi bus client, rc = %d\n",
 				rc);
-
-	if (dsi_ctrl->hw.ops.map_mdp_regs)
-		dsi_ctrl->hw.ops.map_mdp_regs(pdev, &dsi_ctrl->hw);
 
 	item->ctrl = dsi_ctrl;
 
