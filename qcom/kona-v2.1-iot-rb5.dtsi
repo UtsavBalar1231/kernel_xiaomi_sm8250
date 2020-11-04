@@ -199,6 +199,12 @@
 		pinctrl-0 = <&rb5_fan_controller_pin_init>;
 		status = "ok";
 	};
+
+	rb5_gpios_enable {
+		compatible = "qcom,rb5_gpios_enable";
+		qcom,enable-gpio = <&tlmm 60 0x0>;
+		status = "ok";
+	};
 };
 
 &usb0 {
