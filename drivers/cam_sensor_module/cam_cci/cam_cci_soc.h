@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_CCI_SOC_H_
@@ -23,7 +23,8 @@ int cam_cci_init(struct v4l2_subdev *sd,
  *
  * This API releases the CCI and its SOC resources
  */
-int cam_cci_soc_release(struct cci_device *cci_dev);
+int cam_cci_soc_release(struct cci_device *cci_dev,
+	enum cci_i2c_master_t master);
 
 /**
  * @pdev: Platform device
