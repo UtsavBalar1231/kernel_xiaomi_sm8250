@@ -493,13 +493,13 @@ int msm_vidc_get_num_ref_frames(struct msm_vidc_inst *inst)
 	if (num_hp_layers > 0) {
 		/* LTR and B - frame not supported with hybrid HP */
 		if (inst->hybrid_hp)
-			num_ref = (num_hp_layers - 1);
+			num_ref = num_hp_layers >> 1;
 		else if (codec == V4L2_PIX_FMT_HEVC)
 			num_ref = ((num_hp_layers + 1) / 2) + ltr_count;
-		else if ((codec == V4L2_PIX_FMT_H264) && (num_hp_layers <= 4))
-			num_ref = ((1 << (num_hp_layers - 1)) - 1) + ltr_count;
+		else if ((codec == V4L2_PIX_FMT_H264) && (num_hp_layers < 4))
+			num_ref = (num_hp_layers - 1) + ltr_count;
 		else
-			num_ref = ((num_hp_layers + 1) / 2) + ltr_count;
+			num_ref = num_hp_layers + ltr_count;
 	}
 	return num_ref;
 }
