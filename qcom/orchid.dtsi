@@ -10,6 +10,7 @@
 
 &sde_dp {
 	/delete-property/ qcom,mst-enable;
+	qcom,no-mst-encoder;
 };
 
 &mdss_dsi1 {
