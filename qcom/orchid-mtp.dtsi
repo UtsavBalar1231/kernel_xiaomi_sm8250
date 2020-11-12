@@ -86,6 +86,10 @@
 	status = "disabled";
 };
 
+&pm7250b_qg {
+	qcom,use-cp-iin-sns;
+};
+
 &pm7250b_vadc {
 	smb1390_therm@e {
 		qcom,scale-fn-type = <ADC_SCALE_HW_CALIB_PM5_SMB1398_TEMP>;
