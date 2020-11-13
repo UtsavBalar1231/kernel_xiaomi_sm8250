@@ -3668,6 +3668,7 @@ hdd_association_completion_handler(struct hdd_adapter *adapter,
 					      eCSR_BSS_TYPE_INFRASTRUCTURE);
 			}
 
+			hdd_nud_indicate_roam(adapter);
 			/* Start the tx queues */
 #ifdef WLAN_FEATURE_ROAM_OFFLOAD
 			if (roam_info->roamSynchInProgress)
