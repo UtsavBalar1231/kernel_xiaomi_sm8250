@@ -50,6 +50,7 @@ void cam_req_mgr_core_link_reset(struct cam_req_mgr_core_link *link)
 	link->sof_timestamp = 0;
 	link->prev_sof_timestamp = 0;
 	link->skip_wd_validation = false;
+	link->last_applied_jiffies = 0;
 }
 
 void cam_req_mgr_handle_core_shutdown(void)
@@ -1376,6 +1377,7 @@ static int __cam_req_mgr_process_req(struct cam_req_mgr_core_link *link,
 {
 	int                                  rc = 0, idx;
 	int                                  reset_step = 0;
+	bool                                 check_retry_cnt = false;
 	uint32_t                             trigger = trigger_data->trigger;
 	struct cam_req_mgr_slot             *slot = NULL;
 	struct cam_req_mgr_req_queue        *in_q;
@@ -1497,18 +1499,30 @@ static int __cam_req_mgr_process_req(struct cam_req_mgr_core_link *link,
 	if (rc < 0) {
 		/* Apply req failed retry at next sof */
 		slot->status = CRM_SLOT_STATUS_REQ_PENDING;
-		link->retry_cnt++;
-		max_retry = MAXIMUM_RETRY_ATTEMPTS;
-		if (link->max_delay == 1)
-			max_retry++;
-		if (link->retry_cnt == max_retry) {
-			CAM_DBG(CAM_CRM,
-				"Max retry attempts (count: %d) reached on link[0x%x] for req [%lld]",
-				link->retry_cnt, link->link_hdl,
-				in_q->slot[in_q->rd_idx].req_id);
-			__cam_req_mgr_notify_error_on_link(link, dev);
-			link->retry_cnt = 0;
-		}
+
+		if (jiffies_to_msecs(jiffies - link->last_applied_jiffies) >
+			MINIMUM_WORKQUEUE_SCHED_TIME_IN_MS)
+			check_retry_cnt = true;
+
+		if ((in_q->last_applied_idx < in_q->rd_idx) &&
+			check_retry_cnt) {
+			link->retry_cnt++;
+			max_retry = MAXIMUM_RETRY_ATTEMPTS;
+			if (link->max_delay == 1)
+				max_retry++;
+			if (link->retry_cnt == max_retry) {
+				CAM_DBG(CAM_CRM,
+					"Max retry attempts (count: %d) reached on link[0x%x] for req [%lld]",
+					link->retry_cnt, link->link_hdl,
+					in_q->slot[in_q->rd_idx].req_id);
+				__cam_req_mgr_notify_error_on_link(link, dev);
+				link->retry_cnt = 0;
+			}
+		} else
+			CAM_WARN(CAM_CRM,
+				"workqueue congestion, last applied idx:%d rd idx:%d",
+				in_q->last_applied_idx,
+				in_q->rd_idx);
 	} else {
 		if (link->retry_cnt)
 			link->retry_cnt = 0;
@@ -1556,6 +1570,16 @@ static int __cam_req_mgr_process_req(struct cam_req_mgr_core_link *link,
 			link->open_req_cnt--;
 		}
 	}
+
+	/*
+	 * Only update the jiffies of last applied request
+	 * for SOF trigger, since it is used to protect from
+	 * applying fails in ISP which is triggered at SOF.
+	 * And, also don't need to do update for error case
+	 * since error case doesn't check the retry count.
+	 */
+	if (trigger == CAM_TRIGGER_POINT_SOF)
+		link->last_applied_jiffies = jiffies;
 
 	mutex_unlock(&session->lock);
 	return rc;

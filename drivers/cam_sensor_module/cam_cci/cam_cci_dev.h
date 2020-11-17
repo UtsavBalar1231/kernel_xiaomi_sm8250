@@ -133,9 +133,8 @@ struct cam_cci_master_info {
 	struct completion report_q[NUM_QUEUES];
 	atomic_t done_pending[NUM_QUEUES];
 	spinlock_t lock_q[NUM_QUEUES];
-	spinlock_t freq_cnt;
 	struct semaphore master_sem;
-	bool is_first_req;
+	spinlock_t freq_cnt_lock;
 	uint16_t freq_ref_cnt;
 	bool is_initilized;
 };
