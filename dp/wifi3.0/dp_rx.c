@@ -1902,18 +1902,33 @@ bool dp_rx_is_raw_frame_dropped(qdf_nbuf_t nbuf)
 #endif
 
 #ifdef WLAN_FEATURE_DP_RX_RING_HISTORY
+/**
+ * dp_rx_ring_record_entry() - Record an entry into the rx ring history.
+ * @soc: Datapath soc structure
+ * @ring_num: REO ring number
+ * @ring_desc: REO ring descriptor
+ *
+ * Returns: None
+ */
 static inline void
-dp_rx_ring_record_entry(struct dp_soc *soc, uint8_t ring_num, hal_ring_desc_t ring_desc)
+dp_rx_ring_record_entry(struct dp_soc *soc, uint8_t ring_num,
+			hal_ring_desc_t ring_desc)
 {
 	struct dp_buf_info_record *record;
 	uint8_t rbm;
 	struct hal_buf_info hbi;
 	uint32_t idx;
 
+	if (qdf_unlikely(!&soc->rx_ring_history[ring_num]))
+		return;
+
 	hal_rx_reo_buf_paddr_get(ring_desc, &hbi);
 	rbm = hal_rx_ret_buf_manager_get(ring_desc);
 
-	idx = dp_history_get_next_index(&soc->rx_ring_history[ring_num]->index, DP_RX_HIST_MAX);
+	idx = dp_history_get_next_index(&soc->rx_ring_history[ring_num]->index,
+					DP_RX_HIST_MAX);
+
+	/* No NULL check needed for record since its an array */
 	record = &soc->rx_ring_history[ring_num]->entry[idx];
 
 	record->timestamp = qdf_get_log_timestamp();
@@ -1923,7 +1938,8 @@ dp_rx_ring_record_entry(struct dp_soc *soc, uint8_t ring_num, hal_ring_desc_t ri
 }
 #else
 static inline void
-dp_rx_ring_record_entry(struct dp_soc *soc, uint8_t ring_num, hal_ring_desc_t ring_desc)
+dp_rx_ring_record_entry(struct dp_soc *soc, uint8_t ring_num,
+			hal_ring_desc_t ring_desc)
 {
 }
 #endif
