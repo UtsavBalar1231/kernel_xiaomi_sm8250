@@ -2445,11 +2445,7 @@ static int tx_macro_register_event_listener(struct snd_soc_component *component,
 			ret = swrm_wcd_notify(
 				tx_priv->swr_ctrl_data[0].tx_swr_pdev,
 				SWR_REGISTER_WAKEUP, NULL);
-			msm_cdc_pinctrl_set_wakeup_capable(
-					tx_priv->tx_swr_gpio_p, false);
 		} else {
-			msm_cdc_pinctrl_set_wakeup_capable(
-					tx_priv->tx_swr_gpio_p, true);
 			ret = swrm_wcd_notify(
 				tx_priv->swr_ctrl_data[0].tx_swr_pdev,
 				SWR_DEREGISTER_WAKEUP, NULL);
@@ -2484,6 +2480,8 @@ static int tx_macro_tx_va_mclk_enable(struct tx_macro_priv *tx_priv,
 					__func__);
 				goto exit;
 			}
+			msm_cdc_pinctrl_set_wakeup_capable(
+					tx_priv->tx_swr_gpio_p, false);
 		}
 
 		clk_tx_ret = bolero_clk_rsc_request_clock(tx_priv->dev,
@@ -2612,6 +2610,8 @@ tx_clk:
 						   TX_CORE_CLK,
 						   false);
 		if (tx_priv->swr_clk_users == 0) {
+			msm_cdc_pinctrl_set_wakeup_capable(
+					tx_priv->tx_swr_gpio_p, true);
 			ret = msm_cdc_pinctrl_select_sleep_state(
 						tx_priv->tx_swr_gpio_p);
 			if (ret < 0) {
