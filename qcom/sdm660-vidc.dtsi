@@ -214,6 +214,8 @@
 				<&mmss_bimc_smmu 0x529>,
 				<&mmss_bimc_smmu 0x52b>;
 			qcom,iommu-dma-addr-pool = <0x51000000 0x28000000>;
+			qcom,iommu-faults = "non-fatal";
+			qcom,iommu-vmid = <0x9>; /*VMID_CP_BITSTREAM*/
 			buffer-types = <0x241>;
 			virtual-addr-pool = <0x51000000 0x28000000>;
 			qcom,secure-context-bank;
@@ -227,6 +229,8 @@
 				<&mmss_bimc_smmu 0x510>,
 				<&mmss_bimc_smmu 0x52c>;
 			qcom,iommu-dma-addr-pool = <0x29000000 0x28000000>;
+			qcom,iommu-faults = "non-fatal";
+			qcom,iommu-vmid = <0xA>; /*VMID_CP_PIXEL*/
 			buffer-types = <0x106>;
 			virtual-addr-pool = <0x29000000 0x28000000>;
 			qcom,secure-context-bank;
@@ -245,6 +249,8 @@
 				<&mmss_bimc_smmu 0x52d>,
 				<&mmss_bimc_smmu 0x540>;
 			qcom,iommu-dma-addr-pool = <0x1000000 0x28000000>;
+			qcom,iommu-faults = "non-fatal";
+			qcom,iommu-vmid = <0xB>; /*VMID_CP_NON_PIXEL*/
 			buffer-types = <0x480>;
 			virtual-addr-pool = <0x1000000 0x28000000>;
 			qcom,secure-context-bank;

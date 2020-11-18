@@ -11,6 +11,7 @@ Required properties:
                 qca,qca6390
 		qca,wcn6750
 	- qca,bt-reset-gpio: GPIO pin to bring BT Controller out of reset
+	- qca,wl-reset-gpio: GPIO pin for WLAN EN, used here to check status only
 
 Optional properties:
 	- qca,bt-vdd-pa-supply: Bluetooth VDD PA regulator handle
@@ -50,6 +51,7 @@ Example:
 		pinctrl-names = "default";
 		pinctrl-0 = <&bt_en_sleep>;
 		qca,bt-reset-gpio = <&tlmm 21 0>; /* BT_EN */
+		qca,wl-reset-gpio = <&tlmm 20 0>; /* WL_EN */
 		qca,bt-vdd-aon-supply = <&pm8150_s6>;
 		qca,bt-vdd-dig-supply = <&pm8009_s2>;
 		qca,bt-vdd-rfa1-supply = <&pm8150_s5>;

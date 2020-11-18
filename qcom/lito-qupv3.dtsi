@@ -18,7 +18,7 @@
 			<MSM_BUS_MASTER_QUP_0 MSM_BUS_SLAVE_EBI_CH0>;
 		iommus = <&apps_smmu 0x4e3 0x0>;
 		qcom,iommu-dma-addr-pool = <0x40000000 0xc0000000>;
-		qcom,iommu-dma = "atomic";
+		qcom,iommu-dma = "fastmap";
 	};
 
 	/* Debug UART Instance for RUMI platform */
@@ -307,7 +307,7 @@
 			<MSM_BUS_MASTER_QUP_1 MSM_BUS_SLAVE_EBI_CH0>;
 		iommus = <&apps_smmu 0x023 0x0>;
 		qcom,iommu-dma-addr-pool = <0x40000000 0xc0000000>;
-		qcom,iommu-dma = "atomic";
+		qcom,iommu-dma = "fastmap";
 	};
 
 	/* 2-wire UART */

@@ -49,7 +49,7 @@
 			reg = <0x0 0x0>;
 			enable-method = "psci";
 			capacity-dmips-mhz = <1024>;
-			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
+			sched-energy-costs = <&CPU_COST_0>;
 			qcom,lmh-dcvs = <&lmh_dcvs0>;
 			efficiency = <1024>;
 			next-level-cache = <&L2_0>;
@@ -82,7 +82,7 @@
 			reg = <0x0 0x1>;
 			enable-method = "psci";
 			capacity-dmips-mhz = <1024>;
-			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
+			sched-energy-costs = <&CPU_COST_0>;
 			qcom,lmh-dcvs = <&lmh_dcvs0>;
 			#cooling-cells = <2>;
 			efficiency = <1024>;
@@ -106,7 +106,7 @@
 			reg = <0x0 0x2>;
 			enable-method = "psci";
 			capacity-dmips-mhz = <1024>;
-			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
+			sched-energy-costs = <&CPU_COST_0>;
 			qcom,lmh-dcvs = <&lmh_dcvs0>;
 			efficiency = <1024>;
 			next-level-cache = <&L2_0>;
@@ -130,7 +130,7 @@
 			reg = <0x0 0x3>;
 			enable-method = "psci";
 			capacity-dmips-mhz = <1024>;
-			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
+			sched-energy-costs = <&CPU_COST_0>;
 			qcom,lmh-dcvs = <&lmh_dcvs0>;
 			efficiency = <1024>;
 			next-level-cache = <&L2_0>;
@@ -154,7 +154,7 @@
 			reg = <0x0 0x100>;
 			enable-method = "psci";
 			capacity-dmips-mhz = <1638>;
-			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
+			sched-energy-costs = <&CPU_COST_1>;
 			qcom,lmh-dcvs = <&lmh_dcvs1>;
 			efficiency = <1638>;
 			next-level-cache = <&L2_1>;
@@ -182,7 +182,7 @@
 			reg = <0x0 0x101>;
 			enable-method = "psci";
 			capacity-dmips-mhz = <1638>;
-			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
+			sched-energy-costs = <&CPU_COST_1>;
 			qcom,lmh-dcvs = <&lmh_dcvs1>;
 			#cooling-cells = <2>;
 			efficiency = <1638>;
@@ -206,7 +206,7 @@
 			reg = <0x0 0x102>;
 			enable-method = "psci";
 			capacity-dmips-mhz = <1638>;
-			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
+			sched-energy-costs = <&CPU_COST_1>;
 			qcom,lmh-dcvs = <&lmh_dcvs1>;
 			#cooling-cells = <2>;
 			efficiency = <1638>;
@@ -230,7 +230,7 @@
 			reg = <0x0 0x103>;
 			enable-method = "psci";
 			capacity-dmips-mhz = <1638>;
-			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
+			sched-energy-costs = <&CPU_COST_1>;
 			qcom,lmh-dcvs = <&lmh_dcvs1>;
 			#cooling-cells = <2>;
 			efficiency = <1638>;
@@ -300,9 +300,6 @@
 				1747200	228
 				1843200	285
 			>;
-			idle-cost-data = <
-				20 16 10 8
-			>;
 		};
 
 		CPU_COST_1: core-cost1 {
@@ -315,40 +312,6 @@
 				2150400	1592
 				2208000	1632
 				2457600	2080
-			>;
-			idle-cost-data = <
-				100 80 60 40
-			>;
-		};
-
-		CLUSTER_COST_0: cluster-cost0 {
-			busy-cost-data = <
-				633600	4
-				902400	5
-				1113600	7
-				1401600	9
-				1536000	9
-				1747200	11
-				1843200	13
-			>;
-			idle-cost-data = <
-				4 3 2 1
-			>;
-		};
-
-		CLUSTER_COST_1: cluster-cost1 {
-			busy-cost-data = <
-				1113600	14
-				1401600	17
-				1747200	25
-				1804800	31
-				1958400	31
-				2150400	37
-				2208000	44
-				2457600	45
-			>;
-			idle-cost-data = <
-				4 3 2 1
 			>;
 		};
 	};
@@ -1464,23 +1427,25 @@
 		qcom,bus-vector-names = "MIN", "SVS", "PERF", "TURBO";
 		qcom,rx-polling-sleep-ms = <1>; /* Polling sleep interval */
 		qcom,ipa-polling-iteration = <40>; /* Polling Iteration */
-
 		ipa_smmu_ap: ipa_smmu_ap {
 			compatible = "qcom,ipa-smmu-ap-cb";
-			iommus = <&anoc2_smmu 0x19C0>;
-			qcom,iova-mapping = <0x10000000 0x40000000>;
+			iommus = <&anoc2_smmu 0x19C0 0x0>;
+			qcom,iommu-dma-addr-pool = <0x10000000 0x40000000>;
+			qcom,iommu-dma = "bypass";
 		};
 
 		ipa_smmu_wlan: ipa_smmu_wlan {
 			status = "disabled";
 			compatible = "qcom,ipa-smmu-wlan-cb";
-			iommus = <&anoc2_smmu 0x19C1>;
+			iommus = <&anoc2_smmu 0x19C1 0x0>;
+			qcom,iommu-dma = "bypass";
 		};
 
 		ipa_smmu_uc: ipa_smmu_uc {
 			compatible = "qcom,ipa-smmu-uc-cb";
-			iommus = <&anoc2_smmu 0x19C2>;
-			qcom,iova-mapping = <0x40000000 0x20000000>;
+			iommus = <&anoc2_smmu 0x19C2 0x0>;
+			qcom,iommu-dma-addr-pool = <0x40000000 0x20000000>;
+			qcom,iommu-dma = "bypass";
 		};
 	};
 
