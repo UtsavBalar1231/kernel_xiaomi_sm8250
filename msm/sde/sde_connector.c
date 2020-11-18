@@ -2126,6 +2126,7 @@ static int sde_connector_atomic_check(struct drm_connector *connector,
 	struct sde_connector *c_conn;
 	struct sde_connector_state *c_state;
 	bool qsync_dirty = false, has_modeset = false;
+	struct drm_crtc_state *new_crtc_state = NULL;
 
 	if (!connector) {
 		SDE_ERROR("invalid connector\n");
@@ -2140,6 +2141,10 @@ static int sde_connector_atomic_check(struct drm_connector *connector,
 	c_conn = to_sde_connector(connector);
 	c_state = to_sde_connector_state(new_conn_state);
 
+	if (new_conn_state->crtc)
+		new_crtc_state = drm_atomic_get_new_crtc_state(
+			new_conn_state->state, new_conn_state->crtc);
+
 	has_modeset = sde_crtc_atomic_check_has_modeset(new_conn_state->state,
 						new_conn_state->crtc);
 	qsync_dirty = msm_property_is_dirty(&c_conn->property_info,
@@ -2147,7 +2152,8 @@ static int sde_connector_atomic_check(struct drm_connector *connector,
 					CONNECTOR_PROP_QSYNC_MODE);
 
 	SDE_DEBUG("has_modeset %d qsync_dirty %d\n", has_modeset, qsync_dirty);
-	if (has_modeset && qsync_dirty) {
+	if (has_modeset && qsync_dirty  && new_crtc_state &&
+		!msm_is_mode_seamless_vrr(&new_crtc_state->adjusted_mode)) {
 		SDE_ERROR("invalid qsync update during modeset\n");
 		return -EINVAL;
 	}
