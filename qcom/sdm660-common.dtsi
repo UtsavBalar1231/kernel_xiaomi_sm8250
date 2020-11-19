@@ -60,11 +60,11 @@
 
 	ufs1: ufshc@1da4000 {
 		compatible = "qcom,ufshc";
-		reg = <0x1da4000 0x3000>;
+		reg = <0x1da4000 0x3000>, <0x1db0000 0x8000>;
+		reg-names = "ufs_mem", "ufs_ice";
 		interrupts = <0 265 IRQ_TYPE_LEVEL_HIGH>;
 		phys = <&ufsphy1>;
 		phy-names = "ufsphy";
-		ufs-qcom-crypto = <&ufs_ice>;
 
 		clock-names =
 			"core_clk",
