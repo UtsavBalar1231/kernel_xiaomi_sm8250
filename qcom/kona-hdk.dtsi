@@ -20,8 +20,12 @@
 	status = "disabled";
 };
 
-&dwc1 {
-	dr_mode = "host";
+&usb1 {
+	qcom,ignore-wakeup-src-in-hostmode;
+
+	dwc3@a800000 {
+		dr_mode = "host";
+	};
 };
 
 &usb2_phy0 {

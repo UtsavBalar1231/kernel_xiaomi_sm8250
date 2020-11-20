@@ -79,7 +79,7 @@
 			<MSM_BUS_MASTER_USB3 MSM_BUS_SLAVE_IPA_CFG 1 1>,
 			<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_USB3 1 1>;
 
-		dwc0: dwc3@a600000 {
+		dwc3@a600000 {
 			compatible = "snps,dwc3";
 			reg = <0x0a600000 0xd93c>;
 			interrupts = <GIC_SPI 133 IRQ_TYPE_LEVEL_HIGH>;
@@ -418,7 +418,7 @@
 			<MSM_BUS_MASTER_USB3_1 MSM_BUS_SLAVE_IPA_CFG 0 2400>,
 			<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_USB3_1 0 40000>;
 
-		dwc1: dwc3@a800000 {
+		dwc3@a800000 {
 			compatible = "snps,dwc3";
 			reg = <0xa800000 0xd93c>;
 			interrupts = <GIC_SPI 138 IRQ_TYPE_LEVEL_HIGH>;
