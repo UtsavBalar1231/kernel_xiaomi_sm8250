@@ -533,10 +533,12 @@ int msm_fb_obj_get_attrs(struct drm_gem_object *obj, int *fb_ns,
 	 int *fb_sec, int *fb_sec_dir, unsigned long *flags)
 {
 
+	struct msm_gem_object *msm_obj = to_msm_bo(obj);
 	int ret = 0;
 
 	if (!obj->import_attach) {
-		DRM_ERROR("NULL attachment in drm gem object\n");
+		DRM_DEBUG("NULL attachment in gem object flags: 0x%x\n",
+						 msm_obj->flags);
 		return -EINVAL;
 	}
 

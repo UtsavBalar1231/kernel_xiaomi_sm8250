@@ -2581,9 +2581,9 @@ static int _sde_plane_validate_fb(struct sde_plane *psde,
 		ret = msm_fb_obj_get_attrs(fb->obj[i], &fb_ns, &fb_sec,
 			&fb_sec_dir, &flags);
 
-		if ((fb_ns && (mode != SDE_DRM_FB_NON_SEC)) ||
+		if (!ret && ((fb_ns && (mode != SDE_DRM_FB_NON_SEC)) ||
 			(fb_sec && (mode != SDE_DRM_FB_SEC)) ||
-			(fb_sec_dir && (mode != SDE_DRM_FB_SEC_DIR_TRANS))) {
+			(fb_sec_dir && (mode != SDE_DRM_FB_SEC_DIR_TRANS)))) {
 			SDE_ERROR_PLANE(psde, "mode:%d fb:%d flag:0x%x rc:%d\n",
 			mode, fb->base.id, flags, ret);
 			SDE_EVT32(psde->base.base.id, fb->base.id, flags,
@@ -4601,7 +4601,8 @@ struct drm_plane *sde_plane_init(struct drm_device *dev,
 		SDE_ERROR("[%u]SSPP init failed\n", pipe);
 		ret = PTR_ERR(psde->pipe_hw);
 		goto clean_plane;
-	} else if (!psde->pipe_hw->cap || !psde->pipe_hw->cap->sblk) {
+	} else if (!psde->pipe_hw || !psde->pipe_hw->cap ||
+					 !psde->pipe_hw->cap->sblk) {
 		SDE_ERROR("[%u]SSPP init returned invalid cfg\n", pipe);
 		goto clean_sspp;
 	}
