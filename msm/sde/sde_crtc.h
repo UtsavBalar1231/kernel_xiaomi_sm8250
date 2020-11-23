@@ -221,11 +221,13 @@ struct sde_crtc_misr_info {
  * @debugfs_root  : Parent of debugfs node
  * @priv_handle   : Pointer to external private handle, if present
  * @vblank_cb_count : count of vblank callback since last reset
+ * @retire_frame_event_time  : ktime at last retire frame event
  * @play_count    : frame count between crtc enable and disable
  * @vblank_cb_time  : ktime at vblank count reset
  * @vblank_last_cb_time  : ktime at last vblank notification
  * @sysfs_dev  : sysfs device node for crtc
  * @vsync_event_sf : vsync event notifier sysfs device
+ * @retire_frame_event_sf :retire frame event notifier sysfs device
  * @enabled       : whether the SDE CRTC is currently enabled. updated in the
  *                  commit-thread, not state-swap time which is earlier, so
  *                  safe to make decisions on during VBLANK on/off work
@@ -295,10 +297,12 @@ struct sde_crtc {
 	u32 vblank_cb_count;
 	u64 play_count;
 	ktime_t vblank_cb_time;
+	ktime_t retire_frame_event_time;
 	ktime_t vblank_last_cb_time;
 	struct sde_crtc_fps_info fps_info;
 	struct device *sysfs_dev;
 	struct kernfs_node *vsync_event_sf;
+	struct kernfs_node *retire_frame_event_sf;
 	bool enabled;
 
 	bool ds_reconfig;
