@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2014, 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014, 2018, 2020, The Linux Foundation. All rights reserved.
  */
 #ifndef _AUDIO_CAL_UTILS_H
 #define _AUDIO_CAL_UTILS_H
@@ -95,4 +95,6 @@ int32_t cal_utils_get_cal_type_version(void *cal_type_data);
 void cal_utils_mark_cal_used(struct cal_block_data *cal_block);
 
 bool cal_utils_is_cal_stale(struct cal_block_data *cal_block);
+
+int cal_utils_init(void);
 #endif
