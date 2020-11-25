@@ -15,7 +15,7 @@ export KERNEL_CFG
 export OUT_DIR
 
 # Set compiler PATH
-PATH=${HOME}/proton-clang/bin:$PATH
+PATH=$HOME/gas64:$HOME/aosp-clang/bin:$PATH
 
 BUILD="make O=$OUT_DIR \
 ARCH=arm64 \
@@ -90,7 +90,7 @@ if [ -n  "$*" ]; then
   echo "================================================="
   echo "SOC -> ${SOC} :: Device -> $1"
   echo "Running scripts/kconfig/merge_config.sh ..."
-  ret=$(ARCH=arm64 scripts/kconfig/merge_config.sh \
+  ret=$(ARCH=arm64 LLVM=1 scripts/kconfig/merge_config.sh \
     -O "${OUT_DIR}" \
     ${KERNEL_CFG}/../${SOC}-perf_defconfig \
     ${KERNEL_CFG}/xiaomi-kona-common.config \
@@ -162,7 +162,7 @@ else
       echo "================================================="
       echo "SOC -> ${SOC} :: Device -> $device"
       echo "Running scripts/kconfig/merge_config.sh ..."
-      ret=$(ARCH=arm64 scripts/kconfig/merge_config.sh \
+      ret=$(ARCH=arm64 LLVM=1 scripts/kconfig/merge_config.sh \
         -O "${OUT_DIR}" \
         ${KERNEL_CFG}/../${SOC}-perf_defconfig \
         ${KERNEL_CFG}/xiaomi-kona-common.config \
