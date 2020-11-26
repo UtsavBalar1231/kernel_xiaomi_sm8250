@@ -120,6 +120,8 @@ static struct ol_if_ops  dp_ol_if_ops = {
 	.get_con_mode = cds_get_conparam,
 	.send_delba = cds_send_delba,
 #ifdef DP_MEM_PRE_ALLOC
+	.dp_prealloc_get_context = dp_prealloc_get_context_memory,
+	.dp_prealloc_put_context = dp_prealloc_put_context_memory,
 	.dp_prealloc_get_consistent = dp_prealloc_get_coherent,
 	.dp_prealloc_put_consistent = dp_prealloc_put_coherent,
 	.dp_get_multi_pages = dp_prealloc_get_multi_pages,
