@@ -1,0 +1,14 @@
+KERNEL_DIR=private/msm-google
+. ${ROOT_DIR}/${KERNEL_DIR}/build.config.alioth.common.clang
+
+POST_DEFCONFIG_CMDS="check_defconfig && update_nocfi_config"
+function update_nocfi_config() {
+  # Disable clang-specific options
+  ${KERNEL_DIR}/scripts/config --file ${OUT_DIR}/.config \
+    -e THINLTO \
+    -d CFI \
+    -d CFI_PERMISSIVE \
+    -d CFI_CLANG
+  (cd ${OUT_DIR} && \
+    make O=${OUT_DIR} CLANG_TRIPLE=${CLANG_TRIPLE} CROSS_COMPILE=${CROSS_COMPILE} "${TOOL_ARGS[@]}" ${MAKE_ARGS} olddefconfig)
+}
