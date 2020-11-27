@@ -169,6 +169,11 @@ Optional properties:
 					"dfps_immediate_porch_mode_vfp" = FPS change request is
 					implemented immediately by changing panel vertical
 					front porch values.
+- qcom,dsi-supported-dfps-list:	List containing all the supported refresh rates.
+- qcom,dsi-supported-qsync-min-fps-list:	The fps value in this list indicates the qsync min
+					fps corresponding to the mode in the qcom,dsi-supported-dfps-list
+					with same index. qcom,dsi-supported-qsync-min-fps-list cannot be
+					defined along with qcom,mdss-dsi-qsync-min-refresh-rate.
 - qcom,min-refresh-rate:		Minimum refresh rate supported by the panel.
 - qcom,max-refresh-rate:		Maximum refresh rate supported by the panel. If max refresh
 					rate is not specified, then the frame rate of the panel in
@@ -696,6 +701,8 @@ Example:
 		qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_wled";
 		qcom,mdss-dsi-pan-enable-dynamic-fps;
 		qcom,mdss-dsi-pan-fps-update = "dfps_suspend_resume_mode";
+		qcom,dsi-supported-dfps-list = <30 45 60>;
+		qcom,dsi-supported-qsync-min-fps-list = <30 40 55>;
 		qcom,min-refresh-rate = <30>;
 		qcom,max-refresh-rate = <60>;
 		qcom,dsi-dyn-clk-enable;
