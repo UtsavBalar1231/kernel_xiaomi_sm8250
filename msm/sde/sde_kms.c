@@ -1216,6 +1216,7 @@ static void sde_kms_wait_for_commit_done(struct msm_kms *kms,
 	struct drm_encoder *encoder;
 	struct drm_device *dev;
 	int ret;
+	bool cwb_disabling;
 
 	if (!kms || !crtc || !crtc->state) {
 		SDE_ERROR("invalid params\n");
@@ -1241,8 +1242,14 @@ static void sde_kms_wait_for_commit_done(struct msm_kms *kms,
 
 	SDE_ATRACE_BEGIN("sde_kms_wait_for_commit_done");
 	list_for_each_entry(encoder, &dev->mode_config.encoder_list, head) {
-		if (encoder->crtc != crtc)
-			continue;
+		cwb_disabling = false;
+		if (encoder->crtc != crtc) {
+			cwb_disabling = sde_encoder_is_cwb_disabling(encoder,
+					crtc);
+			if (!cwb_disabling)
+				continue;
+		}
+
 		/*
 		 * Wait for post-flush if necessary to delay before
 		 * plane_cleanup. For example, wait for vsync in case of video
@@ -1257,6 +1264,9 @@ static void sde_kms_wait_for_commit_done(struct msm_kms *kms,
 		}
 
 		sde_crtc_complete_flip(crtc, NULL);
+
+		if (cwb_disabling)
+			sde_encoder_virt_reset(encoder);
 	}
 
 	SDE_ATRACE_END("sde_ksm_wait_for_commit_done");
@@ -3315,12 +3325,16 @@ static int sde_kms_pd_enable(struct generic_pm_domain *genpd)
 static int sde_kms_pd_disable(struct generic_pm_domain *genpd)
 {
 	struct sde_kms *sde_kms = genpd_to_sde_kms(genpd);
+	struct msm_drm_private *priv;
 
 	SDE_DEBUG("\n");
 
 	pm_runtime_put_sync(sde_kms->dev->dev);
 
 	SDE_EVT32(genpd->device_count);
+
+	priv = sde_kms->dev->dev_private;
+	sde_kms_check_for_ext_vote(sde_kms, &priv->phandle);
 
 	return 0;
 }

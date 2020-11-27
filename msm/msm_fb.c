@@ -18,6 +18,7 @@
 
 #include <linux/dma-mapping.h>
 #include <linux/dma-buf.h>
+#include <linux/msm_ion.h>
 #include <drm/drm_crtc.h>
 #include <drm/drm_crtc_helper.h>
 #include <drm/drm_gem_framebuffer_helper.h>
@@ -526,4 +527,34 @@ msm_alloc_stolen_fb(struct drm_device *dev, int w, int h, int p, uint32_t format
 	}
 
 	return fb;
+}
+
+int msm_fb_obj_get_attrs(struct drm_gem_object *obj, int *fb_ns,
+	 int *fb_sec, int *fb_sec_dir, unsigned long *flags)
+{
+
+	struct msm_gem_object *msm_obj = to_msm_bo(obj);
+	int ret = 0;
+
+	if (!obj->import_attach) {
+		DRM_DEBUG("NULL attachment in gem object flags: 0x%x\n",
+						 msm_obj->flags);
+		return -EINVAL;
+	}
+
+	ret = dma_buf_get_flags(obj->import_attach->dmabuf, flags);
+	if (ret) {
+		DRM_ERROR("dma_buf_get_flags failure, err=%d\n", ret);
+		return ret;
+	}
+
+	if (!(*flags & ION_FLAG_SECURE))
+		*fb_ns = 1;
+	else if (*flags & ION_FLAG_CP_PIXEL)
+		*fb_sec = 1;
+	else if (*flags & (ION_FLAG_CP_SEC_DISPLAY |
+			ION_FLAG_CP_CAMERA_PREVIEW))
+		*fb_sec_dir = 1;
+
+	return ret;
 }
