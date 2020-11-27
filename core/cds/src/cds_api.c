@@ -574,10 +574,9 @@ static int cds_hang_event_notifier_call(struct notifier_block *block,
 	if (!cds_hang_evt_buff)
 		return NOTIFY_STOP_MASK;
 
-	if (cds_hang_data->offset >= QDF_WLAN_MAX_HOST_OFFSET)
-		return NOTIFY_STOP_MASK;
-
 	total_len = sizeof(*cmd);
+	if (cds_hang_data->offset + total_len > QDF_WLAN_HANG_FW_OFFSET)
+		return NOTIFY_STOP_MASK;
 
 	cds_hang_evt_buff = cds_hang_data->hang_data + cds_hang_data->offset;
 	cmd = (struct cds_hang_event_fixed_param *)cds_hang_evt_buff;
@@ -1280,6 +1279,8 @@ QDF_STATUS cds_close(struct wlan_objmgr_psoc *psoc)
 
 	dispatcher_psoc_close(psoc);
 
+	qdf_flush_work(&gp_cds_context->cds_recovery_work);
+
 	qdf_status = wma_wmi_work_close();
 	if (!QDF_IS_STATUS_SUCCESS(qdf_status)) {
 		cds_err("Failed to close wma_wmi_work");
@@ -1918,8 +1919,6 @@ static void cds_trigger_recovery_work(void *context)
 void __cds_trigger_recovery(enum qdf_hang_reason reason, const char *func,
 			    const uint32_t line)
 {
-	bool is_work_queue_needed = false;
-
 	if (!gp_cds_context) {
 		cds_err("gp_cds_context is null");
 		return;
@@ -1927,19 +1926,10 @@ void __cds_trigger_recovery(enum qdf_hang_reason reason, const char *func,
 
 	gp_cds_context->recovery_reason = reason;
 
-	if (in_atomic() ||
-	    (QDF_RESUME_TIMEOUT == reason || QDF_SUSPEND_TIMEOUT == reason))
-		is_work_queue_needed = true;
-
-	if (is_work_queue_needed) {
-		__cds_recovery_caller.func = func;
-		__cds_recovery_caller.line = line;
-		qdf_queue_work(0, gp_cds_context->cds_recovery_wq,
-			       &gp_cds_context->cds_recovery_work);
-		return;
-	}
-
-	cds_trigger_recovery_handler(func, line);
+	__cds_recovery_caller.func = func;
+	__cds_recovery_caller.line = line;
+	qdf_queue_work(0, gp_cds_context->cds_recovery_wq,
+		       &gp_cds_context->cds_recovery_work);
 }
 
 void cds_trigger_recovery_psoc(void *psoc, enum qdf_hang_reason reason,
