@@ -756,6 +756,13 @@ void dp_rx_desc_update_dbg_info(struct dp_rx_desc *rx_desc,
 #else
 
 static inline
+bool dp_rx_desc_paddr_sanity_check(struct dp_rx_desc *rx_desc,
+				   uint64_t ring_paddr)
+{
+	return true;
+}
+
+static inline
 void dp_rx_desc_alloc_dbg_info(struct dp_rx_desc *rx_desc)
 {
 }

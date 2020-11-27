@@ -529,7 +529,7 @@ static void hif_cpuhp_unregister(struct hif_softc *scn)
 }
 #endif /* ifdef HIF_CPU_PERF_AFFINE_MASK */
 
-#ifdef HIF_CE_LOG_INFO
+#if defined(HIF_CE_LOG_INFO) || defined(HIF_BUS_LOG_INFO)
 /**
  * hif_recovery_notifier_cb - Recovery notifier callback to log
  *  hang event data
@@ -556,6 +556,8 @@ int hif_recovery_notifier_cb(struct notifier_block *block, unsigned long state,
 	if (!hif_handle)
 		return -EINVAL;
 
+	hif_log_bus_info(hif_handle, notif_data->hang_data,
+			 &notif_data->offset);
 	hif_log_ce_info(hif_handle, notif_data->hang_data,
 			&notif_data->offset);
 

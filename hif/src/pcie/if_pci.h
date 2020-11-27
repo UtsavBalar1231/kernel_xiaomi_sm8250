@@ -31,9 +31,9 @@
 
 #ifdef FORCE_WAKE
 /* Register to wake the UMAC from power collapse */
-#define PCIE_SOC_PCIE_REG_PCIE_SCRATCH_0_SOC_PCIE_REG 0x4040
+#define PCIE_SOC_PCIE_REG_PCIE_SCRATCH_0_SOC_PCIE_REG (0x01E04000 + 0x40)
 /* Register used for handshake mechanism to validate UMAC is awake */
-#define PCIE_PCIE_LOCAL_REG_PCIE_SOC_WAKE_PCIE_LOCAL_REG 0x3004
+#define PCIE_PCIE_LOCAL_REG_PCIE_SOC_WAKE_PCIE_LOCAL_REG (0x01E00000 + 0x3004)
 /* Timeout duration to validate UMAC wake status */
 #ifdef HAL_CONFIG_SLUB_DEBUG_ON
 #define FORCE_WAKE_DELAY_TIMEOUT_MS 500
@@ -55,6 +55,11 @@ struct hif_tasklet_entry {
 	uint8_t id;        /* 0 - 9: maps to CE, 10: fw */
 	void *hif_handler; /* struct hif_pci_softc */
 };
+
+struct hang_event_bus_info {
+	uint16_t tlv_header;
+	uint16_t dev_id;
+} qdf_packed;
 
 /**
  * enum hif_pm_runtime_state - Driver States for Runtime Power Management
@@ -277,4 +282,15 @@ static inline int hif_pm_runtime_put_auto(struct device *dev)
 }
 
 #endif /* FEATURE_RUNTIME_PM */
+
+#ifdef HIF_BUS_LOG_INFO
+void hif_log_pcie_info(struct hif_softc *scn, uint8_t *data,
+		       unsigned int *offset);
+#else
+static inline
+void hif_log_pcie_info(struct hif_softc *scn, uint8_t *data,
+		       unsigned int *offset)
+{
+}
+#endif
 #endif /* __ATH_PCI_H__ */

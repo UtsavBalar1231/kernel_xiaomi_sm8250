@@ -953,37 +953,60 @@ struct htt_t2h_stats {
 	uint32_t num_stats;
 };
 
+/*
+ * The logic for get current index of these history is dependent on this
+ * value being power of 2.
+ */
 #define DP_RX_HIST_MAX 2048
 #define DP_RX_ERR_HIST_MAX 4096
 #define DP_RX_REINJECT_HIST_MAX 1024
 
+QDF_COMPILE_TIME_ASSERT(rx_history_size,
+			(DP_RX_HIST_MAX &
+			 (DP_RX_HIST_MAX - 1)) == 0);
+QDF_COMPILE_TIME_ASSERT(rx_err_history_size,
+			(DP_RX_ERR_HIST_MAX &
+			 (DP_RX_ERR_HIST_MAX - 1)) == 0);
+QDF_COMPILE_TIME_ASSERT(rx_reinject_history_size,
+			(DP_RX_REINJECT_HIST_MAX &
+			 (DP_RX_REINJECT_HIST_MAX - 1)) == 0);
+
+/**
+ * struct dp_buf_info_record - ring buffer info
+ * @hbi: HW ring buffer info
+ * @timestamp: timestamp when this entry was recorded
+ */
 struct dp_buf_info_record {
 	struct hal_buf_info hbi;
 	uint64_t timestamp;
 };
 
+/* struct dp_rx_history - rx ring hisotry
+ * @index: Index where the last entry is written
+ * @entry: history entries
+ */
 struct dp_rx_history {
 	qdf_atomic_t index;
 	struct dp_buf_info_record entry[DP_RX_HIST_MAX];
 };
 
+/* struct dp_rx_err_history - rx err ring hisotry
+ * @index: Index where the last entry is written
+ * @entry: history entries
+ */
 struct dp_rx_err_history {
 	qdf_atomic_t index;
 	struct dp_buf_info_record entry[DP_RX_ERR_HIST_MAX];
 };
 
+/* struct dp_rx_reinject_history - rx reinject ring hisotry
+ * @index: Index where the last entry is written
+ * @entry: history entries
+ */
 struct dp_rx_reinject_history {
 	qdf_atomic_t index;
 	struct dp_buf_info_record entry[DP_RX_REINJECT_HIST_MAX];
 };
-
-static inline uint32_t dp_history_get_next_index(qdf_atomic_t *curr_idx,
-						 uint32_t max_entries)
-{
-	uint32_t idx = qdf_atomic_inc_return(curr_idx);
-
-	return idx & (max_entries - 1);
-}
 
 /* structure to record recent operation related variable */
 struct dp_last_op_info {
@@ -1141,6 +1164,10 @@ struct dp_soc {
 	/* Number of REO destination rings */
 	uint8_t num_reo_dest_rings;
 
+	struct dp_rx_history *rx_ring_history[MAX_REO_DEST_RINGS];
+	struct dp_rx_err_history *rx_err_ring_history;
+	struct dp_rx_reinject_history *rx_reinject_ring_history;
+
 #ifdef QCA_LL_TX_FLOW_CONTROL_V2
 	/* lock to control access to soc TX descriptors */
 	qdf_spinlock_t flow_pool_array_lock;
@@ -1240,10 +1267,6 @@ struct dp_soc {
 		unsigned idx_bits;
 		TAILQ_HEAD(, dp_ast_entry) * bins;
 	} ast_hash;
-
-	struct dp_rx_history *rx_ring_history[MAX_REO_DEST_RINGS];
-	struct dp_rx_err_history *rx_err_ring_history;
-	struct dp_rx_reinject_history *rx_reinject_ring_history;
 
 	qdf_spinlock_t ast_lock;
 	/*Timer for AST entry ageout maintainance */

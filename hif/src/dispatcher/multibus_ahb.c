@@ -73,6 +73,8 @@ QDF_STATUS hif_initialize_ahb_ops(struct hif_bus_ops *bus_ops)
 	bus_ops->hif_clear_stats = &hif_ahb_clear_stats;
 	bus_ops->hif_config_irq_affinity =
 		&hif_dummy_config_irq_affinity;
+	bus_ops->hif_log_bus_info = &hif_dummy_log_bus_info;
+
 	return QDF_STATUS_SUCCESS;
 }
 
