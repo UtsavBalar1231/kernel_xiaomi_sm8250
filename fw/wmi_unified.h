@@ -1298,6 +1298,7 @@ typedef enum {
     WMI_TWT_RESUME_DIALOG_CMDID,
     WMI_TWT_BTWT_INVITE_STA_CMDID,
     WMI_TWT_BTWT_REMOVE_STA_CMDID,
+    WMI_TWT_NUDGE_DIALOG_CMDID,
 
     /** WMI commands related to motion detection **/
     WMI_MOTION_DET_CONFIG_PARAM_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_MOTION_DET),
@@ -1998,6 +1999,7 @@ typedef enum {
     /** WMI events related to regulatory offload */
     WMI_REG_CHAN_LIST_CC_EVENTID = WMI_EVT_GRP_START_ID(WMI_GRP_REGULATORY),
     WMI_11D_NEW_COUNTRY_EVENTID,
+    WMI_REG_CHAN_LIST_CC_EXT_EVENTID,
 
     /** Events for TWT(Target Wake Time) of STA and AP  */
     WMI_TWT_ENABLE_COMPLETE_EVENTID = WMI_EVT_GRP_START_ID(WMI_GRP_TWT),
@@ -2009,6 +2011,7 @@ typedef enum {
     WMI_TWT_BTWT_INVITE_STA_COMPLETE_EVENTID,
     WMI_TWT_BTWT_REMOVE_STA_COMPLETE_EVENTID,
     WMI_TWT_SESSION_STATS_EVENTID,
+    WMI_TWT_NUDGE_DIALOG_COMPLETE_EVENTID,
 
     /** Events in Prototyping phase */
     WMI_NDI_CAP_RSP_EVENTID = WMI_EVT_GRP_START_ID(WMI_GRP_PROTOTYPE),
@@ -4315,6 +4318,14 @@ typedef struct {
 /**
  * TLV (tag length value) parameters follow the scan_cmd
  * structure. The TLV's are:
+ *     channel_list:
+ *         If FW supports WMI_SERVICE_SCAN_CONFIG_PER_CHANNEL,
+ *             then channel_list may fill the upper 12 bits with channel flags,
+ *             while using only the lower 20 bits for channel frequency.
+ *             Check WMI_SCAN_CHANNEL_FLAG macros for the channel flags
+ *         If FW doesn't support WMI_SERVICE_SCAN_CONFIG_PER_CHANNEL,
+ *             then channel_list only holds the frequency value
+ *         Use WMI_SCAN_CHANNEL_FREQ_MASK & WMI_SCAN_CHANNEL_FLAGS_MASK
  *     A_UINT32 channel_list[num_chan]; // in MHz
  *     wmi_ssid ssid_list[num_ssids];
  *     wmi_mac_addr bssid_list[num_bssid];
@@ -4464,6 +4475,9 @@ typedef enum {
 /* Extend 6ghz channel measure time */
 #define WMI_SCAN_FLAG_EXT_6GHZ_EXTEND_MEASURE_TIME    0x00000400
 
+/* Force unicast address in RA */
+#define WMI_SCAN_FLAG_EXT_FORCE_UNICAST_RA            0x00000800
+
 /**
  * Currently passive scan has higher priority than beacon and
  * beacon miss would happen irrespective of dwell time.
@@ -4485,6 +4499,24 @@ typedef enum {
 
 /* Combine short SSID with legacy bssid list */
 #define WMI_SCAN_HINT_FLAG_COMBINE_BSSID_LIST   0x00000004
+
+
+#define WMI_SCAN_CHANNEL_FREQ_MASK  0x000FFFFF
+#define WMI_SCAN_CHANNEL_FLAGS_MASK 0xFFF00000
+
+/**
+ * Per channel configuration flags
+ */
+
+/**
+ * WMI_SCAN_CHANNEL_FLAG_SCAN_ONLY_IF_RNR_FOUND:
+ *     If this flag is set, then scan only if the corresponding channel
+ *     is found via RNR IE during 2g/5g scan.
+ *     If this flag is not set, then FW always scans the channel
+ *     irrespective of RNR and also FW ignores
+ *     WMI_SCAN_FLAG_EXT_6GHZ_SKIP_NON_RNR_CH flag
+ */
+#define WMI_SCAN_CHANNEL_FLAG_SCAN_ONLY_IF_RNR_FOUND 0x001
 
 typedef struct {
     A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_stop_scan_cmd_fixed_param */
@@ -9362,6 +9394,73 @@ typedef struct {
     /** sched algo FIFO full count */
     A_UINT32 vdev_pause_fail_rt_to_sched_algo_fifo_full_cnt;
 } wmi_ctrl_path_pdev_stats_struct;
+
+typedef enum {
+    WMI_CTRL_PATH_STATS_ARENA_HRAM,
+    WMI_CTRL_PATH_STATS_ARENA_HCRAM,
+    WMI_CTRL_PATH_STATS_ARENA_HREMOTE,
+    WMI_CTRL_PATH_STATS_ARENA_HCREMOTE,
+    WMI_CTRL_PATH_STATS_ARENA_REMOTE,
+    WMI_CTRL_PATH_STATS_ARENA_SRAM,
+    WMI_CTRL_PATH_STATS_ARENA_SRAM_AUX,
+    WMI_CTRL_PATH_STATS_ARENA_PAGEABLE,
+    WMI_CTRL_PATH_STATS_ARENA_CMEM,
+    WMI_CTRL_PATH_STATS_ARENA_TRAM,
+    WMI_CTRL_PATH_STATS_ARENA_HWIO,
+    WMI_CTRL_PATH_STATS_ARENA_CALDB,
+    WMI_CTRL_PATH_STATS_ARENA_M3,
+    WMI_CTRL_PATH_STATS_ARENA_ETMREMOTE,
+    WMI_CTRL_PATH_STATS_ARENA_M3_DUMP,
+    WMI_CTRL_PATH_STATS_ARENA_EMUPHY,
+    WMI_CTRL_PATH_STATS_ARENA_DBG_SRAM,
+    WMI_CTRL_PATH_STATS_ARENA_DBG_SRAM_AUX,
+    WMI_CTRL_PATH_STATS_ARENA_SRAM_AUX_OVERFLOW,
+    WMI_CTRL_PATH_STATS_ARENA_AMSS,
+    WMI_CTRL_PATH_STATS_ARENA_MAX,
+} wmi_ctrl_path_fw_arena_ids;
+
+/*
+ * Used by some hosts to print names of arenas, based on
+ * wmi_ctrl_path_fw_arena_ids values specified in
+ * wmi_ctrl_path_mem_stats_struct in ctrl_path_stats event msg.
+ */
+static INLINE A_UINT8 *wmi_ctrl_path_fw_arena_id_to_name(A_UINT32 arena_id)
+{
+    switch(arena_id)
+    {
+        WMI_RETURN_STRING(WMI_CTRL_PATH_STATS_ARENA_HRAM);
+        WMI_RETURN_STRING(WMI_CTRL_PATH_STATS_ARENA_HCRAM);
+        WMI_RETURN_STRING(WMI_CTRL_PATH_STATS_ARENA_HREMOTE);
+        WMI_RETURN_STRING(WMI_CTRL_PATH_STATS_ARENA_HCREMOTE);
+        WMI_RETURN_STRING(WMI_CTRL_PATH_STATS_ARENA_REMOTE);
+        WMI_RETURN_STRING(WMI_CTRL_PATH_STATS_ARENA_SRAM);
+        WMI_RETURN_STRING(WMI_CTRL_PATH_STATS_ARENA_SRAM_AUX);
+        WMI_RETURN_STRING(WMI_CTRL_PATH_STATS_ARENA_PAGEABLE);
+        WMI_RETURN_STRING(WMI_CTRL_PATH_STATS_ARENA_CMEM);
+        WMI_RETURN_STRING(WMI_CTRL_PATH_STATS_ARENA_TRAM);
+        WMI_RETURN_STRING(WMI_CTRL_PATH_STATS_ARENA_HWIO);
+        WMI_RETURN_STRING(WMI_CTRL_PATH_STATS_ARENA_CALDB);
+        WMI_RETURN_STRING(WMI_CTRL_PATH_STATS_ARENA_M3);
+        WMI_RETURN_STRING(WMI_CTRL_PATH_STATS_ARENA_ETMREMOTE);
+        WMI_RETURN_STRING(WMI_CTRL_PATH_STATS_ARENA_M3_DUMP);
+        WMI_RETURN_STRING(WMI_CTRL_PATH_STATS_ARENA_EMUPHY);
+        WMI_RETURN_STRING(WMI_CTRL_PATH_STATS_ARENA_DBG_SRAM);
+        WMI_RETURN_STRING(WMI_CTRL_PATH_STATS_ARENA_DBG_SRAM_AUX);
+        WMI_RETURN_STRING(WMI_CTRL_PATH_STATS_ARENA_SRAM_AUX_OVERFLOW);
+        WMI_RETURN_STRING(WMI_CTRL_PATH_STATS_ARENA_AMSS);
+    }
+
+    return (A_UINT8 *) "WMI_CTRL_PATH_STATS_ARENA_UNKNOWN";
+}
+
+typedef struct {
+    /** TLV tag and len; tag equals
+     *  WMITLV_TAG_STRUC_wmi_ctrl_path_stats_event_fixed_param */
+    A_UINT32 tlv_header;
+    A_UINT32 arena_id;          /* see wmi_ctrl_path_fw_arena_ids */
+    A_UINT32 total_bytes;       /* total bytes in each arena */
+    A_UINT32 allocated_bytes;   /* allocated bytes in each arena */
+} wmi_ctrl_path_mem_stats_struct;
 
 typedef struct {
     /** TLV tag and len; tag equals
@@ -15809,6 +15908,7 @@ typedef enum wake_reason_e {
     WOW_REASON_RFKILL,
     WOW_REASON_DFS_CAC,
     WOW_REASON_VDEV_DISCONNECT,
+    WOW_REASON_LOCAL_DATA_UC_DROP,
 
     /* add new WOW_REASON_ defs before this line */
     WOW_REASON_MAX,
@@ -21849,6 +21949,14 @@ typedef struct {
   */
 #define WMI_DEBUG_LOG_PARAM_MOD_ENABLE_BITMAP    0x5
 
+/**
+ *  Wow mode specific logging enablement
+ *  Wow mode module_id_bitmap : identifies the modules for which the log level
+ *                  should be set in WOW and modules for which the log level
+ *                  should be reset to DBGLOG_MAX_LVL.
+ */
+#define WMI_DEBUG_LOG_PARAM_WOW_MOD_ENABLE_BITMAP 0x6
+
 #define NUM_MODULES_PER_ENTRY ((sizeof(A_UINT32)) << 3)
 
 #define WMI_MODULE_ENABLE(pmid_bitmap,mod_id) \
@@ -25600,9 +25708,12 @@ typedef struct {
 typedef enum {
     /*
      * Multiple stats type can be requested together, so each value
-     * within this enum represents a bit within a stats bitmap.
+     * within this enum represents a bit position within a stats bitmap.
      */
-    WMI_REQUEST_CTRL_PATH_PDEV_TX_STAT = 0x00000001,
+    /* bit 0 is currently unused / reserved */
+    WMI_REQUEST_CTRL_PATH_PDEV_TX_STAT   = 1,
+    WMI_REQUEST_CTRL_PATH_VDEV_EXTD_STAT = 2,
+    WMI_REQUEST_CTRL_PATH_MEM_STAT       = 3,
 } wmi_ctrl_path_stats_id;
 
 typedef enum {
@@ -27225,6 +27336,7 @@ static INLINE A_UINT8 *wmi_id_to_name(A_UINT32 wmi_command)
         WMI_RETURN_STRING(WMI_REQUEST_UNIFIED_LL_GET_STA_CMDID);
         WMI_RETURN_STRING(WMI_QOS_NULL_FRAME_TX_SEND_CMDID);
         WMI_RETURN_STRING(WMI_PDEV_ENABLE_DURATION_BASED_TX_MODE_SELECTION_CMDID);
+        WMI_RETURN_STRING(WMI_TWT_NUDGE_DIALOG_CMDID);
     }
 
     return "Invalid WMI cmd";
@@ -27300,6 +27412,38 @@ typedef struct {
                                   bits 31:16 reserved */
 } wmi_regulatory_rule_struct;
 
+#define WMI_REG_RULE_PSD_FLAG_GET(psd_power_info) \
+    WMI_GET_BITS(psd_power_info, 0, 1)
+#define WMI_REG_RULE_PSD_FLAG_SET(psd_power_info, value) \
+    WMI_SET_BITS(psd_power_info, 0, 1, value)
+
+#define WMI_REG_RULE_PSD_EIRP_GET(psd_power_info) \
+    WMI_GET_BITS(psd_power_info, 16, 16)
+#define WMI_REG_RULE_PSD_EIRP_SET(psd_power_info, value) \
+    WMI_SET_BITS(psd_power_info, 16, 16, value)
+
+typedef struct {
+    A_UINT32  tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_regulatory_rule_ext_struct */
+    A_UINT32  freq_info;       /* bits 15:0  = u16 start_freq,
+                                  bits 31:16 = u16 end_freq
+                                  (both in MHz units)
+                                  use same MACRO as wmi_regulatory_rule_struct
+                                */
+    A_UINT32  bw_pwr_info;     /* bits 15:0  = u16 max_bw (MHz units),
+                                  bits 23:16 = u8 reg_power (dBm units),
+                                  bits 31:24 = u8 ant_gain (dB units)
+                                  use same MACRO as wmi_regulatory_rule_struct
+                                */
+    A_UINT32  flag_info;       /* bits 15:0  = u16 flags,
+                                  bits 31:16 reserved
+                                  use same MACRO as wmi_regulatory_rule_struct
+                                */
+    A_UINT32  psd_power_info;  /* bits 0     - whether PSD power,
+                                  bits 15:1  - reserved
+                                  bits 31:16 - maximum PSD EIRP (dB/MHz)
+                                */
+} wmi_regulatory_rule_ext_struct;
+
 typedef enum {
     WMI_REG_DFS_UNINIT_REGION = 0,
     WMI_REG_DFS_FCC_REGION    = 1,
@@ -27348,6 +27492,64 @@ typedef struct {
     A_UINT32 num_5g_reg_rules;
 /* followed by wmi_regulatory_rule_struct TLV array. First 2G and then 5G */
 } wmi_reg_chan_list_cc_event_fixed_param;
+
+typedef enum {
+    WMI_REG_CLIENT_REGULAR = 0,
+    WMI_REG_CLIENT_SUBORDINATE = 1,
+    /* 2 and 3 are reserved for future growth */
+    WMI_REG_CLIENT_MAX = 4, /* can't expand, b/c used as array length below */
+} wmi_reg_client_type;
+
+typedef struct {
+    A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_reg_chan_list_cc_event_ext_fixed_param */
+    A_UINT32 status_code; /* WMI_REG_SET_CC_STATUS_CODE */
+    A_UINT32 phy_id;
+    A_UINT32 alpha2;
+    A_UINT32 num_phy;
+    A_UINT32 country_id;  /* uses CountryCode enum values */
+    A_UINT32 domain_code; /* used EnumRd enum values */
+    A_UINT32 dfs_region;  /* WMI_REG_DFS_REGION */
+    A_UINT32 phybitmap;   /* WMI_REGULATORY_PHYBITMAP */
+    A_UINT32 min_bw_2g;   /* BW in MHz */
+    A_UINT32 max_bw_2g;   /* BW in MHz */
+    A_UINT32 min_bw_5g;   /* BW in MHz */
+    A_UINT32 max_bw_5g;   /* BW in MHz */
+    A_UINT32 num_2g_reg_rules;
+    A_UINT32 num_5g_reg_rules;
+    A_UINT32 client_type;            /* populated if device can function as client */
+    A_UINT32 rnr_tpe_usable;         /* If RNR TPE Octet usable for that country   */
+    A_UINT32 unspecified_ap_usable;  /* If unspecified AP usable for that country  */
+    A_UINT32 domain_code_6g_ap_lpi;
+    A_UINT32 domain_code_6g_ap_sp;
+    A_UINT32 domain_code_6g_ap_vlp;
+    A_UINT32 domain_code_6g_client_lpi[WMI_REG_CLIENT_MAX];
+    A_UINT32 domain_code_6g_client_sp[WMI_REG_CLIENT_MAX];
+    A_UINT32 domain_code_6g_client_vlp[WMI_REG_CLIENT_MAX];
+    A_UINT32 min_bw_6g_ap_sp; /* MHz */
+    A_UINT32 max_bw_6g_ap_sp;
+    A_UINT32 min_bw_6g_ap_lpi;
+    A_UINT32 max_bw_6g_ap_lpi;
+    A_UINT32 min_bw_6g_ap_vlp;
+    A_UINT32 max_bw_6g_ap_vlp;
+    A_UINT32 min_bw_6g_client_sp[WMI_REG_CLIENT_MAX];
+    A_UINT32 max_bw_6g_client_sp[WMI_REG_CLIENT_MAX];
+    A_UINT32 min_bw_6g_client_lpi[WMI_REG_CLIENT_MAX];
+    A_UINT32 max_bw_6g_client_lpi[WMI_REG_CLIENT_MAX];
+    A_UINT32 min_bw_6g_client_vlp[WMI_REG_CLIENT_MAX];
+    A_UINT32 max_bw_6g_client_vlp[WMI_REG_CLIENT_MAX];
+    A_UINT32 num_6g_reg_rules_ap_sp;
+    A_UINT32 num_6g_reg_rules_ap_lpi;
+    A_UINT32 num_6g_reg_rules_ap_vlp;
+    A_UINT32 num_6g_reg_rules_client_sp[WMI_REG_CLIENT_MAX];
+    A_UINT32 num_6g_reg_rules_client_lpi[WMI_REG_CLIENT_MAX];
+    A_UINT32 num_6g_reg_rules_client_vlp[WMI_REG_CLIENT_MAX];
+/*
+ * This fixed_param TLV is followed by wmi_regulatory_rule_ext struct TLV array.
+ * Within the reg rule ext TLV array, the 2G elements occur first,
+ * then the 5G elements, then the 6G elements (AP SG, AP LPI, AP VLP,
+ * client SP x4, client LPI x4, client vlp x4).
+ */
+} wmi_reg_chan_list_cc_event_ext_fixed_param;
 
 typedef struct {
     A_UINT32  tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_11d_scan_start_cmd_fixed_param */
@@ -28129,7 +28331,7 @@ typedef struct {
     wmi_mac_addr peer_macaddr; /* peer MAC address */
     A_UINT32 dialog_id;     /* TWT dialog ID */
     A_UINT32 sp_offset_us;  /* this long time after TWT resumed the 1st SP will start */
-    A_UINT32 next_twt_size; /* Next TWT subfield Size, refer to IEEE 802.11ax sectin "9.4.1.60 TWT Information field" */
+    A_UINT32 next_twt_size; /* Next TWT subfield Size, refer to IEEE 802.11ax section "9.4.1.60 TWT Information field" */
 } wmi_twt_resume_dialog_cmd_fixed_param;
 
 /* status code of resuming TWT dialog */
@@ -28151,6 +28353,34 @@ typedef struct {
     A_UINT32 dialog_id;     /* TWT dialog ID */
     A_UINT32 status;        /* refer to WMI_RESUME_TWT_STATUS_T */
 } wmi_twt_resume_dialog_complete_event_fixed_param;
+
+typedef struct {
+    A_UINT32 tlv_header;    /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_twt_nudge_dialog_cmd_fixed_param  */
+    A_UINT32 vdev_id;       /* VDEV identifier */
+    wmi_mac_addr peer_macaddr; /* peer MAC address */
+    A_UINT32 dialog_id;     /* TWT dialog ID */
+    A_UINT32 suspend_duration_ms;  /* this long time after TWT paused the 1st SP will start (millisecond) */
+    A_UINT32 next_twt_size; /* Next TWT subfield Size, refer to IEEE 802.11ax section "9.4.1.60 TWT Information field" */
+} wmi_twt_nudge_dialog_cmd_fixed_param;
+
+/* status code of nudging TWT dialog */
+typedef enum _WMI_TWT_NUDGE_STATUS_T {
+    WMI_NUDGE_TWT_STATUS_OK,                  /* nudging TWT dialog successfully completed */
+    WMI_NUDGE_TWT_STATUS_DIALOG_ID_NOT_EXIST, /* TWT dialog ID doesn't exist */
+    WMI_NUDGE_TWT_STATUS_INVALID_PARAM,       /* invalid parameters */
+    WMI_NUDGE_TWT_STATUS_DIALOG_ID_BUSY,      /* FW is in the process of handling this dialog */
+    WMI_NUDGE_TWT_STATUS_NO_RESOURCE,         /* FW resource exhausted */
+    WMI_NUDGE_TWT_STATUS_NO_ACK,              /* peer AP/STA did not ACK the request/response frame */
+    WMI_NUDGE_TWT_STATUS_UNKNOWN_ERROR,       /* nudging TWT dialog failed with an unknown reason */
+} WMI_TWT_NUDGE_STATUS_T;
+
+typedef struct {
+    A_UINT32 tlv_header;    /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_twt_nudge_dialog_complete_event_fixed_param */
+    A_UINT32 vdev_id;       /* VDEV identifier */
+    wmi_mac_addr peer_macaddr; /* peer MAC address */
+    A_UINT32 dialog_id;     /* TWT dialog ID */
+    A_UINT32 status;        /* refer to WMI_NUDGE_TWT_STATUS_T */
+} wmi_twt_nudge_dialog_complete_event_fixed_param;
 
 typedef struct {
     A_UINT32 tlv_header;    /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_twt_btwt_invite_sta_cmd_fixed_param  */
