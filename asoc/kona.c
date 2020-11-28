@@ -88,6 +88,8 @@
 #define WCN_CDC_SLIM_TX_CH_MAX 2
 #define WCN_CDC_SLIM_TX_CH_MAX_LITO 3
 
+#define SWR_MAX_SLAVE_DEVICES 6
+
 enum {
 	RX_PATH = 0,
 	TX_PATH,
@@ -195,7 +197,10 @@ struct msm_asoc_mach_data {
 	struct device_node *fsa_handle;
 	struct clk *lpass_audio_hw_vote;
 	int core_audio_vote_count;
+	u32 wsa_max_devs;
 	u32 tdm_max_slots; /* Max TDM slots used */
+	int (*get_wsa_dev_num)(struct snd_soc_component*);
+	struct afe_cps_hw_intf_cfg cps_config;
 };
 
 struct tdm_port {
@@ -2691,6 +2696,12 @@ static int msm_get_port_id(int be_id)
 	case MSM_BACKEND_DAI_SENARY_MI2S_TX:
 		afe_port_id = AFE_PORT_ID_SENARY_MI2S_TX;
 		break;
+	case MSM_BACKEND_DAI_WSA_CDC_DMA_RX_0:
+		afe_port_id = AFE_PORT_ID_WSA_CODEC_DMA_RX_0;
+		break;
+	case MSM_BACKEND_DAI_WSA_CDC_DMA_TX_0:
+		afe_port_id = AFE_PORT_ID_WSA_CODEC_DMA_TX_0;
+		break;
 	case MSM_BACKEND_DAI_VA_CDC_DMA_TX_0:
 		afe_port_id = AFE_PORT_ID_VA_CODEC_DMA_TX_0;
 		break;
@@ -4902,6 +4913,121 @@ static int msm_snd_cdc_dma_startup(struct snd_pcm_substream *substream)
 	return ret;
 }
 
+static void set_cps_config(struct snd_soc_pcm_runtime *rtd,
+				u32 num_ch, u32 ch_mask)
+{
+	int i = 0;
+	int val = 0;
+	u8 dev_num = 0;
+	int ch_configured = 0;
+	int j = 0;
+	int n = 0;
+	char wsa_cdc_name[DEV_NAME_STR_LEN];
+	struct snd_soc_component *component = NULL;
+	struct snd_soc_dai_link *dai_link = rtd->dai_link;
+        struct msm_asoc_mach_data *pdata =
+			snd_soc_card_get_drvdata(rtd->card);
+
+	if (!pdata) {
+		pr_err("%s: pdata is NULL\n", __func__);
+		return;
+	}
+
+	if (!num_ch) {
+		pr_err("%s: channel count is 0\n", __func__);
+		return;
+	}
+
+	if (!pdata->get_wsa_dev_num) {
+		pr_err("%s: get_wsa_dev_num is NULL\n", __func__);
+		return;
+	}
+
+	if (!pdata->cps_config.spkr_dep_cfg) {
+		pr_debug("%s: spkr_dep_cfg is NULL\n", __func__);
+		return;
+	}
+
+	if (!pdata->cps_config.hw_reg_cfg.lpass_wr_cmd_reg_phy_addr ||
+	   !pdata->cps_config.hw_reg_cfg.lpass_rd_cmd_reg_phy_addr ||
+	   !pdata->cps_config.hw_reg_cfg.lpass_rd_fifo_reg_phy_addr) {
+		pr_err("%s: cps static configuration is not set\n", __func__);
+		return;
+	}
+
+	pdata->cps_config.lpass_hw_intf_cfg_mode = 1;
+
+	while (ch_configured < num_ch) {
+		if (!(ch_mask & (1 << i))) {
+			i++;
+			continue;
+		}
+
+		snprintf(wsa_cdc_name, sizeof(wsa_cdc_name), "wsa-codec.%d",
+			 i+1);
+
+		/* Use n to make sure both WSA components are retrieved */
+		/* When first WSA component is retrieved adjust looping
+		   variable such that the next time only the remaining part
+		   of the array is traversed */
+		for (j = n; j < rtd->card->num_aux_devs; j++)
+		{
+			if (msm_codec_conf[j].name_prefix != NULL ) {
+				if (strstr(msm_codec_conf[j].name_prefix,
+					"Left")) {
+					component = soc_find_component_locked(
+						msm_aux_dev[j].codec_of_node,
+						NULL);
+					n = j+1;
+					break;
+				}
+				else if (strstr(msm_codec_conf[j].name_prefix,
+					"Right")) {
+					component = soc_find_component_locked(
+						msm_aux_dev[j].codec_of_node,
+						NULL);
+					n = j+1;
+					break;
+				}
+			}
+		}
+
+		if (!component) {
+			pr_err("%s: %s component is NULL\n", __func__,
+				wsa_cdc_name);
+			return;
+		}
+
+		dev_num = pdata->get_wsa_dev_num(component);
+		if (dev_num < 0 || dev_num > SWR_MAX_SLAVE_DEVICES) {
+			pr_err("%s: invalid slave dev num : %d\n", __func__,
+				dev_num);
+			return;
+		}
+
+		/* Clear stale dev num info */
+		pdata->cps_config.spkr_dep_cfg[i].vbatt_pkd_reg_addr &= 0xFFFF;
+		pdata->cps_config.spkr_dep_cfg[i].temp_pkd_reg_addr &= 0xFFFF;
+
+		val = 0;
+
+		/* bits 20:23 carry swr device number */
+		val |= dev_num << 20;
+
+		/* bits 24:27 carry read length in bytes */
+		val |= 1 << 24;
+
+		/* Update dev num in packed reg addr */
+		pdata->cps_config.spkr_dep_cfg[i].vbatt_pkd_reg_addr |= val;
+		pdata->cps_config.spkr_dep_cfg[i].temp_pkd_reg_addr |= val;
+		i++;
+		ch_configured++;
+	}
+
+	afe_set_cps_config(msm_get_port_id(dai_link->id),
+					&pdata->cps_config, ch_mask);
+}
+
 static int msm_snd_cdc_dma_hw_params(struct snd_pcm_substream *substream,
 			     struct snd_pcm_hw_params *params)
 {
@@ -4949,6 +5075,11 @@ static int msm_snd_cdc_dma_hw_params(struct snd_pcm_substream *substream,
 				goto err;
 			}
 
+			if (dai_link->id == MSM_BACKEND_DAI_WSA_CDC_DMA_RX_0 ||
+			    dai_link->id == MSM_BACKEND_DAI_WSA_CDC_DMA_RX_1) {
+				set_cps_config(rtd, user_set_rx_ch,
+						rx_ch_cdc_dma);
+			}
 		}
 		break;
 		}
@@ -8236,6 +8367,115 @@ static int msm_audio_ssr_register(struct device *dev)
 	return ret;
 }
 
+static void parse_cps_configuration(struct platform_device *pdev,
+			struct msm_asoc_mach_data *pdata)
+{
+	int ret = 0;
+	int i = 0, j = 0;
+	u32 dt_values[MAX_CPS_LEVELS];
+
+	if (!pdev || !pdata || !pdata->wsa_max_devs)
+		return;
+
+	pdata->get_wsa_dev_num = wsa883x_codec_get_dev_num;
+	pdata->cps_config.hw_reg_cfg.num_spkr = pdata->wsa_max_devs;
+
+	ret = of_property_read_u32_array(pdev->dev.of_node,
+				"qcom,cps_reg_phy_addr", dt_values,
+				sizeof(dt_values)/sizeof(dt_values[0]));
+	if (ret) {
+		dev_dbg(&pdev->dev, "%s: could not find %s entry in dt\n",
+			__func__, "qcom,cps_reg_phy_addr");
+	} else {
+		pdata->cps_config.hw_reg_cfg.lpass_wr_cmd_reg_phy_addr =
+								dt_values[0];
+		pdata->cps_config.hw_reg_cfg.lpass_rd_cmd_reg_phy_addr =
+								dt_values[1];
+		pdata->cps_config.hw_reg_cfg.lpass_rd_fifo_reg_phy_addr =
+								dt_values[2];
+	}
+
+	ret = of_property_read_u32_array(pdev->dev.of_node,
+				"qcom,cps_threshold_levels", dt_values,
+				sizeof(dt_values)/sizeof(dt_values[0]) - 1);
+	if (ret) {
+		dev_dbg(&pdev->dev, "%s: could not find %s entry in dt\n",
+			__func__, "qcom,cps_threshold_levels");
+	} else {
+		pdata->cps_config.hw_reg_cfg.vbatt_lower2_threshold =
+								dt_values[0];
+		pdata->cps_config.hw_reg_cfg.vbatt_lower1_threshold =
+								dt_values[1];
+	}
+
+	pdata->cps_config.spkr_dep_cfg = devm_kzalloc(&pdev->dev,
+				    sizeof(struct lpass_swr_spkr_dep_cfg_t)
+				    * pdata->wsa_max_devs, GFP_KERNEL);
+	if (!pdata->cps_config.spkr_dep_cfg) {
+		dev_err(&pdev->dev, "%s: spkr dep cfg alloc failed\n", __func__);
+		return;
+	}
+	ret = of_property_read_u32_array(pdev->dev.of_node,
+				"qcom,cps_wsa_vbatt_temp_reg_addr", dt_values,
+				sizeof(dt_values)/sizeof(dt_values[0]) - 1);
+	if (ret) {
+		dev_dbg(&pdev->dev, "%s: could not find %s entry in dt\n",
+			__func__, "qcom,cps_wsa_vbatt_temp_reg_addr");
+	} else {
+		for (i = 0; i < pdata->wsa_max_devs; i++) {
+			pdata->cps_config.spkr_dep_cfg[i].vbatt_pkd_reg_addr =
+								dt_values[0];
+			pdata->cps_config.spkr_dep_cfg[i].temp_pkd_reg_addr =
+								dt_values[1];
+		}
+	}
+
+	ret = of_property_read_u32_array(pdev->dev.of_node,
+				"qcom,cps_normal_values", dt_values,
+				sizeof(dt_values)/sizeof(dt_values[0]));
+	if (ret) {
+		dev_dbg(&pdev->dev, "%s: could not find %s entry in dt\n",
+			__func__, "qcom,cps_normal_values");
+	} else {
+		for (i = 0; i < pdata->wsa_max_devs; i++) {
+			for (j = 0; j < MAX_CPS_LEVELS; j++) {
+				pdata->cps_config.spkr_dep_cfg[i].
+					value_normal_thrsd[j] = dt_values[j];
+			}
+		}
+	}
+
+	ret = of_property_read_u32_array(pdev->dev.of_node,
+				"qcom,cps_lower1_values", dt_values,
+				sizeof(dt_values)/sizeof(dt_values[0]));
+	if (ret) {
+		dev_dbg(&pdev->dev, "%s: could not find %s entry in dt\n",
+			__func__, "qcom,cps_lower1_values");
+	} else {
+		for (i = 0; i < pdata->wsa_max_devs; i++) {
+			for (j = 0; j < MAX_CPS_LEVELS; j++) {
+				pdata->cps_config.spkr_dep_cfg[i].
+					value_low1_thrsd[j] = dt_values[j];
+			}
+		}
+	}
+
+	ret = of_property_read_u32_array(pdev->dev.of_node,
+				"qcom,cps_lower2_values", dt_values,
+				sizeof(dt_values)/sizeof(dt_values[0]));
+	if (ret) {
+		dev_dbg(&pdev->dev, "%s: could not find %s entry in dt\n",
+			__func__, "qcom,cps_lower2_values");
+	} else {
+		for (i = 0; i < pdata->wsa_max_devs; i++) {
+			for (j = 0; j < MAX_CPS_LEVELS; j++) {
+				pdata->cps_config.spkr_dep_cfg[i].
+					value_low2_thrsd[j] = dt_values[j];
+			}
+		}
+	}
+}
+
 static int msm_asoc_machine_probe(struct platform_device *pdev)
 {
 	struct snd_soc_card *card = NULL;
@@ -8306,6 +8546,15 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	}
 	dev_info(&pdev->dev, "%s: Sound card %s registered\n",
 		 __func__, card->name);
+
+	/* Get maximum WSA device count for this platform */
+	ret = of_property_read_u32(pdev->dev.of_node,
+				   "qcom,wsa-max-devs", &pdata->wsa_max_devs);
+	if (ret) {
+		dev_err(&pdev->dev, "%s: No DT match for wsa max devs\n",
+				__func__);
+		pdata->wsa_max_devs = 0;
+	}
 
 	ret = of_property_read_u32(pdev->dev.of_node, "qcom,tdm-max-slots",
 				   &pdata->tdm_max_slots);
@@ -8418,6 +8667,10 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 			msm_cdc_pinctrl_set_wakeup_capable(pdata->mi2s_gpio_p[index], false);
 		atomic_set(&(pdata->mi2s_gpio_ref_count[index]), 0);
 	}
+
+	/* parse cps configuration from dt */
+	if (of_property_read_bool(pdev->dev.of_node, "qcom,cps_reg_phy_addr"))
+		parse_cps_configuration(pdev, pdata);
 
 	/* Register LPASS audio hw vote */
 	lpass_audio_hw_vote = devm_clk_get(&pdev->dev, "lpass_audio_hw_vote");
