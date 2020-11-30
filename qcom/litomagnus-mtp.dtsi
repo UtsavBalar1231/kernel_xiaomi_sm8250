@@ -73,6 +73,10 @@
 	status = "disabled";
 };
 
+&pmk8350_vadc {
+	status = "disabled";
+};
+
 &pm7250b_qg {
 	qcom,use-cp-iin-sns;
 };
