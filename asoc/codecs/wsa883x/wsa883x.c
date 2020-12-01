@@ -770,6 +770,30 @@ int wsa883x_codec_info_create_codec_entry(struct snd_info_entry *codec_root,
 }
 EXPORT_SYMBOL(wsa883x_codec_info_create_codec_entry);
 
+/*
+ * wsa883x_codec_get_dev_num - returns swr device number
+ * @component: Codec instance
+ *
+ * Return: swr device number on success or negative error
+ * code on failure.
+ */
+int wsa883x_codec_get_dev_num(struct snd_soc_component *component)
+{
+	struct wsa883x_priv *wsa883x;
+
+	if (!component)
+		return -EINVAL;
+
+	wsa883x = snd_soc_component_get_drvdata(component);
+	if (!wsa883x) {
+		pr_err("%s: wsa883x component is NULL\n", __func__);
+		return -EINVAL;
+	}
+
+	return wsa883x->swr_slave->dev_num;
+}
+EXPORT_SYMBOL(wsa883x_codec_get_dev_num);
+
 static int wsa883x_get_compander(struct snd_kcontrol *kcontrol,
 			       struct snd_ctl_elem_value *ucontrol)
 {
@@ -996,6 +1020,12 @@ static int wsa883x_spkr_event(struct snd_soc_dapm_widget *w,
 		/* Force remove group */
 		swr_remove_from_group(wsa883x->swr_slave,
 				      wsa883x->swr_slave->dev_num);
+		snd_soc_component_update_bits(component,
+				WSA883X_VBAT_ADC_FLT_CTL,
+				0x0E, 0x06);
+		snd_soc_component_update_bits(component,
+				WSA883X_VBAT_ADC_FLT_CTL,
+				0x01, 0x01);
 		if (test_bit(SPKR_ADIE_LB, &wsa883x->status_mask))
 			snd_soc_component_update_bits(component,
 				WSA883X_PA_FSM_CTL, 0x01, 0x01);
@@ -1004,6 +1034,12 @@ static int wsa883x_spkr_event(struct snd_soc_dapm_widget *w,
 		if (!test_bit(SPKR_ADIE_LB, &wsa883x->status_mask))
 			wcd_disable_irq(&wsa883x->irq_info,
 					WSA883X_IRQ_INT_PDM_WD);
+		snd_soc_component_update_bits(component,
+				WSA883X_VBAT_ADC_FLT_CTL,
+				0x01, 0x00);
+		snd_soc_component_update_bits(component,
+				WSA883X_VBAT_ADC_FLT_CTL,
+				0x0E, 0x00);
 		snd_soc_component_update_bits(component, WSA883X_PA_FSM_CTL,
 				0x01, 0x00);
 		snd_soc_component_update_bits(wsa883x->component,
