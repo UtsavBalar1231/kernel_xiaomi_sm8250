@@ -185,6 +185,7 @@ struct wlan_srng_cfg {
  * @is_rx_fisa_enabled: flag to enable/disable FISA Rx
  * @rx_pending_high_threshold: threshold of starting pkt drop
  * @rx_pending_low_threshold: threshold of stopping pkt drop
+ * @wow_check_rx_pending_enable: Enable RX frame pending check in WoW
  */
 struct wlan_cfg_dp_soc_ctxt {
 	int num_int_ctxts;
@@ -287,6 +288,7 @@ struct wlan_cfg_dp_soc_ctxt {
 	uint8_t is_rx_fisa_enabled;
 	uint32_t rx_pending_high_threshold;
 	uint32_t rx_pending_low_threshold;
+	bool wow_check_rx_pending_enable;
 };
 
 /**

@@ -2239,6 +2239,7 @@ struct cdp_monitor_filter {
  * @cfg_dp_ce_classify_enable: get CE classify enable config
  * @cfg_dp_disable_intra_bss_fwd: get intra bss fwd config
  * @cfg_dp_pktlog_buffer_size: get packet log buffer size config
+ * @cfg_dp_wow_check_rx_pending: get wow rx pending frame check config
  */
 enum cdp_dp_cfg {
 	cfg_dp_enable_data_stall,
@@ -2260,6 +2261,7 @@ enum cdp_dp_cfg {
 	cfg_dp_ce_classify_enable,
 	cfg_dp_disable_intra_bss_fwd,
 	cfg_dp_pktlog_buffer_size,
+	cfg_dp_wow_check_rx_pending,
 };
 
 /**

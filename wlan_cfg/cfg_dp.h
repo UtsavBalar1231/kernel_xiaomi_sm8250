@@ -926,6 +926,25 @@
 	CFG_INI_BOOL("legacy_mode_csum_disable", false, \
 		     "Enable/Disable legacy mode checksum")
 
+/*
+ * <ini>
+ * wow_check_rx_pending_enable - control to check RX frames pending in Wow
+ * @Min: 0
+ * @Max: 1
+ * @Default: 0
+ *
+ * This ini is used to control DP Software to perform RX pending check
+ * before entering WoW mode
+ *
+ * Usage: Internal
+ *
+ * </ini>
+ */
+#define CFG_DP_WOW_CHECK_RX_PENDING \
+		CFG_INI_BOOL("wow_check_rx_pending_enable", \
+		false, \
+		"enable rx frame pending check in WoW mode")
+
 #define CFG_DP \
 		CFG(CFG_DP_HTT_PACKET_TYPE) \
 		CFG(CFG_DP_INT_BATCH_THRESHOLD_OTHER) \
@@ -1003,6 +1022,6 @@
 		CFG(CFG_DP_RX_FISA_ENABLE) \
 		CFG(CFG_DP_LEGACY_MODE_CSUM_DISABLE) \
 		CFG(CFG_DP_RX_PENDING_HL_THRESHOLD) \
-		CFG(CFG_DP_RX_PENDING_LO_THRESHOLD)
-
+		CFG(CFG_DP_RX_PENDING_LO_THRESHOLD) \
+		CFG(CFG_DP_WOW_CHECK_RX_PENDING)
 #endif /* _CFG_DP_H_ */
