@@ -70,6 +70,11 @@ extern "C" {
 
 #include <wlan_defs.h>
 #include <wmi_services.h>
+/*
+ * Include the defs of vendor-specific messages (or possibly dummy defs
+ * if there are no actual vendor-specific message defs).
+ */
+#include <wmi_unified_vendor.h>
 
 #define ATH_MAC_LEN             6               /**< length of MAC in bytes */
 #define WMI_EVENT_STATUS_SUCCESS 0 /* Success return status to host */
@@ -121,7 +126,7 @@ extern "C" {
     (((num_entries) / (32 / (bits_per_entry))) +            \
     (((num_entries) % (32 / (bits_per_entry))) ? 1 : 0))
 
-#define WMI_RETURN_STRING(str) case ((str)): return (uint8_t *)(# str);
+#define WMI_RETURN_STRING(str) case ((str)): return (A_UINT8 *)(# str);
 
 static INLINE A_UINT32 wmi_packed_arr_get_bits(A_UINT32 *arr,
     A_UINT32 entry_index, A_UINT32 bits_per_entry)
@@ -260,6 +265,7 @@ typedef enum {
     WMI_GRP_AUDIO,          /* 0x43 */
     WMI_GRP_CFR_CAPTURE,    /* 0x44 */
     WMI_GRP_ATM,            /* 0x45 ATM (Air Time Management group) */
+    WMI_GRP_VENDOR,         /* 0x46 vendor specific group */
 } WMI_GRP_ID;
 
 #define WMI_CMD_GRP_START_ID(grp_id) (((grp_id) << 12) | 0x1)
@@ -1338,6 +1344,12 @@ typedef enum {
     WMI_ATF_GROUP_WMM_AC_CONFIG_REQUEST_CMDID,
     /** ATF Peer Extended Request command */
     WMI_PEER_ATF_EXT_REQUEST_CMDID,
+
+    /** Vendor Defined WMI commands **/
+    WMI_VENDOR_PDEV_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_VENDOR),
+    WMI_VENDOR_VDEV_CMDID,
+    WMI_VENDOR_PEER_CMDID,
+    /** Further vendor cmd IDs can be added below **/
 } WMI_CMD_ID;
 
 typedef enum {
@@ -2036,6 +2048,11 @@ typedef enum {
     WMI_AUDIO_AGGR_REPORT_STATISTICS_EVENTID = WMI_EVT_GRP_START_ID(WMI_GRP_AUDIO),
     WMI_AUDIO_AGGR_SCHED_METHOD_EVENTID,
 
+    /** Vendor defined WMI events **/
+    WMI_VENDOR_PDEV_EVENTID = WMI_EVT_GRP_START_ID(WMI_GRP_VENDOR),
+    WMI_VENDOR_VDEV_EVENTID,
+    WMI_VENDOR_PEER_EVENTID,
+    /** Further vendor event IDs can be added below **/
 } WMI_EVT_ID;
 
 /* defines for OEM message sub-types */
@@ -7061,6 +7078,14 @@ typedef enum {
     /* Param to enable/disable PCIE HW ILP */
     WMI_PDEV_PARAM_PCIE_HW_ILP,
 
+    /*
+     * Configure the TXTD_START_TIMESTAMP parameters
+     * The timestamp units are nanoseconds.
+     * This parameter can be used to adjust at what point the TXTD module
+     * will start operating after the STA connects to an AP.
+     */
+    WMI_PDEV_PARAM_SET_TXTD_START_TIMESTAMP,
+
 } WMI_PDEV_PARAM;
 
 #define WMI_PDEV_ONLY_BSR_TRIG_IS_ENABLED(trig_type) WMI_GET_BITS(trig_type, 0, 1)
@@ -11738,6 +11763,7 @@ typedef enum {
          *  5  | UL OFDMA, for AP its Tx OFDMA trigger for Sta its Rx OFDMA
          *     |           trigger receive & UL response
          *  6  | UL MUMIMO
+         *  7  | TXBF+OFDMA
          */
         WMI_VDEV_PARAM_SET_HEMU_MODE,                         /* 0x8002 */
         WMI_VDEV_PARAM_HEOPS_0_31,                            /* 0x8003 */
@@ -11772,6 +11798,10 @@ typedef enum {
 #define WMI_VDEV_HE_ULMUMIMO_IS_ENABLED(hemu_mode) WMI_GET_BITS(hemu_mode, 6, 1)
 #define WMI_VDEV_HE_ULMUMIMO_ENABLE(hemu_mode) WMI_SET_BITS(hemu_mode, 6, 1, 1)
 #define WMI_VDEV_HE_ULMUMIMO_DISABLE(hemu_mode) WMI_SET_BITS(hemu_mode, 6, 1, 0)
+
+#define WMI_VDEV_HE_TXBF_OFDMA_IS_ENABLED(hemu_mode) WMI_GET_BITS(hemu_mode, 7, 1)
+#define WMI_VDEV_HE_TXBF_OFDMA_ENABLE(hemu_mode) WMI_SET_BITS(hemu_mode, 7, 1, 1)
+#define WMI_VDEV_HE_TXBF_OFDMA_DISABLE(hemu_mode) WMI_SET_BITS(hemu_mode, 7, 1, 0)
 
 #define WMI_VDEV_HE_AX_SOUNDING_IS_ENABLED(mode) WMI_GET_BITS(mode, 0, 1)
 #define WMI_VDEV_HE_MU_SOUNDING_IS_ENABLED(mode) WMI_GET_BITS(mode, 2, 1)
@@ -19936,6 +19966,8 @@ typedef struct {
 #define WMI_NAN_SET_RANGING_INITIATOR_ROLE(flag, val) WMI_SET_BITS(flag, 0, 1, val)
 #define WMI_NAN_GET_RANGING_RESPONDER_ROLE(flag)      WMI_GET_BITS(flag, 1, 1)
 #define WMI_NAN_SET_RANGING_RESPONDER_ROLE(flag, val) WMI_SET_BITS(flag, 1, 1, val)
+#define WMI_NAN_GET_NAN_6G_DISABLE(flag)              WMI_GET_BITS(flag, 2, 1)
+#define WMI_NAN_SET_NAN_6G_DISABLE(flag, val)         WMI_SET_BITS(flag, 2, 1, val)
 
 typedef struct {
     A_UINT32 tlv_header; /** TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_nan_host_config_param */
@@ -19945,7 +19977,8 @@ typedef struct {
     /** Flags: refer to WMI_NAN_GET/SET macros
      *  Bit   0    -> Nan ranging initiator role (0 - Disable, 1 - Enable)
      *  Bit   1    -> Nan ranging responder role (0 - Disable, 1 - Enable)
-     *  Bits  2-31 -> Reserved
+     *  Bit   2    -> Nan 6 GHz support          (1 - Disable, 0 - Enable)
+     *  Bits  3-31 -> Reserved
      */
     A_UINT32 flags;
 } wmi_nan_host_config_param_PROTOTYPE;
@@ -26590,6 +26623,11 @@ typedef enum {
     WMI_THERMAL_MITIGATION      = 1,
     /* shut down the tx completely */
     WMI_THERMAL_SHUTOFF         = 2,
+    /* THERMAL_SHUTDOWN_TGT
+     * The target is over the temperature limit even with tx shut off.
+     * The target will be shut down entirely to control the temperature.
+     */
+    WMI_THERMAL_SHUTDOWN_TGT    = 3,
 } WMI_THERMAL_THROT_LEVEL;
 
 /** FW response with the stats event id for every pdev and zones */
@@ -29320,6 +29358,29 @@ typedef struct {
     A_UINT32 timer_canceled;
 } wmi_roam_initial_info;
 
+typedef enum {
+    WMI_ROAM_MSG_RSSI_RECOVERED = 1, /* Connected AP RSSI is recovered to good region */
+} WMI_ROAM_MSG_ID;
+
+typedef struct {
+    A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_roam_msg_info_tlv_param */
+    /*
+     * timestamp is the absolute time (in milliseconds) w.r.t host timer
+     * which is synchronized between the host and target
+     */
+    A_UINT32 timestamp;
+    A_UINT32 msg_id; /* Message ID from WMI_ROAM_MSG_ID */
+    /* msg_param values are interpreted differently for different msg_id values.
+     * if msg_id == WMI_ROAM_MSG_RSSI_RECOVERED:
+     *     msg_param1 contains current AP RSSI in dBm
+     *         (unsigned -> signed conversion is required)
+     *     msg_param2 contains next trigger RSSI threshold in dBm
+     *         (unsigned -> signed conversion is required)
+     */
+    A_UINT32 msg_param1;
+    A_UINT32 msg_param2;
+} wmi_roam_msg_info;
+
 typedef struct {
     A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_roam_stats_event_fixed_param */
     A_UINT32 vdev_id;
@@ -29677,9 +29738,21 @@ typedef struct {
     A_UINT32 chan_width; /* wmi_channel_width */
 } wmi_chan_width_peer_list;
 
+#define WMI_PEER_CHAN_WIDTH_SWITCH_SET_VALID_VDEV_ID(comp) WMI_SET_BITS(comp, 31,1, 1)
+#define WMI_PEER_CHAN_WIDTH_SWITCH_GET_VALID_VDEV_ID(comp) WMI_GET_BITS(comp, 31, 1)
+
+#define WMI_PEER_CHAN_WIDTH_SWITCH_SET_VDEV_ID(comp, value) WMI_SET_BITS(comp, 0, 8, value)
+#define WMI_PEER_CHAN_WIDTH_SWITCH_GET_VDEV_ID(comp) WMI_GET_BITS(comp, 0, 8)
+
 typedef struct {
     A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_peer_chan_width_switch_cmd_fixed_param */
     A_UINT32 num_peers;
+    /* vdev_var:
+     * The MSb (bit 31) indicates that the vdev_id is valid.
+     * The LSB is used to infer the actual vdev_id.
+     * The other bits can be used for future enhancements.
+     */
+    A_UINT32 vdev_var;
     /*
      * Following this structure is the TLV:
      * struct wmi_chan_width_peer_list chan_width_peer_info[num_peers];
@@ -32335,6 +32408,119 @@ typedef struct {
      */
 } wmi_pdev_twt_session_stats_event_fixed_param;
 
+typedef struct wmi_pdev_vendor_event
+{
+    /* type is WMI_PDEV_VENDOR_EVENTID */
+    A_UINT32 tlv_header;
+    /* pdev_id for identifying the MAC.  See macros starting with WMI_PDEV_ID_ for values. */
+    A_UINT32 pdev_id;
+    /* Any vendor specialization cases will need to add sub_type enum defs. */
+    A_UINT32 sub_type;
+    wmi_pdev_vendor_event_val evt;
+    /* NOTE:
+     * Future changes may increase the size of pdev_vendor_event.
+     * Consequently, no fields can be added here after pdev_vendor_event,
+     * because their offsets within wmi_pdev_vendor_event_fixed_param
+     * would change, causing backwards incompatibilities.
+     */
+} wmi_pdev_vendor_event_fixed_param;
+
+typedef struct wmi_vdev_vendor_event
+{
+    /* type is WMI_VDEV_VENDOR_EVENTID */
+    A_UINT32 tlv_header;
+    /* pdev_id for identifying the MAC.  See macros starting with WMI_PDEV_ID_ for values. */
+    A_UINT32 pdev_id;
+    /* unique id identifying the VDEV, generated by the caller */
+    A_UINT32 vdev_id;
+    /* Any vendor specialization cases will need to add sub_type enum defs. */
+    A_UINT32 sub_type;
+    wmi_vdev_vendor_event_val evt;
+    /* NOTE:
+     * Future changes may increase the size of vdev_vendor_event.
+     * Consequently, no fields can be added here after vdev_vendor_event,
+     * because their offsets within wmi_vdev_vendor_event_fixed_param
+     * would change, causing backwards incompatibilities.
+     */
+} wmi_vdev_vendor_event_fixed_param;
+
+typedef struct wmi_peer_vendor_event
+{
+    /* type is WMI_PEER_VENDOR_EVENTID */
+    A_UINT32 tlv_header;
+    /* pdev_id for identifying the MAC.  See macros starting with WMI_PDEV_ID_ for values. */
+    A_UINT32 pdev_id;
+    /* unique id identifying the VDEV, generated by the caller */
+    A_UINT32 vdev_id;
+    /* peer MAC address */
+    wmi_mac_addr peer_macaddr;
+    /* Any vendor specialization cases will need to add sub_type enum defs. */
+    A_UINT32 sub_type;
+    wmi_peer_vendor_event_val evt;
+    /* NOTE:
+     * Future changes may increase the size of peer_vendor_event.
+     * Consequently, no fields can be added here after peer_vendor_event,
+     * because their offsets within wmi_peer_vendor_event_fixed_param
+     * would change, causing backwards incompatibilities.
+     */
+} wmi_peer_vendor_event_fixed_param;
+
+typedef struct wmi_pdev_vendor_cmd
+{
+    /* type is WMI_PDEV_VENDOR_CMDID */
+    A_UINT32 tlv_header;
+    /* pdev_id for identifying the MAC.  See macros starting with WMI_PDEV_ID_ for values. */
+    A_UINT32 pdev_id;
+    /* Any vendor specialization cases will need to add sub_type enum defs. */
+    A_UINT32 sub_type;
+    wmi_pdev_vendor_cmd_val cmd;
+    /* NOTE:
+     * Future changes may increase the size of pdev_vendor_cmd.
+     * Consequently, no fields can be added here after pdev_vendor_cmd,
+     * because their offsets within wmi_pdev_vendor_cmd_fixed_param
+     * would change, causing backwards incompatibilities.
+     */
+} wmi_pdev_vendor_cmd_fixed_param;
+
+typedef struct wmi_vdev_vendor_cmd
+{
+    /* type is WMI_VDEV_VENDOR_CMDID */
+    A_UINT32 tlv_header;
+    /* pdev_id for identifying the MAC.  See macros starting with WMI_PDEV_ID_ for values. */
+    A_UINT32 pdev_id;
+    /* unique id identifying the VDEV, generated by the caller */
+    A_UINT32 vdev_id;
+    /* Any vendor specialization cases will need to add sub_type enum defs. */
+    A_UINT32 sub_type;
+    wmi_vdev_vendor_cmd_val cmd;
+    /* NOTE:
+     * Future changes may increase the size of vdev_vendor_cmd.
+     * Consequently, no fields can be added here after vdev_vendor_cmd,
+     * because their offsets within wmi_vdev_vendor_cmd_fixed_param
+     * would change, causing backwards incompatibilities.
+     */
+} wmi_vdev_vendor_cmd_fixed_param;
+
+typedef struct wmi_peer_vendor_cmd
+{
+    /* type is WMI_PEER_VENDOR_CMDID */
+    A_UINT32 tlv_header;
+    /* pdev_id for identifying the MAC.  See macros starting with WMI_PDEV_ID_ for values. */
+    A_UINT32 pdev_id;
+    /* unique id identifying the VDEV, generated by the caller */
+    A_UINT32 vdev_id;
+    /* peer MAC address */
+    wmi_mac_addr peer_macaddr;
+    /* Any vendor specialization cases will need to add sub_type enum defs. */
+    A_UINT32 sub_type;
+    wmi_peer_vendor_cmd_val cmd;
+    /* NOTE:
+     * Future changes may increase the size of peer_vendor_cmd.
+     * Consequently, no fields can be added here after peer_vendor_cmd,
+     * because their offsets within wmi_peer_vendor_cmd_fixed_param
+     * would change, causing backwards incompatibilities.
+     */
+} wmi_peer_vendor_cmd_fixed_param;
 
 
 /* ADD NEW DEFS HERE */
