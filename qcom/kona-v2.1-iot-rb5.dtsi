@@ -25,6 +25,15 @@
 		power-source = <0>;
 		};
 	};
+
+	rb5_fan_controller_pin_init: rb5_fan_controller_pin_init {
+		pins = "gpio10";
+		function = "normal";
+		output-enable;
+		input-disable;
+		bias-pull-down;
+		power-source = <0>;
+	};
 };
 
 &mdss_mdp {
@@ -181,6 +190,20 @@
 		compatible = "fixed-clock";
 		#clock-cells = <0>;
 		clock-frequency = <40000000>;
+	};
+
+	rb5_fan_controller {
+		compatible = "qcom,rb5_fan_controller";
+		qcom,pwr-enable-gpio = <&pm8150l_gpios 10 0x0>;
+		pinctrl-name = "default";
+		pinctrl-0 = <&rb5_fan_controller_pin_init>;
+		status = "ok";
+	};
+
+	rb5_gpios_enable {
+		compatible = "qcom,rb5_gpios_enable";
+		qcom,enable-gpio = <&tlmm 60 0x0>;
+		status = "ok";
 	};
 };
 

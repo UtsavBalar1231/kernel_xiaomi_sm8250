@@ -79,6 +79,9 @@ Optional properties:
                        WLAN devices.
   - cnss-enable-self-recovery: Boolean property to enable self recovery when
                                recovery is trigeered with reason link down.
+  - qcom,bt-en-gpio: QCA6490 requires synchronization for BT and WLAN GPIO
+                   enable to resolve PMU power up issues. Provide BT GPIO using
+                   this config param.
 
 Example:
 
