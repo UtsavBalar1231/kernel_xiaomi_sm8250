@@ -461,7 +461,7 @@ static void sde_encoder_phys_vid_setup_timing_engine(
 exit:
 	if (phys_enc->parent_ops.get_qsync_fps)
 		phys_enc->parent_ops.get_qsync_fps(
-				phys_enc->parent, &qsync_min_fps);
+			phys_enc->parent, &qsync_min_fps, mode.vrefresh);
 
 	/* only panels which support qsync will have a non-zero min fps */
 	if (qsync_min_fps) {
@@ -1125,13 +1125,21 @@ static void sde_encoder_phys_vid_handle_post_kickoff(
 static void sde_encoder_phys_vid_prepare_for_commit(
 		struct sde_encoder_phys *phys_enc)
 {
+	struct drm_crtc *crtc;
 
-	if (!phys_enc) {
+	if (!phys_enc  || !phys_enc->parent) {
 		SDE_ERROR("invalid encoder parameters\n");
 		return;
 	}
 
-	if (sde_connector_is_qsync_updated(phys_enc->connector))
+	crtc = phys_enc->parent->crtc;
+	if (!crtc || !crtc->state) {
+		SDE_ERROR("invalid crtc or crtc state\n");
+		return;
+	}
+
+	if (!msm_is_mode_seamless_vrr(&crtc->state->adjusted_mode) &&
+		sde_connector_is_qsync_updated(phys_enc->connector))
 		_sde_encoder_phys_vid_avr_ctrl(phys_enc);
 
 }

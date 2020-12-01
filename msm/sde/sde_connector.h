@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _SDE_CONNECTOR_H_
@@ -338,6 +338,14 @@ struct sde_connector_ops {
 	 */
 	int (*prepare_commit)(void *display,
 		struct msm_display_conn_params *params);
+
+	/**
+	 * get_qsync_min_fps - Get qsync min fps from qsync-min-fps-list
+	 * @display: Pointer to private display structure
+	 * @mode_fps: Fps value in dfps list
+	 * Returns: Qsync min fps value on success
+	 */
+	int (*get_qsync_min_fps)(void *display, u32 mode_fps);
 };
 
 /**
