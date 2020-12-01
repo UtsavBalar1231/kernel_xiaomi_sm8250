@@ -1947,6 +1947,7 @@ static QDF_STATUS hdd_dis_connect_handler(struct hdd_adapter *adapter,
 		vdev = hdd_objmgr_get_vdev(adapter);
 		if (vdev) {
 			wlan_crypto_free_vdev_key(vdev);
+			wlan_crypto_reset_vdev_params(vdev);
 			hdd_objmgr_put_vdev(vdev);
 		}
 	}
