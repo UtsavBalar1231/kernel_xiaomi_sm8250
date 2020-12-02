@@ -11,7 +11,6 @@
 #include "kgsl_sharedmem.h"
 
 static struct notifier_block kgsl_reclaim_nb;
-static bool kgsl_reclaim;
 
 /*
  * Reclaiming excessive number of pages from a process will impact launch
@@ -68,9 +67,6 @@ int kgsl_reclaim_to_pinned_state(
 {
 	struct kgsl_mem_entry *entry;
 	int next = 0, valid_entry, ret = 0;
-
-	if (!kgsl_reclaim)
-		return 0;
 
 	mutex_lock(&process->reclaim_lock);
 
@@ -168,17 +164,13 @@ static const struct attribute *proc_reclaim_attrs[] = {
 
 void kgsl_reclaim_proc_sysfs_init(struct kgsl_process_private *process)
 {
-	if (kgsl_reclaim)
-		WARN_ON(sysfs_create_files(&process->kobj, proc_reclaim_attrs));
+	WARN_ON(sysfs_create_files(&process->kobj, proc_reclaim_attrs));
 }
 
 ssize_t kgsl_proc_max_reclaim_limit_store(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t count)
 {
 	int ret;
-
-	if (!kgsl_reclaim)
-		return -EINVAL;
 
 	ret = kstrtou32(buf, 0, &kgsl_reclaim_max_page_limit);
 	return ret ? ret : count;
@@ -187,9 +179,6 @@ ssize_t kgsl_proc_max_reclaim_limit_store(struct device *dev,
 ssize_t kgsl_proc_max_reclaim_limit_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
-	if (!kgsl_reclaim)
-		return 0;
-
 	return scnprintf(buf, PAGE_SIZE, "%d\n", kgsl_reclaim_max_page_limit);
 }
 
@@ -303,22 +292,14 @@ done:
 
 void kgsl_reclaim_proc_private_init(struct kgsl_process_private *process)
 {
-	if (!kgsl_reclaim)
-		return;
-
 	mutex_init(&process->reclaim_lock);
 	INIT_WORK(&process->fg_work, kgsl_reclaim_foreground_work);
 	set_bit(KGSL_PROC_PINNED_STATE, &process->state);
 	set_bit(KGSL_PROC_STATE, &process->state);
 }
 
-int kgsl_reclaim_init(struct kgsl_device *device)
+int kgsl_reclaim_init(void)
 {
-	if (!(device->flags & KGSL_FLAG_PROCESS_RECLAIM))
-		return 0;
-
-	kgsl_reclaim = true;
-
 	kgsl_reclaim_nb.notifier_call = kgsl_reclaim_callback;
 	return proc_reclaim_notifier_register(&kgsl_reclaim_nb);
 }
