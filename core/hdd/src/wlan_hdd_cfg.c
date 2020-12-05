@@ -1039,7 +1039,8 @@ hdd_set_nss_params(struct hdd_adapter *adapter,
  * Ensure that nss is either 1 or 2 before calling this.
  *
  * @adapter: the pointer to adapter
- * @nss: the number of spatial streams to be updated
+ * @tx_nss: the Tx number of spatial streams to be updated
+ * @rx_nss: the Rx number of spatial streams to be updated
  *
  * This function is used to modify the number of spatial streams
  * supported when not in connected state.
@@ -1047,7 +1048,8 @@ hdd_set_nss_params(struct hdd_adapter *adapter,
  * Return: QDF_STATUS_SUCCESS if nss is correctly updated,
  *              otherwise QDF_STATUS_E_FAILURE would be returned
  */
-QDF_STATUS hdd_update_nss(struct hdd_adapter *adapter, uint8_t nss)
+QDF_STATUS hdd_update_nss(struct hdd_adapter *adapter, uint8_t tx_nss,
+			  uint8_t rx_nss)
 {
 	struct hdd_context *hdd_ctx = WLAN_HDD_GET_CTX(adapter);
 	uint32_t rx_supp_data_rate, tx_supp_data_rate;
@@ -1060,16 +1062,16 @@ QDF_STATUS hdd_update_nss(struct hdd_adapter *adapter, uint8_t nss)
 	uint8_t enable2x2;
 	mac_handle_t mac_handle;
 	bool bval = 0;
-	uint8_t tx_nss, rx_nss;
 	uint8_t band, max_supp_nss;
 
-	if ((nss == 2) && (hdd_ctx->num_rf_chains != 2)) {
+	if ((tx_nss == 2 || rx_nss == 2) && (hdd_ctx->num_rf_chains != 2)) {
 		hdd_err("No support for 2 spatial streams");
 		return QDF_STATUS_E_INVAL;
 	}
 
-	if (nss > MAX_VDEV_NSS) {
-		hdd_debug("Cannot support %d nss streams", nss);
+	if (tx_nss > MAX_VDEV_NSS || rx_nss > MAX_VDEV_NSS) {
+		hdd_debug("Cannot support tx_nss: %d rx_nss: %d", tx_nss,
+			  rx_nss);
 		return QDF_STATUS_E_INVAL;
 	}
 
@@ -1085,10 +1087,6 @@ QDF_STATUS hdd_update_nss(struct hdd_adapter *adapter, uint8_t nss)
 		return QDF_STATUS_E_INVAL;
 	}
 	max_supp_nss = MAX_VDEV_NSS;
-
-	/* Till now we dont have support for different rx, tx nss values */
-	tx_nss = nss;
-	rx_nss = nss;
 
 	/*
 	 * If FW is supporting the dynamic nss update, this command is meant to
@@ -1131,7 +1129,7 @@ QDF_STATUS hdd_update_nss(struct hdd_adapter *adapter, uint8_t nss)
 	 * update of nss and chains per vdev feature, for the upcoming
 	 * connection
 	 */
-	enable2x2 = (nss == 1) ? 0 : 1;
+	enable2x2 = (rx_nss == 2) ? 1 : 0;
 
 	if (bval == enable2x2) {
 		hdd_debug("NSS same as requested");
@@ -1149,14 +1147,18 @@ QDF_STATUS hdd_update_nss(struct hdd_adapter *adapter, uint8_t nss)
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	if (!enable2x2) {
-		/* 1x1 */
-		rx_supp_data_rate = VHT_RX_HIGHEST_SUPPORTED_DATA_RATE_1_1;
+	if (tx_nss == 1 && rx_nss == 2) {
+		/* 1x2 */
+		rx_supp_data_rate = VHT_RX_HIGHEST_SUPPORTED_DATA_RATE_2_2;
 		tx_supp_data_rate = VHT_TX_HIGHEST_SUPPORTED_DATA_RATE_1_1;
-	} else {
+	} else if (enable2x2) {
 		/* 2x2 */
 		rx_supp_data_rate = VHT_RX_HIGHEST_SUPPORTED_DATA_RATE_2_2;
 		tx_supp_data_rate = VHT_TX_HIGHEST_SUPPORTED_DATA_RATE_2_2;
+	} else {
+		/* 1x1 */
+		rx_supp_data_rate = VHT_RX_HIGHEST_SUPPORTED_DATA_RATE_1_1;
+		tx_supp_data_rate = VHT_TX_HIGHEST_SUPPORTED_DATA_RATE_1_1;
 	}
 
 	/* Update Rx Highest Long GI data Rate */
@@ -1212,7 +1214,7 @@ skip_ht_cap_update:
 	if (QDF_IS_STATUS_SUCCESS(qdf_status)) {
 		mcs_set[0] = mcs_set_temp[0];
 		if (enable2x2)
-			for (val_len = 0; val_len < nss; val_len++)
+			for (val_len = 0; val_len < rx_nss; val_len++)
 				mcs_set[val_len] =
 				WLAN_HDD_RX_MCS_ALL_NSTREAM_RATES;
 		if (ucfg_mlme_set_supported_mcs_set(
@@ -1226,10 +1228,10 @@ skip_ht_cap_update:
 		status = false;
 		hdd_err("Could not get MCS SET from CFG");
 	}
-	sme_update_he_cap_nss(mac_handle, adapter->vdev_id, nss);
+	sme_update_he_cap_nss(mac_handle, adapter->vdev_id, rx_nss);
 #undef WLAN_HDD_RX_MCS_ALL_NSTREAM_RATES
 
-	if (QDF_STATUS_SUCCESS != sme_update_nss(mac_handle, nss))
+	if (QDF_STATUS_SUCCESS != sme_update_nss(mac_handle, rx_nss))
 		status = false;
 
 	hdd_set_policy_mgr_user_cfg(hdd_ctx);
