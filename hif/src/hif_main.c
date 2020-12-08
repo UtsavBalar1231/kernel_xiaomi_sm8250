@@ -1519,7 +1519,7 @@ void *hif_mem_alloc_consistent_unaligned(struct hif_softc *scn,
 end:
 	dp_info("%s va_unaligned %pK pa_unaligned %pK size %d ring_type %d",
 		*is_mem_prealloc ? "pre-alloc" : "dynamic-alloc", vaddr,
-		(void *)*paddr, size, ring_type);
+		(void *)*paddr, (int)size, ring_type);
 
 	return vaddr;
 }
