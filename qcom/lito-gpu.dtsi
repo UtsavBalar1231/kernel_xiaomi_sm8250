@@ -431,10 +431,12 @@
 				<&gcc GCC_DDRSS_GPU_AXI_CLK>,
 				<&gcc GCC_GPU_MEMNOC_GFX_CLK>,
 				<&gpucc GPU_CC_AHB_CLK>,
-				<&gpucc GPU_CC_HLOS1_VOTE_GPU_SMMU_CLK>;
+				<&gpucc GPU_CC_HLOS1_VOTE_GPU_SMMU_CLK>,
+				<&aopcc QDSS_CLK>;
 
 		clock-names = "gmu_clk", "cxo_clk", "axi_clk",
-				"memnoc_clk", "gpu_cc_ahb", "smmu_vote";
+				"memnoc_clk", "gpu_cc_ahb", "smmu_vote",
+				"apb_pclk";
 
 		/* AOP mailbox for sending ACD enable and disable messages */
 		mboxes = <&qmp_aop 0>;
