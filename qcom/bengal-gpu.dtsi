@@ -126,11 +126,12 @@
 			<&gpucc GPU_CC_AHB_CLK>,
 			<&gcc GCC_GPU_MEMNOC_GFX_CLK>,
 			<&gpucc GPU_CC_CX_GMU_CLK>,
-			<&gpucc GPU_CC_HLOS1_VOTE_GPU_SMMU_CLK>;
+			<&gpucc GPU_CC_HLOS1_VOTE_GPU_SMMU_CLK>,
+			<&rpmcc RPM_SMD_QDSS_CLK>;
 
 		clock-names = "core_clk", "rbbmtimer_clk", "iface_clk",
 				"ahb_clk", "mem_clk", "gmu_clk",
-				"smmu_vote";
+				"smmu_vote", "apb_pclk";
 
 		/* Bus Scale Settings */
 		qcom,gpubw-dev = <&gpubw>;
