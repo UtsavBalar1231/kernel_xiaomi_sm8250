@@ -1,5 +1,4 @@
 # We can build either as part of a standalone Kernel build or as
-				    get_hw_version_platform() == HARDWARE_PLATFORM_ALIOTH ||
 # an external module.  Determine which mechanism is being used
 ifeq ($(MODNAME), )
 	KERNEL_BUILD := 1
