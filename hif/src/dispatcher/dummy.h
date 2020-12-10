@@ -60,5 +60,5 @@ int hif_dummy_bus_reset_resume(struct hif_softc *hif_ctx);
 int hif_dummy_map_ce_to_irq(struct hif_softc *scn, int ce_id);
 int hif_dummy_addr_in_boundary(struct hif_softc *scn, uint32_t offset);
 void hif_dummy_config_irq_affinity(struct hif_softc *scn);
-void hif_dummy_log_bus_info(struct hif_softc *scn, uint8_t *data,
+bool hif_dummy_log_bus_info(struct hif_softc *scn, uint8_t *data,
 			    unsigned int *offset);
