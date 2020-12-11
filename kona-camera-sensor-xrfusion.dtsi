@@ -34,6 +34,17 @@
 		status = "ok";
 	};
 
+	led_flash_hand_track: qcom,camera-flash@3 {
+		cell-index = <3>;
+		compatible = "qcom,camera-flash";
+		gpios = <&tlmm 118 0>;
+		gpio-req-tbl-num = <0>;
+		gpio-req-tbl-flags = <0>;
+		gpio-req-tbl-label = "HNDTCKING_LED_EN";
+		gpio-req-tbl-delay = <20>;
+		status = "ok";
+	};
+
 	led_flash_triple_rear: qcom,camera-flash@4 {
 		cell-index = <4>;
 		compatible = "qcom,camera-flash";
@@ -597,6 +608,7 @@
 		sensor-position-roll = <90>;
 		sensor-position-pitch = <0>;
 		sensor-position-yaw = <180>;
+		led-flash-src = <&led_flash_hand_track>;
 		cam_vio-supply = <&pm8009_l7>;
 		cam_bob-supply = <&pm8150a_bob>;
 		cam_vana-supply = <&pm8009_l6>;
