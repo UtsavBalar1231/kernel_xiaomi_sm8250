@@ -197,6 +197,7 @@ struct sde_dbg_regbuf {
 /**
  * struct sde_dbg_base - global sde debug base structure
  * @evtlog: event log instance
+ * @reglog: reg log instance
  * @reg_base_list: list of register dumping regions
  * @dev: device pointer
  * @mutex: mutex to serialize access to serialze dumps, debugfs access
@@ -212,11 +213,13 @@ struct sde_dbg_regbuf {
  * @dsi_dbg_bus: dump dsi debug bus register
  * @regbuf: buffer data to track the register dumping in hw recovery
  * @cur_evt_index: index used for tracking event logs dump in hw recovery
+ * @cur_reglog_index: index used for tracking register logs dump in hw recovery
  * @dbgbus_dump_idx: index used for tracking dbg-bus dump in hw recovery
  * @vbif_dbgbus_dump_idx: index for tracking vbif dumps in hw recovery
  */
 static struct sde_dbg_base {
 	struct sde_dbg_evtlog *evtlog;
+	struct sde_dbg_reglog *reglog;
 	struct list_head reg_base_list;
 	void *reg_dump_addr;
 	struct device *dev;
@@ -239,6 +242,7 @@ static struct sde_dbg_base {
 
 	struct sde_dbg_regbuf regbuf;
 	u32 cur_evt_index;
+	u32 cur_reglog_index;
 	u32 dbgbus_dump_idx;
 	u32 vbif_dbgbus_dump_idx;
 	enum sde_dbg_dump_context dump_mode;
@@ -246,6 +250,9 @@ static struct sde_dbg_base {
 
 /* sde_dbg_base_evtlog - global pointer to main sde event log for macro use */
 struct sde_dbg_evtlog *sde_dbg_base_evtlog;
+
+/* sde_dbg_base_reglog - global pointer to main sde reg log for macro use */
+struct sde_dbg_reglog *sde_dbg_base_reglog;
 
 static void _sde_debug_bus_xbar_dump(void __iomem *mem_base,
 		struct sde_debug_bus_entry *entry, u32 val)
@@ -4727,6 +4734,12 @@ int sde_dbg_init(struct device *dev)
 
 	sde_dbg_base_evtlog = sde_dbg_base.evtlog;
 
+	sde_dbg_base.reglog = sde_reglog_init();
+	if (IS_ERR_OR_NULL(sde_dbg_base.reglog))
+		return PTR_ERR(sde_dbg_base.reglog);
+
+	sde_dbg_base_reglog = sde_dbg_base.reglog;
+
 	INIT_WORK(&sde_dbg_base.dump_work, _sde_dump_work);
 	sde_dbg_base.work_panic = false;
 	sde_dbg_base.panic_on_err = DEFAULT_PANIC;
@@ -4771,6 +4784,8 @@ void sde_dbg_destroy(void)
 	sde_dbg_base_evtlog = NULL;
 	sde_evtlog_destroy(sde_dbg_base.evtlog);
 	sde_dbg_base.evtlog = NULL;
+	sde_reglog_destroy(sde_dbg_base.reglog);
+	sde_dbg_base.reglog = NULL;
 	sde_dbg_reg_base_destroy();
 	mutex_destroy(&sde_dbg_base.mutex);
 }
