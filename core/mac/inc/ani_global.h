@@ -797,6 +797,8 @@ struct mac_context {
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_objmgr_pdev *pdev;
 	void (*chan_info_cb)(struct scan_chan_info *chan_info);
+	void (*del_peers_ind_cb)(struct wlan_objmgr_psoc *psoc,
+				 uint8_t vdev_id);
 	/* Based on INI parameter */
 	uint32_t dual_mac_feature_disable;
 
