@@ -71,3 +71,7 @@
 &pmk8350_adc_tm {
 	status = "disabled";
 };
+
+&pmk8350_vadc {
+	status = "disabled";
+};
