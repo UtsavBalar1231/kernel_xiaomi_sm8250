@@ -68,7 +68,7 @@ endif
 
 ifneq ($(DEVELOPER_DISABLE_BUILD_TIMESTAMP), y)
 ifneq ($(WLAN_DISABLE_BUILD_TAG), y)
-CONFIG_BUILD_TAG := y
+CONFIG_BUILD_TAG := n
 endif
 endif
 
