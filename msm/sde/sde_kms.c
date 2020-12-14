@@ -2102,8 +2102,9 @@ static int _sde_kms_remove_fbs(struct sde_kms *sde_kms, struct drm_file *file,
 	struct drm_framebuffer *fb, *tfb;
 	struct list_head fbs;
 	struct drm_plane *plane;
+	struct drm_crtc *crtc = NULL;
+	unsigned int crtc_mask = 0;
 	int ret = 0;
-	u32 plane_mask = 0;
 
 	INIT_LIST_HEAD(&fbs);
 
@@ -2112,9 +2113,11 @@ static int _sde_kms_remove_fbs(struct sde_kms *sde_kms, struct drm_file *file,
 			list_move_tail(&fb->filp_head, &fbs);
 
 			drm_for_each_plane(plane, dev) {
-				if (plane->fb == fb) {
-					plane_mask |=
-						1 << drm_plane_index(plane);
+				if (plane->state &&
+					plane->state->fb == fb) {
+					if (plane->state->crtc)
+						crtc_mask |= drm_crtc_mask(
+							plane->state->crtc);
 					 _sde_kms_plane_force_remove(
 								plane, state);
 				}
@@ -2127,11 +2130,22 @@ static int _sde_kms_remove_fbs(struct sde_kms *sde_kms, struct drm_file *file,
 
 	if (list_empty(&fbs)) {
 		SDE_DEBUG("skip commit as no fb(s)\n");
-		drm_atomic_state_put(state);
 		return 0;
 	}
 
-	SDE_DEBUG("committing after removing all the pipes\n");
+	drm_for_each_crtc(crtc, dev) {
+		if ((crtc_mask & drm_crtc_mask(crtc)) && crtc->state->active) {
+			struct drm_encoder *drm_enc;
+
+			drm_for_each_encoder_mask(drm_enc, crtc->dev,
+					crtc->state->encoder_mask)
+				ret = sde_kms_set_crtc_for_conn(
+					dev, drm_enc, state);
+		}
+	}
+
+	SDE_EVT32(state, crtc_mask);
+	SDE_DEBUG("null commit after removing all the pipes\n");
 	ret = drm_atomic_commit(state);
 
 	if (ret) {
