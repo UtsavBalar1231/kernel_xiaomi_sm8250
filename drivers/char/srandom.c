@@ -123,7 +123,7 @@ uint16_t CC_Busy_Flags;
 int CC_buffer_position;
 
 uint64_t tm_seed;
-struct TIMESPEC ts;
+struct TIMESPEC tsp;
 
 /*
  * Global counters
@@ -152,8 +152,8 @@ int mod_init(void)
 	/*
 	 * Entropy Initialize #1
 	 */
-	KTIME_GET_NS(&ts);
-	x = (uint64_t)ts.tv_nsec;
+	KTIME_GET_NS(&tsp);
+	x = (uint64_t)tsp.tv_nsec;
 	s[0] = xorshft64();
 	s[1] = xorshft64();
 
@@ -485,24 +485,24 @@ EXPORT_SYMBOL(sdevice_write);
  */
 void seed_PRND_s0(void)
 {
-	 KTIME_GET_NS(&ts);
-	 s[0] = (s[0] << 31) ^ (uint64_t)ts.tv_nsec;
+	 KTIME_GET_NS(&tsp);
+	 s[0] = (s[0] << 31) ^ (uint64_t)tsp.tv_nsec;
 	 pr_debug("x:%llu, s[0]:%llu, s[1]:%llu\n",
 		x, s[0], s[1]);
 }
 
 void seed_PRND_s1(void)
 {
-	KTIME_GET_NS(&ts);
-	s[1] = (s[1] << 24) ^ (uint64_t)ts.tv_nsec;
+	KTIME_GET_NS(&tsp);
+	s[1] = (s[1] << 24) ^ (uint64_t)tsp.tv_nsec;
 	pr_debug("x:%llu, s[0]:%llu, s[1]:%llu\n",
 		x, s[0], s[1]);
 }
 
 void seed_PRND_x(void)
 {
-	KTIME_GET_NS(&ts);
-	x = (x << 32) ^ (uint64_t)ts.tv_nsec;
+	KTIME_GET_NS(&tsp);
+	x = (x << 32) ^ (uint64_t)tsp.tv_nsec;
 	pr_debug("x:%llu, s[0]:%llu, s[1]:%llu\n",
 		x, s[0], s[1]);
 }
