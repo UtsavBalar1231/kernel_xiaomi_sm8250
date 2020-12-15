@@ -55,8 +55,8 @@
 #define PAID 0
 #define COPY_TO_USER raw_copy_to_user
 #define COPY_FROM_USER raw_copy_from_user
-#define KTIME_GET_NS getnstimeofday
-#define TIMESPEC timespec
+#define KTIME_GET_NS ktime_get_real_ts64
+#define TIMESPEC timespec64
 
 /*
  * Prototypes
