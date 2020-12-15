@@ -25,6 +25,7 @@
 #include <linux/time.h>
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
+#include <linux/srandom.h>
 #include <linux/mutex.h>
 #include <linux/delay.h>
 #include <linux/kthread.h>
@@ -63,8 +64,6 @@
  */
 static int device_open(struct inode *, struct file *);
 static int device_release(struct inode *, struct file *);
-static ssize_t sdevice_read(struct file *, char *, size_t, loff_t *);
-static ssize_t sdevice_write(struct file *, const char *, size_t, loff_t *);
 static uint64_t xorshft64(void);
 static uint64_t xorshft128(void);
 static int nextbuffer(void);
@@ -79,7 +78,7 @@ static int work_thread(void *data);
 /*
  * Global variables are declared as static, so are global within the file.
  */
-static const struct file_operations sfops = {
+const struct file_operations sfops = {
 	.owner   = THIS_MODULE,
 	.open	= device_open,
 	.read	= sdevice_read,
@@ -258,7 +257,7 @@ static int device_release(struct inode *inode, struct file *file)
 /*
  * Called when a process reads from the device.
  */
-static ssize_t sdevice_read(struct file *file, char *buf,
+ssize_t sdevice_read(struct file *file, char *buf,
 size_t count, loff_t *ppos)
 {
 	/* Buffer to hold numbers to send */
@@ -399,11 +398,12 @@ size_t count, loff_t *ppos)
 	 */
 	return count;
 }
+EXPORT_SYMBOL(sdevice_read);
 
 /*
  * Called when someone tries to write to /dev/srandom device
  */
-static ssize_t sdevice_write(struct file *file,
+ssize_t sdevice_write(struct file *file,
 const char __user *buf, size_t count, loff_t *ppos)
 {
 	char *newdata;
@@ -478,7 +478,7 @@ void update_sarray(int CC)
 	pr_info("CC:%d, X:%llu, Y:%llu, Z1:%llu, Z2:%llu, Z3:%llu,\n",
 		CC, X, Y, Z1, Z2, Z3);
 }
-
+EXPORT_SYMBOL(sdevice_write);
 
 /*
  *  Seeding the xorshft's
