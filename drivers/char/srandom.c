@@ -177,11 +177,11 @@ int mod_init(void)
 
 	pr_info("Module version: "AppVERSION"\n");
 
-	sarr_RND = kmalloc((num_arr_RND + 1) * arr_RND_SIZE * sizeof(uint64_t),
+	sarr_RND = kzalloc((num_arr_RND + 1) * arr_RND_SIZE * sizeof(uint64_t),
 	GFP_KERNEL);
 	while (!sarr_RND) {
-		pr_info("kmalloc failed to allocate initial memory. retrying...\n");
-		sarr_RND = kmalloc((num_arr_RND + 1) *
+		pr_info("kzalloc failed to allocate initial memory. retrying...\n");
+		sarr_RND = kzalloc((num_arr_RND + 1) *
 			arr_RND_SIZE * sizeof(uint64_t), GFP_KERNEL);
 	}
 
@@ -323,12 +323,12 @@ size_t count, loff_t *ppos)
 			pr_info("count_remaining:%ld count:%ld\n",
 				count_remaining, count);
 
-			new_buf = kmalloc((count_remaining + 512) *
+			new_buf = kzalloc((count_remaining + 512) *
 				sizeof(uint8_t), GFP_KERNEL);
 			while (!new_buf) {
-				pr_info("buffered kmalloc failed to allocate buffer.",
+				pr_info("buffered kzalloc failed to allocate buffer.",
 					"retrying...\n");
-				new_buf = kmalloc((count_remaining + 512) *
+				new_buf = kzalloc((count_remaining + 512) *
 					sizeof(uint8_t), GFP_KERNEL);
 			}
 
@@ -414,9 +414,9 @@ const char __user *buf, size_t count, loff_t *ppos)
 	/*
 	 * Allocate memory to read from device
 	 */
-	newdata = kmalloc(count, GFP_KERNEL);
+	newdata = kzalloc(count, GFP_KERNEL);
 	while (!newdata)
-		newdata = kmalloc(count, GFP_KERNEL);
+		newdata = kzalloc(count, GFP_KERNEL);
 
 	ret = COPY_FROM_USER(newdata, buf, count);
 
