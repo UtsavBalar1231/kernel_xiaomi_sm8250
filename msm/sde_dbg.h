@@ -35,6 +35,7 @@ enum sde_dbg_evtlog_flag {
 	SDE_EVTLOG_IRQ = BIT(1),
 	SDE_EVTLOG_VERBOSE = BIT(2),
 	SDE_EVTLOG_EXTERNAL = BIT(3),
+	SDE_EVTLOG_REGWRITE = BIT(4),
 	SDE_EVTLOG_ALWAYS = -1
 };
 
@@ -199,6 +200,13 @@ extern struct sde_dbg_reglog *sde_dbg_base_reglog;
  */
 #define SDE_EVT32_EXTERNAL(...) sde_evtlog_log(sde_dbg_base_evtlog, __func__, \
 		__LINE__, SDE_EVTLOG_EXTERNAL, ##__VA_ARGS__, \
+		SDE_EVTLOG_DATA_LIMITER)
+/**
+ * SDE_EVT32_REGWRITE - Write a list of 32bit values for register writes logging
+ * ... - variable arguments
+ */
+#define SDE_EVT32_REGWRITE(...) sde_evtlog_log(sde_dbg_base_evtlog, __func__, \
+		__LINE__, SDE_EVTLOG_REGWRITE, ##__VA_ARGS__, \
 		SDE_EVTLOG_DATA_LIMITER)
 
 /**
