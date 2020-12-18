@@ -1134,10 +1134,12 @@ static void sde_kms_check_for_ext_vote(struct sde_kms *sde_kms,
 	 * cases, allow the target to go through a gdsc toggle after
 	 * crtc is disabled.
 	 */
-	if (!crtc_enabled && phandle->is_ext_vote_en) {
+	if (!crtc_enabled && (phandle->is_ext_vote_en ||
+				!dev->dev->power.runtime_auto)) {
 		pm_runtime_put_sync(sde_kms->dev->dev);
-		SDE_EVT32(phandle->is_ext_vote_en);
 		pm_runtime_get_sync(sde_kms->dev->dev);
+		SDE_EVT32(phandle->is_ext_vote_en,
+				dev->dev->power.runtime_auto);
 	}
 
 	mutex_unlock(&phandle->ext_client_lock);
