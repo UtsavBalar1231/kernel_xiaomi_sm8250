@@ -3347,6 +3347,9 @@ hdd_association_completion_handler(struct hdd_adapter *adapter,
 		if (!reqRsnIe)
 			return QDF_STATUS_E_NOMEM;
 
+		if (roam_info->fReassocReq || ft_carrier_on)
+			hdd_nud_indicate_roam(adapter);
+
 		/*
 		 * For reassoc, the station is already registered, all we need
 		 * is to change the state of the STA in TL.
@@ -3668,7 +3671,6 @@ hdd_association_completion_handler(struct hdd_adapter *adapter,
 					      eCSR_BSS_TYPE_INFRASTRUCTURE);
 			}
 
-			hdd_nud_indicate_roam(adapter);
 			/* Start the tx queues */
 #ifdef WLAN_FEATURE_ROAM_OFFLOAD
 			if (roam_info->roamSynchInProgress)
