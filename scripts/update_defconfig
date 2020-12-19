@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 # shellcheck disable=SC2199
 # shellcheck source=/dev/null
 
@@ -15,15 +14,32 @@ export KERNEL_CFG
 export OUT_DIR
 
 # Set compiler PATH
-PATH=$HOME/gas:$HOME/clang/bin:$PATH
+if [[ "$@" =~ "gcc"* ]]; then
+    PATH=$HOME/gcc32/bin/:$HOME/gcc64/bin:$PATH
+    USE_LLVM=""
+else
+    PATH=$HOME/gas:$HOME/clang/bin:$PATH
+    USE_LLVM="LLVM=1"
+fi
 
+if [[ "$@" =~ "gcc"* ]]; then
+BUILD="make O=$OUT_DIR \
+ARCH=arm64 \
+CROSS_COMPILE=aarch64-elf- \
+CROSS_COMPILE_COMPAT=arm-eabi- \
+-j$(nproc --all)
+"
+else
 BUILD="make O=$OUT_DIR \
 ARCH=arm64 \
 LLVM=1 \
 CLANG_TRIPLE=aarch64-linux-gnu- \
 CROSS_COMPILE=aarch64-linux-gnu- \
+CROSS_COMPILE_COMPAT=arm-linux-gnueabi- \
 -j$(nproc --all)
 "
+fi
+
 export BUILD
 
 cd "$KERNEL_TOP" || exit
@@ -33,74 +49,80 @@ KERNEL_DEFCONFIG_URL="https://github.com/UtsavBalar1231/kernel_xiaomi_sm8250"
 KERNEL_DEFCONFIG_HEAD=$(git -C ${KERNEL_CFG} rev-parse HEAD)
 
 SOC="kona"
-if [ -n  "$*" ]; then
-  case "$1" in
+if [ -n "$*" ]; then
+    case "$1" in
     alioth)
-      DEVICE=$1;
-    ;;
+        DEVICE=$1
+        ;;
     apollo)
-      DEVICE=$1;
-    ;;
+        DEVICE=$1
+        ;;
     cas)
-      DEVICE=$1;
-    ;;
+        DEVICE=$1
+        ;;
     cmi)
-      DEVICE=$1;
-    ;;
+        DEVICE=$1
+        ;;
     elish)
-      DEVICE=$1;
-    ;;
+        DEVICE=$1
+        ;;
     enuma)
-      DEVICE=$1;
-    ;;
+        DEVICE=$1
+        ;;
     lmi)
-      DEVICE=$1;
-    ;;
+        DEVICE=$1
+        ;;
     umi)
-      DEVICE=$1;
-    ;;
+        DEVICE=$1
+        ;;
     thyme)
-      DEVICE=$1;
-    ;;
+        DEVICE=$1
+        ;;
     psyche)
-      DEVICE=$1;
-    ;;
-  esac
+        DEVICE=$1
+        ;;
+    esac
 
-  echo "================================================="
-  echo "Your Environment:"
-  echo "KERNEL_TOP  : ${KERNEL_TOP}"
-  echo "KERNEL_CFG  : ${KERNEL_CFG}"
-  echo "OUT_DIR  : ${OUT_DIR}"
-  ret=$(rm -rf "${OUT_DIR}" 2>&1);
-  ret=$(mkdir -p "${OUT_DIR}" 2>&1);
-  if [ ! -d "${OUT_DIR}" ] ; then
-    echo "Check your environment";
-    echo "ERROR: ${ret}";
-    exit 1;
-  fi
+    echo "================================================="
+    echo "Your Environment:"
+    echo "KERNEL_TOP  : ${KERNEL_TOP}"
+    echo "KERNEL_CFG  : ${KERNEL_CFG}"
+    echo "OUT_DIR  : ${OUT_DIR}"
+    ret=$(rm -rf "${OUT_DIR}" 2>&1)
+    ret=$(mkdir -p "${OUT_DIR}" 2>&1)
+    if [ ! -d "${OUT_DIR}" ]; then
+        echo "Check your environment"
+        echo "ERROR: ${ret}"
+        exit 1
+    fi
 
-  echo "================================================="
-  echo "SOC -> ${SOC} :: Device -> $1"
-  echo "Running scripts/kconfig/merge_config.sh ..."
-  ret=$(ARCH=arm64 LLVM=1 scripts/kconfig/merge_config.sh \
-    -O "${OUT_DIR}" \
-    ${KERNEL_CFG}/../${SOC}-perf_defconfig \
-    ${KERNEL_CFG}/xiaomi-kona-common.config \
-    ${KERNEL_CFG}/kona-custom.config \
-  ${KERNEL_CFG}/"${DEVICE}".config);
+    echo "================================================="
+    echo "SOC -> ${SOC} :: Device -> $1"
+    echo "Running scripts/kconfig/merge_config.sh ..."
+    ret=$(ARCH=arm64 $USE_LLVM scripts/kconfig/merge_config.sh \
+        -O "${OUT_DIR}" \
+        ${KERNEL_CFG}/../${SOC}-perf_defconfig \
+        ${KERNEL_CFG}/xiaomi-kona-common.config \
+        ${KERNEL_CFG}/kona-custom.config \
+        ${KERNEL_CFG}/"${DEVICE}".config)
 
-  case "$ret" in
-    *"error"*|*"ERROR"*|*"Exit"*) echo "ERROR: $ret"; exit 1;;
-  esac
-  echo "Building new defconfig ..."
-  ret=$(${BUILD} savedefconfig 2>&1);
-  case "$ret" in
-    *"error"*|*"ERROR"*) echo "ERROR: $ret"; exit 1;;
-  esac
-  mv "$OUT_DIR"/defconfig ./arch/arm64/configs/"$1"_defconfig
+    case "$ret" in
+    *"error"* | *"ERROR"* | *"Exit"*)
+        echo "ERROR: $ret"
+        exit 1
+        ;;
+    esac
+    echo "Building new defconfig ..."
+    ret=$(${BUILD} savedefconfig 2>&1)
+    case "$ret" in
+    *"error"* | *"ERROR"*)
+        echo "ERROR: $ret"
+        exit 1
+        ;;
+    esac
+    mv "$OUT_DIR"/defconfig ./arch/arm64/configs/"$1"_defconfig
 
-read -r -d '' KERNEL_COMMIT_MESSAGE << EOM
+    read -r -d '' KERNEL_COMMIT_MESSAGE <<EOM
 ARM64: configs: ${DEVICE}: update auto-generated defconfig for ${DEVICE}
 This update is generated automatically by using the update_defconfig script
 HEAD of the project used to prepare this commit:
@@ -109,83 +131,89 @@ EOM
 
 else
 
-read -r -d '' KERNEL_COMMIT_MESSAGE << EOM
+    read -r -d '' KERNEL_COMMIT_MESSAGE <<EOM
 ARM64: configs: xiaomi: update auto-generated defconfig for all devices
 This update is generated automatically by using the update_defconfig script
 HEAD of the project used to prepare this commit:
 ${KERNEL_DEFCONFIG_URL}/tree/${KERNEL_DEFCONFIG_HEAD}
 EOM
 
-  DEVICES="alioth apollo cas cmi elish enuma lmi umi thyme psyche"
+    DEVICES="alioth apollo cas cmi elish enuma lmi umi thyme psyche"
 
-  for device in $DEVICES; do \
+    for device in $DEVICES; do
 
-    case $device in
-      alioth)
-        DEVICE=$device;
-      ;;
-      apollo)
-        DEVICE=$device;
-      ;;
-      cas)
-        DEVICE=$device;
-      ;;
-      cmi)
-        DEVICE=$device;
-      ;;
-      elish)
-        DEVICE=$device;
-      ;;
-      enuma)
-        DEVICE=$device;
-      ;;
-      lmi)
-        DEVICE=$device;
-      ;;
-      umi)
-        DEVICE=$device;
-      ;;
-      thyme)
-        DEVICE=$device;
-      ;;
-      psyche)
-        DEVICE=$device;
-      ;;
-    esac
+        case $device in
+        alioth)
+            DEVICE=$device
+            ;;
+        apollo)
+            DEVICE=$device
+            ;;
+        cas)
+            DEVICE=$device
+            ;;
+        cmi)
+            DEVICE=$device
+            ;;
+        elish)
+            DEVICE=$device
+            ;;
+        enuma)
+            DEVICE=$device
+            ;;
+        lmi)
+            DEVICE=$device
+            ;;
+        umi)
+            DEVICE=$device
+            ;;
+        thyme)
+            DEVICE=$device
+            ;;
+        psyche)
+            DEVICE=$device
+            ;;
+        esac
 
-    echo "================================================="
-    echo "Your Environment:"
-    echo "KERNEL_TOP  : ${KERNEL_TOP}"
-    echo "KERNEL_CFG  : ${KERNEL_CFG}"
-    echo "OUT_DIR  : ${OUT_DIR}"
-      ret=$(rm -rf "${OUT_DIR}" 2>&1);
-      ret=$(mkdir -p "${OUT_DIR}" 2>&1);
-      if [ ! -d "${OUT_DIR}" ] ; then
-        echo "Check your environment";
-        echo "ERROR: ${ret}";
-        exit 1;
-      fi
+        echo "================================================="
+        echo "Your Environment:"
+        echo "KERNEL_TOP  : ${KERNEL_TOP}"
+        echo "KERNEL_CFG  : ${KERNEL_CFG}"
+        echo "OUT_DIR  : ${OUT_DIR}"
+        ret=$(rm -rf "${OUT_DIR}" 2>&1)
+        ret=$(mkdir -p "${OUT_DIR}" 2>&1)
+        if [ ! -d "${OUT_DIR}" ]; then
+            echo "Check your environment"
+            echo "ERROR: ${ret}"
+            exit 1
+        fi
 
-      echo "================================================="
-      echo "SOC -> ${SOC} :: Device -> $device"
-      echo "Running scripts/kconfig/merge_config.sh ..."
-      ret=$(ARCH=arm64 LLVM=1 scripts/kconfig/merge_config.sh \
-        -O "${OUT_DIR}" \
-        ${KERNEL_CFG}/../${SOC}-perf_defconfig \
-        ${KERNEL_CFG}/xiaomi-kona-common.config \
-        ${KERNEL_CFG}/kona-custom.config \
-      ${KERNEL_CFG}/"${DEVICE}".config);
+        echo "================================================="
+        echo "SOC -> ${SOC} :: Device -> $device"
+        echo "Running scripts/kconfig/merge_config.sh ..."
+        ret=$(ARCH=arm64 $USE_LLVM scripts/kconfig/merge_config.sh \
+            -O "${OUT_DIR}" \
+            ${KERNEL_CFG}/../${SOC}-perf_defconfig \
+            ${KERNEL_CFG}/xiaomi-kona-common.config \
+            ${KERNEL_CFG}/kona-custom.config \
+            ${KERNEL_CFG}/"${DEVICE}".config)
 
-      case "$ret" in
-        *"error"*|*"ERROR"*|*"Exit"*) echo "ERROR: $ret"; exit 1;;
-      esac
-      echo "Building new defconfig ..."
-      ret=$(${BUILD} savedefconfig 2>&1);
-      case "$ret" in
-        *"error"*|*"ERROR"*) echo "ERROR: $ret"; exit 1;;
-      esac
-      mv "$OUT_DIR"/defconfig ./arch/arm64/configs/"$device"_defconfig
-  done
+        case "$ret" in
+        *"error"* | *"ERROR"* | *"Exit"*)
+            echo "ERROR: $ret"
+            exit 1
+            ;;
+        esac
+        echo "Building new defconfig ..."
+        ret=$(${BUILD} savedefconfig 2>&1)
+        case "$ret" in
+        *"error"* | *"ERROR"*)
+            echo "ERROR: $ret"
+            exit 1
+            ;;
+        esac
+        mv "$OUT_DIR"/defconfig ./arch/arm64/configs/"$device"_defconfig
+    done
 fi
 
 echo "================================================="
