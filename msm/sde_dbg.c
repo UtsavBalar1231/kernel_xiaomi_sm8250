@@ -218,6 +218,7 @@ struct sde_dbg_regbuf {
 static struct sde_dbg_base {
 	struct sde_dbg_evtlog *evtlog;
 	struct list_head reg_base_list;
+	void *reg_dump_addr;
 	struct device *dev;
 	struct mutex mutex;
 
@@ -2922,6 +2923,7 @@ static void _sde_dump_reg(const char *dump_name, u32 reg_dump_flag,
 		char *base_addr, char *addr, size_t len_bytes, u32 **dump_mem)
 {
 	u32 in_log, in_mem, len_align, len_padded;
+	struct sde_dbg_base *dbg_base = &sde_dbg_base;
 	u32 *dump_addr = NULL;
 	char *end_addr;
 	int i;
@@ -2950,9 +2952,8 @@ static void _sde_dump_reg(const char *dump_name, u32 reg_dump_flag,
 
 	if (in_mem) {
 		if (dump_mem && !(*dump_mem)) {
-			phys_addr_t phys = 0;
-			*dump_mem = dma_alloc_coherent(sde_dbg_base.dev,
-					len_padded, &phys, GFP_KERNEL);
+			*dump_mem = dbg_base->reg_dump_addr;
+			dbg_base->reg_dump_addr += len_padded;
 		}
 
 		if (dump_mem && *dump_mem) {
@@ -3026,6 +3027,49 @@ static u32 _sde_dbg_get_dump_range(struct sde_dbg_reg_offset *range_node,
 	return length;
 }
 
+static u32 _sde_dbg_get_reg_blk_size(struct sde_dbg_reg_base *dbg)
+{
+	u32 len, len_align, len_padded;
+	u32 size = 0;
+	struct sde_dbg_reg_range *range_node;
+
+	if (!dbg || !dbg->base) {
+		pr_err("dbg base is null!\n");
+		return 0;
+	}
+
+	if (!list_empty(&dbg->sub_range_list)) {
+		list_for_each_entry(range_node, &dbg->sub_range_list, head) {
+			len = _sde_dbg_get_dump_range(&range_node->offset,
+					dbg->max_offset);
+			len_align = (len + REG_DUMP_ALIGN - 1) / REG_DUMP_ALIGN;
+			len_padded = len_align * REG_DUMP_ALIGN;
+			size += REG_BASE_NAME_LEN + RANGE_NAME_LEN + len_padded;
+		}
+	} else {
+		len = dbg->max_offset;
+		len_align = (len + REG_DUMP_ALIGN - 1) / REG_DUMP_ALIGN;
+		len_padded = len_align * REG_DUMP_ALIGN;
+		size += REG_BASE_NAME_LEN + RANGE_NAME_LEN + len_padded;
+	}
+	return size;
+}
+
+static u32 _sde_dbg_get_reg_dump_size(void)
+{
+	struct sde_dbg_base *dbg_base = &sde_dbg_base;
+	struct sde_dbg_reg_base *blk_base;
+	u32 size = 0;
+
+	if (!dbg_base)
+		return 0;
+
+	list_for_each_entry(blk_base, &dbg_base->reg_base_list, reg_base_head) {
+		size += _sde_dbg_get_reg_blk_size(blk_base);
+	}
+	return size;
+}
+
 static int _sde_dump_reg_range_cmp(void *priv, struct list_head *a,
 		struct list_head *b)
 {
@@ -3071,6 +3115,7 @@ static void _sde_dump_reg_by_ranges(struct sde_dbg_reg_base *dbg,
 	char *addr;
 	size_t len;
 	struct sde_dbg_reg_range *range_node;
+	struct sde_dbg_base *dbg_base = &sde_dbg_base;
 
 	if (!dbg || !(dbg->base || dbg->cb)) {
 		pr_err("dbg base is null!\n");
@@ -3100,6 +3145,12 @@ static void _sde_dump_reg_by_ranges(struct sde_dbg_reg_base *dbg,
 				addr, range_node->offset.start,
 				range_node->offset.end);
 
+			scnprintf(dbg_base->reg_dump_addr, REG_BASE_NAME_LEN,
+					dbg->name);
+			dbg_base->reg_dump_addr += REG_BASE_NAME_LEN;
+			scnprintf(dbg_base->reg_dump_addr, REG_BASE_NAME_LEN,
+					range_node->range_name);
+			dbg_base->reg_dump_addr += RANGE_NAME_LEN;
 			_sde_dump_reg(range_node->range_name, reg_dump_flag,
 					dbg->base, addr, len,
 					&range_node->reg_dump);
@@ -3112,6 +3163,10 @@ static void _sde_dump_reg_by_ranges(struct sde_dbg_reg_base *dbg,
 				dbg->max_offset);
 		addr = dbg->base;
 		len = dbg->max_offset;
+		scnprintf(dbg_base->reg_dump_addr, REG_BASE_NAME_LEN,
+				dbg->name);
+		dbg_base->reg_dump_addr += REG_BASE_NAME_LEN;
+		dbg_base->reg_dump_addr += RANGE_NAME_LEN;
 		_sde_dump_reg(dbg->name, reg_dump_flag, dbg->base, addr, len,
 				&dbg->reg_dump);
 	}
@@ -3478,8 +3533,15 @@ static void _sde_dump_array(struct sde_dbg_reg_base *blk_arr[],
 	bool dump_dbgbus_vbif_rt, bool dump_all, bool dump_secure)
 {
 	int i;
+	u32 reg_dump_size;
+	struct sde_dbg_base *dbg_base = &sde_dbg_base;
+	phys_addr_t phys = 0;
 
 	mutex_lock(&sde_dbg_base.mutex);
+
+	reg_dump_size =  _sde_dbg_get_reg_dump_size();
+	dbg_base->reg_dump_addr = dma_alloc_coherent(sde_dbg_base.dev,
+			reg_dump_size, &phys, GFP_KERNEL);
 
 	if (dump_all)
 		sde_evtlog_dump_all(sde_dbg_base.evtlog);
