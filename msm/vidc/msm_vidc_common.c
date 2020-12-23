@@ -693,6 +693,25 @@ enum multi_stream msm_comm_get_stream_output_mode(struct msm_vidc_inst *inst)
 		return HAL_VIDEO_DECODER_PRIMARY;
 }
 
+bool vidc_scalar_enabled(struct msm_vidc_inst *inst)
+{
+	struct v4l2_format *f;
+	u32 output_height, output_width, input_height, input_width;
+	bool scalar_enable = false;
+
+	f = &inst->fmts[OUTPUT_PORT].v4l2_fmt;
+	output_height = f->fmt.pix_mp.height;
+	output_width = f->fmt.pix_mp.width;
+	f = &inst->fmts[INPUT_PORT].v4l2_fmt;
+	input_height = f->fmt.pix_mp.height;
+	input_width = f->fmt.pix_mp.width;
+
+	if (output_height != input_height || output_width != input_width)
+		scalar_enable = true;
+
+	return scalar_enable;
+}
+
 bool is_single_session(struct msm_vidc_inst *inst, u32 ignore_flags)
 {
 	bool single = true;
