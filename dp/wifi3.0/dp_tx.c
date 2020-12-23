@@ -1703,6 +1703,57 @@ fail_return:
 }
 
 /**
+ * dp_tx_comp_free_buf() - Free nbuf associated with the Tx Descriptor
+ * @soc: Soc handle
+ * @desc: software Tx descriptor to be processed
+ *
+ * Return: none
+ */
+static inline void dp_tx_comp_free_buf(struct dp_soc *soc,
+				       struct dp_tx_desc_s *desc)
+{
+	struct dp_vdev *vdev = desc->vdev;
+	qdf_nbuf_t nbuf = desc->nbuf;
+
+	/* nbuf already freed in vdev detach path */
+	if (!nbuf)
+		return;
+
+	/* If it is TDLS mgmt, don't unmap or free the frame */
+	if (desc->flags & DP_TX_DESC_FLAG_TDLS_FRAME)
+		return dp_non_std_tx_comp_free_buff(soc, desc, vdev);
+
+	/* 0 : MSDU buffer, 1 : MLE */
+	if (desc->msdu_ext_desc) {
+		/* TSO free */
+		if (hal_tx_ext_desc_get_tso_enable(
+					desc->msdu_ext_desc->vaddr)) {
+			/* unmap eash TSO seg before free the nbuf */
+			dp_tx_tso_unmap_segment(soc, desc->tso_desc,
+						desc->tso_num_desc);
+			qdf_nbuf_free(nbuf);
+			return;
+		}
+	}
+
+	qdf_nbuf_unmap(soc->osdev, nbuf, QDF_DMA_TO_DEVICE);
+
+	if (qdf_unlikely(!vdev)) {
+		qdf_nbuf_free(nbuf);
+		return;
+	}
+
+	if (qdf_likely(!vdev->mesh_vdev))
+		qdf_nbuf_free(nbuf);
+	else {
+		if (desc->flags & DP_TX_DESC_FLAG_TO_FW) {
+			qdf_nbuf_free(nbuf);
+			DP_STATS_INC(vdev, tx_i.mesh.completion_fw, 1);
+		} else
+			vdev->osif_tx_free_ext((nbuf));
+	}
+}
+/**
  * dp_tx_send_msdu_multiple() - Enqueue multiple MSDUs
  * @vdev: DP vdev handle
  * @nbuf: skb
@@ -1777,6 +1828,22 @@ qdf_nbuf_t dp_tx_send_msdu_multiple(struct dp_vdev *vdev, qdf_nbuf_t nbuf,
 				i++;
 				continue;
 			}
+
+			if (msdu_info->frm_type == dp_tx_frm_tso) {
+				dp_tx_tso_unmap_segment(soc,
+							msdu_info->u.tso_info.
+							curr_seg,
+							msdu_info->u.tso_info.
+							tso_num_seg_list);
+
+				if (msdu_info->u.tso_info.curr_seg->next) {
+					msdu_info->u.tso_info.curr_seg =
+					msdu_info->u.tso_info.curr_seg->next;
+					i++;
+					continue;
+				}
+			}
+
 			goto done;
 		}
 
@@ -1792,6 +1859,30 @@ qdf_nbuf_t dp_tx_send_msdu_multiple(struct dp_vdev *vdev, qdf_nbuf_t nbuf,
 		htt_tcl_metadata = vdev->htt_tcl_metadata;
 		if (msdu_info->exception_fw) {
 			HTT_TX_TCL_METADATA_VALID_HTT_SET(htt_tcl_metadata, 1);
+		}
+
+		/*
+		 * For frames with multiple segments (TSO, ME), jump to next
+		 * segment.
+		 */
+		if (msdu_info->frm_type == dp_tx_frm_tso) {
+			if (msdu_info->u.tso_info.curr_seg->next) {
+				msdu_info->u.tso_info.curr_seg =
+					msdu_info->u.tso_info.curr_seg->next;
+
+				/*
+				 * If this is a jumbo nbuf, then increment the
+				 * number of nbuf users for each additional
+				 * segment of the msdu. This will ensure that
+				 * the skb is freed only after receiving tx
+				 * completion for all segments of an nbuf
+				 */
+				qdf_nbuf_inc_users(nbuf);
+
+				/* Check with MCL if this is needed */
+				/* nbuf = msdu_info->u.tso_info.curr_seg->nbuf;
+				 */
+			}
 		}
 
 		/*
@@ -1815,6 +1906,23 @@ qdf_nbuf_t dp_tx_send_msdu_multiple(struct dp_vdev *vdev, qdf_nbuf_t nbuf,
 				i++;
 				continue;
 			}
+
+			/*
+			 * For TSO frames, the nbuf users increment done for
+			 * the current segment has to be reverted, since the
+			 * hw enqueue for this segment failed
+			 */
+			if (msdu_info->frm_type == dp_tx_frm_tso &&
+			    msdu_info->u.tso_info.curr_seg) {
+				/*
+				 * unmap and free current,
+				 * retransmit remaining segments
+				 */
+				dp_tx_comp_free_buf(soc, tx_desc);
+				i++;
+				continue;
+			}
+
 			goto done;
 		}
 
@@ -1824,28 +1932,6 @@ qdf_nbuf_t dp_tx_send_msdu_multiple(struct dp_vdev *vdev, qdf_nbuf_t nbuf,
 		 * as first element, following 2 blocks of code (for TSO and SG)
 		 * can be combined into 1
 		 */
-
-		/*
-		 * For frames with multiple segments (TSO, ME), jump to next
-		 * segment.
-		 */
-		if (msdu_info->frm_type == dp_tx_frm_tso) {
-			if (msdu_info->u.tso_info.curr_seg->next) {
-				msdu_info->u.tso_info.curr_seg =
-					msdu_info->u.tso_info.curr_seg->next;
-
-				/*
-				 * If this is a jumbo nbuf, then increment the number of
-				 * nbuf users for each additional segment of the msdu.
-				 * This will ensure that the skb is freed only after
-				 * receiving tx completion for all segments of an nbuf
-				 */
-				qdf_nbuf_inc_users(nbuf);
-
-				/* Check with MCL if this is needed */
-				/* nbuf = msdu_info->u.tso_info.curr_seg->nbuf; */
-			}
-		}
 
 		/*
 		 * For Multicast-Unicast converted packets,
@@ -2774,58 +2860,6 @@ dp_send_completion_to_stack(struct dp_soc *soc,  struct dp_pdev *pdev,
 {
 }
 #endif
-
-/**
- * dp_tx_comp_free_buf() - Free nbuf associated with the Tx Descriptor
- * @soc: Soc handle
- * @desc: software Tx descriptor to be processed
- *
- * Return: none
- */
-static inline void dp_tx_comp_free_buf(struct dp_soc *soc,
-				       struct dp_tx_desc_s *desc)
-{
-	struct dp_vdev *vdev = desc->vdev;
-	qdf_nbuf_t nbuf = desc->nbuf;
-
-	/* nbuf already freed in vdev detach path */
-	if (!nbuf)
-		return;
-
-	/* If it is TDLS mgmt, don't unmap or free the frame */
-	if (desc->flags & DP_TX_DESC_FLAG_TDLS_FRAME)
-		return dp_non_std_tx_comp_free_buff(soc, desc, vdev);
-
-	/* 0 : MSDU buffer, 1 : MLE */
-	if (desc->msdu_ext_desc) {
-		/* TSO free */
-		if (hal_tx_ext_desc_get_tso_enable(
-					desc->msdu_ext_desc->vaddr)) {
-			/* unmap eash TSO seg before free the nbuf */
-			dp_tx_tso_unmap_segment(soc, desc->tso_desc,
-						desc->tso_num_desc);
-			qdf_nbuf_free(nbuf);
-			return;
-		}
-	}
-
-	qdf_nbuf_unmap(soc->osdev, nbuf, QDF_DMA_TO_DEVICE);
-
-	if (qdf_unlikely(!vdev)) {
-		qdf_nbuf_free(nbuf);
-		return;
-	}
-
-	if (qdf_likely(!vdev->mesh_vdev))
-		qdf_nbuf_free(nbuf);
-	else {
-		if (desc->flags & DP_TX_DESC_FLAG_TO_FW) {
-			qdf_nbuf_free(nbuf);
-			DP_STATS_INC(vdev, tx_i.mesh.completion_fw, 1);
-		} else
-			vdev->osif_tx_free_ext((nbuf));
-	}
-}
 
 #ifdef MESH_MODE_SUPPORT
 /**
