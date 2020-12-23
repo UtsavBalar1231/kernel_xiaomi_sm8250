@@ -34,11 +34,11 @@ convert_gpio_direction(enum gpio_direction dir)
 {
 	switch (dir) {
 	case WMI_HOST_GPIO_INPUT:
-		return 0;
+		return WMI_FW_GPIO_INPUT;
 	case WMI_HOST_GPIO_OUTPUT:
-		return 1;
+		return WMI_FW_GPIO_OUTPUT;
 	default:
-		return 0;
+		return WMI_FW_GPIO_OUTPUT;
 	}
 }
 
