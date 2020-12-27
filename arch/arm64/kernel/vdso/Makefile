@@ -25,6 +25,7 @@ ccflags-y := -fno-common -fno-builtin -fno-stack-protector \
 	     -ffixed-x18 $(DISABLE_LTO)
 
 ccflags-y += -DDISABLE_BRANCH_PROFILING
+ccflags-y += $(call cc-option, -fno-whole-program)
 
 VDSO_LDFLAGS := -Bsymbolic
 
