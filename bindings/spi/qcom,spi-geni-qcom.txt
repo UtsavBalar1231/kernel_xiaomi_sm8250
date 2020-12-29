@@ -37,6 +37,9 @@ Optional properties:
   Note: Use this property to introduce cs_clk_delay only for minicore QUPs with
 	inter words delay as 0 and CS toggle as 0. For other cases, use the
 	conventional method of using spi_cs_clk_dly register.
+- qcom,use-fixed-timeout : Set this flag to use 250ms fixed timeout value. This
+                        will improve overall SPI KPI value but not preferred
+                        for large transfer.
 
 SPI slave nodes must be children of the SPI master node and can contain
 the following properties.
