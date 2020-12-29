@@ -3033,6 +3033,7 @@ static int msm_routing_lsm_port_put(struct snd_kcontrol *kcontrol,
 	struct soc_enum *e = (struct soc_enum *)kcontrol->private_value;
 	int mux = ucontrol->value.enumerated.item[0];
 	int lsm_port = AFE_PORT_ID_SLIMBUS_MULTI_CHAN_5_TX;
+	int lsm_port_idx = 0;
 	u8 fe_idx = 0;
 
 	if (mux >= e->items) {
@@ -3042,6 +3043,7 @@ static int msm_routing_lsm_port_put(struct snd_kcontrol *kcontrol,
 
 	pr_debug("%s: LSM enable %ld\n", __func__,
 			ucontrol->value.integer.value[0]);
+	lsm_port_idx = ucontrol->value.integer.value[0];
 	switch (ucontrol->value.integer.value[0]) {
 	case 1:
 		lsm_port = AFE_PORT_ID_SLIMBUS_MULTI_CHAN_0_TX;
@@ -3098,6 +3100,10 @@ static int msm_routing_lsm_port_put(struct snd_kcontrol *kcontrol,
 	set_lsm_port(lsm_port);
 	msm_routing_get_lsm_fe_idx(kcontrol, &fe_idx);
 	lsm_port_index[fe_idx] = ucontrol->value.integer.value[0];
+        /* Set the default AFE LSM Port to 0xffff */
+	if(lsm_port_idx <= 0 || lsm_port_idx >= ARRAY_SIZE(lsm_port_text))
+		lsm_port = 0xffff;
+	afe_set_lsm_afe_port_id(fe_idx, lsm_port);
 
 	return 0;
 }
