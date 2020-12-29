@@ -11521,7 +11521,8 @@ csr_issue_set_context_req_helper(struct mac_context *mac_ctx,
 	 * For open mode authentication, send dummy install key response to
 	 * send OBSS scan and QOS event.
 	 */
-	if (profile->negotiatedUCEncryptionType == eCSR_ENCRYPT_TYPE_NONE) {
+	if (profile &&
+	    profile->negotiatedUCEncryptionType == eCSR_ENCRYPT_TYPE_NONE) {
 		if (unicast)
 			return QDF_STATUS_SUCCESS;
 
@@ -15884,6 +15885,19 @@ csr_update_sae_single_pmk_ap_cap(struct mac_context *mac,
 }
 #endif
 
+static void csr_get_basic_rates(tSirMacRateSet *b_rates, uint32_t chan_freq)
+{
+	/*
+	 * Some IOT APs don't send supported rates in
+	 * probe resp, hence add BSS basic rates in
+	 * supported rates IE of assoc request.
+	 */
+	if (WLAN_REG_IS_24GHZ_CH_FREQ(chan_freq))
+		csr_populate_basic_rates(b_rates, false, true);
+	else if (WLAN_REG_IS_5GHZ_CH_FREQ(chan_freq))
+		csr_populate_basic_rates(b_rates, true, true);
+}
+
 /**
  * The communication between HDD and LIM is thru mailbox (MB).
  * Both sides will access the data structure "struct join_req".
@@ -16234,9 +16248,13 @@ QDF_STATUS csr_send_join_req_msg(struct mac_context *mac, uint32_t sessionId,
 				qdf_mem_copy(&csr_join_req->operationalRateSet.
 						rate, OpRateSet.rate,
 						OpRateSet.numRates);
-			} else
-				csr_join_req->operationalRateSet.numRates = 0;
+			} else if (pProfile->phyMode == eCSR_DOT11_MODE_AUTO) {
+				tSirMacRateSet b_rates = {0};
 
+				csr_get_basic_rates(&b_rates,
+						    pBssDescription->chan_freq);
+				csr_join_req->operationalRateSet = b_rates;
+			}
 			/* ExtendedRateSet */
 			if (ExRateSet.numRates) {
 				csr_join_req->extendedRateSet.numRates =
@@ -16244,8 +16262,15 @@ QDF_STATUS csr_send_join_req_msg(struct mac_context *mac, uint32_t sessionId,
 				qdf_mem_copy(&csr_join_req->extendedRateSet.
 						rate, ExRateSet.rate,
 						ExRateSet.numRates);
-			} else
+			} else {
 				csr_join_req->extendedRateSet.numRates = 0;
+			}
+		} else if (pProfile->phyMode == eCSR_DOT11_MODE_AUTO) {
+			tSirMacRateSet b_rates = {0};
+
+			csr_get_basic_rates(&b_rates,
+					    pBssDescription->chan_freq);
+			csr_join_req->operationalRateSet = b_rates;
 		} else {
 			csr_join_req->operationalRateSet.numRates = 0;
 			csr_join_req->extendedRateSet.numRates = 0;
@@ -18252,6 +18277,7 @@ csr_populate_roam_chan_list(struct mac_context *mac_ctx,
 			    tCsrChannelInfo *src)
 {
 	enum band_info band;
+	uint32_t band_cap;
 	uint8_t i = 0;
 	uint8_t num_channels = 0;
 	uint32_t *freq_lst = src->freq_list;
@@ -18260,14 +18286,15 @@ csr_populate_roam_chan_list(struct mac_context *mac_ctx,
 	 * The INI channels need to be filtered with respect to the current band
 	 * that is supported.
 	 */
-	band = mac_ctx->mlme_cfg->gen.band_capability;
-	if ((BAND_2G != band) && (BAND_5G != band)
-	    && (BAND_ALL != band)) {
+	band_cap = mac_ctx->mlme_cfg->gen.band_capability;
+	if (!band_cap) {
 		QDF_TRACE(QDF_MODULE_ID_SME, QDF_TRACE_LEVEL_ERROR,
-			 "Invalid band(%d), roam scan offload req aborted",
-			  band);
+			 "Invalid band_cap(%d), roam scan offload req aborted",
+			  band_cap);
 		return QDF_STATUS_E_FAILURE;
 	}
+
+	band = wlan_reg_band_bitmap_to_band_info(band_cap);
 
 	num_channels = dst->ChannelCount;
 	for (i = 0; i < src->numOfChannels; i++) {

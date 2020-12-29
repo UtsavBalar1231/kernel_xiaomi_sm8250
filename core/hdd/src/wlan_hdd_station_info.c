@@ -56,6 +56,9 @@
 #define STATION_MAX \
 	QCA_WLAN_VENDOR_ATTR_GET_STATION_MAX
 
+#define STA_INFO_CONNECT_FAIL_REASON_CODE \
+	QCA_WLAN_VENDOR_ATTR_GET_STA_INFO_CONNECT_FAIL_REASON_CODE
+
 /* define short names for get station info attributes */
 #define LINK_INFO_STANDARD_NL80211_ATTR \
 	QCA_WLAN_VENDOR_ATTR_GET_STATION_INFO_LINK_STANDARD_NL80211_ATTR
@@ -149,6 +152,12 @@ hdd_get_station_policy[STATION_MAX + 1] = {
 	[STATION_INFO] = {.type = NLA_FLAG},
 	[STATION_ASSOC_FAIL_REASON] = {.type = NLA_FLAG},
 	[STATION_REMOTE] = {.type = NLA_BINARY, .len = QDF_MAC_ADDR_SIZE},
+};
+
+const struct nla_policy
+hdd_get_sta_policy[QCA_WLAN_VENDOR_ATTR_GET_STA_INFO_MAX + 1] = {
+	[QCA_WLAN_VENDOR_ATTR_GET_STA_INFO_MAC] = {.type = NLA_BINARY,
+						   .len = QDF_MAC_ADDR_SIZE},
 };
 
 static int hdd_get_sta_congestion(struct hdd_adapter *adapter,
@@ -1599,6 +1608,218 @@ int32_t hdd_cfg80211_get_station_cmd(struct wiphy *wiphy,
 		return errno;
 
 	errno = __hdd_cfg80211_get_station_cmd(wiphy, wdev, data, data_len);
+
+	osif_vdev_sync_op_stop(vdev_sync);
+
+	return errno;
+}
+
+static uint32_t
+hdd_get_connect_fail_reason_code_len(struct hdd_adapter *adapter)
+{
+	if (adapter->connect_req_status == STATUS_SUCCESS)
+		return 0;
+
+	return nla_total_size(sizeof(uint32_t));
+}
+
+/**
+ * hdd_get_umac_to_osif_connect_fail_reason() - Convert to qca internal connect
+ * fail reason
+ * @internal_reason: Mac reason code of type @wlan_status_code
+ *
+ * Check if it is internal status code and convert it to the
+ * enum qca_sta_connect_fail_reason_codes.
+ *
+ * Return: Reason code of type enum qca_sta_connect_fail_reason_codes
+ */
+static enum qca_sta_connect_fail_reason_codes
+hdd_get_umac_to_osif_connect_fail_reason(enum wlan_status_code internal_reason)
+{
+	enum qca_sta_connect_fail_reason_codes reason = 0;
+
+	if (internal_reason < STATUS_PROP_START)
+		return reason;
+
+	switch (internal_reason) {
+	case STATUS_NO_NETWORK_FOUND:
+		reason = QCA_STA_CONNECT_FAIL_REASON_NO_BSS_FOUND;
+		break;
+	case STATUS_AUTH_TX_FAIL:
+		reason = QCA_STA_CONNECT_FAIL_REASON_AUTH_TX_FAIL;
+		break;
+	case STATUS_AUTH_NO_ACK_RECEIVED:
+		reason = QCA_STA_CONNECT_FAIL_REASON_AUTH_NO_ACK_RECEIVED;
+		break;
+	case STATUS_AUTH_NO_RESP_RECEIVED:
+		reason = QCA_STA_CONNECT_FAIL_REASON_AUTH_NO_RESP_RECEIVED;
+		break;
+	case STATUS_ASSOC_TX_FAIL:
+		reason = QCA_STA_CONNECT_FAIL_REASON_ASSOC_REQ_TX_FAIL;
+		break;
+	case STATUS_ASSOC_NO_ACK_RECEIVED:
+		reason = QCA_STA_CONNECT_FAIL_REASON_ASSOC_NO_ACK_RECEIVED;
+		break;
+	case STATUS_ASSOC_NO_RESP_RECEIVED:
+		reason = QCA_STA_CONNECT_FAIL_REASON_ASSOC_NO_RESP_RECEIVED;
+		break;
+	default:
+		hdd_debug("QCA code not present for internal status code %d",
+			  internal_reason);
+	}
+
+	return reason;
+}
+
+/**
+ * hdd_add_connect_fail_reason_code() - Fills connect fail reason code
+ * @skb: pointer to skb
+ * @adapter: pointer to hdd adapter
+ *
+ * Return: on success 0 else error code
+ */
+static int hdd_add_connect_fail_reason_code(struct sk_buff *skb,
+					    struct hdd_adapter *adapter)
+{
+	uint32_t reason;
+
+	reason = hdd_get_umac_to_osif_connect_fail_reason(
+			adapter->connect_req_status);
+	if (!reason)
+		return 0;
+
+	if (nla_put_u32(skb, STA_INFO_CONNECT_FAIL_REASON_CODE, reason)) {
+		hdd_err("put fail");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+/**
+ * hdd_get_station_info_ex() - send STA info to userspace, for STA mode only
+ * @hdd_ctx: pointer to hdd context
+ * @adapter: pointer to adapter
+ *
+ * Return: 0 if success else error status
+ */
+static int hdd_get_station_info_ex(struct hdd_context *hdd_ctx,
+				   struct hdd_adapter *adapter)
+{
+	struct sk_buff *skb;
+	uint32_t nl_buf_len = 0, connect_fail_rsn_len;
+
+	connect_fail_rsn_len = hdd_get_connect_fail_reason_code_len(adapter);
+	nl_buf_len = connect_fail_rsn_len;
+
+	nl_buf_len += NLMSG_HDRLEN;
+
+	skb = cfg80211_vendor_cmd_alloc_reply_skb(hdd_ctx->wiphy, nl_buf_len);
+	if (!skb) {
+		hdd_err_rl("cfg80211_vendor_cmd_alloc_reply_skb failed");
+		return -ENOMEM;
+	}
+
+	if (connect_fail_rsn_len) {
+		if (hdd_add_connect_fail_reason_code(skb, adapter)) {
+			hdd_err_rl("hdd_add_connect_fail_reason_code fail");
+			return -ENOMEM;
+		}
+	}
+
+	return cfg80211_vendor_cmd_reply(skb);
+}
+
+/**
+ * __hdd_cfg80211_get_sta_info_cmd() - Handle get sta info vendor cmd
+ * @wiphy: pointer to wireless phy
+ * @wdev: wireless device
+ * @data: data
+ * @data_len: data length
+ *
+ * Handles QCA_NL80211_VENDOR_SUBCMD_GET_STA_INFO.
+ * Validate cmd attributes and send the station info to upper layers.
+ *
+ * Return: Success(0) or reason code for failure
+ */
+static int
+__hdd_cfg80211_get_sta_info_cmd(struct wiphy *wiphy,
+				struct wireless_dev *wdev,
+				const void *data,
+				int data_len)
+{
+	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
+	struct net_device *dev = wdev->netdev;
+	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(dev);
+	struct nlattr *tb[QCA_WLAN_VENDOR_ATTR_GET_STA_INFO_MAX + 1];
+	struct qdf_mac_addr mac_addr;
+	int32_t status;
+
+	hdd_enter_dev(dev);
+
+	if (hdd_get_conparam() == QDF_GLOBAL_FTM_MODE ||
+	    hdd_get_conparam() == QDF_GLOBAL_MONITOR_MODE) {
+		hdd_err_rl("Command not allowed in FTM / Monitor mode");
+		status = -EPERM;
+		goto out;
+	}
+
+	status = wlan_hdd_validate_context(hdd_ctx);
+	if (status != 0)
+		goto out;
+
+	status = wlan_cfg80211_nla_parse(tb,
+					 QCA_WLAN_VENDOR_ATTR_GET_STA_INFO_MAX,
+					 data, data_len,
+					 hdd_get_sta_policy);
+	if (status) {
+		hdd_err_rl("Invalid ATTR");
+		goto out;
+	}
+
+	switch (adapter->device_mode) {
+	case QDF_STA_MODE:
+	case QDF_P2P_CLIENT_MODE:
+		status = hdd_get_station_info_ex(hdd_ctx, adapter);
+		break;
+	case QDF_SAP_MODE:
+	case QDF_P2P_GO_MODE:
+		if (!tb[QCA_WLAN_VENDOR_ATTR_GET_STA_INFO_MAC]) {
+			hdd_err_rl("MAC address is not present");
+			status = -EINVAL;
+			goto out;
+		}
+
+		nla_memcpy(mac_addr.bytes,
+			   tb[QCA_WLAN_VENDOR_ATTR_GET_STA_INFO_MAC],
+			   QDF_MAC_ADDR_SIZE);
+		hdd_debug("STA " QDF_MAC_ADDR_FMT,
+			  QDF_MAC_ADDR_REF(mac_addr.bytes));
+		break;
+	default:
+		hdd_err_rl("Invalid device_mode: %d", adapter->device_mode);
+		status = -EINVAL;
+		goto out;
+	}
+
+	hdd_exit();
+out:
+	return status;
+}
+
+int32_t hdd_cfg80211_get_sta_info_cmd(struct wiphy *wiphy,
+				      struct wireless_dev *wdev,
+				      const void *data,
+				      int data_len)
+{
+	struct osif_vdev_sync *vdev_sync;
+	int errno;
+
+	errno = osif_vdev_sync_op_start(wdev->netdev, &vdev_sync);
+	if (errno)
+		return errno;
+
+	errno = __hdd_cfg80211_get_sta_info_cmd(wiphy, wdev, data, data_len);
 
 	osif_vdev_sync_op_stop(vdev_sync);
 

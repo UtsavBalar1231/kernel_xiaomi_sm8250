@@ -1077,6 +1077,8 @@ struct hdd_context;
  * @latency_level: 0 - normal, 1 - moderate, 2 - low, 3 - ultralow
  * @last_disconnect_reason: Last disconnected internal reason code
  *                          as per enum qca_disconnect_reason_codes
+ * @connect_req_status: Last disconnected internal status code
+ *                          as per enum qca_sta_connect_fail_reason_codes
  * @upgrade_udp_qos_threshold: The threshold for user priority upgrade for
 			       any UDP packet.
  * @handle_feature_update: Handle feature update only if it is triggered
@@ -1367,6 +1369,7 @@ struct hdd_adapter {
 	uint32_t motion_det_baseline_value;
 #endif /* WLAN_FEATURE_MOTION_DETECTION */
 	enum qca_disconnect_reason_codes last_disconnect_reason;
+	enum wlan_status_code connect_req_status;
 
 #ifdef WLAN_FEATURE_PERIODIC_STA_STATS
 	/* Indicate whether to display sta periodic stats */
