@@ -40,4 +40,3 @@ Example:
 			qcom,smdpkt-dev-name = "smd_pkt_loopback";
 		};
 	};
-
