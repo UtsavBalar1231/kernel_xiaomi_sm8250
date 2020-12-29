@@ -1509,22 +1509,6 @@ void reg_set_channel_params(struct wlan_objmgr_pdev *pdev,
 }
 #endif /* CONFIG_CHAN_NUM_API */
 
-QDF_STATUS reg_get_curr_band(struct wlan_objmgr_pdev *pdev,
-			     enum band_info *band)
-{
-	struct wlan_regulatory_pdev_priv_obj *pdev_reg;
-
-	pdev_reg = reg_get_pdev_obj(pdev);
-	if (!IS_VALID_PDEV_REG_OBJ(pdev_reg)) {
-		reg_err("pdev reg component is NULL");
-		return QDF_STATUS_E_INVAL;
-	}
-
-	*band = pdev_reg->band_capability;
-
-	return QDF_STATUS_SUCCESS;
-}
-
 QDF_STATUS reg_read_default_country(struct wlan_objmgr_psoc *psoc,
 				    uint8_t *country_code)
 {
@@ -3680,5 +3664,32 @@ reg_get_unii_5g_bitmap(struct wlan_objmgr_pdev *pdev, uint8_t *bitmap)
 	*bitmap =  pdev_priv_obj->unii_5g_bitmap;
 
 	return QDF_STATUS_SUCCESS;
+}
+#endif
+
+#ifdef CONFIG_REG_CLIENT
+enum band_info reg_band_bitmap_to_band_info(uint32_t band_bitmap)
+{
+	if ((band_bitmap & BIT(REG_BAND_2G)) &&
+	    (band_bitmap & BIT(REG_BAND_5G)) &&
+	    (band_bitmap & BIT(REG_BAND_6G)))
+		return BAND_ALL;
+	else if ((band_bitmap & BIT(REG_BAND_5G)) &&
+		 (band_bitmap & BIT(REG_BAND_6G)))
+		return BAND_5G;
+	else if ((band_bitmap & BIT(REG_BAND_2G)) &&
+		 (band_bitmap & BIT(REG_BAND_6G)))
+		return BAND_2G;
+	else if ((band_bitmap & BIT(REG_BAND_2G)) &&
+		 (band_bitmap & BIT(REG_BAND_5G)))
+		return BAND_ALL;
+	else if (band_bitmap & BIT(REG_BAND_2G))
+		return BAND_2G;
+	else if (band_bitmap & BIT(REG_BAND_5G))
+		return BAND_5G;
+	else if (band_bitmap & BIT(REG_BAND_6G))
+		return BAND_2G;
+	else
+		return BAND_UNKNOWN;
 }
 #endif
