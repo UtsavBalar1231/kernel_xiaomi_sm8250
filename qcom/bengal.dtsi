@@ -1605,10 +1605,11 @@
 	tsens0:tsens@c222000 {
 		compatible = "qcom,tsens24xx";
 		reg = <0x04410000  0x8>,
-		      <0x04411000  0x1ff>;
+			<0x04411000  0x1ff>;
 		reg-names = "tsens_srot_physical",
-			     "tsens_tm_physical";
-		interrupts = <0 275 0>, <0 190 0>;
+			"tsens_tm_physical";
+		interrupts = <GIC_SPI 275 IRQ_TYPE_LEVEL_HIGH>,
+				<GIC_SPI 190 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "tsens-upper-lower", "tsens-critical";
 		tsens-reinit-wa;
 		#thermal-sensor-cells = <1>;
@@ -2546,7 +2547,8 @@
 		reg = <0x5800000 0x34000>,
 			<0x5804000 0x28000>;
 		reg-names = "ipa-base", "gsi-base";
-		interrupts = <0 257 0>, <0 259 0>;
+		interrupts = <GIC_SPI 257 IRQ_TYPE_LEVEL_HIGH>,
+				<GIC_SPI 259 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "ipa-irq", "gsi-irq";
 		qcom,ipa-hw-ver = <16>; /* IPA core version = IPAv4.2 */
 		qcom,ipa-hw-mode = <0>;
