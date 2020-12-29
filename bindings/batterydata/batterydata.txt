@@ -153,6 +153,21 @@ Profile data node optional properties:
 			This should be in decidegree and if not specified
 			default select value is 10 DeciDegC.
 			<RISE_HYS_DECIDEG_C, FALL_HYS_DECIDEG_C>
+- qcom,jeita-fcc-scaling: A bool property to indicate if temperature based
+			jeita fcc scaling is enabled. If defined, enables
+			scaling of FCC based on battery-temperature. Scales
+			the FCC depending upon the granularity of increase in
+			battery temperature.
+- qcom,jeita-fcc-scaling-temp-threshold: A tuple entry to allow configuring the
+			min and max battery temperature threshold (in DeciDegC)
+			for jeita fcc scaling algorithm to kick in.
+			<MIN_BATT_TEMP_DECIDEG_C, MAX_BATT_TEMP_DECIDEG_C>
+- qcom,jeita-scaling-min-fcc-ua : This value corresponds to the minimum FCC (in uA) of
+			the battery to be applied when battery temperature hits the max
+			temperature indicated it "qcom,jeita-fcc-scaling-temp-threshold".
+			This value is selected based on profiling after making sure that
+			the battery-temperature does not rise at this FCC.
+
 Profile data node required subnodes:
 - qcom,fcc-temp-lut : An 1-dimensional lookup table node that encodes
 			temperature to fcc lookup. The units for this lookup
