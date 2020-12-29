@@ -70,11 +70,13 @@ struct cam_hw_update_entry {
  *
  * @resrouce_handle:       Resource port id for the buffer
  * @sync_id:               Sync id
+ * @image_buf_addr:        Image buffer address array
  *
  */
 struct cam_hw_fence_map_entry {
 	uint32_t           resource_handle;
 	int32_t            sync_id;
+	int32_t            image_buf_addr[CAM_PACKET_MAX_PLANES];
 };
 
 /**
