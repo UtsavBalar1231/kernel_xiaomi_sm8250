@@ -106,6 +106,42 @@
 #define CS35L41_SPEAKER_NAME "cs35l41.2-0040"
 #define CS35L41_RECEIVER_NAME "cs35l41.2-0042"
 #endif
+#ifdef CONFIG_TARGET_PRODUCT_ENUMA
+struct snd_soc_dai_link_component cs35l41_codec_components[] = {
+       {
+               .name = "cs35l41.0-0040",
+               .dai_name = "cs35l41.0-0040",
+       },
+       {
+               .name = "cs35l41.0-0041",
+               .dai_name = "cs35l41.0-0041",
+       },
+       {
+               .name = "cs35l41.0-0043",
+               .dai_name = "cs35l41.0-0043",
+       },
+       {
+               .name = "cs35l41.0-0042",
+               .dai_name = "cs35l41.0-0042",
+       },
+       {
+               .name = "cs35l41.1-0040",
+               .dai_name = "cs35l41.1-0040",
+       },
+       {
+               .name = "cs35l41.1-0041",
+               .dai_name = "cs35l41.1-0041",
+       },
+       {
+               .name = "cs35l41.1-0043",
+               .dai_name = "cs35l41.1-0043",
+       },
+       {
+               .name = "cs35l41.1-0042",
+               .dai_name = "cs35l41.1-0042",
+       },
+};
+#else
 struct snd_soc_dai_link_component cs35l41_codec_components[] = {
 	{
 		.name = CS35L41_SPEAKER_NAME,
@@ -120,7 +156,7 @@ struct snd_soc_dai_link_component cs35l41_codec_components[] = {
 	},
 #endif
 };
-
+#endif
 static struct snd_soc_codec_conf cs35l41_codec_conf[] = {
 	{
 		.dev_name	= CS35L41_SPEAKER_NAME,
@@ -155,7 +191,11 @@ enum {
 };
 
 #define TDM_MAX_SLOTS 8
+#if defined(CONFIG_TARGET_PRODUCT_ENUMA)
 #define TDM_SLOT_WIDTH_BITS 32
+#else
+#define TDM_SLOT_WIDTH_BITS 32
+#endif
 #define TDM_SLOT_WIDTH_BYTES TDM_SLOT_WIDTH_BITS/8
 
 enum {
@@ -6465,7 +6505,7 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 	},
 #ifdef AUDIO_SM8250_FLAG
 	{/* hw:x,30 */
-#if defined(CONFIG_TARGET_PRODUCT_APOLLO) || defined(CONFIG_TARGET_PRODUCT_CAS) || defined(CONFIG_TARGET_PRODUCT_ALIOTH)
+#if defined(CONFIG_TARGET_PRODUCT_APOLLO) || defined(CONFIG_TARGET_PRODUCT_CAS) || defined(CONFIG_TARGET_PRODUCT_ALIOTH)|| defined(CONFIG_TARGET_PRODUCT_ENUMA)
 		.name = "Tertiary TDM1 Hostless Playback",
 		.stream_name = "Tertiary TDM1 Hostless Playback",
 		.cpu_dai_name = "msm-dai-q6-tdm.36898",
@@ -7359,7 +7399,7 @@ static struct snd_soc_dai_link msm_mi2s_be_dai_links[] = {
 
 #ifdef AUDIO_SM8250_FLAG  //j1
 static struct snd_soc_dai_link tert_mi2s_rx_cs35l41_dai_links[] = {
-#if defined(CONFIG_TARGET_PRODUCT_APOLLO) || defined(CONFIG_TARGET_PRODUCT_CAS)  || defined(CONFIG_TARGET_PRODUCT_ALIOTH) 
+#if defined(CONFIG_TARGET_PRODUCT_APOLLO) || defined(CONFIG_TARGET_PRODUCT_CAS)  || defined(CONFIG_TARGET_PRODUCT_ALIOTH)|| defined(CONFIG_TARGET_PRODUCT_ENUMA)
 	{
 		.name = LPASS_BE_TERT_TDM_RX_0,
 		.stream_name = "Tertiary TDM0 Playback",
@@ -8177,6 +8217,7 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 				    get_hw_version_platform() == HARDWARE_PLATFORM_APOLLO ||
 				    get_hw_version_platform() == HARDWARE_PLATFORM_ALIOTH ||
 				    get_hw_version_platform() == HARDWARE_PLATFORM_THYME ||
+				    get_hw_version_platform() == HARDWARE_PLATFORM_ENUMA ||
 					get_hw_version_platform() == HARDWARE_PLATFORM_CAS) {
 					memcpy(msm_kona_dai_links + total_links,
 						tert_mi2s_rx_cs35l41_dai_links,
