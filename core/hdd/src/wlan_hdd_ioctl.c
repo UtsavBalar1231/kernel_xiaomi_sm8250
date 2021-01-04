@@ -2982,7 +2982,7 @@ static int hdd_enable_unit_test_commands(struct hdd_adapter *adapter,
 	QDF_STATUS status;
 
 	if (hdd_get_conparam() == QDF_GLOBAL_FTM_MODE ||
-	    hdd_get_conparam() == QDF_GLOBAL_MISSION_MODE)
+	    hdd_get_conparam() == QDF_GLOBAL_MONITOR_MODE)
 		return -EPERM;
 
 	if (adapter->vdev_id >= WLAN_MAX_VDEVS) {
@@ -3058,7 +3058,7 @@ static int hdd_disable_unit_test_commands(struct hdd_adapter *adapter,
 	QDF_STATUS status;
 
 	if (hdd_get_conparam() == QDF_GLOBAL_FTM_MODE ||
-	    hdd_get_conparam() == QDF_GLOBAL_MISSION_MODE)
+	    hdd_get_conparam() == QDF_GLOBAL_MONITOR_MODE)
 		return -EPERM;
 
 	if (adapter->vdev_id >= WLAN_MAX_VDEVS) {
