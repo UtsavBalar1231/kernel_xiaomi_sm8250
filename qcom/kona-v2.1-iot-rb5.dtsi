@@ -7,7 +7,7 @@
 };
 
 &qupv3_se1_i2c {
-	status = "disabled";
+	status = "okay";
 };
 
 &qupv3_se6_4uart {
@@ -335,5 +335,73 @@
 				cooling-device = <&mdss_mdp 153 153>;
 			};
 		};
+	};
+};
+
+&qupv3_se1_i2c {
+	status = "ok";
+	qcom,clk-freq-out = <400000>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/* TDK Chirp IO Expander */
+	ch_io_expander@22 {
+		#gpio-cells = <2>;
+		#interrupt-cells = <2>;
+		compatible = "semtech,sx1508q";
+		reg = <0x22>;
+		gpio-controller;
+	};
+};
+
+&qupv3_se15_i2c {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "ok";
+	qcom,clk-freq-out = <400000>;
+
+	/* TDK Chirp 3, 4, and 5 are connected to QUP15 */
+	ch101_1: ch101_1@45 {
+		compatible = "invensense,ch101";
+		reg = <0x45>;
+		rst-gpios = <&tlmm 140 GPIO_ACTIVE_HIGH>;
+		rtc_rst-gpios = <&tlmm 0 GPIO_ACTIVE_HIGH>;
+		prg-gpios = <3 4 5>;
+		int-gpios = <&tlmm 122 GPIO_ACTIVE_HIGH>,
+			<&tlmm 123 GPIO_ACTIVE_HIGH>,
+			<&tlmm 66 GPIO_ACTIVE_HIGH>;
+	};
+
+	#include "smb1390.dtsi"
+};
+
+&qupv3_se4_i2c {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "ok";
+	qcom,clk-freq-out = <400000>;
+
+	/* TDK Chirp 0, 1, and 2 are connected to QUP4 */
+	ch101_0: ch101_0@45 {
+		compatible = "invensense,ch101";
+		reg = <0x45>;
+		rst-gpios = <&tlmm 140 GPIO_ACTIVE_HIGH>;
+		rtc_rst-gpios = <&tlmm 0 GPIO_ACTIVE_HIGH>;
+		prg-gpios = <0 1 2>;
+		int-gpios = <&tlmm 129 GPIO_ACTIVE_HIGH>,
+				<&tlmm 141 GPIO_ACTIVE_HIGH>,
+				<&tlmm 113 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&qupv3_se17_spi {
+	status = "okay";
+	temp_sensor@0 {
+		compatible = "tdktherm";
+		reg = <0>; // Chip select ID
+		spi-max-frequency = <10000000>; // Can support up to 24 MHz
+		spi-cpol;
+		spi-cpha;
+		status = "okay";
 	};
 };
