@@ -1042,6 +1042,10 @@
 	};
 };
 
+&mdss_mdp {
+	connectors = <&sde_dp &sde_dsi &sde_dsi1 &sde_rscc>;
+};
+
 &pm8150l_lcdb {
 	status = "ok";
 };
