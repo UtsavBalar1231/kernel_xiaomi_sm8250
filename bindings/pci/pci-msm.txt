@@ -372,6 +372,11 @@ Main node
 	Value type: <prop-encoded array>
 	Definition: PCIe PHY initialization sequence
 
+- qcom,config-recovery:
+	Usage: optional
+	Value type : <bool>
+	Definition: Enable to notify the client driver for recovery when
+		config space is not accessible
 
 ==============
 Root port node
