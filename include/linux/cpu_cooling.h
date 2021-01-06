@@ -44,6 +44,10 @@ struct cpu_cooling_ops {
 struct thermal_cooling_device *
 cpufreq_cooling_register(struct cpufreq_policy *policy);
 
+struct thermal_cooling_device *
+cpufreq_platform_cooling_register(struct cpufreq_policy *policy,
+					struct cpu_cooling_ops *ops);
+
 /**
  * cpufreq_platform_cooling_register - create cpufreq cooling device with
  * additional platform specific mitigation function.
@@ -67,6 +71,13 @@ static inline struct thermal_cooling_device *
 cpufreq_cooling_register(struct cpufreq_policy *policy)
 {
 	return ERR_PTR(-ENOSYS);
+}
+
+static inline struct thermal_cooling_device *
+cpufreq_platform_cooling_register(struct cpufreq_policy *policy,
+					struct cpu_cooling_ops *ops)
+{
+	return NULL;
 }
 
 static inline
