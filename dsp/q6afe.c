@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/* Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
  */
 #include <linux/slab.h>
 #include <linux/debugfs.h>
@@ -8639,8 +8639,7 @@ int afe_close(int port_id)
 		    (port_id == RT_PROXY_DAI_001_TX))
 			proxy_afe_instance[port_id & 0x1] = 0;
 		afe_close_done[port_id & 0x1] = true;
-		ret = -EINVAL;
-		goto fail_cmd;
+		return -EINVAL;
 	}
 	pr_info("%s: port_id = 0x%x\n", __func__, port_id);
 	if ((port_id == RT_PROXY_DAI_001_RX) ||
