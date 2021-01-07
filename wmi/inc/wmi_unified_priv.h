@@ -2009,6 +2009,9 @@ QDF_STATUS
 			   void *evt_buf,
 			   struct wmi_neighbor_report_data *dst,
 			   uint8_t idx, uint8_t rpt_idx);
+QDF_STATUS
+(*extract_roam_msg_info)(wmi_unified_t wmi_handle, void *evt_buf,
+			struct wmi_roam_msg_info *dst, uint8_t idx);
 
 void (*wmi_pdev_id_conversion_enable)(wmi_unified_t wmi_handle,
 				      uint32_t *pdev_map,

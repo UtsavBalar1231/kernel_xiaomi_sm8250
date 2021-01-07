@@ -7724,6 +7724,25 @@ struct wmi_neighbor_report_data {
 };
 
 /**
+ * struct wmi_roam_msg_info - Roam message related information
+ * @present:    Flag to check if the roam msg info tlv is present
+ * @timestamp:  Timestamp is the absolute time w.r.t host timer which is
+ * synchronized between the host and target
+ * @msg_id:     Message ID from WMI_ROAM_MSG_ID
+ * @msg_param1: msg_param1, values is based on the host & FW
+ * understanding and depend on the msg ID
+ * @msg_param2: msg_param2 value is based on the host & FW understanding
+ * and depend on the msg ID
+ */
+struct wmi_roam_msg_info {
+	bool present;
+	uint32_t timestamp;
+	uint32_t msg_id;
+	uint32_t msg_param1;
+	uint32_t msg_param2;
+};
+
+/**
  * struct wmi_roam_trigger_info() - Roam trigger related details
  * @present:            Flag to check if the roam_trigger_info tlv is present
  * @trigger_reason:     Roam trigger reason(enum WMI_ROAM_TRIGGER_REASON_ID)
