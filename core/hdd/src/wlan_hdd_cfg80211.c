@@ -8821,6 +8821,31 @@ static void hdd_disable_runtime_pm_for_user(struct hdd_context *hdd_ctx)
 }
 
 /**
+ * hdd_twt_setup_req_type_to_cmd() - Converts twt setup request type to twt
+ * cmd
+ * @req_type: twt setup request type
+ * @twt_cmd: pointer to store twt command
+ *
+ * Return: QDF_STATUS_SUCCESS on success, else other qdf error values
+ */
+static QDF_STATUS
+hdd_twt_setup_req_type_to_cmd(u8 req_type, enum WMI_HOST_TWT_COMMAND *twt_cmd)
+{
+	if (req_type == QCA_WLAN_VENDOR_TWT_SETUP_REQUEST) {
+		*twt_cmd = WMI_HOST_TWT_COMMAND_REQUEST_TWT;
+	} else if (req_type == QCA_WLAN_VENDOR_TWT_SETUP_SUGGEST) {
+		*twt_cmd = WMI_HOST_TWT_COMMAND_SUGGEST_TWT;
+	} else if (req_type == QCA_WLAN_VENDOR_TWT_SETUP_DEMAND) {
+		*twt_cmd = WMI_HOST_TWT_COMMAND_DEMAND_TWT;
+	} else {
+		hdd_err_rl("Invalid TWT_SETUP_REQ_TYPE %d", req_type);
+		return QDF_STATUS_E_INVAL;
+	}
+
+	return QDF_STATUS_SUCCESS;
+}
+
+/**
  * __wlan_hdd_cfg80211_set_wifi_test_config() - Wifi test configuration
  * vendor command
  *
@@ -9355,7 +9380,14 @@ __wlan_hdd_cfg80211_set_wifi_test_config(struct wiphy *wiphy,
 				hdd_err_rl("TWT_SETUP_REQ_TYPE is must");
 				goto send_err;
 			}
-			params.twt_cmd = nla_get_u8(tb2[cmd_id]);
+
+			status = hdd_twt_setup_req_type_to_cmd(
+					nla_get_u8(tb2[cmd_id]),
+					&params.twt_cmd);
+			if (QDF_IS_STATUS_ERROR(status)) {
+				hdd_err_rl("TWT cmd type is invalid");
+				goto send_err;
+			}
 
 			cmd_id = QCA_WLAN_VENDOR_ATTR_TWT_SETUP_TRIGGER;
 			if (tb2[cmd_id])
