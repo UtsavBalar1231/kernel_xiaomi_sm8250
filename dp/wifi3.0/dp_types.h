@@ -1410,6 +1410,10 @@ struct dp_soc {
 #endif /* WLAN_SUPPORT_RX_FLOW_TAG || WLAN_SUPPORT_RX_FISA */
 	/* Save recent operation related variable */
 	struct dp_last_op_info last_op_info;
+#ifdef FEATURE_RUNTIME_PM
+	/* Dp runtime refcount */
+	qdf_atomic_t dp_runtime_refcount;
+#endif
 };
 
 #ifdef IPA_OFFLOAD
