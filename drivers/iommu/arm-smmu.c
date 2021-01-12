@@ -2088,7 +2088,7 @@ static irqreturn_t arm_smmu_context_fault(int irq, void *dev)
 			"Context fault handled by client: iova=0x%08lx, cb=%d, fsr=0x%x, fsynr0=0x%x, fsynr1=0x%x\n",
 			iova, cfg->cbndx, fsr, fsynr0, fsynr1);
 		dev_dbg(smmu->dev,
-			"Client info: BID=0x%x, PID=0x%x, MID=0x%x\n",
+			"Client info: BID=0x%lx, PID=0x%lx, MID=0x%lx\n",
 			FIELD_GET(FSYNR1_BID, fsynr1),
 			FIELD_GET(FSYNR1_PID, fsynr1),
 			FIELD_GET(FSYNR1_MID, fsynr1));
@@ -2107,7 +2107,7 @@ static irqreturn_t arm_smmu_context_fault(int irq, void *dev)
 				"Unhandled context fault: iova=0x%08lx, cb=%d, fsr=0x%x, fsynr0=0x%x, fsynr1=0x%x\n",
 				iova, cfg->cbndx, fsr, fsynr0, fsynr1);
 			dev_err(smmu->dev,
-				"Client info: BID=0x%x, PID=0x%x, MID=0x%x\n",
+				"Client info: BID=0x%lx, PID=0x%lx, MID=0x%lx\n",
 				FIELD_GET(FSYNR1_BID, fsynr1),
 				FIELD_GET(FSYNR1_PID, fsynr1),
 				FIELD_GET(FSYNR1_MID, fsynr1));
@@ -6548,7 +6548,7 @@ static ssize_t arm_smmu_debug_testbus_read(struct file *file,
 							testbus_version);
 		arm_smmu_power_off(pwr);
 
-		snprintf(buf, buf_len, "0x%0x\n", val);
+		snprintf(buf, buf_len, "0x%0lx\n", val);
 	} else {
 
 		struct arm_smmu_device *smmu = file->private_data;
@@ -6969,7 +6969,7 @@ static ssize_t arm_smmu_debug_capturebus_config_read(struct file *file,
 		snprintf(buf + strlen(buf), buf_len - strlen(buf),
 				"Match_%d : 0x%0llx\n", i+1, match[i]);
 	}
-	snprintf(buf + strlen(buf), buf_len - strlen(buf), "0x%0x\n", val);
+	snprintf(buf + strlen(buf), buf_len - strlen(buf), "0x%0lx\n", val);
 
 	buflen = min(count, strlen(buf));
 	if (copy_to_user(ubuf, buf, buflen)) {
@@ -7039,7 +7039,8 @@ static irqreturn_t arm_smmu_debug_capture_bus_match(int irq, void *dev)
 	void __iomem *tbu_base = tbu->base;
 	u64 mask[NO_OF_MASK_AND_MATCH], match[NO_OF_MASK_AND_MATCH];
 	u64 snapshot[NO_OF_CAPTURE_POINTS][REGS_PER_CAPTURE_POINT];
-	int i, j, val;
+	unsigned long val;
+	int i, j;
 
 	if (arm_smmu_power_on(smmu->pwr) || arm_smmu_power_on(tbu->pwr))
 		return IRQ_NONE;
@@ -7052,7 +7053,7 @@ static irqreturn_t arm_smmu_debug_capture_bus_match(int irq, void *dev)
 	arm_smmu_power_off(tbu->pwr);
 	arm_smmu_power_off(smmu->pwr);
 
-	dev_info(tbu->dev, "TNX_TCR_CNTL : 0x%0llx\n", val);
+	dev_info(tbu->dev, "TNX_TCR_CNTL : 0x%0lx\n", val);
 
 	for (i = 0; i < NO_OF_MASK_AND_MATCH; ++i) {
 		dev_info(tbu->dev,
