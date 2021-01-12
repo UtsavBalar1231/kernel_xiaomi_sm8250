@@ -224,7 +224,9 @@ static void exfat_destroy_inode(struct inode *inode)
 {
 	call_rcu(&inode->i_rcu, exfat_i_callback);
 }
+#endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 6, 0)
 static int exfat_remount(struct super_block *sb, int *flags, char *data)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
@@ -244,6 +246,8 @@ static const struct super_operations exfat_sops = {
 	.free_inode	= exfat_free_inode,
 #else
 	.destroy_inode	= exfat_destroy_inode,
+#endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 6, 0)
 	.remount_fs	= exfat_remount,
 #endif
 	.write_inode	= exfat_write_inode,
