@@ -13,6 +13,7 @@
  */
 #define DEBUG
 
+//#define BRINGUP_IRQ_VERIFY
 #define FAST_SWITCH_WORKAROUND
 
 #include <linux/module.h>
@@ -607,8 +608,6 @@ static int cs35l41_fast_switch_file_put(struct snd_kcontrol *kcontrol,
 		return -EINVAL;
 	}
 
-	cs35l41->fast_switch_file_idx = i;
-
 #if defined(FAST_SWITCH_WORKAROUND)
 	if (!cs35l41->dsp.running) {
 		dev_err(cs35l41->dev, "DSP not running\n");
@@ -621,6 +620,8 @@ static int cs35l41_fast_switch_file_put(struct snd_kcontrol *kcontrol,
 		dev_dbg(cs35l41->dev, "%s: fast switch %s\n", __func__, ret ? "fail" : "success");
 	}
 #endif
+
+	cs35l41->fast_switch_file_idx = i;
 
 	return 0;
 }
@@ -792,6 +793,7 @@ static int cs35l41_put_output_dev(struct snd_kcontrol *kcontrol,
 
 	component = snd_soc_kcontrol_component(kcontrol);
 	cs35l41 = snd_soc_component_get_drvdata(component);
+	dev_dbg(cs35l41->dev, "%s: output_dev = %u\n", __func__, i);
 
 	soc_enum = (struct soc_enum *)kcontrol->private_value;
 
@@ -1017,6 +1019,8 @@ static void cs35l41_vol_ramp(struct work_struct *wk)
 
 	vol_ctl = container_of(wk, struct cs35l41_vol_ctl, ramp_work);
 	cs35l41 = container_of(vol_ctl, struct cs35l41_private, vol_ctl);
+	dev_dbg(cs35l41->dev, "%s: dig_vol = %d\n", __func__, cs35l41->vol_ctl.dig_vol);
+
 	atomic_set(&cs35l41->vol_ctl.vol_ramp, 1);
 	/*
 	 * vol_ramp must be true at this point,
@@ -1703,6 +1707,13 @@ static irqreturn_t cs35l41_irq(int irq, void *data)
 				CS35L41_OTP_BOOT_DONE, CS35L41_OTP_BOOT_DONE);
 	}
 
+#if defined(BRINGUP_IRQ_VERIFY)
+	if (status[0] & CS35L41_PUP_DONE_MASK) {
+		regmap_write(cs35l41->regmap, CS35L41_IRQ1_STATUS1, CS35L41_PUP_DONE_MASK);
+		dev_dbg(cs35l41->dev, "AMP powered up\n");
+	}
+#endif
+
 	return IRQ_HANDLED;
 }
 
@@ -1811,6 +1822,8 @@ static int cs35l41_main_amp_event(struct snd_soc_dapm_widget *w,
 	int i;
 	bool pdn;
 	unsigned int val;
+
+	dev_dbg(cs35l41->dev, "%s: event = 0x%x\n", __func__, event);
 
 	switch (event) {
 	case SND_SOC_DAPM_POST_PMU:
@@ -3633,8 +3646,13 @@ int cs35l41_probe(struct cs35l41_private *cs35l41,
 	}
 
 	/* Set interrupt masks for critical errors */
+#if defined(BRINGUP_IRQ_VERIFY)
+	regmap_write(cs35l41->regmap, CS35L41_IRQ1_MASK1,
+			CS35L41_INT1_MASK_DEFAULT & CS35L41_INT1_UNMASK_PUP);
+#else
 	regmap_write(cs35l41->regmap, CS35L41_IRQ1_MASK1,
 			CS35L41_INT1_MASK_DEFAULT);
+#endif
 
 	mutex_init(&cs35l41->force_int_lock);
 

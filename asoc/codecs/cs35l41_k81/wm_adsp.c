@@ -2008,7 +2008,7 @@ static int wm_adsp_load(struct wm_adsp *dsp)
 	snprintf(file, PAGE_SIZE, "%s-%s-%s.wmfw", dsp->part, dsp->fwf_name,
 		 wm_adsp_fw[dsp->fw].file);
 	file[PAGE_SIZE - 1] = '\0';
-	pr_err("jzw firm %s\n",file);
+	pr_err("jzw firm algo %s\n",file);
 
 	ret = request_firmware(&firmware, file, dsp->dev);
 	if (ret != 0) {
@@ -2194,7 +2194,7 @@ static struct wm_coeff_ctl *wm_adsp_get_ctl(struct wm_adsp *dsp,
 	struct wm_coeff_ctl *pos, *rslt = NULL;
 
 	list_for_each_entry(pos, &dsp->ctl_list, list) {
-		if (strncmp(pos->subname, name, pos->subname_len) == 0) {
+		if (strncmp(pos->subname, name, pos->subname_len) == 0 && pos->enabled) {
 			rslt = pos;
 			break;
 		}
@@ -2841,7 +2841,7 @@ static int wm_adsp_load_coeff(struct wm_adsp *dsp)
 			 dsp->fwf_name, wm_adsp_fw[dsp->fw].file);
 
 	file[PAGE_SIZE - 1] = '\0';
-	pr_err("jzw firm1 %s\n",file);
+	pr_err("jzw firm para %s\n",file);
 
 	ret = request_firmware(&firmware, file, dsp->dev);
 	if (ret != 0) {
