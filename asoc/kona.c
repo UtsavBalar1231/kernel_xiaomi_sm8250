@@ -632,7 +632,11 @@ static struct tdm_dev_config sec_tdm_dev_config[MAX_PATH][TDM_PORT_MAX] = {
 
 static struct tdm_dev_config tert_tdm_dev_config[MAX_PATH][TDM_PORT_MAX] = {
 	{ /* TERT TDM */
+#ifdef CONFIG_TARGET_PRODUCT_ENUMA
+		{ {0,   4, 8, 12, 16, 20, 24, 28} }, /* RX_0 */
+#else
 		{ {0,   4, 0xFFFF} }, /* RX_0 */
+#endif
 		{ {8,  12, 0xFFFF} }, /* RX_1 */
 		{ {16, 20, 0xFFFF} }, /* RX_2 */
 		{ {24, 28, 0xFFFF} }, /* RX_3 */
@@ -642,7 +646,11 @@ static struct tdm_dev_config tert_tdm_dev_config[MAX_PATH][TDM_PORT_MAX] = {
 		{ {0xFFFF} }, /* RX_7 */
 	},
 	{
+#ifdef CONFIG_TARGET_PRODUCT_ENUMA
+		{ {0,   4, 8, 12, 16, 20, 24, 28} }, /* TX_0 */
+#else
 		{ {0,   4, 0xFFFF} }, /* TX_0 */
+#endif
 		{ {8,  12, 0xFFFF} }, /* TX_1 */
 		{ {16, 20, 0xFFFF} }, /* TX_2 */
 		{ {24, 28, 0xFFFF} }, /* TX_3 */
