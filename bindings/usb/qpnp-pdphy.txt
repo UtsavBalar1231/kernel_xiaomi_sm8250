@@ -45,6 +45,8 @@ Optional properties:
 			(milliamps) pairs.
 - qcom,no-usb3-dp-concurrency: If present, usb3 and dp concurrency is not supported.
 - qcom,pd-20-source-only: If present, only PD2.0 is supported as source.
+- qcom,pps-disabled:	If defined pps support will be disabled. Standard PD
+			communication will remain unaffected.
 
 Example:
 	qcom,qpnp-pdphy@1700 {
