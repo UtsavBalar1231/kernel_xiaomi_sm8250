@@ -4932,6 +4932,10 @@ int wma_unified_power_debug_stats_event_handler(void *handle,
 
 	mac->sme.power_stats_resp_callback(power_stats_results,
 			mac->sme.power_debug_stats_context);
+
+	mac->sme.power_stats_resp_callback = NULL;
+	mac->sme.power_debug_stats_context = NULL;
+
 	qdf_mem_free(power_stats_results);
 	return 0;
 }
