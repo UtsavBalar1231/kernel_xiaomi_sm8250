@@ -35,6 +35,7 @@ enum sde_dbg_evtlog_flag {
 	SDE_EVTLOG_IRQ = BIT(1),
 	SDE_EVTLOG_VERBOSE = BIT(2),
 	SDE_EVTLOG_EXTERNAL = BIT(3),
+	SDE_EVTLOG_REGWRITE = BIT(4),
 	SDE_EVTLOG_ALWAYS = -1
 };
 
@@ -48,6 +49,34 @@ enum sde_dbg_dump_context {
 	SDE_DBG_DUMP_IRQ_CTX,
 	SDE_DBG_DUMP_CLK_ENABLED_CTX,
 };
+
+/*
+ * Define blocks for register write logging.
+ */
+#define SDE_REG_LOG_DEFAULT  0
+#define SDE_REG_LOG_NONE     1
+#define SDE_REG_LOG_CDM      2
+#define SDE_REG_LOG_DSPP     3
+#define SDE_REG_LOG_INTF     4
+#define SDE_REG_LOG_LM       5
+#define SDE_REG_LOG_CTL      6
+#define SDE_REG_LOG_PINGPONG 7
+#define SDE_REG_LOG_SSPP     8
+#define SDE_REG_LOG_WB       9
+#define SDE_REG_LOG_TOP     10
+#define SDE_REG_LOG_VBIF    11
+#define SDE_REG_LOG_DSC     12
+#define SDE_REG_LOG_ROT     13
+#define SDE_REG_LOG_DS      14
+#define SDE_REG_LOG_REGDMA  15
+#define SDE_REG_LOG_UIDLE   16
+#define SDE_REG_LOG_SID     16
+#define SDE_REG_LOG_QDSS    17
+/*
+ * 0-32 are reserved for sde_reg_write due to log masks
+ * Additional blocks are assigned from 33 to avoid conflict
+ */
+#define SDE_REG_LOG_RSCC    33
 
 #define SDE_EVTLOG_DEFAULT_ENABLE (SDE_EVTLOG_CRITICAL | SDE_EVTLOG_IRQ | \
 		SDE_EVTLOG_EXTERNAL)
@@ -103,6 +132,44 @@ struct sde_dbg_evtlog {
 
 extern struct sde_dbg_evtlog *sde_dbg_base_evtlog;
 
+/*
+ * reglog keeps this number of entries in memory for debug purpose. This
+ * number must be greater than number of possible writes in at least one
+ * single commit.
+ */
+#define SDE_REGLOG_ENTRY 1024
+
+struct sde_dbg_reglog_log {
+	s64 time;
+	u32 pid;
+	u32 addr;
+	u32 val;
+	u8 blk_id;
+};
+
+/**
+ * @last_dump: Index of last entry to be output during reglog dumps
+ * @filter_list: Linked list of currently active filter strings
+ */
+struct sde_dbg_reglog {
+	struct sde_dbg_reglog_log logs[SDE_REGLOG_ENTRY];
+	u32 first;
+	u32 last;
+	u32 last_dump;
+	u32 curr;
+	u32 next;
+	u32 enable;
+	u32 enable_mask;
+	spinlock_t spin_lock;
+};
+
+extern struct sde_dbg_reglog *sde_dbg_base_reglog;
+
+/**
+ * SDE_REG_LOG - Write register write to the register log
+ */
+#define SDE_REG_LOG(blk_id, val, addr) sde_reglog_log(blk_id, val, addr)
+
 /**
  * SDE_EVT32 - Write a list of 32bit values to the event log, default area
  * ... - variable arguments
@@ -133,6 +200,13 @@ extern struct sde_dbg_evtlog *sde_dbg_base_evtlog;
  */
 #define SDE_EVT32_EXTERNAL(...) sde_evtlog_log(sde_dbg_base_evtlog, __func__, \
 		__LINE__, SDE_EVTLOG_EXTERNAL, ##__VA_ARGS__, \
+		SDE_EVTLOG_DATA_LIMITER)
+/**
+ * SDE_EVT32_REGWRITE - Write a list of 32bit values for register writes logging
+ * ... - variable arguments
+ */
+#define SDE_EVT32_REGWRITE(...) sde_evtlog_log(sde_dbg_base_evtlog, __func__, \
+		__LINE__, SDE_EVTLOG_REGWRITE, ##__VA_ARGS__, \
 		SDE_EVTLOG_DATA_LIMITER)
 
 /**
@@ -175,7 +249,6 @@ extern struct sde_dbg_evtlog *sde_dbg_base_evtlog;
 #define SDE_DBG_CTRL(...) sde_dbg_ctrl(__func__, ##__VA_ARGS__, \
 		SDE_DBG_DUMP_DATA_LIMITER)
 
-#if defined(CONFIG_DEBUG_FS)
 
 /**
  * sde_evtlog_init - allocate a new event log object
@@ -184,11 +257,24 @@ extern struct sde_dbg_evtlog *sde_dbg_base_evtlog;
 struct sde_dbg_evtlog *sde_evtlog_init(void);
 
 /**
+ * sde_reglog_init - allocate a new reg log object
+ * Returns:	reglog or -ERROR
+ */
+struct sde_dbg_reglog *sde_reglog_init(void);
+
+/**
  * sde_evtlog_destroy - destroy previously allocated event log
  * @evtlog:	pointer to evtlog
  * Returns:	none
  */
 void sde_evtlog_destroy(struct sde_dbg_evtlog *evtlog);
+
+/**
+ * sde_reglog_destroy - destroy previously allocated reg log
+ * @reglog:	pointer to reglog
+ * Returns:	none
+ */
+void sde_reglog_destroy(struct sde_dbg_reglog *reglog);
 
 /**
  * sde_evtlog_log - log an entry into the event log.
@@ -202,6 +288,15 @@ void sde_evtlog_destroy(struct sde_dbg_evtlog *evtlog);
  */
 void sde_evtlog_log(struct sde_dbg_evtlog *evtlog, const char *name, int line,
 		int flag, ...);
+
+/**
+ * sde_reglog_log - log an entry into the reg log.
+ *      log collection may be enabled/disabled entirely via debugfs
+ *      log area collection may be filtered by user provided flags via debugfs.
+ * @reglog:     pointer to evtlog
+ * Returns:     none
+ */
+void sde_reglog_log(u8 blk_id, u32 val, u32 addr);
 
 /**
  * sde_evtlog_dump_all - print all entries in event log to kernel log
@@ -370,102 +465,5 @@ void sde_rsc_debug_dump(u32 mux_sel);
  * @size:	size of the debug bus control array
  */
 void dsi_ctrl_debug_dump(u32 *entries, u32 size);
-
-#else
-static inline struct sde_dbg_evtlog *sde_evtlog_init(void)
-{
-	return NULL;
-}
-
-static inline void sde_evtlog_destroy(struct sde_dbg_evtlog *evtlog)
-{
-}
-
-static inline void sde_evtlog_log(struct sde_dbg_evtlog *evtlog,
-		const char *name, int line, int flag, ...)
-{
-}
-
-static inline void sde_evtlog_dump_all(struct sde_dbg_evtlog *evtlog)
-{
-}
-
-static inline bool sde_evtlog_is_enabled(struct sde_dbg_evtlog *evtlog,
-		u32 flag)
-{
-	return false;
-}
-
-static inline ssize_t sde_evtlog_dump_to_buffer(struct sde_dbg_evtlog *evtlog,
-		char *evtlog_buf, ssize_t evtlog_buf_size,
-		bool update_last_entry)
-{
-	return 0;
-}
-
-static inline void sde_dbg_init_dbg_buses(u32 hwversion)
-{
-}
-
-static inline int sde_dbg_init(struct device *dev)
-{
-	return 0;
-}
-
-static inline int sde_dbg_debugfs_register(struct device *dev)
-{
-	return 0;
-}
-
-static inline void sde_dbg_destroy(void)
-{
-}
-
-static inline void sde_dbg_dump(enum sde_dbg_dump_context mode,
-	const char *name, ...)
-{
-}
-
-static inline void sde_dbg_ctrl(const char *name, ...)
-{
-}
-
-static inline int sde_dbg_reg_register_base(const char *name,
-		void __iomem *base, size_t max_offset)
-{
-	return 0;
-}
-
-static inline void sde_dbg_reg_register_dump_range(const char *base_name,
-		const char *range_name, u32 offset_start, u32 offset_end,
-		uint32_t xin_id)
-{
-}
-
-static inline void sde_dbg_set_sde_top_offset(u32 blk_off)
-{
-}
-
-static inline void sde_evtlog_set_filter(
-		struct sde_dbg_evtlog *evtlog, char *filter)
-{
-}
-
-static inline int sde_evtlog_get_filter(struct sde_dbg_evtlog *evtlog,
-		int index, char *buf, size_t bufsz)
-{
-	return -EINVAL;
-}
-
-static inline void sde_rsc_debug_dump(u32 mux_sel)
-{
-}
-
-static inline void dsi_ctrl_debug_dump(u32 *entries, u32 size)
-{
-}
-
-#endif /* defined(CONFIG_DEBUG_FS) */
-
 
 #endif /* SDE_DBG_H_ */
