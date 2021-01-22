@@ -477,6 +477,10 @@ int msm_vidc_get_num_ref_frames(struct msm_vidc_inst *inst)
 	struct v4l2_ctrl *layer_ctrl;
 	u32 codec;
 
+	codec = get_v4l2_codec(inst);
+	if (codec == V4L2_PIX_FMT_VP8)
+		num_ref = num_ref << 1;
+
 	bframe_ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_B_FRAMES);
 	num_bframes = bframe_ctrl->val;
 	if (num_bframes > 0)
@@ -491,11 +495,10 @@ int msm_vidc_get_num_ref_frames(struct msm_vidc_inst *inst)
 	layer_ctrl = get_ctrl(inst,
 		V4L2_CID_MPEG_VIDC_VIDEO_HEVC_MAX_HIER_CODING_LAYER);
 	num_hp_layers = layer_ctrl->val;
-	codec = get_v4l2_codec(inst);
-	if (num_hp_layers > 0) {
+	if (num_hp_layers > 1) {
 		/* LTR and B - frame not supported with hybrid HP */
 		if (inst->hybrid_hp)
-			num_ref = num_hp_layers >> 1;
+			num_ref = (num_hp_layers + 1) >> 1;
 		else if (codec == V4L2_PIX_FMT_HEVC)
 			num_ref = ((num_hp_layers + 1) / 2) + ltr_count;
 		else if ((codec == V4L2_PIX_FMT_H264) && (num_hp_layers < 4))
