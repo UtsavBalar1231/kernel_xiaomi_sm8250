@@ -396,6 +396,7 @@ endif #CONFIG_HELIUMPLUS
 
 ifeq ($(CONFIG_LITHIUM), y)
 CONFIG_RX_DEFRAG_DO_NOT_REINJECT := y
+CONFIG_IPA_SET_RESET_TX_DB_PA := y
 #
 # Enable Shadow V2 for all lithium platform
 #
@@ -450,6 +451,7 @@ CONFIG_MAX_ALLOC_PAGE_SIZE := y
 CONFIG_REO_DESC_DEFER_FREE := y
 CONFIG_RXDMA_ERR_PKT_DROP := y
 CONFIG_DELIVERY_TO_STACK_STATUS_CHECK := y
+CONFIG_DP_MEM_PRE_ALLOC := y
 
 ifeq ($(CONFIG_FEATURE_TSO), y)
 	CONFIG_FEATURE_TSO_STATS := y
@@ -811,6 +813,9 @@ CONFIG_ENABLE_MTRACE_LOG := y
 
 #Flag to enable nud tracking feature
 CONFIG_WLAN_NUD_TRACKING := y
+
+#Flag to enable/Disable Function call trace
+CONFIG_FUNC_CALL_MAP := n
 
 #Flag to enable wbuff feature
 CONFIG_WLAN_WBUFF := y

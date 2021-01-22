@@ -303,7 +303,36 @@ QDF_STATUS hdd_hex_string_to_u16_array(char *str, uint16_t *int_array,
 
 void hdd_cfg_print_global_config(struct hdd_context *hdd_ctx);
 
-QDF_STATUS hdd_update_nss(struct hdd_adapter *adapter, uint8_t nss);
+QDF_STATUS hdd_update_nss(struct hdd_adapter *adapter, uint8_t tx_nss,
+			  uint8_t rx_nss);
+
+/**
+ * hdd_get_tx_nss() - Get the number of spatial streams supported by the
+ * adapter
+ *
+ * @adapter: the pointer to adapter
+ * @tx_nss: the number Tx of spatial streams supported by the adapter
+ *
+ * This function is used to get the number of Tx spatial streams supported by
+ * the adapter.
+ *
+ * Return: QDF_STATUS
+ */
+QDF_STATUS hdd_get_tx_nss(struct hdd_adapter *adapter, uint8_t *tx_nss);
+
+/**
+ * hdd_get_rx_nss() - Get the number of spatial streams supported by the
+ * adapter
+ *
+ * @adapter: the pointer to adapter
+ * @rx_nss: the number Rx of spatial streams supported by the adapter
+ *
+ * This function is used to get the number of Rx spatial streams supported by
+ * the adapter.
+ *
+ * Return: QDF_STATUS
+ */
+QDF_STATUS hdd_get_rx_nss(struct hdd_adapter *adapter, uint8_t *rx_nss);
 
 /**
  * hdd_dfs_indicate_radar() - Block tx as radar found on the channel

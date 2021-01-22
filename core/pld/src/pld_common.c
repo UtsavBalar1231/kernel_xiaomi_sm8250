@@ -661,6 +661,34 @@ void pld_is_pci_link_down(struct device *dev)
 }
 
 /**
+ * pld_get_bus_reg_dump() - Get bus reg dump
+ * @dev: device
+ * @buffer: buffer for hang data
+ * @len: len of hang data
+ *
+ * Get pci reg dump for hang data.
+ *
+ * Return: void
+ */
+void pld_get_bus_reg_dump(struct device *dev, uint8_t *buf, uint32_t len)
+{
+	switch (pld_get_bus_type(dev)) {
+	case PLD_BUS_TYPE_PCIE_FW_SIM:
+		break;
+	case PLD_BUS_TYPE_PCIE:
+		pld_pcie_get_reg_dump(dev, buf, len);
+		break;
+	case PLD_BUS_TYPE_SNOC_FW_SIM:
+	case PLD_BUS_TYPE_SNOC:
+	case PLD_BUS_TYPE_IPCI:
+		break;
+	default:
+		pr_err("Invalid device type\n");
+		break;
+	}
+}
+
+/**
  * pld_schedule_recovery_work() - Schedule recovery work
  * @dev: device
  * @reason: recovery reason
@@ -2100,6 +2128,7 @@ int pld_pci_read_config_word(struct pci_dev *pdev, int offset, uint16_t *val)
 	case PLD_BUS_TYPE_SNOC_FW_SIM:
 		break;
 	case PLD_BUS_TYPE_PCIE_FW_SIM:
+		ret = pld_pcie_fw_sim_read_config_word(&pdev->dev, offset, val);
 		break;
 	case PLD_BUS_TYPE_IPCI:
 		break;
@@ -2690,26 +2719,28 @@ int pld_idle_shutdown(struct device *dev,
 
 	type = pld_get_bus_type(dev);
 	switch (type) {
-		case PLD_BUS_TYPE_SDIO:
-		case PLD_BUS_TYPE_USB:
-		case PLD_BUS_TYPE_SNOC:
-			errno = shutdown_cb(dev);
-			break;
-		case PLD_BUS_TYPE_PCIE:
-			errno = pld_pcie_idle_shutdown(dev);
-			break;
-		case PLD_BUS_TYPE_PCIE_FW_SIM:
-			errno = pld_pcie_fw_sim_idle_shutdown(dev);
-			break;
-		case PLD_BUS_TYPE_SNOC_FW_SIM:
-			errno = pld_snoc_fw_sim_idle_shutdown(dev);
-			break;
-		case PLD_BUS_TYPE_IPCI:
-			errno = pld_ipci_idle_shutdown(dev);
-			break;
-		default:
-			pr_err("Invalid device type %d\n", type);
-			break;
+	case PLD_BUS_TYPE_SDIO:
+	case PLD_BUS_TYPE_USB:
+		errno = shutdown_cb(dev);
+		break;
+	case PLD_BUS_TYPE_SNOC:
+		errno = pld_snoc_idle_shutdown(dev);
+		break;
+	case PLD_BUS_TYPE_PCIE:
+		errno = pld_pcie_idle_shutdown(dev);
+		break;
+	case PLD_BUS_TYPE_PCIE_FW_SIM:
+		errno = pld_pcie_fw_sim_idle_shutdown(dev);
+		break;
+	case PLD_BUS_TYPE_SNOC_FW_SIM:
+		errno = pld_snoc_fw_sim_idle_shutdown(dev);
+		break;
+	case PLD_BUS_TYPE_IPCI:
+		errno = pld_ipci_idle_shutdown(dev);
+		break;
+	default:
+		pr_err("Invalid device type %d\n", type);
+		break;
 	}
 
 	return errno;
@@ -2726,26 +2757,28 @@ int pld_idle_restart(struct device *dev,
 
 	type = pld_get_bus_type(dev);
 	switch (type) {
-		case PLD_BUS_TYPE_SDIO:
-		case PLD_BUS_TYPE_USB:
-		case PLD_BUS_TYPE_SNOC:
-			errno = restart_cb(dev);
-			break;
-		case PLD_BUS_TYPE_PCIE:
-			errno = pld_pcie_idle_restart(dev);
-			break;
-		case PLD_BUS_TYPE_PCIE_FW_SIM:
-			errno = pld_pcie_fw_sim_idle_restart(dev);
-			break;
-		case PLD_BUS_TYPE_SNOC_FW_SIM:
-			errno = pld_snoc_fw_sim_idle_restart(dev);
-			break;
-		case PLD_BUS_TYPE_IPCI:
-			errno = pld_ipci_idle_restart(dev);
-			break;
-		default:
-			pr_err("Invalid device type %d\n", type);
-			break;
+	case PLD_BUS_TYPE_SDIO:
+	case PLD_BUS_TYPE_USB:
+		errno = restart_cb(dev);
+		break;
+	case PLD_BUS_TYPE_SNOC:
+		errno = pld_snoc_idle_restart(dev);
+		break;
+	case PLD_BUS_TYPE_PCIE:
+		errno = pld_pcie_idle_restart(dev);
+		break;
+	case PLD_BUS_TYPE_PCIE_FW_SIM:
+		errno = pld_pcie_fw_sim_idle_restart(dev);
+		break;
+	case PLD_BUS_TYPE_SNOC_FW_SIM:
+		errno = pld_snoc_fw_sim_idle_restart(dev);
+		break;
+	case PLD_BUS_TYPE_IPCI:
+		errno = pld_ipci_idle_restart(dev);
+		break;
+	default:
+		pr_err("Invalid device type %d\n", type);
+		break;
 	}
 
 	return errno;

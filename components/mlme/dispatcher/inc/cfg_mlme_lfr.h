@@ -115,7 +115,7 @@
  * </ini>
  */
 #define CFG_LFR_MAWC_ROAM_RSSI_HIGH_ADJUST CFG_INI_UINT( \
-	"mawc_roam_ap_rssi_threshold", \
+	"mawc_roam_rssi_high_adjust", \
 	3, \
 	5, \
 	5, \
@@ -1106,6 +1106,7 @@
 	"Maximum penalty that can be applied to 5GHz RSSI")
 
 /*
+ * <ini>
  * max_num_pre_auth - Configure max number of pre-auth
  * @Min: 0
  * @Max: 256
@@ -1115,6 +1116,7 @@
  *
  * Usage: Internal
  *
+ * </ini>
  */
 #define CFG_LFR_MAX_NUM_PRE_AUTH CFG_UINT( \
 	"max_num_pre_auth", \
@@ -1125,6 +1127,7 @@
 	"")
 
 /*
+ * <ini>
  * roam_preauth_retry_count
  *
  * @Min: 1
@@ -1160,7 +1163,7 @@
  * @Default: 5
  *
  * Time to wait (in ms) after sending an preauth or reassoc
- * request which didn’t have an ack, before considering
+ * request which didn't have an ack, before considering
  * it as a failure and making another software retry.
  *
  * Related: N/A
