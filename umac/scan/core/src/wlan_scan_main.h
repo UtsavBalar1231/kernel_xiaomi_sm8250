@@ -500,6 +500,8 @@ struct scan_cb {
  * @scan_start_request_buff: buffer used to pass
  *      scan config to event handlers
  * @rnr_channel_db: RNR channel list database
+ * @allow_bss_with_incomplete_ie: Continue scan entry even if any corrupted IES
+ *  are present.
  */
 struct wlan_scan_obj {
 	uint32_t scan_disabled;
@@ -528,6 +530,7 @@ struct wlan_scan_obj {
 #ifdef FEATURE_6G_SCAN_CHAN_SORT_ALGO
 	struct channel_list_db rnr_channel_db;
 #endif
+	bool allow_bss_with_incomplete_ie;
 };
 
 /**

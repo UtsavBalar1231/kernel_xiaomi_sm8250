@@ -1111,3 +1111,10 @@ uint16_t wlan_reg_chan_opclass_to_freq(uint8_t chan,
 
 	return reg_chan_opclass_to_freq(chan, op_class, global_tbl_lookup);
 }
+
+#ifdef CONFIG_REG_CLIENT
+enum band_info wlan_reg_band_bitmap_to_band_info(uint32_t band_bitmap)
+{
+	return reg_band_bitmap_to_band_info(band_bitmap);
+}
+#endif

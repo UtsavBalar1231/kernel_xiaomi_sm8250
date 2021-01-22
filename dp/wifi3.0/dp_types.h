@@ -282,6 +282,14 @@ enum dp_cpu_ring_map_types {
 };
 
 /**
+ * enum dp_ctxt - context type
+ * @DP_PDEV_TYPE: PDEV context
+ */
+enum dp_ctxt_type {
+	DP_PDEV_TYPE
+};
+
+/**
  * enum dp_desc_type - source type for multiple pages allocation
  * @DP_TX_DESC_TYPE: DP SW TX descriptor
  * @DP_TX_EXT_DESC_TYPE: DP TX msdu extension descriptor
@@ -1307,6 +1315,8 @@ struct dp_soc {
 		void *ipa_wbm_ring_base_vaddr;
 		uint32_t ipa_wbm_ring_size;
 		qdf_dma_addr_t ipa_wbm_tp_paddr;
+		/* WBM2SW HP shadow paddr */
+		qdf_dma_addr_t ipa_wbm_hp_shadow_paddr;
 
 		/* TX buffers populated into the WBM ring */
 		void **tx_buf_pool_vaddr_unaligned;

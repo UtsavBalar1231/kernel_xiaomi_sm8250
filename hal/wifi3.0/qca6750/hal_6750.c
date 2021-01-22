@@ -1383,7 +1383,7 @@ struct hal_hw_txrx_ops qca6750_hal_hw_txrx_ops = {
 	NULL,
 	NULL,
 	/* rx - msdu end fast path info fields */
-	hal_rx_msdu_packet_metadata_get_generic,
+	hal_rx_msdu_packet_metadata_get_generic
 };
 
 struct hal_hw_srng_config hw_srng_table_6750[] = {

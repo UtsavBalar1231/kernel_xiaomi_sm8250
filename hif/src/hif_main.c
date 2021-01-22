@@ -546,6 +546,7 @@ int hif_recovery_notifier_cb(struct notifier_block *block, unsigned long state,
 	struct qdf_notifer_data *notif_data = data;
 	qdf_notif_block *notif_block;
 	struct hif_softc *hif_handle;
+	bool bus_id_invalid;
 
 	if (!data || !block)
 		return -EINVAL;
@@ -556,8 +557,11 @@ int hif_recovery_notifier_cb(struct notifier_block *block, unsigned long state,
 	if (!hif_handle)
 		return -EINVAL;
 
-	hif_log_bus_info(hif_handle, notif_data->hang_data,
-			 &notif_data->offset);
+	bus_id_invalid = hif_log_bus_info(hif_handle, notif_data->hang_data,
+					  &notif_data->offset);
+	if (bus_id_invalid)
+		return NOTIFY_STOP_MASK;
+
 	hif_log_ce_info(hif_handle, notif_data->hang_data,
 			&notif_data->offset);
 
@@ -704,6 +708,7 @@ void hif_close(struct hif_opaque_softc *hif_ctx)
 	}
 
 	hif_uninit_rri_on_ddr(scn);
+	hif_cleanup_static_buf_to_target(scn);
 	hif_cpuhp_unregister(scn);
 
 	hif_bus_close(scn);
@@ -1519,7 +1524,7 @@ void *hif_mem_alloc_consistent_unaligned(struct hif_softc *scn,
 end:
 	dp_info("%s va_unaligned %pK pa_unaligned %pK size %d ring_type %d",
 		*is_mem_prealloc ? "pre-alloc" : "dynamic-alloc", vaddr,
-		(void *)*paddr, size, ring_type);
+		(void *)*paddr, (int)size, ring_type);
 
 	return vaddr;
 }

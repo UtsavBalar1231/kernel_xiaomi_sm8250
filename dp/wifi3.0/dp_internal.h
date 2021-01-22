@@ -2128,6 +2128,28 @@ static inline uint32_t dp_history_get_next_index(qdf_atomic_t *curr_idx,
 
 #ifdef DP_MEM_PRE_ALLOC
 /**
+ * dp_context_alloc_mem() - allocate memory for DP context
+ * @soc: datapath soc handle
+ * @ctxt_type: DP context type
+ * @ctxt_size: DP context size
+ *
+ * Return: DP context address
+ */
+void *dp_context_alloc_mem(struct dp_soc *soc, enum dp_ctxt_type ctxt_type,
+			   size_t ctxt_size);
+
+/**
+ * dp_context_free_mem() - Free memory of DP context
+ * @soc: datapath soc handle
+ * @ctxt_type: DP context type
+ * @vaddr: Address of context memory
+ *
+ * Return: None
+ */
+void dp_context_free_mem(struct dp_soc *soc, enum dp_ctxt_type ctxt_type,
+			 void *vaddr);
+
+/**
  * dp_desc_multi_pages_mem_alloc() - alloc memory over multiple pages
  * @soc: datapath soc handle
  * @desc_type: memory request source type
@@ -2173,6 +2195,20 @@ void dp_desc_multi_pages_mem_free(struct dp_soc *soc,
 				  bool cacheable);
 
 #else
+static inline
+void *dp_context_alloc_mem(struct dp_soc *soc, enum dp_ctxt_type ctxt_type,
+			   size_t ctxt_size)
+{
+	return qdf_mem_malloc(ctxt_size);
+}
+
+static inline
+void dp_context_free_mem(struct dp_soc *soc, enum dp_ctxt_type ctxt_type,
+			 void *vaddr)
+{
+	qdf_mem_free(vaddr);
+}
+
 static inline
 void dp_desc_multi_pages_mem_alloc(struct dp_soc *soc,
 				   enum dp_desc_type desc_type,

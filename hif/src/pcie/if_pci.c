@@ -51,6 +51,7 @@
 #include "pci_api.h"
 #include "ahb_api.h"
 #include "qdf_hang_event_notifier.h"
+#include "qdf_platform.h"
 
 /* Maximum ms timeout for host to wake up target */
 #define PCIE_WAKE_TIMEOUT 1000
@@ -2482,7 +2483,7 @@ static void hif_pci_deconfigure_grp_irq(struct hif_softc *scn)
 }
 
 #ifdef HIF_BUS_LOG_INFO
-void hif_log_pcie_info(struct hif_softc *scn, uint8_t *data,
+bool hif_log_pcie_info(struct hif_softc *scn, uint8_t *data,
 		       unsigned int *offset)
 {
 	struct hif_pci_softc *sc = HIF_GET_PCI_SOFTC(scn);
@@ -2491,7 +2492,7 @@ void hif_log_pcie_info(struct hif_softc *scn, uint8_t *data,
 
 	if (!sc) {
 		hif_err("HIF Bus Context is Invalid");
-		return;
+		return false;
 	}
 
 	pfrm_read_config_word(sc->pdev, PCI_DEVICE_ID, &info.dev_id);
@@ -2501,10 +2502,18 @@ void hif_log_pcie_info(struct hif_softc *scn, uint8_t *data,
 			     size - QDF_HANG_EVENT_TLV_HDR_SIZE);
 
 	if (*offset + size > QDF_WLAN_HANG_FW_OFFSET)
-		return;
+		return false;
 
 	qdf_mem_copy(data + *offset, &info, size);
 	*offset = *offset + size;
+
+	if (info.dev_id == sc->devid)
+		return false;
+
+	qdf_recovery_reason_update(QCA_HANG_BUS_FAILURE);
+	qdf_get_bus_reg_dump(scn->qdf_dev->dev, data,
+			     (QDF_WLAN_HANG_FW_OFFSET - size));
+	return true;
 }
 #endif
 
@@ -2687,6 +2696,7 @@ int hif_pci_bus_suspend(struct hif_softc *scn)
 	return 0;
 }
 
+#ifdef PCI_LINK_STATUS_SANITY
 /**
  * __hif_check_link_status() - API to check if PCIe link is active/not
  * @scn: HIF Context
@@ -2725,6 +2735,13 @@ static int __hif_check_link_status(struct hif_softc *scn)
 	pld_is_pci_link_down(sc->dev);
 	return -EACCES;
 }
+#else
+static inline int __hif_check_link_status(struct hif_softc *scn)
+{
+	return 0;
+}
+#endif
+
 
 /**
  * hif_pci_bus_resume(): prepare hif for resume
@@ -3458,6 +3475,9 @@ static void hif_ce_srng_msi_irq_disable(struct hif_softc *hif_sc, int ce_id)
 
 static void hif_ce_srng_msi_irq_enable(struct hif_softc *hif_sc, int ce_id)
 {
+	if (__hif_check_link_status(hif_sc))
+		return;
+
 	pfrm_enable_irq(hif_sc->qdf_dev->dev,
 			hif_ce_msi_map_ce_to_irq(hif_sc, ce_id));
 }
@@ -5035,14 +5055,18 @@ bool hif_pci_needs_bmi(struct hif_softc *scn)
 #ifdef DEVICE_FORCE_WAKE_ENABLE
 int hif_force_wake_request(struct hif_opaque_softc *hif_handle)
 {
-	uint32_t timeout = 0, value;
+	uint32_t timeout, value;
 	struct hif_softc *scn = (struct hif_softc *)hif_handle;
 	struct hif_pci_softc *pci_scn = HIF_GET_PCI_SOFTC(scn);
 
 	HIF_STATS_INC(pci_scn, mhi_force_wake_request_vote, 1);
 
-	if (pld_force_wake_request_sync(scn->qdf_dev->dev,
-					FORCE_WAKE_DELAY_TIMEOUT_MS * 1000)) {
+	if (qdf_in_interrupt())
+		timeout = FORCE_WAKE_DELAY_TIMEOUT_MS * 1000;
+	else
+		timeout = 0;
+
+	if (pld_force_wake_request_sync(scn->qdf_dev->dev, timeout)) {
 		hif_err("force wake request send failed");
 		HIF_STATS_INC(pci_scn, mhi_force_wake_failure, 1);
 		return -EINVAL;
@@ -5070,6 +5094,7 @@ int hif_force_wake_request(struct hif_opaque_softc *hif_handle)
 	 * do not reset the timeout
 	 * total_wake_time = MHI_WAKE_TIME + PCI_WAKE_TIME < 50 ms
 	 */
+	timeout = 0;
 	do {
 		value =
 		hif_read32_mb(scn,
@@ -5123,11 +5148,16 @@ int hif_force_wake_request(struct hif_opaque_softc *hif_handle)
 {
 	struct hif_softc *scn = (struct hif_softc *)hif_handle;
 	struct hif_pci_softc *pci_scn = HIF_GET_PCI_SOFTC(scn);
+	uint32_t timeout;
 
 	HIF_STATS_INC(pci_scn, mhi_force_wake_request_vote, 1);
 
-	if (pld_force_wake_request_sync(scn->qdf_dev->dev,
-					FORCE_WAKE_DELAY_TIMEOUT_MS * 1000)) {
+	if (qdf_in_interrupt())
+		timeout = FORCE_WAKE_DELAY_TIMEOUT_MS * 1000;
+	else
+		timeout = 0;
+
+	if (pld_force_wake_request_sync(scn->qdf_dev->dev, timeout)) {
 		hif_err("force wake request send failed");
 		HIF_STATS_INC(pci_scn, mhi_force_wake_failure, 1);
 		return -EINVAL;
