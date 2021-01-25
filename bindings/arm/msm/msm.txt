@@ -98,6 +98,39 @@ SoCs:
 - BENGALP-IOT
   compatible = "qcom,bengalp-iot"
 
+- MSM8917
+  compatible = "qcom,msm8917"
+
+- MSM8937
+  compatible = "qcom,msm8937"
+
+- SDM439
+  compatible = "qcom,sdm439"
+
+- SDA439
+  compatible = "qcom,sda439"
+
+- SDM429
+  compatible = "qcom,sdm429"
+
+- SDA429
+  compatible = "qcom,sda429"
+
+- QM215
+  compatible = "qcom,qm215"
+
+- QCM2150
+  compatible = "qcom,qcm2150"
+
+- MSM8953
+  compatible = "qcom,msm8953"
+
+- SDM450
+  compatible = "qcom,sdm450"
+
+- SDA450
+  compatible = "qcom,sda450"
+
 Generic board variants:
 
 - CDP device:
@@ -247,3 +280,35 @@ compatible = "qcom,bengal-iot"
 compatible = "qcom,bengalp-iot"
 compatible = "qcom,bengal-iot-idp"
 compatible = "qcom,bengalp-iot-idp"
+compatible = "qcom,msm8917-cdp"
+compatible = "qcom,msm8917-mtp"
+compatible = "qcom,msm8917-rumi"
+compatible = "qcom,msm8917-qrd"
+compatible = "qcom,msm8917-qrd-sku5"
+compatible = "qcom,msm8937-rumi"
+compatible = "qcom,msm8937-cdp"
+compatible = "qcom,msm8937-mtp"
+compatible = "qcom,msm8937-qrd"
+compatible = "qcom,msm8937-pmi8950-qrd-sku1"
+compatible = "qcom,msm8937-pmi8937-qrd-sku2"
+compatible = "qcom,sdm429-cdp"
+compatible = "qcom,sdm429-mtp"
+compatible = "qcom,sdm429-qrd"
+compatible = "qcom,sda429-cdp"
+compatible = "qcom,sda429-mtp"
+compatible = "qcom,sdm439-cdp"
+compatible = "qcom,sdm439-mtp"
+compatible = "qcom,sdm439-qrd"
+compatible = "qcom,sda439-cdp"
+compatible = "qcom,sda439-mtp"
+compatible = "qcom,qm215-qrd"
+compatible = "qcom,qcm2150-qrd"
+compatible = "qcom,msm8953-rumi"
+compatible = "qcom,msm8953-sim"
+compatible = "qcom,msm8953-cdp"
+compatible = "qcom,msm8953-mtp"
+compatible = "qcom,sdm450-mtp"
+compatible = "qcom,sdm450-cdp"
+compatible = "qcom,sdm450-qrd"
+compatible = "qcom,sda450-mtp"
+compatible = "qcom,sda450-cdp"

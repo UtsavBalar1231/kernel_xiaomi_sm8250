@@ -102,6 +102,8 @@
 		qcom,slv-addr-space-size = <0x4000000>;
 		qcom,ep-latency = <10>;
 
+		qcom,config-recovery;
+
 		qcom,pcie-phy-ver = <1102>;
 		qcom,phy-status-offset = <0x814>;
 		qcom,phy-status-bit = <6>;

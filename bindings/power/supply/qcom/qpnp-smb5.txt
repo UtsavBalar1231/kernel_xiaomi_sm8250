@@ -397,6 +397,12 @@ Charger specific properties:
 		for PPS adapter in CV mode.
 		If left unspecified, the default value is 4000mA.
 
+- qcom,jeita-arb-enable
+  Usage:      optional
+  Value type: bool
+  Definition: Boolean flag which indicates if JETIA ARB handling when
+		Vjeita > Vbatt is enabled.
+
 =============================================
 Second Level Nodes - SMB5 Charger Peripherals
 =============================================
