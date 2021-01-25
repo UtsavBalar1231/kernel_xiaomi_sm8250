@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
  *
@@ -1176,8 +1176,11 @@ static int sde_encoder_virt_atomic_check(
 				CONNECTOR_PROP_QSYNC_MODE);
 
 	if (has_modeset && qsync_dirty &&
-		!msm_is_mode_seamless_vrr(adj_mode)) {
-		SDE_ERROR("invalid qsync during modeset\n");
+		(msm_is_mode_seamless_poms(adj_mode) ||
+		msm_is_mode_seamless_dms(adj_mode) ||
+		msm_is_mode_seamless_dyn_clk(adj_mode))) {
+		SDE_ERROR("invalid qsync update during modeset priv flag:%x\n",
+			adj_mode->private_flags);
 		return -EINVAL;
 	}
 
