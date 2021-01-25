@@ -1254,13 +1254,25 @@ static int __cam_isp_ctx_notify_sof_in_activated_state(
 				req->request_id,
 				ctx_isp->active_req_cnt, ctx->ctx_id);
 		} else if (req_isp->bubble_detected) {
-			ctx_isp->bubble_frame_cnt++;
-			CAM_DBG(CAM_ISP,
-				"Waiting on bufdone for bubble req: %lld, since frame_cnt = %lld",
-				req->request_id, ctx_isp->bubble_frame_cnt);
+			if (ctx_isp->last_sof_timestamp !=
+				ctx_isp->sof_timestamp_val) {
+				ctx_isp->bubble_frame_cnt++;
+				CAM_DBG(CAM_ISP,
+					"Waiting on bufdone bubble req %lld ctx %u frame_cnt %lld link 0x%x",
+					req->request_id, ctx->ctx_id,
+					ctx_isp->bubble_frame_cnt,
+					ctx->link_hdl);
+			} else {
+				CAM_DBG(CAM_ISP,
+					"Possible tasklet delay req %lld ctx %u link 0x%x ts %lld",
+					req->request_id, ctx->ctx_id,
+					ctx->link_hdl,
+					ctx_isp->sof_timestamp_val);
+			}
 		} else
-			CAM_DBG(CAM_ISP, "Delayed bufdone for req: %lld",
-				req->request_id);
+			CAM_DBG(CAM_ISP,
+				"Delayed bufdone for req: %lld ctx %u link 0x%x",
+				req->request_id, ctx->ctx_id, ctx->link_hdl);
 	}
 
 	if (ctx->ctx_crm_intf && ctx->ctx_crm_intf->notify_trigger &&
@@ -1306,7 +1318,7 @@ static int __cam_isp_ctx_notify_sof_in_activated_state(
 			ctx->ctx_id);
 		rc = -EFAULT;
 	}
-
+	ctx_isp->last_sof_timestamp = ctx_isp->sof_timestamp_val;
 	return 0;
 }
 

@@ -6956,12 +6956,18 @@ static int  cam_ife_hw_mgr_find_affected_ctx(
 			affected_core, CAM_IFE_HW_NUM_MAX))
 			continue;
 
+		if (error_event_data->error_type ==
+			CAM_ISP_HW_ERROR_CSID_FATAL) {
+			CAM_DBG(CAM_ISP, "CSID recovery");
+			goto skip_overflow;
+		}
+
 		if (atomic_read(&ife_hwr_mgr_ctx->overflow_pending)) {
 			CAM_INFO(CAM_ISP, "CTX:%d already error reported",
 				ife_hwr_mgr_ctx->ctx_index);
 			continue;
 		}
-
+skip_overflow:
 		atomic_set(&ife_hwr_mgr_ctx->overflow_pending, 1);
 		notify_err_cb = ife_hwr_mgr_ctx->common.event_cb[event_type];
 
