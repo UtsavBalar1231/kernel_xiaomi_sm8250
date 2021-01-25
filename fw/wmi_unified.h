@@ -3575,6 +3575,12 @@ typedef struct {
     #define WMI_RSRC_CFG_FLAG_IPA_DISABLE_S 30
     #define WMI_RSRC_CFG_FLAG_IPA_DISABLE_M 0x40000000
 
+    /*
+     * If this bit is set, target should use the PCIe GEN switching feature.
+     */
+    #define WMI_RSRC_CFG_FLAG_PCIE_GEN_SWITCH_CAPABLITY_S 31
+    #define WMI_RSRC_CFG_FLAG_PCIE_GEN_SWITCH_CAPABLITY_M 0x80000000
+
     A_UINT32 flag1;
 
     /** @brief smart_ant_cap - Smart Antenna capabilities information
@@ -4043,6 +4049,11 @@ typedef struct {
     WMI_RSRC_CFG_FLAG_SET((word32), IPA_DISABLE, (value))
 #define WMI_RSRC_CFG_FLAG_IPA_DISABLE_GET(word32) \
     WMI_RSRC_CFG_FLAG_GET((word32), IPA_DISABLE)
+
+#define WMI_RSRC_CFG_FLAG_PCIE_GEN_SWITCH_CAPABLITY_SET(word32, value) \
+    WMI_RSRC_CFG_FLAG_SET((word32), PCIE_GEN_SWITCH_CAPABLITY, (value))
+#define WMI_RSRC_CFG_FLAG_PCIE_GEN_SWITCH_CAPABLITY_GET(word32) \
+    WMI_RSRC_CFG_FLAG_GET((word32), PCIE_GEN_SWITCH_CAPABLITY)
 
 #define WMI_RSRC_CFG_FLAGS2_RE_ULRESP_PDEV_CFG_GET(flags2, pdev_id) \
     WMI_GET_BITS(flags2, pdev_id, 1)
@@ -7137,6 +7148,12 @@ typedef enum {
     /* Param to enable low latency mode */
     WMI_PDEV_PARAM_LOW_LATENCY_SCHED_MODE,
 
+    /* Param to enable per USERPD SSR - for MultiPD enabled chips */
+    WMI_PDEV_PARAM_MPD_USERPD_SSR,
+
+    /* Param to disable Hardware Assist feature */
+    WMI_PDEV_PARAM_DISABLE_HW_ASSIST,
+
 } WMI_PDEV_PARAM;
 
 #define WMI_PDEV_ONLY_BSR_TRIG_IS_ENABLED(trig_type) WMI_GET_BITS(trig_type, 0, 1)
@@ -9564,50 +9581,59 @@ typedef struct {
 } wmi_ctrl_path_twt_stats_struct;
 
 typedef enum {
-    WMI_CTRL_PATH_STATS_CAL_PROFILE_COLD_BOOT_CAL       = 0,
-    WMI_CTRL_PATH_STATS_CAL_PROFILE_FULL_CHAN_SWITCH    = 1,
-    WMI_CTRL_PATH_STATS_CAL_PROFILE_SCAN_CHAN_SWITCH    = 2,
-    WMI_CTRL_PATH_STATS_CAL_PROFILE_DPD_SPLIT_CAL       = 3,
-    WMI_CTRL_PATH_STATS_CAL_PROFILE_TEMP_TRIGEER_CAL    = 4,
-    WMI_CTRL_PATH_STATS_CAL_PROFILE_POWER_SAVE_WAKE_UP  = 5,
-    WMI_CTRL_PATH_STATS_CAL_PROFILE_TIMER_TRIGGER_CAL   = 6,
-    WMI_CTRL_PATH_STATS_CAL_PROFILE_FTM_TRIGGER_CAL     = 7,
-    WMI_CTRL_PATH_STATS_CAL_PROFILE_AGILE_OR_POWER_DOWN_DTIM = 8,
-    WMI_CTRL_PATH_STATS_CAL_PROFILE_NOISY_ENV_RXDO      = 9,
+    WMI_CTRL_PATH_STATS_CAL_PROFILE_COLD_BOOT_CAL       = 0x0,
+    WMI_CTRL_PATH_STATS_CAL_PROFILE_FULL_CHAN_SWITCH    = 0x1,
+    WMI_CTRL_PATH_STATS_CAL_PROFILE_SCAN_CHAN_SWITCH    = 0x2,
+    WMI_CTRL_PATH_STATS_CAL_PROFILE_DPD_SPLIT_CAL       = 0x3,
+    WMI_CTRL_PATH_STATS_CAL_PROFILE_TEMP_TRIGEER_CAL    = 0x4,
+    WMI_CTRL_PATH_STATS_CAL_PROFILE_POWER_SAVE_WAKE_UP  = 0x5,
+    WMI_CTRL_PATH_STATS_CAL_PROFILE_TIMER_TRIGGER_CAL   = 0x6,
+    WMI_CTRL_PATH_STATS_CAL_PROFILE_FTM_TRIGGER_CAL     = 0x7,
+    WMI_CTRL_PATH_STATS_CAL_PROFILE_AGILE_OR_POWER_DOWN_DTIM = 0x8,
+    WMI_CTRL_PATH_STATS_CAL_PROFILE_NOISY_ENV_RXDO      = 0x9,
+
+    /* add new cal profiles above this line */
+    WMI_CTRL_PATH_STATS_CAL_PROFILE_INVALID             = 0x1F
 } wmi_ctrl_path_stats_cal_profile_ids;
 
 typedef enum {
-    WMI_CTRL_PATH_STATS_CAL_TYPE_ADC                     = 0,
-    WMI_CTRL_PATH_STATS_CAL_TYPE_DAC                     = 1,
-    WMI_CTRL_PATH_STATS_CAL_TYPE_PROCESS                 = 2,
-    WMI_CTRL_PATH_STATS_CAL_TYPE_NOISE_FLOOR             = 3,
-    WMI_CTRL_PATH_STATS_CAL_TYPE_RXDCO                   = 4,
-    WMI_CTRL_PATH_STATS_CAL_TYPE_COMB_TXLO_TXIQ_RXIQ     = 5,
-    WMI_CTRL_PATH_STATS_CAL_TYPE_TXLO                    = 6,
-    WMI_CTRL_PATH_STATS_CAL_TYPE_TXIQ                    = 7,
-    WMI_CTRL_PATH_STATS_CAL_TYPE_RXIQ                    = 8,
-    WMI_CTRL_PATH_STATS_CAL_TYPE_IM2                     = 9,
-    WMI_CTRL_PATH_STATS_CAL_TYPE_LNA                     = 10,
-    WMI_CTRL_PATH_STATS_CAL_TYPE_DPD_LP_RXDCO            = 11,
-    WMI_CTRL_PATH_STATS_CAL_TYPE_DPD_LP_RXIQ             = 12,
-    WMI_CTRL_PATH_STATS_CAL_TYPE_DPD_MEMORYLESS          = 13,
-    WMI_CTRL_PATH_STATS_CAL_TYPE_DPD_MEMORY              = 14,
-    WMI_CTRL_PATH_STATS_CAL_TYPE_IBF                     = 15,
-    WMI_CTRL_PATH_STATS_CAL_TYPE_PDET_AND_PAL            = 16,
-    WMI_CTRL_PATH_STATS_CAL_TYPE_RXDCO_IQ                = 17,
-    WMI_CTRL_PATH_STATS_CAL_TYPE_RXDCO_DTIM              = 18,
-    WMI_CTRL_PATH_STATS_CAL_TYPE_TPC_CAL                 = 19,
-    WMI_CTRL_PATH_STATS_CAL_TYPE_DPD_TIMEREQ             = 20,
-    WMI_CTRL_PATH_STATS_CAL_TYPE_BWFILTER                = 21,
-    WMI_CTRL_PATH_STATS_CAL_TYPE_PEF                     = 22,
-    WMI_CTRL_PATH_STATS_CAL_TYPE_PADROOP                 = 23,
-    WMI_CTRL_PATH_STATS_CAL_TYPE_SELFCALTPC              = 24,
+    WMI_CTRL_PATH_STATS_CAL_TYPE_ADC                     = 0x0,
+    WMI_CTRL_PATH_STATS_CAL_TYPE_DAC                     = 0x1,
+    WMI_CTRL_PATH_STATS_CAL_TYPE_PROCESS                 = 0x2,
+    WMI_CTRL_PATH_STATS_CAL_TYPE_NOISE_FLOOR             = 0x3,
+    WMI_CTRL_PATH_STATS_CAL_TYPE_RXDCO                   = 0x4,
+    WMI_CTRL_PATH_STATS_CAL_TYPE_COMB_TXLO_TXIQ_RXIQ     = 0x5,
+    WMI_CTRL_PATH_STATS_CAL_TYPE_TXLO                    = 0x6,
+    WMI_CTRL_PATH_STATS_CAL_TYPE_TXIQ                    = 0x7,
+    WMI_CTRL_PATH_STATS_CAL_TYPE_RXIQ                    = 0x8,
+    WMI_CTRL_PATH_STATS_CAL_TYPE_IM2                     = 0x9,
+    WMI_CTRL_PATH_STATS_CAL_TYPE_LNA                     = 0xa,
+    WMI_CTRL_PATH_STATS_CAL_TYPE_DPD_LP_RXDCO            = 0xb,
+    WMI_CTRL_PATH_STATS_CAL_TYPE_DPD_LP_RXIQ             = 0xc,
+    WMI_CTRL_PATH_STATS_CAL_TYPE_DPD_MEMORYLESS          = 0xd,
+    WMI_CTRL_PATH_STATS_CAL_TYPE_DPD_MEMORY              = 0xe,
+    WMI_CTRL_PATH_STATS_CAL_TYPE_IBF                     = 0xf,
+    WMI_CTRL_PATH_STATS_CAL_TYPE_PDET_AND_PAL            = 0x10,
+    WMI_CTRL_PATH_STATS_CAL_TYPE_RXDCO_IQ                = 0x11,
+    WMI_CTRL_PATH_STATS_CAL_TYPE_RXDCO_DTIM              = 0x12,
+    WMI_CTRL_PATH_STATS_CAL_TYPE_TPC_CAL                 = 0x13,
+    WMI_CTRL_PATH_STATS_CAL_TYPE_DPD_TIMEREQ             = 0x14,
+    WMI_CTRL_PATH_STATS_CAL_TYPE_BWFILTER                = 0x15,
+    WMI_CTRL_PATH_STATS_CAL_TYPE_PEF                     = 0x16,
+    WMI_CTRL_PATH_STATS_CAL_TYPE_PADROOP                 = 0x17,
+    WMI_CTRL_PATH_STATS_CAL_TYPE_SELFCALTPC              = 0x18,
+
+    /* add new cal types above this line */
+    WMI_CTRL_PATH_STATS_CAL_TYPE_INVALID                 = 0xFF
 } wmi_ctrl_path_stats_cal_type_ids;
 
 typedef enum {
-    WMI_CTRL_PATH_STATS_PERIODIC_CAL_TYPE_NOISE_FLOOR    = 0,
-    WMI_CTRL_PATH_STATS_PERIODIC_CAL_TYPE_DPD_MEMORYLESS = 1,
-    WMI_CTRL_PATH_STATS_PERIODIC_CAL_TYPE_DPD_MEMORY     = 2,
+    WMI_CTRL_PATH_STATS_PERIODIC_CAL_TYPE_NOISE_FLOOR    = 0x0,
+    WMI_CTRL_PATH_STATS_PERIODIC_CAL_TYPE_DPD_MEMORYLESS = 0x1,
+    WMI_CTRL_PATH_STATS_PERIODIC_CAL_TYPE_DPD_MEMORY     = 0x2,
+
+    /* add new periodic cal types above this line */
+    WMI_CTRL_PATH_STATS_PERIODIC_CAL_TYPE_INVALID        = 0xFF
 } wmi_ctrl_path_stats_periodic_cal_type_ids;
 
 /*
@@ -9720,14 +9746,14 @@ typedef struct {
     A_UINT32 cal_fcs_fail_cnt;    /* Count of number of times FCS failed for cal */
 } wmi_ctrl_path_calibration_stats_struct;
 
-#define WMI_CTRL_PATH_CALIBRATION_STATS_CAL_TYPE_GET(value)             WMI_GET_BITS(value, 0, 8)
-#define WMI_CTRL_PATH_CALIBRATION_STATS_CAL_TYPE_SET(value, cal_type)   WMI_SET_BITS(value, 0, 8, cal_type)
+#define WMI_CTRL_PATH_CALIBRATION_STATS_CAL_TYPE_GET(cal_info)             WMI_GET_BITS(cal_info, 0, 8)
+#define WMI_CTRL_PATH_CALIBRATION_STATS_CAL_TYPE_SET(cal_info, cal_type)   WMI_SET_BITS(cal_info, 0, 8, cal_type)
 
-#define WMI_CTRL_PATH_CALIBRATION_STATS_CAL_PROFILE_GET(value)              WMI_GET_BITS(value, 8, 5)
-#define WMI_CTRL_PATH_CALIBRATION_STATS_CAL_PROFILE_SET(value, cal_profile) WMI_SET_BITS(value, 8, 5, cal_profile)
+#define WMI_CTRL_PATH_CALIBRATION_STATS_CAL_PROFILE_GET(cal_info)              WMI_GET_BITS(cal_info, 8, 5)
+#define WMI_CTRL_PATH_CALIBRATION_STATS_CAL_PROFILE_SET(cal_info, cal_profile) WMI_SET_BITS(cal_info, 8, 5, cal_profile)
 
-#define WMI_CTRL_PATH_CALIBRATION_STATS_IS_PERIODIC_CAL_GET(value)              WMI_GET_BITS(value, 13, 1)
-#define WMI_CTRL_PATH_CALIBRATION_STATS_IS_PERIODIC_CAL_SET(value, is_periodic) WMI_SET_BITS(value, 13, 1, is_periodic)
+#define WMI_CTRL_PATH_CALIBRATION_STATS_IS_PERIODIC_CAL_GET(cal_info)              WMI_GET_BITS(cal_info, 13, 1)
+#define WMI_CTRL_PATH_CALIBRATION_STATS_IS_PERIODIC_CAL_SET(cal_info, is_periodic) WMI_SET_BITS(cal_info, 13, 1, is_periodic)
 
 typedef struct {
     /** TLV tag and len; tag equals
@@ -12022,9 +12048,72 @@ typedef enum {
         WMI_VDEV_PARAM_SET_HEMU_MODE,                         /* 0x8002 */
         WMI_VDEV_PARAM_HEOPS_0_31,                            /* 0x8003 */
         WMI_VDEV_PARAM_OBSSPD,                                /* 0x8004 */
+
+        /*
+         * Enable / disable trigger access for a AP vdev's peers.
+         * For a STA mode vdev this will enable/disable triggered access
+         * and enable/disable Multi User mode of operation.
+         * A value of 0 in a given bit disables corresponding mode.
+         * bit | hemu mode
+         * ---------------
+         *  0  | EHT SUBFEE
+         *  1  | EHT SUBFER
+         *  2  | EHT MUBFEE
+         *  3  | EHT MUBFER
+         *  4  | EHT DL OFDMA, for AP its DL Tx OFDMA for Sta its Rx OFDMA
+         *  5  | EHT UL OFDMA, for AP its Tx OFDMA trigger for Sta its Rx OFDMA
+         *     |           trigger receive & UL response
+         *  6  | EHT MUMIMO
+         *  7  | EHT DL OFDMA + TXBF
+         *  8  | EHT DL OFDMA + MU-MIMO
+         *  9  | EHT UL OFDMA + MU-MIMO
+         */
+        WMI_VDEV_PARAM_SET_EHT_MU_MODE,                       /* 0x8005 */
     /*=== END VDEV_PARAM_PROTOTYPE SECTION ===*/
 } WMI_VDEV_PARAM;
 
+/* EHT Modes */
+#define WMI_VDEV_EHT_SUBFEE_IS_ENABLED(eht_mu_mode) WMI_GET_BITS((eht_mu_mode), 0, 1)
+#define WMI_VDEV_EHT_SUBFEE_ENABLE(eht_mu_mode) WMI_SET_BITS((eht_mu_mode), 0, 1, 1)
+#define WMI_VDEV_EHT_SUBFEE_DISABLE(eht_mu_mode) WMI_SET_BITS((eht_mu_mode), 0, 1, 0)
+
+#define WMI_VDEV_EHT_SUBFER_IS_ENABLED(eht_mu_mode) WMI_GET_BITS((eht_mu_mode), 1, 1)
+#define WMI_VDEV_EHT_SUBFER_ENABLE(eht_mu_mode) WMI_SET_BITS((eht_mu_mode), 1, 1, 1)
+#define WMI_VDEV_EHT_SUBFER_DISABLE(eht_mu_mode) WMI_SET_BITS((eht_mu_mode), 1, 1, 0)
+
+#define WMI_VDEV_EHT_MUBFEE_IS_ENABLED(eht_mu_mode) WMI_GET_BITS((eht_mu_mode), 2, 1)
+#define WMI_VDEV_EHT_MUBFEE_ENABLE(eht_mu_mode) WMI_SET_BITS((eht_mu_mode), 2, 1, 1)
+#define WMI_VDEV_EHT_MUBFEE_DISABLE(eht_mu_mode) WMI_SET_BITS((eht_mu_mode), 2, 1, 0)
+
+#define WMI_VDEV_EHT_MUBFER_IS_ENABLED(eht_mu_mode) WMI_GET_BITS((eht_mu_mode), 3, 1)
+#define WMI_VDEV_EHT_MUBFER_ENABLE(eht_mu_mode) WMI_SET_BITS((eht_mu_mode), 3, 1, 1)
+#define WMI_VDEV_EHT_MUBFER_DISABLE(eht_mu_mode) WMI_SET_BITS((eht_mu_mode), 3, 1, 0)
+
+#define WMI_VDEV_EHT_DLOFDMA_IS_ENABLED(eht_mu_mode) WMI_GET_BITS((eht_mu_mode), 4, 1)
+#define WMI_VDEV_EHT_DLOFDMA_ENABLE(eht_mu_mode) WMI_SET_BITS((eht_mu_mode), 4, 1, 1)
+#define WMI_VDEV_EHT_DLOFDMA_DISABLE(eht_mu_mode) WMI_SET_BITS((eht_mu_mode), 4, 1, 0)
+
+#define WMI_VDEV_EHT_ULOFDMA_IS_ENABLED(eht_mu_mode) WMI_GET_BITS((eht_mu_mode), 5, 1)
+#define WMI_VDEV_EHT_ULOFDMA_ENABLE(eht_mu_mode) WMI_SET_BITS((eht_mu_mode), 5, 1, 1)
+#define WMI_VDEV_EHT_ULOFDMA_DISABLE(eht_mu_mode) WMI_SET_BITS((eht_mu_mode), 5, 1, 0)
+
+#define WMI_VDEV_EHT_ULMUMIMO_IS_ENABLED(eht_mu_mode) WMI_GET_BITS((eht_mu_mode), 6, 1)
+#define WMI_VDEV_EHT_ULMUMIMO_ENABLE(eht_mu_mode) WMI_SET_BITS((eht_mu_mode), 6, 1, 1)
+#define WMI_VDEV_EHT_ULMUMIMO_DISABLE(eht_mu_mode) WMI_SET_BITS((eht_mu_mode), 6, 1, 0)
+
+#define WMI_VDEV_EHT_TXBF_OFDMA_IS_ENABLED(eht_mu_mode) WMI_GET_BITS((eht_mu_mode), 7, 1)
+#define WMI_VDEV_EHT_TXBF_OFDMA_ENABLE(eht_mu_mode) WMI_SET_BITS((eht_mu_mode), 7, 1, 1)
+#define WMI_VDEV_EHT_TXBF_OFDMA_DISABLE(eht_mu_mode) WMI_SET_BITS((eht_mu_mode), 7, 1, 0)
+
+#define WMI_VDEV_EHT_DLOFDMA_W_MUMIMO_IS_ENABLED(eht_mu_mode) WMI_GET_BITS((eht_mu_mode), 8, 1)
+#define WMI_VDEV_EHT_DLOFDMA_W_MUMIMO_ENABLE(eht_mu_mode) WMI_SET_BITS((eht_mu_mode), 8, 1, 1)
+#define WMI_VDEV_EHT_DLOFDMA_W_MUMIMO_DISABLE(eht_mu_mode) WMI_SET_BITS((eht_mu_mode), 8, 1, 0)
+
+#define WMI_VDEV_EHT_ULOFDMA_W_MUMIMO_IS_ENABLED(eht_mu_mode) WMI_GET_BITS((eht_mu_mode), 9, 1)
+#define WMI_VDEV_EHT_ULOFDMA_W_MUMIMO_ENABLE(eht_mu_mode) WMI_SET_BITS((eht_mu_mode), 9, 1, 1)
+#define WMI_VDEV_EHT_ULOFDMA_W_MUMIMO_DISABLE(eht_mu_mode) WMI_SET_BITS((eht_mu_mode), 9, 1, 0)
+
+/* HE Modes */
 #define WMI_VDEV_HE_SUBFEE_IS_ENABLED(hemu_mode) WMI_GET_BITS(hemu_mode, 0, 1)
 #define WMI_VDEV_HE_SUBFEE_ENABLE(hemu_mode) WMI_SET_BITS(hemu_mode, 0, 1, 1)
 #define WMI_VDEV_HE_SUBFEE_DISABLE(hemu_mode) WMI_SET_BITS(hemu_mode, 0, 1, 0)
@@ -14026,6 +14115,14 @@ typedef struct {
      */
     A_UINT32 bss_max_idle_option;
 
+    /*
+     * Connected AP auth mode values are from  WMI_AUTH_ enum.
+     * The target shall ignore an auth_mode value of 0 / WMI_AUTH_NONE,
+     * due to ambiguity whether a zero value was provided explicitly or
+     * simply as a default.
+     */
+    A_UINT32 auth_mode;
+
 /* Following this struct are the TLV's:
  *     A_UINT8 peer_legacy_rates[];
  *     A_UINT8 peer_ht_rates[];
@@ -14372,7 +14469,9 @@ typedef struct {
  *  BIT 6     : Enable/Disable solicited BTM
  *  BIT 7     : Roam BTM candidates based on the roam score instead of BTM preferred value
  *  BIT 8     : BTM query preference over 11k neighbor report request
- *  BIT 9-31  : Reserved
+ *  BIT 9     : Send BTM query with preferred candidates list
+ *  BIT 10    : Forward MBO BTM Request to Host if MBO ASSOC RETRY attribute is set
+ *  BIT 11-31 : Reserved
  */
 #define WMI_ROAM_BTM_SET_ENABLE(flags, val)                        WMI_SET_BITS(flags, 0, 1, val)
 #define WMI_ROAM_BTM_GET_ENABLE(flags)                             WMI_GET_BITS(flags, 0, 1)
@@ -14388,6 +14487,8 @@ typedef struct {
 #define WMI_ROAM_BTM_GET_BTM_QUERY_PREFERENCE_OVER_11K(flags)      WMI_GET_BITS(flags, 8, 1)
 #define WMI_ROAM_BTM_SET_BTM_QUERY_WITH_CANDIDATE_LIST(flags, val) WMI_SET_BITS(flags, 9, 1, val)
 #define WMI_ROAM_BTM_GET_BTM_QUERY_WITH_CANDIDATE_LIST(flags)      WMI_GET_BITS(flags, 9, 1)
+#define WMI_ROAM_BTM_SET_FORWARD_MBO_ASSOC_RETRY_BTM_REQUEST_TO_HOST(flags, val)    WMI_SET_BITS(flags, 10, 1, val)
+#define WMI_ROAM_BTM_GET_FORWARD_MBO_ASSOC_RETRY_BTM_REQUEST_TO_HOST(flags)         WMI_GET_BITS(flags, 10, 1)
 
 
 /** WMI_ROAM_BTM_SET_NON_MATCHING_CNDS_ACTION definition: When BTM candidate is not matched with cache by WMI_ROAM_BTM_SET_CNDS_MATCH_CONDITION, determine what to do */
@@ -26271,10 +26372,11 @@ typedef enum {
      * within this enum represents a bit position within a stats bitmap.
      */
     /* bit 0 is currently unused / reserved */
-    WMI_REQUEST_CTRL_PATH_PDEV_TX_STAT   = 1,
-    WMI_REQUEST_CTRL_PATH_VDEV_EXTD_STAT = 2,
-    WMI_REQUEST_CTRL_PATH_MEM_STAT       = 3,
-    WMI_REQUEST_CTRL_PATH_TWT_STAT       = 4,
+    WMI_REQUEST_CTRL_PATH_PDEV_TX_STAT      = 1,
+    WMI_REQUEST_CTRL_PATH_VDEV_EXTD_STAT    = 2,
+    WMI_REQUEST_CTRL_PATH_MEM_STAT          = 3,
+    WMI_REQUEST_CTRL_PATH_TWT_STAT          = 4,
+    WMI_REQUEST_CTRL_PATH_CALIBRATION_STAT  = 5,
 } wmi_ctrl_path_stats_id;
 
 typedef enum {
