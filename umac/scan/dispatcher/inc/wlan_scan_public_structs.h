@@ -85,6 +85,7 @@ typedef uint32_t wlan_scan_id;
 	WLAN_GET_BITS(value32, (8 * (bw_index)), 8)
 #define WLAN_SET_SCORE_PERCENTAGE(value32, score_pcnt, bw_index) \
 	WLAN_SET_BITS(value32, (8 * (bw_index)), 8, score_pcnt)
+#define TBTT_INFO_COUNT 16
 
 /* forward declaration */
 struct wlan_objmgr_vdev;

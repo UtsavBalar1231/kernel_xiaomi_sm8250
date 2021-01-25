@@ -1618,6 +1618,8 @@ is_bwnss_oui(uint8_t *frm)
 		((ATH_OUI_BW_NSS_MAP_TYPE << 24) | ATH_OUI));
 }
 
+#define WLAN_BWNSS_MAP_OFFSET 6
+
 /**
  * is_he_cap_oui() - If vendor IE is HE CAP OUI
  * @frm: vendor IE pointer
@@ -1994,9 +1996,12 @@ static inline void wlan_parse_wapi_ie(uint8_t *wapi_ie,
 		len -= WLAN_OUI_SIZE;
 	}
 
+	if (len < 2)
+		return;
 	wapi->uc_cipher_count = LE_READ_2(ie);
 	ie += 2;
 	len -= 2;
+
 	if ((wapi->uc_cipher_count > WLAN_MAX_CIPHER) ||
 	   len < (wapi->uc_cipher_count * WLAN_OUI_SIZE + 2))
 		return;

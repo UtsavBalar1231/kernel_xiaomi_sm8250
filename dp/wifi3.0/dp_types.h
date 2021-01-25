@@ -284,9 +284,15 @@ enum dp_cpu_ring_map_types {
 /**
  * enum dp_ctxt - context type
  * @DP_PDEV_TYPE: PDEV context
+ * @DP_RX_RING_HIST_TYPE: Datapath rx ring history
+ * @DP_RX_ERR_RING_HIST_TYPE: Datapath rx error ring history
+ * @DP_RX_REINJECT_RING_HIST_TYPE: Datapath reinject ring history
  */
 enum dp_ctxt_type {
-	DP_PDEV_TYPE
+	DP_PDEV_TYPE,
+	DP_RX_RING_HIST_TYPE,
+	DP_RX_ERR_RING_HIST_TYPE,
+	DP_RX_REINJECT_RING_HIST_TYPE,
 };
 
 /**
@@ -1315,6 +1321,8 @@ struct dp_soc {
 		void *ipa_wbm_ring_base_vaddr;
 		uint32_t ipa_wbm_ring_size;
 		qdf_dma_addr_t ipa_wbm_tp_paddr;
+		/* WBM2SW HP shadow paddr */
+		qdf_dma_addr_t ipa_wbm_hp_shadow_paddr;
 
 		/* TX buffers populated into the WBM ring */
 		void **tx_buf_pool_vaddr_unaligned;

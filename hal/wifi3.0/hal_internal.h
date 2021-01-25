@@ -582,6 +582,8 @@ struct hal_hw_txrx_ops {
 	bool (*hal_rx_get_fisa_flow_agg_continuation)(uint8_t *buf);
 	uint8_t (*hal_rx_get_fisa_flow_agg_count)(uint8_t *buf);
 	bool (*hal_rx_get_fisa_timeout)(uint8_t *buf);
+	void (*hal_rx_msdu_get_reo_destination_indication)(uint8_t *buf,
+							uint32_t *reo_destination_indication);
 };
 
 /**
