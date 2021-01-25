@@ -1010,6 +1010,11 @@
 &mdss_mdp {
 	qcom,sde-mixer-display-pref = "primary", "primary", "primary",
 					"primary", "none", "none";
+	connectors = <&sde_dp &sde_dsi &sde_dsi1 &sde_rscc>;
+};
+
+&sde_wb {
+	status = "disabled";
 };
 
 &dsi_dual_xrsmrtvwr_jdi_video {
