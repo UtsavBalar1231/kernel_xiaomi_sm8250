@@ -1,4 +1,5 @@
 #include "qm215-qrd.dtsi"
+#include <dt-bindings/iio/qcom,spmi-vadc.h>
 
 &pm8916_chg {
 	qcom,use-external-charger;
@@ -71,6 +72,8 @@
 		qcom,cool-bat-mv = <4200>;
 		qcom,warm-bat-ma = <1000>;
 		qcom,cool-bat-ma = <1000>;
+		io-channels = <&pm8916_vadc VADC_LR_MUX2_BAT_ID>;
+		io-channel-names = "batt_id";
 		status= "okay";
 	};
 };
