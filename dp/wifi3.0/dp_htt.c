@@ -1746,7 +1746,7 @@ int htt_h2t_rx_ring_cfg(struct htt_soc *htt_soc, int pdev_id,
 		qdf_nbuf_data(htt_msg),
 		qdf_nbuf_len(htt_msg),
 		soc->htc_endpoint,
-		1); /* tag - not relevant here */
+		HTC_TX_PACKET_TAG_RUNTIME_PUT); /* tag for no FW response msg */
 
 	SET_HTC_PACKET_NET_BUF_CONTEXT(&pkt->htc_pkt, htt_msg);
 	status = DP_HTT_SEND_HTC_PKT(soc, pkt,
@@ -4591,7 +4591,8 @@ QDF_STATUS dp_h2t_cfg_stats_msg_send(struct dp_pdev *pdev,
 			dp_htt_h2t_send_complete_free_netbuf,
 			qdf_nbuf_data(msg), qdf_nbuf_len(msg),
 			soc->htc_endpoint,
-			1); /* tag - not relevant here */
+			/* tag for no FW response msg */
+			HTC_TX_PACKET_TAG_RUNTIME_PUT);
 
 	SET_HTC_PACKET_NET_BUF_CONTEXT(&pkt->htc_pkt, msg);
 	status = DP_HTT_SEND_HTC_PKT(soc, pkt, HTT_H2T_MSG_TYPE_PPDU_STATS_CFG,
