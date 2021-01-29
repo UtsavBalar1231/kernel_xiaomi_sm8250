@@ -73,18 +73,6 @@ static int onewire_major;
 static int onewire_gpio_detected;
 static struct onewire_gpio_data *g_onewire_data;
 
-void Delay_us(unsigned int T)
-{
-	udelay(T);
-}
-EXPORT_SYMBOL(Delay_us);
-
-void Delay_ns(unsigned int T)
-{
-	ndelay(T);
-}
-EXPORT_SYMBOL(Delay_ns);
-
 unsigned char ow_reset(void)
 {
 	unsigned char presence = 0xFF;
@@ -94,12 +82,12 @@ unsigned char ow_reset(void)
 
 	ONE_WIRE_CONFIG_OUT;
 	ONE_WIRE_OUT_LOW;
-	Delay_us(50);// 48
+	udelay(50);// 48
 	ONE_WIRE_OUT_HIGH;
 	ONE_WIRE_CONFIG_IN;
-	Delay_us(7);
+	udelay(7);
 	presence = (unsigned char)readl_relaxed(g_onewire_data->gpio_in_out_reg) & 0x01; // Read
-	Delay_us(50);
+	udelay(50);
 
 	raw_spin_unlock_irqrestore(&g_onewire_data->lock, flags);
 	return presence;
@@ -112,26 +100,26 @@ unsigned char read_bit(void)
 
 	ONE_WIRE_CONFIG_OUT;
 	ONE_WIRE_OUT_LOW;
-	Delay_us(1);////
+	udelay(1);////
 	ONE_WIRE_CONFIG_IN;
-	Delay_ns(500);//
+	ndelay(500);//
 	vamm = readl_relaxed(g_onewire_data->gpio_in_out_reg); // Read
-	Delay_us(5);
+	udelay(5);
 	ONE_WIRE_OUT_HIGH;
 	ONE_WIRE_CONFIG_OUT;
-	Delay_us(6);
+	udelay(6);
 	return((unsigned char)vamm & 0x01);
 }
 
 void write_bit(char bitval)
 {
 	ONE_WIRE_OUT_LOW;
-	Delay_us(1);//
+	udelay(1);//
 	if (bitval != 0)
 		ONE_WIRE_OUT_HIGH;
-	Delay_us(10);
+	udelay(10);
 	ONE_WIRE_OUT_HIGH;
-	Delay_us(6);
+	udelay(6);
 }
 
 unsigned char read_byte(void)
@@ -330,49 +318,49 @@ const char *buf, size_t count)
 		ONE_WIRE_OUT_HIGH;
 		ONE_WIRE_OUT_LOW;
 
-		Delay_us(1000);
+		udelay(1000);
 		ONE_WIRE_OUT_HIGH;
-		Delay_us(1);
+		udelay(1);
 		ONE_WIRE_OUT_LOW;
-		Delay_us(1);
+		udelay(1);
 		ONE_WIRE_OUT_HIGH;
-		Delay_us(1);
+		udelay(1);
 		ONE_WIRE_OUT_LOW;
-		Delay_us(1);
+		udelay(1);
 		ONE_WIRE_OUT_HIGH;
-		Delay_us(1);
+		udelay(1);
 		ONE_WIRE_OUT_LOW;
-		Delay_us(1);
+		udelay(1);
 		ONE_WIRE_OUT_HIGH;
-		Delay_us(1);
+		udelay(1);
 		ONE_WIRE_OUT_LOW;
-		Delay_us(1);
+		udelay(1);
 		ONE_WIRE_OUT_HIGH;
-		Delay_us(1);
+		udelay(1);
 		ONE_WIRE_OUT_LOW;
-		Delay_us(1);
+		udelay(1);
 
-		Delay_us(1000);
+		udelay(1000);
 		ONE_WIRE_OUT_HIGH;
-		Delay_us(5);
+		udelay(5);
 		ONE_WIRE_OUT_LOW;
-		Delay_us(5);
+		udelay(5);
 		ONE_WIRE_OUT_HIGH;
-		Delay_us(5);
+		udelay(5);
 		ONE_WIRE_OUT_LOW;
-		Delay_us(5);
+		udelay(5);
 		ONE_WIRE_OUT_HIGH;
-		Delay_us(5);
+		udelay(5);
 		ONE_WIRE_OUT_LOW;
-		Delay_us(5);
+		udelay(5);
 		ONE_WIRE_OUT_HIGH;
-		Delay_us(5);
+		udelay(5);
 		ONE_WIRE_OUT_LOW;
-		Delay_us(5);
+		udelay(5);
 		ONE_WIRE_OUT_HIGH;
-		Delay_us(5);
+		udelay(5);
 		ONE_WIRE_OUT_LOW;
-		Delay_us(5);
+		udelay(5);
 	}
 
 	return count;
