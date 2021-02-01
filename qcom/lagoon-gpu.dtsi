@@ -103,6 +103,7 @@
 		qcom,gpu-qdss-stm = <0x161c0000 0x40000>;
 
 		#cooling-cells = <2>;
+		qcom,tzone-names = "gpuss-0-usr", "gpuss-1-usr";
 
 		/* Bus Scale Settings */
 		qcom,gpubw-dev = <&gpubw>;
