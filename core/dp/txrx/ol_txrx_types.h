@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2021 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -834,7 +834,7 @@ struct ol_txrx_pdev_t {
 	struct {
 		int (*cmp)(union htt_rx_pn_t *new,
 			   union htt_rx_pn_t *old,
-			   int is_unicast, int opmode);
+			   int is_unicast, int opmode, bool strict_chk);
 		int len;
 	} rx_pn[htt_num_sec_types];
 
