@@ -5541,7 +5541,8 @@ static void hdd_check_for_net_dev_ref_leak(struct hdd_adapter *adapter)
 
 	for (id = 0; id < NET_DEV_HOLD_ID_MAX; id++) {
 		for (i = 0; i < MAX_NET_DEV_REF_LEAK_ITERATIONS; i++) {
-			if (!adapter->net_dev_hold_ref_count[id])
+			if (!qdf_atomic_read(
+				&adapter->net_dev_hold_ref_count[id]))
 				break;
 			hdd_info("net_dev held for debug id %s",
 				 net_dev_ref_debug_string_from_id(id));
@@ -6233,6 +6234,7 @@ struct hdd_adapter *hdd_open_adapter(struct hdd_context *hdd_ctx, uint8_t sessio
 	struct hdd_adapter *adapter = NULL;
 	u8 intf_count = 0;
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
+	uint32_t i;
 
 	if (hdd_ctx->current_intf_count >= WLAN_MAX_VDEVS) {
 		/*
@@ -6456,6 +6458,10 @@ struct hdd_adapter *hdd_open_adapter(struct hdd_context *hdd_ctx, uint8_t sessio
 	qdf_event_create(&adapter->peer_cleanup_done);
 	hdd_sta_info_init(&adapter->sta_info_list);
 	hdd_sta_info_init(&adapter->cache_sta_info_list);
+
+	for (i = 0; i < NET_DEV_HOLD_ID_MAX; i++)
+		qdf_atomic_init(
+			&adapter->net_dev_hold_ref_count[NET_DEV_HOLD_ID_MAX]);
 
 	/* Add it to the hdd's session list. */
 	status = hdd_add_adapter_back(hdd_ctx, adapter);
@@ -8124,7 +8130,7 @@ void hdd_adapter_dev_hold_debug(struct hdd_adapter *adapter,
 		QDF_BUG(0);
 	}
 	dev_hold(adapter->dev);
-	adapter->net_dev_hold_ref_count[dbgid]++;
+	qdf_atomic_inc(&adapter->net_dev_hold_ref_count[dbgid]);
 }
 
 void hdd_adapter_dev_put_debug(struct hdd_adapter *adapter,
@@ -8135,14 +8141,14 @@ void hdd_adapter_dev_put_debug(struct hdd_adapter *adapter,
 		QDF_BUG(0);
 	}
 
-	if (adapter->net_dev_hold_ref_count[dbgid] == 0) {
+	if (qdf_atomic_dec_return(
+			&adapter->net_dev_hold_ref_count[dbgid]) < 0) {
 		hdd_err("dev_put detected without dev_hold for debug id: %s",
 			net_dev_ref_debug_string_from_id(dbgid));
 		QDF_BUG(0);
 	}
 
 	dev_put(adapter->dev);
-	adapter->net_dev_hold_ref_count[dbgid]--;
 }
 
 QDF_STATUS hdd_get_front_adapter(struct hdd_context *hdd_ctx,
