@@ -179,6 +179,11 @@ static int __wlan_hdd_request_pre_cac(struct hdd_context *hdd_ctx,
 	mac_handle_t mac_handle;
 	bool val;
 
+	if (!policy_mgr_is_hw_dbs_capable(hdd_ctx->psoc)) {
+		hdd_debug("Pre CAC is not supported on non-dbs platforms");
+		return -EINVAL;
+	}
+
 	if (policy_mgr_get_connection_count(hdd_ctx->psoc) > 1) {
 		hdd_err("pre cac not allowed in concurrency");
 		return -EINVAL;
