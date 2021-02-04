@@ -2,7 +2,7 @@
 #include <linux/debugfs.h>
 //#include <linux/device.h>
 
-char msg_format[] = "{\"name\":\"mbhc_impedance\",\"audio_event\":{\"valueL\":\"%d\",\"valueR\":\"%d\"},\"dgt\":\"null\",\"audio_ext\":\"null\" }";
+char msg_format[] = "{\"name\":\"mbhc_impedance\",\"audio_event\":{\"mbhc_impedance_left\":\"%d\",\"mbhc_impedance_right\":\"%d\"},\"dgt\":\"null\",\"audio_ext\":\"null\" }";
 
 #define MAX_LEN 512
 
