@@ -19,6 +19,8 @@
 	qrc:qrc@100 {
 		compatible = "qcom,qrc-uart";
 		status = "ok";
+		qcom,qrc-reset-gpio = <&tlmm 114 0>;
+		qcom,qrc-boot-gpio = <&tlmm 109 0>;
 	};
 };
 
