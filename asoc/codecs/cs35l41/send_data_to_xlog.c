@@ -1,7 +1,7 @@
 #include "send_data_to_xlog.h"
 #include <linux/debugfs.h>
 
-char msg_format[] = "{\"name\":\"DC_detection\",\"audio_event\":{\"DC_count\":\"%d\",\"DC_reason\":\"%s\"},\"dgt\":\"null\",\"audio_ext\":\"null\" }";
+char msg_format[] = "{\"name\":\"dc_detection\",\"audio_event\":{\"dc_count\":\"%d\",\"dc_reason\":\"%s\"},\"dgt\":\"null\",\"audio_ext\":\"null\" }";
 
 #define MAX_LEN 512
 
