@@ -616,12 +616,12 @@ static int cs35l41_fast_switch_file_put(struct snd_kcontrol *kcontrol,
 
 	if ((i != cs35l41->fast_switch_file_idx) && cs35l41->fast_switch_en) {
 		int ret;
+
+		cs35l41->fast_switch_file_idx = i;
 		ret = cs35l41_do_fast_switch(cs35l41);
 		dev_dbg(cs35l41->dev, "%s: fast switch %s\n", __func__, ret ? "fail" : "success");
 	}
 #endif
-
-	cs35l41->fast_switch_file_idx = i;
 
 	return 0;
 }
