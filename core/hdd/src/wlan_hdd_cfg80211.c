@@ -19689,6 +19689,8 @@ static void hdd_populate_crypto_params(struct wlan_objmgr_vdev *vdev,
 		hdd_populate_crypto_cipher_type(req->crypto.cipher_group,
 						vdev,
 						WLAN_CRYPTO_PARAM_MCAST_CIPHER);
+
+	wlan_crypto_free_vdev_key(vdev);
 }
 
 /**
