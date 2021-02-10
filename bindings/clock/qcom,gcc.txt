@@ -30,12 +30,13 @@ Required properties :
 			"qcom,gcc-sdm439"
 			"qcom,gcc-msm8917"
 			"qcom,gcc-msm8937"
+			"qcom,gcc-sdm429w"
 			"qcom,gcc-mdss-msm8937"
 			"qcom,gcc-mdss-8917"
 			"qcom,gcc-mdss-sdm429w"
 			"qcom,gcc-mdss-sdm429"
 			"qcom,gcc-mdss-sdm439"
-
+			"qcom,gcc-mdss-sdm429w"
 
 - reg : shall contain base register location and length
 - #clock-cells : shall contain 1
