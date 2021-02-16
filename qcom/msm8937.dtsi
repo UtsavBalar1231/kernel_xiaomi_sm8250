@@ -299,7 +299,7 @@
 
 	cpu-pmu {
 		compatible = "arm,armv8-pmuv3";
-		interrupts = <1 7 0xff00>;
+		interrupts = <1 7 IRQ_TYPE_LEVEL_HIGH>;
 	};
 
 	qcom,sps {
@@ -1152,7 +1152,7 @@
 			<0x200a000 0x2100>;
 		reg-names = "core", "chnls", "obsrvr", "intr", "cnfg";
 		interrupt-names = "periph_irq";
-		interrupts = <GIC_SPI 190 IRQ_TYPE_NONE>;
+		interrupts = <GIC_SPI 190 IRQ_TYPE_LEVEL_HIGH>;
 		qcom,ee = <0>;
 		qcom,channel = <0>;
 		#address-cells = <1>;
@@ -2091,7 +2091,8 @@
 			    "wlan_tx_status", "alarms_txctl",
 			    "alarms_tactl", "pronto_mcu_base";
 
-		interrupts = <0 145 0 0 146 0>;
+		interrupts = <0 145 IRQ_TYPE_EDGE_RISING>,
+				<0 146 IRQ_TYPE_EDGE_RISING>;
 		interrupt-names = "wcnss_wlantx_irq", "wcnss_wlanrx_irq";
 
 		qcom,pronto-vddmx-supply = <&pm8937_l3_level_ao>;
