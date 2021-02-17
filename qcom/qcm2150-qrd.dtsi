@@ -1,0 +1,5 @@
+#include "qm215-qrd.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. QCM2150 QRD";
+};

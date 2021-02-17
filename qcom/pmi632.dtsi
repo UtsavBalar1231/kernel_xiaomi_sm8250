@@ -331,6 +331,9 @@
 						"ilim2-s2",
 						"vreg-ok";
 			};
+			smb5_vbus: qcom,smb5-vbus {
+				regulator-name = "smb5-vbus";
+			};
 		};
 
 		pmi632_qg: qpnp,qg {

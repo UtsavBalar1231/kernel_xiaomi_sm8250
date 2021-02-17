@@ -1,0 +1,84 @@
+#include "msm8937-mdss.dtsi"
+#include <dt-bindings/clock/mdss-28nm-pll-clk.h>
+&mdss_dsi {
+	vdda-supply = <&pm8937_l2>;
+	vddio-supply = <&pm8937_l6>;
+
+	ranges = <0x1a94000 0x1a94000 0x300
+		0x1a94400 0x1a94400 0x280
+		0x1a94b80 0x1a94b80 0x30
+		0x193e000 0x193e000 0x30>;
+
+	clocks = <&gcc_mdss MDSS_MDP_VOTE_CLK>,
+		<&gcc GCC_MDSS_AHB_CLK>,
+		<&gcc GCC_MDSS_AXI_CLK>,
+		<&mdss_dsi0_pll BYTECLK_SRC_0_CLK>,
+		<&mdss_dsi0_pll PCLK_SRC_0_CLK>;
+	clock-names = "mdp_core_clk", "iface_clk", "bus_clk",
+		"ext_byte0_clk", "ext_pixel0_clk";
+
+	/delete-property/ qcom,mdss-fb-map-sec;
+
+};
+
+&mdss_dsi0 {
+	vdd-supply = <&pm8937_l17>;
+	vddio-supply = <&pm8937_l6>;
+};
+
+/delete-node/ &mdss_dsi1;
+
+&mdss_mdp {
+	qcom,max-bandwidth-low-kbps = <1800000>;
+	qcom,max-bandwidth-high-kbps = <1800000>;
+	qcom,max-bandwidth-per-pipe-kbps = <1000000>;
+
+	qcom,mdss-intf-off = <0x00000000 0x0006B800>;
+	qcom,mdss-pingpong-off = <0x00071000>;
+	qcom,mdss-mixer-intf-off = <0x00045000>;
+	qcom,mdss-mixer-wb-off = <0x00046000>;
+	qcom,mdss-wfd-mode = "dedicated";
+	qcom,mdss-per-pipe-panic-luts = <0x000f>,
+					<0x0>,
+					<0xfffc>,
+					<0x0>;
+
+	/delete-property/ qcom,mdss-highest-bank-bit;
+	/delete-property/ qcom,vbif-settings;
+
+	qcom,regs-dump-mdp = <0x01000 0x01454>,
+			     <0x02000 0x02064>,
+			     <0x02200 0x02264>,
+			     <0x02400 0x02464>,
+			     <0x05000 0x05150>,
+			     <0x05200 0x05230>,
+			     <0x15000 0x15150>,
+			     <0x17000 0x17150>,
+			     <0x25000 0x25150>,
+			     <0x35000 0x35150>,
+			     <0x45000 0x452bc>,
+			     <0x46000 0x462bc>,
+			     <0x55000 0x5522c>,
+			     <0x65000 0x652c0>,
+			     <0x66000 0x662c0>,
+			     <0x6b800 0x6ba68>,
+			     <0x71000 0x710d4>;
+
+	qcom,regs-dump-names-mdp = "MDP",
+		"CTL_0",    "CTL_1", "CTL_2",
+		"VIG0_SSPP", "VIG0",
+		"RGB0_SSPP", "RGB1_SSPP",
+		"DMA0_SSPP",
+		"CURSOR0_SSPP",
+		"LAYER_0", "LAYER_1",
+		"DSPP_0",
+		"WB_0",    "WB_2",
+		"INTF_1",
+		"PP_0";
+};
+
+&mdss_rotator {
+	/delete-property/ qcom,mdss-has-ubwc;
+};
+
+/delete-node/ &mdss_fb2;
