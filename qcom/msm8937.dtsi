@@ -3,6 +3,7 @@
 #include <dt-bindings/spmi/spmi.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/clock/qcom,gcc-sdm429w.h>
+#include <dt-bindings/clock/qcom,cpu-sdm.h>
 #include <dt-bindings/clock/qcom,rpmcc.h>
 #include <dt-bindings/clock/mdss-28nm-pll-clk-legacy.h>
 
@@ -584,12 +585,15 @@
 		#reset-cells = <1>;
 	};
 
+	cpu_debug: syscon@0b11101c {
+		compatible = "syscon";
+		reg = <0xb11101c 0x4>;
+	};
+
 	debugcc: qcom,cc-debug {
-		compatible = "qcom,msm8937-debugcc";
-		reg = <0x1874000 0x4>,
-			<0xb11101c 0x8>;
-		reg-names = "cc_base", "meas";
+		compatible = "qcom,sdm439-debugcc";
 		qcom,gcc = <&gcc>;
+		qcom,cpu = <&cpu_debug>;
 		clocks = <&rpmcc RPM_SMD_XO_CLK_SRC>;
 		clock-names = "xo_clk_src";
 		#clock-cells = <1>;
@@ -607,17 +611,19 @@
 		#clock-cells = <1>;
 	};
 
-	clock_cpu: qcom,cpu-clock-8939@b111050 {
-		compatible = "qcom,cpu-clock-8939";
+	apsscc: qcom,clock-cpu@b111050 {
+		compatible = "qcom,cpu-clock-sdm439";
 		reg =   <0xb011050 0x8>,
-			<0xb111050 0x8>,
+			<0xb016000 0x34>,
+			<0xb011200 0x100>,
 			<0xb1d1050 0x8>,
+			<0xb111050 0x8>,
+			<0xb116000 0x34>,
+			<0xb111200 0x100>,
 			<0x00a412c 0x8>;
-		reg-names = "apcs-c1-rcg-base", "apcs-c0-rcg-base",
-				"apcs-cci-rcg-base", "efuse";
-		vdd-c0-supply = <&apc_vreg_corner>;
-		vdd-c1-supply = <&apc_vreg_corner>;
-		vdd-cci-supply = <&apc_vreg_corner>;
+		reg-names = "apcs-c1-rcg-base", "apcs_pll1", "spm_c1_base",
+			"apcs-cci-rcg-base", "apcs-c0-rcg-base",
+			"apcs_pll0", "spm_c0_base", "efuse";
 		clocks = <&rpmcc RPM_SMD_XO_A_CLK_SRC>,
 			<&gcc GPLL0_AO_OUT_MAIN>;
 		clock-names = "xo_ao", "gpll0_ao" ;

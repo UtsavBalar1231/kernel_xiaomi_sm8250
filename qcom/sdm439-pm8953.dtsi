@@ -76,9 +76,9 @@
 		vdd_hf_pll-supply = <&pm8953_l7_ao>;
 	};
 
-	qcom,cpu-clock-8939@b111050 {
+	qcom,clock-cpu@b111050 {
 		/delete-property/ vdd-c0-supply;
-		/delete-property/ vdd-c1-supply;
+		/delete-property/ cpu-vdd-supply;
 		/delete-property/ vdd-cci-supply;
 	};
 
