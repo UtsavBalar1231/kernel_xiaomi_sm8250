@@ -1473,6 +1473,26 @@
 				qcom,net-id = <1>;
 				qcom,low-latency;
 			};
+
+			qcom,diag {
+				qcom,smd-channels = "DIAG";
+			};
+
+			qcom,diag_cntl {
+				qcom,smd-channels = "DIAG_CNTL";
+			};
+
+			qcom,diag_cmd {
+				qcom,smd-channels = "DIAG_CMD";
+			};
+
+			qcom,diag_dci {
+				qcom,smd-channels = "DIAG_2";
+			};
+
+			qcom.diag_dci_cmd {
+				qcom,smd-channels = "DIAG_2_CMD";
+			};
 		};
 
 		adsp {
