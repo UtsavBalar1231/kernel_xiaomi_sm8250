@@ -2796,7 +2796,7 @@ uint32_t cds_get_arp_stats_gw_ip(void *context)
 void cds_incr_arp_stats_tx_tgt_delivered(void)
 {
 	struct hdd_context *hdd_ctx;
-	struct hdd_adapter *adapter = NULL;
+	struct hdd_adapter *adapter, *next_adapter = NULL;
 
 	hdd_ctx = gp_cds_context->hdd_context;
 	if (!hdd_ctx) {
@@ -2804,9 +2804,14 @@ void cds_incr_arp_stats_tx_tgt_delivered(void)
 		return;
 	}
 
-	hdd_for_each_adapter(hdd_ctx, adapter) {
-		if (QDF_STA_MODE == adapter->device_mode)
+	hdd_for_each_adapter_dev_held_safe(hdd_ctx, adapter, next_adapter) {
+		if (adapter->device_mode == QDF_STA_MODE) {
+			dev_put(adapter->dev);
+			if (next_adapter)
+				dev_put(next_adapter->dev);
 			break;
+		}
+		dev_put(adapter->dev);
 	}
 
 	if (adapter)
@@ -2821,7 +2826,7 @@ void cds_incr_arp_stats_tx_tgt_delivered(void)
 void cds_incr_arp_stats_tx_tgt_acked(void)
 {
 	struct hdd_context *hdd_ctx;
-	struct hdd_adapter *adapter = NULL;
+	struct hdd_adapter *adapter, *next_adapter = NULL;
 
 	hdd_ctx = gp_cds_context->hdd_context;
 	if (!hdd_ctx) {
@@ -2829,9 +2834,14 @@ void cds_incr_arp_stats_tx_tgt_acked(void)
 		return;
 	}
 
-	hdd_for_each_adapter(hdd_ctx, adapter) {
-		if (QDF_STA_MODE == adapter->device_mode)
+	hdd_for_each_adapter_dev_held_safe(hdd_ctx, adapter, next_adapter) {
+		if (adapter->device_mode == QDF_STA_MODE) {
+			dev_put(adapter->dev);
+			if (next_adapter)
+				dev_put(next_adapter->dev);
 			break;
+		}
+		dev_put(adapter->dev);
 	}
 
 	if (adapter)

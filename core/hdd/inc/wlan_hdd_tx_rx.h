@@ -395,6 +395,25 @@ void hdd_reset_pktcapture_cb(uint8_t pdev_id)
 
 void hdd_send_rps_ind(struct hdd_adapter *adapter);
 void hdd_send_rps_disable_ind(struct hdd_adapter *adapter);
+
+/**
+ * hdd_adapter_set_rps() - Enable/disable RPS for mode specified
+ * @vdev_id: vdev id of adapter for which RPS needs to be enabled
+ * @enable: Set true to enable RPS in SAP mode
+ *
+ * Callback function registered with ipa
+ *
+ * Return: none
+ */
+#ifdef IPA_LAN_RX_NAPI_SUPPORT
+void hdd_adapter_set_rps(uint8_t vdev_id, bool enable);
+#else
+static inline
+void hdd_adapter_set_rps(uint8_t vdev_id, bool enable)
+{
+}
+#endif
+
 void wlan_hdd_classify_pkt(struct sk_buff *skb);
 
 #ifdef WLAN_FEATURE_DP_BUS_BANDWIDTH
@@ -409,14 +428,7 @@ void hdd_reset_tcp_delack(struct hdd_context *hdd_ctx);
  * Return: None
  */
 void hdd_reset_tcp_adv_win_scale(struct hdd_context *hdd_ctx);
-#ifdef RX_PERFORMANCE
 bool hdd_is_current_high_throughput(struct hdd_context *hdd_ctx);
-#else
-static inline bool hdd_is_current_high_throughput(struct hdd_context *hdd_ctx)
-{
-	return false;
-}
-#endif
 #define HDD_MSM_CFG(msm_cfg)	msm_cfg
 #else
 static inline void hdd_reset_tcp_delack(struct hdd_context *hdd_ctx) {}
