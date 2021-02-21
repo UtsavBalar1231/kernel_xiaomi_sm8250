@@ -3124,6 +3124,16 @@ wmi_unified_extract_roam_11kv_stats(wmi_unified_t wmi, void *evt_buf,
 	return QDF_STATUS_E_FAILURE;
 }
 
+QDF_STATUS
+wmi_unified_extract_roam_msg_info(wmi_unified_t wmi, void *evt_buf,
+				   struct wmi_roam_msg_info *dst, uint8_t idx)
+{
+	if (wmi->ops->extract_roam_msg_info)
+		return wmi->ops->extract_roam_msg_info(wmi, evt_buf, dst, idx);
+
+	return QDF_STATUS_E_FAILURE;
+}
+
 #ifdef FEATURE_WLAN_TIME_SYNC_FTM
 QDF_STATUS wmi_unified_send_wlan_time_sync_ftm_trigger(wmi_unified_t wmi_handle,
 						       uint32_t vdev_id,

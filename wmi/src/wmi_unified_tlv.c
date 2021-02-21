@@ -13046,6 +13046,42 @@ extract_roam_11kv_stats_tlv(wmi_unified_t wmi_handle, void *evt_buf,
 
 	return QDF_STATUS_SUCCESS;
 }
+
+/**
+ * extract_roam_msg_info_tlv() - Extract the roam message info
+ * from the WMI_ROAM_STATS_EVENTID
+ * @wmi_handle: wmi handle
+ * @evt_buf:    Pointer to the event buffer
+ * @dst:        Pointer to destination structure to fill data
+ * @idx:        TLV id
+ */
+static QDF_STATUS
+extract_roam_msg_info_tlv(wmi_unified_t wmi_handle, void *evt_buf,
+			  struct wmi_roam_msg_info *dst, uint8_t idx)
+{
+	WMI_ROAM_STATS_EVENTID_param_tlvs *param_buf;
+	wmi_roam_msg_info *src_data = NULL;
+
+	param_buf = (WMI_ROAM_STATS_EVENTID_param_tlvs *)evt_buf;
+
+	if (!param_buf || !param_buf->roam_msg_info ||
+	    !param_buf->num_roam_msg_info ||
+	    idx >= param_buf->num_roam_msg_info) {
+		wmi_debug("Empty roam_msg_info param buf");
+		return QDF_STATUS_SUCCESS;
+	}
+
+	src_data = &param_buf->roam_msg_info[idx];
+
+	dst->present = true;
+	dst->timestamp = src_data->timestamp;
+	dst->msg_id = src_data->msg_id;
+	dst->msg_param1 = src_data->msg_param1;
+	dst->msg_param2 = src_data->msg_param2;
+
+	return QDF_STATUS_SUCCESS;
+}
+
 #else
 static inline QDF_STATUS
 extract_roam_trigger_stats_tlv(wmi_unified_t wmi_handle, void *evt_buf,
@@ -13076,6 +13112,14 @@ extract_roam_scan_stats_tlv(wmi_unified_t wmi_handle, void *evt_buf,
 {
 	return QDF_STATUS_E_NOSUPPORT;
 }
+
+static inline QDF_STATUS
+extract_roam_msg_info_tlv(wmi_unified_t wmi_handle, void *evt_buf,
+			  struct wmi_roam_msg_info *dst, uint8_t idx)
+{
+	return QDF_STATUS_E_NOSUPPORT;
+}
+
 #endif
 
 #ifdef FEATURE_WLAN_TIME_SYNC_FTM
@@ -13538,6 +13582,7 @@ struct wmi_ops tlv_ops =  {
 	.extract_roam_scan_stats = extract_roam_scan_stats_tlv,
 	.extract_roam_result_stats = extract_roam_result_stats_tlv,
 	.extract_roam_11kv_stats = extract_roam_11kv_stats_tlv,
+	.extract_roam_msg_info = extract_roam_msg_info_tlv,
 
 #ifdef FEATURE_WLAN_TIME_SYNC_FTM
 	.send_wlan_time_sync_ftm_trigger_cmd = send_wlan_ts_ftm_trigger_cmd_tlv,
