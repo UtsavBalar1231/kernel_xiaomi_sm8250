@@ -2,6 +2,7 @@
 
 #include "scuba-iot-low-ram.dtsi"
 #include "scuba-iot-idp.dtsi"
+#include "scuba-iot-qcs.dtsi"
 
 / {
 	model = "Qualcomm Technologies, Inc. Scubap IOT IDP 2GB DDR";

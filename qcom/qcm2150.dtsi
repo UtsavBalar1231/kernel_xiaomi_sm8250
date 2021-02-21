@@ -1,0 +1,11 @@
+#include "qm215.dtsi"
+#include "qm215-pm8916.dtsi"
+/* TBD */
+/* #include "qm215-audio.dtsi" */
+
+/ {
+	model = "Qualcomm Technologies, Inc. QCM2150";
+	compatible = "qcom,qcm2150";
+	qcom,msm-id = <436 0x0>;
+	qcom,msm-name = "QCM2150";
+};

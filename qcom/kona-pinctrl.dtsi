@@ -3178,6 +3178,58 @@
 			};
 		};
 
+		ch101_rst: ch101_rst {
+			mux {
+				pins = "gpio140";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio140";
+				output-high;
+				drive-strength = <2>;
+			};
+		};
+
+		ch101_tmr_rst: ch101_tmr_rst {
+			mux {
+				pins = "gpio0";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio0";
+				bias-pull-up;
+				drive-strength = <2>;
+			};
+		};
+
+		ch101_0_irq: ch101_0_irq {
+			mux {
+				pins = "gpio129", "gpio141", "gpio113";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio129", "gpio141", "gpio113";
+				bias-no-pull;
+				drive-strength = <2>;
+			};
+		};
+
+		ch101_1_irq: ch101_1_irq {
+			mux {
+				pins = "gpio122", "gpio123", "gpio66";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio122", "gpio123", "gpio66";
+				bias-no-pull;
+				drive-strength = <2>;
+			};
+		};
+
 		/* QUPv3_0 North SE0 mappings */
 		qupv3_se0_i3c_pins: qupv3_se0_i3c_pins {
 			qupv3_se0_i3c_active: qupv3_se0_i3c_active {

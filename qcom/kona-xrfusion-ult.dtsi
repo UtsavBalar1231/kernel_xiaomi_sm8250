@@ -1057,6 +1057,11 @@
 &mdss_mdp {
 	qcom,sde-mixer-display-pref = "primary", "primary", "primary",
 					"primary", "none", "none";
+	connectors = <&sde_dp &sde_dsi &sde_dsi1 &sde_rscc>;
+};
+
+&sde_wb {
+	status = "disabled";
 };
 
 &dsi_dual_xrsmrtvwr_jdi_video {
@@ -1078,9 +1083,6 @@
 	qcom,mdss-dsi-panel-on-check-value = <0x9c>;
 	qcom,mdss-dsi-panel-status-read-length = <1>;
 	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
-	qcom,dsi-supported-dfps-list = <90 75 60>;
-	qcom,mdss-dsi-pan-enable-dynamic-fps;
-	qcom,mdss-dsi-pan-fps-update = "dfps_immediate_porch_mode_vfp";
 	qcom,mdss-dsi-min-refresh-rate = <60>;
 	qcom,mdss-dsi-max-refresh-rate = <90>;
 	qcom,mdss-dsi-display-timings {

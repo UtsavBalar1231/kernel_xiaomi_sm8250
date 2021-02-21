@@ -201,7 +201,7 @@ scuba-idp-overlay.dtbo-base := scuba.dtb scubap.dtb scuba-2gb.dtb
 scuba-qrd-eldo-overlay.dtbo-base := scuba.dtb scubap.dtb scuba-2gb.dtb
 scuba-qrd-non-eldo-overlay.dtbo-base := scuba.dtb scubap.dtb scuba-2gb.dtb
 scuba-idp-usbc-overlay.dtbo-base := scuba.dtb scubap.dtb scuba-2gb.dtb
-scuba-iot-idp-overlay.dtbo-base := scuba-iot.dtb scubap-iot.dtb scuba-iot-2gb.dtb
+scuba-iot-idp-overlay.dtbo-base := scuba-iot.dtb scuba-iot-2gb.dtb scubap-iot.dtb scubap-iot-idp.dtb scubap-iot-idp-2gb.dtb
 scuba-iot-qrd-eldo-overlay.dtbo-base := scuba-iot.dtb scubap-iot.dtb scuba-iot-2gb.dtb
 scuba-iot-qrd-non-eldo-overlay.dtbo-base := scuba-iot.dtb scubap-iot.dtb scuba-iot-2gb.dtb
 scuba-iot-idp-usbc-overlay.dtbo-base := scuba-iot.dtb scubap-iot.dtb scuba-iot-2gb.dtb
@@ -287,6 +287,53 @@ sdm660-internal-codec-cdp.dtb \
         sdm660-pm660a-headset-jacktype-no-rcm.dtb \
         sdm660-usbc-audio-mtp.dtb \
         sdm660-usbc-audio-rcm.dtb
+endif
+
+ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
+dtbo-$(CONFIG_ARCH_SDM439) += sdm439-mtp-overlay.dtbo
+
+dtbo-$(CONFIG_ARCH_SDM429) += sdm429-mtp-overlay.dtbo \
+	sdm429-cdp-overlay.dtbo \
+	sdm429-qrd-overlay.dtbo
+
+dtbo-$(CONFIG_ARCH_QM215) +=qm215-qrd-overlay.dtbo \
+	qcm2150-qrd-overlay.dtbo \
+	qm215-qrd-smb1360-overlay.dtbo
+sdm439-mtp-overlay.dtbo-base := sdm439.dtb \
+	sda439.dtb \
+	msm8937-interposer-sdm439.dtb
+
+sdm429-mtp-overlay.dtbo-base := sdm429.dtb \
+	sda429.dtb \
+	msm8937-interposer-sdm429.dtb
+
+sdm429-cdp-overlay.dtbo-base := sdm429.dtb \
+	sda429.dtb \
+	msm8937-interposer-sdm429.dtb
+
+sdm429-qrd-overlay.dtbo-base := sdm429.dtb \
+	msm8937-interposer-sdm429.dtb
+
+qm215-qrd-overlay.dtbo-base := qm215.dtb
+qcm2150-qrd-overlay.dtbo-base := qcm2150.dtb
+qm215-qrd-smb1360-overlay.dtbo-base := qm215.dtb
+else
+dtb-$(CONFIG_ARCH_SDM439) += sdm439-mtp.dtb \
+	sdm439-cdp.dtb \
+	sdm439-qrd.dtb \
+	sda439-mtp.dtb \
+	sda439-cdp.dtb \
+	sdm439-external-codec-mtp.dtb \
+	sdm439-rcm.dtb
+dtb-$(CONFIG_ARCH_QM215) += qm215-qrd.dtb \
+	qcm2150-qrd.dtb \
+	qm215-qrd-smb1360.dtb
+
+dtb-$(CONFIG_ARCH_SDM429) += sdm429-mtp.dtb \
+	sdm429-cdp.dtb \
+	sdm429-qrd.dtb \
+	sda429-mtp.dtb \
+	sda429-cdp.dtb
 endif
 
 always		:= $(dtb-y)
