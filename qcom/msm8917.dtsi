@@ -1229,6 +1229,14 @@
 				qcom,net-id = <1>;
 				qcom,low-latency;
 			};
+
+			qcom,diag {
+				qcom,smd-channels = "DIAG";
+			};
+
+			qcom,diag_cntl {
+				qcom,smd-channels = "DIAG_CNTL";
+			};
 		};
 
 		wcnss {
