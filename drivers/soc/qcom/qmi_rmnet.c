@@ -1252,8 +1252,7 @@ void qmi_rmnet_work_init(void *port)
 	if (rmnet_ps_wq)
 		return;
 
-	rmnet_ps_wq = alloc_workqueue("rmnet_powersave_work",
-				      WQ_CPU_INTENSIVE, 1);
+	rmnet_ps_wq = create_freezable_workqueue("rmnet_powersave_work");
 
 	if (!rmnet_ps_wq)
 		return;
