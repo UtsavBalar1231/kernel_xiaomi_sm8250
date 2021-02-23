@@ -45,6 +45,10 @@ Optional property:
 - qcom,pmic-revid : Phandle pointing to the revision peripheral node. Use it to query the
 		    PMIC fabrication ID for applying the appropriate temperature
 		    compensation parameters.
+
+- qcom,rradc-fg-reset-wa : With this property enabled, RRADC can register for a power supply
+            notifier and reset FG through a power supply property if it gets stuck.
+
 Example:
 
 	/* RRADC node */
