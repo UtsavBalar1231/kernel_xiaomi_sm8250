@@ -233,6 +233,8 @@ ifeq ($(KERNEL_BUILD), 1)
 	obj-y	+= bolero/
 ifeq ($(TARGET_PRODUCT), $(filter $(TARGET_PRODUCT), enuma))
 	obj-y	+= cs35l41_k81/
+else ifeq ($(TARGET_PRODUCT), $(filter $(TARGET_PRODUCT), elish))
+	obj-y	+= cs35l41_k81/
 else
 	obj-y	+= cs35l41/
 endif

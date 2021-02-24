@@ -2209,7 +2209,7 @@ static int cs35l41_pcm_hw_params(struct snd_pcm_substream *substream,
 			CS35L41_GLOBAL_FS_MASK,
 			cs35l41_fs_rates[i].fs_cfg << CS35L41_GLOBAL_FS_SHIFT);
 
-#if defined(CONFIG_TARGET_PRODUCT_ENUMA)
+#if defined(CONFIG_TARGET_PRODUCT_ENUMA) || defined(CONFIG_TARGET_PRODUCT_ELISH)
 	cs35l41_component_set_sysclk(dai->component, 0, 0, 8 * rate * asp_width, 0);
 #else
 	cs35l41_component_set_sysclk(dai->component, 0, 0, 2 * rate * asp_width, 0);
@@ -2277,7 +2277,7 @@ static int cs35l41_pcm_startup(struct snd_pcm_substream *substream,
 			snd_soc_component_get_drvdata(dai->component);
 	
 	dev_dbg(cs35l41->dev, "%s\n", __func__);
-#if defined(CONFIG_TARGET_PRODUCT_ENUMA)
+#if defined(CONFIG_TARGET_PRODUCT_ENUMA) || defined(CONFIG_TARGET_PRODUCT_ELISH)
 		cs35l41_set_dai_fmt(dai, SND_SOC_DAIFMT_CBS_CFS|SND_SOC_DAIFMT_DSP_A);
 #else
 		cs35l41_set_dai_fmt(dai, SND_SOC_DAIFMT_CBS_CFS|SND_SOC_DAIFMT_I2S);
