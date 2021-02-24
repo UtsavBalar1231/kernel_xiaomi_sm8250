@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/fs.h>
@@ -882,7 +882,7 @@ int send_adm_apr(void *buf, u32 opcode)
 	mutex_unlock(&rtac_adm_apr_mutex);
 
 	result = adm_apr_send_pkt((uint32_t *)rtac_adm_buffer,
-			NULL, port_idx, copp_idx);
+			NULL, port_idx, copp_idx, adm_params.opcode);
 
 	mutex_lock(&rtac_adm_apr_mutex);
 	if (opcode == ADM_CMD_GET_PP_PARAMS_V5) {

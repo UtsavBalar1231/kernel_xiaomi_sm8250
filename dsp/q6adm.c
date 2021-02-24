@@ -874,10 +874,11 @@ EXPORT_SYMBOL(adm_set_custom_chmix_cfg);
  * adm_apr_send_pkt : returns 0 on success, negative otherwise.
  */
 int adm_apr_send_pkt(void *data, wait_queue_head_t *wait,
-			int port_idx, int copp_idx)
+			int port_idx, int copp_idx, int opcode)
 {
 	int ret = 0;
 	atomic_t *copp_stat = NULL;
+	int32_t time_out = msecs_to_jiffies(TIMEOUT_MS);
 	wait = &this_adm.copp.wait[port_idx][copp_idx];
 
 	if (!wait)
@@ -889,18 +890,30 @@ int adm_apr_send_pkt(void *data, wait_queue_head_t *wait,
 	copp_stat = &this_adm.copp.stat[port_idx][copp_idx];
 	atomic_set(copp_stat, -1);
 
-	if (atomic_read(&this_adm.copp.cnt[port_idx][copp_idx]) == 0) {
-		pr_err("%s: port[0x%x] coppid[0x%x] is not active, ERROR\n",
-			__func__, port_idx, copp_idx);
-		mutex_unlock(&this_adm.adm_apr_lock);
-		return -EINVAL;
+	if (opcode != ADM_CMD_DEVICE_OPEN_V8 &&
+		opcode != ADM_CMD_DEVICE_OPEN_V6 &&
+		opcode != ADM_CMD_DEVICE_OPEN_V5 &&
+		opcode != ADM_CMD_DEVICE_CLOSE_V5) {
+		if (atomic_read(&this_adm.copp.cnt[port_idx][copp_idx])
+			== 0) {
+			pr_err("%s: port[0x%x] copp[0x%x] inactive\n",
+				__func__, port_idx, copp_idx);
+			mutex_unlock(&this_adm.adm_apr_lock);
+			return -EINVAL;
+		}
+	}
+
+	if (opcode == ADM_CMD_DEVICE_OPEN_V8 ||
+		opcode == ADM_CMD_DEVICE_OPEN_V6 ||
+		opcode == ADM_CMD_DEVICE_OPEN_V5) {
+		time_out = msecs_to_jiffies(2 * TIMEOUT_MS);
 	}
 
 	ret = apr_send_pkt(this_adm.apr, data);
 	if (ret > 0) {
 		ret = wait_event_timeout(*wait,
 			atomic_read(copp_stat) >= 0,
-			msecs_to_jiffies(TIMEOUT_MS));
+			time_out);
 		if (atomic_read(copp_stat) > 0) {
 			pr_err("%s: DSP returned error[%s]\n", __func__,
 				adsp_err_get_err_str(atomic_read(copp_stat)));
@@ -992,7 +1005,7 @@ int adm_set_pp_params(int port_id, int copp_idx,
 	}
 	ret = adm_apr_send_pkt((uint32_t *) adm_set_params,
 			&this_adm.copp.wait[port_idx][copp_idx],
-			port_idx, copp_idx);
+			port_idx, copp_idx, adm_set_params->apr_hdr.opcode);
 done:
 	kfree(adm_set_params);
 	return ret;
@@ -1045,7 +1058,6 @@ int adm_get_pp_params(int port_id, int copp_idx, uint32_t client_id,
 	int returned_param_size_in_bytes = 0;
 	int port_idx = 0;
 	int idx = 0;
-	atomic_t *copp_stat = NULL;
 	int ret = 0;
 
 	if (param_hdr == NULL) {
@@ -1093,33 +1105,9 @@ int adm_get_pp_params(int port_id, int copp_idx, uint32_t client_id,
 	else
 		adm_get_params.apr_hdr.opcode = ADM_CMD_GET_PP_PARAMS_V5;
 
-	copp_stat = &this_adm.copp.stat[port_idx][copp_idx];
-	atomic_set(copp_stat, -1);
-
-	ret = apr_send_pkt(this_adm.apr, (uint32_t *) &adm_get_params);
-	if (ret < 0) {
-		pr_err("%s: Get params APR send failed port = 0x%x ret %d\n",
-		       __func__, port_id, ret);
-		ret = -EINVAL;
-		goto done;
-	}
-	ret = wait_event_timeout(this_adm.copp.wait[port_idx][copp_idx],
-				 atomic_read(copp_stat) >= 0,
-				 msecs_to_jiffies(TIMEOUT_MS));
-	if (!ret) {
-		pr_err("%s: Get params timed out port = 0x%x\n", __func__,
-		       port_id);
-		ret = -ETIMEDOUT;
-		goto done;
-	}
-	if (atomic_read(copp_stat) > 0) {
-		pr_err("%s: DSP returned error[%s]\n", __func__,
-		       adsp_err_get_err_str(atomic_read(copp_stat)));
-		ret = adsp_err_get_lnx_err_code(atomic_read(copp_stat));
-		goto done;
-	}
-
-	ret = 0;
+	ret = adm_apr_send_pkt((uint32_t *) &adm_get_params,
+			&this_adm.copp.wait[port_idx][copp_idx],
+			port_idx, copp_idx, adm_get_params.apr_hdr.opcode);
 
 	/* Copy data to caller if sent in band */
 	if (!returned_param_data) {
@@ -1147,7 +1135,6 @@ int adm_get_pp_params(int port_id, int copp_idx, uint32_t client_id,
 
 	memcpy(returned_param_data, &adm_get_parameters[idx + 1],
 	       returned_param_size_in_bytes);
-done:
 	return ret;
 }
 EXPORT_SYMBOL(adm_get_pp_params);
@@ -3328,8 +3315,9 @@ int adm_open(int port_id, int path, int rate, int channel_mode, int topology,
 						ep2_payload_size);
 			}
 
-			ret = apr_send_pkt(this_adm.apr,
-					(uint32_t *)adm_params);
+			ret = adm_apr_send_pkt((uint32_t *) adm_params,
+				&this_adm.copp.wait[port_idx][copp_idx],
+				port_idx, copp_idx, open_v8.hdr.opcode);
 			if (ret < 0) {
 				pr_err("%s: port_id: 0x%x for[0x%x] failed %d for open_v8\n",
 					__func__, tmp_port, port_id, ret);
@@ -3415,37 +3403,19 @@ int adm_open(int port_id, int path, int rate, int channel_mode, int topology,
 				if (ret)
 					return ret;
 
-				ret = apr_send_pkt(this_adm.apr,
-					(uint32_t *)&open_v6);
+				ret = adm_apr_send_pkt((uint32_t *) &open_v6,
+					&this_adm.copp.wait[port_idx][copp_idx],
+					port_idx, copp_idx, open_v6.hdr.opcode);
 			} else {
-				ret = apr_send_pkt(this_adm.apr,
-					(uint32_t *)&open);
+				ret = adm_apr_send_pkt((uint32_t *) &open,
+					&this_adm.copp.wait[port_idx][copp_idx],
+					port_idx, copp_idx, open.hdr.opcode);
 			}
 			if (ret < 0) {
 				pr_err("%s: port_id: 0x%x for[0x%x] failed %d\n",
 					__func__, tmp_port, port_id, ret);
 				return -EINVAL;
 			}
-		}
-
-		/* Wait for the callback with copp id */
-		ret = wait_event_timeout(this_adm.copp.wait[port_idx][copp_idx],
-			atomic_read(&this_adm.copp.stat
-			[port_idx][copp_idx]) >= 0,
-			msecs_to_jiffies(2 * TIMEOUT_MS));
-		if (!ret) {
-			pr_err("%s: ADM open timedout for port_id: 0x%x for [0x%x]\n",
-						__func__, tmp_port, port_id);
-			return -EINVAL;
-		} else if (atomic_read(&this_adm.copp.stat
-					[port_idx][copp_idx]) > 0) {
-			pr_err("%s: DSP returned error[%s]\n",
-				__func__, adsp_err_get_err_str(
-				atomic_read(&this_adm.copp.stat
-				[port_idx][copp_idx])));
-			return adsp_err_get_lnx_err_code(
-					atomic_read(&this_adm.copp.stat
-						[port_idx][copp_idx]));
 		}
 	}
 	atomic_inc(&this_adm.copp.cnt[port_idx][copp_idx]);
@@ -3951,30 +3921,12 @@ int adm_close(int port_id, int perf_mode, int copp_idx)
 
 		clear_bit(ADM_STATUS_CALIBRATION_REQUIRED,
 			(void *)&this_adm.copp.adm_status[port_idx][copp_idx]);
-
-		ret = apr_send_pkt(this_adm.apr, (uint32_t *)&close);
+		ret = adm_apr_send_pkt((uint32_t *) &close,
+			&this_adm.copp.wait[port_idx][copp_idx],
+			port_idx, copp_idx, close.opcode);
 		if (ret < 0) {
 			pr_err("%s: ADM close failed %d\n", __func__, ret);
 			return -EINVAL;
-		}
-
-		ret = wait_event_timeout(this_adm.copp.wait[port_idx][copp_idx],
-			atomic_read(&this_adm.copp.stat
-			[port_idx][copp_idx]) >= 0,
-			msecs_to_jiffies(TIMEOUT_MS));
-		if (!ret) {
-			pr_err("%s: ADM cmd Route timedout for port 0x%x\n",
-				__func__, port_id);
-			return -EINVAL;
-		} else if (atomic_read(&this_adm.copp.stat
-					[port_idx][copp_idx]) > 0) {
-			pr_err("%s: DSP returned error[%s]\n",
-				__func__, adsp_err_get_err_str(
-				atomic_read(&this_adm.copp.stat
-				[port_idx][copp_idx])));
-			return adsp_err_get_lnx_err_code(
-					atomic_read(&this_adm.copp.stat
-						[port_idx][copp_idx]));
 		}
 	}
 
