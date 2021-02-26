@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -590,7 +591,7 @@ inline int hal_reo_cmd_flush_cache(hal_ring_handle_t hal_ring_hdl,
 		BLOCK_CACHE_USAGE_AFTER_FLUSH, cp->block_use_after_flush);
 
 	HAL_DESC_SET_FIELD(reo_desc, REO_FLUSH_CACHE_2, FLUSH_ENTIRE_CACHE,
-		cp->flush_all);
+		cp->flush_entire_cache);
 
 	if (hif_pm_runtime_get(hal_soc->hif_handle,
 			       RTPM_ID_HAL_REO_CMD) == 0) {

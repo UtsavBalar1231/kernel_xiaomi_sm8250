@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2011-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -288,6 +289,7 @@ enum cdp_host_txrx_stats {
 	TXRX_SOC_INTERRUPT_STATS = 12,
 	TXRX_SOC_FSE_STATS = 13,
 	TXRX_HAL_REG_WRITE_STATS = 14,
+	TXRX_SOC_REO_HW_DESC_DUMP = 15,
 	TXRX_HOST_STATS_MAX,
 };
 
