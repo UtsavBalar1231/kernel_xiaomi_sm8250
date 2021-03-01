@@ -925,7 +925,7 @@
 			<  533333 >;
 	};
 
-	ddr_bw_opp_table: generic-bw-opp-table {
+	ddr_bw_opp_table: ddr-bw-opp-table {
 		compatible = "operating-points-v2";
 		BW_OPP_ENTRY( 100, 8); /*  769 MB/s */
 		BW_OPP_ENTRY( 211, 8); /* 1611 MB/s */
