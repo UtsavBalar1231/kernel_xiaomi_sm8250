@@ -1,4 +1,5 @@
 #include <dt-bindings/clock/qcom,rpmcc.h>
+#include <dt-bindings/iio/qcom,spmi-vadc.h>
 
 &blsp1_uart2 {
 	status = "ok";
@@ -26,6 +27,12 @@
 
 &pm8916_vib {
 	status = "ok";
+};
+
+&pm8916_vadc {
+	batt_therm {
+		qcom,scale-fn-type = <ADC_SCALE_BATT_THERM_QRD_215>;
+	};
 };
 
 &soc {
