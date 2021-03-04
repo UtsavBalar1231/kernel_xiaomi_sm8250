@@ -1,6 +1,7 @@
 #include "skeleton64.dtsi"
 #include <dt-bindings/clock/qcom,gcc-sdm429w.h>
 #include <dt-bindings/clock/mdss-28nm-pll-clk.h>
+#include <dt-bindings/clock/qcom,cpu-sdm.h>
 #include <dt-bindings/clock/qcom,rpmcc.h>
 #include <dt-bindings/regulator/qcom,rpm-smd-regulator.h>
 #include <dt-bindings/spmi/spmi.h>
@@ -586,13 +587,16 @@
 		#clock-cells = <1>;
 	};
 
-	clock_cpu: qcom,cpu-clock-8939@b111050 {
-		compatible = "qcom,cpu-clock-8917";
-		reg = <0xb011050 0x8>,
+	apsscc: qcom,clock-cpu@b011050 {
+		compatible = "qcom,cpu-clock-qm215";
+		reg =   <0xb011050 0x8>,
+			<0xb016000 0x34>,
 			<0x00a412c 0x8>;
-		reg-names = "apcs-c1-rcg-base", "efuse";
-		qcom,num-cluster;
-		vdd-c1-supply = <&apc_vreg_corner>;
+		reg-names = "apcs-c1-rcg-base",
+			"apcs_pll", "efuse";
+		cpu-vdd-supply = <&apc_vreg_corner>;
+		vdd_dig_ao-supply = <&pm8916_s1_level_ao>;
+		vdd_hf_pll-supply = <&pm8916_l7_ao>;
 		clocks = <&rpmcc RPM_SMD_XO_A_CLK_SRC>,
 			<&gcc GPLL0_AO_OUT_MAIN>;
 		clock-names = "xo_ao", "gpll0_ao" ;
