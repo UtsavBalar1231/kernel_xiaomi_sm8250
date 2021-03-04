@@ -241,6 +241,11 @@ ifneq (,$(filter $(TARGET_PRODUCT), picasso picassoin))
         CDEFINES += -DTFA_ADSP_SUPPORTED
 endif
 
+# TEST FOR UMI
+ifneq (,$(filter $(TARGET_PRODUCT), umi))
+        CDEFINES += -DAUDIO_FORCE_RESTART_ADSP
+endif
+
 KBUILD_CPPFLAGS += $(CDEFINES)
 
 # Currently, for versions of gcc which support it, the kernel Makefile
