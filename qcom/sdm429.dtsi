@@ -219,12 +219,10 @@
 
 &gcc_mdss {
 	compatible = "qcom,gcc-mdss-sdm429";
-	/* TODO
-	 * clocks = <&mdss_dsi0_pll PCLK_SRC_MUX_0_CLK>,
-	 * <&mdss_dsi0_pll BYTE_CLK_SRC_0_CLK>,
-	 * <&mdss_dsi1_pll PCLK_SRC_MUX_1_CLK>,
-	 * <&mdss_dsi1_pll BYTE_CLK_SRC_1_CLK>;
-	 */
+	clocks = <&mdss_dsi0_pll PCLK_SRC_MUX_0_CLK>,
+		<&mdss_dsi0_pll BYTE_CLK_SRC_0_CLK>,
+		<&mdss_dsi1_pll PCLK_SRC_MUX_1_CLK>,
+		<&mdss_dsi1_pll BYTE_CLK_SRC_1_CLK>;
 	clock-names = "pclk0_src", "byte0_src", "pclk1_src",
 		"byte1_src";
 	#clock-cells = <1>;
