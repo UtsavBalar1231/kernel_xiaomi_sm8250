@@ -15,7 +15,7 @@
 		reg = <0x1b34000 0x1000>,
 			<0x1b00030 0x4>;
 		reg-names = "csiphy", "csiphy_clk_mux";
-		interrupts = <0 78 0>;
+		interrupts = <0 78 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "csiphy";
 		clocks = <&gcc GCC_CAMSS_TOP_AHB_CLK>,
 			<&gcc GCC_CAMSS_ISPIF_AHB_CLK>,
@@ -38,7 +38,7 @@
 		reg = <0x1b35000 0x1000>,
 			<0x1b00038 0x4>;
 		reg-names = "csiphy", "csiphy_clk_mux";
-		interrupts = <0 79 0>;
+		interrupts = <0 79 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "csiphy";
 		clocks = <&gcc GCC_CAMSS_TOP_AHB_CLK>,
 			<&gcc GCC_CAMSS_ISPIF_AHB_CLK>,
@@ -60,7 +60,7 @@
 		compatible = "qcom,csid-v3.4.3", "qcom,csid";
 		reg = <0x1b30000 0x400>;
 		reg-names = "csid";
-		interrupts = <0 51 0>;
+		interrupts = <0 51 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "csid";
 		qcom,csi-vdd-voltage = <1088000>;
 		qcom,mipi-csi-vdd-supply = <&pm8916_l2>;
