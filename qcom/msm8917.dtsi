@@ -1413,11 +1413,20 @@
 	bam_dmux: qcom,bam_dmux@4044000 {
 		compatible = "qcom,bam_dmux";
 		reg = <0x4044000 0x19000>;
-		interrupts = <GIC_SPI 162 IRQ_TYPE_EDGE_RISING>;
 		qcom,rx-ring-size = <32>;
 		qcom,max-rx-mtu = <4096>;
 		qcom,fast-shutdown;
 		qcom,no-cpu-affinity;
+
+		qcom,smem-states = <&apps_smsm 1>, <&apps_smsm 11>;
+		qcom,smem-state-names = "pwrctrl", "pwrctrlack";
+
+		interrupts-extended =
+			<&intc GIC_SPI 162 IRQ_TYPE_EDGE_RISING>,
+			<&modem_smsm 1 IRQ_TYPE_EDGE_BOTH>,
+			<&modem_smsm 11 IRQ_TYPE_EDGE_BOTH>;
+
+		interrupt-names = "dmux", "ctrl", "ack";
 	};
 
 	sdcc1_ice: sdcc1ice@7803000 {
