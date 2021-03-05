@@ -308,12 +308,6 @@
 			qcom,scratch-buf-support;
 		};
 
-		msm_cam_smmu_cb2: msm_cam_smmu_cb2 {
-			compatible = "qcom,msm-cam-smmu-cb";
-			label = "vfe_secure";
-			qcom,secure-context;
-		};
-
 		msm_cam_smmu_cb3: msm_cam_smmu_cb3 {
 			compatible = "qcom,msm-cam-smmu-cb";
 			iommus = <&apps_iommu 0x1c00 0x00>;
@@ -382,7 +376,7 @@
 			"camss_top_ahb_clk", "camss_vfe_cpp_ahb_clk",
 			"camss_vfe_cpp_axi_clk", "camss_vfe_cpp_clk",
 			"micro_iface_clk", "camss_ahb_clk";
-		qcom,clock-rates = <61540000 180000000 0 0 0 180000000 0 0>;
+		qcom,src-clock-rates = <61540000 180000000 0 0 0 180000000 0 0>;
 		qcom,min-clock-rate = <133000000>;
 		resets = <&gcc GCC_CAMSS_MICRO_BCR>;
 		reset-names = "micro_iface_reset";
