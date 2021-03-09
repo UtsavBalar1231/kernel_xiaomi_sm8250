@@ -1834,6 +1834,8 @@ static int __wlan_hdd_cfg80211_resume_wlan(struct wiphy *wiphy)
 	if (cds_is_pktcapture_enabled())
 		wlan_hdd_mon_thread_resume(hdd_ctx);
 
+	ucfg_pmo_notify_system_resume(hdd_ctx->psoc);
+
 	qdf_mtrace(QDF_MODULE_ID_HDD, QDF_MODULE_ID_HDD,
 		   TRACE_CODE_HDD_CFG80211_RESUME_WLAN,
 		   NO_SESSION, hdd_ctx->is_wiphy_suspended);
