@@ -109,22 +109,6 @@
 #if defined(CONFIG_TARGET_PRODUCT_ENUMA) || defined(CONFIG_TARGET_PRODUCT_ELISH)
 struct snd_soc_dai_link_component cs35l41_codec_components[] = {
        {
-               .name = "cs35l41.0-0040",
-               .dai_name = "cs35l41.0-0040",
-       },
-       {
-               .name = "cs35l41.0-0041",
-               .dai_name = "cs35l41.0-0041",
-       },
-       {
-               .name = "cs35l41.0-0043",
-               .dai_name = "cs35l41.0-0043",
-       },
-       {
-               .name = "cs35l41.0-0042",
-               .dai_name = "cs35l41.0-0042",
-       },
-       {
                .name = "cs35l41.1-0040",
                .dai_name = "cs35l41.1-0040",
        },
@@ -139,6 +123,22 @@ struct snd_soc_dai_link_component cs35l41_codec_components[] = {
        {
                .name = "cs35l41.1-0042",
                .dai_name = "cs35l41.1-0042",
+       },
+       {
+               .name = "cs35l41.2-0040",
+               .dai_name = "cs35l41.2-0040",
+       },
+       {
+               .name = "cs35l41.2-0041",
+               .dai_name = "cs35l41.2-0041",
+       },
+       {
+               .name = "cs35l41.2-0043",
+               .dai_name = "cs35l41.2-0043",
+       },
+       {
+               .name = "cs35l41.2-0042",
+               .dai_name = "cs35l41.2-0042",
        },
 };
 #else
