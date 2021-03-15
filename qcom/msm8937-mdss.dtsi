@@ -183,6 +183,8 @@
 			compatible = "qcom,smmu_mdp_sec";
 			iommus = <&apps_iommu 0x2801 0>; /* For SEC Ctx Bank */
 			qcom,iommu-dma-addr-pool = <0x08000000 0xF8000000>;
+			qcom,secure-context-bank;
+			qcom,iommu-vmid = <0x11>; /*VMID_CP_SEC_DISPLAY*/
 		};
 
 		mdss_fb0: qcom,mdss_fb_primary {

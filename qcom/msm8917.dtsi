@@ -1607,7 +1607,7 @@
 		qcom,ssctl-instance-id = <0x12>;
 		qcom,qdsp6v56-1-8-inrush-current;
 		qcom,reset-clk;
-
+		qcom,iommu-vmid = <0xF>; /* VMID_MSS_MSA */
 		/* Inputs from mss */
 		/* TBD */
 		interrupts-extended = <&modem_smp2p_in 0 0>,
