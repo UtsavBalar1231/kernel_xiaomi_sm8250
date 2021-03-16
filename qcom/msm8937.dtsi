@@ -1612,12 +1612,6 @@
 			qcom,smdpkt-dev-name = "apr_apps2";
 		};
 
-		qcom,smdpkt-apps-fm {
-			qcom,smdpkt-edge = "wcnss";
-			qcom,smdpkt-ch-name = "APPS_FM";
-			qcom,smdpkt-dev-name = "smd1";
-		};
-
 		qcom,smdpkt-apps-riva-bt-acl {
 			qcom,smdpkt-edge = "wcnss";
 			qcom,smdpkt-ch-name = "APPS_RIVA_BT_ACL";
