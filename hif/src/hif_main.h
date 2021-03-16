@@ -256,6 +256,9 @@ struct hif_softc {
 	/* Variable to track the link state change in RTPM */
 	qdf_atomic_t pm_link_state;
 #endif
+#ifdef SYSTEM_PM_CHECK
+	qdf_atomic_t sys_pm_state;
+#endif
 };
 
 static inline
