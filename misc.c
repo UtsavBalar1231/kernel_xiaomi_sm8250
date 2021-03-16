@@ -126,6 +126,17 @@ void exfat_set_entry_time(struct exfat_sb_info *sbi, struct timespec *ts,
 	struct tm tm;
 	u16 t, d;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0)
+	if (ts->tv_sec < EXFAT_MIN_TIMESTAMP_SECS) {
+		ts->tv_sec = EXFAT_MIN_TIMESTAMP_SECS;
+		ts->tv_nsec = 0;
+	}
+	else if (ts->tv_sec > EXFAT_MAX_TIMESTAMP_SECS) {
+		ts->tv_sec = EXFAT_MAX_TIMESTAMP_SECS;
+		ts->tv_nsec = 0;
+	}
+#endif
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
 	time64_to_tm(ts->tv_sec, 0, &tm);
 #else
