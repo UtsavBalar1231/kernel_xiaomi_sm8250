@@ -376,7 +376,7 @@
 			"camss_top_ahb_clk", "camss_vfe_cpp_ahb_clk",
 			"camss_vfe_cpp_axi_clk", "camss_vfe_cpp_clk",
 			"micro_iface_clk", "camss_ahb_clk";
-		qcom,src-clock-rates = <61540000 180000000 0 0 0 180000000 0 0>;
+		qcom,clock-rates = <61540000 180000000 0 0 0 180000000 0 0>;
 		qcom,min-clock-rate = <133000000>;
 		resets = <&gcc GCC_CAMSS_MICRO_BCR>;
 		reset-names = "micro_iface_reset";
