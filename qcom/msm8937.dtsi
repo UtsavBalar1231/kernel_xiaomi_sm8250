@@ -919,7 +919,7 @@
 		/* TODO
 		 * clocks = <&clock_cpu clk_cci_clk/>;
 		 */
-		governor = "cpufreq";
+		governor = "performance";
 		freq-tbl-khz =
 			<  400000 >,
 			<  533333 >;
@@ -941,7 +941,7 @@
 
 	cpu_cpu_ddr_bw: qcom,cpu-cpu-ddr-bw {
 		compatible = "qcom,devbw";
-		governor = "cpufreq";
+		governor = "performance";
 		qcom,src-dst-ports =
 			<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_EBI_CH0>;
 		qcom,active-only;
@@ -959,7 +959,7 @@
 
 	cpu_cpu_ddr_latfloor: qcom,cpu-cpu-ddr-latfloor {
 		compatible = "qcom,devbw";
-		governor = "cpufreq";
+		governor = "performance";
 		qcom,src-dst-ports =
 			<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_EBI_CH0>;
 		qcom,active-only;
