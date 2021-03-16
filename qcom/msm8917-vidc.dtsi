@@ -62,6 +62,7 @@
 				<&apps_iommu 0x811 0x20>;
 			qcom,iommu-dma-addr-pool = <0x5dc00000 0x7f000000
 				0xdcc00000 0x1000000>;
+			qcom,iommu-faults = "non-fatal";
 			buffer-types = <0xfff>;
 			virtual-addr-pool = <0x5dc00000 0x7f000000
 				0xdcc00000 0x1000000>;
@@ -74,6 +75,7 @@
 				<&apps_iommu 0x90a 0x04>,
 				<&apps_iommu 0x909 0x22>;
 			qcom,iommu-dma-addr-pool = <0x4b000000 0x12c00000>;
+			qcom,iommu-faults = "non-fatal";
 			buffer-types = <0x241>;
 			virtual-addr-pool = <0x4b000000 0x12c00000>;
 			qcom,secure-context-bank;
@@ -85,6 +87,7 @@
 			label = "venus_sec_pixel";
 			iommus = <&apps_iommu 0x90c 0x20>;
 			qcom,iommu-dma-addr-pool = <0x25800000 0x25800000>;
+			qcom,iommu-faults = "non-fatal";
 			buffer-types = <0x106>;
 			virtual-addr-pool = <0x25800000 0x25800000>;
 			qcom,secure-context-bank;
@@ -99,6 +102,7 @@
 				<&apps_iommu 0x908 0x20>,
 				<&apps_iommu 0x90d 0x20>;
 			qcom,iommu-dma-addr-pool = <0x1000000 0x24800000>;
+			qcom,iommu-faults = "non-fatal";
 			buffer-types = <0x480>;
 			virtual-addr-pool = <0x1000000 0x24800000>;
 			qcom,secure-context-bank;
