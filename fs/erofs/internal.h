@@ -54,6 +54,9 @@ struct erofs_sb_info {
 	/* the dedicated workstation for compression */
 	struct radix_tree_root workstn_tree;
 
+	/* strategy of sync decompression (false - auto, true - force on) */
+	bool readahead_sync_decompress;
+
 	/* threshold for decompression synchronously */
 	unsigned int max_sync_decompress_pages;
 
