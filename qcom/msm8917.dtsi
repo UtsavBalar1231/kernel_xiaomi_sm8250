@@ -550,7 +550,7 @@
 	};
 
 	rpmcc: qcom,rpmcc {
-		compatible = "qcom,rpmcc-msm8917";
+		compatible = "qcom,rpmcc-qm215";
 		#clock-cells = <1>;
 	};
 

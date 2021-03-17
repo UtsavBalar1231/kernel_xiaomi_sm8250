@@ -568,15 +568,14 @@
 	};
 
 	rpmcc: qcom,rpmcc {
-		compatible = "qcom,rpmcc-msm8937";
+		compatible = "qcom,rpmcc-sdm439";
 		#clock-cells = <1>;
 	};
 
 	gcc: qcom,gcc@1800000 {
-		compatible = "qcom,gcc-msm8937", "syscon";
+		compatible = "qcom,gcc-sdm439", "syscon";
 		reg = <0x1800000 0x80000>;
-			 <0x00a6018 0x00004>;
-		reg-names = "cc_base", "gpu-bin";
+		reg-names = "cc_base";
 		qcom,gcc_oxili_gfx3d_clk-opp-handle = <&msm_gpu>;
 		vdd_cx-supply = <&pm8937_s2_level>;
 		clocks = <&rpmcc RPM_SMD_XO_CLK_SRC>;
