@@ -342,7 +342,6 @@
 			iommus = <&apps_smmu 0xD40 0x20>,
 				<&apps_smmu 0xD60 0x20>;
 			label = "lrme";
-			qcom,iommu-dma-addr-pool = <0x7400000 0xd8c00000>;
 			lrme_iova_mem_map: iova-mem-map {
 				iova-mem-region-shared {
 					/* Shared region is 100MB long */
@@ -370,7 +369,6 @@
 				<&apps_smmu 0x860 0xc0>,
 				<&apps_smmu 0x880 0x0>;
 			label = "ife";
-			qcom,iommu-dma-addr-pool = <0x7400000 0xd8c00000>;
 			ife_iova_mem_map: iova-mem-map {
 				/* IO region is approximately 3.4 GB */
 				iova-mem-region-io {
@@ -388,7 +386,6 @@
 			iommus = <&apps_smmu 0xD00 0x20>,
 				<&apps_smmu 0xD20 0x20>;
 			label = "jpeg";
-			qcom,iommu-dma-addr-pool = <0x7400000 0xd8c00000>;
 			jpeg_iova_mem_map: iova-mem-map {
 				/* IO region is approximately 3.4 GB */
 				iova-mem-region-io {
@@ -410,13 +407,9 @@
 		msm_cam_smmu_icp {
 			compatible = "qcom,msm-cam-smmu-cb";
 			iommus = <&apps_smmu 0xCA2 0x0>,
-				<&apps_smmu 0xC40 0x20>,
-				<&apps_smmu 0xC60 0x20>,
 				<&apps_smmu 0xCC0 0x20>,
 				<&apps_smmu 0xCE0 0x20>;
 			label = "icp";
-			qcom,iommu-dma-addr-pool = <0x10c00000 0xee300000>;
-			iova-region-discard = <0xdff00000 0x300000>;
 			icp_iova_mem_map: iova-mem-map {
 				iova-mem-region-firmware {
 					/* Firmware region is 5MB */
@@ -447,12 +440,11 @@
 				};
 
 				iova-mem-region-io {
-					/* IO region is approximately 3.7 GB */
+					/* IO region is approximately 3 GB */
 					iova-region-name = "io";
 					iova-region-start = <0x10C00000>;
-					iova-region-len = <0xee300000>;
+					iova-region-len = <0xCF300000>;
 					iova-region-id = <0x3>;
-					iova-region-discard = <0xdff00000 0x300000>;
 					status = "ok";
 				};
 
@@ -472,7 +464,6 @@
 			compatible = "qcom,msm-cam-smmu-cb";
 			iommus = <&apps_smmu 0xC80 0x0>;
 			label = "cpas-cdm0";
-			qcom,iommu-dma-addr-pool = <0x7400000 0xd8c00000>;
 			cpas_cdm_iova_mem_map: iova-mem-map {
 				iova-mem-region-io {
 					/* IO region is approximately 3.4 GB */
@@ -816,7 +807,6 @@
 		num-a5 = <1>;
 		num-ipe = <1>;
 		num-bps = <1>;
-		icp_pc_en;
 		status = "ok";
 	};
 
@@ -1273,7 +1263,7 @@
 					traffic-data =
 					<CAM_CPAS_PATH_DATA_IFE_RDI_ALL>;
 					traffic-transaction-type =
-					<CAM_CPAS_TRANSACTION_WRITE>;
+					<CAM_CPAS_TRANSACTION_READ>;
 					constituent-paths =
 					<CAM_CPAS_PATH_DATA_IFE_RDI0
 					CAM_CPAS_PATH_DATA_IFE_RDI1
@@ -1289,7 +1279,7 @@
 					traffic-data =
 					<CAM_CPAS_PATH_DATA_IFE_RDI_ALL>;
 					traffic-transaction-type =
-					<CAM_CPAS_TRANSACTION_WRITE>;
+					<CAM_CPAS_TRANSACTION_READ>;
 					constituent-paths =
 					<CAM_CPAS_PATH_DATA_IFE_RDI0
 					CAM_CPAS_PATH_DATA_IFE_RDI1

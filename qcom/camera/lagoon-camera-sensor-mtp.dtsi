@@ -164,8 +164,8 @@
 			"cam_clk", "cam_v_custom1";
 		rgltr-cntrl-support;
 		pwm-switch;
-		rgltr-min-voltage = <1800000 2904000 1104000 0 1856000>;
-		rgltr-max-voltage = <1800000 2904000 1104000 0 2048000>;
+		rgltr-min-voltage = <1800000 2904000 1104000 0 2096000>;
+		rgltr-max-voltage = <1800000 2904000 1104000 0 2096000>;
 		rgltr-load-current = <0 80000 105000 0 80000>;
 		gpio-no-mux = <0>;
 		pinctrl-names = "cam_default", "cam_suspend";
