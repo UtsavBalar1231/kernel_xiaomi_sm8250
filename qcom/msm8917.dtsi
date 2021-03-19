@@ -567,12 +567,18 @@
 		#reset-cells = <1>;
 	};
 
+	cpu_debug: syscon@0b01101c {
+		compatible = "syscon";
+		reg = <0x0b01101c 0x4>;
+	};
+
 	debugcc: qcom,cc-debug {
 		compatible = "qcom,msm8917-debugcc";
 		reg = <0x1874000 0x4>,
 		      <0xb01101c 0x8>;
 		reg-names = "cc_base", "meas";
 		qcom,gcc = <&gcc>;
+		qcom,cpu = <&cpu_debug>;
 		clocks = <&rpmcc RPM_SMD_XO_CLK_SRC>;
 		clock-names = "xo_clk_src";
 		#clock-cells = <1>;
