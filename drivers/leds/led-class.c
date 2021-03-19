@@ -2,6 +2,7 @@
  * LED Class Core
  *
  * Copyright (C) 2005 John Lenz <lenz@cs.wisc.edu>
+ * Copyright (C) 2021 XiaoMi, Inc.
  * Copyright (C) 2005-2007 Richard Purdie <rpurdie@openedhand.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -85,8 +86,11 @@ static ssize_t max_brightness_store(struct device *dev,
 	if (ret)
 		return ret;
 
-	led_cdev->max_brightness = state;
-	led_set_brightness(led_cdev, led_cdev->usr_brightness_req);
+	if (state <= LED_FULL) {
+		led_cdev->max_brightness = state;
+		if (led_cdev->usr_brightness_req > 0)
+			led_set_brightness(led_cdev, led_cdev->usr_brightness_req);
+	}
 
 	return size;
 }

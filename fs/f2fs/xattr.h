@@ -3,6 +3,7 @@
  * fs/f2fs/xattr.h
  *
  * Copyright (c) 2012 Samsung Electronics Co., Ltd.
+ * Copyright (C) 2021 XiaoMi, Inc.
  *             http://www.samsung.com/
  *
  * Portions of this code from linux/fs/ext2/xattr.h
@@ -151,6 +152,12 @@ static inline int f2fs_getxattr(struct inode *inode, int index,
 }
 static inline int f2fs_init_xattr_caches(struct f2fs_sb_info *sbi) { return 0; }
 static inline void f2fs_destroy_xattr_caches(struct f2fs_sb_info *sbi) { }
+
+static inline ssize_t f2fs_listxattr(struct dentry *dentry, char *buffer,
+		size_t buffer_size)
+{
+	return -EOPNOTSUPP;
+}
 #endif
 
 #ifdef CONFIG_F2FS_FS_SECURITY

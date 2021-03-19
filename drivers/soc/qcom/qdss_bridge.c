@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2021 XiaoMi, Inc.
  */
 
 #define KMSG_COMPONENT "QDSS diag bridge"
@@ -514,6 +515,8 @@ static int mhi_ch_open(struct qdss_bridge_drvdata *drvdata)
 	}
 
 	return 0;
+err:
+	return ret;
 }
 
 static void qdss_bridge_open_work_fn(struct work_struct *work)

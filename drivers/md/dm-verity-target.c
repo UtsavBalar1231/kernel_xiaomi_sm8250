@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2012 Red Hat, Inc.
+ * Copyright (C) 2021 XiaoMi, Inc.
  *
  * Author: Mikulas Patocka <mpatocka@redhat.com>
  *
@@ -543,6 +544,15 @@ static int verity_verify_io(struct dm_verity_io *io)
 	}
 
 	return 0;
+}
+
+/*
+ * Skip verity work in response to I/O error when system is shutting down.
+ */
+static inline bool verity_is_system_shutting_down(void)
+{
+	return system_state == SYSTEM_HALT || system_state == SYSTEM_POWER_OFF
+		|| system_state == SYSTEM_RESTART;
 }
 
 /*
