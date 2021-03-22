@@ -270,6 +270,21 @@ static inline uint64_t qdf_log_timestamp_to_usecs(uint64_t time)
 
 	return time;
 }
+
+/**
+ * qdf_get_log_timestamp_lightweight - get time stamp for logging
+ * For adrastea this API returns QTIMER tick which is needed to synchronize
+ * host and fw log timestamps
+ * For ROME and other discrete solution this API returns system boot time stamp
+ *
+ * Return:
+ * QTIMER ticks(19.2MHz) for adrastea
+ * System tick for rome and other 3rd party platform solutions
+ */
+static inline uint64_t qdf_get_log_timestamp_lightweight(void)
+{
+	return __qdf_get_log_timestamp();
+}
 #else
 #define QDF_LOG_TIMESTAMP_UNIT KERNEL_LOG
 #define QDF_LOG_TIMESTAMP_CYCLES_PER_10_US 10
@@ -278,6 +293,22 @@ static inline uint64_t qdf_log_timestamp_to_usecs(uint64_t time)
 {
 	/* timestamps are already in micro seconds */
 	return time;
+}
+
+static inline uint64_t qdf_get_log_timestamp_lightweight(void)
+{
+	uint64_t timestamp_us;
+
+	/* explicitly change to uint64_t, otherwise it will assign
+	 * uint32_t to timestamp_us, which lose high 32bits.
+	 * on 64bit platform, it will only use low 32bits jiffies in
+	 * jiffies_to_msecs.
+	 * eg: HZ=250, it will overflow every (0xffff ffff<<2==0x3fff ffff)
+	 * ticks. it is 1193 hours.
+	 */
+	timestamp_us =
+	(uint64_t)__qdf_system_ticks_to_msecs(qdf_system_ticks()) * 1000;
+	return timestamp_us;
 }
 #endif /* end of MSM_PLATFORM */
 

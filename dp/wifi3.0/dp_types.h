@@ -2481,6 +2481,7 @@ struct dp_fisa_rx_sw_ft {
 	uint32_t last_hal_aggr_count;
 	uint32_t cur_aggr_gso_size;
 	struct udphdr *head_skb_udp_hdr;
+	uint32_t reo_dest_indication;
 };
 
 #define DP_RX_GET_SW_FT_ENTRY_SIZE sizeof(struct dp_fisa_rx_sw_ft)

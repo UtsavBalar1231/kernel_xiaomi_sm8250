@@ -248,6 +248,11 @@ typedef struct _HTC_TARGET {
 	uint8_t wmi_ep_count;
 	/* Flag to indicate whether htc header length check is required */
 	bool htc_hdr_length_check;
+
+#ifdef FEATURE_RUNTIME_PM
+	/* Runtime count for H2T msg with response */
+	qdf_atomic_t htc_runtime_cnt;
+#endif
 } HTC_TARGET;
 
 

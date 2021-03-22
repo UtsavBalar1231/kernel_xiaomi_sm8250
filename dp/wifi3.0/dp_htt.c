@@ -744,7 +744,7 @@ static int htt_h2t_ver_req_msg(struct htt_soc *soc)
 	SET_HTC_PACKET_INFO_TX(&pkt->htc_pkt,
 		dp_htt_h2t_send_complete_free_netbuf, qdf_nbuf_data(msg),
 		qdf_nbuf_len(msg), soc->htc_endpoint,
-		1); /* tag - not relevant here */
+		HTC_TX_PACKET_TAG_RTPM_PUT_RC);
 
 	SET_HTC_PACKET_NET_BUF_CONTEXT(&pkt->htc_pkt, msg);
 	status = DP_HTT_SEND_HTC_PKT(soc, pkt, HTT_H2T_MSG_TYPE_VERSION_REQ,
@@ -1746,7 +1746,7 @@ int htt_h2t_rx_ring_cfg(struct htt_soc *htt_soc, int pdev_id,
 		qdf_nbuf_data(htt_msg),
 		qdf_nbuf_len(htt_msg),
 		soc->htc_endpoint,
-		1); /* tag - not relevant here */
+		HTC_TX_PACKET_TAG_RUNTIME_PUT); /* tag for no FW response msg */
 
 	SET_HTC_PACKET_NET_BUF_CONTEXT(&pkt->htc_pkt, htt_msg);
 	status = DP_HTT_SEND_HTC_PKT(soc, pkt,
@@ -3969,7 +3969,17 @@ static void dp_htt_t2h_msg_handler(void *context, HTC_PACKET *pkt)
 
 	case HTT_T2H_MSG_TYPE_VERSION_CONF:
 		{
-			htc_pm_runtime_put(soc->htc_soc);
+			/*
+			 * HTC maintains runtime pm count for H2T messages that
+			 * have a response msg from FW. This count ensures that
+			 * in the case FW does not sent out the response or host
+			 * did not process this indication runtime_put happens
+			 * properly in the cleanup path.
+			 */
+			if (htc_dec_return_runtime_cnt(soc->htc_soc) >= 0)
+				htc_pm_runtime_put(soc->htc_soc);
+			else
+				soc->stats.htt_ver_req_put_skip++;
 			soc->tgt_ver.major = HTT_VER_CONF_MAJOR_GET(*msg_word);
 			soc->tgt_ver.minor = HTT_VER_CONF_MINOR_GET(*msg_word);
 			QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_INFO_LOW,
@@ -4581,7 +4591,8 @@ QDF_STATUS dp_h2t_cfg_stats_msg_send(struct dp_pdev *pdev,
 			dp_htt_h2t_send_complete_free_netbuf,
 			qdf_nbuf_data(msg), qdf_nbuf_len(msg),
 			soc->htc_endpoint,
-			1); /* tag - not relevant here */
+			/* tag for no FW response msg */
+			HTC_TX_PACKET_TAG_RUNTIME_PUT);
 
 	SET_HTC_PACKET_NET_BUF_CONTEXT(&pkt->htc_pkt, msg);
 	status = DP_HTT_SEND_HTC_PKT(soc, pkt, HTT_H2T_MSG_TYPE_PPDU_STATS_CFG,
