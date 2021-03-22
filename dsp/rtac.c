@@ -728,7 +728,6 @@ bool rtac_make_adm_callback(uint32_t *payload, u32 payload_size)
 		atomic_set(&rtac_common.apr_err_code, payload[1]);
 
 	atomic_set(&rtac_adm_apr_data.cmd_state, 0);
-	wake_up(&rtac_adm_apr_data.cmd_wait);
 	return true;
 }
 
@@ -880,33 +879,12 @@ int send_adm_apr(void *buf, u32 opcode)
 	pr_debug("%s: Sending RTAC command ioctl 0x%x, paddr 0x%pK\n",
 		__func__, opcode,
 		&rtac_cal[ADM_RTAC_CAL].cal_data.paddr);
+	mutex_unlock(&rtac_adm_apr_mutex);
 
-	result = apr_send_pkt(rtac_adm_apr_data.apr_handle,
-					(uint32_t *)rtac_adm_buffer);
-	if (result < 0) {
-		pr_err("%s: Set params failed copp = %d\n", __func__, copp_id);
-		goto err;
-	}
-	/* Wait for the callback */
-	result = wait_event_timeout(rtac_adm_apr_data.cmd_wait,
-		(atomic_read(&rtac_adm_apr_data.cmd_state) == 0),
-		msecs_to_jiffies(TIMEOUT_MS));
-	if (!result) {
-		pr_err("%s: Set params timed out copp = %d\n", __func__,
-			copp_id);
-		goto err;
-	}
-	if (atomic_read(&rtac_common.apr_err_code)) {
-		pr_err("%s: DSP returned error code = [%s], opcode = 0x%x\n",
-			__func__, adsp_err_get_err_str(atomic_read(
-			&rtac_common.apr_err_code)),
-			opcode);
-		result = adsp_err_get_lnx_err_code(
-					atomic_read(
-					&rtac_common.apr_err_code));
-		goto err;
-	}
+	result = adm_apr_send_pkt((uint32_t *)rtac_adm_buffer,
+			NULL, port_idx, copp_idx);
 
+	mutex_lock(&rtac_adm_apr_mutex);
 	if (opcode == ADM_CMD_GET_PP_PARAMS_V5) {
 		bytes_returned = ((u32 *)rtac_cal[ADM_RTAC_CAL].cal_data.
 			kvaddr)[2] + 3 * sizeof(u32);
