@@ -428,4 +428,87 @@ config ARCH_ZYNQMP
 	help
 	  This enables support for Xilinx ZynqMP Family
 
+config BOARD_XIAOMI
+	bool "XiaoMi Family"
+	help
+	  This enables support for XiaoMi Family devices.
+
+if BOARD_XIAOMI
+config BOARD_XIAOMI_SM8250
+	bool
+	select ARCH_QCOM
+	select ARCH_KONA
+
+config BOARD_XIAOMI_SM7250
+	bool
+	select ARCH_QCOM
+	select ARCH_SM7250
+
+config BOARD_ALIOTH
+	bool "Alioth platform"
+	select BOARD_XIAOMI_SM8250
+	help
+	  This enables support for Xiaomi Redmi K40 / POCO F3
+
+config BOARD_APOLLO
+	bool "Apollo and Apollopro platform"
+	select BOARD_XIAOMI_SM8250
+	help
+	  This enables support for Xiaomi MI 10T/Pro / Redmi K30S
+
+config BOARD_CAS
+	bool "Cas platform"
+	select BOARD_XIAOMI_SM8250
+	help
+	  This enables support for Xiaomi MI 10 Ultra
+
+config BOARD_CMI
+	bool "Cmi platform"
+	select BOARD_XIAOMI_SM8250
+	help
+	  This enables support for Xiaomi MI 10 Pro
+
+config BOARD_DRACO
+	bool "Draco platform"
+	select BOARD_XIAOMI_SM8250
+	help
+	  This enables support for Xiaomi MI MIX Alpha 2
+
+config BOARD_LMI
+	bool "Lmi, Lmiin and Lmipro platform"
+	select BOARD_XIAOMI_SM8250
+	help
+	  This enables support for Xiaomi Redmi K30 Pro / POCO F2 Pro
+
+config BOARD_THYME
+	bool "Thyme platform"
+	select BOARD_XIAOMI_SM8250
+	help
+	  This enables support for Xiaomi MI 10S
+
+config BOARD_UMI
+	bool "Umi platform"
+	select BOARD_XIAOMI_SM8250
+	help
+	  This enables support for Xiaomi MI 10
+
+config BOARD_PICASSO
+	bool "Picasso and Picassoin platform"
+	select BOARD_XIAOMI_SM7250
+	help
+	  This enables support for Xiaomi Redmi K30 5G
+
+config BOARD_VANGOGH
+	bool "Vangogh platform"
+	select BOARD_XIAOMI_SM7250
+	help
+	  This enables support for Xiaomi MI 10 Lite Zoom
+
+config BOARD_MONET
+	bool "Monet platform"
+	select BOARD_XIAOMI_SM7250
+	help
+	  This enables support for Xiaomi MI 10 Lite
+endif
+
 endmenu
