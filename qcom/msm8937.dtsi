@@ -4,7 +4,7 @@
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/clock/qcom,gcc-sdm429w.h>
 #include <dt-bindings/clock/qcom,rpmcc.h>
-#include <dt-bindings/clock/mdss-28nm-pll-clk.h>
+#include <dt-bindings/clock/mdss-28nm-pll-clk-legacy.h>
 
 #define MHZ_TO_MBPS(mhz, w) ((mhz * 1000000 * w) / (1024 * 1024))
 #define BW_OPP_ENTRY(mhz, w) opp-mhz {opp-hz = /bits/ 64 <MHZ_TO_MBPS(mhz, w)>;}
@@ -599,10 +599,10 @@
 	gcc_mdss: qcom,gcc-mdss@1800000 {
 		compatible = "qcom,gcc-mdss-msm8937";
 		reg = <0x1800000 0x80000>;
-		 clocks = <&mdss_dsi0_pll PCLK_SRC_MUX_0_CLK>,
-		 <&mdss_dsi0_pll BYTE_CLK_SRC_0_CLK>,
-		 <&mdss_dsi1_pll PCLK_SRC_MUX_1_CLK>,
-		 <&mdss_dsi1_pll BYTE_CLK_SRC_1_CLK>;
+		 clocks = <&mdss_dsi0_pll PCLK_SRC_0_CLK>,
+		 <&mdss_dsi0_pll BYTECLK_SRC_0_CLK>,
+		 <&mdss_dsi1_pll PCLK_SRC_1_CLK>,
+		 <&mdss_dsi1_pll BYTECLK_SRC_1_CLK>;
 		clock-names = "pclk0_src", "byte0_src", "pclk1_src",
 			"byte1_src";
 		#clock-cells = <1>;
