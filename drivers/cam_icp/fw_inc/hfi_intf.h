@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2019, 2021 The Linux Foundation. All rights reserved.
  */
 
 #ifndef _HFI_INTF_H_
@@ -146,9 +146,10 @@ int hfi_cmd_ubwc_config_ext(uint32_t *ubwc_ipe_cfg,
 /**
  * hfi_cmd_ubwc_config() - UBWC configuration to firmware
  *                         for older targets
- * @ubwc_cfg: UBWC configuration parameters
+ * @ubwc_cfg:           UBWC configuration parameters
+ * @disable_ubwc_comp:  Disable UBWC compression
  */
-int hfi_cmd_ubwc_config(uint32_t *ubwc_cfg);
+int hfi_cmd_ubwc_config(uint32_t *ubwc_cfg, bool disable_ubwc_comp);
 
 /**
  * cam_hfi_resume() - function to resume

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/slab.h>
@@ -535,12 +535,20 @@ int cam_a5_process_cmd(void *device_priv, uint32_t cmd_type,
 		break;
 	case CAM_ICP_A5_CMD_UBWC_CFG: {
 		struct a5_ubwc_cfg_ext *ubwc_cfg_ext = NULL;
+		uint32_t *disable_ubwc_comp;
 
 		a5_soc = soc_info->soc_private;
 		if (!a5_soc) {
 			CAM_ERR(CAM_ICP, "A5 private soc info is NULL");
 			return -EINVAL;
 		}
+
+		if (!cmd_args) {
+			CAM_ERR(CAM_ICP, "Invalid args");
+			return -EINVAL;
+		}
+
+		disable_ubwc_comp = (uint32_t *)cmd_args;
 
 		if (a5_soc->ubwc_config_ext) {
 			/* Invoke kernel API to determine DDR type */
@@ -558,10 +566,24 @@ int cam_a5_process_cmd(void *device_priv, uint32_t cmd_type,
 				ubwc_cfg_ext->ubwc_bps_fetch_cfg[index];
 			ubwc_bps_cfg[1] =
 				ubwc_cfg_ext->ubwc_bps_write_cfg[index];
+
+			if (*disable_ubwc_comp) {
+				ubwc_ipe_cfg[1] &= ~CAM_ICP_UBWC_COMP_EN;
+				ubwc_bps_cfg[1] &= ~CAM_ICP_UBWC_COMP_EN;
+				CAM_DBG(CAM_ISP,
+					"UBWC comp force disable, ubwc_ipe_cfg:  0x%x, ubwc_bps_cfg: 0x%x",
+					ubwc_ipe_cfg[1], ubwc_bps_cfg[1]);
+			}
+
 			rc = hfi_cmd_ubwc_config_ext(&ubwc_ipe_cfg[0],
 					&ubwc_bps_cfg[0]);
 		} else {
-			rc = hfi_cmd_ubwc_config(a5_soc->uconfig.ubwc_cfg);
+			if (*disable_ubwc_comp)
+				rc = hfi_cmd_ubwc_config(
+					a5_soc->uconfig.ubwc_cfg, true);
+			else
+				rc = hfi_cmd_ubwc_config(
+					a5_soc->uconfig.ubwc_cfg, false);
 		}
 
 		break;

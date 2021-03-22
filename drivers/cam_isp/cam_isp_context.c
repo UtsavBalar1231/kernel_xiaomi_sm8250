@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/debugfs.h>
@@ -1236,6 +1236,14 @@ static int __cam_isp_ctx_notify_sof_in_activated_state(
 			return rc;
 		}
 
+		if (ctx_isp->last_sof_timestamp ==
+			ctx_isp->sof_timestamp_val) {
+			CAM_DBG(CAM_ISP,
+				"Tasklet delay detected! Bubble frame check skipped, sof_timestamp: %lld",
+				ctx_isp->sof_timestamp_val);
+			goto notify_only;
+		}
+
 		req = list_first_entry(&ctx->active_req_list,
 			struct cam_ctx_request, list);
 		req_isp = (struct cam_isp_ctx_req *) req->req_priv;
@@ -1274,6 +1282,8 @@ static int __cam_isp_ctx_notify_sof_in_activated_state(
 				"Delayed bufdone for req: %lld ctx %u link 0x%x",
 				req->request_id, ctx->ctx_id, ctx->link_hdl);
 	}
+
+notify_only:
 
 	if (ctx->ctx_crm_intf && ctx->ctx_crm_intf->notify_trigger &&
 		ctx_isp->active_req_cnt <= 2) {

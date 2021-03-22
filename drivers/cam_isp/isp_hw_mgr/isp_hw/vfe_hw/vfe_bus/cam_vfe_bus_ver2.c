@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/ratelimit.h>
@@ -103,6 +103,7 @@ struct cam_vfe_bus_ver2_common_data {
 	cam_hw_mgr_event_cb_func                    event_cb;
 	bool                                        hw_init;
 	struct cam_vfe_bus_ver2_stats_cfg_info     *stats_data;
+	bool                                        disable_ubwc_comp;
 };
 
 struct cam_vfe_bus_ver2_wm_resource_data {
@@ -1260,6 +1261,13 @@ static int cam_vfe_bus_start_wm(
 			val = cam_io_r_mb(common_data->mem_base +
 				ubwc_regs->mode_cfg_0);
 			val |= 0x1;
+			if (rsrc_data->common_data->disable_ubwc_comp) {
+				val &= ~ubwc_regs->ubwc_comp_en_bit;
+				CAM_DBG(CAM_ISP,
+					"Force disable UBWC, VFE:%d, WM:%d",
+					rsrc_data->common_data->core_index,
+					rsrc_data->index);
+			}
 			cam_io_w_mb(val, common_data->mem_base +
 				ubwc_regs->mode_cfg_0);
 		} else if ((camera_hw_version == CAM_CPAS_TITAN_175_V100) ||
@@ -1276,6 +1284,13 @@ static int cam_vfe_bus_start_wm(
 			val = cam_io_r_mb(common_data->mem_base +
 				ubwc_regs->mode_cfg_0);
 			val |= 0x1;
+			if (rsrc_data->common_data->disable_ubwc_comp) {
+				val &= ~ubwc_regs->ubwc_comp_en_bit;
+				CAM_DBG(CAM_ISP,
+					"Force disable UBWC, VFE:%d, WM:%d",
+					rsrc_data->common_data->core_index,
+					rsrc_data->index);
+			}
 			cam_io_w_mb(val, common_data->mem_base +
 				ubwc_regs->mode_cfg_0);
 		} else {
@@ -2266,6 +2281,8 @@ static int cam_vfe_bus_acquire_vfe_out(void *bus_priv, void *acquire_args,
 
 	rsrc_data = rsrc_node->res_priv;
 	rsrc_data->common_data->event_cb = acq_args->event_cb;
+	rsrc_data->common_data->disable_ubwc_comp =
+		out_acquire_args->disable_ubwc_comp;
 	rsrc_data->priv = acq_args->priv;
 
 	secure_caps = cam_vfe_bus_can_be_secure(rsrc_data->out_type);
@@ -2880,6 +2897,13 @@ static int cam_vfe_bus_update_ubwc_3_regs(
 	CAM_DBG(CAM_ISP, "WM %d meta stride 0x%x",
 		wm_data->index, reg_val_pair[*j-1]);
 
+	if (wm_data->common_data->disable_ubwc_comp) {
+		wm_data->ubwc_mode_cfg_0 &= ~ubwc_regs->ubwc_comp_en_bit;
+		CAM_DBG(CAM_ISP,
+			"UBWC force disable WM:%d, val= 0x%x",
+			wm_data->index, wm_data->ubwc_mode_cfg_0);
+	}
+
 	CAM_VFE_ADD_REG_VAL_PAIR(reg_val_pair, *j,
 		ubwc_regs->mode_cfg_0, wm_data->ubwc_mode_cfg_0);
 	CAM_DBG(CAM_ISP, "WM %d ubwc_mode_cfg_0 0x%x",
@@ -2958,6 +2982,13 @@ static int cam_vfe_bus_update_ubwc_legacy_regs(
 		ubwc_regs->meta_stride, wm_data->ubwc_meta_stride);
 	CAM_DBG(CAM_ISP, "WM %d meta stride 0x%x",
 		wm_data->index, reg_val_pair[*j-1]);
+
+	if (wm_data->common_data->disable_ubwc_comp) {
+		wm_data->ubwc_mode_cfg_0 &= ~ubwc_regs->ubwc_comp_en_bit;
+		CAM_DBG(CAM_ISP,
+			"UBWC fore disable WM:%d val= 0x%x",
+			wm_data->index, wm_data->ubwc_mode_cfg_0);
+	}
 
 	CAM_VFE_ADD_REG_VAL_PAIR(reg_val_pair, *j,
 		ubwc_regs->mode_cfg_0, wm_data->ubwc_mode_cfg_0);

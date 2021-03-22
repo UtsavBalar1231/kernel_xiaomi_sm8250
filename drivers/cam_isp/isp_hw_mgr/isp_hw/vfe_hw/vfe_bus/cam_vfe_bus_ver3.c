@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
  */
 
 
@@ -85,6 +85,7 @@ struct cam_vfe_bus_ver3_common_data {
 	uint32_t                                    comp_done_shift;
 	bool                                        is_lite;
 	bool                                        hw_init;
+	bool                                        disable_ubwc_comp;
 	cam_hw_mgr_event_cb_func                    event_cb;
 	int                        rup_irq_handle[CAM_VFE_BUS_VER3_SRC_GRP_MAX];
 };
@@ -1387,6 +1388,13 @@ static int cam_vfe_bus_ver3_start_wm(struct cam_isp_resource_node *wm_res)
 	if (rsrc_data->en_ubwc) {
 		val = cam_io_r_mb(common_data->mem_base + ubwc_regs->mode_cfg);
 		val |= 0x1;
+		if (rsrc_data->common_data->disable_ubwc_comp) {
+			val &= ~ubwc_regs->ubwc_comp_en_bit;
+			CAM_DBG(CAM_ISP,
+				"UBWC force disable VFE:%d WM:%d val= 0x%x",
+				rsrc_data->common_data->core_index,
+				rsrc_data->index, val);
+		}
 		cam_io_w_mb(val, common_data->mem_base + ubwc_regs->mode_cfg);
 	}
 
@@ -1937,6 +1945,8 @@ static int cam_vfe_bus_ver3_acquire_vfe_out(void *bus_priv, void *acquire_args,
 
 	rsrc_data = rsrc_node->res_priv;
 	rsrc_data->common_data->event_cb = acq_args->event_cb;
+	rsrc_data->common_data->disable_ubwc_comp =
+		out_acquire_args->disable_ubwc_comp;
 	rsrc_data->priv = acq_args->priv;
 
 	secure_caps = cam_vfe_bus_ver3_can_be_secure(
@@ -2977,6 +2987,13 @@ static int cam_vfe_bus_ver3_update_ubwc_regs(
 		ubwc_regs->meta_cfg, wm_data->ubwc_meta_cfg);
 	CAM_DBG(CAM_ISP, "WM:%d meta stride 0x%X",
 		wm_data->index, reg_val_pair[*j-1]);
+
+	if (wm_data->common_data->disable_ubwc_comp) {
+		wm_data->ubwc_mode_cfg &= ~ubwc_regs->ubwc_comp_en_bit;
+		CAM_DBG(CAM_ISP,
+			"UBWC force WM:%d val= x%x",
+			wm_data->index, wm_data->ubwc_mode_cfg);
+	}
 
 	CAM_VFE_ADD_REG_VAL_PAIR(reg_val_pair, *j,
 		ubwc_regs->mode_cfg, wm_data->ubwc_mode_cfg);

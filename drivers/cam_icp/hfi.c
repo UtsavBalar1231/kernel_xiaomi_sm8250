@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2019, 2021 The Linux Foundation. All rights reserved.
  */
 
 #include <linux/io.h>
@@ -269,7 +269,7 @@ err:
 	return rc;
 }
 
-int hfi_cmd_ubwc_config(uint32_t *ubwc_cfg)
+int hfi_cmd_ubwc_config(uint32_t *ubwc_cfg, bool disable_ubwc_comp)
 {
 	uint8_t *prop;
 	struct hfi_cmd_prop *dbg_prop;
@@ -292,6 +292,11 @@ int hfi_cmd_ubwc_config(uint32_t *ubwc_cfg)
 	dbg_prop->num_prop = 1;
 	dbg_prop->prop_data[0] = HFI_PROP_SYS_UBWC_CFG;
 	dbg_prop->prop_data[1] = ubwc_cfg[0];
+	if (disable_ubwc_comp) {
+		ubwc_cfg[1] &= ~CAM_ICP_UBWC_COMP_EN;
+		CAM_DBG(CAM_ICP, "UBWC comp force disable, val= 0x%x",
+			ubwc_cfg[1]);
+	}
 	dbg_prop->prop_data[2] = ubwc_cfg[1];
 
 	hfi_write_cmd(prop);
