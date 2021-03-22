@@ -15,7 +15,7 @@
 		reg = <0x1b34000 0x1000>,
 			<0x1b00030 0x4>;
 		reg-names = "csiphy", "csiphy_clk_mux";
-		interrupts = <0 78 0>;
+		interrupts = <0 78 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "csiphy";
 		clocks = <&gcc GCC_CAMSS_TOP_AHB_CLK>,
 			<&gcc GCC_CAMSS_ISPIF_AHB_CLK>,
@@ -38,7 +38,7 @@
 		reg = <0x1b35000 0x1000>,
 			<0x1b00038 0x4>;
 		reg-names = "csiphy", "csiphy_clk_mux";
-		interrupts = <0 79 0>;
+		interrupts = <0 79 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "csiphy";
 		clocks = <&gcc GCC_CAMSS_TOP_AHB_CLK>,
 			<&gcc GCC_CAMSS_ISPIF_AHB_CLK>,
@@ -60,7 +60,7 @@
 		compatible = "qcom,csid-v3.4.3", "qcom,csid";
 		reg = <0x1b30000 0x400>;
 		reg-names = "csid";
-		interrupts = <0 51 0>;
+		interrupts = <0 51 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "csid";
 		qcom,csi-vdd-voltage = <1088000>;
 		qcom,mipi-csi-vdd-supply = <&pm8916_l2>;
@@ -300,18 +300,13 @@
 	qcom,cam_smmu {
 		status = "ok";
 		compatible = "qcom,msm-cam-smmu";
+		qcom,iommu-dma-addr-pool = <0x00020000 0x7FFE0000>;
 		msm_cam_smmu_cb1: msm_cam_smmu_cb1 {
 			compatible = "qcom,msm-cam-smmu-cb";
 			iommus = <&apps_iommu 0x400 0x00>,
 				<&apps_iommu 0x2400 0x00>;
 			label = "vfe";
 			qcom,scratch-buf-support;
-		};
-
-		msm_cam_smmu_cb2: msm_cam_smmu_cb2 {
-			compatible = "qcom,msm-cam-smmu-cb";
-			label = "vfe_secure";
-			qcom,secure-context;
 		};
 
 		msm_cam_smmu_cb3: msm_cam_smmu_cb3 {
@@ -382,7 +377,7 @@
 			"camss_top_ahb_clk", "camss_vfe_cpp_ahb_clk",
 			"camss_vfe_cpp_axi_clk", "camss_vfe_cpp_clk",
 			"micro_iface_clk", "camss_ahb_clk";
-		qcom,clock-rates = <61540000 180000000 0 0 0 180000000 0 0>;
+		qcom,src-clock-rates = <61540000 180000000 0 0 0 180000000 0 0>;
 		qcom,min-clock-rate = <133000000>;
 		resets = <&gcc GCC_CAMSS_MICRO_BCR>;
 		reset-names = "micro_iface_reset";

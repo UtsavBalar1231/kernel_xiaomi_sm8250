@@ -174,11 +174,15 @@
 		smmu_mdp_unsec: qcom,smmu_mdp_unsec_cb {
 			compatible = "qcom,smmu_mdp_unsec";
 			iommus = <&apps_iommu 0x2800 0>; /* For NS ctx bank */
+			qcom,iommu-dma-addr-pool = <0x08000000 0xF8000000>;
+			qcom,iommu-earlymap; /* for cont-splash */
+
 		};
 
 		smmu_mdp_sec: qcom,smmu_mdp_sec_cb {
 			compatible = "qcom,smmu_mdp_sec";
 			iommus = <&apps_iommu 0x2801 0>; /* For SEC Ctx Bank */
+			qcom,iommu-dma-addr-pool = <0x08000000 0xF8000000>;
 		};
 
 		mdss_fb0: qcom,mdss_fb_primary {

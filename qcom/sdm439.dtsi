@@ -65,8 +65,8 @@
 			 < 1459200 >;
 	};
 
-	/delete-node/ generic-bw-opp-table;
-	 generic_bw_opp_table: generic-bw-opp-table {
+	/delete-node/ ddr-bw-opp-table;
+	 ddr_bw_opp_table: ddr-bw-opp-table {
 		compatible = "operating-points-v2";
 		BW_OPP_ENTRY( 101, 8); /*  769 MB/s */
 		BW_OPP_ENTRY( 211, 8); /* 1611 MB/s */
@@ -84,21 +84,21 @@
 	/delete-node/ qcom,cpu-cpu-ddr-bw;
 	cpu_cpu_ddr_bw: qcom,cpu-cpu-ddr-bw {
 		compatible = "qcom,devbw";
-		governor = "cpufreq";
+		governor = "performance";
 		qcom,src-dst-ports =
 			<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_EBI_CH0>;
 		qcom,active-only;
-		operating-points-v2 = <&generic_bw_opp_table>;
+		operating-points-v2 = <&ddr_bw_opp_table>;
 	};
 
 	/delete-node/ qcom,cpu0-cpu-ddr-latfloor;
 	cpu0_cpu_ddr_latfloor: qcom,cpu0-cpu-ddr-latfloor {
 		compatible = "qcom,devbw";
-		governor = "cpufreq";
+		governor = "performance";
 		qcom,src-dst-ports =
 			<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_EBI_CH0>;
 		qcom,active-only;
-		operating-points-v2 = <&generic_bw_opp_table>;
+		operating-points-v2 = <&ddr_bw_opp_table>;
 	};
 
 	/delete-node/ qcom,cci;
@@ -108,7 +108,7 @@
 		/* TODO
 		 * clocks = <&clock_cpu clk_cci_clk>;
 		 */
-		governor = "cpufreq";
+		governor = "performance";
 		freq-tbl-khz =
 			<  400000 >,
 			<  400000 >,
