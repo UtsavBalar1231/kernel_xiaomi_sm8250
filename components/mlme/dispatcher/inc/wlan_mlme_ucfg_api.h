@@ -4114,4 +4114,15 @@ ucfg_mlme_set_roam_reason_vsie_status(struct wlan_objmgr_psoc *psoc,
 }
 
 #endif
+
+/**
+ * ucfg_is_roaming_enabled() - Check if roaming enabled
+ * to firmware.
+ * @psoc: psoc context
+ * @vdev_id: vdev id
+ *
+ * Return: True if Roam state machine is in
+ *	   WLAN_ROAM_RSO_ENABLED/WLAN_ROAMING_IN_PROG/WLAN_ROAM_SYNCH_IN_PROG
+ */
+bool ucfg_is_roaming_enabled(struct wlan_objmgr_pdev *pdev, uint8_t vdev_id);
 #endif /* _WLAN_MLME_UCFG_API_H_ */
