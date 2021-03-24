@@ -902,6 +902,7 @@ static int exfat_fill_super(struct super_block *sb, void *data, int silent)
 		return -ENOMEM;
 
 	mutex_init(&sbi->s_lock);
+	mutex_init(&sbi->bitmap_lock);
 	sb->s_fs_info = sbi;
 	ratelimit_state_init(&sbi->ratelimit, DEFAULT_RATELIMIT_INTERVAL,
 			DEFAULT_RATELIMIT_BURST);
@@ -1046,6 +1047,7 @@ static int exfat_init_fs_context(struct fs_context *fc)
 		return -ENOMEM;
 
 	mutex_init(&sbi->s_lock);
+	mutex_init(&sbi->bitmap_lock);
 	ratelimit_state_init(&sbi->ratelimit, DEFAULT_RATELIMIT_INTERVAL,
 			DEFAULT_RATELIMIT_BURST);
 
