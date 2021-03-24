@@ -291,6 +291,11 @@ write_size:
 	mutex_unlock(&sbi->s_lock);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+int exfat_getattr(struct user_namespace *mnt_uerns, const struct path *path,
+		  struct kstat *stat, unsigned int request_mask,
+		  unsigned int query_flags)
+#else
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 int exfat_getattr(const struct path *path, struct kstat *stat,
 		unsigned int request_mask, unsigned int query_flags)
@@ -298,7 +303,7 @@ int exfat_getattr(const struct path *path, struct kstat *stat,
 int exfat_getattr(struct vfsmount *mnt, struct dentry *dentry,
 		struct kstat *stat)
 #endif
-
+#endif
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 	struct inode *inode = d_backing_inode(path->dentry);
@@ -322,7 +327,12 @@ int exfat_getattr(struct vfsmount *mnt, struct dentry *dentry,
 	return 0;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+int exfat_setattr(struct user_namespace *mnt_userns, struct dentry *dentry,
+		struct iattr *attr)
+#else
 int exfat_setattr(struct dentry *dentry, struct iattr *attr)
+#endif
 {
 	struct exfat_sb_info *sbi = EXFAT_SB(dentry->d_sb);
 	struct inode *inode = dentry->d_inode;

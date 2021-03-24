@@ -431,6 +431,14 @@ int exfat_trim_fs(struct inode *inode, struct fstrim_range *range);
 extern const struct file_operations exfat_file_operations;
 int __exfat_truncate(struct inode *inode, loff_t new_size);
 void exfat_truncate(struct inode *inode, loff_t size);
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+int exfat_setattr(struct user_namespace *mnt_userns, struct dentry *dentry,
+		  struct iattr *attr);
+int exfat_getattr(struct user_namespace *mnt_userns, const struct path *path,
+		  struct kstat *stat, unsigned int request_mask,
+		  unsigned int query_flags);
+#else
 int exfat_setattr(struct dentry *dentry, struct iattr *attr);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 int exfat_getattr(const struct path *path, struct kstat *stat,
@@ -438,6 +446,7 @@ int exfat_getattr(const struct path *path, struct kstat *stat,
 #else
 int exfat_getattr(struct vfsmount *mnt, struct dentry *dentry,
 		struct kstat *stat);
+#endif
 #endif
 int exfat_file_fsync(struct file *file, loff_t start, loff_t end, int datasync);
 long exfat_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);

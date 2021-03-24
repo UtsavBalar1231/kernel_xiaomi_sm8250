@@ -568,8 +568,13 @@ out:
 	return ret;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+static int exfat_create(struct user_namespace *mnt_userns, struct inode *dir,
+			struct dentry *dentry, umode_t mode, bool excl)
+#else
 static int exfat_create(struct inode *dir, struct dentry *dentry, umode_t mode,
 		bool excl)
+#endif
 {
 	struct super_block *sb = dir->i_sb;
 	struct inode *inode;
@@ -900,7 +905,12 @@ unlock:
 	return err;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+static int exfat_mkdir(struct user_namespace *mnt_userns, struct inode *dir,
+		       struct dentry *dentry, umode_t mode)
+#else
 static int exfat_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
+#endif
 {
 	struct super_block *sb = dir->i_sb;
 	struct inode *inode;
@@ -1425,6 +1435,12 @@ out:
 	return ret;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+static int exfat_rename(struct user_namespace *mnt_userns,
+			struct inode *old_dir, struct dentry *old_dentry,
+			struct inode *new_dir, struct dentry *new_dentry,
+			unsigned int flags)
+#else
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 static int exfat_rename(struct inode *old_dir, struct dentry *old_dentry,
 		struct inode *new_dir, struct dentry *new_dentry,
@@ -1432,6 +1448,7 @@ static int exfat_rename(struct inode *old_dir, struct dentry *old_dentry,
 #else
 static int exfat_rename(struct inode *old_dir, struct dentry *old_dentry,
 		struct inode *new_dir, struct dentry *new_dentry)
+#endif
 #endif
 {
 	struct inode *old_inode, *new_inode;
