@@ -307,7 +307,11 @@ int exfat_getattr(struct vfsmount *mnt, struct dentry *dentry,
 	struct inode *inode = d_inode(dentry);
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+	generic_fillattr(&init_user_ns, inode, stat);
+#else
 	generic_fillattr(inode, stat);
+#endif
 	exfat_truncate_atime(&stat->atime);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 	stat->result_mask |= STATX_BTIME;
