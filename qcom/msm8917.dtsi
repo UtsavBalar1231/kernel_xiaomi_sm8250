@@ -648,6 +648,8 @@
 		 *	 <&clock_cpu clk_a53_bc_clk>;
 		 */
 
+		qcom,governor-per-policy;
+
 		qcom,cpufreq-table =
 			 <  960000 >,
 			 < 1094400 >,
