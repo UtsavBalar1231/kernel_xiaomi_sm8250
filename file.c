@@ -344,7 +344,11 @@ int exfat_setattr(struct dentry *dentry, struct iattr *attr)
 #if ((LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)) && \
 		(LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 37))) || \
 		(LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0))
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+	error = setattr_prepare(&init_user_ns, dentry, attr);
+#else
 	error = setattr_prepare(dentry, attr);
+#endif
 #else
 	error = inode_change_ok(inode, attr);
 #endif
@@ -382,7 +386,11 @@ int exfat_setattr(struct dentry *dentry, struct iattr *attr)
 		up_write(&EXFAT_I(inode)->truncate_lock);
 	}
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+	setattr_copy(&init_user_ns, inode, attr);
+#else
 	setattr_copy(inode, attr);
+#endif
 	exfat_truncate_atime(&inode->i_atime);
 	mark_inode_dirty(inode);
 
