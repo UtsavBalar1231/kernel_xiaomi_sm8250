@@ -8,9 +8,8 @@
 #include <linux/buffer_head.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 #include <linux/cred.h>
-#else
-#include <linux/compat.h>
 #endif
+#include <linux/compat.h>
 #include <linux/blkdev.h>
 
 #include "exfat_raw.h"
@@ -292,6 +291,11 @@ write_size:
 	mutex_unlock(&sbi->s_lock);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+int exfat_getattr(struct user_namespace *mnt_uerns, const struct path *path,
+		  struct kstat *stat, unsigned int request_mask,
+		  unsigned int query_flags)
+#else
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 int exfat_getattr(const struct path *path, struct kstat *stat,
 		unsigned int request_mask, unsigned int query_flags)
@@ -299,7 +303,7 @@ int exfat_getattr(const struct path *path, struct kstat *stat,
 int exfat_getattr(struct vfsmount *mnt, struct dentry *dentry,
 		struct kstat *stat)
 #endif
-
+#endif
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 	struct inode *inode = d_backing_inode(path->dentry);
@@ -308,7 +312,11 @@ int exfat_getattr(struct vfsmount *mnt, struct dentry *dentry,
 	struct inode *inode = d_inode(dentry);
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+	generic_fillattr(&init_user_ns, inode, stat);
+#else
 	generic_fillattr(inode, stat);
+#endif
 	exfat_truncate_atime(&stat->atime);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 	stat->result_mask |= STATX_BTIME;
@@ -319,7 +327,12 @@ int exfat_getattr(struct vfsmount *mnt, struct dentry *dentry,
 	return 0;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+int exfat_setattr(struct user_namespace *mnt_userns, struct dentry *dentry,
+		struct iattr *attr)
+#else
 int exfat_setattr(struct dentry *dentry, struct iattr *attr)
+#endif
 {
 	struct exfat_sb_info *sbi = EXFAT_SB(dentry->d_sb);
 	struct inode *inode = dentry->d_inode;
@@ -345,7 +358,11 @@ int exfat_setattr(struct dentry *dentry, struct iattr *attr)
 #if ((LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)) && \
 		(LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 37))) || \
 		(LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0))
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+	error = setattr_prepare(&init_user_ns, dentry, attr);
+#else
 	error = setattr_prepare(dentry, attr);
+#endif
 #else
 	error = inode_change_ok(inode, attr);
 #endif
@@ -383,13 +400,65 @@ int exfat_setattr(struct dentry *dentry, struct iattr *attr)
 		up_write(&EXFAT_I(inode)->truncate_lock);
 	}
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+	setattr_copy(&init_user_ns, inode, attr);
+#else
 	setattr_copy(inode, attr);
+#endif
 	exfat_truncate_atime(&inode->i_atime);
 	mark_inode_dirty(inode);
 
 out:
 	return error;
 }
+
+static int exfat_ioctl_fitrim(struct inode *inode, unsigned long arg)
+{
+	struct request_queue *q = bdev_get_queue(inode->i_sb->s_bdev);
+	struct fstrim_range range;
+	int ret = 0;
+
+	if (!capable(CAP_SYS_ADMIN))
+		return -EPERM;
+
+	if (!blk_queue_discard(q))
+		return -EOPNOTSUPP;
+
+	if (copy_from_user(&range, (struct fstrim_range __user *)arg, sizeof(range)))
+		return -EFAULT;
+
+	range.minlen = max_t(unsigned int, range.minlen,
+				q->limits.discard_granularity);
+
+	ret = exfat_trim_fs(inode, &range);
+	if (ret < 0)
+		return ret;
+
+	if (copy_to_user((struct fstrim_range __user *)arg, &range, sizeof(range)))
+		return -EFAULT;
+
+	return 0;
+}
+
+long exfat_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+{
+	struct inode *inode = file_inode(filp);
+
+	switch (cmd) {
+	case FITRIM:
+		return exfat_ioctl_fitrim(inode, arg);
+	default:
+		return -ENOTTY;
+	}
+}
+
+#ifdef CONFIG_COMPAT
+long exfat_compat_ioctl(struct file *filp, unsigned int cmd,
+				unsigned long arg)
+{
+	return exfat_ioctl(filp, cmd, (unsigned long)compat_ptr(arg));
+}
+#endif
 
 int exfat_file_fsync(struct file *filp, loff_t start, loff_t end, int datasync)
 {
@@ -404,10 +473,14 @@ int exfat_file_fsync(struct file *filp, loff_t start, loff_t end, int datasync)
 	if (err)
 		return err;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+	return blkdev_issue_flush(inode->i_sb->s_bdev);
+#else
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
 	return blkdev_issue_flush(inode->i_sb->s_bdev, GFP_KERNEL);
 #else
 	return blkdev_issue_flush(inode->i_sb->s_bdev, GFP_KERNEL, NULL);
+#endif
 #endif
 }
 
@@ -415,6 +488,10 @@ const struct file_operations exfat_file_operations = {
 	.llseek		= generic_file_llseek,
 	.read_iter	= generic_file_read_iter,
 	.write_iter	= generic_file_write_iter,
+	.unlocked_ioctl = exfat_ioctl,
+#ifdef CONFIG_COMPAT
+	.compat_ioctl = exfat_compat_ioctl,
+#endif
 	.mmap		= generic_file_mmap,
 	.fsync		= exfat_file_fsync,
 	.splice_read	= generic_file_splice_read,

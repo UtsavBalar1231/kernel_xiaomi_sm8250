@@ -367,7 +367,7 @@ static int exfat_find_empty_entry(struct inode *inode,
 		exfat_chain_set(&clu, last_clu + 1, 0, p_dir->flags);
 
 		/* allocate a cluster */
-		ret = exfat_alloc_cluster(inode, 1, &clu);
+		ret = exfat_alloc_cluster(inode, 1, &clu, IS_DIRSYNC(inode));
 		if (ret)
 			return ret;
 
@@ -568,8 +568,13 @@ out:
 	return ret;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+static int exfat_create(struct user_namespace *mnt_userns, struct inode *dir,
+			struct dentry *dentry, umode_t mode, bool excl)
+#else
 static int exfat_create(struct inode *dir, struct dentry *dentry, umode_t mode,
 		bool excl)
+#endif
 {
 	struct super_block *sb = dir->i_sb;
 	struct inode *inode;
@@ -641,6 +646,8 @@ static int exfat_find(struct inode *dir, struct qstr *qname,
 	struct exfat_inode_info *ei = EXFAT_I(dir);
 	struct exfat_dentry *ep, *ep2;
 	struct exfat_entry_set_cache *es;
+	/* for optimized dir & entry to prevent long traverse of cluster chain */
+	struct exfat_hint hint_opt;
 
 	if (qname->len == 0)
 		return -ENOENT;
@@ -672,7 +679,7 @@ static int exfat_find(struct inode *dir, struct qstr *qname,
 
 	/* search the file name for directories */
 	dentry = exfat_find_dir_entry(sb, ei, &cdir, &uni_name,
-			num_entries, TYPE_ALL);
+			num_entries, TYPE_ALL, &hint_opt);
 
 	if (dentry < 0)
 		return dentry; /* -error value */
@@ -681,6 +688,11 @@ static int exfat_find(struct inode *dir, struct qstr *qname,
 	info->entry = dentry;
 	info->num_subdirs = 0;
 
+	/* adjust cdir to the optimized value */
+	cdir.dir = hint_opt.clu;
+	if (cdir.flags & ALLOC_NO_FAT_CHAIN)
+		cdir.size -= dentry / sbi->dentries_per_clu;
+	dentry = hint_opt.eidx;
 	es = exfat_get_dentry_set(sb, &cdir, dentry, ES_2_ENTRIES);
 	if (!es)
 		return -EIO;
@@ -900,7 +912,12 @@ unlock:
 	return err;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+static int exfat_mkdir(struct user_namespace *mnt_userns, struct inode *dir,
+		       struct dentry *dentry, umode_t mode)
+#else
 static int exfat_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
+#endif
 {
 	struct super_block *sb = dir->i_sb;
 	struct inode *inode;
@@ -1425,6 +1442,12 @@ out:
 	return ret;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+static int exfat_rename(struct user_namespace *mnt_userns,
+			struct inode *old_dir, struct dentry *old_dentry,
+			struct inode *new_dir, struct dentry *new_dentry,
+			unsigned int flags)
+#else
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 static int exfat_rename(struct inode *old_dir, struct dentry *old_dentry,
 		struct inode *new_dir, struct dentry *new_dentry,
@@ -1432,6 +1455,7 @@ static int exfat_rename(struct inode *old_dir, struct dentry *old_dentry,
 #else
 static int exfat_rename(struct inode *old_dir, struct dentry *old_dentry,
 		struct inode *new_dir, struct dentry *new_dentry)
+#endif
 #endif
 {
 	struct inode *old_inode, *new_inode;
