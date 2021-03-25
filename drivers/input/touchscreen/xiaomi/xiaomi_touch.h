@@ -33,7 +33,7 @@
 #define MI_TOUCH_LOGI(level, fmt, args...) ((void)0)
 #define MI_TOUCH_LOGE(level, fmt, args...) ((void)0)
 
-#define XIAOMI_ROI	1
+#define XIAOMI_ROI 0
 
 #if XIAOMI_ROI
 #define DIFF_SENSE_NODE 7
