@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2021 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -2796,7 +2796,9 @@ uint32_t cds_get_arp_stats_gw_ip(void *context)
 void cds_incr_arp_stats_tx_tgt_delivered(void)
 {
 	struct hdd_context *hdd_ctx;
-	struct hdd_adapter *adapter = NULL;
+	struct hdd_adapter *adapter, *next_adapter = NULL;
+	wlan_net_dev_ref_dbgid dbgid =
+			NET_DEV_HOLD_CDS_INCR_ARP_STATS_TX_TGT_DELIVERED;
 
 	hdd_ctx = gp_cds_context->hdd_context;
 	if (!hdd_ctx) {
@@ -2804,9 +2806,15 @@ void cds_incr_arp_stats_tx_tgt_delivered(void)
 		return;
 	}
 
-	hdd_for_each_adapter(hdd_ctx, adapter) {
-		if (QDF_STA_MODE == adapter->device_mode)
+	hdd_for_each_adapter_dev_held_safe(hdd_ctx, adapter, next_adapter,
+					   dbgid) {
+		if (adapter->device_mode == QDF_STA_MODE) {
+			hdd_adapter_dev_put_debug(adapter, dbgid);
+			if (next_adapter)
+				hdd_adapter_dev_put_debug(next_adapter, dbgid);
 			break;
+		}
+		hdd_adapter_dev_put_debug(adapter, dbgid);
 	}
 
 	if (adapter)
@@ -2821,7 +2829,9 @@ void cds_incr_arp_stats_tx_tgt_delivered(void)
 void cds_incr_arp_stats_tx_tgt_acked(void)
 {
 	struct hdd_context *hdd_ctx;
-	struct hdd_adapter *adapter = NULL;
+	struct hdd_adapter *adapter, *next_adapter = NULL;
+	wlan_net_dev_ref_dbgid dbgid =
+			NET_DEV_HOLD_CDS_INCR_ARP_STATS_TX_TGT_ACKED;
 
 	hdd_ctx = gp_cds_context->hdd_context;
 	if (!hdd_ctx) {
@@ -2829,9 +2839,15 @@ void cds_incr_arp_stats_tx_tgt_acked(void)
 		return;
 	}
 
-	hdd_for_each_adapter(hdd_ctx, adapter) {
-		if (QDF_STA_MODE == adapter->device_mode)
+	hdd_for_each_adapter_dev_held_safe(hdd_ctx, adapter, next_adapter,
+					   dbgid) {
+		if (adapter->device_mode == QDF_STA_MODE) {
+			hdd_adapter_dev_put_debug(adapter, dbgid);
+			if (next_adapter)
+				hdd_adapter_dev_put_debug(next_adapter, dbgid);
 			break;
+		}
+		hdd_adapter_dev_put_debug(adapter, dbgid);
 	}
 
 	if (adapter)

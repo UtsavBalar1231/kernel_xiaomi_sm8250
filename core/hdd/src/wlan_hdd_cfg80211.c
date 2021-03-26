@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2021 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -5596,11 +5596,14 @@ wlan_hdd_set_no_dfs_flag_config_policy[QCA_WLAN_VENDOR_ATTR_SET_NO_DFS_FLAG_MAX
 static bool wlan_hdd_check_dfs_channel_for_adapter(struct hdd_context *hdd_ctx,
 				enum QDF_OPMODE device_mode)
 {
-	struct hdd_adapter *adapter;
+	struct hdd_adapter *adapter, *next_adapter = NULL;
 	struct hdd_ap_ctx *ap_ctx;
 	struct hdd_station_ctx *sta_ctx;
+	wlan_net_dev_ref_dbgid dbgid =
+				NET_DEV_HOLD_CHECK_DFS_CHANNEL_FOR_ADAPTER;
 
-	hdd_for_each_adapter(hdd_ctx, adapter) {
+	hdd_for_each_adapter_dev_held_safe(hdd_ctx, adapter, next_adapter,
+					   dbgid) {
 		if ((device_mode == adapter->device_mode) &&
 		    (device_mode == QDF_SAP_MODE)) {
 			ap_ctx =
@@ -5617,6 +5620,10 @@ static bool wlan_hdd_check_dfs_channel_for_adapter(struct hdd_context *hdd_ctx,
 				hdd_ctx->pdev,
 				ap_ctx->operating_chan_freq)) {
 				hdd_err("SAP running on DFS channel");
+				hdd_adapter_dev_put_debug(adapter, dbgid);
+				if (next_adapter)
+					hdd_adapter_dev_put_debug(next_adapter,
+								  dbgid);
 				return true;
 			}
 		}
@@ -5635,9 +5642,14 @@ static bool wlan_hdd_check_dfs_channel_for_adapter(struct hdd_context *hdd_ctx,
 				hdd_ctx->pdev,
 				sta_ctx->conn_info.chan_freq))) {
 				hdd_err("client connected on DFS channel");
+				hdd_adapter_dev_put_debug(adapter, dbgid);
+				if (next_adapter)
+					hdd_adapter_dev_put_debug(next_adapter,
+								  dbgid);
 				return true;
 			}
 		}
+		hdd_adapter_dev_put_debug(adapter, dbgid);
 	}
 
 	return false;
@@ -11107,13 +11119,17 @@ static enum sta_roam_policy_dfs_mode wlan_hdd_get_sta_roam_dfs_mode(
  */
 uint8_t hdd_get_sap_operating_band(struct hdd_context *hdd_ctx)
 {
-	struct hdd_adapter *adapter;
+	struct hdd_adapter *adapter, *next_adapter = NULL;
 	uint32_t  operating_chan_freq;
 	uint8_t sap_operating_band = 0;
+	wlan_net_dev_ref_dbgid dbgid = NET_DEV_HOLD_GET_SAP_OPERATING_BAND;
 
-	hdd_for_each_adapter(hdd_ctx, adapter) {
-		if (adapter->device_mode != QDF_SAP_MODE)
+	hdd_for_each_adapter_dev_held_safe(hdd_ctx, adapter, next_adapter,
+					   dbgid) {
+		if (adapter->device_mode != QDF_SAP_MODE) {
+			hdd_adapter_dev_put_debug(adapter, dbgid);
 			continue;
+		}
 
 		operating_chan_freq = adapter->session.ap.operating_chan_freq;
 		if (WLAN_REG_IS_24GHZ_CH_FREQ(operating_chan_freq))
@@ -11123,6 +11139,8 @@ uint8_t hdd_get_sap_operating_band(struct hdd_context *hdd_ctx)
 			sap_operating_band = BAND_5G;
 		else
 			sap_operating_band = BAND_ALL;
+
+		hdd_adapter_dev_put_debug(adapter, dbgid);
 	}
 
 	return sap_operating_band;
@@ -19671,6 +19689,8 @@ static void hdd_populate_crypto_params(struct wlan_objmgr_vdev *vdev,
 		hdd_populate_crypto_cipher_type(req->crypto.cipher_group,
 						vdev,
 						WLAN_CRYPTO_PARAM_MCAST_CIPHER);
+
+	wlan_crypto_free_vdev_key(vdev);
 }
 
 /**

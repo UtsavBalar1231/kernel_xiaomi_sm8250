@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2019, 2021 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -553,6 +553,82 @@ void wlan_ipa_reg_send_to_nw_cb(struct wlan_ipa_priv *ipa_ctx,
 {
 	ipa_ctx->send_to_nw = cb;
 }
+
+#ifdef IPA_LAN_RX_NAPI_SUPPORT
+/**
+ * wlan_ipa_reg_rps_enable_cb() - Register callback to enable RPS
+ * @ipa_ctx: IPA context
+ * @cb: callback
+ *
+ * Return: None
+ */
+static inline
+void wlan_ipa_reg_rps_enable_cb(struct wlan_ipa_priv *ipa_ctx,
+				wlan_ipa_rps_enable cb)
+{
+	ipa_ctx->rps_enable = cb;
+}
+
+/**
+ * ipa_set_rps_enable(): Enable/disable RPS for all interfaces of specific mode
+ * @ipa_ctx: IPA context
+ * @mode: mode of interface for which RPS needs to be enabled
+ * @enable: Set true to enable RPS
+ *
+ * Return: None
+ */
+void ipa_set_rps(struct wlan_ipa_priv *ipa_ctx, enum QDF_OPMODE mode,
+		 bool enable);
+
+/**
+ * ipa_set_rps_per_vdev(): Enable/disable RPS for a specific vdev
+ * @ipa_ctx: IPA context
+ * @vdev_id: vdev id for which RPS needs to be enabled
+ * @enable: Set true to enable RPS
+ *
+ * Return: None
+ */
+static inline
+void ipa_set_rps_per_vdev(struct wlan_ipa_priv *ipa_ctx, uint8_t vdev_id,
+			  bool enable)
+{
+	if (ipa_ctx->rps_enable)
+		ipa_ctx->rps_enable(vdev_id, enable);
+}
+
+/**
+ * wlan_ipa_handle_multiple_sap_evt() - Handle multiple SAP connect/disconnect
+ * @ipa_ctx: IPA global context
+ * @type: IPA event type.
+ *
+ * This function is used to disable pipes when multiple SAP are connected and
+ * enable pipes back when only one SAP is connected.
+ *
+ * Return: None
+ */
+void wlan_ipa_handle_multiple_sap_evt(struct wlan_ipa_priv *ipa_ctx,
+				      qdf_ipa_wlan_event type);
+
+#else
+static inline
+void ipa_set_rps(struct wlan_ipa_priv *ipa_ctx, enum QDF_OPMODE mode,
+		 bool enable)
+{
+}
+
+static inline
+void ipa_set_rps_per_vdev(struct wlan_ipa_priv *ipa_ctx, uint8_t vdev_id,
+			  bool enable)
+{
+}
+
+static inline
+void wlan_ipa_handle_multiple_sap_evt(struct wlan_ipa_priv *ipa_ctx,
+				      qdf_ipa_wlan_event type)
+{
+}
+
+#endif
 
 /**
  * wlan_ipa_set_mcc_mode() - Set MCC mode

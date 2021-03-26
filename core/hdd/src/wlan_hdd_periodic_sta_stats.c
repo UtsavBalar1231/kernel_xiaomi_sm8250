@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -41,26 +41,31 @@ void hdd_periodic_sta_stats_init(struct hdd_adapter *adapter)
 
 void hdd_periodic_sta_stats_display(struct hdd_context *hdd_ctx)
 {
-	struct hdd_adapter *adapter;
+	struct hdd_adapter *adapter, *next_adapter = NULL;
 	struct hdd_stats sta_stats;
 	struct hdd_config *hdd_cfg;
 	char *dev_name;
 	bool should_log;
+	wlan_net_dev_ref_dbgid dbgid = NET_DEV_HOLD_PERIODIC_STA_STATS_DISPLAY;
 
 	if (!hdd_ctx)
 		return;
 
-	hdd_for_each_adapter(hdd_ctx, adapter) {
+	hdd_for_each_adapter_dev_held_safe(hdd_ctx, adapter, next_adapter,
+					   dbgid) {
 		should_log = false;
 
-		if (adapter->device_mode != QDF_STA_MODE)
+		if (adapter->device_mode != QDF_STA_MODE) {
+			hdd_adapter_dev_put_debug(adapter, dbgid);
 			continue;
+		}
 
 		hdd_cfg = hdd_ctx->config;
 		qdf_mutex_acquire(&adapter->sta_periodic_stats_lock);
 
 		if (!adapter->is_sta_periodic_stats_enabled) {
 			qdf_mutex_release(&adapter->sta_periodic_stats_lock);
+			hdd_adapter_dev_put_debug(adapter, dbgid);
 			continue;
 		}
 
@@ -89,6 +94,7 @@ void hdd_periodic_sta_stats_display(struct hdd_context *hdd_ctx)
 			hdd_nofl_info("%s: Rx DNS responses: %d", dev_name,
 				      sta_stats.hdd_dns_stats.rx_dns_rsp_count);
 		}
+		hdd_adapter_dev_put_debug(adapter, dbgid);
 	}
 }
 

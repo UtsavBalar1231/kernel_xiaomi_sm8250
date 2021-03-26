@@ -1017,6 +1017,11 @@ static void __hdd_hard_start_xmit(struct sk_buff *skb,
 		goto drop_pkt;
 	}
 
+	if (hdd_ctx->hdd_wlan_suspended) {
+		hdd_err_rl("Device is system suspended, drop pkt");
+		goto drop_pkt;
+	}
+
 	wlan_hdd_classify_pkt(skb);
 	if (QDF_NBUF_CB_GET_PACKET_TYPE(skb) == QDF_NBUF_CB_PACKET_TYPE_ARP) {
 		if (qdf_nbuf_data_is_arp_req(skb) &&
@@ -3213,6 +3218,32 @@ void hdd_send_rps_disable_ind(struct hdd_adapter *adapter)
 	cds_cfg->rps_enabled = false;
 }
 
+#ifdef IPA_LAN_RX_NAPI_SUPPORT
+void hdd_adapter_set_rps(uint8_t vdev_id, bool enable)
+{
+	struct hdd_context *hdd_ctx;
+	struct hdd_adapter *adapter;
+
+	hdd_ctx = cds_get_context(QDF_MODULE_ID_HDD);
+	if (!hdd_ctx)
+		return;
+
+	adapter = hdd_get_adapter_by_vdev(hdd_ctx, vdev_id);
+	if (!adapter) {
+		hdd_err_rl("Adapter not found for vdev_id: %d", vdev_id);
+		return;
+	}
+
+	hdd_debug("Set RPS to %d for vdev_id %d", enable, vdev_id);
+	if (!hdd_ctx->rps) {
+		if (enable)
+			hdd_send_rps_ind(adapter);
+		else
+			hdd_send_rps_disable_ind(adapter);
+	}
+}
+#endif
+
 void hdd_tx_queue_cb(hdd_handle_t hdd_handle, uint32_t vdev_id,
 		     enum netif_action_type action,
 		     enum netif_reason_type reason)
@@ -3281,7 +3312,6 @@ void hdd_reset_tcp_adv_win_scale(struct hdd_context *hdd_ctx)
  *
  * Return: True if vote level is high
  */
-#ifdef RX_PERFORMANCE
 bool hdd_is_current_high_throughput(struct hdd_context *hdd_ctx)
 {
 	if (hdd_ctx->cur_vote_level < PLD_BUS_WIDTH_MEDIUM)
@@ -3289,7 +3319,6 @@ bool hdd_is_current_high_throughput(struct hdd_context *hdd_ctx)
 	else
 		return true;
 }
-#endif
 #endif
 
 #ifdef QCA_LL_LEGACY_TX_FLOW_CONTROL
@@ -3524,9 +3553,11 @@ void hdd_dp_cfg_update(struct wlan_objmgr_psoc *psoc,
 		       struct hdd_context *hdd_ctx)
 {
 	struct hdd_config *config;
-	qdf_size_t array_out_size;
+	uint16_t cfg_len;
 
 	config = hdd_ctx->config;
+	cfg_len = qdf_str_len(cfg_get(psoc, CFG_DP_RPS_RX_QUEUE_CPU_MAP_LIST))
+		  + 1;
 	hdd_ini_tx_flow_control(config, psoc);
 	hdd_ini_bus_bandwidth(config, psoc);
 	hdd_ini_tcp_settings(config, psoc);
@@ -3542,9 +3573,18 @@ void hdd_dp_cfg_update(struct wlan_objmgr_psoc *psoc,
 	config->rx_thread_affinity_mask =
 		cfg_get(psoc, CFG_DP_RX_THREAD_CPU_MASK);
 	config->fisa_enable = cfg_get(psoc, CFG_DP_RX_FISA_ENABLE);
-	qdf_uint8_array_parse(cfg_get(psoc, CFG_DP_RPS_RX_QUEUE_CPU_MAP_LIST),
-			      config->cpu_map_list,
-			      sizeof(config->cpu_map_list), &array_out_size);
+	if (cfg_len < CFG_DP_RPS_RX_QUEUE_CPU_MAP_LIST_LEN) {
+		qdf_str_lcopy(config->cpu_map_list,
+			      cfg_get(psoc, CFG_DP_RPS_RX_QUEUE_CPU_MAP_LIST),
+			      cfg_len);
+	} else {
+		hdd_err("ini string length greater than max size %d",
+			CFG_DP_RPS_RX_QUEUE_CPU_MAP_LIST_LEN);
+		cfg_len = qdf_str_len(cfg_default(CFG_DP_RPS_RX_QUEUE_CPU_MAP_LIST));
+		qdf_str_lcopy(config->cpu_map_list,
+			      cfg_default(CFG_DP_RPS_RX_QUEUE_CPU_MAP_LIST),
+			      cfg_len);
+	}
 	config->tx_orphan_enable = cfg_get(psoc, CFG_DP_TX_ORPHAN_ENABLE);
 	config->rx_mode = cfg_get(psoc, CFG_DP_RX_MODE);
 	hdd_set_rx_mode_value(hdd_ctx);

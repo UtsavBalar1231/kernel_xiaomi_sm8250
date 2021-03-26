@@ -22,6 +22,7 @@
 #include "wlan_fw_offload_main.h"
 #include "cds_api.h"
 #include "wma.h"
+#include "wlan_fwol_tgt_api.h"
 
 struct wlan_fwol_psoc_obj *fwol_get_psoc_obj(struct wlan_objmgr_psoc *psoc)
 {
@@ -547,6 +548,7 @@ QDF_STATUS fwol_cfg_on_psoc_enable(struct wlan_objmgr_psoc *psoc)
 	ucfg_fwol_fetch_tsf_sync_host_gpio_pin(psoc, fwol_cfg);
 	ucfg_fwol_fetch_dhcp_server_settings(psoc, fwol_cfg);
 	fwol_cfg->sap_xlna_bypass = cfg_get(psoc, CFG_SET_SAP_XLNA_BYPASS);
+	fwol_cfg->disable_hw_assist = cfg_get(psoc, CFG_DISABLE_HW_ASSIST);
 
 	return status;
 }
@@ -649,4 +651,20 @@ void fwol_release_rx_event(struct wlan_fwol_rx_event *event)
 	if (event->psoc)
 		wlan_objmgr_psoc_release_ref(event->psoc, WLAN_FWOL_SB_ID);
 	qdf_mem_free(event);
+}
+
+QDF_STATUS fwol_configure_hw_assist(struct wlan_objmgr_pdev *pdev,
+				    bool disable_hw_assist)
+{
+	QDF_STATUS status;
+	struct pdev_params pdev_param;
+
+	pdev_param.param_id = WMI_PDEV_PARAM_DISABLE_HW_ASSIST;
+	pdev_param.param_value = disable_hw_assist;
+
+	status = tgt_fwol_pdev_param_send(pdev, pdev_param);
+	if (QDF_IS_STATUS_ERROR(status))
+		fwol_err("WMI_PDEV_PARAM_DISABLE_HW_ASSIST failed %d", status);
+
+	return status;
 }
