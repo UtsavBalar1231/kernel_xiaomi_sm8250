@@ -636,6 +636,18 @@ QDF_STATUS
 wmi_unified_extract_roam_11kv_stats(wmi_unified_t wmi, void *evt_buf,
 				    struct wmi_neighbor_report_data *dst,
 				    uint8_t idx, uint8_t rpt_idx);
+/**
+ * wmi_unified_extract_roam_msg_info() - Extract Roam msg stats
+ * @wmi:       wmi handle
+ * @evt_buf:   Pointer to the event buffer
+ * @dst:       Pointer to destination structure to fill data
+ * @idx:       TLV id
+ *
+ * Return: QDF_STATUS
+ */
+QDF_STATUS
+wmi_unified_extract_roam_msg_info(wmi_unified_t wmi, void *evt_buf,
+				   struct wmi_roam_msg_info *dst, uint8_t idx);
 
 /**
  * wmi_unified_vdev_create_send() - send VDEV create command to fw
