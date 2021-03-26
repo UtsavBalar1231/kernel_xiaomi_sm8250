@@ -1489,6 +1489,7 @@
 			qcom,ipc = <&apcs 0 8>;
 			qcom,smd-edge = <1>;
 			qcom,remote-pid = <2>;
+			mbox-names = "adsp_smem";
 			label = "adsp";
 
 			qcom,smd-channels = "IPCRTR";
@@ -1503,6 +1504,10 @@
 
 			qcom,diag_cntl {
 				qcom,smd-channels = "DIAG_CNTL";
+			};
+
+			qcom,apr_tal_rpmsg {
+				qcom,smd-channels = "apr_audio_svc";
 			};
 		};
 
