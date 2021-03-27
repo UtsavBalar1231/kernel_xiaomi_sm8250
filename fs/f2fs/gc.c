@@ -37,6 +37,7 @@ static int gc_thread_func(void *data)
 	struct f2fs_sb_info *sbi = data;
 	struct f2fs_gc_kthread *gc_th = sbi->gc_thread;
 	wait_queue_head_t *wq = &sbi->gc_thread->gc_wait_queue_head;
+	wait_queue_head_t *fggc_wq = &sbi->gc_thread->fggc_wq;
 	unsigned int wait_ms, gc_count, i;
 	bool boost;
 
@@ -44,12 +45,16 @@ static int gc_thread_func(void *data)
 
 	set_freezable();
 	do {
-		bool sync_mode;
+		bool sync_mode, foreground = false;
 
 		wait_event_interruptible_timeout(*wq,
 				kthread_should_stop() || freezing(current) ||
+				waitqueue_active(fggc_wq) ||
 				gc_th->gc_wake,
 				msecs_to_jiffies(wait_ms));
+
+		if (test_opt(sbi, GC_MERGE) && waitqueue_active(fggc_wq))
+			foreground = true;
 
 		/* give it a try one time */
 		if (gc_th->gc_wake)
@@ -99,7 +104,10 @@ static int gc_thread_func(void *data)
 			goto do_gc;
 		}
 
-		if (!down_write_trylock(&sbi->gc_lock)) {
+		if (foreground) {
+			down_write(&sbi->gc_lock);
+			goto do_gc;
+		} else if (!down_write_trylock(&sbi->gc_lock)) {
 			stat_other_skip_bggc_count(sbi);
 			goto next;
 		}
@@ -120,7 +128,7 @@ static int gc_thread_func(void *data)
 				increase_sleep_time(gc_th, &wait_ms);
 		}
 do_gc:
-		gc_count = boost ? get_gc_count(sbi) : 1;
+		gc_count = (boost && !foreground) ? get_gc_count(sbi) : 1;
 
 		for (i = 0; i < gc_count; i++) {
 			/*
@@ -132,12 +140,17 @@ do_gc:
 				break;
 			}
 
-			stat_inc_bggc_count(sbi->stat_info);
+			if (!foreground)
+				stat_inc_bggc_count(sbi->stat_info);
 
 			sync_mode = F2FS_OPTION(sbi).bggc_mode == BGGC_MODE_SYNC;
 
+			/* foreground GC was been triggered via f2fs_balance_fs() */
+			if (foreground)
+				sync_mode = false;
+
 			/* if return value is not 0, no victim was selected */
-			if (f2fs_gc(sbi, sync_mode, true, NULL_SEGNO)) {
+			if (f2fs_gc(sbi, sync_mode, !foreground, NULL_SEGNO)) {
 				wait_ms = gc_th->no_gc_sleep_time;
 				break;
 			}
@@ -145,6 +158,9 @@ do_gc:
 			if (should_break_gc(sbi))
 				break;
 		}
+
+		if (foreground)
+			wake_up_all(&gc_th->fggc_wq);
 
 		trace_f2fs_background_gc(sbi->sb, wait_ms,
 				prefree_segments(sbi), free_segments(sbi));
@@ -179,6 +195,7 @@ int f2fs_start_gc_thread(struct f2fs_sb_info *sbi)
 
 	sbi->gc_thread = gc_th;
 	init_waitqueue_head(&sbi->gc_thread->gc_wait_queue_head);
+	init_waitqueue_head(&sbi->gc_thread->fggc_wq);
 	sbi->gc_thread->f2fs_gc_task = kthread_run(gc_thread_func, sbi,
 			"f2fs_gc-%u:%u", MAJOR(dev), MINOR(dev));
 	if (IS_ERR(gc_th->f2fs_gc_task)) {
@@ -196,6 +213,7 @@ void f2fs_stop_gc_thread(struct f2fs_sb_info *sbi)
 	if (!gc_th)
 		return;
 	kthread_stop(gc_th->f2fs_gc_task);
+	wake_up_all(&gc_th->fggc_wq);
 	kvfree(gc_th);
 	sbi->gc_thread = NULL;
 }
