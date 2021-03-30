@@ -4966,19 +4966,24 @@
 
 	qfprom: qfprom@780000 {
 		compatible = "qcom,qfprom";
-		reg = <0x00784000 0x3000>;
+		reg = <0x00780000 0x5000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 		read-only;
 		ranges;
 
-		gpu_lm_efuse: gpu_lm_efuse@5c8 {
-			reg = <0x5c8 0x4>;
+		gpu_lm_efuse: gpu_lm_efuse@45c8 {
+			reg = <0x45c8 0x4>;
 		};
 
-		gpu_speed_bin: gpu_speed_bin@19b {
-			reg = <0x19b 0x1>;
+		gpu_speed_bin: gpu_speed_bin@419b {
+			reg = <0x419b 0x1>;
 			bits = <5 3>;
+		};
+
+		thermal_speed_bin: thermal-speed-bin@1a2 {
+			reg = <0x1a2 0x1>;
+			bits = <7 1>;
 		};
 	};
 };
