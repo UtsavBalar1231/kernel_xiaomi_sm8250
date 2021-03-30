@@ -2176,6 +2176,9 @@
 
 		qcom,snoc-wcnss-clock-freq = <200000000>;
 
+		qcom,smem-states = <&apps_smsm 10>, <&apps_smsm 9>, <&apps_smsm 12>;
+		qcom,smem-state-names = "tx-enable", "tx-rings-empty", "wake-state";
+
 		qcom,has-autodetect-xo;
 		qcom,is-pronto-v3;
 		qcom,has-pronto-hw;
