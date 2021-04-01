@@ -43,7 +43,7 @@
 			qcom,bus-master = <MSM_BUS_MASTER_VIDEO_P0>;
 			qcom,bus-slave = <MSM_BUS_SLAVE_EBI_CH0>;
 			qcom,mode  = "vidc-ar50-ddr";
-			qcom,bus-range-kbps = <1000 2128000>;
+			qcom,bus-range-kbps = <1000 6500000>;
 		};
 
 		arm9_bus_ddr {
