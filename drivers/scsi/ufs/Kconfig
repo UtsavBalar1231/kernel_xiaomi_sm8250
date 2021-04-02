@@ -132,6 +132,55 @@ config SCSI_UFS_HISI
 	  Select this if you have UFS controller on Hisilicon chipset.
 	  If unsure, say N.
 
+config UFS3V1
+	bool "Enables support for UFS 3.1 features"
+	default n
+	depends on SCSI_UFSHCD
+	help
+	  This config allows to switch between ufs 3.1 and ufs 3.0 features.
+
+config UFSFEATURE
+	bool "UFS feature activate"
+	default y
+	depends on SCSI_UFSHCD
+	help
+	UFS feature activate such as hpb, tw and etc.
+
+config UFSHPB
+	bool "UFS Host Performance Booster support"
+	default y
+	depends on SCSI_UFSHCD && UFSFEATURE
+	help
+	UFS HPB Feature Enable
+
+config HPB_ERR_INJECTION
+	bool "HPB ERROR INJECTION"
+	depends on SCSI_UFSHCD && UFSFEATURE && UFSHPB
+	help
+	error injection for checking HPB entry integrity
+
+config UFSTW
+	bool "UFS Turbo Write support"
+	default y
+	depends on SCSI_UFSHCD && UFSFEATURE
+	help
+	UFS TW Feature Enable
+
+config UFSTW_IGNORE_GUARANTEE_BIT
+	bool "Ignore UFS Turbo Write Life Time Guarantee bit for POC"
+	default y
+	depends on SCSI_UFSHCD && UFSFEATURE && UFSTW
+	help
+	ignore the guarantee bit[31] of dTurboWriteBufferLifeTimeEst for PoC
+
+config UFSTW_BOOT_ENABLED
+        bool "Turbo Write enabled at boot time"
+	default y
+	depends on SCSI_UFSHCD && UFSFEATURE && UFSTW
+	help
+	fTurboWriteEn and fTurboWriteBufferFlushDuringHibnerEnter flags
+	are enabled at boot time.
+
 config SCSI_UFS_CRYPTO
 	bool "UFS Crypto Engine Support"
 	depends on SCSI_UFSHCD && BLK_INLINE_ENCRYPTION
