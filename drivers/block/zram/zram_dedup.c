@@ -8,7 +8,7 @@
  */
 
 #include <linux/vmalloc.h>
-#include <linux/jhash.h>
+#include <linux/xxhash.h>
 #include <linux/highmem.h>
 
 #include "zram_drv.h"
@@ -30,7 +30,7 @@ u64 zram_dedup_meta_size(struct zram *zram)
 
 static u32 zram_dedup_checksum(unsigned char *mem)
 {
-	return jhash(mem, PAGE_SIZE, 0);
+	return xxhash(mem, PAGE_SIZE, 0);
 }
 
 void zram_dedup_insert(struct zram *zram, struct zram_entry *new,
