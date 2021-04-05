@@ -2,7 +2,7 @@
 /*
  * QTI Inline Crypto Engine (ICE) driver
  *
- * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2020, 2021 The Linux Foundation. All rights reserved.
  */
 
 #include <linux/module.h>
@@ -58,7 +58,8 @@
 
 #define ICE_CRYPTO_CXT_FDE 1
 #define ICE_CRYPTO_CXT_FBE 2
-#define ICE_INSTANCE_TYPE_LENGTH 12
+
+#define ICE_FDE_KEY_INDEX 31
 
 static int ice_fde_flag;
 
@@ -104,6 +105,11 @@ static int qti_ice_setting_config(struct request *req,
 			setting->encr_bypass = true;
 			setting->decr_bypass = true;
 		}
+		/* Qseecom now sets the FDE key to slot 31 by default, instead
+		 * of slot 0, so use the same slot here during read/write
+		 */
+		if (cxt == ICE_CRYPTO_CXT_FDE)
+			setting->crypto_data.key_index = ICE_FDE_KEY_INDEX;
 	}
 
 	return 0;
@@ -584,33 +590,37 @@ static int register_ice_device(struct ice_device *ice_dev)
 	unsigned int baseminor = 0;
 	unsigned int count = 1;
 	struct device *class_dev;
-	char ice_type[ICE_INSTANCE_TYPE_LENGTH];
-
-	if (!strcmp(ice_dev->ice_instance_type, "sdcc"))
-		strlcpy(ice_type, QCOM_SDCC_ICE_DEV, sizeof(ice_type));
-	else if (!strcmp(ice_dev->ice_instance_type, "ufscard"))
-		strlcpy(ice_type, QCOM_UFS_CARD_ICE_DEV, sizeof(ice_type));
-	else
-		strlcpy(ice_type, QCOM_UFS_ICE_DEV, sizeof(ice_type));
+	int is_sdcc_ice = !strcmp(ice_dev->ice_instance_type, "sdcc");
+	int is_ufscard_ice = !strcmp(ice_dev->ice_instance_type, "ufscard");
 
 	rc = alloc_chrdev_region(&ice_dev->device_no, baseminor, count,
-			ice_type);
+			is_sdcc_ice ? QCOM_SDCC_ICE_DEV : is_ufscard_ice ?
+				QCOM_UFS_CARD_ICE_DEV : QCOM_UFS_ICE_DEV);
 	if (rc < 0) {
 		pr_err("alloc_chrdev_region failed %d for %s\n", rc,
-			ice_type);
+			is_sdcc_ice ? QCOM_SDCC_ICE_DEV : is_ufscard_ice ?
+				QCOM_UFS_CARD_ICE_DEV : QCOM_UFS_ICE_DEV);
 		return rc;
 	}
-	ice_dev->driver_class = class_create(THIS_MODULE, ice_type);
+	ice_dev->driver_class = class_create(THIS_MODULE,
+			is_sdcc_ice ? QCOM_SDCC_ICE_DEV : is_ufscard_ice ?
+				QCOM_UFS_CARD_ICE_DEV : QCOM_UFS_ICE_DEV);
 	if (IS_ERR(ice_dev->driver_class)) {
 		rc = -ENOMEM;
-		pr_err("class_create failed %d for %s\n", rc, ice_type);
+		pr_err("class_create failed %d for %s\n", rc,
+			is_sdcc_ice ? QCOM_SDCC_ICE_DEV : is_ufscard_ice ?
+				QCOM_UFS_CARD_ICE_DEV : QCOM_UFS_ICE_DEV);
 		goto exit_unreg_chrdev_region;
 	}
 	class_dev = device_create(ice_dev->driver_class, NULL,
-					ice_dev->device_no, NULL, ice_type);
+					ice_dev->device_no, NULL,
+			is_sdcc_ice ? QCOM_SDCC_ICE_DEV : is_ufscard_ice ?
+				QCOM_UFS_CARD_ICE_DEV : QCOM_UFS_ICE_DEV);
 
 	if (!class_dev) {
-		pr_err("class_device_create failed %d for %s\n", rc, ice_type);
+		pr_err("class_device_create failed %d for %s\n", rc,
+			is_sdcc_ice ? QCOM_SDCC_ICE_DEV : is_ufscard_ice ?
+				QCOM_UFS_CARD_ICE_DEV : QCOM_UFS_ICE_DEV);
 		rc = -ENOMEM;
 		goto exit_destroy_class;
 	}
@@ -620,7 +630,9 @@ static int register_ice_device(struct ice_device *ice_dev)
 
 	rc = cdev_add(&ice_dev->cdev, MKDEV(MAJOR(ice_dev->device_no), 0), 1);
 	if (rc < 0) {
-		pr_err("cdev_add failed %d for %s\n", rc, ice_type);
+		pr_err("cdev_add failed %d for %s\n", rc,
+			is_sdcc_ice ? QCOM_SDCC_ICE_DEV : is_ufscard_ice ?
+				QCOM_UFS_CARD_ICE_DEV : QCOM_UFS_ICE_DEV);
 		goto exit_destroy_device;
 	}
 	return  0;
