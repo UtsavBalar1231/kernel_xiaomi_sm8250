@@ -1723,7 +1723,7 @@ static enum oom_status mem_cgroup_oom(struct mem_cgroup *memcg, gfp_t mask, int 
 	 * victim and then we have to bail out from the charge path.
 	 */
 	if (memcg->oom_kill_disable) {
-		if (!current->in_user_fault)
+		if (!task_in_user_fault())
 			return OOM_SKIPPED;
 		css_get(&memcg->css);
 		current->memcg_in_oom = memcg;
