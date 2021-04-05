@@ -245,6 +245,7 @@ struct zone_reclaim_stat {
 };
 
 struct lruvec;
+struct page_vma_mapped_walk;
 
 #define LRU_GEN_MASK		((BIT(LRU_GEN_WIDTH) - 1) << LRU_GEN_PGOFF)
 #define LRU_USAGE_MASK		((BIT(LRU_USAGE_WIDTH) - 1) << LRU_USAGE_PGOFF)
@@ -335,6 +336,7 @@ void lru_gen_init_lruvec(struct lruvec *lruvec);
 void lru_gen_set_state(bool enable, bool main, bool swap);
 void *lru_gen_eviction(struct page *page);
 void lru_gen_refault(struct page *page, void *shadow);
+void lru_gen_scan_around(struct page_vma_mapped_walk *pvmw);
 
 #else /* CONFIG_LRU_GEN */
 
@@ -352,6 +354,10 @@ static inline void *lru_gen_eviction(struct page *page)
 }
 
 static inline void lru_gen_refault(struct page *page, void *shadow)
+{
+}
+
+static inline void lru_gen_scan_around(struct page_vma_mapped_walk *pvmw)
 {
 }
 
