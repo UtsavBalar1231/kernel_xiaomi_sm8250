@@ -757,6 +757,8 @@ struct zonelist {
 extern struct page *mem_map;
 #endif
 
+struct mm_walk_args;
+
 /*
  * On NUMA machines, each NUMA node would have a pg_data_t to describe
  * it's memory layout. On UMA machines there is a single pglist_data which
@@ -853,6 +855,9 @@ typedef struct pglist_data {
 
 	unsigned long		flags;
 
+#ifdef CONFIG_LRU_GEN
+	struct mm_walk_args	*mm_walk_args;
+#endif
 	ZONE_PADDING(_pad2_)
 
 	/* Per-node vmstats */
