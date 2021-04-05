@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  */
 
 #include <media/cam_defs.h>
@@ -140,6 +140,14 @@ static int cam_isp_update_dual_config(
 		}
 
 		hw_mgr_res = &res_list_isp_out[i];
+		if (!hw_mgr_res) {
+			CAM_ERR(CAM_ISP,
+				"Invalid isp out resource i %d num_out_res %d",
+				i, dual_config->num_ports);
+			rc = -EINVAL;
+			goto end;
+		}
+
 		for (j = 0; j < CAM_ISP_HW_SPLIT_MAX; j++) {
 			if (!hw_mgr_res->hw_res[j])
 				continue;
