@@ -306,25 +306,22 @@
 			compatible = "qcom,msm-cam-smmu-cb";
 			iommus = <&apps_iommu 0x400 0x00>,
 				<&apps_iommu 0x2400 0x00>;
+			qcom,iommu-dma-addr-pool = <0x10000000 0x70000000>;
 			label = "vfe";
 			qcom,scratch-buf-support;
-		};
-
-		msm_cam_smmu_cb2: msm_cam_smmu_cb2 {
-			compatible = "qcom,msm-cam-smmu-cb";
-			label = "vfe_secure";
-			qcom,secure-context;
 		};
 
 		msm_cam_smmu_cb3: msm_cam_smmu_cb3 {
 			compatible = "qcom,msm-cam-smmu-cb";
 			iommus = <&apps_iommu 0x1c00 0x00>;
+			qcom,iommu-dma-addr-pool = <0x00020000 0x78000000>;
 			label = "cpp";
 		};
 
 		msm_cam_smmu_cb4: msm_cam_smmu_cb4 {
 			compatible = "qcom,msm-cam-smmu-cb";
 			iommus = <&apps_iommu 0x1800 0x00>;
+			qcom,iommu-dma-addr-pool = <0x00020000 0x78000000>;
 			label = "jpeg_enc0";
 		};
 	};
@@ -397,6 +394,8 @@
 			<106 512 0 0>;
 		qcom,msm-bus-vector-dyn-vote;
 		qcom,micro-reset;
+		qcom,src-clock-rates = <133333333 160000000 200000000
+			266666667 308570000 320000000 360000000>;
 		qcom,cpp-fw-payload-info {
 			qcom,stripe-base = <156>;
 			qcom,plane-base = <141>;
