@@ -44,3 +44,10 @@
 		status = "disabled";
 	};
 };
+
+&usb0 {
+	/delete-property/ extcon;
+	dwc3@4e00000 {
+		dr_mode = "peripheral";
+	};
+};
