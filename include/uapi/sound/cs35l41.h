@@ -78,7 +78,6 @@ struct cs35l41_private {
 	struct soc_enum fast_switch_enum;
 	const char **fast_switch_names;
 	struct mutex rate_lock;
-	int dc_current_cnt;
 };
 
 int cs35l41_probe(struct cs35l41_private *cs35l41,
