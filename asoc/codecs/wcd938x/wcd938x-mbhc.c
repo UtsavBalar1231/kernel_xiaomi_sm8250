@@ -661,6 +661,7 @@ right_ch_impedance:
 		dev_dbg(component->dev, "%s: stereo plug type detected\n",
 			__func__);
 		mbhc->hph_type = WCD_MBHC_HPH_STEREO;
+		send_mbhc_impedance_to_xlog(*zl, *zr);
 	} else {
 		dev_dbg(component->dev, "%s: MONO plug type detected\n",
 			__func__);
@@ -688,7 +689,6 @@ zdet_complete:
 	if (is_fsm_disable)
 		regmap_update_bits(wcd938x->regmap,
 				   WCD938X_ANA_MBHC_ELECT, 0x80, 0x80);
-	send_mbhc_impedance_to_xlog(*zl, *zr);//LXY
 }
 
 static void wcd938x_mbhc_gnd_det_ctrl(struct snd_soc_component *component,
