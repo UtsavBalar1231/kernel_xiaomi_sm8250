@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/debugfs.h>
@@ -491,6 +491,11 @@ static int msm_vidc_probe_vidc_device(struct platform_device *pdev)
 
 	core->platform_data = vidc_get_drv_data(&pdev->dev);
 	dev_set_drvdata(&pdev->dev, core);
+	vidc_driver->ctxt = kcalloc(core->platform_data->max_inst_count,
+		sizeof(*vidc_driver->ctxt), GFP_KERNEL);
+	if (!vidc_driver->ctxt)
+		return -ENOMEM;
+	vidc_driver->num_ctxt = core->platform_data->max_inst_count;
 	rc = msm_vidc_initialize_core(pdev, core);
 	if (rc) {
 		d_vpr_e("Failed to init core\n");
@@ -620,6 +625,7 @@ err_v4l2_register:
 err_core_init:
 	dev_set_drvdata(&pdev->dev, NULL);
 	kfree(core);
+	kfree(vidc_driver->ctxt);
 	return rc;
 }
 
@@ -701,6 +707,7 @@ static int msm_vidc_remove(struct platform_device *pdev)
 	mutex_destroy(&core->resources.cb_lock);
 	mutex_destroy(&core->lock);
 	kfree(core);
+	kfree(vidc_driver->ctxt);
 	return rc;
 }
 

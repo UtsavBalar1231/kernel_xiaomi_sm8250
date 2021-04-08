@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/jiffies.h>
@@ -3074,7 +3074,6 @@ static int msm_comm_init_core(struct msm_vidc_inst *inst)
 	core->state = VIDC_CORE_INIT;
 	core->smmu_fault_handled = false;
 	core->trigger_ssr = false;
-	core->resources.max_inst_count = MAX_SUPPORTED_INSTANCES;
 	core->resources.max_secure_inst_count =
 		core->resources.max_secure_inst_count ?
 		core->resources.max_secure_inst_count :

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/debugfs.h>
@@ -2055,6 +2055,10 @@ static const struct of_device_id msm_vidc_dt_match[] = {
 		.data = &kona_data,
 	},
 	{
+		.compatible = "qcom,qcs8250-vidc",
+		.data = &kona_data,
+	},
+	{
 		.compatible = "qcom,sm6150-vidc",
 		.data = &sm6150_data,
 	},
@@ -2178,6 +2182,7 @@ void *vidc_get_drv_data(struct device *dev)
 			goto exit;
 	}
 
+	driver_data->max_inst_count = MAX_SUPPORTED_INSTANCES;
 	if (!strcmp(match->compatible, "qcom,sdm670-vidc")) {
 		if (driver_data->sku_version == SKU_VERSION_1) {
 			driver_data->common_data = sdm670_common_data_v1;
@@ -2205,6 +2210,21 @@ void *vidc_get_drv_data(struct device *dev)
 		d_vpr_h("DDR Type 0x%x hbb 0x%x\n",
 			ddr_type, driver_data->ubwc_config ?
 			driver_data->ubwc_config->highest_bank_bit : -1);
+	} else if (!strcmp(match->compatible, "qcom,qcs8250-vidc")) {
+		ddr_type = of_fdt_get_ddrtype();
+		if (ddr_type == -ENOENT)
+			d_vpr_e("Failed to get ddr type, use LPDDR5\n");
+
+		if (driver_data->ubwc_config &&
+			(ddr_type == DDR_TYPE_LPDDR4 ||
+			 ddr_type == DDR_TYPE_LPDDR4X))
+			driver_data->ubwc_config->highest_bank_bit = 0xf;
+
+		d_vpr_h("DDR Type 0x%x hbb 0x%x\n",
+			ddr_type, driver_data->ubwc_config ?
+			driver_data->ubwc_config->highest_bank_bit : -1);
+
+		driver_data->max_inst_count = MAX_SUPPORTED_INSTANCES_24;
 	} else if (!strcmp(match->compatible, "qcom,bengal-vidc")) {
 		rc = msm_vidc_read_rank(driver_data, dev);
 		if (rc) {
