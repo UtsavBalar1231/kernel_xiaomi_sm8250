@@ -496,11 +496,6 @@ static int msm_vidc_probe_vidc_device(struct platform_device *pdev)
 		goto err_core_init;
 	}
 	dev_set_drvdata(&pdev->dev, core);
-	vidc_driver->ctxt = kcalloc(core->platform_data->max_inst_count,
-		sizeof(*vidc_driver->ctxt), GFP_KERNEL);
-	if (!vidc_driver->ctxt)
-		return -ENOMEM;
-	vidc_driver->num_ctxt = core->platform_data->max_inst_count;
 	rc = msm_vidc_initialize_core(pdev, core);
 	if (rc) {
 		d_vpr_e("Failed to init core\n");
@@ -513,6 +508,12 @@ static int msm_vidc_probe_vidc_device(struct platform_device *pdev)
 	}
 
 	core->id = MSM_VIDC_CORE_VENUS;
+
+	vidc_driver->ctxt = kcalloc(core->platform_data->max_inst_count,
+		sizeof(*vidc_driver->ctxt), GFP_KERNEL);
+	if (!vidc_driver->ctxt)
+		goto err_vidc_context;
+	vidc_driver->num_ctxt = core->platform_data->max_inst_count;
 
 	rc = v4l2_device_register(&pdev->dev, &core->v4l2_dev);
 	if (rc) {
@@ -626,11 +627,12 @@ err_enc:
 err_dec:
 	v4l2_device_unregister(&core->v4l2_dev);
 err_v4l2_register:
+	kfree(vidc_driver->ctxt);
+err_vidc_context:
 	sysfs_remove_group(&pdev->dev.kobj, &msm_vidc_core_attr_group);
 err_core_init:
 	dev_set_drvdata(&pdev->dev, NULL);
 	kfree(core);
-	kfree(vidc_driver->ctxt);
 	return rc;
 }
 
