@@ -838,6 +838,10 @@ static int cs35l41_get_output_dev(struct snd_kcontrol *kcontrol,
 	return ret;
 }
 
+static const char * const channel_swap_texts[] = {"Off", "On"};
+static SOC_ENUM_SINGLE_DECL(channel_swap_enum, SND_SOC_NOPM, 0,
+			  channel_swap_texts);
+
 static const char *virt_text[] = { "None", "Ref"};
 static SOC_ENUM_SINGLE_DECL(virt_enum, SND_SOC_NOPM, 2, virt_text);
 
@@ -1344,6 +1348,50 @@ static int cs35l41_put_ramp_knee_time(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
+static int cs35l41_channel_swap_get(struct snd_kcontrol *kcontrol,
+				 struct snd_ctl_elem_value *ucontrol)
+{
+	struct snd_soc_component *component =
+	   snd_soc_kcontrol_component(kcontrol);
+	struct cs35l41_private *cs35l41 =
+	   snd_soc_component_get_drvdata(component);
+	int swapped = 0;
+	int val;
+
+	if (cs35l41->dsp.booted) {
+	  wm_adsp_read_ctl(&cs35l41->dsp, "CH_BAL", (void *)&val, sizeof(__be32));
+
+	  dev_dbg(cs35l41->dev, "%s: CH_BAL = 0x%08x\n", __func__, be32_to_cpu(val));
+	  swapped = (0x400000==be32_to_cpu(val)) ? 1 : 0;
+	}
+
+	ucontrol->value.integer.value[0] = swapped;
+
+	return 0;
+}
+
+static int cs35l41_channel_swap_put(struct snd_kcontrol *kcontrol,
+				 struct snd_ctl_elem_value *ucontrol)
+{
+	struct snd_soc_component *component =
+	   snd_soc_kcontrol_component(kcontrol);
+	struct cs35l41_private *cs35l41 =
+	   snd_soc_component_get_drvdata(component);
+	int val;
+
+	if (cs35l41->dsp.booted) {
+	  if (ucontrol->value.integer.value[0])
+		 val = 0x400000;
+	  else
+		 val = 0;
+
+	  val = cpu_to_be32(val);
+	  wm_adsp_write_ctl(&cs35l41->dsp, "CH_BAL", (void *)&val, sizeof(__be32));
+	}
+
+	return 0;
+}
+
 static const char * const cs35l41_output_dev_text[] = {
 	"Speaker",
 	"Receiver",
@@ -1388,6 +1436,10 @@ static const struct snd_kcontrol_new cs35l41_aud_controls[] = {
 		    cs35l41_fast_switch_en_get, cs35l41_fast_switch_en_put),
 	SOC_SINGLE_EXT("Firmware Reload Tuning", SND_SOC_NOPM, 0, 1, 0,
 			cs35l41_reload_tuning_get, cs35l41_reload_tuning_put),
+	SOC_ENUM_EXT("Channel Swap", channel_swap_enum,
+			 cs35l41_channel_swap_get, cs35l41_channel_swap_put),
+	SOC_SINGLE("VPBR Config", CS35L41_VPBR_CFG, 0, 0x7FFFFFF, 0),
+	SOC_SINGLE("Noise Gate Config", CS35L41_NG_CFG, 0, 0x3FFF, 0),
 	SOC_SINGLE("GLOBAL_EN from GPIO Control", CS35L41_PWR_CTRL1, 8, 1, 0),
 	SOC_SINGLE("Boost Converter Enable", CS35L41_PWR_CTRL2, 4, 3, 0),
 	SOC_SINGLE("AMP Enable", CS35L41_PWR_CTRL2, 0, 1, 0),
