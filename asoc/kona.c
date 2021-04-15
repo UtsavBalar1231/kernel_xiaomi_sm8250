@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
-
+#define DEBUG
 #include <linux/clk.h>
 #include <linux/delay.h>
 #include <linux/gpio.h>
@@ -647,7 +647,7 @@ static struct tdm_dev_config tert_tdm_dev_config[MAX_PATH][TDM_PORT_MAX] = {
 	},
 	{
 #if defined(CONFIG_TARGET_PRODUCT_ENUMA) || defined(CONFIG_TARGET_PRODUCT_ELISH)
-		{ {0,   4, 8, 12, 16, 20, 24, 28} }, /* TX_0 */
+		{ {4,  12,  16,  28, 0xFFFF} }, /* TX_0 */
 #else
 		{ {0,   4, 0xFFFF} }, /* TX_0 */
 #endif
