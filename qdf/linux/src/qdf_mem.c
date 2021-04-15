@@ -51,6 +51,18 @@ static bool is_initial_mem_debug_disabled;
 #define QDF_MEM_WARN_THRESHOLD 300 /* ms */
 #define QDF_DEBUG_STRING_SIZE 512
 
+/**
+ * struct __qdf_mem_stat - qdf memory statistics
+ * @kmalloc:	total kmalloc allocations
+ * @dma:	total dma allocations
+ * @skb:	total skb allocations
+ */
+static struct __qdf_mem_stat {
+	qdf_atomic_t kmalloc;
+	qdf_atomic_t dma;
+	qdf_atomic_t skb;
+} qdf_mem_stat;
+
 #ifdef MEMORY_DEBUG
 #include "qdf_debug_domain.h"
 #include <qdf_list.h>
@@ -266,31 +278,9 @@ qdf_mem_header_assert_valid(struct qdf_mem_header *header,
 	QDF_MEMDEBUG_PANIC("Fatal memory error detected @ %s:%d", func, line);
 }
 
-/**
- * struct __qdf_mem_stat - qdf memory statistics
- * @kmalloc:	total kmalloc allocations
- * @dma:	total dma allocations
- * @skb:	total skb allocations
- */
-static struct __qdf_mem_stat {
-	qdf_atomic_t kmalloc;
-	qdf_atomic_t dma;
-	qdf_atomic_t skb;
-} qdf_mem_stat;
-
-static void qdf_mem_dma_inc(qdf_size_t size)
-{
-	qdf_atomic_add(size, &qdf_mem_stat.dma);
-}
-
 void qdf_mem_skb_inc(qdf_size_t size)
 {
 	qdf_atomic_add(size, &qdf_mem_stat.skb);
-}
-
-static inline void qdf_mem_dma_dec(qdf_size_t size)
-{
-	qdf_atomic_sub(size, &qdf_mem_stat.dma);
 }
 
 void qdf_mem_skb_dec(qdf_size_t size)
@@ -852,6 +842,16 @@ static QDF_STATUS qdf_mem_debug_debugfs_exit(void)
 }
 
 #endif /* WLAN_DEBUGFS */
+
+static void qdf_mem_dma_inc(qdf_size_t size)
+{
+	qdf_atomic_add(size, &qdf_mem_stat.dma);
+}
+
+static inline void qdf_mem_dma_dec(qdf_size_t size)
+{
+	qdf_atomic_sub(size, &qdf_mem_stat.dma);
+}
 
 /**
  * __qdf_mempool_init() - Create and initialize memory pool
