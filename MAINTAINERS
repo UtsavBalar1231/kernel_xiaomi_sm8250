@@ -5798,6 +5798,15 @@ F:	include/linux/fmc*.h
 F:	include/linux/ipmi-fru.h
 K:	fmc_d.*register
 
+FORTIFY_SOURCE
+M:	Kees Cook <keescook@chromium.org>
+L:	linux-hardening@vger.kernel.org
+S:	Supported
+F:	include/linux/fortify-string.h
+F:	lib/test_fortify/*
+F:	scripts/test_fortify.sh
+K:	\b__NO_FORTIFY\b
+
 FPGA MANAGER FRAMEWORK
 M:	Alan Tull <atull@kernel.org>
 M:	Moritz Fischer <mdf@kernel.org>
