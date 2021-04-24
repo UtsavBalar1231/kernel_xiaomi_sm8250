@@ -45,6 +45,7 @@
 #include "wlan_mlme_public_struct.h"
 #include "wlan_mlme_ucfg_api.h"
 #include "wlan_mlme_api.h"
+#include "wlan_crypto_global_api.h"
 
 #define RSN_OUI_SIZE 4
 /* ////////////////////////////////////////////////////////////////////// */
@@ -6245,5 +6246,29 @@ QDF_STATUS populate_dot11f_twt_extended_caps(struct mac_context *mac_ctx,
 	return QDF_STATUS_SUCCESS;
 }
 #endif
+
+QDF_STATUS populate_dot11f_btm_caps(struct mac_context *mac_ctx,
+				    struct pe_session *pe_session,
+				    struct sDot11fIEExtCap *dot11f)
+{
+	struct s_ext_cap *p_ext_cap;
+	uint32_t fw_akm_bitmap;
+	bool sae_can_roam;
+
+	dot11f->num_bytes = DOT11F_IE_EXTCAP_MAX_LEN;
+	p_ext_cap = (struct s_ext_cap *)dot11f->bytes;
+	fw_akm_bitmap = mac_ctx->mlme_cfg->lfr.fw_akm_bitmap;
+	sae_can_roam = (((fw_akm_bitmap) & (1 << AKM_SAE)) ? true : false);
+
+	 if (pe_session->connected_akm == ANI_AKM_TYPE_SAE &&
+	    !sae_can_roam) {
+		p_ext_cap->bss_transition = 0;
+		pe_debug("Disable btm cap for SAE roam not supported");
+	}
+
+	dot11f->num_bytes = lim_compute_ext_cap_ie_length(dot11f);
+
+	return QDF_STATUS_SUCCESS;
+}
 
 /* parser_api.c ends here. */
