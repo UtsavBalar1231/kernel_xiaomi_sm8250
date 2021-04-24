@@ -2678,22 +2678,25 @@ static int tx_macro_clk_switch(struct snd_soc_component *component, int clk_src)
 
 static int tx_macro_core_vote(void *handle, bool enable)
 {
+	int rc = 0;
 	struct tx_macro_priv *tx_priv = (struct tx_macro_priv *) handle;
 
 	if (tx_priv == NULL) {
 		pr_err("%s: tx priv data is NULL\n", __func__);
 		return -EINVAL;
 	}
+
 	if (enable) {
 		pm_runtime_get_sync(tx_priv->dev);
+		if (bolero_check_core_votes(tx_priv->dev))
+			rc = 0;
+		else
+			rc = -ENOTSYNC;
+	} else {
 		pm_runtime_put_autosuspend(tx_priv->dev);
 		pm_runtime_mark_last_busy(tx_priv->dev);
 	}
-
-	if (bolero_check_core_votes(tx_priv->dev))
-		return 0;
-	else
-		return -EINVAL;
+	return rc;
 }
 
 static int tx_macro_swrm_clock(void *handle, bool enable)
