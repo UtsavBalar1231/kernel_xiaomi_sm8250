@@ -551,6 +551,7 @@ struct msm_vidc_inst {
 	bool static_rotation_flip_enabled;
 	struct internal_buf *dpb_extra_binfo;
 	struct msm_vidc_codec_data *codec_data;
+	bool hdr10_sei_enabled;
 	struct hal_hdr10_pq_sei hdr10_sei_params;
 	struct batch_mode batch;
 	struct delayed_work batch_work;
