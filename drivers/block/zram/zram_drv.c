@@ -51,6 +51,8 @@ static unsigned int num_devices = 1;
  */
 static size_t huge_class_size;
 
+static struct zram *zram0;
+
 static const struct block_device_operations zram_devops;
 static const struct block_device_operations zram_wb_devops;
 
@@ -979,20 +981,25 @@ static ssize_t use_dedup_store(struct device *dev,
 }
 #endif
 
+void zram_compact(void)
+{
+	if (!zram0)
+		return;
+
+	down_read(&zram0->init_lock);
+	if (!init_done(zram0)) {
+		up_read(&zram0->init_lock);
+		return;
+	}
+
+	zs_compact(zram0->mem_pool);
+	up_read(&zram0->init_lock);
+}
+
 static ssize_t compact_store(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t len)
 {
-	struct zram *zram = dev_to_zram(dev);
-
-	down_read(&zram->init_lock);
-	if (!init_done(zram)) {
-		up_read(&zram->init_lock);
-		return -EINVAL;
-	}
-
-	zs_compact(zram->mem_pool);
-	up_read(&zram->init_lock);
-
+	zram_compact();
 	return len;
 }
 
@@ -2008,6 +2015,7 @@ static int zram_add(void)
 	strlcpy(zram->compressor, default_compressor, sizeof(zram->compressor));
 
 	zram_debugfs_register(zram);
+	zram0 = zram;
 	pr_info("Added device: %s\n", zram->disk->disk_name);
 	return device_id;
 
@@ -2050,6 +2058,7 @@ static int zram_remove(struct zram *zram)
 	del_gendisk(zram->disk);
 	blk_cleanup_queue(zram->disk->queue);
 	put_disk(zram->disk);
+	zram0 = NULL;
 	kfree(zram);
 	return 0;
 }
