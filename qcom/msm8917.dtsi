@@ -1,6 +1,6 @@
 #include "skeleton64.dtsi"
 #include <dt-bindings/clock/qcom,gcc-sdm429w.h>
-#include <dt-bindings/clock/mdss-28nm-pll-clk.h>
+#include <dt-bindings/clock/mdss-28nm-pll-clk-legacy.h>
 #include <dt-bindings/clock/qcom,cpu-sdm.h>
 #include <dt-bindings/clock/qcom,rpmcc.h>
 #include <dt-bindings/regulator/qcom,rpm-smd-regulator.h>
@@ -550,7 +550,7 @@
 	};
 
 	rpmcc: qcom,rpmcc {
-		compatible = "qcom,rpmcc-msm8917";
+		compatible = "qcom,rpmcc-qm215";
 		#clock-cells = <1>;
 	};
 
@@ -567,19 +567,25 @@
 		#reset-cells = <1>;
 	};
 
+	cpu_debug: syscon@0b01101c {
+		compatible = "syscon";
+		reg = <0x0b01101c 0x4>;
+	};
+
 	debugcc: qcom,cc-debug {
 		compatible = "qcom,msm8917-debugcc";
 		reg = <0x1874000 0x4>,
 		      <0xb01101c 0x8>;
 		reg-names = "cc_base", "meas";
 		qcom,gcc = <&gcc>;
+		qcom,cpu = <&cpu_debug>;
 		clocks = <&rpmcc RPM_SMD_XO_CLK_SRC>;
 		clock-names = "xo_clk_src";
 		#clock-cells = <1>;
 	};
 
 	gcc_mdss: qcom,gcc-mdss@1800000 {
-		compatible = "qcom,gcc-mdss-8917";
+		compatible = "qcom,gcc-mdss-qm215";
 		reg = <0x1800000 0x80000>;
 		clocks = <&mdss_dsi0_pll PCLK_SRC_0_CLK>,
 			<&mdss_dsi0_pll BYTECLK_SRC_0_CLK>;
@@ -633,14 +639,10 @@
 
 	msm_cpufreq: qcom,msm-cpufreq {
 		compatible = "qcom,msm-cpufreq";
-		/* TODO
-		 * clock-names = "cpu0_clk", "cpu1_clk", "cpu2_clk",
-		 *		"cpu3_clk";
-		 * clocks = <&clock_cpu clk_a53_bc_clk>,
-		 *	 <&clock_cpu clk_a53_bc_clk>,
-		 *	 <&clock_cpu clk_a53_bc_clk>,
-		 *	 <&clock_cpu clk_a53_bc_clk>;
-		 */
+		clock-names = "cpu0_clk";
+		clocks = <&apsscc APCS_MUX_C1_CLK>;
+
+		qcom,governor-per-policy;
 
 		qcom,cpufreq-table =
 			 <  960000 >,
@@ -1607,7 +1609,7 @@
 		qcom,ssctl-instance-id = <0x12>;
 		qcom,qdsp6v56-1-8-inrush-current;
 		qcom,reset-clk;
-
+		qcom,iommu-vmid = <0xF>; /* VMID_MSS_MSA */
 		/* Inputs from mss */
 		/* TBD */
 		interrupts-extended = <&modem_smp2p_in 0 0>,

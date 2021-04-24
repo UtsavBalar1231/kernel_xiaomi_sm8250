@@ -1,5 +1,4 @@
 #include "msm8937-mdss.dtsi"
-#include <dt-bindings/clock/mdss-28nm-pll-clk.h>
 &mdss_dsi {
 	vdda-supply = <&pm8937_l2>;
 	vddio-supply = <&pm8937_l6>;

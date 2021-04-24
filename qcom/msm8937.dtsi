@@ -4,7 +4,7 @@
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/clock/qcom,gcc-sdm429w.h>
 #include <dt-bindings/clock/qcom,rpmcc.h>
-#include <dt-bindings/clock/mdss-28nm-pll-clk.h>
+#include <dt-bindings/clock/mdss-28nm-pll-clk-legacy.h>
 
 #define MHZ_TO_MBPS(mhz, w) ((mhz * 1000000 * w) / (1024 * 1024))
 #define BW_OPP_ENTRY(mhz, w) opp-mhz {opp-hz = /bits/ 64 <MHZ_TO_MBPS(mhz, w)>;}
@@ -24,7 +24,7 @@
 			compatible = "android,firmware";
 			vbmeta {
 				compatible = "android,vbmeta";
-			parts = "vbmeta,boot,system,vendor,dtbo,recovery";
+			parts = "vbmeta,boot,system,vendor,dtbo";
 			};
 
 			fstab {
@@ -34,7 +34,7 @@
 		dev = "/dev/block/platform/soc/7824900.sdhci/by-name/vendor";
 					type = "ext4";
 					mnt_flags = "ro,barrier=1,discard";
-					fsmgr_flags = "wait,avb";
+					fsmgr_flags = "wait,slotselect,avb";
 					status = "ok";
 				};
 			};
@@ -568,15 +568,14 @@
 	};
 
 	rpmcc: qcom,rpmcc {
-		compatible = "qcom,rpmcc-msm8937";
+		compatible = "qcom,rpmcc-sdm439";
 		#clock-cells = <1>;
 	};
 
 	gcc: qcom,gcc@1800000 {
-		compatible = "qcom,gcc-msm8937", "syscon";
+		compatible = "qcom,gcc-sdm439", "syscon";
 		reg = <0x1800000 0x80000>;
-			 <0x00a6018 0x00004>;
-		reg-names = "cc_base", "gpu-bin";
+		reg-names = "cc_base";
 		qcom,gcc_oxili_gfx3d_clk-opp-handle = <&msm_gpu>;
 		vdd_cx-supply = <&pm8937_s2_level>;
 		clocks = <&rpmcc RPM_SMD_XO_CLK_SRC>;
@@ -599,10 +598,10 @@
 	gcc_mdss: qcom,gcc-mdss@1800000 {
 		compatible = "qcom,gcc-mdss-msm8937";
 		reg = <0x1800000 0x80000>;
-		 clocks = <&mdss_dsi0_pll PCLK_SRC_MUX_0_CLK>,
-		 <&mdss_dsi0_pll BYTE_CLK_SRC_0_CLK>,
-		 <&mdss_dsi1_pll PCLK_SRC_MUX_1_CLK>,
-		 <&mdss_dsi1_pll BYTE_CLK_SRC_1_CLK>;
+		 clocks = <&mdss_dsi0_pll PCLK_SRC_0_CLK>,
+		 <&mdss_dsi0_pll BYTECLK_SRC_0_CLK>,
+		 <&mdss_dsi1_pll PCLK_SRC_1_CLK>,
+		 <&mdss_dsi1_pll BYTECLK_SRC_1_CLK>;
 		clock-names = "pclk0_src", "byte0_src", "pclk1_src",
 			"byte1_src";
 		#clock-cells = <1>;
@@ -1489,6 +1488,7 @@
 			qcom,ipc = <&apcs 0 8>;
 			qcom,smd-edge = <1>;
 			qcom,remote-pid = <2>;
+			mbox-names = "adsp_smem";
 			label = "adsp";
 
 			qcom,smd-channels = "IPCRTR";
@@ -1503,6 +1503,10 @@
 
 			qcom,diag_cntl {
 				qcom,smd-channels = "DIAG_CNTL";
+			};
+
+			qcom,apr_tal_rpmsg {
+				qcom,smd-channels = "apr_audio_svc";
 			};
 		};
 
