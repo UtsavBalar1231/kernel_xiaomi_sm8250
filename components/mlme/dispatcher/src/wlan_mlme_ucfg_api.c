@@ -1911,3 +1911,13 @@ bool ucfg_mlme_validate_scan_period(uint32_t roam_scan_period)
 
 	return is_valid;
 }
+
+bool ucfg_is_roaming_enabled(struct wlan_objmgr_pdev *pdev, uint8_t vdev_id)
+{
+	struct wlan_objmgr_psoc *psoc = wlan_pdev_get_psoc(pdev);
+
+	if (mlme_get_roam_state(psoc, vdev_id) == ROAM_RSO_STARTED)
+		return true;
+
+	return false;
+}
