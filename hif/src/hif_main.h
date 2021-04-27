@@ -252,6 +252,10 @@ struct hif_softc {
 #ifdef HIF_CE_LOG_INFO
 	qdf_notif_block hif_recovery_notifier;
 #endif
+#ifdef FEATURE_RUNTIME_PM
+	/* Variable to track the link state change in RTPM */
+	qdf_atomic_t pm_link_state;
+#endif
 };
 
 static inline
