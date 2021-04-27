@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
  */
 #include <linux/slab.h>
 #include "msm_venc.h"
@@ -1205,6 +1205,7 @@ int msm_venc_inst_init(struct msm_vidc_inst *inst)
 	inst->buff_req.buffer[13].buffer_type = HAL_BUFFER_INTERNAL_RECON;
 	msm_vidc_init_buffer_size_calculators(inst);
 	inst->static_rotation_flip_enabled = false;
+	inst->hdr10_sei_enabled = false;
 	return rc;
 }
 
@@ -1699,6 +1700,7 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 		u32 info_type = ((u32)ctrl->val >> 28) & 0xF;
 		u32 val = (ctrl->val & 0xFFFFFFF);
 
+		inst->hdr10_sei_enabled = true;
 		s_vpr_h(sid, "Ctrl:%d, HDR Info with value %u (%#X)",
 				info_type, val, ctrl->val);
 		switch (info_type) {
@@ -3206,6 +3208,10 @@ int msm_venc_set_slice_control_mode(struct msm_vidc_inst *inst)
 
 	/* Update Slice Config */
 	mb_per_frame = NUM_MBS_PER_FRAME(output_height, output_width);
+	if (codec == V4L2_PIX_FMT_HEVC)
+		mb_per_frame =
+			NUM_MBS_PER_FRAME_HEVC(output_height, output_width);
+
 	mbps = NUM_MBS_PER_SEC(output_height, output_width, fps);
 
 	if (slice_mode == HFI_MULTI_SLICE_BY_MB_COUNT) {
@@ -4383,7 +4389,8 @@ int msm_venc_set_hdr_info(struct msm_vidc_inst *inst)
 	}
 	hdev = inst->core->device;
 
-	if (get_v4l2_codec(inst) != V4L2_PIX_FMT_HEVC)
+	if (get_v4l2_codec(inst) != V4L2_PIX_FMT_HEVC ||
+		!inst->hdr10_sei_enabled)
 		return 0;
 
 	profile = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_HEVC_PROFILE);
