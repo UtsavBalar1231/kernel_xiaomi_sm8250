@@ -1,0 +1,7 @@
+#include "bengal.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Khaje SoC";
+	compatible = "qcom,khaje";
+	qcom,msm-id = <518 0x10000>;
+};
