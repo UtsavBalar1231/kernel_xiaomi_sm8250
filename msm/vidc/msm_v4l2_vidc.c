@@ -490,6 +490,11 @@ static int msm_vidc_probe_vidc_device(struct platform_device *pdev)
 		return -ENOMEM;
 
 	core->platform_data = vidc_get_drv_data(&pdev->dev);
+	if(!core->platform_data) {
+		d_vpr_e("Failed to get platform data\n");
+		rc = -EINVAL;
+		goto err_core_init;
+	}
 	dev_set_drvdata(&pdev->dev, core);
 	vidc_driver->ctxt = kcalloc(core->platform_data->max_inst_count,
 		sizeof(*vidc_driver->ctxt), GFP_KERNEL);
