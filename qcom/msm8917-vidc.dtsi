@@ -114,7 +114,7 @@
 			label = "venus-ddr";
 			qcom,bus-master = <MSM_BUS_MASTER_VIDEO_P0>;
 			qcom,bus-slave = <MSM_BUS_SLAVE_EBI_CH0>;
-			qcom,bus-mode = "venus-ddr";
+			qcom,mode = "venus-ddr";
 			qcom,bus-range-kbps = <1000 917000>;
 		};
 
@@ -123,7 +123,7 @@
 			label = "venus-arm9-ddr";
 			qcom,bus-master = <MSM_BUS_MASTER_VIDEO_P0>;
 			qcom,bus-slave = <MSM_BUS_SLAVE_EBI_CH0>;
-			qcom,bus-mode = "performance";
+			qcom,mode = "performance";
 			qcom,bus-range-kbps = <1 1>;
 		};
 	};
