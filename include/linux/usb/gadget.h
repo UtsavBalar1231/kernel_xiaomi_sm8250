@@ -545,13 +545,17 @@ struct usb_gadget {
 	unsigned			connected:1;
 	unsigned			lpm_capable:1;
 	unsigned			remote_wakeup:1;
-	bool				bam2bam_func_enabled;
-	u32				extra_buf_alloc;
-	bool				l1_supported;
-	bool				is_chipidea;
-	bool				self_powered;
 
+#ifdef __GENKSYMS__
 	ANDROID_KABI_RESERVE(1);
+#else
+	bool				bam2bam_func_enabled:1;
+	u32				extra_buf_alloc;
+	bool				l1_supported:1;
+	bool				is_chipidea:1;
+	bool				self_powered:1;
+#endif
+
 	ANDROID_KABI_RESERVE(2);
 	ANDROID_KABI_RESERVE(3);
 	ANDROID_KABI_RESERVE(4);
