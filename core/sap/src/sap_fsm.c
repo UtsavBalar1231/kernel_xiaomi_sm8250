@@ -725,6 +725,26 @@ uint32_t sap_select_default_oper_chan(struct mac_context *mac_ctx,
 	return default_freq;
 }
 
+static bool is_mcc_preferred(struct sap_context *sap_context,
+			     uint32_t con_ch_freq)
+{
+	/*
+	 * If SAP ACS channel list is 1-11 and STA is on non-preferred
+	 * channel i.e. 12, 13, 14 then MCC is unavoidable. This is because
+	 * if SAP is started on 12,13,14 some clients may not be able to
+	 * join dependending on their regulatory country.
+	 */
+	if ((con_ch_freq >= 2467) && (con_ch_freq <= 2484) &&
+	    (sap_context->acs_cfg->start_ch_freq >= 2412 &&
+	     sap_context->acs_cfg->end_ch_freq <= 2462)) {
+		sap_debug("conc ch freq %d & sap acs ch list is 1-11, prefer mcc",
+			  con_ch_freq);
+		return true;
+	}
+
+	return false;
+}
+
 QDF_STATUS
 sap_validate_chan(struct sap_context *sap_context,
 		  bool pre_start_bss,
@@ -809,6 +829,9 @@ sap_validate_chan(struct sap_context *sap_context,
 			    (!wlan_reg_is_dfs_for_freq(
 					mac_ctx->pdev, con_ch_freq) ||
 			    sta_sap_scc_on_dfs_chan)) {
+				if (is_mcc_preferred(sap_context, con_ch_freq))
+					goto validation_done;
+
 				QDF_TRACE(QDF_MODULE_ID_SAP,
 					QDF_TRACE_LEVEL_DEBUG,
 					"%s: Override ch freq %d to %d due to CC Intf",
