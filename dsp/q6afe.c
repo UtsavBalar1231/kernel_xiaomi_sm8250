@@ -44,6 +44,7 @@
 #include <soc/qcom/subsystem_restart.h>
 #define ADSP_ERR_LIMITED_COUNT   (3)
 static int err_count = 0;
+static int apr_err_count = 0;
 #endif
 
 #define WAKELOCK_TIMEOUT	5000
@@ -1461,17 +1462,43 @@ static int afe_apr_send_pkt(void *data, wait_queue_head_t *wait)
 				ret = -ETIMEDOUT;
 				trace_printk("%s: wait for ADSP response timed out\n",
 					__func__);
+#ifdef AUDIO_FORCE_RESTART_ADSP
+				apr_err_count++;
+				if (apr_err_count >= ADSP_ERR_LIMITED_COUNT) {
+					apr_err_count = 0;
+					pr_err("%s: DSP returned error more than limited, restart now !\n", __func__);
+					subsystem_restart("adsp");
+				}
+#endif
 			} else if (atomic_read(&this_afe.status) > 0) {
 				pr_err("%s: DSP returned error[%s]\n", __func__,
 					adsp_err_get_err_str(atomic_read(
 					&this_afe.status)));
 				ret = adsp_err_get_lnx_err_code(
 						atomic_read(&this_afe.status));
+#ifdef AUDIO_FORCE_RESTART_ADSP
+				if (atomic_read(&this_afe.status) == ADSP_ENEEDMORE)
+					apr_err_count++;
+				else
+					apr_err_count = 0;
+
+				if (apr_err_count >= ADSP_ERR_LIMITED_COUNT) {
+					apr_err_count = 0;
+					pr_err("%s: DSP returned error more than limited, restart now !\n", __func__);
+					subsystem_restart("adsp");
+				}
+#endif
 			} else {
 				ret = 0;
+#ifdef AUDIO_FORCE_RESTART_ADSP
+				apr_err_count = 0;
+#endif
 			}
 		} else {
 			ret = 0;
+#ifdef AUDIO_FORCE_RESTART_ADSP
+			apr_err_count = 0;
+#endif
 		}
 	} else if (ret == 0) {
 		pr_err("%s: packet not transmitted\n", __func__);
@@ -1502,6 +1529,14 @@ static int afe_apr_send_clk_pkt(void *data, wait_queue_head_t *wait)
 			if (!ret) {
 				pr_err("%s: timeout\n", __func__);
 				ret = -ETIMEDOUT;
+#ifdef AUDIO_FORCE_RESTART_ADSP
+				err_count++;
+				if (err_count >= ADSP_ERR_LIMITED_COUNT) {
+					err_count = 0;
+					pr_err("%s: DSP returned error more than limited, restart now !\n", __func__);
+					subsystem_restart("adsp");
+				}
+#endif
 			} else if (atomic_read(&this_afe.clk_status) > 0) {
 #ifdef AUDIO_FORCE_RESTART_ADSP
 				pr_err("%s: DSP returned error[%s][%d]\n", __func__,
@@ -1528,6 +1563,9 @@ static int afe_apr_send_clk_pkt(void *data, wait_queue_head_t *wait)
 #endif
 			} else {
 				ret = 0;
+#ifdef AUDIO_FORCE_RESTART_ADSP
+				err_count = 0;
+#endif
 			}
 		} else {
 			ret = 0;
