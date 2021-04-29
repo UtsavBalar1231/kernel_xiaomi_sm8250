@@ -193,6 +193,29 @@
 			<  533333333 3>;
 
 		#clock-cells = <1>;
+
+		qcom,cpu-isolation {
+			compatible = "qcom,cpu-isolate";
+			cpu0_isolate: cpu0-isolate {
+				qcom,cpu = <&CPU0>;
+				#cooling-cells = <2>;
+			};
+
+			cpu1_isolate: cpu1-isolate {
+				qcom,cpu = <&CPU1>;
+				#cooling-cells = <2>;
+			};
+
+			cpu2_isolate: cpu2-isolate {
+				qcom,cpu = <&CPU2>;
+				#cooling-cells = <2>;
+			};
+
+			cpu3_isolate: cpu3-isolate {
+				qcom,cpu = <&CPU3>;
+				#cooling-cells = <2>;
+			};
+		};
 	};
 
 	/* Disable secure_mem node */

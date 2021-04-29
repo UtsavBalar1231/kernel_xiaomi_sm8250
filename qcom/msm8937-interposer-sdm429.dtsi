@@ -1,6 +1,15 @@
 #include "msm8937-interposer-sdm439.dtsi"
 #include "sdm429-cpu.dtsi"
 
+&clock_cpu {
+	qcom,cpu-isolation {
+		/delete-node/ cpu4-isolate;
+		/delete-node/ cpu5-isolate;
+		/delete-node/ cpu6-isolate;
+		/delete-node/ cpu7-isolate;
+	};
+};
+
 &soc {
 	/delete-node/ etm@619c000;
 	/delete-node/ etm@619d000;
