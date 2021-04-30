@@ -31,6 +31,7 @@ Required properties :
 			"qcom,gcc-msm8917"
 			"qcom,gcc-msm8937"
 			"qcom,gcc-sdm429w"
+			"qcom,gcc-sdm450"
 			"qcom,gcc-mdss-msm8937"
 			"qcom,gcc-mdss-qm215"
 			"qcom,gcc-mdss-sdm429w"
