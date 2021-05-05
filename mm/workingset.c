@@ -167,9 +167,10 @@
  * refault distance will immediately activate the refaulting page.
  */
 
-#define EVICTION_SHIFT	(RADIX_TREE_EXCEPTIONAL_ENTRY + \
-			 1 + NODES_SHIFT + MEM_CGROUP_ID_SHIFT)
-#define EVICTION_MASK	(~0UL >> EVICTION_SHIFT)
+#define EVICTION_SHIFT		(BITS_PER_LONG - RADIX_TREE_EXCEPTIONAL_SHIFT - \
+				 MEM_CGROUP_ID_SHIFT - NODES_SHIFT)
+#define EVICTION_MASK		(BIT(EVICTION_SHIFT) - 1)
+#define WORKINGSET_WIDTH	1
 
 /*
  * Eviction timestamps need to be able to cover the full range of
@@ -181,37 +182,25 @@
  */
 static unsigned int bucket_order __read_mostly;
 
-static void *pack_shadow(int memcgid, pg_data_t *pgdat, unsigned long eviction,
-			 bool workingset)
+static void *pack_shadow(int memcg_id, struct pglist_data *pgdat, unsigned long val)
 {
-	eviction >>= bucket_order;
-	eviction = (eviction << MEM_CGROUP_ID_SHIFT) | memcgid;
-	eviction = (eviction << NODES_SHIFT) | pgdat->node_id;
-	eviction = (eviction << 1) | workingset;
-	eviction = (eviction << RADIX_TREE_EXCEPTIONAL_SHIFT);
+	val = (val << MEM_CGROUP_ID_SHIFT) | memcg_id;
+	val = (val << NODES_SHIFT) | pgdat->node_id;
+	val = (val << RADIX_TREE_EXCEPTIONAL_SHIFT) | RADIX_TREE_EXCEPTIONAL_ENTRY;
 
-	return (void *)(eviction | RADIX_TREE_EXCEPTIONAL_ENTRY);
+	return (void *)val;
 }
 
-static void unpack_shadow(void *shadow, int *memcgidp, pg_data_t **pgdat,
-			  unsigned long *evictionp, bool *workingsetp)
+static unsigned long unpack_shadow(void *shadow, int *memcg_id, struct pglist_data **pgdat)
 {
-	unsigned long entry = (unsigned long)shadow;
-	int memcgid, nid;
-	bool workingset;
+	unsigned long val = (unsigned long)shadow;
 
-	entry >>= RADIX_TREE_EXCEPTIONAL_SHIFT;
-	workingset = entry & 1;
-	entry >>= 1;
-	nid = entry & ((1UL << NODES_SHIFT) - 1);
-	entry >>= NODES_SHIFT;
-	memcgid = entry & ((1UL << MEM_CGROUP_ID_SHIFT) - 1);
-	entry >>= MEM_CGROUP_ID_SHIFT;
+	val >>= RADIX_TREE_EXCEPTIONAL_SHIFT;
+	*pgdat = NODE_DATA(val & (BIT(NODES_SHIFT) - 1));
+	val >>= NODES_SHIFT;
+	*memcg_id = val & (BIT(MEM_CGROUP_ID_SHIFT) - 1);
 
-	*memcgidp = memcgid;
-	*pgdat = NODE_DATA(nid);
-	*evictionp = entry << bucket_order;
-	*workingsetp = workingset;
+	return val >> MEM_CGROUP_ID_SHIFT;
 }
 
 /**
@@ -237,7 +226,9 @@ void *workingset_eviction(struct address_space *mapping, struct page *page)
 
 	lruvec = mem_cgroup_lruvec(pgdat, memcg);
 	eviction = atomic_long_inc_return(&lruvec->inactive_age);
-	return pack_shadow(memcgid, pgdat, eviction, PageWorkingset(page));
+	eviction >>= bucket_order;
+	eviction = (eviction << WORKINGSET_WIDTH) | PageWorkingset(page);
+	return pack_shadow(memcgid, pgdat, eviction);
 }
 
 /**
@@ -260,7 +251,7 @@ void workingset_refault(struct page *page, void *shadow)
 	bool workingset;
 	int memcgid;
 
-	unpack_shadow(shadow, &memcgid, &pgdat, &eviction, &workingset);
+	eviction = unpack_shadow(shadow, &memcgid, &pgdat);
 
 	rcu_read_lock();
 	/*
@@ -284,6 +275,8 @@ void workingset_refault(struct page *page, void *shadow)
 		goto out;
 	lruvec = mem_cgroup_lruvec(pgdat, memcg);
 	refault = atomic_long_read(&lruvec->inactive_age);
+	workingset = eviction & (BIT(WORKINGSET_WIDTH) - 1);
+	eviction = (eviction >> WORKINGSET_WIDTH) << bucket_order;
 	active_file = lruvec_lru_size(lruvec, LRU_ACTIVE_FILE, MAX_NR_ZONES);
 
 	/*
@@ -302,7 +295,7 @@ void workingset_refault(struct page *page, void *shadow)
 	 * longest time, so the occasional inappropriate activation
 	 * leading to pressure on the active list is not a problem.
 	 */
-	refault_distance = (refault - eviction) & EVICTION_MASK;
+	refault_distance = (refault - eviction) & (EVICTION_MASK >> WORKINGSET_WIDTH);
 
 	inc_lruvec_state(lruvec, WORKINGSET_REFAULT);
 
@@ -540,7 +533,7 @@ static int __init workingset_init(void)
 	unsigned int max_order;
 	int ret;
 
-	BUILD_BUG_ON(BITS_PER_LONG < EVICTION_SHIFT);
+	BUILD_BUG_ON(EVICTION_SHIFT < WORKINGSET_WIDTH);
 	/*
 	 * Calculate the eviction bucket size to cover the longest
 	 * actionable refault distance, which is currently half of
@@ -548,7 +541,7 @@ static int __init workingset_init(void)
 	 * some more pages at runtime, so keep working with up to
 	 * double the initial memory by using totalram_pages as-is.
 	 */
-	timestamp_bits = BITS_PER_LONG - EVICTION_SHIFT;
+	timestamp_bits = EVICTION_SHIFT - WORKINGSET_WIDTH;
 	max_order = fls_long(totalram_pages - 1);
 	if (max_order > timestamp_bits)
 		bucket_order = max_order - timestamp_bits;
