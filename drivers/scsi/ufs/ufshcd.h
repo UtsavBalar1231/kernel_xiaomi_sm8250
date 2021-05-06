@@ -180,6 +180,14 @@ enum {
 	UFS_ERR_LINKSTARTUP,
 	UFS_ERR_POWER_MODE_CHANGE,
 	UFS_ERR_TASK_ABORT,
+
+	/* MI errors*/
+	UFS_ERR_UIC_CMD,
+	UFS_ERR_DEV_CMD,
+	UFS_ERR_PWR_CTRL,
+	UFS_ERR_RSP_STATUS,
+	UFS_ERR_ERR_HANDLER,
+
 	UFS_ERR_MAX,
 };
 
@@ -712,6 +720,9 @@ struct ufs_stats {
 	int q_depth;
 	int err_stats[UFS_ERR_MAX];
 	struct ufshcd_req_stat req_stats[TS_NUM_STATS];
+#if IS_ENABLED(CONFIG_MI_MEMORY_SYSFS)
+	bool req_stats_enabled;
+#endif
 	int query_stats_arr[UPIU_QUERY_OPCODE_MAX][MAX_QUERY_IDN];
 
 #endif

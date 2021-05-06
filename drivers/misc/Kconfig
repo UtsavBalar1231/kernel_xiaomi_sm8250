@@ -671,6 +671,7 @@ source "drivers/misc/ocxl/Kconfig"
 source "drivers/misc/cardreader/Kconfig"
 source "drivers/misc/fpr_FingerprintCard/Kconfig"
 source "drivers/misc/qrc/Kconfig"
+source "drivers/misc/mi-memory/Kconfig"
 endmenu
 
 config OKL4_USER_VIPC
