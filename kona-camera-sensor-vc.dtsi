@@ -634,9 +634,9 @@
 		compatible = "qcom,cam-sensor";
 		csiphy-sd-index = <3>;
 		eeprom-src = <&eeprom_tof>;
-		sensor-position-roll = <270>;
+		sensor-position-roll = <0>;
 		sensor-position-pitch = <0>;
-		sensor-position-yaw = <0>;
+		sensor-position-yaw = <180>;
 		cam_vio-supply = <&pm8009_l7>;
 		cam_vdig-supply = <&vreg_tof>;
 		cam_clk-supply = <&titan_top_gdsc>;
