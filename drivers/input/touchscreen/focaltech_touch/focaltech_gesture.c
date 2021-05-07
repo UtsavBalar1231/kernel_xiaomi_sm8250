@@ -35,6 +35,9 @@
 *****************************************************************************/
 #include "focaltech_core.h"
 #include <linux/input/touch_common_info.h>
+#ifdef CONFIG_TOUCHSCREEN_COMMON
+#include <linux/input/tp_common.h>
+#endif
 #if FTS_GESTURE_EN
 /******************************************************************************
 * Private constant and macro definitions using #define
@@ -130,6 +133,32 @@ static struct attribute *fts_gesture_mode_attrs[] = {
 static struct attribute_group fts_gesture_group = {
 	.attrs = fts_gesture_mode_attrs,
 };
+
+#ifdef CONFIG_TOUCHSCREEN_COMMON
+static ssize_t double_tap_show(struct kobject *kobj,
+				struct kobj_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d\n", fts_gesture_data.mode);
+}
+
+static ssize_t double_tap_store(struct kobject *kobj,
+	struct kobj_attribute *attr, const char *buf, size_t count)
+{
+	int rc, val;
+
+	rc = kstrtoint(buf, 10, &val);
+	if (rc)
+		return -EINVAL;
+
+	fts_gesture_data.mode = !!val;
+	return count;
+}
+
+static struct tp_common_ops double_tap_ops = {
+	.show = double_tap_show,
+	.store = double_tap_store
+};
+#endif
 
 /************************************************************************
 * Name: fts_gesture_show
@@ -379,6 +408,9 @@ int fts_gesture_readdata(struct fts_ts_data *ts_data)
 	u8 state;
 	struct i2c_client *client = ts_data->client;
 	struct input_dev *input_dev = ts_data->input_dev;
+#ifdef CONFIG_TOUCHSCREEN_COMMON
+	int ret;
+#endif
 
 	if (!ts_data->suspended) {
 		return -EINVAL;
@@ -644,6 +676,14 @@ int fts_gesture_init(struct fts_ts_data *ts_data)
 	__set_bit(KEY_GESTURE_Z, input_dev->keybit);
 
 	fts_create_gesture_sysfs(client);
+
+#ifdef CONFIG_TOUCHSCREEN_COMMON
+	ret = tp_common_set_double_tap_ops(&double_tap_ops);
+	if (ret < 0)
+        	FTS_ERROR("%s: Failed to create double_tap node err=%d\n",
+			__func__, ret);
+#endif
+
 	fts_gesture_data.mode = DISABLE;
 	fts_gesture_data.active = DISABLE;
 
