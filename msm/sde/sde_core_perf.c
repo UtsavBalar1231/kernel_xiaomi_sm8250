@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
  */
 
 #define pr_fmt(fmt)	"[drm:%s:%d] " fmt, __func__, __LINE__
@@ -675,6 +675,10 @@ static void _sde_core_perf_crtc_update_bus(struct sde_kms *kms,
 
 	bus_ab_quota = max(bw_sum_of_intfs, kms->perf.perf_tune.min_bus_vote);
 	bus_ib_quota = perf.max_per_pipe_ib[bus_id];
+
+	if (!kms->perf.sde_rsc_available)
+		bus_ib_quota = max(SDE_POWER_HANDLE_ENABLE_BUS_IB_QUOTA,
+					bus_ib_quota);
 
 	if (kms->perf.perf_tune.mode == SDE_PERF_MODE_FIXED) {
 		bus_ab_quota = max(kms->perf.fix_core_ab_vote,
