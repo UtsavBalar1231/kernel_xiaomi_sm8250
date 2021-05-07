@@ -34,6 +34,9 @@
 * 1.Included header files
 *****************************************************************************/
 #include "focaltech_core.h"
+#ifdef CONFIG_TOUCHSCREEN_COMMON
+#include <linux/input/tp_common.h>
+#endif
 
 /******************************************************************************
 * Private constant and macro definitions using #define
@@ -194,6 +197,32 @@ static struct attribute *fts_gesture_mode_attrs[] = {
 static struct attribute_group fts_gesture_group = {
 	.attrs = fts_gesture_mode_attrs,
 };
+
+#ifdef CONFIG_TOUCHSCREEN_COMMON
+static ssize_t double_tap_show(struct kobject *kobj,
+				struct kobj_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d\n", fts_data->gesture_mode);
+}
+
+static ssize_t double_tap_store(struct kobject *kobj,
+	struct kobj_attribute *attr, const char *buf, size_t count)
+{
+	int rc, val;
+
+	rc = kstrtoint(buf, 10, &val);
+	if (rc)
+		return -EINVAL;
+
+	fts_update_gesture_state(fts_data, GESTURE_DOUBLETAP, !!val);
+	return count;
+}
+
+static struct tp_common_ops double_tap_ops = {
+	.show = double_tap_show,
+	.store = double_tap_store
+};
+#endif
 
 static int fts_create_gesture_sysfs(struct device *dev)
 {
@@ -421,6 +450,9 @@ int fts_gesture_resume(struct fts_ts_data *ts_data)
 int fts_gesture_init(struct fts_ts_data *ts_data)
 {
 	struct input_dev *input_dev = ts_data->input_dev;
+#ifdef CONFIG_TOUCHSCREEN_COMMON
+	int ret;
+#endif
 
 	FTS_FUNC_ENTER();
 	input_set_capability(input_dev, EV_KEY, KEY_POWER);
@@ -455,6 +487,12 @@ int fts_gesture_init(struct fts_ts_data *ts_data)
 	__set_bit(KEY_GESTURE_Z, input_dev->keybit);
 
 	fts_create_gesture_sysfs(ts_data->dev);
+#ifdef CONFIG_TOUCHSCREEN_COMMON
+	ret = tp_common_set_double_tap_ops(&double_tap_ops);
+	if (ret < 0)
+        	FTS_ERROR("%s: Failed to create double_tap node err=%d\n",
+			__func__, ret);
+#endif
 
 	memset(&fts_gesture_data, 0, sizeof(struct fts_gesture_st));
 	ts_data->gesture_mode = FTS_GESTURE_EN;
