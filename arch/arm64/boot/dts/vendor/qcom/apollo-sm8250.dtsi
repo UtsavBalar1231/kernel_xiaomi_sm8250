@@ -241,7 +241,6 @@ And public attribution of xiaomi platforms(like apollo and so and)
 
 &pm8150l_lcdb {
 	status = "ok";
-	/delete-property/ qcom,voltage-step-ramp;
 };
 
 &pm8150l_wled {
@@ -287,8 +286,6 @@ And public attribution of xiaomi platforms(like apollo and so and)
 };
 
 &sde_dsi {
-	/delete-property/ vdd-supply;
-	/delete-property/ avdd-supply;
 	lab-supply = <&lcdb_ldo_vreg>;
 	ibb-supply = <&lcdb_ncp_vreg>;
 	qcom,dsi-default-panel = <&dsi_sim_vid>;
