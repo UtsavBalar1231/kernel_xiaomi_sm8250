@@ -1941,6 +1941,22 @@ static const struct dev_pm_ops fts_dev_pm_ops = {
 };
 #endif
 
+void fts_update_gesture_state(struct fts_ts_data *ts_data, int bit, bool enable)
+{
+	if (ts_data->suspended) {
+		FTS_ERROR("TP is suspended, do not update gesture state");
+		return;
+	}
+	mutex_lock(&ts_data->input_dev->mutex);
+	if (enable)
+		ts_data->gesture_status |= 1 << bit;
+	else
+		ts_data->gesture_status &= ~(1 << bit);
+	FTS_INFO("gesture state:0x%02X", ts_data->gesture_status);
+	ts_data->gesture_mode = ts_data->gesture_status != 0 ? ENABLE : DISABLE;
+	mutex_unlock(&ts_data->input_dev->mutex);
+}
+
 #ifdef CONFIG_TOUCHSCREEN_XIAOMI_TOUCHFEATURE
 static struct xiaomi_touch_interface xiaomi_touch_interfaces;
 
@@ -2211,22 +2227,6 @@ static void fts_update_touchmode_data(struct fts_ts_data *ts_data)
 
 	mutex_unlock(&ts_data->cmd_update_mutex);
 	pm_relax(ts_data->dev);
-}
-
-static void fts_update_gesture_state(struct fts_ts_data *ts_data, int bit, bool enable)
-{
-	if (ts_data->suspended) {
-		FTS_ERROR("TP is suspended, do not update gesture state");
-		return;
-	}
-	mutex_lock(&ts_data->input_dev->mutex);
-	if (enable)
-		ts_data->gesture_status |= 1 << bit;
-	else
-		ts_data->gesture_status &= ~(1 << bit);
-	FTS_INFO("gesture state:0x%02X", ts_data->gesture_status);
-	ts_data->gesture_mode = ts_data->gesture_status != 0 ? ENABLE : DISABLE;
-	mutex_unlock(&ts_data->input_dev->mutex);
 }
 
 static void fts_power_status_handle(struct fts_ts_data *fts_data)
