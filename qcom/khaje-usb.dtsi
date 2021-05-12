@@ -1,4 +1,4 @@
-#include <dt-bindings/clock/qcom,gcc-bengal.h>
+#include <dt-bindings/clock/qcom,gcc-khaje.h>
 #include <dt-bindings/msm/msm-bus-ids.h>
 &soc {
 	/* Primary USB port related controller */
