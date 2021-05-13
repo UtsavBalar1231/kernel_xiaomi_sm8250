@@ -1,4 +1,4 @@
-/* Copyright (c) 2018-2020 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2018-2021 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -106,6 +106,7 @@ struct rmnet_shs_cfg_s {
 	u8 dl_ind_state;
 	u8 map_mask;
 	u8 map_len;
+	u8 ff_flag;
 
 };
 
@@ -178,6 +179,8 @@ enum rmnet_shs_flush_reason_e {
 	RMNET_SHS_FLUSH_WQ_FB_FLUSH,
 	RMNET_SHS_FLUSH_WQ_CORE_FLUSH,
 	RMNET_SHS_FLUSH_PSH_PKT_FLUSH,
+	RMNET_SHS_FLUSH_WQ_FB_FF_FLUSH,
+	RMNET_SHS_FLUSH_Z_QUEUE_FLUSH,
 	RMNET_SHS_FLUSH_MAX_REASON
 };
 
