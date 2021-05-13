@@ -345,7 +345,7 @@ wmi_unified_wow_remove_wakeup_pattern_send(
 }
 
 QDF_STATUS wmi_unified_ap_ps_cmd_send(wmi_unified_t wmi_handle,
-				      uint8_t *peer_addr,
+				      uint8_t peer_addr[6],
 				      struct ap_ps_params *param)
 {
 	if (wmi_handle->ops->send_set_ap_ps_param_cmd)
