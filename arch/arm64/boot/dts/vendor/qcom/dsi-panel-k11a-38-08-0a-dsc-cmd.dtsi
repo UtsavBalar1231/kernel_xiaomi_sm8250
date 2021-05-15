@@ -356,8 +356,6 @@
 	mi,feature-enabled;
 	mi,mdss-dsi-panel-hbm-51-ctrl-flag;
 	mi,mdss-dsi-panel-hbm-off-51-index = <1>;
-	mi,mdss-dsi-pan-enable-smart-fps;
-	mi,mdss-dsi-smart-fps-max_framerate = <120>;
 
 	mi,esd-err-irq-gpio = <&tlmm 75 0x2002>;
 
