@@ -1573,7 +1573,7 @@ int of_register_mhi_controller(struct mhi_controller *mhi_cntrl)
 	init_waitqueue_head(&mhi_cntrl->state_event);
 
 	mhi_cntrl->wq = alloc_ordered_workqueue("mhi_w",
-						WQ_MEM_RECLAIM | WQ_HIGHPRI);
+						WQ_HIGHPRI);
 	if (!mhi_cntrl->wq)
 		goto error_alloc_cmd;
 
