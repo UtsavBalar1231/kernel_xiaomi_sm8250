@@ -91,8 +91,8 @@
 		operating-points-v2 = <&ddr_bw_opp_table>;
 	};
 
-	/delete-node/ qcom,cpu0-cpu-ddr-latfloor;
-	cpu0_cpu_ddr_latfloor: qcom,cpu0-cpu-ddr-latfloor {
+	/delete-node/ qcom,cpu-cpu-ddr-latfloor;
+	cpu_cpu_ddr_latfloor: qcom,cpu-cpu-ddr-latfloor {
 		compatible = "qcom,devbw";
 		governor = "performance";
 		qcom,src-dst-ports =
