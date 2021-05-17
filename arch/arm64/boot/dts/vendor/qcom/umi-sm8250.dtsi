@@ -7,6 +7,26 @@ And public attribution of xiaomi platforms(like J2 and so and)
 #include "xiaomi-sm8250-common.dtsi"
 #include "umi-audio-overlay.dtsi"
 
+// SLPI Memory Region
+&pil_slpi_mem {
+	reg = <0x0 0x88c00000 0x0 0x1500000>;
+};
+
+// ADSP Memory Region
+&pil_adsp_mem {
+	reg = <0x0 0x8a100000 0x0 0x2500000>;
+};
+
+// SPSS Memory Region
+&pil_spss_mem {
+	reg = <0x0 0x8c600000 0x0 0x100000>;
+};
+
+// CDSP Memory Region
+&cdsp_secure_heap {
+	reg = <0x0 0x8c700000 0x0 0x4600000>;
+};
+
 &ufshc_mem {
 	qcom,disable-lpm;
 };
