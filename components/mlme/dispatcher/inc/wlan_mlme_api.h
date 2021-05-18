@@ -1927,6 +1927,17 @@ wlan_mlme_get_srd_master_mode_for_vdev(struct wlan_objmgr_psoc *psoc,
 				       bool *value);
 
 /**
+ * wlan_mlme_get_indoor_support_for_nan  - Get indoor channel support for NAN
+ * @psoc: pointer to psoc object
+ * @value: pointer to the value which will be filled for the caller
+ *
+ * Return: QDF Status
+ */
+QDF_STATUS
+wlan_mlme_get_indoor_support_for_nan(struct wlan_objmgr_psoc *psoc,
+				     bool *value);
+
+/**
  * wlan_mlme_get_vht_enable2x2() - Enables/disables VHT Tx/Rx MCS values for 2x2
  * @psoc: psoc context
  * @value: data to be set

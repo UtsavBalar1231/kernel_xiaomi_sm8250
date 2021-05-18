@@ -2359,6 +2359,9 @@ static void mlme_init_reg_cfg(struct wlan_objmgr_psoc *psoc,
 			      &valid_channel_list_num);
 	reg->valid_channel_list_num = (uint8_t)valid_channel_list_num;
 
+	reg->enable_nan_on_indoor_channels =
+		cfg_get(psoc, CFG_INDOOR_CHANNEL_SUPPORT_FOR_NAN);
+
 	pdev = wlan_objmgr_get_pdev_by_id(psoc, 0, WLAN_MLME_NB_ID);
 	if (!pdev) {
 		mlme_legacy_err("null pdev");
