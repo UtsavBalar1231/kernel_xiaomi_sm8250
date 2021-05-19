@@ -1879,6 +1879,7 @@ static struct msm_vidc_platform_data default_data = {
 	.vpu_ver = VPU_VERSION_IRIS2,
 	.num_vpp_pipes = 0x4,
 	.ubwc_config = 0x0,
+	.max_inst_count = MAX_SUPPORTED_INSTANCES,
 };
 
 static struct msm_vidc_platform_data lito_data = {
@@ -1899,6 +1900,7 @@ static struct msm_vidc_platform_data lito_data = {
 	.codecs_count = ARRAY_SIZE(default_codecs),
 	.codec_caps = lito_capabilities_v0,
 	.codec_caps_count = ARRAY_SIZE(lito_capabilities_v0),
+	.max_inst_count = MAX_SUPPORTED_INSTANCES,
 };
 
 static struct msm_vidc_platform_data kona_data = {
@@ -1919,6 +1921,7 @@ static struct msm_vidc_platform_data kona_data = {
 	.codecs_count = ARRAY_SIZE(default_codecs),
 	.codec_caps = kona_capabilities,
 	.codec_caps_count = ARRAY_SIZE(kona_capabilities),
+	.max_inst_count = MAX_SUPPORTED_INSTANCES,
 };
 
 static struct msm_vidc_platform_data lagoon_data = {
@@ -1939,6 +1942,7 @@ static struct msm_vidc_platform_data lagoon_data = {
 	.codecs_count = ARRAY_SIZE(lagoon_codecs),
 	.codec_caps = lagoon_capabilities_v0,
 	.codec_caps_count = ARRAY_SIZE(lagoon_capabilities_v0),
+	.max_inst_count = MAX_SUPPORTED_INSTANCES,
 };
 
 static struct msm_vidc_platform_data sm6150_data = {
@@ -1955,6 +1959,7 @@ static struct msm_vidc_platform_data sm6150_data = {
 	.vpu_ver = VPU_VERSION_AR50,
 	.num_vpp_pipes = 0x1,
 	.ubwc_config = 0x0,
+	.max_inst_count = MAX_SUPPORTED_INSTANCES,
 };
 
 static struct msm_vidc_platform_data bengal_data = {
@@ -1975,6 +1980,7 @@ static struct msm_vidc_platform_data bengal_data = {
 	.codecs_count = ARRAY_SIZE(bengal_codecs),
 	.codec_caps = bengal_capabilities_v0,
 	.codec_caps_count = ARRAY_SIZE(bengal_capabilities_v0),
+	.max_inst_count = MAX_SUPPORTED_INSTANCES,
 };
 
 static struct msm_vidc_platform_data scuba_data = {
@@ -1995,6 +2001,7 @@ static struct msm_vidc_platform_data scuba_data = {
 	.codecs_count = ARRAY_SIZE(scuba_codecs),
 	.codec_caps = scuba_capabilities,
 	.codec_caps_count = ARRAY_SIZE(scuba_capabilities),
+	.max_inst_count = MAX_SUPPORTED_INSTANCES,
 };
 
 static struct msm_vidc_platform_data sm8150_data = {
@@ -2011,6 +2018,7 @@ static struct msm_vidc_platform_data sm8150_data = {
 	.vpu_ver = VPU_VERSION_IRIS1,
 	.num_vpp_pipes = 0x2,
 	.ubwc_config = 0x0,
+	.max_inst_count = MAX_SUPPORTED_INSTANCES,
 };
 
 static struct msm_vidc_platform_data sdm845_data = {
@@ -2027,6 +2035,7 @@ static struct msm_vidc_platform_data sdm845_data = {
 	.vpu_ver = VPU_VERSION_AR50,
 	.num_vpp_pipes = 0x1,
 	.ubwc_config = 0x0,
+	.max_inst_count = MAX_SUPPORTED_INSTANCES,
 };
 
 static struct msm_vidc_platform_data sdm670_data = {
@@ -2043,6 +2052,7 @@ static struct msm_vidc_platform_data sdm670_data = {
 	.vpu_ver = VPU_VERSION_AR50,
 	.num_vpp_pipes = 0x1,
 	.ubwc_config = 0x0,
+	.max_inst_count = MAX_SUPPORTED_INSTANCES,
 };
 
 static const struct of_device_id msm_vidc_dt_match[] = {
@@ -2182,7 +2192,6 @@ void *vidc_get_drv_data(struct device *dev)
 			goto exit;
 	}
 
-	driver_data->max_inst_count = MAX_SUPPORTED_INSTANCES;
 	if (!strcmp(match->compatible, "qcom,sdm670-vidc")) {
 		if (driver_data->sku_version == SKU_VERSION_1) {
 			driver_data->common_data = sdm670_common_data_v1;
