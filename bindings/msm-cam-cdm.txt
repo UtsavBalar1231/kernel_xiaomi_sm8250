@@ -57,7 +57,8 @@ to CDM interface node.
   Definition: Should be "qcom,cam170-cpas-cdm0", "qcom,cam480-cpas-cdm0",
 	"qcom,cam480-cpas-cdm1", "qcom,cam480-cpas-cdm2", "qcom,cam-cpas-cdm1_0",
 	"qcom,cam-cpas-cdm1_1", "qcom,cam-cpas-cdm1_2", "qcom,cam-ife-cdm1_2",
-	"qcom,cam-cpas-cdm2_0" or "qcom,cam-ope-cdm2_0"
+	"qcom,cam-cpas-cdm2_0", "qcom,cam-ope-cdm2_0", "qcom,cam-cpas-cdm2_1",
+	"qcom,cam-ope-cdm2_1"
 
 - label
   Usage: required
