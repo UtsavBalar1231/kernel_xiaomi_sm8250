@@ -133,6 +133,7 @@ struct cam_ife_hw_mgr_debug {
  *                          context
  * @cdm_done                flag to indicate cdm has finished writing shadow
  *                          registers
+ * @last_cdm_done_req:      Last cdm done request
  * @is_rdi_only_context     flag to specify the context has only rdi resource
  * @config_done_complete    indicator for configuration complete
  * @reg_dump_buf_desc:      cmd buffer descriptors for reg dump
@@ -185,6 +186,7 @@ struct cam_ife_hw_mgr_ctx {
 	uint32_t                        eof_cnt[CAM_IFE_HW_NUM_MAX];
 	atomic_t                        overflow_pending;
 	atomic_t                        cdm_done;
+	uint64_t                        last_cdm_done_req;
 	uint32_t                        is_rdi_only_context;
 	struct completion               config_done_complete;
 	struct cam_cmd_buf_desc         reg_dump_buf_desc[

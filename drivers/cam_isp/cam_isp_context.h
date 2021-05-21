@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _CAM_ISP_CONTEXT_H_
@@ -133,21 +133,23 @@ struct cam_isp_ctx_irq_ops {
 /**
  * struct cam_isp_ctx_req - ISP context request object
  *
- * @base:                  Common request object ponter
- * @cfg:                   ISP hardware configuration array
- * @num_cfg:               Number of ISP hardware configuration entries
- * @fence_map_out:         Output fence mapping array
- * @num_fence_map_out:     Number of the output fence map
- * @fence_map_in:          Input fence mapping array
- * @num_fence_map_in:      Number of input fence map
- * @num_acked:             Count to track acked entried for output.
- *                         If count equals the number of fence out, it means
- *                         the request has been completed.
- * @bubble_report:         Flag to track if bubble report is active on
- *                         current request
- * @hw_update_data:        HW update data for this request
- * @event_timestamp:       Timestamp for different stage of request
- * @reapply:               True if reapplying after bubble
+ * @base:                      Common request object ponter
+ * @cfg:                       ISP hardware configuration array
+ * @num_cfg:                   Number of ISP hardware configuration entries
+ * @fence_map_out:             Output fence mapping array
+ * @num_fence_map_out:         Number of the output fence map
+ * @fence_map_in:              Input fence mapping array
+ * @num_fence_map_in:          Number of input fence map
+ * @num_acked:                 Count to track acked entried for output.
+ *                             If count equals the number of fence out, it means
+ *                             the request has been completed.
+ * @bubble_report:             Flag to track if bubble report is active on
+ *                             current request
+ * @hw_update_data:            HW update data for this request
+ * @event_timestamp:           Timestamp for different stage of request
+ * @reapply:                   True if reapplying after bubble
+ * @cdm_reset_before_apply:    For bubble re-apply when buf done not coming set
+ *                             to True
  *
  */
 struct cam_isp_ctx_req {
@@ -167,6 +169,7 @@ struct cam_isp_ctx_req {
 		[CAM_ISP_CTX_EVENT_MAX];
 	bool                                  bubble_detected;
 	bool                                  reapply;
+	bool                                  cdm_reset_before_apply;
 };
 
 /**
@@ -238,6 +241,7 @@ struct cam_isp_context_event_record {
  * @subscribe_event:           The irq event mask that CRM subscribes to, IFE
  *                             will invoke CRM cb at those event.
  * @last_applied_req_id:       Last applied request id
+ * @last_sof_timestamp:        SOF timestamp of the last frame
  * @state_monitor_head:        Write index to the state monitoring array
  * @req_info                   Request id information about last buf done
  * @cam_isp_ctx_state_monitor: State monitoring array
@@ -256,7 +260,6 @@ struct cam_isp_context_event_record {
  *                             decide whether to apply request in offline ctx
  * @workq:                     Worker thread for offline ife
  * @trigger_id:                ID provided by CRM for each ctx on the link
- * @last_sof_timestamp:        SOF timestamp of the last frame
  *
  */
 struct cam_isp_context {
@@ -280,6 +283,7 @@ struct cam_isp_context {
 	int64_t                          reported_req_id;
 	uint32_t                         subscribe_event;
 	int64_t                          last_applied_req_id;
+	uint64_t                         last_sof_timestamp;
 	atomic64_t                       state_monitor_head;
 	struct cam_isp_context_state_monitor cam_isp_ctx_state_monitor[
 		CAM_ISP_CTX_STATE_MONITOR_MAX_ENTRIES];
@@ -299,7 +303,6 @@ struct cam_isp_context {
 	atomic_t                              rxd_epoch;
 	struct cam_req_mgr_core_workq        *workq;
 	int32_t                               trigger_id;
-	uint64_t                              last_sof_timestamp;
 };
 
 /**
