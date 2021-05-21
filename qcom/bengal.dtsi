@@ -2652,7 +2652,6 @@
 #include "bengal-coresight.dtsi"
 #include "bengal-bus.dtsi"
 #include "bengal-vidc.dtsi"
-#include "pmi632.dtsi"
 #include "pm6125.dtsi"
 
 &gcc_camss_top_gdsc {
@@ -2883,59 +2882,6 @@
 
 	xo_therm {
 		reg = <ADC_XO_THERM_PU2>;
-		qcom,ratiometric;
-		qcom,hw-settle-time = <200>;
-	};
-};
-
-&pmi632_vadc {
-	#address-cells = <1>;
-	#size-cells = <0>;
-	pinctrl-names = "default";
-	pinctrl-0 = <&conn_therm_default &skin_therm_default>;
-
-	conn_therm {
-		reg = <ADC_GPIO1_PU2>;
-		label = "conn_therm";
-		qcom,ratiometric;
-		qcom,hw-settle-time = <200>;
-		qcom,pre-scaling = <1 1>;
-	};
-
-	skin_therm {
-		reg = <ADC_GPIO2_PU2>;
-		label = "skin_therm";
-		qcom,ratiometric;
-		qcom,hw-settle-time = <200>;
-		qcom,pre-scaling = <1 1>;
-	};
-};
-
-&pmi632_gpios {
-	conn_therm {
-		conn_therm_default: conn_therm_default {
-			pins = "gpio1";
-			bias-high-impedance;
-		};
-	};
-
-	skin_therm {
-		skin_therm_default: skin_therm_default {
-			pins = "gpio3";
-			bias-high-impedance;
-		};
-	};
-
-};
-
-&pmi632_adc_tm {
-	#address-cells = <1>;
-	#size-cells = <0>;
-	io-channels = <&pmi632_vadc ADC_GPIO2_PU2>;
-
-	/* Channel nodes */
-	skin_therm {
-		reg = <ADC_GPIO2_PU2>;
 		qcom,ratiometric;
 		qcom,hw-settle-time = <200>;
 	};

@@ -1,6 +1,7 @@
 /dts-v1/;
 /plugin/;
 
+#include "bengal-pmi632.dtsi"
 #include "bengal-qrd.dtsi"
 
 / {

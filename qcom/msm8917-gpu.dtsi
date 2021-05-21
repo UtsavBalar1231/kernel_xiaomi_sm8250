@@ -8,21 +8,21 @@
 		compatible = "operating-points-v2";
 		opp-0    { opp-hz = /bits/ 64 < 0 >;     }; /* OFF */
 
-		opp-201  { opp-hz = /bits/ 64 < 769 >;   }; /* 1.  201 MHz */
+		opp-100 { opp-hz = /bits/ 64 < 769 >;   }; /* 1. 100 MHz */
 
-		opp-422  { opp-hz = /bits/ 64 < 1611 >;  }; /* 2.  422 MHz */
+		opp-211 { opp-hz = /bits/ 64 < 1611 >;  }; /* 2. 211 MHz */
 
-		opp-595  { opp-hz = /bits/ 64 < 2270 >;  }; /* 3.  595 MHz */
+		opp-297 { opp-hz = /bits/ 64 < 2270 >;  }; /* 3. 297 MHz */
 
-		opp-768  { opp-hz = /bits/ 64 < 2929 >;  }; /* 4.  768 MHz */
+		opp-384 { opp-hz = /bits/ 64 < 2929 >;  }; /* 4. 384 MHz */
 
-		opp-1113 { opp-hz = /bits/ 64 < 4248 >;  }; /* 5. 1113 MHz */
+		opp-557 { opp-hz = /bits/ 64 < 4248 >;  }; /* 5. 557 MHz */
 
-		opp-1190 { opp-hz = /bits/ 64 < 4541 >;  }; /* 6. 1190 MHz */
+		opp-595 { opp-hz = /bits/ 64 < 4541 >;  }; /* 6. 595 MHz */
 
-		opp-1344 { opp-hz = /bits/ 64 < 5126 >;  }; /* 7. 1344 MHz */
+		opp-672 { opp-hz = /bits/ 64 < 5126 >;  }; /* 7. 672 MHz */
 
-		opp-1478 { opp-hz = /bits/ 64 < 5639 >;  }; /* 8. 1478 MHz */
+		opp-739 { opp-hz = /bits/ 64 < 5639 >;  }; /* 8. 739 MHz */
 	};
 
 	/* Bus governor */

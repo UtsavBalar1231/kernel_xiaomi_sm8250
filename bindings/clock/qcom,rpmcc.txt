@@ -20,6 +20,7 @@ Required properties :
 			"qcom,rpmcc-sdm660", "qcom,rpmcc"
 			"qcom,rpmcc-sdm439", "qcom,rpmcc"
 			"qcom,rpmcc-qm215", "qcom,rpmcc"
+			"qcom,rpmcc-sdm450", "qcom,rpmcc"
 
 - #clock-cells : shall contain 1
 

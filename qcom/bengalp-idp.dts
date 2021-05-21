@@ -2,6 +2,7 @@
 
 #include "bengalp.dtsi"
 #include "bengal-idp.dtsi"
+#include "bengal-idp-pmi632.dtsi"
 
 / {
 	model = "Qualcomm Technologies, Inc. BENGALP IDP";
