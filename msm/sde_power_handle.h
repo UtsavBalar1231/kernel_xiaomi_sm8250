@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _SDE_POWER_HANDLE_H_
@@ -10,7 +10,7 @@
 
 #define SDE_POWER_HANDLE_ENABLE_BUS_AB_QUOTA	0
 #define SDE_POWER_HANDLE_DISABLE_BUS_AB_QUOTA	0
-#define SDE_POWER_HANDLE_ENABLE_BUS_IB_QUOTA		400000000
+#define SDE_POWER_HANDLE_ENABLE_BUS_IB_QUOTA		400000000ULL
 #define SDE_POWER_HANDLE_ENABLE_NRT_BUS_IB_QUOTA	0
 #define SDE_POWER_HANDLE_DISABLE_BUS_IB_QUOTA	0
 
