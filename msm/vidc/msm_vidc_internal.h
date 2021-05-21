@@ -79,6 +79,9 @@
 #define NUM_MBS_PER_FRAME(__height, __width) \
 	((ALIGN(__height, 16) / 16) * (ALIGN(__width, 16) / 16))
 
+#define NUM_MBS_PER_FRAME_HEVC(__height, __width) \
+	((ALIGN(__height, 32) / 32) * (ALIGN(__width, 32) / 32))
+
 #define call_core_op(c, op, ...)			\
 	(((c) && (c)->core_ops && (c)->core_ops->op) ? \
 	((c)->core_ops->op(__VA_ARGS__)) : 0)
