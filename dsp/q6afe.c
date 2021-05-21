@@ -5480,7 +5480,7 @@ static int __afe_port_start(u16 port_id, union afe_port_config *afe_config,
 	union afe_port_config port_cfg;
 	struct param_hdr_v3 param_hdr;
 	int ret = 0;
-	int cfg_type;
+	int cfg_type = 0;
 	int index = 0;
 	enum afe_mad_type mad_type;
 	uint16_t port_index;
