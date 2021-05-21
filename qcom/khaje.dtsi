@@ -2903,7 +2903,7 @@ tpdm_turing_llm: tpdm@8861000 {
 };
 
 #include "bengal-gdsc.dtsi"
-#include "bengal-usb.dtsi"
+#include "khaje-usb.dtsi"
 #include "bengal-ion.dtsi"
 #include "bengal-bus.dtsi"
 #include "bengal-vidc.dtsi"
