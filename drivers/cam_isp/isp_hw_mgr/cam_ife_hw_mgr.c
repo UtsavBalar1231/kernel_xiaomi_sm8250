@@ -6486,6 +6486,10 @@ static int cam_ife_mgr_cmd(void *hw_mgr_priv, void *cmd_args)
 				isp_hw_cmd_args->u.packet_op_code =
 				CAM_ISP_PACKET_UPDATE_DEV;
 			break;
+		case CAM_ISP_HW_MGR_GET_LAST_CDM_DONE:
+			isp_hw_cmd_args->u.last_cdm_done =
+				ctx->last_cdm_done_req;
+			break;
 		default:
 			CAM_ERR(CAM_ISP, "Invalid HW mgr command:0x%x",
 				hw_cmd_args->cmd_type);
@@ -6552,10 +6556,6 @@ static int cam_ife_mgr_cmd(void *hw_mgr_priv, void *cmd_args)
 		break;
 	case CAM_HW_MGR_CMD_DUMP_ACQ_INFO:
 		cam_ife_hw_mgr_dump_acq_data(ctx);
-		break;
-	case CAM_ISP_HW_MGR_GET_LAST_CDM_DONE:
-		isp_hw_cmd_args->u.last_cdm_done =
-			ctx->last_cdm_done_req;
 		break;
 	default:
 		CAM_ERR(CAM_ISP, "Invalid cmd");
