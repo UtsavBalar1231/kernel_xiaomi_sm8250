@@ -1238,6 +1238,7 @@ int32_t hif_get_int_ctx_irq_num(struct hif_opaque_softc *softc,
 				uint8_t id);
 
 uint32_t hif_configure_ext_group_interrupts(struct hif_opaque_softc *hif_ctx);
+void hif_deconfigure_ext_group_interrupts(struct hif_opaque_softc *hif_ctx);
 uint32_t  hif_register_ext_group(struct hif_opaque_softc *hif_ctx,
 		uint32_t numirq, uint32_t irq[], ext_intr_handler handler,
 		void *cb_ctx, const char *context_name,
