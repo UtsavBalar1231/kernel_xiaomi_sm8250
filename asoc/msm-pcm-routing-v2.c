@@ -1568,7 +1568,6 @@ int msm_pcm_routing_reg_phy_compr_stream(int fe_id, int perf_mode,
 				352800) && be_bit_width == 32)
 				bit_width = msm_routing_get_bit_width(
 						SNDRV_PCM_FORMAT_S32_LE);
-
 			copp_idx =
 				adm_open(port_id, path_type, sample_rate,
 					 channels, topology, perf_mode,
@@ -1926,6 +1925,10 @@ int msm_pcm_routing_reg_phy_stream(int fedai_id, int perf_mode,
 				&& be_bit_width == 32)
 				bits_per_sample = msm_routing_get_bit_width(
 							SNDRV_PCM_FORMAT_S32_LE);
+			if(i == 87){
+				channels = fe_dai_app_type_cfg[fedai_id][session_type][i].channel;
+				pr_debug("%s before adm_open change fe_dai_app_type_cfg-> channel to %d!!\n",__func__, channels);
+			}
 			copp_idx = adm_open(port_id, path_type,
 					    sample_rate, channels, topology,
 					    perf_mode, bits_per_sample,
@@ -30427,6 +30430,10 @@ static int msm_pcm_routing_prepare(struct snd_pcm_substream *substream)
 				be_bit_width == 32)
 				bits_per_sample = msm_routing_get_bit_width(
 							SNDRV_PCM_FORMAT_S32_LE);
+			if(be_id == 87){
+				channels = fe_dai_app_type_cfg[i][session_type][be_id].channel;
+				pr_debug("%s before adm_open change fe_dai_app_type_cfg-> channel to %d!!\n",__func__, channels);
+			}
 			copp_idx = adm_open(port_id, path_type,
 					    sample_rate, channels, topology,
 					    fdai->perf_mode, bits_per_sample,
