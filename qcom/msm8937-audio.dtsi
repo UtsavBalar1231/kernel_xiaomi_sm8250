@@ -183,7 +183,7 @@
 		compatible = "qcom,audio-ref-clk";
 		qcom,codec-ext-clk-src = <AUDIO_LPASS_MCLK_2>;
 		qcom,codec-lpass-ext-clk-freq = <9600000>;
-		qcom,codec-lpass-clk-id = <0x301>;
+		qcom,codec-lpass-clk-id = <0x300>;
 		#clock-cells = <1>;
 	};
 
