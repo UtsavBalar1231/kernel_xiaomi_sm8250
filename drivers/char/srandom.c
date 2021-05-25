@@ -195,8 +195,8 @@ int mod_init(void)
 	/*
 	 * Init the sarray
 	 */
-	for (CC = 0; CC <= num_arr_RND; CC++) {
-		for (C = 0; C <= arr_RND_SIZE; C++)
+	for (CC = 0; num_arr_RND >= CC; CC++) {
+		for (C = 0; arr_RND_SIZE >= C; C++)
 			sarr_RND[CC][C] = xorshft128();
 		update_sarray(CC);
 	}
