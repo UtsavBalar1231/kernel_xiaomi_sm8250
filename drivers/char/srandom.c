@@ -162,24 +162,24 @@ int mod_init(void)
 	 */
 	ret = misc_register(&srandom_dev);
 	if (ret)
-		pr_info("/dev/srandom registration failed..\n");
+		pr_debug("/dev/srandom registration failed..\n");
 	else
-		pr_info("/dev/srandom registered..\n");
+		pr_debug("/dev/srandom registered..\n");
 
 	/*
 	 * Create /proc/srandom
 	 */
 	if (!proc_create("srandom", 0, NULL, &proc_fops))
-		pr_info("/proc/srandom registration failed..\n");
+		pr_debug("/proc/srandom registration failed..\n");
 	else
-		pr_info("/proc/srandom registration registered..\n");
+		pr_debug("/proc/srandom registration registered..\n");
 
-	pr_info("Module version: "AppVERSION"\n");
+	pr_debug("Module version: "AppVERSION"\n");
 
 	sarr_RND = kzalloc((num_arr_RND + 1) * arr_RND_SIZE * sizeof(uint64_t),
 	GFP_KERNEL);
 	while (!sarr_RND) {
-		pr_info("kzalloc failed to allocate initial memory. retrying...\n");
+		pr_debug("kzalloc failed to allocate initial memory. retrying...\n");
 		sarr_RND = kzalloc((num_arr_RND + 1) *
 			arr_RND_SIZE * sizeof(uint64_t), GFP_KERNEL);
 	}
@@ -214,7 +214,7 @@ void mod_exit(void)
 	kthread_stop(kthread);
 	misc_deregister(&srandom_dev);
 	remove_proc_entry("srandom", NULL);
-	pr_info("srandom deregistered..\n");
+	pr_debug("srandom deregistered..\n");
 }
 
 
@@ -231,8 +231,8 @@ static int device_open(struct inode *inode, struct file *file)
 	sdev_openCount++;
 	mutex_unlock(&Open_mutex);
 
-	pr_info("(current open) :%d\n", sdev_open);
-	pr_info("(total open)   :%d\n", sdev_openCount);
+	pr_debug("(current open) :%d\n", sdev_open);
+	pr_debug("(total open)   :%d\n", sdev_openCount);
 
 	return 0;
 }
@@ -249,7 +249,7 @@ static int device_release(struct inode *inode, struct file *file)
 	sdev_open--;
 	mutex_unlock(&Open_mutex);
 
-	pr_info("(current open) :%d\n", sdev_open);
+	pr_debug("(current open) :%d\n", sdev_open);
 
 	return 0;
 }
@@ -266,7 +266,7 @@ size_t count, loff_t *ppos)
 	int CC;
 	size_t src_counter;
 
-	pr_info("count:%zu\n", count);
+	pr_debug("count:%zu\n", count);
 
 	/*
 	 * if requested count is small (<512), then select an array and send it
@@ -299,7 +299,7 @@ size_t count, loff_t *ppos)
 		 */
 		update_sarray(CC);
 
-		pr_info("small CC_Busy_Flags:%d CC:%d\n", CC_Busy_Flags, CC);
+		pr_debug("small CC_Busy_Flags:%d CC:%d\n", CC_Busy_Flags, CC);
 
 		/*
 		 * Clear CC_Busy_Flag
@@ -315,17 +315,17 @@ size_t count, loff_t *ppos)
 		 */
 		long count_remaining = count;
 
-		pr_info("count_remaining:%ld count:%ld\n",
+		pr_debug("count_remaining:%ld count:%ld\n",
 			count_remaining, count);
 
 		while (count_remaining > 0) {
-			pr_info("count_remaining:%ld count:%ld\n",
+			pr_debug("count_remaining:%ld count:%ld\n",
 				count_remaining, count);
 
 			new_buf = kzalloc((count_remaining + 512) *
 				sizeof(uint8_t), GFP_KERNEL);
 			while (!new_buf) {
-				pr_info("buffered kzalloc failed to allocate buffer.",
+				pr_debug("buffered kzalloc failed to allocate buffer.",
 					"retrying...\n");
 				new_buf = kzalloc((count_remaining + 512) *
 					sizeof(uint8_t), GFP_KERNEL);
@@ -344,7 +344,7 @@ size_t count, loff_t *ppos)
 			CC = nextbuffer();
 			while ((CC_Busy_Flags & 1 << CC) == (1 << CC)) {
 				CC = xorshft128() & (num_arr_RND - 1);
-				pr_info("buffered CC_Busy_Flags:%d CC:%d\n",
+				pr_debug("buffered CC_Busy_Flags:%d CC:%d\n",
 					CC_Busy_Flags, CC);
 			}
 
@@ -365,7 +365,7 @@ size_t count, loff_t *ppos)
 					src_counter);
 				update_sarray(CC);
 
-				pr_info("buffered COPT_TO_USER counter:%d count_remaining:%zu\n",
+				pr_debug("buffered COPT_TO_USER counter:%d count_remaining:%zu\n",
 					counter, count_remaining);
 
 				counter += 512;
@@ -409,7 +409,7 @@ const char __user *buf, size_t count, loff_t *ppos)
 	char *newdata;
 	int  ret;
 
-	pr_info("count:%zu\n", count);
+	pr_debug("count:%zu\n", count);
 
 	/*
 	 * Allocate memory to read from device
@@ -425,7 +425,7 @@ const char __user *buf, size_t count, loff_t *ppos)
 	 */
 	kfree(newdata);
 
-	pr_info("COPT_FROM_USER count:%zu\n", count);
+	pr_debug("COPT_FROM_USER count:%zu\n", count);
 
 	return count;
 }
@@ -452,7 +452,7 @@ void update_sarray(int CC)
 	Z2 = xorshft64();
 	Z3 = xorshft64();
 	if ((Z1 & 1) == 0) {
-		pr_info("0\n");
+		pr_debug("0\n");
 		for (C = 0; C < (arr_RND_SIZE - 4) ; C = C + 4) {
 			X = xorshft128();
 			Y = xorshft128();
@@ -462,7 +462,7 @@ void update_sarray(int CC)
 			sarr_RND[CC][C + 3] = X ^ Y ^ Z3;
 		}
 	} else {
-		pr_info("1\n");
+		pr_debug("1\n");
 		for (C = 0; C < (arr_RND_SIZE - 4) ; C = C + 4) {
 			X = xorshft128();
 			Y = xorshft128();
@@ -475,7 +475,7 @@ void update_sarray(int CC)
 
 	mutex_unlock(&UpArr_mutex);
 
-	pr_info("CC:%d, X:%llu, Y:%llu, Z1:%llu, Z2:%llu, Z3:%llu,\n",
+	pr_debug("CC:%d, X:%llu, Y:%llu, Z1:%llu, Z2:%llu, Z3:%llu,\n",
 		CC, X, Y, Z1, Z2, Z3);
 }
 EXPORT_SYMBOL(sdevice_write);
@@ -487,7 +487,7 @@ void seed_PRND_s0(void)
 {
 	 KTIME_GET_NS(&ts);
 	 s[0] = (s[0] << 31) ^ (uint64_t)ts.tv_nsec;
-	 pr_info("x:%llu, s[0]:%llu, s[1]:%llu\n",
+	 pr_debug("x:%llu, s[0]:%llu, s[1]:%llu\n",
 		x, s[0], s[1]);
 }
 
@@ -495,7 +495,7 @@ void seed_PRND_s1(void)
 {
 	KTIME_GET_NS(&ts);
 	s[1] = (s[1] << 24) ^ (uint64_t)ts.tv_nsec;
-	pr_info("x:%llu, s[0]:%llu, s[1]:%llu\n",
+	pr_debug("x:%llu, s[0]:%llu, s[1]:%llu\n",
 		x, s[0], s[1]);
 }
 
@@ -503,7 +503,7 @@ void seed_PRND_x(void)
 {
 	KTIME_GET_NS(&ts);
 	x = (x << 32) ^ (uint64_t)ts.tv_nsec;
-	pr_info("x:%llu, s[0]:%llu, s[1]:%llu\n",
+	pr_debug("x:%llu, s[0]:%llu, s[1]:%llu\n",
 		x, s[0], s[1]);
 }
 
@@ -539,7 +539,7 @@ int nextbuffer(void)
 	uint8_t nextbuffer = (sarr_RND[num_arr_RND][position] >> (roll * 4))
 		& (num_arr_RND - 1);
 
-	pr_info("raw:%lld",
+	pr_debug("raw:%lld",
 			"position:%d",
 			"roll:%d",
 			"%s:%d",
