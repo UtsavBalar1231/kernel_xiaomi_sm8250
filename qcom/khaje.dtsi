@@ -2965,7 +2965,7 @@ tpdm_turing_llm: tpdm@8861000 {
 #include "pm6125-rpm-regulator.dtsi"
 #include "bengal-regulator.dtsi"
 #include "bengal-pm.dtsi"
-#include "bengal-pinctrl.dtsi"
+#include "khaje-pinctrl.dtsi"
 #include "bengal-qupv3.dtsi"
 #include "bengal-gpu.dtsi"
 #include "bengal-audio.dtsi"
