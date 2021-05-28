@@ -178,6 +178,29 @@ unsigned long vm_total_pages;
  */
 int min_filelist_kbytes;
 
+int min_filelist_kbytes_handler(struct ctl_table *table, int write,
+				void __user *buf, size_t *len, loff_t *pos)
+{
+	size_t written;
+
+	if (!lru_gen_enabled() || write)
+		return proc_dointvec(table, write, buf, len, pos);
+
+	if (!*len || *pos) {
+		*len = 0;
+		return 0;
+	}
+
+	written = min_t(size_t, 2, *len);
+	if (copy_to_user(buf, "0\n", written))
+		return -EFAULT;
+
+	*len = written;
+	*pos = written;
+
+	return 0;
+}
+
 static LIST_HEAD(shrinker_list);
 static DECLARE_RWSEM(shrinker_rwsem);
 
@@ -330,18 +353,21 @@ static inline bool memcg_congested(struct pglist_data *pgdat,
  */
 unsigned long zone_reclaimable_pages(struct zone *zone)
 {
-	u64 pages_min = min_filelist_kbytes >> (PAGE_SHIFT - 10);
 	unsigned long nr;
 
 	nr = zone_page_state_snapshot(zone, NR_ZONE_INACTIVE_FILE) +
 		zone_page_state_snapshot(zone, NR_ZONE_ACTIVE_FILE);
 
-	pages_min *= zone->managed_pages;
-	do_div(pages_min, totalram_pages);
-	if (nr < pages_min)
-		nr = 0;
-	else
-		nr -= pages_min;
+	if (!lru_gen_enabled()) {
+		u64 pages_min = min_filelist_kbytes >> (PAGE_SHIFT - 10);
+
+		pages_min *= zone->managed_pages;
+		do_div(pages_min, totalram_pages);
+		if (nr < pages_min)
+			nr = 0;
+		else
+			nr -= pages_min;
+	}
 
 	if (get_nr_swap_pages() > 0
 			|| IS_ENABLED(CONFIG_HAVE_LOW_MEMORY_KILLER))

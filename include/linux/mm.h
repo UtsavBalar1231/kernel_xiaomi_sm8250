@@ -60,6 +60,8 @@ extern int sysctl_legacy_va_layout;
 #endif
 
 extern int min_filelist_kbytes;
+extern int min_filelist_kbytes_handler(struct ctl_table *table, int write,
+		void __user *buf, size_t *len, loff_t *pos);
 
 #ifdef CONFIG_HAVE_ARCH_MMAP_RND_BITS
 extern const int mmap_rnd_bits_min;

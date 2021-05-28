@@ -2073,7 +2073,7 @@ static struct ctl_table vm_table[] = {
 		.data		= &min_filelist_kbytes,
 		.maxlen		= sizeof(min_filelist_kbytes),
 		.mode		= 0644,
-		.proc_handler	= proc_dointvec,
+		.proc_handler	= min_filelist_kbytes_handler,
 	},
 #ifdef CONFIG_HAVE_ARCH_MMAP_RND_BITS
 	{
