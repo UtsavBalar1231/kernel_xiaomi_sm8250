@@ -2048,15 +2048,35 @@ static inline void kvm_mod_used_mmu_pages(struct kvm *kvm, long nr)
 	percpu_counter_add(&kvm_total_used_mmu_pages, nr);
 }
 
-static void kvm_mmu_free_page(struct kvm_mmu_page *sp)
+static void kvm_mmu_free_page_rcu(struct rcu_head *rcu_head)
 {
-	MMU_WARN_ON(!is_empty_shadow_page(sp->spt));
-	hlist_del(&sp->hash_link);
-	list_del(&sp->link);
+	struct kvm_mmu_page *sp = container_of(rcu_head, struct kvm_mmu_page,
+					       rcu_head);
+
 	free_page((unsigned long)sp->spt);
 	if (!sp->role.direct)
 		free_page((unsigned long)sp->gfns);
 	kmem_cache_free(mmu_page_header_cache, sp);
+}
+
+static void kvm_mmu_put_page(struct kvm *kvm, struct kvm_mmu_page *sp)
+{
+	if (!atomic_dec_and_test(&sp->ref_count))
+		return;
+
+	spin_lock(&kvm->arch.mmu_page_list_lock);
+	list_del_rcu(&sp->mmu_page_list);
+	spin_unlock(&kvm->arch.mmu_page_list_lock);
+
+	call_rcu(&sp->rcu_head, kvm_mmu_free_page_rcu);
+}
+
+static void kvm_mmu_free_page(struct kvm *kvm, struct kvm_mmu_page *sp)
+{
+	MMU_WARN_ON(!is_empty_shadow_page(sp->spt));
+	hlist_del(&sp->hash_link);
+	list_del(&sp->link);
+	kvm_mmu_put_page(kvm, sp);
 }
 
 static unsigned kvm_page_table_hashfn(gfn_t gfn)
@@ -2530,6 +2550,10 @@ static struct kvm_mmu_page *kvm_mmu_get_page(struct kvm_vcpu *vcpu,
 	}
 	sp->mmu_valid_gen = vcpu->kvm->arch.mmu_valid_gen;
 	clear_page(sp->spt);
+	atomic_set(&sp->ref_count, 1);
+	spin_lock(&vcpu->kvm->arch.mmu_page_list_lock);
+	list_add_tail_rcu(&sp->mmu_page_list, &vcpu->kvm->arch.mmu_page_list);
+	spin_unlock(&vcpu->kvm->arch.mmu_page_list_lock);
 	trace_kvm_mmu_get_page(sp, true);
 
 	kvm_mmu_flush_or_zap(vcpu, &invalid_list, false, flush);
@@ -2774,7 +2798,7 @@ static void kvm_mmu_commit_zap_page(struct kvm *kvm,
 
 	list_for_each_entry_safe(sp, nsp, invalid_list, link) {
 		WARN_ON(!sp->role.invalid || sp->root_count);
-		kvm_mmu_free_page(sp);
+		kvm_mmu_free_page(kvm, sp);
 	}
 }
 
@@ -5599,6 +5623,8 @@ void kvm_mmu_init_vm(struct kvm *kvm)
 	node->track_write = kvm_mmu_pte_write;
 	node->track_flush_slot = kvm_mmu_invalidate_zap_pages_in_memslot;
 	kvm_page_track_register_notifier(kvm, node);
+	INIT_LIST_HEAD(&kvm->arch.mmu_page_list);
+	spin_lock_init(&kvm->arch.mmu_page_list_lock);
 }
 
 void kvm_mmu_uninit_vm(struct kvm *kvm)
@@ -6289,4 +6315,79 @@ void kvm_mmu_pre_destroy_vm(struct kvm *kvm)
 {
 	if (kvm->arch.nx_lpage_recovery_thread)
 		kthread_stop(kvm->arch.nx_lpage_recovery_thread);
+}
+
+static void kvm_clear_young_walk(struct kvm *kvm, struct mmu_notifier_walk *walk,
+				 struct kvm_mmu_page *sp)
+{
+	int i;
+
+	for (i = 0; i < PT64_ENT_PER_PAGE; i++) {
+		u64 old, new;
+		struct page *page;
+		kvm_pfn_t pfn = -1;
+
+		new = old = mmu_spte_get_lockless(sp->spt + i);
+
+		if (is_shadow_present_pte(old)) {
+			if (!is_last_spte(old, sp->role.level))
+				continue;
+
+			pfn = spte_to_pfn(old);
+
+			if (spte_ad_enabled(old))
+				new = old & ~shadow_accessed_mask;
+			else if (!is_access_track_spte(old))
+				new = mark_spte_for_access_track(old);
+		}
+
+		page = walk->get_page(walk->private, pfn, new != old);
+		if (!page)
+			continue;
+
+		if (new != old && cmpxchg64(sp->spt + i, old, new) == old)
+			walk->update_page(walk->private, page);
+
+		put_page(page);
+	}
+}
+
+void kvm_arch_mmu_clear_young_walk(struct kvm *kvm, struct mmu_notifier_walk *walk)
+{
+	struct kvm_mmu_page *sp;
+	bool started = false;
+
+	rcu_read_lock();
+
+	list_for_each_entry_rcu(sp, &kvm->arch.mmu_page_list, mmu_page_list) {
+		if (is_obsolete_sp(kvm, sp) || sp->role.invalid ||
+		    sp->role.level > PT_DIRECTORY_LEVEL)
+			continue;
+
+		if (!started && !walk->start_batch(kvm->mm, walk->private))
+			break;
+
+		started = true;
+
+		kvm_clear_young_walk(kvm, walk, sp);
+
+		if (!walk->end_batch(walk->private, false))
+			continue;
+
+		started = false;
+
+		if (!atomic_inc_not_zero(&sp->ref_count))
+			continue;
+
+		rcu_read_unlock();
+		cond_resched();
+		rcu_read_lock();
+
+		kvm_mmu_put_page(kvm, sp);
+	}
+
+	if (started && !walk->end_batch(walk->private, true))
+		VM_BUG_ON(true);
+
+	rcu_read_unlock();
 }

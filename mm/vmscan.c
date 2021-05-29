@@ -55,6 +55,7 @@
 #include <linux/shmem_fs.h>
 #include <linux/ctype.h>
 #include <linux/debugfs.h>
+#include <linux/mmu_notifier.h>
 
 #include <asm/tlbflush.h>
 #include <asm/div64.h>
@@ -3498,6 +3499,113 @@ contended:
 		cond_resched();
 	} while (err == -EAGAIN && args->next_addr &&
 		 !mm_is_oom_victim(mm) && !mm_has_migrated(mm, memcg));
+
+}
+
+static bool mmu_notifier_start_batch(struct mm_struct *mm, void *priv)
+{
+	struct mm_walk_args *args = priv;
+	struct mem_cgroup *memcg = args->memcg;
+
+	VM_BUG_ON(!rcu_read_lock_held());
+
+#ifdef CONFIG_MEMCG
+	if (memcg && atomic_read(&memcg->moving_account)) {
+		args->mm_stats[MM_LOCK_CONTENTION]++;
+		return false;
+	}
+#endif
+	return !mm_is_oom_victim(mm) && !mm_has_migrated(mm, memcg);
+}
+
+static bool mmu_notifier_end_batch(void *priv, bool last)
+{
+	struct lruvec *lruvec;
+	struct mm_walk_args *args = priv;
+
+	VM_BUG_ON(!rcu_read_lock_held());
+
+	if (!last && args->batch_size < MAX_BATCH_SIZE)
+		return false;
+
+	lruvec = mem_cgroup_lruvec(NODE_DATA(args->node_id), args->memcg);
+	reset_batch_size(lruvec, args);
+
+	return true;
+}
+
+static struct page *mmu_notifier_get_page(void *priv, unsigned long pfn, bool young)
+{
+	struct page *page;
+	struct mm_walk_args *args = priv;
+
+	if (pfn == -1 || is_zero_pfn(pfn)) {
+		args->mm_stats[MM_LEAF_HOLE]++;
+		return NULL;
+	}
+
+	if (!young) {
+		args->mm_stats[MM_LEAF_OLD]++;
+		return NULL;
+	}
+
+	VM_BUG_ON(!pfn_valid(pfn));
+	if (pfn < args->start_pfn || pfn >= args->end_pfn) {
+		args->mm_stats[MM_LEAF_OTHER_NODE]++;
+		return NULL;
+	}
+
+	page = compound_head(pfn_to_page(pfn));
+	if (page_to_nid(page) != args->node_id) {
+		args->mm_stats[MM_LEAF_OTHER_NODE]++;
+		return NULL;
+	}
+
+	if (page_memcg_rcu(page) != args->memcg) {
+		args->mm_stats[MM_LEAF_OTHER_MEMCG]++;
+		return NULL;
+	}
+
+	if (!PageLRU(page)) {
+		args->mm_stats[MM_LEAF_HOLE]++;
+		return NULL;
+	}
+
+	return get_page_unless_zero(page) ? page : NULL;
+}
+
+static void mmu_notifier_update_page(void *priv, struct page *page)
+{
+	struct mm_walk_args *args = priv;
+	int old_gen, new_gen = lru_gen_from_seq(args->max_seq);
+
+	if (page_memcg_rcu(page) != args->memcg) {
+		args->mm_stats[MM_LEAF_OTHER_MEMCG]++;
+		return;
+	}
+
+	if (!PageLRU(page)) {
+		args->mm_stats[MM_LEAF_HOLE]++;
+		return;
+	}
+
+	old_gen = page_update_gen(page, new_gen);
+	if (old_gen >= 0 && old_gen != new_gen)
+		update_batch_size(page, old_gen, new_gen, args);
+	args->mm_stats[MM_LEAF_YOUNG]++;
+}
+
+static void call_mmu_notifier(struct mm_walk_args *args, struct mm_struct *mm)
+{
+	struct mmu_notifier_walk walk = {
+		.start_batch = mmu_notifier_start_batch,
+		.end_batch = mmu_notifier_end_batch,
+		.get_page = mmu_notifier_get_page,
+		.update_page = mmu_notifier_update_page,
+		.private = args,
+	};
+
+	mmu_notifier_clear_young_walk(mm, &walk);
 }
 
 static void page_inc_gen(struct page *page, struct lruvec *lruvec, bool front)
@@ -3689,6 +3797,7 @@ static bool walk_mm_list(struct lruvec *lruvec, unsigned long max_seq,
 		last = get_next_mm(args, &mm);
 		if (mm) {
 			walk_mm(args, mm);
+			call_mmu_notifier(args, mm);
 		}
 
 		cond_resched();

@@ -141,6 +141,20 @@ int __mmu_notifier_clear_young(struct mm_struct *mm,
 	return young;
 }
 
+void __mmu_notifier_clear_young_walk(struct mm_struct *mm,
+				     struct mmu_notifier_walk *walk)
+{
+	int id;
+	struct mmu_notifier *mn;
+
+	id = srcu_read_lock(&srcu);
+	hlist_for_each_entry_rcu(mn, &mm->mmu_notifier_mm->list, hlist) {
+		if (mn->ops->clear_young_walk)
+			mn->ops->clear_young_walk(mn, walk);
+	}
+	srcu_read_unlock(&srcu, id);
+}
+
 int __mmu_notifier_test_young(struct mm_struct *mm,
 			      unsigned long address)
 {

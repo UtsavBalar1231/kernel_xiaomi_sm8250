@@ -314,6 +314,10 @@ struct kvm_mmu_page {
 
 	/* Number of writes since the last time traversal visited this page.  */
 	atomic_t write_flooding_count;
+
+	atomic_t ref_count;
+	struct rcu_head rcu_head;
+	struct list_head mmu_page_list;
 };
 
 struct kvm_pio_request {
@@ -882,6 +886,9 @@ struct kvm_arch {
 	bool guest_can_read_msr_platform_info;
 
 	struct task_struct *nx_lpage_recovery_thread;
+
+	spinlock_t mmu_page_list_lock;
+	struct list_head mmu_page_list;
 };
 
 struct kvm_vm_stat {

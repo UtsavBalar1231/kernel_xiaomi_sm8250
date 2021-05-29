@@ -501,6 +501,19 @@ static int kvm_mmu_notifier_clear_young(struct mmu_notifier *mn,
 	return young;
 }
 
+__weak void kvm_arch_mmu_clear_young_walk(struct kvm *kvm,
+					  struct mmu_notifier_walk *walk)
+{
+}
+
+static void kvm_mmu_notifier_clear_young_walk(struct mmu_notifier *mn,
+					     struct mmu_notifier_walk *walk)
+{
+	struct kvm *kvm = mmu_notifier_to_kvm(mn);
+
+	kvm_arch_mmu_clear_young_walk(kvm, walk);
+}
+
 static int kvm_mmu_notifier_test_young(struct mmu_notifier *mn,
 				       struct mm_struct *mm,
 				       unsigned long address)
@@ -535,6 +548,7 @@ static const struct mmu_notifier_ops kvm_mmu_notifier_ops = {
 	.invalidate_range_end	= kvm_mmu_notifier_invalidate_range_end,
 	.clear_flush_young	= kvm_mmu_notifier_clear_flush_young,
 	.clear_young		= kvm_mmu_notifier_clear_young,
+	.clear_young_walk	= kvm_mmu_notifier_clear_young_walk,
 	.test_young		= kvm_mmu_notifier_test_young,
 	.change_pte		= kvm_mmu_notifier_change_pte,
 	.release		= kvm_mmu_notifier_release,
