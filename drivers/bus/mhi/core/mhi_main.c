@@ -1016,6 +1016,7 @@ static int parse_xfer_event(struct mhi_controller *mhi_cntrl,
 	case MHI_EV_CC_DB_MODE:
 		MHI_VERB("DB_MODE chan %d.\n", mhi_chan->chan);
 		mhi_chan->db_cfg.db_mode = true;
+
 		mhi_chan->mode_change++;
 
 		read_lock_irqsave(&mhi_cntrl->pm_lock, rflags);
