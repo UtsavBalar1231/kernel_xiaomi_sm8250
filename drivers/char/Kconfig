@@ -624,6 +624,10 @@ config RB5_GPIOS_ENABLE
 	  signals, GPIO 60 is default set to low to connect GPIOs
 	  140/145,116/117 to mezzanine connectors.
 
+config XLOGCHAR
+	tristate "xlogchar driver"
+	help
+	  Implements a high performance log driver
 endmenu
 
 config RANDOM_TRUST_CPU
