@@ -31,6 +31,7 @@
 #include <linux/sched/clock.h>
 #include <linux/cpumask.h>
 #include <uapi/linux/sched/types.h>
+#include <linux/sched/debug.h>
 #ifdef CONFIG_QCOM_INITIAL_LOGBUF
 #include <linux/kallsyms.h>
 #include <linux/math64.h>
@@ -759,6 +760,7 @@ static irqreturn_t wdog_bark_handler(int irq, void *dev_id)
 	nanosec_rem = do_div(wdog_dd->last_pet, 1000000000);
 	dev_info(wdog_dd->dev, "Watchdog last pet at %lu.%06lu\n",
 			(unsigned long) wdog_dd->last_pet, nanosec_rem / 1000);
+	show_state_filter(TASK_UNINTERRUPTIBLE);
 	if (wdog_dd->do_ipi_ping)
 		dump_cpu_alive_mask(wdog_dd);
 
