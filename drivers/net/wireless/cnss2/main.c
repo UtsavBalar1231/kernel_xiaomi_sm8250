@@ -66,6 +66,9 @@ struct cnss_driver_event {
 	void *data;
 };
 
+static bool disable_nv_mac;
+module_param(disable_nv_mac, bool, 0444);
+
 static void cnss_set_plat_priv(struct platform_device *plat_dev,
 			       struct cnss_plat_data *plat_priv)
 {
@@ -2697,7 +2700,10 @@ static int cnss_probe(struct platform_device *plat_dev)
 	plat_priv->plat_dev = plat_dev;
 	plat_priv->device_id = device_id->driver_data;
 	plat_priv->bus_type = cnss_get_bus_type(plat_priv->device_id);
-	plat_priv->use_nv_mac = cnss_use_nv_mac(plat_priv);
+	if (disable_nv_mac)
+		plat_priv->use_nv_mac = false;
+	else
+		plat_priv->use_nv_mac = cnss_use_nv_mac(plat_priv);
 	plat_priv->use_fw_path_with_prefix =
 		cnss_use_fw_path_with_prefix(plat_priv);
 	cnss_set_plat_priv(plat_dev, plat_priv);
