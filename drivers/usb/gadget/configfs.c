@@ -93,6 +93,7 @@ struct gadget_info {
 	struct usb_composite_dev cdev;
 	bool use_os_desc;
 	bool unbinding;
+	bool isMSOS;
 	char b_vendor_code;
 	char qw_sign[OS_STRING_QW_SIGN_LEN];
 	spinlock_t spinlock;
@@ -151,6 +152,7 @@ struct gadget_config_name {
 
 #define MAX_USB_STRING_LEN	126
 #define MAX_USB_STRING_WITH_NULL_LEN	(MAX_USB_STRING_LEN+1)
+#define MSOS_VENDOR_TYPE 0x01
 
 static int usb_string_copy(const char *s, char **s_copy)
 {
@@ -1496,6 +1498,8 @@ static void android_work(struct work_struct *data)
 					KOBJ_CHANGE, disconnected);
 		pr_info("%s: sent uevent %s\n", __func__, disconnected[0]);
 		uevent_sent = true;
+		gi->isMSOS = false;
+		cdev->isMSOS = false;
 	}
 
 	if (!uevent_sent) {
@@ -1635,6 +1639,13 @@ static int android_setup(struct usb_gadget *gadget,
 	int value = -EOPNOTSUPP;
 	struct usb_function_instance *fi;
 
+	if ((c->bRequestType & USB_TYPE_MASK) == USB_TYPE_VENDOR) {
+		if ((c->bRequest == MSOS_VENDOR_TYPE) &&
+			(c->bRequestType & USB_DIR_IN) && le16_to_cpu(c->wIndex == 4)) {
+			gi->isMSOS = true;
+			cdev->isMSOS = true;
+		}
+	}
 	spin_lock_irqsave(&cdev->lock, flags);
 	if (!gi->connected) {
 		gi->connected = 1;
@@ -1769,10 +1780,27 @@ out:
 	return sprintf(buf, "%s\n", state);
 }
 
+static ssize_t isMSOS_show(struct device *pdev, struct device_attribute *attr,
+		char *buf)
+{
+	struct gadget_info *dev = dev_get_drvdata(pdev);
+	int len = sizeof(buf);
+	bool isMSOS = false;
+
+	if (!dev)
+		goto out;
+
+	isMSOS = dev->isMSOS;
+out:
+	return snprintf(buf, len, "%d\n", isMSOS);
+}
+
 static DEVICE_ATTR(state, S_IRUGO, state_show, NULL);
+static DEVICE_ATTR(isMSOS, S_IRUGO, isMSOS_show, NULL);
 
 static struct device_attribute *android_usb_attributes[] = {
 	&dev_attr_state,
+	&dev_attr_isMSOS,
 	NULL
 };
 
