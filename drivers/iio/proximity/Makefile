@@ -13,3 +13,5 @@ obj-$(CONFIG_SRF08)		+= srf08.o
 obj-$(CONFIG_SX9500)		+= sx9500.o
 
 obj-y += inv_ch101/
+
+obj-$(CONFIG_US_PROXIMITY)	+= us_prox.o
