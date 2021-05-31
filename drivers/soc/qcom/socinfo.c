@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2009-2021, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2021 XiaoMi, Inc.
  */
 
 #define pr_fmt(fmt) "%s: " fmt, __func__
@@ -53,6 +54,22 @@ enum {
 	HW_PLATFORM_RCM	= 21,
 	HW_PLATFORM_STP = 23,
 	HW_PLATFORM_SBC = 24,
+
+#ifdef CONFIG_BOARD_XIAOMI_SM7250
+	HW_PLATFORM_J9A = 35,
+	HW_PLATFORM_G7A = 36,
+	HW_PLATFORM_J9  = 37,
+#endif
+	HW_PLATFORM_J1  = 36,
+	HW_PLATFORM_J11 = 37,
+	HW_PLATFORM_J1S = 41,
+	HW_PLATFORM_J3S = 42,
+	HW_PLATFORM_J2  = 43,
+	HW_PLATFORM_K11A = 44,
+	HW_PLATFORM_J2S = 45,
+	HW_PLATFORM_K81 = 46,
+	HW_PLATFORM_K81A = 47,
+	HW_PLATFORM_L3A = 48,
 	HW_PLATFORM_HDK = 31,
 	HW_PLATFORM_IDP = 34,
 	HW_PLATFORM_INVALID
@@ -75,6 +92,21 @@ const char *hw_platform[] = {
 	[HW_PLATFORM_DTV] = "DTV",
 	[HW_PLATFORM_STP] = "STP",
 	[HW_PLATFORM_SBC] = "SBC",
+	[HW_PLATFORM_J2] = "UMI",
+	[HW_PLATFORM_J1] = "CMI",
+	[HW_PLATFORM_J11] = "LMI",
+	[HW_PLATFORM_J1S] = "CAS",
+	[HW_PLATFORM_J3S] = "APOLLO",
+	[HW_PLATFORM_K11A] = "ALIOTH",
+	[HW_PLATFORM_J2S] = "THYME",
+	[HW_PLATFORM_K81] = "ENUMA",
+	[HW_PLATFORM_K81A] = "ELISH",
+	[HW_PLATFORM_L3A] = "PSYCHE",
+#ifdef CONFIG_BOARD_XIAOMI_SM7250
+	[HW_PLATFORM_J9A] = "VANGOGH",
+	[HW_PLATFORM_G7A] = "PICASSO",
+	[HW_PLATFORM_J9]  = "MONET",
+#endif
 	[HW_PLATFORM_HDK] = "HDK",
 	[HW_PLATFORM_IDP] = "IDP"
 };
@@ -320,7 +352,7 @@ static struct msm_soc_info cpu_of_id[] = {
 	[365] = {MSM_CPU_SDMMAGPIE, "SDMMAGPIE"},
 
 	/* kona ID */
-	[356] = {MSM_CPU_KONA, "KONA"},
+	[356] = {MSM_CPU_KONA, "SM8250"},
 	[455] = {MSM_CPU_KONA, "KONA"},
 	[496] = {MSM_CPU_KONA, "KONA"},
 
@@ -1681,6 +1713,90 @@ static void socinfo_select_format(void)
 		socinfo_format = socinfo->v0_1.format;
 	}
 }
+
+const char *product_name_get(void)
+{
+	char *product_name = NULL;
+	size_t size;
+	uint32_t hw_type;
+
+	hw_type = socinfo_get_platform_type();
+
+	product_name = qcom_smem_get(QCOM_SMEM_HOST_ANY, SMEM_ID_VENDOR1, &size);
+	if (IS_ERR_OR_NULL(product_name)) {
+		pr_warn("Can't find SMEM_ID_VENDOR1; falling back on dummy values.\n");
+		return hw_platform[hw_type];
+	}
+
+	return product_name;
+}
+
+EXPORT_SYMBOL(product_name_get);
+
+uint32_t get_hw_country_version(void)
+{
+	uint32_t version = socinfo_get_platform_version();
+	return (version & HW_COUNTRY_VERSION_MASK) >> HW_COUNTRY_VERSION_SHIFT;
+}
+
+EXPORT_SYMBOL(get_hw_country_version);
+
+uint32_t get_hw_version_platform(void)
+{
+	uint32_t hw_type = socinfo_get_platform_type();
+	if (hw_type == HW_PLATFORM_J2)
+		return HARDWARE_PLATFORM_UMI;
+	else if (hw_type == HW_PLATFORM_J1)
+		return HARDWARE_PLATFORM_CMI;
+	else if (hw_type == HW_PLATFORM_J11)
+		return HARDWARE_PLATFORM_LMI;
+	else if (hw_type == HW_PLATFORM_J1S)
+		return HARDWARE_PLATFORM_CAS;
+	else if (hw_type == HW_PLATFORM_J3S)
+		return HARDWARE_PLATFORM_APOLLO;
+	else if (hw_type == HW_PLATFORM_K11A)
+		return HARDWARE_PLATFORM_ALIOTH;
+        else if (hw_type == HW_PLATFORM_J2S)
+                return HARDWARE_PLATFORM_THYME;
+	else if (hw_type == HW_PLATFORM_K81)
+		return HARDWARE_PLATFORM_ENUMA;
+	else if (hw_type == HW_PLATFORM_K81A)
+		return HARDWARE_PLATFORM_ELISH;
+        else if (hw_type == HW_PLATFORM_L3A)
+                return HARDWARE_PLATFORM_PSYCHE;
+#ifdef CONFIG_BOARD_XIAOMI_SM7250
+	else if (hw_type == HW_PLATFORM_J9A)
+		return HARDWARE_PLATFORM_VANGOGH;
+	else if (hw_type == HW_PLATFORM_G7A)
+		return HARDWARE_PLATFORM_PICASSO;
+	else if (hw_type == HW_PLATFORM_J9)
+		return HARDWARE_PLATFORM_MONET;
+#endif
+	else
+		return HARDWARE_PLATFORM_UNKNOWN;
+}
+EXPORT_SYMBOL(get_hw_version_platform);
+
+uint32_t get_hw_version_major(void)
+{
+	uint32_t version = socinfo_get_platform_version();
+	return (version & HW_MAJOR_VERSION_MASK) >> HW_MAJOR_VERSION_SHIFT;
+}
+EXPORT_SYMBOL(get_hw_version_major);
+
+uint32_t get_hw_version_minor(void)
+{
+	uint32_t version = socinfo_get_platform_version();
+	return (version & HW_MINOR_VERSION_MASK) >> HW_MINOR_VERSION_SHIFT;
+}
+EXPORT_SYMBOL(get_hw_version_minor);
+
+uint32_t get_hw_version_build(void)
+{
+	uint32_t version = socinfo_get_platform_version();
+	return (version & HW_BUILD_VERSION_MASK) >> HW_BUILD_VERSION_SHIFT;
+}
+EXPORT_SYMBOL(get_hw_version_build);
 
 int __init socinfo_init(void)
 {
