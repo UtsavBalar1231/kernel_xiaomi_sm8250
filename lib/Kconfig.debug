@@ -534,6 +534,12 @@ config DEBUG_OBJECTS_ENABLE_DEFAULT
         help
           Debug objects boot parameter default value
 
+config UEVENTS_RECORD
+	bool "Capture uevent records"
+	default n
+	help
+	  This enables support to capture uevent records in dmesg.
+
 config DEBUG_SLAB
 	bool "Debug slab memory allocations"
 	depends on DEBUG_KERNEL && SLAB
