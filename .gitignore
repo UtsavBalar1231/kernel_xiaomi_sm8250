@@ -137,4 +137,4 @@ all.config
 kernel/configs/android-*.cfg
 
 # Tech package directories
-techpack/
+#techpack/
