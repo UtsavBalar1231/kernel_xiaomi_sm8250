@@ -119,4 +119,10 @@ static inline int qpnp_pon_is_ps_hold_reset(void)
 }
 #endif
 
+#ifdef CONFIG_MTD_BLOCK2MTD
+extern struct Scsi_Host *g_shost;
+extern void ufs_enter_h8_disable(struct Scsi_Host *shost);
+extern void machine_restart(char *cmd);
+#endif
+
 #endif
