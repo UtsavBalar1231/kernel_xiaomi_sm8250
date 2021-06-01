@@ -215,9 +215,12 @@ static ssize_t brightness_store(struct device *dev,
 		return rc;
 
 	bd->usr_brightness_req = brightness;
+#ifndef CONFIG_THERMAL_DIMMING
 	brightness = (brightness <= bd->thermal_brightness_limit) ?
 				bd->usr_brightness_req :
 				bd->thermal_brightness_limit;
+
+#endif
 
 	rc = backlight_device_set_brightness(bd, brightness);
 
@@ -401,11 +404,17 @@ static int bd_cdev_set_cur_brightness(struct thermal_cooling_device *cdev,
 		return 0;
 
 	bd->thermal_brightness_limit = brightness_lvl;
+#ifdef CONFIG_THERMAL_DIMMING
+	sysfs_notify(&cdev->device.kobj, NULL, "cur_state");
+	pr_info("thermal dimming: set thermal_brightness_limit to %d\n",
+				bd->thermal_brightness_limit);
+#else
 	brightness_lvl = (bd->usr_brightness_req
 				<= bd->thermal_brightness_limit) ?
 				bd->usr_brightness_req :
 				bd->thermal_brightness_limit;
 	backlight_device_set_brightness(bd, brightness_lvl);
+#endif
 
 	return 0;
 }
