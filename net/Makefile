@@ -87,3 +87,6 @@ endif
 obj-$(CONFIG_QRTR)		+= qrtr/
 obj-$(CONFIG_NET_NCSI)		+= ncsi/
 obj-$(CONFIG_XDP_SOCKETS)	+= xdp/
+
+#SLM
+obj-$(CONFIG_SLA_STAIC_COLLECT) += sla/
