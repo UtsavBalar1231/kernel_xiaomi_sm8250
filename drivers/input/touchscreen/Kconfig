@@ -1334,6 +1334,7 @@ config INPUT_PRESS_NDT
 	  Say Y here if you have a press ic ndt.
 
 source "drivers/input/touchscreen/nt36672c/Kconfig"
+source "drivers/input/touchscreen/xiaomi/Kconfig"
 
 config TOUCHSCREEN_SYNAPTICS_DSX
 	bool "Synaptics DSX Touchscreen Driver"
@@ -1364,6 +1365,12 @@ config TOUCHSCREEN_SYNAPTICS_TCM
 source "drivers/input/touchscreen/synaptics_tcm/Kconfig"
 
 source "drivers/input/touchscreen/focaltech_touch/Kconfig"
+
+config INPUT_PRESS_NDT
+	bool "ndt"
+	depends on I2C
+	help
+	  Say Y here if you have a press ic ndt.
 
 source "drivers/input/touchscreen/nt36xxx/Kconfig"
 
