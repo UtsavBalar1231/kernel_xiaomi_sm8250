@@ -398,6 +398,9 @@ void __weak arch_suspend_enable_irqs(void)
  *
  * This function should be called after devices have been suspended.
  */
+extern void rpmh_status_print_enabled(void);
+extern void system_sleep_status_print_enabled(void);
+
 static int suspend_enter(suspend_state_t state, bool *wakeup)
 {
 	int error, last_dev;
@@ -445,7 +448,8 @@ static int suspend_enter(suspend_state_t state, bool *wakeup)
 		log_suspend_abort_reason("Disabling non-boot cpus failed");
 		goto Enable_cpus;
 	}
-
+	rpmh_status_print_enabled();
+	system_sleep_status_print_enabled();
 	arch_suspend_disable_irqs();
 	BUG_ON(!irqs_disabled());
 
