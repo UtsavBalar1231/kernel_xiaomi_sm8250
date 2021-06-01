@@ -130,5 +130,12 @@ config HIGH_RES_TIMERS
 	  hardware is not capable then this option only increases
 	  the size of the kernel image.
 
+config ENABLE_ALARMTIMER_RECORD
+	bool "Capture alarmtimer records in procfs"
+	default n
+	help
+	  This option enables support to log alarmtimer records in
+	  dmesg.
+
 endmenu
 endif
