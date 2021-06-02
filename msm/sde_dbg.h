@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
  */
 
 #ifndef SDE_DBG_H_
@@ -156,11 +156,10 @@ struct sde_dbg_reglog {
 	u32 first;
 	u32 last;
 	u32 last_dump;
-	u32 curr;
+	atomic64_t curr;
 	u32 next;
 	u32 enable;
 	u32 enable_mask;
-	spinlock_t spin_lock;
 };
 
 extern struct sde_dbg_reglog *sde_dbg_base_reglog;
