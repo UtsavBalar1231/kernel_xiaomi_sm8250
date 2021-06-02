@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2012-2016, 2018-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016, 2018-2021, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -113,7 +113,10 @@ static inline void __strict_check(struct venus_hfi_device *device)
 		WARN_ON(VIDC_DBG_WARN_ENABLE);
 	}
 }
-
+static inline bool is_clock_bus_voted(struct venus_hfi_device *device)
+{
+	return (device->bus_vote.total_bw_ddr && device->clk_freq);
+}
 static inline void __set_state(struct venus_hfi_device *device,
 		enum venus_hfi_state state)
 {
@@ -769,21 +772,13 @@ static int __unvote_buses(struct venus_hfi_device *device)
 {
 	int rc = 0;
 	struct bus_info *bus = NULL;
-	unsigned long freq = 0, zero = 0;
+	unsigned long freq = 0;
 
 	venus_hfi_for_each_bus(device, bus) {
-		if (!bus->is_prfm_gov_used) {
-			freq = __calc_bw(bus, &device->bus_vote);
 			rc = __vote_bandwidth(bus, &freq);
-		} else
-			rc = __vote_bandwidth(bus, &zero);
-
-		if (rc)
-			goto err_unknown_device;
+			if (rc)
+				goto err_unknown_device;
 	}
-
-	if (rc)
-		dprintk(VIDC_WARN, "Failed to unvote some buses\n");
 
 err_unknown_device:
 	return rc;
@@ -795,7 +790,7 @@ static int __vote_buses(struct venus_hfi_device *device,
 	int rc = 0;
 	struct bus_info *bus = NULL;
 	struct vidc_bus_vote_data *new_data = NULL;
-	unsigned long freq = 0, zero = 0;
+	unsigned long freq = 0;
 
 	if (!num_data) {
 		dprintk(VIDC_DBG, "No vote data available\n");
@@ -820,11 +815,18 @@ no_data_count:
 
 	venus_hfi_for_each_bus(device, bus) {
 		if (!bus->is_prfm_gov_used) {
-			freq = __calc_bw(bus, &device->bus_vote);
-			rc = __vote_bandwidth(bus, &freq);
+			rc = msm_vidc_table_get_target_freq(
+					device->res->gov_data,
+					&device->bus_vote, &freq);
+			if (rc) {
+				dprintk(VIDC_ERR, "unable to get freq\n");
+				return rc;
+			}
+			device->bus_vote.total_bw_ddr = freq;
 		} else
-			rc = __vote_bandwidth(bus, &zero);
+			freq = bus->range[1];
 
+		rc = __vote_bandwidth(bus, &freq);
 		if (rc)
 			return rc;
 	}
@@ -1532,6 +1534,12 @@ static int __iface_cmdq_write_relaxed(struct venus_hfi_device *device,
 		dprintk(VIDC_ERR, "%s: Power on failed\n", __func__);
 		goto err_q_write;
 	}
+
+	if (cmd_packet->packet_type == HFI_CMD_SESSION_EMPTY_BUFFER &&
+				!is_clock_bus_voted(device))
+		dprintk(VIDC_ERR, "%s: bus %llu bps or clock %lu MHz\n",
+				__func__, device->bus_vote.total_bw_ddr,
+					device->clk_freq);
 
 	if (!__write_queue(q_info, (u8 *)pkt, requires_interrupt)) {
 		if (device->res->sw_power_collapsible) {
