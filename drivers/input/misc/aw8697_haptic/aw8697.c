@@ -33,6 +33,7 @@
 #include <linux/power_supply.h>
 #include <linux/vmalloc.h>
 #include <linux/pm_qos.h>
+#include <linux/string.h>
 #include "aw8697_config.h"
 #include "aw8697_reg.h"
 #include "aw869xx_reg.h"
@@ -73,6 +74,10 @@ struct pm_qos_request pm_qos_req_vb;
  ******************************************************/
 #define AW8697_RTP_NAME_MAX        64
 static char *aw8697_ram_name = "aw8697_haptic.bin";
+#ifdef SUPPORT_RELOAD_FW
+static char *aw8697_ram_name_a = "aw8697_haptic_a.bin";
+static char aw8697_rtp_name_a[AW8697_RTP_NAME_MAX];
+#endif
 #ifdef TEST_RTP
 static char aw8697_rtp_name[][AW8697_RTP_NAME_MAX] = {
 	{"aw8697_rtp_1.bin"},
@@ -233,6 +238,37 @@ static char aw8697_rtp_name[][AW8697_RTP_NAME_MAX] = {
 	{"FOD_Motion_Ripple_RTP.bin"},
 	{"FOD_Motion_Spiral_RTP.bin"},
 	{"gamebox_launch_rtp.bin"}, // 161
+	{"Gesture_Back_Pull_RTP.bin"},// 162
+	{"Gesture_Back_Release_RTP.bin"},// 163
+	{"alert_rtp.bin"},// 164
+	{"feedback_negative_light_rtp.bin"},// 165
+	{"feedback_neutral_rtp.bin"},// 166
+	{"feedback_positive_rtp.bin"},// 167
+	{"fingerprint_record_rtp.bin"},// 168
+	{"lockdown_rtp.bin"},// 169
+	{"sliding_damping_rtp.bin"},// 170
+	{"todo_alldone_rtp.bin"},// 171
+	{"uninstall_animation_icon_rtp.bin"},// 172
+	{"signal_button_highlight_rtp.bin"},//173
+	{"signal_button_negative_rtp.bin"},
+	{"signal_button_rtp.bin"},
+	{"signal_clock_high_rtp.bin"},//176
+	{"signal_clock_rtp.bin"},
+	{"signal_clock_unit_rtp.bin"},
+	{"signal_inputbox_rtp.bin"},
+	{"signal_key_high_rtp.bin"},
+	{"signal_key_unit_rtp.bin"},//181
+	{"signal_list_highlight_rtp.bin"},
+	{"signal_list_rtp.bin"},
+	{"signal_picker_rtp.bin"},
+	{"signal_popup_rtp.bin"},
+	{"signal_seekbar_rtp.bin"},//186
+	{"signal_switch_rtp.bin"},
+	{"signal_tab_rtp.bin"},
+	{"signal_text_rtp.bin"},
+	{"signal_transition_light_rtp.bin"},
+	{"signal_transition_rtp.bin"},//191
+	{"haptics_video_rtp.bin"},//192
 };
 #endif
 static int CUSTOME_WAVE_ID;
@@ -730,12 +766,12 @@ static void aw8697_ram_loaded(const struct firmware *cont, void *context)
 	pr_info("%s enter\n", __func__);
 
 	if (!cont) {
-		pr_err("%s: failed to read %s\n", __func__, aw8697_ram_name);
+		pr_err("%s: failed to read %s\n", __func__, aw8697->ram_name);
 		release_firmware(cont);
 		return;
 	}
 
-	pr_info("%s: loaded %s - size: %zu\n", __func__, aw8697_ram_name,
+	pr_info("%s: loaded %s - size: %zu\n", __func__, aw8697->ram_name,
 		cont ? cont->size : 0);
 	/*
 	for(i=0; i<cont->size; i++) {
@@ -743,7 +779,7 @@ static void aw8697_ram_loaded(const struct firmware *cont, void *context)
 	}
 	*/
 	pr_info("%s: loaded %s - size: %zu bytes\n", __func__,
-		    aw8697_ram_name, cont ? cont->size : 0);
+		    aw8697->ram_name, cont ? cont->size : 0);
 	/* check sum */
 	for (i = 2; i < cont->size; i++) {
 		check_sum += cont->data[i];
@@ -780,11 +816,12 @@ static void aw8697_ram_loaded(const struct firmware *cont, void *context)
 	kfree(aw8697_fw);
 
 	aw8697->ram_init = 1;
-	pr_info("%s: fw update complete\n", __func__);
+
 	if (aw8697->chip_version == AW8697_CHIP_9X) {
 		aw8697_haptic_trig_enable_config(aw8697);
 		aw8697_rtp_update(aw8697);
 	}
+	pr_info("%s: fw update complete\n", __func__);
 }
 
 static int aw8697_ram_update(struct aw8697 *aw8697)
@@ -792,7 +829,7 @@ static int aw8697_ram_update(struct aw8697 *aw8697)
 	aw8697->ram_init = 0;
 	aw8697->rtp_init = 0;
 	return request_firmware_nowait(THIS_MODULE, FW_ACTION_HOTPLUG,
-				       aw8697_ram_name, aw8697->dev, GFP_KERNEL,
+				       aw8697->ram_name, aw8697->dev, GFP_KERNEL,
 				       aw8697, aw8697_ram_loaded);
 }
 
@@ -813,11 +850,13 @@ static int aw8697_ram_init(struct aw8697 *aw8697)
 {
 #ifdef AWINIC_RAM_UPDATE_DELAY
 	int ram_timer_val = 5000;
+	aw8697->ram_name = aw8697_ram_name;
 	INIT_DELAYED_WORK(&aw8697->ram_work, aw8697_ram_work_routine);
 	//schedule_delayed_work(&aw8697->ram_work,
 			      //msecs_to_jiffies(ram_timer_val));
 	queue_delayed_work(aw8697->work_queue, &aw8697->ram_work,  msecs_to_jiffies(ram_timer_val));
 #else
+	aw8697->ram_name = aw8697_ram_name;
 	aw8697_ram_update(aw8697);
 #endif
 	return 0;
@@ -2512,6 +2551,23 @@ static void aw8697_rtp_work_routine(struct work_struct *work)
 			if (aw8697->rtp_file_num > ((sizeof(aw8697_rtp_name) / AW8697_RTP_NAME_MAX) - 1))
 				aw8697->rtp_file_num = (sizeof(aw8697_rtp_name) / AW8697_RTP_NAME_MAX) - 1;
 
+#ifdef SUPPORT_RELOAD_FW
+			if (aw8697->vov == 1) {
+				/* fw loaded */
+				memset(aw8697_rtp_name_a, 0, AW8697_RTP_NAME_MAX);
+				strncpy(aw8697_rtp_name_a, aw8697_rtp_name[aw8697->rtp_file_num], strlen(aw8697_rtp_name[aw8697->rtp_file_num]) - 4);
+				strcat(aw8697_rtp_name_a, "_a.bin");
+				ret = request_firmware(&rtp_file,
+					aw8697_rtp_name_a,
+					aw8697->dev);
+				if (ret < 0) {
+					pr_err("%s: failed to read %s\n", __func__,
+						aw8697_rtp_name_a);
+				} else {
+					goto RTP_REQUEST_DONE;
+				}
+			}
+#endif
 			/* fw loaded */
 			ret = request_firmware(&rtp_file,
 					       aw8697_rtp_name[aw8697->rtp_file_num],
@@ -2523,7 +2579,9 @@ static void aw8697_rtp_work_routine(struct work_struct *work)
 				mutex_unlock(&aw8697->lock);
 				return;
 			}
-
+#ifdef SUPPORT_RELOAD_FW
+RTP_REQUEST_DONE:
+#endif
 			vfree(aw8697_rtp);
 			aw8697_rtp = vmalloc(rtp_file->size + sizeof(int));
 			if (!aw8697_rtp) {
@@ -6097,6 +6155,43 @@ static ssize_t aw8697_f0_value_show(struct device *dev,
 	return snprintf(buf, PAGE_SIZE, "%d\n", aw8697->f0);
 }
 
+#ifdef SUPPORT_RELOAD_FW
+static ssize_t aw8697_vov_show(struct device *dev,
+					 struct device_attribute *attr,
+					 char *buf)
+{
+	struct aw8697 *aw8697 = dev_get_drvdata(dev);
+	ssize_t len = 0;
+
+	len += snprintf(buf + len, PAGE_SIZE - len, "0x%02x\n",
+			aw8697->info.bst_vol_ram);
+
+	return len;
+}
+
+static ssize_t aw8697_vov_store(struct device *dev,
+				     struct device_attribute *attr,
+				     const char *buf, size_t count)
+{
+	struct aw8697 *aw8697 = dev_get_drvdata(dev);
+	unsigned int val = 0;
+	int rc = 0;
+
+	rc = kstrtouint(buf, 0, &val);
+	if (rc < 0)
+		return rc;
+	if (val == 1) {
+		aw8697->vov = 1;
+		aw8697->info.bst_vol_ram = 0x10;
+		pr_info("set ux value: 0x%02x, update ram\n", aw8697->info.bst_vol_ram);
+		aw8697->ram_name = aw8697_ram_name_a;
+		queue_delayed_work(aw8697->work_queue, &aw8697->ram_work,  msecs_to_jiffies(5000));
+	}
+
+	return count;
+}
+#endif
+
 static ssize_t aw869xx_cont_wait_num_show(struct device *dev,
 					  struct device_attribute *attr,
 					  char *buf)
@@ -6266,6 +6361,9 @@ static DEVICE_ATTR(osc_save, S_IWUSR | S_IRUGO, aw8697_osc_cali_show, aw8697_osc
 static DEVICE_ATTR(f0_value, S_IRUGO, aw8697_f0_value_show, NULL);
 static DEVICE_ATTR(custom_wave, S_IWUSR | S_IRUGO, aw8697_custom_wave_show,
 		   aw8697_custom_wave_store);
+#ifdef SUPPORT_RELOAD_FW
+static DEVICE_ATTR(vov, S_IWUSR | S_IRUGO, aw8697_vov_show, aw8697_vov_store);
+#endif
 
 /* aw869x */
 static DEVICE_ATTR(cont_td, S_IWUSR | S_IRUGO, aw8697_cont_td_show,
@@ -6321,6 +6419,9 @@ static struct attribute *aw8697_vibrator_attributes[] = {
 	&dev_attr_f0_save.attr,
         &dev_attr_f0_value.attr,
 	&dev_attr_custom_wave.attr,
+#ifdef SUPPORT_RELOAD_FW
+	&dev_attr_vov.attr,
+#endif
 	NULL
 };
 
