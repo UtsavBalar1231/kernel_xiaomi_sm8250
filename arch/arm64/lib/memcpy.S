@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2012-2020, Arm Limited.
+ * Copyright (c) 2012-2021, Arm Limited.
  *
  * Adapted from the original at:
- * https://github.com/ARM-software/optimized-routines/blob/master/string/aarch64/memcpy.S
+ * https://github.com/ARM-software/optimized-routines/blob/afd6244a1f8d9229/string/aarch64/memcpy.S
  */
 
 #include <linux/linkage.h>
