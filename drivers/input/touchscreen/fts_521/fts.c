@@ -51,6 +51,7 @@
 #include <linux/hardirq.h>
 #endif
 
+#include <linux/pm_runtime.h>
 #include <linux/gpio.h>
 #include <linux/of_gpio.h>
 #include <linux/regulator/consumer.h>
@@ -3025,11 +3026,31 @@ static int fts_write_charge_status(int status)
 	u8 wired_charge_cmd[3] = {0xA2, 0x02, 0x01};
 	u8 wireless_charge_cmd[3] = {0xA2, 0x02, 0x02};
 	int res;
+#ifdef CONFIG_SECURE_TOUCH
+	struct fts_secure_info *scr_info = fts_info->secure_info;
+#endif
 
 	if (!fts_info) {
 		logError(1, "%s %s touch no inited\n", tag, __func__);
 		return 0;
 	}
+
+/*TODO:add notify chain to set touch state in list as below
+ *     when exit secure enable
+ * 1.palm
+ * 2.set mode long value
+ * 3.charge
+ * */
+#ifdef CONFIG_SECURE_TOUCH
+	mutex_lock(&scr_info->palm_lock);
+	if (atomic_read(&scr_info->st_enabled)) {
+		MI_TOUCH_LOGE(1, "%s %s: already pending,skip", tag, __func__);
+		mutex_unlock(&scr_info->palm_lock);
+		return 0;
+	}
+	mutex_unlock(&scr_info->palm_lock);
+#endif
+
 	mutex_lock(&fts_info->charge_lock);
 	logError(1, "%s %s: charging_status:%d\n", tag, __func__, status);
 	if (status == NOT_CHARGING) {
@@ -3304,6 +3325,7 @@ static ssize_t fts_secure_touch_enable_store (struct device *dev, struct device_
 			return ret;
 		}
 		mutex_lock(&scr_info->palm_lock);
+		pm_runtime_allow(&info->client->adapter->dev);
 		atomic_set(&scr_info->st_enabled, 0);
 		fts_secure_touch_notify(info);
 		complete(&scr_info->st_irq_processed);
@@ -3324,6 +3346,7 @@ static ssize_t fts_secure_touch_enable_store (struct device *dev, struct device_
 		/*wait until finish process all normal irq*/
 		synchronize_irq(info->client->irq);
 
+		pm_runtime_forbid(&info->client->adapter->dev);
 		/*enable secure touch*/
 		reinit_completion(&scr_info->st_powerdown);
 		reinit_completion(&scr_info->st_irq_processed);
@@ -3347,9 +3370,9 @@ static ssize_t fts_secure_touch_show (struct device *dev, struct device_attribut
 	struct fts_secure_info *scr_info = info->secure_info;
 	int value = 0;
 
-	MI_TOUCH_LOGI(1, "%s %s: SECURE_TOUCH[R]:st_1st_complete = %d\n",
+	MI_TOUCH_LOGN(1, "%s %s: SECURE_TOUCH[R]:st_1st_complete = %d\n",
 		tag, __func__, atomic_read(&scr_info->st_1st_complete));
-	MI_TOUCH_LOGI(1, "%s %s: SECURE_TOUCH[R]:st_pending_irqs = %d\n",
+	MI_TOUCH_LOGN(1, "%s %s: SECURE_TOUCH[R]:st_pending_irqs = %d\n",
 		tag, __func__, atomic_read(&scr_info->st_pending_irqs));
 
 	if (atomic_read(&scr_info->st_enabled) == 0) {
@@ -3363,7 +3386,7 @@ static ssize_t fts_secure_touch_show (struct device *dev, struct device_attribut
 		value = 1;
 	} else if (atomic_cmpxchg(&scr_info->st_1st_complete, 1, 0) == 1) {
 		complete(&scr_info->st_irq_processed);
-		MI_TOUCH_LOGI(1, "%s %s: SECURE_TOUCH[R]:comlpetion st_irq_processed\n", tag, __func__);
+		MI_TOUCH_LOGN(1, "%s %s: SECURE_TOUCH[R]:comlpetion st_irq_processed\n", tag, __func__);
 	}
 	return scnprintf(buf, PAGE_SIZE, "%d", value);
 }
@@ -5946,6 +5969,9 @@ static int fts_reset_mode(int mode)
 static int fts_set_mode_long_value(int mode, int len, int *buf)
 {
 	int i = 0;
+#ifdef CONFIG_SECURE_TOUCH
+	struct fts_secure_info *scr_info = fts_info->secure_info;
+#endif
 
 	if (len == 0)
 		return -EIO;
@@ -5959,8 +5985,18 @@ static int fts_set_mode_long_value(int mode, int len, int *buf)
 		if (fts_info->gamemode_enable) {
 			MI_TOUCH_LOGE(1, "%s %s: in gamemode, don't write parameters to touch ic\n", tag, __func__);
 			return 0;
-		} else
+		} else {
+#ifdef CONFIG_SECURE_TOUCH
+			mutex_lock(&scr_info->palm_lock);
+			if (atomic_read(&scr_info->st_enabled)) {
+				MI_TOUCH_LOGE(1, "%s %s: already pending,skip", tag, __func__);
+				mutex_unlock(&scr_info->palm_lock);
+				return 0;
+			}
+			mutex_unlock(&scr_info->palm_lock);
+#endif
 			schedule_work(&fts_info->grip_mode_work);
+		}
 	}
 	return 0;
 }
