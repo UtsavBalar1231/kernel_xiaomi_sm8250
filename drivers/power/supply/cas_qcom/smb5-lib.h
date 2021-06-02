@@ -234,6 +234,7 @@ enum esr_work_status {
 #define ADAPTER_XIAOMI_PD_40W 0x0c
 #define ADAPTER_VOICE_BOX 0x0d
 #define ADAPTER_XIAOMI_PD_45W	0xe
+#define ADAPTER_XIAOMI_PD_60W   0xf
 
 /* defined for charger type recheck */
 #define CHARGER_RECHECK_DELAY_MS	30000
