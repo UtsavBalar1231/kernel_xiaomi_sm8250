@@ -3487,6 +3487,7 @@ static int smblib_dc_therm_charging(struct smb_charger *chg,
 		}
 		break;
 	case ADAPTER_XIAOMI_PD_45W:
+	case ADAPTER_XIAOMI_PD_60W:
 		thermal_fcc_ua = chg->thermal_mitigation_dc_45w[temp_level];
 		thermal_icl_ua = chg->thermal_mitigation_dc_45w[temp_level];
 		break;
@@ -8367,7 +8368,8 @@ int smblib_get_quick_charge_type(struct smb_charger *chg)
 	if (chg->pd_active)
 		return QUICK_CHARGE_FAST;
 
-	if (chg->wireless_charge_type == ADAPTER_XIAOMI_PD_45W) {
+	if (chg->wireless_charge_type == ADAPTER_XIAOMI_PD_45W ||
+		chg->wireless_charge_type == ADAPTER_XIAOMI_PD_60W) {
 		return QUICK_CHARGE_SUPER;
 	} else if (chg->wireless_charge_type == ADAPTER_XIAOMI_PD_40W) {
 		return QUICK_CHARGE_TURBE;
