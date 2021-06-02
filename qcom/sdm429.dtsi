@@ -54,6 +54,8 @@
 			 < 2016000 >;
 	};
 
+	/delete-node/ qcom,cpu4-cpu-ddr-latfloor;
+
 	/delete-node/ qcom,cpu0-cpugrp;
 	cpu0_memlat_cpugrp: qcom,cpu0-cpugrp {
 		compatible = "qcom,arm-memlat-cpugrp";
@@ -62,7 +64,7 @@
 		cpu0_computemon: qcom,cpu0-computemon {
 			compatible = "qcom,arm-compute-mon";
 			qcom,cpulist = <&CPU0 &CPU1 &CPU2 &CPU3>;
-			qcom,target-dev = <&cpu_cpu_ddr_latfloor>;
+			qcom,target-dev = <&cpu0_cpu_ddr_latfloor>;
 			qcom,core-dev-table =
 				< 1305600 MHZ_TO_MBPS(384, 8) >,
 				< 1804800 MHZ_TO_MBPS(557, 8) >;
