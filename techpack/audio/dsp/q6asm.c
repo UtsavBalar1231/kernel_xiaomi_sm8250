@@ -2213,7 +2213,7 @@ static int32_t q6asm_callback(struct apr_client_data *data, void *priv)
 			}
 			if ( data->payload_size >= 2 * sizeof(uint32_t) &&
 				(lower_32_bits(port->buf[buf_index].phys) !=
-				payload[0] || 
+				payload[0] ||
 				msm_audio_populate_upper_32_bits(
 					port->buf[buf_index].phys) != payload[1])) {
 				pr_debug("%s: Expected addr %pK\n",
@@ -11099,12 +11099,18 @@ static int q6asm_get_asm_topology_apptype(struct q6asm_cal_info *cal_info)
 	cal_info->app_type = ((struct audio_cal_info_asm_top *)
 		cal_block->cal_info)->app_type;
 
+	if (0 == cal_info->topology_id) {
+		cal_info->topology_id = 0x10c68;;
+		pr_err("%s: Correct popp topology 0x%x app_type %d\n", __func__,
+			cal_info->topology_id, cal_info->app_type);
+	}
+
 	cal_utils_mark_cal_used(cal_block);
 
 unlock:
 	mutex_unlock(&cal_data[ASM_TOPOLOGY_CAL]->lock);
 done:
-	pr_debug("%s: Using topology %d app_type %d\n", __func__,
+	pr_err("%s: popp using topology 0x%x app_type %d\n", __func__,
 			cal_info->topology_id, cal_info->app_type);
 
 	return 0;

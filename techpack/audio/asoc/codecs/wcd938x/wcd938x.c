@@ -3,6 +3,7 @@
  * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  */
 
+#define DEBUG
 #include <linux/module.h>
 #include <linux/slab.h>
 #include <linux/platform_device.h>
@@ -2555,7 +2556,7 @@ static const struct soc_enum rx_hph_mode_mux_enum =
 			    rx_hph_mode_mux_text);
 
 static const struct snd_kcontrol_new wcd9380_snd_controls[] = {
-	SOC_ENUM_EXT("EAR PA GAIN", wcd938x_ear_pa_gain_enum,
+	SOC_ENUM_EXT("EAR PA Gain", wcd938x_ear_pa_gain_enum,
 		wcd938x_ear_pa_gain_get, wcd938x_ear_pa_gain_put),
 
 	SOC_ENUM_EXT("RX HPH Mode", rx_hph_mode_mux_enum_wcd9380,
@@ -2572,6 +2573,9 @@ static const struct snd_kcontrol_new wcd9380_snd_controls[] = {
 };
 
 static const struct snd_kcontrol_new wcd9385_snd_controls[] = {
+	SOC_ENUM_EXT("EAR PA Gain", wcd938x_ear_pa_gain_enum,
+		wcd938x_ear_pa_gain_get, wcd938x_ear_pa_gain_put),
+
 	SOC_ENUM_EXT("RX HPH Mode", rx_hph_mode_mux_enum,
 		wcd938x_rx_hph_mode_get, wcd938x_rx_hph_mode_put),
 
@@ -2596,8 +2600,8 @@ static const struct snd_kcontrol_new wcd938x_snd_controls[] = {
 	SOC_SINGLE_EXT("ADC2_BCS Disable", SND_SOC_NOPM, 0, 1, 0,
 		wcd938x_bcs_get, wcd938x_bcs_put),
 
-	SOC_SINGLE_TLV("HPHL Volume", WCD938X_HPH_L_EN, 0, 20, 1, line_gain),
-	SOC_SINGLE_TLV("HPHR Volume", WCD938X_HPH_R_EN, 0, 20, 1, line_gain),
+	SOC_SINGLE_TLV("HPHL Volume", WCD938X_HPH_L_EN, 0, 24, 1, line_gain),
+	SOC_SINGLE_TLV("HPHR Volume", WCD938X_HPH_R_EN, 0, 24, 1, line_gain),
 	SOC_SINGLE_TLV("ADC1 Volume", WCD938X_ANA_TX_CH1, 0, 20, 0,
 			analog_gain),
 	SOC_SINGLE_TLV("ADC2 Volume", WCD938X_ANA_TX_CH2, 0, 20, 0,
