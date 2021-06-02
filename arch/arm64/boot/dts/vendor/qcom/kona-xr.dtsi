@@ -7,7 +7,7 @@
 #include "kona-audio-overlay.dtsi"
 #include "kona-thermal-overlay.dtsi"
 #include "kona-xr-pinctrl-overlay.dtsi"
-#include "camera/kona-camera-sensor-xr.dtsi"
+//#include "camera/kona-camera-sensor-xr.dtsi"
 
 &tlmm {
 	spkr_1_sd_n {

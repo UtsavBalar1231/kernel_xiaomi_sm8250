@@ -4,7 +4,7 @@
 #include "kona-audio-overlay.dtsi"
 #include "kona-thermal-overlay.dtsi"
 #include "kona-xr-pinctrl-overlay.dtsi"
-#include "camera/kona-camera-sensor-xrfusion.dtsi"
+//#include "camera/kona-camera-sensor-xrfusion.dtsi"
 
 &tlmm {
 	display_panel_led1_default: display_panel_led1_default {
