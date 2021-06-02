@@ -19,6 +19,8 @@ First Level Node - CCI device
   Usage: required
   Value type: <string>
   Definition: Should be "qcom,cci".
+        In case of cci version 1.2,
+        use "qcom,cci-v1.2".
 
 - cell-index: cci hardware core index
   Usage: required
