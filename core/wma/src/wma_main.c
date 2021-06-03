@@ -2867,7 +2867,6 @@ QDF_STATUS wma_open(struct wlan_objmgr_psoc *psoc,
 	bool val = 0;
 	void *cds_context;
 	target_resource_config *wlan_res_cfg;
-	uint8_t delay_before_vdev_stop;
 	uint32_t self_gen_frm_pwr = 0;
 
 	WMA_LOGD("%s: Enter", __func__);
@@ -3042,13 +3041,9 @@ QDF_STATUS wma_open(struct wlan_objmgr_psoc *psoc,
 		goto err_scn_context;
 	}
 
-	for (i = 0; i < wma_handle->max_bssid; ++i) {
+	for (i = 0; i < wma_handle->max_bssid; ++i)
 		wma_vdev_init(&wma_handle->interfaces[i]);
-		ucfg_mlme_get_delay_before_vdev_stop(wma_handle->psoc,
-						     &delay_before_vdev_stop);
-		wma_handle->interfaces[i].delay_before_vdev_stop =
-							delay_before_vdev_stop;
-	}
+
 	/* Register the debug print event handler */
 	wmi_unified_register_event_handler(wma_handle->wmi_handle,
 					wmi_debug_print_event_id,

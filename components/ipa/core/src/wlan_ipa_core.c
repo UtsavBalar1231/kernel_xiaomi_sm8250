@@ -972,6 +972,33 @@ wlan_ipa_send_skb_to_network(qdf_nbuf_t skb,
 }
 
 /**
+ * wlan_ipa_eapol_intrabss_fwd_check() - Check if eapol pkt intrabss fwd is
+ *  allowed or not
+ * @ipa_ctx: IPA global context
+ * @vdev_id: vdev id
+ * @nbuf: network buffer
+ *
+ * Return: true if intrabss fwd is allowed for eapol else false
+ */
+static bool
+wlan_ipa_eapol_intrabss_fwd_check(struct wlan_ipa_priv *ipa_ctx,
+				  uint8_t vdev_id, qdf_nbuf_t nbuf)
+{
+	uint8_t *vdev_mac_addr;
+
+	vdev_mac_addr = cdp_get_vdev_mac_addr(ipa_ctx->dp_soc, vdev_id);
+
+	if (!vdev_mac_addr)
+		return false;
+
+	if (qdf_mem_cmp(qdf_nbuf_data(nbuf) + QDF_NBUF_DEST_MAC_OFFSET,
+			vdev_mac_addr, QDF_MAC_ADDR_SIZE))
+		return false;
+
+	return true;
+}
+
+/**
  * __wlan_ipa_w2i_cb() - WLAN to IPA callback handler
  * @priv: pointer to private data registered with IPA (we register a
  *	pointer to the global IPA context)
@@ -988,6 +1015,8 @@ static void __wlan_ipa_w2i_cb(void *priv, qdf_ipa_dp_evt_type_t evt,
 	uint8_t iface_id;
 	uint8_t session_id = 0xff;
 	struct wlan_ipa_iface_context *iface_context;
+	bool is_eapol_wapi = false;
+	struct qdf_mac_addr peer_mac_addr = QDF_MAC_ADDR_ZERO_INIT;
 
 	ipa_ctx = (struct wlan_ipa_priv *)priv;
 	if (!ipa_ctx) {
@@ -1036,6 +1065,46 @@ static void __wlan_ipa_w2i_cb(void *priv, qdf_ipa_dp_evt_type_t evt,
 			return;
 		}
 		iface_context->stats.num_rx_ipa_excep++;
+
+		if (iface_context->device_mode == QDF_STA_MODE)
+			qdf_copy_macaddr(&peer_mac_addr, &iface_context->bssid);
+		else if (iface_context->device_mode == QDF_SAP_MODE)
+			qdf_mem_copy(&peer_mac_addr.bytes[0],
+				     qdf_nbuf_data(skb) +
+				     QDF_NBUF_SRC_MAC_OFFSET,
+				     QDF_MAC_ADDR_SIZE);
+
+		if (qdf_nbuf_is_ipv4_eapol_pkt(skb)) {
+			is_eapol_wapi = true;
+			if (iface_context->device_mode == QDF_SAP_MODE &&
+			    !wlan_ipa_eapol_intrabss_fwd_check(ipa_ctx,
+					      iface_context->session_id, skb)) {
+				ipa_err_rl("EAPOL intrabss fwd drop DA:"QDF_MAC_ADDR_FMT,
+					   QDF_MAC_ADDR_REF(qdf_nbuf_data(skb) +
+					   QDF_NBUF_DEST_MAC_OFFSET));
+				ipa_ctx->ipa_rx_internal_drop_count++;
+				dev_kfree_skb_any(skb);
+				return;
+			}
+		} else if (qdf_nbuf_is_ipv4_wapi_pkt(skb)) {
+			is_eapol_wapi = true;
+		}
+
+		/*
+		 * Check for peer authorized state before allowing
+		 * non-EAPOL/WAPI frames to be intrabss forwarded
+		 * or submitted to stack.
+		 */
+		if (cdp_peer_state_get(ipa_ctx->dp_soc,
+				       iface_context->session_id,
+				       &peer_mac_addr.bytes[0]) !=
+		    OL_TXRX_PEER_STATE_AUTH && !is_eapol_wapi) {
+			ipa_err_rl("Non EAPOL/WAPI packet received when peer "QDF_MAC_ADDR_FMT" is unauthorized",
+				   QDF_MAC_ADDR_REF(peer_mac_addr.bytes));
+			ipa_ctx->ipa_rx_internal_drop_count++;
+			dev_kfree_skb_any(skb);
+			return;
+		}
 
 		/* Disable to forward Intra-BSS Rx packets when
 		 * ap_isolate=1 in hostapd.conf
@@ -1467,6 +1536,7 @@ static void wlan_ipa_cleanup_iface(struct wlan_ipa_iface_context *iface_context)
 	iface_context->session_id = WLAN_IPA_MAX_SESSION;
 	qdf_spin_unlock_bh(&iface_context->interface_lock);
 	iface_context->ifa_address = 0;
+	qdf_zero_macaddr(&iface_context->bssid);
 	if (!iface_context->ipa_ctx->num_iface) {
 		ipa_err("NUM INTF 0, Invalid");
 		QDF_ASSERT(0);
@@ -2029,6 +2099,14 @@ void wlan_ipa_handle_multiple_sap_evt(struct wlan_ipa_priv *ipa_ctx,
 }
 #endif
 
+static inline void
+wlan_ipa_save_bssid_iface_ctx(struct wlan_ipa_priv *ipa_ctx, uint8_t iface_id,
+			      uint8_t *mac_addr)
+{
+	qdf_mem_copy(ipa_ctx->iface_context[iface_id].bssid.bytes,
+		     mac_addr, QDF_MAC_ADDR_SIZE);
+}
+
 /**
  * __wlan_ipa_wlan_evt() - IPA event handler
  * @net_dev: Interface net device
@@ -2229,6 +2307,10 @@ static QDF_STATUS __wlan_ipa_wlan_evt(qdf_netdev_t net_dev, uint8_t device_mode,
 
 		ipa_ctx->vdev_to_iface[session_id] =
 				wlan_ipa_get_ifaceid(ipa_ctx, session_id);
+
+		wlan_ipa_save_bssid_iface_ctx(ipa_ctx,
+					     ipa_ctx->vdev_to_iface[session_id],
+					     mac_addr);
 
 		if (wlan_ipa_uc_sta_is_enabled(ipa_ctx->config) &&
 		    (ipa_ctx->sap_num_connected_sta > 0 ||
@@ -2607,6 +2689,7 @@ static QDF_STATUS __wlan_ipa_wlan_evt(qdf_netdev_t net_dev, uint8_t device_mode,
 					 * unloading WLAN driver is in progress
 					 */
 
+					wlan_ipa_uc_bw_monitor(ipa_ctx, true);
 					wlan_ipa_uc_disable_pipes(ipa_ctx,
 								  true);
 				} else {
