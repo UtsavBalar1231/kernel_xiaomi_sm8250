@@ -1578,3 +1578,7 @@ source "arch/arm64/kvm/Kconfig"
 if CRYPTO
 source "arch/arm64/crypto/Kconfig"
 endif
+
+if ARCH_QCOM
+source "techpack/Kconfig"
+endif
