@@ -271,6 +271,7 @@ struct cam_sensor_cci_client {
 	uint16_t retries;
 	uint16_t id_map;
 	uint16_t cci_device;
+	uint16_t disable_optmz;
 };
 
 struct cam_cci_ctrl {

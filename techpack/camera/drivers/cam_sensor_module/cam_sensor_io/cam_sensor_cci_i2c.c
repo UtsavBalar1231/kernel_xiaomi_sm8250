@@ -160,7 +160,7 @@ int32_t cam_cci_i2c_write_continuous_table(
 }
 
 static int32_t cam_cci_i2c_compare(struct cam_sensor_cci_client *client,
-	uint32_t addr, uint16_t data, uint16_t data_mask,
+	uint32_t addr, uint32_t data, uint32_t data_mask,
 	enum camera_sensor_i2c_type data_type,
 	enum camera_sensor_i2c_type addr_type)
 {
@@ -171,15 +171,16 @@ static int32_t cam_cci_i2c_compare(struct cam_sensor_cci_client *client,
 		addr_type, data_type);
 	if (rc < 0)
 		return rc;
+	CAM_DBG(CAM_SENSOR, "addr %04x, %04x,compare data = %d", addr, reg_data, (int16_t)reg_data);
 
-	reg_data = reg_data & 0xFFFF;
+	reg_data = reg_data & 0xFFFFFFFF;
 	if (data == (reg_data & ~data_mask))
 		return I2C_COMPARE_MATCH;
 	return I2C_COMPARE_MISMATCH;
 }
 
 int32_t cam_cci_i2c_poll(struct cam_sensor_cci_client *client,
-	uint32_t addr, uint16_t data, uint16_t data_mask,
+	uint32_t addr, uint32_t data, uint32_t data_mask,
 	enum camera_sensor_i2c_type data_type,
 	enum camera_sensor_i2c_type addr_type,
 	uint32_t delay_ms)
