@@ -2,9 +2,9 @@
 # RMNET_PERF driver
 #
 
-menuconfig RMNET_PERF
-    tristate "Rmnet Perf driver"
-    default m
-#    depends on RMNET
-    ---help---
-        performance mode of rmnet driver
+config RMNET_PERF
+    bool "Rmnet Perf driver"
+    default y
+    depends on RMNET
+    help
+      performance mode of rmnet driver
