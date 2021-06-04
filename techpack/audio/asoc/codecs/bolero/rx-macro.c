@@ -936,8 +936,8 @@ static int rx_macro_set_prim_interpolator_rate(struct snd_soc_dai *dai,
 					     0x80 * j;
 				pr_debug("%s: AIF_PB DAI(%d) connected to INT%u_1\n",
 					  __func__, dai->id, j);
-				pr_debug("%s: set INT%u_1 sample rate to %u\n",
-					__func__, j, sample_rate);
+				pr_debug("%s: set INT%u_1 sample rate to %u, rate_reg=%d\n",
+					__func__, j, sample_rate, rate_reg_val);
 				/* sample_rate is in Hz */
 				snd_soc_component_update_bits(component,
 						int_fs_reg,
@@ -1774,6 +1774,7 @@ static int rx_macro_config_compander(struct snd_soc_component *component,
 					(comp * RX_MACRO_COMP_OFFSET);
 	rx_path_cfg0_reg = BOLERO_CDC_RX_RX0_RX_PATH_CFG0 +
 					(comp * RX_MACRO_RX_PATH_OFFSET);
+
 	if (SND_SOC_DAPM_EVENT_ON(event)) {
 		/* Enable Compander Clock */
 		snd_soc_component_update_bits(component, comp_ctl0_reg,
@@ -2666,6 +2667,7 @@ static int rx_macro_enable_interp_clk(struct snd_soc_component *component,
 			snd_soc_component_update_bits(component, main_reg,
 						0x40, 0x00);
 			/* Reset rate to 48K*/
+			dev_dbg(component->dev, "%s: reset rate to 48k\n", __func__);
 			snd_soc_component_update_bits(component, main_reg,
 						0x0F, 0x04);
 			snd_soc_component_update_bits(component, rx_cfg2_reg,
