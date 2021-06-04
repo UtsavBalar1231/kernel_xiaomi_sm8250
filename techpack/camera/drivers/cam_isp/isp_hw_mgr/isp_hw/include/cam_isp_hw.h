@@ -149,6 +149,7 @@ struct cam_isp_hw_cmd_query {
  *                                schedule IRQ events related to this resource
  * @irq_handle:                   handle returned on subscribing for IRQ event
  * @rdi_only_ctx:                 resource belong to rdi only context or not
+ * @rdi_only_last_res:            Last resource belong to rdi only context
  * @init:                         function pointer to init the HW resource
  * @deinit:                       function pointer to deinit the HW resource
  * @start:                        function pointer to start the HW resource
@@ -169,6 +170,7 @@ struct cam_isp_resource_node {
 	void                          *tasklet_info;
 	int                            irq_handle;
 	int                            rdi_only_ctx;
+	int                            rdi_only_last_res;
 
 	int (*init)(struct cam_isp_resource_node *rsrc_node,
 		void *init_args, uint32_t arg_size);
