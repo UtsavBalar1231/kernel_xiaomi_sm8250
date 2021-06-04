@@ -1,0 +1,2 @@
+source techpack/data/drivers/rmnet/perf/Kconfig
+source techpack/data/drivers/rmnet/shs/Kconfig
