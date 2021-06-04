@@ -118,6 +118,12 @@ struct cam_ois_opcode {
 	uint32_t coeff;
 	uint32_t pheripheral;
 	uint32_t memory;
+	uint8_t  fw_addr_type;
+	uint8_t  is_addr_increase;
+	uint8_t  is_addr_indata;
+	uint8_t  fwversion;
+	uint32_t fwchecksumsize;
+	uint32_t fwchecksum;
 } __attribute__((packed));
 
 /**
@@ -128,6 +134,7 @@ struct cam_ois_opcode {
  * @cmd_type              :    Explains type of command
  * @ois_fw_flag           :    indicates if fw is present or not
  * @is_ois_calib          :    indicates the calibration data is available
+ * @is_ois_pre_init       :    indicates the pre initialize data is available
  * @ois_name              :    OIS name
  * @opcode                :    opcode
  */
@@ -137,6 +144,7 @@ struct cam_cmd_ois_info {
 	uint8_t               cmd_type;
 	uint8_t               ois_fw_flag;
 	uint8_t               is_ois_calib;
+	uint8_t               is_ois_pre_init;
 	char                  ois_name[MAX_OIS_NAME_SIZE];
 	struct cam_ois_opcode opcode;
 } __attribute__((packed));

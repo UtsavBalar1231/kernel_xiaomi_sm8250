@@ -3605,6 +3605,58 @@ error:
 	return 0;
 }
 
+static int __cam_isp_ctx_rdi_only_reg_upd_in_applied_state(
+	struct cam_isp_context *ctx_isp, void *evt_data)
+{
+	struct cam_ctx_request  *req = NULL;
+	struct cam_context      *ctx = ctx_isp->base;
+	struct cam_isp_ctx_req  *req_isp;
+	uint64_t  request_id  = 0;
+
+	if (list_empty(&ctx->wait_req_list)) {
+		CAM_ERR(CAM_ISP, "Reg upd ack with no waiting request");
+		goto end;
+	}
+	ctx_isp->substate_activated = CAM_ISP_CTX_ACTIVATED_EPOCH;
+
+	req = list_first_entry(&ctx->wait_req_list,
+			struct cam_ctx_request, list);
+	list_del_init(&req->list);
+
+	req_isp = (struct cam_isp_ctx_req *) req->req_priv;
+
+	request_id = (req_isp->hw_update_data.packet_opcode_type ==
+			CAM_ISP_PACKET_INIT_DEV) ? 0 : req->request_id;
+
+	if (req_isp->num_fence_map_out != 0) {
+		list_add_tail(&req->list, &ctx->active_req_list);
+		ctx_isp->active_req_cnt++;
+		request_id = req->request_id;
+		CAM_DBG(CAM_REQ,
+			"move request %lld to active list(cnt = %d), ctx %u",
+			req->request_id, ctx_isp->active_req_cnt, ctx->ctx_id);
+	} else {
+		/* no io config, so the request is completed. */
+		list_add_tail(&req->list, &ctx->free_req_list);
+		CAM_DBG(CAM_ISP,
+			"move active request %lld to free list(cnt = %d), ctx %u",
+			req->request_id, ctx_isp->active_req_cnt, ctx->ctx_id);
+	}
+
+	CAM_DBG(CAM_ISP, "next Substate[%s]",
+		__cam_isp_ctx_substate_val_to_type(
+		ctx_isp->substate_activated));
+
+	return 0;
+end:
+	/*
+	 * There is no request in the pending list, move the sub state machine
+	 * to SOF sub state
+	 */
+	ctx_isp->substate_activated = CAM_ISP_CTX_ACTIVATED_SOF;
+	return 0;
+}
+
 static struct cam_isp_ctx_irq_ops
 	cam_isp_ctx_rdi_only_activated_state_machine_irq
 			[CAM_ISP_CTX_ACTIVATED_MAX] = {
@@ -3624,7 +3676,7 @@ static struct cam_isp_ctx_irq_ops
 		.irq_ops = {
 			__cam_isp_ctx_handle_error,
 			__cam_isp_ctx_rdi_only_sof_in_applied_state,
-			NULL,
+			__cam_isp_ctx_rdi_only_reg_upd_in_applied_state,
 			NULL,
 			NULL,
 			__cam_isp_ctx_buf_done_in_applied,

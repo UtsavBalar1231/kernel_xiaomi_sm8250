@@ -2169,8 +2169,12 @@ static int cam_vfe_bus_ver3_start_vfe_out(
 		return -EFAULT;
 	}
 
+	CAM_INFO(CAM_ISP,
+		"VFE:%d out_type:0x%X RDI context %d for RUP ",
+			rsrc_data->common_data->core_index, rsrc_data->out_type, vfe_out->rdi_only_last_res);
+
 	if ((common_data->is_lite || source_group > CAM_VFE_BUS_VER3_SRC_GRP_0)
-		&& !vfe_out->rdi_only_ctx)
+		&& !vfe_out->rdi_only_last_res)
 		goto end;
 
 	if (!common_data->rup_irq_handle[source_group]) {

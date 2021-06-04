@@ -495,7 +495,7 @@ static uint32_t cam_smmu_find_closest_mapping(int idx, void *vaddr)
 	list_for_each_entry(mapping,
 			&iommu_cb_set.cb_info[idx].smmu_buf_list, list) {
 		start_addr = (unsigned long)mapping->paddr;
-		end_addr = (unsigned long)mapping->paddr + mapping->len;
+		end_addr = (unsigned long)mapping->paddr + mapping->len - 1;
 
 		if (start_addr <= current_addr && current_addr <= end_addr) {
 			closest_mapping = mapping;
@@ -526,11 +526,11 @@ end:
 	if (closest_mapping) {
 		buf_handle = GET_MEM_HANDLE(idx, closest_mapping->ion_fd);
 		CAM_INFO(CAM_SMMU,
-			"Closest map fd %d 0x%lx %llu-%llu 0x%lx-0x%lx buf=%pK mem %0x",
+			"Closest map fd %d 0x%lx %llu 0x%lx-0x%lx buf=%pK mem %0x",
 			closest_mapping->ion_fd, current_addr,
-			mapping->len, closest_mapping->len,
+			closest_mapping->len,
 			(unsigned long)closest_mapping->paddr,
-			(unsigned long)closest_mapping->paddr + mapping->len,
+			(unsigned long)closest_mapping->paddr + mapping->len - 1,
 			closest_mapping->buf,
 			buf_handle);
 	} else
@@ -1902,9 +1902,8 @@ static int cam_smmu_map_buffer_validate(struct dma_buf *buf,
 		goto err_unmap_sg;
 	}
 
-	CAM_DBG(CAM_SMMU,
-		"iova=%pK, region_id=%d, paddr=%pK, len=%d, dma_map_attrs=%d",
-		iova, region_id, *paddr_ptr, *len_ptr, attach->dma_map_attrs);
+	CAM_DBG(CAM_SMMU, "iova=%pK, region_id=%d, paddr=%pK, len=%d",
+		iova, region_id, *paddr_ptr, *len_ptr);
 
 	if (iommu_cb_set.map_profile_enable) {
 		CAM_GET_TIMESTAMP(ts2);

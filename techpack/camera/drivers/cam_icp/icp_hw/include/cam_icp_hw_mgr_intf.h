@@ -16,7 +16,7 @@
 
 #define CAM_ICP_A5_BW_BYTES_VOTE 40000000
 
-#define CAM_ICP_CTX_MAX          54
+#define CAM_ICP_CTX_MAX          65
 
 #define CPAS_IPE1_BIT            0x2000
 
