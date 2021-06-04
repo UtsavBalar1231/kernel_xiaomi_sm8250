@@ -41,7 +41,7 @@
  * It includes both session and device handles
  */
 #define CAM_REQ_MGR_MAX_HANDLES           64
-#define CAM_REQ_MGR_MAX_HANDLES_V2        128
+#define CAM_REQ_MGR_MAX_HANDLES_V2        182
 #define MAX_LINKS_PER_SESSION             2
 
 /* V4L event type which user space will subscribe to */
@@ -207,6 +207,9 @@ struct cam_req_mgr_sched_request {
  * @sync_mode:           Input Param - Type of sync mode
  * @num_links:           Input Param - Num of links in sync mode (Valid only
  *                             when sync_mode is one of SYNC enabled modes)
+ * @init_timeout:        To account for INIT exposure settings
+ *                       If there is no change in exp settings
+ *                       field needs to assigned to 0
  * @link_hdls:           Input Param - Array of link handles to be in sync mode
  *                             (Valid only when sync_mode is one of SYNC
  *                             enabled modes)
@@ -231,9 +234,6 @@ struct cam_req_mgr_sync_mode {
  * @session_hdl:         Input param - Identifier for CSL session
  * @num_links:           Input Param - Num of links
  * @reserved:            reserved field
- * @init_timeout:        To account for INIT exposure settings
- *                       If there is no change in exp settings
- *                       field needs to assigned to 0
  * @link_hdls:           Input Param - Links to be activated/deactivated
  *
  * @opcode: CAM_REQ_MGR_LINK_CONTROL
@@ -285,7 +285,7 @@ struct cam_req_mgr_link_control {
 #define CAM_MEM_MMU_MAX_HANDLE                  16
 
 /* Maximum allowed buffers in existence */
-#define CAM_MEM_BUFQ_MAX                        1024
+#define CAM_MEM_BUFQ_MAX                        1536
 
 #define CAM_MEM_MGR_SECURE_BIT_POS              15
 #define CAM_MEM_MGR_HDL_IDX_SIZE                15
