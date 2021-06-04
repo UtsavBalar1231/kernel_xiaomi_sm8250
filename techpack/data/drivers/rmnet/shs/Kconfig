@@ -2,9 +2,9 @@
 # RMNET_SHS driver
 #
 
-menuconfig RMNET_SHS
-    tristate "Rmnet SHS driver"
-    default m
-#    depends on RMNET
-    ---help---
-        performance mode of rmnet driver
+config RMNET_SHS
+    bool "Rmnet SHS driver"
+    default y
+    depends on RMNET
+    help
+      performance mode of rmnet driver
