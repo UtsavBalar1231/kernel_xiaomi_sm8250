@@ -36,6 +36,9 @@ int elliptic_driver_init(void);
 #ifdef CONFIG_US_PROXIMITY
 int mius_driver_init(void);
 #endif
+#ifdef CONFIG_MSM_CSPL
+int crus_sp_init(void);
+#endif
 #ifdef CONFIG_XT_LOGGING
 int spk_params_init(void);
 void spk_params_exit(void);
@@ -77,6 +80,9 @@ int elliptic_driver_exit(void);
 #endif
 #ifdef CONFIG_US_PROXIMITY
 int mius_driver_exit(void);
+#endif
+#ifdef CONFIG_MSM_CSPL
+void crus_sp_exit(void);
 #endif
 #ifdef CONFIG_VOICE_MHI
 int voice_mhi_init(void);
