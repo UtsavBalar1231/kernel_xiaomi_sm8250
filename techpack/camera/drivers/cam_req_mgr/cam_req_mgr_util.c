@@ -19,6 +19,7 @@
 static struct cam_req_mgr_util_hdl_tbl *hdl_tbl;
 static DEFINE_SPINLOCK(hdl_tbl_lock);
 
+static hdl_count = 0;
 int cam_req_mgr_util_init(void)
 {
 	int rc = 0;
@@ -54,6 +55,7 @@ int cam_req_mgr_util_init(void)
 	}
 	hdl_tbl->bits = bitmap_size * BITS_PER_BYTE;
 
+	hdl_count = 0;
 	return rc;
 
 bitmap_alloc_fail:
@@ -77,6 +79,7 @@ int cam_req_mgr_util_deinit(void)
 	hdl_tbl->bitmap = NULL;
 	kfree(hdl_tbl);
 	hdl_tbl = NULL;
+	hdl_count = 0;
 	spin_unlock_bh(&hdl_tbl_lock);
 
 	return 0;
@@ -103,6 +106,7 @@ int cam_req_mgr_util_free_hdls(void)
 		}
 	}
 	bitmap_zero(hdl_tbl->bitmap, CAM_REQ_MGR_MAX_HANDLES_V2);
+	hdl_count = 0;
 	spin_unlock_bh(&hdl_tbl_lock);
 
 	return 0;
@@ -114,11 +118,14 @@ static int32_t cam_get_free_handle_index(void)
 
 	idx = find_first_zero_bit(hdl_tbl->bitmap, hdl_tbl->bits);
 
-	if (idx >= CAM_REQ_MGR_MAX_HANDLES_V2 || idx < 0)
+	if (idx >= CAM_REQ_MGR_MAX_HANDLES_V2 || idx < 0) {
+		CAM_ERR(CAM_CRM, "wuchi Hdl tbl count is %d", hdl_count);
 		return -ENOSR;
+	}
 
 	set_bit(idx, hdl_tbl->bitmap);
 
+	hdl_count++;
 	return idx;
 }
 
@@ -322,6 +329,7 @@ static int cam_destroy_hdl(int32_t dev_hdl, int dev_hdl_type)
 	hdl_tbl->hdl[idx].ops   = NULL;
 	hdl_tbl->hdl[idx].priv  = NULL;
 	clear_bit(idx, hdl_tbl->bitmap);
+	hdl_count--;
 	spin_unlock_bh(&hdl_tbl_lock);
 
 	return 0;
