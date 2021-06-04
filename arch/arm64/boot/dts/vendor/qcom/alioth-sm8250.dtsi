@@ -65,7 +65,6 @@ And public attribution of xiaomi platforms(like alioth and so and)
 };
 
 &soc {
-
 	testing_mode {
 		compatible = "xiaomi,testing-mode";
 		status-gpio = <&tlmm 70 0x00>;
@@ -307,7 +306,7 @@ And public attribution of xiaomi platforms(like alioth and so and)
 };
 
 &tlmm {
-		/* FP_RESET_N */
+	/* FP_RESET_N */
 	msm_gpio_reset: msm_gpio_reset {
 		mux {
 			pins = "gpio24";
@@ -320,7 +319,7 @@ And public attribution of xiaomi platforms(like alioth and so and)
 			output-low;
 		};
 	};
-		/* FP_RESET_N, state device active*/
+	/* FP_RESET_N, state device active*/
 	msm_gpio_reset_output_high: msm_gpio_reset_output_high {
 		mux {
 			pins = "gpio24";
@@ -333,7 +332,7 @@ And public attribution of xiaomi platforms(like alioth and so and)
 			output-high;
 		};
 	};
-		/* FP_INT_N */
+	/* FP_INT_N */
 	msm_gpio_irq: msm_gpio_irq {
 		mux {
 			pins = "gpio23";
@@ -359,38 +358,29 @@ And public attribution of xiaomi platforms(like alioth and so and)
 		pinctrl-names = "default";
 		pinctrl-0 = <&bq2597x_master_int_default>;
 
-		/*ti,bq2597x,bat-ovp-disable;*/
 		ti,bq2597x,bat-ovp-alarm-disable;
 		ti,bq2597x,bat-ocp-disable;
 		ti,bq2597x,bat-ocp-alarm-disable;
 		ti,bq2597x,bat-ucp-alarm-disable;
 		ti,bq2597x,bat-ucp-disable;
 
-		/*ti,bq2597x,bus-ovp-alarm-disable;
-		ti,bq2597x,bus-ocp-disable;
-		ti,bq2597x,bus-ocp-alarm-disable;*/
 		ti,bq2597x,bat-therm-disable;
 		ti,bq2597x,bus-therm-disable;
 		ti,bq2597x,die-therm-disable;
 
 		ti,bq2597x,bat-ovp-threshold = <4525>;
 		ti,bq2597x,bat-ovp-alarm-threshold = <4525>;
-		//ti,bq2597x,bat-ocp-threshold = <8000>;
-		//ti,bq2597x,bat-ocp-alarm-threshold = <7500>;
 
 		ti,bq2597x,bus-ovp-threshold = <12000>;
 		ti,bq2597x,bus-ovp-alarm-threshold = <11000>;
 		ti,bq2597x,bus-ocp-threshold = <3750>;
 		ti,bq2597x,bus-ocp-alarm-threshold = <3500>;
 
-		//ti,bq2597x,bat-ucp-alarm-threshold = <2000>;
-
 		ti,bq2597x,bat-therm-threshold = <0x15>;/*4.1%*/
 		ti,bq2597x,bus-therm-threshold = <0x15>;/*4.1%*/
 		ti,bq2597x,die-therm-threshold = <145>;
 
 		ti,bq2597x,ac-ovp-threshold = <14>;
-		//ti,bq2597x,sense-resistor-mohm = <2>;
 	};
 };
 
@@ -463,7 +453,6 @@ And public attribution of xiaomi platforms(like alioth and so and)
 		cirrus,boost-ind-nanohenry = <1000>;
 		cirrus,boost-cap-microfarad = <15>;
 		cirrus,asp-sdout-hiz = <3>;
-		//cirrus,right-channel-amp;
 		sound-name-prefix = "RCV";
 		cirrus,gpio-config2 {
 			cirrus,gpio-src-select = <0x4>;
@@ -487,7 +476,6 @@ And public attribution of xiaomi platforms(like alioth and so and)
 		cirrus,boost-cap-microfarad = <15>;
 		cirrus,right-channel-amp;
 		cirrus,asp-sdout-hiz = <3>;
-		//sound-name-prefix = "RCV";
 		cirrus,gpio-config2 {
 			cirrus,gpio-src-select = <0x4>;
 			cirrus,gpio-output-enable;
@@ -501,12 +489,13 @@ And public attribution of xiaomi platforms(like alioth and so and)
 	status = "ok";
 	aw8697_haptic@5A {
 		compatible = "awinic,aw8697_haptic";
-		vib_bst_vol_default = < 0x11 >;
-		vib_bst_vol_ram = < 0x11 >;
-		vib_bst_vol_rtp = < 0x11 >;
+		vib_bst_vol_default = <0x11>;
+		vib_bst_vol_ram = <0x11>;
+		vib_bst_vol_rtp = <0x11>;
 		status = "ok";
 	};
 };
+
 &pm8150b_charger {
 	status = "ok";
 	qcom,sec-charger-config = <0>;
@@ -518,11 +507,9 @@ And public attribution of xiaomi platforms(like alioth and so and)
 	qcom,auto-recharge-soc = <99>;
 	qcom,chg-term-src = <1>;
 	qcom,chg-term-current-ma = <(-220)>;
-	//qcom,step-charging-enable;
 	qcom,sw-jeita-enable;
 	qcom,chg-warm-th= <480>;
 	qcom,chg-cool-th= <150>;
-	//qcom,suspend-input-on-debug-batt;
 	qcom,usbpd-phandle = <&pm8150b_pdphy>;
 	qcom,battery-data = <&umi_batterydata>;
 	mi,six-pin-step-chg-params = <4250000  6000000
@@ -539,12 +526,12 @@ And public attribution of xiaomi platforms(like alioth and so and)
 	mi,support-qc3p5-without-smb;
 	qcom,disable-suspend-on-collapse;
 	qcom,distinguish-qc-class-ab;
-//	qcom,support-conn-therm;
-//	vbus-disable-gpio = <&tlmm 6 GPIO_ACTIVE_HIGH>;
-//	pinctrl-names = "default", "vbus_disable_active", "vbus_disable_suspend";
-//	pinctrl-0 = <&vbus_disable_suspend>;
-//	pinctrl-1 = <&vbus_disable_active>;
-//	pinctrl-2 = <&vbus_disable_suspend>;
+	qcom,support-conn-therm;
+	vbus-disable-gpio = <&tlmm 6 GPIO_ACTIVE_HIGH>;
+	pinctrl-names = "default", "vbus_disable_active", "vbus_disable_suspend";
+	pinctrl-0 = <&vbus_disable_suspend>;
+	pinctrl-1 = <&vbus_disable_active>;
+	pinctrl-2 = <&vbus_disable_suspend>;
 
 	io-channels = <&pm8150b_vadc ADC_USB_IN_V_16>,
 			<&pm8150b_vadc ADC_MID_CHG_DIV6>,
@@ -616,7 +603,7 @@ And public attribution of xiaomi platforms(like alioth and so and)
 		90 20
 		95 10 >;
 	qcom,fg-sys-term-current = <(-300)>;
-	qcom,fg-ffc-sys-term-current = <(-1300)>;
+	qcom,fg-ffc-sys-term-current = <(-1400)>;
 	qcom,ki-coeff-low-chg = <315>;
 	qcom,ki-coeff-med-chg = <183>;
 	qcom,fg-cutoff-voltage = <3400>;
@@ -647,7 +634,6 @@ And public attribution of xiaomi platforms(like alioth and so and)
 		mi,qc3-battery-warm-th = <480>;
 		mi,use-qcom-gauge;
 		mi,support-qc3p5-without-smb;
-		//mi,cp-sec-enable;
 	};
 
 	usbpd_pm {
@@ -657,12 +643,12 @@ And public attribution of xiaomi platforms(like alioth and so and)
 		mi,pd-bat-curr-max = <6000>;
 		mi,pd-bus-volt-max = <12000>;
 		mi,pd-bus-curr-max = <3000>;
-		mi,pd-bus-curr-compensate  = <0>;
+		mi,pd-bus-curr-compensate  = <50>;
 		mi,pd-non-ffc-bat-volt-max = <4450>;
 		mi,pd-battery-warm-th = <480>;
 		mi,use-qcom-gauge;
-		//mi,cp-sec-enable;
 		mi,therm-level-threshold = <12>;
+		mi,chg-enable-k11a;
 	};
 
 	umi_batterydata: qcom,battery-data {
@@ -687,11 +673,9 @@ And public attribution of xiaomi platforms(like alioth and so and)
 
 &ufshc_mem {
 	vccq_set_npm = /bits/ 16 <0x1AD>;
-
 	hsg4_synclength = /bits/ 16 <0x145 0x4F
 				     0x1AD 0x4F
 				     0x12C 0x4F>;
-
 	status = "ok";
 };
 
