@@ -53,6 +53,22 @@ int cam_sync_init_row(struct sync_table_row *table,
 	return 0;
 }
 
+int cam_sync_validate_sync_objects(uint32_t *sync_objs,
+	uint32_t num_objs)
+{
+	int i = 0;
+
+	for (i = 0; i < num_objs; i++) {
+		if (sync_objs[i] >= CAM_SYNC_MAX_OBJS) {
+			CAM_ERR(CAM_SYNC, "Invalid sync object %u",
+				sync_objs[i]);
+			return -EINVAL;
+		}
+	}
+
+	return 0;
+}
+
 int cam_sync_init_group_object(struct sync_table_row *table,
 	uint32_t idx,
 	uint32_t *sync_objs,
@@ -79,6 +95,16 @@ int cam_sync_init_group_object(struct sync_table_row *table,
 			goto clean_children_info;
 		}
 		child_row = table + sync_objs[i];
+
+		if (sync_objs[i] == idx) {
+		        CAM_ERR(CAM_SYNC,
+		                 "Invalid child fence:%i state:%u type:%u",
+		                 child_row->sync_id, child_row->state,
+		                 child_row->type);
+		        rc = -EINVAL;
+		         goto clean_children_info;
+		}
+
 		spin_lock_bh(&sync_dev->row_spinlocks[sync_objs[i]]);
 
 		/* validate child */

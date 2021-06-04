@@ -298,6 +298,12 @@ int cam_sync_merge(int32_t *sync_obj, uint32_t num_objs, int32_t *merged_obj)
 		return -EINVAL;
 	}
 
+	if (cam_sync_validate_sync_objects(sync_obj, num_objs)) {
+		CAM_ERR(CAM_SYNC,
+			"The objects passed for merge are not valid");
+		return -EINVAL;
+	}
+
 	if (cam_common_util_remove_duplicate_arr(sync_obj, num_objs)
 		!= num_objs) {
 		CAM_ERR(CAM_SYNC, "The obj list has duplicate fence");
