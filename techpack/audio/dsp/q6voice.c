@@ -24,7 +24,7 @@
 #include "adsp_err.h"
 #include <dsp/voice_mhi.h>
 
-#define TIMEOUT_MS 300
+#define TIMEOUT_MS 1000
 
 
 #define CMD_STATUS_SUCCESS 0

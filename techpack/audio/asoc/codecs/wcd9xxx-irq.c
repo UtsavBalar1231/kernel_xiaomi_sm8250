@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2011-2019, The Linux Foundation. All rights reserved.
  */
+#define DEBUG
 #include <linux/bitops.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -25,7 +26,7 @@
 #define BYTE_BIT_MASK(nr)		(1UL << ((nr) % BITS_PER_BYTE))
 #define BIT_BYTE(nr)			((nr) / BITS_PER_BYTE)
 
-#define WCD9XXX_SYSTEM_RESUME_TIMEOUT_MS 100
+#define WCD9XXX_SYSTEM_RESUME_TIMEOUT_MS 1200
 
 #ifndef NO_IRQ
 #define NO_IRQ	(-1)
