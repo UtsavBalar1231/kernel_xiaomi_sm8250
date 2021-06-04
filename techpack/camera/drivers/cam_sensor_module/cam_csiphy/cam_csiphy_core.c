@@ -1210,6 +1210,8 @@ int32_t cam_csiphy_core_cfg(void *phy_dev,
 			&ahb_vote, &axi_vote);
 		if (rc < 0) {
 			CAM_ERR(CAM_CSIPHY, "voting CPAS: %d", rc);
+			if (rc == -EALREADY)
+				cam_cpas_stop(csiphy_dev->cpas_handle);
 			goto release_mutex;
 		}
 
