@@ -1370,7 +1370,7 @@ static int cam_cpas_hw_start(void *hw_priv, void *start_args,
 		CAM_ERR(CAM_CPAS, "client=[%d][%s][%d] is in start state",
 			client_indx, cpas_client->data.identifier,
 			cpas_client->data.cell_index);
-		rc = -EPERM;
+		rc = -EALREADY;
 		goto error;
 	}
 
