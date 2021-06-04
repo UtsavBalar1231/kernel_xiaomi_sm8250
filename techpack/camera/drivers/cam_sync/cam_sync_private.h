@@ -24,8 +24,8 @@
 #endif
 
 #define CAM_SYNC_OBJ_NAME_LEN           64
-#define CAM_SYNC_MAX_OBJS               1024
-#define CAM_SYNC_MAX_V4L2_EVENTS        100
+#define CAM_SYNC_MAX_OBJS               1792 // 1536=1024+768
+#define CAM_SYNC_MAX_V4L2_EVENTS        200
 #define CAM_SYNC_DEBUG_FILENAME         "cam_debug"
 #define CAM_SYNC_DEBUG_BASEDIR          "cam"
 #define CAM_SYNC_DEBUG_BUF_SIZE         32
