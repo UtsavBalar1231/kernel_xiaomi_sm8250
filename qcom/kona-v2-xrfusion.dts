@@ -1,0 +1,10 @@
+/dts-v1/;
+
+#include "kona-v2.dtsi"
+#include "kona-xrfusion.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. kona XR 5G Fusion";
+	compatible = "qcom,kona-mtp", "qcom,kona", "qcom,mtp";
+	qcom,board-id = <0x20008 0>;
+};

@@ -1,0 +1,10 @@
+/dts-v1/;
+
+#include "qcm4290-iot-low-ram.dtsi"
+#include "qcm4290-iot-idp-low-ram.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. QCM4290 IDP 1Gb DDR HD+";
+	compatible = "qcom,qcm4290-idp", "qcom,qcm4290", "qcom,idp";
+	qcom,board-id = <34 0x303>;
+};
