@@ -1,0 +1,20 @@
+#include "lito-v2.dtsi"
+#include "pmk8350.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Litomagnus";
+	compatible = "qcom,lito";
+};
+
+&pm8008_regulators {
+	vdd_l6-supply = <&BOB>;
+};
+
+&rpmhcc {
+	compatible = "qcom,litomagnus-rpmh-clk";
+	#clock-cells = <1>;
+};
+
+&apps_rsc {
+	/delete-node/ rpmh-regulator-ldoa7;
+};

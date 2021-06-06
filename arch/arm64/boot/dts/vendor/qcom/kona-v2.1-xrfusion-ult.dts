@@ -1,0 +1,10 @@
+/dts-v1/;
+
+#include "kona-v2.1.dtsi"
+#include "kona-xrfusion-ult.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. kona v2.1 XR 5G UltraSound";
+	compatible = "qcom,kona-mtp", "qcom,kona", "qcom,mtp";
+	qcom,board-id = <0x30008 0>;
+};

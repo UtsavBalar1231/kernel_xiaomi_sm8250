@@ -1,0 +1,7 @@
+#include "lito-v2.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Orchid";
+	compatible = "qcom,orchid";
+	qcom,msm-id = <476 0x10000>;
+};

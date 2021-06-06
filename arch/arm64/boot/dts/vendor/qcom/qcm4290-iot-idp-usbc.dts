@@ -1,0 +1,11 @@
+/dts-v1/;
+
+#include "qcm4290.dtsi"
+#include "qcm4290-iot-idp.dtsi"
+#include "qcm4290-iot-idp-usbc.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. QCM4290 IDP USBC Audio";
+	compatible = "qcom,qcm4290-idp", "qcom,qcm4290", "qcom,idp";
+	qcom,board-id = <34 1>;
+};
