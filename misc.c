@@ -119,6 +119,8 @@ void exfat_get_entry_time(struct exfat_sb_info *sbi, struct timespec *ts,
 void exfat_set_entry_time(struct exfat_sb_info *sbi, struct timespec64 *ts,
 		u8 *tz, __le16 *time, __le16 *date, u8 *time_cs)
 #else
+#undef EXFAT_MAX_TIMESTAMP_SECS
+#define EXFAT_MAX_TIMESTAMP_SECS 0xffffffff
 void exfat_set_entry_time(struct exfat_sb_info *sbi, struct timespec *ts,
 		u8 *tz, __le16 *time, __le16 *date, u8 *time_cs)
 #endif
