@@ -15,7 +15,7 @@
 		qcom,cam-vreg-min-voltage = <2850000>;
 		qcom,cam-vreg-max-voltage = <2850000>;
 		qcom,cam-vreg-op-mode = <80000>;
-		status = "disabled";
+		status = "ok";
 	};
 
 	actuator1: qcom,actuator@1 {
@@ -28,7 +28,7 @@
 		qcom,cam-vreg-min-voltage = <2850000>;
 		qcom,cam-vreg-max-voltage = <2850000>;
 		qcom,cam-vreg-op-mode = <80000>;
-		status = "disabled";
+		status = "ok";
 	};
 
 	eeprom0: qcom,eeprom@0 {
@@ -62,7 +62,7 @@
 		qcom,gpio-req-tbl-label = "CAMIF_MCLK0",
 			"CAM_RESET0",
 			"CAM_VANA";
-		status = "disabled";
+		status = "ok";
 		clocks = <&gcc MCLK0_CLK_SRC>,
 			<&gcc GCC_CAMSS_MCLK0_CLK>;
 		clock-names = "cam_src_clk", "cam_clk";
@@ -142,7 +142,7 @@
 			"sensor_cam_mclk";
 		qcom,cam-power-seq-cfg-val = <1 1 1 1 1 24000000>;
 		qcom,cam-power-seq-delay = <1 1 1 30 30 5>;
-		status = "disabled";
+		status = "ok";
 		clocks = <&gcc MCLK2_CLK_SRC>,
 			<&gcc GCC_CAMSS_MCLK2_CLK>;
 		clock-names = "cam_src_clk", "cam_clk";
@@ -179,7 +179,7 @@
 		qcom,gpio-req-tbl-label = "CAMIF_MCLK2",
 					  "CAM_RESET2",
 					  "CAM_STANDBY2";
-		status = "disabled";
+		status = "ok";
 		clocks = <&gcc MCLK2_CLK_SRC>,
 				<&gcc GCC_CAMSS_MCLK2_CLK>;
 		clock-names = "cam_src_clk", "cam_clk";
