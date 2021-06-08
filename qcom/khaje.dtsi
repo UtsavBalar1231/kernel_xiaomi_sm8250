@@ -597,7 +597,7 @@
 				<GIC_SPI 284 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "slimbus_irq", "slimbus_bam_irq";
 		qcom,apps-ch-pipes = <0x0>;
-		qcom,ea-pc = <0x360>;
+		qcom,ea-pc = <0x3b0>;
 		status = "ok";
 
 		/* Slimbus Slave DT for WCN3990 */
