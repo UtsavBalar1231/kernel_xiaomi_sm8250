@@ -3041,9 +3041,8 @@ static int cam_vfe_bus_ver3_update_wm(void *priv, void *cmd_args,
 	struct cam_vfe_bus_ver3_wm_resource_data *wm_data = NULL;
 	struct cam_vfe_bus_ver3_reg_offset_ubwc_client *ubwc_client = NULL;
 	uint32_t *reg_val_pair;
-	uint32_t  i, j, k, size = 0;
+	uint32_t  i, j, size = 0;
 	uint32_t  frame_inc = 0, val;
-	uint32_t loop_size = 0;
 	bool frame_header_enable = false;
 
 	bus_priv = (struct cam_vfe_bus_ver3_priv  *) priv;
@@ -3172,40 +3171,31 @@ static int cam_vfe_bus_ver3_update_wm(void *priv, void *cmd_args,
 				wm_data->index, reg_val_pair[j-1]);
 		}
 
-		if ((!bus_priv->common_data.is_lite && wm_data->index > 22) ||
-			bus_priv->common_data.is_lite)
-			loop_size = wm_data->irq_subsample_period + 1;
-		else
-			loop_size = 1;
-
 		/* WM Image address */
-		for (k = 0; k < loop_size; k++) {
-			if (wm_data->en_ubwc) {
-				CAM_VFE_ADD_REG_VAL_PAIR(reg_val_pair, j,
-					wm_data->hw_regs->image_addr,
-					update_buf->wm_update->image_buf[i] +
-					io_cfg->planes[i].meta_size +
-					k * frame_inc);
-				update_buf->wm_update->image_buf_offset[i] =
-					io_cfg->planes[i].meta_size;
-			} else if (wm_data->en_cfg & (0x3 << 16)) {
-				CAM_VFE_ADD_REG_VAL_PAIR(reg_val_pair, j,
-					wm_data->hw_regs->image_addr,
-					(update_buf->wm_update->image_buf[i] +
-					wm_data->offset + k * frame_inc));
-				update_buf->wm_update->image_buf_offset[i] =
-					wm_data->offset;
-			} else {
-				CAM_VFE_ADD_REG_VAL_PAIR(reg_val_pair, j,
-					wm_data->hw_regs->image_addr,
-					(update_buf->wm_update->image_buf[i] +
-					k * frame_inc));
-				update_buf->wm_update->image_buf_offset[i] = 0;
-			}
 
-			CAM_DBG(CAM_ISP, "WM:%d image address 0x%X",
-				wm_data->index, reg_val_pair[j-1]);
+		if (wm_data->en_ubwc) {
+			CAM_VFE_ADD_REG_VAL_PAIR(reg_val_pair, j,
+				wm_data->hw_regs->image_addr,
+				update_buf->wm_update->image_buf[i] +
+				io_cfg->planes[i].meta_size);
+			update_buf->wm_update->image_buf_offset[i] =
+				io_cfg->planes[i].meta_size;
+		} else if (wm_data->en_cfg & (0x3 << 16)) {
+			CAM_VFE_ADD_REG_VAL_PAIR(reg_val_pair, j,
+				wm_data->hw_regs->image_addr,
+				(update_buf->wm_update->image_buf[i] +
+				wm_data->offset));
+			update_buf->wm_update->image_buf_offset[i] =
+				wm_data->offset;
+		} else {
+			CAM_VFE_ADD_REG_VAL_PAIR(reg_val_pair, j,
+				wm_data->hw_regs->image_addr,
+				update_buf->wm_update->image_buf[i]);
+			update_buf->wm_update->image_buf_offset[i] = 0;
 		}
+
+		CAM_DBG(CAM_ISP, "WM:%d image address 0x%X",
+			wm_data->index, reg_val_pair[j-1]);
 
 		CAM_VFE_ADD_REG_VAL_PAIR(reg_val_pair, j,
 			wm_data->hw_regs->frame_incr, frame_inc);
