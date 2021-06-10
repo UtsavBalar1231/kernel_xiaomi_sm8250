@@ -4351,6 +4351,7 @@ static int fastrpc_internal_control(struct fastrpc_file *fl,
 		VERIFY(err, latency != 0);
 		if (err)
 			goto bail;
+		mutex_lock(&fl->pm_qos_mutex);
 		cpumask_clear(&mask);
 		for (i = 0; i < len; i++)
 			cpumask_set_cpu(me->silvercores.coreno[i], &mask);
