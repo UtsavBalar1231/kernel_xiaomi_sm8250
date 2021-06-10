@@ -1,1 +1,6 @@
 #include "khaje-pm7250b.dtsi"
+
+&sde_dsi {
+	/delete-property/ lab-supply;
+	/delete-property/ ibb-supply;
+};
