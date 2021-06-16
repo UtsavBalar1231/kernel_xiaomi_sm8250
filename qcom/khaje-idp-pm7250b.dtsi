@@ -1,11 +1,6 @@
 #include "khaje-pm7250b.dtsi"
 #include "khaje-thermal-pm7250b-overlay.dtsi"
 
-&sde_dsi {
-	/delete-property/ lab-supply;
-	/delete-property/ ibb-supply;
-};
-
 &soc {
 	mtp_batterydata: qcom,battery-data {
 		qcom,batt-id-range-pct = <15>;
@@ -92,4 +87,23 @@
 	qcom,vbatt-low-cold-mv = <3800>;
 	qcom,vbatt-empty-mv = <3200>;
 	qcom,vbatt-empty-cold-mv = <3100>;
+};
+
+&sde_dsi {
+	pinctrl-0 = <&sde_dsi_active &sde_te_active &disp_lcd_bias_en_default>;
+};
+
+&dsi_td4330_truly_v2_video {
+	qcom,platform-en-gpio = <&pm7250b_gpios 5 0>;
+	qcom,platform-bklight-en-gpio = <&pm7250b_gpios 1 0>;
+};
+
+&dsi_td4330_truly_v2_cmd {
+	qcom,platform-en-gpio = <&pm7250b_gpios 5 0>;
+	qcom,platform-bklight-en-gpio = <&pm7250b_gpios 1 0>;
+};
+
+&dsi_nt36672e_fhd_plus_90hz_video {
+	qcom,platform-en-gpio = <&pm7250b_gpios 5 0>;
+	qcom,platform-bklight-en-gpio = <&pm7250b_gpios 1 0>;
 };

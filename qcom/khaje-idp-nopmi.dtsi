@@ -1,15 +1,14 @@
 #include "khaje-idp.dtsi"
 
-&sde_dsi {
-	/delete-property/ lab-supply;
-	/delete-property/ ibb-supply;
-};
-
 &dsi_td4330_truly_v2_video {
 	/delete-property/ qcom,esd-check-enabled;
 };
 
 &dsi_td4330_truly_v2_cmd {
+	/delete-property/ qcom,esd-check-enabled;
+};
+
+&dsi_nt36672e_fhd_plus_90hz_video {
 	/delete-property/ qcom,esd-check-enabled;
 };
 
@@ -19,10 +18,6 @@
 	};
 
 	novatek@62 {
-		status = "disabled";
-	};
-
-	focaltech@38 {
 		status = "disabled";
 	};
 };
