@@ -1,0 +1,24 @@
+Qualcomm Technologies, Inc. QRB5165 Fan Controller Driver
+
+This binding describes the QRB5165 Fan Controller Driver, it controls
+fan with pm8150l gpio 10.
+
+- compatible:
+	Usage: required
+	Value type: <stringlist>
+	Definition: must be "qcom,rb5_fan_controller"
+
+- qcom,pwr-enable-gpio:
+	Usage: required
+	Value type: <prop-encoded-array>
+	Definition: the gpio to enable fan pwr
+
+Example:
+
+	rb5_fan_controller {
+		compatible = "qcom,rb5_fan_controller";
+		qcom,pwr-enable-gpio = <&pm8150l_gpios 10 0x0>;
+		pinctrl-name = "default";
+		pinctrl-0 = <&rb5_fan_controller_pin_init>;
+		status = "ok";
+	};
