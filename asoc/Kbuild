@@ -265,6 +265,10 @@ ifeq ($(TARGET_PRODUCT), thyme)
                 CDEFINES += -DCONFIG_TARGET_PRODUCT_THYME
 endif
 
+ifeq ($(TARGET_PRODUCT), psyche)
+                CDEFINES += -DCONFIG_TARGET_PRODUCT_PSYCHE
+endif
+
 KBUILD_CPPFLAGS += $(CDEFINES)
 
 # Currently, for versions of gcc which support it, the kernel Makefile
