@@ -1,0 +1,133 @@
+#include "lito-mtp.dtsi"
+#include <dt-bindings/iio/qcom,spmi-vadc.h>
+
+&soc {
+
+};
+
+&usb_qmp_dp_phy {
+	/delete-property/vdd-supply;
+	vdd-supply = <&L11A>;
+};
+
+&sde_dp {
+	vdda-0p9-supply = <&L11A>;
+};
+
+&swr0 {
+	wsa883x_0221: wsa883x@02170221 {
+		compatible = "qcom,wsa883x";
+		reg = <0x02 0x02170221>;
+		qcom,spkr-sd-n-node = <&wsa_spkr_en1>;
+		qcom,bolero-handle = <&bolero>;
+
+		cdc-vdd-1p8-supply = <&S4A>;
+		qcom,cdc-vdd-1p8-voltage = <1800000 1800000>;
+		qcom,cdc-vdd-1p8-current = <20000>;
+		qcom,cdc-vdd-1p8-lpm-supported = <1>;
+		qcom,cdc-static-supplies = "cdc-vdd-1p8";
+	};
+
+	wsa883x_0222: wsa883x@02170222 {
+		compatible = "qcom,wsa883x";
+		reg = <0x02 0x02170222>;
+		qcom,spkr-sd-n-node = <&wsa_spkr_en2>;
+		qcom,bolero-handle = <&bolero>;
+
+		cdc-vdd-1p8-supply = <&S4A>;
+		qcom,cdc-vdd-1p8-voltage = <1800000 1800000>;
+		qcom,cdc-vdd-1p8-current = <20000>;
+		qcom,cdc-vdd-1p8-lpm-supported = <1>;
+		qcom,cdc-static-supplies = "cdc-vdd-1p8";
+	};
+};
+
+&wsa881x_0211 {
+	status = "disabled";
+};
+
+&wsa881x_0212 {
+	status = "disabled";
+};
+
+&wsa881x_0213 {
+	status = "disabled";
+};
+
+&wsa881x_0214 {
+	status = "disabled";
+};
+
+&lito_snd {
+	qcom,model = "lito-orchidmtp-snd-card";
+	qcom,wsa-max-devs = <2>;
+	qcom,wsa-devs = <&wsa883x_0221>, <&wsa883x_0222>;
+	qcom,wsa-aux-dev-prefix = "SpkrLeft", "SpkrRight";
+};
+
+&pm8150_rtc {
+	status = "disabled";
+};
+
+&pmk8350_adc_tm {
+	status = "disabled";
+};
+
+&pmk8350_vadc {
+	status = "disabled";
+};
+
+&pm7250b_qg {
+	qcom,use-cp-iin-sns;
+};
+
+&pm7250b_vadc {
+	smb1390_therm@e {
+		qcom,scale-fn-type = <ADC_SCALE_HW_CALIB_PM5_SMB1398_TEMP>;
+	};
+};
+
+&pm7250b_gpios {
+	smb_stat {
+		smb_stat_default: smb_stat_default {
+			pins = "gpio6";
+			function = "normal";
+			input-enable;
+			bias-pull-up;
+			qcom,pull-up-strength = <PMIC_GPIO_PULL_UP_30>;
+			power-source = <0>;
+		};
+	};
+};
+
+&qupv3_se9_i2c {
+	qcom,clk-freq-out = <100000>;
+	status = "ok";
+	#include "smb1398.dtsi"
+};
+
+&smb1396 {
+	interrupts = <0x2 0xc5 0x0 IRQ_TYPE_LEVEL_LOW>;
+	interrupt-parent = <&spmi_bus>;
+	interrupt-names = "smb1396";
+	pinctrl-names = "default";
+	qcom,enable-toggle-stat;
+	pinctrl-0 = <&smb_stat_default>;
+	status = "ok";
+};
+
+&smb1396_div2_cp_master {
+	io-channels = <&pm7250b_vadc ADC_AMUX_THM2>;
+	qcom,parallel-input-mode = <1>; /* USBIN */
+	qcom,parallel-output-mode = <2>; /* VBAT */
+	qcom,min-ilim-ua = <1000000>;
+	status = "ok";
+};
+
+&smb1396_slave {
+	status = "ok";
+};
+
+&smb1396_div2_cp_slave {
+	status = "ok";
+};

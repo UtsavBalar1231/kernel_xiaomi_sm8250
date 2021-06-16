@@ -1,0 +1,8 @@
+#include "sdm439.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. SDA439";
+	compatible = "qcom,sda439";
+	qcom,msm-id = <363 0x0>;
+	qcom,msm-name = "SDA439";
+};
