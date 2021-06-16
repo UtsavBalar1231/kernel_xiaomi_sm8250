@@ -235,6 +235,38 @@
 	qcom,dsi-default-panel = <&dsi_td4330_truly_v2_video>;
 };
 
+&tlmm {
+	pmx_ts_reset_active {
+		ts_reset_active: ts_reset_active {
+			mux {
+				pins = "gpio86";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio86";
+				drive-strength = <8>;
+				bias-pull-up;
+			};
+		};
+	};
+
+	pmx_ts_reset_suspend {
+		ts_reset_suspend: ts_reset_suspend {
+			mux {
+				pins = "gpio86";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio86";
+				drive-strength = <2>;
+				bias-pull-down;
+			};
+		};
+	};
+};
+
 &qupv3_se2_i2c {
 	status = "okay";
 	qcom,i2c-touch-active="synaptics,tcm-i2c";
@@ -251,7 +283,7 @@
 		pinctrl-2 = <&ts_release>;
 		synaptics,irq-gpio = <&tlmm 80 0x2008>;
 		synaptics,irq-on-state = <0>;
-		synaptics,reset-gpio = <&tlmm 71 0x00>;
+		synaptics,reset-gpio = <&tlmm 86 0x00>;
 		synaptics,reset-on-state = <0>;
 		synaptics,reset-active-ms = <20>;
 		synaptics,reset-delay-ms = <200>;
