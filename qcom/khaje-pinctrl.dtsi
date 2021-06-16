@@ -118,4 +118,36 @@
 				output-low;
 			};
 		};
+
+	nfc {
+			nfc_clk_req_active {
+				/* active state */
+				mux {
+					/* GPIO 71: NFC CLOCK REQUEST */
+					pins = "gpio71";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio71";
+					drive-strength = <2>; /* 2 MA */
+					bias-pull-up;
+				};
+			};
+
+			nfc_clk_req_suspend {
+				/* sleep state */
+				mux {
+					/* GPIO 71: NFC CLOCK REQUEST */
+					pins = "gpio71";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio71";
+					drive-strength = <2>; /* 2 MA */
+					bias-disable;
+				};
+			};
+	};
 };
