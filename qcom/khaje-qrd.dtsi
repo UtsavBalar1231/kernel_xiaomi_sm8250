@@ -108,7 +108,7 @@
 		qcom,nq-irq = <&tlmm 70 0x00>;
 		qcom,nq-ven = <&tlmm 69 0x00>;
 		qcom,nq-firm = <&tlmm 31 0x00>;
-		qcom,nq-clkreq = <&tlmm 86 0x00>;
+		qcom,nq-clkreq = <&tlmm 71 0x00>;
 		interrupt-parent = <&tlmm>;
 		interrupts = <70 0>;
 		interrupt-names = "nfc_irq";
