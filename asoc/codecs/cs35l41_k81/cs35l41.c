@@ -1915,14 +1915,13 @@ static int cs35l41_main_amp_event(struct snd_soc_dapm_widget *w,
 					CS35L41_GLOBAL_EN_MASK, 0);
 
 			pdn = false;
-			for (i = 0; i < 100; i++) {
-			regmap_read(cs35l41->regmap, CS35L41_IRQ1_STATUS1,
-					&val);
-				if (val & CS35L41_PDN_DONE_MASK) {
-					pdn = true;
-					break;
-				}
-				usleep_range(1000, 1010);
+			for (i = 0; i < 2; i++) {
+				regmap_read(cs35l41->regmap, CS35L41_IRQ1_STATUS1, &val);
+					if (val & CS35L41_PDN_DONE_MASK) {
+						pdn = true;
+						break;
+					}
+					usleep_range(1000, 1010);
 			}
 
 			if (!pdn)
@@ -2769,9 +2768,13 @@ static int cs35l41_component_probe(struct snd_soc_component *component)
 		if (ret < 0)
 			dev_err(cs35l41->dev,
 			       "snd_soc_add_codec_controls failed (%d)\n", ret);
+
+		dev_dbg(cs35l41->dev, "queue boot_work\n");
+		queue_work(cs35l41->dsp.work_queue, &cs35l41->dsp.boot_work);
 		kfree(kcontrol);
 	}
 exit:
+        dev_dbg(cs35l41->dev, "cs35l41_component_probe: X\n");
 	return ret;
 }
 

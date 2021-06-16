@@ -2005,10 +2005,13 @@ static int wm_adsp_load(struct wm_adsp *dsp)
 	if (file == NULL)
 		return -ENOMEM;
 
+	if(dsp->first_booting)
+		dsp->fw = WM_ADSP_FW_SPK_PROT;
+
 	snprintf(file, PAGE_SIZE, "%s-%s-%s.wmfw", dsp->part, dsp->fwf_name,
 		 wm_adsp_fw[dsp->fw].file);
 	file[PAGE_SIZE - 1] = '\0';
-	pr_err("jzw firm algo %s\n",file);
+	adsp_info(dsp, "download fw algo %s, pid %d.\n", file, current->pid);
 
 	ret = request_firmware(&firmware, file, dsp->dev);
 	if (ret != 0) {
@@ -2841,7 +2844,7 @@ static int wm_adsp_load_coeff(struct wm_adsp *dsp)
 			 dsp->fwf_name, wm_adsp_fw[dsp->fw].file);
 
 	file[PAGE_SIZE - 1] = '\0';
-	pr_err("jzw firm para %s\n",file);
+	adsp_info(dsp, "download fw parm %s\n", file);
 
 	ret = request_firmware(&firmware, file, dsp->dev);
 	if (ret != 0) {
@@ -3276,7 +3279,7 @@ static void wm_adsp2v2_disable_core(struct wm_adsp *dsp)
 	regmap_write(dsp->regmap, dsp->base + ADSP2V2_WDMA_CONFIG_2, 0);
 }
 
-static void wm_adsp_boot_work(struct work_struct *work)
+void wm_adsp_boot_work(struct work_struct *work)
 {
 	struct wm_adsp *dsp = container_of(work,
 					   struct wm_adsp,
@@ -3451,7 +3454,7 @@ int wm_adsp2_preloader_put(struct snd_kcontrol *kcontrol,
 
 	snd_soc_dapm_sync(dapm);
 
-	flush_work(&dsp->boot_work);
+	//flush_work(&dsp->boot_work);
 
 	return 0;
 }
@@ -3905,6 +3908,7 @@ int wm_halo_init(struct wm_adsp *dsp, struct mutex *rate_lock)
 
 	dsp->ops = &wm_halo_ops;
 
+	dsp->work_queue = create_workqueue("cirrus_fw");
 	INIT_WORK(&dsp->boot_work, wm_adsp_boot_work);
 
 	dsp->rate_lock = rate_lock;

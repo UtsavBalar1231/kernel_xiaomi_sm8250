@@ -99,9 +99,11 @@ struct wm_adsp {
 	bool running;
 	bool fatal_error;
 	bool tuning_has_prefix;
+	bool first_booting;
 
 	struct list_head ctl_list;
 
+	struct workqueue_struct *work_queue;
 	struct work_struct boot_work;
 
 	struct list_head compr_list;
@@ -234,5 +236,6 @@ int wm_adsp_write_ctl(struct wm_adsp *dsp, const char *name, const void *buf,
 		      size_t len);
 int wm_adsp_read_ctl(struct wm_adsp *dsp, const char *name, void *buf,
 		     size_t len);
+void wm_adsp_boot_work(struct work_struct *work);
 
 #endif
