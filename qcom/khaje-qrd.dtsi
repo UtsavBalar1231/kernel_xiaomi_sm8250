@@ -178,12 +178,12 @@
 };
 
 &ufsphy_mem {
-	compatible = "qcom,ufs-phy-qmp-v3-660";
+	compatible = "qcom,ufs-phy-qmp-v4";
 
 	vdda-phy-supply = <&L4A>; /* 0.9v */
-	vdda-pll-supply = <&L12A>; /* 1.8v */
-	vdda-phy-max-microamp = <51400>;
-	vdda-pll-max-microamp = <14200>;
+	vdda-pll-supply = <&L18A>; /* 1.8v */
+	vdda-phy-max-microamp = <85700>;
+	vdda-pll-max-microamp = <18300>;
 
 	status = "ok";
 };
@@ -194,8 +194,8 @@
 	vcc-supply = <&L24A>;
 	vcc-voltage-level = <2950000 2960000>;
 	vccq2-supply = <&L11A>;
-	vcc-max-microamp = <600000>;
-	vccq2-max-microamp = <600000>;
+	vcc-max-microamp = <800000>;
+	vccq2-max-microamp = <800000>;
 	vccq2-pwr-collapse-sup;
 
 	qcom,vddp-ref-clk-supply = <&L18A>;
