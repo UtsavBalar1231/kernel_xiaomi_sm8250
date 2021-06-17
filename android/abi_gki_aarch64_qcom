@@ -41,6 +41,7 @@
   bus_for_each_dev
   bus_register
   bus_unregister
+  call_rcu
   cancel_delayed_work
   cancel_delayed_work_sync
   cancel_work_sync
@@ -52,6 +53,7 @@
   __check_object_size
   __class_create
   class_destroy
+  _cleanup_srcu_struct
   clk_disable
   clk_enable
   clk_fixed_factor_ops
@@ -94,6 +96,7 @@
   contig_page_data
   _copy_from_iter_full
   cpu_bit_bitmap
+  __cpuhp_remove_state
   __cpuhp_setup_state
   cpu_hwcap_keys
   cpu_hwcaps
@@ -101,6 +104,7 @@
   cpumask_next
   cpu_number
   __cpu_online_mask
+  cpu_pm_register_notifier
   __cpu_possible_mask
   cpus_read_lock
   cpus_read_unlock
@@ -287,7 +291,6 @@
   get_cpu_device
   get_device
   __get_free_pages
-  get_next_event_cpu
   get_pid_task
   get_random_bytes
   __get_task_comm
@@ -364,6 +367,7 @@
   iomem_resource
   iommu_attach_device
   iommu_detach_device
+  iommu_dma_enable_best_fit_algo
   iommu_domain_alloc
   iommu_domain_free
   iommu_domain_get_attr
@@ -398,6 +402,7 @@
   irq_set_affinity_notifier
   irq_set_chip_and_handler_name
   irq_set_chip_data
+  irq_set_irqchip_state
   irq_set_irq_type
   irq_set_irq_wake
   irq_to_desc
@@ -467,6 +472,7 @@
   __ll_sc_atomic64_fetch_or
   __ll_sc_atomic64_or
   __ll_sc_atomic64_sub
+  __ll_sc_atomic64_sub_return
   __ll_sc_atomic_add
   __ll_sc_atomic_add_return
   __ll_sc_atomic_sub
@@ -491,6 +497,10 @@
   __memcpy_toio
   memdup_user
   memmove
+  mempool_alloc
+  mempool_free
+  mempool_kfree
+  mempool_kmalloc
   memremap
   memset
   __memset_io
@@ -506,6 +516,7 @@
   module_put
   __msecs_to_jiffies
   msleep
+  msleep_interruptible
   __mutex_init
   mutex_lock
   mutex_lock_interruptible
@@ -688,7 +699,6 @@
   printk
   print_stack_trace
   proc_dointvec
-  proc_mkdir_data
   proto_register
   proto_unregister
   pskb_expand_head
@@ -899,6 +909,7 @@
   strpbrk
   strrchr
   strsep
+  strstr
   __sw_hweight32
   __sw_hweight64
   __sw_hweight8
@@ -955,6 +966,7 @@
   trace_raw_output_prep
   trace_seq_printf
   try_module_get
+  try_to_del_timer_sync
   tty_flip_buffer_push
   typec_register_partner
   typec_register_port
@@ -1042,10 +1054,6 @@
 # required by adsprpc.ko
   set_normalized_timespec64
   try_wait_for_completion
-  vfs_statx
-
-# required by apr_dlkm.ko
-  strstr
 
 # required by arm-memlat-mon.ko
   perf_event_create_kernel_counter
@@ -1139,7 +1147,6 @@
   led_trigger_unregister_simple
 
 # required by cam_smmu_api.ko
-  iommu_dma_enable_best_fit_algo
   iommu_dma_reserve_iova
 
 # required by cam_utils.ko
@@ -1188,6 +1195,10 @@
 # required by cnss_prealloc.ko
   save_stack_trace
 
+# required by coresight-clk-amba-placeholder.ko
+  amba_driver_register
+  amba_driver_unregister
+
 # required by cpu_isolate.ko
   device_online
   sched_isolate_cpu
@@ -1210,14 +1221,23 @@
   crc_ccitt_table
   kernel_restart
   kernel_setsockopt
-  mempool_alloc
   mempool_create
   mempool_destroy
-  mempool_free
-  mempool_kfree
-  mempool_kmalloc
   send_sig_info
   time64_to_tm
+
+# required by dm-user.ko
+  bio_advance
+  bio_endio
+  bio_put
+  _copy_from_iter
+  copy_page_from_iter
+  copy_page_to_iter
+  _copy_to_iter
+  dm_register_target
+  dm_unregister_target
+  mempool_exit
+  mempool_init
 
 # required by dwc3-haps.ko
   pcim_enable_device
@@ -1313,10 +1333,8 @@
 # required by ftm5.ko
   ktime_get_coarse_real_ts64
   proc_create
+  proc_mkdir_data
   seq_write
-
-# required by google-battery.ko
-  simple_strtoull
 
 # required by google-bms.ko
   full_name_hash
@@ -1359,25 +1377,34 @@
   i2c_put_dma_safe_msg_buf
 
 # required by incrementalfs.ko
+  __audit_inode_child
   __break_lease
   clear_inode
   __close_fd
-  crc32_le
   d_add
+  d_delete
   d_drop
   deactivate_locked_super
   dentry_open
   dget_parent
   d_instantiate
   d_make_root
+  down_read_killable
+  down_write_killable
   dput
+  filemap_fault
+  filemap_map_pages
+  filemap_page_mkwrite
   flush_dcache_page
   fs_kobj
+  fsnotify
+  __fsnotify_parent
   fsstack_copy_attr_all
+  __fsverity_verify_signature
   generic_file_llseek
-  generic_file_mmap
   generic_file_read_iter
   generic_file_splice_read
+  generic_fillattr
   generic_read_dir
   generic_shutdown_super
   get_zeroed_page
@@ -1385,32 +1412,41 @@
   ihold
   inode_init_once
   inode_init_owner
+  inode_set_flags
   iput
   iterate_dir
   kernel_read
   kernel_write
   kern_path
+  kobject_add
+  kobject_init
+  kobj_sysfs_ops
   __ll_sc___cmpxchg_case_rel_8
   lockref_get
   lock_rename
   lookup_one_len
   LZ4_decompress_safe
   match_int
+  match_strdup
   match_token
+  memchr_inv
   noop_llseek
   notify_change
+  override_creds
   pagecache_get_page
   path_get
   path_put
   __put_cred
   register_filesystem
+  revert_creds
   set_anon_super
   sget
-  simple_getattr
   simple_setattr
   simple_statfs
   strndup_user
   sync_filesystem
+  sysfs_emit
+  touch_atime
   truncate_inode_pages
   unlock_new_inode
   unlock_page
@@ -1419,6 +1455,7 @@
   user_path_at_empty
   vfs_create
   vfs_fallocate
+  vfs_fsync
   vfs_getattr
   vfs_getxattr
   vfs_link
@@ -1427,20 +1464,21 @@
   vfs_rename
   vfs_rmdir
   vfs_setxattr
+  vfs_truncate
   vfs_unlink
+  ZSTD_decompressStream
+  ZSTD_DStreamWorkspaceBound
+  ZSTD_initDStream
 
 # required by ion-alloc.ko
   dma_buf_export
   dma_get_device_base
   dma_get_size
-  __ll_sc_atomic64_sub_return
   mm_event_count
   __next_zones_zonelist
   ptr_to_hashval
   sched_setattr
   split_page
-  vm_map_ram
-  vm_unmap_ram
   zone_watermark_ok_safe
 
 # required by ipa3.ko
@@ -1454,6 +1492,7 @@
   pci_release_region
   pci_request_region
   remove_wait_queue
+  vmemdup_user
   vm_iomap_memory
   wait_woken
   woken_wake_function
@@ -1485,7 +1524,7 @@
   snd_soc_of_parse_card_name
   snd_soc_pm_ops
   snd_soc_unregister_card
-  soc_find_component
+  soc_find_component_locked
 
 # required by mbhc_dlkm.ko
   snd_jack_set_key
@@ -1494,6 +1533,7 @@
 
 # required by minidump_log.ko
   __bss_stop
+  irq_stack_ptr
   log_buf_addr_get
   log_buf_len_get
   __per_cpu_end
@@ -1533,7 +1573,6 @@
 
 # required by msm_adreno.ko
   bpf_trace_run10
-  _cleanup_srcu_struct
   __clk_get_name
   devfreq_cooling_unregister
   device_show_int
@@ -1549,6 +1588,7 @@
   getboottime64
   get_random_u32
   get_task_mm
+  get_task_pid
   get_unmapped_area
   get_user_pages
   idr_for_each
@@ -1570,6 +1610,7 @@
   security_mmap_addr
   set_page_dirty_lock
   sg_alloc_table_from_pages
+  shmem_read_mapping_page_gfp
   sysfs_remove_files
   __tracepoint_gpu_mem_total
   unmapped_area_topdown
@@ -1711,6 +1752,7 @@
   drm_dp_update_payload_part1
   drm_dp_update_payload_part2
   drm_edid_duplicate
+  drm_edid_is_valid
   drm_encoder_cleanup
   drm_encoder_init
   drm_err
@@ -1857,6 +1899,7 @@
   shmem_truncate_range
   strreplace
   timespec64_to_jiffies
+  tracing_off
   unmap_kernel_range
   unmap_mapping_range
   vm_get_page_prot
@@ -1945,9 +1988,6 @@
   crc8
   crc8_populate_msb
 
-# required by pac193x.ko
-  try_to_del_timer_sync
-
 # required by peripheral-loader.ko
   __iowrite32_copy
   memblock_overlaps_memory
@@ -1969,6 +2009,8 @@
   irq_chip_set_wake_parent
   irq_create_fwspec_mapping
   irq_domain_free_irqs_top
+  __irq_set_handler
+  irq_set_handler_data
   of_irq_domain_map
   register_restart_handler
   unregister_restart_handler
@@ -2110,6 +2152,7 @@
   rtc_read_time
 
 # required by qpnp-smb5-charger.ko
+  alarm_expires_remaining
   iio_channel_release
 
 # required by qpnp_pdphy.ko
@@ -2157,6 +2200,12 @@
   gen_pool_best_fit
   gen_pool_set_algo
   gen_pool_virt_to_phys
+
+# required by ramdump.ko
+  init_srcu_struct
+  __srcu_read_lock
+  __srcu_read_unlock
+  synchronize_srcu
 
 # required by regmap-spmi.ko
   spmi_ext_register_read
@@ -2223,7 +2272,6 @@
 # required by sctp.ko
   __bitmap_shift_right
   __bitmap_weight
-  call_rcu
   compat_ip_getsockopt
   compat_ip_setsockopt
   compat_ipv6_getsockopt
@@ -2287,6 +2335,8 @@
   ipv6_getsockopt
   ipv6_setsockopt
   kfree_call_rcu
+  memcg_sockets_enabled_key
+  memory_cgrp_subsys_on_dfl_key
   napi_busy_loop
   net_enable_timestamp
   nf_conntrack_destroy
@@ -2304,6 +2354,7 @@
   proc_dointvec_minmax
   proc_dostring
   proc_doulongvec_minmax
+  _proc_mkdir
   put_cmsg
   rcu_barrier
   refcount_add_checked
@@ -2447,6 +2498,9 @@
 # required by subsystem-restart.ko
   system_state
 
+# required by swr_ctrl_dlkm.ko
+  pm_runtime_autosuspend_expiration
+
 # required by system_pm.ko
   arch_timer_mem_get_cval
 
@@ -2518,100 +2572,6 @@
   trace_output_call
   utf16s_to_utf8s
 
-# required by wlan.ko
-  bitmap_print_to_pagebuf
-  __cfg80211_alloc_event_skb
-  __cfg80211_alloc_reply_skb
-  cfg80211_ap_stopped
-  cfg80211_calculate_bitrate
-  cfg80211_chandef_create
-  cfg80211_ch_switch_notify
-  cfg80211_connect_done
-  cfg80211_del_sta_sinfo
-  cfg80211_disconnected
-  cfg80211_external_auth_request
-  cfg80211_ft_event
-  cfg80211_get_bss
-  cfg80211_gtk_rekey_notify
-  cfg80211_ibss_joined
-  cfg80211_inform_bss_frame_data
-  cfg80211_mgmt_tx_status
-  cfg80211_michael_mic_failure
-  cfg80211_new_sta
-  cfg80211_pmksa_candidate_notify
-  cfg80211_put_bss
-  cfg80211_ready_on_channel
-  cfg80211_remain_on_channel_expired
-  cfg80211_roamed
-  cfg80211_rx_mgmt
-  cfg80211_rx_unprot_mlme_mgmt
-  cfg80211_scan_done
-  cfg80211_sched_scan_results
-  __cfg80211_send_event_skb
-  cfg80211_tdls_oper_request
-  cfg80211_unlink_bss
-  cfg80211_update_owe_info_event
-  cfg80211_vendor_cmd_reply
-  complete_and_exit
-  cpufreq_quick_get_max
-  __cpuhp_remove_state
-  cpu_topology
-  crypto_aead_setauthsize
-  crypto_aead_setkey
-  crypto_alloc_aead
-  crypto_alloc_base
-  crypto_alloc_skcipher
-  crypto_shash_final
-  crypto_shash_update
-  dev_alloc_name
-  dump_stack
-  hex2bin
-  hex_to_bin
-  ieee80211_channel_to_frequency
-  ieee80211_frequency_to_channel
-  ieee80211_get_channel
-  ieee80211_hdrlen
-  iommu_iova_to_phys
-  irq_set_affinity_hint
-  mac_pton
-  msleep_interruptible
-  netif_tx_stop_all_queues
-  netlink_broadcast
-  __netlink_kernel_create
-  netlink_kernel_release
-  nla_put_64bit
-  nla_strlcpy
-  param_get_string
-  param_ops_byte
-  param_set_copystring
-  pci_read_config_dword
-  pci_read_config_word
-  pci_write_config_dword
-  pci_write_config_word
-  PDE_DATA
-  pm_freezing
-  pm_system_wakeup
-  proc_create_data
-  proc_mkdir
-  register_netevent_notifier
-  register_sysctl_table
-  regulatory_set_wiphy_regd
-  rtnl_lock
-  save_stack_trace_tsk
-  schedule_timeout_interruptible
-  seq_vprintf
-  set_cpus_allowed_ptr
-  skip_spaces
-  strchrnul
-  unregister_netevent_notifier
-  unregister_sysctl_table
-  vprintk
-  wiphy_free
-  wiphy_new_nm
-  wiphy_register
-  wiphy_unregister
-  wireless_send_event
-
 # required by usb-audio-qmi.ko
   find_snd_usb_substream
   snd_usb_enable_audio_stream
@@ -2630,7 +2590,6 @@
   device_wakeup_disable
   extcon_get_edev_name
   extcon_get_property
-  irq_set_irqchip_state
   pm_runtime_barrier
   regulator_register_notifier
   regulator_unregister_notifier
@@ -2668,12 +2627,15 @@
   i2c_smbus_write_byte_data
 
 # required by watchdog_v2.ko
-  cpu_pm_register_notifier
   cpu_pm_unregister_notifier
   __cpu_present_mask
   disable_percpu_irq
   enable_percpu_irq
   free_percpu_irq
+  irq_stat
+  kstat
+  kstat_irqs_usr
+  nr_irqs
   panic_timeout
   __request_percpu_irq
 
@@ -2683,6 +2645,98 @@
   handle_simple_irq
   irq_create_mapping
   regmap_irq_get_virq
+
+# required by wlan.ko
+  bitmap_print_to_pagebuf
+  __cfg80211_alloc_event_skb
+  __cfg80211_alloc_reply_skb
+  cfg80211_ap_stopped
+  cfg80211_calculate_bitrate
+  cfg80211_chandef_create
+  cfg80211_ch_switch_notify
+  cfg80211_connect_done
+  cfg80211_del_sta_sinfo
+  cfg80211_disconnected
+  cfg80211_external_auth_request
+  cfg80211_ft_event
+  cfg80211_get_bss
+  cfg80211_gtk_rekey_notify
+  cfg80211_ibss_joined
+  cfg80211_inform_bss_frame_data
+  cfg80211_mgmt_tx_status
+  cfg80211_michael_mic_failure
+  cfg80211_new_sta
+  cfg80211_pmksa_candidate_notify
+  cfg80211_put_bss
+  cfg80211_ready_on_channel
+  cfg80211_remain_on_channel_expired
+  cfg80211_roamed
+  cfg80211_rx_mgmt
+  cfg80211_rx_unprot_mlme_mgmt
+  cfg80211_scan_done
+  cfg80211_sched_scan_results
+  __cfg80211_send_event_skb
+  cfg80211_tdls_oper_request
+  cfg80211_unlink_bss
+  cfg80211_update_owe_info_event
+  cfg80211_vendor_cmd_reply
+  complete_and_exit
+  cpufreq_quick_get_max
+  cpu_topology
+  crypto_aead_setauthsize
+  crypto_aead_setkey
+  crypto_alloc_aead
+  crypto_alloc_base
+  crypto_alloc_skcipher
+  crypto_shash_final
+  crypto_shash_update
+  dev_alloc_name
+  dump_stack
+  hex2bin
+  hex_to_bin
+  ieee80211_channel_to_frequency
+  ieee80211_frequency_to_channel
+  ieee80211_get_channel
+  ieee80211_hdrlen
+  iommu_iova_to_phys
+  irq_set_affinity_hint
+  mac_pton
+  netif_tx_stop_all_queues
+  netlink_broadcast
+  __netlink_kernel_create
+  netlink_kernel_release
+  nla_put_64bit
+  nla_strlcpy
+  param_get_string
+  param_ops_byte
+  param_set_copystring
+  pci_read_config_dword
+  pci_read_config_word
+  pci_write_config_dword
+  pci_write_config_word
+  PDE_DATA
+  pm_freezing
+  pm_system_wakeup
+  proc_create_data
+  proc_mkdir
+  register_netevent_notifier
+  register_sysctl_table
+  regulatory_set_wiphy_regd
+  rtnl_lock
+  save_stack_trace_tsk
+  schedule_timeout_interruptible
+  seq_vprintf
+  set_cpus_allowed_ptr
+  skip_spaces
+  strchrnul
+  unregister_netevent_notifier
+  unregister_sysctl_table
+  vprintk
+  wiphy_free
+  wiphy_new_nm
+  wiphy_register
+  wiphy_unregister
+  wireless_send_event
 
 # required by wsa883x_dlkm.ko
   snd_info_create_module_entry
@@ -2702,3 +2756,14 @@
   xhci_resume
   xhci_run
   xhci_suspend
+
+# preserved by --additions-only
+  crc32_le
+  generic_file_mmap
+  idr_alloc_u32
+  simple_getattr
+  simple_strtoull
+  soc_find_component
+  vfs_statx
+  vm_map_ram
+  vm_unmap_ram
