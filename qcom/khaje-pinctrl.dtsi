@@ -150,4 +150,34 @@
 				};
 			};
 	};
+
+		pmx_ts_reset_active {
+			ts_reset_active: ts_reset_active {
+				mux {
+					pins = "gpio86";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio86";
+					drive-strength = <8>;
+					bias-pull-up;
+				};
+			};
+		};
+
+		pmx_ts_reset_suspend {
+			ts_reset_suspend: ts_reset_suspend {
+				mux {
+					pins = "gpio86";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio86";
+					drive-strength = <2>;
+					bias-pull-down;
+				};
+			};
+		};
 };
