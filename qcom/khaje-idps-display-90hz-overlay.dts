@@ -4,6 +4,7 @@
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include "khaje-idp.dtsi"
 #include "khaje-idp-pm7250b.dtsi"
+#include "khaje-idps-display-90hz.dtsi"
 
 / {
 	model = "Qualcomm Technologies, Inc. KHAJE IDPS + 90Hz";
