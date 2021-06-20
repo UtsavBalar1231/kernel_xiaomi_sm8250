@@ -69,6 +69,17 @@
 			power-source = <0>;
 		};
 	};
+
+	eldo9_pin {
+		usb_eldo9:gpio@c000 {
+			pins = "gpio1";
+			function = "normal";
+			qcom,drive-strength = <2>;
+			power-source = <0>;
+			bias-disable;
+			output-high;
+		};
+	};
 };
 
 &soc {
@@ -89,6 +100,21 @@
 			gpio-key,wakeup;
 		};
 	};
+
+	vdda_usb_ss_dp_core: vdda_usb_ss_dp_core {
+		compatible = "regulator-fixed";
+		regulator-name = "vdd_supply";
+		regulator-min-microvolt = <880000>;
+		regulator-max-microvolt = <880000>;
+		enable-active-high;
+		gpio = <&pm6125_gpios 1 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&usb_eldo9>;
+	};
+};
+
+&usb_qmp_dp_phy {
+	vdd-supply = <&vdda_usb_ss_dp_core>;
 };
 
 &qupv3_se1_i2c {
