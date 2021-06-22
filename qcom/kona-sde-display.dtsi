@@ -22,6 +22,7 @@
 #include "dsi-panel-sim-sec-hd-cmd.dtsi"
 #include "dsi-panel-xrsmrtvwr-jdi-dual-video.dtsi"
 #include "dsi-panel-r66451-dsc-fhd-plus-144hz-cmd.dtsi"
+#include "dsi-panel-arglass-seeya-dual-1080p-video.dtsi"
 #include <dt-bindings/clock/mdss-7nm-pll-clk.h>
 
 &tlmm {
@@ -302,6 +303,25 @@
 		timing@0 {
 			qcom,mdss-dsi-panel-phy-timings = [00 3a 0f 0f 2e 2b 0f
 				10 0b 02 04 00 2e 1e];
+			qcom,display-topology = <2 0 2>;
+			qcom,default-topology-index = <0>;
+		};
+	};
+};
+
+&dsi_dual_arglass_seeya_video {
+	qcom,mdss-dsi-min-refresh-rate = <60>;
+	qcom,mdss-dsi-max-refresh-rate = <60>;
+	qcom,mdss-dsi-panel-status-command = [06 01 00 01 00 00 01 0a];
+	qcom,mdss-dsi-panel-status-command-state = "dsi_hs_mode";
+	qcom,mdss-dsi-panel-status-value = <0x9c>;
+	qcom,mdss-dsi-panel-on-check-value = <0x9c>;
+	qcom,mdss-dsi-panel-status-read-length = <1>;
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
+	qcom,mdss-dsi-display-timings {
+		timing@0 {
+			qcom,mdss-dsi-panel-phy-timings =  [00 11 04 04 12 1E
+				04 04 04 03 02 04 0F 09];
 			qcom,display-topology = <2 0 2>;
 			qcom,default-topology-index = <0>;
 		};
