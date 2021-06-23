@@ -3,7 +3,7 @@
 #include <dt-bindings/input/input.h>
 #include "bengal-thermal-overlay.dtsi"
 #include "bengal-audio-overlay.dtsi"
-#include "bengal-sde-display.dtsi"
+#include "khaje-sde-display.dtsi"
 
 &qupv3_se1_i2c {
 	status = "ok";
@@ -237,7 +237,7 @@
 };
 
 &dsi_td4330_truly_v2_video {
-	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_no_labibb>;
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_pwm";
 	pwms = <&pm6125_pwm 0 0>;
 	qcom,bl-pmic-pwm-period-usecs = <100>;
@@ -247,7 +247,7 @@
 };
 
 &dsi_td4330_truly_v2_cmd {
-	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_no_labibb>;
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_pwm";
 	pwms = <&pm6125_pwm 0 0>;
 	qcom,bl-pmic-pwm-period-usecs = <100>;
