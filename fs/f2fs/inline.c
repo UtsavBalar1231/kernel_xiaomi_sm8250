@@ -12,6 +12,7 @@
 #include "f2fs.h"
 #include "node.h"
 #include <trace/events/android_fs.h>
+#include <trace/events/f2fs.h>
 
 bool f2fs_may_inline_data(struct inode *inode)
 {
@@ -204,7 +205,8 @@ int f2fs_convert_inline_inode(struct inode *inode)
 	struct page *ipage, *page;
 	int err = 0;
 
-	if (!f2fs_has_inline_data(inode))
+	if (!f2fs_has_inline_data(inode) ||
+			f2fs_hw_is_readonly(sbi) || f2fs_readonly(sbi->sb))
 		return 0;
 
 	err = dquot_initialize(inode);
@@ -287,7 +289,7 @@ int f2fs_recover_inline_data(struct inode *inode, struct page *npage)
 	 * [prev.] [next] of inline_data flag
 	 *    o       o  -> recover inline_data
 	 *    o       x  -> remove inline_data, and then recover data blocks
-	 *    x       o  -> remove inline_data, and then recover inline_data
+	 *    x       o  -> remove data blocks, and then recover inline_data
 	 *    x       x  -> recover data blocks
 	 */
 	if (IS_INODE(npage))
@@ -319,6 +321,7 @@ process_inline:
 		if (IS_ERR(ipage))
 			return PTR_ERR(ipage);
 		f2fs_truncate_inline_inode(inode, ipage, 0);
+		stat_dec_inline_inode(inode);
 		clear_inode_flag(inode, FI_INLINE_DATA);
 		f2fs_put_page(ipage, 1);
 	} else if (ri && (ri->i_inline & F2FS_INLINE_DATA)) {
@@ -327,6 +330,7 @@ process_inline:
 		ret = f2fs_truncate_blocks(inode, 0, false);
 		if (ret)
 			return ret;
+		stat_inc_inline_inode(inode);
 		goto process_inline;
 	}
 	return 0;
@@ -353,6 +357,10 @@ struct f2fs_dir_entry *f2fs_find_in_inline_dir(struct inode *dir,
 	make_dentry_ptr_inline(dir, &d, inline_dentry);
 	de = f2fs_find_target_dentry(&d, fname, NULL);
 	unlock_page(ipage);
+	if (IS_ERR(de)) {
+		*res_page = ERR_CAST(de);
+		de = NULL;
+	}
 	if (de)
 		*res_page = ipage;
 	else
@@ -545,7 +553,7 @@ static int f2fs_move_rehashed_dirents(struct inode *dir, struct page *ipage,
 			!f2fs_has_inline_xattr(dir))
 		F2FS_I(dir)->i_inline_xattr_size = 0;
 
-	kvfree(backup_dentry);
+	kfree(backup_dentry);
 	return 0;
 recover:
 	lock_page(ipage);
@@ -556,7 +564,7 @@ recover:
 	set_page_dirty(ipage);
 	f2fs_put_page(ipage, 1);
 
-	kvfree(backup_dentry);
+	kfree(backup_dentry);
 	return err;
 }
 
@@ -803,6 +811,7 @@ int f2fs_inline_data_fiemap(struct inode *inode,
 	byteaddr += (char *)inline_data_addr(inode, ipage) -
 					(char *)F2FS_INODE(ipage);
 	err = fiemap_fill_next_extent(fieinfo, start, byteaddr, ilen, flags);
+	trace_f2fs_fiemap(inode, start, byteaddr, ilen, flags, err);
 out:
 	f2fs_put_page(ipage, 1);
 	return err;
