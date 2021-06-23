@@ -33,7 +33,7 @@
 				reg = <0>;
 				label = "perf-l2-wfi";
 				qcom,psci-mode = <1>;
-				qcom,entry-latency-us = <38>; /* TBD */
+				qcom,entry-latency-us = <125>;
 				qcom,exit-latency-us = <180>;
 				qcom,min-residency-us = <305>;
 			};
@@ -42,9 +42,9 @@
 				reg = <1>;
 				label = "perf-l2-gdhs";
 				qcom,psci-mode = <4>;
-				qcom,entry-latency-us = <800>; /* TBD */
+				qcom,entry-latency-us = <240>;
 				qcom,exit-latency-us = <280>;
-				qcom,min-residency-us = <520>;
+				qcom,min-residency-us = <806>;
 				qcom,min-child-idx = <1>;
 				qcom,reset-level = <LPM_RESET_LVL_GDHS>;
 			};
@@ -53,9 +53,9 @@
 				reg = <2>;
 				label = "perf-l2-retention";
 				qcom,psci-mode = <2>;
-				qcom,entry-latency-us = <640>; /* TBD */
+				qcom,entry-latency-us = <700>;
 				qcom,exit-latency-us = <650>;
-				qcom,min-residency-us = <1350>;
+				qcom,min-residency-us = <1972>;
 				qcom,min-child-idx = <1>;
 				qcom,reset-level = <LPM_RESET_LVL_RET>;
 			};
@@ -64,9 +64,9 @@
 				reg = <3>;
 				label = "perf-l2-pc";
 				qcom,psci-mode = <5>;
-				qcom,entry-latency-us = <800>; /* TBD */
+				qcom,entry-latency-us = <800>;
 				qcom,exit-latency-us = <11200>;
-				qcom,min-residency-us = <1700>;
+				qcom,min-residency-us = <6501>;
 				qcom,min-child-idx = <1>;
 				qcom,is-reset;
 				qcom,notify-rpm;
@@ -84,7 +84,7 @@
 					reg = <0>;
 					label = "wfi";
 					qcom,psci-cpu-mode = <1>;
-					qcom,entry-latency-us = <49>; /* TBD */
+					qcom,entry-latency-us = <13>;
 					qcom,exit-latency-us = <12>;
 					qcom,min-residency-us = <25>;
 				};
@@ -93,9 +93,9 @@
 					reg = <1>;
 					label = "pc";
 					qcom,psci-cpu-mode = <3>;
-					qcom,entry-latency-us = <290>; /* TBD */
+					qcom,entry-latency-us = <125>;
 					qcom,exit-latency-us = <180>;
-					qcom,min-residency-us = <305>;
+					qcom,min-residency-us = <595>;
 					qcom,use-broadcast-timer;
 					qcom,is-reset;
 					qcom,reset-level = <LPM_RESET_LVL_PC>;
