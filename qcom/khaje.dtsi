@@ -2680,15 +2680,11 @@
 	};
 
 tpdm_turing_llm: tpdm@8861000 {
-		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x000bb968>;
-		reg = <0x8861000 0x1000>;
-		reg-names = "tpdm-base";
+		compatible = "qcom,coresight-dummy";
 
 		coresight-name = "coresight-tpdm-turing_llm";
+		qcom,dummy-source;
 
-		clocks = <&rpmcc RPM_SMD_QDSS_CLK>;
-		clock-names = "apb_pclk";
 		port {
 			tpdm_turing_llm_out_funnel_turing: endpoint {
 				remote-endpoint =
