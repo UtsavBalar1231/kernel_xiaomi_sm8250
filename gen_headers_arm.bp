@@ -216,6 +216,7 @@ gen_headers_out_arm = [
     "linux/esoc_ctrl.h",
     "linux/ethtool.h",
     "linux/eventpoll.h",
+    "linux/f2fs.h",
     "linux/fadvise.h",
     "linux/falloc.h",
     "linux/fanotify.h",
