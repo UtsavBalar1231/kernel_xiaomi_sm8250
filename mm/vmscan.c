@@ -4291,6 +4291,11 @@ static long get_nr_to_scan(struct lruvec *lruvec, struct scan_control *sc, int s
 	if (get_hi_wmark(max_seq, min_seq, swappiness) > MIN_NR_GENS)
 		return nr_to_scan;
 
+	if (!arch_has_hw_pte_young()) {
+		inc_max_seq(lruvec, max_seq);
+		return nr_to_scan;
+	}
+
 	/* kswapd uses lru_gen_age_node() */
 	if (current_is_kswapd())
 		return 0;
@@ -4381,6 +4386,9 @@ static void lru_gen_age_node(struct pglist_data *pgdat, struct scan_control *sc)
 	struct mem_cgroup *memcg;
 
 	VM_BUG_ON(!current_is_kswapd());
+
+	if (!arch_has_hw_pte_young())
+		return;
 
 	memcg = mem_cgroup_iter(NULL, NULL, NULL);
 	do {

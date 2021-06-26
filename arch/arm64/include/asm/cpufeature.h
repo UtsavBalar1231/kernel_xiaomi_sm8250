@@ -537,6 +537,12 @@ static inline bool system_supports_sve(void)
 		cpus_have_const_cap(ARM64_SVE);
 }
 
+static inline bool system_has_hw_af(void)
+{
+	return IS_ENABLED(CONFIG_ARM64_HW_AFDBM) &&
+	       cpus_have_const_cap(ARM64_HW_AF);
+}
+
 static inline bool system_supports_cnp(void)
 {
 	return false;
