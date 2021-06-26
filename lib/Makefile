@@ -292,6 +292,16 @@ obj-$(CONFIG_GENERIC_LIB_MULDI3) += muldi3.o
 obj-$(CONFIG_GENERIC_LIB_CMPDI2) += cmpdi2.o
 obj-$(CONFIG_GENERIC_LIB_UCMPDI2) += ucmpdi2.o
 
+# KUnit tests
+CFLAGS_bitfield_kunit.o := $(call cc-option,-Wframe-larger-than=10240)
+obj-$(CONFIG_BITFIELD_KUNIT) += bitfield_kunit.o
+obj-$(CONFIG_LIST_KUNIT_TEST) += list-test.o
+obj-$(CONFIG_LINEAR_RANGES_TEST) += test_linear_ranges.o
+obj-$(CONFIG_BITS_TEST) += test_bits.o
+obj-$(CONFIG_CMDLINE_KUNIT_TEST) += cmdline_kunit.o
+obj-$(CONFIG_SLUB_KUNIT_TEST) += slub_kunit.o
+obj-$(CONFIG_MEMCPY_KUNIT_TEST) += memcpy_kunit.o
+
 obj-$(CONFIG_CRYPTO_LIB_SHA256) += libsha256.o
 libsha256-y := sha256.o
 
