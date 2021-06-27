@@ -232,15 +232,21 @@ ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
         dtbo-$(CONFIG_ARCH_KHAJE) += \
 		khaje-idp-overlay.dtbo \
 		khaje-qrd-overlay.dtbo \
-		khaje-idp-nopmi-overlay.dtbo
+		khaje-idp-nopmi-overlay.dtbo \
+		khaje-idps-display-90hz-overlay.dtbo \
+		khaje-atp-overlay.dtbo
 
 khaje-idp-overlay.dtbo-base := khaje.dtb
 khaje-qrd-overlay.dtbo-base := khaje.dtb
 khaje-idp-nopmi-overlay.dtbo-base := khaje.dtb
+khaje-idps-display-90hz-overlay.dtbo-base := khaje.dtb
+khaje-atp-overlay.dtbo-base := khaje.dtb
 else
 dtb-$(CONFIG_ARCH_KHAJE) += khaje-idp.dtb \
 		khaje-qrd.dtb \
-		khaje-idp-nopmi.dtb
+		khaje-idp-nopmi.dtb \
+		khaje-idps-display-90hz.dtb \
+		khaje-atp.dtb
 endif
 
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)

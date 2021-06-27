@@ -1,8 +1,8 @@
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/clock/qcom,rpmcc.h>
-#include <dt-bindings/clock/qcom,dispcc-bengal.h>
-#include <dt-bindings/clock/qcom,gcc-bengal.h>
-#include <dt-bindings/clock/qcom,gpucc-bengal.h>
+#include <dt-bindings/clock/qcom,dispcc-khaje.h>
+#include <dt-bindings/clock/qcom,gcc-khaje.h>
+#include <dt-bindings/clock/qcom,gpucc-khaje.h>
 #include <dt-bindings/spmi/spmi.h>
 #include <dt-bindings/regulator/qcom,rpmh-regulator-levels.h>
 #include <dt-bindings/msm/msm-bus-ids.h>
@@ -597,7 +597,7 @@
 				<GIC_SPI 284 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "slimbus_irq", "slimbus_bam_irq";
 		qcom,apps-ch-pipes = <0x0>;
-		qcom,ea-pc = <0x360>;
+		qcom,ea-pc = <0x3b0>;
 		status = "ok";
 
 		/* Slimbus Slave DT for WCN3990 */
@@ -1194,122 +1194,122 @@
 		};
 
 		l1_icache0 {
-			qcom,dump-size = <0x9040>;
+			qcom,dump-size = <0x8900>;
 			qcom,dump-id = <0x60>;
 		};
 
 		l1_icache1 {
-			qcom,dump-size = <0x9040>;
+			qcom,dump-size = <0x8900>;
 			qcom,dump-id = <0x61>;
 		};
 
 		l1_icache2 {
-			qcom,dump-size = <0x9040>;
+			qcom,dump-size = <0x8900>;
 			qcom,dump-id = <0x62>;
 		};
 
 		l1_icache3 {
-			qcom,dump-size = <0x9040>;
+			qcom,dump-size = <0x8900>;
 			qcom,dump-id = <0x63>;
 		};
 
 		l1_icache100 {
-			qcom,dump-size = <0x12000>;
+			qcom,dump-size = <0x11100>;
 			qcom,dump-id = <0x64>;
 		};
 
 		l1_icache101 {
-			qcom,dump-size = <0x12000>;
+			qcom,dump-size = <0x11100>;
 			qcom,dump-id = <0x65>;
 		};
 
 		l1_icache102 {
-			qcom,dump-size = <0x12000>;
+			qcom,dump-size = <0x11100>;
 			qcom,dump-id = <0x66>;
 		};
 
 		l1_icache103 {
-			qcom,dump-size = <0x12000>;
+			qcom,dump-size = <0x11100>;
 			qcom,dump-id = <0x67>;
 		};
 
 		l1_dcache0 {
-			qcom,dump-size = <0x9040>;
+			qcom,dump-size = <0x9100>;
 			qcom,dump-id = <0x80>;
 		};
 
 		l1_dcache1 {
-			qcom,dump-size = <0x9040>;
+			qcom,dump-size = <0x9100>;
 			qcom,dump-id = <0x81>;
 		};
 
 		l1_dcache2 {
-			qcom,dump-size = <0x9040>;
+			qcom,dump-size = <0x9100>;
 			qcom,dump-id = <0x82>;
 		};
 
 		l1_dcache3 {
-			qcom,dump-size = <0x9040>;
+			qcom,dump-size = <0x9100>;
 			qcom,dump-id = <0x83>;
 		};
 
 		l1_dcache100 {
-			qcom,dump-size = <0x12000>;
+			qcom,dump-size = <0x12100>;
 			qcom,dump-id = <0x84>;
 		};
 
 		l1_dcache101 {
-			qcom,dump-size = <0x12000>;
+			qcom,dump-size = <0x12100>;
 			qcom,dump-id = <0x85>;
 		};
 
 		l1_dcache102 {
-			qcom,dump-size = <0x12000>;
+			qcom,dump-size = <0x12100>;
 			qcom,dump-id = <0x86>;
 		};
 
 		l1_dcache103 {
-			qcom,dump-size = <0x12000>;
+			qcom,dump-size = <0x12100>;
 			qcom,dump-id = <0x87>;
 		};
 
 		l2_tlb0 {
-			qcom,dump-size = <0x2000>;
+			qcom,dump-size = <0x2100>;
 			qcom,dump-id = <0x120>;
 		};
 
 		l2_tlb1 {
-			qcom,dump-size = <0x2000>;
+			qcom,dump-size = <0x2100>;
 			qcom,dump-id = <0x121>;
 		};
 
 		l2_tlb2 {
-			qcom,dump-size = <0x2000>;
+			qcom,dump-size = <0x2100>;
 			qcom,dump-id = <0x122>;
 		};
 
 		l2_tlb3 {
-			qcom,dump-size = <0x2000>;
+			qcom,dump-size = <0x2100>;
 			qcom,dump-id = <0x123>;
 		};
 
 		l2_tlb100 {
-			qcom,dump-size = <0x4800>;
+			qcom,dump-size = <0x4900>;
 			qcom,dump-id = <0x124>;
 		};
 
 		l2_tlb101 {
-			qcom,dump-size = <0x4800>;
+			qcom,dump-size = <0x4900>;
 			qcom,dump-id = <0x125>;
 		};
 
 		l2_tlb102 {
-			qcom,dump-size = <0x4800>;
+			qcom,dump-size = <0x4900>;
 			qcom,dump-id = <0x126>;
 		};
 
 		l2_tlb103 {
-			qcom,dump-size = <0x4800>;
+			qcom,dump-size = <0x4900>;
 			qcom,dump-id = <0x127>;
 		};
 
@@ -1494,11 +1494,11 @@
 	};
 
 	ufsphy_mem: ufsphy_mem@4807000 {
-		reg = <0x4807000 0xdb8>; /* PHY regs */
+		reg = <0x4807000 0xe00>; /* PHY regs */
 		reg-names = "phy_mem";
 		#phy-cells = <0>;
 
-		lanes-per-direction = <1>;
+		lanes-per-direction = <2>;
 
 		clock-names = "ref_clk_src",
 			"ref_clk",
@@ -1518,7 +1518,7 @@
 		phys = <&ufsphy_mem>;
 		phy-names = "ufsphy";
 
-		lanes-per-direction = <1>;
+		lanes-per-direction = <2>;
 		dev-ref-clk-freq = <0>; /* 19.2 MHz */
 		spm-level = <5>;
 
@@ -1530,7 +1530,8 @@
 			"core_clk_ice",
 			"ref_clk",
 			"tx_lane0_sync_clk",
-			"rx_lane0_sync_clk";
+			"rx_lane0_sync_clk",
+			"rx_lane1_sync_clk";
 		clocks =
 			<&gcc GCC_UFS_PHY_AXI_CLK>,
 			<&gcc GCC_SYS_NOC_UFS_PHY_AXI_CLK>,
@@ -1539,13 +1540,15 @@
 			<&gcc GCC_UFS_PHY_ICE_CORE_CLK>,
 			<&rpmcc RPM_SMD_XO_CLK_SRC>,
 			<&gcc GCC_UFS_PHY_TX_SYMBOL_0_CLK>,
-			<&gcc GCC_UFS_PHY_RX_SYMBOL_0_CLK>;
+			<&gcc GCC_UFS_PHY_RX_SYMBOL_0_CLK>,
+			<&gcc GCC_UFS_PHY_RX_SYMBOL_1_CLK>;
 		freq-table-hz =
 			<50000000 200000000>,
 			<0 0>,
 			<0 0>,
 			<37500000 150000000>,
 			<75000000 300000000>,
+			<0 0>,
 			<0 0>,
 			<0 0>,
 			<0 0>;
@@ -1569,18 +1572,37 @@
 		<123 512 1844 0>, <1 757 1000 0>,    /* PWM G2 */
 		<123 512 3688 0>, <1 757 1000 0>,    /* PWM G3 */
 		<123 512 7376 0>, <1 757 1000 0>,    /* PWM G4 */
+		<123 512 1844 0>, <1 757 1000 0>,    /* PWM G1 L2 */
+		<123 512 3688 0>, <1 757 1000 0>,    /* PWM G2 L2 */
+		<123 512 7376 0>, <1 757 1000 0>,    /* PWM G3 L2 */
+		<123 512 14752 0>, <1 757 1000 0>,   /* PWM G4 L2 */
 		<123 512 127796 0>, <1 757 1000 0>,  /* HS G1 RA */
 		<123 512 255591 0>, <1 757 1000 0>,  /* HS G2 RA */
 		<123 512 2097152 0>, <1 757 102400 0>,  /* HS G3 RA */
+		<123 512 255591 0>, <1 757 1000 0>,  /* HS G1 RA L2 */
+		<123 512 511181 0>, <1 757 1000 0>,  /* HS G2 RA L2 */
+		<123 512 4194304 0>, <1 757 204800 0>, /* HS G3 RA L2 */
 		<123 512 149422 0>, <1 757 1000 0>,  /* HS G1 RB */
 		<123 512 298189 0>, <1 757 1000 0>,  /* HS G2 RB */
 		<123 512 2097152 0>, <1 757 102400 0>,  /* HS G3 RB */
+		<123 512 298189 0>, <1 757 1000 0>,  /* HS G1 RB L2 */
+		<123 512 596378 0>, <1 757 1000 0>,  /* HS G2 RB L2 */
+		/* As UFS working in HS G3 RB L2 mode, aggregated
+		 * bandwidth (AB) should take care of providing
+		 * optimum throughput requested. However, as tested,
+		 * in order to scale up CNOC clock, instantaneous
+		 * bindwidth (IB) needs to be given a proper value too.
+		 */
+		<123 512 4194304 0>, <1 757 204800 409600>, /* HS G3 RB L2 */
 		<123 512 7643136 0>, <1 757 307200 0>; /* Max. bandwidth */
 
 		qcom,bus-vector-names = "MIN",
 		"PWM_G1_L1", "PWM_G2_L1", "PWM_G3_L1", "PWM_G4_L1",
+		"PWM_G1_L2", "PWM_G2_L2", "PWM_G3_L2", "PWM_G4_L2",
 		"HS_RA_G1_L1", "HS_RA_G2_L1", "HS_RA_G3_L1",
+		"HS_RA_G1_L2", "HS_RA_G2_L2", "HS_RA_G3_L2",
 		"HS_RB_G1_L1", "HS_RB_G2_L1", "HS_RB_G3_L1",
+		"HS_RB_G1_L2", "HS_RB_G2_L2", "HS_RB_G3_L2",
 		"MAX";
 
 		/* PM QoS */
@@ -1628,9 +1650,16 @@
 			clock-output-names = "sleep_clk";
 			#clock-cells = <0>;
 		};
+
+		usb3_phy_wrapper_gcc_usb30_pipe_clk: usb3_phy_wrapper_gcc_usb30_pipe_clk {
+			compatible = "fixed-clock";
+			clock-frequency = <1000>;
+			clock-output-names = "usb3_phy_wrapper_gcc_usb30_pipe_clk";
+			#clock-cells = <0>;
+		};
 	};
 
-	rpmcc: qcom,rpmcc {
+	rpmcc: clock-controller {
 		compatible = "qcom,rpmcc-bengal";
 		#clock-cells = <1>;
 	};
@@ -1644,19 +1673,18 @@
 		qcom,vm-nav-path;
 	};
 
-	gcc: qcom,gcc@1400000 {
-		compatible = "qcom,bengal-gcc", "syscon";
+	gcc: clock-controller@1400000 {
+		compatible = "qcom,khaje-gcc", "syscon";
 		reg = <0x1400000 0x1f0000>;
 		reg-names = "cc_base";
 		vdd_cx-supply = <&VDD_CX_LEVEL>;
-		vdd_cx_ao-supply = <&VDD_CX_LEVEL_AO>;
 		vdd_mx-supply = <&VDD_MX_LEVEL>;
 		#clock-cells = <1>;
 		#reset-cells = <1>;
 	};
 
-	dispcc: qcom,dispcc@5f00000 {
-		compatible = "qcom,bengal-dispcc", "syscon";
+	dispcc: clock-controller@5f00000 {
+		compatible = "qcom,khaje-dispcc", "syscon";
 		reg = <0x05f00000 0x20000>;
 		reg-names = "cc_base";
 		clock-names = "cfg_ahb_clk";
@@ -1666,8 +1694,8 @@
 		#reset-cells = <1>;
 	};
 
-	gpucc: qcom,gpucc@5990000 {
-		compatible = "qcom,bengal-gpucc", "syscon";
+	gpucc: clock-controller@5990000 {
+		compatible = "qcom,khaje-gpucc", "syscon";
 		reg = <0x5990000 0x9000>;
 		reg-names = "cc_base";
 		vdd_cx-supply = <&VDD_CX_LEVEL>;
@@ -1687,8 +1715,8 @@
 		reg = <0xf11101c 0x4>;
 	};
 
-	debugcc: qcom,cc-debug {
-		compatible = "qcom,bengal-debugcc";
+	debugcc: clock-controller@0 {
+		compatible = "qcom,khaje-debugcc";
 		qcom,gcc = <&gcc>;
 		qcom,dispcc = <&dispcc>;
 		qcom,gpucc = <&gpucc>;
@@ -2903,7 +2931,7 @@ tpdm_turing_llm: tpdm@8861000 {
 };
 
 #include "bengal-gdsc.dtsi"
-#include "bengal-usb.dtsi"
+#include "khaje-usb.dtsi"
 #include "bengal-ion.dtsi"
 #include "bengal-bus.dtsi"
 #include "bengal-vidc.dtsi"
@@ -2947,6 +2975,7 @@ tpdm_turing_llm: tpdm@8861000 {
 };
 
 &mdss_core_gdsc {
+	reg = <0x5f01004 0x4>;
 	qcom,support-hw-trigger;
 	status = "ok";
 };
@@ -2963,9 +2992,9 @@ tpdm_turing_llm: tpdm@8861000 {
 
 #include "msm-arm-smmu-bengal.dtsi"
 #include "pm6125-rpm-regulator.dtsi"
-#include "bengal-regulator.dtsi"
+#include "khaje-regulator.dtsi"
 #include "bengal-pm.dtsi"
-#include "bengal-pinctrl.dtsi"
+#include "khaje-pinctrl.dtsi"
 #include "bengal-qupv3.dtsi"
 #include "bengal-gpu.dtsi"
 #include "bengal-audio.dtsi"
@@ -2988,41 +3017,49 @@ tpdm_turing_llm: tpdm@8861000 {
 
 &pm8008_regulators {
 	vdd_l1_l2-supply = <&S6A>;
+	vdd_l7-supply = <&S7A>;
 };
 
 &L1P {
-	regulator-max-microvolt = <1200000>;
-	qcom,min-dropout-voltage = <100000>;
+	regulator-min-microvolt = <1100000>;
+	regulator-max-microvolt = <1300000>;
+	qcom,min-dropout-voltage = <56000>;
 };
 
 &L2P {
-	regulator-max-microvolt = <1056000>;
-	qcom,min-dropout-voltage = <100000>;
+	regulator-min-microvolt = <950000>;
+	regulator-max-microvolt = <1150000>;
+	qcom,min-dropout-voltage = <96000>;
 };
 
 &L3P {
-	regulator-min-microvolt = <2800000>;
-	regulator-max-microvolt = <2800000>;
+	regulator-min-microvolt = <2700000>;
+	regulator-max-microvolt = <2900000>;
+	qcom,min-dropout-voltage = <96000>;
 };
 
 &L4P {
-	regulator-min-microvolt = <2800000>;
-	regulator-max-microvolt = <2800000>;
+	regulator-min-microvolt = <2700000>;
+	regulator-max-microvolt = <2900000>;
+	qcom,min-dropout-voltage = <136000>;
 };
 
 &L5P {
-	regulator-min-microvolt = <2800000>;
-	regulator-max-microvolt = <2800000>;
+	regulator-min-microvolt = <2700000>;
+	regulator-max-microvolt = <2900000>;
+	qcom,min-dropout-voltage = <240000>;
 };
 
 &L6P {
-	regulator-min-microvolt = <2800000>;
-	regulator-max-microvolt = <2800000>;
+	regulator-min-microvolt = <2700000>;
+	regulator-max-microvolt = <2900000>;
+	qcom,min-dropout-voltage = <168000>;
 };
 
 &L7P {
-	regulator-min-microvolt = <1800000>;
+	regulator-min-microvolt = <1650000>;
 	regulator-max-microvolt = <1800000>;
+	qcom,min-dropout-voltage = <112000>;
 };
 
 &qupv3_se4_2uart {
@@ -3150,3 +3187,7 @@ tpdm_turing_llm: tpdm@8861000 {
 #include "bengal-thermal.dtsi"
 #include "camera/bengal-camera.dtsi"
 #include "msm-rdbg.dtsi"
+
+&cxip_cdev {
+	status = "disabled";
+};
