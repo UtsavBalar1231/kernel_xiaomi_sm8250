@@ -2352,6 +2352,7 @@ static void dp_soc_interrupt_detach(struct cdp_soc_t *txrx_soc)
 	if (soc->intr_mode == DP_INTR_POLL) {
 		qdf_timer_free(&soc->int_timer);
 	} else {
+		hif_deconfigure_ext_group_interrupts(soc->hif_handle);
 		hif_deregister_exec_group(soc->hif_handle, "dp_intr");
 	}
 
@@ -10521,45 +10522,6 @@ static struct cdp_cfr_ops dp_ops_cfr = {
 
 #ifdef FEATURE_RUNTIME_PM
 /**
- * dp_runtime_suspend() - ensure DP is ready to runtime suspend
- * @soc_hdl: Datapath soc handle
- * @pdev_id: id of data path pdev handle
- *
- * DP is ready to runtime suspend if there are no pending TX packets.
- *
- * Return: QDF_STATUS
- */
-static QDF_STATUS dp_runtime_suspend(struct cdp_soc_t *soc_hdl, uint8_t pdev_id)
-{
-	struct dp_soc *soc = cdp_soc_t_to_dp_soc(soc_hdl);
-	struct dp_pdev *pdev;
-
-	pdev = dp_get_pdev_from_soc_pdev_id_wifi3(soc, pdev_id);
-	if (!pdev) {
-		dp_err("pdev is NULL");
-		return QDF_STATUS_E_INVAL;
-	}
-
-	/* Abort if there are any pending TX packets */
-	if (dp_get_tx_pending(dp_pdev_to_cdp_pdev(pdev)) > 0) {
-		QDF_TRACE(QDF_MODULE_ID_DP, QDF_TRACE_LEVEL_INFO,
-			  FL("Abort suspend due to pending TX packets"));
-		return QDF_STATUS_E_AGAIN;
-	}
-
-	if (dp_runtime_get_refcount(soc)) {
-		dp_info("refcount: %d", dp_runtime_get_refcount(soc));
-
-		return QDF_STATUS_E_AGAIN;
-	}
-
-	if (soc->intr_mode == DP_INTR_POLL)
-		qdf_timer_stop(&soc->int_timer);
-
-	return QDF_STATUS_SUCCESS;
-}
-
-/**
  * dp_flush_ring_hptp() - Update ring shadow
  *			  register HP/TP address when runtime
  *                        resume
@@ -10580,6 +10542,54 @@ void dp_flush_ring_hptp(struct dp_soc *soc, hal_ring_handle_t hal_srng)
 		hal_srng_set_flush_last_ts(hal_srng);
 		dp_debug("flushed");
 	}
+}
+
+/**
+ * dp_runtime_suspend() - ensure DP is ready to runtime suspend
+ * @soc_hdl: Datapath soc handle
+ * @pdev_id: id of data path pdev handle
+ *
+ * DP is ready to runtime suspend if there are no pending TX packets.
+ *
+ * Return: QDF_STATUS
+ */
+static QDF_STATUS dp_runtime_suspend(struct cdp_soc_t *soc_hdl, uint8_t pdev_id)
+{
+	struct dp_soc *soc = cdp_soc_t_to_dp_soc(soc_hdl);
+	struct dp_pdev *pdev;
+	uint8_t i;
+
+	pdev = dp_get_pdev_from_soc_pdev_id_wifi3(soc, pdev_id);
+	if (!pdev) {
+		dp_err("pdev is NULL");
+		return QDF_STATUS_E_INVAL;
+	}
+
+	/* Abort if there are any pending TX packets */
+	if (dp_get_tx_pending(dp_pdev_to_cdp_pdev(pdev)) > 0) {
+		QDF_TRACE(QDF_MODULE_ID_DP, QDF_TRACE_LEVEL_INFO,
+			  FL("Abort suspend due to pending TX packets"));
+
+		/* perform a force flush if tx is pending */
+		for (i = 0; i < soc->num_tcl_data_rings; i++) {
+			hal_srng_set_event(soc->tcl_data_ring[i].hal_srng,
+					   HAL_SRNG_FLUSH_EVENT);
+			dp_flush_ring_hptp(soc, soc->tcl_data_ring[i].hal_srng);
+		}
+
+		return QDF_STATUS_E_AGAIN;
+	}
+
+	if (dp_runtime_get_refcount(soc)) {
+		dp_info("refcount: %d", dp_runtime_get_refcount(soc));
+
+		return QDF_STATUS_E_AGAIN;
+	}
+
+	if (soc->intr_mode == DP_INTR_POLL)
+		qdf_timer_stop(&soc->int_timer);
+
+	return QDF_STATUS_SUCCESS;
 }
 
 #define DP_FLUSH_WAIT_CNT 10
