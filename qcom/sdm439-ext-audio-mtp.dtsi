@@ -2,11 +2,19 @@
 	status = "disabled";
 };
 
+&pmic_analog_codec {
+	status = "disabled";
+};
+
 &wsa881x_i2c_f {
 	status = "disabled";
 };
 
 &wsa881x_i2c_45 {
+	status = "disabled";
+};
+
+&wsa881x_analog_clk {
 	status = "disabled";
 };
 
@@ -39,6 +47,10 @@
 };
 
 &clock_audio {
+	status = "okay";
+};
+
+&clock_audio_native {
 	status = "okay";
 };
 
