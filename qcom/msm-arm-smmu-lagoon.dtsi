@@ -7,6 +7,7 @@
 		reg = <0x3d40000 0x10000>;
 		#iommu-cells = <1>;
 		qcom,use-3-lvl-tables;
+		qcom,no-dynamic-asid;
 		#global-interrupts = <2>;
 		qcom,regulator-names = "vdd";
 		vdd-supply = <&gpu_cx_gdsc>;
