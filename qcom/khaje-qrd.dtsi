@@ -6,11 +6,6 @@
 #include "bengal-audio-overlay.dtsi"
 #include "khaje-sde-display.dtsi"
 
-&qupv3_se1_i2c {
-	status = "ok";
-	#include "smb1355.dtsi"
-};
-
 &pm6125_gpios {
 	key_vol_up {
 		key_vol_up_default: key_vol_up_default {
@@ -187,21 +182,6 @@
 	cd-gpios = <&tlmm 88 GPIO_ACTIVE_LOW>;
 
 	status = "ok";
-};
-
-&tlmm {
-	smb_int_default: smb_int_default {
-		mux {
-			pins = "gpio105";
-			function = "gpio";
-		};
-
-		config {
-			pins = "gpio105";
-			bias-pull-up;
-			input-enable;
-		};
-	};
 };
 
 &ufsphy_mem {

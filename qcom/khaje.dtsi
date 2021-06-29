@@ -3402,7 +3402,7 @@ tpdm_turing_llm: tpdm@8861000 {
 &L2P {
 	regulator-min-microvolt = <950000>;
 	regulator-max-microvolt = <1150000>;
-	qcom,min-dropout-voltage = <96000>;
+	qcom,min-dropout-voltage = <88000>;
 };
 
 &L3P {

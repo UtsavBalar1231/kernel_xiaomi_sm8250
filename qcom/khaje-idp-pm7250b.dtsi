@@ -11,7 +11,7 @@
 &pm7250b_gpios {
 	pm7250b_smb_int_default: pm7250b_smb_int_default {
 		pins = "gpio6";
-		function = "func1";
+		function = "gpio";
 		input-enable;
 	 };
 };
