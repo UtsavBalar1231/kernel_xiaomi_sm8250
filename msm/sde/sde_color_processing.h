@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2019, 2021, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _SDE_COLOR_PROCESSING_H
@@ -93,6 +93,15 @@ void sde_cp_crtc_destroy_properties(struct drm_crtc *crtc);
  */
 int sde_cp_crtc_set_property(struct drm_crtc *crtc,
 				struct drm_property *property, uint64_t val);
+/**
+ * sde_cp_crtc_check_properties: Verify color processing properties for a crtc.
+ *                               Should be called during atomic check call.
+ * @crtc: Pointer to crtc.
+ * @state: Pointer to crtc state.
+ * @returns: 0 on success, non-zero otherwise
+ */
+int sde_cp_crtc_check_properties(struct drm_crtc *crtc,
+					struct drm_crtc_state *state);
 
 /**
  * sde_cp_crtc_apply_properties: Enable/disable properties
@@ -196,4 +205,18 @@ int sde_cp_ltm_off_event_handler(struct drm_crtc *crtc_drm, bool en,
  * @crtc_drm: Pointer to crtc.
  */
 void sde_cp_mode_switch_prop_dirty(struct drm_crtc *crtc_drm);
+
+/**
+ * sde_cp_crtc_enable(): enable color processing info in the crtc.
+ *                     Should be called during crtc enable.
+ * @crtc:  Pointer to drm_crtc.
+ */
+void sde_cp_crtc_enable(struct drm_crtc *crtc);
+
+/**
+ * sde_cp_crtc_disable(): disable color processing info in the crtc.
+ *                     Should be called during crtc disable.
+ * @crtc:  Pointer to drm_crtc.
+ */
+void sde_cp_crtc_disable(struct drm_crtc *crtc);
 #endif /*_SDE_COLOR_PROCESSING_H */

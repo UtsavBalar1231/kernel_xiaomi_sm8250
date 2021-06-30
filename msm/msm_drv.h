@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
  *
@@ -138,6 +138,7 @@ enum msm_mdp_crtc_property {
 	CRTC_PROP_DEST_SCALER_LUT_ED,
 	CRTC_PROP_DEST_SCALER_LUT_CIR,
 	CRTC_PROP_DEST_SCALER_LUT_SEP,
+	CRTC_PROP_DSPP_INFO,
 
 	/* # of blob properties */
 	CRTC_PROP_BLOBCOUNT,
