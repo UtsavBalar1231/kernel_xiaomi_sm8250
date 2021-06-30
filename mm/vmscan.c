@@ -3243,7 +3243,8 @@ static bool walk_pte_range(pmd_t *pmd, unsigned long start, unsigned long end,
 	pte = pte_offset_map_lock(walk->mm, pmd, start & PMD_MASK, &ptl);
 	arch_enter_lazy_mmu_mode();
 restart:
-	for (i = pte_index(start), addr = start; addr != end; i++, addr += PAGE_SIZE) {
+	i = (start >> PAGE_SHIFT) & (PTRS_PER_PTE - 1);
+	for (addr = start; addr != end; i++, addr += PAGE_SIZE) {
 		struct page *page;
 		unsigned long pfn = pte_pfn(pte[i]);
 
