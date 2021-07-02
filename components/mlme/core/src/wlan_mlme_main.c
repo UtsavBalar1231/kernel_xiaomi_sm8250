@@ -2337,8 +2337,8 @@ static void mlme_init_reg_cfg(struct wlan_objmgr_psoc *psoc,
 	struct wlan_objmgr_pdev *pdev = NULL;
 
 	reg->self_gen_frm_pwr = cfg_get(psoc, CFG_SELF_GEN_FRM_PWR);
-	reg->etsi13_srd_chan_in_master_mode =
-			cfg_get(psoc, CFG_ETSI13_SRD_CHAN_IN_MASTER_MODE);
+	reg->etsi_srd_chan_in_master_mode =
+			cfg_get(psoc, CFG_ETSI_SRD_CHAN_IN_MASTER_MODE);
 	reg->restart_beaconing_on_ch_avoid =
 			cfg_get(psoc, CFG_RESTART_BEACONING_ON_CH_AVOID);
 	reg->indoor_channel_support = cfg_get(psoc, CFG_INDOOR_CHANNEL_SUPPORT);
@@ -2358,6 +2358,9 @@ static void mlme_init_reg_cfg(struct wlan_objmgr_psoc *psoc,
 			      CFG_VALID_CHANNEL_LIST_LEN,
 			      &valid_channel_list_num);
 	reg->valid_channel_list_num = (uint8_t)valid_channel_list_num;
+
+	reg->enable_nan_on_indoor_channels =
+		cfg_get(psoc, CFG_INDOOR_CHANNEL_SUPPORT_FOR_NAN);
 
 	pdev = wlan_objmgr_get_pdev_by_id(psoc, 0, WLAN_MLME_NB_ID);
 	if (!pdev) {

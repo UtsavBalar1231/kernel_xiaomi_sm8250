@@ -4035,7 +4035,8 @@ static QDF_STATUS wlan_hdd_set_key_helper(struct hdd_adapter *adapter,
 	if (!vdev)
 		return QDF_STATUS_E_FAILURE;
 	ret = wlan_cfg80211_crypto_add_key(vdev,
-					   WLAN_CRYPTO_KEY_TYPE_UNICAST, 0);
+					   WLAN_CRYPTO_KEY_TYPE_UNICAST, 0,
+					   false);
 	hdd_objmgr_put_vdev(vdev);
 	if (ret != 0) {
 		hdd_err("crypto add key fail, status: %d", ret);
