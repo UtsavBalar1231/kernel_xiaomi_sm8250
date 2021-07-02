@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
  */
 
 #include <asm/dma-iommu.h>
@@ -846,6 +846,7 @@ int read_platform_resources_from_drv_data(
 
 	res->vpu_ver = platform_data->vpu_ver;
 	res->ubwc_config = platform_data->ubwc_config;
+	res->max_inst_count = platform_data->max_inst_count;
 
 	return rc;
 
