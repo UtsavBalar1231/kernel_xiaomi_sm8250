@@ -1,4 +1,4 @@
-/* Copyright (c) 2018-2020 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2018-2021 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -82,6 +82,20 @@ MODULE_PARM_DESC(rmnet_shs_flush_reason, "rmnet shs skb flush trigger type");
 unsigned int rmnet_shs_byte_store_limit __read_mostly = 271800 * 80;
 module_param(rmnet_shs_byte_store_limit, uint, 0644);
 MODULE_PARM_DESC(rmnet_shs_byte_store_limit, "Maximum byte module will park");
+
+
+unsigned int rmnet_shs_in_count = 0;
+module_param(rmnet_shs_in_count, uint, 0644);
+MODULE_PARM_DESC(rmnet_shs_in_count, "SKb in count");
+
+unsigned int rmnet_shs_out_count = 0;
+module_param(rmnet_shs_out_count, uint, 0644);
+MODULE_PARM_DESC(rmnet_shs_out_count, "SKb out count");
+
+unsigned int rmnet_shs_wq_fb_limit = 10;
+module_param(rmnet_shs_wq_fb_limit, uint, 0644);
+MODULE_PARM_DESC(rmnet_shs_wq_fb_limit, "Final fb timer");
+
 
 unsigned int rmnet_shs_pkts_store_limit __read_mostly = 2100 * 8;
 module_param(rmnet_shs_pkts_store_limit, uint, 0644);
@@ -370,6 +384,8 @@ static void rmnet_shs_deliver_skb(struct sk_buff *skb)
 	struct rmnet_priv *priv;
 	struct napi_struct *napi;
 
+	rmnet_shs_out_count++;
+
 	SHS_TRACE_LOW(RMNET_SHS_DELIVER_SKB, RMNET_SHS_DELIVER_SKB_START,
 			    0xDEF, 0xDEF, 0xDEF, 0xDEF, skb, NULL);
 
@@ -392,6 +408,7 @@ static void rmnet_shs_deliver_skb_wq(struct sk_buff *skb)
 
 	SHS_TRACE_LOW(RMNET_SHS_DELIVER_SKB, RMNET_SHS_DELIVER_SKB_START,
 			    0xDEF, 0xDEF, 0xDEF, 0xDEF, skb, NULL);
+	rmnet_shs_out_count++;
 
 	priv = netdev_priv(skb->dev);
 	gro_cells_receive(&priv->gro_cells, skb);
@@ -460,6 +477,7 @@ static void rmnet_shs_deliver_skb_segmented(struct sk_buff *in_skb,
 	SHS_TRACE_LOW(RMNET_SHS_DELIVER_SKB, RMNET_SHS_DELIVER_SKB_START,
 			    0x1, 0xDEF, 0xDEF, 0xDEF, in_skb, NULL);
 
+	rmnet_shs_out_count++;
 	segs = rmnet_shs_skb_partial_segment(in_skb, segs_per_skb);
 
 	if (segs == NULL) {
@@ -822,6 +840,7 @@ int rmnet_shs_node_can_flush_pkts(struct rmnet_shs_skbn_s *node, u8 force_flush)
 	int new_cpu;
 	struct rmnet_shs_cpu_node_s *cpun;
 	u8 map = rmnet_shs_cfg.map_mask;
+	u32 old_cpu_qlen;
 
 	cpu_map_index = rmnet_shs_get_hash_map_idx_to_stamp(node);
 	do {
@@ -848,9 +867,9 @@ int rmnet_shs_node_can_flush_pkts(struct rmnet_shs_skbn_s *node, u8 force_flush)
 		cur_cpu_qhead = rmnet_shs_get_cpu_qhead(node->map_cpu);
 		node_qhead = node->queue_head;
 		cpu_num = node->map_cpu;
+		old_cpu_qlen = GET_PQUEUE(cpu_num).qlen + GET_IQUEUE(cpu_num).qlen;
 
-		if ((cur_cpu_qhead >= node_qhead) ||
-		    (force_flush)) {
+		if ((cur_cpu_qhead >= node_qhead) || force_flush || (!old_cpu_qlen && ++rmnet_shs_flush_reason[RMNET_SHS_FLUSH_Z_QUEUE_FLUSH])) {
 			if (rmnet_shs_switch_cores) {
 
 				/* Move the amount parked to other core's count
@@ -892,6 +911,7 @@ int rmnet_shs_node_can_flush_pkts(struct rmnet_shs_skbn_s *node, u8 force_flush)
 				cpun = &rmnet_shs_cpu_node_tbl[node->map_cpu];
 				rmnet_shs_update_cpu_proc_q_all_cpus();
 				node->queue_head = cpun->qhead;
+
 				rmnet_shs_cpu_node_move(node,
 							&cpun->node_list_id,
 							cpu_num);
@@ -1281,7 +1301,7 @@ void rmnet_shs_flush_lock_table(u8 flsh, u8 ctxt)
 
 	if ((rmnet_shs_cfg.num_bytes_parked <= 0) ||
 	    (rmnet_shs_cfg.num_pkts_parked <= 0)) {
-
+		rmnet_shs_cfg.ff_flag = 0;
 		rmnet_shs_cfg.num_bytes_parked = 0;
 		rmnet_shs_cfg.num_pkts_parked = 0;
 		rmnet_shs_cfg.is_pkt_parked = 0;
@@ -1290,9 +1310,7 @@ void rmnet_shs_flush_lock_table(u8 flsh, u8 ctxt)
 			if (hrtimer_active(&rmnet_shs_cfg.hrtimer_shs))
 				hrtimer_cancel(&rmnet_shs_cfg.hrtimer_shs);
 		}
-
 	}
-
 }
 
 void rmnet_shs_flush_table(u8 flsh, u8 ctxt)
@@ -1314,6 +1332,12 @@ void rmnet_shs_flush_table(u8 flsh, u8 ctxt)
 			hrtimer_start(&rmnet_shs_cfg.hrtimer_shs,
 				ns_to_ktime(rmnet_shs_timeout * NS_IN_MS),
 				HRTIMER_MODE_REL);
+		if (rmnet_shs_fall_back_timer &&
+		    rmnet_shs_cfg.num_bytes_parked &&
+		    rmnet_shs_cfg.num_pkts_parked){
+				rmnet_shs_cfg.ff_flag++;
+		}
+
 		}
 		rmnet_shs_flush_reason[RMNET_SHS_FLUSH_WQ_FB_FLUSH]++;
 	}
@@ -1389,23 +1413,27 @@ void rmnet_shs_chain_to_skb_list(struct sk_buff *skb,
  */
 static void rmnet_flush_buffered(struct work_struct *work)
 {
-	u8 is_force_flush = 0;
 
 	SHS_TRACE_HIGH(RMNET_SHS_FLUSH,
-			     RMNET_SHS_FLUSH_DELAY_WQ_START, is_force_flush,
+			     RMNET_SHS_FLUSH_DELAY_WQ_START, rmnet_shs_cfg.ff_flag,
 			     rmnet_shs_cfg.force_flush_state, 0xDEF,
 			     0xDEF, NULL, NULL);
 
 	if (rmnet_shs_cfg.num_pkts_parked &&
 	   rmnet_shs_cfg.force_flush_state == RMNET_SHS_FLUSH_ON) {
 		local_bh_disable();
-		rmnet_shs_flush_table(is_force_flush,
+		if (rmnet_shs_cfg.ff_flag >= rmnet_shs_wq_fb_limit) {
+			rmnet_shs_flush_reason[RMNET_SHS_FLUSH_WQ_FB_FF_FLUSH]++;
+
+		}
+		rmnet_shs_flush_table(rmnet_shs_cfg.ff_flag >= rmnet_shs_wq_fb_limit,
 				      RMNET_WQ_CTXT);
+
 		local_bh_enable();
 	}
 	SHS_TRACE_HIGH(RMNET_SHS_FLUSH,
 			     RMNET_SHS_FLUSH_DELAY_WQ_END,
-			     is_force_flush, 0xDEF, 0xDEF, 0xDEF, NULL, NULL);
+			     rmnet_shs_cfg.ff_flag, 0xDEF, 0xDEF, 0xDEF, NULL, NULL);
 }
 /* Invoked when the flushing timer has expired.
  * Upon first expiry, we set the flag that will trigger force flushing of all
@@ -1602,7 +1630,6 @@ void rmnet_shs_dl_trl_handler_v2(struct rmnet_map_dl_ind_trl *dltrl,
 
 void rmnet_shs_dl_trl_handler(struct rmnet_map_dl_ind_trl *dltrl)
 {
-
 	SHS_TRACE_HIGH(RMNET_SHS_DL_MRK,
 			     RMNET_SHS_FLUSH_DL_MRK_TRLR_HDLR_START,
 			     rmnet_shs_cfg.num_pkts_parked, 0,
@@ -1740,12 +1767,14 @@ void rmnet_shs_assign(struct sk_buff *skb, struct rmnet_port *port)
 	u8 is_shs_reqd = 0;
 	struct rmnet_shs_cpu_node_s *cpu_node_tbl_p;
 
+	rmnet_shs_in_count++;
+
 	/*deliver non TCP/UDP packets right away*/
 	if (!rmnet_shs_is_skb_stamping_reqd(skb)) {
+
 		rmnet_shs_deliver_skb(skb);
 		return;
 	}
-
 	if ((unlikely(!map)) || !rmnet_shs_cfg.rmnet_shs_init_complete) {
 		rmnet_shs_deliver_skb(skb);
 		SHS_TRACE_ERR(RMNET_SHS_ASSIGN,
