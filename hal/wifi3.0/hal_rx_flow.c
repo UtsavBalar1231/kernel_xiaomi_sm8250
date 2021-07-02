@@ -548,7 +548,7 @@ hal_rx_fst_attach(qdf_device_t qdf_dev,
 	fst->hash_mask = max_entries - 1;
 
 	QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_DEBUG,
-		  "HAL FST allocation %x %d * %d\n", fst,
+		  "HAL FST allocation %pK %d * %d\n", fst,
 		  fst->max_entries, HAL_RX_FST_ENTRY_SIZE);
 
 	fst->base_vaddr = (uint8_t *)qdf_mem_alloc_consistent(qdf_dev,
@@ -557,7 +557,7 @@ hal_rx_fst_attach(qdf_device_t qdf_dev,
 				&fst->base_paddr);
 
 	QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_INFO,
-		  "hal_rx_fst base address 0x%x", fst->base_paddr);
+		  "hal_rx_fst base address 0x%pK", (void *)fst->base_paddr);
 	if (!fst->base_vaddr) {
 		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
 			  FL("hal fst->base_vaddr allocation failed"));
@@ -690,8 +690,8 @@ hal_rx_insert_flow_entry(struct hal_rx_fst *fst, uint32_t flow_hash,
 			 void *flow_tuple_info, uint32_t *flow_idx)
 {
 	int i;
-	void *hal_fse;
-	uint32_t hal_hash;
+	void *hal_fse = NULL;
+	uint32_t hal_hash = 0;
 	struct hal_flow_tuple_info hal_tuple_info = { 0 };
 	QDF_STATUS status;
 
@@ -739,8 +739,8 @@ hal_rx_find_flow_from_tuple(struct hal_rx_fst *fst, uint32_t flow_hash,
 			    void *flow_tuple_info, uint32_t *flow_idx)
 {
 	int i;
-	void *hal_fse;
-	uint32_t hal_hash;
+	void *hal_fse = NULL;
+	uint32_t hal_hash = 0;
 	struct hal_flow_tuple_info hal_tuple_info = { 0 };
 	QDF_STATUS status;
 
