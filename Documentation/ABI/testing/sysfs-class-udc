@@ -1,0 +1,16 @@
+What:		/sys/class/udc/<udc name>/device/usb_data_enabled
+Date:		December 2020
+Contact:	"Ray Chi" <raychi@google.com>
+Description:
+		The attribute can allow user space can check and modify
+		the value to enable or disable usb functionality. Therefore,
+		if the attritube is set to 0, USB host and USB peripheral
+		modes wouldn't be working.
+
+		Example:
+		Enable USB data functionality
+		# echo 1 > /sys/class/udc/.../device/usb_data_enabled
+￼
+		Disable USB data functionality
+		# echo 0 > /sys/class/udc/.../device/usb_data_enabled
+￼
