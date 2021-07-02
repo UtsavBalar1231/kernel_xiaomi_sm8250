@@ -57,6 +57,7 @@ dtb-$(CONFIG_ARCH_KONA) += kona-rumi.dtb \
         kona-v2.1-xrfusion-ult.dtb \
         kona-v2.1-arglass.dtb \
         qrb5165-iot-rb5.dtb \
+        qrb5165n-iot-rb5.dtb \
         kona-v2.1-iot-rb5.dtb
 endif
 
