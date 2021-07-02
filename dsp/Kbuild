@@ -242,7 +242,7 @@ ifneq (,$(filter $(TARGET_PRODUCT), picasso picassoin))
 endif
 
 # TEST FOR UMI
-#ifneq (,$(filter $(TARGET_PRODUCT), umi))
+#ifneq (,$(filter $(TARGET_PRODUCT), umi enuma elish))
         CDEFINES += -DAUDIO_FORCE_RESTART_ADSP
 #endif
 

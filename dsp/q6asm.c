@@ -43,6 +43,12 @@
 #include <dsp/q6core.h>
 #include "adsp_err.h"
 
+#ifdef AUDIO_FORCE_RESTART_ADSP
+#include <soc/qcom/subsystem_restart.h>
+#define ADSP_ERR_LIMITED_COUNT   (3)
+static int err_count = 0;
+#endif
+
 #define TIMEOUT_MS  1000
 #define TRUE        0x01
 #define FALSE       0x00
@@ -3249,7 +3255,18 @@ static int __q6asm_open_read(struct audio_client *ac,
 	if (atomic_read(&ac->cmd_state) > 0) {
 		pr_err("%s: DSP returned error[%s]\n",
 				__func__, adsp_err_get_err_str(
-				atomic_read(&ac->cmd_state)));
+					atomic_read(&ac->cmd_state)));
+#ifdef AUDIO_FORCE_RESTART_ADSP
+		if(atomic_read(&ac->cmd_state) == ADSP_ENEEDMORE)
+			err_count++;
+		else
+			err_count = 0;
+		if(err_count >= ADSP_ERR_LIMITED_COUNT) {
+			err_count = 0;
+			pr_err("%s: subsystem adsp restart\n", __func__);
+			subsystem_restart("adsp");
+		}
+#endif
 		rc = adsp_err_get_lnx_err_code(
 				atomic_read(&ac->cmd_state));
 		goto fail_cmd;
@@ -3611,7 +3628,18 @@ static int __q6asm_open_write(struct audio_client *ac, uint32_t format,
 	if (atomic_read(&ac->cmd_state) > 0) {
 		pr_err("%s: DSP returned error[%s]\n",
 				__func__, adsp_err_get_err_str(
-				atomic_read(&ac->cmd_state)));
+					atomic_read(&ac->cmd_state)));
+#ifdef AUDIO_FORCE_RESTART_ADSP
+		if(atomic_read(&ac->cmd_state) == ADSP_ENEEDMORE)
+			err_count++;
+		else
+			err_count = 0;
+		if(err_count >= ADSP_ERR_LIMITED_COUNT) {
+			err_count = 0;
+			pr_err("%s: subsystem adsp restart\n", __func__);
+			subsystem_restart("adsp");
+		}
+#endif
 		rc = adsp_err_get_lnx_err_code(
 				atomic_read(&ac->cmd_state));
 		goto fail_cmd;
