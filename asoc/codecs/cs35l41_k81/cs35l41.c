@@ -1915,7 +1915,7 @@ static int cs35l41_main_amp_event(struct snd_soc_dapm_widget *w,
 					CS35L41_GLOBAL_EN_MASK, 0);
 
 			pdn = false;
-			for (i = 0; i < 2; i++) {
+			for (i = 0; i < 100; i++) {
 				regmap_read(cs35l41->regmap, CS35L41_IRQ1_STATUS1, &val);
 					if (val & CS35L41_PDN_DONE_MASK) {
 						pdn = true;
