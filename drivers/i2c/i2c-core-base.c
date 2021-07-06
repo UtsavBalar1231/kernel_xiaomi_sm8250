@@ -858,10 +858,13 @@ static int dummy_remove(struct i2c_client *client)
 }
 
 static struct i2c_driver dummy_driver = {
-	.driver.name	= "dummy",
 	.probe		= dummy_probe,
 	.remove		= dummy_remove,
 	.id_table	= dummy_id,
+	.driver = {
+		.name = "dummy",
+		.probe_type = PROBE_FORCE_SYNCHRONOUS,
+	},
 };
 
 /**
