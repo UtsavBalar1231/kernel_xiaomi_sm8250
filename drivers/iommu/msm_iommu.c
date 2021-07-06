@@ -846,6 +846,7 @@ static struct platform_driver msm_iommu_driver = {
 	.driver = {
 		.name	= "msm_iommu",
 		.of_match_table = msm_iommu_dt_match,
+		.probe_type = PROBE_FORCE_SYNCHRONOUS,
 	},
 	.probe		= msm_iommu_probe,
 	.remove		= msm_iommu_remove,
