@@ -8858,13 +8858,10 @@ static void update_sw_icl_max(struct smb_charger *chg, int pst)
 	switch (pst) {
 	case POWER_SUPPLY_TYPE_USB:
 		smblib_get_prop_usb_present(chg, &val);
-		/*
-		 * USB_PSY will vote to increase the current to 500/900mA once
-		 * enumeration is done.
-		 */
-		if (!is_client_vote_enabled(chg->usb_icl_votable,
-						USB_PSY_VOTER)) {
-			vote(chg->usb_icl_votable, USB_PSY_VOTER, true, SDP_CURRENT_UA);
+		if (get_client_vote(chg->usb_icl_votable,
+				USB_PSY_VOTER) < SDP_CURRENT_UA) {
+			vote(chg->usb_icl_votable, USB_PSY_VOTER, true,
+					SDP_CURRENT_UA);
 			vote(chg->usb_icl_votable, SW_ICL_MAX_VOTER, false, 0);
 		} else if ((chg->typec_mode == POWER_SUPPLY_TYPEC_NONE)
 				&& (val.intval == 1))
