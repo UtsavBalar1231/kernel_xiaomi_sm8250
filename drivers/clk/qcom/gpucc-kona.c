@@ -451,6 +451,7 @@ static struct platform_driver gpu_cc_kona_driver = {
 	.driver = {
 		.name = "gpu_cc-kona",
 		.of_match_table = gpu_cc_kona_match_table,
+		.probe_type = PROBE_FORCE_SYNCHRONOUS,
 	},
 };
 
