@@ -4424,6 +4424,7 @@ static struct platform_driver gcc_kona_driver = {
 	.driver = {
 		.name = "gcc-kona",
 		.of_match_table = gcc_kona_match_table,
+		.probe_type = PROBE_FORCE_SYNCHRONOUS,
 	},
 };
 
