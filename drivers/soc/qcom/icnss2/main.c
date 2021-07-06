@@ -3967,6 +3967,7 @@ static struct platform_driver icnss_driver = {
 		.name = "icnss2",
 		.pm = &icnss_pm_ops,
 		.of_match_table = icnss_dt_match,
+		.probe_type = PROBE_PREFER_ASYNCHRONOUS,
 	},
 };
 
