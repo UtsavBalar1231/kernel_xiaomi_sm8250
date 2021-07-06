@@ -1242,6 +1242,7 @@ static struct platform_driver geni_i2c_driver = {
 		.name = "i2c_geni",
 		.pm = &geni_i2c_pm_ops,
 		.of_match_table = geni_i2c_dt_match,
+		.probe_type = PROBE_PREFER_ASYNCHRONOUS,
 	},
 };
 
