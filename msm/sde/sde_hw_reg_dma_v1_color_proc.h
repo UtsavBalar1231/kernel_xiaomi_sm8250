@@ -1,7 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2019, 2021, The Linux Foundation. All rights reserved.
  */
+
 #ifndef _SDE_HW_REG_DMA_V1_COLOR_PROC_H
 #define _SDE_HW_REG_DMA_V1_COLOR_PROC_H
 
@@ -241,6 +242,14 @@ void reg_dmav1_setup_ltm_roiv1(struct sde_hw_dspp *ctx, void *cfg);
  * @cfg: pointer to struct sde_hw_cp_cfg
  */
 void reg_dmav1_setup_ltm_vlutv1(struct sde_hw_dspp *ctx, void *cfg);
+
+/**
+ * reg_dmav1_setup_rc_datav1() - RC DATA v1 implementation using reg dma v1.
+ * @ctx: dspp ctx info
+ * @cfg: pointer to struct sde_hw_cp_cfg
+ * @returns: 0 if success, non-zero otherwise
+ */
+int reg_dmav1_setup_rc_datav1(struct sde_hw_dspp *ctx, void *cfg);
 
 /**
  * reg_dmav1_deinit_ltm_ops() - deinitialize the ltm feature op for sde v4
