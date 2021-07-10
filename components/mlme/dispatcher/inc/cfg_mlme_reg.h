@@ -104,6 +104,29 @@
 	CFG_VALUE_OR_DEFAULT, \
 	"enable/disable ETSI SRD channels in master mode")
 
+/*
+ * <ini>
+ * enable_nan_indoor_channel - Enable Indoor channels for NAN
+ * @Min: 0
+ * @Max: 1
+ * @Default: 0
+ *
+ * This ini is used to support to indoor channels for NAN interface
+ * Customer can config this item to enable/disable NAN in indoor channel
+ *
+ * Related: None
+ *
+ * Supported Feature: NAN
+ *
+ * Usage: External
+ *
+ * </ini>
+ */
+#define CFG_INDOOR_CHANNEL_SUPPORT_FOR_NAN CFG_INI_BOOL( \
+	"enable_nan_indoor_channel", \
+	0, \
+	"enable/disable indoor channels for NAN")
+
 #ifdef SAP_AVOID_ACS_FREQ_LIST
 #define SAP_AVOID_ACS_FREQ_LIST_DEFAULT ""
 
@@ -334,6 +357,7 @@
 	CFG(CFG_ENABLE_PENDING_CHAN_LIST_REQ) \
 	CFG(CFG_ENABLE_11D_IN_WORLD_MODE) \
 	CFG(CFG_ETSI_SRD_CHAN_IN_MASTER_MODE) \
+	CFG(CFG_INDOOR_CHANNEL_SUPPORT_FOR_NAN) \
 	CFG(CFG_RESTART_BEACONING_ON_CH_AVOID) \
 	CFG(CFG_INDOOR_CHANNEL_SUPPORT) \
 	CFG(CFG_SCAN_11D_INTERVAL) \
