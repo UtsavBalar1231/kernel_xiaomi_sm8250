@@ -71,6 +71,11 @@ First Level Node - CAM CPAS device
   Definition: List of fuse based features and respective
 	fuse info.
 
+- custom-id
+  Usage: optinal
+  Value type <u32>
+  Definition: Custom id to differentiate same CPAS
+
 - interrupt-names
   Usage: optional
   Value type: <string>
