@@ -2,8 +2,9 @@
 #include <dt-bindings/iio/qcom,spmi-vadc.h>
 #include <dt-bindings/input/input.h>
 #include "bengal-audio-overlay.dtsi"
+#include "camera/khaje-camera-sensor-idp.dtsi"
 #include "bengal-thermal-overlay.dtsi"
-#include "bengal-sde-display.dtsi"
+#include "khaje-sde-display.dtsi"
 
 &qupv3_se4_2uart {
 	status = "ok";
@@ -69,6 +70,17 @@
 			power-source = <0>;
 		};
 	};
+
+	eldo9_pin {
+		usb_eldo9:gpio@c000 {
+			pins = "gpio1";
+			function = "normal";
+			qcom,drive-strength = <2>;
+			power-source = <0>;
+			bias-disable;
+			output-high;
+		};
+	};
 };
 
 &soc {
@@ -89,6 +101,21 @@
 			gpio-key,wakeup;
 		};
 	};
+
+	vdda_usb_ss_dp_core: vdda_usb_ss_dp_core {
+		compatible = "regulator-fixed";
+		regulator-name = "vdd_supply";
+		regulator-min-microvolt = <880000>;
+		regulator-max-microvolt = <880000>;
+		enable-active-high;
+		gpio = <&pm6125_gpios 1 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&usb_eldo9>;
+	};
+};
+
+&usb_qmp_dp_phy {
+	vdd-supply = <&vdda_usb_ss_dp_core>;
 };
 
 &qupv3_se1_i2c {
@@ -189,7 +216,7 @@
 };
 
 &dsi_td4330_truly_v2_video {
-	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_no_labibb>;
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_pwm";
 	pwms = <&pm6125_pwm 0 0>;
 	qcom,bl-pmic-pwm-period-usecs = <100>;
@@ -199,7 +226,7 @@
 };
 
 &dsi_td4330_truly_v2_cmd {
-	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_no_labibb>;
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_pwm";
 	pwms = <&pm6125_pwm 0 0>;
 	qcom,bl-pmic-pwm-period-usecs = <100>;
@@ -209,8 +236,8 @@
 	qcom,platform-reset-gpio = <&tlmm 82 0>;
 };
 
-&dsi_nt36525_truly_video {
-	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
+&dsi_nt36672e_fhd_plus_90hz_video {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_no_labibb>;
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_pwm";
 	pwms = <&pm6125_pwm 0 0>;
 	qcom,bl-pmic-pwm-period-usecs = <100>;
@@ -219,54 +246,14 @@
 	qcom,platform-reset-gpio = <&tlmm 82 0>;
 };
 
-&dsi_r66451_amoled_hd_90hz_video {
+&dsi_sim_vid {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_no_labibb>;
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
-	qcom,mdss-dsi-bl-min-level = <1>;
-	qcom,mdss-dsi-bl-max-level = <4095>;
 	qcom,platform-reset-gpio = <&tlmm 82 0>;
-	qcom,platform-en-gpio = <&tlmm 83 0>;
-};
-
-&dsi_r66451_amoled_hd_90hz_cmd {
-	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
-	qcom,mdss-dsi-bl-min-level = <1>;
-	qcom,mdss-dsi-bl-max-level = <4095>;
-	qcom,platform-te-gpio = <&tlmm 81 0>;
-	qcom,platform-reset-gpio = <&tlmm 82 0>;
-	qcom,platform-en-gpio = <&tlmm 83 0>;
 };
 
 &sde_dsi {
 	qcom,dsi-default-panel = <&dsi_td4330_truly_v2_video>;
-};
-
-&tlmm {
-	touch_vdd_default: touch_vdd_default {
-		mux {
-			pins = "gpio84";
-			function = "gpio";
-		};
-
-		config {
-			pins = "gpio84";
-			drive-strength = <8>;
-			bias-disable = <0>;
-			output-high;
-		};
-	};
-};
-
-&soc {
-	touch_vdd: touch_vdd {
-			compatible = "regulator-fixed";
-			regulator-name = "touch_vdd";
-			regulator-min-microvolt = <3300000>;
-			regulator-max-microvolt = <3300000>;
-			gpio = <&tlmm 84 GPIO_ACTIVE_HIGH>;
-			enable-active-high;
-			pinctrl-names = "default";
-			pinctrl-0 = <&touch_vdd_default>;
-	};
 };
 
 &qupv3_se2_i2c {
@@ -285,7 +272,7 @@
 		pinctrl-2 = <&ts_release>;
 		synaptics,irq-gpio = <&tlmm 80 0x2008>;
 		synaptics,irq-on-state = <0>;
-		synaptics,reset-gpio = <&tlmm 71 0x00>;
+		synaptics,reset-gpio = <&tlmm 86 0x00>;
 		synaptics,reset-on-state = <0>;
 		synaptics,reset-active-ms = <20>;
 		synaptics,reset-delay-ms = <200>;
@@ -310,31 +297,10 @@
 		pinctrl-1 = <&ts_int_suspend &ts_reset_suspend>;
 		pinctrl-2 = <&ts_release>;
 
-		novatek,reset-gpio = <&tlmm 71 0x00>;
+		novatek,reset-gpio = <&tlmm 86 0x00>;
 		novatek,irq-gpio = <&tlmm 80 0x2008>;
 
-		panel = <&dsi_nt36525_truly_video>;
+		panel = <&dsi_nt36672e_fhd_plus_90hz_video>;
 	};
 
-	focaltech@38 {
-		compatible = "focaltech,fts_ts";
-		reg = <0x38>;
-		interrupt-parent = <&tlmm>;
-		interrupts = <80 0x2008>;
-		focaltech,reset-gpio = <&tlmm 71 0x00>;
-		focaltech,irq-gpio = <&tlmm 80 0x2008>;
-		focaltech,max-touch-number = <5>;
-		focaltech,display-coords = <0 0 1080 2340>;
-
-		vdd-supply = <&touch_vdd>;
-
-		pinctrl-names = "pmx_ts_active","pmx_ts_suspend",
-			"pmx_ts_release";
-		pinctrl-0 = <&ts_int_active &ts_reset_active>;
-		pinctrl-1 = <&ts_int_suspend &ts_reset_suspend>;
-		pinctrl-2 = <&ts_release>;
-
-		panel = <&dsi_r66451_amoled_hd_90hz_video
-			 &dsi_r66451_amoled_hd_90hz_cmd>;
-	};
 };

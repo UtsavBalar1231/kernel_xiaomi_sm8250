@@ -180,4 +180,19 @@
 				};
 			};
 		};
+
+		pmx_ts_release {
+			ts_release: ts_release {
+				mux {
+					pins = "gpio80", "gpio86";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio80", "gpio86";
+					drive-strength = <2>;
+					bias-pull-down;
+				};
+			};
+		};
 };

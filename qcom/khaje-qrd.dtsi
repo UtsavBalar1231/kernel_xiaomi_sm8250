@@ -2,13 +2,9 @@
 #include <dt-bindings/iio/qcom,spmi-vadc.h>
 #include <dt-bindings/input/input.h>
 #include "bengal-thermal-overlay.dtsi"
+#include "camera/khaje-camera-sensor-qrd.dtsi"
 #include "bengal-audio-overlay.dtsi"
-#include "bengal-sde-display.dtsi"
-
-&qupv3_se1_i2c {
-	status = "ok";
-	#include "smb1355.dtsi"
-};
+#include "khaje-sde-display.dtsi"
 
 &pm6125_gpios {
 	key_vol_up {
@@ -18,6 +14,17 @@
 			input-enable;
 			bias-pull-up;
 			power-source = <0>;
+		};
+	};
+
+	eldo9_pin {
+		usb_eldo9:gpio@c000 {
+			pins = "gpio1";
+			function = "normal";
+			qcom,drive-strength = <2>;
+			power-source = <0>;
+			bias-disable;
+			output-high;
 		};
 	};
 };
@@ -40,6 +47,21 @@
 			gpio-key,wakeup;
 		};
 	};
+
+	vdda_usb_ss_dp_core: vdda_usb_ss_dp_core {
+		compatible = "regulator-fixed";
+		regulator-name = "vdd_supply";
+		regulator-min-microvolt = <880000>;
+		regulator-max-microvolt = <880000>;
+		enable-active-high;
+		gpio = <&pm6125_gpios 1 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&usb_eldo9>;
+	};
+};
+
+&usb_qmp_dp_phy {
+	vdd-supply = <&vdda_usb_ss_dp_core>;
 };
 
 &bengal_snd {
@@ -162,21 +184,6 @@
 	status = "ok";
 };
 
-&tlmm {
-	smb_int_default: smb_int_default {
-		mux {
-			pins = "gpio105";
-			function = "gpio";
-		};
-
-		config {
-			pins = "gpio105";
-			bias-pull-up;
-			input-enable;
-		};
-	};
-};
-
 &ufsphy_mem {
 	compatible = "qcom,ufs-phy-qmp-v4";
 
@@ -211,7 +218,7 @@
 };
 
 &dsi_td4330_truly_v2_video {
-	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_no_labibb>;
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_pwm";
 	pwms = <&pm6125_pwm 0 0>;
 	qcom,bl-pmic-pwm-period-usecs = <100>;
@@ -221,13 +228,19 @@
 };
 
 &dsi_td4330_truly_v2_cmd {
-	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_no_labibb>;
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_pwm";
 	pwms = <&pm6125_pwm 0 0>;
 	qcom,bl-pmic-pwm-period-usecs = <100>;
 	qcom,mdss-dsi-bl-min-level = <1>;
 	qcom,mdss-dsi-bl-max-level = <4095>;
 	qcom,platform-te-gpio = <&tlmm 81 0>;
+	qcom,platform-reset-gpio = <&tlmm 82 0>;
+};
+
+&dsi_sim_vid {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_no_labibb>;
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
 	qcom,platform-reset-gpio = <&tlmm 82 0>;
 };
 

@@ -16,6 +16,8 @@
 	clock_audio_native: audio_ext_clk_native {
 		status = "disabled";
 		compatible = "qcom,audio-ref-clk";
+		qcom,use-pinctrl = <1>;
+		qcom,codec-ext-clk-src = <2>;
 		#clock-cells = <1>;
 		qcom,codec-mclk-clk-freq = <11289600>;
 		qcom,audio-ref-clk-gpio = <&tlmm 66 0>;

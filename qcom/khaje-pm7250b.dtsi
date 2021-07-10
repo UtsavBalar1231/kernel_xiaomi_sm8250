@@ -73,3 +73,17 @@
 		};
 	};
 };
+
+&pm7250b_gpios {
+	disp_lcd_bias_en {
+		disp_lcd_bias_en_default: disp_lcd_bias_en_default {
+			pins = "gpio5";
+			function = "func1";
+			input-disable;
+			output-enable;
+			bias-disable;
+			power-source = <0>;
+			qcom,drive-strength = <2>;
+		};
+	};
+};
