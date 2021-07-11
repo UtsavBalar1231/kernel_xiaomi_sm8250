@@ -156,6 +156,7 @@
 
 		core-supply = <&L18A>;
 		qcom,vdd-voltage-level = <0 880000 880000>;
+		qcom,core-voltage-level = <0 1232000 1260000>;
 
 		clocks = <&gcc GCC_USB3_PRIM_PHY_COM_AUX_CLK>,
 			 <&gcc GCC_USB3_PRIM_PHY_PIPE_CLK>,
