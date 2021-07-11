@@ -145,7 +145,7 @@ static ssize_t double_tap_store(struct kobject *kobj,
 	if (rc)
 		return -EINVAL;
 
-	s->db_wakeup = !!val;
+	ts->db_wakeup = !!val;
 	return count;
 }
 
@@ -2643,7 +2643,7 @@ static int32_t nvt_ts_probe(struct platform_device *pdev)
 #ifdef CONFIG_TOUCHSCREEN_COMMON
 	ret = tp_common_set_double_tap_ops(&double_tap_ops);
 	if (ret < 0)
-        	NVT_ERROR("%s: Failed to create double_tap node err=%d\n",
+        	NVT_ERR("%s: Failed to create double_tap node err=%d\n",
 			__func__, ret);
 #endif
 #endif
