@@ -33,7 +33,7 @@ static struct kobj_attribute corefs_attr = __ATTR_RO(corefs);
 static ssize_t mounter_context_for_backing_rw_show(struct kobject *kobj,
 			  struct kobj_attribute *attr, char *buff)
 {
-	return snprintf(buff, PAGE_SIZE, "supported\n");
+	return scnprintf(buff, PAGE_SIZE, "%s", "supported\n");
 }
 
 static struct kobj_attribute mounter_context_for_backing_rw_attr =
