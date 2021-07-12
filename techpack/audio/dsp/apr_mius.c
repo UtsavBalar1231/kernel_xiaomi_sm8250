@@ -358,7 +358,7 @@ static int32_t process_sensorhub_msg(uint32_t *payload, uint32_t payload_size)
 
 #endif
 
-extern int us_afe_callback(int data);
+extern int crus_afe_callback(int data);
 static int ups_event;
 
 int32_t mius_process_apr_payload(uint32_t *payload)
@@ -407,12 +407,12 @@ int32_t mius_process_apr_payload(uint32_t *payload)
 			printk(KERN_DEBUG "[MIUS] mi us payload[3] = %d", (int)payload[3]);
 			if (payload[3] == 0 || payload[3] == 1) {
 				ups_event = payload[3];
-				ret = (int32_t)us_afe_callback((const uint32_t)payload[3]);
+				ret = (int32_t)crus_afe_callback((const uint32_t)payload[3]);
 			} else {
 
 				ups_event = ups_event ^ 1;
 				printk(KERN_DEBUG "[MIUS] >> change ups to %d", ups_event);
-				ret = (int32_t)us_afe_callback((uint32_t)ups_event);
+				ret = (int32_t)crus_afe_callback((uint32_t)ups_event);
 			}
 
 			if (ret != 0) {
