@@ -48,6 +48,7 @@
 #define MAX_NUM_OUTPUT_BUFFERS VIDEO_MAX_FRAME // same as VB2_MAX_FRAME
 
 #define MAX_SUPPORTED_INSTANCES 16
+#define MAX_SUPPORTED_INSTANCES_24 24
 
 /* Maintains the number of FTB's between each FBD over a window */
 #define DCVS_FTB_WINDOW 16
@@ -303,6 +304,7 @@ struct msm_vidc_platform_data {
 	uint32_t vpu_ver;
 	uint32_t num_vpp_pipes;
 	struct msm_vidc_ubwc_config_data *ubwc_config;
+	uint32_t max_inst_count;
 };
 
 struct msm_vidc_format_desc {
@@ -329,6 +331,13 @@ struct msm_vidc_format_constraint {
 	u32 uv_buffer_alignment;
 };
 
+struct log_cookie {
+	u32 used;
+	u32 session_type;
+	u32 codec_type;
+	char name[20];
+};
+
 struct msm_vidc_drv {
 	struct mutex lock;
 	struct list_head cores;
@@ -336,6 +345,8 @@ struct msm_vidc_drv {
 	struct dentry *debugfs_root;
 	int thermal_level;
 	u32 sku_version;
+	struct log_cookie *ctxt;
+	u32 num_ctxt;
 };
 
 struct msm_video_device {
