@@ -237,6 +237,8 @@ ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
         dtbo-$(CONFIG_ARCH_KHAJE) += \
 		khaje-idp-overlay.dtbo \
 		khaje-qrd-overlay.dtbo \
+		khaje-qrd-hvdcp3p5-overlay.dtbo \
+		khaje-qrd-wcd9368-overlay.dtbo \
 		khaje-idp-nopmi-overlay.dtbo \
 		khaje-qrd-nopmi-overlay.dtbo \
 		khaje-idps-display-90hz-overlay.dtbo \
@@ -244,6 +246,8 @@ ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
 
 khaje-idp-overlay.dtbo-base := khaje.dtb
 khaje-qrd-overlay.dtbo-base := khaje.dtb
+khaje-qrd-hvdcp3p5-overlay.dtbo-base := khaje.dtb
+khaje-qrd-wcd9368-overlay.dtbo-base := khaje.dtb
 khaje-idp-nopmi-overlay.dtbo-base := khaje.dtb
 khaje-qrd-nopmi-overlay.dtbo-base := khaje.dtb
 khaje-idps-display-90hz-overlay.dtbo-base := khaje.dtb
@@ -251,6 +255,8 @@ khaje-atp-overlay.dtbo-base := khaje.dtb
 else
 dtb-$(CONFIG_ARCH_KHAJE) += khaje-idp.dtb \
 		khaje-qrd.dtb \
+		khaje-qrd-hvdcp3p5.dtb \
+		khaje-qrd-wcd9368.dtb \
 		khaje-idp-nopmi.dtb \
 		khaje-qrd-nopmi.dtb \
 		khaje-idps-display-90hz.dtb \
