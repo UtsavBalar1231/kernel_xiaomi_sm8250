@@ -212,7 +212,7 @@ static void reg_program_config_vars(struct hdd_context *hdd_ctx,
 	uint32_t band_capability = 0, scan_11d_interval = 0;
 	bool indoor_chan_enabled = false;
 	uint32_t restart_beaconing = 0;
-	bool enable_srd_chan = false;
+	uint8_t enable_srd_chan;
 	QDF_STATUS status;
 	bool country_priority = 0;
 	bool value = false;
@@ -258,8 +258,8 @@ static void reg_program_config_vars(struct hdd_context *hdd_ctx,
 						    &restart_beaconing);
 	config_vars->restart_beaconing = restart_beaconing;
 
-	ucfg_mlme_get_etsi13_srd_chan_in_master_mode(hdd_ctx->psoc,
-						     &enable_srd_chan);
+	ucfg_mlme_get_etsi_srd_chan_in_master_mode(hdd_ctx->psoc,
+						   &enable_srd_chan);
 	config_vars->enable_srd_chan_in_master_mode = enable_srd_chan;
 
 	ucfg_mlme_get_11d_in_world_mode(hdd_ctx->psoc,
