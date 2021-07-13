@@ -159,9 +159,9 @@
 		qcom,cpr-enable;
 	};
 
-	qcom,cpu-clock-8939@b111050 {
+	qcom,clock-cpu@b111050 {
 		vdd-c0-supply = <&apc_vreg_corner>;
-		vdd-c1-supply = <&apc_vreg_corner>;
+		cpu-vdd-supply = <&apc_vreg_corner>;
 		vdd-cci-supply = <&apc_vreg_corner>;
 	};
 };
