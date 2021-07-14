@@ -9,4 +9,5 @@
 	model = "Qualcomm Technologies, Inc. KHAJE IDPS + 90Hz";
 	compatible = "qcom,khaje-idp", "qcom,khaje", "qcom,idp";
 	qcom,board-id = <0x10122 0>;
+	qcom,pmic-id = <0x2D 0x2E 0x0 0x0>;
 };
