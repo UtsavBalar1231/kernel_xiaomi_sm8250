@@ -37,6 +37,7 @@
 		#interrupt-cells = <1>;
 
 		#power-domain-cells = <0>;
+		#list-cells = <1>;
 
 		/* hw blocks */
 		qcom,sde-off = <0x1000>;
@@ -256,7 +257,6 @@
 	};
 
 	mdss_rotator: qcom,mdss_rotator {
-		status = "disabled";
 		compatible = "qcom,sde_rotator";
 		reg = <0x5e00000 0xac000>,
 		      <0x5eb0000 0x2008>;
