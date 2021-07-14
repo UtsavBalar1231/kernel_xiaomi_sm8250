@@ -412,7 +412,7 @@ EXPORT_SYMBOL(nla_memcmp);
  */
 int nla_strcmp(const struct nlattr *nla, const char *str)
 {
-	int len = strlen(str);
+	size_t len = strlen(str);
 	char *buf = nla_data(nla);
 	int attrlen = nla_len(nla);
 	int d;
