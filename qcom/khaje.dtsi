@@ -2976,8 +2976,8 @@ tpdm_turing_llm: tpdm@8861000 {
 	gpu_opp_table: gpu-opp-table {
 		compatible = "operating-points-v2";
 
-		opp-111480000 {
-			opp-hz = /bits/ 64 <111480000>;
+		opp-1114800000 {
+			opp-hz = /bits/ 64 <1114800000>;
 			opp-microvolt = <RPMH_REGULATOR_LEVEL_TURBO_L1>;
 		};
 
@@ -3047,7 +3047,7 @@ tpdm_turing_llm: tpdm@8861000 {
 			/* TURBO_L1 */
 			qcom,gpu-pwrlevel@0 {
 				reg = <0>;
-				qcom,gpu-freq = <111480000>;
+				qcom,gpu-freq = <1114800000>;
 				qcom,bus-freq = <7>;
 				qcom,bus-min = <7>;
 				qcom,bus-max = <7>;
@@ -3120,7 +3120,7 @@ tpdm_turing_llm: tpdm@8861000 {
 			/* TURBO_L1 */
 			qcom,gpu-pwrlevel@0 {
 				reg = <0>;
-				qcom,gpu-freq = <111480000>;
+				qcom,gpu-freq = <1114800000>;
 				qcom,bus-freq = <7>;
 				qcom,bus-min = <7>;
 				qcom,bus-max = <7>;
