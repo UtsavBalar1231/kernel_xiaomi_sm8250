@@ -4,6 +4,7 @@
 #include "kona-audio-overlay.dtsi"
 #include "kona-thermal-overlay.dtsi"
 #include "kona-xr-pinctrl-overlay.dtsi"
+#include "camera/kona-camera-sensor-arglass.dtsi"
 
 &tlmm {
 	mag_rst_gpio_default: mag_rst_gpio_default {
@@ -932,3 +933,14 @@
 	status = "disabled";
 };
 
+&pm8150a_l4 {
+	qcom,init-voltage = <2800000>;
+};
+
+&pm8150a_l3 {
+	qcom,init-voltage = <1200000>;
+};
+
+&pm8150a_l9 {
+	qcom,init-voltage = <2800000>;
+};
