@@ -38,7 +38,7 @@ enum print_reason {
 	PR_DEBUG	= BIT(3),
 };
 
-static int debug_mask = PR_OEM;
+static int debug_mask = 0;
 
 module_param_named(
 		debug_mask, debug_mask, int, 0600
