@@ -18,7 +18,6 @@ config TOUCHSCREEN_FTS_DIRECTORY
     default "focaltech_touch"
     depends on TOUCHSCREEN_FTS
 
-
 config TOUCHSCREEN_SUPPORT_NEW_GAME_MODE
     tristate "Touch Support New Game Mode"
     default n
