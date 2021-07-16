@@ -1174,7 +1174,6 @@ int crus_afe_port_start(u16 port_id)
 EXPORT_SYMBOL(crus_afe_port_start);
 int crus_afe_port_close(u16 port_id)
 {
-	pr_info("%s: 0x%x\n", __func__, port_id);
 #if 0
 //CSPL do not be involved in AFE
 	if (port_id != this_ctrl.ff_port)
