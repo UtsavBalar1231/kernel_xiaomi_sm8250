@@ -1,7 +1,6 @@
 #include "xiaomi_touch.h"
 
 static struct xiaomi_touch_pdata *touch_pdata;
-int mi_log_level;
 
 static int xiaomi_touch_dev_open(struct inode *inode, struct file *file)
 {
@@ -63,16 +62,8 @@ static long xiaomi_touch_dev_ioctl(struct file *file, unsigned int cmd,
 
 	switch (user_cmd) {
 	case SET_CUR_VALUE:
-		if (touch_data->setModeValue) {
-			if (buf[0] == Touch_Debug_Level && !pdata->debug_log) {
-				if (buf[1] == 1)
-					mi_log_level = TOUCH_NOTICE;
-				else
-					mi_log_level = TOUCH_INFO;
-			} else {
-				buf[0] = touch_data->setModeValue(buf[0], buf[1]);
-			}
-		}
+		if (touch_data->setModeValue)
+			buf[0] = touch_data->setModeValue(buf[0], buf[1]);
 		break;
 	case GET_CUR_VALUE:
 	case GET_DEF_VALUE:
@@ -441,12 +432,8 @@ static ssize_t xiaomi_touch_log_debug_store(struct device *dev,
 		return -EINVAL;
 	}
 	pdata->debug_log = input;
-	if (pdata->debug_log)
-		mi_log_level = TOUCH_DEBUG;
-	else
-		mi_log_level = TOUCH_INFO;
-	MI_TOUCH_LOGI(1, "%s %s: Set touch driver debug level: %d, mi_log_level: %d\n",
-		MI_TAG, __func__, pdata->debug_log, mi_log_level);
+	MI_TOUCH_LOGI(1, "%s %s: Set touch driver debug level: %d\n",
+		MI_TAG, __func__, pdata->debug_log);
 	return count;
 }
 
@@ -544,7 +531,6 @@ static int xiaomi_touch_probe(struct platform_device *pdev)
 #endif
 
 	MI_TOUCH_LOGI(1, "%s %s: enter\n", MI_TAG, __func__);
-	mi_log_level = TOUCH_INFO;
 	ret = xiaomi_touch_parse_dt(dev, pdata);
 	if (ret < 0) {
 		MI_TOUCH_LOGE(1, "%s %s: parse dt error:%d\n", MI_TAG, __func__, ret);
