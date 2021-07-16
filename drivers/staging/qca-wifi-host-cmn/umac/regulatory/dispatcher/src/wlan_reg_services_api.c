@@ -751,6 +751,11 @@ bool wlan_reg_is_5ghz_ch_freq(qdf_freq_t freq)
 	return reg_is_5ghz_ch_freq(freq);
 }
 
+bool wlan_reg_is_freq_indoor(struct wlan_objmgr_pdev *pdev, qdf_freq_t freq)
+{
+	return reg_is_freq_indoor(pdev, freq);
+}
+
 #ifdef CONFIG_BAND_6GHZ
 bool wlan_reg_is_6ghz_chan_freq(uint16_t freq)
 {

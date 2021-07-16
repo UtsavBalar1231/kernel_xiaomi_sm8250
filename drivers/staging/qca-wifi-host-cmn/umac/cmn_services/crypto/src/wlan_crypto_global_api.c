@@ -35,6 +35,7 @@
 #include "wlan_crypto_def_i.h"
 #include "wlan_crypto_param_handling_i.h"
 #include "wlan_crypto_obj_mgr_i.h"
+#include "wlan_crypto_main.h"
 #include <qdf_module.h>
 
 const struct wlan_crypto_cipher *wlan_crypto_cipher_ops[WLAN_CRYPTO_CIPHER_MAX];
@@ -4337,4 +4338,19 @@ void wlan_crypto_reset_vdev_params(struct wlan_objmgr_vdev *vdev)
 	wlan_crypto_reset_prarams(&crypto_priv->crypto_params);
 }
 
+QDF_STATUS wlan_crypto_psoc_enable(struct wlan_objmgr_psoc *psoc)
+{
+	if (psoc && WLAN_CRYPTO_TX_OPS_REGISTER_EVENTS(psoc))
+		return WLAN_CRYPTO_TX_OPS_REGISTER_EVENTS(psoc)(psoc);
+
+	return QDF_STATUS_E_FAILURE;
+}
+
+QDF_STATUS wlan_crypto_psoc_disable(struct wlan_objmgr_psoc *psoc)
+{
+	if (psoc && WLAN_CRYPTO_TX_OPS_DEREGISTER_EVENTS(psoc))
+		return WLAN_CRYPTO_TX_OPS_DEREGISTER_EVENTS(psoc)(psoc);
+
+	return QDF_STATUS_E_FAILURE;
+}
 #endif
