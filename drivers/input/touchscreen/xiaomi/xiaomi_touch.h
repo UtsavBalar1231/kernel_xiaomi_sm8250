@@ -21,51 +21,17 @@
 #include <linux/slab.h>
 #include <linux/input.h>
 
-
 #define MI_TAG  "[mi-touch]"
-
-/*Xiaomi Touch driver log level
-  *error    : 0
-  *info     : 1
-  *notice   : 2
-  *debug    : 3
-*/
-extern int mi_log_level;
-
-#define 	TOUCH_ERROR    0
-#define 	TOUCH_INFO     1
-#define 	TOUCH_NOTICE   2
-#define 	TOUCH_DEBUG    3
 
 #define XIAOMI_TOUCH_DEVICE_NAME "xiaomi-touch"
 #define KEY_INPUT_DEVICE_PHYS "xiaomi-touch/input0"
 /*Xiaomi Special Touch Event Code*/
 #define BTN_TAP 0x153
 
-#define MI_TOUCH_LOGD(level, fmt, args...) \
-do { \
-	if (mi_log_level == TOUCH_DEBUG && level == 1) \
-		pr_info(fmt, ##args); \
-} while (0)
-
-#define MI_TOUCH_LOGN(level, fmt, args...) \
-do { \
-	if (mi_log_level >= TOUCH_NOTICE && level == 1) \
-		pr_info(fmt, ##args); \
-} while (0)
-
-#define MI_TOUCH_LOGI(level, fmt, args...) \
-do { \
-	if (mi_log_level >= TOUCH_INFO && level == 1) \
-		pr_info(fmt, ##args); \
-} while (0)
-
-#define MI_TOUCH_LOGE(level, fmt, args...) \
-do { \
-	if (level == 1) \
-		pr_err(fmt, ##args); \
-} while (0)
-
+#define MI_TOUCH_LOGD(level, fmt, args...) ((void)0)
+#define MI_TOUCH_LOGN(level, fmt, args...) ((void)0)
+#define MI_TOUCH_LOGI(level, fmt, args...) ((void)0)
+#define MI_TOUCH_LOGE(level, fmt, args...) ((void)0)
 
 #define XIAOMI_ROI	1
 
