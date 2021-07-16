@@ -2,13 +2,9 @@
 #include <dt-bindings/msm/msm-camera.h>
 
 &soc {
-	qcom,cam-res-mgr {
+	cam_res_mgr_label: qcom,cam-res-mgr {
 		compatible = "qcom,cam-res-mgr";
 		status = "ok";
-		gpios-shared = <1171>;
-		pinctrl-names = "cam_res_mgr_default", "cam_res_mgr_suspend";
-		pinctrl-0 = <&cam_flash_hwen_active>;
-		pinctrl-1 = <&cam_flash_hwen_suspend>;
 	};
 };
 
@@ -197,10 +193,6 @@
 		rgltr-max-voltage = <1800000>;
 		rgltr-load-current = <120000>;
 		gpio-no-mux = <0>;
-		pinctrl-names = "cam_default", "cam_suspend";
-		pinctrl-0 = <&cam_flash_hwen_active>;
-		pinctrl-1 = <&cam_flash_hwen_suspend>;
-		gpios = <&tlmm 4 0>;
 		gpio-custom1 = <0>;
 		gpio-req-tbl-num = <0>;
 		gpio-req-tbl-flags = <0>;
@@ -220,10 +212,6 @@
 		rgltr-max-voltage = <1800000>;
 		rgltr-load-current = <120000>;
 		gpio-no-mux = <0>;
-		pinctrl-names = "cam_default", "cam_suspend";
-		pinctrl-0 = <&cam_flash_hwen_active>;
-		pinctrl-1 = <&cam_flash_hwen_suspend>;
-		gpios = <&tlmm 4 0>;
 		gpio-custom1 = <0>;
 		gpio-req-tbl-num = <0>;
 		gpio-req-tbl-flags = <0>;
@@ -243,10 +231,6 @@
 		rgltr-max-voltage = <1800000>;
 		rgltr-load-current = <120000>;
 		gpio-no-mux = <0>;
-		pinctrl-names = "cam_default", "cam_suspend";
-		pinctrl-0 = <&cam_flash_hwen_active>;
-		pinctrl-1 = <&cam_flash_hwen_suspend>;
-		gpios = <&tlmm 4 0>;
 		gpio-custom1 = <0>;
 		gpio-req-tbl-num = <0>;
 		gpio-req-tbl-flags = <0>;
