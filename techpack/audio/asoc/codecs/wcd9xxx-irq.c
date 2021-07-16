@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2011-2019, The Linux Foundation. All rights reserved.
  */
-#define DEBUG
 #include <linux/bitops.h>
 #include <linux/kernel.h>
 #include <linux/module.h>

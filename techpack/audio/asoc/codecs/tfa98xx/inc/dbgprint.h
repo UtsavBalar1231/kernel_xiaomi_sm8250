@@ -19,7 +19,6 @@
 
 /* Debugging macro's. */
 #   ifndef DEBUG
-#      define DEBUG
 #   endif
 
 #   ifndef ASSERT
@@ -51,10 +50,6 @@
 #   define _ERRORMSG(fmt,va...) printk(KERN_ERR PREFIX "ERROR %s:%d: "fmt,__func__,__LINE__, ##va)
 
 
-#   define DEBUG0(x...) MSG(x)
-#   define DEBUG1(x...) _DEBUG(1,x)
-#   define DEBUG2(x...) _DEBUG(2,x)
-#   define DEBUG3(x...) _DEBUG(3,x)
 #   define ERRORMSG(x...) _ERRORMSG(x)
 #	define PRINT(x...)	printk(x) 
 #   define PRINT_ERROR(x...) printk(KERN_INFO PREFIX " **ERROR** " x)
@@ -81,10 +76,6 @@
 
 #   define _ERRORMSG(fmt,...) printf(PREFIX "%s:%s:%d: "fmt,__FILE__,__FUNCTION__,__LINE__,__VA_ARGS__)
 
-#   define DEBUG0(...) MSG(__VA_ARGS__)
-#   define DEBUG1(...) _DEBUGMSG(1,__VA_ARGS__)
-#   define DEBUG2(...) _DEBUGMSG(2,__VA_ARGS__)
-#   define DEBUG3(...) _DEBUGMSG(3,__VA_ARGS__)
 #   define ERRORMSG(fmt,...) _ERRORMSG(fmt,__VA_ARGS__)
 #	define PRINT(...)	printf(__VA_ARGS__)
 /*
@@ -120,10 +111,6 @@
 #   define ERRORMSG(...) TB_TRACE_INF(TbTracePfx2("tfa",TB_FUNC,__VA_ARGS__))
 //fprintf(stderr, PREFIX "ERROR %s:%s:%d: "fmt,__FILE__,__func__,__LINE__, ##va)
 
-#   define DEBUG0(x...) MSG(x)
-#   define DEBUG1(x...) _DEBUG(1,x)
-#   define DEBUG2(x...) _DEBUG(2,x)
-#   define DEBUG3(x...) _DEBUG(3,x)
 //#   define ERRORMSG(x...) _ERRORMSG(x)
 #	define PRINT(x...)	TB_TRACE_INF(TbTracePfx2("tfa",TB_FUNC,x))
 //printf(x)
@@ -146,10 +133,6 @@
 #   define MSG(fmt,va...) printf(PREFIX "%s:%s:%d: "fmt,__FILE__,__func__,__LINE__,##va)
 #   define _ERRORMSG(fmt,va...) fprintf(stderr, PREFIX "ERROR %s:%s:%d: "fmt,__FILE__,__func__,__LINE__, ##va)
 
-#   define DEBUG0(x...) MSG(x)
-#   define DEBUG1(x...) _DEBUG(1,x)
-#   define DEBUG2(x...) _DEBUG(2,x)
-#   define DEBUG3(x...) _DEBUG(3,x)
 #   define ERRORMSG(x...) _ERRORMSG(x)
 #	define PRINT(x...)	printf(x)
 #	define PRINT_ERROR(...)	 fprintf(stderr,__VA_ARGS__)

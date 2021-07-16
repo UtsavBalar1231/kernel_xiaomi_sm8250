@@ -2,7 +2,6 @@
 /* Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  */
 
-#define DEBUG
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/slab.h>
