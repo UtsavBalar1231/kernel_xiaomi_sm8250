@@ -115,3 +115,19 @@
 	qcom,vbatt-empty-cold-mv = <3100>;
 	qcom,use-cp-iin-sns;
 };
+
+&cam_res_mgr_label {
+	gpios = <&pm7250b_gpios 4 0>;
+};
+
+&led_flash_rear {
+	gpios = <&pm7250b_gpios 4 0>;
+};
+
+&led_flash_rear_aux {
+	gpios = <&pm7250b_gpios 4 0>;
+};
+
+&led_flash_rear_aux2 {
+	gpios = <&pm7250b_gpios 4 0>;
+};
