@@ -159,6 +159,8 @@
 				qcom,mdss-dsi-off-command-state = "dsi_lp_mode";
 
 				qcom,mdss-dsi-timing-switch-command = [
+					/* 5 Display On */
+					05 01 00 00 00 00 02 29 00
 					39 00 00 00 00 00 02 60 00
 					39 00 00 00 00 00 03 F0 5A 5A
 					39 00 00 00 00 00 03 FC 5A 5A
@@ -308,6 +310,8 @@
 				qcom,mdss-dsi-off-command-state = "dsi_lp_mode";
 
 				qcom,mdss-dsi-timing-switch-command = [
+					/* 5 Display On */
+					05 01 00 00 00 00 02 29 00
 					39 00 00 00 00 00 02 60 10
 					39 00 00 00 00 00 03 F0 5A 5A
 					39 00 00 00 00 00 03 FC 5A 5A
@@ -457,6 +461,8 @@
 				qcom,mdss-dsi-off-command-state = "dsi_lp_mode";
 
 				qcom,mdss-dsi-timing-switch-command = [
+					/* 5 Display On */
+					05 01 00 00 00 00 02 29 00
 					39 00 00 00 00 00 02 60 10
 					39 00 00 00 00 00 03 F0 5A 5A
 					39 00 00 00 00 00 03 FC 5A 5A
