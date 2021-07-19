@@ -2689,21 +2689,21 @@ tpdm_turing_llm: tpdm@8861000 {
 		ports {
 			#address-cells = <1>;
 			#size-cells = <0>;
+
 			port@0 {
 				reg = <0>;
-				funnel_turing_out_tpda5: endpoint {
+				funnel_turing_out_funnel_qatb: endpoint {
 					remote-endpoint =
-					<&tpda5_in_funnel_turing>;
-					source = <&tpdm_turing>;
+					<&funnel_qatb_in_funnel_turing>;
+					source = <&turing_etm0>;
 				};
 			};
 
 			port@1 {
 				reg = <1>;
-				funnel_turing_out_funnel_qatb: endpoint {
+				funnel_turing_out_tpda5: endpoint {
 					remote-endpoint =
-					<&funnel_qatb_in_funnel_turing>;
-					source = <&turing_etm0>;
+					<&tpda5_in_funnel_turing>;
 				};
 			};
 
