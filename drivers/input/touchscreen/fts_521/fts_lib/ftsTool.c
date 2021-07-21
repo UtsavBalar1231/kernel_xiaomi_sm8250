@@ -328,7 +328,7 @@ int cleanUp(int enableTouch)
 		if (res < OK)
 			return res;
 		logError(0, "%s cleanUp: enabling interrupts...\n", tag);
-		res = fts_enableInterrupt();
+		res = fts_enableInterrupt(true);
 		if (res < OK)
 			return res;
 	}
