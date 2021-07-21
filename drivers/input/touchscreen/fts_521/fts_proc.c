@@ -865,9 +865,9 @@ static ssize_t fts_driver_test_write(struct file *file, const char __user *buf,
 		case CMD_INTERRUPT:
 			if (numberParam >= 2) {
 				if (cmd[1] == 1)
-					res = fts_enableInterrupt();
+					res = fts_enableInterrupt(true);
 				else
-					res = fts_disableInterrupt();
+					res = fts_enableInterrupt(false);
 			} else {
 				logError(1, "%s Wrong number of parameters! \n",
 					 tag);

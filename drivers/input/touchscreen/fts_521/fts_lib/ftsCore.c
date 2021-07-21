@@ -41,8 +41,6 @@ SysInfo systemInfo;							/*Global System Info variable, accessible in all the d
 static int reset_gpio = GPIO_NOT_DEFINED;	/*gpio number of the rest pin, the value is  GPIO_NOT_DEFINED if the reset pin is not connected*/
 static int system_reseted_up;			/*flag checked during resume to understand if there was a system reset and restore the proper state*/
 static int system_reseted_down;		/*flag checked during suspend to understand if there was a system reset and restore the proper state*/
-static int disable_irq_count;			/*count the number of call to disable_irq, start with 1 because at the boot IRQ are already disabled*/
-spinlock_t fts_int;						/*spinlock to controll the access to the disable_irq_counter*/
 
 /**
 * Initialize core variables of the library. Must be called during the probe before any other lib function
@@ -98,8 +96,6 @@ int fts_system_reset(void)
 	}
 	for (i = 0; i < RETRY_SYSTEM_RESET && res < 0; i++) {
 		resetErrorList();
-		fts_disableInterruptNoSync();
-
 		if (reset_gpio == GPIO_NOT_DEFINED) {
 			res =
 			    fts_writeU8UX(FTS_CMD_HW_REG_W, ADDR_SIZE_HW_REG,
@@ -768,86 +764,38 @@ int readConfig(u16 offset, u8 *outBuf, int len)
 }
 
 /**
- * Disable the interrupt so the ISR of the driver can not be called
- * @return OK if success or an error code which specify the type of error encountered
+ * Set the interrupt state
+ * @param enable Indicates whether interrupts should enabled.
+ * @return OK if success
  */
-int fts_disableInterrupt(void)
+int fts_enableInterrupt(bool enable)
 {
-	if (getClient() != NULL) {
-		MI_TOUCH_LOGD(0, "%s %s: Number of disable = %d \n",
-			tag, __func__, disable_irq_count);
-		if (disable_irq_count == 0) {
-			MI_TOUCH_LOGD(0, "%s %s: Excecuting Disable... \n", tag, __func__);
-			disable_irq(getClient()->irq);
-			disable_irq_count++;
-			MI_TOUCH_LOGI(1, "%s %s: Interrupt Disabled!\n", tag, __func__);
-		}
-		return OK;
-	} else {
-		MI_TOUCH_LOGE(1, "%s %s: Impossible get client irq... ERROR %08X\n",
-			 tag, __func__, ERROR_OP_NOT_ALLOW);
+	struct fts_ts_info *info = NULL;
+	unsigned long flag;
+
+	if (getClient() == NULL) {
+		MI_TOUCH_LOGI(1, "%s %s: Cannot get client irq. Error = %08X\n",
+			tag, __func__, ERROR_OP_NOT_ALLOW);
 		return ERROR_OP_NOT_ALLOW;
 	}
 
-}
+	info = dev_get_drvdata(&getClient()->dev);
 
-/**
- * Disable the interrupt async so the ISR of the driver can not be called
- * @return OK if success or an error code which specify the type of error encountered
- */
-int fts_disableInterruptNoSync(void)
-{
-	if (getClient() != NULL) {
-		spin_lock_irq(&fts_int);
-		logError(0, "%s Number of disable = %d \n", tag,
-			 disable_irq_count);
-		if (disable_irq_count == 0) {
-			logError(0, "%s Executing Disable... \n", tag);
-			disable_irq_nosync(getClient()->irq);
-			disable_irq_count++;
-		}
-
-		spin_unlock_irq(&fts_int);
-		logError(0, "%s Interrupt No Sync Disabled!\n", tag);
-		return OK;
-	} else {
-		logError(1, "%s %s: Impossible get client irq... ERROR %08X\n",
-			 tag, __func__, ERROR_OP_NOT_ALLOW);
-		return ERROR_OP_NOT_ALLOW;
-	}
-}
-
-/**
- * Reset the disable_irq count
- * @return OK
- */
-int fts_resetDisableIrqCount(void)
-{
-	disable_irq_count = 0;
-	return OK;
-}
-
-/**
- * Enable the interrupt so the ISR of the driver can be called
- * @return OK if success or an error code which specify the type of error encountered
- */
-int fts_enableInterrupt(void)
-{
-	if (getClient() != NULL) {
-		MI_TOUCH_LOGN(0, "%s %s: Number of re-enable = %d \n",
-			tag, __func__, disable_irq_count);
-		while (disable_irq_count > 0) {
-			MI_TOUCH_LOGN(1, "%s %s: Excecuting Enable... \n", tag, __func__);
+	spin_lock_irqsave(&info->fts_int, flag);
+	if (enable == info->irq_enabled)
+		MI_TOUCH_LOGN(0, "Interrupt is already set (enable = %d).\n", enable);
+	else {
+		info->irq_enabled = enable;
+		if (enable) {
 			enable_irq(getClient()->irq);
-			disable_irq_count--;
-			MI_TOUCH_LOGI(1, "%s %s: Interrupt Enabled!\n", tag, __func__);
+			MI_TOUCH_LOGN(0, "Interrupt enabled.\n");
+		} else {
+			disable_irq_nosync(getClient()->irq);
+			MI_TOUCH_LOGN(0, "Interrupt disabled.\n");
 		}
-		return OK;
-	} else {
-		MI_TOUCH_LOGE(1, "%s %s: Impossible get client irq... ERROR %08X\n",
-			 tag, __func__, ERROR_OP_NOT_ALLOW);
-		return ERROR_OP_NOT_ALLOW;
 	}
+	spin_unlock_irqrestore(&info->fts_int, flag);
+	return OK;
 }
 
 /**
@@ -1068,7 +1016,7 @@ int writeLockDownInfo(u8 *data, int size, u8 lock_id)
 	}
 
 	logError(0, "%s: Writing Lockdown code into the IC ...\n", __func__);
-	fts_disableInterrupt();
+	fts_enableInterrupt(false);
 	for (i = 0; i < 3; i++) {
 		cmd_lockdown_prepare[1] = lock_id;
 		ret = calculateCRC8(data, size, &crc_data);
@@ -1165,7 +1113,7 @@ int writeLockDownInfo(u8 *data, int size, u8 lock_id)
 		logError(1, "%s %s end, write lockdown success\n", tag,
 			 __func__, ret);
 
-	fts_enableInterrupt();
+	fts_enableInterrupt(true);
 	return ret;
 }
 
@@ -1193,7 +1141,7 @@ int readLockDownInfo(u8 *lockData, u8 lock_id, int size)
 	}
 	memset(temp, 0, LOCKDOWN_LENGTH * sizeof(u8));
 
-	fts_disableInterrupt();
+	fts_enableInterrupt(false);
 	for (i = 0; i < 3; i++) {
 		ret =
 		    fts_writeReadU8UX(LOCKDOWN_WRITEREAD_CMD, BITS_16,
@@ -1259,7 +1207,7 @@ int readLockDownInfo(u8 *lockData, u8 lock_id, int size)
 	}
 
 END:
-	fts_enableInterrupt();
+	fts_enableInterrupt(true);
 	kfree(temp);
 	return ret;
 }
@@ -1295,7 +1243,7 @@ int fts_get_lockdown_info(u8 *lockData, struct fts_ts_info *info)
 	}
 	memset(temp, 0, 1024 * sizeof(u8));
 
-	fts_disableInterrupt();
+	fts_enableInterrupt(false);
 
 	for (i = 0; i < LOCKDOWN_CODE_RETRY; i++) {
 
@@ -1363,7 +1311,7 @@ int fts_get_lockdown_info(u8 *lockData, struct fts_ts_info *info)
 	}
 
 END:
-	fts_enableInterrupt();
+	fts_enableInterrupt(true);
 	kfree(temp);
 	return ret;
 

@@ -343,6 +343,9 @@ struct fts_ts_info {
 	struct regulator *vdd_reg;
 	struct regulator *avdd_reg;
 
+	spinlock_t fts_int;	/* Spinlock to protect interrupt toggling */
+	bool irq_enabled;	/* Interrupt state */
+
 	int resume_bit;
 	int fwupdate_stat;
 
