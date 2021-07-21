@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/slab.h>
@@ -28,6 +28,9 @@ struct cam_vfe_top_ver2_priv {
 	unsigned long                       req_clk_rate[
 						CAM_VFE_TOP_MUX_MAX];
 	struct cam_vfe_top_priv_common      top_common;
+	uint32_t                            num_pix_rsrc;
+	uint32_t                            num_pd_rsrc;
+	uint32_t                            num_rdi_rsrc;
 };
 
 static int cam_vfe_top_mux_get_base(struct cam_vfe_top_ver2_priv *top_priv,
@@ -410,7 +413,6 @@ int cam_vfe_top_reserve(void *device_priv,
 	args = (struct cam_vfe_acquire_args *)reserve_args;
 	acquire_args = &args->vfe_in;
 
-
 	for (i = 0; i < top_priv->top_common.num_mux; i++) {
 		if (top_priv->top_common.mux_rsrc[i].res_id ==
 			acquire_args->res_id &&
@@ -484,6 +486,10 @@ int cam_vfe_top_release(void *device_priv,
 
 	top_priv = (struct cam_vfe_top_ver2_priv   *)device_priv;
 	mux_res = (struct cam_isp_resource_node *)release_args;
+
+	top_priv->num_pix_rsrc = 0;
+	top_priv->num_pd_rsrc = 0;
+	top_priv->num_rdi_rsrc = 0;
 
 	CAM_DBG(CAM_ISP, "Resource in state %d", mux_res->res_state);
 	if (mux_res->res_state < CAM_ISP_RESOURCE_STATE_RESERVED) {
@@ -667,6 +673,32 @@ static int cam_vfe_get_irq_register_dump(
 	return 0;
 }
 
+static int cam_vfe_set_num_of_acquired_resource(
+	struct cam_vfe_top_ver2_priv *top_priv,
+	void *cmd_args, uint32_t arg_size)
+{
+	struct cam_vfe_num_of_acquired_resources *num_rsrc = cmd_args;
+
+	top_priv->num_pix_rsrc = num_rsrc->num_pix_rsrc;
+	top_priv->num_pd_rsrc = num_rsrc->num_pd_rsrc;
+	top_priv->num_rdi_rsrc = num_rsrc->num_rdi_rsrc;
+
+	return 0;
+}
+
+static int cam_vfe_get_num_of_acquired_resource(
+	struct cam_vfe_top_ver2_priv *top_priv,
+	void *cmd_args, uint32_t arg_size)
+{
+	struct cam_vfe_num_of_acquired_resources *num_rsrc = cmd_args;
+
+	num_rsrc->num_pix_rsrc = top_priv->num_pix_rsrc;
+	num_rsrc->num_pd_rsrc = top_priv->num_pd_rsrc;
+	num_rsrc->num_rdi_rsrc = top_priv->num_rdi_rsrc;
+
+	return 0;
+}
+
 int cam_vfe_top_process_cmd(void *device_priv, uint32_t cmd_type,
 	void *cmd_args, uint32_t arg_size)
 {
@@ -728,6 +760,14 @@ int cam_vfe_top_process_cmd(void *device_priv, uint32_t cmd_type,
 		break;
 	case CAM_ISP_HW_CMD_GET_IRQ_REGISTER_DUMP:
 		rc = cam_vfe_get_irq_register_dump(top_priv,
+			cmd_args, arg_size);
+		break;
+	case CAM_ISP_HW_CMD_SET_NUM_OF_ACQUIRED_RESOURCE:
+		rc = cam_vfe_set_num_of_acquired_resource(top_priv,
+			cmd_args, arg_size);
+		break;
+	case CAM_ISP_HW_CMD_GET_NUM_OF_ACQUIRED_RESOURCE:
+		rc = cam_vfe_get_num_of_acquired_resource(top_priv,
 			cmd_args, arg_size);
 		break;
 	default:
