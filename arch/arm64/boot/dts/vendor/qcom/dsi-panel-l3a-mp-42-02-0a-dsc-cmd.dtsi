@@ -506,9 +506,7 @@
 	mi,mdss-dsi-panel-gir-on-update-b9-index = <2>;
 
 /*aod status enter lp1 not on start*/
-	mi,mdss-dsi-panel-fod-dimlayer-enabled;
-	mi,mdss-dsi-dimlayer-brightness-alpha-lut-item-count = <21>;
-	mi,mdss-dsi-dimlayer-brightness-alpha-lut =
+	qcom,disp-fod-dim-lut =
 	/* brightness  alpha */
 		<0          0xFF
 		 4          0xEB

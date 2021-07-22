@@ -363,12 +363,10 @@
 
 	mi,mdss-panel-on-dimming-delay = <120>;
 
-	mi,mdss-dsi-panel-fod-dimlayer-enabled;
 	mi,mdss-panel-delay-after-fod-hbm-off;
 	mi,mdss-panel-delay-after-fod-hbm-on;
 
-	mi,mdss-dsi-dimlayer-brightness-alpha-lut-item-count = <21>;
-	mi,mdss-dsi-dimlayer-brightness-alpha-lut =
+	qcom,disp-fod-dim-lut =
 	/* brightness  alpha */
 		<0          0xFF
 		 4          0xEB
@@ -454,7 +452,7 @@
 			mi,mdss-dsi-hbm-off-command-state = "dsi_lp_mode";
 
 			/* aod mode -> hbm on for fingerprint unlock */
-			mi,mdss-dsi-hbm-fod-on-command = [
+			qcom,mdss-dsi-dispparam-hbm-fod-on-command = [
 				/* VI Setting voltage -3.5V */
 				39 01 00 00 00 00 06 F0 55 AA 52 08 01 /* Set page 1 */
 				39 00 00 00 00 00 09 B9 1F 1F 1F 1F 1F 1F 1F 1F
@@ -473,7 +471,7 @@
 				15 00 00 00 00 00 02 65 00
 				05 00 00 00 00 00 02 38 00
 				05 01 00 00 00 00 02 2C 00];
-			mi,mdss-dsi-hbm-fod-off-command = [
+			qcom,mdss-dsi-dispparam-hbm-fod-off-command = [
 				/* Dimming Off */
 				15 01 00 00 00 00 02 53 20
 				/* Normal Mode */
@@ -483,8 +481,8 @@
 				/* ELVSS SWIRE =-4.5V */
 				15 01 00 00 00 00 02 6F 07
 				15 01 00 00 00 00 02 B5 0A];
-			mi,mdss-dsi-hbm-fod-on-command-state = "dsi_lp_mode";
-			mi,mdss-dsi-hbm-fod-off-command-state = "dsi_lp_mode";
+			qcom,mdss-dsi-dispparam-hbm-fod-on-command-state = "dsi_lp_mode";
+			qcom,mdss-dsi-dispparam-hbm-fod-off-command-state = "dsi_lp_mode";
 
 			mi,mdss-dsi-hbm-hdr-on-command = [
 				/* VI Setting voltage -3.5V */
@@ -652,7 +650,7 @@
 			mi,mdss-dsi-hbm-off-command-state = "dsi_lp_mode";
 
 			/* aod mode -> hbm on for fingerprint unlock */
-			mi,mdss-dsi-hbm-fod-on-command = [
+			qcom,mdss-dsi-dispparam-hbm-fod-on-command = [
 				/* VI Setting voltage -3.5V */
 				39 01 00 00 00 00 06 F0 55 AA 52 08 01 /* Set page 1 */
 				39 00 00 00 00 00 09 B9 1F 1F 1F 1F 1F 1F 1F 1F
@@ -675,7 +673,7 @@
 				39 00 00 00 00 00 1E B4 98 88 88 77 66 55 44 00 00 00 60 B8 B8 B8 B8 B8 C8 C8 D8 D8 E8 E8 F8 F8 48 48 48 48 0A
 				15 00 00 00 00 00 02 2F 04
 				15 01 00 00 00 00 02 26 02];
-			mi,mdss-dsi-hbm-fod-off-command = [
+			qcom,mdss-dsi-dispparam-hbm-fod-off-command = [
 				/* Dimming Off */
 				15 01 00 00 00 00 02 53 20
 				/* Normal Mode */
@@ -685,8 +683,8 @@
 				/* ELVSS SWIRE =-4.5V */
 				15 01 00 00 00 00 02 6F 07
 				15 01 00 00 00 00 02 B5 0A];
-			mi,mdss-dsi-hbm-fod-on-command-state = "dsi_lp_mode";
-			mi,mdss-dsi-hbm-fod-off-command-state = "dsi_lp_mode";
+			qcom,mdss-dsi-dispparam-hbm-fod-on-command-state = "dsi_lp_mode";
+			qcom,mdss-dsi-dispparam-hbm-fod-off-command-state = "dsi_lp_mode";
 
 			mi,mdss-dsi-hbm-hdr-on-command = [
 				/* VI Setting voltage -3.5V */
