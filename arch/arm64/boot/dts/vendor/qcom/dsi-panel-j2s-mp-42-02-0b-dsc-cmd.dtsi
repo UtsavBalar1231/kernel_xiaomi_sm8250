@@ -247,10 +247,7 @@
 
 	mi,mdss-panel-on-dimming-delay = <120>;
 
-	mi,mdss-dsi-panel-fod-dimlayer-enabled;
-
-	mi,mdss-dsi-dimlayer-brightness-alpha-lut-item-count = <21>;
-	mi,mdss-dsi-dimlayer-brightness-alpha-lut =
+	qcom,disp-fod-dim-lut =
 	/* brightness  alpha */
 		<0          0xFF
 		 4          0xEB
@@ -318,7 +315,7 @@
 			mi,mdss-dsi-hbm-off-command-state = "dsi_lp_mode";
 
 			/* aod mode -> hbm on for fingerprint unlock */
-			mi,mdss-dsi-hbm-fod-on-command = [
+			qcom,mdss-dsi-dispparam-hbm-fod-on-command = [
 				/* Dimming Off */
 				39 01 00 00 00 00 02 53 20
 				/* Aod to Normal */
@@ -329,14 +326,14 @@
 				39 00 00 00 00 00 02 2C 00
 				/* HBM Mode 700 nit */
 				39 01 00 00 00 00 05 51 0F 8F 00 00];
-			mi,mdss-dsi-hbm-fod-off-command = [
+			qcom,mdss-dsi-dispparam-hbm-fod-off-command = [
 				/* Dimming Off */
 				39 01 00 00 00 00 02 53 20
 				/* Normal Mode */
 				/* parameter will be updated base on last brightness */
 				39 01 00 00 00 00 05 51 07 FF 00 00];
-			mi,mdss-dsi-hbm-fod-on-command-state = "dsi_lp_mode";
-			mi,mdss-dsi-hbm-fod-off-command-state = "dsi_lp_mode";
+			qcom,mdss-dsi-dispparam-hbm-fod-on-command-state = "dsi_lp_mode";
+			qcom,mdss-dsi-dispparam-hbm-fod-off-command-state = "dsi_lp_mode";
 
 			mi,mdss-dsi-hbm-hdr-on-command = [
 				/* VI Setting voltage -3.5V */
@@ -468,7 +465,7 @@
 			mi,mdss-dsi-hbm-off-command-state = "dsi_lp_mode";
 
 			/* aod mode -> hbm on for fingerprint unlock */
-			mi,mdss-dsi-hbm-fod-on-command = [
+			qcom,mdss-dsi-dispparam-hbm-fod-on-command = [
 				/* Dimming Off */
 				39 01 00 00 00 00 02 53 20
 				/* Aod to Normal */
@@ -481,14 +478,14 @@
 				39 00 00 00 00 00 05 51 0F 8F 00 00
 				/* Enter 90Hz */
 				39 01 00 00 00 00 02 2F 02];
-			mi,mdss-dsi-hbm-fod-off-command = [
+			qcom,mdss-dsi-dispparam-hbm-fod-off-command = [
 				/* Dimming Off */
 				39 01 00 00 00 00 02 53 20
 				/* Normal Mode */
 				/* parameter will be updated base on last brightness */
 				39 01 00 00 00 00 05 51 07 FF 00 00];
-			mi,mdss-dsi-hbm-fod-on-command-state = "dsi_lp_mode";
-			mi,mdss-dsi-hbm-fod-off-command-state = "dsi_lp_mode";
+			qcom,mdss-dsi-dispparam-hbm-fod-on-command-state = "dsi_lp_mode";
+			qcom,mdss-dsi-dispparam-hbm-fod-off-command-state = "dsi_lp_mode";
 
 			mi,mdss-dsi-hbm-hdr-on-command = [
 				/* VI Setting voltage -3.5V */
