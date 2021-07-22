@@ -381,9 +381,7 @@
 
     mi,mdss-panel-on-dimming-delay = <120>;
 
-    mi,mdss-dsi-panel-fod-dimlayer-enabled;
-    mi,mdss-dsi-dimlayer-brightness-alpha-lut-item-count = <21>;
-    mi,mdss-dsi-dimlayer-brightness-alpha-lut =
+    qcom,disp-fod-dim-lut =
     /* brightness  alpha */
 	<0          0xFF
 	 4          0xEB
@@ -443,7 +441,7 @@
 	    mi,mdss-dsi-hbm-on-command-state = "dsi_hs_mode";
 	    mi,mdss-dsi-hbm-off-command-state = "dsi_hs_mode";
 
-	    mi,mdss-dsi-hbm-fod-on-command = [
+	    qcom,mdss-dsi-dispparam-hbm-fod-on-command = [
 		/* ELVSS DIM Off */
 		39 00 00 00 00 00 03 F0 5A 5A
 		39 00 00 00 00 00 02 B0 02
@@ -451,7 +449,7 @@
 		39 00 00 00 00 00 03 F0 A5 A5
 		/* HBM Mode On transition(60Hz) */
 		39 01 00 00 00 00 02 53 E0];
-	    mi,mdss-dsi-hbm-fod-off-command = [
+	    qcom,mdss-dsi-dispparam-hbm-fod-off-command = [
 		/* DLY On */
 		39 00 00 00 00 00 03 F0 5A 5A
 		39 00 00 00 00 00 02 B0 02
@@ -459,8 +457,8 @@
 		39 00 00 00 00 00 03 F0 A5 A5
 		/* HBM Mode Off Normal transition(60Hz) */
 		39 01 00 00 00 00 02 53 20];
-	    mi,mdss-dsi-hbm-fod-on-command-state = "dsi_hs_mode";
-	    mi,mdss-dsi-hbm-fod-off-command-state = "dsi_hs_mode";
+	    qcom,mdss-dsi-dispparam-hbm-fod-on-command-state = "dsi_hs_mode";
+	    qcom,mdss-dsi-dispparam-hbm-fod-off-command-state = "dsi_hs_mode";
 
 	    mi,mdss-dsi-flat-on-command = [
 		39 00 00 00 00 00 03 F0 5A 5A
@@ -578,7 +576,7 @@
 	    mi,mdss-dsi-hbm-on-command-state = "dsi_hs_mode";
 	    mi,mdss-dsi-hbm-off-command-state = "dsi_hs_mode";
 
-	    mi,mdss-dsi-hbm-fod-on-command = [
+	    qcom,mdss-dsi-dispparam-hbm-fod-on-command = [
 		/* ELVSS DIM Off */
 		39 00 00 00 00 00 03 F0 5A 5A
 		39 00 00 00 00 00 02 B0 02
@@ -586,7 +584,7 @@
 		39 00 00 00 00 00 03 F0 A5 A5
 		/* HBM Mode On transition(90Hz) */
 		39 01 00 00 00 00 02 53 F0];
-	    mi,mdss-dsi-hbm-fod-off-command = [
+	    qcom,mdss-dsi-dispparam-hbm-fod-off-command = [
 		/* DLY On */
 		39 00 00 00 00 00 03 F0 5A 5A
 		39 00 00 00 00 00 02 B0 02
@@ -594,8 +592,8 @@
 		39 00 00 00 00 00 03 F0 A5 A5
 		/* HBM Mode Off Normal transition(90Hz) */
 		39 01 00 00 00 00 02 53 30];
-	    mi,mdss-dsi-hbm-fod-on-command-state = "dsi_hs_mode";
-	    mi,mdss-dsi-hbm-fod-off-command-state = "dsi_hs_mode";
+	    qcom,mdss-dsi-dispparam-hbm-fod-on-command-state = "dsi_hs_mode";
+	    qcom,mdss-dsi-dispparam-hbm-fod-off-command-state = "dsi_hs_mode";
 
 	    mi,mdss-dsi-flat-on-command = [
 		39 00 00 00 00 00 03 F0 5A 5A

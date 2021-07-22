@@ -137,7 +137,6 @@
 &dsi_j9_38_0a_0a_video {
 	mi,feature-enabled;
 	/* enable fod feature */
-	mi,mdss-dsi-panel-fod-dimlayer-enabled;
 	mi,mdss-dsi-bl-dcs-big-endian-type;
 	mi,mdss-dsi-panel-hbm-51-ctrl-flag;
 	mi,mdss-dsi-panel-hbm-off-51-index = <1>;
@@ -164,11 +163,9 @@
 	mi,mdss-dsi-doze-hbm-brightness-value = <270>;
 	mi,mdss-dsi-doze-lbm-brightness-value = <20>;
 
-	mi,mdss-dsi-panel-fod-dimlayer-enabled;
 	mi,mdss-panel-fod-hbm-on-need-prepare;
 	mi,mdss-panel-fod-hbm-off-delay;
-	mi,mdss-dsi-dimlayer-brightness-alpha-lut-item-count = <21>;
-	mi,mdss-dsi-dimlayer-brightness-alpha-lut =
+	qcom,disp-fod-dim-lut =
 	/* brightness  alpha */
 		<0          0xFF
 		 4          0xEB
@@ -203,7 +200,7 @@
 			mi,mdss-dsi-doze-hbm-command-state = "dsi_lp_mode";
 			mi,mdss-dsi-doze-lbm-command-state = "dsi_lp_mode";
 
-			mi,mdss-dsi-hbm-fod-on-command = [
+			qcom,mdss-dsi-dispparam-hbm-fod-on-command = [
 				/* ELVSS dimming off */
 				39 00 00 00 00 00 03 F0 5A 5A
 				39 00 00 00 00 00 03 B0 05 B3
@@ -212,11 +209,11 @@
 				/* HBM ON 600nit */
 				39 00 00 00 00 00 03 51 03 FF
 				39 01 00 00 00 00 02 53 E0];
-			mi,mdss-dsi-hbm-fod-on-command-state = "dsi_lp_mode";
-			mi,mdss-dsi-hbm-fod-off-command = [
+			qcom,mdss-dsi-dispparam-hbm-fod-on-command-state = "dsi_lp_mode";
+			qcom,mdss-dsi-dispparam-hbm-fod-off-command = [
 				15 00 00 00 00 00 02 53 20
 				39 01 00 00 00 00 03 51 03 FF];
-			mi,mdss-dsi-hbm-fod-off-command-state = "dsi_hs_mode";
+			qcom,mdss-dsi-dispparam-hbm-fod-off-command-state = "dsi_hs_mode";
 
 			mi,mdss-dsi-hbm-off-command = [
 				15 00 00 00 00 00 02 53 28

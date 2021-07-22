@@ -362,13 +362,11 @@
 
 	mi,mdss-panel-on-dimming-delay = <120>;
 
-	mi,mdss-dsi-panel-fod-dimlayer-enabled;
 	mi,mdss-panel-delay-after-fod-hbm-off;
 	mi,mdss-panel-delay-after-fod-hbm-on;
 
 	mi,mdss-dsi-panel-hbm-brightness = <1>;
-	mi,mdss-dsi-dimlayer-brightness-alpha-lut-item-count = <21>;
-	mi,mdss-dsi-dimlayer-brightness-alpha-lut =
+	qcom,disp-fod-dim-lut =
 	/* brightness  alpha */
 		<0          0xFF
 		 4          0xEB
@@ -442,7 +440,7 @@
 			mi,mdss-dsi-hbm-off-command-state = "dsi_lp_mode";
 
 			/* aod mode -> hbm on for fingerprint unlock */
-			mi,mdss-dsi-hbm-fod-on-command = [
+			qcom,mdss-dsi-dispparam-hbm-fod-on-command = [
 				/* VI Setting voltage -3.5V */
 				39 01 00 00 00 00 06 F0 55 AA 52 08 01 /* Set page 1 */
 				39 00 00 00 00 00 09 B9 1F 1F 1F 1F 1F 1F 1F 1F
@@ -458,14 +456,14 @@
 				15 00 00 00 00 00 02 65 00
 				05 00 00 00 00 00 02 38 00
 				05 01 00 00 00 00 02 2C 00];
-			mi,mdss-dsi-hbm-fod-off-command = [
+			qcom,mdss-dsi-dispparam-hbm-fod-off-command = [
 				/* Dimming Off */
 				15 01 00 00 00 00 02 53 20
 				/* Normal Mode */
 				/* parameter will be updated base on last brightness */
 				39 01 00 00 00 00 05 51 07 FF 00 00];
-			mi,mdss-dsi-hbm-fod-on-command-state = "dsi_lp_mode";
-			mi,mdss-dsi-hbm-fod-off-command-state = "dsi_lp_mode";
+			qcom,mdss-dsi-dispparam-hbm-fod-on-command-state = "dsi_lp_mode";
+			qcom,mdss-dsi-dispparam-hbm-fod-off-command-state = "dsi_lp_mode";
 			mi,mdss-dsi-normal-fod-on-command-state = "dsi_lp_mode";
 			mi,mdss-dsi-aod-fod-to-normal-command-state = "dsi_lp_mode";
 
@@ -631,7 +629,7 @@
 			mi,mdss-dsi-hbm-off-command-state = "dsi_lp_mode";
 
 			/* aod mode -> hbm on for fingerprint unlock */
-			mi,mdss-dsi-hbm-fod-on-command = [
+			qcom,mdss-dsi-dispparam-hbm-fod-on-command = [
 				/* VI Setting voltage -3.5V */
 				39 01 00 00 00 00 06 F0 55 AA 52 08 01 /* Set page 1 */
 				39 00 00 00 00 00 09 B9 1F 1F 1F 1F 1F 1F 1F 1F
@@ -654,14 +652,14 @@
 				39 00 00 00 00 00 08 BB 11 00 0E 5A 00 10 4F
 				15 00 00 00 00 00 02 2F 04
 				15 01 00 00 00 00 02 26 02];
-			mi,mdss-dsi-hbm-fod-off-command = [
+			qcom,mdss-dsi-dispparam-hbm-fod-off-command = [
 				/* Dimming Off */
 				15 01 00 00 00 00 02 53 20
 				/* Normal Mode */
 				/* parameter will be updated base on last brightness */
 				39 01 00 00 00 00 05 51 07 FF 00 00];
-			mi,mdss-dsi-hbm-fod-on-command-state = "dsi_lp_mode";
-			mi,mdss-dsi-hbm-fod-off-command-state = "dsi_lp_mode";
+			qcom,mdss-dsi-dispparam-hbm-fod-on-command-state = "dsi_lp_mode";
+			qcom,mdss-dsi-dispparam-hbm-fod-off-command-state = "dsi_lp_mode";
 			mi,mdss-dsi-normal-fod-on-command-state = "dsi_lp_mode";
 			mi,mdss-dsi-aod-fod-to-normal-command-state = "dsi_lp_mode";
 

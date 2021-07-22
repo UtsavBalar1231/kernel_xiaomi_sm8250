@@ -288,13 +288,11 @@
 
 	mi,mdss-panel-on-dimming-delay = <120>;
 
-	mi,mdss-dsi-panel-fod-dimlayer-enabled;
 	mi,mdss-panel-delay-before-fod-hbm-on;
 	mi,mdss-panel-delay-before-fod-hbm-off;
 	mi,mdss-panel-delay-after-fod-hbm-off;
 
-	mi,mdss-dsi-dimlayer-brightness-alpha-lut-item-count = <21>;
-	mi,mdss-dsi-dimlayer-brightness-alpha-lut =
+	qcom,disp-fod-dim-lut =
 	/* brightness  alpha */
 		<0          0xFF
 		 4          0xEB
@@ -353,7 +351,7 @@
 			mi,mdss-dsi-hbm-on-command-state = "dsi_hs_mode";
 			mi,mdss-dsi-hbm-off-command-state = "dsi_hs_mode";
 
-			mi,mdss-dsi-hbm-fod-on-command = [
+			qcom,mdss-dsi-dispparam-hbm-fod-on-command = [
 				/* Aod to Normal */
 				39 00 00 00 00 00 06 F0 55 AA 52 08 00
 				15 00 00 00 00 00 02 B2 58
@@ -364,14 +362,14 @@
 				15 00 00 00 00 00 02 53 20
 				/* HBM Mode */
 				39 01 00 00 00 00 03 51 0F FF];
-			mi,mdss-dsi-hbm-fod-off-command = [
+			qcom,mdss-dsi-dispparam-hbm-fod-off-command = [
 				/* Dimming Off */
 				15 01 00 00 00 00 02 53 20
 				/* Normal Mode */
 				/* parameter will be updated base on last brightness */
 				39 01 00 00 00 00 03 51 07 FF];
-			mi,mdss-dsi-hbm-fod-on-command-state = "dsi_hs_mode";
-			mi,mdss-dsi-hbm-fod-off-command-state = "dsi_hs_mode";
+			qcom,mdss-dsi-dispparam-hbm-fod-on-command-state = "dsi_hs_mode";
+			qcom,mdss-dsi-dispparam-hbm-fod-off-command-state = "dsi_hs_mode";
 
 			mi,mdss-dsi-dimmingon-command = [15 01 00 00 00 00 02 53 28];
 			mi,mdss-dsi-dimmingon-command-state = "dsi_hs_mode";
@@ -443,7 +441,7 @@
 			mi,mdss-dsi-hbm-on-command-state = "dsi_hs_mode";
 			mi,mdss-dsi-hbm-off-command-state = "dsi_hs_mode";
 
-			mi,mdss-dsi-hbm-fod-on-command = [
+			qcom,mdss-dsi-dispparam-hbm-fod-on-command = [
 				/* Aod to Normal */
 				39 00 00 00 00 00 06 F0 55 AA 52 08 00
 				15 00 00 00 00 00 02 B2 58
@@ -457,14 +455,14 @@
 				15 00 00 00 00 00 02 53 20
 				/* HBM Mode */
 				39 01 00 00 00 00 03 51 0F FF];
-			mi,mdss-dsi-hbm-fod-off-command = [
+			qcom,mdss-dsi-dispparam-hbm-fod-off-command = [
 				/* Dimming Off */
 				15 01 00 00 00 00 02 53 20
 				/* Normal Mode */
 				/* parameter will be updated base on last brightness */
 				39 01 00 00 00 00 03 51 07 FF];
-			mi,mdss-dsi-hbm-fod-on-command-state = "dsi_hs_mode";
-			mi,mdss-dsi-hbm-fod-off-command-state = "dsi_hs_mode";
+			qcom,mdss-dsi-dispparam-hbm-fod-on-command-state = "dsi_hs_mode";
+			qcom,mdss-dsi-dispparam-hbm-fod-off-command-state = "dsi_hs_mode";
 
 			mi,mdss-dsi-dimmingon-command = [15 01 00 00 00 00 02 53 28];
 			mi,mdss-dsi-dimmingon-command-state = "dsi_hs_mode";
