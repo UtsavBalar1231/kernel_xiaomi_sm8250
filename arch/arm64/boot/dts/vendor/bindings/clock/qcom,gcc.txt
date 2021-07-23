@@ -31,12 +31,12 @@ Required properties :
 			"qcom,gcc-msm8917"
 			"qcom,gcc-msm8937"
 			"qcom,gcc-sdm429w"
+			"qcom,gcc-sdm450"
 			"qcom,gcc-mdss-msm8937"
-			"qcom,gcc-mdss-8917"
+			"qcom,gcc-mdss-qm215"
 			"qcom,gcc-mdss-sdm429w"
-			"qcom,gcc-mdss-sdm429"
 			"qcom,gcc-mdss-sdm439"
-			"qcom,gcc-mdss-sdm429w"
+			"qcom,khaje-gcc"
 
 - reg : shall contain base register location and length
 - #clock-cells : shall contain 1

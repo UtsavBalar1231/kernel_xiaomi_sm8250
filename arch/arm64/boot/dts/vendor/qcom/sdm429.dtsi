@@ -105,13 +105,7 @@
 };
 
 &gcc {
-	compatible = "qcom,gcc-sdm429";
-	reg = <0x1800000 0x80000>,
-		<0xb016000 0x00040>;
-	reg-names = "cc_base", "apcs_c1_base";
 	vdd_cx-supply = <&pm8953_s2_level>;
-	vdd_hf_dig-supply = <&pm8953_s2_level_ao>;
-	vdd_hf_pll-supply = <&pm8953_l7_ao>;
 };
 
 &debugcc {
@@ -199,6 +193,29 @@
 			<  533333333 3>;
 
 		#clock-cells = <1>;
+
+		qcom,cpu-isolation {
+			compatible = "qcom,cpu-isolate";
+			cpu0_isolate: cpu0-isolate {
+				qcom,cpu = <&CPU0>;
+				#cooling-cells = <2>;
+			};
+
+			cpu1_isolate: cpu1-isolate {
+				qcom,cpu = <&CPU1>;
+				#cooling-cells = <2>;
+			};
+
+			cpu2_isolate: cpu2-isolate {
+				qcom,cpu = <&CPU2>;
+				#cooling-cells = <2>;
+			};
+
+			cpu3_isolate: cpu3-isolate {
+				qcom,cpu = <&CPU3>;
+				#cooling-cells = <2>;
+			};
+		};
 	};
 
 	/* Disable secure_mem node */
@@ -218,13 +235,11 @@
 };
 
 &gcc_mdss {
-	compatible = "qcom,gcc-mdss-sdm429";
-	/* TODO
-	 * clocks = <&mdss_dsi0_pll PCLK_SRC_MUX_0_CLK>,
-	 * <&mdss_dsi0_pll BYTE_CLK_SRC_0_CLK>,
-	 * <&mdss_dsi1_pll PCLK_SRC_MUX_1_CLK>,
-	 * <&mdss_dsi1_pll BYTE_CLK_SRC_1_CLK>;
-	 */
+	compatible = "qcom,gcc-mdss-sdm439";
+	clocks = <&mdss_dsi0_pll PCLK_SRC_MUX_0_CLK>,
+		<&mdss_dsi0_pll BYTE_CLK_SRC_0_CLK>,
+		<&mdss_dsi1_pll PCLK_SRC_MUX_1_CLK>,
+		<&mdss_dsi1_pll BYTE_CLK_SRC_1_CLK>;
 	clock-names = "pclk0_src", "byte0_src", "pclk1_src",
 		"byte1_src";
 	#clock-cells = <1>;

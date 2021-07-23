@@ -308,12 +308,6 @@
 			qcom,scratch-buf-support;
 		};
 
-		msm_cam_smmu_cb2: msm_cam_smmu_cb2 {
-			compatible = "qcom,msm-cam-smmu-cb";
-			label = "vfe_secure";
-			qcom,secure-context;
-		};
-
 		msm_cam_smmu_cb3: msm_cam_smmu_cb3 {
 			compatible = "qcom,msm-cam-smmu-cb";
 			iommus = <&apps_iommu 0x1c00 0x00>;

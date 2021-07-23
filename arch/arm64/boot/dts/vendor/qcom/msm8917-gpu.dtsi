@@ -4,26 +4,34 @@
 		compatible = "qcom,kgsl-busmon";
 	};
 
+	gpu_bw_tbl: gpu-bw-tbl {
+		compatible = "operating-points-v2";
+		opp-0    { opp-hz = /bits/ 64 < 0 >;     }; /* OFF */
+
+		opp-100 { opp-hz = /bits/ 64 < 769 >;   }; /* 1. 100 MHz */
+
+		opp-211 { opp-hz = /bits/ 64 < 1611 >;  }; /* 2. 211 MHz */
+
+		opp-297 { opp-hz = /bits/ 64 < 2270 >;  }; /* 3. 297 MHz */
+
+		opp-384 { opp-hz = /bits/ 64 < 2929 >;  }; /* 4. 384 MHz */
+
+		opp-557 { opp-hz = /bits/ 64 < 4248 >;  }; /* 5. 557 MHz */
+
+		opp-595 { opp-hz = /bits/ 64 < 4541 >;  }; /* 6. 595 MHz */
+
+		opp-672 { opp-hz = /bits/ 64 < 5126 >;  }; /* 7. 672 MHz */
+
+		opp-739 { opp-hz = /bits/ 64 < 5639 >;  }; /* 8. 739 MHz */
+	};
+
 	/* Bus governor */
 	gpubw: qcom,gpubw {
 		compatible = "qcom,devbw";
 		governor = "bw_vbif";
 		qcom,src-dst-ports = <26 512>;
-		/*
-		 * Need to configure 2x Clock as BIMC
-		 * Internally Divides by 2 for Gen1 DDR PHY.
-		 */
+		operating-points-v2 = <&gpu_bw_tbl>;
 		qcom,active-only;
-		qcom,bw-tbl =
-			< 0 >,    /* Off */
-			< 769 >,  /* 1. DDR:100.80 MHz BIMC: 201.60 MHz */
-			< 1611 >, /* 2. DDR:211.20 MHz BIMC: 422.40 MHz */
-			< 2270 >, /* 3. DDR:297.60 MHz BIMC: 595.20 MHz */
-			< 2929 >, /* 4. DDR:384.00 MHz BIMC: 768.00 MHz */
-			< 4248 >, /* 5. DDR:556.80 MHz BIMC: 1113.60 MHz */
-			< 4541 >, /* 6. DDR:595.20 MHz BIMC: 1190.40 MHz */
-			< 5126 >, /* 7. DDR:672.00 MHz BIMC: 1344.00 MHz */
-			< 5639 >; /* 8. DDR:739.20 MHz BIMC: 1478.40 MHz */
 	};
 
 	msm_gpu: qcom,kgsl-3d0@1c00000 {
@@ -158,7 +166,6 @@
 		 * The gpu can only program a single context bank
 		 * at this fixed offset.
 		 */
-		qcom,protect = <0xa000 0x1000>;
 		clocks = <&gcc GCC_SMMU_CFG_CLK>,
 			<&gcc GCC_GFX_TCU_CLK>,
 			<&gcc GCC_GTCU_AHB_CLK>,
@@ -169,6 +176,7 @@
 		gfx3d_user: gfx3d_user {
 			compatible = "qcom,smmu-kgsl-cb";
 			iommus = <&gfx_iommu 0>;
+			qcom,iommu-dma = "disabled";
 			qcom,gpu-offset = <0xa000>;
 		};
 	};

@@ -59,6 +59,9 @@ SoCs:
 - BENGAL
   compatible = "qcom,bengal"
 
+- KHAJE
+  compatible = "qcom,khaje"
+
 - SCUBA
   compatible = "qcom,scuba"
 
@@ -247,6 +250,8 @@ compatible = "qcom,bengal-qrd"
 compatible = "qcom,bengal-idp"
 compatible = "qcom,bengalp"
 compatible = "qcom,bengalp-idp"
+compatible = "qcom,khaje-idp"
+compatible = "qcom,khaje-qrd"
 compatible = "qcom,scuba-rumi"
 compatible = "qcom,scuba-idp"
 compatible = "qcom,scuba-qrd"

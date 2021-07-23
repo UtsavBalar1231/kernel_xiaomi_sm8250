@@ -6,7 +6,8 @@ Required properties :
 		"qcom,bengal-debugcc", "qcom,lagoon-debugcc"
 		"qcom,sdm660-debugcc" "qcom,sdm429w-debugcc"
 		"qcom,msm8937-debugcc" "qcom,msm8917-debugcc"
-		"qcom,sdm429w-debugcc "or "qcom,qm215-debugcc".
+		"qcom,sdm429w-debugcc", "qcom,qm215-debugcc"
+		or "qcom,sdm450-debugcc", "qcom,khaje-debugcc".
 - qcom,gcc: phandle to the GCC device node.
 - qcom,videocc: phandle to the Video CC device node.
 - qcom,camcc: phandle to the Camera CC device node.

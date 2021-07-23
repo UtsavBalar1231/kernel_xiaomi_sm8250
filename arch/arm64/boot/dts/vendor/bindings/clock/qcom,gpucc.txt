@@ -9,7 +9,8 @@ Required properties :
 		"qcom,lagoon-gpucc",
 		"qcom,gpu-sdm660",
 		"qcom,gpucc-sdm660",
-		"qcom,gpucc-sdm630".
+		"qcom,gpucc-sdm630",
+		"qcom,khaje-gpucc".
 
 - reg: shall contain base register offset and size.
 - reg-names: names of registers listed in the same order as in the reg property.

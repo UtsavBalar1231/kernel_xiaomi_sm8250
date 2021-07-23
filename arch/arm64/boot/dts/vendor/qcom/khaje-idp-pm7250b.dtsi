@@ -1,0 +1,24 @@
+#include "khaje-pm7250b.dtsi"
+
+&led_flash_rear {
+	/delete-property/ flash-source;
+	/delete-property/ torch-source;
+	/delete-property/ switch-source;
+};
+
+&led_flash_rear_aux {
+	/delete-property/ flash-source;
+	/delete-property/ torch-source;
+	/delete-property/ switch-source;
+};
+
+&led_flash_rear_aux2 {
+	/delete-property/ flash-source;
+	/delete-property/ torch-source;
+	/delete-property/ switch-source;
+};
+
+&sde_dsi {
+	/delete-property/ lab-supply;
+	/delete-property/ ibb-supply;
+};

@@ -282,6 +282,13 @@ Optional properties:
 				DSPP offsets. Since LTM hardware is represented as part of
 				DSPP block, the LTM offsets are calculated based on the
 				corresponding DSPP base.
+- qcom,sde-dspp-rc-version:	A u32 value indicating the version of the RC hardware.
+- qcom,sde-dspp-rc-off:	Array of u32 offsets indicate the RC block offsets from the
+				DSPP offsets. Since RC hardware is represented as part of
+				DSPP block, the RC offsets are calculated based on the
+				corresponding DSPP base.
+- qcom,sde-dspp-rc-size:	A u32 value indicating the RC block address range.
+- qcom,sde-dspp-rc-mem-size:	A u32 value indicating the RC block shared memory size.
 - qcom,sde-vbif-id:		Array of vbif ids corresponding to the
 				offsets defined in property: qcom,sde-vbif-off.
 - qcom,sde-vbif-default-ot-rd-limit:	A u32 value indicates the default read OT limit

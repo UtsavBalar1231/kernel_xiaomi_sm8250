@@ -18,9 +18,9 @@ Required properties :
 			"qcom,rpmcc-msm8996", "qcom,rpmcc"
 			"qcom,rpmcc-bengal", "qcom,rpmcc"
 			"qcom,rpmcc-sdm660", "qcom,rpmcc"
-			"qcom,rpmcc-msm8937", "qcom,rpmcc"
-			"qcom,rpmcc-msm8917", "qcom,rpmcc"
+			"qcom,rpmcc-sdm439", "qcom,rpmcc"
 			"qcom,rpmcc-qm215", "qcom,rpmcc"
+			"qcom,rpmcc-sdm450", "qcom,rpmcc"
 
 - #clock-cells : shall contain 1
 

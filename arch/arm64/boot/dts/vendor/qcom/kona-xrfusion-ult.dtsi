@@ -1005,7 +1005,6 @@
 	pinctrl-0 = <&sdc2_clk_on  &sdc2_cmd_on &sdc2_data_on &storage_cd>;
 	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off &storage_cd>;
 
-	cd-gpios = <&tlmm 77 GPIO_ACTIVE_HIGH>; /* Morpheus has to be HIGH */
 
 	status = "ok";
 };

@@ -5,19 +5,6 @@
 #include "dsi-panel-r66451-hd-plus-90hz-cmd.dtsi"
 #include <dt-bindings/clock/mdss-14nm-pll-clk.h>
 
-&pmi632_gpios {
-	disp_pins {
-		disp_pins_default: disp_pins_default {
-			pins = "gpio6";
-			function = "func1";
-			qcom,drive-strength = <2>;
-			power-source = <0>;
-			bias-disable;
-			output-low;
-		};
-	};
-};
-
 &soc {
 	dsi_panel_pwr_supply: dsi_panel_pwr_supply {
 		#address-cells = <1>;

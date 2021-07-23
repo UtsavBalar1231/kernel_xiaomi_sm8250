@@ -1289,6 +1289,8 @@
 
 		clocks = <&rpmcc RPM_SMD_QDSS_CLK>;
 		clock-names = "apb_pclk";
+		coresight-ctis = <&cti0>;
+		coresight-csr = <&csr>;
 		ports {
 			#address-cells = <1>;
 			#size-cells = <0>;

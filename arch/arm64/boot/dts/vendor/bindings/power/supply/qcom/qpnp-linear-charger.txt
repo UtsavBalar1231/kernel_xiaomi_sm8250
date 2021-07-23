@@ -18,6 +18,8 @@ Parent node required properties:
 - qcom,vddsafe-mv:			Maximum Vdd voltage in mV.
 - qcom,vinmin-mv:			Minimum input voltage in mV.
 - qcom,ibatsafe-ma:			Safety battery current setting
+- qcom,v-cutoff-mv:			Cutoff voltage where the battery
+					is considered dead in mV.
 
 Parent node optional properties:
 - qcom,vbatweak-uv:			Weak battery voltage threshold in uV,

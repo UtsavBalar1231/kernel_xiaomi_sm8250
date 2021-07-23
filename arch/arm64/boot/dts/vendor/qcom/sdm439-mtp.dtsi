@@ -617,10 +617,24 @@
 		&smb_en_default &pmi632_sense_default &pmi632_ctm_default>;
 	interrupt-parent = <&tlmm>;
 	interrupts = <61 IRQ_TYPE_LEVEL_LOW>;
+	status = "ok";
+	smb1355_charger: qcom,smb1355-charger@1000 {
+		status = "ok";
+		qcom,parallel-mode = <1>;
+		qcom,disable-ctm;
+		qcom,hw-die-temp-mitigation;
+	};
+};
+
+&smb1355_0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&smb_int_default
+		&smb_en_default &pmi632_sense_default &pmi632_ctm_default>;
+	interrupt-parent = <&tlmm>;
+	interrupts = <61 IRQ_TYPE_LEVEL_LOW>;
+	status = "ok";
 	smb1355_charger_0: qcom,smb1355-charger@1000 {
-		status ="ok";
-		/delete-property/ io-channels;
-		/delete-property/ io-channels-names;
+		status = "ok";
 		qcom,parallel-mode = <1>;
 		qcom,disable-ctm;
 		qcom,hw-die-temp-mitigation;

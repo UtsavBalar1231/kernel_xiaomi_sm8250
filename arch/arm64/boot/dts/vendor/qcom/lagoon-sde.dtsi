@@ -88,11 +88,11 @@
 		qcom,sde-mixer-blend-op-off = <0x20 0x38 0x50 0x68 0x80 0x98
 						0xb0 0xc8 0xe0 0xf8 0x110>;
 
-		qcom,sde-max-per-pipe-bw-kbps = <2700000 2700000
-						 2700000 2700000>;
+		qcom,sde-max-per-pipe-bw-kbps = <3200000 3200000
+						 3200000 3200000>;
 
-		qcom,sde-max-per-pipe-bw-high-kbps = <2700000 2700000
-						      2700000 2700000>;
+		qcom,sde-max-per-pipe-bw-high-kbps = <3200000 3200000
+						      3200000 3200000>;
 
 		/* offsets are relative to "mdp_phys + qcom,sde-off */
 		qcom,sde-sspp-clk-ctrl = <0x2ac 0>,
@@ -117,8 +117,8 @@
 		qcom,sde-pipe-order-version = <0x1>;
 		qcom,sde-has-dim-layer;
 		qcom,sde-has-idle-pc;
-		qcom,sde-max-bw-low-kbps = <4200000>;
-		qcom,sde-max-bw-high-kbps = <5100000>;
+		qcom,sde-max-bw-low-kbps = <4400000>;
+		qcom,sde-max-bw-high-kbps = <5900000>;
 		qcom,sde-min-core-ib-kbps = <2500000>;
 		qcom,sde-min-llcc-ib-kbps = <0>;
 		qcom,sde-min-dram-ib-kbps = <1600000>;
@@ -276,18 +276,18 @@
 							"camera_concurrency",
 							"cwb_concurrency";
 				qcom,sde-limit-ids = <0x1 0x2 0x4 0x8 0x10>;
-				qcom,sde-limit-values = <0x1 2700000>,
-							<0x11 2700000>,
-							<0x9 2700000>,
-							<0x19 2700000>,
-							<0x2 2700000>,
-							<0x12 2700000>,
-							<0xa 2700000>,
-							<0x1a 2700000>,
-							<0x4 5100000>,
-							<0x14 5100000>,
+				qcom,sde-limit-values = <0x1 3200000>,
+							<0x11 3200000>,
+							<0x9 3200000>,
+							<0x19 3200000>,
+							<0x2 3200000>,
+							<0x12 3200000>,
+							<0xa 3200000>,
+							<0x1a 3200000>,
+							<0x4 5900000>,
+							<0x14 5900000>,
 							<0xc 4400000>,
-							<0x1c 4200000>;
+							<0x1c 4400000>;
 			};
 		};
 	};
