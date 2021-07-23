@@ -56,7 +56,7 @@
 			   "vph_voltage",
 			   "skin_temp";
 	qcom,battery-data = <&mtp_batterydata>;
-	qcom,sec-charger-config = <1>;
+	qcom,sec-charger-config = <2>;
 	qcom,auto-recharge-soc = <98>;
 	qcom,step-charging-enable;
 	qcom,sw-jeita-enable;
