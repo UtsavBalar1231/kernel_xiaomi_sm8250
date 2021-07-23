@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# HOME path
+HOME=/home/rohanhasabe8/cunt
+# Kernel Output
+OUT_DIR=out
+VERSION="REL-0.3.t"
+DEVICE=umi
+DATE=$(date +"%d.%m.%y.%S")
+ZIPNAME=IMMENSITY-X-${DEVICE}-${VERSION}-${DATE}.zip
+
+# Set compiler PATH
+PATH=${HOME}/proton-clang/bin/:$PATH
+
+make ARCH=arm64 \
+        O=${OUT_DIR} \
+        ${DEVICE}_defconfig \
+        -j"$(nproc --all)"
+
+# Let's build
+START=$(date +"%s")
+
+make ARCH=arm64 \
+        O=${OUT_DIR} \
+        LLVM=1 \
+        CROSS_COMPILE="aarch64-linux-gnu-" \
+        CROSS_COMPILE_ARM32="arm-linux-gnueabi-" \
+        -j"$(nproc --all)"
+
+#find ${OUT_DIR}/arch/arm64/boot/dts/vendor/qcom -name '*.dtb' -exec cat {} + > ${OUT_DIR}/arch/arm64/boot/dtb
+
+# Import Anykernel3 folder
+if [ $DEVICE == alioth ]; then
+        cp -r ${HOME}/anykernel-vb "$(pwd)"/anykernel
+else
+        cp -r ${HOME}/anykernel "$(pwd)"/
+fi
+
+cp "$(pwd)"/${OUT_DIR}/arch/arm64/boot/Image.gz-dtb "$(pwd)"/anykernel/
+cp "$(pwd)"/${OUT_DIR}/arch/arm64/boot/dtbo.img "$(pwd)"/anykernel/
+
+cd anykernel/ || exit
+zip -r9 "${ZIPNAME}" ./*
+CHECKER=$(ls -l "${ZIPNAME}" | awk '{print $5}')
+if (($((CHECKER / 1048576)) > 5)); then
+        curl --upload-file "${ZIPNAME}" https://transfer.sh/"${ZIPNAME}"
+else
+        echo -e '\033[01;31m' "kernel compilation unsuccesfull" || exit
+fi
+cd ../
+
+# Cleanup
+rm -fr anykernel/
+rm ${OUT_DIR}/.version
+rm ${OUT_DIR}/arch/arm64/boot/Image.gz-dtb
+rm ${OUT_DIR}/arch/arm64/boot/dtbo.img
+
+END=$(date +"%s")
+DIFF=$(( END - START))
+echo -e '\033[01;32m' "Kernel compiled successfully in $((DIFF / 60)) minute(s) and $((DIFF % 60)) seconds" || exit

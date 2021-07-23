@@ -1,0 +1,27 @@
+make O=out ARCH=arm64 alioth_defconfig
+make O=out ARCH=arm64 savedefconfig
+mv out/defconfig arch/arm64/configs/alioth_defconfig
+
+make O=out ARCH=arm64 apollo_defconfig
+make O=out ARCH=arm64 savedefconfig
+mv out/defconfig arch/arm64/configs/apollo_defconfig
+
+make O=out ARCH=arm64 cas_defconfig
+make O=out ARCH=arm64 savedefconfig
+mv out/defconfig arch/arm64/configs/cas_defconfig
+
+make O=out ARCH=arm64 cmi_defconfig
+make O=out ARCH=arm64 savedefconfig
+mv out/defconfig arch/arm64/configs/cmi_defconfig
+
+make O=out ARCH=arm64 lmi_defconfig
+make O=out ARCH=arm64 savedefconfig
+mv out/defconfig arch/arm64/configs/lmi_defconfig
+
+make O=out ARCH=arm64 thyme_defconfig
+make O=out ARCH=arm64 savedefconfig
+mv out/defconfig arch/arm64/configs/thyme_defconfig
+
+make O=out ARCH=arm64 umi_defconfig
+make O=out ARCH=arm64 savedefconfig
+mv out/defconfig arch/arm64/configs/umi_defconfig
