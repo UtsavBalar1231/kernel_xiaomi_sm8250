@@ -5,6 +5,7 @@
 
 	/* add rpm-smd node again */
 	rpm_bus: qcom,rpm-smd {
+		interrupts = <GIC_SPI 168 IRQ_TYPE_EDGE_RISING>;
 		compatible = "qcom,rpm-smd";
 		rpm-channel-name = "rpm_requests";
 		rpm-channel-type = <15>; /* SMD_APPS_RPM */
@@ -34,10 +35,6 @@
 				};
 			};
 		};
-	};
-
-	qcom,cpu-clock-8939@b111050 {
-		/delete-property/ vdd-c1-supply;
 	};
 
 	qcom,gcc@1800000 {
@@ -192,10 +189,6 @@
 			qcom,supply-disable-load = <100>;
 		};
 	};
-};
-
-&clock_cpu {
-	vdd-c1-supply = <&apc_vreg_corner>;
 };
 
 &gcc {

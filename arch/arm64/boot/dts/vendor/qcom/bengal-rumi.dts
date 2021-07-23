@@ -2,6 +2,7 @@
 /memreserve/ 0x90000000 0x00000100;
 
 #include "bengal.dtsi"
+#include "bengal-pmi632.dtsi"
 #include "bengal-rumi.dtsi"
 
 / {

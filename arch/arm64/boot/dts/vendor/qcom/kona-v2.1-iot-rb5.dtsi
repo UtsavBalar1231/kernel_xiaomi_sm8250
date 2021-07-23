@@ -14,6 +14,16 @@
 	status = "ok";
 };
 
+&qupv3_se13_4uart {
+	status = "ok";
+	qrc:qrc@100 {
+		compatible = "qcom,qrc-uart";
+		status = "ok";
+		qcom,qrc-reset-gpio = <&tlmm 114 0>;
+		qcom,qrc-boot-gpio = <&tlmm 109 0>;
+	};
+};
+
 &pm8150l_gpios {
 	lt9611_rst_pin_out {
 		lt9611_rst_pin_out_default: lt9611_rst_pin_out_default {

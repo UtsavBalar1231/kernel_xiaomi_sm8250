@@ -4,7 +4,7 @@
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/clock/qcom,gcc-sdm429w.h>
 #include <dt-bindings/clock/qcom,rpmcc.h>
-#include <dt-bindings/clock/mdss-28nm-pll-clk.h>
+#include <dt-bindings/clock/mdss-28nm-pll-clk-legacy.h>
 
 #define MHZ_TO_MBPS(mhz, w) ((mhz * 1000000 * w) / (1024 * 1024))
 #define BW_OPP_ENTRY(mhz, w) opp-mhz {opp-hz = /bits/ 64 <MHZ_TO_MBPS(mhz, w)>;}
@@ -24,7 +24,7 @@
 			compatible = "android,firmware";
 			vbmeta {
 				compatible = "android,vbmeta";
-			parts = "vbmeta,boot,system,vendor,dtbo,recovery";
+			parts = "vbmeta,boot,system,vendor,dtbo";
 			};
 
 			fstab {
@@ -34,7 +34,7 @@
 		dev = "/dev/block/platform/soc/7824900.sdhci/by-name/vendor";
 					type = "ext4";
 					mnt_flags = "ro,barrier=1,discard";
-					fsmgr_flags = "wait,avb";
+					fsmgr_flags = "wait,slotselect,avb";
 					status = "ok";
 				};
 			};
@@ -122,18 +122,6 @@
 	};
 
 	aliases {
-		/* smdtty devices */
-		smd1 = &smdtty_apps_fm;
-		smd2 = &smdtty_apps_riva_bt_acl;
-		smd3 = &smdtty_apps_riva_bt_cmd;
-		smd4 = &smdtty_mbalbridge;
-		smd5 = &smdtty_apps_riva_ant_cmd;
-		smd6 = &smdtty_apps_riva_ant_data;
-		smd7 = &smdtty_data1;
-		smd8 = &smdtty_data4;
-		smd11 = &smdtty_data11;
-		smd21 = &smdtty_data21;
-		smd36 = &smdtty_loopback;
 		i2c2 = &i2c_2;
 		i2c5 = &i2c_5;
 		spi3 = &spi_3;
@@ -311,7 +299,7 @@
 
 	cpu-pmu {
 		compatible = "arm,armv8-pmuv3";
-		interrupts = <1 7 0xff00>;
+		interrupts = <1 7 IRQ_TYPE_LEVEL_HIGH>;
 	};
 
 	qcom,sps {
@@ -580,15 +568,14 @@
 	};
 
 	rpmcc: qcom,rpmcc {
-		compatible = "qcom,rpmcc-msm8937";
+		compatible = "qcom,rpmcc-sdm439";
 		#clock-cells = <1>;
 	};
 
 	gcc: qcom,gcc@1800000 {
-		compatible = "qcom,gcc-msm8937", "syscon";
+		compatible = "qcom,gcc-sdm439", "syscon";
 		reg = <0x1800000 0x80000>;
-			 <0x00a6018 0x00004>;
-		reg-names = "cc_base", "gpu-bin";
+		reg-names = "cc_base";
 		qcom,gcc_oxili_gfx3d_clk-opp-handle = <&msm_gpu>;
 		vdd_cx-supply = <&pm8937_s2_level>;
 		clocks = <&rpmcc RPM_SMD_XO_CLK_SRC>;
@@ -611,10 +598,10 @@
 	gcc_mdss: qcom,gcc-mdss@1800000 {
 		compatible = "qcom,gcc-mdss-msm8937";
 		reg = <0x1800000 0x80000>;
-		 clocks = <&mdss_dsi0_pll PCLK_SRC_MUX_0_CLK>,
-		 <&mdss_dsi0_pll BYTE_CLK_SRC_0_CLK>,
-		 <&mdss_dsi1_pll PCLK_SRC_MUX_1_CLK>,
-		 <&mdss_dsi1_pll BYTE_CLK_SRC_1_CLK>;
+		 clocks = <&mdss_dsi0_pll PCLK_SRC_0_CLK>,
+		 <&mdss_dsi0_pll BYTECLK_SRC_0_CLK>,
+		 <&mdss_dsi1_pll PCLK_SRC_1_CLK>,
+		 <&mdss_dsi1_pll BYTECLK_SRC_1_CLK>;
 		clock-names = "pclk0_src", "byte0_src", "pclk1_src",
 			"byte1_src";
 		#clock-cells = <1>;
@@ -931,13 +918,13 @@
 		/* TODO
 		 * clocks = <&clock_cpu clk_cci_clk/>;
 		 */
-		governor = "cpufreq";
+		governor = "performance";
 		freq-tbl-khz =
 			<  400000 >,
 			<  533333 >;
 	};
 
-	ddr_bw_opp_table: generic-bw-opp-table {
+	ddr_bw_opp_table: ddr-bw-opp-table {
 		compatible = "operating-points-v2";
 		BW_OPP_ENTRY( 100, 8); /*  769 MB/s */
 		BW_OPP_ENTRY( 211, 8); /* 1611 MB/s */
@@ -953,7 +940,7 @@
 
 	cpu_cpu_ddr_bw: qcom,cpu-cpu-ddr-bw {
 		compatible = "qcom,devbw";
-		governor = "cpufreq";
+		governor = "performance";
 		qcom,src-dst-ports =
 			<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_EBI_CH0>;
 		qcom,active-only;
@@ -971,7 +958,7 @@
 
 	cpu_cpu_ddr_latfloor: qcom,cpu-cpu-ddr-latfloor {
 		compatible = "qcom,devbw";
-		governor = "cpufreq";
+		governor = "performance";
 		qcom,src-dst-ports =
 			<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_EBI_CH0>;
 		qcom,active-only;
@@ -1164,7 +1151,7 @@
 			<0x200a000 0x2100>;
 		reg-names = "core", "chnls", "obsrvr", "intr", "cnfg";
 		interrupt-names = "periph_irq";
-		interrupts = <GIC_SPI 190 IRQ_TYPE_NONE>;
+		interrupts = <GIC_SPI 190 IRQ_TYPE_LEVEL_HIGH>;
 		qcom,ee = <0>;
 		qcom,channel = <0>;
 		#address-cells = <1>;
@@ -1473,6 +1460,26 @@
 				qcom,net-id = <1>;
 				qcom,low-latency;
 			};
+
+			qcom,diag {
+				qcom,smd-channels = "DIAG";
+			};
+
+			qcom,diag_cntl {
+				qcom,smd-channels = "DIAG_CNTL";
+			};
+
+			qcom,diag_cmd {
+				qcom,smd-channels = "DIAG_CMD";
+			};
+
+			qcom,diag_dci {
+				qcom,smd-channels = "DIAG_2";
+			};
+
+			qcom.diag_dci_cmd {
+				qcom,smd-channels = "DIAG_2_CMD";
+			};
 		};
 
 		adsp {
@@ -1481,12 +1488,25 @@
 			qcom,ipc = <&apcs 0 8>;
 			qcom,smd-edge = <1>;
 			qcom,remote-pid = <2>;
+			mbox-names = "adsp_smem";
 			label = "adsp";
 
 			qcom,smd-channels = "IPCRTR";
 			qcom,adsp_qrtr {
 				qcom,net-id = <1>;
 				qcom,low-latency;
+			};
+
+			qcom,diag {
+				qcom,smd-channels = "DIAG";
+			};
+
+			qcom,diag_cntl {
+				qcom,smd-channels = "DIAG_CNTL";
+			};
+
+			qcom,apr_tal_rpmsg {
+				qcom,smd-channels = "apr_audio_svc";
 			};
 		};
 
@@ -1502,6 +1522,14 @@
 			qcom,wcnss_qrtr {
 				qcom,net-id = <1>;
 				qcom,low-latency;
+			};
+
+			qcom,diag {
+				qcom,smd-channels = "APPS_RIVA_DATA";
+			};
+
+			qcom,diag_cntl {
+				qcom,smd-channels = "APPS_RIVA_CTRL";
 			};
 		};
 
@@ -1519,63 +1547,39 @@
 		};
 	};
 
-	qcom,smdtty {
-		compatible = "qcom,smdtty";
+	qcom,smsm {
+		compatible = "qcom,smsm";
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-		smdtty_apps_fm: qcom,smdtty-apps-fm {
-			qcom,smdtty-remote = "wcnss";
-			qcom,smdtty-port-name = "APPS_FM";
+		qcom,ipc-1 = <&apcs 0 13>;
+		qcom,ipc-2 = <&apcs 0 9>;
+		qcom,ipc-3 = <&apcs 0 19>;
+
+		apps_smsm: apps@0 {
+			reg = <0>;
+			#qcom,smem-state-cells = <1>;
 		};
 
-		smdtty_apps_riva_bt_acl: smdtty-apps-riva-bt-acl {
-			qcom,smdtty-remote = "wcnss";
-			qcom,smdtty-port-name = "APPS_RIVA_BT_ACL";
+		modem_smsm: modem@1 {
+			reg = <1>;
+			interrupts = <0 26 IRQ_TYPE_EDGE_RISING>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
 		};
 
-		smdtty_apps_riva_bt_cmd: qcom,smdtty-apps-riva-bt-cmd {
-			qcom,smdtty-remote = "wcnss";
-			qcom,smdtty-port-name = "APPS_RIVA_BT_CMD";
+		adsp_smsm: adsp@2 {
+			reg = <2>;
+			interrupts = <0 290 IRQ_TYPE_EDGE_RISING>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
 		};
 
-		smdtty_mbalbridge: qcom,smdtty-mbalbridge {
-			qcom,smdtty-remote = "modem";
-			qcom,smdtty-port-name = "MBALBRIDGE";
-		};
-
-		smdtty_apps_riva_ant_cmd: smdtty-apps-riva-ant-cmd {
-			qcom,smdtty-remote = "wcnss";
-			qcom,smdtty-port-name = "APPS_RIVA_ANT_CMD";
-		};
-
-		smdtty_apps_riva_ant_data: smdtty-apps-riva-ant-data {
-			qcom,smdtty-remote = "wcnss";
-			qcom,smdtty-port-name = "APPS_RIVA_ANT_DATA";
-		};
-
-		smdtty_data1: qcom,smdtty-data1 {
-			qcom,smdtty-remote = "modem";
-			qcom,smdtty-port-name = "DATA1";
-		};
-
-		smdtty_data4: qcom,smdtty-data4 {
-			qcom,smdtty-remote = "modem";
-			qcom,smdtty-port-name = "DATA4";
-		};
-
-		smdtty_data11: qcom,smdtty-data11 {
-			qcom,smdtty-remote = "modem";
-			qcom,smdtty-port-name = "DATA11";
-		};
-
-		smdtty_data21: qcom,smdtty-data21 {
-			qcom,smdtty-remote = "modem";
-			qcom,smdtty-port-name = "DATA21";
-		};
-
-		smdtty_loopback: smdtty-loopback {
-			qcom,smdtty-remote = "modem";
-			qcom,smdtty-port-name = "LOOPBACK";
-			qcom,smdtty-dev-name = "LOOPBACK_TTY";
+		wcnss_smsm: wcnss@3 {
+			reg = <3>;
+			interrupts = <0 144 IRQ_TYPE_EDGE_RISING>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
 		};
 	};
 
@@ -1583,39 +1587,89 @@
 		compatible = "qcom,smdpkt";
 
 		qcom,smdpkt-data5-cntl {
-			qcom,smdpkt-remote = "modem";
-			qcom,smdpkt-port-name = "DATA5_CNTL";
+			qcom,smdpkt-edge = "modem";
+			qcom,smdpkt-ch-name = "DATA5_CNTL";
 			qcom,smdpkt-dev-name = "smdcntl0";
 		};
 
 		qcom,smdpkt-data22 {
-			qcom,smdpkt-remote = "modem";
-			qcom,smdpkt-port-name = "DATA22";
+			qcom,smdpkt-edge = "modem";
+			qcom,smdpkt-ch-name = "DATA22";
 			qcom,smdpkt-dev-name = "smd22";
 		};
 
 		qcom,smdpkt-data40-cntl {
-			qcom,smdpkt-remote = "modem";
-			qcom,smdpkt-port-name = "DATA40_CNTL";
+			qcom,smdpkt-edge = "modem";
+			qcom,smdpkt-ch-name = "DATA40_CNTL";
 			qcom,smdpkt-dev-name = "smdcntl8";
 		};
 
 		qcom,smdpkt-data2 {
-			qcom,smdpkt-remote = "modem";
-			qcom,smdpkt-port-name = "DATA2";
+			qcom,smdpkt-edge = "modem";
+			qcom,smdpkt-ch-name = "DATA2";
 			qcom,smdpkt-dev-name = "at_mdm0";
 		};
 
 		qcom,smdpkt-apr-apps2 {
-			qcom,smdpkt-remote = "adsp";
-			qcom,smdpkt-port-name = "apr_apps2";
+			qcom,smdpkt-edge = "adsp";
+			qcom,smdpkt-ch-name = "apr_apps2";
 			qcom,smdpkt-dev-name = "apr_apps2";
 		};
 
-		qcom,smdpkt-loopback {
-			qcom,smdpkt-remote = "modem";
-			qcom,smdpkt-port-name = "LOOPBACK";
-			qcom,smdpkt-dev-name = "smd_pkt_loopback";
+		qcom,smdpkt-apps-riva-bt-acl {
+			qcom,smdpkt-edge = "wcnss";
+			qcom,smdpkt-ch-name = "APPS_RIVA_BT_ACL";
+			qcom,smdpkt-dev-name = "smd2";
+			qcom,smdpkt-fragmented-read;
+		};
+
+		qcom,smdpkt-apps-riva-bt-cmd {
+			qcom,smdpkt-edge = "wcnss";
+			qcom,smdpkt-ch-name = "APPS_RIVA_BT_CMD";
+			qcom,smdpkt-dev-name = "smd3";
+			qcom,smdpkt-fragmented-read;
+		};
+
+		qcom,smdpkt-mbalbridge {
+			qcom,smdpkt-edge = "modem";
+			qcom,smdpkt-ch-name = "MBALBRIDGE";
+			qcom,smdpkt-dev-name = "smd4";
+		};
+
+		qcom,smdpkt-apps-riva-ant-cmd {
+			qcom,smdpkt-edge = "wcnss";
+			qcom,smdpkt-ch-name = "APPS_RIVA_ANT_CMD";
+			qcom,smdpkt-dev-name = "smd5";
+		};
+
+		qcom,smdpkt-apps-riva-ant-data {
+			qcom,smdpkt-edge = "wcnss";
+			qcom,smdpkt-ch-name = "APPS_RIVA_ANT_DATA";
+			qcom,smdpkt-dev-name = "smd6";
+		};
+
+		qcom,smdpkt-data1 {
+			qcom,smdpkt-edge = "modem";
+			qcom,smdpkt-ch-name = "DATA1";
+			qcom,smdpkt-dev-name = "smd7";
+		};
+
+		qcom,smdpkt-data4 {
+			qcom,smdpkt-edge = "modem";
+			qcom,smdpkt-ch-name = "DATA4";
+			qcom,smdpkt-dev-name = "smd8";
+		};
+
+		qcom,smdpkt-data11 {
+			qcom,smdpkt-edge = "modem";
+			qcom,smdpkt-ch-name = "DATA11";
+			qcom,smdpkt-dev-name = "smd11";
+		};
+
+		qcom,smdpkt-data21 {
+			qcom,smdpkt-edge = "modem";
+			qcom,smdpkt-ch-name = "DATA21";
+			qcom,smdpkt-dev-name = "smd21";
 		};
 	};
 
@@ -2071,7 +2125,8 @@
 			    "wlan_tx_status", "alarms_txctl",
 			    "alarms_tactl", "pronto_mcu_base";
 
-		interrupts = <0 145 0 0 146 0>;
+		interrupts = <0 145 IRQ_TYPE_EDGE_RISING>,
+				<0 146 IRQ_TYPE_EDGE_RISING>;
 		interrupt-names = "wcnss_wlantx_irq", "wcnss_wlanrx_irq";
 
 		qcom,pronto-vddmx-supply = <&pm8937_l3_level_ao>;
@@ -2121,6 +2176,9 @@
 
 		qcom,snoc-wcnss-clock-freq = <200000000>;
 
+		qcom,smem-states = <&apps_smsm 10>, <&apps_smsm 9>, <&apps_smsm 12>;
+		qcom,smem-state-names = "tx-enable", "tx-rings-empty", "wake-state";
+
 		qcom,has-autodetect-xo;
 		qcom,is-pronto-v3;
 		qcom,has-pronto-hw;
@@ -2131,11 +2189,20 @@
 	bam_dmux: qcom,bam_dmux@4044000 {
 		compatible = "qcom,bam_dmux";
 		reg = <0x4044000 0x19000>;
-		interrupts = <0 162 1>;
 		qcom,rx-ring-size = <32>;
 		qcom,max-rx-mtu = <4096>;
 		qcom,fast-shutdown;
 		qcom,no-cpu-affinity;
+
+		qcom,smem-states = <&apps_smsm 1>, <&apps_smsm 11>;
+		qcom,smem-state-names = "pwrctrl", "pwrctrlack";
+
+		interrupts-extended =
+			<&intc GIC_SPI 162 IRQ_TYPE_EDGE_RISING>,
+			<&modem_smsm 1 IRQ_TYPE_EDGE_BOTH>,
+			<&modem_smsm 11 IRQ_TYPE_EDGE_BOTH>;
+
+		interrupt-names = "dmux", "ctrl", "ack";
 	};
 
 	ssc_sensors: qcom,msm-ssc-sensors {

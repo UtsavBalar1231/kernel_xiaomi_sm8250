@@ -31,25 +31,21 @@
 			reg = <0x100>;
 			enable-method = "psci";
 			cpu-release-addr = <0x0 0x90000000>;
-			efficiency = <1024>;
+			capacity-dmips-mhz = <1024>;
 			sched-energy-costs = <&CPU_COST_0>;
 			next-level-cache = <&L2_1>;
 			#cooling-cells = <2>;
 			L2_1: l2-cache {
 			      compatible = "arm,arch-cache";
 			      cache-level = <2>;
-			      /* A53 L2 dump not supported */
-			      qcom,dump-size = <0x0>;
 			};
 
 			L1_I_100: l1-icache {
 				compatible = "arm,arch-cache";
-				qcom,dump-size = <0x8800>;
 			};
 
 			L1_D_100: l1-dcache {
 				compatible = "arm,arch-cache";
-				qcom,dump-size = <0x9000>;
 			};
 		};
 
@@ -59,18 +55,16 @@
 			reg = <0x101>;
 			enable-method = "psci";
 			cpu-release-addr = <0x0 0x90000000>;
-			efficiency = <1024>;
+			capacity-dmips-mhz = <1024>;
 			sched-energy-costs = <&CPU_COST_0>;
 			next-level-cache = <&L2_1>;
 			#cooling-cells = <2>;
 			L1_I_101: l1-icache {
 				compatible = "arm,arch-cache";
-				qcom,dump-size = <0x8800>;
 			};
 
 			L1_D_101: l1-dcache {
 				compatible = "arm,arch-cache";
-				qcom,dump-size = <0x9000>;
 			};
 		};
 
@@ -80,18 +74,16 @@
 			reg = <0x102>;
 			enable-method = "psci";
 			cpu-release-addr = <0x0 0x90000000>;
-			efficiency = <1024>;
+			capacity-dmips-mhz = <1024>;
 			sched-energy-costs = <&CPU_COST_0>;
 			next-level-cache = <&L2_1>;
 			#cooling-cells = <2>;
 			L1_I_102: l1-icache {
 				compatible = "arm,arch-cache";
-				qcom,dump-size = <0x8800>;
 			};
 
 			L1_D_102: l1-dcache {
 				compatible = "arm,arch-cache";
-				qcom,dump-size = <0x9000>;
 			};
 		};
 
@@ -101,18 +93,16 @@
 			reg = <0x103>;
 			enable-method = "psci";
 			cpu-release-addr = <0x0 0x90000000>;
-			efficiency = <1024>;
+			capacity-dmips-mhz = <1024>;
 			sched-energy-costs = <&CPU_COST_0>;
 			next-level-cache = <&L2_1>;
 			#cooling-cells = <2>;
 			L1_I_103: l1-icache {
 				compatible = "arm,arch-cache";
-				qcom,dump-size = <0x8800>;
 			};
 
 			L1_D_103: l1-dcache {
 				compatible = "arm,arch-cache";
-				qcom,dump-size = <0x9000>;
 			};
 		};
 
@@ -122,13 +112,13 @@
 
 		CPU_COST_0: core-cost0 {
 			busy-cost-data = <
-				 960000	159
-				1305600	207
-				1497600	256
-				1708800	327
-				1804800	343
-				1958400	445
-				2016000	470
+				 488 159
+				 663 207
+				 761 256
+				 868 327
+				 917 343
+				 995 445
+				1024 470
 			>;
 		};
 	};

@@ -1,5 +1,50 @@
 #include <dt-bindings/thermal/thermal.h>
 
+&clock_cpu {
+	qcom,cpu-isolation {
+		compatible = "qcom,cpu-isolate";
+		cpu0_isolate: cpu0-isolate {
+			qcom,cpu = <&CPU0>;
+			#cooling-cells = <2>;
+		};
+
+		cpu1_isolate: cpu1-isolate {
+			qcom,cpu = <&CPU1>;
+			#cooling-cells = <2>;
+		};
+
+		cpu2_isolate: cpu2-isolate {
+			qcom,cpu = <&CPU2>;
+			#cooling-cells = <2>;
+		};
+
+		cpu3_isolate: cpu3-isolate {
+			qcom,cpu = <&CPU3>;
+			#cooling-cells = <2>;
+		};
+
+		cpu4_isolate: cpu4-isolate {
+			qcom,cpu = <&CPU4>;
+			#cooling-cells = <2>;
+		};
+
+		cpu5_isolate: cpu5-isolate {
+			qcom,cpu = <&CPU5>;
+			#cooling-cells = <2>;
+		};
+
+		cpu6_isolate: cpu6-isolate {
+			qcom,cpu = <&CPU6>;
+			#cooling-cells = <2>;
+		};
+
+		cpu7_isolate: cpu7-isolate {
+			qcom,cpu = <&CPU7>;
+			#cooling-cells = <2>;
+		};
+	};
+};
+
 &soc {
 	qmi-tmd-devices {
 		compatible = "qcom,qmi-cooling-devices";
@@ -238,56 +283,14 @@
 				trip = <&cpu_trip>;
 				cooling-device =
 					<&CPU0 THERMAL_NO_LIMIT
-						(THERMAL_MAX_LIMIT-1)>;
-			};
-
-			cpu1_cdev {
-				trip = <&cpu_trip>;
-				cooling-device =
-					<&CPU1 THERMAL_NO_LIMIT
-						(THERMAL_MAX_LIMIT-1)>;
-			};
-
-			cpu2_cdev {
-				trip = <&cpu_trip>;
-				cooling-device =
-					<&CPU2 THERMAL_NO_LIMIT
-						(THERMAL_MAX_LIMIT-1)>;
-			};
-
-			cpu3_cdev {
-				trip = <&cpu_trip>;
-				cooling-device =
-					<&CPU3 THERMAL_NO_LIMIT
-						(THERMAL_MAX_LIMIT-1)>;
+						THERMAL_NO_LIMIT>;
 			};
 
 			cpu4_cdev {
 				trip = <&cpu_trip>;
 				cooling-device =
 					<&CPU4 THERMAL_NO_LIMIT
-						(THERMAL_MAX_LIMIT-1)>;
-			};
-
-			cpu5_cdev {
-				trip = <&cpu_trip>;
-				cooling-device =
-					<&CPU5 THERMAL_NO_LIMIT
-						(THERMAL_MAX_LIMIT-1)>;
-			};
-
-			cpu6_cdev {
-				trip = <&cpu_trip>;
-				cooling-device =
-					<&CPU6 THERMAL_NO_LIMIT
-						(THERMAL_MAX_LIMIT-1)>;
-			};
-
-			cpu7_cdev {
-				trip = <&cpu_trip>;
-				cooling-device =
-					<&CPU7 THERMAL_NO_LIMIT
-						(THERMAL_MAX_LIMIT-1)>;
+						THERMAL_NO_LIMIT>;
 			};
 		};
 	};
@@ -310,8 +313,7 @@
 			cpu0_cdev {
 				trip = <&apc1_cpu0_trip>;
 				cooling-device =
-					<&CPU0 THERMAL_MAX_LIMIT
-						THERMAL_MAX_LIMIT>;
+					<&cpu0_isolate 1 1>;
 			};
 		};
 	};
@@ -334,8 +336,7 @@
 			cpu1_cdev {
 				trip = <&apc1_cpu1_trip>;
 				cooling-device =
-					<&CPU1 THERMAL_MAX_LIMIT
-						THERMAL_MAX_LIMIT>;
+					<&cpu1_isolate 1 1>;
 			};
 		};
 	};
@@ -358,8 +359,7 @@
 			cpu2_cdev {
 				trip = <&apc1_cpu2_trip>;
 				cooling-device =
-					<&CPU2 THERMAL_MAX_LIMIT
-						THERMAL_MAX_LIMIT>;
+					<&cpu2_isolate 1 1>;
 			};
 		};
 	};
@@ -382,8 +382,7 @@
 			cpu3_cdev {
 				trip = <&apc1_cpu3_trip>;
 				cooling-device =
-					<&CPU3 THERMAL_MAX_LIMIT
-						THERMAL_MAX_LIMIT>;
+					<&cpu3_isolate 1 1>;
 			};
 		};
 	};
@@ -406,29 +405,25 @@
 			cpu4_cdev {
 				trip = <&cpuss0_step_trip>;
 				cooling-device =
-					<&CPU4 THERMAL_MAX_LIMIT
-						THERMAL_MAX_LIMIT>;
+					<&cpu4_isolate 1 1>;
 			};
 
 			cpu5_cdev {
 				trip = <&cpuss0_step_trip>;
 				cooling-device =
-					<&CPU5 THERMAL_MAX_LIMIT
-						THERMAL_MAX_LIMIT>;
+					<&cpu5_isolate 1 1>;
 			};
 
 			cpu6_cdev {
 				trip = <&cpuss0_step_trip>;
 				cooling-device =
-					<&CPU6 THERMAL_MAX_LIMIT
-						THERMAL_MAX_LIMIT>;
+					<&cpu6_isolate 1 1>;
 			};
 
 			cpu7_cdev {
 				trip = <&cpuss0_step_trip>;
 				cooling-device =
-					<&CPU7 THERMAL_MAX_LIMIT
-						THERMAL_MAX_LIMIT>;
+					<&cpu7_isolate 1 1>;
 			};
 		};
 	};

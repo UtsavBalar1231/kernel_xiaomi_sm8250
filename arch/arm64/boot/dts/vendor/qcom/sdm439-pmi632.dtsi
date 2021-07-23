@@ -2,6 +2,17 @@
 
 &pmi632_charger {
 	dpdm-supply = <&usb_otg>;
+	qcom,battery-data = <&mtp_batterydata>;
+	qcom,auto-recharge-soc = <98>;
+	qcom,flash-disable-soc = <10>;
+	qcom,sw-jeita-enable;
+	qcom,step-charging-enable;
+	qcom,hw-die-temp-mitigation;
+	qcom,hw-connector-mitigation;
+	qcom,connector-internal-pull-kohm = <100>;
+	qcom,thermal-mitigation
+	    = <3000000 2500000 2000000 1500000
+		1000000 500000>;
 };
 
 &usb_otg {
@@ -14,6 +25,17 @@
 	qcom,ps-hold-shutdown-disable;
 };
 
+&soc {
+	led_flash0: qcom,camera-flash {
+		cell-index = <0>;
+		compatible = "qcom,camera-flash";
+		qcom,flash-type = <1>;
+		qcom,flash-source = <&pmi632_flash0 &pmi632_flash1>;
+		qcom,torch-source = <&pmi632_torch0 &pmi632_torch1>;
+		qcom,switch-source = <&pmi632_switch0>;
+	};
+};
+
 / {
 	mtp_batterydata: qcom,battery-data {
 		qcom,batt-id-range-pct = <15>;
@@ -24,10 +46,9 @@
 
 &pmi632_qg {
 	qcom,battery-data = <&mtp_batterydata>;
-};
-
-&pmi632_charger {
-	qcom,battery-data = <&mtp_batterydata>;
+	qcom,qg-iterm-ma = <100>;
+	qcom,hold-soc-while-full;
+	qcom,linearize-soc;
 };
 
 &pmi632_vadc {

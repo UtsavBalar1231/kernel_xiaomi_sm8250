@@ -2,6 +2,7 @@
 /plugin/;
 
 #include <dt-bindings/interrupt-controller/arm-gic.h>
+#include "bengal-pmi632.dtsi"
 #include "bengal-rumi.dtsi"
 
 / {

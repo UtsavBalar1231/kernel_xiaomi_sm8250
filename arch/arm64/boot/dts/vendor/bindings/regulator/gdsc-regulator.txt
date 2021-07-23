@@ -76,6 +76,8 @@ Optional properties:
  - qcom,skip-disable-before-sw-enable : Presence denotes a hardware requirement
 					to leave the GDSC on that has been
 					enabled by an entity external to HLOS.
+ - qcom,no-config-gdscr: Presence denotes HW only supports a single register
+			per GDSC.
 
 [1]: Documentation/devicetree/bindings/arm/msm/msm_bus.txt
 

@@ -28,6 +28,10 @@ Charger specific properties:
 	      mode (auto transition between DIV2 CP and 3-level buck) as a
 	      pre-regulator stand between wireless receiver and downstream
 	      chargers.
+	      "qcom,smb1394-div2-cp-primary" for SMB1394 working in DIV2 mode as
+	      a primary companion charger.
+	      "qcom,smb1394-div2-cp-secondary" for SMB1394 working in DIV2 mode as
+	      a secondary companion charger.
 
 - interrupts
   Usage:      optional

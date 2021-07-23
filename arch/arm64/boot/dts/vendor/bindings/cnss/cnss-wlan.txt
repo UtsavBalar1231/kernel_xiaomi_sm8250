@@ -82,6 +82,7 @@ Optional properties:
   - qcom,bt-en-gpio: QCA6490 requires synchronization for BT and WLAN GPIO
                    enable to resolve PMU power up issues. Provide BT GPIO using
                    this config param.
+  - qcom,sw-ctrl-gpio: Switch control GPIO for device power control
 
 Example:
 

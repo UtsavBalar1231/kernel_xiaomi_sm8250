@@ -174,11 +174,17 @@
 		smmu_mdp_unsec: qcom,smmu_mdp_unsec_cb {
 			compatible = "qcom,smmu_mdp_unsec";
 			iommus = <&apps_iommu 0x2800 0>; /* For NS ctx bank */
+			qcom,iommu-dma-addr-pool = <0x08000000 0xF8000000>;
+			qcom,iommu-earlymap; /* for cont-splash */
+
 		};
 
 		smmu_mdp_sec: qcom,smmu_mdp_sec_cb {
 			compatible = "qcom,smmu_mdp_sec";
 			iommus = <&apps_iommu 0x2801 0>; /* For SEC Ctx Bank */
+			qcom,iommu-dma-addr-pool = <0x08000000 0xF8000000>;
+			qcom,secure-context-bank;
+			qcom,iommu-vmid = <0x11>; /*VMID_CP_SEC_DISPLAY*/
 		};
 
 		mdss_fb0: qcom,mdss_fb_primary {
@@ -228,13 +234,12 @@
 
 		clocks = <&gcc_mdss MDSS_MDP_VOTE_CLK>,
 			<&gcc GCC_MDSS_AHB_CLK>,
-			<&gcc GCC_MDSS_AXI_CLK>;
-			/* TODO
-			 * <&mdss_dsi0_pll BYTE_CLK_SRC_0_CLK>,
-			 * <&mdss_dsi1_pll BYTE_CLK_SRC_1_CLK>,
-			 * <&mdss_dsi0_pll PCLK_SRC_MUX_0_CLK>,
-			 * <&mdss_dsi1_pll PCLK_SRC_MUX_1_CLK>;
-			 */
+			<&gcc GCC_MDSS_AXI_CLK>,
+			<&mdss_dsi0_pll BYTECLK_SRC_0_CLK>,
+			<&mdss_dsi1_pll BYTECLK_SRC_1_CLK>,
+			<&mdss_dsi0_pll PCLK_SRC_0_CLK>,
+			<&mdss_dsi1_pll PCLK_SRC_1_CLK>;
+
 		clock-names = "mdp_core_clk", "iface_clk", "bus_clk",
 			"ext_byte0_clk", "ext_byte1_clk", "ext_pixel0_clk",
 			"ext_pixel1_clk";
