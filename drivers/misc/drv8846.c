@@ -46,8 +46,6 @@
 #include <linux/debugfs.h>
 #include <linux/drv8846.h>
 
-#define EVENT_FCAM  0x2
-extern void lpm_disable_for_dev(bool on, char event_dev);
 static DECLARE_WAIT_QUEUE_HEAD(poll_wait_queue);
 
 struct pwm_setting {
@@ -111,7 +109,6 @@ static int __drv8846_config_pwm(struct drv8846_soc_ctrl *c_ctrl,
 		gpio_direction_output(c_ctrl->gpio_sleep, 0);
 		atomic_set(&c_ctrl->move_done, 1);
 		wake_up(&poll_wait_queue);
-		lpm_disable_for_dev(false, EVENT_FCAM);
 	} else {
 		gpio_direction_output(c_ctrl->gpio_sleep, 1);
 	}
@@ -172,7 +169,6 @@ void drv8846_move(struct drv8846_soc_ctrl *c_ctrl)
 	c_ctrl->pwm_setting.pre_period_ns = c_ctrl->pdata.speed_period;
 	c_ctrl->pwm_setting.duty_ns = c_ctrl->pdata.speed_period >> 1;
 
-	lpm_disable_for_dev(true, EVENT_FCAM);
 	hrtimer_start(&c_ctrl->pwm_timer,
 			ktime_set(c_ctrl->pdata.speed_duration / MSEC_PER_SEC,
 			(c_ctrl->pdata.speed_duration % MSEC_PER_SEC) * NSEC_PER_MSEC),
@@ -690,7 +686,6 @@ static int drv8846_remove(struct platform_device *pdev)
 
 	cancel_work_sync(&c_ctrl->pwm_apply_work);
 	hrtimer_cancel(&c_ctrl->pwm_timer);
-	lpm_disable_for_dev(false, EVENT_FCAM);
 	mutex_destroy(&c_ctrl->motor_mutex);
 	devm_pwm_put(&c_ctrl->pdev->dev, c_ctrl->pwm_dev);
 
