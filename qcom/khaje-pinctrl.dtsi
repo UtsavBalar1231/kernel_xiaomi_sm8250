@@ -3,35 +3,6 @@
 &tlmm {
 		compatible = "qcom,khaje-pinctrl";
 
-		cam_flash_strobe_active: cam_flash_strobe_active {
-			/* STROBE */
-			mux {
-				pins = "gpio2";
-				function = "gpio";
-			};
-
-			config {
-				pins = "gpio2";
-				bias-disable; /* No PULL */
-				drive-strength = <2>; /* 2 MA */
-			};
-		};
-
-		cam_flash_strobe_suspend: cam_flash_strobe_suspend {
-			/* STROBE */
-			mux {
-				pins = "gpio2";
-				function = "gpio";
-			};
-
-			config {
-				pins = "gpio2";
-				bias-pull-down; /* PULL DOWN */
-				drive-strength = <2>; /* 2 MA */
-				output-low;
-			};
-		};
-
 		cam_flash_torch_active: cam_flash_torch_active {
 			/* TORCH */
 			mux {
@@ -55,35 +26,6 @@
 
 			config {
 				pins = "gpio85";
-				bias-pull-down; /* PULL DOWN */
-				drive-strength = <2>; /* 2 MA */
-				output-low;
-			};
-		};
-
-		cam_flash_hwen_active: cam_flash_hwen_active {
-			/* HWEN */
-			mux {
-				pins = "gpio4";
-				function = "gpio";
-			};
-
-			config {
-				pins = "gpio4";
-				bias-disable; /* No PULL */
-				drive-strength = <2>; /* 2 MA */
-			};
-		};
-
-		cam_flash_hwen_suspend: cam_flash_hwen_suspend {
-			/* HWEN */
-			mux {
-				pins = "gpio4";
-				function = "gpio";
-			};
-
-			config {
-				pins = "gpio4";
 				bias-pull-down; /* PULL DOWN */
 				drive-strength = <2>; /* 2 MA */
 				output-low;
