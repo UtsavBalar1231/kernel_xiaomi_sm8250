@@ -669,6 +669,8 @@ static void cam_ife_hw_mgr_print_acquire_info(
 	struct cam_ife_hw_mgr_res    *hw_mgr_res = NULL;
 	struct cam_ife_hw_mgr_res    *hw_mgr_res_temp = NULL;
 	struct cam_isp_resource_node *hw_res = NULL;
+	struct cam_hw_intf           *hw_intf = NULL;
+	struct cam_vfe_num_of_acquired_resources num_rsrc;
 	int hw_idx[CAM_ISP_HW_SPLIT_MAX] = {-1, -1};
 	int i = 0;
 
@@ -687,6 +689,27 @@ static void cam_ife_hw_mgr_print_acquire_info(
 
 	if (acquire_failed)
 		goto fail;
+
+	hw_mgr_res = list_first_entry(&hw_mgr_ctx->res_list_ife_src,
+		struct cam_ife_hw_mgr_res, list);
+	for (i = 0; i < CAM_ISP_HW_SPLIT_MAX; i++) {
+		if (!hw_mgr_res->hw_res[i])
+			continue;
+
+		hw_intf = hw_mgr_res->hw_res[i]->hw_intf;
+
+		if (hw_intf->hw_ops.process_cmd) {
+			num_rsrc.num_pix_rsrc = num_pix_port;
+			num_rsrc.num_pd_rsrc = num_pd_port;
+			num_rsrc.num_rdi_rsrc = num_rdi_port;
+
+			hw_intf->hw_ops.process_cmd(hw_intf->hw_priv,
+				CAM_ISP_HW_CMD_SET_NUM_OF_ACQUIRED_RESOURCE,
+				&num_rsrc,
+				sizeof(
+				struct cam_vfe_num_of_acquired_resources));
+		}
+	}
 
 	CAM_INFO(CAM_ISP,
 		"Successfully acquire %s IFE[%d %d] with [%u pix] [%u pd] [%u rdi] ports for ctx:%u",

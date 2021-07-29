@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/slab.h>
@@ -220,7 +220,8 @@ int cam_vfe_deinit_soc_resources(struct cam_hw_soc_info *soc_info)
 	return rc;
 }
 
-int cam_vfe_enable_soc_resources(struct cam_hw_soc_info *soc_info)
+int cam_vfe_enable_soc_resources(struct cam_hw_soc_info *soc_info,
+	int num_pix_rsrc, int num_pd_rsrc, int num_rdi_rsrc)
 {
 	int                               rc = 0;
 	struct cam_vfe_soc_private       *soc_private;
@@ -242,8 +243,18 @@ int cam_vfe_enable_soc_resources(struct cam_hw_soc_info *soc_info)
 		axi_vote.axi_path[0].path_data_type =
 			CAM_AXI_PATH_DATA_IFE_RDI1;
 	} else {
-		axi_vote.axi_path[0].path_data_type =
-			CAM_AXI_PATH_DATA_IFE_VID;
+		if (num_pix_rsrc)
+			axi_vote.axi_path[0].path_data_type =
+				CAM_AXI_PATH_DATA_IFE_VID;
+		else if (num_pd_rsrc)
+			axi_vote.axi_path[0].path_data_type =
+				CAM_AXI_PATH_DATA_IFE_PDAF;
+		else if (num_rdi_rsrc)
+			axi_vote.axi_path[0].path_data_type =
+				CAM_AXI_PATH_DATA_IFE_RDI0;
+		else
+			axi_vote.axi_path[0].path_data_type =
+				CAM_AXI_PATH_DATA_IFE_VID;
 	}
 
 	axi_vote.axi_path[0].transac_type = CAM_AXI_TRANSACTION_WRITE;

@@ -254,6 +254,19 @@ struct cam_vfe_bw_update_args {
 };
 
 /*
+ * struct cam_vfe_num_of_acquired_resources:
+ *
+ * @num_pix_rsrc:            Number of pix resources acquired in context
+ * @num_pd_rsrc:             Number of pd resources acquired in context
+ * @num_rdi_rsrc:            Number of rdi resources acquired in context
+ */
+struct cam_vfe_num_of_acquired_resources {
+	uint32_t      num_pix_rsrc;
+	uint32_t      num_pd_rsrc;
+	uint32_t      num_rdi_rsrc;
+};
+
+/*
  * struct cam_vfe_fe_update_args:
  *
  * @node_res:             Resource to get fetch configuration
