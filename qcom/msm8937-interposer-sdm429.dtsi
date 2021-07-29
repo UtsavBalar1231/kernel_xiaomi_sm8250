@@ -1,7 +1,7 @@
 #include "msm8937-interposer-sdm439.dtsi"
 #include "sdm429-cpu.dtsi"
 
-&clock_cpu {
+&apsscc {
 	qcom,cpu-isolation {
 		/delete-node/ cpu4-isolate;
 		/delete-node/ cpu5-isolate;

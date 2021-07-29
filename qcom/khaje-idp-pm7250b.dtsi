@@ -1,5 +1,6 @@
 #include "khaje-pm7250b.dtsi"
 #include "khaje-thermal-pm7250b-overlay.dtsi"
+#include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
 
 &soc {
 	mtp_batterydata: qcom,battery-data {
@@ -13,6 +14,9 @@
 		pins = "gpio6";
 		function = "gpio";
 		input-enable;
+		bias-pull-up;
+		qcom,pull-up-strength = <PMIC_GPIO_PULL_UP_30>;
+		power-source = <0>;
 	 };
 };
 

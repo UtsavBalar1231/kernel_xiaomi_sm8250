@@ -243,11 +243,12 @@
 	};
 };
 
-&clock_cpu {
-	compatible = "qcom,cpu-clock-sdm439";
-	vdd-c0-supply = <&apc_vreg_corner>;
-	vdd-c1-supply = <&apc_vreg_corner>;
-	vdd-cci-supply = <&apc_vreg_corner>;
+&apsscc {
+	cpu-vdd-supply = <&apc_vreg_corner>;
+	vdd_hf_pll-supply = <&pm8953_l7_ao>;
+	vdd_dig_ao-supply = <&pm8953_s2_level_ao>;
+	vdd_sr2_pll-supply = <&pm8953_l7_ao>;
+	vdd_sr2_dig_ao-supply = <&pm8953_s2_level_ao>;
 	qcom,speed0-bin-v0-c0 =
 		<          0 0>,
 		<  768000000 1>,

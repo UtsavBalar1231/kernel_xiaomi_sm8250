@@ -573,7 +573,7 @@
 	};
 
 	debugcc: qcom,cc-debug {
-		compatible = "qcom,msm8917-debugcc";
+		compatible = "qcom,qm215-debugcc";
 		reg = <0x1874000 0x4>,
 		      <0xb01101c 0x8>;
 		reg-names = "cc_base", "meas";
@@ -597,9 +597,10 @@
 		compatible = "qcom,cpu-clock-qm215";
 		reg =   <0xb011050 0x8>,
 			<0xb016000 0x34>,
-			<0x00a412c 0x8>;
+			<0x00a412c 0x8>,
+			<0xb011200 0x100>;
 		reg-names = "apcs-c1-rcg-base",
-			"apcs_pll", "efuse";
+			"apcs_pll1", "efuse", "spm_c1_base";
 		cpu-vdd-supply = <&apc_vreg_corner>;
 		vdd_dig_ao-supply = <&pm8916_s1_level_ao>;
 		vdd_hf_pll-supply = <&pm8916_l7_ao>;

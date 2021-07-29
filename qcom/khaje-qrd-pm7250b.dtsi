@@ -1,4 +1,5 @@
 #include "khaje-pm7250b.dtsi"
+#include "khaje-thermal-pm7250b-overlay.dtsi"
 
 &sde_dsi {
 	pinctrl-0 = <&sde_dsi_active &sde_te_active &disp_lcd_bias_en_default>;

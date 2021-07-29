@@ -387,7 +387,7 @@
 			alloc-ranges = <0x0 0x00000000 0x0 0xffffffff>;
 			reusable;
 			alignment = <0x0 0x400000>;
-			size = <0x0 0x140000>;
+			size = <0x0 0x1a0000>;
 		};
 
 		venus_fw_mem: venus_fw_region {
@@ -542,6 +542,101 @@
 		mem_dump {
 			compatible = "qcom,mem-dump";
 			memory-region = <&dump_mem>;
+
+			rpm_sw_dump {
+				qcom,dump-size = <0x28000>;
+				qcom,dump-id = <0xea>;
+			};
+
+			pmic_dump {
+				qcom,dump-size = <0x10000>;
+				qcom,dump-id = <0xe4>;
+			};
+
+			vsense_dump {
+				qcom,dump-size = <0x1000>;
+				qcom,dump-id = <0xe9>;
+			};
+
+			tmc_etf_dump {
+				qcom,dump-size = <0x10000>;
+				qcom,dump-id = <0xf0>;
+			};
+
+			tmc_etr_reg_dump {
+				qcom,dump-size = <0x1000>;
+				qcom,dump-id = <0x100>;
+			};
+
+			tmc_etf_reg_dump {
+				qcom,dump-size = <0x1000>;
+				qcom,dump-id = <0x101>;
+			};
+
+			misc_data_dump {
+				qcom,dump-size = <0x1000>;
+				qcom,dump-id = <0xe8>;
+			};
+
+			dcc_reg_dump {
+				qcom,dump-size = <0x1000>;
+				qcom,dump-id = <0xe6>;
+			};
+
+			dcc_sram_dump {
+				qcom,dump-size = <0x2000>;
+				qcom,dump-id = <0xe7>;
+			};
+
+			log_buf_dump {
+				qcom,dump-size = <0x10000>;
+				qcom,dump-id = <0x110>;
+			};
+
+			log_buf_first_idx_dump {
+				qcom,dump-size = <0x0>;
+				qcom,dump-id = <0x111>;
+			};
+
+			etm_reg0_dump {
+				qcom,dump-size = <0x1000>;
+				qcom,dump-id = <0xa0>;
+			};
+
+			etm_reg1_dump {
+				qcom,dump-size = <0x1000>;
+				qcom,dump-id = <0xa1>;
+			};
+
+			etm_reg2_dump {
+				qcom,dump-size = <0x1000>;
+				qcom,dump-id = <0xa2>;
+			};
+
+			etm_reg3_dump {
+				qcom,dump-size = <0x1000>;
+				qcom,dump-id = <0xa3>;
+			};
+
+			etm_reg4_dump {
+				qcom,dump-size = <0x1000>;
+				qcom,dump-id = <0xa4>;
+			};
+
+			etm_reg5_dump {
+				qcom,dump-size = <0x1000>;
+				qcom,dump-id = <0xa5>;
+			};
+
+			etm_reg6_dump {
+				qcom,dump-size = <0x1000>;
+				qcom,dump-id = <0xa6>;
+			};
+
+			etm_reg7_dump {
+				qcom,dump-size = <0x1000>;
+				qcom,dump-id = <0xa7>;
+			};
 
 			c_scandump {
 				qcom,dump-size = <0x40000>;

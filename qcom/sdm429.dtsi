@@ -31,6 +31,12 @@
 		};
 	};
 
+	/delete-node/ syscon@0b11101c;
+	cpu_debug: syscon@0b01101c {
+		compatible = "syscon";
+		reg = <0x0b01101c 0x4>;
+	};
+
 	/delete-node/ qcom,msm-cpufreq;
 	msm_cpufreq: qcom,msm-cpufreq {
 		compatible = "qcom,msm-cpufreq";
@@ -67,7 +73,7 @@
 			qcom,target-dev = <&cpu0_cpu_ddr_latfloor>;
 			qcom,core-dev-table =
 				< 1305600 MHZ_TO_MBPS(384, 8) >,
-				< 1804800 MHZ_TO_MBPS(557, 8) >;
+				< 1804800 MHZ_TO_MBPS(749, 8) >;
 		};
 	};
 
@@ -111,36 +117,28 @@
 };
 
 &debugcc {
-	compatible = "qcom,msm8937-debugcc";
-	reg = <0x1874000 0x4>,
-		<0xb01101c 0x8>;
-	reg-names = "cc_base", "meas";
-	#clock-cells = <1>;
+	compatible = "qcom,sdm429-debugcc";
+	qcom,cpu = <&cpu_debug>;
 };
 
 &soc {
-	/delete-node/ qcom,cpu-clock-8939@b111050;
-	clock_cpu: qcom,cpu-clock-8939@b111050 {
+	/delete-node/ qcom,clock-cpu@b111050;
+	apsscc: qcom,clock-cpu@b111050 {
 		compatible = "qcom,cpu-clock-sdm429";
-
 		reg =   <0xb011050 0x8>,
 			<0xb1d1050 0x8>,
-			<0x00a412c 0x8>;
+			<0xb016000 0x34>,
+			<0x00a412c 0x8>,
+			<0xb011200 0x100>;
 		reg-names = "apcs-c1-rcg-base",
-			"apcs-cci-rcg-base", "efuse";
-
-		qcom,num-cluster;
-		vdd-c1-supply = <&apc_vreg_corner>;
-		vdd-cci-supply = <&apc_vreg_corner>;
-
-		clocks = <&gcc GPLL0_AO_CLK_SRC>,
-			/* TODO
-			 * <&gcc A53SS_C1_PLL TODO>,
-			 */
-			<&gcc GPLL0_AO_CLK_SRC>,
-			<&gcc GPLL0_AO_CLK_SRC>;
-		clock-names = "clk-c1-4", "clk-c1-5",
-				"clk-cci-4", "clk-cci-2";
+			"apcs-cci-rcg-base", "apcs_pll1", "efuse",
+			"spm_c1_base";
+		clocks = <&rpmcc RPM_SMD_XO_A_CLK_SRC>,
+			<&gcc GPLL0_AO_OUT_MAIN>;
+		clock-names = "xo_ao", "gpll0_ao" ;
+		cpu-vdd-supply = <&apc_vreg_corner>;
+		vdd_dig_ao-supply = <&pm8953_s2_level_ao>;
+		vdd_hf_pll-supply = <&pm8953_l7_ao>;
 
 		qcom,speed0-bin-v0-c1 =
 			<          0 0>,

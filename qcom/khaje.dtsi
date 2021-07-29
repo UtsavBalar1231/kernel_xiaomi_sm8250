@@ -21,6 +21,7 @@
 	model = "Qualcomm Technologies, Inc. Khaje SoC";
 	compatible = "qcom,khaje";
 	qcom,msm-id = <518 0x10000>;
+	interrupt-parent = <&wakegic>;
 
 	#address-cells = <2>;
 	#size-cells = <2>;
@@ -1554,7 +1555,7 @@
 			<0 0>;
 
 		qcom,msm-bus,name = "ufshc_mem";
-		qcom,msm-bus,num-cases = <12>;
+		qcom,msm-bus,num-cases = <22>;
 		qcom,msm-bus,num-paths = <2>;
 		qcom,msm-bus,vectors-KBps =
 		/*
@@ -2373,33 +2374,25 @@
 
 	ddr_bw_opp_table: ddr-bw-opp-table {
 		compatible = "operating-points-v2";
-		BW_OPP_ENTRY_DDR( 200, 8, 0xA0); /* 1525 MB/s */
-		BW_OPP_ENTRY_DDR( 300, 8, 0xA0); /* 2288 MB/s */
-		BW_OPP_ENTRY_DDR( 451, 8, 0xA0); /* 3440 MB/s */
-		BW_OPP_ENTRY_DDR( 547, 8, 0xA0); /* 4173 MB/s */
-		BW_OPP_ENTRY_DDR( 681, 8, 0xA0); /* 5195 MB/s */
-		BW_OPP_ENTRY_DDR( 768, 8, 0xA0); /* 5859 MB/s */
-		BW_OPP_ENTRY_DDR( 931, 8, 0x20); /* 7102 MB/s */
+		BW_OPP_ENTRY_DDR( 200, 8, 0x80); /* 1525 MB/s */
+		BW_OPP_ENTRY_DDR( 547, 8, 0x80); /* 4173 MB/s */
+		BW_OPP_ENTRY_DDR( 768, 8, 0x80); /* 5859 MB/s */
 		BW_OPP_ENTRY_DDR(1017, 8, 0x80); /* 7759 MB/s */
-		BW_OPP_ENTRY_DDR(1353, 8, 0x80); /*10322 MB/s */
 		BW_OPP_ENTRY_DDR(1555, 8, 0x80); /*11863 MB/s */
 		BW_OPP_ENTRY_DDR(1804, 8, 0x80); /*13763 MB/s */
+		BW_OPP_ENTRY_DDR(2092, 8, 0x80); /*15960 MB/s */
 	};
 
 	suspendable_ddr4_bw_opp_table: suspendable-ddr4-bw-opp-table {
 		compatible = "operating-points-v2";
-		BW_OPP_ENTRY_DDR(   0, 8, 0xA0); /*    0 MB/s */
-		BW_OPP_ENTRY_DDR( 200, 8, 0xA0); /* 1525 MB/s */
-		BW_OPP_ENTRY_DDR( 300, 8, 0xA0); /* 2288 MB/s */
-		BW_OPP_ENTRY_DDR( 451, 8, 0xA0); /* 3440 MB/s */
-		BW_OPP_ENTRY_DDR( 547, 8, 0xA0); /* 4173 MB/s */
-		BW_OPP_ENTRY_DDR( 681, 8, 0xA0); /* 5195 MB/s */
-		BW_OPP_ENTRY_DDR( 768, 8, 0xA0); /* 5859 MB/s */
-		BW_OPP_ENTRY_DDR( 931, 8, 0x20); /* 7102 MB/s */
+		BW_OPP_ENTRY_DDR(   0, 8, 0x80); /*    0 MB/s */
+		BW_OPP_ENTRY_DDR( 200, 8, 0x80); /* 1525 MB/s */
+		BW_OPP_ENTRY_DDR( 547, 8, 0x80); /* 4173 MB/s */
+		BW_OPP_ENTRY_DDR( 768, 8, 0x80); /* 5859 MB/s */
 		BW_OPP_ENTRY_DDR(1017, 8, 0x80); /* 7759 MB/s */
-		BW_OPP_ENTRY_DDR(1353, 8, 0x80); /*10322 MB/s */
 		BW_OPP_ENTRY_DDR(1555, 8, 0x80); /*11863 MB/s */
 		BW_OPP_ENTRY_DDR(1804, 8, 0x80); /*13763 MB/s */
+		BW_OPP_ENTRY_DDR(2092, 8, 0x80); /*15960 MB/s */
 	};
 
 	cpu_cpu_ddr_bw: qcom,cpu-cpu-ddr-bw {
@@ -2450,44 +2443,20 @@
 			qcom,target-dev = <&cpu0_cpu_ddr_lat>;
 			qcom,cachemiss-ev = <0x17>;
 			qcom,stall-cycle-ev = <0xE7>;
-			ddr3-map {
-				qcom,ddr-type = <DDR_TYPE_LPDDR3>;
-				qcom,core-dev-table =
-					<  864000 MHZ_TO_MBPS(200, 8) >,
-					< 1305600 MHZ_TO_MBPS(451, 8) >,
-					< 1804800 MHZ_TO_MBPS(768, 8) >;
-			};
-
-			ddr4-map {
-				qcom,ddr-type = <DDR_TYPE_LPDDR4X>;
-				qcom,core-dev-table =
-					<  864000 MHZ_TO_MBPS( 300, 8) >,
-					< 1305600 MHZ_TO_MBPS( 547, 8) >,
-					< 1420000 MHZ_TO_MBPS( 768, 8) >,
-					< 1804800 MHZ_TO_MBPS(1017, 8) >;
-			};
+			qcom,core-dev-table =
+				< 1190400 MHZ_TO_MBPS( 547, 8) >,
+				< 1516800 MHZ_TO_MBPS( 768, 8) >,
+				< 1804800 MHZ_TO_MBPS(1017, 8) >;
 		};
 
 		cpu0_computemon: qcom,cpu0-computemon {
 			compatible = "qcom,arm-compute-mon";
 			qcom,cpulist = <&CPU0 &CPU1 &CPU2 &CPU3>;
 			qcom,target-dev = <&cpu0_cpu_ddr_latfloor>;
-			ddr3-map {
-				qcom,ddr-type = <DDR_TYPE_LPDDR3>;
-				qcom,core-dev-table =
-					<  614400 MHZ_TO_MBPS( 200, 8) >,
-					< 1305600 MHZ_TO_MBPS( 451, 8) >,
-					< 1804800 MHZ_TO_MBPS( 768, 8) >;
-			};
-
-			ddr4-map {
-				qcom,ddr-type = <DDR_TYPE_LPDDR4X>;
-				qcom,core-dev-table =
-					<  614400 MHZ_TO_MBPS( 300, 8) >,
-					< 1017600 MHZ_TO_MBPS( 451, 8) >,
-					< 1420000 MHZ_TO_MBPS( 547, 8) >,
-					< 1804800 MHZ_TO_MBPS( 768, 8) >;
-			};
+			qcom,core-dev-table =
+				< 1190400 MHZ_TO_MBPS( 547, 8) >,
+				< 1516800 MHZ_TO_MBPS( 768, 8) >,
+				< 1804800 MHZ_TO_MBPS(1017, 8) >;
 		};
 	};
 
@@ -2519,48 +2488,24 @@
 			qcom,target-dev = <&cpu4_cpu_ddr_lat>;
 			qcom,cachemiss-ev = <0x17>;
 			qcom,stall-cycle-ev = <0x24>;
-			ddr3-map {
-				qcom,ddr-type = <DDR_TYPE_LPDDR3>;
-				qcom,core-dev-table =
-					< 1056000 MHZ_TO_MBPS(200, 8) >,
-					< 1401600 MHZ_TO_MBPS(451, 8) >,
-					< 1804800 MHZ_TO_MBPS(768, 8) >,
-					< 2016000 MHZ_TO_MBPS(931, 8) >;
-			};
-
-			ddr4-map {
-				qcom,ddr-type = <DDR_TYPE_LPDDR4X>;
-				qcom,core-dev-table =
-					<  902400 MHZ_TO_MBPS( 451, 8) >,
-					< 1401600 MHZ_TO_MBPS(1017, 8) >,
-					< 1804800 MHZ_TO_MBPS(1555, 8) >,
-					< 2016000 MHZ_TO_MBPS(1804, 8) >;
-			};
+			qcom,core-dev-table =
+				< 1056000 MHZ_TO_MBPS( 547, 8) >,
+				< 1344000 MHZ_TO_MBPS(1017, 8) >,
+				< 1766400 MHZ_TO_MBPS(1555, 8) >,
+				< 2208000 MHZ_TO_MBPS(1804, 8) >,
+				< 2803200 MHZ_TO_MBPS(2092, 8) >;
 		};
 
 		cpu4_computemon: qcom,cpu4-computemon {
 			compatible = "qcom,arm-compute-mon";
 			qcom,cpulist = <&CPU4 &CPU5 &CPU6 &CPU7>;
 			qcom,target-dev = <&cpu4_cpu_ddr_latfloor>;
-			ddr3-map {
-				qcom,ddr-type = <DDR_TYPE_LPDDR3>;
-				qcom,core-dev-table =
-					<  652800 MHZ_TO_MBPS( 200, 8) >,
-					< 1056000 MHZ_TO_MBPS( 451, 8) >,
-					< 1401600 MHZ_TO_MBPS( 547, 8) >,
-					< 1536000 MHZ_TO_MBPS( 768, 8) >,
-					< 2016000 MHZ_TO_MBPS( 931, 8) >;
-			};
-
-			ddr4-map {
-				qcom,ddr-type = <DDR_TYPE_LPDDR4X>;
-				qcom,core-dev-table =
-					<  902400 MHZ_TO_MBPS( 300, 8) >,
-					< 1056000 MHZ_TO_MBPS( 547, 8) >,
-					< 1401680 MHZ_TO_MBPS( 768, 8) >,
-					< 1804800 MHZ_TO_MBPS(1017, 8) >,
-					< 2016000 MHZ_TO_MBPS(1804, 8) >;
-			};
+			qcom,core-dev-table =
+				< 1056000 MHZ_TO_MBPS( 547, 8) >,
+				< 1344000 MHZ_TO_MBPS( 768, 8) >,
+				< 1766400 MHZ_TO_MBPS(1017, 8) >,
+				< 2208000 MHZ_TO_MBPS(1804, 8) >,
+				< 2803200 MHZ_TO_MBPS(2092, 8) >;
 		};
 	};
 
@@ -2744,21 +2689,21 @@ tpdm_turing_llm: tpdm@8861000 {
 		ports {
 			#address-cells = <1>;
 			#size-cells = <0>;
+
 			port@0 {
 				reg = <0>;
-				funnel_turing_out_tpda5: endpoint {
+				funnel_turing_out_funnel_qatb: endpoint {
 					remote-endpoint =
-					<&tpda5_in_funnel_turing>;
-					source = <&tpdm_turing>;
+					<&funnel_qatb_in_funnel_turing>;
+					source = <&turing_etm0>;
 				};
 			};
 
 			port@1 {
 				reg = <1>;
-				funnel_turing_out_funnel_qatb: endpoint {
+				funnel_turing_out_tpda5: endpoint {
 					remote-endpoint =
-					<&funnel_qatb_in_funnel_turing>;
-					source = <&turing_etm0>;
+					<&tpda5_in_funnel_turing>;
 				};
 			};
 
@@ -3031,29 +2976,14 @@ tpdm_turing_llm: tpdm@8861000 {
 	gpu_opp_table: gpu-opp-table {
 		compatible = "operating-points-v2";
 
-		opp-1115000000 {
-			opp-hz = /bits/ 64 <1115000000>;
-			opp-microvolt = <RPMH_REGULATOR_LEVEL_TURBO_L1>;
-		};
-
-		opp-1100000000 {
-			opp-hz = /bits/ 64 <1100000000>;
+		opp-1114800000 {
+			opp-hz = /bits/ 64 <1114800000>;
 			opp-microvolt = <RPMH_REGULATOR_LEVEL_TURBO_L1>;
 		};
 
 		opp-1025000000 {
 			opp-hz = /bits/ 64 <1025000000>;
 			opp-microvolt = <RPMH_REGULATOR_LEVEL_TURBO>;
-		};
-
-		opp-980000000 {
-			opp-hz = /bits/ 64 <980000000>;
-			opp-microvolt = <RPMH_REGULATOR_LEVEL_TURBO>;
-		};
-
-		opp-820000000 {
-			opp-hz = /bits/ 64 <820000000>;
-			opp-microvolt = <RPMH_REGULATOR_LEVEL_NOM_L1>;
 		};
 
 		opp-785000000 {
@@ -3111,56 +3041,30 @@ tpdm_turing_llm: tpdm@8861000 {
 
 			qcom,speed-bin = <0>;
 
-			qcom,initial-pwrlevel = <8>;
-			qcom,ca-target-pwrlevel = <7>;
+			qcom,initial-pwrlevel = <5>;
+			qcom,ca-target-pwrlevel = <4>;
 
 			/* TURBO_L1 */
 			qcom,gpu-pwrlevel@0 {
 				reg = <0>;
-				qcom,gpu-freq = <111500000>;
+				qcom,gpu-freq = <1114800000>;
 				qcom,bus-freq = <7>;
 				qcom,bus-min = <7>;
 				qcom,bus-max = <7>;
 			};
 
-			/* TURBO_L1 */
+			/* TURBO */
 			qcom,gpu-pwrlevel@1 {
 				reg = <1>;
-				qcom,gpu-freq = <110000000>;
-				qcom,bus-freq = <7>;
-				qcom,bus-min = <6>;
-				qcom,bus-max = <7>;
-			};
-
-			/* TURBO */
-			qcom,gpu-pwrlevel@2 {
-				reg = <2>;
 				qcom,gpu-freq = <1025000000>;
 				qcom,bus-freq = <6>;
-				qcom,bus-min = <6>;
-				qcom,bus-max = <7>;
-			};
-			/* TURBO */
-			qcom,gpu-pwrlevel@3 {
-				reg = <3>;
-				qcom,gpu-freq = <980000000>;
-				qcom,bus-freq = <6>;
 				qcom,bus-min = <5>;
-				qcom,bus-max = <6>;
-			};
-
-			/* NOM_L1 */
-			qcom,gpu-pwrlevel@4 {
-				reg = <4>;
-				qcom,gpu-freq = <820000000>;
-				qcom,bus-freq = <5>;
-				qcom,bus-min = <4>;
-				qcom,bus-max = <6>;
+				qcom,bus-max = <7>;
 			};
 
 			/* NOM */
-			qcom,gpu-pwrlevel@5 {
-				reg = <5>;
+			qcom,gpu-pwrlevel@2 {
+				reg = <2>;
 				qcom,gpu-freq = <785000000>;
 				qcom,bus-freq = <5>;
 				qcom,bus-min = <4>;
@@ -3168,8 +3072,8 @@ tpdm_turing_llm: tpdm@8861000 {
 			};
 
 			/* SVS_L1 */
-			qcom,gpu-pwrlevel@6 {
-				reg = <6>;
+			qcom,gpu-pwrlevel@3 {
+				reg = <3>;
 				qcom,gpu-freq = <600000000>;
 				qcom,bus-freq = <4>;
 				qcom,bus-min = <3>;
@@ -3177,8 +3081,8 @@ tpdm_turing_llm: tpdm@8861000 {
 			};
 
 			/* SVS */
-			qcom,gpu-pwrlevel@7 {
-				reg = <7>;
+			qcom,gpu-pwrlevel@4 {
+				reg = <4>;
 				qcom,gpu-freq = <465000000>;
 				qcom,bus-freq = <3>;
 				qcom,bus-min = <2>;
@@ -3186,8 +3090,8 @@ tpdm_turing_llm: tpdm@8861000 {
 			};
 
 			/* LOW SVS */
-			qcom,gpu-pwrlevel@8 {
-				reg = <8>;
+			qcom,gpu-pwrlevel@5 {
+				reg = <5>;
 				qcom,gpu-freq = <320000000>;
 				qcom,bus-freq = <2>;
 				qcom,bus-min = <1>;
@@ -3195,8 +3099,8 @@ tpdm_turing_llm: tpdm@8861000 {
 			};
 
 			/* XO */
-			qcom,gpu-pwrlevel@9 {
-				reg = <9>;
+			qcom,gpu-pwrlevel@6 {
+				reg = <6>;
 				qcom,gpu-freq = <0>;
 				qcom,bus-freq = <0>;
 				qcom,bus-min = <0>;
@@ -3208,17 +3112,17 @@ tpdm_turing_llm: tpdm@8861000 {
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			qcom,speed-bin = <232>;
+			qcom,speed-bin = <235>;
 
-			qcom,initial-pwrlevel = <7>;
-			qcom,ca-target-pwrlevel = <6>;
+			qcom,initial-pwrlevel = <5>;
+			qcom,ca-target-pwrlevel = <4>;
 
 			/* TURBO_L1 */
 			qcom,gpu-pwrlevel@0 {
 				reg = <0>;
-				qcom,gpu-freq = <110000000>;
+				qcom,gpu-freq = <1114800000>;
 				qcom,bus-freq = <7>;
-				qcom,bus-min = <6>;
+				qcom,bus-min = <7>;
 				qcom,bus-max = <7>;
 			};
 
@@ -3227,31 +3131,13 @@ tpdm_turing_llm: tpdm@8861000 {
 				reg = <1>;
 				qcom,gpu-freq = <1025000000>;
 				qcom,bus-freq = <6>;
-				qcom,bus-min = <6>;
+				qcom,bus-min = <5>;
 				qcom,bus-max = <7>;
 			};
 
-			/* TURBO */
+			/* NOM */
 			qcom,gpu-pwrlevel@2 {
 				reg = <2>;
-				qcom,gpu-freq = <980000000>;
-				qcom,bus-freq = <6>;
-				qcom,bus-min = <5>;
-				qcom,bus-max = <6>;
-			};
-
-			/* NOM_L1 */
-			qcom,gpu-pwrlevel@3 {
-				reg = <3>;
-				qcom,gpu-freq = <820000000>;
-				qcom,bus-freq = <5>;
-				qcom,bus-min = <4>;
-				qcom,bus-max = <6>;
-			};
-
-			/* NOM */
-			qcom,gpu-pwrlevel@4 {
-				reg = <4>;
 				qcom,gpu-freq = <785000000>;
 				qcom,bus-freq = <5>;
 				qcom,bus-min = <4>;
@@ -3259,8 +3145,8 @@ tpdm_turing_llm: tpdm@8861000 {
 			};
 
 			/* SVS_L1 */
-			qcom,gpu-pwrlevel@5 {
-				reg = <5>;
+			qcom,gpu-pwrlevel@3 {
+				reg = <3>;
 				qcom,gpu-freq = <600000000>;
 				qcom,bus-freq = <4>;
 				qcom,bus-min = <3>;
@@ -3268,8 +3154,8 @@ tpdm_turing_llm: tpdm@8861000 {
 			};
 
 			/* SVS */
-			qcom,gpu-pwrlevel@6 {
-				reg = <6>;
+			qcom,gpu-pwrlevel@4 {
+				reg = <4>;
 				qcom,gpu-freq = <465000000>;
 				qcom,bus-freq = <3>;
 				qcom,bus-min = <2>;
@@ -3277,8 +3163,8 @@ tpdm_turing_llm: tpdm@8861000 {
 			};
 
 			/* LOW SVS */
-			qcom,gpu-pwrlevel@7 {
-				reg = <7>;
+			qcom,gpu-pwrlevel@5 {
+				reg = <5>;
 				qcom,gpu-freq = <320000000>;
 				qcom,bus-freq = <2>;
 				qcom,bus-min = <1>;
@@ -3286,8 +3172,8 @@ tpdm_turing_llm: tpdm@8861000 {
 			};
 
 			/* XO */
-			qcom,gpu-pwrlevel@8 {
-				reg = <8>;
+			qcom,gpu-pwrlevel@6 {
+				reg = <6>;
 				qcom,gpu-freq = <0>;
 				qcom,bus-freq = <0>;
 				qcom,bus-min = <0>;
@@ -3299,32 +3185,23 @@ tpdm_turing_llm: tpdm@8861000 {
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			qcom,speed-bin = <207>;
+			qcom,speed-bin = <216>;
 
-			qcom,initial-pwrlevel = <5>;
-			qcom,ca-target-pwrlevel = <4>;
+			qcom,initial-pwrlevel = <4>;
+			qcom,ca-target-pwrlevel = <3>;
 
 			/* TURBO */
 			qcom,gpu-pwrlevel@0 {
 				reg = <0>;
-				qcom,gpu-freq = <980000000>;
+				qcom,gpu-freq = <1025000000>;
 				qcom,bus-freq = <6>;
 				qcom,bus-min = <5>;
-				qcom,bus-max = <6>;
-			};
-
-			/* NOM_L1 */
-			qcom,gpu-pwrlevel@1 {
-				reg = <1>;
-				qcom,gpu-freq = <820000000>;
-				qcom,bus-freq = <5>;
-				qcom,bus-min = <4>;
-				qcom,bus-max = <6>;
+				qcom,bus-max = <7>;
 			};
 
 			/* NOM */
-			qcom,gpu-pwrlevel@2 {
-				reg = <2>;
+			qcom,gpu-pwrlevel@1 {
+				reg = <1>;
 				qcom,gpu-freq = <785000000>;
 				qcom,bus-freq = <5>;
 				qcom,bus-min = <4>;
@@ -3332,8 +3209,8 @@ tpdm_turing_llm: tpdm@8861000 {
 			};
 
 			/* SVS_L1 */
-			qcom,gpu-pwrlevel@3 {
-				reg = <3>;
+			qcom,gpu-pwrlevel@2 {
+				reg = <2>;
 				qcom,gpu-freq = <600000000>;
 				qcom,bus-freq = <4>;
 				qcom,bus-min = <3>;
@@ -3341,8 +3218,8 @@ tpdm_turing_llm: tpdm@8861000 {
 			};
 
 			/* SVS */
-			qcom,gpu-pwrlevel@4 {
-				reg = <4>;
+			qcom,gpu-pwrlevel@3 {
+				reg = <3>;
 				qcom,gpu-freq = <465000000>;
 				qcom,bus-freq = <3>;
 				qcom,bus-min = <2>;
@@ -3350,8 +3227,8 @@ tpdm_turing_llm: tpdm@8861000 {
 			};
 
 			/* LOW SVS */
-			qcom,gpu-pwrlevel@5 {
-				reg = <5>;
+			qcom,gpu-pwrlevel@4 {
+				reg = <4>;
 				qcom,gpu-freq = <320000000>;
 				qcom,bus-freq = <2>;
 				qcom,bus-min = <1>;
@@ -3359,8 +3236,8 @@ tpdm_turing_llm: tpdm@8861000 {
 			};
 
 			/* XO */
-			qcom,gpu-pwrlevel@6 {
-				reg = <6>;
+			qcom,gpu-pwrlevel@5 {
+				reg = <5>;
 				qcom,gpu-freq = <0>;
 				qcom,bus-freq = <0>;
 				qcom,bus-min = <0>;

@@ -11,4 +11,5 @@
 	compatible = "qcom,khaje-idp", "qcom,khaje", "qcom,idp";
 	qcom,msm-id = <518 0x10000>;
 	qcom,board-id = <0x10122 0>;
+	qcom,pmic-id = <0x2D 0x2E 0x0 0x0>;
 };
