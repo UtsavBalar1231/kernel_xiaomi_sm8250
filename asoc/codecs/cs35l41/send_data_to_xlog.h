@@ -17,7 +17,9 @@
 #include <linux/atomic.h>
 #include <linux/poll.h>
 
+#ifdef CONFIG_XLOGCHAR
 extern ssize_t xlogchar_kwrite(const char __user *buf, size_t count);
+#endif
 
 void send_DC_data_to_xlog(char *reason);
 int xlog_send_int(char *reason);

@@ -85,7 +85,7 @@ INCS +=	$(COMMON_INC) \
 	$(UAPI_INC) \
 	$(TFA_INC)
 
-EXTRA_CFLAGS += $(INCS)
+EXTRA_CFLAGS += -I$(src)/inc
 
 CDEFINES +=	-DANI_LITTLE_BYTE_ENDIAN \
 		-DANI_LITTLE_BIT_ENDIAN \
@@ -98,18 +98,17 @@ CDEFINES +=	-DANI_LITTLE_BYTE_ENDIAN \
 		-D__linux__\
 		-DDEBUG
 
-
-ifeq ($(TARGET_PRODUCT), $(filter $(TARGET_PRODUCT),lmi lmiin lmiinpro))
+ifdef CONFIG_BOARD_LMI
 	CDEFINES += -DTFA_NON_DSP_SOLUTION
 	CDEFINES += -DNXP_SPEAKERBOOST_V3
 endif
 
-ifeq ($(TARGET_PRODUCT), $(filter $(TARGET_PRODUCT),lmi lmiin lmiinpro cas umi cmi apollo alioth thyme enuma elish psyche))
+ifdef CONFIG_BOARD_XIAOMI_SM8250
 	CDEFINES += -DAUDIO_SM8250_FLAG
 endif
 
-ifneq (,$(filter $(TARGET_PRODUCT), picasso picassoin))
-CDEFINES += -DTFA_NON_DSP_SOLUTION
+ifdef CONFIG_BOARD_PICASSO
+	CDEFINES += -DTFA_NON_DSP_SOLUTION
 endif
 
 KBUILD_CPPFLAGS += $(CDEFINES)
