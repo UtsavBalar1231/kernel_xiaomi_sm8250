@@ -13,6 +13,7 @@ export
 endif
 ifeq ($(CONFIG_ARCH_KONA), y)
 include $(srctree)/techpack/audio/config/konaauto.conf
+export $(shell sed 's/=.*//' $(srctree)/techpack/audio/config/konaauto.conf)
 endif
 ifeq ($(CONFIG_ARCH_SDM660), y)
 include $(srctree)/techpack/audio/config/sdm660auto.conf
@@ -27,7 +28,15 @@ USERINCLUDE     += \
 # Needed to be compatible with the O= option
 LINUXINCLUDE    += \
                 -I$(srctree)/techpack/audio/include/uapi \
+                -I$(srctree)/techpack/audio/include/elliptic \
                 -I$(srctree)/techpack/audio/include
+
+#for mius start
+ifeq ($(CONFIG_US_PROXIMITY), y)
+LINUXINCLUDE    += \
+                -I$(srctree)/techpack/audio/include/mius
+endif
+#for mius end
 
 ifeq ($(CONFIG_ARCH_SDXPOORWILLS), y)
 LINUXINCLUDE    += \
