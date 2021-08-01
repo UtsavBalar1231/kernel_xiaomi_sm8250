@@ -1001,6 +1001,8 @@ static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
 	pr_debug("Size = %d\n", size);
 	pr_debug("fbytes = %lu\n", fbytes);
 	pr_debug("idx = %d\n", idx);
+	pr_debug("period_size = %d\n", prtd->pcm_count);
+
 	if (bufptr) {
 		xfer = fbytes;
 		if (xfer > size)
