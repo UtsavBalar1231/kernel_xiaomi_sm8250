@@ -148,3 +148,111 @@ config SCSI_UFS_CRYPTO_QTI
 	 Enable Vendor Crypto Engine Support in UFS
 	 Enabling this allows kernel to use UFS crypto operations defined
 	 and implemented by QTI.
+
+config UFSFEATURE_31
+	bool "UFS feature activate"
+	depends on SCSI_UFSHCD
+	---help---
+	UFS feature activate such as hpb, tw and etc.
+
+config UFSHPB_31
+	bool "UFS Host Performance Booster support"
+	depends on SCSI_UFSHCD && UFSFEATURE_31
+	---help---
+	UFS HPB Feature Enable
+
+config UFSTW_IGNORE_GUARANTEE_BIT_31
+       bool "Ignore UFS Turbo Write Life Time Guarantee bit for POC"
+       default n
+       depends on SCSI_UFSHCD && UFSFEATURE_31 && UFSTW_31
+       ---help---
+       ignore the guarantee bit[31] of dTurboWriteBufferLifeTimeEst for PoC
+
+config UFSTW_BOOT_ENABLED
+       bool "Turbo Write enabled at boot time"
+       default y
+       depends on SCSI_UFSHCD && UFSFEATURE_31 && UFSTW_31
+       ---help---
+       fTurboWriteEn and fTurboWriteBufferFlushDuringHibnerEnter flags
+       are enabled at boot time.
+
+config UFSTW_31
+	bool "UFS Turbo Write support"
+	depends on SCSI_UFSHCD && UFSFEATURE_31
+	---help---
+	UFS TW Feature Enable
+
+config UFSHID
+	bool "UFS Host Initiated Defrag support"
+	depends on SCSI_UFSHCD && UFSFEATURE_31
+	---help---
+	UFS HID Feature Enable
+
+config UFSHID_POC
+	bool "UFSHID_POC test"
+	depends on SCSI_UFSHCD && UFSFEATURE_31 && UFSHID
+	---help---
+	UFS HID POC test
+	1. block to enter suspend state
+	2. auto_hibern8 enable/disable (HCI)
+	3. set flag bDefragOperation
+	4. debug msg enable (default : disable)
+
+config UFSRINGBUF
+	bool "UFS RingBuffer support"
+	depends on SCSI_UFSHCD && UFSFEATURE_31
+	---help---
+	UFS RingBuffer Feature Enable
+
+config UFSRINGBUF_POC
+	bool "UFS RingBuffer POC test"
+	depends on SCSI_UFSHCD && UFSFEATURE && UFSRINGBUF
+	---help---
+	UFS RingBuffer POC test
+	1. set default vendor_signature & vendor_parameter for test
+	2. Set custom vender_parameter
+
+config UFSFEATURE
+	bool "UFS feature activate"
+	depends on SCSI_UFSHCD
+	---help---
+	UFS feature activate such as hpb, tw and etc.
+
+config UFSHPB
+	bool "UFSHPB"
+	depends on SCSI_UFSHCD && UFSFEATURE
+	---help---
+	UFS HPB Feature Enable
+
+config UFSTW
+	bool "UFSTW"
+	depends on SCSI_UFSHCD && UFSFEATURE
+	---help---
+	UFS TW Feature Enable
+
+config UFSTW_IGNORE_GUARANTEE_BIT
+	bool "UFSTW_IGNORE_GUARANTEE_BIT"
+	default n
+	depends on SCSI_UFSHCD && UFSFEATURE && UFSTW
+	---help---
+	ignore the guarantee bit[31] of dTurboWriteBufferLifeTimeEst for PoC
+
+config UFSTW_ENABLE_BY_DEFAULT
+	bool "UFSTW_ENABLE_BY_DEFAULT"
+	default y
+	depends on SCSI_UFSHCD && UFSFEATURE && UFSTW
+	---help---
+	Activate UFS Turbo Write right after powering up
+
+config UFSTW_LPM_DISABLED_ON_HIBERN8_FLUSH
+	bool "Prevent LPM mode on flusing turbo write buffer during hibern8 state"
+	default y
+	depends on SCSI_UFSHCD && UFSFEATURE && UFSTW
+	---help---
+	If fTurboWriteBufferFlushDuringHibnerEnter flag is set
+	and the value of bAvailbleTurboWriteBufferSize is less than
+	UFSTW_AVAIL_BUF_SIZE_DISABLE_LPM(defined in ufstw.h),
+	LPM mode will be disabled on runtime suspend.
+	In addtion, if not runtime suspend(shutdown and system suspend),
+	fTurboWriteBufferFlushDuringHibnerEnter flag will be disabled in
+	suspend routines.

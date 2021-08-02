@@ -22,6 +22,7 @@ endif
 
 obj-$(CONFIG_PROC_FS) += proc_namespace.o
 
+obj-$(CONFIG_FS_HPB)		+= hpb_supp.o
 obj-y				+= notify/
 obj-$(CONFIG_EPOLL)		+= eventpoll.o
 obj-y				+= anon_inodes.o
