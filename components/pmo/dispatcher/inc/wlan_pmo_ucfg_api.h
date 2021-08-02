@@ -1956,4 +1956,20 @@ ucfg_pmo_get_runtime_pm_delay(struct wlan_objmgr_psoc *psoc)
  */
 bool
 ucfg_pmo_get_enable_sap_suspend(struct wlan_objmgr_psoc *psoc);
+
+#ifdef SYSTEM_PM_CHECK
+/**
+ * ucfg_pmo_notify_system_resume() - system resume notification to pmo
+ * @psoc: pointer to psoc object
+ *
+ * Return: None
+ */
+void
+ucfg_pmo_notify_system_resume(struct wlan_objmgr_psoc *psoc);
+#else
+static inline
+void ucfg_pmo_notify_system_resume(struct wlan_objmgr_psoc *psoc)
+{
+}
+#endif
 #endif /* end  of _WLAN_PMO_UCFG_API_H_ */
