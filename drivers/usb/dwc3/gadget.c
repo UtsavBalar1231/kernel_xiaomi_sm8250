@@ -1850,19 +1850,11 @@ static int dwc3_gadget_ep_dequeue(struct usb_ep *ep,
 			 */
 			list_for_each_entry_safe(r, t, &dep->started_list, list)
 				dwc3_gadget_move_cancelled_request(r);
-			/* If GEN1 controller then cleanup the cancelled
-			 * requests from here as check for
-			 * DWC3_EP_END_TRANSFER_PENDING in EPCMDCMPLT
-			 * will prevent the request on cancelled list from
-			 * getting cleared there.
-			 */
-			if (!(dep->flags & DWC3_EP_END_TRANSFER_PENDING)) {
-				dbg_log_string("%s:giveback all request\n",
-								     __func__);
-				dwc3_gadget_ep_cleanup_cancelled_requests(dep);
-			}
 
-			goto out0;
+			if (dep->flags & DWC3_EP_TRANSFER_STARTED)
+				goto out0;
+			else
+				goto out1;
 		}
 		dev_err_ratelimited(dwc->dev, "request %pK was not queued to %s\n",
 				request, ep->name);
@@ -1870,6 +1862,7 @@ static int dwc3_gadget_ep_dequeue(struct usb_ep *ep,
 		goto out0;
 	}
 
+out1:
 	dbg_ep_dequeue(dep->number, req);
 	dwc3_gadget_ep_skip_trbs(dep, req);
 	dwc3_gadget_giveback(dep, req, -ECONNRESET);
@@ -3352,12 +3345,8 @@ static void dwc3_endpoint_interrupt(struct dwc3 *dwc,
 	case DWC3_DEPEVT_EPCMDCMPLT:
 		dep->dbg_ep_events.epcmdcomplete++;
 		cmd = DEPEVT_PARAMETER_CMD(event->parameters);
-		/* Prevent GEN1 controllers to cleanup cancelled
-		 * request twice (one from error path in kick_transfer
-		 * another from here).
-		 */
-		if (cmd == DWC3_DEPCMD_ENDTRANSFER &&
-			(dep->flags & DWC3_EP_END_TRANSFER_PENDING)) {
+
+		if (cmd == DWC3_DEPCMD_ENDTRANSFER) {
 			dep->flags &= ~(DWC3_EP_END_TRANSFER_PENDING |
 					DWC3_EP_TRANSFER_STARTED);
 			dwc3_gadget_ep_cleanup_cancelled_requests(dep);
