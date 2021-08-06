@@ -1885,7 +1885,7 @@ static int tfa98xx_create_controls(struct tfa98xx *tfa98xx)
 	pr_info("create tfa98xx_controls  ret=%d", ret);
 
 #ifdef TFA_NON_DSP_SOLUTION
-	ret = snd_soc_add_component_controls(tfa98xx->component, tfa987x_algo_controls, ARRAY_SIZE(tfa987x_algo_controls))
+	ret = snd_soc_add_component_controls(tfa98xx->component, tfa987x_algo_controls, ARRAY_SIZE(tfa987x_algo_controls));
 	pr_info("create tfa987x_algo_controls  ret=%d", ret);
 	/* reset kcontrol flag once power down tfa device. */
 	atomic_set(&g_algo_bypass, TFA_KCONTROL_VALUE_DISABLED);
@@ -4420,7 +4420,6 @@ static const struct i2c_device_id tfa98xx_i2c_id[] = {
 };
 MODULE_DEVICE_TABLE(i2c, tfa98xx_i2c_id);
 
-#ifdef CONFIG_OF
 static struct of_device_id tfa98xx_dt_match[] = {
 	{.compatible = "nxp,tfa98xx" },
 	{.compatible = "nxp,tfa9872" },
@@ -4437,7 +4436,6 @@ static struct of_device_id tfa98xx_dt_match[] = {
 	{.compatible = "nxp,tfa9912" },
 	{ },
 };
-#endif
 
 static struct i2c_driver tfa98xx_i2c_driver = {
 	.driver = {

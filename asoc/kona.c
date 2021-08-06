@@ -41,7 +41,11 @@
 #include "kona-port-config.h"
 #include <soc/qcom/socinfo.h>
 #ifdef CONFIG_SND_SOC_TFA9874
+#ifdef CONFIG_TARGET_PRODUCT_POUSSIN
+#include "codecs/tfa9874/inc/tfa_platform_interface_definition.h"
+#else
 #include "codecs/tfa98xx/inc/tfa_platform_interface_definition.h"
+#endif
 #endif
 
 

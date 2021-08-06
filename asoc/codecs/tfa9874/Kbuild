@@ -72,11 +72,11 @@ TFA_INC    :=   -I$(AUDIO_ROOT)/asoc/codecs/tfa9874/inc
 
 # for TFA9874 Amplifer
 ifdef CONFIG_SND_SOC_TFA9874
-	TFA98XX_OBJS += src/tfa98xx.o
-	TFA98XX_OBJS += src/tfa_container.o
-	TFA98XX_OBJS += src/tfa_dsp.o
-	TFA98XX_OBJS += src/tfa_init.o
-	#TFA98XX_OBJS += src/tfa_debug.o
+	TFA9874_OBJS += src/tfa98xx.o
+	TFA9874_OBJS += src/tfa_container.o
+	TFA9874_OBJS += src/tfa_dsp.o
+	TFA9874_OBJS += src/tfa_init.o
+	#TFA9874_OBJS += src/tfa_debug.o
 endif
 
 LINUX_INC += -Iinclude/linux
@@ -97,8 +97,7 @@ CDEFINES +=	-DANI_LITTLE_BYTE_ENDIAN \
 		-Werror\
 		-D__linux__\
 		-DDEBUG
-
-ifeq ($(TARGET_PRODUCT), poussin)
+ifeq ($(TARGET_PRODUCT), $(filter $(TARGET_PRODUCT),poussin))
 	CDEFINES += -DTFA_NON_DSP_SOLUTION
 	CDEFINES += -DAUDIO_SM8250_FLAG
 	CDEFINES += -DCONFIG_TARGET_PRODUCT_POUSSIN
@@ -129,7 +128,7 @@ endif
 
 # Module information used by KBuild framework
 obj-$(CONFIG_SND_SOC_TFA9874)    += tfa98xx_dlkm.o
-tfa98xx_dlkm-y := $(TFA98XX_OBJS)
+tfa98xx_dlkm-y := $(TFA9874_OBJS)
 
 # inject some build related information
 DEFINES += -DBUILD_TIMESTAMP=\"$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')\"
