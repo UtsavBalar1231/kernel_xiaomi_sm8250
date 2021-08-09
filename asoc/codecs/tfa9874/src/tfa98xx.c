@@ -4420,22 +4420,22 @@ static const struct i2c_device_id tfa98xx_i2c_id[] = {
 };
 MODULE_DEVICE_TABLE(i2c, tfa98xx_i2c_id);
 
+
 static struct of_device_id tfa98xx_dt_match[] = {
-	{.compatible = "nxp,tfa98xx" },
-	{.compatible = "nxp,tfa9872" },
-	{.compatible = "nxp,tfa9873" },
-	{.compatible = "nxp,tfa9874" },
-	{.compatible = "nxp,tfa9878" },
-	{.compatible = "nxp,tfa9888" },
-	{.compatible = "nxp,tfa9890" },
-	{.compatible = "nxp,tfa9891" },
-	{.compatible = "nxp,tfa9894" },
-	{.compatible = "nxp,tfa9895" },
-	{.compatible = "nxp,tfa9896" },
-	{.compatible = "nxp,tfa9897" },
-	{.compatible = "nxp,tfa9912" },
+	{ .compatible = "nxp,tfa98xx" },
+	{ .compatible = "nxp,tfa9872" },
+	{ .compatible = "nxp,tfa9874" },
+	{ .compatible = "nxp,tfa9888" },
+	{ .compatible = "nxp,tfa9890" },
+	{ .compatible = "nxp,tfa9891" },
+	{ .compatible = "nxp,tfa9894" },
+	{ .compatible = "nxp,tfa9895" },
+	{ .compatible = "nxp,tfa9896" },
+	{ .compatible = "nxp,tfa9897" },
+	{ .compatible = "nxp,tfa9912" },
 	{ },
 };
+
 
 static struct i2c_driver tfa98xx_i2c_driver = {
 	.driver = {
