@@ -89,6 +89,7 @@
 	vcc-supply = <&L24A>;
 	vcc-voltage-level = <2950000 2960000>;
 	vccq2-supply = <&L11A>;
+	vccq2-voltage-level = <1800000 1800000>;
 	vcc-max-microamp = <800000>;
 	vccq2-max-microamp = <800000>;
 	vccq2-pwr-collapse-sup;
