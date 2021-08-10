@@ -863,6 +863,13 @@ sme_rrm_issue_scan_req(struct mac_context *mac_ctx, uint8_t idx)
 		struct wlan_objmgr_vdev *vdev;
 		uint32_t freq;
 
+		if (!sme_rrm_ctx->channelList.numOfChannels ||
+		    !sme_rrm_ctx->channelList.freq_list) {
+			sme_err("[802.11 RRM]: Global freq list is null");
+			status = QDF_STATUS_E_FAILURE;
+			goto send_ind;
+		}
+
 		req = qdf_mem_malloc(sizeof(*req));
 		if (!req) {
 			status = QDF_STATUS_E_NOMEM;
