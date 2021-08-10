@@ -1018,7 +1018,6 @@ gen_headers_out_arm64 = [
     "sound/audio_effects.h",
     "sound/audio_slimslave.h",
     "sound/cs35l41.h",
-    "sound/cs35l41_k81.h",
     "sound/devdep_params.h",
     "sound/lsm_params.h",
     "sound/msm-cirrus-playback.h",
