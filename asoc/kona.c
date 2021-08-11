@@ -118,12 +118,12 @@ static struct snd_soc_dai_link_component tfa98xx_codec_components[]=
 {
 	{
 		.name = TFA98xx_RECEIVER_NAME,
-		.dai_name = TFA98xx_RECEIVER_NAME,
+		.dai_name = "tfa98xx-aif-1-34",
 	},
 
 	{
 		.name = TFA98xx_SPEAKER_NAME,
-		.dai_name = TFA98xx_SPEAKER_NAME,
+		.dai_name = "tfa98xx-aif-1-35",
 	},
 };
 #endif
@@ -7530,33 +7530,17 @@ static struct snd_soc_dai_link tert_mi2s_rx_cs35l41_dai_links[] = {
 static struct snd_soc_dai_link pri_mi2s_rx_tfa9874_dai_links[] = {
 #if defined(CONFIG_TARGET_PRODUCT_POUSSIN)
 	{
-		.name = LPASS_BE_TERT_TDM_RX_0,
-		.stream_name = "Tertiary TDM0 Playback",
-		.cpu_dai_name = "msm-dai-q6-tdm.36896",
+		.name = LPASS_BE_TERT_MI2S_RX,
+		.stream_name = "Tertiary MI2S Playback",
+		.cpu_dai_name = "msm-dai-q6-mi2s.2",
 		.platform_name = "msm-pcm-routing",
 		.codecs = tfa98xx_codec_components,
 		.num_codecs = ARRAY_SIZE(tfa98xx_codec_components),
 		.no_pcm = 1,
 		.dpcm_playback = 1,
-		.id = MSM_BACKEND_DAI_TERT_TDM_RX_0,
+		.id = MSM_BACKEND_DAI_TERTIARY_MI2S_RX,
 		.be_hw_params_fixup = msm_be_hw_params_fixup,
-		.ops = &kona_tdm_be_ops,
-		.ignore_suspend = 1,
-		.ignore_pmdown_time = 1,
-		.init = &tfa98xx_init,
-	},
-  	{
-		.name = LPASS_BE_TERT_TDM_RX_1,
-		.stream_name = "Tertiary TDM1 Playback",
-		.cpu_dai_name = "msm-dai-q6-tdm.36898",
-		.platform_name = "msm-pcm-routing",
-		.codecs = tfa98xx_codec_components,
-		.num_codecs = ARRAY_SIZE(tfa98xx_codec_components),
-		.no_pcm = 1,
-		.dpcm_playback = 1,
-		.id = MSM_BACKEND_DAI_TERT_TDM_RX_1,
-		.be_hw_params_fixup = msm_be_hw_params_fixup,
-		.ops = &kona_tdm_be_ops,
+		.ops = &msm_mi2s_be_ops,
 		.ignore_suspend = 1,
 		.ignore_pmdown_time = 1,
 		.init = &tfa98xx_init,
