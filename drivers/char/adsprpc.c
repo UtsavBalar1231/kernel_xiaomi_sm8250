@@ -3203,8 +3203,9 @@ static int fastrpc_mmap_remove_ssr(struct fastrpc_file *fl)
 	} while (match);
 	me->enable_ramdump = false;
 bail:
-	if (err && match)
+	if (err && match) {
 		fastrpc_mmap_add(match);
+	}
 	return err;
 }
 
