@@ -526,11 +526,15 @@ static int memlat_event_hotplug_going_down(unsigned int cpu)
 	return ret;
 }
 
+/*
+ * Note: We must be holding cpus_read_lock() before calling this function
+ * since we are using cpuslocked version of function inside it
+ */
 static int memlat_event_cpu_hp_init(void)
 {
 	int ret = 0;
 
-	ret = cpuhp_setup_state_nocalls(CPUHP_AP_ONLINE_DYN,
+	ret = cpuhp_setup_state_nocalls_cpuslocked(CPUHP_AP_ONLINE_DYN,
 				"MEMLAT_EVENT",
 				memlat_event_hotplug_coming_up,
 				memlat_event_hotplug_going_down);
