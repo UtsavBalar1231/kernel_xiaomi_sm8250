@@ -52,10 +52,17 @@
 };
 
 &smb1394_div2_cp_primary {
-	io-channels = <&pm7250b_vadc ADC_AMUX_THM2_PU2>;
+	io-channels = <&pm7250b_vadc ADC_AMUX_THM2>;
+	io-channel-names = "die_temp";
 	qcom,parallel-input-mode = <1>;
 	qcom,parallel-output-mode = <2>;
 	status = "ok";
+};
+
+&pm7250b_vadc {
+	smb1390_therm@e {
+		qcom,scale-fn-type = <ADC_SCALE_HW_CALIB_PM5_SMB1398_TEMP>;
+	};
 };
 
 &pm7250b_charger {

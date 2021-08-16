@@ -11,8 +11,14 @@ smb1394: qcom,smb1394@34 {
 	qcom,periph-map = <0x6 0x26 0x27>;
 	status = "disabled";
 
+	smb1394_revid: qcom,revid {
+		compatible = "qcom,qpnp-revid";
+		reg = <0x100>;
+	};
+
 	smb1394_div2_cp_primary: qcom,div2_cp_pry {
 		compatible = "qcom,smb1394-div2-cp-primary";
+		qcom,pmic-revid = <&smb1394_revid>;
 		#io-channel-cells = <1>;
 		interrupts = <0x26 0x1 IRQ_TYPE_EDGE_RISING>,
 			     <0x26 0x3 IRQ_TYPE_EDGE_RISING>,
