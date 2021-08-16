@@ -700,14 +700,10 @@ ifeq ($(CONFIG_CC_OPTIMIZE_FOR_SIZE), y)
 KBUILD_CFLAGS   += -Os
 KBUILD_AFLAGS   += -Os
 KBUILD_LDFLAGS  += -Os
-else ifeq ($(cc-name),clang)
+else
 KBUILD_CFLAGS   += -O3
 KBUILD_AFLAGS   += -O3
 KBUILD_LDFLAGS  += -O3
-else
-KBUILD_CFLAGS   += -O2
-KBUILD_AFLAGS   += -O2
-KBUILD_LDFLAGS  += -O2
 endif
 
 # Tell gcc to never replace conditional load with a non-conditional one
