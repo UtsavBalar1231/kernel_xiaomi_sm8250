@@ -2012,8 +2012,8 @@ void rmnet_shs_wq_update_stats(void)
 		}
 	}
 	rmnet_shs_wq_refresh_all_cpu_stats();
-	rmnet_shs_wq_refresh_total_stats();
 	rmnet_shs_wq_refresh_dl_mrkr_stats();
+	rmnet_shs_wq_refresh_total_stats();
 
 	if (rmnet_shs_userspace_connected) {
 		rm_err("%s", "SHS_UPDATE: Userspace connected, relying on userspace evaluation");
