@@ -3730,11 +3730,6 @@ static void pre_transmit(struct DWC_ETH_QOS_prv_data *pdata,
 		TX_CONTEXT_DESC_TDES3_OWN_MLF_WR(
 			TX_CONTEXT_DESC->TDES3, 0x1);
 
-		/* DMA uses the MSS value programed in DMA_CR if driver
-		 * doesn't provided the CONTEXT descriptor
-		 */
-		DMA_CR_MSS_UDFWR(QINX, tx_pkt_features->mss);
-
 		tx_desc_data->default_mss = tx_pkt_features->mss;
 
 		original_start_index = tx_desc_data->cur_tx;
