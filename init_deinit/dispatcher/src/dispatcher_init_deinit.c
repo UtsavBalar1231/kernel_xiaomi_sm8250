@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2021 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -75,6 +75,8 @@
 #ifdef FEATURE_COEX
 #include <wlan_coex_utils_api.h>
 #endif
+
+#include <wlan_gpio_api.h>
 
 /**
  * DOC: This file provides various init/deinit trigger point for new
@@ -843,6 +845,9 @@ QDF_STATUS dispatcher_init(void)
 	if (QDF_STATUS_SUCCESS != dispatcher_coex_init())
 		goto coex_init_fail;
 
+	if (QDF_STATUS_SUCCESS != wlan_gpio_init())
+		goto gpio_init_fail;
+
 	/*
 	 * scheduler INIT has to be the last as each component's
 	 * initialization has to happen first and then at the end
@@ -854,6 +859,8 @@ QDF_STATUS dispatcher_init(void)
 	return QDF_STATUS_SUCCESS;
 
 scheduler_init_fail:
+	wlan_gpio_deinit();
+gpio_init_fail:
 	dispatcher_coex_deinit();
 coex_init_fail:
 	dispatcher_deinit_cfr();
@@ -908,6 +915,8 @@ QDF_STATUS dispatcher_deinit(void)
 	QDF_STATUS status;
 
 	QDF_BUG(QDF_STATUS_SUCCESS == scheduler_deinit());
+
+	QDF_BUG(QDF_STATUS_SUCCESS == wlan_gpio_deinit());
 
 	QDF_BUG(QDF_STATUS_SUCCESS == dispatcher_coex_deinit());
 
