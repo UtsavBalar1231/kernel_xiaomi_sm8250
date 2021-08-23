@@ -2904,6 +2904,7 @@ cppflags-y += -DENABLE_HAL_REG_WR_HISTORY
 cppflags-y += -DDP_RX_DESC_COOKIE_INVALIDATE
 cppflags-y += -DPCI_LINK_STATUS_SANITY
 cppflags-y += -DDISABLE_EAPOL_INTRABSS_FWD
+cppflags-y += -DSYSTEM_PM_CHECK
 endif
 
 cppflags-$(CONFIG_WLAN_CLD_PM_QOS) += -DCLD_PM_QOS
