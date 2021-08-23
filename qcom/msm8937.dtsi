@@ -884,20 +884,10 @@
 
 	msm_cpufreq: qcom,msm-cpufreq {
 		compatible = "qcom,msm-cpufreq";
-		clock-names = "l2_clk", "cpu0_clk", "cpu1_clk", "cpu2_clk",
-				"cpu3_clk", "cpu4_clk", "cpu5_clk",
-				"cpu6_clk", "cpu7_clk";
-		/* TODO
-		 *clocks = <&clock_cpu clk_cci_clk>,
-		 * <&clock_cpu clk_a53_bc_clk>,
-		 * <&clock_cpu clk_a53_bc_clk>,
-		 * <&clock_cpu clk_a53_bc_clk>,
-		 * <&clock_cpu clk_a53_bc_clk>,
-		 * <&clock_cpu clk_a53_lc_clk>,
-		 * <&clock_cpu clk_a53_lc_clk>,
-		 * <&clock_cpu clk_a53_lc_clk>,
-		 * <&clock_cpu clk_a53_lc_clki>;
-		 */
+		clocks = <&apsscc APCS_MUX_CCI_CLK>,
+			<&apsscc APCS_MUX_C1_CLK>,
+			<&apsscc APCS_MUX_C0_CLK>;
+		clock-names = "l2_clk", "cpu0_clk", "cpu4_clk";
 
 		qcom,governor-per-policy;
 
@@ -921,9 +911,7 @@
 	cci_cache: qcom,cci {
 		compatible = "devfreq-simple-dev";
 		clock-names = "devfreq_clk";
-		/* TODO
-		 * clocks = <&clock_cpu clk_cci_clk/>;
-		 */
+		clocks = <&apsscc APCS_MUX_CCI_CLK>;
 		governor = "performance";
 		freq-tbl-khz =
 			<  400000 >,

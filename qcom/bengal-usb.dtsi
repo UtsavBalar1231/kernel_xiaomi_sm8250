@@ -88,6 +88,7 @@
 			snps,dis_enblslpm_quirk;
 			snps,has-lpm-erratum;
 			snps,hird-threshold = /bits/ 8 <0x10>;
+			snps,usb3-u1u2-disable;
 			snps,usb3_lpm_capable;
 			usb-core-id = <0>;
 			maximum-speed = "super-speed";

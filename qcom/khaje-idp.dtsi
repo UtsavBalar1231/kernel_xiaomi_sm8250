@@ -119,6 +119,50 @@
 };
 
 &qupv3_se1_i2c {
+	awinic@64 {
+		compatible = "awinic,aw2016_led";
+		reg = <0x64>;
+
+		awinic,red {
+			awinic,name = "red";
+			awinic,id = <0>;
+			awinic,imax = <2>;
+			awinic,led-current = <3>;
+			awinic,max-brightness = <255>;
+			awinic,rise-time-ms = <6>;
+			awinic,hold-time-ms = <0>;
+			awinic,fall-time-ms = <6>;
+			awinic,off-time-ms = <4>;
+		};
+
+		awinic,green {
+			awinic,name = "green";
+			awinic,id = <1>;
+			awinic,imax = <2>;
+			awinic,led-current = <3>;
+			awinic,max-brightness = <255>;
+			awinic,rise-time-ms = <6>;
+			awinic,hold-time-ms = <0>;
+			awinic,fall-time-ms = <6>;
+			awinic,off-time-ms = <4>;
+		};
+
+		awinic,blue {
+			awinic,name = "blue";
+			awinic,id = <2>;
+			awinic,imax = <2>;
+			awinic,led-current = <3>;
+			awinic,max-brightness = <255>;
+			awinic,rise-time-ms = <6>;
+			awinic,hold-time-ms = <0>;
+			awinic,fall-time-ms = <6>;
+			awinic,off-time-ms = <4>;
+		};
+
+	};
+};
+
+&qupv3_se1_i2c {
 	status = "ok";
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -199,6 +243,7 @@
 	vcc-supply = <&L24A>;
 	vcc-voltage-level = <2950000 2960000>;
 	vccq2-supply = <&L11A>;
+	vccq2-voltage-level = <1800000 1800000>;
 	vcc-max-microamp = <800000>;
 	vccq2-max-microamp = <800000>;
 	vccq2-pwr-collapse-sup;
