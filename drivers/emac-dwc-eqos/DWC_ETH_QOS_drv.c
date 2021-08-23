@@ -1,4 +1,4 @@
-/* Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2017-2019,2021 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -6802,8 +6802,18 @@ static void DWC_ETH_QOS_program_dcb_algorithm(
 	DBGPR("-->DWC_ETH_QOS_program_dcb_algorithm\n");
 
 	if (copy_from_user(&l_dcb_struct, u_dcb_struct,
-			   sizeof(struct DWC_ETH_QOS_dcb_algorithm)))
-		dev_alert(&pdata->pdev->dev, "Failed to fetch DCB Struct info from user\n");
+			   sizeof(struct DWC_ETH_QOS_dcb_algorithm))) {
+		dev_alert(&pdata->pdev->dev,
+			  "Failed to fetch DCB Struct info from user\n");
+		return;
+	}
+
+	if (l_dcb_struct.qinx >= DWC_ETH_QOS_TX_QUEUE_CNT) {
+		dev_alert(&pdata->pdev->dev,
+			  "Invaild queue number[%u] in DCB Struct from user\n",
+			  l_dcb_struct.qinx);
+		return;
+	}
 
 	hw_if->set_tx_queue_operating_mode(l_dcb_struct.qinx,
 		(UINT)l_dcb_struct.op_mode);
@@ -6839,8 +6849,10 @@ static void DWC_ETH_QOS_program_avb_algorithm(
 	DBGPR("-->DWC_ETH_QOS_program_avb_algorithm\n");
 
 	if (copy_from_user(&l_avb_struct, u_avb_struct,
-			   sizeof(struct DWC_ETH_QOS_avb_algorithm)))
+			   sizeof(struct DWC_ETH_QOS_avb_algorithm))) {
 		dev_alert(&pdata->pdev->dev, "Failed to fetch AVB Struct info from user\n");
+		return;
+	}
 
 	if (pdata->speed == SPEED_1000)
 		avb_params = &l_avb_struct.speed1000params;
@@ -6849,10 +6861,16 @@ static void DWC_ETH_QOS_program_avb_algorithm(
 
 	/*Application uses 1 for CLASS A traffic and 2 for CLASS B traffic
 	  Configure right channel accordingly*/
-	if (l_avb_struct.qinx == 1)
+	if (l_avb_struct.qinx == 1) {
 		l_avb_struct.qinx = CLASS_A_TRAFFIC_TX_CHANNEL;
-	else if (l_avb_struct.qinx == 2)
+	} else if (l_avb_struct.qinx == 2) {
 		l_avb_struct.qinx = CLASS_B_TRAFFIC_TX_CHANNEL;
+	} else {
+		dev_alert(&pdata->pdev->dev,
+			  "Invalid queue number[%u] in AVB struct from user\n",
+			  l_avb_struct.qinx);
+		return;
+	}
 
 	hw_if->set_tx_queue_operating_mode(l_avb_struct.qinx,
 		(UINT)l_avb_struct.op_mode);
