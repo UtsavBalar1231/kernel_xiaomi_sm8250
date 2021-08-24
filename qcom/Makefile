@@ -190,7 +190,8 @@ dtb-$(CONFIG_ARCH_BENGAL) += bengal-rumi.dtb \
 		bengal-iot-idp-usbc.dtb \
 		bengalp-iot-idp-2gb.dtb \
 		bengalp-iot-idp-usbc-2gb.dtb \
-		bengalp-iot-idp-usbc.dtb
+		bengalp-iot-idp-usbc.dtb \
+		bengalp-iot-idp-2gb.dtb
 endif
 
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
