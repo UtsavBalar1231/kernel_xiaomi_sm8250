@@ -3574,6 +3574,7 @@ struct wifi_interface_info {
 	uint8_t apCountryStr[CFG_COUNTRY_CODE_LEN];
 	/* country string for this association */
 	uint8_t countryStr[CFG_COUNTRY_CODE_LEN];
+	uint8_t time_slice_duty_cycle;
 };
 
 /**
