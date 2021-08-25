@@ -1628,6 +1628,10 @@ QDF_STATUS hdd_wlan_re_init(void)
 		hdd_ssr_restart_sap(hdd_ctx);
 	hdd_is_interface_down_during_ssr(hdd_ctx);
 	hdd_wlan_ssr_reinit_event();
+
+	if (hdd_ctx->hdd_wlan_suspended)
+		hdd_ctx->hdd_wlan_suspended = false;
+
 	return QDF_STATUS_SUCCESS;
 
 err_re_init:
