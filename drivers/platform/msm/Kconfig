@@ -199,7 +199,7 @@ config MSM_11AD
 
 config IPA_EMULATION
 	bool "IPA on X86 Linux (IPA emulation support)"
-	depends on X86 && IPA3
+	depends on X86 && IPA3 && IPA_UT
 	help
 	  This options is used only when building the X86 version of
 	  the IPA/GSI driver. On this mode, IPA driver will be probed
