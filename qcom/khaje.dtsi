@@ -612,7 +612,7 @@
 	};
 
 	wakegic: wake-gic {
-		compatible = "qcom,mpm-gic-bengal", "qcom,mpm-gic";
+		compatible = "qcom,mpm-gic-khaje", "qcom,mpm-gic";
 		interrupts-extended = <&wakegic GIC_SPI 197
 						IRQ_TYPE_EDGE_RISING>;
 		reg = <0x45f01b8 0x1000>,
