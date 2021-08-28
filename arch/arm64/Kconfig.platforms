@@ -474,6 +474,18 @@ config BOARD_DRACO
 	help
 	  This enables support for Xiaomi MI MIX Alpha 2
 
+config BOARD_ELISH
+	bool "Elish platform"
+	select BOARD_XIAOMI_SM8250
+	help
+	  This enables support for Xiaomi MI Pad 5 Pro
+
+config BOARD_ENUMA
+	bool "Enuma platform"
+	select BOARD_XIAOMI_SM8250
+	help
+	  This enables support for Xiaomi MI Pad 5 Pro 5G
+
 config BOARD_LMI
 	bool "Lmi, Lmiin and Lmipro platform"
 	select BOARD_XIAOMI_SM8250
