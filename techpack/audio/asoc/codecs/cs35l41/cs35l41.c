@@ -919,8 +919,7 @@ static irqreturn_t cs35l41_irq(int irq, void *data)
 		//Analog mute PA if DC is detected
 		//regmap_write(cs35l41->regmap, CS35L41_AMP_OUT_MUTE,
 		//	     1 << CS35L41_AMP_MUTE_SHIFT);
-		cs35l41->dc_current_cnt++;
-		send_DC_data_to_xlog((int)cs35l41->dc_current_cnt, reason);
+		send_DC_data_to_xlog(reason);
 		dev_crit(cs35l41->dev, "DC current detected");
 	}
 
@@ -955,8 +954,8 @@ static int cs35l41_main_amp_event(struct snd_soc_dapm_widget *w,
 	int i;
 	bool pdn;
 	unsigned int val;
-	dev_dbg(cs35l41->dev, "%s: event = %d, DC counter = %d.\n",
-		__func__, event, cs35l41->dc_current_cnt);
+	dev_dbg(cs35l41->dev, "%s: event = %d.\n",
+		__func__, event);
 	switch (event) {
 	case SND_SOC_DAPM_POST_PMU:
 		regmap_multi_reg_write_bypassed(cs35l41->regmap,
@@ -1370,7 +1369,7 @@ static int cs35l41_pcm_hw_params(struct snd_pcm_substream *substream,
 	asp_wl = params_width(params);
 	asp_width = params_physical_width(params);
 
-#if defined(CONFIG_TARGET_PRODUCT_APOLLO) || defined(CONFIG_TARGET_PRODUCT_CAS) || defined (CONFIG_TARGET_PRODUCT_ALIOTH)
+#if defined(CONFIG_TARGET_PRODUCT_APOLLO) || defined(CONFIG_TARGET_PRODUCT_CAS) || defined (CONFIG_TARGET_PRODUCT_ALIOTH) || defined(CONFIG_TARGET_PRODUCT_ENUMA)
 	cs35l41_component_set_sysclk(dai->component, 0, 0, 8 * rate * asp_width, 0);
 #else
 	cs35l41_component_set_sysclk(dai->component, 0, 0, 2 * rate * asp_width, 0);
@@ -1442,12 +1441,12 @@ static int cs35l41_pcm_startup(struct snd_pcm_substream *substream,
 	//struct snd_soc_codec *codec = dai->codec;
 	pr_debug("++++>CSPL: %s.\n", __func__);
 
-#if defined(CONFIG_TARGET_PRODUCT_APOLLO) || defined(CONFIG_TARGET_PRODUCT_CAS) || defined (CONFIG_TARGET_PRODUCT_ALIOTH)
+#if defined(CONFIG_TARGET_PRODUCT_APOLLO) || defined(CONFIG_TARGET_PRODUCT_CAS) || defined (CONFIG_TARGET_PRODUCT_ALIOTH) || defined(CONFIG_TARGET_PRODUCT_ENUMA)
 	cs35l41_set_dai_fmt(dai, SND_SOC_DAIFMT_CBS_CFS|SND_SOC_DAIFMT_DSP_A);
 #else
 	cs35l41_set_dai_fmt(dai, SND_SOC_DAIFMT_CBS_CFS|SND_SOC_DAIFMT_I2S);
 #endif
-	
+
     //cs35l41_codec_set_sysclk(codec, 0, 0, 1536000, 0);
 #if 0
 	if (substream->runtime)
@@ -2407,8 +2406,6 @@ int cs35l41_probe(struct cs35l41_private *cs35l41,
 	}
 
 	irq_pol = cs35l41_irq_gpio_config(cs35l41);
-
-	cs35l41->dc_current_cnt = 0;
 
 	ret = devm_request_threaded_irq(cs35l41->dev, cs35l41->irq, NULL,
 				cs35l41_irq, irq_pol | IRQF_ONESHOT,

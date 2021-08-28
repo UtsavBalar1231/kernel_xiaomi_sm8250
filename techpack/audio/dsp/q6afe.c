@@ -36,6 +36,12 @@
 #include <dsp/msm-cirrus-playback.h>
 #endif
 
+#ifdef AUDIO_FORCE_RESTART_ADSP
+#include <soc/qcom/subsystem_restart.h>
+#define ADSP_ERR_LIMITED_COUNT   (3)
+static int err_count = 0;
+#endif
+
 #define WAKELOCK_TIMEOUT	5000
 #define AFE_CLK_TOKEN	1024
 
@@ -1487,16 +1493,37 @@ static int afe_apr_send_clk_pkt(void *data, wait_queue_head_t *wait)
 				pr_err("%s: timeout\n", __func__);
 				ret = -ETIMEDOUT;
 			} else if (atomic_read(&this_afe.clk_status) > 0) {
+#ifdef AUDIO_FORCE_RESTART_ADSP
+				pr_err("%s: DSP returned error[%s][%d]\n", __func__,
+					adsp_err_get_err_str(atomic_read(
+					&this_afe.clk_status)), err_count);
+#else
 				pr_err("%s: DSP returned error[%s]\n", __func__,
 					adsp_err_get_err_str(atomic_read(
 					&this_afe.clk_status)));
+#endif
 				ret = adsp_err_get_lnx_err_code(
 						atomic_read(&this_afe.clk_status));
+#ifdef AUDIO_FORCE_RESTART_ADSP
+				if (atomic_read(&this_afe.clk_status) == ADSP_ENEEDMORE)
+					err_count++;
+				else
+					err_count = 0;
+
+				if (err_count >= ADSP_ERR_LIMITED_COUNT) {
+					err_count = 0;
+					pr_err("%s: DSP returned error more than limited, restart now !\n", __func__);
+					subsystem_restart("adsp");
+				}
+#endif
 			} else {
 				ret = 0;
 			}
 		} else {
 			ret = 0;
+#ifdef AUDIO_FORCE_RESTART_ADSP
+			err_count = 0;
+#endif
 		}
 	} else if (ret == 0) {
 		pr_err("%s: packet not transmitted\n", __func__);

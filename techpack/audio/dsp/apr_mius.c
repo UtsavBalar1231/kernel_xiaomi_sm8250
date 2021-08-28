@@ -142,7 +142,7 @@ static int afe_set_parameter(int port,
 	}
 	ret = wait_event_timeout(mius_afe.ptr_wait[index],
 		(atomic_read(mius_afe.ptr_state) == 0),
-		msecs_to_jiffies(mius_afe.timeout_ms*10));
+		msecs_to_jiffies(mius_afe.timeout_ms));
 	if (!ret) {
 		pr_err("%s: wait_event timeout\n", __func__);
 		ret = -EINVAL;
