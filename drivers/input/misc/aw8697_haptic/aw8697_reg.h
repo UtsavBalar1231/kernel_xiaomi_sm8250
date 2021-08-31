@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 #ifndef _AW8697_REG_H_
 #define _AW8697_REG_H_
 
@@ -536,4 +537,4 @@ const unsigned char aw8697_reg_access[AW8697_REG_MAX] = {
 /* BEMF_NUM: reg0x78 */
 #define AW8697_BIT_BEMF_NUM_BRK_MASK                (~(15<<0))
 
-#endif
+#endif /* _AW8697_REG_H_ */

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 #ifndef __AW8697_CONFIG_H__
 #define __AW8697_CONFIG_H__
 
@@ -6,10 +7,6 @@
 
 #define AW8697_CONT_PLAYBACK_MODE       AW8697_BIT_CONT_CTRL_CLOSE_PLAYBACK
 
-/*#define CONFIG_DEBUG_FS*/
-
-/*#ifdef INPUT_DEV*/
-#if 1
 /* haptics module register definitions */
 #define REG_HAP_STATUS1			0x0A
 #define HAP_SC_DET_BIT			BIT(3)
@@ -113,5 +110,5 @@
 
 static int wf_repeat[8] = { 1, 2, 4, 8, 16, 32, 64, 128 };
 static int wf_s_repeat[4] = { 1, 2, 4, 8 };
-#endif
-#endif
+
+#endif /* __AW8697_CONFIG_H__ */
