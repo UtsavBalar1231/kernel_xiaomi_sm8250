@@ -4077,8 +4077,6 @@ static irqreturn_t aw8697_irq(int irq, void *data)
 		aw8697_haptic_set_rtp_aei(aw8697, false);
 	}
 
-	aw8697_i2c_read(aw8697, AW8697_REG_SYSINT, &reg_val);
-	pr_debug("%s: reg SYSINT=0x%x\n", __func__, reg_val);
 	aw8697_i2c_read(aw8697, AW8697_REG_SYSST, &reg_val);
 	pr_debug("%s: reg SYSST=0x%x\n", __func__, reg_val);
 	atomic_set(&aw8697->is_in_rtp_loop, 0);
