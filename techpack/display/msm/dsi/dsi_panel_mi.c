@@ -295,6 +295,30 @@ static int dsi_panel_parse_elvss_dimming_config(struct dsi_panel *panel,
 	return rc;
 }
 
+int dsi_panel_parse_esd_gpio_config(struct dsi_panel *panel)
+{
+	int rc = 0;
+	struct dsi_parser_utils *utils = &panel->utils;
+	struct dsi_panel_mi_cfg *mi_cfg = &panel->mi_cfg;
+
+	mi_cfg->esd_err_irq_gpio = of_get_named_gpio_flags(
+			utils->data, "mi,esd-err-irq-gpio",
+			0, (enum of_gpio_flags *)&(mi_cfg->esd_err_irq_flags));
+	if (gpio_is_valid(mi_cfg->esd_err_irq_gpio)) {
+		mi_cfg->esd_err_irq = gpio_to_irq(mi_cfg->esd_err_irq_gpio);
+		rc = gpio_request(mi_cfg->esd_err_irq_gpio, "esd_err_irq_gpio");
+		if (rc)
+			pr_err("Failed to request esd irq gpio %d, rc=%d\n",
+				mi_cfg->esd_err_irq_gpio, rc);
+		else
+			gpio_direction_input(mi_cfg->esd_err_irq_gpio);
+	} else {
+		rc = -EINVAL;
+	}
+
+	return rc;
+}
+
 int dsi_panel_parse_mi_config(struct dsi_panel *panel,
 				struct device_node *of_node)
 {
@@ -637,6 +661,47 @@ void display_utc_time_marker(const char *format, ...)
 			&vaf);
 
 	va_end(args);
+}
+
+int dsi_panel_esd_irq_ctrl(struct dsi_panel *panel,
+				bool enable)
+{
+	struct dsi_panel_mi_cfg *mi_cfg;
+	struct irq_desc *desc;
+
+	if (!panel || !panel->panel_initialized) {
+		pr_err("Panel not ready!\n");
+		return -EINVAL;
+	}
+
+	mutex_lock(&panel->panel_lock);
+
+	mi_cfg = &panel->mi_cfg;
+	if (gpio_is_valid(mi_cfg->esd_err_irq_gpio)) {
+		if (mi_cfg->esd_err_irq) {
+			if (enable) {
+				if (!mi_cfg->esd_err_enabled) {
+					desc = irq_to_desc(mi_cfg->esd_err_irq);
+					if (!irq_settings_is_level(desc))
+						desc->istate &= ~IRQS_PENDING;
+					enable_irq(mi_cfg->esd_err_irq);
+					mi_cfg->esd_err_enabled = true;
+					pr_info("panel esd irq is enable\n");
+				}
+			} else {
+				if (mi_cfg->esd_err_enabled) {
+					disable_irq_nosync(mi_cfg->esd_err_irq);
+					mi_cfg->esd_err_enabled = false;
+					pr_info("panel esd irq is disable\n");
+				}
+			}
+		}
+	} else {
+		pr_info("panel esd irq gpio invalid\n");
+	}
+
+	mutex_unlock(&panel->panel_lock);
+	return 0;
 }
 
 int dsi_panel_update_elvss_dimming(struct dsi_panel *panel)
