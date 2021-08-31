@@ -83,7 +83,7 @@ static char aw8697_rtp_name[][AW8697_RTP_NAME_MAX] = {
 };
 #else
 static char aw8697_rtp_name[][AW8697_RTP_NAME_MAX] = {
-	{"aw8697_rtp_1.bin"}, //8
+	{"aw8697_rtp_1.bin"}, //10
 	{"aw8697_rtp_1.bin"},
 	{"aw8697_rtp_1.bin"},
 	{"aw8697_rtp_1.bin"},
@@ -1922,6 +1922,7 @@ static int aw8697_haptic_rtp_init(struct aw8697 *aw8697)
 	unsigned int period_size = aw8697->ram.base_addr >> 2 ;
 	bool rtp_start = true;
 	pm_qos_add_request(&pm_qos_req_vb, PM_QOS_CPU_DMA_LATENCY, PM_QOS_VALUE_VB);
+	mutex_lock(&aw8697->rtp_lock);
 	aw8697->rtp_cnt = 0;
 	while ((!aw8697_haptic_rtp_get_fifo_afi(aw8697)) &&
 	       (aw8697->play_mode == AW8697_HAPTIC_RTP_MODE) &&
@@ -1950,6 +1951,7 @@ static int aw8697_haptic_rtp_init(struct aw8697 *aw8697)
 			if (aw8697->rtp_cnt == aw8697_rtp->len) {
 				aw8697->rtp_cnt = 0;
 				aw8697_haptic_set_rtp_aei(aw8697, false);
+				mutex_unlock(&aw8697->rtp_lock);
 				pm_qos_remove_request(&pm_qos_req_vb);
 				return 0;
 			}
@@ -1960,6 +1962,7 @@ static int aw8697_haptic_rtp_init(struct aw8697 *aw8697)
 				pr_info("%s: custom rtp update complete\n", __func__);
 				aw8697->rtp_cnt = 0;
 				aw8697_haptic_set_rtp_aei(aw8697, false);
+				mutex_unlock(&aw8697->rtp_lock);
 				pm_qos_remove_request(&pm_qos_req_vb);
 				return 0;
 			}
@@ -1969,6 +1972,7 @@ static int aw8697_haptic_rtp_init(struct aw8697 *aw8697)
 		aw8697_haptic_set_rtp_aei(aw8697, true);
 	}
 	pr_info("%s: exit\n", __func__);
+	mutex_unlock(&aw8697->rtp_lock);
 	pm_qos_remove_request(&pm_qos_req_vb);
 	return 0;
 }
