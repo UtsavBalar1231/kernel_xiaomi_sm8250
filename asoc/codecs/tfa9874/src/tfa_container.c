@@ -36,8 +36,6 @@ enum tfa_error tfa_load_cnt(void *cnt, int length)
 {
 	TfaContainer_t  *cntbuf = (TfaContainer_t  *)cnt;
 
-	printk(KERN_ERR "%s-1\n");//
-
 	if (length > TFA_MAX_CNT_LENGTH) {
 		pr_err("incorrect length\n");
 		return tfa_error_container;
