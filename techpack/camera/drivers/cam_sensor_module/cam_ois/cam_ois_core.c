@@ -16,6 +16,7 @@
 #include "cam_packet_util.h"
 #include <linux/vmalloc.h>
 #include "Sem1215.h"
+#include "Lc898128.h"
 
 static int oisfwctrl;
 module_param(oisfwctrl, int, 0644);
@@ -301,7 +302,7 @@ static int cam_ois_slaveInfo_pkt_parser(struct cam_ois_ctrl_t *o_ctrl,
 	return rc;
 }
 
-static int cam_ois_fw_download(struct cam_ois_ctrl_t *o_ctrl)
+static int cam_default_ois_fw_download(struct cam_ois_ctrl_t *o_ctrl)
 {
 	uint16_t                           total_bytes = 0;
 	uint8_t                           *ptr = NULL;
@@ -875,6 +876,109 @@ static int cam_sem1215_ois_fw_download(struct cam_ois_ctrl_t *o_ctrl)
 		}
 		CAM_DBG(CAM_OIS, "FW Update Success.");
 	}
+	return rc;
+}
+
+static int cam_lc898128_ois_fw_download(struct cam_ois_ctrl_t *o_ctrl, uint32_t FwChecksum, uint32_t FwChecksumSize, uint8_t FwVersion)
+{
+	int32_t rc = 0;
+	uint8_t ans = 0;
+	if (!o_ctrl) {
+		CAM_ERR(CAM_OIS, "Invalid Args");
+		return -EINVAL;
+	}
+	if ( !CheckFwValid(o_ctrl,FwVersion) ) {
+		CAM_ERR(CAM_OIS, "firmware is invalid, updating");
+//--------------------------------------------------------------------------------
+// 0. <Info Mat1> Driver Offset
+//--------------------------------------------------------------------------------
+		ans = DrvOffAdj(o_ctrl);
+		if (ans != 0)
+			 return ans;
+
+		ans = CoreResetwithoutMC128(o_ctrl);
+		if (ans != 0)
+			return ans;
+
+		ans = Mat2ReWrite(o_ctrl);	// MAT2 re-write process
+		if (ans != 0 && ans != 1)
+			return ans;
+
+		ans = PmemUpdate128(o_ctrl, 1);
+		if (ans != 0)
+			return ans;
+//--------------------------------------------------------------------------------
+// <User Mat> Erase
+//--------------------------------------------------------------------------------
+		if (0 != UnlockCodeSet(o_ctrl))
+			return 0x33;
+
+		WritePermission(o_ctrl);
+
+		AddtionalUnlockCodeSet(o_ctrl);
+
+		ans = EraseUserMat128(o_ctrl, 0, 10);
+		if (0 != ans) {
+			if (0 != UnlockCodeClear(o_ctrl))
+				return 0x32;
+			else
+				return ans;
+		}
+//--------------------------------------------------------------------------------
+// 4. <User Mat> Write
+//--------------------------------------------------------------------------------
+#if (SELECT_VENDOR == 0x01)
+		ans = ProgramFlash128_LongBurst(o_ctrl);
+#else
+		ans = ProgramFlash128_Standard(o_ctrl);
+#endif
+		if ( ans != 0) {
+			if ( UnlockCodeClear(o_ctrl) != 0 )
+				return (0x43);	// unlock code clear ng
+			else
+				return( ans );
+		}
+
+		if ( UnlockCodeClear(o_ctrl) != 0 )
+			return (0x43);
+//--------------------------------------------------------------------------------
+// 5. <User Mat> Verify
+//--------------------------------------------------------------------------------
+		ans = MatVerify(o_ctrl,FwChecksum,FwChecksumSize);
+		if (ans != 0) {
+			CAM_ERR(CAM_OIS, "MatVerify fail %d", ans);
+		}
+	} else {
+		CAM_ERR(CAM_OIS, "firmware is valid, skip updating");
+	}
+
+	return rc;
+}
+
+static int cam_ois_fw_download(struct cam_ois_ctrl_t *o_ctrl)
+{
+	int32_t rc = 0;
+	uint32_t FwChecksum =0;
+	uint32_t FwChecksumSize = 0;
+	uint8_t FwVersion = 0;
+
+	if (1 == o_ctrl->opcode.is_addr_indata) {
+		CAM_DBG(CAM_OIS, "apply lc898124 ois_fw settings");
+		rc = cam_lc898124_ois_fw_download(o_ctrl);
+	} else if (121 == o_ctrl->opcode.is_addr_indata) {
+		CAM_DBG(CAM_OIS, "apply Sem1215 ois_fw settings");
+		rc = cam_sem1215_ois_fw_download(o_ctrl);
+	} else if (128 == o_ctrl->opcode.is_addr_indata) {
+		FwChecksum = o_ctrl->opcode.fwchecksum;
+		FwChecksumSize = o_ctrl->opcode.fwchecksumsize;
+		FwVersion = o_ctrl->opcode.fwversion;
+		CAM_DBG(CAM_OIS, "apply lc898128 ois_fw settings");
+		rc = cam_lc898128_ois_fw_download(o_ctrl, FwChecksum, FwChecksumSize, FwVersion);
+	} else {
+		CAM_DBG(CAM_OIS, "apply default ois_fw settings");
+		rc = cam_default_ois_fw_download(o_ctrl);
+	}
+
 	return rc;
 }
 
