@@ -2159,6 +2159,7 @@ void sde_cp_crtc_clear(struct drm_crtc *crtc)
 	list_del_init(&sde_crtc->dirty_list);
 	list_del_init(&sde_crtc->ad_active);
 	list_del_init(&sde_crtc->ad_dirty);
+	sde_crtc->cp_pu_feature_mask = 0;
 	mutex_unlock(&sde_crtc->crtc_cp_lock);
 
 	spin_lock_irqsave(&sde_crtc->spin_lock, flags);
