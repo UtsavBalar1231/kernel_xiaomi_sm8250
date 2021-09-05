@@ -1776,7 +1776,7 @@ static int issue_discard_thread(void *data)
 						dcc->discard_granularity);
 
 		if (!atomic_read(&dcc->discard_cmd_cnt))
-		       wait_ms = dpolicy.max_interval;
+			wait_ms = dpolicy.max_interval;
 
 		wait_event_interruptible_timeout(*q,
 				kthread_should_stop() || freezing(current) ||
