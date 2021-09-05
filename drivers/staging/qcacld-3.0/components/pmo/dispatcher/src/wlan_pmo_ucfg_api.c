@@ -863,3 +863,10 @@ ucfg_pmo_get_active_mc_bc_apf_mode(struct wlan_objmgr_psoc *psoc)
 
 	return pmo_psoc_ctx->psoc_cfg.active_mc_bc_apf_mode;
 }
+
+#ifdef SYSTEM_PM_CHECK
+void ucfg_pmo_notify_system_resume(struct wlan_objmgr_psoc *psoc)
+{
+	pmo_core_system_resume(psoc);
+}
+#endif
