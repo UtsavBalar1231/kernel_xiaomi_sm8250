@@ -1,0 +1,6 @@
+config MI_RECLAIM
+	bool "reclaim pages"
+	depends on MIHW
+	default n
+	---help---
+	  Mi memory reclaim
