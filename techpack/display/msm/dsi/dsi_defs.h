@@ -590,6 +590,7 @@ struct dsi_host_common_cfg {
 	struct dsi_split_link_config split_link;
 	u32 byte_intf_clk_div;
 	u32 clk_strength;
+	bool cphy_strength;
 };
 
 /**

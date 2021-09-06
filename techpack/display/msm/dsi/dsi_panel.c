@@ -1416,6 +1416,9 @@ static int dsi_panel_parse_misc_host_config(struct dsi_host_common_cfg *host,
 	host->phy_type = panel_cphy_mode ? DSI_PHY_TYPE_CPHY
 						: DSI_PHY_TYPE_DPHY;
 
+	host->cphy_strength = utils->read_bool(utils->data,
+					"qcom,mdss-dsi-cphy-strength");
+
 	return 0;
 }
 

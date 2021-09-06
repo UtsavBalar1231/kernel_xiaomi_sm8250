@@ -113,6 +113,7 @@ struct dsi_phy_cfg {
 	enum dsi_phy_type phy_type;
 	unsigned long bit_clk_rate_hz;
 	unsigned long clk_strength;
+	bool cphy_strength;
 };
 
 struct dsi_phy_hw;
