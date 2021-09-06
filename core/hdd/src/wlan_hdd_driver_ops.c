@@ -708,12 +708,11 @@ static int hdd_soc_recovery_reinit(struct device *dev,
 		return errno;
 
 	errno = __hdd_soc_recovery_reinit(dev, bdev, bid, bus_type);
-	if (errno)
-		return errno;
+
 
 	osif_psoc_sync_trans_stop(psoc_sync);
 
-	return 0;
+	return errno;
 }
 
 static void __hdd_soc_remove(struct device *dev)
@@ -1518,6 +1517,11 @@ static int wlan_hdd_runtime_suspend(struct device *dev)
 	if (ucfg_scan_get_pdev_status(hdd_ctx->pdev) !=
 	    SCAN_NOT_IN_PROGRESS) {
 		hdd_debug("Scan in progress, ignore runtime suspend");
+		return -EBUSY;
+	}
+
+	if (ucfg_ipa_is_tx_pending(hdd_ctx->pdev)) {
+		hdd_debug("IPA TX comps pending, ignore rtpm suspend");
 		return -EBUSY;
 	}
 
