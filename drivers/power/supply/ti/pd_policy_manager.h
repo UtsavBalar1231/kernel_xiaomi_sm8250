@@ -70,12 +70,9 @@ enum pm_state {
 #define BQ_TAPER_FCC_VOTER	"BQ_TAPER_FCC_VOTER"
 #define BQ_TAPER_CELL_HGIH_FCC_VOTER	"BQ_TAPER_CELL_HGIH_FCC_VOTER"
 
-/* defined for non_verified pps charger maxium fcc */
 #define NON_VERIFIED_PPS_FCC_MAX		4800
-/* defined min fcc threshold for start bq direct charging */
 #define START_DRIECT_CHARGE_FCC_MIN_THR			2000
 #define PDO_MAX_NUM			7
-/* product related */
 #define LOW_POWER_PPS_CURR_THR			2000
 #define XIAOMI_LOW_POWER_PPS_CURR_MAX			1500
 #define PPS_VOL_MAX			11000
@@ -83,6 +80,7 @@ enum pm_state {
 
 #define STEP_MV			20
 #define TAPER_VOL_HYS			80
+#define TAPER_VOL_HYS_30			30
 #define TAPER_WITH_IBUS_HYS			60
 #define TAPER_IBUS_THR			450
 #define MAX_THERMAL_LEVEL			13
@@ -119,6 +117,7 @@ enum pm_state {
 #define CRITICAL_HIGH_VOL_THR_MV			4480
 
 #define IBUS_TARGET_COMP_MA			100
+#define IBUS_TARGET_COMP_30MA			30
 #define HIGH_IBUS_LIMI_THR_MA			4000
 
 #define TAPER_DONE_FFC_MA			2400
@@ -126,7 +125,6 @@ enum pm_state {
 
 #define VBAT_HIGH_FOR_FC_HYS_MV		100
 #define CAPACITY_TOO_HIGH_THR			95
-#define CAPACITY_HIGH_THR			80
 
 #define	APDO_MAX_VOLT				11000
 
@@ -141,6 +139,7 @@ enum {
 };
 struct sw_device {
 	bool charge_enabled;
+	bool night_charging;
 };
 
 struct usbpd_pdo {
@@ -254,6 +253,8 @@ struct usbpd_pm {
 	int			therm_level_threshold;
 	bool		cp_sec_enable;
 	bool			use_qcom_gauge;
+	bool			chg_enable_k11a;
+	bool			chg_enable_miphone;
 	/* jeita or thermal related */
 	bool			jeita_triggered;
 	bool			is_temp_out_fc2_range;
@@ -266,7 +267,6 @@ struct usbpd_pm {
 	int			cell_vol_high_threshold_mv;
 	int			cell_vol_max_threshold_mv;
 
-	/* dual bq contrl related */
 	bool			no_need_en_slave_bq;
 	int			slave_bq_disabled_check_count;
 	int			master_ibus_below_critical_low_count;
@@ -298,6 +298,7 @@ extern int usbpd_get_pps_status(struct usbpd *pd, u32 *status);
 extern int usbpd_fetch_pdo(struct usbpd *pd, struct usbpd_pdo *pdos);
 extern int usbpd_select_pdo(struct usbpd *pd, int pdo, int uv, int ua);
 extern struct usbpd *smb_get_usbpd(void);
+extern int usbpd_get_current_state(struct usbpd *pd);
 
 
 #endif /* SRC_PDLIB_USB_PD_POLICY_MANAGER_H_ */

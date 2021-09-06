@@ -13,9 +13,9 @@
 #include <linux/types.h>
 #include <linux/device.h>
 #include <linux/workqueue.h>
-#include "idtp9415_fw.h"
-#define IDT_DRIVER_NAME      "idtp9415"
-#define IDT_I2C_ADDR         0x61
+#include "idtp9418_fw.h"
+#define IDT_DRIVER_NAME      "idtp9418"
+#define IDT_I2C_ADDR         0x3b
 
 #define HSCLK                60000
 
@@ -61,6 +61,7 @@
 #define INT_OV_CURR       (1 << 0)
 
 /*TRX int bits define*/
+#define INT_GET_BLE_ADDR   (1 << 8)
 #define INT_INIT_TX        (1 << 7)
 #define INT_GET_DPING      (1 << 6)
 #define INT_GET_PPP        (1 << 5)
@@ -134,6 +135,13 @@
 #define REG_VRECT_TAEGET     0x0090
 #define REG_FOD_LOW          0x0092
 #define REG_FOD_HIGH         0x0093
+#define REG_MAC_ADDR         0x00be
+
+#define REG_REVERSE_IIN_LOW  0x006e
+#define REG_REVERSE_IIN_HIGH 0x006f
+#define REG_REVERSE_VIN_LOW  0x0070
+#define REG_REVERSE_VIN_HIGH 0x0071
+#define REG_REVERSE_TEMP     0x007a
 
 #define EPT_POCP             BIT(15)
 #define EPT_OTP              BIT(14)
@@ -186,14 +194,6 @@
 #define BC_SET_AP_OVERLOAD    0x31
 #define BC_ENABLE_FAST_CHARGE 0x32
 
-/* Adapter_list = {0x00:'ADAPTER_UNKNOWN',  */
-/*            0x01:'SDP 500mA',  */
-/*            0x02:'CDP 1.1A',  */
-/*            0x03:'DCP 1.5A',  */
-/*            0x05:'QC2.0',  */
-/*            0x06:'QC3.0',  */
-/*            0x07:'PD',} */
-//define adapter type
 #define ADAPTER_NONE 0x00
 #define ADAPTER_SDP  0x01
 #define ADAPTER_CDP  0x02
@@ -216,32 +216,21 @@
 #define FULL_MODE   0x3
 #define RECHG_MODE  0x4
 
-//fw version to update
-#define FW_VERSION  0x25
+#define FW_VERSION  0x1
 
-//add for crc verify
-#define CRC_VERIFY_LOW	0x31
-#define CRC_VERIFY_HIGH	0x29
+#define CRC_VERIFY_LOW	0x6C
+#define CRC_VERIFY_HIGH	0xAF
 
 
-//add for reverse fod
 #define REVERSE_FOD 500
 
-/*CLRPOWERGOOD BIT(10), upper byte is 0x8*/
 #define CLRPOWERGOOD		 0x04
-// bitmap for status flags
-// 1: indicates a pending interrupt for LDO Vout state change – from OFF to ON
 #define VOUTCHANGED          BIT(7) // Stat_Vout_ON
-// 1: indicates a pending interrupt for TX Data Received. (Change from “No Received Data” state to “Data Received” state)
 #define TXDATARCVD           BIT(4) // TX Data Received
 
-// bitmap for SSCmnd register 0x4e
 #define VSWITCH              BIT(7)
-// If AP sets this bit to "1" then IDTP9220 M0 clears the interrupt corresponding to the bit(s) which has a value of “1”
 #define CLRINT               BIT(5) // Clear Interrupt
-// If AP sets this bit to "1" then IDTP9220 M0 toggles LDO output once (from on to off, or from off to on), and then sets this bit to “0”
 #define LDOTGL               BIT(1) // Toggle LDO On/OFF
-// If AP sets this bit to “1” then IDTP9220 M0 sends the Proprietary Packet
 #define SENDPROPP            BIT(0) //  SEND RX Data
 
 #define SEND_DEVICE_AUTH     BIT(2)

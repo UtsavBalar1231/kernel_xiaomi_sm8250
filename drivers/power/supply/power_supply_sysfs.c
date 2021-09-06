@@ -240,6 +240,22 @@ static ssize_t power_supply_show_property(struct device *dev,
 		ret = scnprintf(buf, PAGE_SIZE, "%llx\n",
 				value.int64val);
 		break;
+	case POWER_SUPPLY_PROP_PEN_MAC:
+		ret = scnprintf(buf, PAGE_SIZE, "%llx\n",
+				value.int64val);
+		break;
+	case POWER_SUPPLY_PROP_REVERSE_PEN_SOC:
+		ret = scnprintf(buf, PAGE_SIZE, "%d\n",
+				value.intval);
+		break;
+	case POWER_SUPPLY_PROP_REVERSE_CHG_STATE:
+		ret = scnprintf(buf, PAGE_SIZE, "%d\n",
+				value.intval);
+		break;
+	case POWER_SUPPLY_PROP_REVERSE_PEN_CHG_STATE:
+		ret = scnprintf(buf, PAGE_SIZE, "%d\n",
+				value.intval);
+		break;
 	case POWER_SUPPLY_PROP_RX_CR:
 		ret = scnprintf(buf, PAGE_SIZE, "%llx\n",
 				value.int64val);
@@ -325,6 +341,18 @@ static ssize_t power_supply_store_property(struct device *dev,
 		ret = val;
 		break;
 	case POWER_SUPPLY_PROP_TX_MAC:
+		ret = kstrtoll(buf, 16, &num_long);
+		if (ret < 0)
+			return ret;
+		value.int64val = num_long;
+		ret = power_supply_set_property(psy, psp, &value);
+		if (ret < 0)
+			return ret;
+		else
+			return count;
+
+		break;
+	case POWER_SUPPLY_PROP_PEN_MAC:
 		ret = kstrtoll(buf, 16, &num_long);
 		if (ret < 0)
 			return ret;
@@ -551,6 +579,7 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(rx_cr),
 	POWER_SUPPLY_ATTR(rx_cep),
 	POWER_SUPPLY_ATTR(bt_state),
+	POWER_SUPPLY_ATTR(pen_mac),
 	POWER_SUPPLY_ATTR(min_icl),
 	POWER_SUPPLY_ATTR(moisture_detected),
 	POWER_SUPPLY_ATTR(batt_profile_version),
@@ -663,10 +692,16 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(div_2_mode),
 	POWER_SUPPLY_ATTR(reverse_chg_mode),
 	POWER_SUPPLY_ATTR(reverse_chg_state),
+	POWER_SUPPLY_ATTR(reverse_pen_chg_state),
 	POWER_SUPPLY_ATTR(reverse_gpio_state),
 	POWER_SUPPLY_ATTR(reset_div_2_mode),
 	POWER_SUPPLY_ATTR(aicl_enable),
 	POWER_SUPPLY_ATTR(otg_state),
+	POWER_SUPPLY_ATTR(reverse_chg_hall3),
+	POWER_SUPPLY_ATTR(reverse_chg_hall4),
+	POWER_SUPPLY_ATTR(reverse_pen_soc),
+	POWER_SUPPLY_ATTR(reverse_vout),
+	POWER_SUPPLY_ATTR(reverse_iout),
 	POWER_SUPPLY_ATTR(fg_type),
 	POWER_SUPPLY_ATTR(charger_status),
 	POWER_SUPPLY_ATTR(moisture_detection_enabled),

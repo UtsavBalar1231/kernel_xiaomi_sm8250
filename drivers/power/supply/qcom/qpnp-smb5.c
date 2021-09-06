@@ -235,6 +235,26 @@ static struct smb_charger *__smbchg;
 
 static int __debug_mask = 0;
 
+static BLOCKING_NOTIFIER_HEAD(pen_charge_state_notifier_list);
+
+int pen_charge_state_notifier_register_client(struct notifier_block *nb)
+{
+	return blocking_notifier_chain_register(&pen_charge_state_notifier_list, nb);
+}
+EXPORT_SYMBOL(pen_charge_state_notifier_register_client);
+
+int pen_charge_state_notifier_unregister_client(struct notifier_block *nb)
+{
+	return blocking_notifier_chain_unregister(&pen_charge_state_notifier_list, nb);
+}
+EXPORT_SYMBOL(pen_charge_state_notifier_unregister_client);
+
+int pen_charge_state_notifier_call_chain(unsigned long val, void *v)
+{
+	return blocking_notifier_call_chain(&pen_charge_state_notifier_list, val, v);
+}
+EXPORT_SYMBOL(pen_charge_state_notifier_call_chain);
+
 static ssize_t pd_disabled_show(struct device *dev, struct device_attribute
 				*attr, char *buf)
 {
@@ -647,6 +667,9 @@ static int smb5_parse_dt_misc(struct smb5 *chip, struct device_node *node)
 	chg->sec_pl_present =
 		chip->dt.sec_charger_config == POWER_SUPPLY_CHARGER_SEC_PL ||
 		chip->dt.sec_charger_config == POWER_SUPPLY_CHARGER_SEC_CP_PL;
+
+	chg->chg_enable_k11a = of_property_read_bool(node,
+			"mi,chg-enable-k11a");
 
 	chg->step_chg_enabled = of_property_read_bool(node,
 				"qcom,step-charging-enable");
@@ -2518,6 +2541,29 @@ static int smb5_get_prop_wirless_type(struct smb_charger *chg,
 	return rc;
 }
 
+static int smb5_get_prop_reverse_pen_soc(struct smb_charger *chg,
+				union power_supply_propval *val)
+{
+	int rc = 0;
+
+	chg->idtp_psy = power_supply_get_by_name("idt");
+	if (chg->idtp_psy)
+		chg->wls_chip_psy = chg->idtp_psy;
+	else {
+		chg->wip_psy = power_supply_get_by_name("rx1619");
+		if (chg->wip_psy)
+			chg->wls_chip_psy = chg->wip_psy;
+		else
+			return -EINVAL;
+	}
+
+	if (chg->wls_chip_psy)
+		rc = power_supply_get_property(chg->wls_chip_psy,
+			POWER_SUPPLY_PROP_REVERSE_PEN_SOC, val);
+
+	return rc;
+}
+
 /*set mode of DIV 2*/
 static int smb5_set_prop_div2_mode(struct smb_charger *chg,
 				const union power_supply_propval *val)
@@ -2705,10 +2751,16 @@ static enum power_supply_property smb5_wireless_props[] = {
 	POWER_SUPPLY_PROP_SW_DISABLE_DC_EN,
 	POWER_SUPPLY_PROP_TX_ADAPTER,
 	POWER_SUPPLY_PROP_TX_MAC,
+	POWER_SUPPLY_PROP_PEN_MAC,
+	POWER_SUPPLY_PROP_REVERSE_PEN_SOC,
+	POWER_SUPPLY_PROP_BT_STATE,
+	POWER_SUPPLY_PROP_RX_CR,
+	POWER_SUPPLY_PROP_RX_CEP,
 	POWER_SUPPLY_PROP_DC_RESET,
 	POWER_SUPPLY_PROP_DIV_2_MODE,
 	POWER_SUPPLY_PROP_REVERSE_CHG_MODE,
 	POWER_SUPPLY_PROP_REVERSE_CHG_STATE,
+	POWER_SUPPLY_PROP_REVERSE_PEN_CHG_STATE,
 	POWER_SUPPLY_PROP_REVERSE_GPIO_STATE,
 	POWER_SUPPLY_PROP_AICL_ENABLE,
 	POWER_SUPPLY_PROP_OTG_STATE,
@@ -2749,8 +2801,27 @@ static int smb5_wireless_set_prop(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_DIV_2_MODE:
 		rc = smb5_set_prop_div2_mode(chg, val);
 		break;
+	case POWER_SUPPLY_PROP_TX_MAC:
+		smblib_set_prop_tx_mac(chg, val);
+		break;
+	case POWER_SUPPLY_PROP_PEN_MAC:
+		smblib_set_prop_pen_mac(chg, val);
+		break;
+	case POWER_SUPPLY_PROP_RX_CR:
+		smblib_set_prop_rx_cr(chg, val);
+		break;
+	case POWER_SUPPLY_PROP_RX_CEP:
+		smblib_set_prop_rx_cep(chg, val);
+		break;
+	case POWER_SUPPLY_PROP_BT_STATE:
+		smblib_set_prop_bt_state(chg, val);
+		break;
 	case POWER_SUPPLY_PROP_REVERSE_CHG_MODE:
 		rc = smb5_set_prop_reverse_chg_mode(chg, val);
+		break;
+	case POWER_SUPPLY_PROP_REVERSE_PEN_CHG_STATE:
+		chg->reverse_pen_chg_state = val->intval;
+		pen_charge_state_notifier_call_chain(chg->reverse_pen_chg_state == 4, NULL);
 		break;
 	case POWER_SUPPLY_PROP_REVERSE_CHG_STATE:
 		chg->reverse_chg_state = val->intval;
@@ -2813,17 +2884,38 @@ static int smb5_wireless_get_prop(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_TX_ADAPTER:
 		smb5_get_prop_wirless_type(chg, val);
 		break;
+	case POWER_SUPPLY_PROP_REVERSE_PEN_SOC:
+		smb5_get_prop_reverse_pen_soc(chg, val);
+		break;
 	case POWER_SUPPLY_PROP_DC_RESET:
 		val->intval = 0;
 		break;
 	case POWER_SUPPLY_PROP_DIV_2_MODE:
 		smb5_get_prop_div2_mode(chg, val);
 		break;
+	case POWER_SUPPLY_PROP_TX_MAC:
+		val->int64val = chg->tx_bt_mac;
+		break;
+	case POWER_SUPPLY_PROP_PEN_MAC:
+		val->int64val = chg->pen_bt_mac;
+		break;
+	case POWER_SUPPLY_PROP_RX_CR:
+		val->int64val = chg->rpp;
+		break;
+	case POWER_SUPPLY_PROP_RX_CEP:
+		val->int64val = chg->cep;
+		break;
+	case POWER_SUPPLY_PROP_BT_STATE:
+		val->intval = 0;
+		break;
 	case POWER_SUPPLY_PROP_SW_DISABLE_DC_EN:
 		val->intval = 0;
 		break;
 	case POWER_SUPPLY_PROP_REVERSE_CHG_MODE:
 		smb5_get_prop_reverse_chg_mode(chg, val);
+		break;
+	case POWER_SUPPLY_PROP_REVERSE_PEN_CHG_STATE:
+		val->intval = chg->reverse_pen_chg_state;
 		break;
 	case POWER_SUPPLY_PROP_REVERSE_CHG_STATE:
 		val->intval = chg->reverse_chg_state;
@@ -2861,9 +2953,15 @@ static int smb5_wireless_prop_is_writeable(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_WIRELESS_CP_EN:
 	case POWER_SUPPLY_PROP_WIRELESS_POWER_GOOD_EN:
 	case POWER_SUPPLY_PROP_SW_DISABLE_DC_EN:
+	case POWER_SUPPLY_PROP_RX_CR:
+	case POWER_SUPPLY_PROP_RX_CEP:
+	case POWER_SUPPLY_PROP_TX_MAC:
+	case POWER_SUPPLY_PROP_PEN_MAC:
+	case POWER_SUPPLY_PROP_BT_STATE:
 	case POWER_SUPPLY_PROP_DIV_2_MODE:
 	case POWER_SUPPLY_PROP_REVERSE_CHG_MODE:
 	case POWER_SUPPLY_PROP_REVERSE_CHG_STATE:
+	case POWER_SUPPLY_PROP_REVERSE_PEN_CHG_STATE:
 	case POWER_SUPPLY_PROP_CURRENT_MAX:
 		return 1;
 	default:
@@ -3449,7 +3547,7 @@ static int smb5_configure_typec(struct smb_charger *chg)
 	 * cables due to VBUS attachment prior to CC attach/detach. Reset
 	 * the legacy detection logic by enabling/disabling the typeC mode.
 	 */
-	if (val & TYPEC_LEGACY_CABLE_STATUS_BIT) {
+	if (chg->pd_not_supported && (val & TYPEC_LEGACY_CABLE_STATUS_BIT)) {
 		pval.intval = POWER_SUPPLY_TYPEC_PR_NONE;
 		rc = smblib_set_prop_typec_power_role(chg, &pval);
 		if (rc < 0) {
@@ -4219,7 +4317,7 @@ static int smb5_init_hw(struct smb5 *chip)
 	}
 
 	rc = smblib_write(chg, CHGR_FAST_CHARGE_SAFETY_TIMER_CFG_REG,
-					FAST_CHARGE_SAFETY_TIMER_768_MIN);
+					FAST_CHARGE_SAFETY_TIMER_1536_MIN);
 	if (rc < 0) {
 		dev_err(chg->dev, "Couldn't set CHGR_FAST_CHARGE_SAFETY_TIMER_CFG_REG rc=%d\n",
 			rc);

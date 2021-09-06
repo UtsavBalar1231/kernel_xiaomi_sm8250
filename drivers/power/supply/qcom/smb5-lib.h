@@ -143,7 +143,13 @@ enum print_reason {
 #define SDP_CURRENT_UA			500000
 #define CDP_CURRENT_UA			1500000
 #define DCP_CURRENT_UA			1600000
-#define HVDCP_START_CURRENT_UA		1000000
+
+#ifdef CONFIG_RX1619_REMOVE
+#define HVDCP_START_CURRENT_UA		500000
+#else
+#define HVDCP_START_CURRENT_UA          1000000
+#endif
+
 #define HVDCP_CURRENT_UA		2800000
 #define TYPEC_DEFAULT_CURRENT_UA	900000
 #define TYPEC_MEDIUM_CURRENT_UA		1500000
@@ -737,6 +743,7 @@ struct smb_charger {
 	int			dcp_icl_ua;
 	int			fake_capacity;
 	int			fake_batt_status;
+	bool			chg_enable_k11a;
 	bool			step_chg_enabled;
 	bool			sw_jeita_enabled;
 	bool			jeita_arb_enable;
@@ -861,9 +868,11 @@ struct smb_charger {
 	int64_t			rpp;
 	int64_t			cep;
 	int64_t			tx_bt_mac;
+	int64_t			pen_bt_mac;
 	int64_t oob_rpp_msg_cnt;
 	int64_t oob_cep_msg_cnt;
 	int			reverse_chg_state;
+	int			reverse_pen_chg_state;
 	int			reverse_gpio_state;
 
 	/* product related */
@@ -1199,6 +1208,8 @@ int smblib_set_prop_dc_temp_level(struct smb_charger *chg,
 int smblib_get_prop_dc_temp_level(struct smb_charger *chg,
 				union power_supply_propval *val);
 int smblib_set_prop_tx_mac(struct smb_charger *chg,
+				const union power_supply_propval *val);
+void smblib_set_prop_pen_mac(struct smb_charger *chg,
 				const union power_supply_propval *val);
 int smblib_set_prop_rx_cr(struct smb_charger *chg,
 				const union power_supply_propval *val);
