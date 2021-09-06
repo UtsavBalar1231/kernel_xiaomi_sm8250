@@ -494,7 +494,7 @@ config THERMAL_DIMMING
 	bool "thermal dimming enabled"
 	default n
 	help
-	  Support for thermal backlight dimming on J1S.
+	  Support for thermal backlight dimming.
 
 endif # BACKLIGHT_CLASS_DEVICE
 
