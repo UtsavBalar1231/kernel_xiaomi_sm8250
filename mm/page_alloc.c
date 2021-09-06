@@ -69,11 +69,20 @@
 #include <linux/nmi.h>
 #include <linux/khugepaged.h>
 #include <linux/psi.h>
+#include <linux/delayacct.h>
 
 #include <asm/sections.h>
 #include <asm/tlbflush.h>
 #include <asm/div64.h>
 #include "internal.h"
+
+#ifdef CONFIG_KPERFEVENTS
+#include <linux/kperfevents.h>
+#undef CREATE_TRACE_POINTS
+#include <trace/events/kperfevents_mm.h>
+#define CREATE_TRACE_POINTS
+DEFINE_TRACE(kperfevents_mm_slowpath);
+#endif
 
 /* prevent >1 _updater_ of zone percpu pageset ->high and ->batch fields */
 static DEFINE_MUTEX(pcp_batch_high_lock);
@@ -4830,6 +4839,8 @@ __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order, int preferred_nid,
 	struct page *page;
 	unsigned int alloc_flags = ALLOC_WMARK_LOW;
 	gfp_t alloc_mask; /* The gfp_t that was actually used for allocation */
+	u64 start_time, duration;
+	u64 start_uptime, spent_duration;
 	struct alloc_context ac = { };
 
 	/*
@@ -4875,7 +4886,26 @@ __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order, int preferred_nid,
 	if (unlikely(ac.nodemask != nodemask))
 		ac.nodemask = nodemask;
 
+	start_uptime = ktime_get_ns();
+	start_time = current->stime;
+	delayacct_slowpath_start();
 	page = __alloc_pages_slowpath(alloc_mask, order, &ac);
+	delayacct_slowpath_end();
+	duration = current->stime - start_time;
+	spent_duration = ktime_get_ns() - start_uptime;
+
+#ifdef CONFIG_KPERFEVENTS
+	if (unlikely(is_above_kperfevents_threshold_nanos(spent_duration))) {
+#ifdef CONFIG_VIRT_CPU_ACCOUNTING_GEN
+		trace_kperfevents_mm_slowpath(order, duration, spent_duration);
+#else
+		/* The difference between start_time and end_time are jiffies. For e.g.
+		 * duration * (NSEC_PER_SEC / HZ)
+		 */
+		trace_kperfevents_mm_slowpath(order, ((duration << 30) / HZ), spent_duration);
+#endif
+	}
+#endif /* CONFIG_KPERFEVENTS */
 
 out:
 	if (memcg_kmem_enabled() && (gfp_mask & __GFP_ACCOUNT) && page &&

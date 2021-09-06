@@ -60,6 +60,8 @@ struct binderfs_mount_opts {
  * @device_count:   The current number of allocated binder devices.
  * @proc_log_dir:   Pointer to the directory dentry containing process-specific
  *                  logs.
+ * @proc_transaction_log_dir:   Pointer to the directory dentry containing miui binder
+ *                  logs.
  */
 struct binderfs_info {
 	struct ipc_namespace *ipc_ns;
@@ -69,6 +71,7 @@ struct binderfs_info {
 	struct binderfs_mount_opts mount_opts;
 	int device_count;
 	struct dentry *proc_log_dir;
+	struct dentry *proc_transaction_log_dir;
 };
 
 extern const struct file_operations binder_fops;
