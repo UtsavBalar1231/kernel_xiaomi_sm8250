@@ -7,6 +7,7 @@
 #include "kona-audio-overlay.dtsi"
 #include "kona-thermal-overlay.dtsi"
 #include "kona-xr-pinctrl-overlay.dtsi"
+#include "camera/kona-camera-sensor-xr.dtsi"
 
 &tlmm {
 	spkr_1_sd_n {
@@ -420,6 +421,34 @@
 		};
 	};
 
+	display_panel_led1_default: display_panel_led1_default {
+		mux {
+			pins = "gpio144";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio144";
+			drive-strength = <8>;
+			bias-disable = <0>;
+			output-high;
+		};
+	};
+
+	display_panel_led2_default: display_panel_led2_default {
+		mux {
+			pins = "gpio140";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio140";
+			drive-strength = <8>;
+			bias-disable = <0>;
+			output-high;
+		};
+	};
+
 };
 
 &qupv3_se12_2uart {
@@ -627,7 +656,7 @@
 			label = "home";
 			gpios = <&pm8150_gpios 7 GPIO_ACTIVE_LOW>;
 			linux,input-type = <1>;
-			linux,code = <KEY_HOME>;
+			linux,code = <KEY_BACK>;
 			gpio-key,wakeup;
 			debounce-interval = <15>;
 			linux,can-disable;
@@ -648,13 +677,21 @@
 		status = "disabled";
 	};
 
+	qcom,xr-stdalonevwr-misc {
+		status ="ok";
+		compatible = "qcom,xr-stdalonevwr-misc";
+		/* IMU CLK Enable PM8150 GPIO 3 */
+		pinctrl-names = "default", "sleep";
+		pinctrl-0 = <&imu_clkin_default>;
+		pinctrl-1 = <&imu_clkin_sleep>;
+	};
 };
 
 &qupv3_se13_i2c {
 	#address-cells = <1>;
 	#size-cells = <0>;
 
-	status = "ok";
+	status = "disabled";
 
 	st_fts@49 {
 		status = "disabled";
@@ -678,6 +715,7 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&bt_en_sleep>;
 		qca,bt-reset-gpio = <&tlmm 21 0>; /* BT_EN */
+		qca,bt-sw-ctrl-gpio = <&tlmm 124 0>; /* SW_CTRL */
 		qca,bt-vdd-aon-supply = <&pm8150_s6>;
 		qca,bt-vdd-dig-supply = <&pm8009_s2>;
 		qca,bt-vdd-rfa1-supply = <&pm8150_s5>;
@@ -971,18 +1009,41 @@
 	qcom,platform-reset-gpio = <&tlmm 75 0>;
 	qcom,platform-te-gpio = <&tlmm 66 0>;
 
-	qcom,display-1p8-en-gpio = <&tlmm 133 0>;
-	qcom,led-5v-en-gpio = <&tlmm 134 0>;
-	qcom,led-driver-en1-gpio = <&tlmm 144 0>;
-	qcom,led-driver-en2-gpio = <&tlmm 140 0>;
+	qcom,platform-bklight-en-gpio = <&tlmm 133 0>;
+	qcom,5v-boost-gpio = <&tlmm 134 0>;
 	/delete-property/ qcom,platform-en-gpio;
 };
 
 &sde_dsi {
-	/delete-property/ avdd-supply;
+	avdd-supply = <&display_panel_avdd>;
 	lab-supply = <&lcdb_ldo_vreg>;
 	ibb-supply = <&lcdb_ncp_vreg>;
 	qcom,dsi-default-panel = <&dsi_dual_xrsmrtvwr_jdi_video>;
+};
+
+&display_panel_avdd {
+	display_panel_led1_gpio = <&tlmm 144 0>;
+	display_panel_led2_gpio = <&tlmm 140 0>;
+	enable-active-high;
+	regulator-boot-on;
+	pinctrl-names = "default";
+	pinctrl-0 = <&display_panel_led1_default
+			 &display_panel_led2_default>;
+};
+
+&dsi_panel_pwr_supply_lab_ibb {
+	qcom,panel-supply-entry@3 {
+		reg = <1>;
+		qcom,supply-name = "avdd";
+		qcom,supply-min-voltage = <4600000>;
+		qcom,supply-max-voltage = <6000000>;
+		qcom,supply-enable-load = <100000>;
+		qcom,supply-disable-load = <100>;
+	};
+};
+
+&mdss_mdp {
+	connectors = <&sde_dp &sde_dsi &sde_dsi1 &sde_rscc>;
 };
 
 &pm8150l_lcdb {
@@ -1115,7 +1176,45 @@
 	extcon = <&extcon_usb1>;
 };
 
+&flash_led {
+	qcom,hw-strobe-option = <0>;
+	qcom,strobe-sel = <1>;
+};
+
+&pm8150l_flash0 {
+	qcom,hw-strobe-option = <0>;
+	qcom,strobe-sel = <1>;
+};
+
+&pm8150l_flash1 {
+	qcom,hw-strobe-option = <0>;
+	qcom,strobe-sel = <1>;
+};
+
+&pm8150l_flash2 {
+	qcom,hw-strobe-option = <0>;
+	qcom,strobe-sel = <1>;
+};
+
+&pm8150l_torch0 {
+	qcom,hw-strobe-option = <0>;
+	qcom,strobe-sel = <1>;
+};
+
+&pm8150l_torch1 {
+	qcom,hw-strobe-option = <0>;
+	qcom,strobe-sel = <1>;
+};
+
+&pm8150l_torch2 {
+	qcom,hw-strobe-option = <0>;
+	qcom,strobe-sel = <1>;
+};
 
 &wil6210 {
 	status = "disabled";
+};
+
+&key_home_default {
+	pins = "gpio7";
 };

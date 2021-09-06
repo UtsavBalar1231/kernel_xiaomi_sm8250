@@ -19,6 +19,14 @@
 		regulator-max-microvolt = <RPMH_REGULATOR_LEVEL_MAX>;
 	};
 
+	cx_cdev: cx-cdev-lvl {
+		compatible = "qcom,regulator-cooling-device";
+		regulator-cdev-supply = <&VDD_CX_LEVEL_AO>;
+		regulator-levels = <RPMH_REGULATOR_LEVEL_NOM
+				RPMH_REGULATOR_LEVEL_RETENTION>;
+		#cooling-cells = <2>;
+	};
+
 	VDD_MX_LEVEL:
 	L1A_LEVEL: pm2250_l1_level: regulator-pm2250-l1-level {
 		compatible = "qcom,stub-regulator";
@@ -35,6 +43,14 @@
 		qcom,hpm-min-load = <10000>;
 		regulator-min-microvolt = <RPMH_REGULATOR_LEVEL_RETENTION>;
 		regulator-max-microvolt = <RPMH_REGULATOR_LEVEL_MAX>;
+	};
+
+	mx_cdev: mx-cdev-lvl {
+		compatible = "qcom,regulator-cooling-device";
+		regulator-cdev-supply = <&VDD_MX_LEVEL>;
+		regulator-levels = <RPMH_REGULATOR_LEVEL_NOM
+				RPMH_REGULATOR_LEVEL_RETENTION>;
+		#cooling-cells = <2>;
 	};
 
 	S4A: pm2250_s4: regulator-pm2250-s4 {

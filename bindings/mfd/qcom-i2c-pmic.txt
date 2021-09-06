@@ -76,6 +76,11 @@ Platform independent properties:
 	Definition: phandle of the pin configuration.
 		    Please refer to pinctrl-bindings.txt
 
+- qcom,enable-toggle-stat
+	Usage:      optional
+	Value type: bool
+	Definition: Enables stat interrupt toggle at init.
+
 =======
 Example
 =======

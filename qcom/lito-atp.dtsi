@@ -62,6 +62,7 @@
 
 	qcom,vddp-ref-clk-supply = <&pm8150_l9>;
 	qcom,vddp-ref-clk-max-microamp = <100>;
+	qcom,vddp-ref-clk-min-microamp = <0>;
 	qcom,vddp-ref-clk-min-uV = <1152000>;
 	qcom,vddp-ref-clk-max-uV = <1200000>;
 	status = "ok";

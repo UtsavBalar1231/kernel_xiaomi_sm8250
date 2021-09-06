@@ -5,10 +5,13 @@
 		compatible = "qcom,sde-kms";
 		reg = <0x5e00000 0x8f030>,
 		      <0x5eb0000 0x2008>,
-		      <0x5e8f000 0x02c>;
+		      <0x5e8f000 0x02c>,
+		      <0xc125ba4 0x20>;
+
 		reg-names = "mdp_phys",
 			   "vbif_phys",
-			   "sid_phys";
+			   "sid_phys",
+			   "sde_imem_phys";
 
 		clocks =
 			<&gcc GCC_DISP_AHB_CLK>,
@@ -326,6 +329,7 @@
 		compatible = "qcom,dsi-ctrl-hw-v2.4";
 		label = "dsi-ctrl-0";
 		cell-index = <0>;
+		frame-threshold-time-us = <1000>;
 		reg =   <0x5e94000 0x400>,
 			<0x5f08000 0x4>;
 		reg-names = "dsi_ctrl", "disp_cc_base";

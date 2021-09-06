@@ -11,6 +11,7 @@ Required properties :
 		"qcom,sdm845-rpmh-clk"
 		"qcom,lito-rpmh-clk"
 		"qcom,lagoon-rpmh-clk"
+		"qcom,litomagnus-rpmh-clk"
 
 - #clock-cells : must contain 1
 

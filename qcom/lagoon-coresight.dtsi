@@ -49,6 +49,9 @@
 
 		clocks = <&aopcc QDSS_CLK>;
 		clock-names = "apb_pclk";
+
+		qcom,msr-fix-req;
+
 		port {
 			tpdm_swao_1_out_tpda_swao1: endpoint {
 				remote-endpoint = <&tpda_swao1_in_tpdm_swao_1>;
@@ -158,6 +161,9 @@
 
 		clocks = <&aopcc QDSS_CLK>;
 		clock-names = "apb_pclk";
+
+		qcom,msr-fix-req;
+
 		port {
 			tpdm_lpass_out_tpda0: endpoint {
 				remote-endpoint =
@@ -185,7 +191,6 @@
 		arm,primecell-periphid = <0x0003b968>;
 		reg = <0x6c47000  0x1000>;
 		reg-names = "tpdm-base";
-		status = "disabled";
 
 		coresight-name = "coresight-tpdm-npu";
 
@@ -249,13 +254,13 @@
 		};
 	};
 
-	tpdm_dlct0_0: tpdm@6c28000 {
+	tpdm_dlct: tpdm@6c28000 {
 		compatible = "arm,primecell";
 		arm,primecell-periphid = <0x0003b968>;
 		reg = <0x6c28000 0x1000>;
 		reg-names = "tpdm-base";
 
-		coresight-name = "coresight-tpdm-dlct0_0";
+		coresight-name = "coresight-tpdm-dlct";
 
 		clocks = <&aopcc QDSS_CLK>;
 		clock-names = "apb_pclk";
@@ -267,13 +272,13 @@
 		};
 	};
 
-	tpdm_dlct0_1: tpdm@6c29000 {
+	tpdm_ipcc: tpdm@6c29000 {
 		compatible = "arm,primecell";
 		arm,primecell-periphid = <0x0003b968>;
 		reg = <0x6c29000 0x1000>;
 		reg-names = "tpdm-base";
 
-		coresight-name = "coresight-tpdm-dlct0_1";
+		coresight-name = "coresight-tpdm-ipcc";
 
 		clocks = <&aopcc QDSS_CLK>;
 		clock-names = "apb_pclk";
@@ -351,8 +356,12 @@
 
 		coresight-name = "coresight-tpdm-ddr";
 
+		status = "disabled";
 		clocks = <&aopcc QDSS_CLK>;
 		clock-names = "apb_pclk";
+
+		qcom,msr-fix-req;
+
 		port {
 			tpdm_ddr_out_funnel_ddr0: endpoint {
 				remote-endpoint =
@@ -371,6 +380,9 @@
 
 		clocks = <&aopcc QDSS_CLK>;
 		clock-names = "apb_pclk";
+
+		qcom,msr-fix-req;
+
 		port {
 			tpdm_turing_out_funnel_turing: endpoint {
 				remote-endpoint =
@@ -655,11 +667,13 @@
 		reg = <0x6800000 0x1000>;
 		reg-names = "tpdm-base";
 
-		status = "disabled";
-		coresight-name = "coresight-tpdm-modem0";
+		coresight-name = "coresight-tpdm-modem-0";
 
 		clocks = <&aopcc QDSS_CLK>;
 		clock-names = "apb_pclk";
+
+		qcom,msr-fix-req;
+
 		port {
 			tpdm_modem0_out_tpda_modem0: endpoint {
 				remote-endpoint =
@@ -676,12 +690,112 @@
 
 		coresight-name = "coresight-tpdm-modem1";
 
+		status = "disabled";
 		clocks = <&aopcc QDSS_CLK>;
 		clock-names = "apb_pclk";
+
+		qcom,msr-fix-req;
+
 		port {
 			tpdm_modem1_out_tpda_modem1: endpoint {
 				remote-endpoint =
 					<&tpda_modem1_in_tpdm_modem1>;
+			};
+		};
+	};
+
+	funnel_modem_q6: funnel@680c000 {
+		compatible = "arm,primecell";
+		arm,primecell-periphid = <0x000bb908>;
+
+		reg = <0x680c000 0x1000>;
+		reg-names = "funnel-base";
+
+		coresight-name = "coresight-funnel-modem-q6";
+
+		clocks = <&aopcc QDSS_CLK>;
+		clock-names = "apb_pclk";
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				funnel_modem_q6_out_funnel_mq6_dup: endpoint {
+					remote-endpoint =
+					<&funnel_mq6_dup_in_funnel_modem_q6>;
+				};
+			};
+
+			port@1 {
+				reg = <0>;
+				funnel_modem_q6_in_modem_etm0: endpoint {
+					slave-mode;
+					remote-endpoint =
+					<&modem_etm0_out_funnel_modem_q6>;
+				};
+			};
+		};
+	};
+
+	funnel_mq6_dup: funnel_1@680c000 {
+		compatible = "arm,primecell";
+		arm,primecell-periphid = <0x000bb908>;
+
+		reg = <0x680b000 0x1000>,
+			<0x680c000 0x1000>;
+
+		reg-names = "funnel-base-dummy", "funnel-base-real";
+
+		coresight-name = "coresight-funnel-modem-q6_dup";
+
+		clocks = <&aopcc QDSS_CLK>;
+		clock-names = "apb_pclk";
+		qcom,duplicate-funnel;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				funnel_mq6_dup_out_funnel_modem: endpoint {
+					remote-endpoint =
+					<&funnel_modem_in_funnel_mq6_dup>;
+				};
+			};
+
+			port@1 {
+				reg = <1>;
+				funnel_mq6_dup_in_funnel_modem_q6: endpoint {
+					slave-mode;
+					remote-endpoint =
+					<&funnel_modem_q6_out_funnel_mq6_dup>;
+				};
+			};
+
+			port@2 {
+				reg = <2>;
+				funnel_mq6_dup_in_modem_diag: endpoint {
+					slave-mode;
+					remote-endpoint =
+					<&modem_diag_out_funnel_mq6_dup>;
+				};
+			};
+		};
+	};
+
+	modem_diag: dummy_source {
+		compatible = "qcom,coresight-dummy";
+
+		coresight-name = "coresight-modem-diag";
+		qcom,dummy-source;
+
+		port {
+			modem_diag_out_funnel_mq6_dup: endpoint {
+				remote-endpoint =
+					<&funnel_mq6_dup_in_modem_diag>;
 			};
 		};
 	};
@@ -693,9 +807,9 @@
 		qcom,inst-id = <2>;
 
 		port {
-			modem_etm0_out_funnel_modem: endpoint {
+			modem_etm0_out_funnel_modem_q6: endpoint {
 				remote-endpoint =
-					<&funnel_modem_in_modem_etm0>;
+					<&funnel_modem_q6_in_modem_etm0>;
 			};
 		};
 	};
@@ -721,7 +835,6 @@
 		reg-names = "funnel-base";
 
 		coresight-name = "coresight-funnel-npu";
-		status = "disabled";
 
 		clocks = <&aopcc QDSS_CLK>;
 		clock-names = "apb_pclk";
@@ -835,19 +948,19 @@
 
 			port@2 {
 				reg = <1>;
-				funnel_modem_in_modem_etm0: endpoint {
+				funnel_modem_in_modem2_etm0: endpoint {
 					slave-mode;
 					remote-endpoint =
-						<&modem_etm0_out_funnel_modem>;
+						<&modem2_etm0_out_funnel_modem>;
 				};
 			};
 
 			port@3 {
 				reg = <3>;
-				funnel_modem_in_modem2_etm0: endpoint {
+				funnel_modem_in_funnel_mq6_dup: endpoint {
 					slave-mode;
 					remote-endpoint =
-						<&modem2_etm0_out_funnel_modem>;
+						<&funnel_mq6_dup_out_funnel_modem>;
 				};
 			};
 
@@ -920,7 +1033,7 @@
 			};
 
 			port@1 {
-				reg = <0>;
+				reg = <1>;
 				funnel_dlct0_out_funnel_qatb4: endpoint {
 					remote-endpoint =
 						<&funnel_qatb4_in_funnel_dlct0>;
@@ -930,7 +1043,7 @@
 			};
 
 			port@2 {
-				reg = <0>;
+				reg = <2>;
 				funnel_dlct0_out_tpda16: endpoint {
 					remote-endpoint =
 						<&tpda16_in_funnel_dlct0>;
@@ -940,7 +1053,7 @@
 			};
 
 			port@3 {
-				reg = <0>;
+				reg = <3>;
 				funnel_dlct0_out_tpda17: endpoint {
 					remote-endpoint =
 						<&tpda17_in_funnel_dlct0>;
@@ -950,21 +1063,21 @@
 			};
 
 			port@4 {
-				reg = <0>;
+				reg = <4>;
 				funnel_dlct0_out_tpda21: endpoint {
 					remote-endpoint =
 						<&tpda21_in_funnel_dlct0>;
-					source = <&tpdm_dlct0_0>;
+					source = <&tpdm_dlct>;
 				};
 
 			};
 
 			port@5 {
-				reg = <0>;
+				reg = <5>;
 				funnel_dlct0_out_tpda22: endpoint {
 					remote-endpoint =
 						<&tpda22_in_funnel_dlct0>;
-					source = <&tpdm_dlct0_1>;
+					source = <&tpdm_ipcc>;
 				};
 
 			};
@@ -1099,7 +1212,7 @@
 			};
 
 			port@1 {
-				reg = <0>;
+				reg = <1>;
 				funnel_turing_out_tpda_dl_center6: endpoint {
 					remote-endpoint =
 						<&tpda_dl_center6_in_funnel_turing>;
@@ -1109,7 +1222,7 @@
 			};
 
 			port@2 {
-				reg = <0>;
+				reg = <2>;
 				funnel_turing_out_funnel_dlct1: endpoint {
 					remote-endpoint =
 						<&funnel_dlct1_in_funnel_turing>;
@@ -1814,6 +1927,7 @@
 		reg-names = "csr-base";
 
 		coresight-name = "coresight-csr";
+		qcom,perflsheot-set-support;
 		qcom,usb-bam-support;
 		qcom,hwctrl-set-support;
 		qcom,set-byte-cntr-support;
@@ -2092,6 +2206,7 @@
 		reg-names = "tmc-base";
 
 		coresight-name = "coresight-tmc-etf";
+		coresight-ctis = <&cti_swao_cti0 &cti_swao_cti3>;
 		coresight-csr = <&swao_csr>;
 
 		clocks = <&aopcc QDSS_CLK>;
@@ -2201,7 +2316,9 @@
 		arm,buffer-size = <0x400000>;
 		arm,scatter-gather;
 
+		qcom,sw-usb;
 		coresight-name = "coresight-tmc-etr";
+		coresight-ctis = <&cti0 &cti_swao_cti3>;
 		coresight-csr = <&csr>;
 
 		interrupts = <GIC_SPI 270 IRQ_TYPE_EDGE_RISING>;
@@ -2366,6 +2483,10 @@
 
 		clocks = <&aopcc QDSS_CLK>;
 		clock-names = "apb_pclk";
+
+		qcom,cti-gpio-trigout = <0>;
+		pinctrl-names = "cti-trigout-pctrl";
+		pinctrl-0 = <&trigout_a>;
 	};
 
 	cti3: cti@6013000 {
@@ -2788,6 +2909,7 @@
 		reg-names = "cti-base";
 
 		coresight-name = "coresight-cti-sierra_a6_cti";
+		status = "disabled";
 
 		clocks = <&aopcc QDSS_CLK>;
 		clock-names = "apb_pclk";
@@ -2896,6 +3018,22 @@
 		reg-names = "cti-base";
 
 		coresight-name = "coresight-cti-dl-apss";
+
+		clocks = <&aopcc QDSS_CLK>;
+		clock-names = "apb_pclk";
+	};
+
+	ipcb_tgu: tgu@6b0b000 {
+		compatible = "arm,primecell";
+		arm,primecell-periphid = <0x000bb999>;
+		reg = <0x06b0b000 0x1000>;
+		reg-names = "tgu-base";
+		tgu-steps = <3>;
+		tgu-conditions = <4>;
+		tgu-regs = <4>;
+		tgu-timer-counters = <8>;
+
+		coresight-name = "coresight-tgu-ipcb";
 
 		clocks = <&aopcc QDSS_CLK>;
 		clock-names = "apb_pclk";

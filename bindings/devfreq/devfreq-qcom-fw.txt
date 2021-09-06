@@ -23,8 +23,13 @@ Only for qcom,devfreq-fw:
 			  table.
 			- "perf-base": address of register to request a
 			  frequency.
+			Optional register region:
+			- "pstate-base": address of register to request
+			  for current performance state (Mandatory if
+			  qcom,support-panic-notifier property is added).
 Optional properties:
 - qcom,ftbl-row-size:    Size of the LUT row size.
+- qcom,support-panic-notifier:	Support for panic notifier for l3-domain.
 
 Example:
 

@@ -38,6 +38,9 @@ Optional properties:
   - quirk-broken-port-ped: set if the controller has broken port disable mechanism
   - imod-interval-ns: default interrupt moderation interval is 5000ns
   - phys : see usb-hcd.txt in the current directory
+  - ignore-wakeup-src-in-hostmode: If present, PM suspend/freeze allowed
+    irrespective of host runtimePM state. In PM suspend/resume case, core
+    will stay powered and connected devices will just be suspended/resumed.
 
 additionally the properties from usb-hcd.txt (in the current directory) are
 supported.

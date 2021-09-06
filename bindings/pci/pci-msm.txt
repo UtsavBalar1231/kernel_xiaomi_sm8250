@@ -172,6 +172,10 @@ Main node
 	Definition: Should contain:
 		- "pcie_<num>_core_reset"	Core reset
 		- "pcie_<num>_phy_reset"	PHY reset
+	Following resets are optional and required only if driver must perform
+	link recovery post linkdown:
+		- "pcie_<num>_link_down_reset"		Core linkdown reset
+		- "pcie_<num>_phy_nocsr_com_phy_reset"	PHY no-csr reset
 
 - qcom,smmu-sid-base:
 	Usage: optional
@@ -372,6 +376,11 @@ Main node
 	Value type: <prop-encoded array>
 	Definition: PCIe PHY initialization sequence
 
+- qcom,config-recovery:
+	Usage: optional
+	Value type : <bool>
+	Definition: Enable to notify the client driver for recovery when
+		config space is not accessible
 
 ==============
 Root port node

@@ -17,6 +17,7 @@ platforms.
 		    "qcom,kona-spcs-global"
 		    "qcom,bengal-apcs-hmss-global"
 		    "qcom,scuba-apcs-hmss-global"
+		    "qcom,sdm660-apcs-hmss-global"
 - reg:
 	Usage: required
 	Value type: <prop-encoded-array>

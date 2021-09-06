@@ -21,11 +21,21 @@
 
 &dai_mi2s2 {
 	qcom,msm-mi2s-tx-lines = <1>;
-	pinctrl-names = "default", "sleep";
-	pinctrl-0 = <&tert_mi2s_sck_active &tert_mi2s_ws_active
-			&tert_mi2s_sd0_active>;
-	pinctrl-1 = <&tert_mi2s_sck_sleep &tert_mi2s_ws_sleep
-			&tert_mi2s_sd0_sleep>;
+};
+
+&q6core {
+	cdc_tert_mi2s_gpios: msm_cdc_pinctrl_tert {
+		compatible = "qcom,msm-cdc-pinctrl";
+		pinctrl-names = "aud_active", "aud_sleep";
+		pinctrl-0 = <&tert_mi2s_sck_active &tert_mi2s_ws_active
+				&tert_mi2s_sd0_active>;
+		pinctrl-1 = <&tert_mi2s_sck_sleep &tert_mi2s_ws_sleep
+				&tert_mi2s_sd0_sleep>;
+	};
+};
+
+&kona_snd {
+	qcom,tert-mi2s-gpios = <&cdc_tert_mi2s_gpios>;
 };
 
 &qupv3_se1_i2c {
@@ -172,6 +182,26 @@
 
 		panel = <&dsi_sharp_qsync_wqhd_cmd &dsi_sharp_qsync_wqhd_video>;
 	};
+
+	focaltech@38 {
+		compatible = "focaltech,fts_ts";
+		reg = <0x38>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <39 0x2008>;
+		focaltech,reset-gpio = <&tlmm 38 0x00>;
+		focaltech,irq-gpio = <&tlmm 39 0x2008>;
+		focaltech,max-touch-number = <5>;
+		focaltech,display-coords = <0 0 1080 2340>;
+
+		vdd-supply = <&pm8150_l13>;
+
+		pinctrl-names = "pmx_ts_active", "pmx_ts_suspend","pmx_ts_release";
+		pinctrl-0 = <&ts_active>;
+		pinctrl-1 = <&ts_int_suspend &ts_reset_suspend>;
+		pinctrl-2 = <&pmx_ts_release>;
+
+		panel = <&dsi_r66451_amoled_144hz_cmd>;
+	};
 };
 
 &vendor {
@@ -180,6 +210,7 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&bt_en_sleep>;
 		qca,bt-reset-gpio = <&tlmm 21 0>; /* BT_EN */
+		qca,bt-sw-ctrl-gpio = <&tlmm 124 0>; /* SW_CTRL */
 		qca,bt-vdd-aon-supply = <&pm8150_s6>;
 		qca,bt-vdd-dig-supply = <&pm8009_s2>;
 		qca,bt-vdd-rfa1-supply = <&pm8150_s5>;
@@ -375,6 +406,17 @@
 	qcom,mdss-dsi-bl-max-level = <1023>;
 	qcom,platform-reset-gpio = <&tlmm 75 0>;
 	qcom,platform-sec-reset-gpio = <&tlmm 128 0>;
+};
+
+&dsi_r66451_amoled_144hz_cmd {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
+	qcom,mdss-dsi-bl-min-level = <1>;
+	qcom,mdss-dsi-bl-max-level = <4095>;
+	qcom,mdss-brightness-max-level = <255>;
+	qcom,mdss-dsi-bl-inverted-dbv;
+	qcom,platform-te-gpio = <&tlmm 66 0>;
+	qcom,platform-reset-gpio = <&tlmm 75 0>;
 };
 
 &sde_dsi {

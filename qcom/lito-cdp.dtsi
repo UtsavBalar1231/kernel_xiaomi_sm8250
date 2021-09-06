@@ -247,9 +247,11 @@
 	vccq2-supply = <&pm8150_s4>;
 	vcc-max-microamp = <800000>;
 	vccq2-max-microamp = <800000>;
+	vccq2-min-microamp = <0>;
 
 	qcom,vddp-ref-clk-supply = <&pm8150_l9>;
 	qcom,vddp-ref-clk-max-microamp = <100>;
+	qcom,vddp-ref-clk-min-microamp = <0>;
 	qcom,vddp-ref-clk-min-uV = <1152000>;
 	qcom,vddp-ref-clk-max-uV = <1200000>;
 	status = "ok";
@@ -386,6 +388,27 @@
 
 		panel = <&dsi_sharp_qsync_wqhd_cmd &dsi_sharp_qsync_wqhd_video
 			&dsi_sharp_qsync_fhd_video &dsi_sharp_qsync_fhd_cmd>;
+	};
+
+	focaltech@38 {
+		compatible = "focaltech,fts_ts";
+		reg = <0x38>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <39 0x2008>;
+		focaltech,irq-gpio = <&tlmm 9 0x2008>;
+		focaltech,reset-gpio = <&tlmm 8 0x00>;
+		focaltech,max-touch-number = <5>;
+		focaltech,display-coords = <0 0 1080 2340>;
+
+		vdd-supply = <&pm8150_l13>;
+
+		pinctrl-names = "pmx_ts_active", "pmx_ts_suspend",
+					"pmx_ts_release";
+		pinctrl-0 = <&ts_active>;
+		pinctrl-1 = <&ts_int_suspend &ts_reset_suspend>;
+		pinctrl-2 = <&pmx_ts_release>;
+
+		panel = <&dsi_r66451_amoled_144hz_cmd>;
 	};
 
 };
@@ -547,6 +570,17 @@
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
 	qcom,mdss-dsi-bl-min-level = <1>;
 	qcom,mdss-dsi-bl-max-level = <255>;
+	qcom,platform-te-gpio = <&tlmm 10 0>;
+	qcom,platform-reset-gpio = <&pm8150l_gpios 3 0>;
+};
+
+&dsi_r66451_amoled_144hz_cmd {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
+	qcom,mdss-dsi-bl-min-level = <1>;
+	qcom,mdss-dsi-bl-max-level = <4095>;
+	qcom,mdss-brightness-max-level = <255>;
+	qcom,mdss-dsi-bl-inverted-dbv;
 	qcom,platform-te-gpio = <&tlmm 10 0>;
 	qcom,platform-reset-gpio = <&pm8150l_gpios 3 0>;
 };

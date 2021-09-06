@@ -119,6 +119,7 @@
 		regulator-name = "gpu_gx_gdsc";
 		sw-reset = <&gpu_gx_sw_reset>;
 		domain-addr = <&gpu_gx_domain_addr>;
+		qcom,skip-disable-before-sw-enable;
 		status = "disabled";
 	};
 

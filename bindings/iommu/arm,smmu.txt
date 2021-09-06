@@ -155,6 +155,13 @@ conditions.
 		  option can be used to specify the testbus version to support testbus interface.
 		  Type is <u32>.
 
+- qcom,iommu-geometry:
+          Allow clients to extend the available IOVA space by setting the
+          DOMAIN_ATTR_GEOMETRY domain attribute. The new IOVA space created
+          will be a superset of the IOVA range which was created through the
+          create mapping call. The DOMAIN_ATTR_GEOMETRY domain attribute can
+          only be set before attaching.
+
 - clocks        : List of clocks to be used during SMMU register access. See
                   Documentation/devicetree/bindings/clock/clock-bindings.txt
                   for information about the format. For each clock specified
@@ -223,7 +230,9 @@ conditions.
 --- "stall-disable":
 		Iommu faults do not stall the client while the fault
 		interrupt is being handled.
-
+--- "HUPCF":
+		Iommu may process other transactions while a fault is
+		in the process of being handled.
 - qcom,iommu-vmid:
 		Optional, Int.
 		An identifier indicating the security state of the client.

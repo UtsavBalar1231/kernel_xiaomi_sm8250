@@ -3,7 +3,7 @@
 #include "bengal-low-ram.dtsi"
 
 / {
-	model = "Qualcomm Technologies, Inc. Bengal 1Gb DDR SoC";
+	model = "Qualcomm Technologies, Inc. Bengal 1Gb DDR HD+ SoC";
 	compatible = "qcom,bengal";
-	qcom,board-id = <34 0x300>;
+	qcom,board-id = <0 0x303>;
 };

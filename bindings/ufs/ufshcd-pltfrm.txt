@@ -25,6 +25,8 @@ Optional properties:
 - vcc-supply            : phandle to VCC supply regulator node
 - vcc-voltage-level     : specifies voltage levels for VCC supply.
                           Should be specified in pairs (min, max), units uV.
+- vccq2-voltage-level   : specifies voltage levels for VCCQ2 supply.
+                          Should be specified in pairs (min, max), units uV.
 - vcc-low-voltage-sup   : If specified, treats min voltage from vcc-voltage-level as
                           low voltage level different from max voltage.
 - vccq-supply           : phandle to VCCQ supply regulator node
@@ -36,7 +38,9 @@ Optional properties:
 			  always 2.7-3.6V.
 - vcc-max-microamp      : specifies max. load that can be drawn from vcc supply
 - vccq-max-microamp     : specifies max. load that can be drawn from vccq supply
+- vccq-min-microamp     : specifies min. load that can be drawn from vccq supply
 - vccq2-max-microamp    : specifies max. load that can be drawn from vccq2 supply
+- vccq2-min-microamp    : specifies min. load that can be drawn from vccq2 supply
 - <name>-fixed-regulator : boolean property specifying that <name>-supply is a fixed regulator
 
 - clocks                : List of phandle and clock specifier pairs

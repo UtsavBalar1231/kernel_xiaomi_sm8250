@@ -6,6 +6,7 @@ Required properties:
 
 Optional property:
 - qcom,msm-rng-iface-clk : If the device uses iface-clk.
+- qcom,msm-rng-hwkm-clk  : If the device uses hwkm clock.
 - qcom,no-qrng-config    : Flag to decide whether the driver do the hardware configuration or not.
 
 Example:

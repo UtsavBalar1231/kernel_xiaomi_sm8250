@@ -79,6 +79,8 @@
 };
 
 &usb0 {
+	/delete-property/ extcon;
+
 	dwc3@a600000 {
 		usb-phy = <&usb_emu_phy>, <&usb_nop_phy>;
 		maximum-speed = "high-speed";
@@ -143,4 +145,9 @@
 
 &qupv3_se10_i2c {
 	status = "disabled";
+};
+
+/* Debug UART Console */
+&qupv3_se9_2uart {
+	qcom,rumi_platform;
 };

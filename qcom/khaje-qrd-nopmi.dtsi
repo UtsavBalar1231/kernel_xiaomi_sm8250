@@ -1,0 +1,35 @@
+#include "khaje-qrd.dtsi"
+
+&sde_dsi {
+	/delete-property/ lab-supply;
+	/delete-property/ ibb-supply;
+};
+
+&dsi_td4330_truly_v2_video {
+	/delete-property/ qcom,esd-check-enabled;
+};
+
+&dsi_td4330_truly_v2_cmd {
+	/delete-property/ qcom,esd-check-enabled;
+};
+
+&qupv3_se2_i2c {
+	synaptics_tcm@20 {
+		status = "disabled";
+	};
+
+	novatek@62 {
+		status = "disabled";
+	};
+
+	focaltech@38 {
+		status = "disabled";
+	};
+};
+
+&usb0 {
+	/delete-property/ extcon;
+	dwc3@4e00000 {
+		dr_mode = "peripheral";
+	};
+};

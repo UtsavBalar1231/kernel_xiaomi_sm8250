@@ -1,0 +1,21 @@
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include "litomagnus-cdp.dtsi"
+#include "lito-v2-audio.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Litomagnus CDP";
+	compatible = "qcom,lito-cdp", "qcom,lito", "qcom,cdp";
+	qcom,msm-id = <400 0x20000>, <440 0x20000>;
+	qcom,board-id = <1 1>;
+};
+
+/*
+ * overriding adsp-fw-names with empty string
+ * to allow default adsp img load
+ */
+&adsp_loader {
+	adsp-fw-names="";
+};

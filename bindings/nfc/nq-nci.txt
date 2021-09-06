@@ -25,6 +25,9 @@ Optional properties:
 - pinctrl-names, pinctrl-0, pincntrl-1: references to our pincntrl settings
 - clocks, clock-names: must contain the NQxxxx's core clock.
 - qcom,nq-esepwr: gpio to control power of secure element
+- qcom,nq-vdd-1p8-supply: name of LDO to which NFC is connected
+- qcom,nq-vdd-1p8-voltage: min and max voltage(in uV) requirement for NFC
+- qcom,nq-vdd-1p8-current: max current(in uA) expected by NFC
 - qcom,clk-src: NFC clock for antenna
 
 Example:
@@ -37,6 +40,9 @@ Example:
 		qcom,nq-firm = <&tlmm 93 0x00>;
 		qcom,nq-clkreq = <&pm8998_gpios 21 0x00>;
 		qcom,nq-esepwr = <&tlmm 116 0x00>;
+		qcom,nq-vdd-1p8-supply = <&L11A>;
+		qcom,nq-vdd-1p8-voltage = <1800000 1800000>;
+		qcom,nq-vdd-1p8-current = <157000>;
 		qcom,clk-src = "BBCLK2";
 		interrupt-parent = <&tlmm>;
 		interrupts = <29 0>;

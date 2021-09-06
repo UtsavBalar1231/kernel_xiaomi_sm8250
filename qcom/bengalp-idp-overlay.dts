@@ -3,6 +3,7 @@
 
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include "bengal-idp.dtsi"
+#include "bengal-idp-pmi632.dtsi"
 
 / {
 	model = "Qualcomm Technologies, Inc. BENGALP IDP";

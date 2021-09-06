@@ -17,6 +17,7 @@ LAGOON platform.
 	Usage: required
 	Value type: <prop-encoded-array>
 	Definition: should specify the TLMM summary IRQ.
+		    This can be followed by optional direct connect IRQs.
 
 - interrupt-controller:
 	Usage: required

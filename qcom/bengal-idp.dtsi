@@ -6,13 +6,6 @@
 #include "bengal-sde-display.dtsi"
 #include "camera/bengal-camera-sensor-idp.dtsi"
 
-&soc {
-	mtp_batterydata: qcom,battery-data {
-		qcom,batt-id-range-pct = <15>;
-		#include "qg-batterydata-alium-3600mah.dtsi"
-	};
-};
-
 &qupv3_se1_i2c {
 	status = "ok";
 	#include "smb1355.dtsi"
@@ -64,68 +57,11 @@
 	};
 };
 
-&pmi632_qg {
-	qcom,battery-data = <&mtp_batterydata>;
-	qcom,qg-iterm-ma = <100>;
-	qcom,hold-soc-while-full;
-	qcom,linearize-soc;
-	qcom,qg-use-s7-ocv;
-};
-
-&pmi632_charger {
-	qcom,battery-data = <&mtp_batterydata>;
-	qcom,suspend-input-on-debug-batt;
-	qcom,sw-jeita-enable;
-	qcom,step-charging-enable;
-	qcom,hvdcp2-max-icl-ua = <2000000>;
-	/* SMB1355 only */
-	qcom,sec-charger-config = <2>;
-	dpdm-supply = <&qusb_phy0>;
-	qcom,charger-temp-max = <800>;
-	qcom,smb-temp-max = <800>;
-	qcom,auto-recharge-soc = <98>;
-	qcom,flash-disable-soc = <10>;
-	qcom,hw-die-temp-mitigation;
-	qcom,hw-connector-mitigation;
-	qcom,connector-internal-pull-kohm = <100>;
-	qcom,float-option = <1>;
-	qcom,thermal-mitigation = <3000000 2500000
-			2000000 1500000 1000000 500000>;
-};
-
-&pmi632_gpios {
-	smb_en {
-		smb_en_default: smb_en_default {
-			pins = "gpio2";
-			function = "func1";
-			output-enable;
-		};
-	};
-
-	pmi632_sense {
-		/* GPIO 7 and 8 are external-sense pins for PMI632 */
-		pmi632_sense_default: pmi632_sense_default {
-			pins = "gpio7", "gpio8";
-			bias-high-impedance;	/* disable the GPIO */
-			bias-disable;		/* no-pull */
-		};
-	};
-
-	pmi632_ctm {
-		/* Disable GPIO1 for h/w base mitigation */
-		pmi632_ctm_default: pmi632_ctm_default {
-			pins = "gpio1";
-			bias-high-impedance;	/* disable the GPIO */
-			bias-disable;		/* no-pull */
-		};
-	};
-};
-
 &pm6125_gpios {
 
 	rf_pa1_therm {
 		rf_pa1_therm_default: rf_pa1_therm_default {
-			 pins = "gpio7";
+			pins = "gpio7";
 			 bias-high-impedance;
 		};
 	};
@@ -139,10 +75,6 @@
 			power-source = <0>;
 		};
 	};
-};
-
-&usb0 {
-	extcon = <&pmi632_charger>, <&eud>;
 };
 
 &soc {
@@ -202,23 +134,6 @@
 	};
 };
 
-&smb1355 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&smb_int_default>;
-	interrupt-parent = <&tlmm>;
-	interrupts = <105 IRQ_TYPE_LEVEL_LOW>;
-	status = "ok";
-};
-
-&smb1355_charger {
-	pinctrl-names = "default";
-	pinctrl-0 = <&smb_en_default &pmi632_sense_default &pmi632_ctm_default>;
-	qcom,parallel-mode = <1>;
-	qcom,disable-ctm;
-	qcom,hw-die-temp-mitigation;
-	status = "ok";
-};
-
 &sdhc_1 {
 	vdd-supply = <&L24A>;
 	qcom,vdd-voltage-level = <2960000 2960000>;
@@ -248,6 +163,10 @@
 	qcom,vdd-io-voltage-level = <1800000 2960000>;
 	qcom,vdd-io-current-level = <0 22000>;
 
+	vdd-io-bias-supply = <&L7A>;
+	qcom,vdd-io-bias-voltage-level = <1256000 1256000>;
+	qcom,vdd-io-bias-current-level = <0 6000>;
+
 	pinctrl-names = "active", "sleep";
 	pinctrl-0 = <&sdc2_clk_on  &sdc2_cmd_on &sdc2_data_on &sdc2_cd_on>;
 	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off &sdc2_cd_off>;
@@ -276,6 +195,7 @@
 	vccq2-supply = <&L11A>;
 	vcc-max-microamp = <600000>;
 	vccq2-max-microamp = <600000>;
+	vccq2-pwr-collapse-sup;
 
 	qcom,vddp-ref-clk-supply = <&L18A>;
 	qcom,vddp-ref-clk-max-microamp = <100>;
@@ -297,7 +217,6 @@
 	qcom,mdss-dsi-bl-min-level = <1>;
 	qcom,mdss-dsi-bl-max-level = <4095>;
 	qcom,platform-reset-gpio = <&tlmm 82 0>;
-	qcom,platform-bklight-en-gpio = <&pmi632_gpios 6 0>;
 };
 
 &dsi_td4330_truly_v2_cmd {
@@ -309,7 +228,6 @@
 	qcom,mdss-dsi-bl-max-level = <4095>;
 	qcom,platform-te-gpio = <&tlmm 81 0>;
 	qcom,platform-reset-gpio = <&tlmm 82 0>;
-	qcom,platform-bklight-en-gpio = <&pmi632_gpios 6 0>;
 };
 
 &dsi_nt36525_truly_video {
@@ -320,11 +238,56 @@
 	qcom,mdss-dsi-bl-min-level = <1>;
 	qcom,mdss-dsi-bl-max-level = <4095>;
 	qcom,platform-reset-gpio = <&tlmm 82 0>;
-	qcom,platform-bklight-en-gpio = <&pmi632_gpios 6 0>;
+};
+
+&dsi_r66451_amoled_hd_90hz_video {
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
+	qcom,mdss-dsi-bl-min-level = <1>;
+	qcom,mdss-dsi-bl-max-level = <4095>;
+	qcom,platform-reset-gpio = <&tlmm 82 0>;
+	qcom,platform-en-gpio = <&tlmm 83 0>;
+};
+
+&dsi_r66451_amoled_hd_90hz_cmd {
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
+	qcom,mdss-dsi-bl-min-level = <1>;
+	qcom,mdss-dsi-bl-max-level = <4095>;
+	qcom,platform-te-gpio = <&tlmm 81 0>;
+	qcom,platform-reset-gpio = <&tlmm 82 0>;
+	qcom,platform-en-gpio = <&tlmm 83 0>;
 };
 
 &sde_dsi {
 	qcom,dsi-default-panel = <&dsi_td4330_truly_v2_video>;
+};
+
+&tlmm {
+	touch_vdd_default: touch_vdd_default {
+		mux {
+			pins = "gpio84";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio84";
+			drive-strength = <8>;
+			bias-disable = <0>;
+			output-high;
+		};
+	};
+};
+
+&soc {
+	touch_vdd: touch_vdd {
+			compatible = "regulator-fixed";
+			regulator-name = "touch_vdd";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			gpio = <&tlmm 84 GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+			pinctrl-names = "default";
+			pinctrl-0 = <&touch_vdd_default>;
+	};
 };
 
 &qupv3_se2_i2c {
@@ -353,5 +316,46 @@
 		synaptics,firmware-name = "synaptics_firmware_k.img";
 
 		panel = <&dsi_td4330_truly_v2_video &dsi_td4330_truly_v2_cmd>;
+	};
+
+	novatek@62 {
+		compatible = "novatek,NVT-ts";
+		reg = <0x62>;
+		status = "ok";
+
+		interrupt-parent = <&tlmm>;
+		interrupts = <80 0x2008>;
+		pinctrl-names = "pmx_ts_active","pmx_ts_suspend",
+			"pmx_ts_release";
+		pinctrl-0 = <&ts_int_active &ts_reset_active>;
+		pinctrl-1 = <&ts_int_suspend &ts_reset_suspend>;
+		pinctrl-2 = <&ts_release>;
+
+		novatek,reset-gpio = <&tlmm 71 0x00>;
+		novatek,irq-gpio = <&tlmm 80 0x2008>;
+
+		panel = <&dsi_nt36525_truly_video>;
+	};
+
+	focaltech@38 {
+		compatible = "focaltech,fts_ts";
+		reg = <0x38>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <80 0x2008>;
+		focaltech,reset-gpio = <&tlmm 71 0x00>;
+		focaltech,irq-gpio = <&tlmm 80 0x2008>;
+		focaltech,max-touch-number = <5>;
+		focaltech,display-coords = <0 0 1080 2340>;
+
+		vdd-supply = <&touch_vdd>;
+
+		pinctrl-names = "pmx_ts_active","pmx_ts_suspend",
+			"pmx_ts_release";
+		pinctrl-0 = <&ts_int_active &ts_reset_active>;
+		pinctrl-1 = <&ts_int_suspend &ts_reset_suspend>;
+		pinctrl-2 = <&ts_release>;
+
+		panel = <&dsi_r66451_amoled_hd_90hz_video
+			 &dsi_r66451_amoled_hd_90hz_cmd>;
 	};
 };

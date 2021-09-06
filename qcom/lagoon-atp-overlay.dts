@@ -7,6 +7,6 @@
 / {
 	model = "Qualcomm Technologies, Inc. Lagoon ATP";
 	compatible = "qcom,lagoon-atp", "qcom,lagoon", "qcom,atp";
-	qcom,msm-id = <434 0x10000>;
+	qcom,msm-id = <434 0x10000>, <459 0x10000>;
 	qcom,board-id = <33 0>;
 };

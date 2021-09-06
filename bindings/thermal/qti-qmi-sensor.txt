@@ -57,6 +57,9 @@ Subsystem properties:
 		24. sys_therm1
 		25. sys_therm2
 		26. modem_tsens1
+		27. BEAMER_W_THERM
+		28. BEAMER_N_THERM
+		29. BEAMER_E_THERM
 
 Example:
 

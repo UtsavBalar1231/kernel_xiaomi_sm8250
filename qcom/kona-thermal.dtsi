@@ -851,6 +851,12 @@
 		thermal-governor = "step_wise";
 		wake-capable-sensor;
 		trips {
+			cpufreq_10_config: cpufreq-10-config {
+				temperature = <75000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+
 			cpu10_config: cpu10-config {
 				temperature = <110000>;
 				hysteresis = <10000>;
@@ -859,6 +865,11 @@
 		};
 
 		cooling-maps {
+			cpufreq_cdev {
+				trip = <&cpufreq_10_config>;
+				cooling-device = <&cpu7_notify 1 1>;
+			};
+
 			cpu10_cdev {
 				trip = <&cpu10_config>;
 				cooling-device = <&cpu4_isolate 1 1>;
@@ -873,6 +884,12 @@
 		thermal-governor = "step_wise";
 		wake-capable-sensor;
 		trips {
+			cpufreq_11_config: cpufreq-11-config {
+				temperature = <75000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+
 			cpu11_config: cpu11-config {
 				temperature = <110000>;
 				hysteresis = <10000>;
@@ -881,6 +898,11 @@
 		};
 
 		cooling-maps {
+			cpufreq_cdev {
+				trip = <&cpufreq_11_config>;
+				cooling-device = <&cpu7_notify 1 1>;
+			};
+
 			cpu11_cdev {
 				trip = <&cpu11_config>;
 				cooling-device = <&cpu5_isolate 1 1>;
@@ -895,6 +917,12 @@
 		thermal-governor = "step_wise";
 		wake-capable-sensor;
 		trips {
+			cpufreq_12_config: cpufreq-12-config {
+				temperature = <75000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+
 			cpu12_config: cpu12-config {
 				temperature = <110000>;
 				hysteresis = <10000>;
@@ -903,6 +931,11 @@
 		};
 
 		cooling-maps {
+			cpufreq_cdev {
+				trip = <&cpufreq_12_config>;
+				cooling-device = <&cpu7_notify 1 1>;
+			};
+
 			cpu12_cdev {
 				trip = <&cpu12_config>;
 				cooling-device = <&cpu6_isolate 1 1>;
@@ -917,6 +950,12 @@
 		thermal-governor = "step_wise";
 		wake-capable-sensor;
 		trips {
+			cpufreq_13_config: cpufreq-13-config {
+				temperature = <75000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+
 			cpu13_config: cpu13-config {
 				temperature = <110000>;
 				hysteresis = <10000>;
@@ -925,6 +964,11 @@
 		};
 
 		cooling-maps {
+			cpufreq_cdev {
+				trip = <&cpufreq_13_config>;
+				cooling-device = <&cpu7_notify 1 1>;
+			};
+
 			cpu13_cdev {
 				trip = <&cpu13_config>;
 				cooling-device = <&cpu7_isolate 1 1>;
@@ -939,6 +983,12 @@
 		thermal-governor = "step_wise";
 		wake-capable-sensor;
 		trips {
+			cpufreq_14_config: cpufreq-14-config {
+				temperature = <75000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+
 			cpu14_config: cpu14-config {
 				temperature = <110000>;
 				hysteresis = <10000>;
@@ -947,6 +997,11 @@
 		};
 
 		cooling-maps {
+			cpufreq_cdev {
+				trip = <&cpufreq_14_config>;
+				cooling-device = <&cpu7_notify 1 1>;
+			};
+
 			cpu14_cdev {
 				trip = <&cpu14_config>;
 				cooling-device = <&cpu4_isolate 1 1>;
@@ -961,6 +1016,12 @@
 		thermal-governor = "step_wise";
 		wake-capable-sensor;
 		trips {
+			cpufreq_15_config: cpufreq-15-config {
+				temperature = <75000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+
 			cpu15_config: cpu15-config {
 				temperature = <110000>;
 				hysteresis = <10000>;
@@ -969,6 +1030,11 @@
 		};
 
 		cooling-maps {
+			cpufreq_cdev {
+				trip = <&cpufreq_15_config>;
+				cooling-device = <&cpu7_notify 1 1>;
+			};
+
 			cpu15_cdev {
 				trip = <&cpu15_config>;
 				cooling-device = <&cpu5_isolate 1 1>;
@@ -983,6 +1049,12 @@
 		thermal-governor = "step_wise";
 		wake-capable-sensor;
 		trips {
+			cpufreq_16_config: cpufreq-16-config {
+				temperature = <75000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+
 			cpu16_config: cpu16-config {
 				temperature = <110000>;
 				hysteresis = <10000>;
@@ -991,6 +1063,11 @@
 		};
 
 		cooling-maps {
+			cpufreq_cdev {
+				trip = <&cpufreq_16_config>;
+				cooling-device = <&cpu7_notify 1 1>;
+			};
+
 			cpu16_cdev {
 				trip = <&cpu16_config>;
 				cooling-device = <&cpu6_isolate 1 1>;
@@ -1005,6 +1082,12 @@
 		thermal-governor = "step_wise";
 		wake-capable-sensor;
 		trips {
+			cpufreq_17_config: cpufreq-17-config {
+				temperature = <75000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+
 			cpu17_config: cpu17-config {
 				temperature = <110000>;
 				hysteresis = <10000>;
@@ -1013,9 +1096,322 @@
 		};
 
 		cooling-maps {
+			cpufreq_cdev {
+				trip = <&cpufreq_17_config>;
+				cooling-device = <&cpu7_notify 1 1>;
+			};
+
 			cpu17_cdev {
 				trip = <&cpu17_config>;
 				cooling-device = <&cpu7_isolate 1 1>;
+			};
+		};
+	};
+
+	cwlan-step {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-sensors = <&tsens1 1>;
+		thermal-governor = "step_wise";
+		wake-capable-sensor;
+		trips {
+			cwlan_trip0: cwlan-trip0 {
+				temperature = <100000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			cdsp-cdev {
+				trip = <&cwlan_trip0>;
+				cooling-device = <&msm_cdsp_rm 3 3>;
+			};
+
+			gpu-cdev {
+				trip = <&cwlan_trip0>;
+				cooling-device = <&msm_gpu (THERMAL_MAX_LIMIT-1)
+							(THERMAL_MAX_LIMIT-1)>;
+			};
+
+			modem-pa-cdev {
+				trip = <&cwlan_trip0>;
+				cooling-device = <&modem_pa 3 3>;
+			};
+
+			modem-tj-cdev {
+				trip = <&cwlan_trip0>;
+				cooling-device = <&modem_tj 3 3>;
+			};
+
+			npu_cdev {
+				trip = <&cwlan_trip0>;
+				cooling-device = <&msm_npu (THERMAL_MAX_LIMIT-3)
+							(THERMAL_MAX_LIMIT-3)>;
+			};
+		};
+	};
+
+	video-step {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-sensors = <&tsens1 2>;
+		thermal-governor = "step_wise";
+		wake-capable-sensor;
+		trips {
+			video_trip0: video-trip0 {
+				temperature = <100000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			cdsp-cdev {
+				trip = <&video_trip0>;
+				cooling-device = <&msm_cdsp_rm 3 3>;
+			};
+
+			gpu-cdev {
+				trip = <&video_trip0>;
+				cooling-device = <&msm_gpu (THERMAL_MAX_LIMIT-1)
+							(THERMAL_MAX_LIMIT-1)>;
+			};
+
+			modem-pa-cdev {
+				trip = <&video_trip0>;
+				cooling-device = <&modem_pa 3 3>;
+			};
+
+			modem-tj-cdev {
+				trip = <&video_trip0>;
+				cooling-device = <&modem_tj 3 3>;
+			};
+
+			npu_cdev {
+				trip = <&video_trip0>;
+				cooling-device = <&msm_npu (THERMAL_MAX_LIMIT-3)
+							(THERMAL_MAX_LIMIT-3)>;
+			};
+		};
+	};
+
+	ddr-step {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-sensors = <&tsens1 3>;
+		thermal-governor = "step_wise";
+		wake-capable-sensor;
+		trips {
+			ddr_trip0: ddr-trip0 {
+				temperature = <100000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			cdsp-cdev {
+				trip = <&ddr_trip0>;
+				cooling-device = <&msm_cdsp_rm 3 3>;
+			};
+
+			gpu-cdev {
+				trip = <&ddr_trip0>;
+				cooling-device = <&msm_gpu (THERMAL_MAX_LIMIT-1)
+							(THERMAL_MAX_LIMIT-1)>;
+			};
+
+			modem-pa-cdev {
+				trip = <&ddr_trip0>;
+				cooling-device = <&modem_pa 3 3>;
+			};
+
+			modem-tj-cdev {
+				trip = <&ddr_trip0>;
+				cooling-device = <&modem_tj 3 3>;
+			};
+
+			npu_cdev {
+				trip = <&ddr_trip0>;
+				cooling-device = <&msm_npu (THERMAL_MAX_LIMIT-3)
+							(THERMAL_MAX_LIMIT-3)>;
+			};
+		};
+	};
+
+	q6-hvx-step {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-sensors = <&tsens1 4>;
+		thermal-governor = "step_wise";
+		wake-capable-sensor;
+		trips {
+			q6_hvx_trip0: q6-hvx-trip0 {
+				temperature = <100000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			cdsp-cdev {
+				trip = <&q6_hvx_trip0>;
+				cooling-device = <&msm_cdsp_rm 3 3>;
+			};
+
+			gpu-cdev {
+				trip = <&q6_hvx_trip0>;
+				cooling-device = <&msm_gpu (THERMAL_MAX_LIMIT-1)
+							(THERMAL_MAX_LIMIT-1)>;
+			};
+
+			modem-pa-cdev {
+				trip = <&q6_hvx_trip0>;
+				cooling-device = <&modem_pa 3 3>;
+			};
+
+			modem-tj-cdev {
+				trip = <&q6_hvx_trip0>;
+				cooling-device = <&modem_tj 3 3>;
+			};
+
+			npu_cdev {
+				trip = <&q6_hvx_trip0>;
+				cooling-device = <&msm_npu (THERMAL_MAX_LIMIT-3)
+							(THERMAL_MAX_LIMIT-3)>;
+			};
+		};
+	};
+
+	camera-step {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-sensors = <&tsens1 5>;
+		thermal-governor = "step_wise";
+		wake-capable-sensor;
+		trips {
+			camera_trip0: camera-trip0 {
+				temperature = <100000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			cdsp-cdev {
+				trip = <&camera_trip0>;
+				cooling-device = <&msm_cdsp_rm 3 3>;
+			};
+
+			gpu-cdev {
+				trip = <&camera_trip0>;
+				cooling-device = <&msm_gpu (THERMAL_MAX_LIMIT-1)
+							(THERMAL_MAX_LIMIT-1)>;
+			};
+
+			modem-pa-cdev {
+				trip = <&camera_trip0>;
+				cooling-device = <&modem_pa 3 3>;
+			};
+
+			modem-tj-cdev {
+				trip = <&camera_trip0>;
+				cooling-device = <&modem_tj 3 3>;
+			};
+
+			npu_cdev {
+				trip = <&camera_trip0>;
+				cooling-device = <&msm_npu (THERMAL_MAX_LIMIT-3)
+							(THERMAL_MAX_LIMIT-3)>;
+			};
+		};
+	};
+
+	cmpss-step {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-sensors = <&tsens1 6>;
+		thermal-governor = "step_wise";
+		wake-capable-sensor;
+		trips {
+			cmpss_trip0: cmpss-trip0 {
+				temperature = <100000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			cdsp-cdev {
+				trip = <&cmpss_trip0>;
+				cooling-device = <&msm_cdsp_rm 3 3>;
+			};
+
+			gpu-cdev {
+				trip = <&cmpss_trip0>;
+				cooling-device = <&msm_gpu (THERMAL_MAX_LIMIT-1)
+							(THERMAL_MAX_LIMIT-1)>;
+			};
+
+			modem-pa-cdev {
+				trip = <&cmpss_trip0>;
+				cooling-device = <&modem_pa 3 3>;
+			};
+
+			modem-tj-cdev {
+				trip = <&cmpss_trip0>;
+				cooling-device = <&modem_tj 3 3>;
+			};
+
+			npu_cdev {
+				trip = <&cmpss_trip0>;
+				cooling-device = <&msm_npu (THERMAL_MAX_LIMIT-3)
+							(THERMAL_MAX_LIMIT-3)>;
+			};
+		};
+	};
+
+	npu-step {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-sensors = <&tsens1 7>;
+		thermal-governor = "step_wise";
+		wake-capable-sensor;
+		trips {
+			npu_trip0: npu-trip0 {
+				temperature = <100000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			cdsp-cdev {
+				trip = <&npu_trip0>;
+				cooling-device = <&msm_cdsp_rm 3 3>;
+			};
+
+			gpu-cdev {
+				trip = <&npu_trip0>;
+				cooling-device = <&msm_gpu (THERMAL_MAX_LIMIT-1)
+							(THERMAL_MAX_LIMIT-1)>;
+			};
+
+			modem-pa-cdev {
+				trip = <&npu_trip0>;
+				cooling-device = <&modem_pa 3 3>;
+			};
+
+			modem-tj-cdev {
+				trip = <&npu_trip0>;
+				cooling-device = <&modem_tj 3 3>;
+			};
+
+			npu_cdev {
+				trip = <&npu_trip0>;
+				cooling-device = <&msm_npu (THERMAL_MAX_LIMIT-3)
+							(THERMAL_MAX_LIMIT-3)>;
 			};
 		};
 	};

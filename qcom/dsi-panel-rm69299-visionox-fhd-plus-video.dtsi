@@ -4,6 +4,7 @@
 		qcom,mdss-dsi-panel-name =
 		"rm69299 amoled fhd+ video mode dsi visionox panel";
 		qcom,mdss-dsi-panel-type = "dsi_video_mode";
+		qcom,mdss-dsi-panel-physical-type = "oled";
 		qcom,dsi-ctrl-num = <0>;
 		qcom,dsi-phy-num = <0>;
 
@@ -58,6 +59,13 @@
 						05 01 00 00 96 00 02 10 00];
 				qcom,mdss-dsi-on-command-state = "dsi_lp_mode";
 				qcom,mdss-dsi-off-command-state = "dsi_hs_mode";
+				qcom,mdss-dsi-lp1-command =
+						[05 01 00 00 00 00 02 39 00];
+				qcom,mdss-dsi-lp1-command-state ="dsi_lp_mode";
+				qcom,mdss-dsi-nolp-command =
+						[05 01 00 00 00 00 02 38 00];
+				qcom,mdss-dsi-nolp-command-state =
+						"dsi_lp_mode";
 			};
 		};
 	};

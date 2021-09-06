@@ -134,6 +134,7 @@ fastrax	Fastrax Oy
 fcs	Fairchild Semiconductor
 firefly	Firefly
 focaltech	FocalTech Systems Co.,Ltd
+fpc	Fingerprint Cards AB.
 friendlyarm	Guangzhou FriendlyARM Computer Tech Co., Ltd
 fsl	Freescale Semiconductor
 fujitsu	Fujitsu Ltd.
@@ -269,6 +270,7 @@ nintendo	Nintendo
 nlt	NLT Technologies, Ltd.
 nokia	Nokia
 nordic	Nordic Semiconductor
+novatek	Novatek Microelectronics Corporation
 nutsboard	NutsBoard
 nuvoton	Nuvoton Technology Corporation
 nvd	New Vision Display
