@@ -1,0 +1,4 @@
+config CAM_RECLAIM
+	bool "reclaim pages under camera condition"
+	depends on MIHW
+	default n
