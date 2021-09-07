@@ -55,6 +55,11 @@
 		cell-index = <0>;
 		label = "wb_display";
 	};
+
+	msm_notifier: qcom,msm_notifier@0 {
+		compatible = "qcom,msm-notifier";
+		panel = <&dsi_nt36672e_fhd_plus_90hz_video>;
+	};
 };
 
 &mdss_mdp {
