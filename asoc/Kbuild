@@ -229,7 +229,7 @@ ifeq ($(TARGET_PRODUCT), $(filter $(TARGET_PRODUCT),lmi lmiin lmiinpro poussin))
 CDEFINES += -DTFA_ADSP_SUPPORTED
 endif
 
-ifeq ($(TARGET_PRODUCT), $(filter $(TARGET_PRODUCT),lmi lmiin lmiinpro cas skuld umi cmi apollo alioth thyme enuma elish psyche poussin))
+ifeq ($(TARGET_PRODUCT), $(filter $(TARGET_PRODUCT),lmi lmiin lmiinpro cas skuld umi cmi apollo alioth thyme enuma elish psyche poussin munch))
 CDEFINES += -DAUDIO_SM8250_FLAG
 endif
 

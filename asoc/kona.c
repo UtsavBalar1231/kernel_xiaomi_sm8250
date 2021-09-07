@@ -8324,7 +8324,8 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 					total_links += ARRAY_SIZE(tert_mi2s_rx_cs35l41_dai_links);
 					dev_info(dev, "%s: Using tert_mi2s_rx_cs35l41_dai_links\n", __func__);
 				} else if (get_hw_version_platform() == HARDWARE_PLATFORM_LMI ||
-				           get_hw_version_platform() == HARDWARE_PLATFORM_POUSSIN) {
+				           get_hw_version_platform() == HARDWARE_PLATFORM_POUSSIN ||
+							get_hw_version_platform() == HARDWARE_PLATFORM_MUNCH) {
 					memcpy(msm_kona_dai_links + total_links,
 						pri_mi2s_rx_tfa9874_dai_links,
 						sizeof(pri_mi2s_rx_tfa9874_dai_links));
