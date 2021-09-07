@@ -1640,9 +1640,7 @@ static bool fts_fwupg_need_upgrade(struct fts_upgrade *upg)
 		}
 
 		FTS_INFO("fw version in tp:%x, host:%x", fw_ver_in_tp, fw_ver_in_host);
-		if (fw_ver_in_tp != fw_ver_in_host) {
-			return true;
-		}
+		return true;
 	} else {
 		FTS_INFO("fw invalid, need upgrade fw");
 		return true;
