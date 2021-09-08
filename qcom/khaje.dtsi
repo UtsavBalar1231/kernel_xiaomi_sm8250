@@ -3150,6 +3150,11 @@
 			reg = <0x602d 0x1>;
 			bits = <5 1>;
 		};
+
+		feat_conf11: feat_conf11@6030 {
+			reg = <0x6030 0x1>;
+			bits = <0 8>;
+		};
 	};
 
 	spmi_bus: qcom,spmi@1c40000 {
