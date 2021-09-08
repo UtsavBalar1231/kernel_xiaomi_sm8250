@@ -1179,6 +1179,9 @@ static bool pe_filter_bcn_probe_frame(struct mac_context *mac_ctx,
 			return false;
 
 		bcn_ssid.length = ssid_ie[1];
+		if (bcn_ssid.length > WLAN_SSID_MAX_LEN)
+			return false;
+
 		qdf_mem_copy(&bcn_ssid.ssId,
 			     &ssid_ie[2],
 			     bcn_ssid.length);
