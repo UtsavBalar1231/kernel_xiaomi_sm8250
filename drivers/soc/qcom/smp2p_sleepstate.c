@@ -49,7 +49,11 @@ static struct notifier_block sleepstate_pm_nb = {
 
 static irqreturn_t smp2p_sleepstate_handler(int irq, void *ctxt)
 {
+#ifdef CONFIG_SMP2P_SLEEPSTATE_TIME_100MS
+	__pm_wakeup_event(notify_ws, 100);
+#else
 	__pm_wakeup_event(notify_ws, 200);
+#endif
 	return IRQ_HANDLED;
 }
 
