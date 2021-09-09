@@ -88,6 +88,11 @@ struct dc_cfg {
 	u8 exit_dc_lut[75];
 };
 
+struct lockdowninfo_cfg {
+	u8 lockdowninfo[16];
+	bool lockdowninfo_read_done;
+};
+
 struct greenish_gamma_cfg {
 	u32 index_1st_param;
 	u32 index_2nd_param;
@@ -215,8 +220,12 @@ struct dsi_panel_mi_cfg {
 	bool smart_fps_restore;
 	u32 smart_fps_max_framerate;
 	u32 smart_fps_value;
+	u32 idle_fps;
+	struct lockdowninfo_cfg lockdowninfo_read;
+	bool idle_mode_flag;
 
 	bool dither_enabled;
+	int current_tp_code_fps;
 };
 
 struct dsi_read_config {
@@ -286,10 +295,15 @@ int dsi_panel_read_greenish_gamma_setting(struct dsi_panel *panel);
 
 int dsi_panel_update_greenish_gamma_setting(struct dsi_panel *panel);
 
+int dsi_panel_match_fps_pen_setting(struct dsi_panel *panel,
+				struct dsi_display_mode *adj_mode);
+
 int dsi_panel_set_thermal_hbm_disabled(struct dsi_panel *panel,
 				bool thermal_hbm_disabled);
 int dsi_panel_get_thermal_hbm_disabled(struct dsi_panel *panel,
 				bool *thermal_hbm_disabled);
+
+int dsi_panel_lockdowninfo_param_read(struct dsi_panel *panel);
 
 struct calc_hw_vsync *get_hw_calc_vsync_struct(int dsi_display_type);
 ssize_t calc_hw_vsync_info(struct dsi_panel *panel,

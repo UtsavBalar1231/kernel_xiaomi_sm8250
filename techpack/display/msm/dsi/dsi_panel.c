@@ -17,6 +17,7 @@
 #include "dsi_display.h"
 #include "xiaomi_frame_stat.h"
 #include "sde_dbg.h"
+#include "dsi_mi_feature.h"
 
 /**
  * topology is currently defined by a set of following 3 values:
@@ -2073,6 +2074,9 @@ const char *cmd_set_prop_map[DSI_CMD_SET_MAX] = {
 	"mi,mdss-dsi-greenish-gamma-set-command",
 	"mi,mdss-dsi-black-setting-command",
 	"mi,mdss-dsi-read-lockdown-info-command",
+	"qcom,mdss-dsi-dispparam-pen-120hz-command",
+	"qcom,mdss-dsi-dispparam-pen-60hz-command",
+	"qcom,mdss-dsi-dispparam-pen-30hz-command",
 	/* xiaomi add end */
 	"qcom,mdss-dsi-dispparam-hbm-fod-on-command",
 	"qcom,mdss-dsi-dispparam-hbm-fod-off-command",
@@ -2170,6 +2174,9 @@ const char *cmd_set_state_map[DSI_CMD_SET_MAX] = {
 	"mi,mdss-dsi-greenish-gamma-set-command-state",
 	"mi,mdss-dsi-black-setting-command-state",
 	"mi,mdss-dsi-read-lockdown-info-command-state",
+	"qcom,mdss-dsi-dispparam-pen-120hz-command-state",
+	"qcom,mdss-dsi-dispparam-pen-60hz-command-state",
+	"qcom,mdss-dsi-dispparam-pen-30hz-command-state",
 	/* xiaomi add end */
 	"qcom,mdss-dsi-dispparam-hbm-fod-on-command-state",
 	"qcom,mdss-dsi-dispparam-hbm-fod-off-command-state",
@@ -5020,6 +5027,14 @@ int dsi_panel_post_enable(struct dsi_panel *panel)
 		goto error;
 	}
 error:
+	if (panel->host_config.phy_type == DSI_PHY_TYPE_CPHY) {
+		rc = dsi_panel_match_fps_pen_setting(panel, panel->cur_mode);
+		if (rc) {
+			DSI_ERR("[%s] failed to update TP fps code setting, rc=%d\n",
+				panel->name, rc);
+		}
+	}
+
 	mutex_unlock(&panel->panel_lock);
 
 	if (panel->mi_cfg.gamma_update_flag) {
