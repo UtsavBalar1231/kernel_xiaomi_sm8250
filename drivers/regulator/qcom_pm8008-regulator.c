@@ -75,6 +75,10 @@ enum pmic_subtype {
 	PM8010_SUBTYPE,
 };
 
+#ifdef CONFIG_I2C_RETRY
+#define MAX_RETRY_TIME			5
+#endif
+
 struct pm8008_chip {
 	struct device		*dev;
 	struct regmap		*regmap;
@@ -167,10 +171,21 @@ static int pm8008_read(struct regmap *regmap,  u16 reg, u8 *val, int count)
 {
 	int rc;
 
+#ifdef CONFIG_I2C_RETRY
+	int retry = 0;
+	do {
+		rc = regmap_bulk_read(regmap, reg, val, count);
+	} while (rc < 0 && retry++ < MAX_RETRY_TIME);
+	if (retry > 0)
+		pr_err("failed to read 0x%04x retry time %d success\n", reg, retry);
+	if (rc < 0)
+		pr_err("failed to read 0x%04x\n", reg);
+#else
 	rc = regmap_bulk_read(regmap, reg, val, count);
 	if (rc < 0)
 		pr_err("failed to read 0x%04x\n", reg);
 
+#endif
 	return rc;
 }
 
@@ -179,11 +194,23 @@ static int pm8008_write(struct regmap *regmap, u16 reg, const u8 *val,
 {
 	int rc;
 
+#ifdef CONFIG_I2C_RETRY
+	int retry = 0;
+	pr_debug("Writing 0x%02x to 0x%04x\n", val, reg);
+	do {
+		rc = regmap_bulk_write(regmap, reg, val, count);
+	} while (rc < 0 && retry++ < MAX_RETRY_TIME);
+	if (retry > 0)
+		pr_err("failed to write 0x%04x retry time %d success\n", reg, retry);
+	if (rc < 0)
+		pr_err("failed to write 0x%04x\n", reg);
+#else
 	pr_debug("Writing 0x%02x to 0x%04x\n", val, reg);
 	rc = regmap_bulk_write(regmap, reg, val, count);
 	if (rc < 0)
 		pr_err("failed to write 0x%04x\n", reg);
 
+#endif
 	return rc;
 }
 
@@ -192,12 +219,26 @@ static int pm8008_masked_write(struct regmap *regmap, u16 reg, u8 mask,
 {
 	int rc;
 
+#ifdef CONFIG_I2C_RETRY
+	int retry = 0;
+	pr_debug("Writing 0x%02x to 0x%04x with mask 0x%02x\n", val, reg, mask);
+	do {
+		rc = regmap_update_bits(regmap, reg, mask, val);
+	} while (rc < 0 && retry++ < MAX_RETRY_TIME);
+	if (retry > 0)
+		pr_err("failed to write 0x%02x to 0x%04x with mask 0x%02x retry time %d success\n",
+				val, reg, retry);
+	if (rc < 0)
+	pr_err("failed to write 0x%02x to 0x%04x with mask 0x%02x\n",
+				val, reg, mask);
+#else
 	pr_debug("Writing 0x%02x to 0x%04x with mask 0x%02x\n", val, reg, mask);
 	rc = regmap_update_bits(regmap, reg, mask, val);
 	if (rc < 0)
 		pr_err("failed to write 0x%02x to 0x%04x with mask 0x%02x\n",
 				val, reg, mask);
 
+#endif
 	return rc;
 }
 
