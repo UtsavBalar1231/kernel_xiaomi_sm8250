@@ -14,9 +14,13 @@ make O=out ARCH=arm64 cmi_defconfig
 make O=out ARCH=arm64 savedefconfig
 mv out/defconfig arch/arm64/configs/cmi_defconfig
 
-make O=out ARCH=arm64 lmi_defconfig
+make O=out ARCH=arm64 elish_defconfig
 make O=out ARCH=arm64 savedefconfig
-mv out/defconfig arch/arm64/configs/lmi_defconfig
+mv out/defconfig arch/arm64/configs/elish_defconfig
+
+make O=out ARCH=arm64 enuma_defconfig
+make O=out ARCH=arm64 savedefconfig
+mv out/defconfig arch/arm64/configs/enuma_defconfig
 
 make O=out ARCH=arm64 thyme_defconfig
 make O=out ARCH=arm64 savedefconfig
