@@ -1,3 +1,0 @@
-&msm_gpu {
-	qcom,chipid = <0x06050002>;
-};

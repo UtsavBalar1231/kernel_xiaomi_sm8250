@@ -1,9 +1,0 @@
-/dts-v1/;
-
-#include "qcm2150.dtsi"
-
-/ {
-	model = "Qualcomm Technologies, Inc. QCM2150";
-	compatible = "qcom,qcm2150";
-	qcom,pmic-name = "PM8916";
-};
