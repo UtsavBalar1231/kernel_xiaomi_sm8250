@@ -29,6 +29,21 @@ static struct dentry *f2fs_debugfs_root;
 #endif
 extern struct proc_dir_entry *f2fs_proc_root;
 
+const char *f2fs_cp_reasons[NR_CP_REASON_TYPE] = {
+	"no needed",
+	"non regular",
+	"compressed",
+	"hardlink",
+	"sb needs cp",
+	"wrong pino",
+	"no space roll forward",
+	"node needs cp",
+	"fastboot mode",
+	"log type is 2",
+	"dir needs recovery",
+	"parent dir xattr set",
+};
+
 /*
  * This function calculates BDF of every segments
  */
@@ -77,6 +92,10 @@ static void update_general_status(struct f2fs_sb_info *sbi)
 	/* validation check of the segment numbers */
 	si->hit_largest = atomic64_read(&sbi->read_hit_largest);
 	si->hit_cached = atomic64_read(&sbi->read_hit_cached);
+	si->sync_file_total = atomic64_read(&sbi->sync_file_count);
+	for (i = 0; i < NR_CP_REASON_TYPE; i++)
+		si->cp_reason_total[i] = atomic64_read(&sbi->cp_reason_count[i]);
+
 	si->hit_rbtree = atomic64_read(&sbi->read_hit_rbtree);
 	si->hit_total = si->hit_largest + si->hit_cached + si->hit_rbtree;
 	si->total_ext = atomic64_read(&sbi->total_hit_ext);
@@ -167,6 +186,7 @@ static void update_general_status(struct f2fs_sb_info *sbi)
 	si->free_nids = NM_I(sbi)->nid_cnt[FREE_NID];
 	si->avail_nids = NM_I(sbi)->available_nids;
 	si->alloc_nids = NM_I(sbi)->nid_cnt[PREALLOC_NID];
+	si->gc_booster = sbi->gc_booster;
 	si->io_skip_bggc = sbi->io_skip_bggc;
 	si->other_skip_bggc = sbi->other_skip_bggc;
 	si->skipped_atomic_files[BG_GC] = sbi->skipped_atomic_files[BG_GC];
@@ -454,6 +474,11 @@ static int stat_show(struct seq_file *s, void *v)
 			   si->dirty_count);
 		seq_printf(s, "  - Prefree: %d\n  - Free: %d (%d)\n\n",
 			   si->prefree_count, si->free_segs, si->free_secs);
+		seq_printf(s, "sync_file calls: %llu\n", si->sync_file_total);
+		seq_printf(s, "  - %-25s%-10s\n", "cp reason", "counts");
+		for (i = 0; i < NR_CP_REASON_TYPE; i++)
+			if (si->cp_reason_total[i])
+				seq_printf(s, "  - %-25s%-10llu\n", f2fs_cp_reasons[i], si->cp_reason_total[i]);
 		seq_printf(s, "CP calls: %d (BG: %d)\n",
 				si->cp_count, si->bg_cp_count);
 		seq_printf(s, "  - cp blocks : %u\n", si->meta_count[META_CP]);
@@ -468,8 +493,8 @@ static int stat_show(struct seq_file *s, void *v)
 				si->nr_queued_ckpt, si->nr_issued_ckpt,
 				si->nr_total_ckpt, si->cur_ckpt_time,
 				si->peak_ckpt_time);
-		seq_printf(s, "GC calls: %d (BG: %d)\n",
-			   si->call_count, si->bg_gc);
+		seq_printf(s, "GC calls: %d (BG: %d) (Boost: %d)\n",
+			   si->call_count, si->bg_gc, si->gc_booster);
 		seq_printf(s, "  - data segments : %d (%d)\n",
 				si->data_segs, si->bg_data_segs);
 		seq_printf(s, "  - node segments : %d (%d)\n",
@@ -608,6 +633,9 @@ int f2fs_build_stats(struct f2fs_sb_info *sbi)
 	atomic64_set(&sbi->read_hit_rbtree, 0);
 	atomic64_set(&sbi->read_hit_largest, 0);
 	atomic64_set(&sbi->read_hit_cached, 0);
+	atomic64_set(&sbi->sync_file_count, 0);
+	for (i = 0; i < NR_CP_REASON_TYPE; i++)
+		atomic64_set(&sbi->cp_reason_count[i], 0);
 
 	atomic_set(&sbi->inline_xattr, 0);
 	atomic_set(&sbi->inline_inode, 0);
