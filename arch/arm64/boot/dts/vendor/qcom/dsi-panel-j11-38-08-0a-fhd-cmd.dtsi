@@ -126,7 +126,6 @@
 	mi,mdss-dsi-panel-dc-threshold = <470>;
 	mi,mdss-dsi-panel-dc-type = <2>; /* differ to cmi */
 
-	mi,mdss-dsi-panel-fod-dimlayer-enabled;
 	mi,mdss-panel-fod-hbm-on-need-prepare;
 	mi,mdss-panel-delay-before-fod-hbm-on;
 	mi,mdss-panel-delay-before-fod-hbm-off;

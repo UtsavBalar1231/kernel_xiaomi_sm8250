@@ -137,7 +137,6 @@
 &dsi_j9_38_0a_0a_video {
 	mi,feature-enabled;
 	/* enable fod feature */
-	mi,mdss-dsi-panel-fod-dimlayer-enabled;
 	mi,mdss-dsi-bl-dcs-big-endian-type;
 	mi,mdss-dsi-panel-hbm-51-ctrl-flag;
 	mi,mdss-dsi-panel-hbm-off-51-index = <1>;
@@ -164,7 +163,6 @@
 	mi,mdss-dsi-doze-hbm-brightness-value = <270>;
 	mi,mdss-dsi-doze-lbm-brightness-value = <20>;
 
-	mi,mdss-dsi-panel-fod-dimlayer-enabled;
 	mi,mdss-panel-fod-hbm-on-need-prepare;
 	mi,mdss-panel-fod-hbm-off-delay;
 	mi,mdss-dsi-dimlayer-brightness-alpha-lut-item-count = <21>;

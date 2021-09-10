@@ -406,7 +406,6 @@
 
 	mi,mdss-panel-on-dimming-delay = <120>;
 
-	mi,mdss-dsi-panel-fod-dimlayer-enabled;
 	mi,mdss-panel-delay-before-fod-hbm-on;
 	mi,mdss-panel-delay-before-fod-hbm-off;
 	mi,mdss-panel-before-fod-hbm-on-60Hz-delay = <8000>;
