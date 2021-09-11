@@ -1479,9 +1479,11 @@ static void _sde_crtc_blend_setup_mixer(struct drm_crtc *crtc,
 			_sde_crtc_setup_dim_layer_cfg(crtc, sde_crtc,
 					mixer, &cstate->dim_layer[i]);
 
+#ifdef CONFIG_OSSFOD
 		if (cstate->fod_dim_layer)
 			_sde_crtc_setup_dim_layer_cfg(crtc, sde_crtc,
 					mixer, cstate->fod_dim_layer);
+#endif
 	}
 
 	_sde_crtc_program_lm_output_roi(crtc);
@@ -4512,6 +4514,7 @@ sec_err:
 	return -EINVAL;
 }
 
+#ifdef CONFIG_OSSFOD
 static struct sde_hw_dim_layer* sde_crtc_setup_fod_dim_layer(
 		struct sde_crtc_state *cstate,
 		uint32_t stage)
@@ -4591,6 +4594,7 @@ static void sde_crtc_fod_atomic_check(struct sde_crtc_state *cstate,
 		if (pstates[plane_idx].stage >= dim_layer_stage)
 			pstates[plane_idx].stage++;
 }
+#endif
 
 static int _sde_crtc_check_secure_conn(struct drm_crtc *crtc,
 		struct drm_crtc_state *state, uint32_t fb_sec)
@@ -4944,7 +4948,9 @@ static int _sde_crtc_atomic_check_pstates(struct drm_crtc *crtc,
 		return rc;
 #endif
 
+#ifdef CONFIG_OSSFOD
 	sde_crtc_fod_atomic_check(cstate, pstates, cnt);
+#endif
 
 	/* assign mixer stages based on sorted zpos property */
 	rc = _sde_crtc_check_zpos(state, sde_crtc, pstates, cstate, mode, cnt);

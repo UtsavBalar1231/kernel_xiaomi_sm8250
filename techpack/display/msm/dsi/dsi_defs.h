@@ -379,8 +379,10 @@ enum dsi_cmd_set_type {
 	DSI_CMD_SET_DISP_PEN_60HZ,
 	DSI_CMD_SET_DISP_PEN_30HZ,
 	/* xiaomi add end */
+#ifdef CONFIG_OSSFOD
 	DSI_CMD_SET_DISP_HBM_FOD_ON,
 	DSI_CMD_SET_DISP_HBM_FOD_OFF,
+#endif
 	DSI_CMD_SET_MAX
 };
 
