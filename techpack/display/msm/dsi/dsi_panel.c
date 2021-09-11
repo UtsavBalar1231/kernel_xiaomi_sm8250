@@ -827,6 +827,7 @@ bool dc_skip_set_backlight(struct dsi_panel *panel, u32 bl_lvl)
 	}
 }
 
+#ifdef CONFIG_OSSFOD
 static u32 dsi_panel_get_backlight(struct dsi_panel *panel)
 {
 	return panel->bl_config.bl_level;
@@ -878,6 +879,7 @@ int dsi_panel_set_fod_hbm(struct dsi_panel *panel, bool status)
 
 	return rc;
 }
+#endif
 
 int dsi_panel_set_backlight(struct dsi_panel *panel, u32 bl_lvl)
 {
@@ -2753,6 +2755,7 @@ error:
 	return rc;
 }
 
+#ifdef CONFIG_OSSFOD
 static int dsi_panel_parse_fod_dim_lut(struct dsi_panel *panel,
 		struct dsi_parser_utils *utils)
 {
@@ -2814,6 +2817,7 @@ count_fail:
 	}
 	return rc;
 }
+#endif
 
 static int dsi_panel_parse_bl_config(struct dsi_panel *panel)
 {
@@ -2911,9 +2915,11 @@ static int dsi_panel_parse_bl_config(struct dsi_panel *panel)
 	panel->bl_config.bl_inverted_dbv = utils->read_bool(utils->data,
 		"qcom,mdss-dsi-bl-inverted-dbv");
 
+#ifdef CONFIG_OSSFOD
 	rc = dsi_panel_parse_fod_dim_lut(panel, utils);
 	if (rc)
 		pr_err("[%s failed to parse fod dim lut\n", panel->name);
+#endif
 
 	if (panel->bl_config.type == DSI_BACKLIGHT_PWM) {
 		rc = dsi_panel_parse_bl_pwm_config(panel);
