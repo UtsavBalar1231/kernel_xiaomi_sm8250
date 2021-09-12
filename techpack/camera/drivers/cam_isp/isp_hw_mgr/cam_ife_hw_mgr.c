@@ -2353,7 +2353,7 @@ static int cam_ife_hw_mgr_acquire_res_ife_bus_rd(
 	}
 
 	if (j == CAM_IFE_HW_NUM_MAX || !vfe_acquire.vfe_bus_rd.rsrc_node) {
-		CAM_ERR(CAM_ISP, "Failed to acquire BUS RD for LEFT", i);
+		CAM_ERR(CAM_ISP, "Failed to acquire BUS RD for LEFT");
 		goto put_res;
 	}
 
@@ -2539,11 +2539,8 @@ static int cam_ife_mgr_acquire_hw_for_offline_ctx(
 	cam_ife_hw_mgr_preprocess_port(ife_ctx, in_port, &ipp_count,
 		&rdi_count, &ppp_count, &ife_rd_count, &lcr_count);
 
-	if ((!ipp_count && !lcr_count) || !ife_rd_count) {
-		CAM_ERR(CAM_ISP,
-			"Invalid %d BUS RD %d PIX %d LCR ports for FE ctx");
+	if ((!ipp_count && !lcr_count) || !ife_rd_count)
 		return -EINVAL;
-	}
 
 	if (rdi_count || ppp_count) {
 		CAM_ERR(CAM_ISP,
@@ -5938,7 +5935,7 @@ static int cam_isp_packet_generic_blob_handler(void *user_data,
 
 		if (blob_size < sizeof(struct cam_isp_csid_qcfa_config)) {
 			CAM_ERR(CAM_ISP,
-				"Invalid qcfa blob size %u expected %u",
+				"Invalid qcfa blob size %u expected %lu",
 				blob_size,
 				sizeof(struct cam_isp_csid_qcfa_config));
 			return -EINVAL;
@@ -5991,7 +5988,7 @@ static int cam_isp_packet_generic_blob_handler(void *user_data,
 		struct cam_isp_vfe_out_config *vfe_out_config;
 
 		if (blob_size < sizeof(struct cam_isp_vfe_out_config)) {
-			CAM_ERR(CAM_ISP, "Invalid blob size %u",
+			CAM_ERR(CAM_ISP, "Invalid blob size %u expected %lu",
 				blob_size,
 				sizeof(struct cam_isp_vfe_out_config));
 			return -EINVAL;
@@ -6003,8 +6000,7 @@ static int cam_isp_packet_generic_blob_handler(void *user_data,
 			vfe_out_config->num_ports == 0) {
 			CAM_ERR(CAM_ISP,
 				"Invalid num_ports:%u in vfe out config",
-				vfe_out_config->num_ports,
-				CAM_IFE_HW_OUT_RES_MAX);
+				vfe_out_config->num_ports);
 			return -EINVAL;
 		}
 
@@ -6042,7 +6038,7 @@ static int cam_isp_packet_generic_blob_handler(void *user_data,
 
 		if (blob_size < sizeof(struct cam_isp_csid_epd_config)) {
 			CAM_ERR(CAM_ISP,
-				"Invalid epd config blob size %u expected %u",
+				"Invalid epd config blob size %u expected %lu",
 				blob_size,
 				sizeof(struct cam_isp_csid_epd_config));
 			return -EINVAL;
@@ -6058,7 +6054,7 @@ static int cam_isp_packet_generic_blob_handler(void *user_data,
 		struct cam_isp_sensor_config *csid_dim_config;
 
 		if (blob_size < sizeof(struct cam_isp_sensor_config)) {
-			CAM_ERR(CAM_ISP, "Invalid blob size %zu expected %zu",
+			CAM_ERR(CAM_ISP, "Invalid blob size %u expected %lu",
 				blob_size,
 				sizeof(struct cam_isp_sensor_config));
 			return -EINVAL;
@@ -6647,7 +6643,7 @@ static int cam_ife_mgr_user_dump_hw(
 		true);
 	if (rc) {
 		CAM_ERR(CAM_ISP,
-			"Dump failed req: %lld handle %u offset %u",
+			"Dump failed req: %lld handle %u offset %zu",
 			dump_args->request_id,
 			dump_args->buf_handle,
 			dump_args->offset);

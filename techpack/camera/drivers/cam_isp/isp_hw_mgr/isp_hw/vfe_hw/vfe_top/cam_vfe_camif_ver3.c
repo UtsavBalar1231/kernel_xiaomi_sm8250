@@ -771,7 +771,7 @@ int cam_vfe_camif_ver3_dump_timestamps(
 		(struct cam_vfe_mux_camif_ver3_data *)rsrc_node->res_priv;
 
 	CAM_INFO(CAM_ISP,
-		"CAMIF ERROR time %lld:%lld SOF %lld:%lld EPOCH %lld:%lld EOF %lld:%lld",
+		"CAMIF ERROR time %ld:%ld SOF %ld:%ld EPOCH %ld:%ld EOF %ld:%ld",
 		camif_priv->error_ts.tv_sec,
 		camif_priv->error_ts.tv_usec,
 		camif_priv->sof_ts.tv_sec,
@@ -820,6 +820,7 @@ static int cam_vfe_camif_ver3_irq_reg_dump(
 
 	CAM_INFO(CAM_ISP,
 		"Core Id =%d Status reg: offset 0x%x val 0x%x offset 0x%x val 0x%x offset 0x%x val 0x%x",
+		camif_priv->hw_intf->hw_idx,
 		camif_priv->common_reg->irq_status_0,
 		cam_io_r_mb(camif_priv->mem_base +
 			camif_priv->common_reg->irq_status_0),
@@ -1437,7 +1438,7 @@ static int cam_vfe_camif_ver3_handle_irq_bottom_half(void *handler_priv,
 		CAM_ERR(CAM_ISP, "VFE:%d Overflow", evt_info.hw_idx);
 
 		CAM_INFO(CAM_ISP,
-			"SOF %lld:%lld EPOCH %lld:%lld EOF %lld:%lld",
+			"SOF %ld:%ld EPOCH %ld:%ld EOF %ld:%ld",
 			camif_priv->sof_ts.tv_sec,
 			camif_priv->sof_ts.tv_usec,
 			camif_priv->epoch_ts.tv_sec,
@@ -1446,7 +1447,7 @@ static int cam_vfe_camif_ver3_handle_irq_bottom_half(void *handler_priv,
 			camif_priv->eof_ts.tv_usec);
 		ktime_get_boottime_ts64(&ts);
 		CAM_INFO(CAM_ISP,
-			"current monotonic time stamp seconds %lld:%lld",
+			"current monotonic time stamp seconds %lld:%ld",
 			ts.tv_sec, ts.tv_nsec/1000);
 
 		if (camif_priv->event_cb)
@@ -1477,7 +1478,7 @@ static int cam_vfe_camif_ver3_handle_irq_bottom_half(void *handler_priv,
 		CAM_ERR(CAM_ISP, "VFE:%d Violation", evt_info.hw_idx);
 
 		CAM_INFO(CAM_ISP,
-			"SOF %lld:%lld EPOCH %lld:%lld EOF %lld:%lld",
+			"SOF %ld:%ld EPOCH %ld:%ld EOF %ld:%ld",
 			camif_priv->sof_ts.tv_sec,
 			camif_priv->sof_ts.tv_usec,
 			camif_priv->epoch_ts.tv_sec,
@@ -1486,7 +1487,7 @@ static int cam_vfe_camif_ver3_handle_irq_bottom_half(void *handler_priv,
 			camif_priv->eof_ts.tv_usec);
 		ktime_get_boottime_ts64(&ts);
 		CAM_INFO(CAM_ISP,
-			"current monotonic time stamp seconds %lld:%lld",
+			"current monotonic time stamp seconds %lld:%ld",
 			ts.tv_sec, ts.tv_nsec/1000);
 
 		if (camif_priv->event_cb)
