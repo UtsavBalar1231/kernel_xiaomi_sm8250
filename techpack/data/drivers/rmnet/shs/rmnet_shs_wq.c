@@ -2238,7 +2238,7 @@ int rmnet_shs_wq_get_max_flows_per_cluster(u16 cpu)
 		end_core = MAX_CPUS;
 	}
 
-	for (start_core; start_core < end_core; start_core++) {
+	for (; start_core < end_core; start_core++) {
 		cpu_flows = rmnet_shs_wq_get_num_cpu_flows(start_core);
 		if (cpu_flows > max_flows)
 			max_flows = cpu_flows;
