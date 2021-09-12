@@ -518,7 +518,7 @@ static int _sde_kms_secure_ctrl(struct sde_kms *sde_kms, struct drm_crtc *crtc,
 	if (smmu_state->sui_misr_state == SUI_MISR_ENABLE_REQ) {
 		ret = _sde_kms_sui_misr_ctrl(sde_kms, crtc, true);
 		if (ret) {
-			smmu_state->sui_misr_state == NONE;
+			smmu_state->sui_misr_state = NONE;
 			goto end;
 		}
 	}
