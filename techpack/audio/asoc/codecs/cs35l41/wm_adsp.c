@@ -1836,7 +1836,7 @@ static int wm_adsp_create_control(struct wm_adsp *dsp,
 	struct wmfw_ctl_work *ctl_work;
 	char name[SNDRV_CTL_ELEM_ID_NAME_MAXLEN];
 	const char *region_name;
-	int ret;
+	int ret = 0;
 
 	region_name = wm_adsp_mem_region_name(alg_region->type);
 	if (!region_name) {
