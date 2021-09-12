@@ -810,7 +810,7 @@ static int cpufreq_hw_register_cooling_device(struct platform_device *pdev)
 						cpu_cdev,
 						&cpufreq_hw_cooling_ops);
 				if (IS_ERR(cpu_cdev->cdev)) {
-					pr_err("Cooling register failed for %s, ret: %d\n",
+					pr_err("Cooling register failed for %s, ret: %ld\n",
 						cdev_name,
 						PTR_ERR(cpu_cdev->cdev));
 					c->skip_data.final_index =
