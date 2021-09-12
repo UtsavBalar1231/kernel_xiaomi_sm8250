@@ -679,7 +679,7 @@ int cam_hfi_resume(struct hfi_mem_info *hfi_mem,
 	cam_io_w_mb((uint32_t)hfi_mem->io_mem2.len,
 		icp_base + HFI_REG_IO2_REGION_SIZE);
 
-	CAM_INFO(CAM_HFI, "Resume IO1 : [0x%x 0x%x] IO2 [0x%x 0x%x]",
+	CAM_INFO(CAM_HFI, "Resume IO1 : [0x%x 0x%llx] IO2 [0x%x 0x%llx]",
 		hfi_mem->io_mem.iova, hfi_mem->io_mem.len,
 		hfi_mem->io_mem2.iova, hfi_mem->io_mem2.len);
 
@@ -878,7 +878,7 @@ int cam_hfi_init(uint8_t event_driven_mode, struct hfi_mem_info *hfi_mem,
 	cam_io_w_mb((uint32_t)hfi_mem->io_mem2.len,
 		icp_base + HFI_REG_IO2_REGION_SIZE);
 
-	CAM_INFO(CAM_HFI, "Init IO1 : [0x%x 0x%x] IO2 [0x%x 0x%x]",
+	CAM_INFO(CAM_HFI, "Init IO1 : [0x%x 0x%llx] IO2 [0x%x 0x%llx]",
 		hfi_mem->io_mem.iova, hfi_mem->io_mem.len,
 		hfi_mem->io_mem2.iova, hfi_mem->io_mem2.len);
 
