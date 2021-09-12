@@ -99,7 +99,7 @@ int32_t cam_csiphy_status_dmp(struct csiphy_device *csiphy_dev)
 	clear_reg = csiphy_reg->mipi_csiphy_interrupt_clear0_addr;
 	size = csiphy_reg->csiphy_interrupt_status_size;
 
-	CAM_INFO(CAM_CSIPHY, "PHY base addr=%pK offset=0x%x size=%d",
+	CAM_INFO(CAM_CSIPHY, "PHY base addr=%pK offset=0x%x size=%llu",
 			phy_base, status_reg, size);
 
 	if (phy_base != NULL) {
