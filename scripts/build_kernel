@@ -14,7 +14,7 @@ DATE=$(date +"%d.%m.%y.%S")
 ZIPNAME=IMMENSITY-X-${DEVICE}-${VERSION}-${DATE}.zip
 
 # Set compiler PATH
-PATH=${HOME}/linux-x86/clang-r433403/bin/:${HOME}/gas64/bin:${HOME}/gas32/bin:$PATH
+PATH=${HOME}/gcc64/bin:${HOME}/gcc32/bin:$PATH
 
 # Correct panel dimensions on MIUI builds
 function miui_fix_dimens()
@@ -61,6 +61,20 @@ make ARCH=arm64 \
         ${DEVICE}_defconfig \
         -j"$(nproc --all)"
 
+# Enable GCC LTO
+scripts/config --file ${OUT_DIR}/.config \
+	-e CC_WERROR \
+	-e LTO_GCC \
+	-e LD_DEAD_CODE_DATA_ELIMINATION \
+	-d FORTIFY_SOURCE
+
+# Make olddefconfig
+cd ${OUT_DIR}
+make O=${OUT_DIR} \
+	ARCH=arm64 \
+	olddefconfig
+cd ../
+
 if [[ "$@" =~ "miui"* ]]; then
 	# Enable LLD
 	scripts/config --file ${OUT_DIR}/.config \
@@ -89,9 +103,9 @@ START=$(date +"%s")
 
 make ARCH=arm64 \
         O=${OUT_DIR} \
-        LLVM=1 \
-        CROSS_COMPILE="aarch64-linux-gnu-" \
-        CROSS_COMPILE_ARM32="arm-linux-gnueabi-" \
+        CROSS_COMPILE="aarch64-elf-" \
+	LD="aarch64-elf-ld.bfd" \
+        CROSS_COMPILE_ARM32="arm-eabi-" \
         -j"$(nproc --all)"
 
 # Import Anykernel3 folder
