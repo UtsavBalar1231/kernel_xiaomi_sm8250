@@ -3867,7 +3867,7 @@ static ssize_t diagchar_read(struct file *file, char __user *buf, size_t count,
 		atomic_dec(&driver->data_ready_notif[index]);
 
 		DIAG_LOG(DIAG_DEBUG_MASKS,
-		"diag: %s: event masks update complete for client pid: %d\n",
+		"diag: event masks update complete for client pid: %d\n",
 		current->tgid);
 
 		goto exit;
