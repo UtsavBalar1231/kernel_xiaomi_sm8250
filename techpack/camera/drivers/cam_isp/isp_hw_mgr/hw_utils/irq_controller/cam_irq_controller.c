@@ -721,9 +721,9 @@ irqreturn_t cam_irq_controller_handle_irq(int irq_num, void *priv)
 			if (irq_register->top_half_enable_mask[j] &
 				controller->irq_status_arr[i])
 				need_th_processing[j] = true;
-				CAM_DBG(CAM_IRQ_CTRL,
-					"i %d j %d need_th_processing = %d",
-					i, j, need_th_processing[j]);
+			CAM_DBG(CAM_IRQ_CTRL,
+				"i %d j %d need_th_processing = %d",
+				i, j, need_th_processing[j]);
 		}
 	}
 
