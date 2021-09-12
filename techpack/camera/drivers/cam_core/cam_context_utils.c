@@ -1183,7 +1183,7 @@ int32_t cam_context_dump_dev_to_hw(struct cam_context *ctx,
 		 */
 		if (dump_args.offset > cmd->offset) {
 			cam_context_dump_context(ctx, &dump_args);
-			CAM_INFO(CAM_CTXT, "[%s] ctx: %d Filled Length %u",
+			CAM_INFO(CAM_CTXT, "[%s] ctx: %d Filled Length %lu",
 				 ctx->dev_name, ctx->ctx_id,
 				 dump_args.offset - cmd->offset);
 			cmd->offset  = dump_args.offset;
