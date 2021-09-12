@@ -399,7 +399,7 @@ static int dp_hdcp2p2_aux_read_message(struct dp_hdcp2p2_ctrl *ctrl)
 	diff_ms = ktime_ms_delta(finish_read, start_read);
 
 	if (ctrl->transaction_timeout && diff_ms > ctrl->transaction_timeout) {
-		DP_ERR("HDCP read timeout exceeded (%dms > %dms)\n", diff_ms,
+		DP_ERR("HDCP read timeout exceeded (%lldms > %dms)\n", diff_ms,
 				ctrl->transaction_timeout);
 		rc = -ETIMEDOUT;
 	}
