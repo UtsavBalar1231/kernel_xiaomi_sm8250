@@ -1089,8 +1089,8 @@ static void  set_pwr_srcs_status(int ldo_index,
 		if (handle->is_enabled && regulator_is_enabled(handle->reg)) {
 			bt_power_src_status[ldo_index] =
 				(int)regulator_get_voltage(handle->reg);
-			BT_PWR_ERR("%s(%d) value(%d)", handle->name,
-				handle, bt_power_src_status[ldo_index]);
+			BT_PWR_ERR("%s value(%d)", handle->name,
+				bt_power_src_status[ldo_index]);
 		} else {
 			BT_PWR_ERR("%s: %s is_enabled %d", __func__,
 				handle->name, handle->is_enabled);
