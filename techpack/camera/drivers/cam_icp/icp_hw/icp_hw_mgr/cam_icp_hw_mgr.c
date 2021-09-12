@@ -4276,7 +4276,7 @@ static int cam_icp_mgr_process_cmd_desc(struct cam_icp_hw_mgr *hw_mgr,
 				((len - cmd_desc[i].offset) <
 				cmd_desc[i].size)){
 				CAM_ERR(CAM_ICP,
-					"Invalid offset, i: %d offset: %u len: %zu size: %zu",
+					"Invalid offset, i: %d offset: %u len: %zu size: %u",
 					i, cmd_desc[i].offset,
 					len, cmd_desc[i].size);
 				return -EINVAL;
@@ -5243,7 +5243,7 @@ hw_dump:
 	req_ts = ktime_to_timespec64(frm_process->submit_timestamp[i]);
 
 	if (diff < CAM_ICP_CTX_RESPONSE_TIME_THRESHOLD) {
-		CAM_INFO(CAM_ICP, "No Error req %lld %ld:%06ld %ld:%06ld",
+		CAM_INFO(CAM_ICP, "No Error req %lld %lld:%06ld %lld:%06ld",
 			dump_args->request_id,
 			req_ts.tv_sec,
 			req_ts.tv_nsec/NSEC_PER_USEC,
@@ -5252,7 +5252,7 @@ hw_dump:
 		return 0;
 	}
 
-	CAM_INFO(CAM_ICP, "Error req %lld %ld:%06ld %ld:%06ld",
+	CAM_INFO(CAM_ICP, "Error req %lld %lld:%06ld %lld:%06ld",
 		dump_args->request_id,
 		req_ts.tv_sec,
 		req_ts.tv_nsec/NSEC_PER_USEC,
