@@ -443,7 +443,7 @@ static inline void walt_dump(void)
 	printk_deferred("============ WALT RQ DUMP END ==============\n");
 }
 
-static int in_sched_bug;
+static __maybe_unused int in_sched_bug;
 #define SCHED_BUG_ON(condition)				\
 ({							\
 	if (unlikely(!!(condition)) && !in_sched_bug) {	\
