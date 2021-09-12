@@ -93,7 +93,7 @@ static long cam_sensor_init_subdev_do_ioctl(struct v4l2_subdev *sd,
 		rc = cam_sensor_subdev_ioctl(sd, cmd, &cmd_data);
 		if (rc < 0)
 			CAM_ERR(CAM_SENSOR, "cam_sensor_subdev_ioctl failed");
-			break;
+		break;
 	default:
 		CAM_ERR(CAM_SENSOR, "Invalid compat ioctl cmd_type: %d", cmd);
 		rc = -EINVAL;
