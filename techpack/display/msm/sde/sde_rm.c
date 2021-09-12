@@ -968,7 +968,7 @@ static bool _sde_rm_check_lm_and_get_connected_blks(
 	is_conn_secondary = (reqs->hw_res.display_type ==
 				 SDE_CONNECTOR_SECONDARY) ? true : false;
 
-	SDE_DEBUG("check lm %d: dspp %d ds %d pp %d features %d disp type %d\n",
+	SDE_DEBUG("check lm %d: dspp %d ds %d pp %d features %lx disp type %d\n",
 		 lm_cfg->id, lm_cfg->dspp, lm_cfg->ds, lm_cfg->pingpong,
 		 lm_cfg->features, (int)reqs->hw_res.display_type);
 
@@ -1003,7 +1003,7 @@ static bool _sde_rm_check_lm_and_get_connected_blks(
 	} else if ((!is_conn_primary && lm_primary_pref) ||
 			(!is_conn_secondary && lm_secondary_pref)) {
 		SDE_DEBUG(
-			"display preference is not met. display_type: %d lm_features: %x\n",
+			"display preference is not met. display_type: %d lm_features: %lx\n",
 			(int)reqs->hw_res.display_type, lm_cfg->features);
 		return false;
 	}
@@ -2092,7 +2092,7 @@ static void _sde_rm_check_and_modify_commit_rsvps(
 			if (blk->rsvp_nxt &&  blk->rsvp_nxt->enc_id == rsvp->enc_id
 					 && blk->rsvp_nxt != rsvp) {
 				pr_err("rsvp :%x blk->rsvp_nxt :%x, enc_id: %x type :%x\n",
-					rsvp->seq, blk->rsvp_next->seq, blk->rsvp_nxt->enc_id , type);
+					rsvp->seq, blk->rsvp_nxt->seq, blk->rsvp_nxt->enc_id , type);
 				SDE_EVT32(rsvp, blk->rsvp_nxt, blk->rsvp_nxt->enc_id , type);
 				modify = true;
 			}
