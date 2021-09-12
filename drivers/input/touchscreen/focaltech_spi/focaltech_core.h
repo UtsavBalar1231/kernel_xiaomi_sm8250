@@ -203,7 +203,7 @@ struct fts_ts_data {
 	bool power_disabled;
 	bool glove_mode;
 	bool cover_mode;
-	bool charger_mode;
+	int charger_mode;
 	bool gesture_mode;      /* gesture enable or disable, default: disable */
 	/* multi-touch */
 	struct ts_event *events;
