@@ -208,7 +208,7 @@ static int q6lsm_callback(struct apr_client_data *data, void *priv)
 						sizeof(struct param_hdr_v2);
 
 		if (data->payload_size < payload_min_size_expected) {
-			pr_err("%s: invalid payload size %d expected size %d\n",
+			pr_err("%s: invalid payload size %d expected size %u\n",
 				__func__, data->payload_size,
 				payload_min_size_expected);
 			ret = -EINVAL;
@@ -229,7 +229,7 @@ static int q6lsm_callback(struct apr_client_data *data, void *priv)
 		}
 
 		if (client->param_size != param_size) {
-			pr_err("%s: response payload size %d mismatched with user requested %d\n",
+			pr_err("%s: response payload size %d mismatched with user requested %lu\n",
 			    __func__, param_size, client->param_size);
 			ret = -EINVAL;
 			goto done;
