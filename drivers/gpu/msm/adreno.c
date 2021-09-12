@@ -1057,7 +1057,7 @@ static void adreno_of_get_bimc_iface_clk(struct adreno_device *adreno_dev,
 				"bimc_gpu_clk");
 		if (IS_ERR_OR_NULL(pwr->gpu_bimc_int_clk)) {
 			dev_err(&device->pdev->dev,
-					"dt: Couldn't get bimc_gpu_clk (%d)\n",
+					"dt: Couldn't get bimc_gpu_clk (%ld)\n",
 					PTR_ERR(pwr->gpu_bimc_int_clk));
 			pwr->gpu_bimc_int_clk = NULL;
 		}
