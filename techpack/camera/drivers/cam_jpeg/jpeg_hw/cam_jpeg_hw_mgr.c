@@ -1563,7 +1563,7 @@ hw_dump:
 
 	if (diff < CAM_JPEG_RESPONSE_TIME_THRESHOLD) {
 		CAM_INFO(CAM_JPEG,
-			"No error req %lld %ld:%06ld %ld:%06ld",
+			"No error req %lld %lld:%06ld %lld:%06ld",
 			dump_args->request_id,
 			req_ts.tv_sec,
 			req_ts.tv_nsec/NSEC_PER_USEC,
@@ -1574,7 +1574,7 @@ hw_dump:
 	}
 
 	CAM_INFO(CAM_JPEG,
-		"Error req %lld %ld:%06ld %ld:%06ld",
+		"Error req %lld %lld:%06ld %lld:%06ld",
 		dump_args->request_id,
 		req_ts.tv_sec,
 		req_ts.tv_nsec/NSEC_PER_USEC,
