@@ -911,13 +911,13 @@ void rmnet_shs_wq_mem_update_cached_netdevs(void)
 		       ep->ep->name);
 		rm_err("SHS_NETDEV: ep %u has mux_id = %u \n", count,
 		       priv->mux_id);
-		rm_err("SHS_NETDEV: ep %u has ip_miss = %lu \n", count,
+		rm_err("SHS_NETDEV: ep %u has ip_miss = %llu \n", count,
 		       priv->stats.coal.close.ip_miss);
-		rm_err("SHS_NETDEV: ep %u has coal_rx_pkts = %lu \n", count,
+		rm_err("SHS_NETDEV: ep %u has coal_rx_pkts = %llu \n", count,
 		       priv->stats.coal.coal_pkts);
-		rm_err("SHS_NETDEV: ep %u has udp_rx_bps = %lu \n", count,
+		rm_err("SHS_NETDEV: ep %u has udp_rx_bps = %llu \n", count,
 		       ep->udp_rx_bps);
-		rm_err("SHS_NETDEV: ep %u has tcp_rx_bps = %lu \n", count,
+		rm_err("SHS_NETDEV: ep %u has tcp_rx_bps = %llu \n", count,
 		       ep->tcp_rx_bps);
 
 		/* Set netdev name and ip mismatch count */
