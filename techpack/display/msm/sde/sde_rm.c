@@ -2092,7 +2092,7 @@ static void _sde_rm_check_and_modify_commit_rsvps(
 			if (blk->rsvp_nxt &&  blk->rsvp_nxt->enc_id == rsvp->enc_id
 					 && blk->rsvp_nxt != rsvp) {
 				pr_err("rsvp :%x blk->rsvp_nxt :%x, enc_id: %x type :%x\n",
-					rsvp, blk->rsvp_nxt, blk->rsvp_nxt->enc_id , type);
+					rsvp->seq, blk->rsvp_next->seq, blk->rsvp_nxt->enc_id , type);
 				SDE_EVT32(rsvp, blk->rsvp_nxt, blk->rsvp_nxt->enc_id , type);
 				modify = true;
 			}
