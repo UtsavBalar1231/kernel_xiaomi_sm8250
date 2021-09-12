@@ -3935,8 +3935,7 @@ static void sde_encoder_get_qsync_fps_callback(
 		if (!sde_enc->cur_master ||
 			!(sde_enc->disp_info.capabilities &
 				MSM_DISPLAY_CAP_VID_MODE)) {
-			SDE_ERROR("invalid qsync settings %b\n",
-				!sde_enc->cur_master);
+			SDE_ERROR("invalid qsync settings\n");
 			return;
 		}
 		sde_conn = to_sde_connector(sde_enc->cur_master->connector);
