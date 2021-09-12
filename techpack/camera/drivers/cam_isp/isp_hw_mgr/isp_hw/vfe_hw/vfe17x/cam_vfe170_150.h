@@ -115,7 +115,7 @@ struct cam_vfe_top_ver2_reg_offset_module_ctrl zoom_170_150_reg = {
 };
 
 /*Check offsets and values*/
-static struct cam_vfe_bus_ver2_stats_cfg_info stats_170_150_info  = {
+static __maybe_unused struct cam_vfe_bus_ver2_stats_cfg_info stats_170_150_info  = {
 	.dmi_offset_info = {
 		.auto_increment = 0x00000100,
 		.cfg_offset     = 0x00000C24,
