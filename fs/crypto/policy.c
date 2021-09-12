@@ -652,7 +652,7 @@ static int fscrypt_update_context(union fscrypt_context *ctx)
 	if (!fscrypt_find_storage_type(&boot)) {
 		if (!strcmp(boot, SDHCI))
 			ctx->v1.flags |= FSCRYPT_POLICY_FLAG_IV_INO_LBLK_32;
-			return 0;
+		return 0;
 	}
 	return -EINVAL;
 }
