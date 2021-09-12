@@ -18,7 +18,7 @@
 static struct cam_req_mgr_util_hdl_tbl *hdl_tbl;
 static DEFINE_SPINLOCK(hdl_tbl_lock);
 
-static hdl_count = 0;
+static int hdl_count = 0;
 int cam_req_mgr_util_init(void)
 {
 	int rc = 0;
