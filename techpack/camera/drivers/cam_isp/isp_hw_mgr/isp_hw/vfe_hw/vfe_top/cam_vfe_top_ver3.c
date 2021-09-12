@@ -113,7 +113,7 @@ static int cam_vfe_top_ver3_set_hw_clk_rate(
 			soc_info->src_clk_idx, &clk_lvl);
 		if (rc) {
 			CAM_WARN(CAM_ISP,
-				"Failed to get clk level for %s with clk_rate %llu src_idx %d rc %d",
+				"Failed to get clk level for %s with clk_rate %lu src_idx %d rc %d",
 				soc_info->dev_name, max_clk_rate,
 				soc_info->src_clk_idx, rc);
 			rc = 0;

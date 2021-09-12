@@ -116,7 +116,7 @@ static int __cam_isp_ctx_dump_event_record(
 	struct cam_isp_context_event_record *record;
 
 	if (!cpu_addr || !buf_len || !offset || !ctx_isp) {
-		CAM_ERR(CAM_ISP, "Invalid args %pK %zu %pK %pK",
+		CAM_ERR(CAM_ISP, "Invalid args %lu %zu %pK %pK",
 			cpu_addr, buf_len, offset, ctx_isp);
 		return -EINVAL;
 	}

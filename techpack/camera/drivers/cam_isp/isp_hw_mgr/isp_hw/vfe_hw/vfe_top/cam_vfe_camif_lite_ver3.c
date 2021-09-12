@@ -1183,16 +1183,16 @@ static int cam_vfe_camif_lite_handle_irq_bottom_half(
 		evt_info.err_type = CAM_VFE_IRQ_STATUS_OVERFLOW;
 		ktime_get_boottime_ts64(&ts);
 		CAM_INFO(CAM_ISP,
-			"current monotonic time stamp seconds %lld:%lld",
+			"current monotonic time stamp seconds %lld:%ld",
 			ts.tv_sec, ts.tv_nsec/1000);
 		CAM_INFO(CAM_ISP,
-			"ERROR time %lld:%lld",
+			"ERROR time %ld:%ld",
 			camif_lite_priv->error_ts.tv_sec,
 			camif_lite_priv->error_ts.tv_usec);
 
 		if (camif_lite_node->rdi_only_ctx)
 			CAM_INFO(CAM_ISP,
-				"SOF %lld:%lld EPOCH %lld:%lld EOF %lld:%lld",
+				"SOF %ld:%ld EPOCH %ld:%ld EOF %ld:%ld",
 				camif_lite_priv->sof_ts.tv_sec,
 				camif_lite_priv->sof_ts.tv_usec,
 				camif_lite_priv->epoch_ts.tv_sec,

@@ -1181,7 +1181,7 @@ int cam_ife_csid_path_reserve(struct cam_ife_csid_hw *csid_hw,
 
 	/* CSID  CSI2 v2.0 supports 31 vc */
 	if (reserve->sync_mode >= CAM_ISP_HW_SYNC_MAX) {
-		CAM_ERR(CAM_ISP, "CSID: %d Sync Mode: %d",
+		CAM_ERR(CAM_ISP, "Sync Mode: %d",
 			reserve->sync_mode);
 		return -EINVAL;
 	}
@@ -1189,9 +1189,9 @@ int cam_ife_csid_path_reserve(struct cam_ife_csid_hw *csid_hw,
 	for (i = 0; i < reserve->in_port->num_valid_vc_dt; i++) {
 		if (reserve->in_port->dt[i] > 0x3f ||
 			reserve->in_port->vc[i] > 0x1f) {
-			CAM_ERR(CAM_ISP, "CSID:%d Invalid vc:%d dt %d",
+			CAM_ERR(CAM_ISP, "CSID:%d Invalid vc:%lu dt %lu",
 				csid_hw->hw_intf->hw_idx,
-				reserve->in_port->vc, reserve->in_port->dt);
+				(uintptr_t)reserve->in_port->vc, (uintptr_t)reserve->in_port->dt);
 			rc = -EINVAL;
 			goto end;
 		}
@@ -1432,7 +1432,7 @@ static int cam_ife_csid_enable_hw(struct cam_ife_csid_hw  *csid_hw)
 	rc = cam_soc_util_get_clk_level(soc_info, csid_hw->clk_rate,
 		soc_info->src_clk_idx, &clk_lvl);
 	if (rc) {
-		CAM_ERR(CAM_ISP, "Failed to get clk level for rate %d",
+		CAM_ERR(CAM_ISP, "Failed to get clk level for rate %llu",
 			csid_hw->clk_rate);
 		goto err;
 	}
@@ -3766,7 +3766,7 @@ static int cam_ife_csid_reset_regs(
 				rem_jiffies);
 			goto end;
 		}
-		CAM_ERR(CAM_ISP, "CSID:%d csid_reset %s fail rc = %d",
+		CAM_ERR(CAM_ISP, "CSID:%d csid_reset %s fail rc = %lu",
 			csid_hw->hw_intf->hw_idx, reset_hw ? "hw" : "sw",
 			rem_jiffies);
 		rc = -ETIMEDOUT;
