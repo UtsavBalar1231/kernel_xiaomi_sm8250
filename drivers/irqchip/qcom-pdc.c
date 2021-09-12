@@ -69,7 +69,7 @@ static void pdc_enable_intr(struct irq_data *d, bool on)
 	enable = pdc_reg_read(IRQ_ENABLE_BANK, index);
 	enable = on ? ENABLE_INTR(enable, mask) : CLEAR_INTR(enable, mask);
 	pdc_reg_write(IRQ_ENABLE_BANK, index, enable);
-	ipc_log_string(pdc_ipc_log, "PIN=%d enable=%d", d->hwirq, on);
+	ipc_log_string(pdc_ipc_log, "PIN=%lu enable=%d", d->hwirq, on);
 	raw_spin_unlock(&pdc_lock);
 }
 
@@ -114,7 +114,7 @@ static void qcom_pdc_gic_mask(struct irq_data *d)
 	if (d->hwirq == GPIO_NO_WAKE_IRQ)
 		return;
 
-	ipc_log_string(pdc_ipc_log, "PIN=%d mask", d->hwirq);
+	ipc_log_string(pdc_ipc_log, "PIN=%lu mask", d->hwirq);
 	irq_chip_mask_parent(d);
 }
 
@@ -123,7 +123,7 @@ static void qcom_pdc_gic_unmask(struct irq_data *d)
 	if (d->hwirq == GPIO_NO_WAKE_IRQ)
 		return;
 
-	ipc_log_string(pdc_ipc_log, "PIN=%d unmask", d->hwirq);
+	ipc_log_string(pdc_ipc_log, "PIN=%lu unmask", d->hwirq);
 	irq_chip_unmask_parent(d);
 }
 
@@ -223,7 +223,7 @@ static int qcom_pdc_gic_set_type(struct irq_data *d, unsigned int type)
 	}
 
 	pdc_reg_write(IRQ_i_CFG, pin_out, pdc_type);
-	ipc_log_string(pdc_ipc_log, "Set type: PIN=%d pdc_type=%d gic_type=%d",
+	ipc_log_string(pdc_ipc_log, "Set type: PIN=%u pdc_type=%d gic_type=%d",
 		       pin_out, pdc_type, type);
 
 	/* Additionally, configure (only) the GPIO in the f/w */
@@ -318,7 +318,7 @@ static int qcom_pdc_alloc(struct irq_domain *domain, unsigned int virq,
 	parent_fwspec.param[1]    = parent_hwirq;
 	parent_fwspec.param[2]    = type;
 
-	ipc_log_string(pdc_ipc_log, "Alloc: PIN=%d GIC-SPI=%d",
+	ipc_log_string(pdc_ipc_log, "Alloc: PIN=%lu GIC-SPI=%ld",
 		       hwirq, parent_hwirq);
 	return irq_domain_alloc_irqs_parent(domain, virq, nr_irqs,
 					    &parent_fwspec);
@@ -370,7 +370,7 @@ static int qcom_pdc_gpio_alloc(struct irq_domain *domain, unsigned int virq,
 	parent_fwspec.param[1]    = parent_hwirq;
 	parent_fwspec.param[2]    = type;
 
-	ipc_log_string(pdc_ipc_log, "GPIO alloc: PIN=%d GIC-SPI=%d",
+	ipc_log_string(pdc_ipc_log, "GPIO alloc: PIN=%lu GIC-SPI=%ld",
 		       hwirq, parent_hwirq);
 	return irq_domain_alloc_irqs_parent(domain, virq, nr_irqs,
 					    &parent_fwspec);
