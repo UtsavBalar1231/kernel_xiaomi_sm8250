@@ -880,7 +880,7 @@ int crus_adm_set_params(int port_id, int copp_idx, uint32_t module_id,
 			 uint32_t params_length)
 {
 	struct param_hdr_v3 param_hdr;
-	int port_idx;
+	int port_idx = 0;
 	int rc  = 0;
 
 	pr_info("[CSPL] %s: config: port_idx %d copp_idx  %d module 0x%d, len=%d\n",
