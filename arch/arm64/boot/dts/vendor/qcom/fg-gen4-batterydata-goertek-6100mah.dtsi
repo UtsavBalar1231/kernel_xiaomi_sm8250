@@ -1,0 +1,123 @@
+qcom,4295629_goertek_vdl_6100mah_pm8150b_sep18th2020 {
+	/* 4295629_Goertek_MorpheusVDL_6100mAh_avged_MasterSlave_Sept18th2020 */
+	qcom,max-voltage-uv = <4350000>;
+	qcom,fg-cc-cv-threshold-mv = <4340>;
+	qcom,nom-batt-capacity-mah = <6100>;
+	qcom,batt-id-kohm = <35>;
+	qcom,battery-beta = <4250>;
+	qcom,therm-room-temp = <100000>;
+	qcom,battery-type = "4295629_goertek_vdl_6100mah_pm8150b_sep18th2020";
+	qcom,therm-coefficients = <0x2318 0xd0c 0xdaf7 0xc556 0x848d>;
+	qcom,therm-center-offset = <0x70>;
+	qcom,therm-pull-up = <100>;
+	qcom,rslow-normal-coeffs = <0x4d 0xf4 0xd1 0x12>;
+	qcom,rslow-low-coeffs = <0x5e 0x15 0x67 0x07>;
+	qcom,checksum = <0xF24D>;
+	qcom,gui-version = "PM855GUI - 1.0.0.14";
+	qcom,fg-profile-data = [
+		 09 00 8B E2
+		 ED DD A2 DB
+		 26 D4 00 00
+		 39 B5 DC 83
+		 F7 87 C8 82
+		 DF 8D 03 80
+		 23 00 4D F4
+		 D1 12 76 04
+		 FC 02 CE 07
+		 32 00 FD EA
+		 E4 ED F5 CB
+		 20 03 47 DA
+		 69 B2 EF 1A
+		 85 01 DA BB
+		 60 00 46 00
+		 46 00 44 00
+		 38 00 30 00
+		 34 00 3B 00
+		 49 00 48 00
+		 4B 00 60 00
+		 3E 00 3C 00
+		 3C 00 39 00
+		 33 00 59 00
+		 4B 64 4A 00
+		 44 00 47 08
+		 60 F0 51 00
+		 4D 00 54 10
+		 4D 10 47 00
+		 74 20 5D 40
+		 51 50 4C 11
+		 4B 00 D8 00
+		 DB 1F 97 05
+		 05 EA 53 04
+		 44 1C CD 0B
+		 6E 0D 86 22
+		 0A 18 23 43
+		 50 5D 3E 03
+		 6F 11 84 1E
+		 FD FE 89 02
+		 19 04 D3 1C
+		 23 FA 5B 05
+		 00 03 DF 17
+		 A2 23 B1 44
+		 12 52 67 14
+		 85 1E EB E5
+		 A6 CA 6B CF
+		 DD 1C FD A2
+		 7A 05 EF B2
+		 E6 17 01 83
+		 B9 85 5E A2
+		 7D A0 09 80
+		 5B FA 8F FC
+		 EA 02 D0 03
+		 00 00 BC DD
+		 86 EA FC 07
+		 19 F2 EC D5
+		 FB 1F 17 00
+		 A9 EC 27 02
+		 05 06 B1 01
+		 CE 07 32 00
+		 84 01 37 02
+		 C9 05 EE 02
+		 DF 05 44 03
+		 58 02 50 03
+		 9E 05 4D 00
+		 3F 00 41 00
+		 42 64 47 00
+		 4A 00 42 08
+		 49 00 45 00
+		 47 00 3E 10
+		 4B 10 3F 00
+		 47 28 47 48
+		 4F 60 57 0C
+		 41 00 55 F8
+		 52 08 50 00
+		 39 00 48 00
+		 3B 08 47 10
+		 49 00 5B 20
+		 68 40 4A 58
+		 55 0F 4E 00
+		 45 00 2A 00
+		 D8 F8 05 20
+		 A7 05 32 0A
+		 96 0E CE 1C
+		 71 23 9E 45
+		 70 52 7E 18
+		 44 02 1B 05
+		 90 02 6A 11
+		 3F 0A 85 1F
+		 07 04 06 02
+		 BB 06 CE 1C
+		 EE 02 17 04
+		 13 02 9F 18
+		 88 03 67 04
+		 8C 02 6A 00
+		 08 1F 7E 06
+		 70 03 FD 05
+		 D0 1C 6B 02
+		 17 05 24 03
+		 AC 18 14 03
+		 3A 05 76 03
+		 6C 00 DF 00
+		 C0 00 FA 00
+		 59 19 00 00
+	];
+};

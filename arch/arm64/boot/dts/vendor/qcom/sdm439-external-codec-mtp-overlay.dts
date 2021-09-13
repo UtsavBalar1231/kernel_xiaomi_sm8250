@@ -1,0 +1,11 @@
+/dts-v1/;
+/plugin/;
+
+#include "sdm439-mtp.dtsi"
+#include "sdm439-external-codec.dtsi"
+
+/ {
+	model = "MTP";
+	qcom,board-id = <8 3>;
+	qcom,msm-id = <353 0x0>;
+};
