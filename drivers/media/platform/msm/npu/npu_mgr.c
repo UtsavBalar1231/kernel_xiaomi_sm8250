@@ -649,7 +649,7 @@ static int npu_notifier_cb(struct notifier_block *this, unsigned long code,
 	struct npu_device *npu_dev = host_ctx->npu_dev;
 	uint32_t reg_val;
 
-	NPU_DBG("notifier code %d\n", code);
+	NPU_DBG("notifier code %ld\n", code);
 	switch (code) {
 	case SUBSYS_BEFORE_POWERUP:
 	{
@@ -757,7 +757,7 @@ static int npu_reboot_handler(struct notifier_block *this,
 	struct npu_host_ctx *host_ctx =
 		container_of(this, struct npu_host_ctx, reboot_nb);
 
-	NPU_INFO("Device is rebooting with code %d\n", code);
+	NPU_INFO("Device is rebooting with code %lu\n", code);
 
 	if ((code == NOTIFY_DONE) || (code == SYS_POWER_OFF)) {
 		mutex_lock(&host_ctx->lock);
