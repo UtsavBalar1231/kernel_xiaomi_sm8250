@@ -667,7 +667,7 @@ static int npu_notifier_cb(struct notifier_block *this, unsigned long code,
 	struct npu_device *npu_dev = host_ctx->npu_dev;
 	uint32_t reg_val;
 
-	NPU_DBG("notifier code %d\n", code);
+	NPU_DBG("notifier code %ld\n", code);
 	switch (code) {
 	case SUBSYS_BEFORE_POWERUP:
 	{
@@ -1668,14 +1668,14 @@ int npu_process_kevent(struct npu_client *client, struct npu_kevent *kevt)
 		network = get_network_by_hdl(host_ctx,
 			client, kevt->reserved[0]);
 		if (!network) {
-			NPU_ERR("Can't find network %x\n", kevt->reserved[0]);
+			NPU_ERR("Can't find network %llx\n", kevt->reserved[0]);
 			ret = -EINVAL;
 			break;
 		}
 
 		cmd = npu_find_network_cmd(network, kevt->reserved[1]);
 		if (!cmd) {
-			NPU_ERR("can't find exec cmd with trans_id:%d\n",
+			NPU_ERR("can't find exec cmd with trans_id:%lld\n",
 				kevt->reserved[1]);
 			network_put(network);
 			ret = -EINVAL;
