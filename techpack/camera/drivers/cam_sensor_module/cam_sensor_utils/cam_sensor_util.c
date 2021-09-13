@@ -637,7 +637,7 @@ int cam_sensor_i2c_command_parser(
 
 				if (tot_size > (remain_len - byte_cnt)) {
 					CAM_ERR(CAM_SENSOR,
-						"Not enough buffer provided %d, %d, %d",
+						"Not enough buffer provided %ld, %d, %d",
 						tot_size, (int)remain_len, (int)byte_cnt);
 					rc = -EINVAL;
 					goto end;
@@ -678,7 +678,7 @@ int cam_sensor_i2c_command_parser(
 
 				if (tot_size > (remain_len - byte_cnt)) {
 					CAM_ERR(CAM_SENSOR,
-						"Not enough buffer provided %d, %d, %d",
+						"Not enough buffer provided %ld, %d, %d",
 						tot_size, (int)remain_len, (int)byte_cnt);
 					rc = -EINVAL;
 					goto end;
