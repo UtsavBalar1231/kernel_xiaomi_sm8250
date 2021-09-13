@@ -53,7 +53,7 @@ int cam_sync_create(int32_t *sync_obj, const char *name)
 		idx = find_first_zero_bit(sync_dev->bitmap, CAM_SYNC_MAX_OBJS);
 		if (idx >= CAM_SYNC_MAX_OBJS) {
 			CAM_ERR(CAM_SYNC,
-				"Error: Unable to create sync idx = %d reached max!",
+				"Error: Unable to create sync idx = %ld reached max!",
 				idx);
 			cam_sync_print_fence_table();
 			return -ENOMEM;
