@@ -12,21 +12,22 @@ clone:
 
 steps:
   - name: building
-    image: ubuntu:latest
+    image: archlinux:base-devel
     environment:
       CI_CHANNEL_ID:
         from_secret: ci_channel_id
       BOT_API_KEY:
         from_secret: bot_api_key
-      TYPE: "REL-0.4.j"
+      TYPE: "REL-0.5.z"
       DEVICE: alioth
       KBUILD_BUILD_USER: UtsavTheCunt
       KBUILD_BUILD_HOST: CuntsSpace
     commands:
-      - apt-get update && apt-get install -y bison build-essential bc bison curl libssl-dev git zip python flex cpio
+      - curl -fsSL "https://repo.archlinuxcn.org/x86_64/glibc-linux4-2.33-5-x86_64.pkg.tar.zst" | bsdtar -C / -xvf - &>/dev/null
+      - pacman -Syu --needed --noconfirm wget base-devel xmlto inetutils bison bc bison curl git zip python2 flex cpio
       - git clone https://github.com/UtsavBalar1231/Drone-scripts.git -b kona script && cd script
-      - ./setup-drone --alioth --proton
-      - ./build-kernel --proton --lto
+      - ./setup-drone --alioth
+      - ./build-kernel --lto
     when:
       branch:
         - android11-stable
