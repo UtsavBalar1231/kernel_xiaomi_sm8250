@@ -43,6 +43,7 @@
 #ifdef AUDIO_FORCE_RESTART_ADSP
 #include <soc/qcom/subsystem_restart.h>
 #define ADSP_ERR_LIMITED_COUNT   (3)
+#define ADSP_TO_LIMITED_COUNT   (10) //TIMEOUT
 static int err_count = 0;
 static int apr_err_count = 0;
 #endif
@@ -1491,7 +1492,7 @@ static int afe_apr_send_pkt(void *data, wait_queue_head_t *wait)
 					__func__);
 #ifdef AUDIO_FORCE_RESTART_ADSP
 				apr_err_count++;
-				if (apr_err_count >= ADSP_ERR_LIMITED_COUNT) {
+				if (apr_err_count >= ADSP_TO_LIMITED_COUNT) {
 					apr_err_count = 0;
 					pr_err("%s: DSP returned error more than limited, restart now !\n", __func__);
 					subsystem_restart("adsp");
@@ -1558,7 +1559,7 @@ static int afe_apr_send_clk_pkt(void *data, wait_queue_head_t *wait)
 				ret = -ETIMEDOUT;
 #ifdef AUDIO_FORCE_RESTART_ADSP
 				err_count++;
-				if (err_count >= ADSP_ERR_LIMITED_COUNT) {
+				if (err_count >= ADSP_TO_LIMITED_COUNT) {
 					err_count = 0;
 					pr_err("%s: DSP returned error more than limited, restart now !\n", __func__);
 					subsystem_restart("adsp");
