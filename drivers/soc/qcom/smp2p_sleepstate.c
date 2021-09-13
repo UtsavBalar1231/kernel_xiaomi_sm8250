@@ -61,7 +61,7 @@ static int smp2p_sleepstate_probe(struct platform_device *pdev)
 	struct device *dev = &pdev->dev;
 	struct device_node *node = dev->of_node;
 
-	state = qcom_smem_state_get(&pdev->dev, 0, &ret);
+	state = qcom_smem_state_get(&pdev->dev, NULL, &ret);
 	if (IS_ERR(state))
 		return PTR_ERR(state);
 	qcom_smem_state_update_bits(state, AWAKE_BIT, AWAKE_BIT);
