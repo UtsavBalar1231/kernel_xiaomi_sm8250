@@ -432,7 +432,7 @@ static void ipa3_event_ring_hdlr(void)
 
 		if (((struct eventElement_t *) rp_va)->Opcode == BW_NOTIFY) {
 			e_b = ((struct eventElement_t *) rp_va);
-			IPADBG("prot(%d), index (%d) throughput (%lu)\n",
+			IPADBG("prot(%d), index (%d) throughput (%llu)\n",
 			e_b->Protocol,
 			e_b->Value.bw_param.ThresholdIndex,
 			e_b->Value.bw_param.throughput);
@@ -454,7 +454,7 @@ static void ipa3_event_ring_hdlr(void)
 		} else if (((struct eventElement_t *) rp_va)->Opcode
 			== QUOTA_NOTIFY) {
 			e_q = ((struct eventElement_t *) rp_va);
-			IPADBG("got quota-notify %d reach(%d) usage (%lu)\n",
+			IPADBG("got quota-notify %d reach(%d) usage (%llu)\n",
 			e_q->Protocol,
 			e_q->Value.quota_param.ThreasholdReached,
 			e_q->Value.quota_param.usage);
@@ -1381,7 +1381,7 @@ int ipa3_uc_quota_monitor(uint64_t quota)
 		false, 10 * HZ);
 
 	if (res) {
-		IPAERR(" faile to set quota %d, number offset %d\n",
+		IPAERR(" faile to set quota %llu, number offset %d\n",
 			quota_info->params.WdiQM.Quota,
 			quota_info->params.WdiQM.info.Num);
 		goto free_cmd;
@@ -1442,14 +1442,14 @@ int ipa3_uc_bw_monitor(struct ipa_wdi_bw_info *info)
 
 	for (i = 0; i < info->num; i++) {
 		bw_info->params.WdiBw.BwThreshold[i] = info->threshold[i];
-		IPADBG("%d-st, %lu\n", i, bw_info->params.WdiBw.BwThreshold[i]);
+		IPADBG("%d-st, %llu\n", i, bw_info->params.WdiBw.BwThreshold[i]);
 		ipa3_ctx->uc_ctx.info.threshold[i] = info->threshold[i];
 		if (info->threshold[i] > ipa3_ctx->uc_ctx.bw_info_max)
 			ipa3_ctx->uc_ctx.bw_info_max = info->threshold[i];
 	}
 	/* set max to both UL+DL */
 	ipa3_ctx->uc_ctx.bw_info_max *= 2;
-	IPADBG("bw-monitor max %lu\n", ipa3_ctx->uc_ctx.bw_info_max);
+	IPADBG("bw-monitor max %llu\n", ipa3_ctx->uc_ctx.bw_info_max);
 
 	bw_info->params.WdiBw.info.Num = 8;
 	ind = ipa3_ctx->fnr_info.hw_counter_offset +
