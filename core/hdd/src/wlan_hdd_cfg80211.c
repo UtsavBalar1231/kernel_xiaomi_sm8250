@@ -153,6 +153,7 @@
 #include <qdf_hang_event_notifier.h>
 #include "hif.h"
 #include "wlan_hdd_ioctl.h"
+#include "wlan_hdd_gpio.h"
 
 #define g_mode_rates_size (12)
 #define a_mode_rates_size (8)
@@ -15685,6 +15686,7 @@ const struct wiphy_vendor_command hdd_wiphy_vendor_commands[] = {
 	FEATURE_MPTA_HELPER_COMMANDS
 	FEATURE_HW_CAPABILITY_COMMANDS
 	FEATURE_THERMAL_VENDOR_COMMANDS
+	FEATURE_GPIO_CFG_VENDOR_COMMANDS
 };
 
 struct hdd_context *hdd_cfg80211_wiphy_alloc(void)

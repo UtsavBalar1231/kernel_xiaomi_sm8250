@@ -359,6 +359,7 @@ static const struct category_info cinfo[MAX_SUPPORTED_CATEGORY] = {
 	[QDF_MODULE_ID_PKT_CAPTURE] = {QDF_TRACE_LEVEL_ALL},
 	[QDF_MODULE_ID_FTM_TIME_SYNC] = {QDF_TRACE_LEVEL_ALL},
 	[QDF_MODULE_ID_CFR] = {QDF_TRACE_LEVEL_ALL},
+	[QDF_MODULE_ID_GPIO] = {QDF_TRACE_LEVEL_ALL},
 };
 
 struct notifier_block hdd_netdev_notifier;
@@ -15378,6 +15379,9 @@ static void hdd_set_adapter_wlm_def_level(struct hdd_context *hdd_ctx)
 	struct hdd_adapter *adapter, *next_adapter = NULL;
 	wlan_net_dev_ref_dbgid dbgid = NET_DEV_HOLD_GET_ADAPTER;
 	int ret;
+
+	if (QDF_GLOBAL_FTM_MODE == hdd_get_conparam())
+		return;
 
 	ret = wlan_hdd_validate_context(hdd_ctx);
 	if (ret != 0)
