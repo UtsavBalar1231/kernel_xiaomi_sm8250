@@ -612,7 +612,7 @@
 	};
 
 	wakegic: wake-gic {
-		compatible = "qcom,mpm-gic-bengal", "qcom,mpm-gic";
+		compatible = "qcom,mpm-gic-khaje", "qcom,mpm-gic";
 		interrupts-extended = <&wakegic GIC_SPI 197
 						IRQ_TYPE_EDGE_RISING>;
 		reg = <0x45f01b8 0x1000>,
@@ -4359,4 +4359,31 @@ tpdm_turing_llm: tpdm@8861000 {
 
 &cxip_cdev {
 	status = "disabled";
+};
+
+&rpm_bus {
+	rpm_smd_cdev: rpm-smd-cdev {
+		compatible = "qcom,rpm-smd-cooling-device";
+		#cooling-cells = <2>;
+	};
+};
+
+&thermal_zones {
+	mapss-lowc {
+		cooling-maps {
+			rpm_smd_vdd_cdev {
+				trip = <&mapss_cap_trip>;
+				cooling-device = <&rpm_smd_cdev 2 2>;
+			};
+		};
+	};
+
+	camera-lowc {
+		cooling-maps {
+			rpm_smd_vdd_cdev {
+				trip = <&camera_cap_trip>;
+				cooling-device = <&rpm_smd_cdev 2 2>;
+			};
+		};
+	};
 };
