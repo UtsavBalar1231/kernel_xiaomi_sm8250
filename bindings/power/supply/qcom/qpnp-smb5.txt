@@ -368,8 +368,16 @@ Charger specific properties:
   Usage:      optional
   Value type: <u32>
   Definition: Specifies the maximum input current limit that can be configured
-		for HVDCP2 adapter.
+		for HVDCP2 adapter when it's working at 5V and 9V.
 		If left unspecified, the default value is 3000mA.
+
+- qcom,hvdcp2-12v-max-icl-ua
+  Usage:      optional
+  Value type: <u32>
+  Definition: Specifies the maximum input current limit that can be configured
+		for HVDCP2 adapter when it's working at 12V.
+		If left unspecified, the default value is the same value
+		specified in "qcom,hvdcp2-max-icl-ua".
 
 - qcom,hvdcp3-max-icl-ua
   Usage:      optional
