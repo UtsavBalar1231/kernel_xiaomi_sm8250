@@ -3938,7 +3938,36 @@ typedef struct {
      *      Refer to the below definitions of the
      *      WMI_RSRC_CFG_HOST_SERVICE_FLAG_REG_CC_EXT_SUPPORT_GET
      *      and _SET macros.
-     *  Bits 31:5 - Reserved
+     *  Bit 5
+     *      This bit will be set when the host supports NAN channels.
+     *      Refer to WMI_RSRC_CFG_HOST_SERVICE_FLAG_NAN_CHANNEL_SUPPORT_GET/SET
+     *  Bit 6
+     *      This bit will be set when the host supports synchronous TWT events.
+     *      Refer to WMI_RSRC_CFG_HOST_SERVICE_FLAG_STA_TWT_SYNC_EVT_SUPPORT_GET
+     *      and _SET.
+     *  Bit 7
+     *      This bit will be set when host supports both LPI and SP mode.
+     *      when this bit is set to 0 - Indicate LPI only mode
+     *                  when set to 1 - Indicate both SP mode and LPI mode
+     *                                  both are supported
+     *      Refer to the below definitions of the
+     *      WMI_RSRC_CFG_HOST_SERVICE_FLAG_LPI_SP_MODE_SUPPORT_GET
+     *      and _SET macros.
+     *  Bit 8
+     *      This bit will be set when host wants to disable timer check in
+     *      reg for AFC.
+     *      when set to 1 - Disable timer check
+     *      Refer to the below definitions of the
+     *      WMI_RSRC_CFG_HOST_SERVICE_FLAG_REG_DISCARD_TIMER_CHECK_GET
+     *      and _SET macros.
+     *  Bit 9
+     *      This bit will be set when host host wants to disable request id
+     *      check in reg for AFC.
+     *      when set to 1 - Disable Request ID check
+     *      Refer to the below definitions of the
+     *      WMI_RSRC_CFG_HOST_SERVICE_FLAG_REG_DISCARD_REQ_ID_CHECK_GET
+     *      and _SET macros.
+     *  Bits 31:10 - Reserved
      */
     A_UINT32 host_service_flags;
 
@@ -4256,6 +4285,21 @@ typedef struct {
     WMI_GET_BITS(host_service_flags, 6, 1)
 #define WMI_RSRC_CFG_HOST_SERVICE_FLAG_STA_TWT_SYNC_EVT_SUPPORT_SET(host_service_flags, val) \
     WMI_SET_BITS(host_service_flags, 6, 1, val)
+
+#define WMI_RSRC_CFG_HOST_SERVICE_FLAG_LPI_SP_MODE_SUPPORT_GET(host_service_flags) \
+    WMI_GET_BITS(host_service_flags, 7, 1)
+#define WMI_RSRC_CFG_HOST_SERVICE_FLAG_LPI_SP_MODE_SUPPORT_SET(host_service_flags, val) \
+    WMI_SET_BITS(host_service_flags, 7, 1, val)
+
+#define WMI_RSRC_CFG_HOST_SERVICE_FLAG_REG_DISCARD_AFC_TIMER_CHECK_GET(host_service_flags) \
+    WMI_GET_BITS(host_service_flags, 8, 1)
+#define WMI_RSRC_CFG_HOST_SERVICE_FLAG_REG_DISCARD_AFC_TIMER_CHECK_SET(host_service_flags, val) \
+    WMI_SET_BITS(host_service_flags, 8, 1, val)
+
+#define WMI_RSRC_CFG_HOST_SERVICE_FLAG_REG_DISCARD_AFC_REQ_ID_CHECK_GET(host_service_flags) \
+    WMI_GET_BITS(host_service_flags, 9, 1)
+#define WMI_RSRC_CFG_HOST_SERVICE_FLAG_REG_DISCARD_AFC_REQ_ID_CHECK_SET(host_service_flags, val) \
+    WMI_SET_BITS(host_service_flags, 9, 1, val)
 
 typedef struct {
     A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_init_cmd_fixed_param */
@@ -5116,6 +5160,7 @@ typedef struct {
      * link flags: refer WMI_ROAM_LINK_FLAG_XXX.
      */
     A_UINT32 flags;
+    wmi_mac_addr link_addr; /* link address */
 } wmi_roam_ml_setup_links_param;
 
 /*
@@ -14608,34 +14653,45 @@ typedef struct {
  * IMPORTANT: Make sure the bit definitions here are consistent
  * with the ni_flags definitions in wlan_peer.h
  */
-#define WMI_PEER_AUTH           0x00000001  /* Authorized for data */
-#define WMI_PEER_QOS            0x00000002  /* QoS enabled */
-#define WMI_PEER_NEED_PTK_4_WAY 0x00000004  /* Needs PTK 4 way handshake for authorization */
-#define WMI_PEER_NEED_GTK_2_WAY 0x00000010  /* Needs GTK 2 way handshake after 4-way handshake */
-#define WMI_PEER_HE             0x00000400  /* HE Enabled */
-#define WMI_PEER_APSD           0x00000800  /* U-APSD power save enabled */
-#define WMI_PEER_HT             0x00001000  /* HT enabled */
-#define WMI_PEER_40MHZ          0x00002000  /* 40MHz enabld */
-#define WMI_PEER_INTER_BSS_PEER 0x00004000  /* Inter BSS peer */
-#define WMI_PEER_STBC           0x00008000  /* STBC Enabled */
-#define WMI_PEER_LDPC           0x00010000  /* LDPC ENabled */
-#define WMI_PEER_DYN_MIMOPS     0x00020000  /* Dynamic MIMO PS Enabled */
-#define WMI_PEER_STATIC_MIMOPS  0x00040000  /* Static MIMO PS enabled */
-#define WMI_PEER_SPATIAL_MUX    0x00200000  /* SM Enabled */
-#define WMI_PEER_TWT_REQ        0x00400000  /* TWT Requester Support bit in Extended Capabilities element */
-#define WMI_PEER_TWT_RESP       0x00800000  /* TWT Responder Support bit in Extended Capabilities element */
-#define WMI_PEER_MULTI_BSSID    0x01000000  /* Multiple BSSID Support bit in Extended Capabilities element */
-#define WMI_PEER_VHT            0x02000000  /* VHT Enabled */
-#define WMI_PEER_80MHZ          0x04000000  /* 80MHz enabld */
-#define WMI_PEER_PMF            0x08000000  /* Robust Management Frame Protection enabled */
-/** CAUTION TODO: Place holder for WLAN_PEER_F_PS_PRESEND_REQUIRED = 0x10000000. Need to be clean up */
-#define WMI_PEER_IS_P2P_CAPABLE 0x20000000  /* P2P capable peer */
-#define WMI_PEER_160MHZ         0x40000000  /* 160 MHz enabled */
-#define WMI_PEER_SAFEMODE_EN    0x80000000  /* Fips Mode Enabled */
+#define WMI_PEER_AUTH            0x00000001  /* Authorized for data */
+#define WMI_PEER_QOS             0x00000002  /* QoS enabled */
+#define WMI_PEER_NEED_PTK_4_WAY  0x00000004  /* Needs PTK 4 way handshake for authorization */
+#define WMI_PEER_GK_INST         0x00000008  /* group Key Installed */
+#define WMI_PEER_NEED_GTK_2_WAY  0x00000010  /* Needs GTK 2 way handshake after 4-way handshake */
+#define WMI_PEER_PRIV            0x00000020  /* Encryption Enabled */
+#define WMI_PEER_PK_INST         0x00000040  /* Pairwise Key Installed */
+#define WMI_PEER_TKIP_CM_ENABLED 0x00000080  /* TKIP CounterMeasures */
+#define WMI_PEER_SW_DEMIC_FRAG   0x00000100  /* S/W Demic of Frag Train */
+#define WMI_PEER_CCX_ENABLED     0x00000200  /* CCX enabled */
+#define WMI_PEER_HE              0x00000400  /* HE Enabled */
+#define WMI_PEER_APSD            0x00000800  /* U-APSD power save enabled */
+#define WMI_PEER_HT              0x00001000  /* HT enabled */
+#define WMI_PEER_40MHZ           0x00002000  /* 40MHz enabld */
+#define WMI_PEER_INTER_BSS_PEER  0x00004000  /* Inter BSS peer */
+#define WMI_PEER_STBC            0x00008000  /* STBC Enabled */
+#define WMI_PEER_LDPC            0x00010000  /* LDPC ENabled */
+#define WMI_PEER_DYN_MIMOPS      0x00020000  /* Dynamic MIMO PS Enabled */
+#define WMI_PEER_STATIC_MIMOPS   0x00040000  /* Static MIMO PS enabled */
+#define WMI_PEER_DIS_MIMOPS      0x00080000  /* MIMO PS DISABLED */
+#define WMI_PEER_SPATIAL_EXP     0x00100000  /* Enable spatial expansion for
+                                              * single stream rates to avoid
+                                              * unintentional beamforming */
+#define WMI_PEER_SPATIAL_MUX     0x00200000  /* SM Enabled */
+#define WMI_PEER_TWT_REQ         0x00400000  /* TWT Requester Support bit in Extended Capabilities element */
+#define WMI_PEER_TWT_RESP        0x00800000  /* TWT Responder Support bit in Extended Capabilities element */
+#define WMI_PEER_MULTI_BSSID     0x01000000  /* Multiple BSSID Support bit in Extended Capabilities element */
+#define WMI_PEER_VHT             0x02000000  /* VHT Enabled */
+#define WMI_PEER_80MHZ           0x04000000  /* 80MHz enabld */
+#define WMI_PEER_PMF             0x08000000  /* Robust Management Frame Protection enabled */
+#define WMI_PEER_F_PS_PRESEND_REQUIRED 0x10000000 /* Use this flag to avoid calling powersave API when STA is awake */
+#define WMI_PEER_IS_P2P_CAPABLE  0x20000000  /* P2P capable peer */
+#define WMI_PEER_160MHZ          0x40000000  /* 160 MHz enabled */
+#define WMI_PEER_SAFEMODE_EN     0x80000000  /* Fips Mode Enabled */
 
 /** define for peer_flags_ext */
-#define WMI_PEER_EXT_EHT        0x00000001  /* EHT enabled */
-#define WMI_PEER_EXT_320MHZ     0x00000002  /* 320Mhz enabled */
+#define WMI_PEER_EXT_EHT         0x00000001  /* EHT enabled */
+#define WMI_PEER_EXT_320MHZ      0x00000002  /* 320Mhz enabled */
+#define WMI_PEER_EXT_F_CRIT_PROTO_HINT_ENABLED 0x40000000
 
 /**
  * Peer rate capabilities.
