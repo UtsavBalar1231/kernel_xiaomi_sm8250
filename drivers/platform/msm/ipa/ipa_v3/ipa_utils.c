@@ -7704,7 +7704,7 @@ static int __ipa3_stop_gsi_channel(u32 clnt_hdl)
 		res = ipa3_cfg_ep_holb(ipa3_get_ep_mapping(
 				IPA_CLIENT_MHI_PRIME_RMNET_CONS), &holb_cfg);
 		if (res) {
-			IPAERR("Enable HOLB failed ep:%lu\n",
+			IPAERR("Enable HOLB failed ep:%d\n",
 				ipa3_get_ep_mapping(
 					IPA_CLIENT_MHI_PRIME_RMNET_CONS));
 		}
