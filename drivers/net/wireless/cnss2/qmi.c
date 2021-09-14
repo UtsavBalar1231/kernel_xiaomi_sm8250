@@ -2380,7 +2380,7 @@ int cnss_wlfw_server_exit(struct cnss_plat_data *plat_priv)
 
 	ret = cnss_qmi_init(plat_priv);
 	if (ret < 0) {
-		cnss_pr_err("QMI WLFW service registraton failed, ret\n", ret);
+		cnss_pr_err("QMI WLFW service registraton failed, ret: %d\n", ret);
 		CNSS_ASSERT(0);
 	}
 	return 0;
