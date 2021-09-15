@@ -5,6 +5,7 @@
 #include <linux/slab.h>
 #include <linux/wait.h>
 #include <linux/jiffies.h>
+#include <linux/sched/signal.h>
 #include <sound/asound.h>
 #include <sound/soc.h>
 #include <sound/control.h>
@@ -355,10 +356,39 @@ static int32_t process_sensorhub_msg(uint32_t *payload, uint32_t payload_size)
 	return ret;
 }
 
+static inline int block_proximity(char *name)
+{
+	struct task_struct *p;
+
+	for_each_process(p) {
+		// Skip kthreads
+		if (p->flags & PF_KTHREAD)
+			continue;
+
+		if (strstr(p->comm, name)) {
+			int adj = p->signal->oom_score_adj;
+
+			pr_info("%s has adj: %d", p->comm, adj);
+			// Telegram has adj of 700 when it's not a top-app, but playing a message
+			// It drops to 945 when it stops playing
+			// Telegram when it's a top-app has adj of 0
+			if (adj <= 700) {
+				pr_info("Blocking %s from reading proximity sensor...", p->comm);
+				return 1;
+			}
+		}
+	}
+
+	return 0;
+}
+
 int32_t elliptic_process_apr_payload(uint32_t *payload)
 {
 	uint32_t payload_size = 0;
 	int32_t  ret = -1;
+
+	if (block_proximity("egram.messenger"))
+		return ret;
 
 	if (payload[0] == ELLIPTIC_ULTRASOUND_MODULE_TX) {
 		/* payload format
