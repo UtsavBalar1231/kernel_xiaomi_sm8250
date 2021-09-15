@@ -246,7 +246,13 @@
 };
 
 &pcie1 {
-	status = "disabled";
+	status = "okay";
+	qcom,boot-option = <0x0>;
+};
+
+&pcie2 {
+	status = "okay";
+	qcom,boot-option = <0x0>;
 };
 
 &thermal_zones {
