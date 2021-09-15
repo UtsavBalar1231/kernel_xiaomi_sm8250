@@ -101,7 +101,10 @@ else
         cp -r ${HOME}/anykernel "$(pwd)"/
 fi
 
-cp "$(pwd)"/${OUT_DIR}/arch/arm64/boot/Image.gz-dtb "$(pwd)"/anykernel/
+find ${OUT_DIR}/arch/arm64/boot/dts/vendor/qcom -name '*.dtb' -exec cat {} + > ${OUT_DIR}/arch/arm64/boot/dtb
+
+cp "$(pwd)"/${OUT_DIR}/arch/arm64/boot/Image.gz "$(pwd)"/anykernel/
+cp "$(pwd)"/${OUT_DIR}/arch/arm64/boot/dtb "$(pwd)"/anykernel/
 cp "$(pwd)"/${OUT_DIR}/arch/arm64/boot/dtbo.img "$(pwd)"/anykernel/
 
 cd anykernel/ || exit
@@ -117,7 +120,8 @@ cd ../
 # Cleanup
 rm -fr anykernel/
 rm ${OUT_DIR}/.version
-rm ${OUT_DIR}/arch/arm64/boot/Image.gz-dtb
+rm ${OUT_DIR}/arch/arm64/boot/Image.gz
+rm ${OUT_DIR}/arch/arm64/boot/dtb
 rm ${OUT_DIR}/arch/arm64/boot/dtbo.img
 
 if [[ "$@" =~ "miui"* ]]; then
