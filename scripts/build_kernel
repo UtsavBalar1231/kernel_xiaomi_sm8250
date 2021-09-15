@@ -16,6 +16,40 @@ ZIPNAME=IMMENSITY-X-${DEVICE}-${VERSION}-${DATE}.zip
 # Set compiler PATH
 PATH=${HOME}/linux-x86/clang-r433403/bin/:${HOME}/gas64/bin:${HOME}/gas32/bin:$PATH
 
+# Correct panel dimensions on MIUI builds
+function miui_fix_dimens()
+{
+	sed -i 's/<70>/<695>/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel-j3s-37-02-0a-dsc-video.dtsi
+	sed -i 's/<70>/<695>/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel-j11-38-08-0a-fhd-cmd.dtsi
+	sed -i 's/<70>/<695>/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel-k11a-38-08-0a-dsc-cmd.dtsi
+	sed -i 's/<71>/<710>/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel-j1s*
+	sed -i 's/<71>/<710>/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel-j2*
+	sed -i 's/<155>/<1544>/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel-j3s-37-02-0a-dsc-video.dtsi
+	sed -i 's/<155>/<1545>/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel-j11-38-08-0a-fhd-cmd.dtsi
+	sed -i 's/<155>/<1546>/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel-k11a-38-08-0a-dsc-cmd.dtsi
+	sed -i 's/<154>/<1537>/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel-j1s*
+	sed -i 's/<154>/<1537>/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel-j2*
+}
+
+# Enable back mi smartfps while disabling qsync min refresh-rate
+function miui_fix_fps()
+{
+	sed -i 's/qcom,mdss-dsi-qsync-min-refresh-rate/\/\/qcom,mdss-dsi-qsync-min-refresh-rate/g'  arch/arm64/boot/dts/vendor/qcom/dsi-panel*
+	sed -i 's/\/\/ mi,mdss-dsi-smart-fps-max_framerate/mi,mdss-dsi-smart-fps-max_framerate/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel*
+	sed -i 's/\/\/ mi,mdss-dsi-pan-enable-smart-fps/mi,mdss-dsi-pan-enable-smart-fps/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel*
+	sed -i 's/\/\/ qcom,mdss-dsi-pan-enable-smart-fps/qcom,mdss-dsi-pan-enable-smart-fps/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel*
+
+}
+
+# Enable back refresh rates supported on MIUI
+function miui_fix_dfps()
+{
+	sed -i 's/120 90 60/120 90 60 50 30/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel-g7a-37-02-0a-dsc-video.dtsi
+	sed -i 's/120 90 60/120 90 60 50 30/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel-g7a-37-02-0b-dsc-video.dtsi
+	sed -i 's/120 90 60/120 90 60 50 30/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel-g7a-36-02-0c-dsc-video.dtsi
+	sed -i 's/144 120 90 60/144 120 90 60 50 48 30/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel-j3s-37-02-0a-dsc-video.dtsi
+}
+
 make ARCH=arm64 \
         O=${OUT_DIR} \
         ${DEVICE}_defconfig \
@@ -38,28 +72,9 @@ if [[ "$@" =~ "miui"* ]]; then
 		olddefconfig
 	cd ../
 
-	# Correct panel dimensions on MIUI builds
-	sed -i 's/<70>/<695>/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel-j3s-37-02-0a-dsc-video.dtsi
-	sed -i 's/<70>/<695>/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel-j11-38-08-0a-fhd-cmd.dtsi
-	sed -i 's/<70>/<695>/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel-k11a-38-08-0a-dsc-cmd.dtsi
-	sed -i 's/<71>/<710>/g' arch/arm64/boot/dts/vendor/qcom/qcom/dsi-panel-j1s*
-	sed -i 's/<71>/<710>/g' arch/arm64/boot/dts/vendor/qcom/qcom/dsi-panel-j2*
-	sed -i 's/<155>/<1544>/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel-j3s-37-02-0a-dsc-video.dtsi
-	sed -i 's/<155>/<1545>/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel-j11-38-08-0a-fhd-cmd.dtsi
-	sed -i 's/<155>/<1546>/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel-k11a-38-08-0a-dsc-cmd.dtsi
-	sed -i 's/<154>/<1537>/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel-j1s*
-	sed -i 's/<154>/<1537>/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel-j2*
-
-	# Enable back mi smartfps while disabling qsync min refresh-rate
-	sed -i 's/qcom,mdss-dsi-qsync-min-refresh-rate/\/\/qcom,mdss-dsi-qsync-min-refresh-rate/g'  arch/arm64/boot/dts/vendor/qcom/dsi-panel*
-	sed -i 's/\/\/ mi,mdss-dsi-smart-fps-max_framerate/mi,mdss-dsi-smart-fps-max_framerate/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel*
-	sed -i 's/\/\/ mi,mdss-dsi-pan-enable-smart-fps/mi,mdss-dsi-pan-enable-smart-fps/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel*
-	sed -i 's/\/\/ qcom,mdss-dsi-pan-enable-smart-fps/qcom,mdss-dsi-pan-enable-smart-fps/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel*
-
-
-	# Enable back refresh rates support on MIUI
-	sed -i 's/120 90 60/120 90 60 50 30/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel*
-	sed -i 's/144 120 90 60/120 90 60 50 48 30/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel*
+	miui_fix_dimens
+	miui_fix_fps
+	miui_fix_dfps
 fi
 
 # Let's build
@@ -99,7 +114,7 @@ rm ${OUT_DIR}/arch/arm64/boot/Image.gz-dtb
 rm ${OUT_DIR}/arch/arm64/boot/dtbo.img
 
 if [[ "$@" =~ "miui"* ]]; then
-	git reset --hard arch/arm64/boot/dts/vendor
+	git checkout arch/arm64/boot/dts/vendor
 fi
 
 END=$(date +"%s")
