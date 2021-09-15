@@ -50,6 +50,12 @@ function miui_fix_dfps()
 	sed -i 's/144 120 90 60/144 120 90 60 50 48 30/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel-j3s-37-02-0a-dsc-video.dtsi
 }
 
+# Enable back MI fod dimlayer support on MIUI
+function miui_fix_fod()
+{
+	sed -i 's/\/\/ mi,mdss-dsi-panel-fod-dimlayer-enabled/mi,mdss-dsi-panel-fod-dimlayer-enabled/g' arch/arm64/boot/dts/vendor/qcom/dsi-panel*
+}
+
 make ARCH=arm64 \
         O=${OUT_DIR} \
         ${DEVICE}_defconfig \
@@ -75,6 +81,7 @@ if [[ "$@" =~ "miui"* ]]; then
 	miui_fix_dimens
 	miui_fix_fps
 	miui_fix_dfps
+	miui_fix_fod
 fi
 
 # Let's build
