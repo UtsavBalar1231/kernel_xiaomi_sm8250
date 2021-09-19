@@ -34,7 +34,7 @@ void populate_bound_rows(
 	for (j = 0; j < row->num_bound_synxs;
 		j++) {
 		cur += scnprintf(cur, end - cur,
-			"\n\tID: %d State: %s",
+			"\n\tID: %d State: %d",
 			row->bound_synxs[j].external_data->synx_obj,
 			state);
 	}
