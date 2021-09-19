@@ -394,7 +394,9 @@ int32_t mius_process_apr_payload(uint32_t *payload)
 	uint32_t payload_size = 0;
 	int32_t  ret = -1;
 
-	if (block_proximity("egram.messenger"))
+	if (block_proximity("egram.messenger") ||
+	    block_proximity("onlab.messenger") ||
+	    block_proximity("nekox.messenger"))
 		return ret;
 
 	//if (payload[0] == MIUS_ULTRASOUND_MODULE_TX) {
