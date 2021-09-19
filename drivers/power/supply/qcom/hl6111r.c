@@ -603,7 +603,7 @@ static int hl6111r_probe(struct i2c_client *i2c, const struct i2c_device_id *id)
 			&cfg);
 
 	if (IS_ERR(chip->psy)) {
-		dev_err(&i2c->dev, "psy registration failed: %d\n",
+		dev_err(&i2c->dev, "psy registration failed: %ld\n",
 				PTR_ERR(chip->psy));
 		rc = PTR_ERR(chip->psy);
 		goto cleanup;
