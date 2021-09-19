@@ -1532,7 +1532,7 @@ static int msm_venc_update_bitrate(struct msm_vidc_inst *inst)
 	u32 cabac_max_bitrate = 0;
 
 	if (!inst) {
-		d_vpr_e("%s: invalid params %pK\n", __func__);
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
 		return -EINVAL;
 	}
 
@@ -1541,7 +1541,7 @@ static int msm_venc_update_bitrate(struct msm_vidc_inst *inst)
 		if ((inst->clk_data.bitrate > cabac_max_bitrate) &&
 			(inst->entropy_mode == HFI_H264_ENTROPY_CABAC)) {
 			s_vpr_h(inst->sid,
-				"%s: update bitrate %u to max allowed cabac bitrate %u\n",
+				"%s: update bitrate %lu to max allowed cabac bitrate %u\n",
 				__func__, inst->clk_data.bitrate,
 				cabac_max_bitrate);
 			inst->clk_data.bitrate = cabac_max_bitrate;
