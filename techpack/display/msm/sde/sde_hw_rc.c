@@ -860,7 +860,7 @@ int sde_hw_rc_setup_pu_roi(struct sde_hw_dspp *hw_dspp, void *cfg)
 
 	rc = _sde_hw_rc_get_merge_mode(hw_cfg, &merge_mode);
 	if (rc) {
-		SDE_ERROR("invalid merge_mode, rc:%d\n");
+		SDE_ERROR("invalid merge_mode, rc:%d\n", rc);
 		return rc;
 	}
 
@@ -941,7 +941,7 @@ int sde_hw_rc_setup_mask(struct sde_hw_dspp *hw_dspp, void *cfg)
 
 	rc = _sde_hw_rc_get_merge_mode(hw_cfg, &merge_mode);
 	if (rc) {
-		SDE_ERROR("invalid merge_mode, rc:%d\n");
+		SDE_ERROR("invalid merge_mode, rc:%d\n", rc);
 		return rc;
 	}
 
@@ -1037,7 +1037,7 @@ int sde_hw_rc_setup_data_ahb(struct sde_hw_dspp *hw_dspp, void *cfg)
 	SDE_DEBUG("cfg_param_07:%u\n", cfg_param_07);
 
 	for (i = 0; i < rc_mask_cfg->cfg_param_08; i++) {
-		SDE_DEBUG("cfg_param_09[%d] = 0x%016lX at %u\n", i,
+		SDE_DEBUG("cfg_param_09[%d] = 0x%016llX at %u\n", i,
 				rc_mask_cfg->cfg_param_09[i], i + cfg_param_07);
 
 		data = (i == 0) ? (BIT(30) | (cfg_param_07 << 18)) : 0;
