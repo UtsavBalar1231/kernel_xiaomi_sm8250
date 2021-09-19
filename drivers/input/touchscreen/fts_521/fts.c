@@ -134,6 +134,7 @@ extern struct mutex gestureMask_mutex;
 static u8 key_mask;
 #endif
 
+extern spinlock_t fts_int;
 struct fts_ts_info *fts_info;
 
 static int fts_init_sensing(struct fts_ts_info *info);
@@ -1251,7 +1252,7 @@ static ssize_t stm_fts_cmd_show(struct device *dev,
 	limit_file_name = fts_get_limit(info);
 
 	if (numberParameters >= 1) {
-		res = fts_enableInterrupt(false);
+		res = fts_disableInterrupt();
 		if (res < 0) {
 			logError(0, "%s fts_disableInterrupt: ERROR %08X \n",
 				 tag, res);
@@ -1471,7 +1472,7 @@ static ssize_t stm_fts_cmd_show(struct device *dev,
 
 		doClean = fts_mode_handler(info, 1);
 		if (typeOfComand[0] != 0xF0)
-			doClean |= fts_enableInterrupt(true);
+			doClean |= fts_enableInterrupt();
 		if (doClean < 0) {
 			logError(0, "%s %s: ERROR %08X \n", tag, __func__,
 				 (doClean | ERROR_ENABLE_INTER));
@@ -1742,7 +1743,7 @@ static ssize_t fts_selftest_info_show(struct device *dev,
 	struct i2c_client *client = to_i2c_client(dev);
 	struct fts_ts_info *info = i2c_get_clientdata(client);
 
-	res = fts_enableInterrupt(false);
+	res = fts_disableInterrupt();
 	if (res < OK)
 		goto END;
 
@@ -1782,7 +1783,7 @@ static ssize_t fts_selftest_info_show(struct device *dev,
 		     systemInfo.u16_chip0Id, systemInfo.u16_fwVer,
 		     systemInfo.u16_cfgVer, buff, force_node, sense_node);
 END:
-	fts_enableInterrupt(true);
+	fts_enableInterrupt();
 	return count;
 
 }
@@ -1797,7 +1798,7 @@ static ssize_t fts_ms_raw_show(struct device *dev,
 	MutualSenseFrame frameMS;
 	int buf_size;
 
-	res = fts_enableInterrupt(false);
+	res = fts_disableInterrupt();
 	if (res < OK)
 		goto END;
 
@@ -1867,7 +1868,7 @@ static ssize_t fts_ms_raw_show(struct device *dev,
 	vfree(info->data_dump_buf);
 	info->data_dump_buf = NULL;
 END:
-	fts_enableInterrupt(true);
+	fts_enableInterrupt();
 	return count;
 }
 
@@ -1884,7 +1885,7 @@ static ssize_t fts_mutual_raw_ito_show(struct device *dev, struct device_attribu
 	struct i2c_client *client = to_i2c_client(dev);
 	struct fts_ts_info *info = i2c_get_clientdata(client);
 
-	res = fts_enableInterrupt(false);
+	res = fts_disableInterrupt();
 	if (res < OK)
 		return res;
 	logError(1, "%s ITO Production test is starting...\n", tag);
@@ -1994,7 +1995,7 @@ ERROR:
 	}
 	res = fts_system_reset();
 	setScanMode(SCAN_MODE_ACTIVE, 0x01);
-	fts_enableInterrupt(true);
+	fts_enableInterrupt();
 	return count;
 }
 
@@ -2008,7 +2009,7 @@ static ssize_t fts_ms_cx_total_show(struct device *dev,
 	struct fts_ts_info *info = i2c_get_clientdata(client);
 	TotMutualSenseData totCompData;
 
-	res = fts_enableInterrupt(false);
+	res = fts_disableInterrupt();
 	if (res < OK)
 		goto END;
 	res =
@@ -2072,7 +2073,7 @@ static ssize_t fts_ms_cx_total_show(struct device *dev,
 	vfree(info->data_dump_buf);
 	info->data_dump_buf = NULL;
 END:
-	fts_enableInterrupt(true);
+	fts_enableInterrupt();
 	return count;
 
 }
@@ -2087,7 +2088,7 @@ static ssize_t fts_ms_cx2_lp_show(struct device *dev,
 	struct fts_ts_info *info = i2c_get_clientdata(client);
 	MutualSenseData msCompData;
 
-	res = fts_enableInterrupt(false);
+	res = fts_disableInterrupt();
 	if (res < OK)
 		goto END;
 	res = readMutualSenseCompensationData(LOAD_CX_MS_LOW_POWER, &msCompData);
@@ -2149,7 +2150,7 @@ static ssize_t fts_ms_cx2_lp_show(struct device *dev,
 	vfree(info->data_dump_buf);
 	info->data_dump_buf = NULL;
 END:
-	fts_enableInterrupt(true);
+	fts_enableInterrupt();
 	return count;
 
 }
@@ -2164,7 +2165,7 @@ static ssize_t fts_ms_cx2_lp_total_show(struct device *dev,
 	struct fts_ts_info *info = i2c_get_clientdata(client);
 	TotMutualSenseData totCompData;
 
-	res = fts_enableInterrupt(false);
+	res = fts_disableInterrupt();
 	if (res < OK)
 		goto END;
 	res = readTotMutualSenseCompensationData(LOAD_PANEL_CX_TOT_MS_LOW_POWER, &totCompData);
@@ -2226,7 +2227,7 @@ static ssize_t fts_ms_cx2_lp_total_show(struct device *dev,
 	vfree(info->data_dump_buf);
 	info->data_dump_buf = NULL;
 END:
-	fts_enableInterrupt(true);
+	fts_enableInterrupt();
 	return count;
 
 }
@@ -2239,7 +2240,7 @@ static ssize_t fts_ss_ix_total_show(struct device *dev,
 	char *all_strbuff = NULL;
 	TotSelfSenseData totCompData;
 
-	ret = fts_enableInterrupt(false);
+	ret = fts_disableInterrupt();
 	if (ret < OK)
 		goto END;
 	all_strbuff = vmalloc(PAGE_SIZE);
@@ -2333,7 +2334,7 @@ static ssize_t fts_ss_ix_total_show(struct device *dev,
 	vfree(all_strbuff);
 	all_strbuff = NULL;
 END:
-	fts_enableInterrupt(true);
+	fts_enableInterrupt();
 	return count;
 }
 
@@ -2347,7 +2348,7 @@ static ssize_t fts_ss_raw_show(struct device *dev,
 	struct fts_ts_info *info = i2c_get_clientdata(client);
 	SelfSenseFrame frameSS;
 
-	res = fts_enableInterrupt(false);
+	res = fts_disableInterrupt();
 	if (res < OK)
 		goto END;
 	all_strbuff = vmalloc(PAGE_SIZE * 4);
@@ -2424,7 +2425,7 @@ static ssize_t fts_ss_raw_show(struct device *dev,
 	vfree(all_strbuff);
 	all_strbuff = NULL;
 END:
-	fts_enableInterrupt(true);
+	fts_enableInterrupt();
 	return count;
 }
 
@@ -2439,7 +2440,7 @@ static ssize_t fts_strength_frame_show(struct device *dev,
 	struct fts_ts_info *info = i2c_get_clientdata(client);
 	frame.node_data = NULL;
 
-	res = fts_enableInterrupt(false);
+	res = fts_disableInterrupt();
 	if (res < OK)
 		goto END;
 
@@ -2486,7 +2487,7 @@ static ssize_t fts_strength_frame_show(struct device *dev,
 	}
 
 END:
-	fts_enableInterrupt(true);
+	fts_enableInterrupt();
 
 	return count;
 }
@@ -2527,7 +2528,7 @@ int fts_hover_auto_tune(struct fts_ts_info *info)
 	u8 sett[2];
 	logError(0, "%s start...\n", tag, __func__);
 
-	fts_enableInterrupt(false);
+	fts_disableInterrupt();
 
 	sett[0] = 0x02;
 	sett[1] = 0x00;
@@ -2554,7 +2555,7 @@ int fts_hover_auto_tune(struct fts_ts_info *info)
 	}
 	logError(0, "%s end...\n", tag, __func__);
 
-	fts_enableInterrupt(true);
+	fts_enableInterrupt();
 
 	return res;
 }
@@ -2589,7 +2590,7 @@ static ssize_t fts_hover_raw_show(struct device *dev,
 	TotSelfSenseData ssHoverCompData;
 	u8 hover_cnt[4] = {0xa8, 0x0b, 0x01, 0x00};
 
-	res = fts_enableInterrupt(false);
+	res = fts_disableInterrupt();
 	if (res < OK)
 		goto END;
 	all_strbuff = vmalloc(PAGE_SIZE);
@@ -2836,7 +2837,7 @@ static ssize_t fts_hover_raw_show(struct device *dev,
 	all_strbuff = NULL;
 END:
 	fts_mode_handler(info, 1);
-	fts_enableInterrupt(true);
+	fts_enableInterrupt();
 	return count;
 }
 
@@ -2977,7 +2978,7 @@ static ssize_t fts_ellipse_data_show(struct device *dev,
 	int sense_node;
 
 	logError(1, "%s %s\n", tag, __func__);
-	res = fts_enableInterrupt(false);
+	res = fts_disableInterrupt();
 	if (res < OK) {
 		logError(1, "%s %s disable irq error\n", tag, __func__);
 	}
@@ -2989,13 +2990,13 @@ static ssize_t fts_ellipse_data_show(struct device *dev,
 	res = getSSFrame3(SS_RAW, &frameSS);
 	if (res < OK) {
 		logError(1, "%s Error while taking the SS frame... ERROR %08X \n", tag, res);
-		fts_enableInterrupt(true);
+		fts_enableInterrupt();
 		return 0;
 	}
 	force_node = frameSS.header.force_node;
 	sense_node = frameSS.header.sense_node;
 	fts_mode_handler(fts_info, 1);
-	fts_enableInterrupt(true);
+	fts_enableInterrupt();
 
 	return snprintf(buf, PAGE_SIZE, "%d %d %d %d %d\n", frameSS.force_data[force_node / 4], frameSS.force_data[force_node * 3 / 4],
 			 frameSS.sense_data[sense_node / 4], frameSS.sense_data[sense_node / 2], frameSS.sense_data[sense_node * 3 / 4]);
@@ -3236,7 +3237,7 @@ static void fts_secure_work(struct fts_secure_info *scr_info)
 		MI_TOUCH_LOGN(0, "%s %s: SECURE_FILTER:st_irq_processed be completed\n", tag, __func__);
 	}
 
-	fts_enableInterrupt(true);
+	fts_enableInterrupt();
 	MI_TOUCH_LOGN(0, "%s %s: SECURE_FILTER:enable irq\n", tag, __func__);
 }
 
@@ -3270,6 +3271,7 @@ static int fts_secure_filter_interrupt(struct fts_ts_info *info)
 		return -EPERM;
 	}
 
+	fts_disableInterruptNoSync();
 	MI_TOUCH_LOGN(0, "%s %s: SECURE_FILTER:disable irq\n", tag, __func__);
 	/*check and change irq pending state
 	 *change irq pending here, secure_touch_show, secure_touch_enable_store
@@ -3904,7 +3906,7 @@ static void fts_error_event_handler(struct fts_ts_info *info,
 
 			error = fts_system_reset();
 			error |= fts_mode_handler(info, 0);
-			error |= fts_enableInterrupt(true);
+			error |= fts_enableInterrupt();
 			if (error < OK) {
 				MI_TOUCH_LOGE(1, "%s %s: Cannot restore the device ERROR %08X\n",
 					 tag, __func__, error);
@@ -3917,7 +3919,7 @@ static void fts_error_event_handler(struct fts_ts_info *info,
 			release_all_touches(info);
 			error = fts_system_reset();
 			error |= fts_mode_handler(info, 0);
-			error |= fts_enableInterrupt(true);
+			error |= fts_enableInterrupt();
 			if (error < OK) {
 				MI_TOUCH_LOGE(1, "%s %s: Cannot reset the device ERROR %08X\n",
 					 tag, __func__, error);
@@ -4517,12 +4519,12 @@ static void fts_ts_sleep_work(struct work_struct *work)
 	int r;
 
 	if (info->tp_pm_suspend) {
-		fts_enableInterrupt(false);
+		fts_disableInterrupt();
 		r = wait_for_completion_timeout(&info->pm_resume_completion, msecs_to_jiffies(500));
 		if (!r) {
 			logError(1, "%s pm_resume_completion timeout, i2c is closed", tag);
 			pm_relax(info->dev);
-			fts_enableInterrupt(true);
+			fts_enableInterrupt();
 			return;
 		} else {
 			logError(1, "%s pm_resume_completion be completed, handling irq", tag);
@@ -4576,7 +4578,7 @@ static void fts_ts_sleep_work(struct work_struct *work)
 	wake_up(&info->wait_queue);
 #endif
 	pm_relax(info->dev);
-	fts_enableInterrupt(true);
+	fts_enableInterrupt();
 
 	return;
 }
@@ -4679,7 +4681,7 @@ static const char *fts_get_config(struct fts_ts_info *info)
 		return pdata->default_fw_name;
 	}
 
-	ret |= fts_enableInterrupt(true);
+	ret |= fts_enableInterrupt();
 
 	for (i = 0; i < pdata->config_array_size; i++) {
 		if (info->lockdown_info[1] == pdata->config_array[i].tp_vendor) {
@@ -4715,7 +4717,7 @@ const char *fts_get_limit(struct fts_ts_info *info)
 		return LIMITS_FILE;
 	}
 
-	ret |= fts_enableInterrupt(true);
+	ret |= fts_enableInterrupt();
 
 	for (i = 0; i < pdata->config_array_size; i++) {
 		if (info->lockdown_info[1] == pdata->config_array[i].tp_vendor) {
@@ -4981,22 +4983,15 @@ static int fts_interrupt_install(struct fts_ts_info *info)
 	install_handler(info, USER_REPORT, user_report);
 
 	/* disable interrupts in any case */
-	error = fts_enableInterrupt(false);
-	if (error) {
-		MI_TOUCH_LOGE(1,"%s %s: Failed to disable interrupts.\n",
-			 tag, __func__);
-		return error;
-	}
-
-	error = request_threaded_irq(info->client->irq, NULL,
-			fts_event_handler, info->board->irq_flags,
-			FTS_TS_DRV_NAME, info);
-	info->irq_enabled = true;
-
+	error = fts_disableInterrupt();
 	MI_TOUCH_LOGN(1, "%s %s: Interrupt Mode\n", tag, __func__);
-	if (error) {
+	if (request_threaded_irq(info->client->irq, NULL, fts_event_handler, info->board->irq_flags,
+			 FTS_TS_DRV_NAME, info)) {
 		MI_TOUCH_LOGE(1, "%s %s: Request irq failed\n", tag, __func__);
 		kfree(info->event_dispatch_table);
+		error = -EBUSY;
+	} else {
+		disable_irq(info->client->irq);
 	}
 
 	return error;
@@ -5009,7 +5004,7 @@ static int fts_interrupt_install(struct fts_ts_info *info)
 static void fts_interrupt_uninstall(struct fts_ts_info *info)
 {
 
-	fts_enableInterrupt(false);
+	fts_disableInterrupt();
 
 	kfree(info->event_dispatch_table);
 
@@ -5063,6 +5058,8 @@ int fts_chip_powercycle(struct fts_ts_info *info)
 
 	logError(1, "%s %s: Power Cycle Starting... \n", tag, __func__);
 	logError(1, "%s %s: Disabling IRQ... \n", tag, __func__);
+
+	fts_disableInterruptNoSync();
 
 	if (info->vdd_reg) {
 		error = regulator_disable(info->vdd_reg);
@@ -5141,7 +5138,7 @@ static int fts_init_sensing(struct fts_ts_info *info)
 			tag, __func__, error);
 		return error;
 	}
-	error |= fts_enableInterrupt(true);
+	error |= fts_enableInterrupt();
 
 	return error;
 }
@@ -6119,7 +6116,7 @@ static void fts_resume_work(struct work_struct *work)
 	struct fts_ts_info *info;
 	info = container_of(work, struct fts_ts_info, resume_work);
 	MI_TOUCH_LOGI(1, "%s %s: enter\n", tag,  __func__);
-	fts_enableInterrupt(false);
+	fts_disableInterrupt();
 #ifdef CONFIG_SECURE_TOUCH
 	fts_secure_stop(info, true);
 #endif
@@ -6138,7 +6135,7 @@ static void fts_resume_work(struct work_struct *work)
 	info->sensor_sleep = false;
 	info->sleep_finger = 0;
 
-	fts_enableInterrupt(true);
+	fts_enableInterrupt();
 #ifdef CONFIG_TOUCHSCREEN_XIAOMI_TOUCHFEATURE
 	if (info->palm_sensor_switch && !info->palm_sensor_changed) {
 		fts_palm_sensor_cmd(info->palm_sensor_switch);
@@ -6167,14 +6164,14 @@ static void fts_suspend_work(struct work_struct *work)
 		info->palm_sensor_switch = false;
 	}
 #endif
-	fts_enableInterrupt(false);
+	fts_disableInterrupt();
 	info->resume_bit = 0;
 	fts_mode_handler(info, 0);
 	release_all_touches(info);
 
 	info->sensor_sleep = true;
 	if (info->gesture_enabled || fts_need_enter_lp_mode())
-		fts_enableInterrupt(true);
+		fts_enableInterrupt();
 }
 
 #ifdef CONFIG_DRM
@@ -6248,7 +6245,7 @@ static int fts_bl_state_chg_callback(struct notifier_block *nb,
 			if (info->sensor_sleep)
 				return NOTIFY_OK;
 			logError(1, "%s %s: BL_EVENT_BLANK\n", tag, __func__);
-			ret = fts_enableInterrupt(false);
+			ret = fts_disableInterrupt();
 			setScanMode(SCAN_MODE_ACTIVE, 0x00);
 			info->sensor_scan = false;
 			flushFIFO();
@@ -6258,7 +6255,7 @@ static int fts_bl_state_chg_callback(struct notifier_block *nb,
 		} else if (blank == BACKLIGHT_ON) {
 			logError(1, "%s %s: BL_EVENT_UNBLANK\n", tag, __func__);
 			if (!info->sensor_sleep) {
-				ret = fts_enableInterrupt(true);
+				ret = fts_enableInterrupt();
 				if (ret < OK)
 					logError(1, "%s fts_enableInterrupt Error %08X\n", tag, ret | ERROR_ENABLE_INTER);
 			if (!info->sensor_scan)
@@ -6894,7 +6891,7 @@ static void fts_switch_mode_work(struct work_struct *work)
 			gesture_cmd[2] = 0x20;
 			MI_TOUCH_LOGI(1, "%s %s: Enable doubleclick gesture mode\n", tag, __func__);
 		}
-		fts_enableInterrupt(false);
+		fts_disableInterrupt();
 		res = fts_write_dma_safe(gesture_cmd, ARRAY_SIZE(gesture_cmd));
 		if (res < OK)
 			MI_TOUCH_LOGE(1, "%s %s: enter gesture mode failed during SenseOff! ERROR %08X\n",
@@ -6907,7 +6904,7 @@ static void fts_switch_mode_work(struct work_struct *work)
 			else
 				info->non_ui_poweroff = false;
 		}
-		fts_enableInterrupt(true);
+		fts_enableInterrupt();
 	}
 	mutex_unlock(&info->fod_mutex);
 }
@@ -6987,7 +6984,7 @@ static int fts_short_open_test(void)
 	selftests.SelfSenseCxTotal = 0;
 	selftests.SelfSenseCxTotalAdj = 0;
 
-	res = fts_enableInterrupt(false);
+	res = fts_disableInterrupt();
 	if (res < 0) {
 		logError(0, "%s fts_disableInterrupt: ERROR %08X \n",
 			 tag, res);
@@ -6997,7 +6994,7 @@ static int fts_short_open_test(void)
 	res = production_test_main(limit_file_name, 1, init_type, &selftests);
 END:
 	fts_mode_handler(fts_info, 1);
-	fts_enableInterrupt(true);
+	fts_enableInterrupt();
 	if (res == OK)
 		return FTS_RESULT_PASS;
 	else
@@ -7687,7 +7684,7 @@ static int fts_probe(struct spi_device *client)
 #endif
 #endif
 
-	spin_lock_init(&info->fts_int);
+	spin_lock_init(&fts_int);
 
 	/* register the multi-touch input device */
 	error = input_register_device(info->input_dev);
