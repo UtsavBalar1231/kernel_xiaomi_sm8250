@@ -1311,7 +1311,8 @@ static ssize_t store_mask_and_match(struct device *dev,
 		return -EINVAL;
 
 	while ((token = strsep(&temp, " "))) {
-		kstrtoul(token, 0, &value);
+		if (kstrtoul(token, 0, &value))
+			return -EINVAL;
 		if (i == 0)
 			mask = value;
 		else if (i == 1)
