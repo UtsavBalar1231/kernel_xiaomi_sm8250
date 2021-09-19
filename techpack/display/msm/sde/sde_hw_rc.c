@@ -464,7 +464,7 @@ static int _sde_hw_rc_program_enable_bits(
 	if (!r1_enable && r2_enable)
 		ystart = rc_roi->y;
 
-	SDE_DEBUG("flags:%x, R1 valid:%d, R2 valid:%d\n",
+	SDE_DEBUG("flags:%llx, R1 valid:%d, R2 valid:%d\n",
 			flags, r1_valid, r2_valid);
 	SDE_DEBUG("PU in R1:%d, PU in R2:%d, Y_START:%d\n",
 			pu_in_r1, pu_in_r2, ystart);
