@@ -172,8 +172,8 @@ static inline void del_from_hash(struct hpb_ext *entry, bool need_lock) {
 static ssize_t fs_hpb_generic_show(struct kobject *kobj,
 				   struct kobj_attribute *attr, char *buf)
 {
-	//struct fs_hpb_attr *entry = \
-	//			container_of(attr, struct fs_hpb_attr, attr);
+	/* struct fs_hpb_attr *entry = \
+				container_of(attr, struct fs_hpb_attr, attr);*/
 	struct hpb_ext *ext_entry;
 	int offs = 0;
 	int i;
@@ -193,8 +193,8 @@ static ssize_t fs_hpb_generic_show(struct kobject *kobj,
 static ssize_t fs_hpb_generic_store(struct kobject *kobj,
 				    struct kobj_attribute *attr, const char *buf, size_t len)
 {
-	//struct fs_hpb_attr *entry = \
-	//			    container_of(attr, struct fs_hpb_attr, attr);
+	/*struct fs_hpb_attr *entry = \
+				    container_of(attr, struct fs_hpb_attr, attr);*/
 	struct hpb_ext *ext_entry;
 
 	if (!strcmp(attr->attr.name, "hpb_extension")) {
