@@ -197,7 +197,7 @@ struct msm_cvp_inst *cvp_get_inst_validate(struct msm_cvp_core *core,
 
 	s = cvp_get_inst(core, session_id);
 	if (!s) {
-		dprintk(CVP_ERR, "%s session doesn't exit\n",
+		dprintk(CVP_ERR, "%pK session doesn't exit\n",
 			__builtin_return_address(0));
 		return NULL;
 	}
@@ -686,7 +686,7 @@ static void handle_sys_error(enum hal_command_response cmd, void *data)
 	call_hfi_op(hdev, flush_debug_queue, hdev->hfi_device_data);
 	list_for_each_entry(inst, &core->instances, list) {
 		dprintk(CVP_WARN,
-			"%s: sys error inst %#x kref %x, cmd %x state %x\n",
+			"%s: sys error inst %pK kref %x, cmd %x state %x\n",
 				__func__, inst, kref_read(&inst->kref),
 				inst->cur_cmd_type, inst->state);
 		if (inst->state != MSM_CVP_CORE_INVALID) {
@@ -1414,7 +1414,7 @@ void msm_cvp_ssr_handler(struct work_struct *work)
 		dprintk(CVP_ERR, "Session abort triggered\n");
 		list_for_each_entry(inst, &core->instances, list) {
 			dprintk(CVP_WARN,
-				"Session to abort: inst %#x cmd %x ref %x\n",
+				"Session to abort: inst %pK cmd %x ref %x\n",
 				inst, inst->cur_cmd_type,
 				kref_read(&inst->kref));
 			break;
