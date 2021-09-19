@@ -923,7 +923,7 @@ static int cam_custom_mgr_acquire_hw_for_ctx(
 	/* Acquire custom csid */
 	rc = cam_custom_hw_mgr_acquire_csid_res(custom_ctx, in_port_info);
 	if (rc) {
-		CAM_ERR(CAM_CUSTOM, "Custom csid acquire failed rc %d");
+		CAM_ERR(CAM_CUSTOM, "Custom csid acquire failed rc %d", rc);
 		goto err;
 	}
 
