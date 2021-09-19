@@ -162,7 +162,7 @@ static ssize_t debug_level_write(struct file *filp, const char __user *buf,
 
 	/* filter partial writes and invalid commands */
 	if (*ppos != 0 || count >= sizeof(kbuf) || count == 0) {
-		d_vpr_e("returning error - pos %d, count %d\n", *ppos, count);
+		d_vpr_e("returning error - pos %lld, count %lu\n", *ppos, count);
 		rc = -EINVAL;
 	}
 
