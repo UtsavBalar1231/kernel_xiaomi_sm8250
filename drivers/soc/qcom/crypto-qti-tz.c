@@ -128,7 +128,7 @@ int crypto_qti_tz_raw_secret(const u8 *wrapped_key,
 
 	err = scm_call2_noretry(smc_id, &desc);
 	if (err) {
-		pr_err("%s failed to retrieve raw secret\n", __func__, err);
+		pr_err("%s failed to retrieve raw secret\n", __func__);
 		return err;
 	}
 
