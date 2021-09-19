@@ -671,14 +671,14 @@ static int __init qvr_external_sensor_init(void)
 
 	ret = alloc_chrdev_region(&sensor->dev_no, 0, 1, "qvr_external_sensor");
 	if (ret < 0) {
-		pr_err("%s: alloc_chrdev_region failed\n");
+		pr_err("%s: alloc_chrdev_region failed\n", __func__);
 		return ret;
 	}
 	cdev_init(&sensor->cdev, &qvr_external_sensor_ops);
 	ret = cdev_add(&sensor->cdev, sensor->dev_no, 1);
 
 	if (ret < 0) {
-		pr_err("%s: cdev_add failed\n");
+		pr_err("%s: cdev_add failed\n", __func__);
 		return ret;
 	}
 	sensor->class = class_create(THIS_MODULE, "qvr_external_sensor");
