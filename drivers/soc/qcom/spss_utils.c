@@ -557,8 +557,12 @@ static long spss_utils_ioctl(struct file *file,
 			pr_err("cmd [0x%x] invalid size [0x%x]\n", cmd, size);
 			return -EINVAL;
 		}
+		if (copy_to_user((void __user *)arg, data, size)) {
+			pr_err("%s: copy_to_user for SPSS_IOC_WAIT_FOR_EVENT failed\n",
+				__func__);
+			return -EFAULT;
+		}
 		ret = spss_wait_for_event(req);
-		copy_to_user((void __user *)arg, data, size);
 		if (ret < 0)
 			return ret;
 		break;
@@ -569,8 +573,12 @@ static long spss_utils_ioctl(struct file *file,
 			pr_err("cmd [0x%x] invalid size [0x%x]\n", cmd, size);
 			return -EINVAL;
 		}
+		if (copy_to_user((void __user *)arg, data, size)) {
+			pr_err("%s: copy_to_user for SPSS_IOC_SIGNAL_EVENT failed\n",
+				__func__);
+			return -EFAULT;
+		}
 		ret = spss_signal_event(req);
-		copy_to_user((void __user *)arg, data, size);
 		if (ret < 0)
 			return ret;
 		break;
@@ -581,8 +589,12 @@ static long spss_utils_ioctl(struct file *file,
 			pr_err("cmd [0x%x] invalid size [0x%x]\n", cmd, size);
 			return -EINVAL;
 		}
+		if (copy_to_user((void __user *)arg, data, size)) {
+			pr_err("%s: copy_to_user for SPSS_IOC_IS_EVENT_SIGNALED failed\n",
+				__func__);
+			return -EFAULT;
+		}
 		ret = spss_is_event_signaled(req);
-		copy_to_user((void __user *)arg, data, size);
 		if (ret < 0)
 			return ret;
 		break;
