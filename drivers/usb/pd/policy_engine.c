@@ -5198,7 +5198,7 @@ static void usbpd_mi_vdm_received_cb(struct usbpd_svid_handler *hdlr, u32 vdm_hd
 	cmd = UVDM_HDR_CMD(vdm_hdr);
 
 	usbpd_dbg(&pd->dev, "hdlr->svid:0x%x, vdm_hdr:0x%x, num_vdos:%d, cmd:%d\n",
-			hdlr->svid, vdm_hdr, num_vdos);
+			hdlr->svid, vdm_hdr, num_vdos, cmd);
 
 	switch (cmd) {
 	case USBPD_UVDM_CHARGER_VERSION:
