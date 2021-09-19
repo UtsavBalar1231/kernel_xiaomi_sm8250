@@ -1257,7 +1257,7 @@ void dsi_ctrl_hw_cmn_enable_error_interrupts(struct dsi_ctrl_hw *ctrl,
 	DSI_W32(ctrl, DSI_INT_CTRL, int_ctrl);
 	DSI_W32(ctrl, DSI_ERR_INT_MASK0, int_mask0);
 
-	DSI_CTRL_HW_DBG(ctrl, "[DSI_%d] enable errors = 0x%llx, int_mask0=0x%x\n",
+	DSI_CTRL_HW_DBG(ctrl, "enable errors = 0x%llx, int_mask0=0x%x\n",
 		 errors, int_mask0);
 }
 
