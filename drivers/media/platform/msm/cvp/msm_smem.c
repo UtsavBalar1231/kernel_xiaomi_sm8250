@@ -49,7 +49,7 @@ static int msm_dma_get_device_address(struct dma_buf *dbuf, u32 align,
 		if (dbuf->size < *buffer_size) {
 			rc = -EINVAL;
 			dprintk(CVP_ERR,
-				"Size mismatch: Dmabuf size: %zu Expected Size: %lu",
+				"Size mismatch: Dmabuf size: %zu Expected Size: %u",
 				dbuf->size, *buffer_size);
 			msm_cvp_res_handle_fatal_hw_error(res,
 					true);
@@ -352,7 +352,7 @@ static int alloc_dma_mem(size_t size, u32 align, u32 flags, int map_kernel,
 	dbuf = ion_alloc(size, heap_mask, ion_flags);
 	if (IS_ERR_OR_NULL(dbuf)) {
 		dprintk(CVP_ERR,
-		"Failed to allocate shared memory = %x bytes, %llx, %x\n",
+		"Failed to allocate shared memory = %lx bytes, %lx, %x\n",
 		size, heap_mask, ion_flags);
 		rc = -ENOMEM;
 		goto fail_shared_mem_alloc;
@@ -393,7 +393,7 @@ static int alloc_dma_mem(size_t size, u32 align, u32 flags, int map_kernel,
 	}
 
 	dprintk(CVP_DBG,
-		"%s: dma_buf = %pK, device_addr = %x, size = %d, kvaddr = %pK, buffer_type = %#x, flags = %#lx\n",
+		"%s: dma_buf = %pK, device_addr = %x, size = %d, kvaddr = %pK, buffer_type = %#x, flags = %#x\n",
 		__func__, mem->dma_buf, mem->device_addr, mem->size,
 		mem->kvaddr, mem->buffer_type, mem->flags);
 	return rc;
@@ -546,7 +546,7 @@ struct context_bank_info *msm_cvp_smem_get_context_bank(u32 session_type,
 
 	if (!match)
 		dprintk(CVP_ERR,
-			"%s: cb not found for buffer_type %x, is_secure %d\n",
+			"%s: cb not found for buffer_type %lx, is_secure %d\n",
 			__func__, ion_flags, is_secure);
 
 	return match;
