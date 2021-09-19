@@ -920,7 +920,7 @@ static void process_tzcb_req(void *buf, size_t buf_len, struct file **arr_filp)
 	struct smcinvoke_server_info *srvr_info = NULL;
 
 	if (buf_len < sizeof(struct smcinvoke_tzcb_req)) {
-		pr_err("smaller buffer length : %u\n", buf_len);
+		pr_err("smaller buffer length : %lu\n", buf_len);
 		return;
 	}
 
