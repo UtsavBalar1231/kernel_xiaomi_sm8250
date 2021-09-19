@@ -1557,7 +1557,7 @@ static int ipa_mpm_vote_unvote_pcie_clk(enum ipa_mpm_clk_vote_type vote,
 				MHI_VOTE_BUS | MHI_VOTE_DEVICE);
 		if (result) {
 			IPA_MPM_ERR("mhi_sync_get failed for probe_id %d\n",
-				result, probe_id);
+				probe_id);
 			*is_acted = false;
 			return result;
 		}
@@ -1886,7 +1886,7 @@ int ipa_mpm_notify_wan_state(struct wan_ioctl_notify_wan_state *state)
 		ret = ipa_mpm_vote_unvote_pcie_clk(CLK_ON, probe_id,
 			false, &is_acted);
 		if (ret) {
-			IPA_MPM_ERR("Err %d cloking on PCIe clk %d\n", ret);
+			IPA_MPM_ERR("Err clocking on PCIe clk %d\n", ret);
 			return ret;
 		}
 
@@ -2149,12 +2149,12 @@ static void ipa_mpm_read_channel(enum ipa_client_type chan)
 
 	ep = &ipa3_ctx->ep[ipa_ep_idx];
 
-	IPA_MPM_DBG("Reading channel for chan %d, ep = %d, gsi_chan_hdl = %d\n",
+	IPA_MPM_DBG("Reading channel for chan %d, ep = %pR, gsi_chan_hdl = %lu\n",
 		chan, ep, ep->gsi_chan_hdl);
 
 	res = ipa3_get_gsi_chan_info(&chan_info, ep->gsi_chan_hdl);
 	if (res)
-		IPA_MPM_ERR("Reading of channel failed for ep %d\n", ep);
+		IPA_MPM_ERR("Reading of channel failed for ep %pR\n", ep);
 }
 
 /* ipa_mpm_mhi_probe_cb is received for each MHI'/MHI channel
@@ -2273,7 +2273,7 @@ static int ipa_mpm_mhi_probe_cb(struct mhi_device *mhi_dev,
 				ipa_mpm_ctx->uc_fc_db);
 			ch->chan_props.ch_ctx.reserved2 =
 				ipa_mpm_ctx->uc_fc_db_iova;
-			IPA_MPM_DBG("configure reserved2 %lx\n",
+			IPA_MPM_DBG("configure reserved2 %llx\n",
 				ch->chan_props.ch_ctx.reserved2);
 		}
 
@@ -3152,7 +3152,7 @@ static int ipa_mpm_populate_smmu_info(struct platform_device *pdev)
 	cb->va_end = cb->va_start + cb->va_size;
 
 	if (cb->va_end >= ap_cb->va_start) {
-		IPA_MPM_ERR("MPM iommu and AP overlap addr 0x%lx\n",
+		IPA_MPM_ERR("MPM iommu and AP overlap addr 0x%x\n",
 				cb->va_start);
 		ipa_assert();
 		return -EFAULT;
@@ -3332,7 +3332,7 @@ int ipa_mpm_panic_handler(char *buf, int size)
 
 	for (i = 0; i < IPA_MPM_MHIP_CH_ID_MAX; i++) {
 		cnt += scnprintf(buf + cnt, size - cnt,
-			"client id: %d ipa vote cnt: %d pcie vote cnt\n", i,
+			"client id: %d ipa vote cnt: %d pcie vote cnt: %d\n", i,
 			atomic_read(&ipa_mpm_ctx->md[i].clk_cnt.ipa_clk_cnt),
 			atomic_read(&ipa_mpm_ctx->md[i].clk_cnt.pcie_clk_cnt));
 	}
