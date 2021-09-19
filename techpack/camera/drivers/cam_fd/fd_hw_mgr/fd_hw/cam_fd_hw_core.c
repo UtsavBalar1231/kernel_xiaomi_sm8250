@@ -558,7 +558,7 @@ static int cam_fd_hw_util_processcmd_hw_dump(
 		    soc_info->reg_map[0].size + sizeof(uint32_t);
 
 	if (remain_len < min_len) {
-		CAM_WARN(CAM_FD, "dump buffer exhaust remain %zu min %u",
+		CAM_WARN(CAM_FD, "dump buffer exhaust remain %llu min %u",
 			remain_len, min_len);
 		mutex_unlock(&fd_hw->hw_mutex);
 		return -ENOSPC;
