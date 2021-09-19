@@ -537,7 +537,7 @@ static int cam_cpas_util_translate_client_paths(
 			*path_data_type %= CAM_CPAS_MAX_GRAN_PATHS_PER_CLIENT;
 
 		if (*path_data_type >= CAM_CPAS_PATH_DATA_MAX) {
-			CAM_ERR(CAM_CPAS, "index Invalid: %d", path_data_type);
+			CAM_ERR(CAM_CPAS, "index Invalid: %d", *path_data_type);
 			return -EINVAL;
 		}
 	}
