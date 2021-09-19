@@ -35,7 +35,6 @@
 #include <linux/debugfs.h>
 #include <linux/bitops.h>
 #include <linux/math64.h>
-#include <asm/neon.h>
 #include "bq25970_reg.h"
 /*#include "bq2597x.h"*/
 
@@ -58,7 +57,7 @@ enum {
 	ADC_MAX_NUM,
 };
 
-static float sc8551_adc_lsb[] = {
+static long sc8551_adc_lsb[] = {
 	[ADC_IBUS]	= SC8551_IBUS_ADC_LSB,
 	[ADC_VBUS]	= SC8551_VBUS_ADC_LSB,
 	[ADC_VAC]	= SC8551_VAC_ADC_LSB,
@@ -1125,11 +1124,8 @@ static int bq2597x_get_adc_data(struct bq2597x *bq, int channel,  int *result)
 		t |= (val >> 8) & 0xFF;
 		*result = t;
 
-		if (bq->chip_vendor == SC8551) {
-			kernel_neon_begin();
+		if (bq->chip_vendor == SC8551)
 			*result = (int)(t * sc8551_adc_lsb[channel]);
-			kernel_neon_end();
-		}
 	}
 
 	return 0;
