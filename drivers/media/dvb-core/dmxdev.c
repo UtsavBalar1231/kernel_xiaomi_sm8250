@@ -4678,7 +4678,7 @@ static unsigned int dvb_demux_poll(struct file *file, poll_table *wait)
 	unsigned int mask = 0;
 
 	if (!dmxdevfilter) {
-		pr_err("%s: dmxdevfilter is NULL\n");
+		pr_err("%s: dmxdevfilter is NULL\n", __func__);
 		return -EINVAL;
 	}
 	if (dvb_vb2_is_streaming(&dmxdevfilter->vb2_ctx))
