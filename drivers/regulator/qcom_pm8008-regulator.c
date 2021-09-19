@@ -194,7 +194,7 @@ static int pm8008_write(struct regmap *regmap, u16 reg, const u8 *val,
 
 #ifdef CONFIG_I2C_RETRY
 	int retry = 0;
-	pr_debug("Writing 0x%02x to 0x%04x\n", val, reg);
+	pr_debug("Writing 0x%2s to 0x%04x\n", val, reg);
 	do {
 		rc = regmap_bulk_write(regmap, reg, val, count);
 	} while (rc < 0 && retry++ < MAX_RETRY_TIME);
@@ -203,7 +203,7 @@ static int pm8008_write(struct regmap *regmap, u16 reg, const u8 *val,
 	if (rc < 0)
 		pr_err("failed to write 0x%04x\n", reg);
 #else
-	pr_debug("Writing 0x%02x to 0x%04x\n", val, reg);
+	pr_debug("Writing 0x%2s to 0x%04x\n", val, reg);
 	rc = regmap_bulk_write(regmap, reg, val, count);
 	if (rc < 0)
 		pr_err("failed to write 0x%04x\n", reg);
