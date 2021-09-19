@@ -4,7 +4,6 @@
 #include <linux/rtc.h>
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
-#include <linux/printk.h>
 
 #define MAX_RECORD_NUM		2048
 #define MAX_ONE_RECORD_SIZE	128
@@ -117,8 +116,6 @@ static int __init perf_helper_init(void)
 	struct proc_dir_entry *entry;
 
 	entry = proc_create("perflock_records", 0664, NULL, &perflock_records_ops);
-	if (!entry)
-		printk(KERN_ERR "%s: create perflock_records node failed\n");
 
 	return 0;
 }
