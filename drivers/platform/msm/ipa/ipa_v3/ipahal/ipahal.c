@@ -898,7 +898,7 @@ static enum ipahal_pkt_status_exception pkt_status_parse_exception(
 		exception_type = IPAHAL_PKT_STATUS_EXCEPTION_CSUM;
 		break;
 	default:
-		IPAHAL_ERR("unsupported Status Exception type 0x%x\n",
+		IPAHAL_ERR("unsupported Status Exception type 0x%llx\n",
 			exception);
 		WARN_ON(1);
 	}
