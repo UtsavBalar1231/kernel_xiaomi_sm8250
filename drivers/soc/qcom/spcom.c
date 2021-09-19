@@ -2335,7 +2335,7 @@ static int spcom_rpdev_cb(struct rpmsg_device *rpdev,
 	}
 	ch = dev_get_drvdata(&rpdev->dev);
 	if (!ch) {
-		spcom_pr_err("%s: invalid ch\n");
+		spcom_pr_err("%s: invalid ch\n", __func__);
 		return -EINVAL;
 	}
 	if (len > SPCOM_RX_BUF_SIZE || len <= 0) {
