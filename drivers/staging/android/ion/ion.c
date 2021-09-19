@@ -1328,9 +1328,9 @@ static int ion_debug_heap_show2(struct seq_file *s, void *unused)
 	struct ion_heap *heap = s->private;
 
 	seq_puts(s, "----------------------------------------------------\n");
-	seq_printf(s, "%25s %16zu\n", "num_of_alloc_bytes ", heap->num_of_alloc_bytes);
-	seq_printf(s, "%25s %16zu\n", "num_of_buffers ", heap->num_of_buffers);
-	seq_printf(s, "%25s %16zu\n", "alloc_bytes_wm ", heap->alloc_bytes_wm);
+	seq_printf(s, "%25s %16llu\n", "num_of_alloc_bytes ", heap->num_of_alloc_bytes);
+	seq_printf(s, "%25s %16llu\n", "num_of_buffers ", heap->num_of_buffers);
+	seq_printf(s, "%25s %16llu\n", "alloc_bytes_wm ", heap->alloc_bytes_wm);
 	if (heap->flags & ION_HEAP_FLAG_DEFER_FREE)
 		seq_printf(s, "%25s %16zu\n", "deferred free ", heap->free_list_size);
 	seq_puts(s, "----------------------------------------------------\n");
