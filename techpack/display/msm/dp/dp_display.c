@@ -822,7 +822,7 @@ static void dp_display_process_mst_hpd_high(struct dp_display_private *dp,
 
 		/* add extra delay if MST state is not cleared */
 		if (old_mstm_ctrl) {
-			DP_MST_DEBUG("MSTM_CTRL is not cleared, wait %dus\n",
+			DP_MST_DEBUG("MSTM_CTRL is not cleared, wait %lu us\n",
 					clear_mstm_ctrl_timeout_us);
 			usleep_range(clear_mstm_ctrl_timeout_us,
 				clear_mstm_ctrl_timeout_us + 1000);
