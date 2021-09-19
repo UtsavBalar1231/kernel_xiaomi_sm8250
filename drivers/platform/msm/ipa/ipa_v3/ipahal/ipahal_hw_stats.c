@@ -229,7 +229,7 @@ static struct ipahal_stats_init_pyld *ipahal_generate_init_pyld_flt_rt_v4_5(
 
 	if (num > IPA_MAX_FLT_RT_CNT_INDEX ||
 		num <= 0) {
-		IPAHAL_ERR("num %d not valid\n", num);
+		IPAHAL_ERR("num %ld not valid\n", num);
 		return NULL;
 	}
 	pyld = IPAHAL_MEM_ALLOC(sizeof(*pyld) +
