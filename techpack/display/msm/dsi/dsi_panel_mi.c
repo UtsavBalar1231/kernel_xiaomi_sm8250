@@ -1472,7 +1472,7 @@ ssize_t dsi_panel_print_gamma_param(struct dsi_panel *panel,
 	mutex_lock(&panel->panel_lock);
 
 	count += snprintf(buf + count, PAGE_SIZE - count,
-				"Gamma 0xC8 OPT Read %d Parameter (60Hz)\n",
+				"Gamma 0xC8 OPT Read %ld Parameter (60Hz)\n",
 				sizeof(gamma_cfg->otp_read_c8));
 	buffer = gamma_cfg->otp_read_c8;
 	for (i = 1; i <= sizeof(gamma_cfg->otp_read_c8); i++) {
@@ -1486,7 +1486,7 @@ ssize_t dsi_panel_print_gamma_param(struct dsi_panel *panel,
 	}
 
 	count += snprintf(buf + count, PAGE_SIZE - count,
-				"Gamma 0xC9 OPT Read %d Parameter (60Hz)\n",
+				"Gamma 0xC9 OPT Read %ld Parameter (60Hz)\n",
 				sizeof(gamma_cfg->otp_read_c9));
 	buffer = gamma_cfg->otp_read_c9;
 	for (i = 1; i <= sizeof(gamma_cfg->otp_read_c9); i++) {
@@ -1500,7 +1500,7 @@ ssize_t dsi_panel_print_gamma_param(struct dsi_panel *panel,
 	}
 
 	count += snprintf(buf + count, PAGE_SIZE - count,
-				"Gamma 0xB3 OPT Read %d Parameter (60Hz)\n",
+				"Gamma 0xB3 OPT Read %ld Parameter (60Hz)\n",
 				sizeof(gamma_cfg->otp_read_b3));
 	buffer = gamma_cfg->otp_read_b3;
 	for (i = 1; i <= sizeof(gamma_cfg->otp_read_b3); i++) {
@@ -1514,7 +1514,7 @@ ssize_t dsi_panel_print_gamma_param(struct dsi_panel *panel,
 	}
 
 	count += snprintf(buf + count, PAGE_SIZE - count,
-				"Gamma Flash 0xC8 Read %d Parameter (90Hz)\n",
+				"Gamma Flash 0xC8 Read %ld Parameter (90Hz)\n",
 				sizeof(gamma_cfg->flash_read_c8));
 	buffer = gamma_cfg->flash_read_c8;
 	for (i = 1; i <= sizeof(gamma_cfg->flash_read_c8); i++) {
@@ -1528,7 +1528,7 @@ ssize_t dsi_panel_print_gamma_param(struct dsi_panel *panel,
 	}
 
 	count += snprintf(buf + count, PAGE_SIZE - count,
-				"Gamma Flash 0xC9 Read %d Parameter (90Hz)\n",
+				"Gamma Flash 0xC9 Read %ld Parameter (90Hz)\n",
 				sizeof(gamma_cfg->flash_read_c9));
 	buffer = gamma_cfg->flash_read_c9;
 	for (i = 1; i <= sizeof(gamma_cfg->flash_read_c9); i++) {
@@ -1542,7 +1542,7 @@ ssize_t dsi_panel_print_gamma_param(struct dsi_panel *panel,
 	}
 
 	count += snprintf(buf + count, PAGE_SIZE - count,
-				"Gamma Flash 0xB3 Read %d Parameter (90Hz)\n",
+				"Gamma Flash 0xB3 Read %ld Parameter (90Hz)\n",
 				sizeof(gamma_cfg->flash_read_b3));
 	buffer = gamma_cfg->flash_read_b3;
 	for (i = 1; i <= sizeof(gamma_cfg->flash_read_b3); i++) {
@@ -2153,7 +2153,7 @@ int dsi_panel_write_mipi_reg(struct dsi_panel *panel,
 			goto exit_free0;
 		}
 		if (tmp_data > sizeof(g_dsi_read_cfg.rbuf)) {
-			pr_err("read size exceeding the limit %d\n",
+			pr_err("read size exceeding the limit %lu\n",
 					sizeof(g_dsi_read_cfg.rbuf));
 			goto exit_free0;
 		}
@@ -2684,7 +2684,7 @@ ssize_t calc_hw_vsync_info(struct dsi_panel *panel, char *buf)
 	/* Multiplying with 1000 to get fps in floating point */
 	calc_vsync->measured_fps_x1000 =
 			(u32)((NSEC_PER_SEC * 1000) / calc_vsync->measured_vsync_period_ns);
-	pr_info("[hw_vsync_info]fps: %d.%d, vsync_period_ns:%lld,"
+	pr_info("[hw_vsync_info]fps: %lld.%lld, vsync_period_ns:%lld,"
 			" panel_mode:%s, panel_type:%s, average of %d statistics\n",
 			calc_vsync->measured_fps_x1000 / 1000,
 			calc_vsync->measured_fps_x1000 % 1000,
@@ -2692,7 +2692,7 @@ ssize_t calc_hw_vsync_info(struct dsi_panel *panel, char *buf)
 			(panel->panel_mode == DSI_OP_VIDEO_MODE) ? "dsi_video" : "dsi_cmd",
 			panel->type, valid_count ? valid_count : count);
 
-	return scnprintf(buf, PAGE_SIZE, "fps: %d.%d vsync_period_ns:%lld"
+	return scnprintf(buf, PAGE_SIZE, "fps: %lld.%lld vsync_period_ns:%lld"
 			" panel_mode:%s panel_type:%s\n",
 			calc_vsync->measured_fps_x1000 / 1000,
 			calc_vsync->measured_fps_x1000 % 1000,
