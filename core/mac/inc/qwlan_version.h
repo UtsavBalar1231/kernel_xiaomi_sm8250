@@ -32,9 +32,9 @@
 #define QWLAN_VERSION_MAJOR            5
 #define QWLAN_VERSION_MINOR            2
 #define QWLAN_VERSION_PATCH            022
-#define QWLAN_VERSION_EXTRA            "Y"
-#define QWLAN_VERSION_BUILD            8
+#define QWLAN_VERSION_EXTRA            "C"
+#define QWLAN_VERSION_BUILD            9
 
-#define QWLAN_VERSIONSTR               "5.2.022.8Y"
+#define QWLAN_VERSIONSTR               "5.2.022.9C"
 
 #endif /* QWLAN_VERSION_H */
