@@ -2,8 +2,9 @@
 /plugin/;
 
 #include <dt-bindings/interrupt-controller/arm-gic.h>
-#include "khaje-qrd-nowcd9375.dtsi"
+#include "khaje-qrd.dtsi"
 #include "khaje-qrd-pm7250b.dtsi"
+#include "khaje-qrd-nowcd9375.dtsi"
 
 / {
 	model = "Qualcomm Technologies, Inc. Khaje QRD NOWCD9375";
