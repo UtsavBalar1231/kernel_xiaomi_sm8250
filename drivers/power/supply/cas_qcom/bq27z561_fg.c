@@ -2286,7 +2286,7 @@ static int calc_delta_time(ktime_t time_last, int *delta_time)
 	if (*delta_time < 0)
 		*delta_time = 0;
 
-	bq_dbg(PR_DEBUG,  "now:%ld, last:%ld, delta:%d\n", time_now, time_last, *delta_time);
+	bq_dbg(PR_DEBUG, "now:%lld, last:%lld, delta:%d\n", time_now, time_last, *delta_time);
 
 	return 0;
 }
@@ -2373,7 +2373,7 @@ static int bq_battery_soc_smooth_tracking(struct bq_fg_chip *bq,
 			if (last_status == POWER_SUPPLY_STATUS_CHARGING
 					&& status == POWER_SUPPLY_STATUS_DISCHARGING)
 				last_change_time = ktime_get();
-			bq_dbg(PR_DEBUG, "update last_statu:%d, last_change_time:%ld\n", status, last_change_time);
+			bq_dbg(PR_DEBUG, "update last_statu:%d, last_change_time:%lld\n", status, last_change_time);
 			last_status = status;
 		}
 	}
