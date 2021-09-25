@@ -622,7 +622,7 @@ static int smb1398_div2_cp_get_irq_status(
 			POWER_SUPPLY_PROP_ADAPTER_CC_MODE,
 			&pval);
 	if (rc < 0) {
-		dev_err(chip->dev, "Get ADAPTER_CC_MODE failed, rc=%d\n");
+		dev_err(chip->dev, "Get ADAPTER_CC_MODE failed, rc=%d\n", rc);
 		return rc;
 	}
 	if (pval.intval)
@@ -1355,7 +1355,7 @@ static bool is_vbus_ok_for_passthrough(struct smb1398_chip *chip)
 			POWER_SUPPLY_PROP_VOLTAGE_NOW,
 			&pval);
 	if (rc < 0) {
-		dev_err(chip->dev, "Get USB VOLTAGE_NOW failed, rc=%d\n");
+		dev_err(chip->dev, "Get USB VOLTAGE_NOW failed, rc=%d\n", rc);
 		return false;
 	}
 	vbus_uv = pval.intval;
@@ -1372,14 +1372,14 @@ static bool is_vbus_ok_for_passthrough(struct smb1398_chip *chip)
 			POWER_SUPPLY_PROP_VOLTAGE_NOW,
 			&pval);
 	if (rc < 0) {
-		dev_err(chip->dev, "Get BATT VOLTAGE_NOW failed, rc=%d\n");
+		dev_err(chip->dev, "Get BATT VOLTAGE_NOW failed, rc=%d\n", rc);
 		return false;
 	}
 
 	vbat_uv = pval.intval;
 
 	vbus_ok = (vbus_uv + 100000) > vbat_uv ? true : false;
-	dev_dbg(chip->dev, "vbat_uv=%d, vbus_uv:%d, vbus_ok:%d\n", vbat_uv, vbus_uv, vbus_ok);
+	dev_dbg(chip->dev, "vbat_uv=%ld, vbus_uv:%ld, vbus_ok:%d\n", vbat_uv, vbus_uv, vbus_ok);
 
 	return vbus_ok;
 }
@@ -1815,7 +1815,7 @@ static bool is_adapter_in_cc_mode(struct smb1398_chip *chip)
 			POWER_SUPPLY_PROP_ADAPTER_CC_MODE,
 			&pval);
 	if (rc < 0) {
-		dev_err(chip->dev, "Get ADAPTER_CC_MODE failed, rc=%d\n");
+		dev_err(chip->dev, "Get ADAPTER_CC_MODE failed, rc=%d\n", rc);
 		return rc;
 	}
 
@@ -2212,7 +2212,7 @@ static irqreturn_t default_irq_handler(int irq, void *data)
 			POWER_SUPPLY_PROP_ADAPTER_CC_MODE,
 			&pval);
 	if (rc < 0) {
-		dev_err(chip->dev, "Get ADAPTER_CC_MODE failed, rc=%d\n");
+		dev_err(chip->dev, "Get ADAPTER_CC_MODE failed, rc=%d\n", rc);
 		return IRQ_HANDLED;
 	}
 
@@ -2804,7 +2804,7 @@ static void smb1398_irev_process_work(struct work_struct *work)
 				POWER_SUPPLY_PROP_VOLTAGE_NOW,
 				&pval);
 		if (rc < 0) {
-			dev_err(chip->dev, "Get USB VOLTAGE_NOW failed, rc=%d\n");
+			dev_err(chip->dev, "Get USB VOLTAGE_NOW failed, rc=%d\n", rc);
 			return;
 		}
 
@@ -2819,12 +2819,12 @@ static void smb1398_irev_process_work(struct work_struct *work)
 				POWER_SUPPLY_PROP_VOLTAGE_NOW,
 				&pval);
 		if (rc < 0) {
-			dev_err(chip->dev, "Get BATT VOLTAGE_NOW failed, rc=%d\n");
+			dev_err(chip->dev, "Get BATT VOLTAGE_NOW failed, rc=%d\n", rc);
 			return;
 		}
 
 		vbat_uv = pval.intval;
-		dev_err(chip->dev, "vbat_uv=%d, vbus_uv:%d, rx_off:%d\n", vbat_uv, vbus_uv, rx_off);
+		dev_err(chip->dev, "vbat_uv=%ld, vbus_uv:%ld, rx_off:%d\n", vbat_uv, vbus_uv, rx_off);
 		if (vbus_uv > 0) {
 			rx_off = vbus_uv < vbat_uv ? true : false;
 		}
