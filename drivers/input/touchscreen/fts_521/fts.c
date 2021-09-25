@@ -2502,7 +2502,7 @@ static ssize_t fts_edge_grip_value_show(struct device *dev,
 	char buff[CMD_STR_LEN] = { 0 };
 	all_strbuff = (char *)kmalloc(PAGE_SIZE * sizeof(char), GFP_KERNEL);
 	memset(all_strbuff, 0, PAGE_SIZE);
-	snprintf(all_strbuff, sizeof(all_strbuff), "grip_log_value\n");
+	snprintf(all_strbuff, sizeof(*all_strbuff), "grip_log_value\n");
 	for (i = 0; i < GRIP_TYPE; i++) {
 		type = i;
 		for (j = 0; j < GRIP_POS; j++) {
