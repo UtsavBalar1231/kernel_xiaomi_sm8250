@@ -1582,8 +1582,7 @@ static inline bool ufstw_disable_lpm_needed(struct ufstw_lu *tw)
 {
 	int ret, val = 0;
 
-	INFO_MSG("Flush hibern (%d)\n", __func__, __LINE__,
-			tw->tw_flush_during_hibern_enter);
+	INFO_MSG("Flush hibern (%d)\n", tw->tw_flush_during_hibern_enter);
 	if (!tw->tw_flush_during_hibern_enter)
 		return false;
 
@@ -1634,8 +1633,7 @@ void ufstw_disable_flush_hibern(struct ufsf_feature *ufsf)
 		if (!tw)
 			continue;
 
-		INFO_MSG("Flush hibern (%d)\n", __func__, __LINE__,
-				tw->tw_flush_during_hibern_enter);
+		INFO_MSG("Flush hibern (%d)\n", tw->tw_flush_during_hibern_enter);
 		if (!tw->tw_flush_during_hibern_enter)
 			return;
 
