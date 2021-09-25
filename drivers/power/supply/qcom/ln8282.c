@@ -338,7 +338,7 @@ static bool ln8282_vin_switch_ok(struct ln8282_info *info)
 static void ln8282_enter_switching(struct ln8282_info *info)
 {
 	if (info->reverse_power) {
-       pr_info("%s:set switch in reverse mode\n");
+       pr_info("%s:set switch in reverse mode\n", __func__);
 	   ln8282_set_switch_seq(info, 0);
 	   ln8282_set_base_opt_Bx(info, 0, 1, 0);
 	   ln8282_set_vbus_uv_track(info, 1);//disable during startup
@@ -349,7 +349,7 @@ static void ln8282_enter_switching(struct ln8282_info *info)
 	      pr_warn("%s: Failed to transition to forward SWITCHING mode.\n", __func__);
 	      return;
 	   }
-	   pr_info("%s:set switch in forward mode\n");
+	   pr_info("%s:set switch in forward mode\n", __func__);
 	   ln8282_set_switch_seq(info, 1);
 	   ln8282_set_base_opt_Bx(info, 0, 1, 0);
 	   regmap_write(info->regmap, LN8282_REG_FAULT_CTRL, 0x04);
