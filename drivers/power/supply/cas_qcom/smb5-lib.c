@@ -4740,7 +4740,7 @@ static void smblib_plugin_check_time_work(struct work_struct *work)
 			chg->plugin_detch_check_time = plugin_time;
 			schedule_delayed_work(&chg->fake_plug_out_check_work,
 				msecs_to_jiffies(FAKE_PLUG_OUT_CHECK_DELAY_MS));
-			smblib_dbg(chg, PR_OEM, "%s fake plug out delta_us:%d \n", __func__, delta_us);
+			smblib_dbg(chg, PR_OEM, "%s fake plug out delta_us: %llu\n", __func__, delta_us);
 		}
 
 		if (chg->fake_plug_out == false)
@@ -4755,7 +4755,7 @@ static void smblib_plugin_check_time_work(struct work_struct *work)
 			chg->plugin_attach_check_time = plugin_time;
 			if (chg->fake_plug_out == true)
 				chg->no_raise_vbus_status = true;
-			smblib_dbg(chg, PR_OEM, "%s in delta_us:%d \n", __func__, delta_us);
+			smblib_dbg(chg, PR_OEM, "%s in delta_us: %llu\n", __func__, delta_us);
 		}
 	}
 }
@@ -4789,7 +4789,7 @@ static void smblib_after_ffc_chg_dis_work(struct work_struct *work)
 		return;
 
 	delta_us = ktime_us_delta(ktime_get(), chg->last_ffc_remove_time);
-	smblib_dbg(chg, PR_OEM, "delta_us :%d\n", delta_us);
+	smblib_dbg(chg, PR_OEM, "delta_us: %llu\n", delta_us);
 	if (delta_us > FFC_DISABLE_CHG_DELAY_US)
 		return;
 
@@ -4826,7 +4826,7 @@ static void smblib_after_ffc_chg_dis_work(struct work_struct *work)
 			schedule_delayed_work(&chg->after_ffc_chg_dis_work,
 					msecs_to_jiffies(FFC_DISABLE_CHG_RECHECK_DELAY_1S));
 		} else {
-			smblib_dbg(chg, PR_OEM, "disable chg for :%ds when ffc charging\n",
+			smblib_dbg(chg, PR_OEM, "disable chg for: %llus when ffc charging\n",
 					FFC_DISABLE_CHG_ENABLE_DELAY_120S - (delta_us / 1000));
 			vote(chg->chg_disable_votable, AFTER_FFC_VOTER, true, 0);
 			schedule_delayed_work(&chg->after_ffc_chg_en_work,
@@ -5323,7 +5323,7 @@ int smblib_set_prop_dc_reset(struct smb_charger *chg)
 
 	rc = smblib_write(chg, DCIN_CMD_PON_REG, DCIN_PON_BIT | MID_CHG_BIT);
 	if (rc < 0) {
-		smblib_err(chg, "Couldn't write %d to DCIN_CMD_PON_REG rc=%d\n",
+		smblib_err(chg, "Couldn't write %lu to DCIN_CMD_PON_REG rc=%d\n",
 			DCIN_PON_BIT | MID_CHG_BIT, rc);
 		return rc;
 	}
@@ -9181,20 +9181,20 @@ static void typec_src_removal(struct smb_charger *chg)
 				POWER_SUPPLY_PROP_RESET_DIV_2_MODE,
 				&pval);
 		if (rc < 0) {
-			dev_err(chg->dev, "Couldn't set RESET DIV_2", rc);
+			dev_err(chg->dev, "Couldn't set RESET DIV_2 rc=%d", rc);
 		}
 		rc = power_supply_set_property(chg->cp_slave_psy,
 				POWER_SUPPLY_PROP_RESET_DIV_2_MODE,
 				&pval);
 		if (rc < 0) {
-			dev_err(chg->dev, "Couldn't set Slave RESET DIV_2", rc);
+			dev_err(chg->dev, "Couldn't set Slave RESET DIV_2 rc=%d", rc);
 		}
 	}
 	chg->current_thermal_fcc = -EINVAL;
 	cancel_delayed_work(&chg->thermal_setting_work);
 	vote(chg->ffc_mode_dis_votable, CHG_STATE_VOTER, true, 0);
-	smblib_dbg(chg, PR_OEM, "pps typec_src_removal done:%d\n", chg->last_ffc_remove_time);
-
+	smblib_dbg(chg, PR_OEM, "pps typec_src_removal done: %llu\n",
+		   chg->last_ffc_remove_time);
 }
 
 static void typec_mode_unattached(struct smb_charger *chg)
