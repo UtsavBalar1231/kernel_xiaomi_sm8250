@@ -3633,7 +3633,7 @@ static int rx1619_set_reverse_gpio_state( struct rx1619_chg *chip, int enable){
 		chip->wireless_psy = power_supply_get_by_name("wireless");
 
 	if (chip->wireless_psy) {
-		dev_dbg(chip->dev, "set_reverse_gpio_state\n", reverse_val.intval);
+		dev_dbg(chip->dev, "set_reverse_gpio_state=%d\n", reverse_val.intval);
 		if (enable) {
 			reverse_val.intval = REVERSE_GPIO_STATE_START;
 		} else {
@@ -3688,7 +3688,8 @@ static int rx_set_reverse_gpio(struct rx1619_chg *chip, int enable)
 		dev_info(chip->dev, "txon gpio: %d\n", ret);
 		gpio_free(chip->tx_on_gpio);
 	} else
-		dev_err(chip->dev, "%s: unable to set tx_on gpio_130\n");
+		dev_err(chip->dev,
+				"%s: unable to set tx_on gpio_130\n", __func__);
 
 	return ret;
 }
@@ -3798,7 +3799,8 @@ static int rx_set_reverse_chg_mode(struct rx1619_chg *chip, int enable)
 			pm_relax(chip->dev);
 		}
 	} else
-		dev_err(chip->dev, "%s: unable to set tx_on gpio_130\n");
+		dev_err(chip->dev,
+				"%s: unable to set tx_on gpio_130\n", __func__);
 
 	return ret;
 }
