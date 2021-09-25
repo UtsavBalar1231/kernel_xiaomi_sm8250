@@ -3295,13 +3295,11 @@ static void smblib_get_start_vbat_before_step_charge(struct smb_charger *chg)
 int smblib_set_prop_input_suspend(struct smb_charger *chg,
 				  const union power_supply_propval *val)
 {
-	int rc;
-
 	vote(chg->input_suspend_votable, USER_VOTER, val->intval ? true : false, 0);
 
 	power_supply_changed(chg->batt_psy);
 
-	return rc;
+	return 0;
 }
 
 int smblib_set_prop_batt_capacity(struct smb_charger *chg,
