@@ -973,7 +973,7 @@ static int idtp9220_set_reverse_gpio_state(struct idtp9220_device_info *di,
 		di->wireless_psy = power_supply_get_by_name("wireless");
 
 	if (di->wireless_psy) {
-		dev_dbg(di->dev, "set_reverse_gpio_state\n",
+		dev_dbg(di->dev, "set_reverse_gpio_state=%d\n",
 			reverse_val.intval);
 		if (enable) {
 			reverse_val.intval = REVERSE_GPIO_STATE_START;
@@ -1013,7 +1013,7 @@ static int idtp9229_set_reverse_boost_enable_gpio(struct idtp9220_device_info *d
 	   }
 	   gpio_free(di->dt_props.reverse_boost_enable_gpio);
    } else
-	   dev_err(di->dev, "%s: unable to set reverse_boost_enable_gpio\n");
+	   dev_err(di->dev, "%s: unable to set reverse_boost_enable_gpio\n", __func__);
 
 	return ret;
 }
@@ -1068,7 +1068,7 @@ static int idtp9220_set_reverse_gpio(struct idtp9220_device_info *di,
 		}
 
 	} else
-		dev_err(di->dev, "%s: unable to set tx_on gpio_130\n");
+		dev_err(di->dev, "%s: unable to set tx_on gpio_130\n", __func__);
 
 	di->wireless_psy = power_supply_get_by_name("wireless");
 	if (!di->wireless_psy)
@@ -1188,7 +1188,7 @@ static ssize_t vout_regulator_store(struct device *dev,
 
 	vout = (int)simple_strtoul(buf, NULL, 10);
 	if ((vout <= VOUT_MIN_4900_MV) || (vout > VOUT_MAX_10000_MV)) {
-		dev_err(di->dev, "Store Val %s : %ld is invalid!\n", buf, vout);
+		dev_err(di->dev, "Store Val %s : %d is invalid!\n", buf, vout);
 		return count;
 	}
 	idtp9220_set_vout_regulator(di, vout);
@@ -1238,7 +1238,7 @@ static ssize_t chip_freq_show(struct device *dev,
 
 	f = idtp9220_get_freq(di);
 
-	return snprintf(buf, sizeof(buf), "Output Current: %dkHz\n", f);
+	return snprintf(buf, sizeof(*buf), "Output Current: %dkHz\n", f);
 }
 
 static void idtp9220_charging_info(struct idtp9220_device_info *di)
@@ -1425,7 +1425,7 @@ static ssize_t reverse_enable_show(struct device *dev,
 
 	dev_info(di->dev, "reverse enable gpio: %d\n", ret);
 
-	return snprintf(buf, sizeof(buf), "reverse enable: %d\n", ret);
+	return snprintf(buf, sizeof(*buf), "reverse enable: %d\n", ret);
 }
 
 static ssize_t reverse_gpio_store(struct device *dev,
@@ -1493,7 +1493,7 @@ static ssize_t ovp_gpio_store(struct device *dev,
 		}
 		gpio_free(di->dt_props.rx_ovp_ctl_gpio);
 	} else
-		dev_err(di->dev, "%s: unable to get ovp_en_gpio\n");
+		dev_err(di->dev, "%s: unable to get ovp_en_gpio\n", __func__);
 
 	return count;
 }
