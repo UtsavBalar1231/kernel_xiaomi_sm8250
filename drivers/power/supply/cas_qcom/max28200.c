@@ -995,12 +995,22 @@ static int max28200_parse_dt(struct max28200_chip *chip)
 		max_dbg(PR_OEM, "%s - get watchdog_int error\n", __func__);
 		return -ENODEV;
 	}
+
 	ret = gpio_request(chip->watchdog_int, "watchdog_int");
+	if (ret)
+		return ret;
+
 	chip->watchdog_irq = gpio_to_irq(chip->watchdog_int);
-	request_threaded_irq(chip->watchdog_irq,
+
+	ret = request_threaded_irq(chip->watchdog_irq,
 			     NULL, max28200_irq_handler,
 			     IRQF_TRIGGER_FALLING | IRQF_ONESHOT,
 			     "watchdog_irq", chip);
+	if (ret) {
+		max_dbg(PR_OEM, "%s: request_threaded_irq failed ret = %d\n",
+			__func__, ret);
+		return ret;
+	}
 
 	return 0;
 }
