@@ -818,7 +818,7 @@ static int idtp9220_set_reverse_gpio_state(struct idtp9220_device_info *di, int 
 		di->wireless_psy = power_supply_get_by_name("wireless");
 
 	if (di->wireless_psy) {
-		dev_dbg(di->dev, "set_reverse_gpio_state\n", reverse_val.intval);
+		dev_dbg(di->dev, "set_reverse_gpio_state=%d\n", reverse_val.intval);
 		if (enable) {
 			reverse_val.intval = REVERSE_GPIO_STATE_START;
 		} else {
@@ -858,7 +858,8 @@ static int idtp9220_set_reverse_gpio(struct idtp9220_device_info *di, int enable
 		}
 		gpio_free(di->dt_props.reverse_gpio);
 	} else
-		dev_err(di->dev, "%s: unable to set tx_on gpio_130\n");
+		dev_err(di->dev,
+				"%s: unable to set tx_on gpio_130\n", __func__);
 
 	di->wireless_psy = power_supply_get_by_name("wireless");
 	if (!di->wireless_psy)
@@ -980,7 +981,7 @@ static ssize_t vout_regulator_store(struct device *dev,
 
 	vout = (int)simple_strtoul(buf, NULL, 10);
 	if ((vout <= VOUT_MIN_4900_MV) || (vout > VOUT_MAX_10000_MV)) {
-		dev_err(di->dev, "Store Val %s : %ld is invalid!\n", buf, vout );
+		dev_err(di->dev, "Store Val %s : %d is invalid!\n", buf, vout);
 		return count;
 	}
 	idtp9220_set_vout_regulator(di, vout);
