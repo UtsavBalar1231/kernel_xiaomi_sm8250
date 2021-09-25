@@ -743,7 +743,7 @@ static int fg_get_fastcharge_mode(struct bq_fg_chip *bq)
 
 static int fg_set_fastcharge_mode(struct bq_fg_chip *bq, bool enable)
 {
-	u8 data[2];
+	u8 data[2] = {0};
 	int ret;
 
 	data[0] = enable;
@@ -2329,7 +2329,7 @@ static int calc_delta_time(ktime_t time_last, int *delta_time)
 	if (*delta_time < 0)
 		*delta_time = 0;
 
-	bq_dbg(PR_DEBUG,  "now:%ld, last:%ld, delta:%d\n", time_now, time_last, *delta_time);
+	bq_dbg(PR_DEBUG,  "now:%lld, last:%lld, delta:%d\n", time_now, time_last, *delta_time);
 
 	return 0;
 }
@@ -2434,7 +2434,7 @@ static int bq_battery_soc_smooth_tracking(struct bq_fg_chip *bq,
 			last_raw_soc[bq->fg_index] = raw_soc;
 			optimiz_soc[bq->fg_index] += soc_changed;
 			last_optimiz_time[bq->fg_index] = ktime_get();
-			bq_dbg(PR_DEBUG, "optimiz_soc:%d, last_optimiz_time%ld\n",
+			bq_dbg(PR_DEBUG, "optimiz_soc:%d, last_optimiz_time%lld\n",
 					optimiz_soc[bq->fg_index], last_optimiz_time[bq->fg_index]);
 			if (optimiz_soc[bq->fg_index] > 100)
 				optimiz_soc[bq->fg_index] = 100;
@@ -2492,7 +2492,7 @@ static int bq_battery_soc_smooth_tracking(struct bq_fg_chip *bq,
 	bq_dbg(PR_DEBUG, "batt_ma_avg:%d, batt_ma:%d, cold_smooth:%d, optimiz_soc:%d",
 			batt_ma_avg, batt_ma, cold_smooth[bq->fg_index], optimiz_soc[bq->fg_index]);
 	bq_dbg(PR_DEBUG, "delta_time:%d, change_delta:%d, unit_time:%d"
-			" soc_changed:%d, bq->update_now:%d, bq->ffc_smooth",
+			" soc_changed:%d, bq->update_now:%d, bq->ffc_smooth:%d",
 			delta_time, change_delta, unit_time,
 			soc_changed, bq->update_now, bq->ffc_smooth);
 
