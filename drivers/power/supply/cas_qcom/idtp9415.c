@@ -5335,9 +5335,8 @@ static int idtp9220_probe(struct i2c_client *client,
 	di->ocp_disable_votable = create_votable("IDTP_OCP_DISABLE",
 		VOTE_SET_ANY, idtp9220_ocp_disable_vote_cb, di);
 	if (IS_ERR_OR_NULL(di->ocp_disable_votable)) {
-		PTR_ERR_OR_ZERO(di->ocp_disable_votable);
 		dev_err(di->dev, "Failed to initialize ocp_disable_votable\n");
-		return -ENODEV;
+		return PTR_ERR_OR_ZERO(di->ocp_disable_votable);
 	}
 	//ret = idtp9220_get_property_names(di);
 	/*
