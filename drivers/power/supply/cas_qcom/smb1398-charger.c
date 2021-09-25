@@ -3751,7 +3751,7 @@ static int smb1398_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, chip);
 
 	chip->standalone_mode = true;
-	chip->div2_cp_role = (int)of_device_get_match_data(chip->dev);
+	chip->div2_cp_role = (uintptr_t)of_device_get_match_data(chip->dev);
 	switch (chip->div2_cp_role) {
 	case DIV2_CP_MASTER:
 		rc = smb1398_div2_cp_master_probe(chip);
