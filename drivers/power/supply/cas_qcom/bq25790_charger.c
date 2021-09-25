@@ -2175,7 +2175,7 @@ static ssize_t bq25790_store_mtbf(struct device *dev,
 	union power_supply_propval prop = {0,};
 	int ret = 0;
 
-	ret = sscanf(buf, "%d", &bq->mtbf);
+	ret = sscanf(buf, "%d", (int *)&bq->mtbf);
 
 	bq25790_update_byte_bits(bq, BQ25790_REG_TIMER_CTRL, 0xFF, 0x07);
 	prop.intval = 288;
