@@ -6,7 +6,7 @@
 
 struct sockaddr_pkt {
 	unsigned short spkt_family;
-	unsigned char spkt_device[14];
+	unsigned char spkt_device[16];
 	__be16 spkt_protocol;
 };
 
