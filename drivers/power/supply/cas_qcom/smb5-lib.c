@@ -4686,8 +4686,6 @@ static int smblib_update_thermal_readings(struct smb_charger *chg)
 int smblib_set_vbus_disable(struct smb_charger *chg,
 					bool disable)
 {
-	int ret;
-
 	smblib_dbg(chg, PR_OEM, "set vbus disable:%d\n", disable);
 	if (disable) {
 		if (chg->vbus_disable_gpio) {
@@ -4700,7 +4698,7 @@ int smblib_set_vbus_disable(struct smb_charger *chg,
 	}
 	chg->vbus_disable = disable;
 
-	return ret;
+	return 0;
 }
 
 static int smblib_set_sw_conn_therm_regulation(struct smb_charger *chg,
