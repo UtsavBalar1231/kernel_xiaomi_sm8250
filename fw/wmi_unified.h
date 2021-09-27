@@ -3895,8 +3895,13 @@ typedef struct {
      *      1-> enable the feature
      *      Refer to the WMI_RSRC_CFG_FLAGS2_IS_DYNAMIC_PCIE_GEN_SPEED_SWITCH_ENABLED
      *      GET/SET macros.
+     *  Bit 9 - calc_next_dtim_count
+     *      0 -> disable calculation of DTIM count for MBSSID_NON_TX_VAP
+     *      1 -> Used by some hosts to indicate calculation of DTIM count
+     *           for MBSSID_NON_TX_VAP
+     *      Refer to WMI_RSRC_CFG_FLAGS2_CALC_NEXT_DTIM_COUNT_GET/SET macros.
      *
-     *  Bits 31:9 - Reserved
+     *  Bits 31:10 - Reserved
      */
     A_UINT32 flags2;
     /** @brief host_service_flags - can be used by Host to indicate
@@ -4027,6 +4032,13 @@ typedef struct {
      *  default beacon size (1500) is used.
      */
     A_UINT32 ema_init_config;
+
+    /** @brief carrier_config
+     * Carrier profile configuration
+     * BIT 0 -> enable/disable charter configurations
+     * BIT 1 : 31 Reserved
+     */
+    A_UINT32 carrier_config;
 } wmi_resource_config;
 
 #define WMI_MSDU_FLOW_AST_ENABLE_GET(msdu_flow_config0, ast_x) \
@@ -4251,6 +4263,11 @@ typedef struct {
 #define WMI_RSRC_CFG_FLAGS2_IS_DYNAMIC_PCIE_GEN_SPEED_SWITCH_ENABLED_SET(flags2, value) \
     WMI_SET_BITS(flags2, 8, 1, value)
 
+#define WMI_RSRC_CFG_FLAGS2_CALC_NEXT_DTIM_COUNT_GET(flags2) \
+    WMI_GET_BITS(flags2, 9, 1)
+#define WMI_RSRC_CFG_FLAGS2_CALC_NEXT_DTIM_COUNT_SET(flags2, value) \
+    WMI_SET_BITS(flags2, 9, 1, value)
+
 #define WMI_RSRC_CFG_HOST_SERVICE_FLAG_NAN_IFACE_SUPPORT_GET(host_service_flags) \
     WMI_GET_BITS(host_service_flags, 0, 1)
 #define WMI_RSRC_CFG_HOST_SERVICE_FLAG_NAN_IFACE_SUPPORT_SET(host_service_flags, val) \
@@ -4300,6 +4317,11 @@ typedef struct {
     WMI_GET_BITS(host_service_flags, 9, 1)
 #define WMI_RSRC_CFG_HOST_SERVICE_FLAG_REG_DISCARD_AFC_REQ_ID_CHECK_SET(host_service_flags, val) \
     WMI_SET_BITS(host_service_flags, 9, 1, val)
+
+#define WMI_RSRC_CFG_CARRIER_CFG_CHARTER_ENABLE_GET(carrier_config) \
+    WMI_GET_BITS(carrier_config, 0, 1)
+#define WMI_RSRC_CFG_CARRIER_CFG_CHARTER_ENABLE_SET(carrier_config, val) \
+    WMI_SET_BITS(carrier_config, 0, 1, val)
 
 typedef struct {
     A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_init_cmd_fixed_param */
@@ -10221,6 +10243,77 @@ typedef struct {
 
 #define WMI_CTRL_PATH_CALIBRATION_STATS_IS_PERIODIC_CAL_GET(cal_info)              WMI_GET_BITS(cal_info, 13, 1)
 #define WMI_CTRL_PATH_CALIBRATION_STATS_IS_PERIODIC_CAL_SET(cal_info, is_periodic) WMI_SET_BITS(cal_info, 13, 1, is_periodic)
+
+/* 0=20MHz, 1=40MHz, 2=80MHz, 3=160MHz, 4=240MHz, 5=320MHz */
+#define WMI_AWGN_MAX_BW 6
+
+typedef struct {
+    /* TLV tag and len; tag equals
+     * WMITLV_TAG_STRUC_wmi_ctrl_path_awgn_stats_struct
+     * For 6G FCC test we have to monitor channel interference and switch
+     * to non-interference channel.
+     * Additive White Gaussian Noise (AWGN) interference detection logic
+     * is used to detect interference based upon CCA / BW drop / packet drop.
+     * Once AWGN interference is detected, the target sends
+     * WMI_DCS_INTERFERENCE_EVENTID to host for channel change/BW change.
+     * This stats struct is used to get info about how many times these
+     * CCA_Interference/BW_Drop/Pkt_Drop indicators of AWGN occur.
+     */
+    A_UINT32 tlv_header;
+    /*
+     * AWGN WMI event sent count
+     * This is used to inform how many WMI_DCS_INTERFERENCE_EVENTID have been
+     * sent to the host.
+     * WMI_DCS_INTERFERENCE_EVENTID is sent whenever one or more of
+     * CCA_Int/BW_Drop/Channel_Change(Pkt_Drop) happen.
+     */
+    A_UINT32 awgn_send_evt_cnt;
+    /* AWGN primary int count */
+    A_UINT32 awgn_pri_int_cnt;
+    /* AWGN secondary int count */
+    A_UINT32 awgn_sec_int_cnt;
+    /*
+     * AWGN pkt drop trigger count
+     * This shows how many times the presence of interference on the
+     * primary BW has been inferred due to pkt drops.
+     * WMI_DCS_INTERFERENCE_EVENTID wil be sent whenever there is
+     * interference on Primary Channel.
+     */
+    A_UINT32 awgn_pkt_drop_trigger_cnt;
+    /* awgn pkt drop trigger reset count */
+    A_UINT32 awgn_pkt_drop_trigger_reset_cnt;
+    /*
+     * AWGN bandwidth drop count
+     * This is used to inform count for any frame transmitted on lower BW
+     * than configured BW.
+     * WMI_DCS_INTERFERENCE_EVENTID wil be sent whenever there is BW drop.
+     */
+    A_UINT32 awgn_bw_drop_cnt;
+    /* AWGN bandwidth drop reset count */
+    A_UINT32 awgn_bw_drop_reset_cnt;
+    /*
+     * AWGN CCA int count
+     * This is used to inform the interference based on CCA registers.
+     * WMI_DCS_INTERFERENCE_EVENTID wil be sent whenever there is CCA
+     * interference.
+     */
+    A_UINT32 awgn_cca_int_cnt;
+    /* AWGN cca int reset count */
+    A_UINT32 awgn_cca_int_reset_cnt;
+    /* AWGN cca ack blk count */
+    A_UINT32 awgn_cca_ack_blk_cnt;
+    /* AWGN cca ack blk reset count */
+    A_UINT32 awgn_cca_ack_reset_cnt;
+    /*
+     * AWGN int BW cnt used to store interference occured at 20/40/80/160MHz
+     * bw_cnt[0] counts interference detections in 20 MHz BW,
+     * bw_cnt[1] counts interference detections in 40 MHz BW,
+     * bw_cnt[2] counts interference detections in 80 MHz BW,
+     * bw_cnt[3] counts interference detections in 160 MHz BW,
+     * bw_cnt[4] and bw_cnt[6] are reserved for 240 MHz and 320 MHz.
+     */
+    A_UINT32 awgn_int_bw_cnt[WMI_AWGN_MAX_BW];
+} wmi_ctrl_path_awgn_stats_struct;
 
 typedef struct {
     /** TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_ctrl_path_dfs_channel_stats_struct*/
@@ -27452,6 +27545,7 @@ typedef enum {
     WMI_REQUEST_CTRL_PATH_TWT_STAT          = 4,
     WMI_REQUEST_CTRL_PATH_CALIBRATION_STAT  = 5,
     WMI_REQUEST_CTRL_PATH_DFS_CHANNEL_STAT  = 6,
+    WMI_REQUEST_CTRL_PATH_AWGN_STAT         = 7,
 } wmi_ctrl_path_stats_id;
 
 typedef enum {
@@ -30592,6 +30686,18 @@ typedef enum _WMI_TWT_COMMAND_T {
 /* 0 means TWT Information frame is enabled, 1 means TWT Information frame is disabled */
 #define TWT_FLAGS_GET_TWT_INFO_FRAME_DISABLED(flag)      WMI_GET_BITS(flag, 13, 1)
 #define TWT_FLAGS_SET_TWT_INFO_FRAME_DISABLED(flag, val) WMI_SET_BITS(flag, 13, 1, val)
+
+/*
+ * 1 means PM_RESPONDER_MODE information sent in BIT15 is valid, 0 means it is not valid.
+ * Will be used for backward compatibility if host uses older FW versions
+ * then value will be 0 so host will not consider the BIT15 value.
+ */
+#define TWT_FLAGS_GET_PM_RESPONDER_MODE_VALID(flag)      WMI_GET_BITS(flag, 14, 1)
+#define TWT_FLAGS_SET_PM_RESPONDER_MODE_VALID(flag, val) WMI_SET_BITS(flag, 14, 1, val)
+
+/* 1 means PM_RESPONDER_MODE supported, 0 means not supported */
+#define TWT_FLAGS_GET_PM_RESPONDER_MODE(flag)      WMI_GET_BITS(flag, 15, 1)
+#define TWT_FLAGS_SET_PM_RESPONDER_MODE(flag, val) WMI_SET_BITS(flag, 15, 1, val)
 
 typedef struct {
     A_UINT32 tlv_header;    /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_twt_ack_event_fixed_param */
@@ -35406,6 +35512,12 @@ typedef struct {
 
 #define WMI_TWT_SESSION_FLAG_TWT_INFO_FRAME_DISABLED_GET(_var) WMI_GET_BITS(_var, 20, 1)
 #define WMI_TWT_SESSION_FLAG_TWT_INFO_FRAME_DISABLED_SET(_var, _val) WMI_SET_BITS(_var, 20, 1, _val)
+
+#define WMI_TWT_SESSION_FLAG_TWT_PM_RESPONDER_MODE_VALID_GET(_var) WMI_GET_BITS(_var, 21, 1)
+#define WMI_TWT_SESSION_FLAG_TWT_PM_RESPONDER_MODE_VALID_SET(_var, _val) WMI_SET_BITS(_var, 21, 1, _val)
+
+#define WMI_TWT_SESSION_FLAG_TWT_PM_RESPONDER_MODE_GET(_var) WMI_GET_BITS(_var, 22, 1)
+#define WMI_TWT_SESSION_FLAG_TWT_PM_RESPONDER_MODE_SET(_var, _val) WMI_SET_BITS(_var, 22, 1, _val)
 
 typedef struct {
     /** TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_twt_session_stats_info */
