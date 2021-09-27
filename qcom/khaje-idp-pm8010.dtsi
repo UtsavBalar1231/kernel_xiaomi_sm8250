@@ -1,10 +1,6 @@
 &soc {
 };
 
-&qupv3_se1_i2c {
-	qcom,clk-freq-out = <100000>;
-};
-
 &pm8008_regulators {
 	compatible = "qcom,pm8010-regulator";
 };
