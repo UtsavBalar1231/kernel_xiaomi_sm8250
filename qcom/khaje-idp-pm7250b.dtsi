@@ -112,6 +112,11 @@
 	qcom,platform-bklight-en-gpio = <&pm7250b_gpios 1 0>;
 };
 
+&dsi_nt36672e_fhd_plus_120hz_video {
+	qcom,platform-en-gpio = <&pm7250b_gpios 5 0>;
+	qcom,platform-bklight-en-gpio = <&pm7250b_gpios 1 0>;
+};
+
 &cam_res_mgr_label {
 	gpios = <&pm7250b_gpios 4 0>;
 };
