@@ -325,6 +325,14 @@
 &thermal_zones {
 	quiet-therm-step {
 		status = "ok";
+
+		cooling-maps {
+			silver_cdev {
+				/* limit to 1516800khz */
+				cooling-device = <&CPU0 THERMAL_NO_LIMIT
+							(THERMAL_MAX_LIMIT-4)>;
+			};
+		};
 	};
 };
 

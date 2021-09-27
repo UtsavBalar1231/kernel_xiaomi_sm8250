@@ -284,3 +284,25 @@
 		panel = <&dsi_nt36672e_fhd_plus_90hz_video>;
 	};
 };
+
+&pm7250b_charger {
+	dpdm-supply = <&usb2_phy0>;
+
+	smb5_vbus: qcom,smb5-vbus {
+		regulator-name = "smb5-vbus";
+	};
+
+	smb5_vconn: qcom,smb5-vconn {
+		regulator-name = "smb5-vconn";
+	};
+};
+
+&pm7250b_pdphy {
+	vdd-pdphy-supply = <&L15A>;
+	vbus-supply = <&smb5_vbus>;
+	vconn-supply = <&smb5_vconn>;
+};
+
+&usb0 {
+	extcon = <&pm7250b_pdphy>, <&pm7250b_charger>, <&eud>;
+};
