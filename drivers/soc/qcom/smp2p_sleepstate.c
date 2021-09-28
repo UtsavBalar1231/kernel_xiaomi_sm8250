@@ -13,6 +13,7 @@
 #include <linux/pm_wakeup.h>
 
 #define PROC_AWAKE_ID 12 /* 12th bit */
+#define SMP2P_SLEEPSTATE_TIME CONFIG_SMP2P_SLEEPSTATE_TIME
 #define AWAKE_BIT BIT(PROC_AWAKE_ID)
 static struct qcom_smem_state *state;
 static struct wakeup_source *notify_ws;
@@ -49,11 +50,7 @@ static struct notifier_block sleepstate_pm_nb = {
 
 static irqreturn_t smp2p_sleepstate_handler(int irq, void *ctxt)
 {
-#ifdef CONFIG_SMP2P_SLEEPSTATE_TIME_100MS
-	__pm_wakeup_event(notify_ws, 100);
-#else
-	__pm_wakeup_event(notify_ws, 200);
-#endif
+	__pm_wakeup_event(notify_ws, SMP2P_SLEEPSTATE_TIME);
 	return IRQ_HANDLED;
 }
 
