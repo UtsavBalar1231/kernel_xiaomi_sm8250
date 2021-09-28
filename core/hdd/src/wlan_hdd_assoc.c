@@ -1848,6 +1848,37 @@ static void hdd_cm_set_default_wlm_mode(struct hdd_adapter *adapter)
 }
 
 /**
+ * hdd_reset_udp_qos_upgrade_config() - Reset the threshold for UDP packet
+ * QoS upgrade.
+ * @adapter: adapter for which this configuration is to be applied
+ *
+ * Return: None
+ */
+static void hdd_reset_udp_qos_upgrade_config(struct hdd_adapter *adapter)
+{
+	struct hdd_context *hdd_ctx = WLAN_HDD_GET_CTX(adapter);
+	bool reset;
+	QDF_STATUS status;
+
+	if (!hdd_ctx) {
+		hdd_err("hdd_ctx is NULL");
+		return;
+	}
+
+	status = ucfg_mlme_cfg_get_wlm_reset(hdd_ctx->psoc, &reset);
+	if (QDF_IS_STATUS_ERROR(status)) {
+		hdd_err("could not get the wlm reset flag");
+		return;
+	}
+
+	if (reset) {
+		adapter->upgrade_udp_qos_threshold = QCA_WLAN_AC_BK;
+		hdd_debug("UDP packets qos upgrade to: %d",
+			  adapter->upgrade_udp_qos_threshold);
+	}
+}
+
+/**
  * hdd_dis_connect_handler() - disconnect event handler
  * @adapter: pointer to adapter
  * @roam_info: pointer to roam info
@@ -1899,6 +1930,7 @@ static QDF_STATUS hdd_dis_connect_handler(struct hdd_adapter *adapter,
 				  sta_ctx->conn_info.bssid.bytes);
 
 	hdd_cm_set_default_wlm_mode(adapter);
+	hdd_reset_udp_qos_upgrade_config(adapter);
 	hdd_periodic_sta_stats_stop(adapter);
 
 #ifdef FEATURE_WLAN_AUTO_SHUTDOWN
