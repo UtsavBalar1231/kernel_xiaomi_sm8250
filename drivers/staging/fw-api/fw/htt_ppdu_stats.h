@@ -210,10 +210,13 @@ PREPACK struct htt_tx_ppdu_stats_info {
     A_UINT32 tx_ratecode:       8,
              is_ampdu:          1,
              ba_ack_failed:     2,
-             /*  0: 20 MHz
-                 1: 40 MHz
-                 2: 80 MHz
-                 3: 160 MHz or 80+80 MHz */
+             /* bw
+              *  0: 20 MHz
+              *  1: 40 MHz
+              *  2: 80 MHz
+              *  3: 160 MHz or 80+80 MHz
+              *  4: 320 MHz
+              */
              bw:                3,
              sgi:               1,
              skipped_rate_ctrl: 1,
@@ -375,6 +378,13 @@ enum HTT_STATS_FTYPE {
     HTT_STATS_FTYPE_TIDQ_DATA_MU,
     HTT_STATS_FTYPE_SGEN_UL_BSR_RESP,
     HTT_STATS_FTYPE_SGEN_QOS_NULL,
+    HTT_STATS_FTYPE_SGEN_BE_NDPA,
+    HTT_STATS_FTYPE_SGEN_BE_NDP,
+    HTT_STATS_FTYPE_SGEN_BE_MU_TRIG,
+    HTT_STATS_FTYPE_SGEN_BE_MU_BAR,
+    HTT_STATS_FTYPE_SGEN_BE_MU_BRP,
+    HTT_STATS_FTYPE_SGEN_BE_MU_RTS,
+    HTT_STATS_FTYPE_SGEN_BE_MU_BSRP,
     HTT_STATS_FTYPE_MAX,
 };
 typedef enum HTT_STATS_FTYPE HTT_STATS_FTYPE;
@@ -416,6 +426,8 @@ enum HTT_PPDU_STATS_BW {
     HTT_PPDU_STATS_BANDWIDTH_80MHZ  = 4,
     HTT_PPDU_STATS_BANDWIDTH_160MHZ = 5, /* includes 80+80 */
     HTT_PPDU_STATS_BANDWIDTH_DYN    = 6,
+    HTT_PPDU_STATS_BANDWIDTH_DYN_PATTERNS = 7,
+    HTT_PPDU_STATS_BANDWIDTH_320MHZ = 8,
 };
 typedef enum HTT_PPDU_STATS_BW HTT_PPDU_STATS_BW;
 
@@ -433,16 +445,23 @@ typedef enum HTT_PPDU_STATS_BW HTT_PPDU_STATS_BW;
      } while (0)
 
 enum HTT_PPDU_STATS_SEQ_TYPE {
-    HTT_SEQTYPE_UNSPECIFIED     = 0,
-    HTT_SEQTYPE_SU              = 1,
-    HTT_SEQTYPE_AC_MU_MIMO      = 2,
-    HTT_SEQTYPE_AX_MU_MIMO      = 3,
-    HTT_SEQTYPE_MU_OFDMA        = 4,
-    HTT_SEQTYPE_UL_TRIG         = 5,
-    HTT_SEQTYPE_BURST_BCN       = 6,
-    HTT_SEQTYPE_UL_BSR_RESP     = 7,
-    HTT_SEQTYPE_UL_BSR_TRIG     = 8,
-    HTT_SEQTYPE_UL_RESP         = 9,
+    HTT_SEQTYPE_UNSPECIFIED         = 0,
+    HTT_SEQTYPE_SU                  = 1,
+    HTT_SEQTYPE_AC_MU_MIMO          = 2,
+    HTT_SEQTYPE_AX_MU_MIMO          = 3,
+    HTT_SEQTYPE_MU_OFDMA            = 4,
+    HTT_SEQTYPE_UL_MU_OFDMA_TRIG    = 5, /* new name - use this */
+        HTT_SEQTYPE_UL_TRIG         = 5,  /* deprecated old name */
+    HTT_SEQTYPE_BURST_BCN           = 6,
+    HTT_SEQTYPE_UL_BSR_RESP         = 7,
+    HTT_SEQTYPE_UL_BSR_TRIG         = 8,
+    HTT_SEQTYPE_UL_RESP             = 9,
+    HTT_SEQTYPE_UL_MU_MIMO_TRIG     = 10,
+    HTT_SEQTYPE_BE_MU_MIMO          = 11,
+    HTT_SEQTYPE_BE_MU_OFDMA         = 12,
+    HTT_SEQTYPE_BE_UL_MU_OFDMA_TRIG = 13,
+    HTT_SEQTYPE_BE_UL_MU_MIMO_TRIG  = 14,
+    HTT_SEQTYPE_BE_UL_BSR_TRIG      = 15,
 };
 typedef enum HTT_PPDU_STATS_SEQ_TYPE HTT_PPDU_STATS_SEQ_TYPE;
 
@@ -596,6 +615,11 @@ typedef enum HTT_PPDU_STATS_SPATIAL_REUSE HTT_PPDU_STATS_SPATIAL_REUSE;
 #define HTT_PPDU_STATS_COMMON_TRIG_COOKIE_GET(_val) \
         (((_val) & HTT_PPDU_STATS_COMMON_TRIG_COOKIE_M) >> \
          HTT_PPDU_STATS_COMMON_TRIG_COOKIE_S)
+
+enum HTT_SEQ_TYPE {
+    WAL_PPDU_SEQ_TYPE = 0,
+    HTT_PPDU_SEQ_TYPE = 1,
+};
 
 typedef struct {
     htt_tlv_hdr_t tlv_hdr;
@@ -756,6 +780,26 @@ typedef struct {
             A_UINT32 trig_cookie: 16,
                      trig_cookie_rsvd: 15,
                      trig_cookie_valid: 1;
+        };
+    };
+
+    /*
+     * htt_seq_type field is added for backward compatibility with
+     * pktlog decoder, host driver or any third party tool interpreting
+     * ppdu sequence type. If field 'htt_seq_type'is not present or is
+     * present but set to WAL_PPDU_SEQ_TYPE, decoder should interpret
+     * the seq type as WAL_TXSEND_PPDU_SEQUENCE.
+     * If the new field htt_seq_type is present and is set to
+     * HTT_PPDU_SEQ_TYPE then decoder should interpret the seq type as
+     * HTT_PPDU_STATS_SEQ_TYPE. htt_seq_type field will be set to
+     * HTT_PPDU_SEQ_TYPE in firmware versions where this field is
+     * defined.
+     */
+    union {
+        A_UINT32 reserved__htt_seq_type;
+        struct {
+            A_UINT32 htt_seq_type:  1,
+                     reserved3:     31;
         };
     };
 } htt_ppdu_stats_common_tlv;
@@ -1527,6 +1571,24 @@ typedef enum HTT_PPDU_STATS_RESP_PPDU_TYPE HTT_PPDU_STATS_RESP_PPDU_TYPE;
          ((_var) |= ((_val) << HTT_PPDU_STATS_USER_RATE_TLV_RESP_PPDU_TYPE_S)); \
      } while (0)
 
+typedef enum HTT_PPDU_STATS_RU_SIZE {
+    HTT_PPDU_STATS_RU_26,
+    HTT_PPDU_STATS_RU_52,
+    HTT_PPDU_STATS_RU_52_26,
+    HTT_PPDU_STATS_RU_106,
+    HTT_PPDU_STATS_RU_106_26,
+    HTT_PPDU_STATS_RU_242,
+    HTT_PPDU_STATS_RU_484,
+    HTT_PPDU_STATS_RU_484_242,
+    HTT_PPDU_STATS_RU_996,
+    HTT_PPDU_STATS_RU_996_484,
+    HTT_PPDU_STATS_RU_996_484_242,
+    HTT_PPDU_STATS_RU_996x2,
+    HTT_PPDU_STATS_RU_996x2_484,
+    HTT_PPDU_STATS_RU_996x3,
+    HTT_PPDU_STATS_RU_996x3_484,
+    HTT_PPDU_STATS_RU_996x4,
+} HTT_PPDU_STATS_RU_SIZE;
 
 typedef struct {
     htt_tlv_hdr_t tlv_hdr;
@@ -1546,36 +1608,68 @@ typedef struct {
 
     /* BIT [ 3 :   0]   :- user_pos
      * BIT [ 11:   4]   :- mu_group_id
-     * BIT [ 31:  12]   :- reserved1
+     * BIT [ 15:  12]   :- ru_format
+     * BIT [ 31:  16]   :- reserved1
      */
     union {
         A_UINT32 mu_group_id__user_pos;
         struct {
             A_UINT32 user_pos:           4,
                      mu_group_id:        8,
-                     reserved1:         20;
+                     ru_format:          4,
+                     reserved1:         16;
         };
     };
 
-    /* BIT [ 15 :   0]   :- ru_end
-     * BIT [ 31 :  16]   :- ru_start
+    /* BIT [ 15 :   0]   :- ru_end or ru_index
+     * BIT [ 31 :  16]   :- ru_start or ru_size
+     *
+     * Discriminant is field ru_format:
+     *     - ru_format = 0: ru_end, ru_start
+     *     - ru_format = 1: ru_index, ru_size
+     *     - ru_format = other: reserved for future expansion
+     *
+     * ru_start and ru_end are RU 26 indices
+     *
+     * ru_size is an HTT_PPDU_STATS_RU_SIZE, ru_index is a size
+     * specific index for the given ru_size.
      */
     union {
         A_UINT32 ru_start__ru_end;
+        A_UINT32 ru_size__ru_index;
         struct {
-            A_UINT32 ru_end:            16,
-                     ru_start:          16;
+            A_UINT32 ru_end:   16,
+                     ru_start: 16;
+        };
+        struct {
+            A_UINT32 ru_index: 16,
+                     ru_size:  16;
         };
     };
 
-    /* BIT [ 15 :   0]   :- ru_end
-     * BIT [ 31 :  16]   :- ru_start
+    /* BIT [ 15 :   0]   :- resp_ru_end or resp_ru_index
+     * BIT [ 31 :  16]   :- resp_ru_start or resp_ru_size
+     *
+     * Discriminant is field ru_format:
+     *     - ru_format = 0: resp_ru_end, resp_ru_start
+     *     - ru_format = 1: resp_ru_index, resp_ru_size
+     *     - ru_format = other: reserved for future expansion
+     *
+     * resp_ru_start and resp_ru_end are RU 26 indices
+     *
+     * resp_ru_size is an HTT_PPDU_STATS_RU_SIZE, resp_ru_index
+     * is a size specific index for the given ru_size.
      */
     union {
         A_UINT32 resp_ru_start__ru_end;
+        A_UINT32 resp_ru_size__ru_index;
         struct {
-            A_UINT32 resp_ru_end:       16,
-                     resp_ru_start:     16;
+            A_UINT32 resp_ru_end:   16,
+                     resp_ru_start: 16;
+        };
+        struct {
+            A_UINT32 resp_ru_index: 16,
+                     resp_ru_size:  16;
         };
     };
 

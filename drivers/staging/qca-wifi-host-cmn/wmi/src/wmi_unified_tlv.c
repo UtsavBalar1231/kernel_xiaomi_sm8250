@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2021 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -10891,6 +10891,9 @@ static QDF_STATUS extract_fips_event_data_tlv(wmi_unified_t wmi_handle,
 	param_buf = (WMI_PDEV_FIPS_EVENTID_param_tlvs *) evt_buf;
 	event = (wmi_pdev_fips_event_fixed_param *) param_buf->fixed_param;
 
+	if (event->data_len > param_buf->num_data)
+		return QDF_STATUS_E_FAILURE;
+
 	if (fips_conv_data_be(event->data_len, param_buf->data) !=
 							QDF_STATUS_SUCCESS)
 		return QDF_STATUS_E_FAILURE;
@@ -14373,6 +14376,7 @@ void wmi_tlv_attach(wmi_unified_t wmi_handle)
 	wmi_fwol_attach_tlv(wmi_handle);
 	wmi_vdev_attach_tlv(wmi_handle);
 	wmi_cfr_attach_tlv(wmi_handle);
+	wmi_gpio_attach_tlv(wmi_handle);
 }
 qdf_export_symbol(wmi_tlv_attach);
 

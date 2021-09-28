@@ -210,8 +210,23 @@ static struct sde_kms *get_kms(struct drm_crtc *crtc)
 static void update_pu_feature_enable(struct sde_crtc *sde_crtc,
 		u32 feature, bool enable)
 {
+	struct drm_crtc *crtc;
+	struct sde_crtc_state *sde_crtc_state;
+
 	if (!sde_crtc || feature > SDE_CP_CRTC_MAX_PU_FEATURES) {
 		DRM_ERROR("invalid args feature %d\n", feature);
+		return;
+	}
+
+	crtc = &(sde_crtc->base);
+	if (!crtc) {
+		DRM_ERROR("invalid crtc pointer\n");
+		return;
+	}
+
+	sde_crtc_state = to_sde_crtc_state(crtc->state);
+	if (!sde_crtc_state) {
+		DRM_ERROR("invalid sde_crtc_state pointer\n");
 		return;
 	}
 
@@ -219,6 +234,13 @@ static void update_pu_feature_enable(struct sde_crtc *sde_crtc,
 		sde_crtc->cp_pu_feature_mask |= BIT(feature);
 	else
 		sde_crtc->cp_pu_feature_mask &= ~BIT(feature);
+
+	/* clear cached ROI list when feature is disabled */
+	if ((sde_crtc->cp_pu_feature_mask == 0) &&
+		(sde_crtc_state->cached_user_roi_list.num_rects != 0)) {
+		memset(&sde_crtc_state->cached_user_roi_list, 0,
+				sizeof(struct msm_roi_list));
+	}
 }
 
 static int set_dspp_vlut_feature(struct sde_hw_dspp *hw_dspp,
@@ -1677,27 +1699,32 @@ static int sde_cp_crtc_set_pu_features(struct drm_crtc *crtc, bool *need_flush)
 	}
 
 	/* early return if not a partial update frame or no change in rois */
-	if (sde_crtc_state->user_roi_list.num_rects == 0) {
+	if ((sde_crtc_state->user_roi_list.num_rects == 0) &&
+		(sde_crtc_state->cached_user_roi_list.num_rects == 0)) {
 		DRM_DEBUG_DRIVER("no partial update required\n");
+		return 0;
+	} else if (sde_crtc_state->user_roi_list.num_rects == 0) {
+		DRM_DEBUG_DRIVER("transition from PU to full update\n");
 		memset(&sde_crtc_state->cached_user_roi_list, 0,
 				sizeof(struct msm_roi_list));
-		return 0;
-	}
-
-	sde_kms_rect_merge_rectangles(&sde_crtc_state->user_roi_list,
-			&user_rect);
-	sde_kms_rect_merge_rectangles(&sde_crtc_state->cached_user_roi_list,
-			&cached_rect);
-	if (sde_kms_rect_is_equal(&user_rect, &cached_rect)) {
-		DRM_DEBUG_DRIVER("no change in list of ROIs\n");
-		return 0;
+	} else {
+		sde_kms_rect_merge_rectangles(&sde_crtc_state->user_roi_list,
+				&user_rect);
+		sde_kms_rect_merge_rectangles(
+				&sde_crtc_state->cached_user_roi_list,
+				&cached_rect);
+		if (sde_kms_rect_is_equal(&user_rect, &cached_rect)) {
+			DRM_DEBUG_DRIVER("no change in list of ROIs\n");
+			return 0;
+		}
 	}
 
 	catalog = get_kms(&sde_crtc->base)->catalog;
 	memset(&hw_cfg, 0, sizeof(hw_cfg));
 	hw_cfg.num_of_mixers = sde_crtc->num_mixers;
 	hw_cfg.broadcast_disabled = catalog->dma_cfg.broadcast_disabled;
-	hw_cfg.payload = &sde_crtc_state->user_roi_list;
+	hw_cfg.payload = (sde_crtc_state->user_roi_list.num_rects) ?
+		&sde_crtc_state->user_roi_list : NULL;
 	hw_cfg.len = sizeof(sde_crtc_state->user_roi_list);
 	for (i = 0; i < hw_cfg.num_of_mixers; i++)
 		hw_cfg.dspp[i] = sde_crtc->mixers[i].hw_dspp;
@@ -1732,9 +1759,11 @@ static int sde_cp_crtc_set_pu_features(struct drm_crtc *crtc, bool *need_flush)
 		}
 	}
 
-	memcpy(&sde_crtc_state->cached_user_roi_list,
-			&sde_crtc_state->user_roi_list,
-			sizeof(struct msm_roi_list));
+	if (sde_crtc_state->user_roi_list.num_rects != 0) {
+		memcpy(&sde_crtc_state->cached_user_roi_list,
+				&sde_crtc_state->user_roi_list,
+				sizeof(struct msm_roi_list));
+	}
 
 	return 0;
 }
@@ -2162,6 +2191,7 @@ void sde_cp_crtc_clear(struct drm_crtc *crtc)
 	list_del_init(&sde_crtc->dirty_list);
 	list_del_init(&sde_crtc->ad_active);
 	list_del_init(&sde_crtc->ad_dirty);
+	sde_crtc->cp_pu_feature_mask = 0;
 	mutex_unlock(&sde_crtc->crtc_cp_lock);
 
 	spin_lock_irqsave(&sde_crtc->spin_lock, flags);
