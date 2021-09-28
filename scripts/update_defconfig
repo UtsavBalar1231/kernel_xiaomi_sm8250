@@ -22,6 +22,10 @@ make O=out ARCH=arm64 enuma_defconfig
 make O=out ARCH=arm64 savedefconfig
 mv out/defconfig arch/arm64/configs/enuma_defconfig
 
+make O=out ARCH=arm64 lmi_defconfig
+make O=out ARCH=arm64 savedefconfig
+mv out/defconfig arch/arm64/configs/lmi_defconfig
+
 make O=out ARCH=arm64 thyme_defconfig
 make O=out ARCH=arm64 savedefconfig
 mv out/defconfig arch/arm64/configs/thyme_defconfig
