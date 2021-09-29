@@ -566,7 +566,7 @@ static int device_prepare(struct fpc1020_data *fpc1020, bool enable)
 
 		ensable_regulator_2V9(dev, &p_2v9_vreg);
 		usleep_range(OPTICAL_PWR_ON_SLEEP_MIN_US, OPTICAL_PWR_ON_SLEEP_MAX_US);
-		dev_info(dev, "regulator p_2v9_vreg is %d\n", p_2v9_vreg);
+		dev_info(dev, "regulator p_2v9_vreg is %d\n", &p_2v9_vreg);
 		// 1.8V
 		rc = vreg_setup(fpc1020, "vdd_io", true);
 
