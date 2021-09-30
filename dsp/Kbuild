@@ -242,6 +242,9 @@ ifneq (,$(filter $(TARGET_PRODUCT), picasso picassoin))
 endif
 
 CDEFINES += -DAUDIO_FORCE_RESTART_ADSP
+ifeq ($(TARGET_PRODUCT), $(filter $(TARGET_PRODUCT),psyche poussin))
+CDEFINES += -DAUDIO_FORCE_RESTART_ADSP_TEMP
+endif
 
 KBUILD_CPPFLAGS += $(CDEFINES)
 
