@@ -1173,7 +1173,7 @@ static bool pe_filter_bcn_probe_frame(struct mac_context *mac_ctx,
 
 		ssid_ie = wlan_get_ie_ptr_from_eid(WLAN_ELEMID_SSID,
 				body + SIR_MAC_B_PR_SSID_OFFSET,
-				frame_len);
+				frame_len - SIR_MAC_B_PR_SSID_OFFSET);
 
 		if (!ssid_ie)
 			return false;
