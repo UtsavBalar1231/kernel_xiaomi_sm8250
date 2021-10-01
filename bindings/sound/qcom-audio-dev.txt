@@ -2153,6 +2153,27 @@ Example:
 
 };
 
+Required properties:
+- compatible : "qcom,spf-core-platform"
+
+Required properties:
+- compatible : "qcom,audio-pkt-core-platform"
+
+Required properties:
+- compatible : "qcom,gpr"
+
+Required properties:
+- compatible : "qcom,spf_core"
+
+Required properties:
+- compatible : "qcom,audio-pkt"
+
+Required properties:
+- compatible : "qcom,audio_prm"
+
+Required properties:
+- compatible : "qcom,voice_mhi_gpr"
+
 * LITO ASoC Machine driver
 
 Required properties:

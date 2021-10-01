@@ -55,6 +55,9 @@
 		swr0 = &swr0;
 		swr1 = &swr1;
 		swr2 = &swr2;
+		swr_ar0 = &swr_ar0;
+		swr_ar1 = &swr_ar1;
+		swr_ar2 = &swr_ar2;
 		mhi-netdev0 = &mhi_netdev_0;
 	};
 
@@ -5050,6 +5053,7 @@
 #include "camera/kona-camera.dtsi"
 #include "kona-qupv3.dtsi"
 #include "kona-audio.dtsi"
+#include "kona-audio-ar.dtsi"
 #include "kona-thermal.dtsi"
 #include "kona-vidc.dtsi"
 #include "kona-cvp.dtsi"

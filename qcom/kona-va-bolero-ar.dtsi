@@ -1,0 +1,15 @@
+&bolero_ar {
+	va_macro_ar: va-macro-ar@3370000 {
+		compatible = "qcom,va-macro";
+		reg = <0x3370000 0x0>;
+		clock-names = "lpass_audio_hw_vote";
+		clocks = <&lpass_audio_hw_vote_ar 0>;
+		va-vdd-micb-supply = <&S4A>;
+		qcom,va-vdd-micb-voltage = <1800000 1800000>;
+		qcom,va-vdd-micb-current = <11200>;
+		qcom,va-dmic-sample-rate = <600000>;
+		qcom,va-clk-mux-select = <1>;
+		qcom,va-island-mode-muxsel = <0x033A0000>;
+		qcom,default-clk-id = <TX_CORE_CLK>;
+	};
+};
