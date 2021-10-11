@@ -37,4 +37,4 @@ uninstall:
 
 endif
 
-.PHONY : all clean install uninstal
+.PHONY : all clean install uninstall
