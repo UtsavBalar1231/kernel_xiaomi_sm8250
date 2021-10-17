@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2019, 2021, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _DP_DRM_H_
@@ -177,6 +177,18 @@ int dp_mst_init(struct dp_display *dp_display);
  * @display: Pointer to private display structure
  */
 void dp_mst_deinit(struct dp_display *dp_display);
+
+/**
+ * dp_conn_set_info_blob - callback to perform info blob initialization
+ * @connector: Pointer to drm connector structure
+ * @info: Pointer to sde connector info structure
+ * @display: Pointer to private display handle
+ * @mode_info: Pointer to mode info structure
+ * Returns: Zero on success
+ */
+int dp_connnector_set_info_blob(struct drm_connector *connector,
+		void *info, void *display, struct msm_mode_info *mode_info);
+
 #else
 static inline int dp_connector_config_hdr(struct drm_connector *connector,
 		void *display, struct sde_connector_state *c_state)
@@ -278,6 +290,13 @@ static inline int dp_mst_deinit(struct dp_display *dp_display)
 {
 	return 0;
 }
+
+int dp_connnector_set_info_blob(struct drm_connector *connector,
+		void *info, void *display, struct msm_mode_info *mode_info)
+{
+	return 0;
+}
+
 #endif
 
 #endif /* _DP_DRM_H_ */
