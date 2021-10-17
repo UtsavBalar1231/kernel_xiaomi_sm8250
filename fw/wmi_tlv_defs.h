@@ -1201,6 +1201,9 @@ typedef enum {
     WMITLV_TAG_STRUC_wmi_htt_msdu_idx_to_htt_msdu_qtype,
     WMITLV_TAG_STRUC_wmi_pdev_set_bios_interface_cmd_fixed_param,
     WMITLV_TAG_STRUC_wmi_vdev_set_mu_snif_cmd_param,
+    WMITLV_TAG_STRUC_wmi_ctrl_path_btcoex_stats_struct,
+    WMITLV_TAG_STRUC_wmi_icmp_offload_fixed_param,
+    WMITLV_TAG_STRUC_WMI_IPV6_ADDR,
 } WMITLV_TAG_ID;
 
 /*
@@ -1677,6 +1680,7 @@ typedef enum {
     OP(WMI_REQUEST_THERMAL_STATS_CMDID) \
     OP(WMI_PDEV_SET_BIOS_INTERFACE_CMDID) \
     OP(WMI_VDEV_SET_MU_SNIF_CMDID) \
+    OP(WMI_VDEV_ICMP_OFFLOAD_CMDID) \
     /* add new CMD_LIST elements above this line */
 
 
@@ -4813,6 +4817,12 @@ WMITLV_CREATE_PARAM_STRUC(WMI_REQUEST_THERMAL_STATS_CMDID);
     WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_UINT32, A_UINT32, aids, WMITLV_SIZE_VAR)
 WMITLV_CREATE_PARAM_STRUC(WMI_VDEV_SET_MU_SNIF_CMDID);
 
+/* WMI CMD used to offload ICMP ping packets */
+#define WMITLV_TABLE_WMI_VDEV_ICMP_OFFLOAD_CMDID(id,op,buf,len) \
+    WMITLV_ELEM(id, op, buf, len, WMITLV_TAG_STRUC_wmi_icmp_offload_fixed_param, wmi_icmp_offload_fixed_param, fixed_param, WMITLV_SIZE_FIX) \
+    WMITLV_ELEM(id, op, buf, len, WMITLV_TAG_ARRAY_FIXED_STRUC, WMI_IPV6_ADDR, ipv6_addr, WMITLV_SIZE_VAR)
+ WMITLV_CREATE_PARAM_STRUC(WMI_VDEV_ICMP_OFFLOAD_CMDID);
+
 
 
 /************************** TLV definitions of WMI events *******************************/
@@ -6175,7 +6185,8 @@ WMITLV_CREATE_PARAM_STRUC(WMI_PEER_STATS_INFO_EVENTID);
     WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_ctrl_path_twt_stats_struct, ctrl_path_twt_stats, WMITLV_SIZE_VAR) \
     WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_ctrl_path_calibration_stats_struct, ctrl_path_calibration_stats, WMITLV_SIZE_VAR) \
     WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_ctrl_path_dfs_channel_stats_struct, ctrl_path_dfs_channel_stats, WMITLV_SIZE_VAR) \
-    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_ctrl_path_awgn_stats_struct, ctrl_path_awgn_stats, WMITLV_SIZE_VAR)
+    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_ctrl_path_awgn_stats_struct, ctrl_path_awgn_stats, WMITLV_SIZE_VAR) \
+    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_ctrl_path_btcoex_stats_struct, ctrl_path_btcoex_stats, WMITLV_SIZE_VAR)
 WMITLV_CREATE_PARAM_STRUC(WMI_CTRL_PATH_STATS_EVENTID);
 
 #define WMITLV_TABLE_WMI_RADIO_CHAN_STATS_EVENTID(id, op, buf, len) \
