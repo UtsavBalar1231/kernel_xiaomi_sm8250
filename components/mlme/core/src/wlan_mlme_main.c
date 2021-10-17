@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2021 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -2237,6 +2237,7 @@ static void mlme_init_fe_wlm_in_cfg(struct wlan_objmgr_psoc *psoc,
 				    struct wlan_mlme_fe_wlm *wlm_config)
 {
 	wlm_config->latency_enable = cfg_get(psoc, CFG_LATENCY_ENABLE);
+	wlm_config->latency_reset = cfg_get(psoc, CFG_LATENCY_RESET);
 	wlm_config->latency_level = cfg_get(psoc, CFG_LATENCY_LEVEL);
 	wlm_config->latency_flags[0] = cfg_get(psoc, CFG_LATENCY_FLAGS_NORMAL);
 	wlm_config->latency_flags[1] = cfg_get(psoc, CFG_LATENCY_FLAGS_MOD);
@@ -2954,6 +2955,34 @@ mlme_set_operations_bitmap(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id,
 	else
 		mlme_priv->mlme_roam.roam_sm.mlme_operations_bitmap |= reqs;
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_MLME_OBJMGR_ID);
+}
+
+QDF_STATUS mlme_get_cfg_wlm_level(struct wlan_objmgr_psoc *psoc,
+				  uint8_t *level)
+{
+	struct wlan_mlme_psoc_ext_obj *mlme_obj;
+
+	mlme_obj = mlme_get_psoc_ext_obj(psoc);
+	if (!mlme_obj)
+		return QDF_STATUS_E_FAILURE;
+
+	*level = mlme_obj->cfg.wlm_config.latency_level;
+
+	return QDF_STATUS_SUCCESS;
+}
+
+QDF_STATUS mlme_get_cfg_wlm_reset(struct wlan_objmgr_psoc *psoc,
+				  bool *reset)
+{
+	struct wlan_mlme_psoc_ext_obj *mlme_obj;
+
+	mlme_obj = mlme_get_psoc_ext_obj(psoc);
+	if (!mlme_obj)
+		return QDF_STATUS_E_FAILURE;
+
+	*reset = mlme_obj->cfg.wlm_config.latency_reset;
+
+	return QDF_STATUS_SUCCESS;
 }
 
 enum roam_offload_state
