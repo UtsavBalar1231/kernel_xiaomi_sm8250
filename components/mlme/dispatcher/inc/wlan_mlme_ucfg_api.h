@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2021 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -3219,6 +3219,34 @@ static inline QDF_STATUS
 ucfg_mlme_get_wmm_mode(struct wlan_objmgr_psoc *psoc, uint8_t *value)
 {
 	return wlan_mlme_get_wmm_mode(psoc, value);
+}
+
+/**
+ * ucfg_mlme_cfg_get_wlm_level() - Get the WLM level value
+ * @psoc: pointer to psoc object
+ * @level: level that needs to be filled.
+ *
+ * Return: QDF Status
+ */
+static inline
+QDF_STATUS ucfg_mlme_cfg_get_wlm_level(struct wlan_objmgr_psoc *psoc,
+				       uint8_t *level)
+{
+	return mlme_get_cfg_wlm_level(psoc, level);
+}
+
+/**
+ * ucfg_mlme_cfg_get_wlm_reset() - Get the WLM reset flag
+ * @psoc: pointer to psoc object
+ * @reset: reset that needs to be filled.
+ *
+ * Return: QDF Status
+ */
+static inline
+QDF_STATUS ucfg_mlme_cfg_get_wlm_reset(struct wlan_objmgr_psoc *psoc,
+				       bool *reset)
+{
+	return mlme_get_cfg_wlm_reset(psoc, reset);
 }
 
 #ifdef WLAN_FEATURE_11AX
