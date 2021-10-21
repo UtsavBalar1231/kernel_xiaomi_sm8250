@@ -1491,6 +1491,12 @@ static int __cam_req_mgr_process_req(struct cam_req_mgr_core_link *link,
 				rc = -EPERM;
 			}
 			spin_unlock_bh(&link->link_state_spin_lock);
+			/*
+			 * Update wd timer so in next frame if the request
+			 * packet is available request can be applied, SOF
+			 * freeze will hit otherwise.
+			 */
+			__cam_req_mgr_validate_crm_wd_timer(link);
 			goto error;
 		}
 	}
