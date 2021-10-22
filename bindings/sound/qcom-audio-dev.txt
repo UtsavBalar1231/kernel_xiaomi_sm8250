@@ -2007,6 +2007,10 @@ Optional properties:
 - qcom,msm-mi2s-master: This property is used to inform machine driver
   if MSM is the clock master of mi2s. 1 means master and 0 means slave. The
   first entry is primary mi2s; the second entry is secondary mi2s, and so on.
+- qcom,tdm-clk-attribute: This property is used to set the clock attribute for tdm.
+  The first entry is primary tdm; the second entry is secondary tdm, and so on.
+- qcom,mi2s-clk-attribute: This property is used to set the clock attribute for mi2s.
+  The first entry is primary mi2s; the second entry is secondary mi2s, and so on.
 - qcom,msm-mbhc-hphl-swh: This property is used to distinguish headset HPHL
   switch type on target typically the switch type will be normally open or
   normally close, value for this property 0 for normally close and 1 for
