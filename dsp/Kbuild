@@ -291,6 +291,10 @@ ifeq ($(TARGET_PRODUCT), $(filter $(TARGET_PRODUCT), poussin))
     CDEFINES += -DCONFIG_TARGET_PRODUCT_POUSSIN
 endif
 
+ifeq ($(TARGET_PRODUCT), $(filter $(TARGET_PRODUCT), psyche))
+    CDEFINES += -DCONFIG_TARGET_PRODUCT_PSYCHE
+endif
+
 ifeq ($(KERNEL_BUILD), 1)
 	obj-y += codecs/
 endif
