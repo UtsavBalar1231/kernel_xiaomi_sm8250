@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
  */
 
 #include <asm/dma-iommu.h>
@@ -990,20 +990,22 @@ static void __set_registers(struct venus_hfi_device *device, u32 sid)
 	}
 }
 
-static int __vote_bandwidth(struct bus_info *bus,
-	unsigned long bw_kbps, u32 sid)
+static int __vote_bandwidth(struct bus_info *bus, unsigned long ab_kbps,
+			    unsigned long ib_kbps, u32 sid)
 {
 	int rc = 0;
-	uint64_t ab = 0;
+	uint64_t ab = 0, ib = 0;
 
 	/* Bus Driver expects values in Bps */
-	ab = bw_kbps * 1000;
-	s_vpr_p(sid, "Voting bus %s to ab %llu bps\n", bus->name, ab);
-	rc = msm_bus_scale_update_bw(bus->client, ab, 0);
+	ab = ab_kbps * 1000;
+	ib = ib_kbps * 1000;
+	s_vpr_p(sid, "Voting bus %s to ab %llu ib %llu bps\n",
+						bus->name, ab, ib);
+	rc = msm_bus_scale_update_bw(bus->client, ab, ib);
 	if (rc)
-		s_vpr_e(sid, "Failed voting bus %s to ab %llu, rc=%d\n",
-				bus->name, ab, rc);
-
+		s_vpr_e(sid,
+			"Failed voting bus %s to ab %llu ib %llu bps rc=%d\n",
+			bus->name, ab, ib, rc);
 	return rc;
 }
 
@@ -1015,7 +1017,7 @@ int __unvote_buses(struct venus_hfi_device *device, u32 sid)
 	device->bus_vote = DEFAULT_BUS_VOTE;
 
 	venus_hfi_for_each_bus(device, bus) {
-		rc = __vote_bandwidth(bus, 0, sid);
+		rc = __vote_bandwidth(bus, 0, 0, sid);
 		if (rc)
 			goto err_unknown_device;
 	}
@@ -1029,7 +1031,7 @@ static int __vote_buses(struct venus_hfi_device *device,
 {
 	int rc = 0;
 	struct bus_info *bus = NULL;
-	unsigned long bw_kbps = 0, bw_prev = 0;
+	unsigned long ab_kbps = 0, ib_kbps = 0, bw_prev = 0;
 	enum vidc_bus_type type;
 
 	venus_hfi_for_each_bus(device, bus) {
@@ -1037,33 +1039,36 @@ static int __vote_buses(struct venus_hfi_device *device,
 			type = get_type_frm_name(bus->name);
 
 			if (type == DDR) {
-				bw_kbps = bw_ddr;
+				ab_kbps = bw_ddr;
 				bw_prev = device->bus_vote.total_bw_ddr;
 			} else if (type == LLCC) {
-				bw_kbps = bw_llcc;
+				ab_kbps = bw_llcc;
 				bw_prev = device->bus_vote.total_bw_llcc;
 			} else {
-				bw_kbps = bus->range[1];
+				ab_kbps = bus->range[1];
 				bw_prev = device->bus_vote.total_bw_ddr ?
-						bw_kbps : 0;
+						ab_kbps : 0;
 			}
 
 			/* ensure freq is within limits */
-			bw_kbps = clamp_t(typeof(bw_kbps), bw_kbps,
+			ab_kbps = clamp_t(typeof(ab_kbps), ab_kbps,
 				bus->range[0], bus->range[1]);
 
-			if (TRIVIAL_BW_CHANGE(bw_kbps, bw_prev) && bw_prev) {
+			if (TRIVIAL_BW_CHANGE(ab_kbps, bw_prev) && bw_prev) {
 				s_vpr_l(sid, "Skip voting bus %s to %llu bps",
-					bus->name, bw_kbps * 1000);
+					bus->name, ab_kbps * 1000);
 				continue;
 			}
 
-			rc = __vote_bandwidth(bus, bw_kbps, sid);
+			if (device->res->vpu_ver == VPU_VERSION_AR50_LITE)
+				ib_kbps = 2 * ab_kbps;
+
+			rc = __vote_bandwidth(bus, ab_kbps, ib_kbps, sid);
 
 			if (type == DDR)
-				device->bus_vote.total_bw_ddr = bw_kbps;
+				device->bus_vote.total_bw_ddr = ab_kbps;
 			else if (type == LLCC)
-				device->bus_vote.total_bw_llcc = bw_kbps;
+				device->bus_vote.total_bw_llcc = ab_kbps;
 		} else {
 			s_vpr_e(sid, "No BUS to Vote\n");
 		}
