@@ -5,6 +5,7 @@
 #include "kona-sde-display.dtsi"
 #include "camera/kona-camera-sensor-mtp.dtsi"
 #include "kona-audio-overlay.dtsi"
+#include "kona-audio-overlay-ar.dtsi"
 #include "kona-thermal-overlay.dtsi"
 
 &qupv3_se12_2uart {
