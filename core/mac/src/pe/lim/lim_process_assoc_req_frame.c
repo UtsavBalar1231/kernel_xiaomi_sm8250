@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2021 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -2244,11 +2244,11 @@ void lim_process_assoc_req_frame(struct mac_context *mac_ctx, uint8_t *rx_pkt_in
 	hdr = WMA_GET_RX_MAC_HEADER(rx_pkt_info);
 	frame_len = WMA_GET_RX_PAYLOAD_LEN(rx_pkt_info);
 
-	pe_nofl_debug("Assoc req RX: subtype %d vdev %d sys role %d lim state %d rssi %d from " QDF_MAC_ADDR_FMT,
-		      sub_type, session->vdev_id, GET_LIM_SYSTEM_ROLE(session),
-		      session->limMlmState,
-		      WMA_GET_RX_RSSI_NORMALIZED(rx_pkt_info),
-		      QDF_MAC_ADDR_REF(hdr->sa));
+	pe_nofl_rl_debug("Assoc req RX: subtype %d vdev %d sys role %d lim state %d rssi %d from " QDF_MAC_ADDR_FMT,
+			 sub_type, session->vdev_id,
+			 GET_LIM_SYSTEM_ROLE(session), session->limMlmState,
+			 WMA_GET_RX_RSSI_NORMALIZED(rx_pkt_info),
+			 QDF_MAC_ADDR_REF(hdr->sa));
 
 	if (LIM_IS_STA_ROLE(session)) {
 		pe_err("Rcvd unexpected ASSOC REQ, sessionid: %d sys sub_type: %d for role: %d from: "

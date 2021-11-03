@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2021 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -2448,9 +2448,9 @@ lim_send_assoc_req_mgmt_frame(struct mac_context *mac_ctx,
 	MTRACE(qdf_trace(QDF_MODULE_ID_PE, TRACE_CODE_TX_MGMT,
 			 pe_session->peSessionId, mac_hdr->fc.subType));
 
-	pe_nofl_info("Assoc req TX: vdev %d to "QDF_MAC_ADDR_FMT" seq num %d", pe_session->vdev_id,
-		     QDF_MAC_ADDR_REF(pe_session->bssId),
-		     mac_ctx->mgmtSeqNum);
+	pe_nofl_rl_info("Assoc req TX: vdev %d to "QDF_MAC_ADDR_FMT" seq num %d", pe_session->vdev_id,
+			QDF_MAC_ADDR_REF(pe_session->bssId),
+			mac_ctx->mgmtSeqNum);
 	QDF_TRACE_HEX_DUMP(QDF_MODULE_ID_PE, QDF_TRACE_LEVEL_DEBUG,
 			  frame, (uint16_t)(sizeof(tSirMacMgmtHdr) + payload));
 
@@ -2604,9 +2604,9 @@ static QDF_STATUS lim_auth_tx_complete_cnf(void *context,
 	uint16_t reason_code;
 	bool sae_auth_acked;
 
-	pe_nofl_info("Auth TX: %s",
-		     (tx_complete == WMI_MGMT_TX_COMP_TYPE_COMPLETE_OK) ?
-		     "success" : "fail");
+	pe_nofl_rl_info("Auth TX: %s",
+			(tx_complete == WMI_MGMT_TX_COMP_TYPE_COMPLETE_OK) ?
+			"success" : "fail");
 	if (tx_complete == WMI_MGMT_TX_COMP_TYPE_COMPLETE_OK) {
 		mac_ctx->auth_ack_status = LIM_ACK_RCD_SUCCESS;
 		auth_ack_status = ACKED;
@@ -3572,10 +3572,10 @@ lim_send_deauth_mgmt_frame(struct mac_context *mac,
 				&nPayload, discon_ie);
 	mlme_free_self_disconnect_ies(pe_session->vdev);
 
-	pe_nofl_info("Deauth TX: vdev %d seq_num %d reason %u waitForAck %d to " QDF_MAC_ADDR_FMT " from " QDF_MAC_ADDR_FMT,
-		     pe_session->vdev_id, mac->mgmtSeqNum, nReason, waitForAck,
-		     QDF_MAC_ADDR_REF(pMacHdr->da),
-		     QDF_MAC_ADDR_REF(pe_session->self_mac_addr));
+	pe_nofl_rl_info("Deauth TX: vdev %d seq_num %d reason %u waitForAck %d to " QDF_MAC_ADDR_FMT " from " QDF_MAC_ADDR_FMT,
+			pe_session->vdev_id, mac->mgmtSeqNum, nReason,
+			waitForAck, QDF_MAC_ADDR_REF(pMacHdr->da),
+			QDF_MAC_ADDR_REF(pe_session->self_mac_addr));
 
 	if (!wlan_reg_is_24ghz_ch_freq(pe_session->curr_op_freq) ||
 	    pe_session->opmode == QDF_P2P_CLIENT_MODE ||
