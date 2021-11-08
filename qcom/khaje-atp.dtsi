@@ -1,6 +1,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/iio/qcom,spmi-vadc.h>
 #include <dt-bindings/input/input.h>
+#include "bengal-audio-overlay.dtsi"
 #include "khaje-sde-display.dtsi"
 #include "khaje-pm7250b.dtsi"
 
