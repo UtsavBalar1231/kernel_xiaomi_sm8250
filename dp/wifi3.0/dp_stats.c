@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -4677,6 +4678,8 @@ void dp_print_soc_cfg_params(struct dp_soc *soc)
 		       soc_cfg_ctx->sg_enabled);
 	DP_PRINT_STATS("Gro enabled: %u ",
 		       soc_cfg_ctx->gro_enabled);
+	DP_PRINT_STATS("Force Gro enabled: %u ",
+		       soc_cfg_ctx->force_gro_enabled);
 	DP_PRINT_STATS("rawmode enabled: %u ",
 		       soc_cfg_ctx->rawmode_enabled);
 	DP_PRINT_STATS("peer flow ctrl enabled: %u ",
