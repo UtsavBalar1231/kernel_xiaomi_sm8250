@@ -10,7 +10,6 @@
 #include <linux/netdevice.h>
 #include <linux/skbuff.h>
 #include <linux/timer.h>
-#include <linux/pm_wakeup.h>
 
 #define MAX_MQ_NUM 16
 #define MAX_CLIENT_NUM 2
@@ -100,8 +99,6 @@ struct qmi_info {
 	bool ps_enabled;
 	bool dl_msg_active;
 	bool ps_ignore_grant;
-	bool wakelock_active;
-	struct wakeup_source *ws;
 };
 
 enum data_ep_type_enum_v01 {
