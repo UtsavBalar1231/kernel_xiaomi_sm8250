@@ -1782,6 +1782,7 @@ struct hdd_adapter_ops_history {
  * @sar_cmd_params: SAR command params to be configured to the FW
  * @rx_aggregation: rx aggregation enable or disable state
  * @gro_force_flush: gro force flushed indication flag
+ * @force_gro_enable: force GRO enable or disable flag
  * @adapter_ops_wq: High priority workqueue for handling adapter operations
  * @is_dual_mac_cfg_updated: indicate whether dual mac cfg has been updated
  * @rx_skip_qdisc_chk_conc: flag to skip ingress qdisc check in concurrency
@@ -2112,6 +2113,7 @@ struct hdd_context {
 	struct {
 		qdf_atomic_t rx_aggregation;
 		uint8_t gro_force_flush[DP_MAX_RX_THREADS];
+		bool force_gro_enable;
 	} dp_agg_param;
 #ifdef FW_THERMAL_THROTTLE_SUPPORT
 	uint8_t dutycycle_off_percent;
