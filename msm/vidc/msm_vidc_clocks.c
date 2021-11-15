@@ -1751,8 +1751,12 @@ int msm_vidc_decide_core_and_power_mode_iris1(struct msm_vidc_inst *inst)
 		msm_vidc_move_core_to_power_save_mode(core,
 			VIDC_CORE_ID_1, inst->sid);
 	} else {
-		s_vpr_e(inst->sid, "Core cannot support this load\n");
-		return -EINVAL;
+		if (!is_realtime_session(inst)) {
+			s_vpr_h(inst->sid, "Supporting NRT session");
+		} else {
+			s_vpr_e(inst->sid, "Core cannot support this load\n");
+			return -EINVAL;
+		}
 	}
 
 	inst->clk_data.core_id = VIDC_CORE_ID_1;
