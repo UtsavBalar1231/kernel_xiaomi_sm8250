@@ -323,9 +323,7 @@
 };
 
 &thermal_zones {
-	/delete-node/ quiet-therm-step;
-
-	quiet-therm-step {
+	quiet-thermal-step {
 		polling-delay-passive = <2000>;
 		polling-delay = <0>;
 		thermal-governor = "step_wise";
@@ -333,67 +331,67 @@
 		wake-capable-sensor;
 
 		trips {
-			skin_batt_trip0: batt-trip0 {
+			quiet_batt_trip0: batt-trip0 {
 				temperature = <41000>;
 				hysteresis = <2000>;
 				type = "passive";
 			};
 
-			skin_modem_trip0: modem-trip0 {
+			quiet_modem_trip0: modem-trip0 {
 				temperature = <42000>;
 				hysteresis = <2000>;
 				type = "passive";
 			};
 
-			skin_batt_trip1: batt-trip1 {
+			quiet_batt_trip1: batt-trip1 {
 				temperature = <43000>;
 				hysteresis = <2000>;
 				type = "passive";
 			};
 
-			skin_batt_trip2: batt-trip2 {
+			quiet_batt_trip2: batt-trip2 {
 				temperature = <45000>;
 				hysteresis = <2000>;
 				type = "passive";
 			};
 
-			skin_gold_trip: gold-trip {
+			quiet_gold_trip: gold-trip {
 				temperature = <47000>;
 				hysteresis = <0>;
 				type = "passive";
 			};
 
-			skin_batt_trip3: batt-trip3 {
+			quiet_batt_trip3: batt-trip3 {
 				temperature = <47000>;
 				hysteresis = <2000>;
 				type = "passive";
 			};
 
-			skin_batt_trip4: batt-trip4 {
+			quiet_batt_trip4: batt-trip4 {
 				temperature = <48000>;
 				hysteresis = <1000>;
 				type = "passive";
 			};
 
-			skin_gpu_trip: gpu-trip {
+			quiet_gpu_trip: gpu-trip {
 				temperature = <48000>;
 				hysteresis = <4000>;
 				type = "passive";
 			};
 
-			skin_silver_trip: silver-trip {
+			quiet_silver_trip: silver-trip {
 				temperature = <50000>;
 				hysteresis = <0>;
 				type = "passive";
 			};
 
-			skin_hvx_trip: hvx-trip {
+			quiet_hvx_trip: hvx-trip {
 				temperature = <52000>;
 				hysteresis = <4000>;
 				type = "passive";
 			};
 
-			skin_modem_trip1: modem-trip1 {
+			quiet_modem_trip1: modem-trip1 {
 				temperature = <60000>;
 				hysteresis = <4000>;
 				type = "passive";
@@ -402,38 +400,38 @@
 
 		cooling-maps {
 			gold_cdev {
-				trip = <&skin_gold_trip>;
+				trip = <&quiet_gold_trip>;
 				/* limit to 1766400khz */
 				cooling-device = <&CPU4 THERMAL_NO_LIMIT
 							(THERMAL_MAX_LIMIT-4)>;
 			};
 
 			silver_cdev {
-				trip = <&skin_silver_trip>;
+				trip = <&quiet_silver_trip>;
 				/* limit to 1516800khz */
 				cooling-device = <&CPU0 THERMAL_NO_LIMIT
 							(THERMAL_MAX_LIMIT-4)>;
 			};
 
 			gpu_cdev {
-				trip = <&skin_gpu_trip>;
+				trip = <&quiet_gpu_trip>;
 				/* limit 785000000hz */
 				cooling-device = <&msm_gpu THERMAL_NO_LIMIT
 							(THERMAL_MAX_LIMIT-3)>;
 			};
 
 			hvx_cdev {
-				trip = <&skin_hvx_trip>;
+				trip = <&quiet_hvx_trip>;
 				cooling-device = <&cdsp_sw 4 4>;
 			};
 
 			mdm_cdev0 {
-				trip = <&skin_modem_trip0>;
+				trip = <&quiet_modem_trip0>;
 				cooling-device = <&modem_proc 1 1>;
 			};
 
 			mdm_cdev1 {
-				trip = <&skin_modem_trip1>;
+				trip = <&quiet_modem_trip1>;
 				cooling-device = <&modem_proc 3 3>;
 			};
 		};
