@@ -19,6 +19,7 @@
  * @cam_lock: per file handle lock
  * @cam_eventq: event queue
  * @cam_eventq_lock: lock for event queue
+ * @shutdown_state: shutdown state
  */
 struct cam_req_mgr_device {
 	struct video_device *video;
@@ -31,6 +32,7 @@ struct cam_req_mgr_device {
 	struct mutex cam_lock;
 	struct v4l2_fh  *cam_eventq;
 	spinlock_t cam_eventq_lock;
+	bool shutdown_state;
 };
 
 #define CAM_REQ_MGR_GET_PAYLOAD_PTR(ev, type)        \
