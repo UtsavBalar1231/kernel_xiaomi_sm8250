@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -1783,6 +1784,7 @@ struct hdd_adapter_ops_history {
  * @gro_force_flush: gro force flushed indication flag
  * @adapter_ops_wq: High priority workqueue for handling adapter operations
  * @is_dual_mac_cfg_updated: indicate whether dual mac cfg has been updated
+ * @rx_skip_qdisc_chk_conc: flag to skip ingress qdisc check in concurrency
  */
 struct hdd_context {
 	struct wlan_objmgr_psoc *psoc;
@@ -2118,6 +2120,7 @@ struct hdd_context {
 	qdf_workqueue_t *adapter_ops_wq;
 	struct hdd_adapter_ops_history adapter_ops_history;
 	bool is_dual_mac_cfg_updated;
+	qdf_atomic_t rx_skip_qdisc_chk_conc;
 };
 
 /**
