@@ -878,7 +878,6 @@ static int cam_fd_mgr_util_submit_frame(void *priv, void *data)
 	list_del_init(&frame_req->list);
 	hw_mgr->num_pending_frames--;
 	frame_req->submit_timestamp = ktime_get();
-	list_add_tail(&frame_req->list, &hw_mgr->frame_processing_list);
 
 	if (hw_device->hw_intf->hw_ops.start) {
 		start_args.hw_ctx = hw_ctx;
