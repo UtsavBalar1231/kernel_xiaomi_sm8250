@@ -950,6 +950,13 @@ void bolero_tx_macro_mute_hs(void)
 		return;
 
 	component = g_tx_priv->component;
+
+	if (delayed_work_pending(&g_tx_priv->tx_hs_unmute_dwork)) {
+		dev_err(component->dev, "%s: there is already a work, give up unmute\n",
+				__func__);
+		return;
+	}
+
 	g_tx_priv->reg_before_mute = snd_soc_component_read32(component, BOLERO_CDC_TX0_TX_VOL_CTL);
 	dev_info(component->dev, "%s: the reg value before mute is: %#x \n",
 			__func__, g_tx_priv->reg_before_mute);
