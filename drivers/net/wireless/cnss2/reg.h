@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* Copyright (c) 2019-2020, The Linux Foundation. All rights reserved. */
+/* Copyright (c) 2019-2021, The Linux Foundation. All rights reserved. */
 
 #ifndef _CNSS_REG_H
 #define _CNSS_REG_H
@@ -267,7 +267,7 @@
 #define QCA6390_SYSPM_DBG_BUS_SEL_REG 0x1F82008
 #define QCA6390_SYSPM_WCSSAON_SR_STATUS 0x1F8200C
 
-#define QCA6490_DEBUG_PBL_LOG_SRAM_START 0x1403D58
+#define QCA6490_DEBUG_PBL_LOG_SRAM_START 0x01403DA0
 #define QCA6490_DEBUG_PBL_LOG_SRAM_MAX_SIZE 40
 #define QCA6490_DEBUG_SBL_LOG_SRAM_MAX_SIZE 48
 #define QCA6490_TCSR_PBL_LOGGING_REG 0x01B000F8
@@ -287,4 +287,9 @@
 
 #define SRAM_START		0x01400000
 #define SRAM_END		0x01800000
+
+/* PCIE SOC scratch registers, address same for QCA6390 & QCA6490*/
+#define PCIE_SCRATCH_0_SOC_PCIE_REG 0x1E04040
+#define PCIE_SCRATCH_1_SOC_PCIE_REG 0x1E04044
+#define PCIE_SCRATCH_2_SOC_PCIE_REG 0x1E0405C
 #endif
