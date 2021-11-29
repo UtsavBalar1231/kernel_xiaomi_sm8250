@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2017-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2021 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -70,9 +71,12 @@ typedef uint32_t wlan_scan_id;
 #define CHANNEL_CONGESTION_WEIGHTAGE 5
 #define OCE_WAN_WEIGHTAGE 0
 #define BEST_CANDIDATE_MAX_WEIGHT 100
+#define MAX_BSS_SCORE 200
 #define MAX_INDEX_SCORE 100
 #define MAX_INDEX_PER_INI 4
 #define SAE_PK_AP_WEIGHTAGE 3
+
+#define BEST_CANDIDATE_MAX_BSS_SCORE (MAX_BSS_SCORE * 100)
 
 #define WLAN_GET_BITS(_val, _index, _num_bits) \
 	(((_val) >> (_index)) & ((1 << (_num_bits)) - 1))
