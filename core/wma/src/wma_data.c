@@ -24,6 +24,7 @@
 /* Header files */
 
 #include "wma.h"
+#include "enet.h"
 #include "wma_api.h"
 #include "cds_api.h"
 #include "wmi_unified_api.h"
@@ -65,7 +66,6 @@
 #include <cdp_txrx_cfg.h>
 #include "cdp_txrx_stats.h"
 #include <cdp_txrx_misc.h>
-#include "enet.h"
 #include "wlan_mgmt_txrx_utils_api.h"
 #include "wlan_objmgr_psoc_obj.h"
 #include "wlan_objmgr_pdev_obj.h"

@@ -492,7 +492,20 @@ static void hdd_nud_filter_netevent(struct neighbour *neigh)
 
 	case NUD_FAILED:
 		hdd_debug("NUD_FAILED [0x%x]", neigh->nud_state);
-		hdd_nud_process_failure_event(adapter);
+		/*
+		 * This condition is to handle the scenario where NUD_FAILED
+		 * events are received without any NUD_PROBE/INCOMPLETE event
+		 * post roaming. Nud state is set to NONE as part of roaming.
+		 * NUD_FAILED is not honored when the curr state is any state
+		 * other than NUD_PROBE/INCOMPLETE so post roaming, nud state
+		 * is moved to NUD_PROBE to honor future NUD_FAILED events.
+		 */
+		if (adapter->nud_tracking.curr_state == NUD_NONE) {
+			hdd_nud_capture_stats(adapter, NUD_PROBE);
+			hdd_nud_set_tracking(adapter, NUD_PROBE, true);
+		} else {
+			hdd_nud_process_failure_event(adapter);
+		}
 		break;
 	default:
 		hdd_debug("NUD Event For Other State [0x%x]",
@@ -574,4 +587,9 @@ void hdd_nud_unregister_netevent_notifier(struct hdd_context *hdd_ctx)
 		if (!ret)
 			hdd_debug("Unregistered netevent notifier");
 	}
+}
+
+void hdd_nud_indicate_roam(struct hdd_adapter *adapter)
+{
+	hdd_nud_set_tracking(adapter, NUD_NONE, false);
 }
