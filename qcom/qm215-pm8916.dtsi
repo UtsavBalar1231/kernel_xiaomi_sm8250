@@ -198,165 +198,159 @@
 };
 
 &pm8916_vadc {
-	chan@0 {
+	#thermal-sensor-cells = <1>;
+	usb_in {
+		reg = <VADC_USBIN>;
 		label = "usb_in";
-		reg = <0>;
-		qcom,decimation = <0>;
-		qcom,pre-div-channel-scaling = <7>;
-		qcom,calibration-type = "absolute";
-		qcom,scale-function = <0>;
-		qcom,hw-settle-time = <0>;
-		qcom,fast-avg-setup = <0>;
+		qcom,pre-scaling = <1 10>;
 	};
 
-	chan@2 {
+	ireg_fb {
+		reg = <VADC_VCHG_SNS>;
 		label = "ireg_fb";
-		reg = <2>;
-		qcom,decimation = <0>;
-		qcom,pre-div-channel-scaling = <6>;
-		qcom,calibration-type = "absolute";
-		qcom,scale-function = <0>;
-		qcom,hw-settle-time = <0>;
-		qcom,fast-avg-setup = <0>;
+		qcom,pre-scaling = <10 81>;
 	};
 
-	chan@5 {
+	vcoin {
+		reg = <VADC_VCOIN>;
 		label = "vcoin";
-		reg = <5>;
-		qcom,decimation = <0>;
-		qcom,pre-div-channel-scaling = <1>;
-		qcom,calibration-type = "absolute";
-		qcom,scale-function = <0>;
-		qcom,hw-settle-time = <0>;
-		qcom,fast-avg-setup = <0>;
+		qcom,pre-scaling = <1 3>;
 	};
 
-	chan@6 {
+	vbat_sns {
+		reg = <VADC_VBAT_SNS>;
 		label = "vbat_sns";
-		reg = <6>;
-		qcom,decimation = <0>;
-		qcom,pre-div-channel-scaling = <1>;
-		qcom,calibration-type = "absolute";
-		qcom,scale-function = <0>;
-		qcom,hw-settle-time = <0>;
-		qcom,fast-avg-setup = <0>;
+		qcom,pre-scaling = <1 3>;
 	};
 
-	chan@7 {
+	vph_pwr {
+		reg = <VADC_VSYS>;
 		label = "vph_pwr";
-		reg = <7>;
-		qcom,decimation = <0>;
-		qcom,pre-div-channel-scaling = <1>;
-		qcom,calibration-type = "absolute";
-		qcom,scale-function = <0>;
-		qcom,hw-settle-time = <0>;
-		qcom,fast-avg-setup = <0>;
+		qcom,pre-scaling = <1 3>;
 	};
 
-	chan@b {
+	chg_temp {
+		reg = <VADC_CHG_TEMP>;
 		label = "chg_temp";
-		reg = <0xb>;
-		qcom,decimation = <0>;
-		qcom,pre-div-channel-scaling = <0>;
-		qcom,calibration-type = "absolute";
-		qcom,scale-function = <3>;
-		qcom,hw-settle-time = <0>;
-		qcom,fast-avg-setup = <0>;
+		qcom,pre-scaling = <1 1>;
 	};
 
-	chan@11 {
+	skin_therm {
+		reg = <VADC_P_MUX2_1_1>;
 		label = "skin_therm";
-		reg = <0x11>;
-		qcom,decimation = <0>;
-		qcom,pre-div-channel-scaling = <0>;
-		qcom,calibration-type = "ratiometric";
-		qcom,scale-function = <2>;
-		qcom,hw-settle-time = <2>;
-		qcom,fast-avg-setup = <0>;
-		qcom,vadc-thermal-node;
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+		qcom,pre-scaling = <1 1>;
 	};
 
-	chan@30 {
+	batt_therm {
+		reg = <VADC_LR_MUX1_BAT_THERM>;
 		label = "batt_therm";
-		reg = <0x30>;
-		qcom,decimation = <0>;
-		qcom,pre-div-channel-scaling = <0>;
 		qcom,calibration-type = "ratiometric";
-		qcom,scale-function = <26>;
-		qcom,hw-settle-time = <0xb>;
-		qcom,fast-avg-setup = <0>;
+		qcom,ratiometric;
+		qcom,hw-settle-time = <2000>;
+		qcom,pre-scaling = <1 1>;
 	};
 
-	chan@31 {
+	batt_id {
+		reg = <VADC_LR_MUX2_BAT_ID>;
 		label = "batt_id";
-		reg = <0x31>;
-		qcom,decimation = <0>;
-		qcom,pre-div-channel-scaling = <0>;
-		qcom,calibration-type = "ratiometric";
-		qcom,scale-function = <0>;
-		qcom,hw-settle-time = <0xb>;
-		qcom,fast-avg-setup = <0>;
+		qcom,ratiometric;
+		qcom,hw-settle-time = <2000>;
+		qcom,pre-scaling = <1 1>;
 	};
 
-	chan@36 {
+	pa_therm0 {
+		reg = <VADC_LR_MUX7_HW_ID>;
 		label = "pa_therm0";
-		reg = <0x36>;
-		qcom,decimation = <0>;
-		qcom,pre-div-channel-scaling = <0>;
-		qcom,calibration-type = "ratiometric";
-		qcom,scale-function = <2>;
-		qcom,hw-settle-time = <2>;
-		qcom,fast-avg-setup = <0>;
-		qcom,vadc-thermal-node;
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+		qcom,pre-scaling = <1 1>;
 	};
 
-	chan@32 {
+	xo_therm {
+		reg = <VADC_LR_MUX3_XO_THERM>;
 		label = "xo_therm";
-		reg = <0x32>;
-		qcom,decimation = <0>;
-		qcom,pre-div-channel-scaling = <0>;
-		qcom,calibration-type = "ratiometric";
-		qcom,scale-function = <4>;
-		qcom,hw-settle-time = <2>;
-		qcom,fast-avg-setup = <0>;
-		qcom,vadc-thermal-node;
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+		qcom,pre-scaling = <1 1>;
 	};
 
-	chan@3c {
+	xo_therm_buf {
+		reg = <VADC_LR_MUX3_BUF_XO_THERM>;
 		label = "xo_therm_buf";
-		reg = <0x3c>;
-		qcom,decimation = <0>;
-		qcom,pre-div-channel-scaling = <0>;
-		qcom,calibration-type = "ratiometric";
-		qcom,scale-function = <4>;
-		qcom,hw-settle-time = <2>;
-		qcom,fast-avg-setup = <0>;
-		qcom,vadc-thermal-node;
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+		qcom,pre-scaling = <1 1>;
+	};
+};
+
+&pm8916_adc_tm_iio {
+	io-channels = <&pm8916_vadc VADC_LR_MUX3_BUF_XO_THERM>,
+			<&pm8916_vadc VADC_LR_MUX3_XO_THERM>,
+			<&pm8916_vadc VADC_LR_MUX7_HW_ID>,
+			<&pm8916_vadc VADC_P_MUX2_1_1>;
+	io-channel-names = "xo_therm_buf", "xo_therm", "pa_therm0",
+				"skin_therm";
+
+	pa_therm0 {
+		reg = <VADC_LR_MUX7_HW_ID>;
+		label = "pa_therm0";
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+		qcom,pre-scaling = <1 1>;
+	};
+
+	xo_therm {
+		reg = <VADC_LR_MUX3_XO_THERM>;
+		label = "xo_therm";
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+		qcom,pre-scaling = <1 1>;
+	};
+
+	xo_therm_buf {
+		reg = <VADC_LR_MUX3_BUF_XO_THERM>;
+		label = "xo_therm_buf";
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+		qcom,pre-scaling = <1 1>;
+	};
+
+	skin_therm {
+		reg = <VADC_P_MUX2_1_1>;
+		label = "skin_therm";
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+		qcom,pre-scaling = <1 1>;
 	};
 };
 
 &pm8916_adc_tm {
-	/* Channel Node */
-	chan@30 {
+	/* Channel Nodes */
+	batt_therm {
+		reg = <VADC_LR_MUX1_BAT_THERM>;
 		label = "batt_therm";
-		reg = <0x30>;
-		qcom,decimation = <0>;
+		io-channels = <&pm8916_vadc VADC_LR_MUX1_BAT_THERM>;
+		io-channel-names = "batt_therm";
 		qcom,pre-div-channel-scaling = <0>;
-		qcom,calibration-type = "ratiometric";
-		qcom,scale-function = <8>;
+		qcom,decimation = <0>;
+		qcom,ratiometric;
 		qcom,hw-settle-time = <0xb>;
+		qcom,scale-fn-type = <8>;
 		qcom,fast-avg-setup = <0x2>;
 		qcom,btm-channel-number = <0x48>;
 	};
 
-	chan@6 {
+	vbat_sns {
+		reg = <VADC_VBAT_SNS>;
 		label = "vbat_sns";
-		reg = <0x6>;
-		qcom,decimation = <0>;
+		io-channels = <&pm8916_vadc VADC_VBAT_SNS>;
+		io-channel-names = "vbat_sns";
 		qcom,pre-div-channel-scaling = <1>;
-		qcom,calibration-type = "absolute";
-		qcom,scale-function = <0>;
+		qcom,decimation = <0>;
 		qcom,hw-settle-time = <0xb>;
+		qcom,scale-fn-type = <0>;
 		qcom,fast-avg-setup = <0x2>;
 		qcom,btm-channel-number = <0x68>;
 	};
@@ -367,7 +361,8 @@
 		xo-therm-buf-adc {
 			polling-delay-passive = <0>;
 			polling-delay = <5000>;
-			thermal-sensors = <&pm8916_vadc 0x3c>;
+			thermal-sensors = <&pm8916_adc_tm_iio
+						VADC_LR_MUX3_BUF_XO_THERM>;
 			thermal-governor = "user_space";
 
 			trips {
@@ -382,7 +377,8 @@
 		xo-therm-adc {
 			polling-delay-passive = <0>;
 			polling-delay = <5000>;
-			thermal-sensors = <&pm8916_vadc 0x32>;
+			thermal-sensors = <&pm8916_adc_tm_iio
+						VADC_LR_MUX3_XO_THERM>;
 			thermal-governor = "user_space";
 
 			trips {
@@ -397,7 +393,8 @@
 		pa-therm0-adc {
 			polling-delay-passive = <0>;
 			polling-delay = <5000>;
-			thermal-sensors = <&pm8916_vadc 0x36>;
+			thermal-sensors = <&pm8916_adc_tm_iio
+						VADC_LR_MUX7_HW_ID>;
 			thermal-governor = "user_space";
 
 			trips {
@@ -412,7 +409,8 @@
 		skin-therm-adc {
 			polling-delay-passive = <0>;
 			polling-delay = <5000>;
-			thermal-sensors = <&pm8916_vadc 0x11>;
+			thermal-sensors = <&pm8916_adc_tm_iio
+						VADC_P_MUX2_1_1>;
 			thermal-governor = "user_space";
 
 			trips {
@@ -433,7 +431,7 @@
 		};
 
 		pm8916_tz {
-			polling-delay-passive = <0>;
+			polling-delay-passive = <100>;
 			polling-delay = <0>;
 			thermal-governor = "step_wise";
 			thermal-sensors = <&pm8916_tz>;
@@ -462,7 +460,8 @@
 		xo-therm-step {
 			polling-delay-passive = <1000>;
 			polling-delay = <5000>;
-			thermal-sensors = <&pm8916_vadc 0x32>;
+			thermal-sensors = <&pm8916_adc_tm_iio
+						VADC_LR_MUX3_XO_THERM>;
 			thermal-governor = "step_wise";
 
 			trips {

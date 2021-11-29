@@ -196,6 +196,10 @@
 };
 
 &soc {
+	msm_vidc: qcom,vidc@aa00000 {
+		compatible = "qcom,msm-vidc", "qcom,qcs8250-vidc";
+	};
+
 	clk40M: can_clock {
 		compatible = "fixed-clock";
 		#clock-cells = <0>;
