@@ -4826,6 +4826,7 @@ int msm_comm_qbufs_batch(struct msm_vidc_inst *inst,
 	int rc = 0;
 	struct msm_vidc_buffer *buf;
 	int do_bw_calc = 0;
+	int num_buffers_queued = 0;
 
 	do_bw_calc = mbuf ? mbuf->vvb.vb2_buf.type == INPUT_MPLANE : 0;
 	rc = msm_comm_scale_clocks_and_bus(inst, do_bw_calc);
@@ -4851,10 +4852,13 @@ int msm_comm_qbufs_batch(struct msm_vidc_inst *inst,
 				__func__, rc);
 			break;
 		}
+		num_buffers_queued++;
 loop_end:
-		/* Queue pending buffers till the current buffer only */
-		if (buf == mbuf)
+		/* Queue pending buffers till batch size */
+		if (num_buffers_queued == inst->batch.size) {
+			s_vpr_e(inst->sid, "%s: Queue buffers till batch size\n");
 			break;
+		}
 	}
 	mutex_unlock(&inst->registeredbufs.lock);
 
