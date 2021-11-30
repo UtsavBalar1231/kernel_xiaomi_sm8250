@@ -7749,6 +7749,12 @@ typedef enum {
     /* Param to configure the access category for the TWT queue */
     WMI_PDEV_PARAM_TWT_AC_CONFIG,
 
+    /*
+     * TX xretry extension parameter to allow product specific adjustment.
+     * I.e. multiply the xretry counter by N% for a requirement from framework.
+     */
+    WMI_PDEV_PARAM_PDEV_STATS_TX_XRETRY_EXT,
+
 
 } WMI_PDEV_PARAM;
 
@@ -17639,10 +17645,21 @@ typedef struct {
     A_UINT32 flags;  /* WMI_WOW_FLAG enums */
 } wmi_wow_enable_cmd_fixed_param;
 
+typedef enum {
+    WMI_WOW_RESUME_FLAG_TX_DATA          = 0x00000001, /* TX data pending to be sent in resume */
+} WMI_WOW_RESUME_FLAG_ENUM;
+
 typedef struct {
     A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_wow_hostwakeup_from_sleep_cmd_fixed_param  */
-    /** Reserved for future use */
-    A_UINT32 reserved0;
+    /* reserved0:
+     * This "reserved" field is not actually reserved any more.
+     * It is being used in certain FW branches to hold flags, whose values
+     * are defined by WMI_WOW_RESUME_FLAG_ENUM.
+     */
+    union {
+        A_UINT32 reserved0;
+        A_UINT32 flags;
+    };
 } wmi_wow_hostwakeup_from_sleep_cmd_fixed_param;
 
 #define WOW_ICMPV6_NA_FILTER_DISABLE 0
@@ -36269,7 +36286,7 @@ typedef struct wmi_mlo_link_set_active_cmd
 
 typedef struct wmi_mlo_set_active_link_number_param
 {
-    /** TLV tag and len; */
+    /** TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_mlo_set_active_link_number_param */
     A_UINT32 tlv_header;
     /** number of link to be config */
     A_UINT32 num_of_link;
