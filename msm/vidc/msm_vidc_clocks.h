@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _MSM_VIDC_CLOCKS_H_
@@ -9,8 +9,8 @@
 
 void msm_clock_data_reset(struct msm_vidc_inst *inst);
 void msm_dcvs_reset(struct msm_vidc_inst *inst);
-int msm_vidc_set_clocks(struct msm_vidc_core *core, u32 sid);
-int msm_comm_vote_bus(struct msm_vidc_inst *inst);
+int msm_vidc_set_clocks(struct msm_vidc_core *core, u32 sid, bool force_reset);
+int msm_comm_vote_bus(struct msm_vidc_inst *inst, bool force_reset);
 int msm_dcvs_try_enable(struct msm_vidc_inst *inst);
 bool res_is_less_than(u32 width, u32 height, u32 ref_width, u32 ref_height);
 bool res_is_greater_than(u32 width, u32 height, u32 ref_width, u32 ref_height);
@@ -21,6 +21,7 @@ bool res_is_greater_than_or_equal_to(u32 width, u32 height,
 int msm_vidc_get_mbs_per_frame(struct msm_vidc_inst *inst);
 int msm_vidc_get_fps(struct msm_vidc_inst *inst);
 int msm_comm_scale_clocks_and_bus(struct msm_vidc_inst *inst, bool do_bw_calc);
+int msm_comm_reset_clocks_and_bus(struct msm_vidc_inst *inst);
 int msm_comm_init_clocks_and_bus_data(struct msm_vidc_inst *inst);
 int msm_vidc_decide_work_route_iris1(struct msm_vidc_inst *inst);
 int msm_vidc_decide_work_mode_iris1(struct msm_vidc_inst *inst);
