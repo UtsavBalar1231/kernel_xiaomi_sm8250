@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/of_gpio.h>
@@ -165,6 +165,10 @@ static int dp_parser_misc(struct dp_parser *parser)
 		"qcom,max-lclk-frequency-khz", &parser->max_lclk_khz);
 	if (rc)
 		parser->max_lclk_khz = DP_MAX_LINK_CLK_KHZ;
+
+	parser->display_type = of_get_property(of_node, "label", NULL);
+	if (!parser->display_type)
+		parser->display_type = "unknown";
 
 	return 0;
 }

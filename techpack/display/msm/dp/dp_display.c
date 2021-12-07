@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/module.h>
@@ -2571,6 +2571,27 @@ static int dp_display_config_hdr(struct dp_display *dp_display, void *panel,
 		core_clk_rate, flush_hdr);
 }
 
+static int dp_display_get_display_type(struct dp_display *dp_display,
+		const char **display_type)
+{
+	struct dp_display_private *dp;
+
+	if (!dp_display || !display_type) {
+		pr_err("invalid input\n");
+		return -EINVAL;
+	}
+
+	dp = container_of(dp_display, struct dp_display_private, dp_display);
+
+	*display_type = dp->parser->display_type;
+
+	if (!strcmp(*display_type, "primary"))
+		dp_display->is_primary = true;
+
+	return 0;
+}
+
+
 static int dp_display_setup_colospace(struct dp_display *dp_display,
 		void *panel,
 		u32 colorspace)
@@ -3101,6 +3122,7 @@ static int dp_display_probe(struct platform_device *pdev)
 	g_dp_display->post_open     = NULL;
 	g_dp_display->post_init     = dp_display_post_init;
 	g_dp_display->config_hdr    = dp_display_config_hdr;
+	g_dp_display->get_display_type = dp_display_get_display_type;
 	g_dp_display->mst_install   = dp_display_mst_install;
 	g_dp_display->mst_uninstall = dp_display_mst_uninstall;
 	g_dp_display->mst_connector_install = dp_display_mst_connector_install;
