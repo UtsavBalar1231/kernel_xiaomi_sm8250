@@ -1059,29 +1059,67 @@ static void dp_rx_fill_gro_info(struct dp_soc *soc, uint8_t *rx_tlv,
  *
  * @nbuf: pointer to msdu.
  * @mpdu_len: mpdu length
+ * @l3_pad_len: L3 padding length by HW
  *
  * Return: returns true if nbuf is last msdu of mpdu else retuns false.
  */
-static inline bool dp_rx_adjust_nbuf_len(qdf_nbuf_t nbuf, uint16_t *mpdu_len)
+static inline bool dp_rx_adjust_nbuf_len(qdf_nbuf_t nbuf,
+					 uint16_t *mpdu_len,
+					 uint32_t l3_pad_len)
 {
 	bool last_nbuf;
+	uint32_t pkt_hdr_size;
 
-	if (*mpdu_len > (RX_DATA_BUFFER_SIZE - RX_PKT_TLVS_LEN)) {
+	pkt_hdr_size = RX_PKT_TLVS_LEN + l3_pad_len;
+
+	if ((*mpdu_len + pkt_hdr_size) > RX_DATA_BUFFER_SIZE) {
 		qdf_nbuf_set_pktlen(nbuf, RX_DATA_BUFFER_SIZE);
 		last_nbuf = false;
+		*mpdu_len -= (RX_DATA_BUFFER_SIZE - pkt_hdr_size);
 	} else {
-		qdf_nbuf_set_pktlen(nbuf, (*mpdu_len + RX_PKT_TLVS_LEN));
+		qdf_nbuf_set_pktlen(nbuf, (*mpdu_len + pkt_hdr_size));
 		last_nbuf = true;
+		*mpdu_len = 0;
 	}
-
-	*mpdu_len -= (RX_DATA_BUFFER_SIZE - RX_PKT_TLVS_LEN);
 
 	return last_nbuf;
 }
 
 /**
+ * dp_get_l3_hdr_pad_len() - get L3 header padding length.
+ *
+ * @soc: DP soc handle
+ * @nbuf: pointer to msdu.
+ *
+ * Return: returns padding length in bytes.
+ */
+static inline uint32_t dp_get_l3_hdr_pad_len(struct dp_soc *soc,
+					     qdf_nbuf_t nbuf)
+{
+	uint32_t l3_hdr_pad = 0;
+	uint8_t *rx_tlv_hdr;
+	struct hal_rx_msdu_metadata msdu_metadata;
+
+	while (nbuf) {
+		if (!qdf_nbuf_is_rx_chfrag_cont(nbuf)) {
+			/* scattered msdu end with continuation is 0 */
+			rx_tlv_hdr = qdf_nbuf_data(nbuf);
+			hal_rx_msdu_metadata_get(soc->hal_soc,
+						 rx_tlv_hdr,
+						 &msdu_metadata);
+			l3_hdr_pad = msdu_metadata.l3_hdr_pad;
+			break;
+		}
+		nbuf = nbuf->next;
+	}
+
+	return l3_hdr_pad;
+}
+
+/**
  * dp_rx_sg_create() - create a frag_list for MSDUs which are spread across
  *		     multiple nbufs.
+ * @soc: DP SOC handle
  * @nbuf: pointer to the first msdu of an amsdu.
  *
  * This function implements the creation of RX frag_list for cases
@@ -1089,12 +1127,13 @@ static inline bool dp_rx_adjust_nbuf_len(qdf_nbuf_t nbuf, uint16_t *mpdu_len)
  *
  * Return: returns the head nbuf which contains complete frag_list.
  */
-qdf_nbuf_t dp_rx_sg_create(qdf_nbuf_t nbuf)
+qdf_nbuf_t dp_rx_sg_create(struct dp_soc *soc, qdf_nbuf_t nbuf)
 {
 	qdf_nbuf_t parent, frag_list, next = NULL;
 	uint16_t frag_list_len = 0;
 	uint16_t mpdu_len;
 	bool last_nbuf;
+	uint32_t l3_hdr_pad_offset = 0;
 
 	/*
 	 * Use msdu len got from REO entry descriptor instead since
@@ -1102,6 +1141,7 @@ qdf_nbuf_t dp_rx_sg_create(qdf_nbuf_t nbuf)
 	 * from REO descriptor is right for non-raw RX scatter msdu.
 	 */
 	mpdu_len = QDF_NBUF_CB_RX_PKT_LEN(nbuf);
+
 	/*
 	 * this is a case where the complete msdu fits in one single nbuf.
 	 * in this case HW sets both start and end bit and we only need to
@@ -1113,6 +1153,8 @@ qdf_nbuf_t dp_rx_sg_create(qdf_nbuf_t nbuf)
 		qdf_nbuf_pull_head(nbuf, RX_PKT_TLVS_LEN);
 		return nbuf;
 	}
+
+	l3_hdr_pad_offset = dp_get_l3_hdr_pad_len(soc, nbuf);
 
 	/*
 	 * This is a case where we have multiple msdus (A-MSDU) spread across
@@ -1133,7 +1175,24 @@ qdf_nbuf_t dp_rx_sg_create(qdf_nbuf_t nbuf)
 	 * nbufs will form the frag_list of the parent nbuf.
 	 */
 	qdf_nbuf_set_rx_chfrag_start(parent, 1);
-	last_nbuf = dp_rx_adjust_nbuf_len(parent, &mpdu_len);
+	/*
+	 * L3 header padding is only needed for the 1st buffer
+	 * in a scattered msdu
+	 */
+	last_nbuf = dp_rx_adjust_nbuf_len(parent, &mpdu_len,
+					  l3_hdr_pad_offset);
+
+	/*
+	 * HW issue:  MSDU cont bit is set but reported MPDU length can fit
+	 * in to single buffer
+	 *
+	 * Increment error stats and avoid SG list creation
+	 */
+	if (last_nbuf) {
+		qdf_nbuf_pull_head(parent,
+				   RX_PKT_TLVS_LEN + l3_hdr_pad_offset);
+		return parent;
+	}
 
 	/*
 	 * this is where we set the length of the fragments which are
@@ -1141,7 +1200,7 @@ qdf_nbuf_t dp_rx_sg_create(qdf_nbuf_t nbuf)
 	 * till we hit the last_nbuf of the list.
 	 */
 	do {
-		last_nbuf = dp_rx_adjust_nbuf_len(nbuf, &mpdu_len);
+		last_nbuf = dp_rx_adjust_nbuf_len(nbuf, &mpdu_len, 0);
 		qdf_nbuf_pull_head(nbuf, RX_PKT_TLVS_LEN);
 		frag_list_len += qdf_nbuf_len(nbuf);
 
@@ -1158,7 +1217,8 @@ qdf_nbuf_t dp_rx_sg_create(qdf_nbuf_t nbuf)
 	qdf_nbuf_append_ext_list(parent, frag_list, frag_list_len);
 	parent->next = next;
 
-	qdf_nbuf_pull_head(parent, RX_PKT_TLVS_LEN);
+	qdf_nbuf_pull_head(parent,
+			   RX_PKT_TLVS_LEN + l3_hdr_pad_offset);
 	return parent;
 }
 
@@ -2466,7 +2526,7 @@ done:
 			qdf_nbuf_pull_head(nbuf, RX_PKT_TLVS_LEN);
 		} else if (qdf_nbuf_is_rx_chfrag_cont(nbuf)) {
 			msdu_len = QDF_NBUF_CB_RX_PKT_LEN(nbuf);
-			nbuf = dp_rx_sg_create(nbuf);
+			nbuf = dp_rx_sg_create(soc, nbuf);
 			next = nbuf->next;
 
 			if (qdf_nbuf_is_raw_frame(nbuf)) {
