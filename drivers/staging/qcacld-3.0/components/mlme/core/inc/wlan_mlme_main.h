@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2021 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -543,11 +543,42 @@ mlme_get_operations_bitmap(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id);
  * @reqs: RSO stop requestor
  * @clear: clear bit if true else set bit
  *
- * Return: bitmap value
+ * Return: None
  */
 void
 mlme_set_operations_bitmap(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id,
 			   enum roam_control_requestor reqs, bool clear);
+
+/**
+ * mlme_clear_operations_bitmap() - Clear mlme operations bitmap which
+ *  indicates what mlme operations are in progress
+ * @psoc: PSOC pointer
+ * @vdev_id: vdev for which the mlme operation bitmap is requested
+ *
+ * Return: None
+ */
+void
+mlme_clear_operations_bitmap(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id);
+
+/**
+ * mlme_get_cfg_wlm_level() - Get the WLM level value
+ * @psoc: pointer to psoc object
+ * @level: level that needs to be filled.
+ *
+ * Return: QDF Status
+ */
+QDF_STATUS mlme_get_cfg_wlm_level(struct wlan_objmgr_psoc *psoc,
+				  uint8_t *level);
+
+/**
+ * mlme_get_cfg_wlm_reset() - Get the WLM reset flag
+ * @psoc: pointer to psoc object
+ * @reset: reset that needs to be filled.
+ *
+ * Return: QDF Status
+ */
+QDF_STATUS mlme_get_cfg_wlm_reset(struct wlan_objmgr_psoc *psoc,
+				  bool *reset);
 
 #define MLME_IS_ROAM_STATE_RSO_STARTED(psoc, vdev_id) \
 	(mlme_get_roam_state(psoc, vdev_id) == ROAM_RSO_STARTED)
