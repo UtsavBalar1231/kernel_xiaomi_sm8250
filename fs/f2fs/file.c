@@ -865,7 +865,7 @@ int f2fs_truncate(struct inode *inode)
 		return -EIO;
 	}
 
-	err = dquot_initialize(inode);
+	err = f2fs_dquot_initialize(inode);
 	if (err)
 		return err;
 
@@ -996,7 +996,7 @@ int f2fs_setattr(struct dentry *dentry, struct iattr *attr)
 		return err;
 
 	if (is_quota_modification(inode, attr)) {
-		err = dquot_initialize(inode);
+		err = f2fs_dquot_initialize(inode);
 		if (err)
 			return err;
 	}
@@ -1770,6 +1770,7 @@ next_alloc:
 
 		map.m_seg_type = CURSEG_COLD_DATA_PINNED;
 		err = f2fs_map_blocks(inode, &map, 1, F2FS_GET_BLOCK_PRE_DIO);
+		file_dont_truncate(inode);
 
 		up_write(&sbi->pin_sem);
 
@@ -3166,7 +3167,7 @@ static int f2fs_ioc_setproject(struct file *filp, __u32 projid)
 	}
 	f2fs_put_page(ipage, 1);
 
-	err = dquot_initialize(inode);
+	err = f2fs_dquot_initialize(inode);
 	if (err)
 		return err;
 
@@ -4473,8 +4474,15 @@ static int f2fs_preallocate_blocks(struct kiocb *iocb, struct iov_iter *iter)
 	int flag;
 	int ret;
 
-	/* If it will be an in-place direct write, don't bother. */
+	/* If it will be an out-of-place direct write, don't bother. */
 	if (dio && f2fs_lfs_mode(sbi))
+		return 0;
+	/*
+	 * Don't preallocate holes aligned to DIO_SKIP_HOLES which turns into
+	 * buffered IO, if DIO meets any holes.
+	 */
+	if (dio && i_size_read(inode) &&
+		(F2FS_BYTES_TO_BLK(pos) < F2FS_BLK_ALIGN(i_size_read(inode))))
 		return 0;
 
 	/* No-wait I/O can't allocate blocks. */
@@ -4482,7 +4490,7 @@ static int f2fs_preallocate_blocks(struct kiocb *iocb, struct iov_iter *iter)
 		return 0;
 
 	/* If it will be a short write, don't bother. */
-	if (iov_iter_fault_in_readable(iter, count) != 0)
+	if (iov_iter_fault_in_readable(iter, count))
 		return 0;
 
 	if (f2fs_has_inline_data(inode)) {
@@ -4494,13 +4502,13 @@ static int f2fs_preallocate_blocks(struct kiocb *iocb, struct iov_iter *iter)
 			return ret;
 	}
 
+	/* Do not preallocate blocks that will be written partially in 4KB. */
 	map.m_lblk = F2FS_BLK_ALIGN(pos);
 	map.m_len = F2FS_BYTES_TO_BLK(pos + count);
 	if (map.m_len > map.m_lblk)
 		map.m_len -= map.m_lblk;
 	else
 		map.m_len = 0;
-
 	map.m_may_create = true;
 	if (dio) {
 		map.m_seg_type = f2fs_rw_hint_to_seg_type(inode->i_write_hint);
@@ -4511,8 +4519,8 @@ static int f2fs_preallocate_blocks(struct kiocb *iocb, struct iov_iter *iter)
 	}
 
 	ret = f2fs_map_blocks(inode, &map, 1, flag);
-	/* -ENOSPC is only a fatal error if no blocks could be allocated. */
-	if (ret < 0 && !(ret == -ENOSPC && map.m_len > 0))
+	/* -ENOSPC|-EDQUOT are fine to report the number of allocated blocks. */
+	if (ret < 0 && !((ret == -ENOSPC || ret == -EDQUOT) && map.m_len > 0))
 		return ret;
 	if (ret == 0)
 		set_inode_flag(inode, FI_PREALLOCATED_ALL);
@@ -4564,45 +4572,44 @@ static ssize_t f2fs_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
 
 	if (iocb->ki_flags & IOCB_NOWAIT) {
 		if (!f2fs_overwrite_io(inode, iocb->ki_pos,
-				       iov_iter_count(from)) ||
-		    f2fs_has_inline_data(inode) ||
-		    f2fs_force_buffered_io(inode, iocb, from)) {
+					iov_iter_count(from)) ||
+				f2fs_has_inline_data(inode) ||
+				f2fs_force_buffered_io(inode, iocb, from)) {
 			ret = -EAGAIN;
 			goto out_unlock;
 		}
 	}
+
 	if (iocb->ki_flags & IOCB_DIRECT) {
-		/*
-		 * Convert inline data for Direct I/O before entering
-		 * f2fs_direct_IO().
-		 */
 		ret = f2fs_convert_inline_inode(inode);
 		if (ret)
 			goto out_unlock;
 	}
-
 	/* Possibly preallocate the blocks for the write. */
 	target_size = iocb->ki_pos + iov_iter_count(from);
 	preallocated = f2fs_preallocate_blocks(iocb, from);
-	if (preallocated < 0) {
+	if (preallocated < 0)
 		ret = preallocated;
-		goto out_unlock;
-	}
-
-	ret = __generic_file_write_iter(iocb, from);
+	else
+		ret = __generic_file_write_iter(iocb, from);
 
 	/* Don't leave any preallocated blocks around past i_size. */
-	if (preallocated > 0 && inode->i_size < target_size) {
+	if (preallocated && i_size_read(inode) < target_size) {
 		down_write(&F2FS_I(inode)->i_gc_rwsem[WRITE]);
 		down_write(&F2FS_I(inode)->i_mmap_sem);
-		f2fs_truncate(inode);
+		if (!f2fs_truncate(inode))
+			file_dont_truncate(inode);
 		up_write(&F2FS_I(inode)->i_mmap_sem);
 		up_write(&F2FS_I(inode)->i_gc_rwsem[WRITE]);
+	} else {
+		file_dont_truncate(inode);
 	}
+
 	clear_inode_flag(inode, FI_PREALLOCATED_ALL);
 
 	if (ret > 0)
 		f2fs_update_iostat(F2FS_I_SB(inode), APP_WRITE_IO, ret);
+
 out_unlock:
 	inode_unlock(inode);
 out:
