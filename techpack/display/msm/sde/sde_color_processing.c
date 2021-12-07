@@ -237,8 +237,8 @@ static void update_pu_feature_enable(struct sde_crtc *sde_crtc,
 
 	/* clear cached ROI list when feature is disabled */
 	if ((sde_crtc->cp_pu_feature_mask == 0) &&
-		(sde_crtc_state->cached_user_roi_list.num_rects != 0)) {
-		memset(&sde_crtc_state->cached_user_roi_list, 0,
+		(sde_crtc->cached_user_roi_list.num_rects != 0)) {
+		memset(&sde_crtc->cached_user_roi_list, 0,
 				sizeof(struct msm_roi_list));
 	}
 }
