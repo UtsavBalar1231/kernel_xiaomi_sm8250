@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
  */
 
 #include "msm_cvp_internal.h"
@@ -233,14 +233,14 @@ static int msm_cvp_scale_clocks_and_bus(struct msm_vidc_inst *inst)
 		return -EINVAL;
 	}
 
-	rc = msm_vidc_set_clocks(inst->core, inst->sid);
+	rc = msm_vidc_set_clocks(inst->core, inst->sid, false);
 	if (rc) {
 		s_vpr_e(inst->sid, "%s: failed set_clocks for inst %pK\n",
 			__func__, inst);
 		goto exit;
 	}
 
-	rc = msm_comm_vote_bus(inst);
+	rc = msm_comm_vote_bus(inst, false);
 	if (rc) {
 		s_vpr_e(inst->sid,
 			"%s: failed vote_bus for inst %pK\n", __func__, inst);

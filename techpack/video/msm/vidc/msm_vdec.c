@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/slab.h>
@@ -927,6 +927,15 @@ int msm_vdec_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 	case V4L2_CID_MPEG_VIDC_VIDEO_OPERATING_RATE:
 		if (!is_valid_operating_rate(inst, ctrl->val))
 			break;
+		/*
+		 * reset the resources like clock and bus as per the updated
+		 * flag. When switch from TURBO to normal, need not wait for
+		 * next qbuf to scale down the resources.
+		 */
+		if ((inst->flags & VIDC_TURBO) && (ctrl->val != INT_MAX)) {
+			inst->flags &= ~VIDC_TURBO;
+			msm_comm_reset_clocks_and_bus(inst);
+		}
 		inst->flags &= ~VIDC_TURBO;
 		if (ctrl->val == INT_MAX)
 			inst->flags |= VIDC_TURBO;
