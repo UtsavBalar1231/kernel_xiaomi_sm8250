@@ -1218,6 +1218,28 @@ cfg80211_bss_update(struct cfg80211_registered_device *rdev,
 	return NULL;
 }
 
+int cfg80211_get_ies_channel_number(const u8 *ie, size_t ielen,
+				    enum nl80211_band band)
+{
+	const u8 *tmp;
+	int channel_number = -1;
+
+	tmp = cfg80211_find_ie(WLAN_EID_DS_PARAMS, ie, ielen);
+	if (tmp && tmp[1] == 1) {
+		channel_number = tmp[2];
+	} else {
+		tmp = cfg80211_find_ie(WLAN_EID_HT_OPERATION, ie, ielen);
+		if (tmp && tmp[1] >= sizeof(struct ieee80211_ht_operation)) {
+			struct ieee80211_ht_operation *htop = (void *)(tmp + 2);
+
+			channel_number = htop->primary_chan;
+		}
+	}
+
+	return channel_number;
+}
+EXPORT_SYMBOL(cfg80211_get_ies_channel_number);
+
 /*
  * Update RX channel information based on the available frame payload
  * information. This is mainly for the 2.4 GHz band where frames can be received
@@ -1231,22 +1253,11 @@ cfg80211_get_bss_channel(struct wiphy *wiphy, const u8 *ie, size_t ielen,
 			 struct ieee80211_channel *channel,
 			 enum nl80211_bss_scan_width scan_width)
 {
-	const u8 *tmp;
 	u32 freq;
 	int channel_number = -1;
 	struct ieee80211_channel *alt_channel;
 
-	tmp = cfg80211_find_ie(WLAN_EID_DS_PARAMS, ie, ielen);
-	if (tmp && tmp[1] == 1) {
-		channel_number = tmp[2];
-	} else {
-		tmp = cfg80211_find_ie(WLAN_EID_HT_OPERATION, ie, ielen);
-		if (tmp && tmp[1] >= sizeof(struct ieee80211_ht_operation)) {
-			struct ieee80211_ht_operation *htop = (void *)(tmp + 2);
-
-			channel_number = htop->primary_chan;
-		}
-	}
+	channel_number = cfg80211_get_ies_channel_number(ie, ielen, channel->band);
 
 	if (channel_number < 0) {
 		/* No channel information in frame payload */
