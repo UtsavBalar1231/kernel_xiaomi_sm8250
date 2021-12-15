@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2021 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -1831,9 +1832,9 @@ static void mlme_init_scoring_cfg(struct wlan_objmgr_psoc *psoc,
 	 * If configured weights are greater than max weight,
 	 * fallback to default weights
 	 */
-	if (total_weight > BEST_CANDIDATE_MAX_WEIGHT) {
+	if (total_weight > MAX_BSS_SCORE) {
 		mlme_legacy_err("Total weight greater than %d, using default weights",
-				BEST_CANDIDATE_MAX_WEIGHT);
+				MAX_BSS_SCORE);
 		scoring_cfg->weight_cfg.rssi_weightage = RSSI_WEIGHTAGE;
 		scoring_cfg->weight_cfg.ht_caps_weightage =
 						HT_CAPABILITY_WEIGHTAGE;
