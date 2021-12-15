@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2017-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2021 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -34,8 +35,6 @@
 	(((const uint8_t *)(addr))[QDF_MAC_ADDR_SIZE - 1] % SCAN_HASH_SIZE)
 
 #define SCM_PCL_RSSI_THRESHOLD -75
-#define BEST_CANDIDATE_MAX_BSS_SCORE 10000
-
 #define ADJACENT_CHANNEL_RSSI_THRESHOLD -80
 
 /**

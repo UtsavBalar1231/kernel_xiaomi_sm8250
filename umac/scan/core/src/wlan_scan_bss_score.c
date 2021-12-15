@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2017-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2021 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -117,10 +118,10 @@ void scm_validate_scoring_config(struct scoring_config *score_cfg)
 		       score_cfg->weight_cfg.channel_congestion_weightage +
 		       score_cfg->weight_cfg.oce_wan_weightage;
 
-	if (total_weight > BEST_CANDIDATE_MAX_WEIGHT) {
+	if (total_weight > MAX_BSS_SCORE) {
 
 		scm_err("total weight is greater than %d fallback to default values",
-			BEST_CANDIDATE_MAX_WEIGHT);
+			MAX_BSS_SCORE);
 
 		score_cfg->weight_cfg.rssi_weightage = RSSI_WEIGHTAGE;
 		score_cfg->weight_cfg.ht_caps_weightage =
