@@ -4061,7 +4061,7 @@ int cam_req_mgr_dump_request(struct cam_dump_req_cmd *dump_req)
 
 	link = (struct cam_req_mgr_core_link *)
 		cam_get_device_priv(dump_req->link_hdl);
-	if (!link) {
+	if (!link || link->link_hdl != dump_req->link_hdl) {
 		CAM_DBG(CAM_CRM, "link ptr NULL %x", dump_req->link_hdl);
 		rc = -EINVAL;
 		goto end;
