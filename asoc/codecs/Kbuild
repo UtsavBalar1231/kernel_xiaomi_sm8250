@@ -81,9 +81,6 @@ ifeq ($(TARGET_PRODUCT), psyche)
         CDEFINES += -DCONFIG_TARGET_PRODUCT_PSYCHE
 endif
 
-ifeq ($(TARGET_PRODUCT), poussin)
-        CDEFINES += -DCONFIG_TARGET_PRODUCT_POUSSIN
-endif
 
 # As per target team, build is done as follows:
 # Defconfig : build with default flags
@@ -243,8 +240,6 @@ ifeq ($(TARGET_PRODUCT), $(filter $(TARGET_PRODUCT), enuma))
 	obj-y	+= cs35l41_k81/
 else ifeq ($(TARGET_PRODUCT), $(filter $(TARGET_PRODUCT), elish))
 	obj-y	+= cs35l41_k81/
-else ifeq ($(TARGET_PRODUCT), $(filter $(TARGET_PRODUCT), poussin))
-	obj-y	+= tfa9874/
 else
 	obj-y	+= cs35l41/
 endif
