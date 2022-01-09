@@ -619,7 +619,13 @@ static int device_prepare(struct fpc1020_data *fpc1020, bool enable)
 		(void)select_pin_ctl(fpc1020, "fpc1020_reset_reset");
 
 		usleep_range(PWR_ON_SLEEP_MIN_US, PWR_ON_SLEEP_MAX_US);
-#ifndef CONFIG_FINGERPRINT_FP_VREG_CONTROL
+#ifdef CONFIG_FINGERPRINT_FP_VREG_CONTROL
+		rc = regulator_disable(vreg);
+		if (rc) {
+			dev_dbg(dev, "error disabling fp_vdd_vreg!\n");
+			goto exit;
+		}
+#else
 		rc = vreg_setup(fpc1020, "vdd_ana", false);
 		if (rc) {
 			dev_dbg(dev, "fpc vreg power off failed. \n");
