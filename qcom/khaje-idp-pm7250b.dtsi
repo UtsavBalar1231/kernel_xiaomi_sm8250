@@ -56,7 +56,7 @@
 			   "vph_voltage",
 			   "skin_temp";
 	qcom,battery-data = <&mtp_batterydata>;
-	qcom,sec-charger-config = <1>;
+	qcom,sec-charger-config = <2>;
 	qcom,auto-recharge-soc = <98>;
 	qcom,step-charging-enable;
 	qcom,sw-jeita-enable;
@@ -110,4 +110,47 @@
 &dsi_nt36672e_fhd_plus_90hz_video {
 	qcom,platform-en-gpio = <&pm7250b_gpios 5 0>;
 	qcom,platform-bklight-en-gpio = <&pm7250b_gpios 1 0>;
+};
+
+&dsi_nt36672e_fhd_plus_120hz_video {
+	qcom,platform-en-gpio = <&pm7250b_gpios 5 0>;
+	qcom,platform-bklight-en-gpio = <&pm7250b_gpios 1 0>;
+};
+
+&cam_res_mgr_label {
+	gpios = <&pm7250b_gpios 4 0>;
+};
+
+&led_flash_rear {
+	gpios = <&pm7250b_gpios 4 0>;
+};
+
+&led_flash_rear_aux {
+	gpios = <&pm7250b_gpios 4 0>;
+};
+
+&led_flash_rear_aux2 {
+	gpios = <&pm7250b_gpios 4 0>;
+};
+
+&pm7250b_charger {
+	dpdm-supply = <&usb2_phy0>;
+
+	smb5_vbus: qcom,smb5-vbus {
+		regulator-name = "smb5-vbus";
+	};
+
+	smb5_vconn: qcom,smb5-vconn {
+		regulator-name = "smb5-vconn";
+	};
+};
+
+&pm7250b_pdphy {
+	vdd-pdphy-supply = <&L15A>;
+	vbus-supply = <&smb5_vbus>;
+	vconn-supply = <&smb5_vconn>;
+};
+
+&usb0 {
+	extcon = <&pm7250b_pdphy>, <&pm7250b_charger>, <&eud>;
 };

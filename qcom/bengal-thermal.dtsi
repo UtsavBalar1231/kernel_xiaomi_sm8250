@@ -957,6 +957,30 @@
 		};
 	};
 
+	mapss-lowc {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-governor = "low_limits_cap";
+		thermal-sensors = <&tsens0 0>;
+		wake-capable-sensor;
+		tracks-low;
+
+		trips {
+			mapss_cap_trip: mapss-cap-trip {
+				temperature = <5000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			lmh_cpu_cdev {
+				trip = <&mapss_cap_trip>;
+				cooling-device = <&lmh_cpu_vdd 1 1>;
+			};
+		};
+	};
+
 	mapss-lowf {
 		polling-delay-passive = <0>;
 		polling-delay = <0>;
@@ -996,16 +1020,16 @@
 		};
 	};
 
-	mapss-lowc {
+	camera-lowc {
 		polling-delay-passive = <0>;
 		polling-delay = <0>;
 		thermal-governor = "low_limits_cap";
-		thermal-sensors = <&tsens0 0>;
+		thermal-sensors = <&tsens0 3>;
 		wake-capable-sensor;
 		tracks-low;
 
 		trips {
-			mapss_cap_trip: mapss-cap-trip {
+			camera_cap_trip: camera-cap-trip {
 				temperature = <5000>;
 				hysteresis = <5000>;
 				type = "passive";
@@ -1014,7 +1038,7 @@
 
 		cooling-maps {
 			lmh_cpu_cdev {
-				trip = <&mapss_cap_trip>;
+				trip = <&camera_cap_trip>;
 				cooling-device = <&lmh_cpu_vdd 1 1>;
 			};
 		};
@@ -1055,30 +1079,6 @@
 			adsp_vdd_cdev {
 				trip = <&camera_trip>;
 				cooling-device = <&adsp_vdd 0 0>;
-			};
-		};
-	};
-
-	camera-lowc {
-		polling-delay-passive = <0>;
-		polling-delay = <0>;
-		thermal-governor = "low_limits_cap";
-		thermal-sensors = <&tsens0 3>;
-		wake-capable-sensor;
-		tracks-low;
-
-		trips {
-			camera_cap_trip: camera-cap-trip {
-				temperature = <5000>;
-				hysteresis = <5000>;
-				type = "passive";
-			};
-		};
-
-		cooling-maps {
-			lmh_cpu_cdev {
-				trip = <&camera_cap_trip>;
-				cooling-device = <&lmh_cpu_vdd 1 1>;
 			};
 		};
 	};

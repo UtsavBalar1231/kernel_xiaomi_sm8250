@@ -202,6 +202,26 @@
 
 		panel = <&dsi_r66451_amoled_144hz_cmd>;
 	};
+
+	novatek@62 {
+		compatible = "novatek,NVT-ts";
+		reg = <0x62>;
+
+		interrupt-parent = <&tlmm>;
+		interrupts = <39 0x2008>;
+
+		pinctrl-names = "pmx_ts_active", "pmx_ts_suspend",
+				"pmx_ts_release";
+		pinctrl-0 = <&ts_active>;
+		pinctrl-1 = <&ts_int_suspend &ts_reset_suspend>;
+		pinctrl-2 = <&pmx_ts_release>;
+
+		novatek,reset-gpio = <&tlmm 38 0x00>;
+		novatek,irq-gpio = <&tlmm 39 0x2008>;
+
+		panel = <&dsi_nt36672e_fhd_plus_60_video>;
+
+	};
 };
 
 &vendor {
@@ -301,6 +321,15 @@
 };
 
 &dsi_sharp_qsync_wqhd_video {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_avdd>;
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_external";
+	qcom,mdss-dsi-bl-min-level = <1>;
+	qcom,mdss-dsi-bl-max-level = <4095>;
+	qcom,platform-reset-gpio = <&tlmm 75 0>;
+	qcom,platform-en-gpio = <&tlmm 60 0>;
+};
+
+&dsi_nt36672e_fhd_plus_60_video {
 	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_avdd>;
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_external";
 	qcom,mdss-dsi-bl-min-level = <1>;

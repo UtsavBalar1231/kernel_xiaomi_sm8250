@@ -34,6 +34,8 @@
 				3500000 3000000 2500000 2000000 1500000
 				1000000 500000>;
 			qcom,pmic-revid = <&pm7250b_revid>;
+			qcom,hvdcp2-max-icl-ua = <2000000>;
+			qcom,hvdcp2-12v-max-icl-ua = <1500000>;
 
 			qcom,chgr@1000 {
 				reg = <0x1000 0x100>;

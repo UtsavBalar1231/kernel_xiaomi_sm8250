@@ -1,0 +1,17 @@
+#include "khaje-qrd-hvdcp3p5.dtsi"
+
+&wcd937x_codec {
+	status = "disabled";
+};
+
+&wcd937x_rx_slave {
+	status = "disabled";
+};
+
+&wcd937x_tx_slave {
+	status = "disabled";
+};
+
+&bengal_snd {
+	qcom,codec-max-aux-devs = <0>;
+};

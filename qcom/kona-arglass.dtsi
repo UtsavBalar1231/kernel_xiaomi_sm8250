@@ -2,6 +2,7 @@
 #include "kona-pmic-overlay.dtsi"
 #include "kona-sde-display.dtsi"
 #include "kona-audio-overlay.dtsi"
+#include "kona-audio-overlay-ar.dtsi"
 #include "kona-thermal-overlay.dtsi"
 #include "kona-xr-pinctrl-overlay.dtsi"
 #include "camera/kona-camera-sensor-arglass.dtsi"
@@ -125,9 +126,9 @@
 };
 
 &vendor {
-	kona_xrfusion_batterydata: qcom,battery-data {
+	kona_arglass_batterydata: qcom,battery-data {
 		qcom,batt-id-range-pct = <15>;
-		#include "fg-gen4-batterydata-goertek-6100mah.dtsi"
+		#include "fg-gen4-batterydata-goertek-650mah.dtsi"
 	};
 };
 
@@ -159,7 +160,7 @@
 };
 
 &qupv3_se1_i2c {
-	status = "ok";
+	status = "disabled";
 	qcom,clk-freq-out = <1000000>;
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -223,10 +224,10 @@
 
 	qcom,xr-stdalonevwr-misc {
 		compatible = "qcom,xr-stdalonevwr-misc";
-		/* IMU CLK Enable PM8150 GPIO 3 */
+		/* IMU CLK Enable PM8150 GPIO 3 & MAG_RST_GPIO */
 		pinctrl-names = "default", "sleep";
-		pinctrl-0 = <&imu_clkin_default>;
-		pinctrl-1 = <&imu_clkin_sleep>;
+		pinctrl-0 = <&imu_clkin_default &mag_rst_gpio_default>;
+		pinctrl-1 = <&imu_clkin_sleep &mag_rst_gpio_sleep>;
 	};
 };
 
@@ -387,22 +388,24 @@
 			   "sbux_res",
 			   "vph_voltage",
 			   "chg_temp";
-	qcom,battery-data = <&kona_xrfusion_batterydata>;
+	qcom,battery-data = <&kona_arglass_batterydata>;
 	qcom,sw-jeita-enable;
 	qcom,wd-bark-time-secs = <16>;
 	qcom,suspend-input-on-debug-batt;
+	qcom,hvdcp-disable;
 	qcom,thermal-mitigation = <5325000 4500000 4000000 3500000 3000000
 				2500000 2000000 1500000 1000000 500000>;
 };
 
 &pm8150b_fg {
 	status = "ok";
-	qcom,battery-data = <&kona_xrfusion_batterydata>;
+	qcom,battery-data = <&kona_arglass_batterydata>;
 	qcom,hold-soc-while-full;
 	qcom,linearize-soc;
 	qcom,five-pin-battery;
 	qcom,cl-wt-enable;
 	qcom,soc-scale-mode-en;
+	qcom,fg-force-load-profile;
 	/* ESR fast calibration */
 	qcom,fg-esr-timer-chg-fast = <0 7>;
 	qcom,fg-esr-timer-dischg-fast = <0 7>;
@@ -787,7 +790,7 @@
 		qca,bt-reset-gpio = <&tlmm 21 0>; /* BT_EN */
 		qca,bt-sw-ctrl-gpio = <&tlmm 124 0>; /* SW_CTRL */
 		qca,bt-vdd-aon-supply = <&pm8150_s6>;
-		qca,bt-vdd-dig-supply = <&pm8009_s2>;
+		qca,bt-vdd-dig-supply = <&pm8150_s6>;
 		qca,bt-vdd-rfa1-supply = <&pm8150_s5>;
 		qca,bt-vdd-rfa2-supply = <&pm8150a_s8>;
 		qca,bt-vdd-asd-supply = <&pm8150_l16>;
@@ -828,26 +831,15 @@
 					"primary", "none", "none";
 };
 
-&pcie0 {
-	qcom,target-link-speed = <0x2>;
-};
-
 &kona_snd {
 	qcom,model = "kona-arglass-snd-card";
 	qcom,mi2s-audio-intf = <0>;
 	qcom,audio-routing =
-		"AMIC2", "MIC BIAS2",
-		"MIC BIAS2", "Analog Mic2",
-		"TX DMIC1", "MIC BIAS1",
-		"MIC BIAS1", "Digital Mic0",
-		"TX DMIC2", "MIC BIAS1",
-		"MIC BIAS1", "Digital Mic1",
-		"TX DMIC3", "MIC BIAS1",
-		"MIC BIAS1", "Digital Mic2",
-		"TX DMIC4", "MIC BIAS1",
-		"MIC BIAS1", "Digital Mic3",
-		"TX DMIC5", "MIC BIAS3",
-		"MIC BIAS3", "Digital Mic4",
+		"TX DMIC0", "Digital Mic0",
+		"TX DMIC1", "Digital Mic1",
+		"TX DMIC2", "Digital Mic2",
+		"TX DMIC3", "Digital Mic3",
+		"TX DMIC4", "Digital Mic4",
 		"IN1_HPHL", "HPHL_OUT",
 		"IN2_HPHR", "HPHR_OUT",
 		"IN3_AUX", "AUX_OUT",
@@ -874,16 +866,11 @@
 		"VA_AIF1 CAP", "VA_SWR_CLK",
 		"VA_AIF2 CAP", "VA_SWR_CLK",
 		"VA_AIF3 CAP", "VA_SWR_CLK",
-		"VA MIC BIAS3", "Digital Mic0",
-		"VA MIC BIAS3", "Digital Mic1",
-		"VA MIC BIAS1", "Digital Mic2",
-		"VA MIC BIAS1", "Digital Mic3",
-		"VA MIC BIAS4", "Digital Mic5",
-		"VA DMIC0", "VA MIC BIAS3",
-		"VA DMIC1", "VA MIC BIAS3",
-		"VA DMIC2", "VA MIC BIAS1",
-		"VA DMIC3", "VA MIC BIAS1",
-		"VA DMIC5", "VA MIC BIAS4",
+		"VA DMIC0", "Digital Mic0",
+		"VA DMIC1", "Digital Mic1",
+		"VA DMIC2", "Digital Mic2",
+		"VA DMIC3", "Digital Mic3",
+		"VA DMIC4", "Digital Mic4",
 		"VA SWR_ADC1", "VA_SWR_CLK",
 		"VA SWR_MIC0", "VA_SWR_CLK",
 		"VA SWR_MIC1", "VA_SWR_CLK",
@@ -933,6 +920,82 @@
 	status = "disabled";
 };
 
+&kona_snd_ar {
+	qcom,model = "kona-arglass-snd-card";
+	qcom,mi2s-audio-intf = <0>;
+	qcom,audio-routing =
+		"TX DMIC0", "Digital Mic0",
+		"TX DMIC1", "Digital Mic1",
+		"TX DMIC2", "Digital Mic2",
+		"TX DMIC3", "Digital Mic3",
+		"TX DMIC4", "Digital Mic4",
+		"IN1_HPHL", "HPHL_OUT",
+		"IN2_HPHR", "HPHR_OUT",
+		"IN3_AUX", "AUX_OUT",
+		"TX SWR_ADC0", "ADC1_OUTPUT",
+		"TX SWR_ADC1", "ADC2_OUTPUT",
+		"TX SWR_ADC2", "ADC3_OUTPUT",
+		"TX SWR_ADC3", "ADC4_OUTPUT",
+		"TX SWR_DMIC0", "DMIC1_OUTPUT",
+		"TX SWR_DMIC1", "DMIC2_OUTPUT",
+		"TX SWR_DMIC2", "DMIC3_OUTPUT",
+		"TX SWR_DMIC3", "DMIC4_OUTPUT",
+		"TX SWR_DMIC4", "DMIC5_OUTPUT",
+		"TX SWR_DMIC5", "DMIC6_OUTPUT",
+		"TX SWR_DMIC6", "DMIC7_OUTPUT",
+		"TX SWR_DMIC7", "DMIC8_OUTPUT",
+		"WSA SRC0_INP", "SRC0",
+		"WSA_TX DEC0_INP", "TX DEC0 MUX",
+		"WSA_TX DEC1_INP", "TX DEC1 MUX",
+		"RX_TX DEC0_INP", "TX DEC0 MUX",
+		"RX_TX DEC1_INP", "TX DEC1 MUX",
+		"RX_TX DEC2_INP", "TX DEC2 MUX",
+		"RX_TX DEC3_INP", "TX DEC3 MUX",
+		"SpkrRight IN", "WSA_SPK2 OUT",
+		"VA_AIF1 CAP", "VA_SWR_CLK",
+		"VA_AIF2 CAP", "VA_SWR_CLK",
+		"VA_AIF3 CAP", "VA_SWR_CLK",
+		"VA DMIC0", "Digital Mic0",
+		"VA DMIC1", "Digital Mic1",
+		"VA DMIC2", "Digital Mic2",
+		"VA DMIC3", "Digital Mic3",
+		"VA DMIC4", "Digital Mic4",
+		"VA SWR_ADC1", "VA_SWR_CLK",
+		"VA SWR_MIC0", "VA_SWR_CLK",
+		"VA SWR_MIC1", "VA_SWR_CLK",
+		"VA SWR_MIC2", "VA_SWR_CLK",
+		"VA SWR_MIC3", "VA_SWR_CLK",
+		"VA SWR_MIC4", "VA_SWR_CLK",
+		"VA SWR_MIC5", "VA_SWR_CLK",
+		"VA SWR_MIC6", "VA_SWR_CLK",
+		"VA SWR_MIC7", "VA_SWR_CLK",
+		"VA SWR_MIC0", "DMIC1_OUTPUT",
+		"VA SWR_MIC1", "DMIC2_OUTPUT",
+		"VA SWR_MIC2", "DMIC3_OUTPUT",
+		"VA SWR_MIC3", "DMIC4_OUTPUT",
+		"VA SWR_MIC4", "DMIC5_OUTPUT",
+		"VA SWR_MIC5", "DMIC6_OUTPUT",
+		"VA SWR_MIC6", "DMIC7_OUTPUT",
+		"VA SWR_MIC7", "DMIC8_OUTPUT",
+		"VA SWR_ADC1", "ADC2_OUTPUT";
+	qcom,msm-mbhc-hphl-swh = <0>;
+	qcom,msm-mbhc-gnd-swh = <0>;
+	qcom,codec-max-aux-devs = <0>;
+	/delete-property/ qcom,codec-aux-devs;
+};
+
+&wcd938x_tx_slave_ar {
+	status = "disabled";
+};
+
+&wcd938x_rx_slave_ar {
+	status = "disabled";
+};
+
+&wcd938x_codec_ar {
+	status = "disabled";
+};
+
 &pm8150a_l4 {
 	qcom,init-voltage = <2800000>;
 };
@@ -944,3 +1007,61 @@
 &pm8150a_l9 {
 	qcom,init-voltage = <2800000>;
 };
+
+&sde_dp {
+	status="disabled";
+};
+
+&mdss_mdp {
+	connectors = <&sde_wb &sde_dsi &sde_dsi1 &sde_rscc>;
+};
+
+&wlan {
+	vdd-wlan-dig-supply = <&pm8150_s6>;
+	qcom,vdd-wlan-dig-config = <950000 950000 0 0 1>;
+	qcom,cmd_db_name = "smpa6";
+};
+
+&flash_led {
+	qcom,hw-strobe-option = <0>;
+	qcom,strobe-sel = <1>;
+	qcom,ramp-up-step = <200>;
+	qcom,ramp-down-step = <200>;
+	status = "okay";
+};
+
+&pm8150l_flash0 {
+	qcom,strobe-sel = <1>;
+	status = "okay";
+};
+
+&pm8150l_flash1 {
+	qcom,strobe-sel = <1>;
+	status = "okay";
+};
+
+&pm8150l_flash2 {
+	qcom,strobe-sel = <1>;
+	status = "okay";
+};
+
+&pm8150l_torch0 {
+	qcom,strobe-sel = <1>;
+	status = "okay";
+};
+
+&pm8150l_torch1 {
+	qcom,strobe-sel = <1>;
+	status = "okay";
+};
+
+&pm8150l_torch2 {
+	qcom,strobe-sel = <1>;
+	status = "okay";
+};
+
+&pm8150b_pdphy {
+	/* Restricting only to 5V@3A */
+	qcom,default-sink-caps = <5000 3000>; /* 5V @ 3A */
+};
+

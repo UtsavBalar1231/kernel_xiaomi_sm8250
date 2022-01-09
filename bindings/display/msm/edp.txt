@@ -1,4 +1,4 @@
-Qualcomm Technologies Inc. adreno/snapdragon eDP output
+Qualcomm Technologies Inc. snapdragon eDP output
 
 Required properties:
 - compatible:

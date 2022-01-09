@@ -485,7 +485,7 @@
 
 	/* 6DOF Left */
 	qcom,cam-sensor0 {
-		cell-index = <0>;
+		cell-index = <3>;
 		compatible = "qcom,cam-sensor";
 		csiphy-sd-index = <0>;
 		sensor-position-roll = <90>;
@@ -531,7 +531,7 @@
 
 	/* 6DOF Right */
 	qcom,cam-sensor1 {
-		cell-index = <1>;
+		cell-index = <4>;
 		compatible = "qcom,cam-sensor";
 		csiphy-sd-index = <1>;
 		sensor-position-roll = <90>;

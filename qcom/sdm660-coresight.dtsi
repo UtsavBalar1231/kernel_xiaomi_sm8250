@@ -24,7 +24,7 @@
 		reg-names = "tmc-base", "bam-base";
 
 		arm,buffer-size = <0x400000>;
-		arm,sg-enable;
+		arm,scatter-gather;
 		arm,default-sink;
 		coresight-csr = <&csr>;
 

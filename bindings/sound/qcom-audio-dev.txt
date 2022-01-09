@@ -1873,6 +1873,7 @@ Optional properties:
 - qcom,rxtx-bolero-codec: Property to specify RX-TX macros supported.
 - qcom,wsa-bolero-codec: Property to specify WSA macro supported.
 - qcom,tdm-audio-intf: Property to specify if Aux PCM interface is used for the target
+- qcom,wcd-datalane-mismatch: Property to specify if wcd datalane mismatch.
 
 Example:
 	bengal_snd: sound {
@@ -1885,6 +1886,7 @@ Example:
 		qcom,va-bolero-codec = <1>;
 		qcom,rxtx-bolero-codec = <1>;
 		qcom,tdm-audio-intf = <1>;
+		qcom,wcd-datalane-mismatch = <1>;
 
 		asoc-platform = <&pcm0>, <&pcm1>, <&pcm2>, <&voip>, <&voice>,
 				<&loopback>, <&compress>, <&hostless>,
@@ -2005,6 +2007,10 @@ Optional properties:
 - qcom,msm-mi2s-master: This property is used to inform machine driver
   if MSM is the clock master of mi2s. 1 means master and 0 means slave. The
   first entry is primary mi2s; the second entry is secondary mi2s, and so on.
+- qcom,tdm-clk-attribute: This property is used to set the clock attribute for tdm.
+  The first entry is primary tdm; the second entry is secondary tdm, and so on.
+- qcom,mi2s-clk-attribute: This property is used to set the clock attribute for mi2s.
+  The first entry is primary mi2s; the second entry is secondary mi2s, and so on.
 - qcom,msm-mbhc-hphl-swh: This property is used to distinguish headset HPHL
   switch type on target typically the switch type will be normally open or
   normally close, value for this property 0 for normally close and 1 for
@@ -2150,6 +2156,27 @@ Example:
 	};
 
 };
+
+Required properties:
+- compatible : "qcom,spf-core-platform"
+
+Required properties:
+- compatible : "qcom,audio-pkt-core-platform"
+
+Required properties:
+- compatible : "qcom,gpr"
+
+Required properties:
+- compatible : "qcom,spf_core"
+
+Required properties:
+- compatible : "qcom,audio-pkt"
+
+Required properties:
+- compatible : "qcom,audio_prm"
+
+Required properties:
+- compatible : "qcom,voice_mhi_gpr"
 
 * LITO ASoC Machine driver
 

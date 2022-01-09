@@ -1,4 +1,4 @@
-Qualcomm adreno/snapdragon MDP5 display controller
+Qualcomm Technologies, Inc. adreno/snapdragon MDP5 display controller
 
 Description:
 

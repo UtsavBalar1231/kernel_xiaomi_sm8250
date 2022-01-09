@@ -50,8 +50,6 @@
 		qcom,dwc-usb3-msm-tx-fifo-size = <21288>;
 		qcom,gsi-disable-io-coherency;
 
-		qcom,pm-qos-latency = <61>; /* CPU0-WFI-LVL latency +1 */
-
 		qcom,msm-bus,name = "usb0";
 		qcom,msm-bus,num-cases = <4>;
 		qcom,msm-bus,num-paths = <3>;
@@ -89,6 +87,7 @@
 			snps,disable-clk-gating;
 			snps,has-lpm-erratum;
 			snps,hird-threshold = /bits/ 8 <0x10>;
+			snps,usb3-u1u2-disable;
 			snps,usb3_lpm_capable;
 			usb-core-id = <0>;
 			maximum-speed = "super-speed";
@@ -138,14 +137,16 @@
 		vdda33-supply = <&L15A>;
 		qcom,vdd-voltage-level = <0 880000 880000>;
 
-		clocks = <&rpmcc CXO_SMD_OTG_CLK>;
-		clock-names =  "ref_clk_src";
+		clocks = <&rpmcc CXO_SMD_OTG_CLK>,
+			<&gcc GCC_AHB2PHY_USB_CLK>;
+		clock-names =  "ref_clk_src", "cfg_ahb_clk";
 
 		resets = <&gcc GCC_QUSB2PHY_PRIM_BCR>;
 		reset-names = "phy_reset";
-		qcom,param-override-seq = <0x61 0x6c>, //override_x0
-					  <0x43 0x70>, //override_x1
-					  <0x2E 0x74>; //override_x2
+		qcom,param-override-seq =
+			<0xa6 0x6c>,  /* override_x0 */
+			<0x85 0x70>,  /* override_x1 */
+			<0x16 0x74>;  /* override_x2 */
 	};
 
 	/* Primary USB port related QMP USB PHY */
@@ -163,10 +164,12 @@
 			 <&gcc GCC_USB3_PRIM_PHY_PIPE_CLK_SRC>,
 			 <&usb3_phy_wrapper_gcc_usb30_pipe_clk>,
 			 <&rpmcc CXO_SMD_OTG_CLK>,
-			 <&gcc GCC_USB3_PRIM_PHY_COM_AUX_CLK>;
+			 <&gcc GCC_USB3_PRIM_PHY_COM_AUX_CLK>,
+			 <&gcc GCC_AHB2PHY_USB_CLK>;
+
 		clock-names = "aux_clk", "pipe_clk", "pipe_clk_mux",
 				"pipe_clk_ext_src", "ref_clk_src",
-				"com_aux_clk";
+				"com_aux_clk","cfg_ahb_clk";
 
 		resets = <&gcc GCC_USB3_DP_PHY_PRIM_BCR>,
 			 <&gcc GCC_USB3_PHY_PRIM_SP0_BCR>;

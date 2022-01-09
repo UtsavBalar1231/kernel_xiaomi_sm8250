@@ -30,6 +30,7 @@ Properties:
 		"qcom,mpm-gic-bengal"
 		"qcom,mpm-gic-scuba"
 		"qcom,mpm-gic-sdm660"
+		"qcom,mpm-gic-khaje"
 
 - interrupts:
 	Usage: required

@@ -52,6 +52,7 @@ avago	Avago Technologies
 avia	avia semiconductor
 avic	Shanghai AVIC Optoelectronics Co., Ltd.
 avnet	Avnet, Inc.
+awinic  Shanghai Awinic Electronic Technology Co., LTD.
 axentia	Axentia Technologies AB
 axis	Axis Communications AB
 bananapi BIPAI KEJI LIMITED

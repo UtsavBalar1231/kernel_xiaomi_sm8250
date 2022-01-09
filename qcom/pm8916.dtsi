@@ -1,3 +1,4 @@
+#include <dt-bindings/iio/qcom,spmi-vadc.h>
 #include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/spmi/spmi.h>
 
@@ -76,63 +77,67 @@
 		pm8916_vadc: vadc@3100 {
 			compatible = "qcom,spmi-vadc";
 			reg = <0x3100 0x100>;
+			interrupts = <0x0 0x31 0x0 IRQ_TYPE_EDGE_RISING>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <0x0 0x31 0x0 IRQ_TYPE_EDGE_RISING>;
-			interrupt-names = "eoc-int-en-set";
-			qcom,adc-bit-resolution = <15>;
-			qcom,adc-vdd-reference = <1800>;
-			qcom,vadc-poll-eoc;
-			qcom,pmic-revid = <&pm8916_revid>;
-			#thermal-sensor-cells = <1>;
+			#io-channel-cells = <1>;
 
-			chan@8 {
+			die_temp {
+				reg = <VADC_DIE_TEMP>;
 				label = "die_temp";
-				reg = <8>;
-				qcom,decimation = <0>;
-				qcom,pre-div-channel-scaling = <0>;
-				qcom,calibration-type = "absolute";
-				qcom,scale-function = <3>;
-				qcom,hw-settle-time = <0>;
-				qcom,fast-avg-setup = <0>;
+				qcom,pre-scaling = <1 1>;
 			};
 
-			chan@9 {
+			ref_625mv {
+				reg = <VADC_REF_625MV>;
 				label = "ref_625mv";
-				reg = <9>;
-				qcom,decimation = <0>;
-				qcom,pre-div-channel-scaling = <0>;
-				qcom,calibration-type = "absolute";
-				qcom,scale-function = <0>;
-				qcom,hw-settle-time = <0>;
-				qcom,fast-avg-setup = <0>;
+				qcom,pre-scaling = <1 1>;
 			};
 
-			chan@a {
+			ref_1250v {
+				reg = <VADC_REF_1250MV>;
 				label = "ref_1250v";
-				reg = <0xa>;
-				qcom,decimation = <0>;
-				qcom,pre-div-channel-scaling = <0>;
-				qcom,calibration-type = "absolute";
-				qcom,scale-function = <0>;
-				qcom,hw-settle-time = <0>;
-				qcom,fast-avg-setup = <0>;
+				qcom,pre-scaling = <1 1>;
+			};
+
+			ref_buf_625mv {
+				reg = <VADC_SPARE1>;
+				label = "ref_buf_625mv";
+				qcom,pre-scaling = <1 1>;
+			};
+
+			ref_vdd {
+				reg = <VADC_VDD_VADC>;
+				label = "ref_vdd";
+				qcom,pre-scaling = <1 1>;
+			};
+
+			ref_gnd {
+				reg = <VADC_GND_REF>;
+				label = "ref_gnd";
+				qcom,pre-scaling = <1 1>;
 			};
 		};
 
-		pm8916_tz: qcom,temp-alarm@2400 {
+		pm8916_tz: temp-alarm@2400 {
 			compatible = "qcom,spmi-temp-alarm";
 			reg = <0x2400 0x100>;
-			interrupts = <0x0 0x24 0x0 IRQ_TYPE_EDGE_RISING>;
-			label = "pm8916_tz";
-			qcom,channel-num = <8>;
-			qcom,threshold-set = <0>;
-			qcom,temp_alarm-vadc = <&pm8916_vadc>;
+			interrupts = <0 0x24 0 IRQ_TYPE_EDGE_RISING>;
+			io-channels = <&pm8916_vadc VADC_DIE_TEMP>;
+			io-channel-names = "thermal";
 			#thermal-sensor-cells = <0>;
 		};
 
+		pm8916_adc_tm_iio: adc_tm_iio {
+			compatible = "qcom,adc-tm5-iio";
+			reg = <0x3500 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			#thermal-sensor-cells = <1>;
+		};
+
 		pm8916_adc_tm: vadc@3400 {
-			compatible = "qcom,adc-tm-rev2";
+			compatible = "qcom,qpnp-adc-tm";
 			reg = <0x3400 0x100>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -142,10 +147,15 @@
 			interrupt-names = "eoc-int-en-set",
 					  "high-thr-en-set",
 					  "low-thr-en-set";
-			qcom,adc-bit-resolution = <15>;
 			qcom,adc-vdd-reference = <1800>;
-			qcom,adc_tm-vadc = <&pm8916_vadc>;
+			#thermal-sensor-cells = <1>;
 			qcom,pmic-revid = <&pm8916_revid>;
+			io-channels = <&pm8916_vadc VADC_REF_625MV>,
+					<&pm8916_vadc VADC_REF_1250MV>,
+					<&pm8916_vadc VADC_VDD_VADC>,
+					<&pm8916_vadc VADC_GND_REF>;
+			io-channel-names = "ref_625mv", "ref_1250v", "ref_vdd",
+						"ref_gnd";
 		};
 
 		pm8916_chg: qcom,charger {
@@ -170,7 +180,9 @@
 			qcom,batt-cold-percentage = <80>;
 			qcom,tchg-mins = <232>;
 			qcom,resume-soc = <99>;
-			qcom,chg-vadc = <&pm8916_vadc>;
+			io-channels = <&pm8916_vadc VADC_VBAT_SNS>,
+				      <&pm8916_vadc VADC_LR_MUX1_BAT_THERM>;
+			io-channel-names = "vbat_sns", "batt_therm";
 			qcom,chg-adc_tm = <&pm8916_adc_tm>;
 
 			status = "disabled";
@@ -231,7 +243,15 @@
 			qcom,s3-ocv-tolerence-uv = <1200>;
 			qcom,s2-fifo-length = <5>;
 			qcom,low-soc-fifo-length = <2>;
-			qcom,bms-vadc = <&pm8916_vadc>;
+			io-channels = <&pm8916_vadc VADC_REF_625MV>,
+				      <&pm8916_vadc VADC_REF_1250MV>,
+				      <&pm8916_vadc VADC_VBAT_SNS>,
+				      <&pm8916_vadc VADC_LR_MUX1_BAT_THERM>,
+				      <&pm8916_vadc VADC_DIE_TEMP>,
+				      <&pm8916_vadc VADC_LR_MUX2_BAT_ID>;
+			io-channel-names = "ref_625mv", "ref_1250v",
+					   "vbat_sns", "batt_therm",
+					   "die_temp", "batt_id";
 			qcom,bms-adc_tm = <&pm8916_adc_tm>;
 			qcom,pmic-revid = <&pm8916_revid>;
 

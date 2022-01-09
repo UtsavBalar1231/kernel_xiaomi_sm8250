@@ -1,7 +1,7 @@
 &soc {
 	tmc_etr: tmc@6028000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b961>;
+		arm,primecell-periphid = <0x000bb961>;
 
 		reg = <0x6028000 0x1000>,
 				<0x6044000 0x15000>;
@@ -10,9 +10,9 @@
 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "byte-cntr-irq";
 
-		arm,buffer-size = <0x100000>;
-		arm,sg-enable;
+		arm,buffer-size = <0x400000>;
 		qcom,force-reg-dump;
+		arm,scatter-gather;
 
 		coresight-name = "coresight-tmc-etr";
 		coresight-csr = <&csr>;
@@ -32,7 +32,7 @@
 
 	tmc_etf: tmc@6027000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b961>;
+		arm,primecell-periphid = <0x000bb961>;
 
 		reg = <0x6027000 0x1000>;
 		reg-names = "tmc-base";
@@ -73,7 +73,7 @@
 
 	replicator: replicator@6026000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b909>;
+		arm,primecell-periphid = <0x000bb909>;
 
 		reg = <0x6026000 0x1000>;
 		reg-names = "replicator-base";
@@ -108,7 +108,7 @@
 
 	funnel_in0: funnel@6021000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b908>;
+		arm,primecell-periphid = <0x000bb908>;
 
 		reg = <0x6021000 0x1000>;
 		reg-names = "funnel-base";
@@ -178,7 +178,7 @@
 
 	funnel_center: funnel@6100000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b908>;
+		arm,primecell-periphid = <0x000bb908>;
 
 		reg = <0x6100000 0x1000>;
 		reg-names = "funnel-base";
@@ -222,7 +222,7 @@
 
 	funnel_right: funnel@6120000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b908>;
+		arm,primecell-periphid = <0x000bb908>;
 
 		reg = <0x6120000 0x1000>;
 		reg-names = "funnel-base";
@@ -266,7 +266,7 @@
 
 	funnel_mm: funnel@6130000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b908>;
+		arm,primecell-periphid = <0x000bb908>;
 
 		reg = <0x6130000 0x1000>;
 		reg-names = "funnel-base";
@@ -327,7 +327,7 @@
 
 	funnel_cam: funnel@6132000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b908>;
+		arm,primecell-periphid = <0x000bb908>;
 
 		reg = <0x6132000 0x1000>;
 		reg-names = "funnel-base";
@@ -347,7 +347,7 @@
 
 	funnel_apss: funnel@61a1000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b908>;
+		arm,primecell-periphid = <0x000bb908>;
 
 		reg = <0x61a1000 0x1000>;
 		reg-names = "funnel-base";
@@ -613,7 +613,7 @@
 
 	stm: stm@6002000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b962>;
+		arm,primecell-periphid = <0x000bb962>;
 
 		reg = <0x6002000 0x1000>,
 		      <0x9280000 0x180000>;
@@ -634,7 +634,7 @@
 
 	cti0: cti@6010000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b966>;
+		arm,primecell-periphid = <0x000bb966>;
 
 		reg = <0x6010000 0x1000>;
 		reg-names = "cti-base";
@@ -647,7 +647,7 @@
 
 	cti1: cti@6011000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b966>;
+		arm,primecell-periphid = <0x000bb966>;
 
 		reg = <0x6011000 0x1000>;
 		reg-names = "cti-base";
@@ -660,7 +660,7 @@
 
 	cti2: cti@6012000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b966>;
+		arm,primecell-periphid = <0x000bb966>;
 
 		reg = <0x6012000 0x1000>;
 		reg-names = "cti-base";
@@ -673,7 +673,7 @@
 
 	cti3: cti@6013000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b966>;
+		arm,primecell-periphid = <0x000bb966>;
 
 		reg = <0x6013000 0x1000>;
 		reg-names = "cti-base";
@@ -686,7 +686,7 @@
 
 	cti4: cti@6014000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b966>;
+		arm,primecell-periphid = <0x000bb966>;
 
 		reg = <0x6014000 0x1000>;
 		reg-names = "cti-base";
@@ -699,7 +699,7 @@
 
 	cti5: cti@6015000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b966>;
+		arm,primecell-periphid = <0x000bb966>;
 
 		reg = <0x6015000 0x1000>;
 		reg-names = "cti-base";
@@ -712,7 +712,7 @@
 
 	cti6: cti@6016000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b966>;
+		arm,primecell-periphid = <0x000bb966>;
 
 		reg = <0x6016000 0x1000>;
 		reg-names = "cti-base";
@@ -725,7 +725,7 @@
 
 	cti7: cti@6017000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b966>;
+		arm,primecell-periphid = <0x000bb966>;
 
 		reg = <0x6017000 0x1000>;
 		reg-names = "cti-base";
@@ -738,7 +738,7 @@
 
 	cti8: cti@6018000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b966>;
+		arm,primecell-periphid = <0x000bb966>;
 
 		reg = <0x6018000 0x1000>;
 		reg-names = "cti-base";
@@ -751,7 +751,7 @@
 
 	cti9: cti@6019000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b966>;
+		arm,primecell-periphid = <0x000bb966>;
 
 		reg = <0x6019000 0x1000>;
 		reg-names = "cti-base";
@@ -764,7 +764,7 @@
 
 	cti10: cti@601a000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b966>;
+		arm,primecell-periphid = <0x000bb966>;
 
 		reg = <0x601a000 0x1000>;
 		reg-names = "cti-base";
@@ -777,7 +777,7 @@
 
 	cti11: cti@601b000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b966>;
+		arm,primecell-periphid = <0x000bb966>;
 
 		reg = <0x601b000 0x1000>;
 		reg-names = "cti-base";
@@ -790,7 +790,7 @@
 
 	cti12: cti@601c000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b966>;
+		arm,primecell-periphid = <0x000bb966>;
 
 		reg = <0x601c000 0x1000>;
 		reg-names = "cti-base";
@@ -803,7 +803,7 @@
 
 	cti13: cti@601d000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b966>;
+		arm,primecell-periphid = <0x000bb966>;
 
 		reg = <0x601d000 0x1000>;
 		reg-names = "cti-base";
@@ -816,7 +816,7 @@
 
 	cti14: cti@601e000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b966>;
+		arm,primecell-periphid = <0x000bb966>;
 
 		reg = <0x601e000 0x1000>;
 		reg-names = "cti-base";
@@ -829,7 +829,7 @@
 
 	cti15: cti@601f000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b966>;
+		arm,primecell-periphid = <0x000bb966>;
 
 		reg = <0x601f000 0x1000>;
 		reg-names = "cti-base";
@@ -842,7 +842,7 @@
 
 	cti_cpu0: cti@61b8000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b966>;
+		arm,primecell-periphid = <0x000bb966>;
 
 		reg = <0x61b8000 0x1000>;
 		reg-names = "cti-base";
@@ -857,7 +857,7 @@
 
 	cti_cpu1: cti@61b9000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b966>;
+		arm,primecell-periphid = <0x000bb966>;
 
 		reg = <0x61b9000 0x1000>;
 		reg-names = "cti-base";
@@ -872,7 +872,7 @@
 
 	cti_cpu2: cti@61ba000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b966>;
+		arm,primecell-periphid = <0x000bb966>;
 
 		reg = <0x61ba000 0x1000>;
 		reg-names = "cti-base";
@@ -887,7 +887,7 @@
 
 	cti_cpu3: cti@61bb000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b966>;
+		arm,primecell-periphid = <0x000bb966>;
 
 		reg = <0x61bb000 0x1000>;
 		reg-names = "cti-base";
@@ -902,7 +902,7 @@
 
 	cti_cpu4: cti@6198000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b966>;
+		arm,primecell-periphid = <0x000bb966>;
 
 		reg = <0x6198000 0x1000>;
 		reg-names = "cti-base";
@@ -917,7 +917,7 @@
 
 	cti_cpu5: cti@6199000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b966>;
+		arm,primecell-periphid = <0x000bb966>;
 
 		reg = <0x6199000 0x1000>;
 		reg-names = "cti-base";
@@ -932,7 +932,7 @@
 
 	cti_cpu6: cti@619a000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b966>;
+		arm,primecell-periphid = <0x000bb966>;
 
 		reg = <0x619a000 0x1000>;
 		reg-names = "cti-base";
@@ -947,7 +947,7 @@
 
 	cti_cpu7: cti@619b000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b966>;
+		arm,primecell-periphid = <0x000bb966>;
 
 		reg = <0x619b000 0x1000>;
 		reg-names = "cti-base";
@@ -962,7 +962,7 @@
 
 	cti_modem_cpu0: cti@6124000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b966>;
+		arm,primecell-periphid = <0x000bb966>;
 
 		reg = <0x6124000 0x1000>;
 		reg-names = "cti-base";
@@ -976,7 +976,7 @@
 	/* Venus CTI */
 	cti_video_cpu0: cti@6035000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b966>;
+		arm,primecell-periphid = <0x000bb966>;
 
 		reg = <0x6035000 0x1000>;
 		reg-names = "cti-base";
@@ -991,7 +991,7 @@
 	/* Pronto CTI */
 	cti_wcn_cpu0: cti@6039000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b966>;
+		arm,primecell-periphid = <0x000bb966>;
 
 		reg = <0x6039000 0x1000>;
 		reg-names = "cti-base";
@@ -1006,7 +1006,7 @@
 	/* LPASS CTI */
 	cti_audio_cpu0: cti@613c000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b966>;
+		arm,primecell-periphid = <0x000bb966>;
 
 		reg = <0x613c000 0x1000>;
 		reg-names = "cti-base";
@@ -1019,7 +1019,7 @@
 
 	cti_rpm_cpu0: cti@610c000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b966>;
+		arm,primecell-periphid = <0x000bb966>;
 
 		reg = <0x610c000 0x1000>;
 		reg-names = "cti-base";
@@ -1122,7 +1122,7 @@
 
 	tpda: tpda@6003000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b969>;
+		arm,primecell-periphid = <0x000bb969>;
 
 		reg = <0x6003000 0x1000>;
 		reg-names = "tpda-base";
@@ -1158,7 +1158,7 @@
 
 	tpdm_dcc: tpdm@6110000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b968>;
+		arm,primecell-periphid = <0x000bb968>;
 
 		reg = <0x6110000 0x1000>;
 		reg-names = "tpdm-base";

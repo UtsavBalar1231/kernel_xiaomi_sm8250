@@ -1,4 +1,4 @@
-Qualcomm adreno/snapdragon hdmi output
+Qualcomm Technologies, Inc. adreno/snapdragon hdmi output
 
 Required properties:
 - compatible: one of the following

@@ -97,6 +97,7 @@ ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
         dtbo-$(CONFIG_ARCH_KONA) += \
                 kona-cdp-overlay.dtbo \
                 kona-cdp-lcd-overlay.dtbo \
+                kona-cdp-lcd-tron-overlay.dtbo \
                 kona-mtp-overlay.dtbo \
                 kona-mtp-ws-overlay.dtbo \
 		kona-sa-mtp-overlay.dtbo \
@@ -110,6 +111,7 @@ ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
 
 kona-cdp-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
 kona-cdp-lcd-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
+kona-cdp-lcd-tron-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
 kona-mtp-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
 kona-mtp-ws-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
 kona-sa-mtp-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
@@ -131,6 +133,7 @@ dtb-$(CONFIG_ARCH_KONA) += kona-rumi.dtb \
         kona-arglass.dtb \
         kona-cdp.dtb \
         kona-cdp-lcd.dtb \
+        kona-cdp-lcd-tron.dtb \
         kona-qrd.dtb \
         kona-v2-rumi.dtb \
         kona-v2-mtp.dtb \
@@ -152,6 +155,7 @@ dtb-$(CONFIG_ARCH_KONA) += kona-rumi.dtb \
         kona-v2.1-xrfusion-ult.dtb \
         kona-v2.1-arglass.dtb \
         qrb5165-iot-rb5.dtb \
+        qrb5165n-iot-rb5.dtb \
         kona-v2.1-iot-rb5.dtb \
         kona-v2.1-hdk.dtb
 endif
@@ -285,7 +289,8 @@ dtb-$(CONFIG_ARCH_BENGAL) += bengal-rumi.dtb \
 		bengal-iot-idp-usbc.dtb \
 		bengalp-iot-idp-2gb.dtb \
 		bengalp-iot-idp-usbc-2gb.dtb \
-		bengalp-iot-idp-usbc.dtb
+		bengalp-iot-idp-usbc.dtb \
+		bengalp-iot-idp-2gb.dtb
 endif
 
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
@@ -334,8 +339,10 @@ ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
 		khaje-idp-overlay.dtbo \
 		khaje-qrd-overlay.dtbo \
 		khaje-qrd-hvdcp3p5-overlay.dtbo \
-		khaje-qrd-wcd9368-overlay.dtbo \
+		khaje-qrd-nowcd9375-overlay.dtbo \
 		khaje-idp-nopmi-overlay.dtbo \
+		khaje-idp-usbc-overlay.dtbo \
+		khaje-idp-pm8010-overlay.dtbo \
 		khaje-qrd-nopmi-overlay.dtbo \
 		khaje-idps-display-90hz-overlay.dtbo \
 		khaje-atp-overlay.dtbo
@@ -343,8 +350,10 @@ ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
 khaje-idp-overlay.dtbo-base := khaje.dtb
 khaje-qrd-overlay.dtbo-base := khaje.dtb
 khaje-qrd-hvdcp3p5-overlay.dtbo-base := khaje.dtb
-khaje-qrd-wcd9368-overlay.dtbo-base := khaje.dtb
+khaje-qrd-nowcd9375-overlay.dtbo-base := khaje.dtb
 khaje-idp-nopmi-overlay.dtbo-base := khaje.dtb
+khaje-idp-usbc-overlay.dtbo-base := khaje.dtb
+khaje-idp-pm8010-overlay.dtbo-base := khaje.dtb
 khaje-qrd-nopmi-overlay.dtbo-base := khaje.dtb
 khaje-idps-display-90hz-overlay.dtbo-base := khaje.dtb
 khaje-atp-overlay.dtbo-base := khaje.dtb
@@ -352,8 +361,10 @@ else
 dtb-$(CONFIG_ARCH_KHAJE) += khaje-idp.dtb \
 		khaje-qrd.dtb \
 		khaje-qrd-hvdcp3p5.dtb \
-		khaje-qrd-wcd9368.dtb \
+		khaje-qrd-nowcd9375.dtb \
 		khaje-idp-nopmi.dtb \
+		khaje-idp-usbc.dtb \
+		khaje-idp-pm8010.dtb \
 		khaje-qrd-nopmi.dtb \
 		khaje-idps-display-90hz.dtb \
 		khaje-atp.dtb
