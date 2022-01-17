@@ -283,6 +283,7 @@
 #define ADAPTER_XIAOMI_PD_40W		0x0c
 #define ADAPTER_VOICE_BOX		0x0d
 #define ADAPTER_XIAOMI_PD_45W	0x0e
+#define ADAPTER_XIAOMI_PD_60W   0x0f
 #define WLDC_XIAOMI_20W_IOUT_MAX_UA	1000000
 #define WLDC_XIAOMI_30W_IOUT_MAX_UA	1500000
 #define WLDC_XIAOMI_40W_IOUT_MAX_UA	2000000
@@ -2393,7 +2394,8 @@ static int smb1398_get_wls_charging_icl(struct smb1398_chip *chip, int *effectiv
 	} else if ((tx_adapter_type == ADAPTER_XIAOMI_PD_40W)
 			|| (tx_adapter_type == ADAPTER_VOICE_BOX)) {
 		*effectiveIcl = WLDC_XIAOMI_30W_IOUT_MAX_UA;
-	} else if (tx_adapter_type == ADAPTER_XIAOMI_PD_45W) {
+	} else if (tx_adapter_type == ADAPTER_XIAOMI_PD_45W ||
+			tx_adapter_type == ADAPTER_XIAOMI_PD_60W) {
 		*effectiveIcl = WLDC_XIAOMI_50W_IOUT_MAX_UA;
 	} else {
 		dev_err(chip->dev, "Get Main tx_adapter_type failed, tx_adapter_type=%d\n",
@@ -2665,7 +2667,7 @@ static void smb1398_isns_process_work(struct work_struct *work)
 				if (chip->isns_cnt++ >= WLS_MAIN_START_ILIM_CNT) {
 					vote(chip->div2_cp_ilim_votable, WIRELESS_CP_OPEN_VOTER, false, 0);
 					smb1398_charge_get_wireless_adapter_type(chip, &tx_adapter_type);
-					if (tx_adapter_type == ADAPTER_XIAOMI_PD_45W) {
+					if (tx_adapter_type == ADAPTER_XIAOMI_PD_45W ||tx_adapter_type == ADAPTER_XIAOMI_PD_60W) {
 						chip->max_power_cnt = 0;
 						if (!chip->rx_ocp_disable_votable)
 							chip->rx_ocp_disable_votable = find_votable("IDTP_OCP_DISABLE");

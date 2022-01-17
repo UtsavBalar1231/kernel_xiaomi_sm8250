@@ -1,5 +1,9 @@
 /**
- *  Copyright “Copyright (C) 2020 XiaoMi, Inc
+ * @file   idtp9220.h
+ * @author  <roy@ROY-PC>
+ * @date   Sun Nov 22 11:49:55 2015
+ *
+ * @brief
  *
  *
  */
@@ -20,6 +24,7 @@
 #define CHARGING_FULL        100
 #define CHARGING_NEED        95
 
+/* status low regiter bits define */
 #define STATUS_VOUT_ON       (1 << 7)
 #define STATUS_VOUT_OFF      (1 << 6)
 #define STATUS_TX_DATA_RECV  (1 << 4)
@@ -30,6 +35,7 @@
 #define OVER_EVENT_OCCUR     (STATUS_OV_TEMP | STATUS_OV_VOL | STATUS_OV_CURR)
 #define TOGGLE_LDO_ON_OFF    (1 << 1)
 
+/* interrupt register bits define */
 #define INT_RPP_READ      (1 << 17)
 #define INT_EXT5V_FAIL    (1 << 16)
 #define INT_VSWITCH_FAIL  (1 << 15)
@@ -49,6 +55,7 @@
 #define INT_OV_VOL        (1 << 1)
 #define INT_OV_CURR       (1 << 0)
 
+/*TRX int bits define*/
 #define INT_INIT_TX        (1 << 7)
 #define INT_GET_DPING      (1 << 6)
 #define INT_GET_PPP        (1 << 5)
@@ -58,22 +65,23 @@
 #define INT_START_DPING    (1 << 1)
 #define INT_EPT_TYPE       (1 << 0)
 
-#define TX_TOGGLE          BIT(6)
-#define TX_FOD_EN          BIT(5)
-#define TX_WD              BIT(4)
-#define TX_SEND_FSK        BIT(3)
-#define TX_DIS             BIT(2)
-#define TX_CLRINT          BIT(1)
-#define TX_EN              BIT(0)
+#define TX_TOGGLE          BIT(6) // toggle work mode(148K or 190K)
+#define TX_FOD_EN          BIT(5) // enable FOD
+#define TX_WD              BIT(4) // enable WD
+#define TX_SEND_FSK        BIT(3) // SEND_FSK
+#define TX_DIS             BIT(2) // disable tx
+#define TX_CLRINT          BIT(1) // clr int
+#define TX_EN              BIT(0) // enable tx mode
 
+/* used registers define */
 #define REG_CHIP_ID_L        0x0000
 #define REG_CHIP_ID_H        0x0001
 #define REG_CHIP_REV         0x0002
 #define REG_CTM_ID           0x0003
-#define REG_OTPFWVER_ADDR    0x0004
-#define REG_EPRFWVER_ADDR    0x001c
-#define REG_SYS_INT_CLR      0x0028
-#define REG_SYS_INT          0x0030
+#define REG_OTPFWVER_ADDR    0x0004 // OTP firmware version
+#define REG_EPRFWVER_ADDR    0x001c // EEPROM firmware version
+#define REG_SYS_INT_CLR      0x0028 // int clear
+#define REG_SYS_INT          0x0030 // interrupt
 #define REG_STATUS_L         0x0034
 #define REG_STATUS_H         0x0035
 #define REG_INTR_L           0x0036
@@ -88,27 +96,28 @@
 #define REG_ADC_VRECT        0x0040
 #define REG_RX_LOUT_L        0x0044
 #define REG_RX_LOUT_H        0x0045
-#define REG_FREQ_ADDR        0x0048
+#define REG_FREQ_ADDR        0x0048 // Operating Frequency, Fop(KHz) = 64 * 6000 /value * 256)
 #define REG_ILIM_SET         0x004A
 #define REG_SIGNAL_STRENGTH  0x004B
 #define REG_WPC_MODE         0x004D
-#define REG_SSCMND           0x004e
+#define REG_SSCMND           0x004e // Command Register, COM (0x4E)
 #define REG_RX_RESET         0x004F
-#define REG_PROPPKT          0x0050
-#define REG_PPPDATA          0x0051
-#define REG_SSINTCLR         0x0056
-#define REG_BCHEADER         0x0058
-#define REG_BCDATA           0x0059
-#define REG_FC_VOLTAGE_L     0x0078
+#define REG_PROPPKT          0x0050 // Proprietary Packet Header Register, PPP_Header (0x50)
+#define REG_PPPDATA          0x0051 // PPP Data Value Register(0X51, 0x52, 0x53, 0x54, 0x55)
+#define REG_SSINTCLR         0x0056 // Interrupt Clear Registers, INT_Clear_L (0x56)
+#define REG_BCHEADER         0x0058 // Back Channel Packet Register (0x58)
+#define REG_BCDATA           0x0059 // Back Channel Packet Register (0x59, 0x5A, 0x5B, 0x5C)
+#define REG_FC_VOLTAGE_L     0x0078 // Fast Charging Voltage Register
 #define REG_FC_VOLTAGE_H     0x0079
 #define REG_REGULATOR_L      0x000C
 #define REG_REGULATOR_H      0x000d
-#define REG_POWER_MAX        0x0084
-#define REG_TX_TYPE          0x00A2
-#define REG_BLE_FLAG         0x00A4
-#define REG_CEP              0x00A5
-#define REG_RPP              0x00A6
+#define REG_POWER_MAX        0x0084 //Get the TX power on EPP mode.
+#define REG_TX_TYPE          0x00A2 //Get the TX type.
+#define REG_BLE_FLAG         0x00A4 //Get the rx ble flag.
+#define REG_CEP              0x00A5 //Get the CEP.
+#define REG_RPP              0x00A6 //Get the RPP.
 
+/*add for reverse charge*/
 #define REG_EPT_TYPE         0x0074
 #define REG_TX_CMD           0x0076
 #define REG_TX_DATA          0x0078
@@ -126,14 +135,16 @@
 #define EPT_CEP_TIMEOUT      BIT(8)
 #define EPT_CMD              BIT(0)
 
-#define REG_EXTERNAL_5V      0x00dc
+#define REG_EXTERNAL_5V      0x00dc //external 5v enable
 
+// RX -> TX
 #define PROPRIETARY18        0x18
 #define PROPRIETARY28        0x28
 #define PROPRIETARY38        0x38
 #define PROPRIETARY48        0x48
 #define PROPRIETARY58        0x58
 
+// bitmap for customer command
 #define BC_NONE               0x00
 #define BC_SET_FREQ           0x03
 #define BC_GET_FREQ           0x04
@@ -154,6 +165,7 @@
 #define CMD_GET_BLEMAC_2_0    0xb6
 #define CMD_GET_BLEMAC_5_3    0xb7
 
+//Factory test command
 #define BC_READ_IOUT          0x12
 #define BC_READ_VOUT          0x13
 #define BC_RX_CHIP_VERSION    0x23
@@ -162,6 +174,14 @@
 #define BC_SET_AP_OVERLOAD    0x31
 #define BC_ENABLE_FAST_CHARGE 0x32
 
+/* Adapter_list = {0x00:'ADAPTER_UNKNOWN',  */
+/*            0x01:'SDP 500mA',  */
+/*            0x02:'CDP 1.1A',  */
+/*            0x03:'DCP 1.5A',  */
+/*            0x05:'QC2.0',  */
+/*            0x06:'QC3.0',  */
+/*            0x07:'PD',} */
+//define adapter type
 #define ADAPTER_NONE 0x00
 #define ADAPTER_SDP  0x01
 #define ADAPTER_CDP  0x02
@@ -183,20 +203,30 @@
 #define FULL_MODE   0x3
 #define RECHG_MODE  0x4
 
+//fw version to update
 #define FW_VERSION  0x25
 
+//add for crc verify
 #define CRC_VERIFY_LOW  0x22
 #define CRC_VERIFY_HIGH 0x26
 
+//add for reverse fod
 #define REVERSE_FOD 600
 
-#define VOUTCHANGED          BIT(7)
-#define TXDATARCVD           BIT(4)
+// bitmap for status flags
+// 1: indicates a pending interrupt for LDO Vout state change – from OFF to ON
+#define VOUTCHANGED          BIT(7) // Stat_Vout_ON
+// 1: indicates a pending interrupt for TX Data Received. (Change from “No Received Data” state to “Data Received” state)
+#define TXDATARCVD           BIT(4) // TX Data Received
 
+// bitmap for SSCmnd register 0x4e
 #define VSWITCH              BIT(7)
-#define CLRINT               BIT(5)
-#define LDOTGL               BIT(1)
-#define SENDPROPP            BIT(0)
+// If AP sets this bit to "1" then IDTP9220 M0 clears the interrupt corresponding to the bit(s) which has a value of “1”
+#define CLRINT               BIT(5) // Clear Interrupt
+// If AP sets this bit to "1" then IDTP9220 M0 toggles LDO output once (from on to off, or from off to on), and then sets this bit to “0”
+#define LDOTGL               BIT(1) // Toggle LDO On/OFF
+// If AP sets this bit to “1” then IDTP9220 M0 sends the Proprietary Packet
+#define SENDPROPP            BIT(0) //  SEND RX Data
 
 #define SEND_DEVICE_AUTH     BIT(2)
 
@@ -269,18 +299,26 @@ struct vol_curr_table {
   int index;
   char *val;
 };
-typedef struct {
-  u16 status;
-  u16 startAddr;
-  u16 codeLength;
-  u16 dataChksum;
-  u8  dataBuf[128];
+/*
+struct idtp9220_platform_data {
+  enum VOUT_SET_VAL vout_val_default;
+  enum IMIL_SET_VAL curr_val_default;
+  unsigned long gpio_en;
+};
+*/
+typedef struct {        // write to structure at SRAM address 0x0400
+  u16 status;           // Read/Write by both 9220 and 9220 host
+  u16 startAddr;        // OTP image address of the current packet
+  u16 codeLength;       // The size of the OTP image data in the current packet
+  u16 dataChksum;       // Checksum of the current packet
+  u8  dataBuf[128];     // OTP image data of the current packet
 }idtp9220_packet_t;
 
+// proprietary packet type
 typedef struct {
-  u8 header;
-  u8 cmd;
-  u8 data[4];
+  u8 header;            // The header consists of a single byte that indicates the Packet type.
+  u8 cmd;               // Back channel command
+  u8 data[4];           // Send data buffer
 } ProPkt_Type;
 
 #if 1

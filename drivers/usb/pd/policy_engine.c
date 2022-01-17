@@ -432,6 +432,7 @@ struct usbpd {
 	struct notifier_block	psy_nb;
 
 	bool			batt_2s;
+	bool			fix_pdo_5v;
 
 	int			bms_charge_full;
 	int			bat_voltage_max;
@@ -523,6 +524,7 @@ struct usbpd {
 	u8			get_battery_status_db;
 	bool			send_get_battery_status;
 	u32			battery_sts_dobj;
+	bool			request_reject;
 };
 
 static LIST_HEAD(_usbpd);	/* useful for debugging */
@@ -2716,6 +2718,8 @@ static void handle_state_soft_reset(struct usbpd *pd,
 	usbpd_set_state(pd, pd->current_pr == PR_SRC ?
 			PE_SRC_SEND_CAPABILITIES :
 			PE_SNK_WAIT_FOR_CAPABILITIES);
+	pd->request_reject = 1;
+	usbpd_err(&pd->dev, "set request_reject as 1\n");
 }
 
 static void handle_state_src_transition_to_default(struct usbpd *pd,
@@ -3724,6 +3728,7 @@ static void handle_disconnect(struct usbpd *pd)
 	pd->forced_pr = POWER_SUPPLY_TYPEC_PR_NONE;
 
 	pd->current_state = PE_UNKNOWN;
+	pd_reset_protocol(pd);
 
 	kobject_uevent(&pd->dev.kobj, KOBJ_CHANGE);
 	typec_unregister_partner(pd->partner);
@@ -3894,8 +3899,14 @@ static int usbpd_process_typec_mode(struct usbpd *pd,
 		/* if waiting for SinkTxOk to start an AMS */
 		if (pd->spec_rev == USBPD_REV_30 &&
 			typec_mode == POWER_SUPPLY_TYPEC_SOURCE_HIGH &&
-			(pd->send_pr_swap || pd->send_dr_swap || pd->vdm_tx))
+			(pd->send_pr_swap || pd->send_dr_swap || pd->vdm_tx)) {
+
+			if (pd->vdm_tx) {
+				kfree(pd->vdm_tx);
+				pd->vdm_tx = NULL;
+			}
 			break;
+		}
 
 		if (pd->current_pr == PR_SINK)
 			return 0;
@@ -4803,7 +4814,7 @@ static ssize_t usbpd_verifed_store(struct device *dev,
 		}
 	}
 
-	if (!pd->verifed && !pd->pps_found)
+	if (!pd->verifed && !pd->pps_found && !pd->fix_pdo_5v)
 		schedule_delayed_work(&pd->fixed_pdo_work, 5 * HZ);
 
 	return size;
@@ -5244,6 +5255,9 @@ int usbpd_fetch_pdo(struct usbpd *pd, struct usbpd_pdo *pdos)
 
 	mutex_lock(&pd->swap_lock);
 
+	pd->request_reject = 0;
+	usbpd_err(&pd->dev, "set request_reject as 0\n");
+
 	if (pd->current_pr == PR_SRC) {
 		usbpd_err(&pd->dev, "not support in SRC mode\n");
 		ret = -ENOTSUPP;
@@ -5345,6 +5359,12 @@ int usbpd_select_pdo(struct usbpd *pd, int pdo, int uv, int ua)
 		ret = -EINVAL;
 	}
 
+	//if (pd->request_reject == 1) {
+	//	usbpd_err(&pd->dev, "set request rejected as 0\n");
+	//	pd->request_reject = 0;
+	//	ret = -EINVAL;
+	//}
+
 out:
 	pd->send_request = false;
 	pd->last_pdo = pdo;
@@ -5354,6 +5374,14 @@ out:
 	return ret;
 }
 EXPORT_SYMBOL(usbpd_select_pdo);
+
+int usbpd_get_current_state(struct usbpd *pd){
+	int ret = 0;
+
+	ret = pd->request_reject;
+	return ret;
+}
+EXPORT_SYMBOL(usbpd_get_current_state);
 
 static void source_check_workfunc(struct work_struct *w)
 {
@@ -5510,6 +5538,10 @@ static void usbpd_pdo_workfunc(struct work_struct *w)
 	for (i = 0; i < ARRAY_SIZE(pd->received_pdos); i++) {
 		u32 pdo = pd->received_pdos[i];
 
+		if (pd->received_pdos[2] == 0) {
+			pd->fix_pdo_5v = true;
+			usbpd_info(&pd->dev,"fixed pdo [2]= %d",pd->fix_pdo_5v);
+			}
 		if (pdo == 0)
 			break;
 

@@ -338,14 +338,15 @@ void sched_clock_resume(void)
 {
 	struct clock_read_data *rd = &cd.read_data[0];
 
-	update_sched_clock();
-
-	resume_ns = rd->epoch_ns;
-	//rd->epoch_cyc = cd.actual_read_sched_clock();
+	rd->epoch_cyc = cd.actual_read_sched_clock();
 	resume_cycles = rd->epoch_cyc;
 	pr_info("resume cycles:%17llu\n", rd->epoch_cyc);
+
 	hrtimer_start(&sched_clock_timer, cd.wrap_kt, HRTIMER_MODE_REL);
 	rd->read_sched_clock = cd.actual_read_sched_clock;
+
+	update_sched_clock();
+	resume_ns = rd->epoch_ns;
 }
 
 static struct syscore_ops sched_clock_ops = {

@@ -76,6 +76,7 @@ obj-$(CONFIG_SPI_XIAOMI_TP) += spi-xiaomi-tp.o
 obj-$(CONFIG_WIGIG_SENSING_SPI)	+= wigig_sensing.o
 obj-$(CONFIG_QTI_MAXIM_FAN_CONTROLLER) += max31760.o
 obj-$(CONFIG_QTI_XR_SMRTVWR_MISC) += qxr-stdalonevwr.o
+obj-y	+= perf_helper.o
 
 obj-y                           +=drv8846.o
 obj-y                           +=akm09970.o

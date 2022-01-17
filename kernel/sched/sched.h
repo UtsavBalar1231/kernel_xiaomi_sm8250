@@ -563,6 +563,7 @@ struct cfs_rq {
 
 	u64			exec_clock;
 	u64			min_vruntime;
+	u64			min_vruntimex;
 #ifndef CONFIG_64BIT
 	u64			min_vruntime_copy;
 #endif
@@ -2791,6 +2792,7 @@ extern void add_new_task_to_grp(struct task_struct *new);
 #define FULL_THROTTLE_BOOST 1
 #define CONSERVATIVE_BOOST 2
 #define RESTRAINED_BOOST 3
+#define MI_BOOST         4
 #define FULL_THROTTLE_BOOST_DISABLE -1
 #define CONSERVATIVE_BOOST_DISABLE -2
 #define RESTRAINED_BOOST_DISABLE -3
@@ -2936,6 +2938,12 @@ static inline int sched_boost(void)
 	return sched_boost_type;
 }
 
+extern unsigned int mi_sched_boost;
+static inline int sched_mi_boost(void)
+{
+	return mi_sched_boost;
+}
+
 static inline bool rt_boost_on_big(void)
 {
 	return sched_boost() == FULL_THROTTLE_BOOST ?
@@ -2947,6 +2955,7 @@ static inline bool is_full_throttle_boost(void)
 	return sched_boost() == FULL_THROTTLE_BOOST;
 }
 
+extern bool sched_boost_top_app(void);
 extern int preferred_cluster(struct sched_cluster *cluster,
 						struct task_struct *p);
 extern struct sched_cluster *rq_cluster(struct rq *rq);
@@ -3090,6 +3099,11 @@ static inline bool rt_boost_on_big(void)
 }
 
 static inline bool is_full_throttle_boost(void)
+{
+	return false;
+}
+
+static inline bool sched_boost_top_app(void)
 {
 	return false;
 }

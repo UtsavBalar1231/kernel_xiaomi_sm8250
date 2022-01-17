@@ -102,6 +102,8 @@ extern const char *f2fs_fault_name[FAULT_MAX];
 #define F2FS_MOUNT_RESERVE_ROOT		0x01000000
 #define F2FS_MOUNT_DISABLE_CHECKPOINT	0x02000000
 
+#define F2FS_MOUNT_MERGE_CHECKPOINT    0x10000000
+
 #define F2FS_OPTION(sbi)	((sbi)->mount_opt)
 #define clear_opt(sbi, option)	(F2FS_OPTION(sbi).opt &= ~F2FS_MOUNT_##option)
 #define set_opt(sbi, option)	(F2FS_OPTION(sbi).opt |= F2FS_MOUNT_##option)
@@ -265,6 +267,26 @@ struct fsync_node_entry {
 	struct list_head list;	/* list head */
 	struct page *page;	/* warm node page pointer */
 	unsigned int seq_id;	/* sequence id */
+};
+
+struct ckpt_req {
+	struct completion wait;         /* completion for checkpoint done */
+	struct llist_node llnode;       /* llist_node to be linked in wait queue */
+	int ret;                        /* return code of checkpoint */
+	ktime_t queue_time;             /* request queued time */
+};
+
+struct ckpt_req_control {
+	struct task_struct *f2fs_issue_ckpt;    /* checkpoint task */
+	int ckpt_thread_ioprio;			/* checkpoint merge thread ioprio */
+	wait_queue_head_t ckpt_wait_queue;      /* waiting queue for wake-up */
+	atomic_t issued_ckpt;           /* # of actually issued ckpts */
+	atomic_t total_ckpt;            /* # of total ckpts */
+	atomic_t queued_ckpt;           /* # of queued ckpts */
+	struct llist_head issue_list;   /* list for command issue */
+	spinlock_t stat_lock;           /* lock for below checkpoint time stats */
+	unsigned int cur_time;          /* cur wait time in msec for currently issued checkpoint */
+	unsigned int peak_time;         /* peak wait time in msec until now */
 };
 
 /* for the bitmap indicate blocks to be discarded */
@@ -1087,6 +1109,7 @@ enum cp_reason_type {
 	CP_SPEC_LOG_NUM,
 	CP_RECOVER_DIR,
 	CP_PARENT_XATTR_SET,
+	NR_CP_REASON_TYPE,
 };
 
 enum iostat_type {
@@ -1360,6 +1383,7 @@ struct f2fs_sb_info {
 	wait_queue_head_t cp_wait;
 	unsigned long last_time[MAX_TIME];	/* to store time in jiffies */
 	long interval_time[MAX_TIME];		/* to store thresholds */
+	struct ckpt_req_control cprc_info;     /* for checkpoint request control */
 
 	struct inode_management im[MAX_INO_ENTRY];      /* manage inode cache */
 
@@ -1441,6 +1465,7 @@ struct f2fs_sb_info {
 	struct f2fs_gc_kthread	*gc_thread;	/* GC thread */
 	unsigned int cur_victim_sec;		/* current victim section num */
 	unsigned int gc_mode;			/* current GC state */
+	bool gc_booster;			/* boost background gc */
 	unsigned int next_victim_seg[2];	/* next segment in victim section */
 	/* for skip statistic */
 	unsigned int atomic_files;              /* # of opened atomic file */
@@ -1470,6 +1495,7 @@ struct f2fs_sb_info {
 	atomic64_t read_hit_rbtree;		/* # of hit rbtree extent node */
 	atomic64_t read_hit_largest;		/* # of hit largest extent node */
 	atomic64_t read_hit_cached;		/* # of hit cached extent node */
+	atomic64_t sync_file_count;		/* # of f2fs_do_sync_file calls */
 	atomic_t inline_xattr;			/* # of inline_xattr inodes */
 	atomic_t inline_inode;			/* # of inline_data inodes */
 	atomic_t inline_dir;			/* # of inline_dentry inodes */
@@ -1481,6 +1507,7 @@ struct f2fs_sb_info {
 	unsigned int io_skip_bggc;		/* skip background gc for in-flight IO */
 	unsigned int other_skip_bggc;		/* skip background gc for other reasons */
 	unsigned int ndirty_inode[NR_INODE_TYPE];	/* # of dirty inodes */
+	atomic64_t cp_reason_count[NR_CP_REASON_TYPE];	/* # of checkpoint reason */
 #endif
 	spinlock_t stat_lock;			/* lock for stat operations */
 
@@ -3314,6 +3341,10 @@ int f2fs_write_checkpoint(struct f2fs_sb_info *sbi, struct cp_control *cpc);
 void f2fs_init_ino_entry_info(struct f2fs_sb_info *sbi);
 int __init f2fs_create_checkpoint_caches(void);
 void f2fs_destroy_checkpoint_caches(void);
+int f2fs_issue_checkpoint(struct f2fs_sb_info *sbi);
+int f2fs_start_ckpt_thread(struct f2fs_sb_info *sbi);
+void f2fs_stop_ckpt_thread(struct f2fs_sb_info *sbi);
+void f2fs_init_ckpt_req_control(struct f2fs_sb_info *sbi);
 
 /*
  * data.c
@@ -3409,7 +3440,8 @@ struct f2fs_stat_info {
 	struct f2fs_sb_info *sbi;
 	int all_area_segs, sit_area_segs, nat_area_segs, ssa_area_segs;
 	int main_area_segs, main_area_sections, main_area_zones;
-	unsigned long long hit_largest, hit_cached, hit_rbtree;
+	unsigned long long hit_largest, hit_cached, hit_rbtree, sync_file_total;
+	unsigned long long cp_reason_total[NR_CP_REASON_TYPE];
 	unsigned long long hit_total, total_ext;
 	int ext_tree, zombie_tree, ext_node;
 	int ndirty_node, ndirty_dent, ndirty_meta, ndirty_imeta;
@@ -3419,7 +3451,7 @@ struct f2fs_stat_info {
 	int nats, dirty_nats, sits, dirty_sits;
 	int free_nids, avail_nids, alloc_nids;
 	int total_count, utilization;
-	int bg_gc, nr_wb_cp_data, nr_wb_data;
+	int gc_booster, bg_gc, nr_wb_cp_data, nr_wb_data;
 	int nr_rd_data, nr_rd_node, nr_rd_meta;
 	int nr_dio_read, nr_dio_write;
 	unsigned int io_skip_bggc, other_skip_bggc;
@@ -3427,6 +3459,8 @@ struct f2fs_stat_info {
 	int nr_discarding, nr_discarded;
 	int nr_discard_cmd;
 	unsigned int undiscard_blks;
+	int nr_issued_ckpt, nr_total_ckpt, nr_queued_ckpt;
+	unsigned int cur_ckpt_time, peak_ckpt_time;
 	int inline_xattr, inline_inode, inline_dir, append, update, orphans;
 	int compr_inode, compr_blocks;
 	int aw_cnt, max_aw_cnt, vw_cnt, max_vw_cnt;
@@ -3469,6 +3503,9 @@ static inline struct f2fs_stat_info *F2FS_STAT(struct f2fs_sb_info *sbi)
 #define stat_inc_rbtree_node_hit(sbi)	(atomic64_inc(&(sbi)->read_hit_rbtree))
 #define stat_inc_largest_node_hit(sbi)	(atomic64_inc(&(sbi)->read_hit_largest))
 #define stat_inc_cached_node_hit(sbi)	(atomic64_inc(&(sbi)->read_hit_cached))
+#define stat_inc_sync_file_count(sbi)	(atomic64_inc(&(sbi)->sync_file_count))
+#define stat_inc_cp_reason(sbi, cp_reason)			\
+		(atomic64_inc(&(sbi)->cp_reason_count[cp_reason]))
 #define stat_inc_inline_xattr(inode)					\
 	do {								\
 		if (f2fs_has_inline_xattr(inode))			\
@@ -3598,6 +3635,8 @@ void f2fs_update_sit_info(struct f2fs_sb_info *sbi);
 #define stat_inc_rbtree_node_hit(sbi)			do { } while (0)
 #define stat_inc_largest_node_hit(sbi)			do { } while (0)
 #define stat_inc_cached_node_hit(sbi)			do { } while (0)
+#define stat_inc_sync_file_count(sbi)			do { } while (0)
+#define stat_inc_cp_reason(sbi, cp_reason)		do { } while (0)
 #define stat_inc_inline_xattr(inode)			do { } while (0)
 #define stat_dec_inline_xattr(inode)			do { } while (0)
 #define stat_inc_inline_inode(inode)			do { } while (0)
@@ -3630,6 +3669,7 @@ static inline void f2fs_destroy_root_stats(void) { }
 static inline void update_sit_info(struct f2fs_sb_info *sbi) {}
 #endif
 
+extern const char *f2fs_cp_reasons[NR_CP_REASON_TYPE];
 extern const struct file_operations f2fs_dir_operations;
 extern const struct file_operations f2fs_file_operations;
 extern const struct inode_operations f2fs_file_inode_operations;

@@ -1219,6 +1219,24 @@ int dsi_message_validate_tx_mode(struct dsi_ctrl *dsi_ctrl,
 
 	return rc;
 }
+static u32 calculate_schedule_line(struct dsi_ctrl *dsi_ctrl, u32 flags)
+{
+	u32 line_no = 0x1;
+	struct dsi_mode_info *timing;
+
+	/* check if custom dma scheduling line needed */
+	if ((dsi_ctrl->host_config.panel_mode == DSI_OP_VIDEO_MODE) &&
+		(flags & DSI_CTRL_CMD_CUSTOM_DMA_SCHED))
+		line_no = dsi_ctrl->host_config.u.video_engine.dma_sched_line;
+
+	timing = &(dsi_ctrl->host_config.video_timing);
+
+	if (timing)
+		line_no += timing->v_back_porch + timing->v_sync_width +
+				timing->v_active;
+
+	return line_no;
+}
 
 static void dsi_kickoff_msg_tx(struct dsi_ctrl *dsi_ctrl,
 				const struct mipi_dsi_msg *msg,
@@ -1228,20 +1246,13 @@ static void dsi_kickoff_msg_tx(struct dsi_ctrl *dsi_ctrl,
 {
 	u32 hw_flags = 0;
 	u32 line_no = 0x1;
-	struct dsi_mode_info *timing;
 	struct dsi_ctrl_hw_ops dsi_hw_ops = dsi_ctrl->hw.ops;
 
 	SDE_EVT32(dsi_ctrl->cell_index, SDE_EVTLOG_FUNC_ENTRY, flags,
 		msg->flags);
-	/* check if custom dma scheduling line needed */
-	if ((dsi_ctrl->host_config.panel_mode == DSI_OP_VIDEO_MODE) &&
-		(flags & DSI_CTRL_CMD_CUSTOM_DMA_SCHED))
-		line_no = dsi_ctrl->host_config.u.video_engine.dma_sched_line;
 
-	timing = &(dsi_ctrl->host_config.video_timing);
-	if (timing)
-		line_no += timing->v_back_porch + timing->v_sync_width +
-				timing->v_active;
+	line_no = calculate_schedule_line(dsi_ctrl, flags);
+
 	if ((dsi_ctrl->host_config.panel_mode == DSI_OP_VIDEO_MODE) &&
 		dsi_hw_ops.schedule_dma_cmd &&
 		(dsi_ctrl->current_state.vid_engine_state ==
@@ -1249,6 +1260,8 @@ static void dsi_kickoff_msg_tx(struct dsi_ctrl *dsi_ctrl,
 		dsi_hw_ops.schedule_dma_cmd(&dsi_ctrl->hw,
 				line_no);
 
+	dsi_ctrl->cmd_mode = (dsi_ctrl->host_config.panel_mode ==
+				DSI_OP_CMD_MODE);
 	hw_flags |= (flags & DSI_CTRL_CMD_DEFER_TRIGGER) ?
 			DSI_CTRL_HW_CMD_WAIT_FOR_TRIGGER : 0;
 
@@ -1554,8 +1567,10 @@ static int dsi_message_rx(struct dsi_ctrl *dsi_ctrl,
 	bool short_resp = false;
 	bool read_done = false;
 	u32 dlen, diff, rlen;
-	unsigned char *buff;
+	unsigned char *buff = NULL;
 	char cmd;
+	u32 buffer_sz = 0, header_offset = 0;
+	u8 *head = NULL;
 
 	if (!msg) {
 		DSI_CTRL_ERR(dsi_ctrl, "Invalid msg\n");
@@ -1568,6 +1583,12 @@ static int dsi_message_rx(struct dsi_ctrl *dsi_ctrl,
 		short_resp = true;
 		rd_pkt_size = msg->rx_len;
 		total_read_len = 4;
+
+		/*
+		 * buffer size: header + data
+		 * No 32 bits alignment issue, thus offset is 0
+		 */
+		buffer_sz = 4;
 	} else {
 		short_resp = false;
 		current_read_len = 10;
@@ -1577,8 +1598,25 @@ static int dsi_message_rx(struct dsi_ctrl *dsi_ctrl,
 			rd_pkt_size = current_read_len;
 
 		total_read_len = current_read_len + 6;
+
+		/*
+		 * buffer size: header + data + footer, rounded up to 4 bytes
+		 * Out of bound can occurs is rx_len is not aligned to size 4.
+		 * We are reading 32 bits registers, and converting
+		 * the data to CPU endianness, thus inserting garbage data
+		 * at the beginning of buffer.
+		 */
+		buffer_sz = (((4 + msg->rx_len + 2) + 3) >> 2) << 2;
+		if (buffer_sz < 16)
+			buffer_sz = 16;
 	}
-	buff = msg->rx_buf;
+
+	buff = kzalloc(buffer_sz, GFP_KERNEL);
+	if (!buff) {
+		rc = -ENOMEM;
+		goto error;
+	}
+	head = buff;
 
 	while (!read_done) {
 		rc = dsi_set_max_return_size(dsi_ctrl, msg, rd_pkt_size);
@@ -1636,13 +1674,15 @@ static int dsi_message_rx(struct dsi_ctrl *dsi_ctrl,
 		}
 	}
 
+	buff = head;
+
 	if (hw_read_cnt < 16 && !short_resp)
-		buff = msg->rx_buf + (16 - hw_read_cnt);
+		header_offset = (16 - hw_read_cnt);
 	else
-		buff = msg->rx_buf;
+		header_offset = 0;
 
 	/* parse the data read from panel */
-	cmd = buff[0];
+	cmd = buff[header_offset];
 	switch (cmd) {
 	case MIPI_DSI_RX_ACKNOWLEDGE_AND_ERROR_REPORT:
 		DSI_CTRL_ERR(dsi_ctrl, "Rx ACK_ERROR 0x%x\n", cmd);
@@ -1650,15 +1690,15 @@ static int dsi_message_rx(struct dsi_ctrl *dsi_ctrl,
 		break;
 	case MIPI_DSI_RX_GENERIC_SHORT_READ_RESPONSE_1BYTE:
 	case MIPI_DSI_RX_DCS_SHORT_READ_RESPONSE_1BYTE:
-		rc = dsi_parse_short_read1_resp(msg, buff);
+		rc = dsi_parse_short_read1_resp(msg, &buff[header_offset]);
 		break;
 	case MIPI_DSI_RX_GENERIC_SHORT_READ_RESPONSE_2BYTE:
 	case MIPI_DSI_RX_DCS_SHORT_READ_RESPONSE_2BYTE:
-		rc = dsi_parse_short_read2_resp(msg, buff);
+		rc = dsi_parse_short_read2_resp(msg, &buff[header_offset]);
 		break;
 	case MIPI_DSI_RX_GENERIC_LONG_READ_RESPONSE:
 	case MIPI_DSI_RX_DCS_LONG_READ_RESPONSE:
-		rc = dsi_parse_long_read_resp(msg, buff);
+		rc = dsi_parse_long_read_resp(msg, &buff[header_offset]);
 		break;
 	default:
 		DSI_CTRL_WARN(dsi_ctrl, "Invalid response: 0x%x\n", cmd);
@@ -1666,6 +1706,7 @@ static int dsi_message_rx(struct dsi_ctrl *dsi_ctrl,
 	}
 
 error:
+	kfree(buff);
 	return rc;
 }
 
@@ -1966,6 +2007,9 @@ static int dsi_ctrl_dev_probe(struct platform_device *pdev)
 	if (rc)
 		DSI_CTRL_DEBUG(dsi_ctrl, "failed to init axi bus client, rc = %d\n",
 				rc);
+
+	if (dsi_ctrl->hw.ops.map_mdp_regs)
+		dsi_ctrl->hw.ops.map_mdp_regs(pdev, &dsi_ctrl->hw);
 
 	item->ctrl = dsi_ctrl;
 
@@ -3298,6 +3342,10 @@ int dsi_ctrl_cmd_tx_trigger(struct dsi_ctrl *dsi_ctrl, u32 flags)
 {
 	int rc = 0;
 	struct dsi_ctrl_hw_ops dsi_hw_ops;
+	u32 v_total = 0, fps = 0, cur_line = 0, mem_latency_us = 100;
+	u32 line_time = 0, schedule_line = 0x1, latency_by_line = 0;
+	struct dsi_mode_info *timing;
+	unsigned long flag;
 
 	if (!dsi_ctrl) {
 		DSI_CTRL_ERR(dsi_ctrl, "Invalid params\n");
@@ -3313,6 +3361,18 @@ int dsi_ctrl_cmd_tx_trigger(struct dsi_ctrl *dsi_ctrl, u32 flags)
 
 	mutex_lock(&dsi_ctrl->ctrl_lock);
 
+	timing = &(dsi_ctrl->host_config.video_timing);
+
+	if (timing &&
+		(dsi_ctrl->host_config.panel_mode == DSI_OP_VIDEO_MODE)) {
+		v_total = timing->v_sync_width + timing->v_back_porch +
+			timing->v_front_porch + timing->v_active;
+		fps = timing->refresh_rate;
+		schedule_line = calculate_schedule_line(dsi_ctrl, flags);
+		line_time = (1000000 / fps) / v_total;
+		latency_by_line = CEIL(mem_latency_us, line_time);
+	}
+
 	if (!(flags & DSI_CTRL_CMD_BROADCAST_MASTER))
 		dsi_hw_ops.trigger_command_dma(&dsi_ctrl->hw);
 
@@ -3325,7 +3385,36 @@ int dsi_ctrl_cmd_tx_trigger(struct dsi_ctrl *dsi_ctrl, u32 flags)
 		reinit_completion(&dsi_ctrl->irq_info.cmd_dma_done);
 
 		/* trigger command */
-		dsi_hw_ops.trigger_command_dma(&dsi_ctrl->hw);
+		if ((dsi_ctrl->host_config.panel_mode == DSI_OP_VIDEO_MODE) &&
+			dsi_hw_ops.schedule_dma_cmd &&
+			(dsi_ctrl->current_state.vid_engine_state ==
+			DSI_CTRL_ENGINE_ON)) {
+			/*
+			 * This change reads the video line count from
+			 * MDP_INTF_LINE_COUNT register and checks whether
+			 * DMA trigger happens close to the schedule line.
+			 * If it is not close to the schedule line, then DMA
+			 * command transfer is triggered.
+			 */
+			while (1) {
+				local_irq_save(flag);
+				cur_line =
+				dsi_hw_ops.log_line_count(&dsi_ctrl->hw,
+					dsi_ctrl->cmd_mode);
+				if (cur_line <
+					(schedule_line - latency_by_line) ||
+					cur_line > (schedule_line + 1)) {
+					dsi_hw_ops.trigger_command_dma(
+						&dsi_ctrl->hw);
+					local_irq_restore(flag);
+					break;
+				}
+				local_irq_restore(flag);
+				udelay(1000);
+			}
+		} else
+			dsi_hw_ops.trigger_command_dma(&dsi_ctrl->hw);
+
 		if (flags & DSI_CTRL_CMD_ASYNC_WAIT) {
 			dsi_ctrl->dma_wait_queued = true;
 			queue_work(dsi_ctrl->dma_cmd_workq,

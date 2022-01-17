@@ -229,7 +229,7 @@ static void ufshcd_update_uic_error_cnt(struct ufs_hba *hba, u32 reg, int type)
 /* Query request retries */
 #define QUERY_REQ_RETRIES 3
 /* Query request timeout */
-#define QUERY_REQ_TIMEOUT 3000 /* 3.0 seconds */
+#define QUERY_REQ_TIMEOUT 1500 /* 1.5 seconds */
 
 /* Task management command timeout */
 #define TM_CMD_TIMEOUT	100 /* msecs */
@@ -4064,7 +4064,7 @@ static int ufshcd_wait_for_dev_cmd(struct ufs_hba *hba,
 		ufshcd_outstanding_req_clear(hba, lrbp->task_tag);
 	}
 
-	if (err && err != -EAGAIN)
+	if (err)
 		ufsdbg_set_err_state(hba);
 
 	return err;
@@ -8613,7 +8613,6 @@ static int ufs_get_device_desc(struct ufs_hba *hba,
 
 	model_index = desc_buf[DEVICE_DESC_PARAM_PRDCT_NAME];
 
-
 	/* Enable WB only for UFS-3.1 or UFS-2.2 OR if desc len >= 0x59 */
 /*	if ((dev_desc->wspecversion >= 0x310) ||
 	    (dev_desc->wspecversion == 0x220) ||
@@ -8628,7 +8627,6 @@ static int ufs_get_device_desc(struct ufs_hba *hba,
 			desc_buf[DEVICE_DESC_PARAM_EXT_UFS_FEATURE_SUP + 2]
 								<< 8 |
 			desc_buf[DEVICE_DESC_PARAM_EXT_UFS_FEATURE_SUP + 3];
-
 		hba->dev_info.b_wb_buffer_type =
 			desc_buf[DEVICE_DESC_PARAM_WB_TYPE];
 
@@ -9291,7 +9289,6 @@ reinit:
 	 * device initialization.
 	 */
 	ufshcd_set_auto_hibern8_timer(hba);
-
 out:
 	if (ret) {
 		ufshcd_set_ufs_dev_poweroff(hba);

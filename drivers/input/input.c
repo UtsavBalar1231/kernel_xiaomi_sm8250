@@ -28,7 +28,6 @@
 #include <linux/device.h>
 #include <linux/mutex.h>
 #include <linux/rcupdate.h>
-
 #include "input-compat.h"
 
 MODULE_AUTHOR("Vojtech Pavlik <vojtech@suse.cz>");
@@ -1296,7 +1295,6 @@ static int __init input_proc_init(void)
 		goto fail2;
 
 	return 0;
-
  fail2:	remove_proc_entry("devices", proc_bus_input_dir);
  fail1: remove_proc_entry("bus/input", NULL);
 	return -ENOMEM;
@@ -2222,6 +2220,7 @@ int input_register_device(struct input_dev *dev)
 			__func__, dev_name(&dev->dev));
 		devres_add(dev->dev.parent, devres);
 	}
+
 	return 0;
 
 err_device_del:
