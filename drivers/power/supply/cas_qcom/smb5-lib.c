@@ -3488,6 +3488,7 @@ static int smblib_dc_therm_charging(struct smb_charger *chg,
 		break;
 	case ADAPTER_XIAOMI_PD_45W:
 	case ADAPTER_XIAOMI_PD_60W:
+	case ADAPTER_XIAOMI_PD_100W:
 		thermal_fcc_ua = chg->thermal_mitigation_dc_45w[temp_level];
 		thermal_icl_ua = chg->thermal_mitigation_dc_45w[temp_level];
 		break;
@@ -8431,9 +8432,18 @@ struct quick_charge adapter_cap[10] = {
 	{0, 0},
 };
 
+#define ADAPTER_PWR_NONE              0x0
+#define ADAPTER_XIAOMI_QC3_PWR_20W    0x9
+#define ADAPTER_XIAOMI_PD_PWR_20W     0xa
+#define ADAPTER_XIAOMI_CAR_PWR_20W    0xb
+#define ADAPTER_XIAOMI_PD_PWR_30W     0xc
+#define ADAPTER_VOICE_BOX_PWR_30W     0xd
+#define ADAPTER_XIAOMI_PD_PWR_50W     0xe
+#define ADAPTER_XIAOMI_PD_PWR_60W     0xf
 int smblib_get_quick_charge_type(struct smb_charger *chg)
 {
 	int i = 0, rc;
+	int tx_adapter = 0, wls_online = 0;
 	union power_supply_propval pval = {0, };
 
 	if (!chg) {
@@ -8459,11 +8469,23 @@ int smblib_get_quick_charge_type(struct smb_charger *chg)
 	if (chg->pd_active)
 		return QUICK_CHARGE_FAST;
 
-	if (chg->wireless_charge_type == ADAPTER_XIAOMI_PD_45W ||
-		chg->wireless_charge_type == ADAPTER_XIAOMI_PD_60W) {
-		return QUICK_CHARGE_SUPER;
-	} else if (chg->wireless_charge_type == ADAPTER_XIAOMI_PD_40W) {
-		return QUICK_CHARGE_TURBE;
+	if (chg->wls_psy && chg->dc_psy) {
+		rc = power_supply_get_property(chg->wls_psy, POWER_SUPPLY_PROP_TX_ADAPTER, &pval);
+		tx_adapter = pval.intval;
+
+		rc = power_supply_get_property(chg->dc_psy, POWER_SUPPLY_PROP_ONLINE, &pval);
+		wls_online = pval.intval;
+
+		if (wls_online) {
+			if (tx_adapter >= ADAPTER_XIAOMI_PD_PWR_50W)
+				return QUICK_CHARGE_SUPER;
+			else if (tx_adapter >= ADAPTER_XIAOMI_QC3_PWR_20W)
+				return QUICK_CHARGE_TURBE;
+			else if (tx_adapter > ADAPTER_PWR_NONE)
+				return QUICK_CHARGE_NORMAL;
+			else
+				return 0;
+		}
 	}
 
 	while (adapter_cap[i].adap_type != 0) {
@@ -8471,6 +8493,69 @@ int smblib_get_quick_charge_type(struct smb_charger *chg)
 			return adapter_cap[i].adap_cap;
 		}
 		i++;
+	}
+
+	return 0;
+}
+
+#define WLS_POWER_20W	20
+#define WLS_POWER_30W	30
+#define WLS_POWER_50W	50
+int smblib_get_adapter_power_max(struct smb_charger *chg)
+{
+	int rc;
+	int wireless_power_good_en = 0;
+	int tx_adapter = 0;
+	int usb_present = 0;
+	int apdo_max = 0;
+	union power_supply_propval pval = {0, };
+
+	if (chg->wls_psy) {
+		rc = power_supply_get_property(chg->wls_psy,
+				POWER_SUPPLY_PROP_WIRELESS_POWER_GOOD_EN, &pval);
+		if (rc < 0) {
+			dev_err(chg->dev, "get wireless_power_good_en failed, rc=%d\n", rc);
+			return 0;
+		}
+		wireless_power_good_en = pval.intval;
+		pr_info("wireless_power_good_en:%d\n", wireless_power_good_en);
+	}
+
+	if (wireless_power_good_en) {
+		rc = power_supply_get_property(chg->wls_psy, POWER_SUPPLY_PROP_TX_ADAPTER, &pval);
+		if (rc < 0) {
+			dev_err(chg->dev, "get tx_adapter failed, rc=%d\n", rc);
+			return 0;
+		}
+		tx_adapter = pval.intval;
+		pr_info("tx_adapter:%d\n", tx_adapter);
+
+		if (tx_adapter >= ADAPTER_XIAOMI_PD_PWR_50W)
+			return WLS_POWER_50W;
+		else if (tx_adapter >= ADAPTER_XIAOMI_PD_PWR_30W)
+			return WLS_POWER_30W;
+		else if (tx_adapter >= ADAPTER_XIAOMI_QC3_PWR_20W)
+			return WLS_POWER_20W;
+		else
+			return 0;
+
+	} else {
+		if (chg->usb_psy) {
+			rc = power_supply_get_property(chg->usb_psy, POWER_SUPPLY_PROP_ONLINE, &pval);
+			if (rc < 0) {
+				dev_err(chg->dev, "get usb online status failed, rc=%d\n", rc);
+				return 0;
+			}
+		}
+		usb_present = pval.intval;
+
+		if (usb_present) {
+			rc = power_supply_get_property(chg->usb_psy,
+						POWER_SUPPLY_PROP_APDO_MAX, &pval);
+			apdo_max = pval.intval;
+			pr_info("apdo_max:%d\n", apdo_max);
+			return apdo_max;
+		}
 	}
 
 	return 0;

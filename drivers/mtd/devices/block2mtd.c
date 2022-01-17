@@ -2,7 +2,6 @@
  * block2mtd.c - create an mtd from a block device
  *
  * Copyright (C) 2001,2002	Simon Evans <spse@secret.org.uk>
- * Copyright (C) 2021 XiaoMi, Inc.
  * Copyright (C) 2004-2006	Joern Engel <joern@wh.fh-wedel.de>
  *
  * Licence: GPL

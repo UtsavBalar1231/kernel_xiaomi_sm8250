@@ -3,7 +3,6 @@
 // soc-pcm.c  --  ALSA SoC PCM
 //
 // Copyright 2005 Wolfson Microelectronics PLC.
-// Copyright (C) 2021 XiaoMi, Inc.
 // Copyright 2005 Openedhand Ltd.
 // Copyright (C) 2010 Slimlogic Ltd.
 // Copyright (C) 2010 Texas Instruments Inc.

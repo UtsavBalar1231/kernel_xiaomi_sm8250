@@ -2,6 +2,7 @@
  *  linux/kernel/reboot.c
  *
  *  Copyright (C) 2013  Linus Torvalds
+ *  Copyright (C) 2021 XiaoMi, Inc.
  */
 
 #define pr_fmt(fmt)	"reboot: " fmt

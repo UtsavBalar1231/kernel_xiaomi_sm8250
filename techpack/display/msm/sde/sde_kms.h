@@ -660,6 +660,7 @@ void sde_kms_timeline_status(struct drm_device *dev);
  */
 int sde_kms_handle_recovery(struct drm_encoder *encoder);
 
+
 /**
  * sde_kms_update_pm_qos_irq_request - Update Qos vote for CPU receiving
  *					display IRQ

@@ -5,6 +5,7 @@
  * internal format has been designed by PLUMgrid:
  *
  *	Copyright (c) 2011 - 2014 PLUMgrid, http://plumgrid.com
+ *	Copyright (C) 2021 XiaoMi, Inc.
  *
  * Authors:
  *
@@ -6756,6 +6757,19 @@ static u32 sock_ops_convert_ctx_access(enum bpf_access_type type,
 		SOCK_OPS_GET_FIELD(bytes_acked, bytes_acked, struct tcp_sock);
 		break;
 
+	// XIAOMI: Add by zholei8 --start
+	case offsetof(struct bpf_sock_ops, sk_uid):
+		SOCK_OPS_GET_FIELD(sk_uid, sk_uid, struct sock);
+		break;
+
+	case offsetof(struct bpf_sock_ops, voip_daddr):
+		SOCK_OPS_GET_FIELD(voip_daddr, sk_daddr, struct sock);
+		break;
+
+	case offsetof(struct bpf_sock_ops, voip_dport):
+		SOCK_OPS_GET_FIELD(voip_dport, sk_dport, struct sock);
+		break;
+	// XIAOMI: Add by zholei8 --end
 	}
 	return insn - insn_buf;
 }

@@ -51,7 +51,7 @@ KERNEL_CONFIG_OVERRIDE_DEVMEM := CONFIG_DEVMEM=y
 endif
 
 
-ifeq ($(TARGET_PRODUCT), $(filter $(TARGET_PRODUCT), alioth thyme enuma elish))
+ifeq ($(TARGET_PRODUCT), $(filter $(TARGET_PRODUCT), alioth thyme enuma elish psyche))
 
 ifeq ($(FACTORY_BUILD),1)
 KERNEL_CONFIG_OVERRIDE_DEBUGFS := CONFIG_DEBUG_FS=y

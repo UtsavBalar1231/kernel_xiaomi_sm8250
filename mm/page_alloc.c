@@ -5,6 +5,7 @@
  *  Note that kmalloc() lives in slab.c
  *
  *  Copyright (C) 1991, 1992, 1993, 1994  Linus Torvalds
+ *  Copyright (C) 2021 XiaoMi, Inc.
  *  Swap reorganised 29.12.95, Stephen Tweedie
  *  Support of BIGMEM added by Gerhard Wichert, Siemens AG, July 1999
  *  Reshaped it to be a zoned allocator, Ingo Molnar, Red Hat, 1999

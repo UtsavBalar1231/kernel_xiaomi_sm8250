@@ -499,9 +499,7 @@ static void msm_restart_prepare(const char *cmd)
 
 	if (qpnp_pon_check_hard_reset_stored()) {
 		/* Set warm reset as true when device is in dload mode */
-		if (get_dload_mode() ||
-			((cmd != NULL && cmd[0] != '\0') &&
-			!strcmp(cmd, "edl")))
+		if (get_dload_mode())
 			need_warm_reset = true;
 	} else {
 		need_warm_reset = (get_dload_mode() ||
@@ -619,6 +617,11 @@ static void do_msm_restart(enum reboot_mode reboot_mode, const char *cmd)
 	deassert_ps_hold();
 
 	msleep(10000);
+}
+
+void ufs_trigger_msm_restart(enum reboot_mode reboot_mode, const char *cmd)
+{
+	do_msm_restart(reboot_mode, cmd);
 }
 
 static void do_msm_poweroff(void)

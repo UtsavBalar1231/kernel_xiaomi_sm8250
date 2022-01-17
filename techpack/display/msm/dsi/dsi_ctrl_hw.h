@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2021 XiaoMi, Inc.
  */
 
 #ifndef _DSI_CTRL_HW_H_
@@ -840,12 +841,23 @@ struct dsi_ctrl_hw_ops {
 	void (*hs_req_sel)(struct dsi_ctrl_hw *ctrl, bool sel_phy);
 
 	/**
-	 * hw.ops.map_mdp_regs() - maps MDP interface line count registers.
-	 * @pdev:Â»       Pointer to platform device.
-	 * @ctrl:Â»       Pointer to the controller host hardware.
+	 * hw.ops.configure_cmddma_window() - configure DMA window for CMD TX
+	 * @ctrl:	Pointer to the controller host hardware.
+	 * @cmd:	Pointer to the DSI DMA command info.
+	 * @line_no:	Line number at which the CMD needs to be triggered.
+	 * @window:	Width of the DMA CMD window.
 	 */
-	int (*map_mdp_regs)(struct platform_device *pdev,
-			struct dsi_ctrl_hw *ctrl);
+	void (*configure_cmddma_window)(struct dsi_ctrl_hw *ctrl,
+			struct dsi_ctrl_cmd_dma_info *cmd,
+			u32 line_no, u32 window);
+
+	/**
+	 * hw.ops.reset_trig_ctrl() - resets trigger control of DSI controller
+	 * @ctrl:	Pointer to the controller host hardware.
+	 * @cfg:	Common configuration parameters.
+	 */
+	void (*reset_trig_ctrl)(struct dsi_ctrl_hw *ctrl,
+			struct dsi_host_common_cfg *cfg);
 
 	/**
 	 * hw.ops.log_line_count() - reads the MDP interface line count
@@ -864,13 +876,11 @@ struct dsi_ctrl_hw_ops {
  * @mmss_misc_length:       Length of mmss_misc register map.
  * @disp_cc_base:           Base address of disp_cc register map.
  * @disp_cc_length:         Length of disp_cc register map.
- * @te_rd_ptr_reg:          Address of MDP_TEAR_INTF_TEAR_LINE_COUNT. This
- *                          register is used for testing and validating the RD
- *                          ptr value when a CMD is triggered and it succeeds.
- * @line_count_reg:         Address of MDP_TEAR_INTF_LINE_COUNT. This
- *                          register is used for testing and validating the
- *                          line count value when a CMD is triggered and it
- *                          succeeds.
+ * @mdp_intf_base:	Base address of mdp_intf register map. Addresses of
+ *			MDP_TEAR_INTF_TEAR_LINE_COUNT, MDP_TEAR_INTF_LINE_COUNT
+ *			are mapped using the base address to test and validate
+ *			the RD ptr value and line count value respectively when
+ *			a CMD is triggered and it succeeds.
  * @index:                  Instance ID of the controller.
  * @feature_map:            Features supported by the DSI controller.
  * @ops:                    Function pointers to the operations supported by the
@@ -881,6 +891,8 @@ struct dsi_ctrl_hw_ops {
  *                          dsi controller and run only dsi controller.
  * @null_insertion_enabled:  A boolean property to allow dsi controller to
  *                           insert null packet.
+ * @reset_trig_ctrl:		Boolean to indicate if trigger control needs to
+ *				be reset to default.
  */
 struct dsi_ctrl_hw {
 	void __iomem *base;
@@ -888,9 +900,8 @@ struct dsi_ctrl_hw {
 	void __iomem *mmss_misc_base;
 	u32 mmss_misc_length;
 	void __iomem *disp_cc_base;
-	void __iomem *te_rd_ptr_reg;
-	void __iomem *line_count_reg;
 	u32 disp_cc_length;
+	void __iomem *mdp_intf_base;
 	u32 index;
 
 	/* features */
@@ -903,6 +914,7 @@ struct dsi_ctrl_hw {
 
 	bool phy_isolation_enabled;
 	bool null_insertion_enabled;
+	bool reset_trig_ctrl;
 };
 
 #endif /* _DSI_CTRL_HW_H_ */

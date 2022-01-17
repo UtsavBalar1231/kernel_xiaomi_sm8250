@@ -3923,3 +3923,4 @@ int sde_kms_handle_recovery(struct drm_encoder *encoder)
 	SDE_EVT32(DRMID(encoder), MSM_ENC_ACTIVE_REGION);
 	return sde_encoder_wait_for_event(encoder, MSM_ENC_ACTIVE_REGION);
 }
+

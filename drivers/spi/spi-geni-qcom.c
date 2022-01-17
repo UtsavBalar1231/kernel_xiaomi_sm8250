@@ -1303,6 +1303,7 @@ static int spi_geni_transfer_one(struct spi_master *spi,
 				geni_se_rx_dma_unprep(mas->wrapper_dev,
 					xfer->rx_dma, xfer->len);
 		}
+		mas->cur_xfer = NULL;
 	} else {
 		mas->num_tx_eot = 0;
 		mas->num_rx_eot = 0;

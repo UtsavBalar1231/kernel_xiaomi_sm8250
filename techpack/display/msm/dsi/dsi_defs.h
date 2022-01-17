@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2021 XiaoMi, Inc.
  */
 
 #ifndef _DSI_DEFS_H_
@@ -297,6 +298,7 @@ enum dsi_cmd_set_type {
 	DSI_CMD_SET_POST_CMD_TO_VID_SWITCH,
 	DSI_CMD_SET_VID_TO_CMD_SWITCH,
 	DSI_CMD_SET_POST_VID_TO_CMD_SWITCH,
+	DSI_CMD_SET_PANEL_STATUS_OFFSET,
 	DSI_CMD_SET_PANEL_STATUS,
 	DSI_CMD_SET_LP1,
 	DSI_CMD_SET_LP2,
@@ -332,6 +334,21 @@ enum dsi_cmd_set_type {
 	DSI_CMD_SET_MI_HBM_OFF,
 	DSI_CMD_SET_MI_HBM_FOD_ON,
 	DSI_CMD_SET_MI_HBM_FOD_OFF,
+	DSI_CMD_SET_MI_FOD_LHBM_WHITE_1000NIT,
+	DSI_CMD_SET_MI_FOD_LHBM_WHITE_110NIT,
+	DSI_CMD_SET_MI_FOD_LHBM_GREEN_500NIT,
+	DSI_CMD_SET_MI_FOD_LHBM_OFF,
+	DSI_CMD_SET_MI_FOD_LHBM_GREEN_500NIT_READ_REG_PRE,
+	DSI_CMD_SET_MI_FOD_LHBM_GREEN_500NIT_READ_REG,
+	DSI_CMD_SET_MI_FOD_LHBM_WHITE_1000NIT_GIR_OFF_READ_REG_PRE,
+	DSI_CMD_SET_MI_FOD_LHBM_WHITE_1000NIT_GIR_ON_READ_REG_PRE,
+	DSI_CMD_SET_MI_FOD_LHBM_WHITE_110NIT_GIR_OFF_READ_REG_PRE,
+	DSI_CMD_SET_MI_FOD_LHBM_WHITE_110NIT_GIR_ON_READ_REG_PRE,
+	DSI_CMD_SET_MI_FOD_LHBM_WHITE_1000NIT_READ_OFFSET_REG,
+	DSI_CMD_SET_MI_FOD_LHBM_WHITE_110NIT_READ_OFFSET_REG,
+	DSI_CMD_SET_MI_FOD_LHBM_WHITE_READ_B2_REG,
+	DSI_CMD_SET_MI_FOD_LHBM_WHITE_READ_B5_REG,
+	DSI_CMD_SET_MI_FOD_LHBM_WHITE_READ_B8_REG,
 	DSI_CMD_SET_MI_HBM_HDR_ON,
 	DSI_CMD_SET_MI_HBM_HDR_OFF,
 	DSI_CMD_SET_MI_HBM_FOD2NORM,
@@ -344,6 +361,12 @@ enum dsi_cmd_set_type {
 	DSI_CMD_SET_MI_ELVSS_DIMMING_OFF,
 	DSI_CMD_SET_MI_FLAT_MODE_ON,
 	DSI_CMD_SET_MI_FLAT_MODE_OFF,
+	DSI_CMD_SET_MI_GIR_ON,
+	DSI_CMD_SET_MI_GIR_OFF,
+	DSI_CMD_SET_MI_GIR_READ_REG_PRE,
+	DSI_CMD_SET_MI_GIR_OFF_READ_REG_PRE,
+	DSI_CMD_SET_MI_GIR_READ_REG,
+	DSI_CMD_SET_TIMING_SWITCH_GIR_ON,
 	DSI_CMD_SET_MI_LEVEL2_KEY_ENABLE,
 	DSI_CMD_SET_MI_GAMMA_OTP_READ_C8,
 	DSI_CMD_SET_MI_GAMMA_OTP_READ_C9,
@@ -361,6 +384,8 @@ enum dsi_cmd_set_type {
 	DSI_CMD_SET_MI_VI_SETTING_HIGH,
 	DSI_CMD_SET_MI_SWITCH_PAGE4,
 	DSI_CMD_SET_MI_DC_READ,
+	DSI_CMD_SET_MI_DC_READ_D2,
+	DSI_CMD_SET_MI_DC_READ_D4,
 	DSI_CMD_SET_MI_AOD_TO_DC_ON,
 	DSI_CMD_SET_MI_DYNAMIC_ELVSS_ON,
 	DSI_CMD_SET_MI_DYNAMIC_ELVSS_OFF,
@@ -378,6 +403,12 @@ enum dsi_cmd_set_type {
 	DSI_CMD_SET_DISP_PEN_120HZ,
 	DSI_CMD_SET_DISP_PEN_60HZ,
 	DSI_CMD_SET_DISP_PEN_30HZ,
+	DSI_CMD_SET_DISABLE_INSERT_BLACK,
+	DSI_CMD_SET_INSERT_BLACK,
+	DSI_CMD_SET_MI_ROUND_ON,
+	DSI_CMD_SET_MI_ROUND_OFF,
+	DSI_CMD_SET_MI_DIM_FP_DBV_MAX_IN_HBM,
+	DSI_CMD_SET_MI_DIM_FP_DBV_MAX_IN_NORMAL,
 	/* xiaomi add end */
 	DSI_CMD_SET_MAX
 };
@@ -561,6 +592,11 @@ struct dsi_split_link_config {
  * @phy_type:            DPHY/CPHY is enabled for this panel.
  * @dsi_split_link_config:  Split Link Configuration.
  * @byte_intf_clk_div:   Determines the factor for calculating byte intf clock.
+ * @dma_sched_line:      Line at which dma command gets triggered. In case of
+ *			video mode it is the line number after vactive and for
+ *			cmd it points to the line after TE.
+ * @dma_sched_window:	Determines the width of the window during the
+ *			DSI command will be sent by the HW.
  */
 struct dsi_host_common_cfg {
 	enum dsi_pixel_format dst_format;
@@ -589,6 +625,8 @@ struct dsi_host_common_cfg {
 	u32 byte_intf_clk_div;
 	u32 clk_strength;
 	bool cphy_strength;
+	u32 dma_sched_line;
+	u32 dma_sched_window;
 };
 
 /**
@@ -605,8 +643,6 @@ struct dsi_host_common_cfg {
  * @bllp_lp11_en:              Enter low power stop mode (LP-11) during BLLP.
  * @traffic_mode:              Traffic mode for video stream.
  * @vc_id:                     Virtual channel identifier.
- * @dma_sched_line:         Line number, after vactive end, at which command dma
- *			       needs to be triggered.
  */
 struct dsi_video_engine_cfg {
 	bool last_line_interleave_en;
@@ -618,7 +654,6 @@ struct dsi_video_engine_cfg {
 	bool bllp_lp11_en;
 	enum dsi_video_traffic_mode traffic_mode;
 	u32 vc_id;
-	u32 dma_sched_line;
 };
 
 /**

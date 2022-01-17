@@ -1001,7 +1001,7 @@ static int fg_read_system_soc(struct bq_fg_chip *bq)
 				soc = bq->last_soc;
 		} else
 			soc = 100;
-	} else if (raw_soc > 770) {
+	} else if (raw_soc > 1770) {
 		soc += 3;
 		if (soc <= 102 && soc > 99)
 			soc = 99;
@@ -1022,7 +1022,7 @@ static int fg_read_system_soc(struct bq_fg_chip *bq)
 			} else
 				soc = bq->last_soc;
 		} else {
-			soc = (raw_soc + 69) / 70;
+			soc = (raw_soc + 84) / 85;
 		}
 	}
 

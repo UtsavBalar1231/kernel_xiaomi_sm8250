@@ -3,7 +3,6 @@
  * drivers/staging/android/ion/ion.h
  *
  * Copyright (C) 2011 Google, Inc.
- * Copyright (C) 2021 XiaoMi, Inc.
  * Copyright (c) 2011-2019, The Linux Foundation. All rights reserved.
  *
  */

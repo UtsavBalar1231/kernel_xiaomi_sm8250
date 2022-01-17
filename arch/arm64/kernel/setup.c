@@ -2,7 +2,6 @@
  * Based on arch/arm/kernel/setup.c
  *
  * Copyright (C) 1995-2001 Russell King
- * Copyright (C) 2021 XiaoMi, Inc.
  * Copyright (C) 2012 ARM Ltd.
  *
  * This program is free software; you can redistribute it and/or modify

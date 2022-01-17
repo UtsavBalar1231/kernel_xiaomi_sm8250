@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
 /* Copyright (c) 2011-2014 PLUMgrid, http://plumgrid.com
+ * Copyright (C) 2021 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of version 2 of the GNU General Public
@@ -2316,6 +2317,12 @@ enum bpf_lwt_encap_mode {
 	BPF_LWT_ENCAP_SEG6_INLINE
 };
 
+#define __bpf_md_ptr(type, name)	\
+union {					\
+	type name;			\
+	__u64 :64;			\
+} __attribute__((aligned(8)))
+
 /* user accessible mirror of in-kernel sk_buff.
  * new fields can only be added to the end of this structure
  */
@@ -2608,6 +2615,12 @@ struct bpf_sock_ops {
 	__u32 sk_txhash;
 	__u64 bytes_received;
 	__u64 bytes_acked;
+	__bpf_md_ptr(struct bpf_sock *, sk);
+	// XIAOMI: Add by zhoulei8 --start
+	__u32 sk_uid;
+	__u32 voip_daddr;
+	__u32 voip_dport;
+	// XIAOMI: Add by zhoulei8 --end
 };
 
 /* Definitions for bpf_sock_ops_cb_flags */
@@ -2669,6 +2682,10 @@ enum {
 	BPF_SOCK_OPS_TCP_LISTEN_CB,	/* Called on listen(2), right after
 					 * socket transition to LISTEN state.
 					 */
+	BPF_SOCK_OPS_RTT_CB,		/* Called on every RTT.
+					 */
+	// XIAOMI: Add by zhoulei8
+	BPF_SOCK_OPS_VOIP_CB,		/* Called on every udp states. */
 };
 
 /* List of TCP states. There is a build check in net/ipv4/tcp.c to detect

@@ -67,7 +67,7 @@ static struct semaphore gps_file_operation_lock; //read /write can't reenter
 static int open_num = 0;
 struct pinctrl *pctrl;
 struct pinctrl_state *pctrl_mode_active, *pctrl_mode_idle;
-
+int request_ldo_pin_global;
 /* GLOBAL SYMBOL END */
 
 static int airoha_gps_open(struct inode *inode, struct file *file_p){
@@ -149,19 +149,38 @@ static struct file_operations gps_cdev_ops = {
 	return IRQ_HANDLED;
 }*/
 static int xiaomi_uart_probe(struct platform_device *pdev) {
-	char request_ldo_pin;
+	int request_ldo_pin;
 	int result;
+	int ret;
 	airoha_printk("====GPIO init Begin======\n");
-	request_ldo_pin = gpio_request(AIROHA_LDO_PIN,"airoha_gps_ldo_pin");
+	//request_ldo_pin = gpio_request(AIROHA_LDO_PIN,"airoha_gps_ldo_pin");
 	//request_data_in_pin = gpio_request(AIROHA_HOST_TO_GPS_PIN,"airoha_host_to_gps_pin");
 	//request_interrupt_pin = gpio_request(AIROHA_GPS_TO_HOST_PIN,"airoha_gps_to_host_pin");
+	if (!pdev->dev.of_node) {
+		airoha_printk("Failed to find of_node\n");
+		goto err_exit;
+	}
+	request_ldo_pin = of_get_named_gpio(pdev->dev.of_node, "gps-ldo", 0);
+	if ((!gpio_is_valid(request_ldo_pin)))
+		return -EINVAL;
+	ret = gpio_request(request_ldo_pin, "gps-ldo");
+	if (ret) {
+		airoha_printk( "request GPS ldo pin fail %d", ret);
+		goto err_exit;
+	}
+	ret = gpio_direction_output(request_ldo_pin, 0);
+	if (ret) {
+		airoha_printk( "set GPS ldo pin as out mode fail %d", ret);
+		goto err_exit;
+	}
+	request_ldo_pin_global = request_ldo_pin;
 	airoha_printk("pin info:\n");
 	airoha_printk("ldo...%d\n",request_ldo_pin);
 	//airoha_printk("data_in...%d\n",request_data_in_pin);
 	//airoha_printk("interrupt_pin...%d\n",request_interrupt_pin);
 	//Set GPIO direction
 	//gpio_direction_input(AIROHA_GPS_TO_HOST_PIN);
-	gpio_direction_output(AIROHA_LDO_PIN, 0);
+	//gpio_direction_output(AIROHA_LDO_PIN, 0);
 	//gpio_direction_output(AIROHA_HOST_TO_GPS_PIN, 1);
 	//register interrupt
 	//gps_interrupt = gpio_to_irq(AIROHA_GPS_TO_HOST_PIN);
@@ -219,14 +238,16 @@ static int xiaomi_uart_probe(struct platform_device *pdev) {
 	//
 
 	return 0;
+err_exit:
+	return -1;
 }
 
 //Common Api
 static int gps_chip_enable(bool enable){
 	if (enable)
-		gpio_direction_output(AIROHA_LDO_PIN, 1);
+		gpio_direction_output(request_ldo_pin_global, 1);
 	else
-		gpio_direction_output(AIROHA_LDO_PIN, 0);
+		gpio_direction_output(request_ldo_pin_global, 0);
 	return 0;
 }
 
@@ -238,7 +259,7 @@ static int xiaomi_uart_remove(struct platform_device *pdev)
 	device_destroy(gps_class, gps_dev_number);
 	class_destroy(gps_class);
 	unregister_chrdev_region(gps_dev_number, 1);
-	gpio_free(AIROHA_LDO_PIN);
+	gpio_free(request_ldo_pin_global);
 	//gpio_free(AIROHA_GPS_TO_HOST_PIN);
 	//gpio_free(AIROHA_HOST_TO_GPS_PIN);
 	//free_irq(gps_interrupt,NULL);

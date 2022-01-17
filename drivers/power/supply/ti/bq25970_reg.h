@@ -443,6 +443,7 @@
 #define BQ25970_DEVICE_ID				0x10
 #define SC8551_DEVICE_ID				0x00
 #define SC8551A_DEVICE_ID				0x51
+#define NU2105_DEVICE_ID				0xC0
 
 
 /* Register 14h */
@@ -818,4 +819,9 @@
 #define SC8551_REG_34					0x34
 #define SC8551_REG_36					0x36
 
+#define NU2105_REG_2F                                   0x2F
+#define NU2105_CHG_MODE_MASK                            0x01
+#define NU2105_CHG_MODE_SHIFT                           0
+#define NU2105_1_1_MODE                                 1
+#define NU2105_2_1_MODE                                 0
 #endif

@@ -2,6 +2,7 @@
  *  linux/mm/memory.c
  *
  *  Copyright (C) 1991, 1992, 1993, 1994  Linus Torvalds
+ *  Copyright (C) 2021 XiaoMi, Inc.
  */
 
 /*

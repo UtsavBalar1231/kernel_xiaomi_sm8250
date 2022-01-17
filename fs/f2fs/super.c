@@ -148,6 +148,8 @@ enum {
 	Opt_compress_algorithm,
 	Opt_compress_log_size,
 	Opt_compress_extension,
+	Opt_gc_merge,
+	Opt_nogc_merge,
 	Opt_err,
 };
 
@@ -216,6 +218,8 @@ static match_table_t f2fs_tokens = {
 	{Opt_compress_algorithm, "compress_algorithm=%s"},
 	{Opt_compress_log_size, "compress_log_size=%u"},
 	{Opt_compress_extension, "compress_extension=%s"},
+	{Opt_gc_merge, "gc_merge"},
+	{Opt_nogc_merge, "nogc_merge"},
 	{Opt_err, NULL},
 };
 
@@ -288,6 +292,22 @@ static inline void limit_reserve_root(struct f2fs_sb_info *sbi)
 					   F2FS_OPTION(sbi).s_resuid),
 			  from_kgid_munged(&init_user_ns,
 					   F2FS_OPTION(sbi).s_resgid));
+}
+
+static inline void adjust_unusable_cap_perc(struct f2fs_sb_info *sbi)
+{
+	if (!F2FS_OPTION(sbi).unusable_cap_perc)
+		return;
+
+	if (F2FS_OPTION(sbi).unusable_cap_perc == 100)
+		F2FS_OPTION(sbi).unusable_cap = sbi->user_block_count;
+	else
+		F2FS_OPTION(sbi).unusable_cap = (sbi->user_block_count / 100) *
+					F2FS_OPTION(sbi).unusable_cap_perc;
+
+	f2fs_info(sbi, "Adjust unusable cap for checkpoint=disable = %u / %u%%",
+			F2FS_OPTION(sbi).unusable_cap,
+			F2FS_OPTION(sbi).unusable_cap_perc);
 }
 
 static void init_once(void *foo)
@@ -811,12 +831,7 @@ static int parse_options(struct super_block *sb, char *options)
 				return -EINVAL;
 			if (arg < 0 || arg > 100)
 				return -EINVAL;
-			if (arg == 100)
-				F2FS_OPTION(sbi).unusable_cap =
-					sbi->user_block_count;
-			else
-				F2FS_OPTION(sbi).unusable_cap =
-					(sbi->user_block_count / 100) *	arg;
+			F2FS_OPTION(sbi).unusable_cap_perc = arg;
 			set_opt(sbi, DISABLE_CHECKPOINT);
 			break;
 		case Opt_checkpoint_disable_cap:
@@ -896,6 +911,12 @@ static int parse_options(struct super_block *sb, char *options)
 			strcpy(ext[ext_cnt], name);
 			F2FS_OPTION(sbi).compress_ext_cnt++;
 			kfree(name);
+			break;
+		case Opt_gc_merge:
+			set_opt(sbi, GC_MERGE);
+			break;
+		case Opt_nogc_merge:
+			clear_opt(sbi, GC_MERGE);
 			break;
 		default:
 			f2fs_err(sbi, "Unrecognized mount option \"%s\" or missing value",
@@ -984,7 +1005,6 @@ static struct inode *f2fs_alloc_inode(struct super_block *sb)
 	INIT_LIST_HEAD(&fi->gdirty_list);
 	INIT_LIST_HEAD(&fi->inmem_ilist);
 	INIT_LIST_HEAD(&fi->inmem_pages);
-	INIT_LIST_HEAD(&fi->xattr_dirty_list);
 	mutex_init(&fi->inmem_lock);
 	init_rwsem(&fi->i_gc_rwsem[READ]);
 	init_rwsem(&fi->i_gc_rwsem[WRITE]);
@@ -1477,6 +1497,8 @@ static int f2fs_show_options(struct seq_file *seq, struct dentry *root)
 	} else {
 		seq_printf(seq, ",background_gc=%s", "off");
 	}
+	if (test_opt(sbi, GC_MERGE))
+		seq_puts(seq, ",gc_merge");
 	if (test_opt(sbi, DISABLE_ROLL_FORWARD))
 		seq_puts(seq, ",disable_roll_forward");
 	if (test_opt(sbi, DISCARD))
@@ -1627,6 +1649,8 @@ static void default_options(struct f2fs_sb_info *sbi)
 	sbi->sb->s_flags |= SB_LAZYTIME;
 	set_opt(sbi, FLUSH_MERGE);
 	set_opt(sbi, DISCARD);
+	set_opt(sbi, GC_MERGE);
+	set_opt(sbi, MERGE_CHECKPOINT);
 	if (f2fs_sb_has_blkzoned(sbi))
 		set_opt_mode(sbi, F2FS_MOUNT_LFS);
 	else
@@ -1822,7 +1846,8 @@ static int f2fs_remount(struct super_block *sb, int *flags, char *data)
 	 * or if background_gc = off is passed in mount
 	 * option. Also sync the filesystem.
 	 */
-	if ((*flags & SB_RDONLY) || !test_opt(sbi, BG_GC)) {
+	if ((*flags & SB_RDONLY) ||
+			(!test_opt(sbi, BG_GC) && !test_opt(sbi, GC_MERGE))) {
 		if (sbi->gc_thread) {
 			f2fs_stop_gc_thread(sbi);
 			need_restart_gc = true;
@@ -1891,6 +1916,7 @@ skip:
 		(test_opt(sbi, POSIX_ACL) ? SB_POSIXACL : 0);
 
 	limit_reserve_root(sbi);
+	adjust_unusable_cap_perc(sbi);
 	*flags = (*flags & ~SB_LAZYTIME) | (sb->s_flags & SB_LAZYTIME);
 	return 0;
 restore_gc:
@@ -3611,15 +3637,13 @@ try_onemore:
 	sbi->reserved_blocks = 0;
 	sbi->current_reserved_blocks = 0;
 	limit_reserve_root(sbi);
+	adjust_unusable_cap_perc(sbi);
 
 	for (i = 0; i < NR_INODE_TYPE; i++) {
 		INIT_LIST_HEAD(&sbi->inode_list[i]);
 		spin_lock_init(&sbi->inode_lock[i]);
 	}
 	mutex_init(&sbi->flush_lock);
-
-	INIT_LIST_HEAD(&sbi->xattr_set_dir_ilist);
-	spin_lock_init(&sbi->xattr_set_dir_ilist_lock);
 
 	f2fs_init_extent_cache_info(sbi);
 
@@ -3776,7 +3800,8 @@ reset_checkpoint:
 	 * If filesystem is not mounted as read-only then
 	 * do start the gc_thread.
 	 */
-	if (test_opt(sbi, BG_GC) && !f2fs_readonly(sb)) {
+	if ((test_opt(sbi, BG_GC) || test_opt(sbi, GC_MERGE))
+			&& !f2fs_readonly(sb)) {
 		/* After POR, we can run background GC thread.*/
 		err = f2fs_start_gc_thread(sbi);
 		if (err)

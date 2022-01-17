@@ -1,7 +1,6 @@
 /**************************************************************************
  *
  * Copyright 2006 Tungsten Graphics, Inc., Bismarck, ND., USA.
- * Copyright (C) 2021 XiaoMi, Inc.
  * Copyright 2016 Intel Corporation
  * All Rights Reserved.
  *

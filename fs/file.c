@@ -3,6 +3,7 @@
  *  linux/fs/file.c
  *
  *  Copyright (C) 1998-1999, Stephen Tweedie and Bill Hawes
+ *  Copyright (C) 2021 XiaoMi, Inc.
  *
  *  Manage the dynamic fd arrays in the process files_struct.
  */

@@ -1,5 +1,6 @@
 /************************************************************************
 * Copyright (c) 2012-2020, Focaltech Systems (R)��All Rights Reserved.
+* Copyright (C) 2021 XiaoMi, Inc.
 *
 * File Name: focaltech_flash.h
 *

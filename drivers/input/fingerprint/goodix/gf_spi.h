@@ -143,6 +143,7 @@ struct gf_dev {
 	char fb_black;
 	char wait_finger_down;
 	struct work_struct work;
+	uint32_t key_flag;  /*if not up, flag = 1*/
 #ifdef CONFIG_FINGERPRINT_FP_VREG_CONTROL
 	struct regulator *vreg;
 #endif

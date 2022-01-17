@@ -644,6 +644,12 @@ config PERF_HELPER
 	help
 	  this module support record perf lock history and other perf messages.
 
+config GPIO_TESTING_MODE
+	tristate "A simple GPIO testing mode driver for sar controler"
+	default n
+	help
+	  Enable driver for a simple testing mode detection
+
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
 source "drivers/misc/cb710/Kconfig"

@@ -1,6 +1,7 @@
 /*
   FUSE: Filesystem in Userspace
   Copyright (C) 2001-2008  Miklos Szeredi <miklos@szeredi.hu>
+  Copyright (C) 2021 XiaoMi, Inc.
 
   This program can be distributed under the terms of the GNU GPL.
   See the file COPYING.

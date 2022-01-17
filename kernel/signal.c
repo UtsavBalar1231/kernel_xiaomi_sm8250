@@ -2,6 +2,7 @@
  *  linux/kernel/signal.c
  *
  *  Copyright (C) 1991, 1992  Linus Torvalds
+ *  Copyright (C) 2021 XiaoMi, Inc.
  *
  *  1997-11-02  Modified for POSIX.1b signals by Richard Henderson
  *

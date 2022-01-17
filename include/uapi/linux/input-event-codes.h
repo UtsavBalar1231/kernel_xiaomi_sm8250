@@ -7,7 +7,6 @@
  * files. As such this file MUST only contain comments and defines.
  *
  * Copyright (c) 1999-2002 Vojtech Pavlik
- * Copyright (C) 2021 XiaoMi, Inc.
  * Copyright (c) 2015 Hans de Goede <hdegoede@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify it

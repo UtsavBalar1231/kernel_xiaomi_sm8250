@@ -3,6 +3,7 @@
  *  linux/drivers/char/mem.c
  *
  *  Copyright (C) 1991, 1992  Linus Torvalds
+ *  Copyright (C) 2021 XiaoMi, Inc.
  *
  *  Added devfs support.
  *    Jan-11-1998, C. Scott Ananian <cananian@alumni.princeton.edu>

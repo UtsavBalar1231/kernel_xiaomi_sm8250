@@ -47,7 +47,6 @@ ssize_t dsi_display_get_doze_brightness(struct drm_connector *connector,
 int dsi_display_read_gamma_param(struct drm_connector *connector);
 ssize_t dsi_display_print_gamma_param(struct drm_connector *connector,
 				char *buf);
-
 ssize_t dsi_display_fod_get(struct drm_connector *connector, char *buf);
 
 ssize_t complete_commit_time_get(struct drm_connector *connector, char *buf);

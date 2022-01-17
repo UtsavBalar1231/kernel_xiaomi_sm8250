@@ -5,7 +5,6 @@
  *               does not allow adding attributes.
  *
  * Copyright (c) 2004 Jon Smirl <jonsmirl@gmail.com>
- * Copyright (C) 2021 XiaoMi, Inc.
  * Copyright (c) 2003-2004 Greg Kroah-Hartman <greg@kroah.com>
  * Copyright (c) 2003-2004 IBM Corp.
  *

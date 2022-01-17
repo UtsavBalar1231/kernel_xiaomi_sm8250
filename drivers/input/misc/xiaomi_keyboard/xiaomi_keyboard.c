@@ -16,6 +16,8 @@
 #include <drm/drm_notifier_mi.h>
 #include <linux/notifier.h>
 
+extern void usb_reset_host(void);
+
 static struct xiaomi_keyboard_data *mdata;
 
 static void set_keyboard_status(bool on);
@@ -28,7 +30,7 @@ static void xiaomi_keyboard_reset(void)
 	}
 	MI_KB_INFO("xiaomi keyboard IC Reset\n");
 	gpio_direction_output(mdata->pdata->rst_gpio, 0);
-	msleep(2);
+	msleep(100);
 	gpio_direction_output(mdata->pdata->rst_gpio, 1);
 }
 
@@ -76,6 +78,15 @@ static ssize_t xiaomi_keyboard_conn_status_store (struct device *dev, struct dev
 	} else if (!strncmp(cmd, "disable_keyboard", 16)) {
 		MI_KB_INFO("disable keyboard\n");
 		set_keyboard_status(0);
+	} else if (!strncmp(cmd, "host_reset", 10)) {
+		MI_KB_ERR("Reset Host!");
+		gpio_direction_output(mdata->pdata->rst_gpio, 0);
+		MI_KB_ERR("Pull Down RST GPIO");
+		msleep(100);
+		usb_reset_host();
+		ssleep(3);
+		MI_KB_ERR("Pull Up RST GPIO");
+		gpio_direction_output(mdata->pdata->rst_gpio, 1);
 	}
 	else
 		MI_KB_ERR("Undefined CMD: %s\n", cmd);

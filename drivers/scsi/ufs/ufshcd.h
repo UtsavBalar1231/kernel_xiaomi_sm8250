@@ -3,7 +3,6 @@
  *
  * This code is based on drivers/scsi/ufs/ufshcd.h
  * Copyright (C) 2011-2013 Samsung India Software Operations
- * Copyright (C) 2021 XiaoMi, Inc.
  * Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
  *
  * Authors:
@@ -597,6 +596,8 @@ struct debugfs_files {
 	struct dentry *show_hba;
 	struct dentry *host_regs;
 	struct dentry *dump_dev_desc;
+	struct dentry *dump_string_desc_serial;
+	struct dentry *dump_heatlth_desc;
 	struct dentry *power_mode;
 	struct dentry *dme_local_read;
 	struct dentry *dme_peer_read;
@@ -1357,6 +1358,10 @@ out:
 }
 
 int ufshcd_read_device_desc(struct ufs_hba *hba, u8 *buf, u32 size);
+int ufshcd_read_health_desc(struct ufs_hba *hba, u8 *buf, u32 size);
+char *ufs_get_serial(void);
+int ufshcd_read_string_desc(struct ufs_hba *hba, int desc_index,
+				   u8 *buf, u32 size, bool ascii);
 
 static inline bool ufshcd_is_hs_mode(struct ufs_pa_layer_attr *pwr_info)
 {

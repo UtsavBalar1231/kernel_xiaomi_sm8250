@@ -6,7 +6,6 @@
  * Some ARP specific bits are:
  *
  * Copyright (C) 2002 David S. Miller (davem@redhat.com)
- * Copyright (C) 2021 XiaoMi, Inc.
  * Copyright (C) 2006-2009 Patrick McHardy <kaber@trash.net>
  *
  */

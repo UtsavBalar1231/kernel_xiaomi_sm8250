@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 1991, 1992 Linus Torvalds
- * Copyright (C) 2021 XiaoMi, Inc.
  * Copyright (C) 1994,      Karl Keyte: Added support for disk statistics
  * Elevator latency, (C) 2000  Andrea Arcangeli <andrea@suse.de> SuSE
  * Queue request tables / lock, selectable elevator, Jens Axboe <axboe@suse.de>
