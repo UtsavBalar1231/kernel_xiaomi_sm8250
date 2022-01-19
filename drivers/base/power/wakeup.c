@@ -22,6 +22,7 @@
 #include <linux/irq.h>
 #include <linux/interrupt.h>
 #include <linux/irqdesc.h>
+#include <linux/wakeup_reason.h>
 
 #include "power.h"
 
@@ -124,6 +125,7 @@ static void wakeup_source_record(struct wakeup_source *ws)
 
 	spin_lock_irqsave(&deleted_ws.lock, flags);
 
+	pr_info("the deleted wakeup source is %s\n", ws->name);
 	if (ws->event_count) {
 		deleted_ws.total_time =
 			ktime_add(deleted_ws.total_time, ws->total_time);
