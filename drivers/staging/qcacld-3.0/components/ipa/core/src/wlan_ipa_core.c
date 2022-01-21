@@ -1106,6 +1106,46 @@ static void __wlan_ipa_w2i_cb(void *priv, qdf_ipa_dp_evt_type_t evt,
 			return;
 		}
 
+		if (iface_context->device_mode == QDF_STA_MODE)
+			qdf_copy_macaddr(&peer_mac_addr, &iface_context->bssid);
+		else if (iface_context->device_mode == QDF_SAP_MODE)
+			qdf_mem_copy(&peer_mac_addr.bytes[0],
+				     qdf_nbuf_data(skb) +
+				     QDF_NBUF_SRC_MAC_OFFSET,
+				     QDF_MAC_ADDR_SIZE);
+
+		if (qdf_nbuf_is_ipv4_eapol_pkt(skb)) {
+			is_eapol_wapi = true;
+			if (iface_context->device_mode == QDF_SAP_MODE &&
+			    !wlan_ipa_eapol_intrabss_fwd_check(ipa_ctx,
+					      iface_context->session_id, skb)) {
+				ipa_err_rl("EAPOL intrabss fwd drop DA:"QDF_MAC_ADDR_FMT,
+					   QDF_MAC_ADDR_REF(qdf_nbuf_data(skb) +
+					   QDF_NBUF_DEST_MAC_OFFSET));
+				ipa_ctx->ipa_rx_internal_drop_count++;
+				dev_kfree_skb_any(skb);
+				return;
+			}
+		} else if (qdf_nbuf_is_ipv4_wapi_pkt(skb)) {
+			is_eapol_wapi = true;
+		}
+
+		/*
+		 * Check for peer authorized state before allowing
+		 * non-EAPOL/WAPI frames to be intrabss forwarded
+		 * or submitted to stack.
+		 */
+		if (cdp_peer_state_get(ipa_ctx->dp_soc,
+				       iface_context->session_id,
+				       &peer_mac_addr.bytes[0]) !=
+		    OL_TXRX_PEER_STATE_AUTH && !is_eapol_wapi) {
+			ipa_err_rl("Non EAPOL/WAPI packet received when peer "QDF_MAC_ADDR_FMT" is unauthorized",
+				   QDF_MAC_ADDR_REF(peer_mac_addr.bytes));
+			ipa_ctx->ipa_rx_internal_drop_count++;
+			dev_kfree_skb_any(skb);
+			return;
+		}
+
 		/* Disable to forward Intra-BSS Rx packets when
 		 * ap_isolate=1 in hostapd.conf
 		 */
