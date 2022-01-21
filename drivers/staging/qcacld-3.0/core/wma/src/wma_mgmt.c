@@ -836,6 +836,18 @@ void wma_set_sta_keep_alive(tp_wma_handle wma, uint8_t vdev_id,
 	wmi_unified_set_sta_keep_alive_cmd(wma->wmi_handle, &params);
 }
 
+void wma_register_install_key_complete_cb(wma_install_key_complete_cb cb)
+{
+	tp_wma_handle wma_handle = cds_get_context(QDF_MODULE_ID_WMA);
+
+	if (!wma_handle) {
+		wma_err("wma handle is NULL");
+		return;
+	}
+
+	wma_handle->install_key_complete_cb = cb;
+}
+
 /*
  * 802.11n D2.0 defined values for "Minimum MPDU Start Spacing":
  *   0 for no restriction
