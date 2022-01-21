@@ -1419,7 +1419,8 @@ static void sap_compute_spect_weight(tSapChSelSpectInfo *pSpectInfoParams,
 
 		chan_freq = pSpectCh->chan_freq;
 
-		if (wlan_reg_is_dfs_for_freq(mac->pdev, chan_freq)) {
+		if (wlan_reg_is_dfs_for_freq(mac->pdev, chan_freq) ||
+		    wlan_reg_is_freq_indoor(mac->pdev, chan_freq)) {
 			normalize_factor =
 				MLME_GET_DFS_CHAN_WEIGHT(
 				mac->mlme_cfg->acs.np_chan_weightage);
