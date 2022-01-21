@@ -857,6 +857,44 @@ struct wma_wlm_stats_data {
 #endif
 
 /**
+ * struct wma_install_key_complete_param - parameters for installking
+ *   key completion callback
+ * @vdev_id: vdev id
+ * @mac_addr: MAC address for the key installed
+ * @key_ix: key index
+ * @key_flags: key flags
+ * @status: status of installing key
+ */
+struct wma_install_key_complete_param {
+	uint32_t vdev_id;
+	struct qdf_mac_addr mac_addr;
+	uint32_t key_ix;
+	uint32_t key_flags;
+	uint32_t status;
+};
+
+/**
+ * typedef wma_install_key_complete_cb() - Callback function to indicate
+ *   key install completion.
+ * @param: parameters of the key which has been installed.
+ */
+typedef void (*wma_install_key_complete_cb)(
+	struct wma_install_key_complete_param *param);
+
+/**
+ * wma_register_install_key_complete_cb() - register callback handler to
+ *   indicate install key complete.
+ *
+ * @cb: install key complete cb
+ *
+ * This function is used to register install key complete callback.
+ *
+ * Return: None
+ *
+ */
+void wma_register_install_key_complete_cb(wma_install_key_complete_cb cb);
+
+/**
  * struct t_wma_handle - wma context
  * @wmi_handle: wmi handle
  * @cds_context: cds handle
@@ -981,6 +1019,7 @@ struct wma_wlm_stats_data {
  * @ito_repeat_count: Indicates ito repeated count
  * @wma_fw_time_sync_timer: timer used for firmware time sync
  * * @fw_therm_throt_support: FW Supports thermal throttling?
+ * @install_key_complete_cb: Callback function for install key completion
  *
  * This structure is the global wma context.  It contains global wma
  * module parameters and handles of other modules.
@@ -1122,6 +1161,7 @@ typedef struct {
 #ifdef WLAN_FEATURE_PKT_CAPTURE
 	bool is_pktcapture_enabled;
 #endif
+	wma_install_key_complete_cb install_key_complete_cb;
 } t_wma_handle, *tp_wma_handle;
 
 /**
