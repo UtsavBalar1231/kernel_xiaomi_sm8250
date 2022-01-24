@@ -1,8 +1,9 @@
 /**
- * Copyright “Copyright (C) 2019 XiaoMi, Inc
- * Copyright (C) 2021 XiaoMi, Inc.
+ * @file   rx1619.c
+ * @author  <colin>
+ * @date   2019-04-09
  *
- * L.D
+ * @brief
  *
  *
  */
@@ -138,6 +139,7 @@
 #define ID_CMD               0x3b
 #define AUTH_CMD             0x86
 #define UUID_CMD             0x90
+#define COMM_CMD	     0x12
 
 u8 fod_param[8] = {
 0x44, 0x64,
@@ -211,6 +213,8 @@ struct rx1619_chg {
 	struct delayed_work    reverse_sent_state_work;
 	struct delayed_work    reverse_chg_state_work;
 	struct delayed_work    reverse_dping_state_work;
+	struct delayed_work    oob_set_cep_work;
+	struct delayed_work	oob_set_ept_work;
 	struct delayed_work	dc_check_work;
 	struct delayed_work cmd_timeout_work;
 	struct delayed_work	fw_download_work;
@@ -258,8 +262,13 @@ struct rx1619_chg {
 	int ss;
 	int is_reverse_chg;
 	int is_reverse_gpio;
+	u8 mac_addr[6];
+	u8 rpp_val[2];
+	u8 cep_val;
 	u8 fod_mode;
+	int is_oob_ok;
 	int is_car_tx;
+	int is_ble_tx;
 	int is_voice_box_tx;
 	int is_compatible_hwid;
 	int is_f1_tx;
@@ -371,6 +380,157 @@ void rx1619_set_adap_vol(struct rx1619_chg *chip, u16 mv)
 	rx1619_write(chip, AP_SENT_DATA_OK, REG_AP_RX_COMM);
 }
 
+/*OOB function*/
+
+static u8 oob_check_sum(u8 *buf, u32 size)
+{
+	u8 chksum = 0;
+	while (size--) {
+		chksum ^= *buf++;
+	}
+
+	return chksum;
+}
+
+static int rx1619_set_ept(struct rx1619_chg *chip)
+{
+	union power_supply_propval val = {0, };
+	int ept = 0;
+	u8 ept_raw = 0x0b;
+	u8 header[2] = {0};
+	u8 chksum[4] = {0};
+	int rc;
+
+	header[1] = 0x02;  //add the ept header
+
+	chksum[0] = header[1];
+	chksum[1] = ept_raw;
+	header[0] = oob_check_sum(chksum, 2);
+	ept = header[0] | ept_raw << 8 | (header[1] << 16);
+	val.int64val = ept;
+
+	if (chip->wireless_psy) {
+		mutex_lock(&chip->sysfs_op_lock);
+		power_supply_set_property(chip->wireless_psy, POWER_SUPPLY_PROP_RX_CEP, &val);
+		mutex_unlock(&chip->sysfs_op_lock);
+	} else {
+		dev_err(chip->dev, "BLE EPT set error:\n");
+		rc = -EINVAL;
+	}
+
+	dev_info(chip->dev, "Header: 0x%x, ept_raw: 0x%x, checksum: 0x%x\n",
+							header[1], ept_raw, header[0]);
+
+	return rc;
+}
+
+static int rx1619_set_rpp(struct rx1619_chg *chip)
+{
+	int rpp = 0;
+	int64_t rpp_ul = 0;
+	u8 header[2] = {0};
+	u8 chksum[4] = {0};
+	union power_supply_propval val = {0, };
+	int rc;
+
+	header[1] = 0x31;  //add the rpp header
+
+	chksum[0] = header[1];
+	chksum[1] = chip->rpp_val[0];
+	chksum[2] = chip->rpp_val[1];
+	header[0] = oob_check_sum(chksum, 3);
+
+	dev_info(chip->dev, "header: 0x%x, RPP_raw:  0x%x, 0x%x, checksum: 0x%x\n",
+	header[1], chip->rpp_val[1], chip->rpp_val[0], header[0]);
+	rpp = header[0] | (chip->rpp_val[0] << 16) | (chip->rpp_val[1] << 8);
+	rpp_ul = header[1];
+	rpp_ul <<= 32;
+	rpp_ul |= rpp;
+	val.int64val = rpp_ul;
+
+	if (chip->wireless_psy) {
+		mutex_lock(&chip->sysfs_op_lock);
+		power_supply_set_property(chip->wireless_psy, POWER_SUPPLY_PROP_RX_CR, &val);
+		mutex_unlock(&chip->sysfs_op_lock);
+	} else {
+		dev_err(chip->dev, "BLE RPP set error:\n");
+		rc = -EINVAL;
+	}
+	return rc;
+}
+
+static int rx1619_set_cep(struct rx1619_chg *chip)
+{
+	int cep = 0;
+	u8 header[2] = {0};
+	u8 chksum[4] = {0};
+	union power_supply_propval val = {0, };
+	int rc;
+
+	header[1] = 0x03;  //add the rpp header
+
+	chksum[0] = header[1];
+	chksum[1] = chip->cep_val;
+	header[0] = oob_check_sum(chksum, 2);
+
+	dev_info(chip->dev, "Header: 0x%x, CEP_raw: 0x%x, checksum: 0x%x\n",
+							header[1], chip->cep_val, header[0]);
+	cep = header[0] | chip->cep_val << 8 | (header[1] << 16);
+	val.int64val = cep;
+	if (chip->wireless_psy) {
+		mutex_lock(&chip->sysfs_op_lock);
+		power_supply_set_property(chip->wireless_psy, POWER_SUPPLY_PROP_RX_CEP, &val);
+		mutex_unlock(&chip->sysfs_op_lock);
+	} else {
+		dev_err(chip->dev, "BLE CEP set error:\n");
+		rc = -EINVAL;
+	}
+	return rc;
+}
+
+static void rx1619_oob_set_ept_work(struct work_struct *work)
+{
+	struct rx1619_chg *chip =
+		 container_of(work, struct rx1619_chg,
+					oob_set_ept_work.work);
+
+	rx1619_set_ept(chip);
+
+	return;
+}
+
+unsigned int rx1619_get_cep_value(struct rx1619_chg *chip)
+{
+	u8 data = 0;
+
+	rx1619_read(chip, &data, REG_CEP_VALUE);//cep-0x0008
+	dev_info(chip->dev, "[%s] cep value=0x%x \n",
+				__func__, data);
+
+	return data;
+}
+
+
+void rx1619_set_ble_status(struct rx1619_chg *chip, u8 data)
+{
+	rx1619_write(chip, 0x8b, REG_RX_SENT_CMD);//0x8b sent BLEOK
+	rx1619_write(chip, data, REG_RX_SENT_DATA1);
+	rx1619_write(chip, AP_SENT_DATA_OK, REG_AP_RX_COMM);
+	dev_info(chip->dev, "[%s] AP sent ble_OK status = 0x%x\n", __func__, data);
+}
+
+void rx1619_request_low_addr(struct rx1619_chg *chip)
+{
+	rx1619_write(chip, 0x8e, REG_RX_SENT_CMD);//0x8e request low addr
+	rx1619_write(chip, AP_SENT_DATA_OK, REG_AP_RX_COMM);//0x8b sent BLEOK
+}
+
+void rx1619_request_high_addr(struct rx1619_chg *chip)
+{
+	rx1619_write(chip, 0x8f, REG_RX_SENT_CMD);//0x8f request high addr
+	rx1619_write(chip, AP_SENT_DATA_OK, REG_AP_RX_COMM);//0x8b sent BLEOK
+}
+
 void rx1619_request_uuid(struct rx1619_chg *chip, int is_epp)
 {
 	rx1619_write(chip, UUID_CMD, REG_RX_SENT_CMD);//0x8f request high addr
@@ -396,6 +556,55 @@ void rx1619_send_device_auth(struct rx1619_chg *chip)
 {
 	rx1619_write(chip, PRIVATE_USB_TYPE_CMD, REG_RX_SENT_CMD);
 	rx1619_write(chip, AP_SENT_DATA_OK, REG_AP_RX_COMM);
+}
+
+void rx1619_sent_tx_mac(struct rx1619_chg *chip)
+{
+	int64_t ble_mac = 0;
+	union power_supply_propval val = {0, };
+	uint32_t lens = 6;
+	memcpy(&ble_mac, chip->mac_addr, lens);
+	val.int64val = ble_mac;
+	if (chip->wireless_psy)
+		power_supply_set_property(chip->wireless_psy, POWER_SUPPLY_PROP_TX_MAC, &val);
+	else
+		dev_err(chip->dev, "BLE mac addr get error:\n");
+}
+
+void rx1619_oob_set_cep_work(struct work_struct *work)
+{
+	struct rx1619_chg *chip =
+		 container_of(work, struct rx1619_chg,
+					oob_set_cep_work.work);
+
+	if (chip->is_oob_ok) {
+		mutex_lock(&chip->wireless_chg_lock);
+		chip->cep_val = rx1619_get_cep_value(chip);
+		rx1619_set_cep(chip);
+		dev_info(chip->dev, "[%s] cep_value = 0x%x\n", __func__, chip->cep_val);
+		schedule_delayed_work(&chip->oob_set_cep_work, msecs_to_jiffies(1000));
+		mutex_unlock(&chip->wireless_chg_lock);
+	} else
+		dev_info(chip->dev, "[%s] oob disabled = %d\n", __func__, chip->is_oob_ok);
+	return;
+}
+
+int rx_op_ble_flag(int en)
+{
+	int rc;
+	if (!g_chip)
+		return -EINVAL;
+
+	dev_info(g_chip->dev, "set ble flag: %d\n", en);
+
+	if (en)
+		rx1619_set_ble_status(g_chip, 1);
+	else {
+		rx1619_set_ble_status(g_chip, 0);
+		cancel_delayed_work_sync(&g_chip->oob_set_cep_work);
+	}
+
+	return rc;
 }
 
 static int rx_get_property_names(struct rx1619_chg *chip)
@@ -2685,6 +2894,7 @@ static void rx1619_wireless_int_work(struct work_struct *work)
 	u8 g_uuid_data[4] = {0};
 	int tx_gpio, ret;
 	u8 tx_status, tx_phase;
+	u8 ble_flag;
 	u8 err_cmd;
 	static int retry;
 	static int retry_id;
@@ -2892,6 +3102,7 @@ static void rx1619_wireless_int_work(struct work_struct *work)
 		rx1619_write(chip, PRIVATE_ID_CMD, REG_RX_SENT_CMD);    //0x86 authen req
 		rx1619_write(chip, AP_SENT_DATA_OK, REG_AP_RX_COMM);
 		dev_err(chip->dev, "[rx1619] [%s] ID OK! \n", __func__);
+
 		break;
 
 	case 0x05: //sha one ok
@@ -2901,11 +3112,18 @@ static void rx1619_wireless_int_work(struct work_struct *work)
 		rx1619_read(chip, &g_shaone_data_h, REG_RX_REV_DATA1);//0x0021
 		rx1619_read(chip, &g_shaone_data_l, REG_RX_REV_DATA2);//0x0022
 
-		rx1619_request_uuid(chip, chip->epp);
+		dev_err(chip->dev, "[%s] aqin sha one value 0x%x,0x%x\n",
+                                __func__, g_shaone_data_h, g_shaone_data_l);
+		if (g_shaone_data_h == 1) {
+			rx1619_request_uuid(chip, chip->epp);
 		//rx1619_write(chip, PRIVATE_USB_TYPE_CMD, REG_RX_SENT_CMD);//0x87 usb type req
 		//rx1619_write(chip, AP_SENT_DATA_OK, REG_AP_RX_COMM);
-		dev_info(chip->dev, "[rx1619] [%s] SHA ONE OK! \n", __func__);
-		chip->auth = 1;
+			dev_info(chip->dev, "[rx1619] [%s] SHA ONE OK! \n", __func__);
+			chip->auth = 1;
+		} else {
+			dev_info(chip->dev, "[rx1619] [%s] SHA failed ! \n", __func__);
+                        chip->auth = 0;
+		}
 		if (!chip->epp)
 			alarm_start_relative(&chip->cmd_timeout_alarm,
 				ms_to_ktime(CMD_TIMEOUT_DELAY_MS));
@@ -2985,6 +3203,8 @@ static void rx1619_wireless_int_work(struct work_struct *work)
 		rx1619_read(chip, &g_fc_status, REG_RX_REV_DATA1);
 		dev_info(chip->dev, "[%s] FC status = %d\n",
 						__func__, g_fc_status);
+		if (chip->is_ble_tx)
+			rx1619_request_low_addr(chip);
 		if (g_fc_status == 1) {
 			set_usb_type_current(chip, g_USB_TYPE);
 			dev_info(chip->dev, "[%s] fast charge success!!! \n",
@@ -2999,6 +3219,62 @@ static void rx1619_wireless_int_work(struct work_struct *work)
 				chip->target_curr = DC_BPP_AUTH_FAIL_CURRENT;
 			}
 		}
+		break;
+	case 0x09: //get mac low addr
+		rx1619_write(chip, AP_REV_DATA_OK, REG_AP_RX_COMM);    //receive ok
+		msleep(10);
+
+		for (i = 0; i < 3; i++)
+			chip->mac_addr[i] = rx_rev_data[i];
+
+		dev_info(chip->dev, "get low_addr: 0x%x, 0x%x, 0x%x\n",
+						chip->mac_addr[0], chip->mac_addr[1], chip->mac_addr[2]);
+		rx1619_request_high_addr(chip);
+
+		break;
+	case 0x0a: //get mac high addr
+		rx1619_write(chip, AP_REV_DATA_OK, REG_AP_RX_COMM);    //receive ok
+		msleep(10);
+
+		for (i = 0; i < 3; i++)
+			chip->mac_addr[i + 3] = rx_rev_data[i];
+
+		dev_info(chip->dev, "get high_addr: %x, %x, %x\n",
+						chip->mac_addr[3], chip->mac_addr[4], chip->mac_addr[5]);
+
+		rx1619_sent_tx_mac(chip);
+		break;
+	case 0x0b: //BLE flag -- bit0:BLEOK bit1:CEPOK bit2: OOBOK
+		rx1619_write(chip, AP_REV_DATA_OK, REG_AP_RX_COMM);    //receive ok
+		msleep(10);
+
+		ble_flag = rx_rev_data[0];
+		dev_info(chip->dev, "[%s] ble_flag = 0x%x \n",
+						__func__, ble_flag);
+		if (ble_flag & BIT(2)) {
+			if (!chip->is_oob_ok) {//OOB OK
+				schedule_delayed_work(&chip->oob_set_cep_work, 0);
+				chip->is_oob_ok = 1;
+			}
+		} else {
+			if (chip->is_oob_ok) {
+				cancel_delayed_work(&chip->oob_set_cep_work);
+				chip->is_oob_ok = 0;
+			}
+		}
+		break;
+	case 0x0c: //RPP
+		rx1619_write(chip, AP_REV_DATA_OK, REG_AP_RX_COMM);    //receive ok
+		msleep(10);
+
+		chip->rpp_val[0] = rx_rev_data[0];
+		chip->rpp_val[1] = rx_rev_data[1];
+
+		dev_info(chip->dev, "[%s] rp_h = 0x%x, rp_l = 0x%x\n",
+						__func__, chip->rpp_val[0], chip->rpp_val[1]);
+
+		rx1619_set_rpp(chip);
+
 		break;
 	case 0x0d:
 		rx1619_write(chip, AP_REV_DATA_OK, REG_AP_RX_COMM);    //receive ok
@@ -3023,7 +3299,12 @@ static void rx1619_wireless_int_work(struct work_struct *work)
 			dev_info(chip->dev, "vendor:0x%x, module:0x%x, hw:0x%x and power:0x%x\n",
 						g_uuid_data[0], g_uuid_data[1], g_uuid_data[2], g_uuid_data[3]);
 
-			if (g_uuid_data[3] == 0x01 &&
+			if (g_uuid_data[3] == 0x07 &&
+				g_uuid_data[1] == 0x1 &&
+				g_uuid_data[2] == 0x4 &&
+				((g_uuid_data[0] == 0x9) || (g_uuid_data[0] == 0x1))) {
+				chip->is_ble_tx = 1;
+			} else if (g_uuid_data[3] == 0x01 &&
 				g_uuid_data[1] == 0x2 &&
 				g_uuid_data[2] == 0x8 &&
 				g_uuid_data[0] == 0x6) {
@@ -3033,10 +3314,14 @@ static void rx1619_wireless_int_work(struct work_struct *work)
 				g_uuid_data[2] == 0x6 &&
 				g_uuid_data[0] == 0x9) {
 				chip->is_voice_box_tx = 1;
-			} else if (g_uuid_data[3] == 0x06 &&
+				chip->is_ble_tx = 1;
+			} else if ((g_uuid_data[3] == 0x06 &&
 				g_uuid_data[1] == 0x1 &&
 				g_uuid_data[2] == 0x5 &&
-				g_uuid_data[0] == 0x9) {
+				g_uuid_data[0] == 0x9) || (g_uuid_data[3] == 0x08 &&
+				g_uuid_data[1] == 0x9 &&
+				g_uuid_data[2] == 0x9 &&
+				g_uuid_data[0] == 0xc)) {
 				chip->is_pan_tx = 1;
 			}
 		}
@@ -3052,6 +3337,7 @@ static void rx1619_wireless_int_work(struct work_struct *work)
 		if (!chip->epp && ((err_cmd == ID_CMD) ||
 				(err_cmd == AUTH_CMD) ||
 				(err_cmd == UUID_CMD) ||
+				(err_cmd == COMM_CMD) ||
 				(err_cmd == PRIVATE_USB_TYPE_CMD))) {
 			if (err_cmd == ID_CMD && (retry_id < 3)) {
 				//send device idauth
@@ -3070,6 +3356,8 @@ static void rx1619_wireless_int_work(struct work_struct *work)
 				retry_id = 0;
 			}
 			g_USB_TYPE = ADAPTER_AUTH_FAILED;
+			if (chip->wireless_psy)
+				power_supply_changed(chip->wireless_psy);
 			dev_info(chip->dev, "[rx1619]auth failed tx charger type set 0x%x\n", g_USB_TYPE);
 			alarm_cancel(&chip->cmd_timeout_alarm);
 			if (chip->epp){
@@ -3124,8 +3412,6 @@ static void rx1619_wireless_int_work(struct work_struct *work)
 			}
 		}
 
-		if (chip->wireless_psy)
-                        power_supply_changed(chip->wireless_psy);
 		break;
 
 	case 0x1f: //for product test
@@ -3576,6 +3862,7 @@ static void rx1619_set_present(struct rx1619_chg *chip, int enable)
 	if (enable) {
 		chip->dcin_present = 1;
 	} else {
+		schedule_delayed_work(&chip->oob_set_ept_work, msecs_to_jiffies(10));
 		chip->dcin_present = 0;
 		g_id_done_flag = 0;
 		g_epp_or_bpp = BPP_MODE;
@@ -3586,6 +3873,7 @@ static void rx1619_set_present(struct rx1619_chg *chip, int enable)
 		chip->epp_exchange = 0;
 		chip->exchange = 0;
 		chip->last_vin = 0;
+		chip->is_oob_ok = 0;
 		chip->last_icl = 0;
 		chip->last_qc3_icl = 0;
 		chip->op_mode = LN8282_OPMODE_UNKNOWN;
@@ -3594,6 +3882,7 @@ static void rx1619_set_present(struct rx1619_chg *chip, int enable)
 		chip->target_curr = 0;
 		chip->is_car_tx = 0;
 		chip->is_voice_box_tx = 0;
+		chip->is_ble_tx = 0;
 		g_USB_TYPE = 0;
 		chip->is_pan_tx = 0;
 		chip->disable_bq = false;
@@ -3604,6 +3893,9 @@ static void rx1619_set_present(struct rx1619_chg *chip, int enable)
 			power_supply_set_property(chip->ln_psy,
 				POWER_SUPPLY_PROP_RESET_DIV_2_MODE, &val);
 
+		/* clear TX address */
+		memset(chip->mac_addr, 0x0, sizeof(chip->mac_addr));
+		rx1619_sent_tx_mac(chip);
 
 		/* enable aicl if disabled by wireless earlier */
 		rx1619_enable_aicl(chip , true);
@@ -4255,6 +4547,8 @@ static int rx1619_probe(struct i2c_client *client,const struct i2c_device_id *id
 	INIT_DELAYED_WORK(&chip->reverse_sent_state_work, reverse_chg_sent_state_work);
 	INIT_DELAYED_WORK(&chip->reverse_chg_state_work, reverse_chg_state_set_work);
 	INIT_DELAYED_WORK(&chip->reverse_dping_state_work, reverse_dping_state_set_work);
+	INIT_DELAYED_WORK(&chip->oob_set_cep_work, rx1619_oob_set_cep_work);
+	INIT_DELAYED_WORK(&chip->oob_set_ept_work, rx1619_oob_set_ept_work);
 	INIT_DELAYED_WORK(&chip->dc_check_work, rx1619_dc_check_work);
 	INIT_DELAYED_WORK(&chip->cmd_timeout_work, rx1619_cmd_timeout_work);
 	INIT_DELAYED_WORK(&chip->fw_download_work, rx1619_fw_download_work);
