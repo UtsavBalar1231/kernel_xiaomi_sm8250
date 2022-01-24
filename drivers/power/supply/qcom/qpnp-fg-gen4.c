@@ -221,6 +221,7 @@ struct fg_dt_props {
 	bool	soc_hi_res;
 	bool	sun_profile_only;
 	bool	j3s_batt_profile;
+	bool	k11a_batt_profile;
 	bool	soc_scale_mode;
 	bool	fg_increase_100soc_time;
 	bool	shutdown_delay_enable;
@@ -1192,6 +1193,7 @@ static int fg_gen4_get_power(struct fg_gen4_chip *chip, int *val, bool average)
 }
 
 #define LOW_TEMP_CUTOFF_VOL_MV  3200
+#define NORMAL_TEMP_CUTOFF_VOL_MV 3400
 
 static int fg_gen4_get_prop_soc_scale(struct fg_gen4_chip *chip)
 {
@@ -2112,8 +2114,13 @@ static int fg_gen4_get_batt_profile(struct fg_dev *fg)
 		if ((chip->ds_romid[0] == 0x9F) && ((chip->ds_romid[5] & 0xF0) == 0xF0)
 				&& (chip->ds_romid[6] == 04) && !fg->profile_already_find) {
 			if ((chip->ds_page0[0] == 'C') || (chip->ds_page0[0] == 'V')) {
-				profile_node = of_batterydata_get_best_profile(batt_node,
+				if (chip->dt.k11a_batt_profile) {
+					profile_node = of_batterydata_get_best_profile(batt_node,
+							fg->batt_id_ohms / 1000, "K11A_GY_4520mah");
+				} else {
+					profile_node = of_batterydata_get_best_profile(batt_node,
 						fg->batt_id_ohms / 1000, "j2gybm4n_4780mah");
+				}
 			} else if ((chip->ds_page0[0] == 'N') || (chip->ds_page0[0] == 'A')) {
 				profile_node = of_batterydata_get_best_profile(batt_node,
 					fg->batt_id_ohms / 1000, "j2nvtbm4n_4780mah");
@@ -2124,7 +2131,14 @@ static int fg_gen4_get_batt_profile(struct fg_dev *fg)
 				else
 					profile_node = of_batterydata_get_best_profile(batt_node,
 						fg->batt_id_ohms / 1000, "j11sun_4700mah");
-			} else {
+			} else if (chip->ds_page0[0] == 'U') {
+				if (chip->dt.k11a_batt_profile)
+					profile_node = of_batterydata_get_best_profile(batt_node,
+							fg->batt_id_ohms / 1000, "K11A_FMT_4520mah");
+				else
+					profile_node = of_batterydata_get_best_profile(batt_node,
+							fg->batt_id_ohms / 1000, "K11A_FMT_4520mah");
+			}  else {
 				retry_batt_profile++;
 			}
 		} else if (!fg->profile_already_find) {
@@ -2148,6 +2162,10 @@ static int fg_gen4_get_batt_profile(struct fg_dev *fg)
 					pr_warn("verifty battery fail. use default profile j3ssun_5000mah\n");
 					profile_node = of_batterydata_get_best_profile(batt_node,
 						fg->batt_id_ohms / 1000, "j3ssun_5000mah");
+				} else if (chip->dt.k11a_batt_profile) {
+					pr_warn("verifty battery fail. use default profile k11a_fmt_4520mah\n");
+					profile_node = of_batterydata_get_best_profile(batt_node,
+						fg->batt_id_ohms / 1000, "K11A_FMT_4520mah");
 				} else {
 					pr_warn("verifty battery fail. use default profile j11sun_4700mah\n");
 					profile_node = of_batterydata_get_best_profile(batt_node,
@@ -2155,7 +2173,6 @@ static int fg_gen4_get_batt_profile(struct fg_dev *fg)
 				}
 			}
 		}
-
 #else
 		profile_node = of_batterydata_get_best_profile(batt_node,
 					fg->batt_id_ohms / 1000, NULL);
@@ -6970,6 +6987,7 @@ static int fg_gen4_parse_dt(struct fg_gen4_chip *chip)
 	chip->dt.soc_hi_res = of_property_read_bool(node, "qcom,soc-hi-res");
 	chip->dt.sun_profile_only = of_property_read_bool(node, "qcom,sun-profile-only");
 	chip->dt.j3s_batt_profile = of_property_read_bool(node, "qcom,j3s-batt-profile");
+	chip->dt.k11a_batt_profile = of_property_read_bool(node, "qcom,k11a-batt-profile");
 
 	chip->dt.fg_increase_100soc_time = of_property_read_bool(node, "qcom,fg-increase-100soc-time");
 	fg->param.smooth_batt_flag = of_property_read_bool(node, "qcom,fg-increase-100soc-time-2");
@@ -7236,9 +7254,10 @@ static void soc_monitor_work(struct work_struct *work)
 		if (fg->param.batt_temp < LOW_DISCHARGE_TEMP_TRH ) {
 			chip->dt.cutoff_volt_mv = LOW_TEMP_CUTOFF_VOL_MV;
 			is_low_temp_flag = true;
-		} else
+		} else {
+			chip->dt.cutoff_volt_mv	= NORMAL_TEMP_CUTOFF_VOL_MV;
 			is_low_temp_flag = false;
-
+		}
 		fg_dynamic_set_cutoff_voltage(fg, chip->dt.cutoff_volt_mv);
 		if (rc < 0)
 			pr_err("fg_dynamic_set_cutoff_voltage set failed\n");

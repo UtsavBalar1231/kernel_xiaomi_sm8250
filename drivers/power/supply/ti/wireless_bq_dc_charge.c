@@ -526,6 +526,22 @@ static int wldc_pm_check_sw_enabled(struct wireless_dc_device_info *pm)
 	return ret;
 }
 
+static int wldc_pm_get_night_charging_enabled(struct wireless_dc_device_info *pm)
+{
+        int ret;
+        union power_supply_propval val = {0,};
+
+        if (wldc_pm_check_batt_psy(pm))
+                return -ENODEV;
+
+        ret = power_supply_get_property(pm->sw_psy,
+                        POWER_SUPPLY_PROP_BATTERY_INPUT_SUSPEND, &val);
+        if (!ret)
+                pm->night_charging = !!val.intval;
+
+        return ret;
+}
+
 static int wldc_pm_get_batt_capacity(struct wireless_dc_device_info *pm, int *capacity)
 {
 	int ret;
@@ -1191,6 +1207,12 @@ static int wldc_pm_fc2_charge_algo(struct wireless_dc_device_info *pm)
 		fc2_taper_timer = 0;
 	}
 
+	pm->night_charging = wldc_pm_get_night_charging_enabled(pm);
+	pr_info("wl is open night charging:%d\n", pm->night_charging);
+
+	if (pm->night_charging )
+		return PM_ALGO_RET_CHG_DISABLED;
+		
 	/* do thermal and jeita check */
 	wl_get_batt_current_thermal_level(pm, &thermal_level);
 	pm->is_temp_out_fc2_range = wl_disable_cp_by_jeita_status(pm);
@@ -1201,6 +1223,7 @@ static int wldc_pm_fc2_charge_algo(struct wireless_dc_device_info *pm)
 			pm->is_temp_out_fc2_range, thermal_level);
 		return PM_ALGO_RET_CHG_DISABLED;
 	}
+
 
 	steps = min(sw_ctrl_steps, hw_ctrl_steps);
 	pr_info("steps: %d, sw_ctrl_steps:%d, hw_ctrl_steps:%d\n", steps, sw_ctrl_steps, hw_ctrl_steps);
@@ -1285,6 +1308,9 @@ static int wldc_pm_sm(struct wireless_dc_device_info *pm)
 		pm->is_temp_out_fc2_range = wl_disable_cp_by_jeita_status(pm);
 		pr_info("is_temp_out_fc2_range:%d\n", pm->is_temp_out_fc2_range);
 
+		pm->night_charging = wldc_pm_get_night_charging_enabled(pm);
+		pr_info("night charging is open :%d\n", pm->night_charging);
+
 		if (pm->cp.vbat_volt < pm_config.min_vbat_for_cp) {
 			pr_info("batt_volt %d, waiting...\n", pm->cp.vbat_volt);
 		} else if (tx_adapter_type > ADAPTER_XIAOMI_PD_60W ||
@@ -1298,6 +1324,8 @@ static int wldc_pm_sm(struct wireless_dc_device_info *pm)
 			wldc_pm_move_state(pm, CP_PM_STATE_FC2_EXIT);
 		} else if (thermal_level >= MAX_THERMAL_LEVEL || pm->is_temp_out_fc2_range) {
 			pr_info("thermal level is too high, waiting...\n");
+		} else if (pm->night_charging) {
+			pr_info("night charging is open, waiting...\n");
 		} else if (effective_fcc_val <= MIN_FCC_FOR_OPEN_BQ_MA) {
 			pr_info("fcc %d is too low, waiting...\n", effective_fcc_val);
 		} else {

@@ -231,6 +231,7 @@ typedef struct {
 	bool			jeita_triggered;
 	bool			batt_cell_volt_triggered;
 	bool			is_temp_out_fc2_range;
+	bool 			night_charging;
 
     struct delayed_work	qc3_pm_work;
 	struct work_struct	disable_hvdcp3_work;

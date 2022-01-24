@@ -222,6 +222,7 @@ struct wireless_dc_device_info {
 	/* jeita or thermal related */
 	bool		jeita_triggered;
 	bool		is_temp_out_fc2_range;
+	bool		night_charging;
 	int			warm_threshold_temp;
 
 	/* bq taper related */
