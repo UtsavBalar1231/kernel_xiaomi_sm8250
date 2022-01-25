@@ -11,7 +11,6 @@
  * published by the Free Software Foundation.
  *
  */
-#define DEBUG
 
 //#define BRINGUP_IRQ_VERIFY
 #define FAST_SWITCH_WORKAROUND

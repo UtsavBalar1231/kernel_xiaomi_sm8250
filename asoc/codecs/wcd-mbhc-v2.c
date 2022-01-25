@@ -2,7 +2,6 @@
 /* Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  */
 
-#define DEBUG
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/slab.h>
@@ -54,8 +53,6 @@
 #define HEADSET_EVENT_PLUGOUT_MICROPHONE (4)
 #define HEADSET_EVENT_PLUGOUT_JACK (8)
 
-#define DEBUGFS_DIR_NAME "mbhc"
-#define DEBUGFS_HEADSET_STATUS_FILE_NAME "headset_status"
 #define HEADSET_EVENT_MAX (5)
 
 static struct dentry* mbhc_debugfs_dir;
