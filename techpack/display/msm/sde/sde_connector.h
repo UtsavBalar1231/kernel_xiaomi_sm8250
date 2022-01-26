@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2021 XiaoMi, Inc.
  */
 
 #ifndef _SDE_CONNECTOR_H_
@@ -395,6 +396,7 @@ enum mi_dimlayer_type {
 	MI_DIMLAYER_FOD_ICON = 0x2,
 	MI_DIMLAYER_AOD = 0x4,
 	MI_FOD_UNLOCK_SUCCESS = 0x8,
+	MI_LAYER_FOD_ANIM = 0x10,
 	MI_DIMLAYER_MAX,
 };
 

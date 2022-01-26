@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2021 XiaoMi, Inc.
  */
 
 #ifndef _DSI_PANEL_H_
@@ -166,6 +167,7 @@ struct drm_panel_esd_config {
 	bool esd_enabled;
 
 	enum esd_check_status_mode status_mode;
+	struct dsi_panel_cmd_set offset_cmd;
 	struct dsi_panel_cmd_set status_cmd;
 	u32 *status_cmds_rlen;
 	u32 *status_valid_params;
