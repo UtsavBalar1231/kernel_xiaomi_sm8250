@@ -47,6 +47,7 @@
 #include "msm_mmu.h"
 #include "sde_wb.h"
 #include "sde_dbg.h"
+#include "dsi/dsi_panel_mi.h"
 
 /*
  * MSM driver version:
@@ -2077,6 +2078,8 @@ static void msm_pdev_shutdown(struct platform_device *pdev)
 		DRM_ERROR("invalid msm drm private node\n");
 		return;
 	}
+
+	dsi_panel_power_turn_off(false);
 
 	msm_lastclose(ddev);
 
