@@ -410,8 +410,8 @@ static int notrace ramoops_pstore_write(struct pstore_record *record)
 				     record->size);
 		return 0;
 	} else if (record->type == PSTORE_TYPE_PMSG) {
-		pr_warn_ratelimited("PMSG shouldn't call %s\n", __func__);
-		return -EINVAL;
+		persistent_ram_write(cxt->mprz, record->buf, record->size);
+		return 0;
 	}
 
 	if (record->type != PSTORE_TYPE_DMESG)
