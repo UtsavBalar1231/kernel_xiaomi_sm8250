@@ -1949,10 +1949,17 @@ const struct seq_operations nvt_selftest_seq_ops = {
 #if NVT_TOUCH_MP_SETTING_CRITERIA_FROM_CSV
 static void goto_next_line(char **ptr)
 {
-	do {
-		*ptr = *ptr + 1;
-	} while (**ptr != '\n');
-	*ptr = *ptr + 1;
+    if (**ptr == '\n')
+        goto step_to_next_line;
+    else {
+        do {
+            *ptr = *ptr + 1;
+        } while (**ptr != '\n');
+    }
+
+step_to_next_line:
+    *ptr = *ptr + 1;
+
 }
 
 static void copy_this_line(char *dest, char *src)

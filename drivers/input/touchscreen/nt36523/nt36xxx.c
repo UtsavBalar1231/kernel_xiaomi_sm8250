@@ -69,6 +69,7 @@ extern void nvt_mp_proc_deinit(void);
 
 static int32_t nvt_ts_suspend(struct device *dev);
 static int32_t nvt_ts_resume(struct device *dev);
+void nvt_tp_state_recovery(struct nvt_ts_data *ts);
 struct nvt_ts_data *ts;
 
 #if BOOT_UPDATE_FIRMWARE
@@ -89,6 +90,7 @@ static void nvt_ts_late_resume(struct early_suspend *h);
 #endif
 extern int dsi_panel_lockdown_info_read(unsigned char *plockdowninfo);
 extern void dsi_panel_doubleclick_enable(bool on);
+extern int dsi_panel_vendor_info_read(unsigned char *plockdowninfo);
 uint32_t ENG_RST_ADDR  = 0x7FFF80;
 uint32_t SWRST_N8_ADDR = 0; //read from dtsi
 uint32_t SPI_RD_FAST_ADDR = 0;	//read from dtsi
@@ -1279,11 +1281,11 @@ static int nvt_get_panel_type(struct nvt_ts_data *ts_data)
 			i = 0;
 			break;
 		}
-		if (lockdown[1] == 0x04) {
+		if (lockdown[1] == 0x08) {
 			i = 1;
 			break;
 		}
-		if (lockdown[1] == 0x44) {
+		if (lockdown[1] == 0x35) {
 			i = 1;
 			break;
 		}
@@ -1577,10 +1579,20 @@ static int32_t nvt_ts_point_data_checksum(uint8_t *buf, uint8_t length)
 	if (checksum != buf[length]) {
 		NVT_ERR("i2c/spi packet checksum not match. (point_data[%d]=0x%02X, checksum=0x%02X)\n",
 				length, buf[length], checksum);
-
-		for (i = 0; i < 10; i++) {
+		if (buf[1] == 0xFD && buf[2] == 0xFD && buf[3] == 0xFD
+				&& buf[4] == 0xFD && buf[5] == 0xFD && buf[6] == 0xFD) {
 			NVT_LOG("%02X %02X %02X %02X %02X %02X\n",
-				buf[1 + i*6], buf[2 + i*6], buf[3 + i*6], buf[4 + i*6], buf[5 + i*6], buf[6 + i*6]);
+					buf[1], buf[2], buf[3], buf[4], buf[5], buf[6]);
+		} else if (buf[1] == 0xFE && buf[2] == 0xFE && buf[3] == 0xFE &&
+				buf[4] == 0xFE && buf[5] == 0xFE && buf[6] == 0xFE) {
+			NVT_LOG("%02X %02X %02X %02X %02X %02X\n",
+					buf[1], buf[2], buf[3], buf[4], buf[5], buf[6]);
+		} else {
+			for (i = 0; i < 10; i++) {
+				NVT_LOG("%02X %02X %02X %02X %02X %02X\n",
+						buf[1 + i*6], buf[2 + i*6], buf[3 + i*6],
+						buf[4 + i*6], buf[5 + i*6], buf[6 + i*6]);
+			}
 		}
 
 		NVT_LOG("%02X %02X %02X %02X %02X\n", buf[61], buf[62], buf[63], buf[64], buf[65]);
@@ -1588,7 +1600,7 @@ static int32_t nvt_ts_point_data_checksum(uint8_t *buf, uint8_t length)
 		return -1;
 	}
 
-	return 0;
+   return 0;
 }
 #endif /* POINT_DATA_CHECKSUM */
 
@@ -1678,6 +1690,8 @@ static irqreturn_t nvt_ts_work_func(int irq, void *data)
 			}
 		} else {
 			nvt_update_firmware(ts->fw_name);
+			msleep(50);
+			nvt_tp_state_recovery(ts);
 		}
 		goto XFER_ERROR;
 	}
@@ -2118,12 +2132,14 @@ static void update_touchfeature_value_work(struct work_struct *work) {
 	temp_get_value = xiaomi_touch_interfaces.touch_mode[Touch_Panel_Orientation][GET_CUR_VALUE];
 	temp_set_value = xiaomi_touch_interfaces.touch_mode[Touch_Panel_Orientation][SET_CUR_VALUE];
 	if (temp_get_value != temp_set_value) {
-		if (temp_set_value == PANEL_ORIENTATION_DEGREE_0 || temp_set_value == PANEL_ORIENTATION_DEGREE_180) {
+		if (temp_set_value == PANEL_ORIENTATION_DEGREE_0) {
 			nvt_game_value[0] = 0xBA;
 		} else if (temp_set_value == PANEL_ORIENTATION_DEGREE_90) {
 			nvt_game_value[0] = 0xBC;
 		} else if (temp_set_value == PANEL_ORIENTATION_DEGREE_270) {
 			nvt_game_value[0] = 0xBB;
+		} else if (temp_set_value == PANEL_ORIENTATION_DEGREE_180) {
+			nvt_game_value[0] = 0xBD;
 		}
 		nvt_game_value[1] = 0;
 		ret = nvt_touchfeature_set(nvt_game_value);
@@ -2352,7 +2368,7 @@ static u8 nvt_panel_vendor_read(void)
 	if (ts->lkdown_readed) {
 		value = ts->lockdown_info[0];
 	} else {
-		ret = dsi_panel_lockdown_info_read(ts->lockdown_info);
+		ret = dsi_panel_vendor_info_read(ts->lockdown_info);
 		if (ret <= 0) {
 			NVT_ERR("can't get lockdown info");
 			return value;
@@ -2381,7 +2397,7 @@ static u8 nvt_panel_display_read(void)
 	if (ts->lkdown_readed) {
 		value = ts->lockdown_info[1];
 	} else {
-		ret = dsi_panel_lockdown_info_read(ts->lockdown_info);
+		ret = dsi_panel_vendor_info_read(ts->lockdown_info);
 		if (ret <= 0) {
 			NVT_ERR("can't get lockdown info");
 			return value;
@@ -2400,7 +2416,7 @@ static int nvt_power_supply_event(struct notifier_block *nb,
 	struct nvt_ts_data *ts =
 	    container_of(nb, struct nvt_ts_data, power_supply_notifier);
 
-	if (ts)
+	if (ts && &ts->power_supply_work != NULL && ts->event_wq != NULL)
 		queue_work(ts->event_wq, &ts->power_supply_work);
 
 	return 0;
@@ -2445,25 +2461,21 @@ static void get_lockdown_info(struct work_struct *work)
 	NVT_LOG("lkdown_readed = %d", ts->lkdown_readed);
 
 	if (!ts->lkdown_readed) {
-		ret = dsi_panel_lockdown_info_read(ts->lockdown_info);
+		ret = dsi_panel_vendor_info_read(ts->lockdown_info);
 		if (ret < 0) {
 			NVT_ERR("can't get lockdown info");
 		} else {
-			NVT_LOG("Lockdown:0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x\n",
-			ts->lockdown_info[0], ts->lockdown_info[1], ts->lockdown_info[2], ts->lockdown_info[3],
-			ts->lockdown_info[4], ts->lockdown_info[5], ts->lockdown_info[6], ts->lockdown_info[7]);
+			NVT_LOG("Lockdown:0x%02x,0x%02x\n",
+			ts->lockdown_info[0], ts->lockdown_info[1]);
 		}
 		ts->lkdown_readed = true;
 		NVT_LOG("READ LOCKDOWN!!!");
 	} else {
 		NVT_LOG("use lockdown info that readed before");
-		NVT_LOG("Lockdown:0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x\n",
-			ts->lockdown_info[0], ts->lockdown_info[1], ts->lockdown_info[2], ts->lockdown_info[3],
-			ts->lockdown_info[4], ts->lockdown_info[5], ts->lockdown_info[6], ts->lockdown_info[7]);
+		NVT_LOG("Lockdown:0x%02x,0x%02x\n",
+			ts->lockdown_info[0], ts->lockdown_info[1]);
 	}
 }
-
-
 
 #ifdef CONFIG_TOUCHSCREEN_NVT_DEBUG_FS
 
@@ -2685,6 +2697,21 @@ void nvt_enable_doubleclick(void)
 	} else {
 		NVT_LOG("skip\n");
 	}
+}
+
+void nvt_tp_state_recovery(struct nvt_ts_data *ts)
+{
+#ifdef CONFIG_TOUCHSCREEN_XIAOMI_TOUCHFEATURE
+	NVT_ERR("Recovery game mode");
+	nvt_game_mode_recovery();
+#endif
+	msleep(50);
+	NVT_ERR("Recovery power supply");
+	ts->is_usb_exist = -1;
+	queue_work(ts->event_wq, &ts->power_supply_work);
+	msleep(50);
+	NVT_ERR("Recovery pen charger mode");
+	schedule_work(&ts->pen_charge_state_change_work);
 }
 
 /*******************************************************
@@ -3087,13 +3114,13 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 	/* is usb exit init */
 	ts->is_usb_exist = -1;
 	mutex_init(&ts->power_supply_lock);
+	INIT_WORK(&ts->power_supply_work, nvt_power_supply_work);
 	ts->power_supply_notifier.notifier_call = nvt_power_supply_event;
 	ret = power_supply_reg_notifier(&ts->power_supply_notifier);
 	if (ret) {
 		NVT_ERR("register power_supply_notifier failed. ret=%d\n", ret);
 		goto err_register_power_supply_notif_failed;
 	}
-	INIT_WORK(&ts->power_supply_work, nvt_power_supply_work);
 
 #ifdef CONFIG_TOUCHSCREEN_XIAOMI_TOUCHFEATURE
 	xiaomi_touch_interfaces.touch_vendor_read = nvt_touch_vendor_read;
@@ -3247,6 +3274,11 @@ static int32_t nvt_ts_remove(struct spi_device *client)
 {
 	NVT_LOG("Removing driver...\n");
 
+	if (ts->power_supply_notifier.notifier_call) {
+		power_supply_unreg_notifier(&ts->power_supply_notifier);
+		ts->power_supply_notifier.notifier_call = NULL;
+	}
+
 #if defined(CONFIG_FB)
 #ifdef CONFIG_DRM
 	if (mi_drm_unregister_client(&ts->drm_notif))
@@ -3270,6 +3302,10 @@ if (pen_charge_state_notifier_unregister_client(&ts->pen_charge_state_notifier))
 	nvt_flash_proc_deinit();
 #endif
 
+	mutex_destroy(&ts->power_supply_lock);
+	destroy_workqueue(ts->event_wq);
+	ts->event_wq = NULL;
+
 #if NVT_TOUCH_ESD_PROTECT
 	if (nvt_esd_check_wq) {
 		cancel_delayed_work_sync(&nvt_esd_check_work);
@@ -3286,6 +3322,12 @@ if (pen_charge_state_notifier_unregister_client(&ts->pen_charge_state_notifier))
 		nvt_fwu_wq = NULL;
 	}
 #endif
+
+	if (nvt_lockdown_wq) {
+		cancel_delayed_work_sync(&ts->nvt_lockdown_work);
+		destroy_workqueue(nvt_lockdown_wq);
+		nvt_lockdown_wq = NULL;
+	}
 
 #if WAKEUP_GESTURE
 	device_init_wakeup(&ts->input_dev->dev, 0);
@@ -3305,10 +3347,6 @@ if (pen_charge_state_notifier_unregister_client(&ts->pen_charge_state_notifier))
 			ts->pen_input_dev = NULL;
 		}
 	}
-
-	mutex_destroy(&ts->power_supply_lock);
-	if (ts->power_supply_notifier.notifier_call)
-		power_supply_unreg_notifier(&ts->power_supply_notifier);
 
 	if (ts->input_dev) {
 		input_unregister_device(ts->input_dev);
@@ -3334,6 +3372,11 @@ static void nvt_ts_shutdown(struct spi_device *client)
 
 	nvt_irq_enable(false);
 
+	if (ts->power_supply_notifier.notifier_call) {
+		power_supply_unreg_notifier(&ts->power_supply_notifier);
+		ts->power_supply_notifier.notifier_call = NULL;
+	}
+
 #if defined(CONFIG_FB)
 #ifdef CONFIG_DRM
 	if (mi_drm_unregister_client(&ts->drm_notif))
@@ -3357,6 +3400,10 @@ if (pen_charge_state_notifier_unregister_client(&ts->pen_charge_state_notifier))
 	nvt_flash_proc_deinit();
 #endif
 
+	mutex_destroy(&ts->power_supply_lock);
+	destroy_workqueue(ts->event_wq);
+	ts->event_wq = NULL;
+
 #if NVT_TOUCH_ESD_PROTECT
 	if (nvt_esd_check_wq) {
 		cancel_delayed_work_sync(&nvt_esd_check_work);
@@ -3373,6 +3420,12 @@ if (pen_charge_state_notifier_unregister_client(&ts->pen_charge_state_notifier))
 		nvt_fwu_wq = NULL;
 	}
 #endif
+
+	if (nvt_lockdown_wq) {
+		cancel_delayed_work_sync(&ts->nvt_lockdown_work);
+		destroy_workqueue(nvt_lockdown_wq);
+		nvt_lockdown_wq = NULL;
+	}
 
 #if WAKEUP_GESTURE
 	device_init_wakeup(&ts->input_dev->dev, 0);
@@ -3491,6 +3544,11 @@ static int32_t nvt_ts_resume(struct device *dev)
 		return 0;
 	}
 
+	if (ts->fw_name == NULL) {
+		NVT_ERR("fw has not been loaded and cannot be resume!\n");
+		return 0;
+	}
+
 	if (ts->dev_pm_suspend)
 		pm_stay_awake(dev);
 
@@ -3556,6 +3614,7 @@ static int32_t nvt_ts_resume(struct device *dev)
 		NVT_LOG("execute delayed command, set double click wakeup %d\n", ts->db_wakeup);
 		dsi_panel_doubleclick_enable(!!ts->db_wakeup);
 	}
+	ts->is_usb_exist = -1;
 	queue_work(ts->event_wq, &ts->power_supply_work);
 #ifdef CONFIG_TOUCHSCREEN_XIAOMI_TOUCHFEATURE
 	NVT_LOG("reload the game mode cmd");
