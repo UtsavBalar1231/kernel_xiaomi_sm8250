@@ -41,7 +41,6 @@
 #include "cp_qc30.h"
 
 #define LN8000_DUAL_CONFIG
-#define LN8000_I2C_RETRY	5
 
 static const char *ln8000_dev_name[] = {
 	"ln8000-standalone",
@@ -430,7 +429,7 @@ static int ln8000_set_adc_hib_delay(struct ln8000_info *info, unsigned int cfg)
 static int ln8000_get_vbat_float(struct ln8000_info *info)
 {
 	int ret;
-	u8 val;
+	u32 val;
 
 	ret = ln8000_read_reg(info, LN8000_REG_V_FLOAT_CTRL, &val);
 	if (ret < 0)
@@ -443,7 +442,7 @@ static int ln8000_get_vbat_float(struct ln8000_info *info)
 static int ln8000_get_iin_limit(struct ln8000_info *info)
 {
 	int ret, iin;
-	u8 val;
+	u32 val;
 
 	ret = ln8000_read_reg(info, LN8000_REG_IIN_CTRL, &val);
 	if (ret < 0)
@@ -494,7 +493,7 @@ static void ln8000_convert_adc_code(struct ln8000_info *info, unsigned int ch, u
 		break;
 	case LN8000_ADC_CH_DIETEMP:
 		adc_raw   = ((sts[1] & 0x0F)<<6) | ((sts[0] & 0xFC)>>2);
-		adc_final = (935 - adc_raw) * LN8000_ADC_DIETEMP_STEP / LN8000_ADC_DIETEMP_DENOM;//dC
+		adc_final = (935 - adc_raw) * 1000 / 2300;//dC
 		if (adc_final > LN8000_ADC_DIETEMP_MAX)
 			adc_final = LN8000_ADC_DIETEMP_MAX;
 		else if (adc_final < LN8000_ADC_DIETEMP_MIN)
@@ -577,14 +576,22 @@ static int ln8000_check_status(struct ln8000_info *info)
 	if (info->volt_qual == 1 && info->chg_en == 1) {
 		info->volt_qual = !(LN8000_STATUS(val[3], 1 << 5));
 		if (info->volt_qual == 0) {
-			ln_info("volt_fault_detected (volt_qual=%d\n", info->volt_qual);
+			ln_info("volt_fault_detected (volt_qual=%d)\n", info->volt_qual);
+			/* clear latched status */
+			ln8000_update_reg(info, LN8000_REG_TIMER_CTRL, 0x1 << 2, 0x1 << 2);
+			ln8000_update_reg(info, LN8000_REG_TIMER_CTRL, 0x1 << 2, 0x0 << 2);
 		}
 	}
 	info->iin_oc     = LN8000_STATUS(val[3], LN8000_MASK_IIN_OC_DETECTED);
 
-	ln_info("LN8000_STATUS : SYS_STS[0x%2x], SAFETY_STS[0x%2x], FAULT1_STS[0x%2x], FAULT2_STS[0x%2x]\n",
-			val[0], val[1], val[2], val[3]);
+	if (info->vbat_regulated || info->iin_regulated ||
+			info->tdie_fault || info->tdie_alarm || info->iin_rc ||
+			info->wdt_fault || info->vbat_ov || info->vac_unplug || info->vac_ov || info->vbus_ov ||
+			info->iin_oc) {
+		ln_info("LN8000_STATUS : SYS_STS[0x%2x], SAFETY_STS[0x%2x], FAULT1_STS[0x%2x], FAULT2_STS[0x%2x]\n",
+					val[0], val[1], val[2], val[3]);
 
+	}
 	mutex_unlock(&info->data_lock);
 
 	return 0;
@@ -642,6 +649,7 @@ static void ln8000_update_opmode(struct ln8000_info *info)
 		if (op_mode == LN8000_OPMODE_STANDBY) {
 			ln8000_update_reg(info, LN8000_REG_SYS_CTRL, 1 << LN8000_BIT_STANDBY_EN, 1 << LN8000_BIT_STANDBY_EN);
 			ln_info("forced trigger standby_en\n");
+			info->chg_en = 0;
 		}
 		ln_info("op_mode has been changed [%d]->[%d] (sys_st=0x%x)\n", info->op_mode, op_mode, val);
 		info->op_mode = op_mode;
@@ -708,9 +716,14 @@ static int ln8000_init_device(struct ln8000_info *info)
 	ln8000_enable_iin_loop_int(info, !info->pdata->iin_reg_disable);
 	ln8000_enable_tdie_regulation(info, !info->pdata->tdie_reg_disable);
 	ln8000_enable_tdie_prot(info, !info->pdata->tdie_prot_disable);
-	ln8000_enable_rcp(info, 0);
+	ln8000_enable_rcp(info, 1);
 	ln8000_change_opmode(info, LN8000_OPMODE_STANDBY);
-	ln8000_enable_vac_ov(info, 1);
+	if (info->dev_role == LN_ROLE_SLAVE) {
+		/* slave device didn't connect to OVPGATE */
+		ln8000_enable_vac_ov(info, 0);
+	} else {
+			ln8000_enable_vac_ov(info, 1);
+	}
 
 	/* wdt : disable, adc : shutdown mode */
 	ln8000_enable_wdt(info, false);
@@ -725,7 +738,7 @@ static int ln8000_init_device(struct ln8000_info *info)
 	ln8000_update_reg(info, LN8000_REG_CHARGE_CTRL, 0x1 << 7, 0x1 << 7);
 	ln8000_write_reg(info, LN8000_REG_THRESHOLD_CTRL, 0x0E);
 
-
+#if 0 /* we are recommanded Dual-standalone mode */
 	/* dual mode initialized */
 	if (info->dev_role == LN_ROLE_MASTER && !info->standalone_mode_master) {
 		ln8000_write_reg(info, LN8000_REG_LION_CTRL, 0xAA);
@@ -742,6 +755,7 @@ static int ln8000_init_device(struct ln8000_info *info)
 		ln8000_update_reg(info, 0x31, 0x1 << 5, 0x1 << 5);
 		ln8000_write_reg(info, LN8000_REG_LION_CTRL, 0x00);
 	}
+#endif
 
 	/* backup to initial setting for comparing to reset value. */
 	ln8000_read_reg(info, LN8000_REG_REGULATION_CTRL, &info->regulation_ctrl);
@@ -827,13 +841,12 @@ static int psy_chg_get_charging_enabled(struct ln8000_info *info)
 	return enabled;
 }
 
-
-static int ln8000_check_regmap_data(struct ln8000_info *info)
+ static int ln8000_check_regmap_data(struct ln8000_info *info)
 {
-        u8 regulation_ctrl;
-        u8 adc_ctrl;
-        u8 v_float_ctrl;
-        u8 charge_ctrl;
+        u32 regulation_ctrl;
+        u32 adc_ctrl;
+        u32 v_float_ctrl;
+        u32 charge_ctrl;
 
         ln8000_read_reg(info, LN8000_REG_REGULATION_CTRL, &regulation_ctrl);
         ln8000_read_reg(info, LN8000_REG_ADC_CTRL, &adc_ctrl);
@@ -862,7 +875,6 @@ static int psy_chg_get_ti_alarm_status(struct ln8000_info *info)
 	int alarm;
 	unsigned int v_offset;
 	bool bus_ovp, bus_ocp, bat_ovp;
-	u8 val[4];
 
 	ln8000_check_status(info);
 	ln8000_get_adc_data(info, LN8000_ADC_CH_VIN, &info->vbus_uV);
@@ -881,35 +893,33 @@ static int psy_chg_get_ti_alarm_status(struct ln8000_info *info)
 			(info->tbus_tbat_alarm << BUS_THERM_ALARM_SHIFT) |
 			(info->tdie_alarm << DIE_THERM_ALARM_SHIFT));
 
-	v_offset = info->vbus_uV - (info->vbat_uV * 2);
-	/* after charging-enabled, When the input current rises above rcp_th(over 200mA), it activates rcp. */
+	if (info->vbus_uV < (info->vbat_uV * 2)) {
+		v_offset = 0;
+	} else {
+		v_offset = info->vbus_uV - (info->vbat_uV * 2);
+	}
+	/* after charging-enabled, When the input current rises above 400mA), it activates rcp. */
 	if (info->chg_en && !(info->rcp_en)) {
-		if (info->iin_uA > 200000 && v_offset > 300000) {
+		if (info->iin_uA > 400000) {
 			ln8000_enable_rcp(info, 1);
 			ln_info("enabled rcp\n");
 		}
-	}
-	/* If an unplug event occurs when vbus voltage lower then vin_start_up_th, switch to standby mode. */
+}
+	/* If an unplug event occurs when vbus voltage lower then iin(70mA) and v_offset(100mV), switch to standby mode. */
 	if (info->chg_en && !(info->rcp_en)) {
 		if (info->iin_uA < 70000 && v_offset < 100000) {
 			ln8000_change_opmode(info, LN8000_OPMODE_STANDBY);
 			ln_info("forced change standby_mode for prevent reverse current\n");
+			ln8000_enable_rcp(info, 1);
 			info->chg_en = 0;
 		}
 	}
 
-	ln_info("debug adc_vin=%d(th=%d), adc_iin=%d(th=%d), adc_vbat=%d(th=%d), v_offset=%d\n",
+	ln_info("adc_vin=%d(th=%d), adc_iin=%d(th=%d), adc_vbat=%d(th=%d), v_offset=%d, alarm=0x%x\n",
 			info->vbus_uV / 1000, info->vin_ovp_alarm_th / 1000,
 			info->iin_uA / 1000, info->iin_ocp_alarm_th / 1000,
 			info->vbat_uV / 1000, info->vbat_ovp_alarm_th / 1000,
-			v_offset / 1000);
-	ln8000_bulk_read_reg(info, LN8000_REG_SYS_STS, val, 4);
-	ln_info("adc_vin=%d(th=%d), adc_iin=%d(th=%d), adc_vbat=%d(th=%d), v_offset=%d\n",
-			info->vbus_uV / 1000, info->vin_ovp_alarm_th / 1000,
-			info->iin_uA / 1000, info->iin_ocp_alarm_th / 1000,
-			info->vbat_uV / 1000, info->vbat_ovp_alarm_th / 1000,
-			v_offset / 1000);
-	ln_info("st:0x%x:0x%x:0x%x:0x%x alarm=0x%x\n", val[0], val[1], val[2], val[3], alarm);
+			v_offset / 1000, alarm);
 
 	return alarm;
 }
@@ -1045,12 +1055,20 @@ static int psy_chg_set_charging_enable(struct ln8000_info *info, int val)
 {
 	int op_mode;
 
+	/* skip duplicate command of charging enable */
+	if (val == info->chg_en) {
+		return 0;
+	}
+
 	if (val) {
 		ln_info("start charging\n");
 		op_mode = LN8000_OPMODE_SWITCHING;
+		/* when the start-up to charging, we need to disabled rcp. */
+		ln8000_enable_rcp(info, 0);
 	} else {
 		ln_info("stop charging\n");
 		op_mode = LN8000_OPMODE_STANDBY;
+		ln8000_enable_rcp(info, 1);
 	}
 
 	/* when the start-up to charging, we need to disabled rcp. */
@@ -1247,7 +1265,7 @@ static int read_reg(void *data, u64 *val)
 {
 	struct ln8000_info *info = data;
 	int ret;
-	u8 temp;
+	u32 temp;
 
 	ret = ln8000_read_reg(info, info->debug_address, &temp);
 	if (ret) {
@@ -1321,44 +1339,55 @@ static int ln8000_read_int_value(struct ln8000_info *info, u32 *reg_val)
 static void vac_ov_control_work(struct work_struct *work)
 {
 	struct ln8000_info *info = container_of(work, struct ln8000_info, vac_ov_work.work);
-	int i, cnt, ta_detached, delay = 50;
+	int i, cnt, adc_check_cnt, ta_detach_cnt, delay = 50;
 	u32 sys_st;
 	bool enable_vac_ov = 1;
 
-	ta_detached = 0;
-	cnt = 5000 / delay;
+	adc_check_cnt = 0;
+	ta_detach_cnt = 0;
+	cnt = 10000 / delay;
 	for (i = 0; i < cnt; ++i) {
 		ln8000_get_adc_data(info, LN8000_ADC_CH_VIN, &info->vbus_uV);
 		ln8000_read_reg(info, LN8000_REG_SYS_STS, &sys_st);
 
 		if (enable_vac_ov) {
-			/* Check ADC_VIN during the 5sec, if vin higher then 10V, disable to vac_ov */
+			/* Check ADC_VIN during the 10sec, if vin higher then 10V, disable to vac_ov */
 			if (info->vbus_uV > 10000000) {
-				enable_vac_ov = 0;
-				ln8000_enable_vac_ov(info, enable_vac_ov);
-				ln_info("vac_ov=disable, vin=%dmV, i=%d, cnt=%d, delay=%d\n", info->vbus_uV/1000, i, cnt, delay);
+				adc_check_cnt += 1;
+				ln_info("vin=%dmV, adc_check_cnt=%d\n", info->vbus_uV/1000, adc_check_cnt);
+				if (adc_check_cnt > 2) {
+					enable_vac_ov = 0;
+					ln8000_enable_vac_ov(info, enable_vac_ov);
+					ln_info("vac_ov=disable, vin=%dmV, i=%d, cnt=%d, delay=%d\n", info->vbus_uV/1000, i, cnt, delay);
+					adc_check_cnt = 0;
+				}
 			}
 		} else {
-			/* After disabled vac_ov, if ADC_VIN lower then 7V goto the terminate work */
-			if (info->vbus_uV < 7000000) {
-				enable_vac_ov = 1;
-				ln_info("vac_ov=enable, vin=%dmV, i=%d, cnt=%d, delay=%d\n", info->vbus_uV/1000, i, cnt, delay);
-				goto teminate_work;
-			}
+				/* After disabled vac_ov, if ADC_VIN lower then 7V goto the terminate work */
+				if (info->vbus_uV < 7000000) {
+					adc_check_cnt += 1;
+					ln_info("vin=%dmV, adc_check_cnt=%d\n", info->vbus_uV/1000, adc_check_cnt);
+						if (adc_check_cnt > 2) {
+							enable_vac_ov = 1;
+							ln_info("vac_ov=enable, vin=%dmV, i=%d, cnt=%d, delay=%d\n", info->vbus_uV/1000, i, cnt, delay);
+							goto teminate_work;
+						}
+				}
 		}
 		/* If judged 3 times by TA disconnected, goto the terminate work */
 		if (sys_st == 0x1) { /* it's means entered shutdown mode */
-			ta_detached += 1;
-			ln_info("sys_st=0x%x, ta_detached=%d\n", sys_st, ta_detached);
-			if (ta_detached > 2) {
-				goto teminate_work;
-			}
+			ta_detach_cnt += 1;
+			ln_info("sys_st=0x%x, ta_detached=%d\n", sys_st, ta_detach_cnt);
+				if (ta_detach_cnt > 2) {
+					goto teminate_work;
+				}
 		}
 
 		msleep(delay);
 	}
 
 teminate_work:
+	ln_info("terminate_work:enable_vac_ov (i=%d, cnt=%d)\n", i, cnt);
 	ln8000_enable_vac_ov(info, 1);
 	info->vac_ov_work_on = 0;
 }
@@ -1452,7 +1481,9 @@ static irqreturn_t ln8000_interrupt_handler(int irq, void *data)
 		ln_info("Watchdog timer has expired(wdt_fault=%d)\n", info->wdt_fault);
 	}
 
-	check_vac_ov_work(info);
+	if (info->dev_role != LN_ROLE_SLAVE) {
+		check_vac_ov_work(info);
+	}
 
 	return IRQ_HANDLED;
 }
@@ -1666,15 +1697,11 @@ static int ln8000_probe(struct i2c_client *client, const struct i2c_device_id *i
 {
 	struct ln8000_info *info;
 	int ret = 0;
-	int retries = 0;
 
 	/* detect device on connected i2c bus */
-	do {
-		ret = i2c_smbus_read_byte_data(client, LN8000_REG_DEVICE_ID);
-	} while (IS_ERR_VALUE((unsigned long)ret) && retries++ < LN8000_I2C_RETRY);
+	ret = i2c_smbus_read_byte_data(client, LN8000_REG_DEVICE_ID);
 	if (IS_ERR_VALUE((unsigned long)ret)) {
 		dev_err(&client->dev, "fail to detect ln8000 on i2c_bus(addr=0x%x)\n", client->addr);
-		dev_err(&client->dev, "retries times:%d\n", retries);
 		return -ENODEV;
 	}
 	dev_info(&client->dev, "device id=0x%x\n", ret);

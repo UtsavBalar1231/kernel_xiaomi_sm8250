@@ -216,6 +216,10 @@ typedef struct {
 	int			usb_present;
 	int			ibat_now;
 	int			capacity;
+	int			bms_temp;
+	int			ibus_limits;
+	int			effective_ibus;
+	int			thermal_l;
 
 	struct bq2597x			bq2597x;
 	struct sw_charger			sw_chager;
