@@ -2301,6 +2301,12 @@ enum bpf_lwt_encap_mode {
 	BPF_LWT_ENCAP_SEG6_INLINE
 };
 
+#define __bpf_md_ptr(type, name)	\
+union {					\
+	type name;			\
+	__u64 :64;			\
+} __attribute__((aligned(8)))
+
 /* user accessible mirror of in-kernel sk_buff.
  * new fields can only be added to the end of this structure
  */
@@ -2593,6 +2599,9 @@ struct bpf_sock_ops {
 	__u32 sk_txhash;
 	__u64 bytes_received;
 	__u64 bytes_acked;
+	__u32 sk_uid;
+	__u32 voip_daddr;
+	__u32 voip_dport;
 };
 
 /* Definitions for bpf_sock_ops_cb_flags */
@@ -2653,6 +2662,10 @@ enum {
 					 */
 	BPF_SOCK_OPS_TCP_LISTEN_CB,	/* Called on listen(2), right after
 					 * socket transition to LISTEN state.
+					 */
+	BPF_SOCK_OPS_RTT_CB,		/* Called on every RTT.
+					 */
+	BPF_SOCK_OPS_VOIP_CB,		/* Called on every udp states.
 					 */
 };
 
