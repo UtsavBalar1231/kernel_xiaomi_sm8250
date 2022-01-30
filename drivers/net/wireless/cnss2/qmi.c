@@ -243,6 +243,29 @@ static int cnss_wlfw_host_cap_send_sync(struct cnss_plat_data *plat_priv)
 		req->wake_msi_valid = 1;
 	}
 
+#if IS_ENABLED(CONFIG_WIFI_THREE_ANTENNA)
+	req->gpios_valid = 1;
+	/* Format of GPIO configuration -
+	*
+	* A_UINT32 default_output_val:1, - GPIO default Output value if direction is output
+	* reserved1:7, - reserved bits
+	* sw_func:4, - GPIO pin software function selection
+	* pull:2, - GPIO Pull, TLMM_GPIO_CFGn.GPIO_PULL
+	* func:4, - GPIO pin function, TLMM_GPIO_CFGn.FUNC_SEL
+	* drive:3, - GPIO Drive, TLMM_GPIO_CFGn.DRV_STRENGTH
+	* dir:1, - GPIO pin direction: PLAT_GPIO_DIR_INPUT/PLAT_GPIO_DIR_OUTPUT, TLMM_GPIO_CFGn.GPIO_OE
+	* reserved0:2, - reserved bits
+	* gpio_num:8; - GPIO pin number
+	*/
+	/* 1st GPIO,set default GPIO config*/
+	req->gpios[0] = 0x38242F01;
+
+	/* The Nth GPIO if any, and update req->gpios_len accordingly
+	* Ensure gpios_len less than QMI_WLFW_MAX_NUM_GPIO_V01
+	*/
+	req->gpios_len = 1;
+#endif
+
 	req->bdf_support_valid = 1;
 	req->bdf_support = 1;
 
