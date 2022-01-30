@@ -140,6 +140,7 @@ enum ln8000_reg_addr {
     LN8000_REG_V_FLOAT_CTRL     = 0x28,
     LN8000_REG_CHARGE_CTRL      = 0x29,
     LN8000_REG_LION_CTRL        = 0x30,
+    LN8000_REG_PRODUCT_ID	= 0x31,
     LN8000_REG_BC_OP_1          = 0x41,
     LN8000_REG_BC_OP_2          = 0x42,
     LN8000_REG_BC_STS_A         = 0x49,
@@ -154,8 +155,9 @@ enum ln8000_reg_addr {
 #define LN8000_DEVICE_ID    0x42
 
 enum ln8000_role {
-    LN_PRIMARY              = 0x0,
-    LN_SECONDARY            = 0x1,
+	LN_ROLE_STANDALONE      = 0x0,
+	LN_ROLE_MASTER          = 0x1,
+	LN_ROLE_SLAVE           = 0x2,
 };
 
 enum ln8000_opmode_{
@@ -326,11 +328,20 @@ struct ln8000_info {
     struct delayed_work vac_ov_work;
     bool vac_ov_work_on;
 
+    /* for restore reg_init_val */
+    u32 regulation_ctrl;
+    u32 adc_ctrl;
+    u32 v_float_ctrl;
+    u32 charge_ctrl;
+
 #ifdef LN8000_ROLE_MASTER
     bool ibat_term;             /* battery current below termination threshold */
     bool vbat_rechg;            /* battery voltage below recharge threshold */
     bool vbat_min;              /* battery voltage above min. threshold */
 #endif
+
+	bool standalone_mode_master;
+	bool standalone_mode_slave;
 
     /* debugfs */
     struct dentry *debug_root;

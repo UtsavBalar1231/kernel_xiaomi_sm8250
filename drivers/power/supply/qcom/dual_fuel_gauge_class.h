@@ -11,8 +11,9 @@
 #include <linux/power_supply.h>
 
 #define BQ_REPORT_FULL_SOC 9800
-#define BQ_CHARGE_FULL_SOC 9750
+#define BQ_CHARGE_FULL_SOC 9780
 #define BQ_RECHARGE_SOC 9900
+#define BQ_RESET_BATT_CTRL_SOC 9000
 
 struct dual_fg_info {
 	int fcc_master;

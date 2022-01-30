@@ -84,6 +84,7 @@ enum {
 	BQ25968,
 	BQ25970,
 	SC8551,
+	NU2105,
 };
 
 static int bq2597x_mode_data[] = {
@@ -448,6 +449,41 @@ out:
 	mutex_unlock(&bq->i2c_rw_lock);
 	return ret;
 }
+
+/*********************************************************************/
+//don't use 1:1 mode of sc8551A
+//static int sc8551_set_charge_mode(struct bq2597x *bq, int mode)
+//{
+//	int ret;
+//	u8 val;
+//	if (bq->chip_vendor != SC8551)
+//		return ret;
+//	if (mode != SC8551_CHARGE_MODE_BYPASS && mode != SC8551_CHARGE_MODE_DIV2)
+//		return ret;
+//	val = mode << SC8551_CHARGE_MODE_SHIFT;
+//	ret = bq2597x_update_bits(bq, SC8551_REG_31,
+//				SC8551_CHARGE_MODE_MASK, val);
+//	/* in bypass mode, ovp will be set to half value automatically */
+//	/* in charge_pump mode, should set it manually */
+//	if (mode == SC8551_CHARGE_MODE_DIV2) {
+//		ret = bq2597x_set_acovp_th(bq, bq->cfg->ac_ovp_th);
+//		ret = bq2597x_set_busovp_th(bq, bq->cfg->bus_ovp_th);
+//	}
+//	return ret;
+//}
+//EXPORT_SYMBOL_GPL(sc8551_set_charge_mode);
+//static int sc8551_get_charge_mode(struct bq2597x *bq)
+//{
+//	int ret;
+//	u8 val;
+//	if (bq->chip_vendor != SC8551)
+//		return -1;
+//	ret = bq2597x_read_byte(bq, SC8551_REG_31, &val);
+//	return (int)(val & SC8551_CHARGE_MODE_MASK);
+//}
+//EXPORT_SYMBOL_GPL(sc8551_get_charge_mode);
+
+/*********************************************************************/
 
 static int bq2597x_enable_charge(struct bq2597x *bq, bool enable)
 {
@@ -1064,23 +1100,36 @@ static int bq2597x_get_adc_data(struct bq2597x *bq, int channel,  int *result)
 {
 	int ret;
 	u16 val;
+	u8 val_l, val_h;
 	s16 t;
 
 	if (channel < 0 || channel >= ADC_MAX_NUM)
 		return -EINVAL;
 
-	ret = bq2597x_read_word(bq, ADC_REG_BASE + (channel << 1), &val);
-	if (ret < 0)
-		return ret;
-	t = val & 0xFF;
-	t <<= 8;
-	t |= (val >> 8) & 0xFF;
-	*result = t;
+	if (bq->chip_vendor == NU2105) {
+		ret = bq2597x_read_byte(bq, ADC_REG_BASE + (channel << 1), &val_h);
+		ret |= bq2597x_read_byte(bq, ADC_REG_BASE + (channel << 1) + 1, &val_l);
+		if (ret < 0)
+			return ret;
+		t = val_l + (val_h << 8);
+		/* vbat need calibration read by NU2105 */
+		if (channel == ADC_VBAT)
+			t = t * (1 + 1.803 * 0.001);
+		*result = t;
+	} else {
+		ret = bq2597x_read_word(bq, ADC_REG_BASE + (channel << 1), &val);
+		if (ret < 0)
+			return ret;
+		t = val & 0xFF;
+		t <<= 8;
+		t |= (val >> 8) & 0xFF;
+		*result = t;
 
-	if (bq->chip_vendor == SC8551) {
-		kernel_neon_begin();
-		*result = (int)(t * sc8551_adc_lsb[channel]);
-		kernel_neon_end();
+		if (bq->chip_vendor == SC8551) {
+			kernel_neon_begin();
+			*result = (int)(t * sc8551_adc_lsb[channel]);
+			kernel_neon_end();
+		}
 	}
 
 	return 0;
@@ -1420,6 +1469,8 @@ static int bq2597x_detect_device(struct bq2597x *bq)
 		pr_err("detect device:%d\n", data);
 		if (data == SC8551_DEVICE_ID || data == SC8551A_DEVICE_ID)
 			bq->chip_vendor = SC8551;
+		else if (data == NU2105_DEVICE_ID)
+			bq->chip_vendor = NU2105;
 		else if (data == BQ25968_DEV_ID)
 			bq->chip_vendor = BQ25968;
 		else
@@ -1766,7 +1817,10 @@ static int bq2597x_init_regulation(struct bq2597x *bq)
 	bq2597x_set_vdrop_deglitch(bq, 5000);
 	bq2597x_set_vdrop_th(bq, 400);
 
-	bq2597x_enable_regulation(bq, true);
+	if (bq->chip_vendor == NU2105)
+		bq2597x_enable_regulation(bq, false);
+	else
+		bq2597x_enable_regulation(bq, true);
 
 	return 0;
 }
@@ -1775,8 +1829,40 @@ static int bq2597x_init_device(struct bq2597x *bq)
 {
 	int ret;
 	u8 val;
-	bq2597x_enable_wdt(bq, false);
 
+	if (bq->chip_vendor == NU2105) {
+		//Set AC_OVP [0:2] = 0
+		bq2597x_set_acovp_th(bq, 12);
+
+		/*nu2105 init*/
+		ret = bq2597x_write_byte(bq, 0x00, 0x3d);
+		ret = bq2597x_write_byte(bq, 0x01, 0x34);
+		ret = bq2597x_write_byte(bq, 0x02, 0x3c);
+		ret = bq2597x_write_byte(bq, 0x03, 0x37);
+		ret = bq2597x_write_byte(bq, 0x04, 0x28);
+		ret = bq2597x_write_byte(bq, 0x05, 0x1d);
+		ret = bq2597x_write_byte(bq, 0x06, 0x51);
+		ret = bq2597x_write_byte(bq, 0x07, 0x46);
+		ret = bq2597x_write_byte(bq, 0x08, 0x0c);
+		ret = bq2597x_write_byte(bq, 0x09, 0x4c);
+		ret = bq2597x_write_byte(bq, 0x0B, 0x44);
+		ret = bq2597x_write_byte(bq, 0x0C, 0x17);
+		ret = bq2597x_write_byte(bq, 0x0F, 0x01);
+		ret = bq2597x_write_byte(bq, 0x12, 0x0e);
+		ret = bq2597x_write_byte(bq, 0x14, 0xa8);
+		ret = bq2597x_write_byte(bq, 0x15, 0x06);
+		ret = bq2597x_write_byte(bq, 0x28, 0x28);
+		ret = bq2597x_write_byte(bq, 0x29, 0x28);
+		ret = bq2597x_write_byte(bq, 0x2A, 0xc8);
+		ret = bq2597x_write_byte(bq, 0x2B, 0xe4);
+		ret = bq2597x_write_byte(bq, 0x2C, 0x00);
+		ret = bq2597x_write_byte(bq, 0x2D, 0x00);
+		ret = bq2597x_write_byte(bq, 0x2E, 0x18);
+		ret = bq2597x_write_byte(bq, 0x2F, 0x20);
+		/*nu2105 init*/
+	}
+
+	bq2597x_enable_wdt(bq, false);
 	bq2597x_set_ss_timeout(bq, 1500);
 	bq2597x_set_ibus_ucp_thr(bq, 300);
 	bq2597x_enable_ucp(bq,1);
@@ -1804,6 +1890,7 @@ static int bq2597x_set_present(struct bq2597x *bq, bool present)
 
 	if (present)
 		bq2597x_init_device(bq);
+
 	return 0;
 }
 
@@ -2475,6 +2562,7 @@ static int bq2597x_charger_probe(struct i2c_client *client,
 		return -EIO;
 
 	ret = bq2597x_init_device(bq);
+
 	if (ret) {
 		bq_err("Failed to init device\n");
 		return ret;
