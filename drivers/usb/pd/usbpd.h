@@ -77,6 +77,7 @@ struct usbpd_pdo {
 
 int usbpd_get_pps_status(struct usbpd *pd, u32 *status);
 int usbpd_fetch_pdo(struct usbpd *pd, struct usbpd_pdo *pdos);
+int usbpd_get_current_state(struct usbpd *pd);
 
 #if IS_ENABLED(CONFIG_QPNP_USB_PDPHY)
 int pd_phy_open(struct pd_phy_params *params);
