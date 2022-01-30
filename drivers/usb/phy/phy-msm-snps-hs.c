@@ -668,6 +668,7 @@ static int msm_hsphy_dpdm_regulator_disable(struct regulator_dev *rdev)
 			 * and avoid extra current consumption.
 			 */
 			msm_hsphy_reset(phy);
+			msm_hsphy_enable_clocks(phy, false);
 			ret = msm_hsphy_enable_power(phy, false);
 			if (ret < 0) {
 				mutex_unlock(&phy->phy_lock);
