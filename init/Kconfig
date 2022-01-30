@@ -1093,6 +1093,28 @@ config SCHED_CORE_CTL
 
 	  If unsure, say N here.
 
+config MIHW
+	bool "enable miui optimization"
+	default n
+	help
+	  This adds support for enabling miui specific optimization.
+
+	  If unsure, say N here.
+
+config PERF_HUMANTASK
+	bool "enable feature humantask"
+	depends on MIHW && MILLET
+	default n
+	help
+	  support switch on/off of sched humantask.
+
+config KPERFEVENTS
+	bool "enable kperfevents"
+	depends on MIHW
+	default n
+	help
+	  support switch on/off of kperfevents.
+
 menuconfig NAMESPACES
 	bool "Namespaces support" if EXPERT
 	depends on MULTIUSER

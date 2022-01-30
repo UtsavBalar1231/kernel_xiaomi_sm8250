@@ -199,6 +199,9 @@ struct bio {
 	};
 
 	unsigned short		bi_vcnt;	/* how many bio_vec's */
+#if IS_ENABLED(CONFIG_PERF_HUMANTASK)
+	unsigned int            human_task;
+#endif
 
 	/*
 	 * Everything starting with bi_max_vecs will be preserved by bio_reset()

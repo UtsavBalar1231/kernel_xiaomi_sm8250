@@ -1,0 +1,11 @@
+config MILLET
+	bool "frozen framework"
+	depends on MIHW
+	help
+	  Mi frozen function
+
+config MIGT
+        bool "boost cpufreq when load high"
+	depends on MIHW
+        help
+          Boost cpufreq when current frame drawing time too long

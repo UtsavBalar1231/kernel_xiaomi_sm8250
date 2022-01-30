@@ -185,6 +185,10 @@ struct task_struct init_task
 #ifdef CONFIG_SECURITY
 	.security	= NULL,
 #endif
+#if IS_ENABLED(CONFIG_KPERFEVENTS)
+	.kperfevents_lock = __RW_LOCK_UNLOCKED(tsk.kperfevents_lock),
+	.kperfevents = NULL,
+#endif
 };
 EXPORT_SYMBOL(init_task);
 
