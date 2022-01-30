@@ -452,6 +452,7 @@ struct aw8697 {
 	unsigned char max_pos_beme;
 	unsigned char max_neg_beme;
 	unsigned char f0_cali_flag;
+	bool f0_cali_status;
 	unsigned int osc_cali_run;
 
 	unsigned char ram_vbat_comp;
