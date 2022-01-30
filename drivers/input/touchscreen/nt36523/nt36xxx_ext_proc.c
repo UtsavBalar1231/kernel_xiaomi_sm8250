@@ -69,6 +69,7 @@ static struct proc_dir_entry *NVT_proc_drag_latency_switch_entry;
 static struct proc_dir_entry *NVT_proc_small_jitter_switch_entry;
 static struct proc_dir_entry *NVT_proc_xiaomi_lockdown_info_entry;
 static struct proc_dir_entry *NVT_proc_game_mode_switch_entry;
+extern int dsi_panel_lockdown_info_read(unsigned char *plockdowninfo);
 
 /*******************************************************
 Description:
@@ -800,11 +801,19 @@ static const struct file_operations nvt_pen_diff_fops = {
 
 static int nvt_xiaomi_lockdown_info_show(struct seq_file *m, void *v)
 {
-	u8 *lk = ts->lockdown_info;
+	int ret;
 
-	seq_printf(m, "0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x\n",
-                	lk[0], lk[1], lk[2], lk[3], lk[4], lk[5], lk[6], lk[7]);
-    return 0;
+	ret = dsi_panel_lockdown_info_read(ts->lockdown_info);
+	if (ret < 0) {
+		NVT_ERR("can't get lockdown info");
+	} else {
+		seq_printf(m, "0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x\n",
+				ts->lockdown_info[0], ts->lockdown_info[1], ts->lockdown_info[2], ts->lockdown_info[3],
+				ts->lockdown_info[4], ts->lockdown_info[5], ts->lockdown_info[6], ts->lockdown_info[7]);
+
+	}
+
+	return 0;
 }
 
 static int32_t nvt_xiaomi_lockdown_info_open(struct inode *inode, struct file *file)
