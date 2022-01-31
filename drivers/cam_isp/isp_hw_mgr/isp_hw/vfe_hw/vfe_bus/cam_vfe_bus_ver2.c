@@ -261,6 +261,28 @@ static enum cam_vfe_bus_comp_grp_id
 	}
 }
 
+static enum cam_vfe_bus_ver2_comp_grp_type
+	cam_vfe_bus_dual_comp_grp_id_convert(uint32_t comp_grp)
+{
+	switch (comp_grp) {
+	case CAM_VFE_BUS_COMP_GROUP_ID_0:
+		return CAM_VFE_BUS_VER2_COMP_GRP_DUAL_0;
+	case CAM_VFE_BUS_COMP_GROUP_ID_1:
+		return CAM_VFE_BUS_VER2_COMP_GRP_DUAL_1;
+	case CAM_VFE_BUS_COMP_GROUP_ID_2:
+		return CAM_VFE_BUS_VER2_COMP_GRP_DUAL_2;
+	case CAM_VFE_BUS_COMP_GROUP_ID_3:
+		return CAM_VFE_BUS_VER2_COMP_GRP_DUAL_3;
+	case CAM_VFE_BUS_COMP_GROUP_ID_4:
+		return CAM_VFE_BUS_VER2_COMP_GRP_DUAL_4;
+	case CAM_VFE_BUS_COMP_GROUP_ID_5:
+		return CAM_VFE_BUS_VER2_COMP_GRP_DUAL_5;
+	case CAM_VFE_BUS_COMP_GROUP_NONE:
+	default:
+		return CAM_VFE_BUS_VER2_COMP_GRP_MAX;
+	}
+}
+
 static int cam_vfe_bus_put_evt_payload(
 	struct cam_vfe_bus_ver2_common_data     *common_data,
 	struct cam_vfe_bus_irq_evt_payload     **evt_payload)
@@ -1299,10 +1321,9 @@ static int cam_vfe_bus_start_wm(
 			return -EINVAL;
 		}
 	}
-
-	/* Enable WM */
-	cam_io_w_mb(rsrc_data->en_cfg, common_data->mem_base +
-		rsrc_data->hw_regs->cfg);
+	/* enabling Wm configuratons are taken care in update_wm().
+	 * i.e enable wm only if io buffers are allocated
+	 */
 
 	CAM_DBG(CAM_ISP, "WM res %d width = %d, height = %d", rsrc_data->index,
 		rsrc_data->width, rsrc_data->height);
@@ -1784,6 +1805,39 @@ static void cam_vfe_bus_match_comp_grp(
 	*comp_grp = NULL;
 }
 
+static int cam_vfe_bus_get_free_dual_comp_grp(
+	struct cam_vfe_bus_ver2_priv  *ver2_bus_priv,
+	struct cam_isp_resource_node **comp_grp,
+	uint32_t                       comp_grp_local_idx)
+{
+	struct cam_vfe_bus_ver2_comp_grp_data  *rsrc_data = NULL;
+	struct cam_isp_resource_node           *dual_comp_grp_local = NULL;
+	struct cam_isp_resource_node           *dual_comp_grp_local_temp = NULL;
+	int32_t  dual_comp_grp_idx = 0;
+	int rc = -EINVAL;
+
+	dual_comp_grp_idx =
+		cam_vfe_bus_dual_comp_grp_id_convert(comp_grp_local_idx);
+
+	CAM_DBG(CAM_ISP, "dual_comp_grp_idx :%d", dual_comp_grp_idx);
+
+	list_for_each_entry_safe(dual_comp_grp_local, dual_comp_grp_local_temp,
+		&ver2_bus_priv->free_dual_comp_grp, list) {
+		rsrc_data = dual_comp_grp_local->res_priv;
+		CAM_DBG(CAM_ISP, "current grp type : %d expected :%d",
+			rsrc_data->comp_grp_type, dual_comp_grp_idx);
+		if (dual_comp_grp_idx != rsrc_data->comp_grp_type) {
+			continue;
+		} else {
+			list_del_init(&dual_comp_grp_local->list);
+			*comp_grp = dual_comp_grp_local;
+			return 0;
+		}
+	}
+
+	return rc;
+}
+
 static int cam_vfe_bus_acquire_comp_grp(
 	struct cam_vfe_bus_ver2_priv        *ver2_bus_priv,
 	struct cam_isp_out_port_generic_info        *out_port_info,
@@ -1816,9 +1870,15 @@ static int cam_vfe_bus_acquire_comp_grp(
 				CAM_ERR(CAM_ISP, "No Free Composite Group");
 				return -ENODEV;
 			}
-			comp_grp_local = list_first_entry(
-				&ver2_bus_priv->free_dual_comp_grp,
-				struct cam_isp_resource_node, list);
+			rc = cam_vfe_bus_get_free_dual_comp_grp(
+				ver2_bus_priv, &comp_grp_local,
+				bus_comp_grp_id);
+			if (rc || !comp_grp_local) {
+				CAM_ERR(CAM_ISP,
+					"failed to acquire dual comp grp for :%d rc :%d",
+					bus_comp_grp_id, rc);
+					return rc;
+			}
 			rsrc_data = comp_grp_local->res_priv;
 			rc = cam_vfe_bus_ver2_get_intra_client_mask(
 				dual_slave_core,

@@ -43,8 +43,11 @@ static int cam_fd_dev_open(struct v4l2_subdev *sd,
 {
 	struct cam_fd_dev *fd_dev = &g_fd_dev;
 
+	cam_req_mgr_rwsem_read_op(CAM_SUBDEV_LOCK);
+
 	if (!fd_dev->probe_done) {
 		CAM_ERR(CAM_FD, "FD Dev not initialized, fd_dev=%pK", fd_dev);
+		cam_req_mgr_rwsem_read_op(CAM_SUBDEV_UNLOCK);
 		return -ENODEV;
 	}
 
@@ -52,6 +55,8 @@ static int cam_fd_dev_open(struct v4l2_subdev *sd,
 	fd_dev->open_cnt++;
 	CAM_DBG(CAM_FD, "FD Subdev open count %d", fd_dev->open_cnt);
 	mutex_unlock(&fd_dev->lock);
+
+	cam_req_mgr_rwsem_read_op(CAM_SUBDEV_UNLOCK);
 
 	return 0;
 }

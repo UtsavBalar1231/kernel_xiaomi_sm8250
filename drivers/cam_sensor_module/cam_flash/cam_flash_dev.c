@@ -66,6 +66,11 @@ static int32_t cam_flash_driver_cmd(struct cam_flash_ctrl *fctrl,
 
 		flash_acq_dev.device_handle =
 			cam_create_device_hdl(&bridge_params);
+		if (flash_acq_dev.device_handle <= 0) {
+			rc = -EFAULT;
+			CAM_ERR(CAM_FLASH, "Can not create device handle");
+			goto release_mutex;
+		}
 		fctrl->bridge_intf.device_hdl =
 			flash_acq_dev.device_handle;
 		fctrl->bridge_intf.session_hdl =

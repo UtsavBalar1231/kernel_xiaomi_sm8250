@@ -14,6 +14,7 @@
 #include <media/cam_req_mgr.h>
 #include "cam_req_mgr_util.h"
 #include "cam_debug_util.h"
+#include "cam_subdev.h"
 
 static struct cam_req_mgr_util_hdl_tbl *hdl_tbl;
 static DEFINE_SPINLOCK(hdl_tbl_lock);
@@ -159,6 +160,14 @@ int32_t cam_create_device_hdl(struct cam_create_dev_hdl *hdl_data)
 	int idx;
 	int rand = 0;
 	int32_t handle;
+	bool crm_active;
+
+	crm_active = cam_req_mgr_is_open();
+	if (!crm_active) {
+		CAM_ERR(CAM_ICP, "CRM is not ACTIVE");
+		spin_unlock_bh(&hdl_tbl_lock);
+		return -EINVAL;
+	}
 
 	spin_lock_bh(&hdl_tbl_lock);
 	if (!hdl_tbl) {
