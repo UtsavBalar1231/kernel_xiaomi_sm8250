@@ -4856,7 +4856,7 @@ int msm_comm_qbufs_batch(struct msm_vidc_inst *inst,
 loop_end:
 		/* Queue pending buffers till batch size */
 		if (num_buffers_queued == inst->batch.size) {
-			s_vpr_e(inst->sid, "%s: Queue buffers till batch size\n");
+			s_vpr_l(inst->sid, "Queue buffers till batch size\n");
 			break;
 		}
 	}
