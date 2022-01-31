@@ -1420,6 +1420,8 @@ QDF_STATUS hdd_wlan_shutdown(void)
 		scheduler_resume();
 		hdd_ctx->is_scheduler_suspended = false;
 		hdd_ctx->is_wiphy_suspended = false;
+		ucfg_pmo_resume_all_components(hdd_ctx->psoc,
+					       QDF_SYSTEM_SUSPEND);
 	}
 
 	wlan_hdd_rx_thread_resume(hdd_ctx);
@@ -1626,6 +1628,10 @@ QDF_STATUS hdd_wlan_re_init(void)
 		hdd_ssr_restart_sap(hdd_ctx);
 	hdd_is_interface_down_during_ssr(hdd_ctx);
 	hdd_wlan_ssr_reinit_event();
+
+	if (hdd_ctx->hdd_wlan_suspended)
+		hdd_ctx->hdd_wlan_suspended = false;
+
 	return QDF_STATUS_SUCCESS;
 
 err_re_init:
