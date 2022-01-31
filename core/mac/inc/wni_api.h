@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -247,7 +248,8 @@ enum eWniMsgTypes {
 				SIR_SME_MSG_TYPES_BEGIN + 161,
 	eWNI_SME_MONITOR_MODE_VDEV_UP = SIR_SME_MSG_TYPES_BEGIN + 162,
 	eWNI_SME_UPDATE_SESSION_EDCA_TXQ_PARAMS = SIR_SME_MSG_TYPES_BEGIN + 163,
-	eWNI_SME_MSG_TYPES_END = SIR_SME_MSG_TYPES_BEGIN + 164
+	eWNI_SME_ABORT_CONN_TIMER = SIR_SME_MSG_TYPES_BEGIN + 164,
+	eWNI_SME_MSG_TYPES_END = SIR_SME_MSG_TYPES_BEGIN + 165
 };
 
 typedef struct sAniCfgTxRateCtrs {
