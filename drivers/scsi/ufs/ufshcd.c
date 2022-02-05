@@ -8611,9 +8611,9 @@ static int ufs_get_device_desc(struct ufs_hba *hba,
 {
 	int err;
 	size_t buff_len;
-	u8 model_index, lun;
+	__maybe_unused u8 model_index, lun;
 	u8 *desc_buf;
-	u32 d_lu_wb_buf_alloc;
+	__maybe_unused u32 d_lu_wb_buf_alloc;
 
 	buff_len = max_t(size_t, hba->desc_size.dev_desc,
 			 QUERY_DESC_MAX_SIZE + 1);
@@ -8641,8 +8641,9 @@ static int ufs_get_device_desc(struct ufs_hba *hba,
 	model_index = desc_buf[DEVICE_DESC_PARAM_PRDCT_NAME];
 
 
+
 	/* Enable WB only for UFS-3.1 or UFS-2.2 OR if desc len >= 0x59 */
-	if ((dev_desc->wspecversion >= 0x310) ||
+	/*if ((dev_desc->wspecversion >= 0x310) ||
 	    (dev_desc->wspecversion == 0x220) ||
 	    (dev_desc->wmanufacturerid == UFS_VENDOR_TOSHIBA &&
 	     dev_desc->wspecversion >= 0x300 &&
@@ -8678,9 +8679,9 @@ static int ufs_get_device_desc(struct ufs_hba *hba,
 				break;
 			}
 		}
-	}
+	}*/
 
-skip_unit_desc:
+//skip_unit_desc:
 	/* Zero-pad entire buffer for string termination. */
 	memset(desc_buf, 0, buff_len);
 
