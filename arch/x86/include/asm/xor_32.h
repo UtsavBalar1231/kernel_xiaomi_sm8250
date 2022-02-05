@@ -29,7 +29,8 @@
 #include <asm/fpu/api.h>
 
 static void
-xor_pII_mmx_2(unsigned long bytes, unsigned long *p1, unsigned long *p2)
+xor_pII_mmx_2(unsigned long bytes, unsigned long * __restrict p1,
+	      const unsigned long * __restrict p2)
 {
 	unsigned long lines = bytes >> 7;
 
@@ -72,8 +73,9 @@ xor_pII_mmx_2(unsigned long bytes, unsigned long *p1, unsigned long *p2)
 }
 
 static void
-xor_pII_mmx_3(unsigned long bytes, unsigned long *p1, unsigned long *p2,
-	      unsigned long *p3)
+xor_pII_mmx_3(unsigned long bytes, unsigned long * __restrict p1,
+	      const unsigned long * __restrict p2,
+	      const unsigned long * __restrict p3)
 {
 	unsigned long lines = bytes >> 7;
 
@@ -121,8 +123,10 @@ xor_pII_mmx_3(unsigned long bytes, unsigned long *p1, unsigned long *p2,
 }
 
 static void
-xor_pII_mmx_4(unsigned long bytes, unsigned long *p1, unsigned long *p2,
-	      unsigned long *p3, unsigned long *p4)
+xor_pII_mmx_4(unsigned long bytes, unsigned long * __restrict p1,
+	      const unsigned long * __restrict p2,
+	      const unsigned long * __restrict p3,
+	      const unsigned long * __restrict p4)
 {
 	unsigned long lines = bytes >> 7;
 
@@ -176,8 +180,11 @@ xor_pII_mmx_4(unsigned long bytes, unsigned long *p1, unsigned long *p2,
 
 
 static void
-xor_pII_mmx_5(unsigned long bytes, unsigned long *p1, unsigned long *p2,
-	      unsigned long *p3, unsigned long *p4, unsigned long *p5)
+xor_pII_mmx_5(unsigned long bytes, unsigned long * __restrict p1,
+	      const unsigned long * __restrict p2,
+	      const unsigned long * __restrict p3,
+	      const unsigned long * __restrict p4,
+	      const unsigned long * __restrict p5)
 {
 	unsigned long lines = bytes >> 7;
 
@@ -256,7 +263,8 @@ xor_pII_mmx_5(unsigned long bytes, unsigned long *p1, unsigned long *p2,
 #undef BLOCK
 
 static void
-xor_p5_mmx_2(unsigned long bytes, unsigned long *p1, unsigned long *p2)
+xor_p5_mmx_2(unsigned long bytes, unsigned long * __restrict p1,
+	     const unsigned long * __restrict p2)
 {
 	unsigned long lines = bytes >> 6;
 
@@ -303,8 +311,9 @@ xor_p5_mmx_2(unsigned long bytes, unsigned long *p1, unsigned long *p2)
 }
 
 static void
-xor_p5_mmx_3(unsigned long bytes, unsigned long *p1, unsigned long *p2,
-	     unsigned long *p3)
+xor_p5_mmx_3(unsigned long bytes, unsigned long * __restrict p1,
+	     const unsigned long * __restrict p2,
+	     const unsigned long * __restrict p3)
 {
 	unsigned long lines = bytes >> 6;
 
@@ -360,8 +369,10 @@ xor_p5_mmx_3(unsigned long bytes, unsigned long *p1, unsigned long *p2,
 }
 
 static void
-xor_p5_mmx_4(unsigned long bytes, unsigned long *p1, unsigned long *p2,
-	     unsigned long *p3, unsigned long *p4)
+xor_p5_mmx_4(unsigned long bytes, unsigned long * __restrict p1,
+	     const unsigned long * __restrict p2,
+	     const unsigned long * __restrict p3,
+	     const unsigned long * __restrict p4)
 {
 	unsigned long lines = bytes >> 6;
 
@@ -426,8 +437,11 @@ xor_p5_mmx_4(unsigned long bytes, unsigned long *p1, unsigned long *p2,
 }
 
 static void
-xor_p5_mmx_5(unsigned long bytes, unsigned long *p1, unsigned long *p2,
-	     unsigned long *p3, unsigned long *p4, unsigned long *p5)
+xor_p5_mmx_5(unsigned long bytes, unsigned long * __restrict p1,
+	     const unsigned long * __restrict p2,
+	     const unsigned long * __restrict p3,
+	     const unsigned long * __restrict p4,
+	     const unsigned long * __restrict p5)
 {
 	unsigned long lines = bytes >> 6;
 

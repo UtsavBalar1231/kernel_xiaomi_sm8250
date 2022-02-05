@@ -32,7 +32,8 @@
 		BLOCK4(8) \
 		BLOCK4(12)
 
-static void xor_avx_2(unsigned long bytes, unsigned long *p0, unsigned long *p1)
+static void xor_avx_2(unsigned long bytes, unsigned long * __restrict p0,
+		      const unsigned long * __restrict p1)
 {
 	unsigned long lines = bytes >> 9;
 
@@ -58,8 +59,9 @@ do { \
 	kernel_fpu_end();
 }
 
-static void xor_avx_3(unsigned long bytes, unsigned long *p0, unsigned long *p1,
-	unsigned long *p2)
+static void xor_avx_3(unsigned long bytes, unsigned long * __restrict p0,
+		      const unsigned long * __restrict p1,
+		      const unsigned long * __restrict p2)
 {
 	unsigned long lines = bytes >> 9;
 
@@ -88,8 +90,10 @@ do { \
 	kernel_fpu_end();
 }
 
-static void xor_avx_4(unsigned long bytes, unsigned long *p0, unsigned long *p1,
-	unsigned long *p2, unsigned long *p3)
+static void xor_avx_4(unsigned long bytes, unsigned long * __restrict p0,
+		      const unsigned long * __restrict p1,
+		      const unsigned long * __restrict p2,
+		      const unsigned long * __restrict p3)
 {
 	unsigned long lines = bytes >> 9;
 
@@ -121,8 +125,11 @@ do { \
 	kernel_fpu_end();
 }
 
-static void xor_avx_5(unsigned long bytes, unsigned long *p0, unsigned long *p1,
-	unsigned long *p2, unsigned long *p3, unsigned long *p4)
+static void xor_avx_5(unsigned long bytes, unsigned long * __restrict p0,
+	     const unsigned long * __restrict p1,
+	     const unsigned long * __restrict p2,
+	     const unsigned long * __restrict p3,
+	     const unsigned long * __restrict p4)
 {
 	unsigned long lines = bytes >> 9;
 

@@ -65,7 +65,8 @@
 					op(i + 3, 3)
 
 static void
-xor_sse_2(unsigned long bytes, unsigned long *p1, unsigned long *p2)
+xor_sse_2(unsigned long bytes, unsigned long * __restrict p1,
+	  const unsigned long * __restrict p2)
 {
 	unsigned long lines = bytes >> 8;
 
@@ -116,7 +117,8 @@ xor_sse_2(unsigned long bytes, unsigned long *p1, unsigned long *p2)
 }
 
 static void
-xor_sse_2_pf64(unsigned long bytes, unsigned long *p1, unsigned long *p2)
+xor_sse_2_pf64(unsigned long bytes, unsigned long * __restrict p1,
+	       const unsigned long * __restrict p2)
 {
 	unsigned long lines = bytes >> 8;
 
@@ -150,8 +152,9 @@ xor_sse_2_pf64(unsigned long bytes, unsigned long *p1, unsigned long *p2)
 }
 
 static void
-xor_sse_3(unsigned long bytes, unsigned long *p1, unsigned long *p2,
-	  unsigned long *p3)
+xor_sse_3(unsigned long bytes, unsigned long * __restrict p1,
+	  const unsigned long * __restrict p2,
+	  const unsigned long * __restrict p3)
 {
 	unsigned long lines = bytes >> 8;
 
@@ -209,8 +212,9 @@ xor_sse_3(unsigned long bytes, unsigned long *p1, unsigned long *p2,
 }
 
 static void
-xor_sse_3_pf64(unsigned long bytes, unsigned long *p1, unsigned long *p2,
-	       unsigned long *p3)
+xor_sse_3_pf64(unsigned long bytes, unsigned long * __restrict p1,
+	       const unsigned long * __restrict p2,
+	       const unsigned long * __restrict p3)
 {
 	unsigned long lines = bytes >> 8;
 
@@ -246,8 +250,10 @@ xor_sse_3_pf64(unsigned long bytes, unsigned long *p1, unsigned long *p2,
 }
 
 static void
-xor_sse_4(unsigned long bytes, unsigned long *p1, unsigned long *p2,
-	  unsigned long *p3, unsigned long *p4)
+xor_sse_4(unsigned long bytes, unsigned long * __restrict p1,
+	  const unsigned long * __restrict p2,
+	  const unsigned long * __restrict p3,
+	  const unsigned long * __restrict p4)
 {
 	unsigned long lines = bytes >> 8;
 
@@ -312,8 +318,10 @@ xor_sse_4(unsigned long bytes, unsigned long *p1, unsigned long *p2,
 }
 
 static void
-xor_sse_4_pf64(unsigned long bytes, unsigned long *p1, unsigned long *p2,
-	       unsigned long *p3, unsigned long *p4)
+xor_sse_4_pf64(unsigned long bytes, unsigned long * __restrict p1,
+	       const unsigned long * __restrict p2,
+	       const unsigned long * __restrict p3,
+	       const unsigned long * __restrict p4)
 {
 	unsigned long lines = bytes >> 8;
 
@@ -351,8 +359,11 @@ xor_sse_4_pf64(unsigned long bytes, unsigned long *p1, unsigned long *p2,
 }
 
 static void
-xor_sse_5(unsigned long bytes, unsigned long *p1, unsigned long *p2,
-	  unsigned long *p3, unsigned long *p4, unsigned long *p5)
+xor_sse_5(unsigned long bytes, unsigned long * __restrict p1,
+	  const unsigned long * __restrict p2,
+	  const unsigned long * __restrict p3,
+	  const unsigned long * __restrict p4,
+	  const unsigned long * __restrict p5)
 {
 	unsigned long lines = bytes >> 8;
 
@@ -424,8 +435,11 @@ xor_sse_5(unsigned long bytes, unsigned long *p1, unsigned long *p2,
 }
 
 static void
-xor_sse_5_pf64(unsigned long bytes, unsigned long *p1, unsigned long *p2,
-	       unsigned long *p3, unsigned long *p4, unsigned long *p5)
+xor_sse_5_pf64(unsigned long bytes, unsigned long * __restrict p1,
+	       const unsigned long * __restrict p2,
+	       const unsigned long * __restrict p3,
+	       const unsigned long * __restrict p4,
+	       const unsigned long * __restrict p5)
 {
 	unsigned long lines = bytes >> 8;
 
