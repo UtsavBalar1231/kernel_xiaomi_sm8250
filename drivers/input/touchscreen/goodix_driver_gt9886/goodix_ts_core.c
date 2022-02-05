@@ -33,6 +33,10 @@
 #include <linux/pm_wakeup.h>
 #include "goodix_ts_core.h"
 
+#ifdef CONFIG_TOUCHSCREEN_COMMON
+#include <linux/input/tp_common.h>
+#endif
+
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 38)
 #include <linux/input/mt.h>
 #define INPUT_TYPE_B_PROTOCOL
@@ -920,6 +924,32 @@ static struct attribute *sysfs_attrs[] = {
 static const struct attribute_group sysfs_group = {
 	.attrs = sysfs_attrs,
 };
+
+#ifdef CONFIG_TOUCHSCREEN_COMMON
+static ssize_t double_tap_show(struct kobject *kobj,
+				struct kobj_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d\n", goodix_core_data->double_wakeup);
+}
+
+static ssize_t double_tap_store(struct kobject *kobj,
+	struct kobj_attribute *attr, const char *buf, size_t count)
+{
+	int rc, val;
+
+	rc = kstrtoint(buf, 10, &val);
+	if (rc)
+		return -EINVAL;
+
+	goodix_core_data->double_wakeup = !!val;
+	return count;
+}
+
+static struct tp_common_ops double_tap_ops = {
+	.show = double_tap_show,
+	.store = double_tap_store
+};
+#endif
 
 static ssize_t goodix_sysfs_config_write(struct file *file,
 		struct kobject *kobj, struct bin_attribute *attr,
@@ -3143,6 +3173,14 @@ static int goodix_ts_probe(struct platform_device *pdev)
 		ts_info("Failed start cfg_bin_proc");
 		goto out;
 	}
+
+#ifdef CONFIG_TOUCHSCREEN_COMMON
+	r = tp_common_set_double_tap_ops(&double_tap_ops);
+	if (r < 0) {
+		ts_err("%s: Failed to create double_tap node err=%d\n",
+			__func__, r);
+	}
+#endif
 
 	core_data->event_wq = alloc_workqueue("gdt-event-queue",
 				WQ_UNBOUND | WQ_HIGHPRI | WQ_CPU_INTENSIVE, 1);
