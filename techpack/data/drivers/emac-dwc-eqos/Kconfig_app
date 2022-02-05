@@ -1,0 +1,6 @@
+config EMAC_APP
+       bool "EMAC app support"
+       depends on EMAC_DWC_EQOS
+       default y
+       help
+         Say y here if you want to run Neutrino ethernet open function
