@@ -76,3 +76,11 @@
  * clang: https://clang.llvm.org/docs/AttributeReference.html#overloadable
  */
 #define __overloadable			__attribute__((__overloadable__))
+
+/*
+ * Optional: only supported since clang >= 14.0
+ *
+ * clang: https://clang.llvm.org/docs/AttributeReference.html#diagnose_as_builtin
+ */
+#define __diagnose_as(builtin...)	__attribute__((__diagnose_as_builtin__(builtin)))
+
