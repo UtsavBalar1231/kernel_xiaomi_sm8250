@@ -64,3 +64,10 @@
 #else
 # define __noscs
 #endif
+
+/*
+ * Note: the "type" argument should match any __builtin_object_size(p, type) usage.
+ *
+ * clang: https://clang.llvm.org/docs/AttributeReference.html#pass-object-size-pass-dynamic-object-size
+ */
+#define __pass_object_size(type)	__attribute__((__pass_object_size__(type)))
