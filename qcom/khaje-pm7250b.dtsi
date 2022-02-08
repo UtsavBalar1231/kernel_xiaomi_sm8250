@@ -87,3 +87,7 @@
 		};
 	};
 };
+
+&pm7250b_pon {
+	qcom,log-kpd-event;
+};

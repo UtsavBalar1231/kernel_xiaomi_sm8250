@@ -638,7 +638,7 @@
 
 &dsi_dual_arglass_seeya_video {
 	qcom,mdss-dsi-min-refresh-rate = <60>;
-	qcom,mdss-dsi-max-refresh-rate = <60>;
+	qcom,mdss-dsi-max-refresh-rate = <90>;
 	qcom,mdss-dsi-panel-status-command = [06 01 00 01 00 00 01 0a];
 	qcom,mdss-dsi-panel-status-command-state = "dsi_hs_mode";
 	qcom,mdss-dsi-panel-status-value = <0x9c>;
@@ -649,7 +649,7 @@
 		timing@0 {
 			qcom,mdss-dsi-panel-phy-timings =  [00 11 04 04 12 1E
 				04 04 04 03 02 04 0F 09];
-			qcom,display-topology = <2 0 2>;
+			qcom,display-topology = <2 2 2>;
 			qcom,default-topology-index = <0>;
 		};
 	};

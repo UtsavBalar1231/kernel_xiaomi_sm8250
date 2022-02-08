@@ -360,7 +360,7 @@
 	thermal-zones {
 		xo-therm-buf-adc {
 			polling-delay-passive = <0>;
-			polling-delay = <5000>;
+			polling-delay = <0>;
 			thermal-sensors = <&pm8916_adc_tm_iio
 						VADC_LR_MUX3_BUF_XO_THERM>;
 			thermal-governor = "user_space";
@@ -376,7 +376,7 @@
 
 		xo-therm-adc {
 			polling-delay-passive = <0>;
-			polling-delay = <5000>;
+			polling-delay = <0>;
 			thermal-sensors = <&pm8916_adc_tm_iio
 						VADC_LR_MUX3_XO_THERM>;
 			thermal-governor = "user_space";
@@ -392,7 +392,7 @@
 
 		pa-therm0-adc {
 			polling-delay-passive = <0>;
-			polling-delay = <5000>;
+			polling-delay = <0>;
 			thermal-sensors = <&pm8916_adc_tm_iio
 						VADC_LR_MUX7_HW_ID>;
 			thermal-governor = "user_space";
@@ -408,7 +408,7 @@
 
 		skin-therm-adc {
 			polling-delay-passive = <0>;
-			polling-delay = <5000>;
+			polling-delay = <0>;
 			thermal-sensors = <&pm8916_adc_tm_iio
 						VADC_P_MUX2_1_1>;
 			thermal-governor = "user_space";
