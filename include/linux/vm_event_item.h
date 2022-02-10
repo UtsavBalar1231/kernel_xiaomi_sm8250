@@ -114,6 +114,12 @@ enum vm_event_item { PGPGIN, PGPGOUT, PGPGOUTCLEAN, PSWPIN, PSWPOUT,
 		SPECULATIVE_PGFAULT_ANON,	/* Speculative page fault field */
 		SPECULATIVE_PGFAULT_FILE,	/* Speculative page fault field */
 #endif
+#ifdef CONFIG_ZRAM_LRU_WRITEBACK
+		SQZR_OBJCNT,
+		SQZR_COUNT,
+		SQZR_READ,
+		SQZR_WRITE,
+#endif
 		NR_VM_EVENT_ITEMS
 };
 

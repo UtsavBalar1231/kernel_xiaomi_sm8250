@@ -32,7 +32,7 @@ config ZRAM_DEDUP
 config ZRAM_WRITEBACK
        bool "Write back incompressible or idle page to backing device"
        depends on ZRAM
-       default n
+       default y
        help
 	 With incompressible page, there is no memory saving to keep it
 	 in memory. Instead, write it out to backing device.
@@ -63,3 +63,15 @@ config MIUI_ZRAM_MEMORY_TRACKING
 	  /sys/block/zramX/.
 
 	  See Documentation/blockdev/zram.txt for more information.
+
+config ZRAM_LRU_WRITEBACK
+	bool
+	depends on ZRAM_WRITEBACK
+	default y
+	help
+	  This feature supports zram lru-based writeback (SQZR).
+
+config ZRAM_LRU_WRITEBACK_LIMIT
+	int "Limit zram lru writeback"
+	default 1024
+	depends on ZRAM_LRU_WRITEBACK
