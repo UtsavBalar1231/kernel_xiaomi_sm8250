@@ -3634,6 +3634,7 @@ void hdd_set_qmi_stats_enabled(struct hdd_context *hdd_ctx)
 }
 #endif
 
+#if IS_ENABLED(CONFIG_BOARD_ELISH) || IS_ENABLED(CONFIG_BOARD_ENUMA) || IS_ENABLED(CONFIG_BOARD_DAGU)
 static void
 hdd_install_key_comp_cb(struct wma_install_key_complete_param *param)
 {
@@ -3677,6 +3678,7 @@ int hdd_wait_for_install_key_complete(struct hdd_adapter *adapter)
 	hdd_debug("exit with status %d", status);
 	return qdf_status_to_os_return(status);
 }
+#endif
 
 int hdd_wlan_start_modules(struct hdd_context *hdd_ctx, bool reinit)
 {
@@ -3799,7 +3801,9 @@ int hdd_wlan_start_modules(struct hdd_context *hdd_ctx, bool reinit)
 			goto psoc_close;
 		}
 
+#if IS_ENABLED(CONFIG_BOARD_ELISH) || IS_ENABLED(CONFIG_BOARD_ENUMA) || IS_ENABLED(CONFIG_BOARD_DAGU)
 		wma_register_install_key_complete_cb(hdd_install_key_comp_cb);
+#endif
 
 		hdd_set_qmi_stats_enabled(hdd_ctx);
 
@@ -6523,7 +6527,9 @@ struct hdd_adapter *hdd_open_adapter(struct hdd_context *hdd_ctx, uint8_t sessio
 	qdf_mutex_create(&adapter->blocked_scan_request_q_lock);
 	qdf_event_create(&adapter->acs_complete_event);
 	qdf_event_create(&adapter->peer_cleanup_done);
+#if IS_ENABLED(CONFIG_BOARD_ELISH) || IS_ENABLED(CONFIG_BOARD_ENUMA) || IS_ENABLED(CONFIG_BOARD_DAGU)
 	qdf_event_create(&adapter->install_key_complete);
+#endif
 	hdd_sta_info_init(&adapter->sta_info_list);
 	hdd_sta_info_init(&adapter->cache_sta_info_list);
 	qdf_atomic_init(&adapter->gro_disallowed);
@@ -6586,7 +6592,9 @@ static void __hdd_close_adapter(struct hdd_context *hdd_ctx,
 	qdf_mutex_destroy(&adapter->blocked_scan_request_q_lock);
 	policy_mgr_clear_concurrency_mode(hdd_ctx->psoc, adapter->device_mode);
 	qdf_event_destroy(&adapter->acs_complete_event);
+#if IS_ENABLED(CONFIG_BOARD_ELISH) || IS_ENABLED(CONFIG_BOARD_ENUMA) || IS_ENABLED(CONFIG_BOARD_DAGU)
 	qdf_event_destroy(&adapter->install_key_complete);
+#endif
 	qdf_event_destroy(&adapter->peer_cleanup_done);
 	hdd_adapter_feature_update_work_deinit(adapter);
 	hdd_cleanup_adapter(hdd_ctx, adapter, rtnl_held);
