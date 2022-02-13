@@ -856,6 +856,7 @@ struct wma_wlm_stats_data {
 };
 #endif
 
+#if IS_ENABLED(CONFIG_BOARD_ELISH) || IS_ENABLED(CONFIG_BOARD_ENUMA) || IS_ENABLED(CONFIG_BOARD_DAGU)
 /**
  * struct wma_install_key_complete_param - parameters for installking
  *   key completion callback
@@ -893,6 +894,7 @@ typedef void (*wma_install_key_complete_cb)(
  *
  */
 void wma_register_install_key_complete_cb(wma_install_key_complete_cb cb);
+#endif
 
 /**
  * struct t_wma_handle - wma context
@@ -1161,7 +1163,9 @@ typedef struct {
 #ifdef WLAN_FEATURE_PKT_CAPTURE
 	bool is_pktcapture_enabled;
 #endif
+#if IS_ENABLED(CONFIG_BOARD_ELISH) || IS_ENABLED(CONFIG_BOARD_ENUMA) || IS_ENABLED(CONFIG_BOARD_DAGU)
 	wma_install_key_complete_cb install_key_complete_cb;
+#endif
 } t_wma_handle, *tp_wma_handle;
 
 /**
