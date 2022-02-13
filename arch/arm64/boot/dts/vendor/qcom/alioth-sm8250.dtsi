@@ -312,6 +312,7 @@ this file is for attribution only of alioth
 	regulator-min-microvolt = <3304000>;
 	regulator-max-microvolt = <3304000>;
 	qcom,init-voltage = <3304000>;
+	regulator-always-on;
 };
 
 &tlmm {
