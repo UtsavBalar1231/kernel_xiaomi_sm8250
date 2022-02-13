@@ -1483,7 +1483,9 @@ struct hdd_adapter {
 	qdf_work_t netdev_features_update_work;
 	qdf_atomic_t gro_disallowed;
 	uint8_t gro_flushed[DP_MAX_RX_THREADS];
+#if IS_ENABLED(CONFIG_BOARD_ELISH) || IS_ENABLED(CONFIG_BOARD_ENUMA) || IS_ENABLED(CONFIG_BOARD_DAGU)
 	qdf_event_t install_key_complete;
+#endif
 	bool delete_in_progress;
 	qdf_atomic_t net_dev_hold_ref_count[NET_DEV_HOLD_ID_MAX];
 #ifdef CFG_SUPPORT_SCAN_EXT_FLAG
@@ -4770,6 +4772,7 @@ void hdd_init_start_completion(void);
  */
 void hdd_netdev_update_features(struct hdd_adapter *adapter);
 
+#if IS_ENABLED(CONFIG_BOARD_ELISH) || IS_ENABLED(CONFIG_BOARD_ENUMA) || IS_ENABLED(CONFIG_BOARD_DAGU)
 /**
  * hdd_start_install_key - indicate install key start
  * @adapter: Adapter upon which the command was received
@@ -4789,5 +4792,6 @@ void hdd_start_install_key(struct hdd_adapter *adapter);
  * Return: 0 on success and errno on failure
  */
 int hdd_wait_for_install_key_complete(struct hdd_adapter *adapter);
+#endif /* end #if IS_ENABLED(CONFIG_BOARD_ELISH) || IS_ENABLED(CONFIG_BOARD_ENUMA) || IS_ENABLED(CONFIG_BOARD_DAGU) */
 
 #endif /* end #if !defined(WLAN_HDD_MAIN_H) */

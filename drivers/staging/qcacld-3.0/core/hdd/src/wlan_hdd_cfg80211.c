@@ -17672,13 +17672,17 @@ static int wlan_hdd_add_key_sta(struct hdd_adapter *adapter,
 	if (!vdev)
 		return -EINVAL;
 
+#if IS_ENABLED(CONFIG_BOARD_ELISH) || IS_ENABLED(CONFIG_BOARD_ENUMA) || IS_ENABLED(CONFIG_BOARD_DAGU)
 	hdd_start_install_key(adapter);
+#endif
 	errno = wlan_cfg80211_crypto_add_key(vdev, (pairwise ?
 					     WLAN_CRYPTO_KEY_TYPE_UNICAST :
 					     WLAN_CRYPTO_KEY_TYPE_GROUP),
 					     key_index, true);
+#if IS_ENABLED(CONFIG_BOARD_ELISH) || IS_ENABLED(CONFIG_BOARD_ENUMA) || IS_ENABLED(CONFIG_BOARD_DAGU)
 	if (!errno)
 		errno = hdd_wait_for_install_key_complete(adapter);
+#endif
 
 	hdd_objmgr_put_vdev(vdev);
 	if (!errno && adapter->send_mode_change) {
