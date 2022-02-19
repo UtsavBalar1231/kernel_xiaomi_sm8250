@@ -164,7 +164,7 @@ do {\
 #define FTS_RESULT_FAIL 1
 #define FTS_SELFTEST_FORCE_CAL
 
-#define GRIP_MODE_DEBUG
+#define GRIP_MODE_DEBUG	0
 #define GRIP_RECT_NUM 12
 #define GRIP_PARAMETER_NUM 8
 #define GRIP_TYPE 3
