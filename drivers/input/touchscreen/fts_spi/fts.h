@@ -84,9 +84,9 @@
 #define FTS_FOD_AREA_REPORT
 #endif
 
-#define FTS_DEBUG_FS
+#define FTS_DEBUG_FS	0
 
-#define DEBUG
+#define DEBUG		0
 
 /*#define USE_ONE_FILE_NODE*/
 
@@ -179,7 +179,7 @@ do {\
 #define FTS_RESULT_FAIL 1
 #define FTS_SELFTEST_FORCE_CAL
 
-#define GRIP_MODE_DEBUG
+#define GRIP_MODE_DEBUG	0
 #define GRIP_RECT_NUM 12
 #define GRIP_PARAMETER_NUM 8
 #define EXPERT_ARRAY_SIZE 3
