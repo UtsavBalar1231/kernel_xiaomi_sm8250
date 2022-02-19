@@ -1,0 +1,20 @@
+#include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
+
+&pm7250b_gpios {
+	pm7250b_smb_int_default: pm7250b_smb_int_default {
+		pins = "gpio6";
+		function = "gpio";
+		input-enable;
+		bias-pull-up;
+		qcom,pull-up-strength = <PMIC_GPIO_PULL_UP_30>;
+		power-source = <0>;
+	};
+};
+
+&smb1394 {
+	qcom,enable-toggle-stat;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pm7250b_smb_int_default>;
+	interrupts = <0x2 0xc5 0x0 IRQ_TYPE_LEVEL_LOW>;
+	interrupt-parent = <&spmi_bus>;
+};

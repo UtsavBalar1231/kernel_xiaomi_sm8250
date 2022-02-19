@@ -1,0 +1,9 @@
+/dts-v1/;
+
+#include "orchid.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Orchid SoC";
+	compatible = "qcom,orchid";
+	qcom,board-id = <0 0>;
+};

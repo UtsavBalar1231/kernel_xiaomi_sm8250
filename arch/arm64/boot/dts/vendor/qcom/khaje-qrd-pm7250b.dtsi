@@ -1,0 +1,192 @@
+#include "khaje-pm7250b.dtsi"
+#include "khaje-thermal-pm7250b-overlay.dtsi"
+
+&sde_dsi {
+	pinctrl-0 = <&sde_dsi_active &sde_te_active &disp_lcd_bias_en_default>;
+};
+
+&dsi_td4330_truly_v2_video {
+	qcom,platform-en-gpio = <&pm7250b_gpios 5 0>;
+	qcom,platform-bklight-en-gpio = <&pm7250b_gpios 1 0>;
+};
+
+&dsi_td4330_truly_v2_cmd {
+	qcom,platform-en-gpio = <&pm7250b_gpios 5 0>;
+	qcom,platform-bklight-en-gpio = <&pm7250b_gpios 1 0>;
+};
+
+&soc {
+	qrd_batterydata: qcom,battery-data {
+		qcom,batt-id-range-pct = <15>;
+		#include "qg-batterydata-atl466271_3300mAh.dtsi"
+	};
+};
+
+&tlmm {
+	smb_int_default: smb_int_default {
+		mux {
+			pins = "gpio105";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio105";
+			bias-pull-up;
+			input-enable;
+		};
+	};
+};
+
+&qupv3_se1_i2c {
+	status = "ok";
+	#include "smb1394.dtsi"
+};
+
+&smb1394 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&smb_int_default>;
+	interrupt-parent = <&tlmm>;
+	interrupt-names = "smb1394";
+	interrupts = <105 IRQ_TYPE_LEVEL_LOW>;
+	status = "ok";
+};
+
+&smb1394_div2_cp_primary {
+	io-channels = <&pm7250b_vadc ADC_AMUX_THM2>;
+	io-channel-names = "die_temp";
+	qcom,parallel-input-mode = <1>;
+	qcom,parallel-output-mode = <2>;
+	status = "ok";
+};
+
+&pm7250b_vadc {
+	smb1390_therm@e {
+		qcom,scale-fn-type = <ADC_SCALE_HW_CALIB_PM5_SMB1398_TEMP>;
+	};
+};
+
+&pm7250b_charger {
+	status = "ok";
+	io-channels = <&pm7250b_vadc ADC_USB_IN_V_16>,
+		      <&pm7250b_vadc ADC_USB_IN_I>,
+		      <&pm7250b_vadc ADC_CHG_TEMP>,
+		      <&pm7250b_vadc ADC_DIE_TEMP>,
+		      <&pm7250b_vadc ADC_AMUX_THM3_PU2>,
+		      <&pm7250b_vadc ADC_SBUx>,
+		      <&pm7250b_vadc ADC_VPH_PWR>,
+		      <&pm7250b_vadc ADC_AMUX_THM1_PU2>;
+	io-channel-names = "usb_in_voltage",
+			   "usb_in_current",
+			   "chg_temp",
+			   "die_temp",
+			   "conn_temp",
+			   "sbux_res",
+			   "vph_voltage",
+			   "skin_temp";
+	qcom,battery-data = <&qrd_batterydata>;
+	qcom,sec-charger-config = <1>;
+	qcom,auto-recharge-soc = <98>;
+	qcom,step-charging-enable;
+	qcom,sw-jeita-enable;
+	qcom,charger-temp-max = <800>;
+	qcom,smb-temp-max = <800>;
+	qcom,suspend-input-on-debug-batt;
+	qcom,fcc-stepping-enable;
+	qcom,fcc-step-delay-ms = <100>;
+	qcom,fcc-step-size-ua = <100000>;
+	qcom,smb-internal-pull-kohm = <0>;
+	qcom,thermal-mitigation = <8000000 7500000 7000000 6500000 6000000 5500000
+			5000000 4500000 4000000 3500000 3000000 2500000 2000000 1500000
+			1000000 500000>;
+};
+
+&pm7250b_qg {
+	status = "ok";
+	io-channels = <&pm7250b_vadc ADC_BAT_THERM_PU2>,
+		      <&pm7250b_vadc ADC_BAT_ID_PU2>;
+	io-channel-names = "batt-therm",
+			   "batt-id";
+	qcom,qg-iterm-ma = <150>;
+	qcom,hold-soc-while-full;
+	qcom,linearize-soc;
+	qcom,cl-feedback-on;
+	qcom,tcss-enable;
+	qcom,fvss-enable;
+	qcom,fvss-vbatt-mv = <3500>;
+	qcom,bass-enable;
+	qcom,vbatt-cutoff-mv = <3400>;
+	qcom,vbatt-low-mv = <3500>;
+	qcom,vbatt-low-cold-mv = <3800>;
+	qcom,vbatt-empty-mv = <3200>;
+	qcom,vbatt-empty-cold-mv = <3100>;
+	qcom,use-cp-iin-sns;
+};
+
+&cam_res_mgr_label {
+	gpios = <&pm7250b_gpios 4 0>;
+};
+
+&led_flash_rear {
+	gpios = <&pm7250b_gpios 4 0>;
+};
+
+&led_flash_rear_aux {
+	gpios = <&pm7250b_gpios 4 0>;
+};
+
+&led_flash_rear_aux2 {
+	gpios = <&pm7250b_gpios 4 0>;
+};
+
+&pm7250b_charger {
+	dpdm-supply = <&usb2_phy0>;
+
+	smb5_vbus: qcom,smb5-vbus {
+		regulator-name = "smb5-vbus";
+	};
+
+	smb5_vconn: qcom,smb5-vconn {
+		regulator-name = "smb5-vconn";
+	};
+};
+
+&pm7250b_pdphy {
+	vdd-pdphy-supply = <&L15A>;
+	vbus-supply = <&smb5_vbus>;
+	vconn-supply = <&smb5_vconn>;
+};
+
+&usb0 {
+	extcon = <&pm7250b_pdphy>, <&pm7250b_charger>, <&eud>;
+};
+
+&thermal_zones {
+	quiet-thermal-step {
+		cooling-maps {
+			quiet_batt_cdev1 {
+				trip = <&quiet_batt_trip0>;
+				cooling-device = <&pm7250b_charger 8 8>;
+			};
+
+			quiet_batt_cdev2 {
+				trip = <&quiet_batt_trip1>;
+				cooling-device = <&pm7250b_charger 12 12>;
+			};
+
+			quiet_batt_cdev3 {
+				trip = <&quiet_batt_trip2>;
+				cooling-device = <&pm7250b_charger 14 14>;
+			};
+
+			quiet_batt_cdev4 {
+				trip = <&quiet_batt_trip3>;
+				cooling-device = <&pm7250b_charger 16 16>;
+			};
+
+			quiet_batt_cdev5 {
+				trip = <&quiet_batt_trip4>;
+				cooling-device = <&pm7250b_charger 18 18>;
+			};
+		};
+	};
+};

@@ -1,0 +1,12 @@
+/dts-v1/;
+
+#include "khaje.dtsi"
+#include "khaje-idp.dtsi"
+#include "khaje-idp-pm7250b.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. KHAJE IDP";
+	compatible = "qcom,khaje-idp", "qcom,khaje", "qcom,idp";
+	qcom,board-id = <0x10022 0>;
+	qcom,pmic-id = <0x2D 0x2E 0x0 0x0>;
+};

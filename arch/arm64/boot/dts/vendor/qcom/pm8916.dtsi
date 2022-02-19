@@ -1,0 +1,386 @@
+#include <dt-bindings/iio/qcom,spmi-vadc.h>
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/spmi/spmi.h>
+
+&spmi_bus {
+
+	pm8916_0: pm8916@0 {
+		compatible = "qcom,pm8916", "qcom,spmi-pmic";
+		reg = <0 SPMI_USID>;
+		#address-cells = <2>;
+		#size-cells = <0>;
+
+		pm8916_revid: qcom,revid@100 {
+			compatible = "qcom,qpnp-revid";
+			reg = <0x100 0x100>;
+		};
+
+		pm8916_pon: qcom,power-on@800 {
+			compatible = "qcom,qpnp-power-on";
+			reg = <0x800 0x100>;
+			interrupts = <0x0 0x8 0x0 IRQ_TYPE_NONE>,
+				     <0x0 0x8 0x1 IRQ_TYPE_NONE>;
+			interrupt-names = "kpdpwr", "resin";
+			qcom,pon-dbc-delay = <15625>;
+			qcom,system-reset;
+			qcom,clear-warm-reset;
+			qcom,store-hard-reset-reason;
+
+			qcom,pon_1 {
+				qcom,pon-type = <0>;
+				qcom,support-reset = <1>;
+				qcom,pull-up = <1>;
+				qcom,s1-timer = <10256>;
+				qcom,s2-timer = <2000>;
+				qcom,s2-type = <1>;
+				linux,code = <116>;
+			};
+
+			qcom,pon_2 {
+				qcom,pon-type = <1>;
+				qcom,pull-up = <1>;
+				linux,code = <114>;
+			};
+		};
+
+		pm8916_gpios: pinctrl@c000 {
+			compatible = "qcom,pm8916-gpio";
+			reg = <0xc000 0x400>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <0 0xc0 0 IRQ_TYPE_NONE>,
+				     <0 0xc1 0 IRQ_TYPE_NONE>,
+				     <0 0xc2 0 IRQ_TYPE_NONE>,
+				     <0 0xc3 0 IRQ_TYPE_NONE>;
+			interrupt-names = "pm8916_gpio1", "pm8916_gpio2",
+					  "pm8916_gpio3", "pm8916_gpio4";
+		};
+
+		pm8916_mpps: mpps@a000 {
+			compatible = "qcom,pm8916-mpp";
+			reg = <0xa000 0x400>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <0 0xa0 0 IRQ_TYPE_NONE>,
+				     <0 0xa1 0 IRQ_TYPE_NONE>,
+				     <0 0xa2 0 IRQ_TYPE_NONE>,
+				     <0 0xa3 0 IRQ_TYPE_NONE>;
+			interrupt-names = "pm8916_mpp1", "pm8916_mpp2",
+					  "pm8916_mpp3", "pm8916_mpp4";
+		};
+
+		pm8916_rtc: qcom,pm8916_rtc {
+			compatible = "qcom,pm8916-rtc";
+			interrupts = <0x0 0x61 0x1 IRQ_TYPE_NONE>;
+		};
+
+		pm8916_vadc: vadc@3100 {
+			compatible = "qcom,spmi-vadc";
+			reg = <0x3100 0x100>;
+			interrupts = <0x0 0x31 0x0 IRQ_TYPE_EDGE_RISING>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			#io-channel-cells = <1>;
+
+			die_temp {
+				reg = <VADC_DIE_TEMP>;
+				label = "die_temp";
+				qcom,pre-scaling = <1 1>;
+			};
+
+			ref_625mv {
+				reg = <VADC_REF_625MV>;
+				label = "ref_625mv";
+				qcom,pre-scaling = <1 1>;
+			};
+
+			ref_1250v {
+				reg = <VADC_REF_1250MV>;
+				label = "ref_1250v";
+				qcom,pre-scaling = <1 1>;
+			};
+
+			ref_buf_625mv {
+				reg = <VADC_SPARE1>;
+				label = "ref_buf_625mv";
+				qcom,pre-scaling = <1 1>;
+			};
+
+			ref_vdd {
+				reg = <VADC_VDD_VADC>;
+				label = "ref_vdd";
+				qcom,pre-scaling = <1 1>;
+			};
+
+			ref_gnd {
+				reg = <VADC_GND_REF>;
+				label = "ref_gnd";
+				qcom,pre-scaling = <1 1>;
+			};
+		};
+
+		pm8916_tz: temp-alarm@2400 {
+			compatible = "qcom,spmi-temp-alarm";
+			reg = <0x2400 0x100>;
+			interrupts = <0 0x24 0 IRQ_TYPE_EDGE_RISING>;
+			io-channels = <&pm8916_vadc VADC_DIE_TEMP>;
+			io-channel-names = "thermal";
+			#thermal-sensor-cells = <0>;
+		};
+
+		pm8916_adc_tm_iio: adc_tm_iio {
+			compatible = "qcom,adc-tm5-iio";
+			reg = <0x3500 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			#thermal-sensor-cells = <1>;
+		};
+
+		pm8916_adc_tm: vadc@3400 {
+			compatible = "qcom,qpnp-adc-tm";
+			reg = <0x3400 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <0x0 0x34 0x0 IRQ_TYPE_EDGE_RISING>,
+				     <0x0 0x34 0x3 IRQ_TYPE_EDGE_RISING>,
+				     <0x0 0x34 0x4 IRQ_TYPE_EDGE_RISING>;
+			interrupt-names = "eoc-int-en-set",
+					  "high-thr-en-set",
+					  "low-thr-en-set";
+			qcom,adc-vdd-reference = <1800>;
+			#thermal-sensor-cells = <1>;
+			qcom,pmic-revid = <&pm8916_revid>;
+			io-channels = <&pm8916_vadc VADC_REF_625MV>,
+					<&pm8916_vadc VADC_REF_1250MV>,
+					<&pm8916_vadc VADC_VDD_VADC>,
+					<&pm8916_vadc VADC_GND_REF>;
+			io-channel-names = "ref_625mv", "ref_1250v", "ref_vdd",
+						"ref_gnd";
+		};
+
+		pm8916_chg: qcom,charger {
+			compatible = "qcom,qpnp-linear-charger";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			#cooling-cells = <2>;
+
+			qcom,v-cutoff-mv = <3400>;
+			qcom,vddmax-mv = <4200>;
+			qcom,vddsafe-mv = <4200>;
+			qcom,vinmin-mv = <4308>;
+			qcom,ibatsafe-ma = <1440>;
+			qcom,thermal-mitigation = <1440 720 630 0>;
+			qcom,cool-bat-decidegc = <100>;
+			qcom,warm-bat-decidegc = <450>;
+			qcom,cool-bat-mv = <4100>;
+			qcom,warm-bat-mv = <4100>;
+			qcom,ibatmax-warm-ma = <360>;
+			qcom,ibatmax-cool-ma = <360>;
+			qcom,batt-hot-percentage = <25>;
+			qcom,batt-cold-percentage = <80>;
+			qcom,tchg-mins = <232>;
+			qcom,resume-soc = <99>;
+			io-channels = <&pm8916_vadc VADC_VBAT_SNS>,
+				      <&pm8916_vadc VADC_LR_MUX1_BAT_THERM>;
+			io-channel-names = "vbat_sns", "batt_therm";
+			qcom,chg-adc_tm = <&pm8916_adc_tm>;
+
+			status = "disabled";
+
+			qcom,chgr@1000 {
+				reg = <0x1000 0x100>;
+				interrupts =
+					<0x0 0x10 0x7 IRQ_TYPE_EDGE_RISING>,
+					<0x0 0x10 0x6 IRQ_TYPE_EDGE_RISING>,
+					<0x0 0x10 0x5 IRQ_TYPE_EDGE_BOTH>,
+					<0x0 0x10 0x0 IRQ_TYPE_EDGE_FALLING>;
+				interrupt-names = "chg-done",
+						  "chg-failed",
+						  "fast-chg-on",
+						  "vbat-det-lo";
+			};
+
+			qcom,bat-if@1200 {
+				reg = <0x1200 0x100>;
+				interrupts = <0x0 0x12 0x1 IRQ_TYPE_EDGE_BOTH>,
+					     <0x0 0x12 0x0 IRQ_TYPE_EDGE_BOTH>;
+				interrupt-names = "bat-temp-ok",
+						  "batt-pres";
+			};
+
+			qcom,usb-chgpth@1300 {
+				reg = <0x1300 0x100>;
+				interrupts =
+					<0 0x13 0x4 IRQ_TYPE_EDGE_BOTH>,
+					<0 0x13 0x2 IRQ_TYPE_EDGE_RISING>,
+					<0 0x13 0x1 IRQ_TYPE_EDGE_BOTH>;
+				interrupt-names = "usb-over-temp",
+						  "chg-gone",
+						  "usbin-valid";
+			};
+
+			qcom,chg-misc@1600 {
+				reg = <0x1600 0x100>;
+			};
+		};
+
+		pm8916_bms: qcom,vmbms {
+			compatible = "qcom,qpnp-vm-bms";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			qcom,v-cutoff-uv = <3400000>;
+			qcom,max-voltage-uv = <4200000>;
+			qcom,r-conn-mohm = <0>;
+			qcom,shutdown-soc-valid-limit = <100>;
+			qcom,low-soc-calculate-soc-threshold = <15>;
+			qcom,low-voltage-calculate-soc-ms = <1000>;
+			qcom,low-soc-calculate-soc-ms = <5000>;
+			qcom,calculate-soc-ms = <20000>;
+			qcom,volatge-soc-timeout-ms = <60000>;
+			qcom,low-voltage-threshold = <3450000>;
+			qcom,s3-ocv-tolerence-uv = <1200>;
+			qcom,s2-fifo-length = <5>;
+			qcom,low-soc-fifo-length = <2>;
+			io-channels = <&pm8916_vadc VADC_REF_625MV>,
+				      <&pm8916_vadc VADC_REF_1250MV>,
+				      <&pm8916_vadc VADC_VBAT_SNS>,
+				      <&pm8916_vadc VADC_LR_MUX1_BAT_THERM>,
+				      <&pm8916_vadc VADC_DIE_TEMP>,
+				      <&pm8916_vadc VADC_LR_MUX2_BAT_ID>;
+			io-channel-names = "ref_625mv", "ref_1250v",
+					   "vbat_sns", "batt_therm",
+					   "die_temp", "batt_id";
+			qcom,bms-adc_tm = <&pm8916_adc_tm>;
+			qcom,pmic-revid = <&pm8916_revid>;
+
+			qcom,force-s3-on-suspend;
+			qcom,force-s2-in-charging;
+			qcom,report-charger-eoc;
+
+			qcom,batt-pres-status@1208 {
+				reg = <0x1208 0x1>;
+			};
+
+			qcom,qpnp-chg-pres@1008 {
+				reg = <0x1008 0x1>;
+			};
+
+			qcom,vm-bms@4000 {
+				reg = <0x4000 0x100>;
+				interrupts = <0x0 0x40 0x0 IRQ_TYPE_NONE>,
+					     <0x0 0x40 0x1 IRQ_TYPE_NONE>,
+					     <0x0 0x40 0x2 IRQ_TYPE_NONE>,
+					     <0x0 0x40 0x3 IRQ_TYPE_NONE>,
+					     <0x0 0x40 0x4 IRQ_TYPE_NONE>,
+					     <0x0 0x40 0x5 IRQ_TYPE_NONE>;
+
+				interrupt-names = "leave_cv",
+						  "enter_cv",
+						  "good_ocv",
+						  "ocv_thr",
+						  "fifo_update_done",
+						  "fsm_state_change";
+			};
+		};
+
+		pm8916_leds: qcom,leds@a100 {
+			compatible = "qcom,leds-qpnp";
+			reg = <0xa100 0x100>;
+			label = "mpp";
+		};
+	};
+
+	pm8916_1: pm8916@1 {
+		compatible = "qcom,pm8916", "qcom,spmi-pmic";
+		reg = <1 SPMI_USID>;
+		#address-cells = <2>;
+		#size-cells = <0>;
+
+		pm8916_pwm: qcom,pwms@bc00 {
+			compatible = "qcom,pwm-lpg";
+			reg = <0xbc00 0x100>;
+			reg-names = "lpg-base";
+			#pwm-cells = <2>;
+			qcom,num-lpg-channels = <1>;
+		};
+
+		pm8916_vib: qcom,vibrator@c000 {
+			compatible = "qcom,qpnp-vibrator";
+			reg = <0xc000 0x100>;
+			label = "vibrator";
+			status = "disabled";
+		};
+
+		pm8916_tombak_dig: msm8x16_wcd_codec@f000 {
+			compatible = "qcom,msm8x16_wcd_codec";
+			reg = <0xf000 0x100>;
+			interrupt-parent = <&spmi_bus>;
+			interrupts = <0x1 0xf0 0x0 IRQ_TYPE_NONE>,
+				     <0x1 0xf0 0x1 IRQ_TYPE_NONE>,
+				     <0x1 0xf0 0x2 IRQ_TYPE_NONE>,
+				     <0x1 0xf0 0x3 IRQ_TYPE_NONE>,
+				     <0x1 0xf0 0x4 IRQ_TYPE_NONE>,
+				     <0x1 0xf0 0x5 IRQ_TYPE_NONE>,
+				     <0x1 0xf0 0x6 IRQ_TYPE_NONE>,
+				     <0x1 0xf0 0x7 IRQ_TYPE_NONE>;
+			interrupt-names = "spk_cnp_int",
+					  "spk_clip_int",
+					  "spk_ocp_int",
+					  "ins_rem_det1",
+					  "but_rel_det",
+					  "but_press_det",
+					  "ins_rem_det",
+					  "mbhc_int";
+
+			cdc-vdda-cp-supply = <&pm8916_s4>;
+			qcom,cdc-vdda-cp-voltage = <1800000 2200000>;
+			qcom,cdc-vdda-cp-current = <770000>;
+
+			cdc-vdda-h-supply = <&pm8916_l5>;
+			qcom,cdc-vdda-h-voltage = <1800000 1800000>;
+			qcom,cdc-vdda-h-current = <20000>;
+
+			cdc-vdd-px-supply = <&pm8916_s4>;
+			qcom,cdc-vdd-px-voltage = <1800000 2200000>;
+			qcom,cdc-vdd-px-current = <770000>;
+
+			cdc-vdd-pa-supply = <&pm8916_l5>;
+			qcom,cdc-vdd-pa-voltage = <1800000 1800000>;
+			qcom,cdc-vdd-pa-current = <5000>;
+
+			cdc-vdd-mic-bias-supply = <&pm8916_l13>;
+			qcom,cdc-vdd-mic-bias-voltage = <3075000 3075000>;
+			qcom,cdc-vdd-mic-bias-current = <25000>;
+
+			qcom,cdc-mclk-clk-rate = <9600000>;
+
+			qcom,cdc-static-supplies = "cdc-vdda-h",
+						   "cdc-vdd-px",
+						   "cdc-vdd-pa",
+						   "cdc-vdda-cp";
+
+			qcom,cdc-on-demand-supplies = "cdc-vdd-mic-bias";
+			qcom,subsys-name = "modem";
+		};
+
+		pm8916_tombak_analog: msm8x16_wcd_codec@f100 {
+			compatible = "qcom,msm8x16_wcd_codec";
+			reg = <0xf100 0x100>;
+			interrupt-parent = <&spmi_bus>;
+			interrupts = <0x1 0xf1 0x0 IRQ_TYPE_NONE>,
+				     <0x1 0xf1 0x1 IRQ_TYPE_NONE>,
+				     <0x1 0xf1 0x2 IRQ_TYPE_NONE>,
+				     <0x1 0xf1 0x3 IRQ_TYPE_NONE>,
+				     <0x1 0xf1 0x4 IRQ_TYPE_NONE>,
+				     <0x1 0xf1 0x5 IRQ_TYPE_NONE>;
+			interrupt-names = "ear_ocp_int",
+					  "hphr_ocp_int",
+					  "hphl_ocp_det",
+					  "ear_cnp_int",
+					  "hphr_cnp_int",
+					  "hphl_cnp_int";
+		};
+	};
+};

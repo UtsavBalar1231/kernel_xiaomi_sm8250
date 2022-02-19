@@ -1,0 +1,12 @@
+#include "lito-v2.dtsi"
+#include "pmk8350.dtsi"
+#include "magnus.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Litomagnus";
+	compatible = "qcom,lito";
+};
+
+&llcc {
+	compatible = "qcom,llcc-v2";
+};

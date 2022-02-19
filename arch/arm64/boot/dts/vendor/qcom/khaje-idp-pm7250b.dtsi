@@ -1,0 +1,156 @@
+#include "khaje-pm7250b.dtsi"
+#include "khaje-thermal-pm7250b-overlay.dtsi"
+#include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
+
+&soc {
+	mtp_batterydata: qcom,battery-data {
+		qcom,batt-id-range-pct = <15>;
+		#include "qg-batterydata-alium-3600mah.dtsi"
+	};
+};
+
+&pm7250b_gpios {
+	pm7250b_smb_int_default: pm7250b_smb_int_default {
+		pins = "gpio6";
+		function = "gpio";
+		input-enable;
+		bias-pull-up;
+		qcom,pull-up-strength = <PMIC_GPIO_PULL_UP_30>;
+		power-source = <0>;
+	 };
+};
+
+&qupv3_se1_i2c {
+	status = "ok";
+	#include "smb1355.dtsi"
+};
+
+&smb1355 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pm7250b_smb_int_default>;
+	status = "ok";
+};
+
+&smb1355_charger {
+	qcom,parallel-mode = <1>;
+	qcom,hw-die-temp-mitigation;
+	status = "ok";
+};
+
+&pm7250b_charger {
+	status = "ok";
+	io-channels = <&pm7250b_vadc ADC_USB_IN_V_16>,
+		      <&pm7250b_vadc ADC_USB_IN_I>,
+		      <&pm7250b_vadc ADC_CHG_TEMP>,
+		      <&pm7250b_vadc ADC_DIE_TEMP>,
+		      <&pm7250b_vadc ADC_AMUX_THM3_PU2>,
+		      <&pm7250b_vadc ADC_SBUx>,
+		      <&pm7250b_vadc ADC_VPH_PWR>,
+		      <&pm7250b_vadc ADC_AMUX_THM1_PU2>;
+	io-channel-names = "usb_in_voltage",
+			   "usb_in_current",
+			   "chg_temp",
+			   "die_temp",
+			   "conn_temp",
+			   "sbux_res",
+			   "vph_voltage",
+			   "skin_temp";
+	qcom,battery-data = <&mtp_batterydata>;
+	qcom,sec-charger-config = <2>;
+	qcom,auto-recharge-soc = <98>;
+	qcom,step-charging-enable;
+	qcom,sw-jeita-enable;
+	qcom,charger-temp-max = <800>;
+	qcom,smb-temp-max = <800>;
+	qcom,suspend-input-on-debug-batt;
+	qcom,fcc-stepping-enable;
+	qcom,fcc-step-delay-ms = <100>;
+	qcom,fcc-step-size-ua = <100000>;
+	qcom,smb-internal-pull-kohm = <0>;
+	qcom,en-skin-therm-mitigation;
+	qcom,hvdcp3-standalone-config;
+};
+
+&pm7250b_qg {
+	status = "ok";
+	io-channels = <&pm7250b_vadc ADC_BAT_THERM_PU2>,
+		      <&pm7250b_vadc ADC_BAT_ID_PU2>;
+	io-channel-names = "batt-therm",
+			   "batt-id";
+	qcom,battery-data = <&mtp_batterydata>;
+	qcom,qg-iterm-ma = <100>;
+	qcom,hold-soc-while-full;
+	qcom,linearize-soc;
+	qcom,cl-feedback-on;
+	qcom,tcss-enable;
+	qcom,fvss-enable;
+	qcom,fvss-vbatt-mv = <3500>;
+	qcom,bass-enable;
+	qcom,vbatt-cutoff-mv = <3400>;
+	qcom,vbatt-low-mv = <3500>;
+	qcom,vbatt-low-cold-mv = <3800>;
+	qcom,vbatt-empty-mv = <3200>;
+	qcom,vbatt-empty-cold-mv = <3100>;
+};
+
+&sde_dsi {
+	pinctrl-0 = <&sde_dsi_active &sde_te_active &disp_lcd_bias_en_default>;
+};
+
+&dsi_td4330_truly_v2_video {
+	qcom,platform-en-gpio = <&pm7250b_gpios 5 0>;
+	qcom,platform-bklight-en-gpio = <&pm7250b_gpios 1 0>;
+};
+
+&dsi_td4330_truly_v2_cmd {
+	qcom,platform-en-gpio = <&pm7250b_gpios 5 0>;
+	qcom,platform-bklight-en-gpio = <&pm7250b_gpios 1 0>;
+};
+
+&dsi_nt36672e_fhd_plus_90hz_video {
+	qcom,platform-en-gpio = <&pm7250b_gpios 5 0>;
+	qcom,platform-bklight-en-gpio = <&pm7250b_gpios 1 0>;
+};
+
+&dsi_nt36672e_fhd_plus_120hz_video {
+	qcom,platform-en-gpio = <&pm7250b_gpios 5 0>;
+	qcom,platform-bklight-en-gpio = <&pm7250b_gpios 1 0>;
+};
+
+&cam_res_mgr_label {
+	gpios = <&pm7250b_gpios 4 0>;
+};
+
+&led_flash_rear {
+	gpios = <&pm7250b_gpios 4 0>;
+};
+
+&led_flash_rear_aux {
+	gpios = <&pm7250b_gpios 4 0>;
+};
+
+&led_flash_rear_aux2 {
+	gpios = <&pm7250b_gpios 4 0>;
+};
+
+&pm7250b_charger {
+	dpdm-supply = <&usb2_phy0>;
+
+	smb5_vbus: qcom,smb5-vbus {
+		regulator-name = "smb5-vbus";
+	};
+
+	smb5_vconn: qcom,smb5-vconn {
+		regulator-name = "smb5-vconn";
+	};
+};
+
+&pm7250b_pdphy {
+	vdd-pdphy-supply = <&L15A>;
+	vbus-supply = <&smb5_vbus>;
+	vconn-supply = <&smb5_vconn>;
+};
+
+&usb0 {
+	extcon = <&pm7250b_pdphy>, <&pm7250b_charger>, <&eud>;
+};

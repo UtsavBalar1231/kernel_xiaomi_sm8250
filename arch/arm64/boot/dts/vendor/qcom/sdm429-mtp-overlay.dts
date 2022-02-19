@@ -1,0 +1,9 @@
+/dts-v1/;
+/plugin/;
+
+#include "sdm429-mtp.dtsi"
+
+/ {
+	model = "MTP";
+	qcom,board-id = <8 2>;
+};
