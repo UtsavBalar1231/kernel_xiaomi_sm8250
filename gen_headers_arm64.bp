@@ -373,6 +373,7 @@ gen_headers_out_arm64 = [
     "linux/module.h",
     "linux/mpls.h",
     "linux/mpls_iptunnel.h",
+    "linux/mptcp.h",
     "linux/mqueue.h",
     "linux/mroute.h",
     "linux/mroute6.h",

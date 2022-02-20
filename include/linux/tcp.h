@@ -58,7 +58,11 @@ static inline unsigned int tcp_optlen(const struct sk_buff *skb)
 /* TCP Fast Open */
 #define TCP_FASTOPEN_COOKIE_MIN	4	/* Min Fast Open Cookie size in bytes */
 #define TCP_FASTOPEN_COOKIE_MAX	16	/* Max Fast Open Cookie size in bytes */
+#ifdef CONFIG_MPTCP
+#define TCP_FASTOPEN_COOKIE_SIZE 4	/* the size employed by this impl for MPTCP. */
+#else
 #define TCP_FASTOPEN_COOKIE_SIZE 8	/* the size employed by this impl. */
+#endif
 
 /* TCP Fast Open Cookie as stored in memory */
 struct tcp_fastopen_cookie {
@@ -83,6 +87,56 @@ struct tcp_sack_block {
 	u32	end_seq;
 };
 
+#ifdef CONFIG_MPTCP
+struct tcp_out_options {
+	u16	options;	/* bit field of OPTION_* */
+	u16	mss;		/* 0 to disable */
+	u8	ws;		/* window scale, 0 to disable */
+	u8	num_sack_blocks;/* number of SACK blocks to include */
+	u8	hash_size;	/* bytes in hash_location */
+	__u8	*hash_location;	/* temporary pointer, overloaded */
+	__u32	tsval, tsecr;	/* need to include OPTION_TS */
+	struct tcp_fastopen_cookie *fastopen_cookie;	/* Fast open cookie */
+	u16	mptcp_options;	/* bit field of MPTCP related OPTION_* */
+	u8	dss_csum:1,	/* dss-checksum required? */
+		add_addr_v4:1,
+		add_addr_v6:1,
+		mptcp_ver:4;
+
+	union {
+		struct {
+			__u64	sender_key;	/* sender's key for mptcp */
+			__u64	receiver_key;	/* receiver's key for mptcp */
+		} mp_capable;
+
+		struct {
+			__u64	sender_truncated_mac;
+			__u32	sender_nonce;
+					/* random number of the sender */
+			__u32	token;	/* token for mptcp */
+			u8	low_prio:1;
+		} mp_join_syns;
+	};
+
+	struct {
+		__u64 trunc_mac;
+		struct in_addr addr;
+		u16 port;
+		u8 addr_id;
+	} add_addr4;
+
+	struct {
+		__u64 trunc_mac;
+		struct in6_addr addr;
+		u16 port;
+		u8 addr_id;
+	} add_addr6;
+
+	u16	remove_addrs;	/* list of address id */
+	u8	addr_id;	/* address id (mp_join or add_address) */
+};
+#endif
+
 /*These are used to set the sack_ok field in struct tcp_options_received */
 #define TCP_SACK_SEEN     (1 << 0)   /*1 = peer is SACK capable, */
 #define TCP_DSACK_SEEN    (1 << 2)   /*1 = DSACK was received from peer*/
@@ -105,6 +159,11 @@ struct tcp_options_received {
 	u16	user_mss;	/* mss requested by user in ioctl	*/
 	u16	mss_clamp;	/* Maximal mss, negotiated at connection setup */
 };
+
+#ifdef CONFIG_MPTCP
+struct mptcp_cb;
+struct mptcp_tcp_sock;
+#endif
 
 static inline void tcp_clear_options(struct tcp_options_received *rx_opt)
 {
@@ -143,6 +202,10 @@ static inline struct tcp_request_sock *tcp_rsk(const struct request_sock *req)
 {
 	return (struct tcp_request_sock *)req;
 }
+
+#ifdef CONFIG_MPTCP
+struct tcp_md5sig_key;
+#endif
 
 struct tcp_sock {
 	/* inet_connection_sock has to be the first member of tcp_sock */
@@ -401,6 +464,43 @@ struct tcp_sock {
 	 */
 	struct request_sock *fastopen_rsk;
 	u32	*saved_syn;
+#ifdef CONFIG_MPTCP
+	/* MPTCP/TCP-specific callbacks */
+	const struct tcp_sock_ops	*ops;
+
+	struct mptcp_cb		*mpcb;
+	struct sock		*meta_sk;
+	/* We keep these flags even if CONFIG_MPTCP is not checked, because
+	 * it allows checking MPTCP capability just by checking the mpc flag,
+	 * rather than adding ifdefs everywhere.
+	 */
+	u32     mpc:1,          /* Other end is multipath capable */
+		inside_tk_table:1, /* Is the tcp_sock inside the token-table? */
+		send_mp_fclose:1,
+		request_mptcp:1, /* Did we send out an MP_CAPABLE?
+				  * (this speeds up mptcp_doit() in tcp_recvmsg)
+				  */
+		pf:1, /* Potentially Failed state: when this flag is set, we
+		       * stop using the subflow
+		       */
+		mp_killed:1, /* Killed with a tcp_done in mptcp? */
+		is_master_sk:1,
+		close_it:1,	/* Must close socket in mptcp_data_ready? */
+		closing:1,
+		mptcp_ver:4,
+		mptcp_sched_setsockopt:1,
+		mptcp_pm_setsockopt:1,
+		record_master_info:1,
+		tcp_disconnect:1;
+	struct mptcp_tcp_sock *mptcp;
+#define MPTCP_SCHED_NAME_MAX 16
+#define MPTCP_PM_NAME_MAX 16
+	struct hlist_nulls_node tk_table;
+	u32		mptcp_loc_token;
+	u64		mptcp_loc_key;
+	char		mptcp_sched_name[MPTCP_SCHED_NAME_MAX];
+	char		mptcp_pm_name[MPTCP_PM_NAME_MAX];
+#endif /* CONFIG_MPTCP */
 };
 
 enum tsq_enum {
@@ -412,6 +512,10 @@ enum tsq_enum {
 	TCP_MTU_REDUCED_DEFERRED,  /* tcp_v{4|6}_err() could not call
 				    * tcp_v{4|6}_mtu_reduced()
 				    */
+#ifdef CONFIG_MPTCP
+	MPTCP_PATH_MANAGER_DEFERRED, /* MPTCP deferred creation of new subflows */
+	MPTCP_SUB_DEFERRED, /* A subflow got deferred - process them */
+#endif
 };
 
 enum tsq_flags {
@@ -421,6 +525,10 @@ enum tsq_flags {
 	TCPF_WRITE_TIMER_DEFERRED	= (1UL << TCP_WRITE_TIMER_DEFERRED),
 	TCPF_DELACK_TIMER_DEFERRED	= (1UL << TCP_DELACK_TIMER_DEFERRED),
 	TCPF_MTU_REDUCED_DEFERRED	= (1UL << TCP_MTU_REDUCED_DEFERRED),
+#ifdef CONFIG_MPTCP
+	TCPF_PATH_MANAGER_DEFERRED	= (1UL << MPTCP_PATH_MANAGER_DEFERRED),
+	TCPF_SUB_DEFERRED		= (1UL << MPTCP_SUB_DEFERRED),
+#endif
 };
 
 static inline struct tcp_sock *tcp_sk(const struct sock *sk)
@@ -442,6 +550,9 @@ struct tcp_timewait_sock {
 	int			  tw_ts_recent_stamp;
 #ifdef CONFIG_TCP_MD5SIG
 	struct tcp_md5sig_key	  *tw_md5_key;
+#endif
+#ifdef CONFIG_MPTCP
+	struct mptcp_tw		  *mptcp_tw;
 #endif
 };
 

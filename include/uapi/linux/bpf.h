@@ -2768,6 +2768,9 @@ enum {
 	BPF_TCP_LISTEN,
 	BPF_TCP_CLOSING,	/* Now a valid state */
 	BPF_TCP_NEW_SYN_RECV,
+#ifdef CONFIG_MPTCP
+	BPF_TCP_RST_WAIT,
+#endif
 
 	BPF_TCP_MAX_STATES	/* Leave at the end! */
 };

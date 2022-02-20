@@ -58,6 +58,10 @@ ip6_dgram_sock_seq_show(struct seq_file *seq, struct sock *sp, __u16 srcp,
 
 /* address family specific functions */
 extern const struct inet_connection_sock_af_ops ipv4_specific;
+#ifdef CONFIG_MPTCP
+extern const struct inet_connection_sock_af_ops ipv6_mapped;
+extern const struct inet_connection_sock_af_ops ipv6_specific;
+#endif
 
 void inet6_destroy_sock(struct sock *sk);
 
