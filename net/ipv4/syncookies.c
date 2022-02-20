@@ -16,6 +16,10 @@
 #include <linux/siphash.h>
 #include <linux/kernel.h>
 #include <linux/export.h>
+#ifdef CONFIG_MPTCP
+#include <net/mptcp.h>
+#include <net/mptcp_v4.h>
+#endif
 #include <net/secure_seq.h>
 #include <net/tcp.h>
 #include <net/route.h>
@@ -179,7 +183,12 @@ u32 __cookie_v4_init_sequence(const struct iphdr *iph, const struct tcphdr *th,
 }
 EXPORT_SYMBOL_GPL(__cookie_v4_init_sequence);
 
+#ifdef CONFIG_MPTCP
+__u32 cookie_v4_init_sequence(struct request_sock *req, const struct sock *sk,
+			      const struct sk_buff *skb, __u16 *mssp)
+#else
 __u32 cookie_v4_init_sequence(const struct sk_buff *skb, __u16 *mssp)
+#endif
 {
 	const struct iphdr *iph = ip_hdr(skb);
 	const struct tcphdr *th = tcp_hdr(skb);
@@ -209,9 +218,27 @@ struct sock *tcp_get_cookie_sock(struct sock *sk, struct sk_buff *skb,
 	struct inet_connection_sock *icsk = inet_csk(sk);
 	struct sock *child;
 	bool own_req;
+#ifdef CONFIG_MPTCP
+	int ret;
+#endif
 
 	child = icsk->icsk_af_ops->syn_recv_sock(sk, skb, req, dst,
 						 NULL, &own_req);
+
+#ifdef CONFIG_MPTCP
+	if (!child)
+		goto listen_overflow;
+
+	ret = mptcp_check_req_master(sk, child, req, skb, 0, tsoff);
+	if (ret < 0)
+		return NULL;
+
+	if (!ret)
+		return tcp_sk(child)->mpcb->master_sk;
+
+listen_overflow:
+#endif
+
 	if (child) {
 		refcount_set(&req->rsk_refcnt, 1);
 		tcp_sk(child)->tsoffset = tsoff;
@@ -289,6 +316,9 @@ struct sock *cookie_v4_check(struct sock *sk, struct sk_buff *skb)
 {
 	struct ip_options *opt = &TCP_SKB_CB(skb)->header.h4.opt;
 	struct tcp_options_received tcp_opt;
+#ifdef CONFIG_MPTCP
+	struct mptcp_options_received mopt;
+#endif
 	struct inet_request_sock *ireq;
 	struct tcp_request_sock *treq;
 	struct tcp_sock *tp = tcp_sk(sk);
@@ -318,7 +348,12 @@ struct sock *cookie_v4_check(struct sock *sk, struct sk_buff *skb)
 
 	/* check for timestamp cookie support */
 	memset(&tcp_opt, 0, sizeof(tcp_opt));
+#ifdef CONFIG_MPTCP
+	mptcp_init_mp_opt(&mopt);
+	tcp_parse_options(sock_net(sk), skb, &tcp_opt, &mopt, 0, NULL, NULL);
+#else
 	tcp_parse_options(sock_net(sk), skb, &tcp_opt, 0, NULL);
+#endif
 
 	if (tcp_opt.saw_tstamp && tcp_opt.rcv_tsecr) {
 		tsoff = secure_tcp_ts_off(sock_net(sk),
@@ -331,7 +366,12 @@ struct sock *cookie_v4_check(struct sock *sk, struct sk_buff *skb)
 		goto out;
 
 	ret = NULL;
-	req = inet_reqsk_alloc(&tcp_request_sock_ops, sk, false); /* for safety */
+#ifdef CONFIG_MPTCP
+	if (mopt.saw_mpc)
+		req = inet_reqsk_alloc(&mptcp_request_sock_ops, sk, false); /* for safety */
+	else
+#endif
+		req = inet_reqsk_alloc(&tcp_request_sock_ops, sk, false); /* for safety */
 	if (!req)
 		goto out;
 
@@ -351,6 +391,10 @@ struct sock *cookie_v4_check(struct sock *sk, struct sk_buff *skb)
 	ireq->sack_ok		= tcp_opt.sack_ok;
 	ireq->wscale_ok		= tcp_opt.wscale_ok;
 	ireq->tstamp_ok		= tcp_opt.saw_tstamp;
+#ifdef CONFIG_MPTCP
+	ireq->mptcp_rqsk	= 0;
+	ireq->saw_mpc		= 0;
+#endif
 	req->ts_recent		= tcp_opt.saw_tstamp ? tcp_opt.rcv_tsval : 0;
 	treq->snt_synack	= 0;
 	treq->tfo_listener	= false;
@@ -359,6 +403,10 @@ struct sock *cookie_v4_check(struct sock *sk, struct sk_buff *skb)
 
 	ireq->ir_iif = inet_request_bound_dev_if(sk, skb);
 
+#ifdef CONFIG_MPTCP
+	if (mopt.saw_mpc)
+		mptcp_cookies_reqsk_init(req, &mopt, skb);
+#endif
 	/* We throwed the options of the initial SYN away, so we hope
 	 * the ACK carries the same options again (see RFC1122 4.2.3.8)
 	 */
@@ -392,10 +440,18 @@ struct sock *cookie_v4_check(struct sock *sk, struct sk_buff *skb)
 	/* Try to redo what tcp_v4_send_synack did. */
 	req->rsk_window_clamp = tp->window_clamp ? :dst_metric(&rt->dst, RTAX_WINDOW);
 
+#ifdef CONFIG_MPTCP
+	tp->ops->select_initial_window(sk, tcp_full_space(sk), req->mss,
+				       &req->rsk_rcv_wnd, &req->rsk_window_clamp,
+				       ireq->wscale_ok, &rcv_wscale,
+				       dst_metric(&rt->dst, RTAX_INITRWND));
+
+#else
 	tcp_select_initial_window(sk, tcp_full_space(sk), req->mss,
 				  &req->rsk_rcv_wnd, &req->rsk_window_clamp,
 				  ireq->wscale_ok, &rcv_wscale,
 				  dst_metric(&rt->dst, RTAX_INITRWND));
+#endif
 
 	ireq->rcv_wscale  = rcv_wscale;
 	ireq->ecn_ok = cookie_ecn_ok(&tcp_opt, sock_net(sk), &rt->dst);

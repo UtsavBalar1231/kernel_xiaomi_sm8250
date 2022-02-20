@@ -378,6 +378,7 @@ gen_headers_out_arm = [
     "linux/mmtimer.h",
     "linux/module.h",
     "linux/mpls.h",
+    "linux/mptcp.h",
     "linux/mpls_iptunnel.h",
     "linux/mqueue.h",
     "linux/mroute.h",
