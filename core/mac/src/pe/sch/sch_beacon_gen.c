@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -211,6 +212,7 @@ static void sch_get_csa_ecsa_count_offset(uint8_t *ie, uint32_t ie_len,
 		offset += elem_len;
 		ptr += (elem_len + 2);
 	}
+
 }
 
 /**
@@ -910,6 +912,14 @@ void lim_update_probe_rsp_template_ie_bitmap_beacon2(struct mac_context *mac,
 		qdf_mem_copy((void *)&prb_rsp->he_6ghz_band_cap,
 			     (void *)&beacon2->he_6ghz_band_cap,
 			     sizeof(beacon2->he_6ghz_band_cap));
+	}
+
+	if (beacon2->TPCReport.present) {
+		set_probe_rsp_ie_bitmap(DefProbeRspIeBitmap,
+					WLAN_ELEMID_TPCREP);
+		qdf_mem_copy((void *)&prb_rsp->TPCReport,
+			     (void *)&beacon2->TPCReport,
+			     sizeof(beacon2->TPCReport));
 	}
 
 }
