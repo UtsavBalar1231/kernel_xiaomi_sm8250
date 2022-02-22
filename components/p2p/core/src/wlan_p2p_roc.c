@@ -167,9 +167,8 @@ static QDF_STATUS p2p_scan_start(struct p2p_roc_context *roc_ctx)
 				P2P_MAX_ROC_DURATION_NON_DBS_NAN_PRESENT)
 					req->scan_req.dwell_time_passive =
 						P2P_MAX_ROC_DURATION_NON_DBS_NAN_PRESENT;
-
-		else if (req->scan_req.dwell_time_passive >
-			P2P_MAX_ROC_DURATION)
+		} else if (req->scan_req.dwell_time_passive >
+			P2P_MAX_ROC_DURATION) {
 			req->scan_req.dwell_time_passive = P2P_MAX_ROC_DURATION;
 		}
 	}
