@@ -635,7 +635,7 @@ populate_dot11f_ext_supp_rates(struct mac_context *mac, uint8_t nChannelNum,
 			       struct pe_session *pe_session)
 {
 	QDF_STATUS nsir_status;
-	qdf_size_t nRates = 0;
+	qdf_size_t n_rates = 0;
 	uint8_t rates[WLAN_SUPPORTED_RATES_IE_MAX_LEN];
 
 	/* Use the ext rates present in session entry whenever nChannelNum is set to OPERATIONAL
@@ -644,28 +644,29 @@ populate_dot11f_ext_supp_rates(struct mac_context *mac, uint8_t nChannelNum,
 	 */
 	if (POPULATE_DOT11F_RATES_OPERATIONAL == nChannelNum) {
 		if (pe_session) {
-			nRates = pe_session->extRateSet.numRates;
+			n_rates = pe_session->extRateSet.numRates;
 			qdf_mem_copy(rates, pe_session->extRateSet.rate,
-				     nRates);
+				     n_rates);
 		} else {
 			pe_err("no session context exists while populating Operational Rate Set");
 		}
 	} else if (HIGHEST_24GHZ_CHANNEL_NUM >= nChannelNum) {
-		nRates = mac->mlme_cfg->rates.ext_opr_rate_set.len;
+		n_rates = mac->mlme_cfg->rates.ext_opr_rate_set.len;
 		nsir_status = wlan_mlme_get_cfg_str(
 			rates,
-			&mac->mlme_cfg->rates.ext_opr_rate_set, &nRates);
+			&mac->mlme_cfg->rates.ext_opr_rate_set, &n_rates);
 		if (QDF_IS_STATUS_ERROR(nsir_status)) {
-			nRates = 0;
+			n_rates = 0;
 			pe_err("Failed to retrieve nItem from CFG status: %d",
 			       (nsir_status));
 			return nsir_status;
 		}
 	}
 
-	if (0 != nRates) {
-		pDot11f->num_rates = (uint8_t) nRates;
-		qdf_mem_copy(pDot11f->rates, rates, nRates);
+	if (0 != n_rates) {
+		pe_debug("ext supp rates present, num %d", (uint8_t)n_rates);
+		pDot11f->num_rates = (uint8_t)n_rates;
+		qdf_mem_copy(pDot11f->rates, rates, n_rates);
 		pDot11f->present = 1;
 	}
 

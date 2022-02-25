@@ -766,6 +766,7 @@ struct csr_roam_profile {
 	uint16_t beacon_tx_rate;
 	tSirMacRateSet  supported_rates;
 	tSirMacRateSet  extended_rates;
+	bool require_h2e;
 	struct qdf_mac_addr bssid_hint;
 	bool force_24ghz_in_ht20;
 	uint32_t cac_duration_ms;
