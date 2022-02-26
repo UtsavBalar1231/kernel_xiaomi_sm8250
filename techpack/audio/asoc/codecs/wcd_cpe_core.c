@@ -116,6 +116,8 @@ struct wcd_cpe_attribute {
 			 ssize_t count);
 };
 
+static u64 wcd_cpe_dma_mask = DMA_BIT_MASK(32);
+
 #define WCD_CPE_ATTR(_name, _mode, _show, _store) \
 static struct wcd_cpe_attribute cpe_attr_##_name = { \
 	.attr = {.name = __stringify(_name), .mode = _mode}, \
@@ -2034,6 +2036,8 @@ struct wcd_cpe_core *wcd_cpe_init(const char *img_fname,
 			__func__);
 		goto schedule_dload_work;
 	}
+	core->dev->coherent_dma_mask = DMA_BIT_MASK(32);
+	core->dev->dma_mask = &wcd_cpe_dma_mask;
 
 	arch_setup_dma_ops(core->dev, 0, 0, NULL, 0);
 	core->cpe_dump_v_addr = dma_alloc_coherent(core->dev,
