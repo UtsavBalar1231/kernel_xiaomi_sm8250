@@ -136,8 +136,7 @@ static inline int dev_pm_qos_request_active(struct dev_pm_qos_request *req)
 }
 
 int pm_qos_update_target(struct pm_qos_constraints *c, struct plist_node *node,
-			 enum pm_qos_req_action action, int value,
-			 bool dev_req);
+			 enum pm_qos_req_action action, int value);
 bool pm_qos_update_flags(struct pm_qos_flags *pqf,
 			 struct pm_qos_flags_request *req,
 			 enum pm_qos_req_action action, s32 val);
