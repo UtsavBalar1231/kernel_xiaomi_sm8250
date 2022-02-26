@@ -1,0 +1,34 @@
+---
+kind: pipeline
+type: docker
+name: Cunt's CI
+
+platform:
+  os: linux
+  arch: amd64
+
+clone:
+  depth: 1
+
+steps:
+  - name: building
+    image: ubuntu:latest
+    environment:
+      CI_CHANNEL_ID:
+        from_secret: ci_channel_id
+      BOT_API_KEY:
+        from_secret: bot_api_key
+      TYPE: "STGNG-0.2.1"
+      DEVICE: alioth
+      KBUILD_BUILD_USER: UtsavTheCunt
+      KBUILD_BUILD_HOST: CuntsSpace
+    commands:
+      - apt-get update && apt-get install -y bison build-essential bc bison curl libssl-dev git zip python python3 flex cpio libncurses5-dev wget
+      - git clone https://github.com/UtsavBalar1231/Drone-scripts.git -b kona script && cd script
+      - ./setup-drone
+      - ./build-kernel
+    when:
+      branch:
+        - android12-stable
+      event:
+        - push
