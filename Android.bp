@@ -43,6 +43,6 @@ cc_library_headers {
             export_generated_headers: ["qti_generate_kernel_headers_arm64"],
         },
     },
-    vendor: true,
+    vendor_available: true,
     recovery_available: true,
 }
