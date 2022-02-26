@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
  */
 
 #ifndef __Q6CORE_H__
@@ -428,4 +428,7 @@ int q6core_destroy_lpass_npa_client(uint32_t client_handle);
 int q6core_request_island_transition(uint32_t client_handle,
 				     uint32_t island_allow_mode);
 
+int q6core_get_avcs_avs_build_version_info(
+	uint32_t *build_major_version, uint32_t *build_minor_version,
+					uint32_t *build_branch_version);
 #endif /* __Q6CORE_H__ */
