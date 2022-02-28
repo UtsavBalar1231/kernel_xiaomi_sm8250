@@ -241,7 +241,7 @@ void exfat_truncate(struct inode *inode, loff_t size)
 	struct super_block *sb = inode->i_sb;
 	struct exfat_sb_info *sbi = EXFAT_SB(sb);
 	struct exfat_inode_info *ei = EXFAT_I(inode);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 72)
 	unsigned int blocksize = i_blocksize(inode);
 #else
 	unsigned int blocksize = 1 << inode->i_blkbits;
