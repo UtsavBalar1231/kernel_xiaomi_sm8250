@@ -807,6 +807,23 @@ out:
 	return err;
 }
 
+#if IS_ENABLED(CONFIG_MIUI_ZRAM_MEMORY_TRACKING)
+static inline void update_wb_pages_max(struct zram *zram,
+					const s64 wb_pages)
+{
+	unsigned long old_max, cur_max;
+
+	old_max = atomic_long_read(&zram->stats.wb_pages_max);
+
+	do {
+		cur_max = old_max;
+		if (wb_pages > cur_max)
+			old_max = atomic_long_cmpxchg(
+				&zram->stats.wb_pages_max, cur_max, wb_pages);
+	} while (old_max != cur_max);
+}
+#endif
+
 #ifdef CONFIG_ZRAM_LRU_WRITEBACK
 static unsigned long chunk_to_blk_idx(unsigned long idx)
 {
@@ -1540,23 +1557,6 @@ static int zram_wbd(void *p)
 
 	return 0;
 }
-
-#if IS_ENABLED(CONFIG_MIUI_ZRAM_MEMORY_TRACKING)
-static inline void update_wb_pages_max(struct zram *zram,
-					const s64 wb_pages)
-{
-	unsigned long old_max, cur_max;
-
-	old_max = atomic_long_read(&zram->stats.wb_pages_max);
-
-	do {
-		cur_max = old_max;
-		if (wb_pages > cur_max)
-			old_max = atomic_long_cmpxchg(
-				&zram->stats.wb_pages_max, cur_max, wb_pages);
-	} while (old_max != cur_max);
-}
-#endif
 
 int is_writeback_entry(swp_entry_t entry)
 {
