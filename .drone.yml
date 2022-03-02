@@ -18,13 +18,15 @@ steps:
         from_secret: ci_channel_id
       BOT_API_KEY:
         from_secret: bot_api_key
+      PD_API_KEY:
+        from_secret: pd_api_key
       TYPE: "STGNG-0.2.1"
       DEVICE: alioth
       KBUILD_BUILD_USER: UtsavTheCunt
       KBUILD_BUILD_HOST: CuntsSpace
     commands:
       - apt-get update && apt-get install -y bison build-essential bc bison curl libssl-dev git zip python python3 flex cpio libncurses5-dev wget
-      - git clone https://github.com/UtsavBalar1231/Drone-scripts.git -b kona script && cd script
+      - git clone https://github.com/UtsavBalar1231/Drone-scripts.git -b test script && cd script
       - ./setup-drone
       - ./build-kernel
     when:
