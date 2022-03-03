@@ -4130,7 +4130,11 @@ static int ufshcd_wait_for_dev_cmd(struct ufs_hba *hba,
 		ufshcd_outstanding_req_clear(hba, lrbp->task_tag);
 	}
 
-	if (err && err != -EAGAIN) {
+	if (err
+#if IS_ENABLED(CONFIG_MI_MEMORY_SYSFS)
+		&& err != -EAGAIN
+#endif
+	) {
 		ufsdbg_set_err_state(hba);
 #if IS_ENABLED(CONFIG_MI_MEMORY_SYSFS)
 		hba->ufs_stats.err_stats[UFS_ERR_DEV_CMD]++;
@@ -10712,7 +10716,11 @@ enable_gating:
 out:
 	hba->pm_op_in_progress = 0;
 
-	if (ret && (ret != -EAGAIN))
+	if (ret
+#if IS_ENABLED(CONFIG_MI_MEMORY_SYSFS)
+		&& (ret != -EAGAIN)
+#endif
+	)
 		ufshcd_update_error_stats(hba, UFS_ERR_SUSPEND);
 
 	return ret;

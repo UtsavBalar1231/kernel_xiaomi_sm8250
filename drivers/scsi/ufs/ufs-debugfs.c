@@ -1539,7 +1539,9 @@ static int ufsdbg_read_err_state(void *data, u64 *val)
 void ufsdbg_set_err_state(struct ufs_hba *hba)
 {
 	hba->debugfs_files.err_occurred = true;
+#if IS_ENABLED(CONFIG_MI_MEMORY_SYSFS)
 	dump_stack();
+#endif
 }
 
 void ufsdbg_clr_err_state(struct ufs_hba *hba)
