@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010-2022 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2010-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2021-2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1231,6 +1232,16 @@ typedef enum {
     WMITLV_TAG_STRUC_wmi_pdev_sscan_per_detector_info,
     WMITLV_TAG_STRUC_wmi_ctrl_path_odd_addr_read_struct,
     WMITLV_TAG_STRUC_wmi_vdev_multiple_peer_group_cmd_fixed_param,
+    WMITLV_TAG_STRUC_wmi_vdev_set_ltf_key_seed_cmd_fixed_param,
+    WMITLV_TAG_STRUC_wmi_rtt_pasn_peer_create_req_event_fixed_param,
+    WMITLV_TAG_STRUC_wmi_rtt_pasn_peer_create_req_param,
+    WMITLV_TAG_STRUC_wmi_rtt_pasn_auth_status_cmd_fixed_param,
+    WMITLV_TAG_STRUC_wmi_rtt_pasn_auth_status_param,
+    WMITLV_TAG_STRUC_wmi_rtt_pasn_peer_delete_event_fixed_param,
+    WMITLV_TAG_STRUC_wmi_rtt_pasn_peer_delete_param,
+    WMITLV_TAG_STRUC_wmi_rtt_pasn_deauth_cmd_fixed_param,
+    WMITLV_TAG_STRUC_wmi_tx_send_params_ext,
+    WMITLV_TAG_STRUC_wmi_mgmt_rx_params_ext,
 } WMITLV_TAG_ID;
 
 /*
@@ -1716,6 +1727,9 @@ typedef enum {
     OP(WMI_SAWF_SVC_CLASS_DISABLE_CMDID) \
     OP(WMI_SOC_TQM_RESET_ENABLE_DISABLE_CMDID) \
     OP(WMI_VDEV_MULTIPLE_PEER_GROUP_CMDID) \
+    OP(WMI_VDEV_SET_LTF_KEY_SEED_CMDID) \
+    OP(WMI_RTT_PASN_AUTH_STATUS_CMD) \
+    OP(WMI_RTT_PASN_DEAUTH_CMD) \
     /* add new CMD_LIST elements above this line */
 
 
@@ -1995,6 +2009,8 @@ typedef enum {
     OP(WMI_RESMGR_CHAN_TIME_QUOTA_CHANGED_EVENTID) \
     OP(WMI_PDEV_PKTLOG_DECODE_INFO_EVENTID) \
     OP(WMI_SPECTRAL_CAPABILITIES_EVENTID) \
+    OP(WMI_RTT_PASN_PEER_CREATE_REQ_EVENTID) \
+    OP(WMI_RTT_PASN_PEER_DELETE_EVENTID) \
     /* add new EVT_LIST elements above this line */
 
 
@@ -2454,6 +2470,12 @@ WMITLV_CREATE_PARAM_STRUC(WMI_FD_TMPL_CMDID);
 
 WMITLV_CREATE_PARAM_STRUC(WMI_VDEV_INSTALL_KEY_CMDID);
 
+/* VDEV set LTF key seed Cmd */
+#define WMITLV_TABLE_WMI_VDEV_SET_LTF_KEY_SEED_CMDID(id,op,buf,len) \
+    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_STRUC_wmi_vdev_set_ltf_key_seed_cmd_fixed_param, wmi_vdev_set_ltf_key_seed_cmd_fixed_param, fixed_param, WMITLV_SIZE_FIX)\
+    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_BYTE, A_UINT8, key_seed, WMITLV_SIZE_VAR)
+WMITLV_CREATE_PARAM_STRUC(WMI_VDEV_SET_LTF_KEY_SEED_CMDID);
+
 /* VDEV WNM SLEEP MODE Cmd */
 #define WMITLV_TABLE_WMI_VDEV_WNM_SLEEPMODE_CMDID(id,op,buf,len) \
     WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_STRUC_WMI_VDEV_WNM_SLEEPMODE_CMD_fixed_param, WMI_VDEV_WNM_SLEEPMODE_CMD_fixed_param, fixed_param, WMITLV_SIZE_FIX)
@@ -2851,7 +2873,8 @@ WMITLV_CREATE_PARAM_STRUC(WMI_MGMT_TX_CMDID);
     WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_STRUC_wmi_mgmt_tx_send_cmd_fixed_param, wmi_mgmt_tx_send_cmd_fixed_param, fixed_param, WMITLV_SIZE_FIX) \
     WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_BYTE, A_UINT8, bufp, WMITLV_SIZE_VAR) \
     WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_STRUC_wmi_tx_send_params, wmi_tx_send_params, tx_send_params, WMITLV_SIZE_FIX) \
-    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_mlo_tx_send_params, mlo_tx_send_params, WMITLV_SIZE_VAR)
+    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_mlo_tx_send_params, mlo_tx_send_params, WMITLV_SIZE_VAR) \
+    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_tx_send_params_ext, tx_send_params_ext, WMITLV_SIZE_VAR)
 
 WMITLV_CREATE_PARAM_STRUC(WMI_MGMT_TX_SEND_CMDID);
 
@@ -4907,6 +4930,17 @@ WMITLV_CREATE_PARAM_STRUC(WMI_SOC_TQM_RESET_ENABLE_DISABLE_CMDID);
     WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_FIXED_STRUC, wmi_mac_addr, wds_macaddr, WMITLV_SIZE_VAR)
 WMITLV_CREATE_PARAM_STRUC(WMI_VDEV_MULTIPLE_PEER_GROUP_CMDID);
 
+/* RTT 11az PASN authentication status cmd */
+#define WMITLV_TABLE_WMI_RTT_PASN_AUTH_STATUS_CMD(id,op,buf,len) \
+    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_STRUC_wmi_rtt_pasn_auth_status_cmd_fixed_param, wmi_rtt_pasn_auth_status_cmd_fixed_param, fixed_param, WMITLV_SIZE_FIX) \
+    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_rtt_pasn_auth_status_param, pasn_auth_status_param, WMITLV_SIZE_VAR)
+WMITLV_CREATE_PARAM_STRUC(WMI_RTT_PASN_AUTH_STATUS_CMD);
+
+/* RTT 11az PASN deauthentication cmd */
+#define WMITLV_TABLE_WMI_RTT_PASN_DEAUTH_CMD(id,op,buf,len) \
+    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_STRUC_wmi_rtt_pasn_deauth_cmd_fixed_param, wmi_rtt_pasn_deauth_cmd_fixed_param, fixed_param, WMITLV_SIZE_FIX)
+WMITLV_CREATE_PARAM_STRUC(WMI_RTT_PASN_DEAUTH_CMD);
+
 
 
 /************************** TLV definitions of WMI events *******************************/
@@ -5161,7 +5195,8 @@ WMITLV_CREATE_PARAM_STRUC(WMI_PEER_STA_KICKOUT_EVENTID);
     WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_STRUC_wmi_mgmt_rx_hdr, wmi_mgmt_rx_hdr, hdr, WMITLV_SIZE_FIX)   \
     WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_BYTE, A_UINT8, bufp, WMITLV_SIZE_VAR) \
     WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_rssi_ctl_ext, rssi_ctl_ext, WMITLV_SIZE_VAR) \
-    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_STRUC_wmi_mgmt_rx_reo_params, wmi_mgmt_rx_reo_params, reo_params, WMITLV_SIZE_FIX)
+    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_STRUC_wmi_mgmt_rx_reo_params, wmi_mgmt_rx_reo_params, reo_params, WMITLV_SIZE_FIX) \
+    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC,  wmi_mgmt_rx_params_ext,  mgmt_rx_params_ext, WMITLV_SIZE_VAR)
 WMITLV_CREATE_PARAM_STRUC(WMI_MGMT_RX_EVENTID);
 
 /* Management Rx FW Consumed Event */
@@ -6632,6 +6667,20 @@ WMITLV_CREATE_PARAM_STRUC(WMI_RESMGR_CHAN_TIME_QUOTA_CHANGED_EVENTID);
 #define WMITLV_TABLE_WMI_PDEV_PKTLOG_DECODE_INFO_EVENTID(id,op,buf,len) \
     WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_STRUC_wmi_pdev_pktlog_decode_info_evt_fixed_param, wmi_pdev_pktlog_decode_info_evt_fixed_param, fixed_param, WMITLV_SIZE_FIX)
 WMITLV_CREATE_PARAM_STRUC(WMI_PDEV_PKTLOG_DECODE_INFO_EVENTID);
+
+/* RTT 11az PASN peer create request event */
+#define WMITLV_TABLE_WMI_RTT_PASN_PEER_CREATE_REQ_EVENTID(id,op,buf,len) \
+    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_STRUC_wmi_rtt_pasn_peer_create_req_event_fixed_param, \
+        wmi_rtt_pasn_peer_create_req_event_fixed_param, fixed_param, WMITLV_SIZE_FIX) \
+    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_rtt_pasn_peer_create_req_param, rtt_pasn_peer_param, WMITLV_SIZE_VAR)
+WMITLV_CREATE_PARAM_STRUC(WMI_RTT_PASN_PEER_CREATE_REQ_EVENTID);
+
+/* RTT 11az PASN peer delete event */
+#define WMITLV_TABLE_WMI_RTT_PASN_PEER_DELETE_EVENTID(id,op,buf,len) \
+    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_STRUC_wmi_rtt_pasn_peer_delete_event_fixed_param, \
+        wmi_rtt_pasn_peer_delete_event_fixed_param, fixed_param, WMITLV_SIZE_FIX) \
+    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_rtt_pasn_peer_delete_param, rtt_pasn_peer_param, WMITLV_SIZE_VAR)
+WMITLV_CREATE_PARAM_STRUC(WMI_RTT_PASN_PEER_DELETE_EVENTID);
 
 
 #ifdef __cplusplus

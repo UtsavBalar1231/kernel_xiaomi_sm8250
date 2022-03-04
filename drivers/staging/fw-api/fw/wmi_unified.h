@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010-2022 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2010-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2021-2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -581,6 +582,8 @@ typedef enum {
     WMI_VDEV_UPDATE_MAC_ADDR_CMDID,
     /* WMI cmd to perform operation on multiple peer based on subcmd type */
     WMI_VDEV_MULTIPLE_PEER_GROUP_CMDID,
+    /** Set LTF key seed which will be further used to derive LTF keys */
+    WMI_VDEV_SET_LTF_KEY_SEED_CMDID,
 
     /* peer specific commands */
 
@@ -944,6 +947,10 @@ typedef enum {
     WMI_RTT_MEASREQ_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_RTT),
     /** request to report a tsf measurement */
     WMI_RTT_TSF_CMDID,
+    /** RTT 11az PASN authentication status */
+    WMI_RTT_PASN_AUTH_STATUS_CMD,
+    /** RTT 11az PASN deauthentication cmd */
+    WMI_RTT_PASN_DEAUTH_CMD,
 
     /** spectral scan command */
     /** configure spectral scan */
@@ -1844,6 +1851,10 @@ typedef enum {
     WMI_TSF_MEASUREMENT_REPORT_EVENTID,
     /** RTT error report */
     WMI_RTT_ERROR_REPORT_EVENTID,
+    /** RTT 11az PASN peer create request */
+    WMI_RTT_PASN_PEER_CREATE_REQ_EVENTID,
+    /** RTT 11az PASN peer delete event */
+    WMI_RTT_PASN_PEER_DELETE_EVENTID,
 
     /*STATS specific events*/
     /** txrx stats event requested by host */
@@ -2573,6 +2584,12 @@ typedef struct _wmi_ppe_threshold {
  * 2 – index for == 160Mhz bw (only 3 bytes are valid and other is reserved)
  * 3 – index for == 320Mhz bw (only 3 bytes are valid and other is reserved)
  */
+enum {
+    WMI_EHT_SUPP_MCS_20MHZ_ONLY,
+    WMI_EHT_SUPP_MCS_LE_80MHZ,
+    WMI_EHT_SUPP_MCS_160MHZ,
+    WMI_EHT_SUPP_MCS_320MHZ,
+};
 #define WMI_MAX_EHT_SUPP_MCS_2G_SIZE  2
 #define WMI_MAX_EHT_SUPP_MCS_5G_SIZE  4
 
@@ -5539,6 +5556,44 @@ typedef struct {
     A_UINT32 mgmt_pkt_ctr_link_info;
 } wmi_mgmt_rx_reo_params;
 
+/** Helper macro for param GET/SET */
+#define WMI_RX_PARAM_EXT_META_ID_GET(mgmt_rx_params_ext_dword0) WMI_GET_BITS(mgmt_rx_params_ext_dword0, 0, 3)
+#define WMI_RX_PARAM_EXT_META_ID_SET(mgmt_rx_params_ext_dword0, value) WMI_SET_BITS(mgmt_rx_params_ext_dword0, 0, 3, value)
+
+#define WMI_RX_PARAM_EXT_BA_WIN_SIZE_GET(mgmt_rx_params_ext_dword1) WMI_GET_BITS(mgmt_rx_params_ext_dword1, 0, 16)
+#define WMI_RX_PARAM_EXT_BA_WIN_SIZE_SET(mgmt_rx_params_ext_dword1, value) WMI_SET_BITS(mgmt_rx_params_ext_dword1, 0, 16, value)
+
+#define WMI_RX_PARAM_EXT_REO_WIN_SIZE_GET(mgmt_rx_params_ext_dword1) WMI_GET_BITS(mgmt_rx_params_ext_dword1, 16, 16)
+#define WMI_RX_PARAM_EXT_REO_WIN_SIZE_SET(mgmt_rx_params_ext_dword1, value) WMI_SET_BITS(mgmt_rx_params_ext_dword1, 16, 16, value)
+
+typedef enum {
+    WMI_RX_PARAMS_EXT_META_ADDBA = 0x0,
+} wmi_mgmt_rx_params_ext_meta_t;
+
+typedef struct {
+    A_UINT32 tlv_header; /* TLV tag (WMITLV_TAG_STRUC_wmi_mgmt_rx_params_ext) and len */
+    union {
+        struct {
+            A_UINT32
+                /* Describes the representation of the data in rx_param_ext_dword1
+                 * Full set shown in wmi_mgmt_rx_params_ext_meta_t */
+                meta_id     : 3,
+                /* Dedicated for commonly used parameters only */
+                reserved_0  : 29;
+        };
+        A_UINT32 mgmt_rx_params_ext_dword0;
+    };
+    union {
+        struct {
+            /* WMI_RX_PARAMS_EXT_META_ADDBA */
+            A_UINT32
+                ba_win_size :16,  /* negotiated BA window size */
+                reo_win_size :16; /* 2x the negotiated BA window size to handle any latency across MLO */
+        };
+        A_UINT32 mgmt_rx_params_ext_dword1;
+    };
+} wmi_mgmt_rx_params_ext;
+
 typedef struct {
     A_UINT32 tlv_header; /* TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_mgmt_rx_hdr */
     /** channel on which this frame is received (channel number) */
@@ -5596,6 +5651,10 @@ typedef struct {
 /*
  * This TLV is followed by struct:
  * wmi_mgmt_rx_reo_params reo_params;// MGMT rx REO params
+ */
+/*
+ * This TLV is optionally followed by struct:
+ * wmi_mgmt_rx_params_ext mgmt_rx_params_ext[0 or 1];
  */
 } wmi_mgmt_rx_hdr;
 
@@ -6003,6 +6062,36 @@ typedef struct {
  */
 } wmi_mgmt_tx_hdr;
 
+#define WMI_TX_SEND_PARAM_EXT_META_ID_GET(tx_param_ext_dword0) WMI_GET_BITS(tx_param_dword0, 0, 3)
+#define WMI_TX_SEND_PARAM_EXT_META_ID_SET(tx_param_ext_dword0, value) WMI_SET_BITS(tx_param_dword0, 0, 3, value)
+
+#define WMI_TX_SEND_PARAM_EXT_WIN_SIZE_GET(tx_param_ext_dword1) WMI_GET_BITS(tx_param_dword1, 0, 16)
+#define WMI_TX_SEND_PARAM_EXT_WIN_SIZE_SET(tx_param_ext_dword1, value) WMI_SET_BITS(tx_param_dword1, 0, 16, value)
+
+typedef enum {
+    WMI_TX_SEND_PARAMS_EXT_META_ADDBA = 0x0,
+    WMI_TX_SEND_PARAMS_EXT_META_DELBA = 0x1,
+} wmi_tx_send_params_ext_meta_t;
+
+typedef struct {
+    A_UINT32 tlv_header; /* TLV tag (WMITLV_TAG_STRUC_wmi_tx_send_params_ext) and len */
+    union {
+        struct {
+            A_UINT32 meta_id     : 3,  /* Describes the representation of the data in tx_param_ext_dword1 Full set shown in wmi_tx_send_params_ext_meta_t */
+                     reserved_0  : 29; /* Dedicated for commonly used parameters only */
+        };
+        A_UINT32 tx_param_ext_dword0;
+    };
+    union {
+        struct {
+        /* WMI_TX_SEND_PARAMS_EXT_META_ADDBA */
+            A_UINT32 win_size    : 16,
+                     reserved_1  : 16;
+        };
+        A_UINT32 tx_param_ext_dword1;
+    };
+} wmi_tx_send_params_ext;
+
 #define WMI_TX_SEND_PARAM_PWR_GET(tx_param_dword0) WMI_GET_BITS(tx_param_dword0, 0, 8)
 #define WMI_TX_SEND_PARAM_PWR_SET(tx_param_dword0, value) WMI_SET_BITS(tx_param_dword0, 0, 8, value)
 
@@ -6245,6 +6334,7 @@ typedef struct {
 /* This TLV is followed by wmi_tx_send_params
  * wmi_tx_send_params tx_send_params;
  * wmi_mlo_tx_send_params mlo_tx_send_params[];
+ * wmi_tx_send_params_ext tx_send_params_ext[0 or 1];
  */
 } wmi_mgmt_tx_send_cmd_fixed_param;
 
@@ -8031,6 +8121,10 @@ typedef enum {
 
     /* Param to enable/disable probing on all BW */
     WMI_PDEV_PARAM_EN_PROBE_ALL_BW,
+
+    /* Param to enable/disable updating scrambler seed feature */
+    WMI_PDEV_PARAM_EN_UPDATE_SCRAM_SEED,
+
 } WMI_PDEV_PARAM;
 
 #define WMI_PDEV_ONLY_BSR_TRIG_IS_ENABLED(trig_type) WMI_GET_BITS(trig_type, 0, 1)
@@ -12488,6 +12582,22 @@ typedef struct {
  */
 } wmi_vdev_install_key_cmd_fixed_param;
 
+typedef struct {
+    A_UINT32 tlv_header; /** TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_vdev_set_ltf_key_seed_cmd_fixed_param */
+    /** unique id identifying the VDEV, generated by the caller */
+    A_UINT32 vdev_id;
+    /** MAC address used for deriving */
+    wmi_mac_addr peer_macaddr;
+    /** authentication mode */
+    A_UINT32 rsn_authmode;
+    /** LTF key seed length */
+    A_UINT32 key_seed_len;
+/*
+ * Following this struct are this TLV.
+ *     A_UINT8  key_seed[key_seed_len]; <-- actual LTF key seed;
+ */
+} wmi_vdev_set_ltf_key_seed_cmd_fixed_param;
+
 /** Preamble types to be used with VDEV fixed rate configuration */
 typedef enum {
     WMI_RATE_PREAMBLE_OFDM,
@@ -13052,6 +13162,9 @@ typedef enum {
      *               1- Manual mode(addba req not sent).
      *               2- buffer size 64
      *               3- buffer size 256
+     *               4- buffer size 128 // placeholder, not valid
+     *               5- buffer size 512
+     *               6- buffer size 1024
      */
     WMI_VDEV_PARAM_BA_MODE,                                 /* 0x7e */
 
@@ -14945,6 +15058,7 @@ enum wmi_peer_type {
     WMI_PEER_TYPE_OCB = 3,        /* Peer is a OCB Peer */
     WMI_PEER_TYPE_NAN_DATA = 4,   /* Peer is NAN DATA */
     WMI_PEER_TYPE_TRANS_BSS = 5,  /* For creating BSS peer when connecting with non-transmit AP */
+    WMI_PEER_TYPE_PASN = 6,       /* Peer is used for Pre-Association Security Negotiation */
     WMI_PEER_TYPE_HOST_MAX = 127, /* Host <-> Target Peer type is assigned up to 127 */
                                   /* Reserved from 128 - 255 for target internal use.*/
     WMI_PEER_TYPE_ROAMOFFLOAD_TEMP = 128, /* Temporarily created during offload roam */
@@ -17374,7 +17488,18 @@ typedef struct{
 #define WMI_ROAM_INVOKE_FLAG_NO_NULL_FRAME_TO_AP       2
 /* start extra full scan if no candidate found in previous scan */
 #define WMI_ROAM_INVOKE_FLAG_FULL_SCAN_IF_NO_CANDIDATE 3
-/* from bit 4 to bit 31 are reserved */
+/* when bit is set:
+ *     Candidate selection algo will based on fw score algo.
+ *     Which means configurations like wmi_roam_score_delta_param,
+ *     wmi_configure_roam_trigger_parameters is also configurable for
+ *     host_invoke roam, as well as consider current BSS score as
+ *     score algo input.
+ * when bit is not set:
+ *     Candidate selection algo will ignore score and above configurations
+ *     and ignore current BSS score.
+ */
+#define WMI_ROAM_INVOKE_FLAG_SELECT_CANDIDATE_CONSIDER_SCORE 4
+/* from bit 5 to bit 31 are reserved */
 
 #define WMI_SET_ROAM_INVOKE_ADD_CH_TO_CACHE(flag) do { \
         (flag) |=  (1 << WMI_SET_ROAM_INVOKE_ADD_CH_TO_CACHE);      \
@@ -18038,6 +18163,8 @@ typedef enum event_type_e {
     WOW_TWT_EVENT,                        /* 32 + 10 */
     WOW_DCS_INTERFERENCE_DET,             /* 32 + 11 */
     WOW_ROAM_STATS_EVENT,                 /* 32 + 12 */
+    WOW_RTT_11AZ_EVENT,                   /* 32 + 13 */
+    WOW_P2P_NOA_EVENT,                    /* 32 + 14 */
 } WOW_WAKE_EVENT_TYPE;
 
 typedef enum wake_reason_e {
@@ -18115,6 +18242,8 @@ typedef enum wake_reason_e {
     WOW_REASON_DCS_INT_DET,
     WOW_REASON_ROAM_STATS,
     WOW_REASON_MDNS_WAKEUP,
+    WOW_REASON_RTT_11AZ,
+    WOW_REASON_P2P_NOA_UPDATE,
 
     /* add new WOW_REASON_ defs before this line */
     WOW_REASON_MAX,
@@ -30490,6 +30619,9 @@ static INLINE A_UINT8 *wmi_id_to_name(A_UINT32 wmi_command)
         WMI_RETURN_STRING(WMI_VDEV_UPDATE_MAC_ADDR_CMDID);
         WMI_RETURN_STRING(WMI_SOC_TQM_RESET_ENABLE_DISABLE_CMDID);
         WMI_RETURN_STRING(WMI_VDEV_MULTIPLE_PEER_GROUP_CMDID);
+        WMI_RETURN_STRING(WMI_VDEV_SET_LTF_KEY_SEED_CMDID);
+        WMI_RETURN_STRING(WMI_RTT_PASN_AUTH_STATUS_CMD);
+        WMI_RETURN_STRING(WMI_RTT_PASN_DEAUTH_CMD);
     }
 
     return (A_UINT8 *) "Invalid WMI cmd";
@@ -30535,6 +30667,7 @@ typedef enum {
      */
     AFC_SERV_RESP_FORMAT_JSON = 0,
     AFC_SERV_RESP_FORMAT_BINARY = 1,
+    AFC_SERV_RESP_FORMAT_IGNORE = 2, /* When cmd type is reset,server response is set to FORMAT_IGNORE */
 } WMI_AFC_SERV_RESP_FORMAT_TYPE;
 
 typedef enum {
@@ -30545,6 +30678,7 @@ typedef enum {
      * This type can be expanded in future as per requirements.
      */
     WMI_AFC_CMD_SERV_RESP_READY = 1,
+    WMI_AFC_CMD_RESET = 2, /* Added cmd type to handle AFC reset */
 } WMI_AFC_CMD_TYPE;
 
 /** Host indicating AFC info availability to FW */
@@ -37266,6 +37400,7 @@ typedef struct {
 typedef struct {
     A_UINT32 tlv_header; /** TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_vdev_multiple_peer_group_cmd_fixed_param */
     A_UINT32 vdev_id;
+    A_UINT32 pdev_id;
     /** Sub command id - Currently supported command ids are
      *  WMI_PEER_REMOVE_WDS_ENTRY_CMDID
      */
@@ -37274,6 +37409,92 @@ typedef struct {
      * wmi_mac_addr wds_macaddr[]; <--- Array of wds mac addresses.
      */
 } wmi_vdev_multiple_peer_group_cmd_fixed_param;
+
+#define WMI_RTT_PASN_PEER_CREATE_SECURITY_MODE_GET(flag)          WMI_GET_BITS(flag, 0, 2)
+#define WMI_RTT_PASN_PEER_CREATE_SECURITY_MODE_SET(flag,val)      WMI_SET_BITS(flag, 0, 2, val)
+#define WMI_RTT_PASN_PEER_CREATE_FORCE_SELF_MAC_USE_GET(flag)     WMI_GET_BITS(flag, 2, 1)
+#define WMI_RTT_PASN_PEER_CREATE_FORCE_SELF_MAC_USE_SET(flag,val) WMI_SET_BITS(flag, 2, 1, val)
+
+typedef struct {
+    A_UINT32 tlv_header; /** TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_rtt_pasn_peer_create_req_event_fixed_param */
+    /** unique id identifying the VDEV, generated by the caller */
+    A_UINT32 vdev_id;
+/**
+ * The following TLV will follow this fixed_param TLV:
+ *
+ * wmi_rtt_pasn_peer_create_req_param rtt_pasn_peer_param[]
+ */
+} wmi_rtt_pasn_peer_create_req_event_fixed_param;
+
+typedef struct {
+    A_UINT32     tlv_header; /** TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_rtt_pasn_peer_create_req_param */
+
+    wmi_mac_addr self_mac_addr; /* self MAC address (can be vdev address or random mac address) */
+    wmi_mac_addr dest_mac_addr; /* MAC address of the peer */
+
+    A_UINT32     control_flag; /* some control information here */
+    /*********************************************************************************
+     * Bits 1:0:   Security mode, check wmi_rtt_security_mode for detail.
+     *             Host driver to request supplicant to derive and install PASN keys if security mode is set.
+     * Bit 2:      Force_self_mac_addr_use, To indicate supplicant/hostapd to use this self mac addr to (re)generate PASN keys,
+     *             and flush old cache( if it exists) for dest_mac_addr with old self_mac_addr.
+     * Bits 31:3:  Reserved
+     */
+} wmi_rtt_pasn_peer_create_req_param;
+
+
+typedef struct {
+    A_UINT32 tlv_header; /** TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_rtt_pasn_auth_status_cmd_fixed_param */
+/**
+ * The following TLV will follow this fixed_param TLV:
+ *
+ * wmi_rtt_pasn_auth_status_param pasn_auth_status_param[]
+ */
+} wmi_rtt_pasn_auth_status_cmd_fixed_param;
+
+typedef struct {
+    A_UINT32     tlv_header; /** TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_rtt_pasn_auth_status_param */
+    /* MAC address of the peer */
+    wmi_mac_addr peer_mac_addr;
+    /* Return status. 0 for success, non-zero otherwise */
+    A_UINT32     status;
+} wmi_rtt_pasn_auth_status_param;
+
+
+#define WMI_RTT_PASN_PEER_DELETE_DELETED_BIT_GET(flag)     WMI_GET_BITS(flag, 0, 1)
+#define WMI_RTT_PASN_PEER_DELETE_DELETED_BIT_SET(flag,val) WMI_SET_BITS(flag, 0, 1, val)
+#define WMI_RTT_PASN_PEER_DELETE_FLUSH_KEYS_GET(flag)      WMI_GET_BITS(flag, 1, 1)
+#define WMI_RTT_PASN_PEER_DELETE_FLUSH_KEYS_SET(flag,val)  WMI_SET_BITS(flag, 1, 1, val)
+
+typedef struct {
+    A_UINT32 tlv_header; /** TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_rtt_pasn_peer_delete_event_fixed_param */
+    /** unique id identifying the VDEV, generated by the caller */
+    A_UINT32 vdev_id;
+/**
+ * The following TLV will follow this fixed_param TLV:
+ *
+ * wmi_rtt_pasn_peer_delete_param rtt_pasn_peer_param[]
+ */
+} wmi_rtt_pasn_peer_delete_event_fixed_param;
+
+typedef struct {
+    A_UINT32     tlv_header; /** TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_rtt_pasn_peer_delete_param */
+    /* MAC address of the peer */
+    wmi_mac_addr peer_mac_addr;
+    /* some control information here */
+    A_UINT32     control_flag;
+/**********************************************************************************
+ * Bit 0:    peer_deleted (This is set to 1 if peer has already been deleted by the target)
+ * Bit 1:    flush keys (This is set to 1 if target wants the cached PASN keys to be flushed)
+ * Bits 31:2: reserved
+ */
+} wmi_rtt_pasn_peer_delete_param;
+
+typedef struct {
+    A_UINT32     tlv_header; /** TLV tag and len; tag equals WMITLV_TAG_STRUC_wmi_rtt_pasn_deauth_cmd_fixed_param */
+    /* MAC address of the peer */
+    wmi_mac_addr peer_mac_addr;
+} wmi_rtt_pasn_deauth_cmd_fixed_param;
 
 
 
