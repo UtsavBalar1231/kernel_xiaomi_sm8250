@@ -79,8 +79,13 @@ UTS_TRUNCATE="cut -b -$UTS_LEN"
    CC_VERSION="$KBUILD_COMPILER_STRING"
   fi
 
-  LD_VERSION=$($LD -v | head -n1 | sed 's/(compatible with [^)]*)//' \
+  if [ -z "$KBUILD_LINKER_STRING" ]; then
+   LD_VERSION=$($LD -v | head -n1 | sed 's/(compatible with [^)]*)//' \
 		      | sed 's/[[:space:]]*$//')
+  else
+   LD_VERSION="$KBUILD_LINKER_STRING"
+  fi
+
   printf '#define LINUX_COMPILER "%s"\n' "$CC_VERSION, $LD_VERSION"
 ) > .tmpcompile
 
