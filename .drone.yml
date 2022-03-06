@@ -27,10 +27,10 @@ steps:
     commands:
       - apt-get update && apt-get install -y bison build-essential bc bison curl libssl-dev git zip python python3 flex cpio libncurses5-dev wget
       - git clone https://github.com/UtsavBalar1231/Drone-scripts.git -b test script && cd script
-      - ./setup-drone
-      - ./build-kernel
+      - ./setup-drone --aosp-clang
+      - ./build-kernel --aosp-clang
     when:
       branch:
-        - android12-stable
+        - test
       event:
         - push
