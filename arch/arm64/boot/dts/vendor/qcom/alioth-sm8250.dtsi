@@ -510,12 +510,10 @@ this file is for attribution only of alioth
 	status = "ok";
 	aw8697_haptic@5A {
 		compatible = "awinic,aw8697_haptic";
-		vib_bst_vol_default = < 0x11 >;
-		vib_bst_vol_ram = < 0x11 >;
-		vib_bst_vol_rtp = < 0x11 >;
 		status = "ok";
 	};
 };
+
 &pm8150b_charger {
 	status = "ok";
 	qcom,sec-charger-config = <0>;

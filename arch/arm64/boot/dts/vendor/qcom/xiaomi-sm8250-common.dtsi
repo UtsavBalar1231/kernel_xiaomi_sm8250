@@ -236,27 +236,27 @@
 		irq-gpio = <&tlmm 129 0>;
 		vib_mode = < 0 >;   /*mode:   RAM mode->0; CONT mode -> 1*/
 		vib_f0_pre = < 1700 >;
-		vib_f0_cali_percen = < 7 >;
-		vib_cont_drv_lev = < 38 >;
-		vib_cont_drv_lvl_ov = < 50 >;
-		vib_cont_td = < 0xf06c >;
-		vib_cont_zc_thr = < 0x08f8 >;  /*hq 0x08F8 */
+		vib_f0_cali_percen = < 9 >;
+		vib_cont_drv_lev = < 63 >;
+		vib_cont_drv_lvl_ov = < 63 >;
+		vib_cont_td = < 0x009A >;
+		vib_cont_zc_thr = < 0x0FF1 >;  /*hq 0x08F8 */
 		vib_cont_num_brk = < 3 >;
 		vib_f0_coeff = < 260 >; /*Don't modify it    2.604167*/
-		vib_f0_trace_parameter = < 9 3 1 31 >;
-		vib_bemf_config = < 0 0x08 0x03 0xf8 >;
+		vib_f0_trace_parameter = <0x05 0x03 0x02 0x0f>;
+		vib_bemf_config = < 0x10 0x08 0x03 0xf8 >;
 		vib_sw_brake = < 0x2c >;
 		vib_tset = < 0x12 >;
 		vib_r_spare = < 0x68 >;
 		vib_bstdbg = < 0x30 0xeb 0xd4 0 0 0 >;
 		vib_effect_id_boundary = < 10 >;
-		vib_effect_max = < 193 >;   /*vib_effect_max must bigger than vib_effect_id*/
+		vib_effect_max = < 192 >;   /*vib_effect_max must bigger than vib_effect_id*/
 		vib_trig_config = < 0 1 0 1 2
 						0 1 0 1 2
 						0 1 0 1 2 >;
-		vib_bst_vol_default = < 0x10 >;
-		vib_bst_vol_ram = < 0x10 >;
-		vib_bst_vol_rtp = < 0x10 >;
+		vib_bst_vol_default = < 0x0c >;
+		vib_bst_vol_ram = < 0x0c >;
+		vib_bst_vol_rtp = < 0x0c >;
 		vib_rtp_time = < 20 20 20 20 20 20 20 20 20000 15000
 				 15000 20000 25000 15000 30000 25000 20000 20000 20000 20000
 				 20000 20000 20000 20000 20000 20000 20000 20000 20000 20000
