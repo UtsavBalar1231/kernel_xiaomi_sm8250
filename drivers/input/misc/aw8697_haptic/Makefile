@@ -1,15 +1,8 @@
-ifeq ($(CONFIG_BOARD_LMI),y)
+ifeq ($(TARGET_PRODUCT),lmi)
 CDEFINES += -DUSE_CONT_F0_CALI
 KBUILD_CPPFLAGS += $(CDEFINES)
-else ifeq ($(CONFIG_BOARD_UMI),y)
-CDEFINES += -DSUPPORT_RELOAD_FW
-KBUILD_CPPFLAGS += $(CDEFINES)
 endif
 
-ifeq ($(CONFIG_BOARD_PSYCHE),y)
-CDEFINES += -DRETRY_F0_CHECK \
-            -DRTP_SET_GAIN
-KBUILD_CPPFLAGS += $(CDEFINES)
-endif
+aw8697-haptic-objs = ringbuffer.o aw8697.o
 
-obj-$(CONFIG_INPUT_AW8697_HAPTIC)	+= aw8697.o ringbuffer.o
+obj-$(CONFIG_INPUT_AW8697_HAPTIC)	+= aw8697-haptic.o
