@@ -31,6 +31,6 @@ steps:
       - ./build-kernel --aosp-clang
     when:
       branch:
-        - test
+        - android12-ci
       event:
         - push
