@@ -15,7 +15,7 @@ export KERNEL_CFG
 export OUT_DIR
 
 # Set compiler PATH
-PATH=$HOME/gas:$HOME/clang/bin:$PATH
+PATH=${HOME}/aospa/prebuilts/clang/host/linux-x86/clang-r416183b1/bin:$PATH
 
 BUILD="make O=$OUT_DIR \
 ARCH=arm64 \
@@ -29,7 +29,7 @@ export BUILD
 cd "$KERNEL_TOP" || exit
 
 # These values must be changed for forks!
-KERNEL_DEFCONFIG_URL="https://github.com/UtsavBalar1231/kernel_xiaomi_sm8250"
+KERNEL_DEFCONFIG_URL="https://github.com/AOSPA/android_kernel_xiaomi_sm8250"
 KERNEL_DEFCONFIG_HEAD=$(git -C ${KERNEL_CFG} rev-parse HEAD)
 
 SOC="kona"
