@@ -32,13 +32,6 @@ cd "$KERNEL_TOP" || exit
 KERNEL_DEFCONFIG_URL="https://github.com/UtsavBalar1231/kernel_xiaomi_sm8250"
 KERNEL_DEFCONFIG_HEAD=$(git -C ${KERNEL_CFG} rev-parse HEAD)
 
-read -r -d '' KERNEL_COMMIT_MESSAGE << EOM
-ARM64: configs: xiaomi: update auto-generated defconfig for all devices
-This update is generated automatically by using the update_defconfig script
-HEAD of the project used to prepare this commit:
-${KERNEL_DEFCONFIG_URL}/tree/${KERNEL_DEFCONFIG_HEAD}
-EOM
-
 SOC="kona"
 if [ -n  "$*" ]; then
   case "$1" in
@@ -107,7 +100,21 @@ if [ -n  "$*" ]; then
   esac
   mv "$OUT_DIR"/defconfig ./arch/arm64/configs/"$1"_defconfig
 
+read -r -d '' KERNEL_COMMIT_MESSAGE << EOM
+ARM64: configs: ${DEVICE}: update auto-generated defconfig for ${DEVICE}
+This update is generated automatically by using the update_defconfig script
+HEAD of the project used to prepare this commit:
+${KERNEL_DEFCONFIG_URL}/tree/${KERNEL_DEFCONFIG_HEAD}
+EOM
+
 else
+
+read -r -d '' KERNEL_COMMIT_MESSAGE << EOM
+ARM64: configs: xiaomi: update auto-generated defconfig for all devices
+This update is generated automatically by using the update_defconfig script
+HEAD of the project used to prepare this commit:
+${KERNEL_DEFCONFIG_URL}/tree/${KERNEL_DEFCONFIG_HEAD}
+EOM
 
   DEVICES="alioth apollo cas cmi elish enuma lmi umi thyme psyche"
 
