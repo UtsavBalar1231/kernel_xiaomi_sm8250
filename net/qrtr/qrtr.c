@@ -849,7 +849,9 @@ int qrtr_endpoint_post(struct qrtr_endpoint *ep, const void *data, size_t len)
 	    cb->type != QRTR_TYPE_RESUME_TX)
 		goto err;
 
-	pm_wakeup_ws_event(node->ws, qrtr_wakeup_ms, true);
+	/* Force wakeup for all packets except for slpi and adsp */
+	if (node->nid != 9 && node->nid != 5)
+		pm_wakeup_ws_event(node->ws, qrtr_wakeup_ms, true);
 
 	skb->data_len = size;
 	skb->len = size;
