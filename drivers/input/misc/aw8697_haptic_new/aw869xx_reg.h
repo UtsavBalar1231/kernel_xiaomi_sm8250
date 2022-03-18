@@ -1,12 +1,9 @@
-/* SPDX-License-Identifier: GPL-2.0 */
 #ifndef _AW869XX_REG_H_
 #define _AW869XX_REG_H_
 
-/*
- *******************************************
+/********************************************
  * Register List
- *******************************************
- */
+ *******************************************/
 
 #define AW869XX_REG_ID		0x00
 #define AW869XX_REG_SYSST	0x01
@@ -907,4 +904,4 @@ const unsigned char aw869xx_reg_access[AW869XX_REG_MAX] = {
 #define AW869XX_BIT_D2SCFG1_CLK_TRIM_MODE_6K		(3<<0)
 #define AW869XX_BIT_D2SCFG1_CLK_TRIM_MODE_12M		(4<<0)
 
-#endif /* _AW869XX_REG_H_ */
+#endif
