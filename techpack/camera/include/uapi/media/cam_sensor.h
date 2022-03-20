@@ -118,7 +118,9 @@ struct cam_ois_opcode {
 	uint32_t coeff;
 	uint32_t pheripheral;
 	uint32_t memory;
+#ifdef CONFIG_BOARD_PSYCHE
 	uint32_t ois_get_data;
+#endif
 	uint8_t  fw_addr_type;
 	uint8_t  is_addr_increase;
 	uint8_t  is_addr_indata;

@@ -27,8 +27,12 @@
 #include "cam_debug_util.h"
 #include "cam_common_util.h"
 
+#ifdef CONFIG_BOARD_PSYCHE
 /* Xiaomi: enlarge from 60 to 120 */
 #define CAM_REQ_MGR_EVENT_MAX 120
+#else
+#define CAM_REQ_MGR_EVENT_MAX 60
+#endif
 
 static struct cam_req_mgr_device g_dev;
 struct kmem_cache *g_cam_req_mgr_timer_cachep;
