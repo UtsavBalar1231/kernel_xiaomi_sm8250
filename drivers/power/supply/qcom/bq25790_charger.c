@@ -43,10 +43,10 @@
 #include "bq25790_reg.h"
 #include "bq25790.h"
 
-#define	bq_info	pr_err
+#define	bq_info	pr_debug
 #define bq_dbg	pr_debug
-#define bq_err	pr_err
-#define bq_log	pr_err
+#define bq_err	pr_debug
+#define bq_log	pr_debug
 
 enum {
 	USER		= BIT(0),

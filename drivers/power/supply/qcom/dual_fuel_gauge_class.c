@@ -47,7 +47,7 @@ enum reason {
 	CURRENT = BIT(2),
 	SOC = BIT(3),
 };
-static int debug_mask = PR_OEM;
+static int debug_mask = PR_DEBUG;
 module_param_named(debug_mask, debug_mask, int, 0600);
 static struct dual_fg_info *global_dual_fg_info = NULL;
 struct dual_fg_chip {

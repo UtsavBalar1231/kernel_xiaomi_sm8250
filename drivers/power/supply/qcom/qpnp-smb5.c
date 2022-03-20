@@ -233,7 +233,7 @@ struct smb5 {
 
 static struct smb_charger *__smbchg;
 
-static int __debug_mask = PR_MISC | PR_WLS | PR_OEM | PR_PARALLEL;
+static int __debug_mask;
 
 static BLOCKING_NOTIFIER_HEAD(pen_charge_state_notifier_list);
 
