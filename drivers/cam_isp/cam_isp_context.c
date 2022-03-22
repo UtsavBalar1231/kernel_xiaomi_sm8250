@@ -1170,6 +1170,8 @@ static void __cam_isp_ctx_buf_done_match_req(
 	CAM_DBG(CAM_ISP,
 		"buf done num handles %d match count %d for next req:%lld",
 		done->num_handles, match_count, req->request_id);
+	CAM_DBG(CAM_ISP,
+		"irq_delay_detected %d", *irq_delay_detected);
 }
 
 static int __cam_isp_ctx_handle_buf_done_verify_addr(
