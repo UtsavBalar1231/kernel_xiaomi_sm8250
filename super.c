@@ -113,7 +113,6 @@ static int exfat_set_vol_flags(struct super_block *sb, unsigned short new_flags)
 {
 	struct exfat_sb_info *sbi = EXFAT_SB(sb);
 	struct boot_sector *p_boot = (struct boot_sector *)sbi->boot_bh->b_data;
-	bool sync;
 
 	/* retain persistent-flags */
 	new_flags |= sbi->vol_flags_persistent;
@@ -136,16 +135,15 @@ static int exfat_set_vol_flags(struct super_block *sb, unsigned short new_flags)
 
 	p_boot->vol_flags = cpu_to_le16(new_flags);
 
-	if ((new_flags & VOLUME_DIRTY) && !buffer_dirty(sbi->boot_bh))
-		sync = true;
-	else
-		sync = false;
-
 	set_buffer_uptodate(sbi->boot_bh);
 	mark_buffer_dirty(sbi->boot_bh);
 
-	if (sync)
-		sync_dirty_buffer(sbi->boot_bh);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
+	__sync_dirty_buffer(sbi->boot_bh, REQ_SYNC | REQ_FUA | REQ_PREFLUSH);
+#else
+	__sync_dirty_buffer(sbi->boot_bh, REQ_SYNC | REQ_FUA | REQ_FLUSH);
+#endif
+
 	return 0;
 }
 
