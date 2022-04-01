@@ -222,6 +222,7 @@ struct cam_ife_hw_mgr_ctx {
  * @ife_dev_caps           ife device capability per core
  * @work q                 work queue for IFE hw manager
  * @debug_cfg              debug configuration
+ * @support_consumed_addr  indicate whether hw supports last consumed address
  */
 struct cam_ife_hw_mgr {
 	struct cam_isp_hw_mgr          mgr_common;
@@ -241,6 +242,7 @@ struct cam_ife_hw_mgr {
 	struct cam_req_mgr_core_workq *workq;
 	struct cam_ife_hw_mgr_debug    debug_cfg;
 	spinlock_t                     ctx_lock;
+	bool                           support_consumed_addr;
 };
 
 /**

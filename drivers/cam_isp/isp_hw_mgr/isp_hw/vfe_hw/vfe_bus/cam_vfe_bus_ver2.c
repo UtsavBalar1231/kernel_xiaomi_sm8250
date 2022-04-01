@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/ratelimit.h>
@@ -104,6 +105,7 @@ struct cam_vfe_bus_ver2_common_data {
 	bool                                        hw_init;
 	struct cam_vfe_bus_ver2_stats_cfg_info     *stats_data;
 	bool                                        disable_ubwc_comp;
+	bool                                        support_consumed_addr;
 };
 
 struct cam_vfe_bus_ver2_wm_resource_data {
@@ -3902,6 +3904,7 @@ static int cam_vfe_bus_process_cmd(
 {
 	int rc = -EINVAL;
 	struct cam_vfe_bus_ver2_priv		 *bus_priv;
+	bool *support_consumed_addr;
 
 	if (!priv || !cmd_args) {
 		CAM_ERR_RATE_LIMIT(CAM_ISP, "Invalid input arguments");
@@ -3939,6 +3942,12 @@ static int cam_vfe_bus_process_cmd(
 		break;
 	case CAM_ISP_HW_CMD_UBWC_UPDATE_V2:
 		rc = cam_vfe_bus_update_ubwc_config_v2(cmd_args);
+		break;
+	case CAM_ISP_HW_CMD_IS_CONSUMED_ADDR_SUPPORT:
+		bus_priv = (struct cam_vfe_bus_ver2_priv *) priv;
+		support_consumed_addr = (bool *)cmd_args;
+		*support_consumed_addr =
+			bus_priv->common_data.support_consumed_addr;
 		break;
 	default:
 		CAM_ERR_RATE_LIMIT(CAM_ISP, "Invalid camif process command:%d",
@@ -4002,6 +4011,8 @@ int cam_vfe_bus_ver2_init(
 		CAM_VFE_BUS_ADDR_NO_SYNC_DEFAULT_VAL;
 	bus_priv->common_data.hw_init            = false;
 	bus_priv->common_data.stats_data         = ver2_hw_info->stats_data;
+	bus_priv->common_data.support_consumed_addr =
+		ver2_hw_info->support_consumed_addr;
 
 	mutex_init(&bus_priv->common_data.bus_mutex);
 
