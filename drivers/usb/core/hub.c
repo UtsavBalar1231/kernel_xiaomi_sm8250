@@ -4919,7 +4919,7 @@ hub_port_init(struct usb_hub *hub, struct usb_device *udev, int port1,
 	if (hcd->driver->update_device)
 		hcd->driver->update_device(hcd, udev);
 	/*skip this initial*/
-	if (IS_ENABLED(CONFIG_BOARD_XIAOMI))
+	if (!IS_ENABLED(CONFIG_BOARD_XIAOMI))
 		hub_set_initial_usb2_lpm_policy(udev);
 fail:
 	if (retval) {
