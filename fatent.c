@@ -6,6 +6,7 @@
 #include <linux/slab.h>
 #include <asm/unaligned.h>
 #include <linux/buffer_head.h>
+#include <linux/blkdev.h>
 
 #include "exfat_raw.h"
 #include "exfat_fs.h"
@@ -278,6 +279,46 @@ int exfat_find_last_cluster(struct super_block *sb, struct exfat_chain *p_chain,
 	return 0;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
+int exfat_zeroed_cluster(struct inode *dir, unsigned int clu)
+{
+	struct super_block *sb = dir->i_sb;
+	struct exfat_sb_info *sbi = EXFAT_SB(sb);
+	struct buffer_head *bh;
+	sector_t blknr, last_blknr;
+	int i;
+
+	blknr = exfat_cluster_to_sector(sbi, clu);
+	last_blknr = blknr + sbi->sect_per_clus;
+
+	if (last_blknr > sbi->num_sectors && sbi->num_sectors > 0) {
+		exfat_fs_error_ratelimit(sb,
+			"%s: out of range(sect:%llu len:%u)",
+			__func__, (unsigned long long)blknr,
+			sbi->sect_per_clus);
+		return -EIO;
+	}
+
+	/* Zeroing the unused blocks on this cluster */
+	for (i = blknr; i < last_blknr; i++) {
+		bh = sb_getblk(sb, i);
+		if (!bh)
+			return -ENOMEM;
+
+		memset(bh->b_data, 0, sb->s_blocksize);
+		set_buffer_uptodate(bh);
+		mark_buffer_dirty(bh);
+		brelse(bh);
+	}
+
+	if (IS_DIRSYNC(dir))
+		return sync_blockdev_range(sb->s_bdev,
+				EXFAT_BLK_TO_B(blknr, sb),
+				EXFAT_BLK_TO_B(last_blknr, sb) - 1);
+
+	return 0;
+}
+#else
 int exfat_zeroed_cluster(struct inode *dir, unsigned int clu)
 {
 	struct super_block *sb = dir->i_sb;
@@ -324,6 +365,7 @@ release_bhs:
 		bforget(bhs[i]);
 	return err;
 }
+#endif
 
 int exfat_alloc_cluster(struct inode *inode, unsigned int num_alloc,
 		struct exfat_chain *p_chain, bool sync_bmap)
