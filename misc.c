@@ -84,6 +84,13 @@ static void exfat_adjust_tz(struct timespec *ts, u8 tz_off)
 		ts->tv_sec += TIMEZONE_SEC(0x80 - tz_off);
 }
 
+static inline int exfat_tz_offset(struct exfat_sb_info *sbi)
+{
+	if (sbi->options.sys_tz)
+		return -sys_tz.tz_minuteswest;
+	return sbi->options.time_offset;
+}
+
 /* Convert a EXFAT time/date pair to a UNIX date (seconds since 1 1 70). */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0)
 void exfat_get_entry_time(struct exfat_sb_info *sbi, struct timespec64 *ts,
@@ -111,8 +118,7 @@ void exfat_get_entry_time(struct exfat_sb_info *sbi, struct timespec *ts,
 		/* Adjust timezone to UTC0. */
 		exfat_adjust_tz(ts, tz & ~EXFAT_TZ_VALID);
 	else
-		/* Convert from local time to UTC using time_offset. */
-		ts->tv_sec -= sbi->options.time_offset * SECS_PER_MIN;
+		ts->tv_sec -= exfat_tz_offset(sbi) * SECS_PER_MIN;
 }
 
 /* Convert linear UNIX date to a EXFAT time/date pair. */
