@@ -652,7 +652,7 @@ static int ffs_ep0_open(struct inode *inode, struct file *file)
 	file->private_data = ffs;
 	ffs_data_opened(ffs);
 
-	return 0;
+	return stream_open(inode, file);
 }
 
 static int ffs_ep0_release(struct inode *inode, struct file *file)
@@ -1183,7 +1183,7 @@ ffs_epfile_open(struct inode *inode, struct file *file)
 	ffs_data_opened(epfile->ffs);
 	atomic_inc(&epfile->opened);
 
-	return 0;
+	return stream_open(inode, file);
 }
 
 static int ffs_aio_cancel(struct kiocb *kiocb)
@@ -1809,6 +1809,9 @@ static void ffs_data_put(struct ffs_data *ffs)
 
 static void ffs_data_closed(struct ffs_data *ffs)
 {
+	struct ffs_epfile *epfiles;
+	unsigned long flags;
+
 	ENTER();
 
 	ffs_log("state %d setup_state %d flag %lu opened %d", ffs->state,
@@ -1817,11 +1820,16 @@ static void ffs_data_closed(struct ffs_data *ffs)
 	if (atomic_dec_and_test(&ffs->opened)) {
 		if (ffs->no_disconnect) {
 			ffs->state = FFS_DEACTIVATED;
-			if (ffs->epfiles) {
-				ffs_epfiles_destroy(ffs->epfiles,
-						   ffs->eps_count);
-				ffs->epfiles = NULL;
-			}
+			spin_lock_irqsave(&ffs->eps_lock, flags);
+			epfiles = ffs->epfiles;
+			ffs->epfiles = NULL;
+			spin_unlock_irqrestore(&ffs->eps_lock,
+							flags);
+
+			if (epfiles)
+				ffs_epfiles_destroy(epfiles,
+						 ffs->eps_count);
+
 			if (ffs->setup_state == FFS_SETUP_PENDING)
 				__ffs_ep0_stall(ffs);
 		} else {
@@ -1882,6 +1890,9 @@ static struct ffs_data *ffs_data_new(const char *dev_name)
 
 static void ffs_data_clear(struct ffs_data *ffs)
 {
+	struct ffs_epfile *epfiles;
+	unsigned long flags;
+
 	ENTER();
 
 	ffs_log("enter: state %d setup_state %d flag %lu", ffs->state,
@@ -1893,11 +1904,25 @@ static void ffs_data_clear(struct ffs_data *ffs)
 
 	BUG_ON(ffs->gadget);
 
-	if (ffs->epfiles)
-		ffs_epfiles_destroy(ffs->epfiles, ffs->eps_count);
+	spin_lock_irqsave(&ffs->eps_lock, flags);
+	epfiles = ffs->epfiles;
+	ffs->epfiles = NULL;
+	spin_unlock_irqrestore(&ffs->eps_lock, flags);
 
-	if (ffs->ffs_eventfd)
+	/*
+	 * potential race possible between ffs_func_eps_disable
+	 * & ffs_epfile_release therefore maintaining a local
+	 * copy of epfile will save us from use-after-free.
+	 */
+	if (epfiles) {
+		ffs_epfiles_destroy(epfiles, ffs->eps_count);
+		ffs->epfiles = NULL;
+	}
+
+	if (ffs->ffs_eventfd) {
 		eventfd_ctx_put(ffs->ffs_eventfd);
+		ffs->ffs_eventfd = NULL;
+	}
 
 	kfree(ffs->raw_descs_data);
 	kfree(ffs->raw_strings);
@@ -1913,7 +1938,6 @@ static void ffs_data_reset(struct ffs_data *ffs)
 
 	ffs_data_clear(ffs);
 
-	ffs->epfiles = NULL;
 	ffs->raw_descs_data = NULL;
 	ffs->raw_descs = NULL;
 	ffs->raw_strings = NULL;
@@ -2057,16 +2081,19 @@ static void ffs_epfiles_destroy(struct ffs_epfile *epfiles, unsigned count)
 
 static void ffs_func_eps_disable(struct ffs_function *func)
 {
-	struct ffs_ep *ep         = func->eps;
 	struct ffs_data *ffs      = func->ffs;
-	struct ffs_epfile *epfile = func->ffs->epfiles;
-	unsigned count            = func->ffs->eps_count;
+	struct ffs_ep *ep;
+	struct ffs_epfile *epfile;
+	unsigned short count;
 	unsigned long flags;
 
 	ffs_log("enter: state %d setup_state %d flag %lu", func->ffs->state,
 		func->ffs->setup_state, func->ffs->flags);
 
 	spin_lock_irqsave(&func->ffs->eps_lock, flags);
+	count = func->ffs->eps_count;
+	epfile = func->ffs->epfiles;
+	ep = func->eps;
 	while (count--) {
 		/* pending requests get nuked */
 		if (likely(ep->ep))
@@ -2085,10 +2112,10 @@ static void ffs_func_eps_disable(struct ffs_function *func)
 
 static int ffs_func_eps_enable(struct ffs_function *func)
 {
-	struct ffs_data *ffs      = func->ffs;
-	struct ffs_ep *ep         = func->eps;
-	struct ffs_epfile *epfile = ffs->epfiles;
-	unsigned count            = ffs->eps_count;
+	struct ffs_data *ffs;
+	struct ffs_ep *ep;
+	struct ffs_epfile *epfile;
+	unsigned short count;
 	unsigned long flags;
 	int ret = 0;
 
@@ -2096,6 +2123,10 @@ static int ffs_func_eps_enable(struct ffs_function *func)
 		func->ffs->setup_state, func->ffs->flags);
 
 	spin_lock_irqsave(&func->ffs->eps_lock, flags);
+	ffs = func->ffs;
+	ep = func->eps;
+	epfile = ffs->epfiles;
+	count = ffs->eps_count;
 	while(count--) {
 		ep->ep->driver_data = ep;
 

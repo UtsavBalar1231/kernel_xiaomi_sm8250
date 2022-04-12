@@ -1553,6 +1553,11 @@ static void cpuset_attach(struct cgroup_taskset *tset)
 
 	mutex_lock(&cpuset_mutex);
 
+	/*
+	 * It should hold cpus lock because a cpu offline event can
+	 * cause set_cpus_allowed_ptr() failed.
+	 */
+	get_online_cpus();
 	/* prepare for attach */
 	if (cs == &top_cpuset)
 		cpumask_copy(cpus_attach, cpu_possible_mask);
@@ -1571,6 +1576,7 @@ static void cpuset_attach(struct cgroup_taskset *tset)
 		cpuset_change_task_nodemask(task, &cpuset_attach_nodemask_to);
 		cpuset_update_task_spread_flag(cs, task);
 	}
+       put_online_cpus();
 
 	/*
 	 * Change mm for all threadgroup leaders. This is expensive and may
