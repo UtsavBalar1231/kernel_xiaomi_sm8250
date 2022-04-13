@@ -2228,6 +2228,9 @@ static void ufshcd_ungate_work(struct work_struct *work)
 	struct ufs_hba *hba = container_of(work, struct ufs_hba,
 			clk_gating.ungate_work);
 
+	if (oops_in_progress)
+		return;
+
 	ufshcd_cancel_gate_work(hba);
 
 	ufs_spin_lock_irqsave(hba->host->host_lock, flags);
@@ -2415,6 +2418,9 @@ static void ufshcd_gate_work(struct work_struct *work)
 	struct ufs_hba *hba = container_of(work, struct ufs_hba,
 						clk_gating.gate_work);
 	unsigned long flags;
+
+	if (oops_in_progress)
+		return;
 
 	hba->clk_gating.gate_wk_in_process = true;
 	ufs_spin_lock_irqsave(hba->host->host_lock, flags);
@@ -5607,6 +5613,9 @@ static int __ufshcd_uic_hibern8_enter(struct ufs_hba *hba)
 	int ret;
 	struct uic_command uic_cmd = {0};
 	ktime_t start = ktime_get();
+
+	if (oops_in_progress)
+		return 0;
 
 	ufshcd_vops_hibern8_notify(hba, UIC_CMD_DME_HIBER_ENTER, PRE_CHANGE);
 

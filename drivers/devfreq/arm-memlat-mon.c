@@ -344,6 +344,9 @@ static void memlat_monitor_work(struct work_struct *work)
 	struct memlat_mon *mon;
 	unsigned int i;
 
+	if (oops_in_progress)
+		return;
+
 	mutex_lock(&cpu_grp->mons_lock);
 	if (!cpu_grp->num_active_mons)
 		goto unlock_out;
