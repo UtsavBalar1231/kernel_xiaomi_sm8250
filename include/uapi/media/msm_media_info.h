@@ -4,11 +4,20 @@
 
 #include <asm/bitsperlong.h>
 
-
+#if __BITS_PER_LONG == 64
+#define NV12_STRIDE_ALIGNMENT 512
+#define NV12_SCANLINE_ALIGNMENT 512
+#else
 #define NV12_STRIDE_ALIGNMENT 128
 #define NV12_SCANLINE_ALIGNMENT 32
+#endif
 
-#define UBWC_EXTRA_SIZE 16384 /* 16*1024 extra size */
+#ifdef VENUS_USE_64BIT_ALIGNMENT
+#undef NV12_STRIDE_ALIGNMENT
+#undef NV12_SCANLINE_ALIGNMENT
+#define NV12_STRIDE_ALIGNMENT 512
+#define NV12_SCANLINE_ALIGNMENT 512
+#endif
 
 /* Width and Height should be multiple of 16 */
 #define INTERLACE_WIDTH_MAX 1920
@@ -1239,7 +1248,7 @@ invalid_input:
 static inline unsigned int VENUS_BUFFER_SIZE(unsigned int color_fmt,
 	unsigned int width, unsigned int height)
 {
-	unsigned int size = 0, uv_alignment = 0;
+	unsigned int size = 0;
 	unsigned int y_plane, uv_plane, y_stride,
 		uv_stride, y_sclines, uv_sclines;
 	unsigned int y_ubwc_plane = 0, uv_ubwc_plane = 0;
@@ -1264,11 +1273,10 @@ static inline unsigned int VENUS_BUFFER_SIZE(unsigned int color_fmt,
 	case COLOR_FMT_NV21:
 	case COLOR_FMT_NV12:
 	case COLOR_FMT_P010:
-	case COLOR_FMT_NV12_128:
 	case COLOR_FMT_NV12_512:
-		uv_alignment = 4096;
+	case COLOR_FMT_NV12_128:
 		y_plane = y_stride * y_sclines;
-		uv_plane = uv_stride * uv_sclines + uv_alignment;
+		uv_plane = uv_stride * uv_sclines;
 		size = y_plane + uv_plane;
 		break;
 	case COLOR_FMT_NV12_UBWC:
@@ -1311,9 +1319,8 @@ static inline unsigned int VENUS_BUFFER_SIZE(unsigned int color_fmt,
 			uv_meta_plane = MSM_MEDIA_ALIGN(uv_meta_stride *
 				uv_meta_scanlines, 4096);
 			size = (y_ubwc_plane + uv_ubwc_plane + y_meta_plane +
-				uv_meta_plane)+(64 * y_stride);
+				uv_meta_plane);
 		}
-		size += UBWC_EXTRA_SIZE;
 		break;
 	case COLOR_FMT_NV12_BPP10_UBWC:
 		y_ubwc_plane = MSM_MEDIA_ALIGN(y_stride * y_sclines, 4096);
