@@ -58,7 +58,7 @@ config ZRAM_DEDUP
 	bool "Deduplication support for ZRAM data"
 	depends on ZRAM
 	select XXHASH
-	default n
+	default y
 	help
 	  Deduplicate ZRAM data to reduce amount of memory consumption.
 	  Advantage largely depends on the workload. In some cases, this
