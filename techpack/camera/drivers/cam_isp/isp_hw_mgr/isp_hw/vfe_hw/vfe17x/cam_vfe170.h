@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _CAM_VFE170_H_
@@ -860,6 +861,7 @@ static struct cam_vfe_bus_ver2_hw_info vfe170_bus_hw_info = {
 			.max_height    = -1,
 		},
 	},
+	.support_consumed_addr = false,
 };
 
 struct cam_vfe_hw_info cam_vfe170_hw_info = {

@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _CAM_ISP_CONTEXT_H_
@@ -255,6 +256,7 @@ struct cam_isp_context_event_record {
  * @split_acquire:             Indicate whether a separate acquire is expected
  * @custom_enabled:            Custom HW enabled for this ctx
  * @use_frame_header_ts:       Use frame header for qtimer ts
+ * @support_consumed_addr:     Indicate whether HW has last consumed addr reg
  * @init_timestamp:            Timestamp at which this context is initialized
  * @rxd_epoch:                 Indicate whether epoch has been received. Used to
  *                             decide whether to apply request in offline ctx
@@ -299,6 +301,7 @@ struct cam_isp_context {
 	bool                                  split_acquire;
 	bool                                  custom_enabled;
 	bool                                  use_frame_header_ts;
+	bool                                  support_consumed_addr;
 	unsigned int                          init_timestamp;
 	atomic_t                              rxd_epoch;
 	struct cam_req_mgr_core_workq        *workq;
