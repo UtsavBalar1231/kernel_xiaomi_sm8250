@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2011-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -288,6 +289,8 @@ blm_filter_bssid(struct wlan_objmgr_pdev *pdev, qdf_list_t *scan_list)
 	uint32_t scan_list_size;
 	enum blm_bssid_action action;
 	qdf_list_node_t *cur_node = NULL, *next_node = NULL;
+	struct scan_cache_node *force_connect_candidate = NULL;
+	bool are_all_candidate_blacklisted = true;
 
 	if (!scan_list || !qdf_list_size(scan_list)) {
 		blm_debug("Scan list is NULL or No BSSIDs present");
@@ -303,11 +306,56 @@ blm_filter_bssid(struct wlan_objmgr_pdev *pdev, qdf_list_t *scan_list)
 		scan_node = qdf_container_of(cur_node, struct scan_cache_node,
 					    node);
 		action = blm_action_on_bssid(pdev, scan_node->entry);
+
+		if (are_all_candidate_blacklisted &&
+		    (action == BLM_ACTION_NOP ||
+		     action == BLM_MOVE_AT_LAST))
+			are_all_candidate_blacklisted = false;
+
+		/*
+		 * The below logic is added to select the best candidate
+		 * amongst the blacklisted candidates. This is done to
+		 * handle a case where all the BSSIDs become blacklisted
+		 * and hence there are continuous connection failures.
+		 * With the below logic if the action on BSSID is to remove
+		 * then we keep a backup node and restore the candidate
+		 * list.
+		 */
+		if (action == BLM_REMOVE_FROM_LIST &&
+		    are_all_candidate_blacklisted) {
+			if (!force_connect_candidate) {
+				force_connect_candidate =
+					qdf_mem_malloc(
+					   sizeof(*force_connect_candidate));
+				if (!force_connect_candidate)
+					return QDF_STATUS_E_NOMEM;
+				force_connect_candidate->entry =
+				   util_scan_copy_cache_entry(scan_node->entry);
+				if (!force_connect_candidate->entry)
+					return QDF_STATUS_E_NOMEM;
+			} else if (scan_node->entry->bss_score >
+				   force_connect_candidate->entry->bss_score) {
+				util_scan_free_cache_entry(
+					force_connect_candidate->entry);
+				force_connect_candidate->entry =
+				  util_scan_copy_cache_entry(scan_node->entry);
+				if (!force_connect_candidate->entry)
+					return QDF_STATUS_E_NOMEM;
+			}
+		}
 		if (action != BLM_ACTION_NOP)
 			blm_modify_scan_list(scan_list, scan_node, action);
 		cur_node = next_node;
 		next_node = NULL;
 		scan_list_size--;
+	}
+
+	if (are_all_candidate_blacklisted && force_connect_candidate) {
+		qdf_list_insert_front(scan_list,
+				      &force_connect_candidate->node);
+	} else if (force_connect_candidate) {
+		util_scan_free_cache_entry(force_connect_candidate->entry);
+		qdf_mem_free(force_connect_candidate);
 	}
 
 	return QDF_STATUS_SUCCESS;
