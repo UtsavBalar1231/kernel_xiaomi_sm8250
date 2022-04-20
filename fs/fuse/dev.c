@@ -926,7 +926,7 @@ static int fuse_copy_page(struct fuse_copy_state *cs, struct page **pagep,
 			 * Can't control lifetime of pipe buffers, so always
 			 * copy user pages.
 			 */
-			if (cs->req->user_pages) {
+			if (cs->req->args->user_pages) {
 				err = fuse_copy_fill(cs);
 				if (err)
 					return err;
