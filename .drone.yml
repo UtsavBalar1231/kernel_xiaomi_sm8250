@@ -20,7 +20,7 @@ steps:
         from_secret: bot_api_key
       PD_API_KEY:
         from_secret: pd_api_key
-      TYPE: "REL-2.0.0"
+      TYPE: "REL-2.0.1"
       DEVICE: alioth
       KBUILD_BUILD_USER: UtsavTheCunt
       KBUILD_BUILD_HOST: CuntsSpace
