@@ -12560,17 +12560,6 @@ static int hdd_update_mac_addr_to_fw(struct hdd_context *hdd_ctx)
 	return 0;
 }
 
-static void reverse_byte_array(uint8_t *arr, int len)
-{
-	int i = 0;
-
-	for (i = 0; i < len / 2; i++) {
-		char temp = arr[i];
-		arr[i] = arr[len - i - 1];
-		arr[len - i - 1] = temp;
-	}
-}
-
 /**
  * hdd_initialize_mac_address() - API to get wlan mac addresses
  * @hdd_ctx: HDD Context
@@ -12606,7 +12595,6 @@ static int hdd_initialize_mac_address(struct hdd_context *hdd_ctx)
 
 	/* Use fw provided MAC */
 	if (!qdf_is_macaddr_zero(&hdd_ctx->hw_macaddr)) {
-		reverse_byte_array(&hdd_ctx->hw_macaddr.bytes[0], 6);
 		hdd_update_macaddr(hdd_ctx, hdd_ctx->hw_macaddr, false);
 		update_mac_addr_to_fw = false;
 		return 0;
