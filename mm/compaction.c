@@ -1064,9 +1064,6 @@ static bool suitable_migration_source(struct compact_control *cc,
 {
 	int block_mt;
 
-	if (pageblock_skip_persistent(page))
-		return false;
-
 	if ((cc->mode != MIGRATE_ASYNC) || !cc->direct_compaction)
 		return true;
 
@@ -1703,17 +1700,12 @@ static isolate_migrate_t isolate_migratepages(struct zone *zone,
 			continue;
 
 		/*
-		 * For async compaction, also only scan in MOVABLE blocks
-		 * without huge pages. Async compaction is optimistic to see
-		 * if the minimum amount of work satisfies the allocation.
-		 * The cached PFN is updated as it's possible that all
-		 * remaining blocks between source and target are unsuitable
-		 * and the compaction scanners fail to meet.
+		 * For async compaction, also only scan in MOVABLE blocks.
+		 * Async compaction is optimistic to see if the minimum amount
+		 * of work satisfies the allocation.
 		 */
-		if (!suitable_migration_source(cc, page)) {
-			update_cached_migrate(cc, block_end_pfn);
+		if (!suitable_migration_source(cc, page))
 			continue;
-		}
 
 		/* Perform the isolation */
 		low_pfn = isolate_migratepages_block(cc, low_pfn,
