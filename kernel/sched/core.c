@@ -2897,9 +2897,6 @@ static void __sched_fork(unsigned long clone_flags, struct task_struct *p)
 	INIT_HLIST_HEAD(&p->preempt_notifiers);
 #endif
 
-#ifdef CONFIG_COMPACTION
-	p->capture_control = NULL;
-#endif
 	init_numa_balancing(clone_flags, p);
 }
 

@@ -2059,8 +2059,7 @@ bool compaction_zonelist_suitable(struct alloc_context *ac, int order,
 	return false;
 }
 
-static enum compact_result
-compact_zone(struct compact_control *cc, struct capture_control *capc)
+static enum compact_result compact_zone(struct compact_control *cc)
 {
 	enum compact_result ret;
 	unsigned long start_pfn = cc->zone->zone_start_pfn;
@@ -2240,11 +2239,6 @@ check_drain:
 			}
 		}
 
-		/* Stop if a page has been captured */
-		if (capc && capc->page) {
-			ret = COMPACT_SUCCESS;
-			break;
-		}
 	}
 
 out:
@@ -2278,8 +2272,7 @@ out:
 
 static enum compact_result compact_zone_order(struct zone *zone, int order,
 		gfp_t gfp_mask, enum compact_priority prio,
-		unsigned int alloc_flags, int classzone_idx,
-		struct page **capture)
+		unsigned int alloc_flags, int classzone_idx)
 {
 	enum compact_result ret;
 	struct compact_control cc = {
@@ -2296,21 +2289,11 @@ static enum compact_result compact_zone_order(struct zone *zone, int order,
 		.ignore_skip_hint = (prio == MIN_COMPACT_PRIORITY),
 		.ignore_block_suitable = (prio == MIN_COMPACT_PRIORITY)
 	};
-	struct capture_control capc = {
-		.cc = &cc,
-		.page = NULL,
-	};
 
-	if (capture)
-		current->capture_control = &capc;
-
-	ret = compact_zone(&cc, &capc);
+	ret = compact_zone(&cc);
 
 	VM_BUG_ON(!list_empty(&cc.freepages));
 	VM_BUG_ON(!list_empty(&cc.migratepages));
-
-	*capture = capc.page;
-	current->capture_control = NULL;
 
 	return ret;
 }
@@ -2329,7 +2312,7 @@ int sysctl_extfrag_threshold = 500;
  */
 enum compact_result try_to_compact_pages(gfp_t gfp_mask, unsigned int order,
 		unsigned int alloc_flags, const struct alloc_context *ac,
-		enum compact_priority prio, struct page **capture)
+		enum compact_priority prio)
 {
 	int may_perform_io = gfp_mask & __GFP_IO;
 	struct zoneref *z;
@@ -2357,7 +2340,7 @@ enum compact_result try_to_compact_pages(gfp_t gfp_mask, unsigned int order,
 		}
 
 		status = compact_zone_order(zone, order, gfp_mask, prio,
-				alloc_flags, ac_classzone_idx(ac), capture);
+					alloc_flags, ac_classzone_idx(ac));
 		rc = max(status, rc);
 
 		/* The allocation should succeed, stop compacting */
@@ -2419,7 +2402,7 @@ static void compact_node(int nid)
 
 		cc.zone = zone;
 
-		compact_zone(&cc, NULL);
+		compact_zone(&cc);
 
 		VM_BUG_ON(!list_empty(&cc.freepages));
 		VM_BUG_ON(!list_empty(&cc.migratepages));
@@ -2554,7 +2537,7 @@ static void kcompactd_do_work(pg_data_t *pgdat)
 			return;
 
 		cc.zone = zone;
-		status = compact_zone(&cc, NULL);
+		status = compact_zone(&cc);
 
 		if (status == COMPACT_SUCCESS) {
 			compaction_defer_reset(zone, cc.order, false);
