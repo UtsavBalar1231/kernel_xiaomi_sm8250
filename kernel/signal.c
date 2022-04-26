@@ -1406,7 +1406,6 @@ int group_send_sig_info(int sig, struct siginfo *info, struct task_struct *p,
 	rcu_read_unlock();
 
 	if (!ret && sig) {
-		check_panic_on_foreground_kill(p);
 		ret = do_send_sig_info(sig, info, p, type);
 		if (capable(CAP_KILL) && sig == SIGKILL) {
 			if (!strcmp(current->comm, ULMK_MAGIC))
