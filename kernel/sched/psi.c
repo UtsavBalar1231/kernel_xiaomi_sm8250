@@ -143,9 +143,6 @@
 #include <linux/psi.h>
 #include "sched.h"
 
-#define CREATE_TRACE_POINTS
-#include <trace/events/psi.h>
-
 static int psi_bug __read_mostly;
 
 DEFINE_STATIC_KEY_FALSE(psi_disabled);
@@ -457,33 +454,6 @@ static void psi_avgs_work(struct work_struct *work)
 	mutex_unlock(&group->avgs_lock);
 }
 
-#ifdef CONFIG_PSI_FTRACE
-static void trace_event_helper(struct psi_group *group)
-{
-	struct zone *zone;
-	unsigned long wmark;
-	unsigned long free;
-	unsigned long cma;
-	unsigned long file;
-	u64 memstall = group->total[PSI_POLL][PSI_MEM_SOME];
-
-	for_each_populated_zone(zone) {
-		wmark = zone->watermark[WMARK_HIGH];
-		free = zone_page_state(zone, NR_FREE_PAGES);
-		cma = zone_page_state(zone, NR_FREE_CMA_PAGES);
-		file = zone_page_state(zone, NR_ZONE_ACTIVE_FILE) +
-			zone_page_state(zone, NR_ZONE_INACTIVE_FILE);
-
-		trace_psi_window_vmstat(
-			memstall, zone->name, wmark, free, cma, file);
-	}
-}
-#else
-static void trace_event_helper(struct psi_group *group)
-{
-}
-#endif /* CONFIG_PSI_FTRACE */
-
 /* Trigger tracking window manupulations */
 static void window_reset(struct psi_window *win, u64 now, u64 value,
 			 u64 prev_growth)
@@ -576,8 +546,6 @@ static u64 update_triggers(struct psi_group *group, u64 now)
 		if (now < t->last_event_time + t->win.size)
 			continue;
 
-		trace_psi_event(t->state, t->threshold);
-
 		t->last_event_time = now;
 		t->last_event_growth = growth;
 		/* Generate an event */
@@ -651,7 +619,6 @@ static void psi_poll_work(struct kthread_work *work)
 		 */
 		group->polling_until = now +
 			group->poll_min_period * UPDATES_PER_WINDOW;
-		trace_event_helper(group);
 	}
 
 	if (now > group->polling_until) {
