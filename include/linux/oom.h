@@ -118,18 +118,14 @@ extern void dump_tasks(struct mem_cgroup *memcg,
 		       const nodemask_t *nodemask);
 
 #ifdef CONFIG_HAVE_USERSPACE_LOW_MEMORY_KILLER
-extern bool should_ulmk_retry(gfp_t gfp);
+extern bool should_ulmk_retry(void);
 extern void ulmk_update_last_kill(void);
-extern void ulmk_watchdog_fn(struct timer_list *t);
-extern void ulmk_watchdog_pet(struct timer_list *t);
 #else
-static inline bool should_ulmk_retry(gfp_t gfp)
+static inline bool should_ulmk_retry(void)
 {
 	return false;
 }
 static inline void ulmk_update_last_kill(void) {}
-static inline void ulmk_watchdog_fn(struct timer_list *t) {}
-static inline void ulmk_watchdog_pet(struct timer_list *t) {}
 #endif
 
 /* sysctls */
