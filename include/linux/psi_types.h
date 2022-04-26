@@ -124,9 +124,6 @@ struct psi_trigger {
 	/* Refcounting to prevent premature destruction */
 	struct kref refcount;
 
-	/* Task that created the trigger */
-	char comm[TASK_COMM_LEN];
-
 	/*
 	 * Stall time growth for the last event in ns.
 	 */
