@@ -82,7 +82,6 @@ DEFINE_MUTEX(oom_adj_mutex);
 
 /* The maximum amount of time to loop in should_ulmk_retry() */
 #define ULMK_TIMEOUT (20 * HZ)
-#define ULMK_EMERG_TRIG_TIMEOUT (ULMK_TIMEOUT + 10 * HZ)
 
 #define ULMK_DBG_POLICY_TRIGGER (BIT(0))
 #define ULMK_DBG_POLICY_WDOG (BIT(1))
@@ -95,7 +94,6 @@ static atomic64_t ulmk_wdog_expired = ATOMIC64_INIT(0);
 static atomic64_t ulmk_kill_jiffies = ATOMIC64_INIT(INITIAL_JIFFIES);
 static atomic64_t ulmk_watchdog_pet_jiffies = ATOMIC64_INIT(INITIAL_JIFFIES);
 static unsigned long psi_emergency_jiffies = INITIAL_JIFFIES;
-static unsigned long psi_emerg_trigger_jiffies = INITIAL_JIFFIES;
 /* Prevents contention on the mutex_trylock in psi_emergency_jiffies */
 static DEFINE_MUTEX(ulmk_retry_lock);
 
@@ -174,10 +172,9 @@ bool should_ulmk_retry(gfp_t gfp_mask)
 	 *    current time and return true.
 	 *
 	 * b) If no kill have had happened in the last ULMK_TIMEOUT and
-	 *    LMKD also stuck for the last ULMK_TIMEOUT despite an
-	 *    emergency trigger in the last ULMK_EMERG_TRIG_TIMEOUT, which
-	 *    then means that system kill logic is not responding despite
-	 *    PSI events sent from kernel. Return false.
+	 *    LMKD also stuck for the last ULMK_TIMEOUT, which then means
+	 *    that system kill logic is not responding despite PSI events
+	 *    sent from kernel. Return false.
 	 *
 	 * c) Cond1: trigger = !active && wdog_expired = false:
 	 *    Then give a chance to the ULMK by raising emergnecy trigger
@@ -204,14 +201,11 @@ bool should_ulmk_retry(gfp_t gfp_mask)
 		psi_emergency_jiffies = now;
 		ret = true;
 	} else if (time_after(now, psi_emergency_jiffies + ULMK_TIMEOUT) &&
-		   time_after(now, last_wdog_pet + ULMK_TIMEOUT) &&
-		   time_after(psi_emerg_trigger_jiffies,
-				now - ULMK_EMERG_TRIG_TIMEOUT)) {
+		   time_after(now, last_wdog_pet + ULMK_TIMEOUT)) {
 		ret = false;
 	} else if (!trigger_active) {
 		BUG_ON(ulmk_dbg_policy & ULMK_DBG_POLICY_TRIGGER);
 		psi_emergency_trigger();
-		psi_emerg_trigger_jiffies = now;
 		ret = true;
 	} else if (wdog_expired) {
 		mutex_lock(&oom_lock);
