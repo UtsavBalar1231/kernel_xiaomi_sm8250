@@ -2121,28 +2121,17 @@ struct vm_struct *__get_vm_area_caller(unsigned long size, unsigned long flags,
  */
 struct vm_struct *get_vm_area(unsigned long size, unsigned long flags)
 {
-#ifdef CONFIG_ENABLE_VMALLOC_SAVING
-	return __get_vm_area_node(size, 1, flags, PAGE_OFFSET, VMALLOC_END,
-				  NUMA_NO_NODE, GFP_KERNEL,
-				  __builtin_return_address(0));
-#else
 	return __get_vm_area_node(size, 1, flags, VMALLOC_START, VMALLOC_END,
 				  NUMA_NO_NODE, GFP_KERNEL,
 				  __builtin_return_address(0));
-#endif
 }
 EXPORT_SYMBOL_GPL(get_vm_area);
 
 struct vm_struct *get_vm_area_caller(unsigned long size, unsigned long flags,
 				const void *caller)
 {
-#ifdef CONFIG_ENABLE_VMALLOC_SAVING
-	return __get_vm_area_node(size, 1, flags, PAGE_OFFSET, VMALLOC_END,
-				  NUMA_NO_NODE, GFP_KERNEL, caller);
-#else
 	return __get_vm_area_node(size, 1, flags, VMALLOC_START, VMALLOC_END,
 				  NUMA_NO_NODE, GFP_KERNEL, caller);
-#endif
 }
 
 /**
