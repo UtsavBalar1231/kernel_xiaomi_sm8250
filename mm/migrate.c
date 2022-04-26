@@ -903,7 +903,7 @@ static int fallback_migrate_page(struct address_space *mapping,
 	 */
 	if (page_has_private(page) &&
 	    !try_to_release_page(page, GFP_KERNEL))
-		return mode == MIGRATE_SYNC ? -EAGAIN : -EBUSY;
+		return -EAGAIN;
 
 	return migrate_page(mapping, newpage, page, mode);
 }
