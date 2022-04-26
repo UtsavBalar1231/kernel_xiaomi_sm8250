@@ -68,28 +68,6 @@ DEFINE_MUTEX(oom_lock);
 /* Serializes oom_score_adj and oom_score_adj_min updates */
 DEFINE_MUTEX(oom_adj_mutex);
 
-/*
- * If ULMK has killed a process recently,
- * we are making progress.
- */
-
-#ifdef CONFIG_HAVE_USERSPACE_LOW_MEMORY_KILLER
-static atomic64_t ulmk_kill_jiffies = ATOMIC64_INIT(INITIAL_JIFFIES);
-
-
-bool should_ulmk_retry(void)
-{
-	unsigned long j = atomic64_read(&ulmk_kill_jiffies);
-
-	return time_before(jiffies, j + 2 * HZ);
-}
-
-void ulmk_update_last_kill(void)
-{
-	atomic64_set(&ulmk_kill_jiffies, jiffies);
-}
-#endif
-
 #ifdef CONFIG_NUMA
 /**
  * has_intersects_mems_allowed() - check task eligiblity for kill
