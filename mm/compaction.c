@@ -1407,7 +1407,7 @@ fast_isolate_freepages(struct compact_control *cc)
 				page = pfn_to_page(highest);
 				cc->free_pfn = highest;
 			} else {
-				if (cc->direct_compaction && pfn_valid(min_pfn)) {
+				if (cc->direct_compaction) {
 					page = pfn_to_page(min_pfn);
 					cc->free_pfn = min_pfn;
 				}
