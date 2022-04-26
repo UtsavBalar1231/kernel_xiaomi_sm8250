@@ -914,7 +914,8 @@ int __ref online_pages(unsigned long pfn, unsigned long nr_pages, int online_typ
 		node_states_set_node(nid, &arg);
 		if (need_zonelists_rebuild)
 			build_all_zonelists(NULL);
-		zone_pcp_update(zone);
+		else
+			zone_pcp_update(zone);
 	}
 
 	init_per_zone_wmark_min();
