@@ -12,7 +12,7 @@ clone:
 
 steps:
   - name: building
-    image: ubuntu:latest
+    image: debian:stable-slim
     environment:
       CI_CHANNEL_ID:
         from_secret: ci_channel_id
