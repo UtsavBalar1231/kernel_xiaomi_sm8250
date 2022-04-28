@@ -3860,8 +3860,6 @@ retry:
 				.vma = vma,
 				.address = haddr,
 				.flags = flags,
-				.vma_flags = vma->vm_flags,
-				.vma_page_prot = vma->vm_page_prot,
 				/*
 				 * Hard to debug if it ends up being
 				 * used by a callee that assumes
