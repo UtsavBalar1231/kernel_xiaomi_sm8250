@@ -696,10 +696,6 @@ int __vma_adjust(struct vm_area_struct *vma, unsigned long start,
 	long adjust_next = 0;
 	int remove_next = 0;
 
-	vm_write_begin(vma);
-	if (next)
-		vm_write_begin(next);
-
 	if (next && !insert) {
 		struct vm_area_struct *exporter = NULL, *importer = NULL;
 
@@ -910,7 +906,6 @@ again:
 			anon_vma_merge(vma, next);
 		mm->map_count--;
 		mpol_put(vma_policy(next));
-		vm_write_end(next);
 		vm_area_free(next);
 		/*
 		 * In mprotect's case 6 (see comments on vma_merge),
@@ -925,8 +920,6 @@ again:
 			 * "vma->vm_next" gap must be updated.
 			 */
 			next = vma->vm_next;
-			if (next)
-				vm_write_begin(next);
 		} else {
 			/*
 			 * For the scope of the comment "next" and
@@ -972,10 +965,6 @@ again:
 	}
 	if (insert && file)
 		uprobe_mmap(insert);
-
-	if (next && next != vma)
-		vm_write_end(next);
-	vm_write_end(vma);
 
 	validate_mm(mm);
 
