@@ -1477,24 +1477,6 @@ struct vm_struct *find_vm_area(const void *addr)
 	return NULL;
 }
 
-static struct vm_struct *__remove_vm_area(struct vmap_area *va)
-{
-	struct vm_struct *vm = va->vm;
-
-	might_sleep();
-
-	spin_lock(&vmap_area_lock);
-	va->vm = NULL;
-	va->flags &= ~VM_VM_AREA;
-	va->flags |= VM_LAZY_FREE;
-	spin_unlock(&vmap_area_lock);
-
-	kasan_free_shadow(vm);
-	free_unmap_vmap_area(va);
-
-	return vm;
-}
-
 /**
  *	remove_vm_area  -  find and remove a continuous kernel virtual area
  *	@addr:		base address
@@ -1505,20 +1487,31 @@ static struct vm_struct *__remove_vm_area(struct vmap_area *va)
  */
 struct vm_struct *remove_vm_area(const void *addr)
 {
-	struct vm_struct *vm = NULL;
 	struct vmap_area *va;
 
-	va = find_vmap_area((unsigned long)addr);
-	if (va && va->flags & VM_VM_AREA)
-		vm = __remove_vm_area(va);
+	might_sleep();
 
-	return vm;
+	va = find_vmap_area((unsigned long)addr);
+	if (va && va->flags & VM_VM_AREA) {
+		struct vm_struct *vm = va->vm;
+
+		spin_lock(&vmap_area_lock);
+		va->vm = NULL;
+		va->flags &= ~VM_VM_AREA;
+		va->flags |= VM_LAZY_FREE;
+		spin_unlock(&vmap_area_lock);
+
+		kasan_free_shadow(vm);
+		free_unmap_vmap_area(va);
+
+		return vm;
+	}
+	return NULL;
 }
 
 static void __vunmap(const void *addr, int deallocate_pages)
 {
 	struct vm_struct *area;
-	struct vmap_area *va;
 
 	if (!addr)
 		return;
@@ -1527,18 +1520,17 @@ static void __vunmap(const void *addr, int deallocate_pages)
 			addr))
 		return;
 
-	va = find_vmap_area((unsigned long)addr);
-	if (unlikely(!va || !(va->flags & VM_VM_AREA))) {
+	area = find_vmap_area((unsigned long)addr)->vm;
+	if (unlikely(!area)) {
 		WARN(1, KERN_ERR "Trying to vfree() nonexistent vm area (%p)\n",
 				addr);
 		return;
 	}
 
-	area = va->vm;
-	debug_check_no_locks_freed(addr, get_vm_area_size(area));
-	debug_check_no_obj_freed(addr, get_vm_area_size(area));
+	debug_check_no_locks_freed(area->addr, get_vm_area_size(area));
+	debug_check_no_obj_freed(area->addr, get_vm_area_size(area));
 
-	__remove_vm_area(va);
+	remove_vm_area(addr);
 	if (deallocate_pages) {
 		int i;
 
@@ -1554,6 +1546,7 @@ static void __vunmap(const void *addr, int deallocate_pages)
 	}
 
 	kfree(area);
+	return;
 }
 
 static inline void __vfree_deferred(const void *addr)
