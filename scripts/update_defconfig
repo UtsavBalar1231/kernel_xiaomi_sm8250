@@ -15,7 +15,7 @@ export KERNEL_CFG
 export OUT_DIR
 
 # Set compiler PATH
-PATH=$HOME/gas64:$HOME/aosp-clang/bin:$PATH
+PATH=$HOME/gas:$HOME/clang/bin:$PATH
 
 BUILD="make O=$OUT_DIR \
 ARCH=arm64 \
