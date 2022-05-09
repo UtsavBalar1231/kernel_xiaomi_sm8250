@@ -368,6 +368,18 @@ long cam_soc_util_get_clk_round_rate(struct cam_hw_soc_info *soc_info,
 	return clk_round_rate(soc_info->clk[clk_index], clk_rate);
 }
 
+int cam_soc_util_set_clk_flags(struct cam_hw_soc_info *soc_info,
+	uint32_t clk_index, unsigned long flags)
+{
+	if (!soc_info || (clk_index >= soc_info->num_clk)) {
+		CAM_ERR(CAM_UTIL, "Invalid input params %pK, %d",
+			soc_info, clk_index);
+		return -EINVAL;
+	}
+
+	return clk_set_flags(soc_info->clk[clk_index], flags);
+}
+
 /**
  * cam_soc_util_set_clk_rate()
  *
