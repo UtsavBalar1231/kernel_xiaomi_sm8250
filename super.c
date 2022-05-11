@@ -202,7 +202,11 @@ static struct inode *exfat_alloc_inode(struct super_block *sb)
 {
 	struct exfat_inode_info *ei;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
+	ei = alloc_inode_sb(sb, exfat_inode_cachep, GFP_NOFS);
+#else
 	ei = kmem_cache_alloc(exfat_inode_cachep, GFP_NOFS);
+#endif
 	if (!ei)
 		return NULL;
 
