@@ -3115,4 +3115,22 @@ void mlme_set_roam_state(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id,
 	mlme_priv->mlme_roam.roam_sm.state = new_state;
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_MLME_OBJMGR_ID);
 }
+
+bool wlan_is_vdev_id_up(struct wlan_objmgr_pdev *pdev, uint8_t vdev_id)
+{
+	struct wlan_objmgr_vdev *vdev;
+	bool is_up = false;
+
+	if (!pdev)
+		return is_up;
+
+	vdev = wlan_objmgr_get_vdev_by_id_from_pdev(pdev, vdev_id,
+						    WLAN_LEGACY_MAC_ID);
+	if (vdev) {
+		is_up = QDF_IS_STATUS_SUCCESS(wlan_vdev_is_up(vdev));
+		wlan_objmgr_vdev_release_ref(vdev, WLAN_LEGACY_MAC_ID);
+	}
+
+	return is_up;
+}
 #endif
