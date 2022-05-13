@@ -224,7 +224,11 @@ int exfat_update_bhs(struct buffer_head **bhs, int nr_bhs, int sync)
 		set_buffer_uptodate(bhs[i]);
 		mark_buffer_dirty(bhs[i]);
 		if (sync)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
 			write_dirty_buffer(bhs[i], REQ_SYNC);
+#else
+			write_dirty_buffer(bhs[i], WRITE_SYNC);
+#endif
 	}
 
 	for (i = 0; i < nr_bhs && sync; i++) {
