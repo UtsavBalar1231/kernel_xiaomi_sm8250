@@ -4011,7 +4011,6 @@ static int cam_ife_mgr_stop_hw(void *hw_mgr_priv, void *stop_hw_args)
 	struct cam_ife_hw_mgr_ctx        *ctx;
 	enum cam_ife_csid_halt_cmd        csid_halt_type;
 	uint32_t                          i, master_base_idx = 0;
-	unsigned long                     rem_jiffies = 0;
 
 	if (!hw_mgr_priv || !stop_hw_args) {
 		CAM_ERR(CAM_ISP, "Invalid arguments");
@@ -4125,14 +4124,7 @@ static int cam_ife_mgr_stop_hw(void *hw_mgr_priv, void *stop_hw_args)
 
 	cam_ife_mgr_pause_hw(ctx);
 
-	rem_jiffies = wait_for_completion_timeout(&ctx->config_done_complete,
-		msecs_to_jiffies(10));
-	if (rem_jiffies == 0) {
-		CAM_WARN(CAM_ISP,
-			"config done completion timeout for last applied req_id=%llu rc=%d ctx_index %d",
-			ctx->applied_req_id, rc, ctx->ctx_index);
-		rc = -ETIMEDOUT;
-	}
+	wait_for_completion(&ctx->config_done_complete);
 
 	if (stop_isp->stop_only)
 		goto end;
