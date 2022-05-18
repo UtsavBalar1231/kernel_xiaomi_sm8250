@@ -36,7 +36,7 @@ static inline void exfat_d_version_set(struct dentry *dentry,
  */
 static int exfat_d_revalidate(struct dentry *dentry, unsigned int flags)
 {
-	int ret;
+	int ret = 1;
 
 	if (flags & LOOKUP_RCU)
 		return -ECHILD;
