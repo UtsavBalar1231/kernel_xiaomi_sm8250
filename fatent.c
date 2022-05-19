@@ -273,7 +273,6 @@ int exfat_find_last_cluster(struct super_block *sb, struct exfat_chain *p_chain,
 	return 0;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
 int exfat_zeroed_cluster(struct inode *dir, unsigned int clu)
 {
 	struct super_block *sb = dir->i_sb;
@@ -306,60 +305,19 @@ int exfat_zeroed_cluster(struct inode *dir, unsigned int clu)
 	}
 
 	if (IS_DIRSYNC(dir))
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
 		return sync_blockdev_range(sb->s_bdev,
 				EXFAT_BLK_TO_B(blknr, sb),
 				EXFAT_BLK_TO_B(last_blknr, sb) - 1);
-
-	return 0;
-}
 #else
-int exfat_zeroed_cluster(struct inode *dir, unsigned int clu)
-{
-	struct super_block *sb = dir->i_sb;
-	struct exfat_sb_info *sbi = EXFAT_SB(sb);
-	struct buffer_head *bhs[MAX_BUF_PER_PAGE];
-	int nr_bhs = MAX_BUF_PER_PAGE;
-	sector_t blknr, last_blknr;
-	int err, i, n;
-
-	blknr = exfat_cluster_to_sector(sbi, clu);
-	last_blknr = blknr + sbi->sect_per_clus;
-
-	if (last_blknr > sbi->num_sectors && sbi->num_sectors > 0) {
-		exfat_fs_error_ratelimit(sb,
-			"%s: out of range(sect:%llu len:%u)",
-			__func__, (unsigned long long)blknr,
-			sbi->sect_per_clus);
-		return -EIO;
-	}
-
-	/* Zeroing the unused blocks on this cluster */
-	while (blknr < last_blknr) {
-		for (n = 0; n < nr_bhs && blknr < last_blknr; n++, blknr++) {
-			bhs[n] = sb_getblk(sb, blknr);
-			if (!bhs[n]) {
-				err = -ENOMEM;
-				goto release_bhs;
-			}
-			memset(bhs[n]->b_data, 0, sb->s_blocksize);
-		}
-
-		err = exfat_update_bhs(bhs, n, IS_DIRSYNC(dir));
-		if (err)
-			goto release_bhs;
-
-		for (i = 0; i < n; i++)
-			brelse(bhs[i]);
-	}
-	return 0;
-
-release_bhs:
-	exfat_err(sb, "failed zeroed sect %llu\n", (unsigned long long)blknr);
-	for (i = 0; i < n; i++)
-		bforget(bhs[i]);
-	return err;
-}
+		return filemap_write_and_wait_range(sb->s_bdev->bd_inode->i_mapping,
+				EXFAT_BLK_TO_B(blknr, sb),
+				EXFAT_BLK_TO_B(last_blknr, sb) - 1);
 #endif
+
+
+	return 0;
+}
 
 int exfat_alloc_cluster(struct inode *inode, unsigned int num_alloc,
 		struct exfat_chain *p_chain, bool sync_bmap)
