@@ -138,7 +138,11 @@ static int exfat_set_vol_flags(struct super_block *sb, unsigned short new_flags)
 	set_buffer_uptodate(sbi->boot_bh);
 	mark_buffer_dirty(sbi->boot_bh);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
 	__sync_dirty_buffer(sbi->boot_bh, REQ_SYNC | REQ_FUA | REQ_PREFLUSH);
+#else
+	__sync_dirty_buffer(sbi->boot_bh, WRITE_FLUSH_FUA);
+#endif
 
 	return 0;
 }
@@ -187,7 +191,9 @@ static int exfat_show_options(struct seq_file *m, struct dentry *root)
 		seq_puts(m, ",discard");
 	if (opts->keep_last_dots)
 		seq_puts(m, ",keep_last_dots");
-	if (opts->time_offset)
+	if (opts->sys_tz)
+		seq_puts(m, ",sys_tz");
+	else if (opts->time_offset)
 		seq_printf(m, ",time_offset=%d", opts->time_offset);
 	return 0;
 }
@@ -196,7 +202,11 @@ static struct inode *exfat_alloc_inode(struct super_block *sb)
 {
 	struct exfat_inode_info *ei;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
+	ei = alloc_inode_sb(sb, exfat_inode_cachep, GFP_NOFS);
+#else
 	ei = kmem_cache_alloc(exfat_inode_cachep, GFP_NOFS);
+#endif
 	if (!ei)
 		return NULL;
 
@@ -266,6 +276,7 @@ enum {
 	Opt_errors,
 	Opt_discard,
 	Opt_keep_last_dots,
+	Opt_sys_tz,
 	Opt_time_offset,
 
 	/* Deprecated options */
@@ -310,6 +321,7 @@ static const struct fs_parameter_spec exfat_param_specs[] = {
 #endif
 	fsparam_flag("discard",			Opt_discard),
 	fsparam_flag("keep_last_dots",		Opt_keep_last_dots),
+	fsparam_flag("sys_tz",			Opt_sys_tz),
 	fsparam_s32("time_offset",		Opt_time_offset),
 	__fsparam(NULL, "utf8",			Opt_utf8, fs_param_deprecated,
 		  NULL),
@@ -378,6 +390,9 @@ static int exfat_parse_param(struct fs_context *fc, struct fs_parameter *param)
 		break;
 	case Opt_keep_last_dots:
 		opts->keep_last_dots = 1;
+		break;
+	case Opt_sys_tz:
+		opts->sys_tz = 1;
 		break;
 	case Opt_time_offset:
 		/*
