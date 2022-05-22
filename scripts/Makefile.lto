@@ -77,9 +77,9 @@ endif
 	# to avoid the time overhead
 	KBUILD_MODPOST_LDFLAGS += -flinker-output=nolto-rel
 
-	# don't compile everything twice
-	# requires plugin ar
-	LTO_CFLAGS += -fno-fat-lto-objects -Wno-attributes
+	# Disable some options for LTO
+	LTO_CFLAGS += -fno-fat-lto-objects -Wno-attributes \
+		      -Wno-lto-type-mismatch
 
 	# Used to disable LTO for specific files (e.g. vdso)
 	DISABLE_LTO := -fno-lto
