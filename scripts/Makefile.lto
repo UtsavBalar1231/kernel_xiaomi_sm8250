@@ -79,7 +79,7 @@ endif
 
 	# Disable some options for LTO
 	LTO_CFLAGS += -fno-fat-lto-objects -Wno-attributes \
-		      -Wno-lto-type-mismatch
+		      -Wno-lto-type-mismatch -Wno-stringop-overflow
 
 	# Used to disable LTO for specific files (e.g. vdso)
 	DISABLE_LTO := -fno-lto
