@@ -79,7 +79,7 @@ endif
 
 	# don't compile everything twice
 	# requires plugin ar
-	LTO_CFLAGS += -fno-fat-lto-objects
+	LTO_CFLAGS += -fno-fat-lto-objects -Wno-attributes
 
 	# Used to disable LTO for specific files (e.g. vdso)
 	DISABLE_LTO := -fno-lto
