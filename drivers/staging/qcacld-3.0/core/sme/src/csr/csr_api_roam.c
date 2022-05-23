@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -9348,6 +9349,37 @@ QDF_STATUS csr_roam_process_disassoc_deauth(struct mac_context *mac,
 	return status;
 }
 
+static void csr_abort_connect_request_timers(
+	struct mac_context *mac, uint32_t vdev_id)
+{
+	struct scheduler_msg msg;
+	QDF_STATUS status;
+	enum QDF_OPMODE op_mode;
+	struct wlan_objmgr_vdev *vdev;
+
+	vdev = wlan_objmgr_get_vdev_by_id_from_pdev(mac->pdev,
+						    vdev_id,
+						    WLAN_LEGACY_SME_ID);
+	if (!vdev) {
+		sme_err("Vdev ref error");
+		return;
+	}
+	op_mode = wlan_vdev_mlme_get_opmode(vdev);
+	wlan_objmgr_vdev_release_ref(vdev, WLAN_LEGACY_SME_ID);
+
+	if (op_mode != QDF_STA_MODE &&
+	    op_mode != QDF_P2P_CLIENT_MODE)
+		return;
+	qdf_mem_zero(&msg, sizeof(msg));
+	msg.bodyval = vdev_id;
+	msg.type = eWNI_SME_ABORT_CONN_TIMER;
+	status = scheduler_post_message(QDF_MODULE_ID_MLME,
+					QDF_MODULE_ID_PE,
+					QDF_MODULE_ID_PE, &msg);
+	if (QDF_IS_STATUS_ERROR(status))
+		sme_debug("msg eWNI_SME_ABORT_CONN_TIMER post fail");
+}
+
 QDF_STATUS csr_roam_issue_disassociate_cmd(struct mac_context *mac,
 					uint32_t sessionId,
 					eCsrRoamDisconnectReason reason,
@@ -9369,6 +9401,8 @@ QDF_STATUS csr_roam_issue_disassociate_cmd(struct mac_context *mac,
 			csr_roam_substate_change(mac, eCSR_ROAM_SUBSTATE_NONE,
 						 sessionId);
 		}
+		csr_abort_connect_request_timers(mac, sessionId);
+
 		pCommand->command = eSmeCommandRoam;
 		pCommand->vdev_id = (uint8_t) sessionId;
 		sme_debug("Disassociate reason: %d, vdev_id: %d",
