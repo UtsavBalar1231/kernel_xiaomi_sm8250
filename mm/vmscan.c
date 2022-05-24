@@ -3949,15 +3949,16 @@ static void lru_gen_age_node(struct pglist_data *pgdat, struct scan_control *sc)
 	 * younger than min_ttl. However, another theoretical possibility is all
 	 * memcgs are either below min or empty.
 	 */
-	if (!success && mutex_trylock(&oom_lock)) {
-		struct oom_control oc = {
-			.gfp_mask = sc->gfp_mask,
-			.order = sc->order,
-		};
-
-		out_of_memory(&oc);
-
-		mutex_unlock(&oom_lock);
+	if (!success) {
+		pr_err("mglru: min_ttl unsatisfied, calling OOM killer\n");
+		if (mutex_trylock(&oom_lock)) {
+			struct oom_control oc = {
+				.gfp_mask = sc->gfp_mask,
+				.order = sc->order,
+			};
+			out_of_memory(&oc);
+			mutex_unlock(&oom_lock);
+		}
 	}
 }
 
