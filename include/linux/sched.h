@@ -974,11 +974,11 @@ struct task_struct {
 #ifndef TIF_RESTORE_SIGMASK
 	unsigned			restore_sigmask:1;
 #endif
-#ifdef CONFIG_MMU
+#ifdef CONFIG_MEMCG
 	unsigned			in_user_fault:1;
-#endif
 #ifdef CONFIG_MEMCG_KMEM
 	unsigned			memcg_kmem_skip_account:1;
+#endif
 #endif
 #ifdef CONFIG_COMPAT_BRK
 	unsigned			brk_randomized:1;
