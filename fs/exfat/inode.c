@@ -514,6 +514,14 @@ int exfat_block_truncate_page(struct inode *inode, loff_t from)
 }
 
 static const struct address_space_operations exfat_aops = {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
+	.dirty_folio	= block_dirty_folio,
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(5, 14, 0)
+	.set_page_dirty	= __set_page_dirty_buffers,
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
+	.invalidate_folio = block_invalidate_folio,
+#endif
 	.readpage	= exfat_readpage,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
 	.readahead	= exfat_readahead,

@@ -762,6 +762,7 @@ bool tcp_should_expand_sndbuf(const struct sock *sk);
 #endif
 void tcp_skb_mark_lost_uncond_verify(struct tcp_sock *tp, struct sk_buff *skb);
 void tcp_fin(struct sock *sk);
+void tcp_check_space(struct sock *sk);
 
 /* tcp_timer.c */
 void tcp_init_xmit_timers(struct sock *);
@@ -2174,6 +2175,11 @@ struct tcp_request_sock_ops {
 			   struct tcp_fastopen_cookie *foc,
 			   enum tcp_synack_type synack_type);
 };
+
+extern const struct tcp_request_sock_ops tcp_request_sock_ipv4_ops;
+#if IS_ENABLED(CONFIG_IPV6)
+extern const struct tcp_request_sock_ops tcp_request_sock_ipv6_ops;
+#endif
 
 #ifdef CONFIG_SYN_COOKIES
 #ifdef CONFIG_MPTCP
