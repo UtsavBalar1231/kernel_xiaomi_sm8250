@@ -131,11 +131,6 @@ static int walk_p4d_range(pgd_t *pgd, unsigned long addr, unsigned long end,
 				break;
 			continue;
 		}
-		if (walk->p4d_entry) {
-			err = walk->p4d_entry(p4d, addr, next, walk);
-			if (err)
-				break;
-		}
 		if (walk->pmd_entry || walk->pte_entry)
 			err = walk_pud_range(p4d, addr, next, walk);
 		if (err)
@@ -162,7 +157,7 @@ static int walk_pgd_range(unsigned long addr, unsigned long end,
 				break;
 			continue;
 		}
-		if (walk->p4d_entry || walk->pmd_entry || walk->pte_entry)
+		if (walk->pmd_entry || walk->pte_entry)
 			err = walk_p4d_range(pgd, addr, next, walk);
 		if (err)
 			break;
