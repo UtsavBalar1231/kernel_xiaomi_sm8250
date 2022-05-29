@@ -6,10 +6,10 @@
 
 export TAG=$1
 for p in qcacld-3.0 fw-api qca-wifi-host-cmn;
-  do git subtree pull --prefix=drivers/staging/$p https://source.codeaurora.org/quic/la/platform/vendor/qcom-opensource/wlan/$p $TAG;
+	do git subtree pull --prefix=drivers/staging/$p https://git.codelinaro.org/clo/la/platform/vendor/qcom-opensource/wlan/$p $TAG;
 done
-git subtree pull --prefix=techpack/audio https://source.codeaurora.org/quic/la/platform/vendor/opensource/audio-kernel $TAG;
-git subtree pull --prefix=techpack/camera https://source.codeaurora.org/quic/la/platform/vendor/opensource/camera-kernel $TAG;
-git subtree pull --prefix=techpack/data https://source.codeaurora.org/quic/la/platform/vendor/qcom-opensource/data-kernel $TAG;
-git subtree pull --prefix=techpack/display https://source.codeaurora.org/quic/la/platform/vendor/opensource/display-drivers $TAG;
-git subtree pull --prefix=techpack/video https://source.codeaurora.org/quic/la/platform/vendor/opensource/video-driver $TAG;
+git subtree pull --prefix=techpack/audio https://git.codelinaro.org/clo/la/platform/vendor/opensource/audio-kernel $TAG;
+git subtree pull --prefix=techpack/camera https://git.codelinaro.org/clo/la/platform/vendor/opensource/camera-kernel $TAG;
+git subtree pull --prefix=techpack/data https://git.codelinaro.org/clo/la/platform/vendor/qcom-opensource/data-kernel $TAG;
+git subtree pull --prefix=techpack/display https://git.codelinaro.org/clo/la/platform/vendor/opensource/display-drivers $TAG;
+git subtree pull --prefix=techpack/video https://git.codelinaro.org/clo/la/platform/vendor/opensource/video-driver $TAG;
