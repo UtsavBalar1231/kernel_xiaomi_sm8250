@@ -58,7 +58,7 @@ ifeq ($(LTO_MESSAGE),)
         LTO_MESSAGE := 1
 endif
 
-	LTO_CFLAGS := -flto
+	LTO_CFLAGS := -flto -fipa-pta
 	LTO_FINAL_CFLAGS := -fuse-linker-plugin
 
 	# gcc 8.x doesn't generate debuginfo if we don't
