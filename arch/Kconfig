@@ -540,6 +540,7 @@ config LTO_GCC
 	bool "Enable gcc link time optimization (LTO)"
 	depends on ARCH_SUPPORTS_LTO_GCC
 	depends on CC_IS_GCC
+	select LTO
 	# lto does not support excluding flags for specific files
 	# right now. Can be removed if that is fixed.
 	#depends on !FUNCTION_TRACER
