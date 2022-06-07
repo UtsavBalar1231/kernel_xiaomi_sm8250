@@ -2,26 +2,86 @@
 /*
  * LRNG DRNG switching support
  *
- * Copyright (C) 2016 - 2021, Stephan Mueller <smueller@chronox.de>
+ * Copyright (C) 2022, Stephan Mueller <smueller@chronox.de>
  */
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <linux/lrng.h>
 
-#include "lrng_internal.h"
+#include "lrng_es_aux.h"
+#include "lrng_es_mgr.h"
+#include "lrng_numa.h"
 
-static int lrng_drng_switch(struct lrng_drng *drng_store,
-			    const struct lrng_crypto_cb *cb, int node)
+static int __maybe_unused
+lrng_hash_switch(struct lrng_drng *drng_store, const void *cb, int node)
 {
-	const struct lrng_crypto_cb *old_cb;
-	unsigned long flags = 0, flags2 = 0;
+	const struct lrng_hash_cb *new_cb = (const struct lrng_hash_cb *)cb;
+	const struct lrng_hash_cb *old_cb = drng_store->hash_cb;
+	unsigned long flags;
+	u32 i;
+	void *new_hash = new_cb->hash_alloc();
+	void *old_hash = drng_store->hash;
+	int ret;
+
+	if (IS_ERR(new_hash)) {
+		pr_warn("could not allocate new LRNG pool hash (%ld)\n",
+			PTR_ERR(new_hash));
+		return PTR_ERR(new_hash);
+	}
+
+	if (new_cb->hash_digestsize(new_hash) > LRNG_MAX_DIGESTSIZE) {
+		pr_warn("digest size of newly requested hash too large\n");
+		new_cb->hash_dealloc(new_hash);
+		return -EINVAL;
+	}
+
+	write_lock_irqsave(&drng_store->hash_lock, flags);
+
+	/* Trigger the switch for each entropy source */
+	for_each_lrng_es(i) {
+		if (!lrng_es[i]->switch_hash)
+			continue;
+		ret = lrng_es[i]->switch_hash(drng_store, node, new_cb,
+					      new_hash, old_cb);
+		if (ret) {
+			u32 j;
+
+			/* Revert all already executed operations */
+			for (j = 0; j < i; j++) {
+				if (!lrng_es[j]->switch_hash)
+					continue;
+				WARN_ON(lrng_es[j]->switch_hash(drng_store,
+								node, old_cb,
+								old_hash,
+								new_cb));
+			}
+			goto err;
+		}
+	}
+
+	drng_store->hash = new_hash;
+	drng_store->hash_cb = new_cb;
+	old_cb->hash_dealloc(old_hash);
+	pr_info("Conditioning function allocated for DRNG for NUMA node %d\n",
+		node);
+
+err:
+	write_unlock_irqrestore(&drng_store->hash_lock, flags);
+	return ret;
+}
+
+static int __maybe_unused
+lrng_drng_switch(struct lrng_drng *drng_store, const void *cb, int node)
+{
+	const struct lrng_drng_cb *new_cb = (const struct lrng_drng_cb *)cb;
+	const struct lrng_drng_cb *old_cb = drng_store->drng_cb;
 	int ret;
 	u8 seed[LRNG_DRNG_SECURITY_STRENGTH_BYTES];
-	void *new_drng = cb->lrng_drng_alloc(LRNG_DRNG_SECURITY_STRENGTH_BYTES);
-	void *old_drng, *new_hash, *old_hash;
+	void *new_drng = new_cb->drng_alloc(LRNG_DRNG_SECURITY_STRENGTH_BYTES);
+	void *old_drng = drng_store->drng;
 	u32 current_security_strength;
-	bool sl = false, reset_drng = !lrng_get_available();
+	bool reset_drng = !lrng_get_available();
 
 	if (IS_ERR(new_drng)) {
 		pr_warn("could not allocate new DRNG for NUMA node %d (%ld)\n",
@@ -29,23 +89,8 @@ static int lrng_drng_switch(struct lrng_drng *drng_store,
 		return PTR_ERR(new_drng);
 	}
 
-	new_hash = cb->lrng_hash_alloc();
-	if (IS_ERR(new_hash)) {
-		pr_warn("could not allocate new LRNG pool hash (%ld)\n",
-			PTR_ERR(new_hash));
-		cb->lrng_drng_dealloc(new_drng);
-		return PTR_ERR(new_hash);
-	}
-
-	if (cb->lrng_hash_digestsize(new_hash) > LRNG_MAX_DIGESTSIZE) {
-		pr_warn("digest size of newly requested hash too large\n");
-		cb->lrng_hash_dealloc(new_hash);
-		cb->lrng_drng_dealloc(new_drng);
-		return -EINVAL;
-	}
-
 	current_security_strength = lrng_security_strength();
-	lrng_drng_lock(drng_store, &flags);
+	mutex_lock(&drng_store->lock);
 
 	/*
 	 * Pull from existing DRNG to seed new DRNG regardless of seed status
@@ -54,9 +99,8 @@ static int lrng_drng_switch(struct lrng_drng *drng_store,
 	 * seeding of the new DRNG shall only ensure that the new DRNG has the
 	 * same entropy as the old DRNG.
 	 */
-	ret = drng_store->crypto_cb->lrng_drng_generate_helper(
-				drng_store->drng, seed, sizeof(seed));
-	lrng_drng_unlock(drng_store, &flags);
+	ret = old_cb->drng_generate(old_drng, seed, sizeof(seed));
+	mutex_unlock(&drng_store->lock);
 
 	if (ret < 0) {
 		reset_drng = true;
@@ -64,7 +108,7 @@ static int lrng_drng_switch(struct lrng_drng *drng_store,
 			node, ret);
 	} else {
 		/* seed new DRNG with data */
-		ret = cb->lrng_drng_seed_helper(new_drng, seed, ret);
+		ret = new_cb->drng_seed(new_drng, seed, ret);
 		memzero_explicit(seed, sizeof(seed));
 		if (ret < 0) {
 			reset_drng = true;
@@ -77,104 +121,55 @@ static int lrng_drng_switch(struct lrng_drng *drng_store,
 	}
 
 	mutex_lock(&drng_store->lock);
-	write_lock_irqsave(&drng_store->hash_lock, flags2);
-	/*
-	 * If we switch the DRNG from the initial ChaCha20 DRNG to something
-	 * else, there is a lock transition from spin lock to mutex (see
-	 * lrng_drng_is_atomic and how the lock is taken in lrng_drng_lock).
-	 * Thus, we need to take both locks during the transition phase.
-	 */
-	if (lrng_drng_is_atomic(drng_store)) {
-		spin_lock_irqsave(&drng_store->spin_lock, flags);
-		sl = true;
-	} else {
-		__acquire(&drng_store->spin_lock);
-	}
 
-	/* Trigger the switch of the aux entropy pool for current node. */
-	if (drng_store == lrng_drng_init_instance()) {
-		ret = lrng_aux_switch_hash(cb, new_hash, drng_store->crypto_cb);
-		if (ret)
-			goto err;
-	}
+	if (reset_drng)
+		lrng_drng_reset(drng_store);
 
-	/* Trigger the switch of the per-CPU entropy pools for current node. */
-	ret = lrng_pcpu_switch_hash(node, cb, new_hash, drng_store->crypto_cb);
-	if (ret) {
-		/* Switch the crypto operation back to be consistent */
-		WARN_ON(lrng_aux_switch_hash(drng_store->crypto_cb,
-					     drng_store->hash, cb));
-	} else {
-		if (reset_drng)
-			lrng_drng_reset(drng_store);
+	drng_store->drng = new_drng;
+	drng_store->drng_cb = new_cb;
 
-		old_drng = drng_store->drng;
-		old_cb = drng_store->crypto_cb;
-		drng_store->drng = new_drng;
-		drng_store->crypto_cb = cb;
+	/* Reseed if previous LRNG security strength was insufficient */
+	if (current_security_strength < lrng_security_strength())
+		drng_store->force_reseed = true;
 
-		old_hash = drng_store->hash;
-		drng_store->hash = new_hash;
-		pr_info("Entropy pool read-hash allocated for DRNG for NUMA node %d\n",
-			node);
+	/* Force oversampling seeding as we initialize DRNG */
+	if (IS_ENABLED(CONFIG_CRYPTO_FIPS))
+		lrng_unset_fully_seeded(drng_store);
 
-		/* Reseed if previous LRNG security strength was insufficient */
-		if (current_security_strength < lrng_security_strength())
-			drng_store->force_reseed = true;
-
-		/* Force oversampling seeding as we initialize DRNG */
-		if (IS_ENABLED(CONFIG_LRNG_OVERSAMPLE_ENTROPY_SOURCES))
-			lrng_unset_fully_seeded(drng_store);
-
-		if (lrng_state_min_seeded())
-			lrng_set_entropy_thresh(lrng_get_seed_entropy_osr(
+	if (lrng_state_min_seeded())
+		lrng_set_entropy_thresh(lrng_get_seed_entropy_osr(
 						drng_store->fully_seeded));
 
-		/* ChaCha20 serves as atomic instance left untouched. */
-		if (old_drng != &chacha20) {
-			old_cb->lrng_drng_dealloc(old_drng);
-			old_cb->lrng_hash_dealloc(old_hash);
-		}
+	old_cb->drng_dealloc(old_drng);
 
-		pr_info("DRNG of NUMA node %d switched\n", node);
-	}
+	pr_info("DRNG of NUMA node %d switched\n", node);
 
-err:
-	if (sl)
-		spin_unlock_irqrestore(&drng_store->spin_lock, flags);
-	else
-		__release(&drng_store->spin_lock);
-	write_unlock_irqrestore(&drng_store->hash_lock, flags2);
 	mutex_unlock(&drng_store->lock);
-
 	return ret;
 }
 
 /*
- * Switch the existing DRNG instances with new using the new crypto callbacks.
- * The caller must hold the lrng_crypto_cb_update lock.
+ * Switch the existing DRNG and hash instances with new using the new crypto
+ * callbacks. The caller must hold the lrng_crypto_cb_update lock.
  */
-static int lrng_drngs_switch(const struct lrng_crypto_cb *cb)
+static int lrng_switch(const void *cb,
+		       int(*switcher)(struct lrng_drng *drng_store,
+				      const void *cb, int node))
 {
 	struct lrng_drng **lrng_drng = lrng_drng_instances();
 	struct lrng_drng *lrng_drng_init = lrng_drng_init_instance();
 	int ret = 0;
 
-	/* Update DRNG */
 	if (lrng_drng) {
 		u32 node;
 
 		for_each_online_node(node) {
 			if (lrng_drng[node])
-				ret = lrng_drng_switch(lrng_drng[node], cb,
-						       node);
+				ret = switcher(lrng_drng[node], cb, node);
 		}
 	} else {
-		ret = lrng_drng_switch(lrng_drng_init, cb, 0);
+		ret = switcher(lrng_drng_init, cb, 0);
 	}
-
-	if (!ret)
-		lrng_set_available();
 
 	return 0;
 }
@@ -184,20 +179,23 @@ static int lrng_drngs_switch(const struct lrng_crypto_cb *cb)
  * The registering implies that all old DRNG states are replaced with new
  * DRNG states.
  *
- * @cb: Callback functions to be registered -- if NULL, use the default
- *	callbacks pointing to the ChaCha20 DRNG.
+ * drng_cb: Callback functions to be registered -- if NULL, use the default
+ *	    callbacks defined at compile time.
  *
  * Return:
  * * 0 on success
  * * < 0 on error
  */
-int lrng_set_drng_cb(const struct lrng_crypto_cb *cb)
+int lrng_set_drng_cb(const struct lrng_drng_cb *drng_cb)
 {
 	struct lrng_drng *lrng_drng_init = lrng_drng_init_instance();
 	int ret;
 
-	if (!cb)
-		cb = &lrng_cc20_crypto_cb;
+	if (!IS_ENABLED(CONFIG_LRNG_SWITCH_DRNG))
+		return -EOPNOTSUPP;
+
+	if (!drng_cb)
+		drng_cb = lrng_default_drng_cb;
 
 	mutex_lock(&lrng_crypto_cb_update);
 
@@ -210,17 +208,64 @@ int lrng_set_drng_cb(const struct lrng_crypto_cb *cb)
 	 * (e.g. the kernel module providing it must be unloaded) and the new
 	 * implementation can be registered.
 	 */
-	if ((cb != &lrng_cc20_crypto_cb) &&
-	    (lrng_drng_init->crypto_cb != &lrng_cc20_crypto_cb)) {
-		pr_warn("disallow setting new cipher callbacks, unload the old callbacks first!\n");
+	if ((drng_cb != lrng_default_drng_cb) &&
+	    (lrng_drng_init->drng_cb != lrng_default_drng_cb)) {
+		pr_warn("disallow setting new DRNG callbacks, unload the old callbacks first!\n");
 		ret = -EINVAL;
 		goto out;
 	}
 
-	ret = lrng_drngs_switch(cb);
+	ret = lrng_switch(drng_cb, lrng_drng_switch);
+	/* The swtich may imply new entropy due to larger DRNG sec strength. */
+	if (!ret)
+		lrng_es_add_entropy();
 
 out:
 	mutex_unlock(&lrng_crypto_cb_update);
 	return ret;
 }
 EXPORT_SYMBOL(lrng_set_drng_cb);
+
+/*
+ * lrng_set_hash_cb - Register new cryptographic callback functions for hash
+ * The registering implies that all old hash states are replaced with new
+ * hash states.
+ *
+ * @hash_cb: Callback functions to be registered -- if NULL, use the default
+ *	     callbacks defined at compile time.
+ *
+ * Return:
+ * * 0 on success
+ * * < 0 on error
+ */
+int lrng_set_hash_cb(const struct lrng_hash_cb *hash_cb)
+{
+	struct lrng_drng *lrng_drng_init = lrng_drng_init_instance();
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_LRNG_SWITCH_HASH))
+		return -EOPNOTSUPP;
+
+	if (!hash_cb)
+		hash_cb = lrng_default_hash_cb;
+
+	mutex_lock(&lrng_crypto_cb_update);
+
+	/* Comment from lrng_set_drng_cb applies. */
+	if ((hash_cb != lrng_default_hash_cb) &&
+	    (lrng_drng_init->hash_cb != lrng_default_hash_cb)) {
+		pr_warn("disallow setting new hash callbacks, unload the old callbacks first!\n");
+		ret = -EINVAL;
+		goto out;
+	}
+
+	ret = lrng_switch(hash_cb, lrng_hash_switch);
+	/* The swtich may imply new entropy due to larger digest size. */
+	if (!ret)
+		lrng_es_add_entropy();
+
+out:
+	mutex_unlock(&lrng_crypto_cb_update);
+	return ret;
+}
+EXPORT_SYMBOL(lrng_set_hash_cb);

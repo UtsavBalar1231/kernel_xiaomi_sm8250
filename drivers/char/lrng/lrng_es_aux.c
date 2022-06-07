@@ -2,14 +2,16 @@
 /*
  * LRNG Slow Entropy Source: Auxiliary entropy pool
  *
- * Copyright (C) 2016 - 2021, Stephan Mueller <smueller@chronox.de>
+ * Copyright (C) 2022, Stephan Mueller <smueller@chronox.de>
  */
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <linux/lrng.h>
 
-#include "lrng_internal.h"
+#include "lrng_es_aux.h"
+#include "lrng_es_mgr.h"
+#include "lrng_sysctl.h"
 
 /*
  * This is the auxiliary pool
@@ -40,7 +42,7 @@ static struct lrng_pool lrng_pool __aligned(LRNG_KCAPI_ALIGN) = {
 /********************************** Helper ***********************************/
 
 /* Entropy in bits present in aux pool */
-u32 lrng_avail_aux_entropy(void)
+static u32 lrng_aux_avail_entropy(u32 __unused)
 {
 	/* Cap available entropy with max entropy */
 	u32 avail_bits = min_t(u32, lrng_get_digestsize(),
@@ -51,7 +53,7 @@ u32 lrng_avail_aux_entropy(void)
 }
 
 /* Set the digest size of the used hash in bytes */
-static inline void lrng_set_digestsize(u32 digestsize)
+static void lrng_set_digestsize(u32 digestsize)
 {
 	struct lrng_pool *pool = &lrng_pool;
 	u32 ent_bits = atomic_xchg_relaxed(&pool->aux_entropy_bits, 0),
@@ -60,13 +62,12 @@ static inline void lrng_set_digestsize(u32 digestsize)
 	atomic_set(&lrng_pool.digestsize, digestsize);
 
 	/*
-	 * Update the /proc/.../write_wakeup_threshold which must not be larger
-	 * than the digest size of the curent conditioning hash.
+	 * Update the write wakeup threshold which must not be larger
+	 * than the digest size of the current conditioning hash.
 	 */
-	digestsize <<= 3;
-	lrng_proc_update_max_write_thresh(digestsize);
-	if (lrng_write_wakeup_bits > digestsize)
-		lrng_write_wakeup_bits = digestsize;
+	digestsize = lrng_reduce_by_osr(digestsize << 3);
+	lrng_sysctl_update_max_write_thresh(digestsize);
+	lrng_write_wakeup_bits = digestsize;
 
 	/*
 	 * In case the new digest is larger than the old one, cap the available
@@ -75,6 +76,16 @@ static inline void lrng_set_digestsize(u32 digestsize)
 	ent_bits = min_t(u32, ent_bits, old_digestsize);
 	atomic_add(ent_bits, &pool->aux_entropy_bits);
 }
+
+static int __init lrng_init_wakeup_bits(void)
+{
+	u32 digestsize = lrng_reduce_by_osr(lrng_get_digestsize());
+
+	lrng_sysctl_update_max_write_thresh(digestsize);
+	lrng_write_wakeup_bits = digestsize;
+	return 0;
+}
+core_initcall(lrng_init_wakeup_bits);
 
 /* Obtain the digest size provided by the used hash in bits */
 u32 lrng_get_digestsize(void)
@@ -88,41 +99,53 @@ void lrng_pool_set_entropy(u32 entropy_bits)
 	atomic_set(&lrng_pool.aux_entropy_bits, entropy_bits);
 }
 
+static void lrng_aux_reset(void)
+{
+	lrng_pool_set_entropy(0);
+}
+
 /*
  * Replace old with new hash for auxiliary pool handling
  *
  * Assumption: the caller must guarantee that the new_cb is available during the
  * entire operation (e.g. it must hold the write lock against pointer updating).
  */
-int lrng_aux_switch_hash(const struct lrng_crypto_cb *new_cb, void *new_hash,
-			 const struct lrng_crypto_cb *old_cb)
+static int
+lrng_aux_switch_hash(struct lrng_drng *drng, int __unused,
+		     const struct lrng_hash_cb *new_cb, void *new_hash,
+		     const struct lrng_hash_cb *old_cb)
 {
+	struct lrng_drng *init_drng = lrng_drng_init_instance();
 	struct lrng_pool *pool = &lrng_pool;
 	struct shash_desc *shash = (struct shash_desc *)pool->aux_pool;
 	u8 digest[LRNG_MAX_DIGESTSIZE];
 	int ret;
 
-	if (!IS_ENABLED(CONFIG_LRNG_DRNG_SWITCH))
+	if (!IS_ENABLED(CONFIG_LRNG_SWITCH))
 		return -EOPNOTSUPP;
 
 	if (unlikely(!pool->initialized))
 		return 0;
 
+	/* We only switch if the processed DRNG is the initial DRNG. */
+	if (init_drng != drng)
+		return 0;
+
 	/* Get the aux pool hash with old digest ... */
-	ret = old_cb->lrng_hash_final(shash, digest) ?:
+	ret = old_cb->hash_final(shash, digest) ?:
 	      /* ... re-initialize the hash with the new digest ... */
-	      new_cb->lrng_hash_init(shash, new_hash) ?:
+	      new_cb->hash_init(shash, new_hash) ?:
 	      /*
 	       * ... feed the old hash into the new state. We may feed
 	       * uninitialized memory into the new state, but this is
 	       * considered no issue and even good as we have some more
 	       * uncertainty here.
 	       */
-	      new_cb->lrng_hash_update(shash, digest, sizeof(digest));
+	      new_cb->hash_update(shash, digest, sizeof(digest));
 	if (!ret) {
-		lrng_set_digestsize(new_cb->lrng_hash_digestsize(new_hash));
+		lrng_set_digestsize(new_cb->hash_digestsize(new_hash));
 		pr_debug("Re-initialize aux entropy pool with hash %s\n",
-			 new_cb->lrng_hash_name());
+			 new_cb->hash_name());
 	}
 
 	memzero_explicit(digest, sizeof(digest));
@@ -131,31 +154,30 @@ int lrng_aux_switch_hash(const struct lrng_crypto_cb *new_cb, void *new_hash,
 
 /* Insert data into auxiliary pool by using the hash update function. */
 static int
-lrng_pool_insert_aux_locked(const u8 *inbuf, u32 inbuflen, u32 entropy_bits)
+lrng_aux_pool_insert_locked(const u8 *inbuf, u32 inbuflen, u32 entropy_bits)
 {
 	struct lrng_pool *pool = &lrng_pool;
 	struct shash_desc *shash = (struct shash_desc *)pool->aux_pool;
 	struct lrng_drng *drng = lrng_drng_init_instance();
-	const struct lrng_crypto_cb *crypto_cb;
+	const struct lrng_hash_cb *hash_cb;
 	unsigned long flags;
 	void *hash;
 	int ret;
 
 	entropy_bits = min_t(u32, entropy_bits, inbuflen << 3);
 
-	lrng_hash_lock(drng, &flags);
-
-	crypto_cb = drng->crypto_cb;
+	read_lock_irqsave(&drng->hash_lock, flags);
+	hash_cb = drng->hash_cb;
 	hash = drng->hash;
 
 	if (unlikely(!pool->initialized)) {
-		ret = crypto_cb->lrng_hash_init(shash, hash);
+		ret = hash_cb->hash_init(shash, hash);
 		if (ret)
 			goto out;
 		pool->initialized = true;
 	}
 
-	ret = crypto_cb->lrng_hash_update(shash, inbuf, inbuflen);
+	ret = hash_cb->hash_update(shash, inbuf, inbuflen);
 	if (ret)
 		goto out;
 
@@ -166,10 +188,10 @@ lrng_pool_insert_aux_locked(const u8 *inbuf, u32 inbuflen, u32 entropy_bits)
 	entropy_bits += atomic_read_u32(&pool->aux_entropy_bits);
 	atomic_set(&pool->aux_entropy_bits,
 		   min_t(u32, entropy_bits,
-			 crypto_cb->lrng_hash_digestsize(hash) << 3));
+			 hash_cb->hash_digestsize(hash) << 3));
 
 out:
-	lrng_hash_unlock(drng, flags);
+	read_unlock_irqrestore(&drng->hash_lock, flags);
 	return ret;
 }
 
@@ -180,13 +202,14 @@ int lrng_pool_insert_aux(const u8 *inbuf, u32 inbuflen, u32 entropy_bits)
 	int ret;
 
 	spin_lock_irqsave(&pool->lock, flags);
-	ret = lrng_pool_insert_aux_locked(inbuf, inbuflen, entropy_bits);
+	ret = lrng_aux_pool_insert_locked(inbuf, inbuflen, entropy_bits);
 	spin_unlock_irqrestore(&pool->lock, flags);
 
-	lrng_pool_add_entropy();
+	lrng_es_add_entropy();
 
 	return ret;
 }
+EXPORT_SYMBOL(lrng_pool_insert_aux);
 
 /************************* Get data from entropy pool *************************/
 
@@ -197,42 +220,47 @@ int lrng_pool_insert_aux(const u8 *inbuf, u32 inbuflen, u32 entropy_bits)
  * @requested_bits: Requested amount of entropy
  * @return: amount of entropy in outbuf in bits.
  */
-static inline u32 lrng_get_aux_pool(u8 *outbuf, u32 requested_bits)
+static u32 lrng_aux_get_pool(u8 *outbuf, u32 requested_bits)
 {
 	struct lrng_pool *pool = &lrng_pool;
 	struct shash_desc *shash = (struct shash_desc *)pool->aux_pool;
 	struct lrng_drng *drng = lrng_drng_init_instance();
-	const struct lrng_crypto_cb *crypto_cb;
+	const struct lrng_hash_cb *hash_cb;
 	unsigned long flags;
 	void *hash;
 	u32 collected_ent_bits, returned_ent_bits, unused_bits = 0,
-	    digestsize;
+	    digestsize, digestsize_bits, requested_bits_osr;
 	u8 aux_output[LRNG_MAX_DIGESTSIZE];
 
 	if (unlikely(!pool->initialized))
 		return 0;
 
-	lrng_hash_lock(drng, &flags);
+	read_lock_irqsave(&drng->hash_lock, flags);
 
-	crypto_cb = drng->crypto_cb;
+	hash_cb = drng->hash_cb;
 	hash = drng->hash;
-	digestsize = crypto_cb->lrng_hash_digestsize(hash);
+	digestsize = hash_cb->hash_digestsize(hash);
+	digestsize_bits = digestsize << 3;
+
+	/* Cap to maximum entropy that can ever be generated with given hash */
+	lrng_cap_requested(digestsize_bits, requested_bits);
 
 	/* Ensure that no more than the size of aux_pool can be requested */
 	requested_bits = min_t(u32, requested_bits, (LRNG_MAX_DIGESTSIZE << 3));
+	requested_bits_osr = requested_bits + lrng_compress_osr();
 
 	/* Cap entropy with entropy counter from aux pool and the used digest */
-	collected_ent_bits = min_t(u32, digestsize << 3,
+	collected_ent_bits = min_t(u32, digestsize_bits,
 			       atomic_xchg_relaxed(&pool->aux_entropy_bits, 0));
 
 	/* We collected too much entropy and put the overflow back */
-	if (collected_ent_bits > (requested_bits + lrng_compress_osr())) {
+	if (collected_ent_bits > requested_bits_osr) {
 		/* Amount of bits we collected too much */
-		unused_bits = collected_ent_bits - requested_bits;
+		unused_bits = collected_ent_bits - requested_bits_osr;
 		/* Put entropy back */
 		atomic_add(unused_bits, &pool->aux_entropy_bits);
 		/* Fix collected entropy */
-		collected_ent_bits = requested_bits;
+		collected_ent_bits = requested_bits_osr;
 	}
 
 	/* Apply oversampling: discount requested oversampling rate */
@@ -242,13 +270,13 @@ static inline u32 lrng_get_aux_pool(u8 *outbuf, u32 requested_bits)
 		 returned_ent_bits, collected_ent_bits, unused_bits);
 
 	/* Get the digest for the aux pool to be returned to the caller ... */
-	if (crypto_cb->lrng_hash_final(shash, aux_output) ||
+	if (hash_cb->hash_final(shash, aux_output) ||
 	    /*
 	     * ... and re-initialize the aux state. Do not add the aux pool
 	     * digest for backward secrecy as it will be added with the
 	     * insertion of the complete seed buffer after it has been filled.
 	     */
-	    crypto_cb->lrng_hash_init(shash, hash)) {
+	    hash_cb->hash_init(shash, hash)) {
 		returned_ent_bits = 0;
 	} else {
 		/*
@@ -259,12 +287,13 @@ static inline u32 lrng_get_aux_pool(u8 *outbuf, u32 requested_bits)
 		memcpy(outbuf, aux_output, requested_bits >> 3);
 	}
 
-	lrng_hash_unlock(drng, flags);
+	read_unlock_irqrestore(&drng->hash_lock, flags);
 	memzero_explicit(aux_output, digestsize);
 	return returned_ent_bits;
 }
 
-void lrng_get_backtrack_aux(struct entropy_buf *entropy_buf, u32 requested_bits)
+static void lrng_aux_get_backtrack(struct entropy_buf *eb, u32 requested_bits,
+				   bool __unused)
 {
 	struct lrng_pool *pool = &lrng_pool;
 	unsigned long flags;
@@ -272,23 +301,35 @@ void lrng_get_backtrack_aux(struct entropy_buf *entropy_buf, u32 requested_bits)
 	/* Ensure aux pool extraction and backtracking op are atomic */
 	spin_lock_irqsave(&pool->lock, flags);
 
-	entropy_buf->a_bits = lrng_get_aux_pool(entropy_buf->a, requested_bits);
+	eb->e_bits[lrng_ext_es_aux] = lrng_aux_get_pool(eb->e[lrng_ext_es_aux],
+							requested_bits);
 
 	/* Mix the extracted data back into pool for backtracking resistance */
-	if (lrng_pool_insert_aux_locked((u8 *)entropy_buf,
+	if (lrng_aux_pool_insert_locked((u8 *)eb,
 					sizeof(struct entropy_buf), 0))
 		pr_warn("Backtracking resistance operation failed\n");
 
 	spin_unlock_irqrestore(&pool->lock, flags);
 }
 
-void lrng_aux_es_state(unsigned char *buf, size_t buflen)
+static void lrng_aux_es_state(unsigned char *buf, size_t buflen)
 {
 	const struct lrng_drng *lrng_drng_init = lrng_drng_init_instance();
 
 	/* Assume the lrng_drng_init lock is taken by caller */
 	snprintf(buf, buflen,
-		 "Auxiliary ES properties:\n"
-		 " Hash for operating entropy pool: %s\n",
-		 lrng_drng_init->crypto_cb->lrng_hash_name());
+		 " Hash for operating entropy pool: %s\n"
+		 " Available entropy: %u\n",
+		 lrng_drng_init->hash_cb->hash_name(),
+		 lrng_aux_avail_entropy(0));
 }
+
+struct lrng_es_cb lrng_es_aux = {
+	.name			= "Auxiliary",
+	.get_ent		= lrng_aux_get_backtrack,
+	.curr_entropy		= lrng_aux_avail_entropy,
+	.max_entropy		= lrng_get_digestsize,
+	.state			= lrng_aux_es_state,
+	.reset			= lrng_aux_reset,
+	.switch_hash		= lrng_aux_switch_hash,
+};

@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: GPL-2.0 OR BSD-2-Clause
 /*
- * Linux Random Number Generator (LRNG) testing interfaces
+ * LRNG testing interfaces to obtain raw entropy
  *
- * Copyright (C) 2019 - 2021, Stephan Mueller <smueller@chronox.de>
+ * Copyright (C) 2022, Stephan Mueller <smueller@chronox.de>
  */
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
+#include <linux/lrng.h>
 #include <linux/atomic.h>
 #include <linux/bug.h>
 #include <linux/debugfs.h>
-#include <linux/lrng.h>
 #include <linux/module.h>
 #include <linux/sched.h>
 #include <linux/sched/signal.h>
@@ -21,7 +21,20 @@
 #include <linux/workqueue.h>
 #include <asm/errno.h>
 
-#include "lrng_internal.h"
+#include "lrng_definitions.h"
+#include "lrng_drng_chacha20.h"
+#include "lrng_sha.h"
+#include "lrng_testing.h"
+
+#if defined(CONFIG_LRNG_RAW_SCHED_HIRES_ENTROPY) ||		\
+    defined(CONFIG_LRNG_RAW_SCHED_PID_ENTROPY) ||		\
+    defined(CONFIG_LRNG_RAW_SCHED_START_TIME_ENTROPY) ||	\
+    defined(CONFIG_LRNG_RAW_SCHED_NVCSW_ENTROPY) ||		\
+    defined(CONFIG_LRNG_SCHED_PERF)
+#define LRNG_TESTING_USE_BUSYLOOP
+#endif
+
+#ifdef CONFIG_LRNG_TESTING_RECORDING
 
 #define LRNG_TESTING_RINGBUFFER_SIZE	1024
 #define LRNG_TESTING_RINGBUFFER_MASK	(LRNG_TESTING_RINGBUFFER_SIZE - 1)
@@ -29,7 +42,7 @@
 struct lrng_testing {
 	u32 lrng_testing_rb[LRNG_TESTING_RINGBUFFER_SIZE];
 	u32 rb_reader;
-	u32 rb_writer;
+	atomic_t rb_writer;
 	atomic_t lrng_testing_enabled;
 	spinlock_t lock;
 	wait_queue_head_t read_wait;
@@ -46,17 +59,17 @@ struct lrng_testing {
  *	 disabled
  */
 
-static inline void lrng_testing_reset(struct lrng_testing *data)
+static void lrng_testing_reset(struct lrng_testing *data)
 {
 	unsigned long flags;
 
 	spin_lock_irqsave(&data->lock, flags);
 	data->rb_reader = 0;
-	data->rb_writer = 0;
+	atomic_set(&data->rb_writer, 0);
 	spin_unlock_irqrestore(&data->lock, flags);
 }
 
-static inline void lrng_testing_init(struct lrng_testing *data, u32 boot)
+static void lrng_testing_init(struct lrng_testing *data, u32 boot)
 {
 	/*
 	 * The boot time testing implies we have a running test. If the
@@ -71,7 +84,7 @@ static inline void lrng_testing_init(struct lrng_testing *data, u32 boot)
 	pr_warn("Enabling data collection\n");
 }
 
-static inline void lrng_testing_fini(struct lrng_testing *data, u32 boot)
+static void lrng_testing_fini(struct lrng_testing *data, u32 boot)
 {
 	/* If we have boot data, we do not reset yet to allow data to be read */
 	if (boot)
@@ -82,8 +95,8 @@ static inline void lrng_testing_fini(struct lrng_testing *data, u32 boot)
 	pr_warn("Disabling data collection\n");
 }
 
-static inline bool lrng_testing_store(struct lrng_testing *data, u32 value,
-				      u32 *boot)
+static bool lrng_testing_store(struct lrng_testing *data, u32 value,
+			       u32 *boot)
 {
 	unsigned long flags;
 
@@ -97,37 +110,41 @@ static inline bool lrng_testing_store(struct lrng_testing *data, u32 value,
 	 * is filled.
 	 */
 	if (*boot) {
-		if (data->rb_writer > LRNG_TESTING_RINGBUFFER_SIZE) {
+		if (((u32)atomic_read(&data->rb_writer)) >
+		    LRNG_TESTING_RINGBUFFER_SIZE) {
 			*boot = 2;
 			pr_warn_once("One time data collection test disabled\n");
 			spin_unlock_irqrestore(&data->lock, flags);
 			return false;
 		}
 
-		if (data->rb_writer == 1)
+		if (atomic_read(&data->rb_writer) == 1)
 			pr_warn("One time data collection test enabled\n");
 	}
 
-	data->lrng_testing_rb[data->rb_writer & LRNG_TESTING_RINGBUFFER_MASK] =
-									value;
-	data->rb_writer++;
+	data->lrng_testing_rb[((u32)atomic_read(&data->rb_writer)) &
+			      LRNG_TESTING_RINGBUFFER_MASK] = value;
+	atomic_inc(&data->rb_writer);
 
 	spin_unlock_irqrestore(&data->lock, flags);
 
+#ifndef LRNG_TESTING_USE_BUSYLOOP
 	if (wq_has_sleeper(&data->read_wait))
 		wake_up_interruptible(&data->read_wait);
+#endif
 
 	return true;
 }
 
-static inline bool lrng_testing_have_data(struct lrng_testing *data)
+static bool lrng_testing_have_data(struct lrng_testing *data)
 {
-	return ((data->rb_writer & LRNG_TESTING_RINGBUFFER_MASK) !=
+	return ((((u32)atomic_read(&data->rb_writer)) &
+		 LRNG_TESTING_RINGBUFFER_MASK) !=
 		 (data->rb_reader & LRNG_TESTING_RINGBUFFER_MASK));
 }
 
-static inline int lrng_testing_reader(struct lrng_testing *data, u32 *boot,
-				      u8 *outbuf, u32 outbuflen)
+static int lrng_testing_reader(struct lrng_testing *data, u32 *boot,
+			       u8 *outbuf, u32 outbuflen)
 {
 	unsigned long flags;
 	int collected_data = 0;
@@ -135,11 +152,12 @@ static inline int lrng_testing_reader(struct lrng_testing *data, u32 *boot,
 	lrng_testing_init(data, *boot);
 
 	while (outbuflen) {
+		u32 writer = (u32)atomic_read(&data->rb_writer);
+
 		spin_lock_irqsave(&data->lock, flags);
 
 		/* We have no data or reached the writer. */
-		if (!data->rb_writer ||
-		    (data->rb_writer == data->rb_reader)) {
+		if (!writer || (writer == data->rb_reader)) {
 
 			spin_unlock_irqrestore(&data->lock, flags);
 
@@ -152,8 +170,13 @@ static inline int lrng_testing_reader(struct lrng_testing *data, u32 *boot,
 				goto out;
 			}
 
+#ifdef LRNG_TESTING_USE_BUSYLOOP
+			while (!lrng_testing_have_data(data))
+				;
+#else
 			wait_event_interruptible(data->read_wait,
 						 lrng_testing_have_data(data));
+#endif
 			if (signal_pending(current)) {
 				collected_data = -ERESTARTSYS;
 				goto out;
@@ -244,17 +267,19 @@ static int lrng_testing_extract_user(struct file *file, char __user *buf,
 	return ret;
 }
 
-/************** Raw High-Resolution Timer Entropy Data Handling ***************/
+#endif /* CONFIG_LRNG_TESTING_RECORDING */
+
+/************* Raw High-Resolution IRQ Timer Entropy Data Handling ************/
 
 #ifdef CONFIG_LRNG_RAW_HIRES_ENTROPY
 
 static u32 boot_raw_hires_test = 0;
 module_param(boot_raw_hires_test, uint, 0644);
-MODULE_PARM_DESC(boot_raw_hires_test, "Enable gathering boot time high resolution timer entropy of the first entropy events");
+MODULE_PARM_DESC(boot_raw_hires_test, "Enable gathering boot time high resolution timer entropy of the first IRQ entropy events");
 
 static struct lrng_testing lrng_raw_hires = {
 	.rb_reader = 0,
-	.rb_writer = 0,
+	.rb_writer = ATOMIC_INIT(0),
 	.lock      = __SPIN_LOCK_UNLOCKED(lrng_raw_hires.lock),
 	.read_wait = __WAIT_QUEUE_HEAD_INITIALIZER(lrng_raw_hires.read_wait)
 };
@@ -294,7 +319,7 @@ MODULE_PARM_DESC(boot_raw_jiffies_test, "Enable gathering boot time high resolut
 
 static struct lrng_testing lrng_raw_jiffies = {
 	.rb_reader = 0,
-	.rb_writer = 0,
+	.rb_writer = ATOMIC_INIT(0),
 	.lock      = __SPIN_LOCK_UNLOCKED(lrng_raw_jiffies.lock),
 	.read_wait = __WAIT_QUEUE_HEAD_INITIALIZER(lrng_raw_jiffies.read_wait)
 };
@@ -335,7 +360,7 @@ MODULE_PARM_DESC(boot_raw_irq_test, "Enable gathering boot time entropy of the f
 
 static struct lrng_testing lrng_raw_irq = {
 	.rb_reader = 0,
-	.rb_writer = 0,
+	.rb_writer = ATOMIC_INIT(0),
 	.lock      = __SPIN_LOCK_UNLOCKED(lrng_raw_irq.lock),
 	.read_wait = __WAIT_QUEUE_HEAD_INITIALIZER(lrng_raw_irq.read_wait)
 };
@@ -365,47 +390,6 @@ static const struct file_operations lrng_raw_irq_fops = {
 
 #endif /* CONFIG_LRNG_RAW_IRQ_ENTROPY */
 
-/************************ Raw IRQFLAGS Data Handling **************************/
-
-#ifdef CONFIG_LRNG_RAW_IRQFLAGS_ENTROPY
-
-static u32 boot_raw_irqflags_test = 0;
-module_param(boot_raw_irqflags_test, uint, 0644);
-MODULE_PARM_DESC(boot_raw_irqflags_test, "Enable gathering boot time entropy of the first IRQ flags entropy events");
-
-static struct lrng_testing lrng_raw_irqflags = {
-	.rb_reader = 0,
-	.rb_writer = 0,
-	.lock      = __SPIN_LOCK_UNLOCKED(lrng_raw_irqflags.lock),
-	.read_wait = __WAIT_QUEUE_HEAD_INITIALIZER(lrng_raw_irqflags.read_wait)
-};
-
-bool lrng_raw_irqflags_entropy_store(u32 value)
-{
-	return lrng_testing_store(&lrng_raw_irqflags, value,
-				  &boot_raw_irqflags_test);
-}
-
-static int lrng_raw_irqflags_entropy_reader(u8 *outbuf, u32 outbuflen)
-{
-	return lrng_testing_reader(&lrng_raw_irqflags, &boot_raw_irqflags_test,
-				   outbuf, outbuflen);
-}
-
-static ssize_t lrng_raw_irqflags_read(struct file *file, char __user *to,
-				      size_t count, loff_t *ppos)
-{
-	return lrng_testing_extract_user(file, to, count, ppos,
-					 lrng_raw_irqflags_entropy_reader);
-}
-
-static const struct file_operations lrng_raw_irqflags_fops = {
-	.owner = THIS_MODULE,
-	.read = lrng_raw_irqflags_read,
-};
-
-#endif /* CONFIG_LRNG_RAW_IRQFLAGS_ENTROPY */
-
 /************************ Raw _RET_IP_ Data Handling **************************/
 
 #ifdef CONFIG_LRNG_RAW_RETIP_ENTROPY
@@ -416,7 +400,7 @@ MODULE_PARM_DESC(boot_raw_retip_test, "Enable gathering boot time entropy of the
 
 static struct lrng_testing lrng_raw_retip = {
 	.rb_reader = 0,
-	.rb_writer = 0,
+	.rb_writer = ATOMIC_INIT(0),
 	.lock      = __SPIN_LOCK_UNLOCKED(lrng_raw_retip.lock),
 	.read_wait = __WAIT_QUEUE_HEAD_INITIALIZER(lrng_raw_retip.read_wait)
 };
@@ -456,7 +440,7 @@ MODULE_PARM_DESC(boot_raw_regs_test, "Enable gathering boot time entropy of the 
 
 static struct lrng_testing lrng_raw_regs = {
 	.rb_reader = 0,
-	.rb_writer = 0,
+	.rb_writer = ATOMIC_INIT(0),
 	.lock      = __SPIN_LOCK_UNLOCKED(lrng_raw_regs.lock),
 	.read_wait = __WAIT_QUEUE_HEAD_INITIALIZER(lrng_raw_regs.read_wait)
 };
@@ -496,7 +480,7 @@ MODULE_PARM_DESC(boot_raw_array, "Enable gathering boot time raw noise array dat
 
 static struct lrng_testing lrng_raw_array = {
 	.rb_reader = 0,
-	.rb_writer = 0,
+	.rb_writer = ATOMIC_INIT(0),
 	.lock      = __SPIN_LOCK_UNLOCKED(lrng_raw_array.lock),
 	.read_wait = __WAIT_QUEUE_HEAD_INITIALIZER(lrng_raw_array.read_wait)
 };
@@ -532,11 +516,11 @@ static const struct file_operations lrng_raw_array_fops = {
 
 static u32 boot_irq_perf = 0;
 module_param(boot_irq_perf, uint, 0644);
-MODULE_PARM_DESC(boot_irq_perf, "Enable gathering boot time interrupt performance data of the first entropy events");
+MODULE_PARM_DESC(boot_irq_perf, "Enable gathering interrupt entropy source performance data");
 
 static struct lrng_testing lrng_irq_perf = {
 	.rb_reader = 0,
-	.rb_writer = 0,
+	.rb_writer = ATOMIC_INIT(0),
 	.lock      = __SPIN_LOCK_UNLOCKED(lrng_irq_perf.lock),
 	.read_wait = __WAIT_QUEUE_HEAD_INITIALIZER(lrng_irq_perf.read_wait)
 };
@@ -566,6 +550,214 @@ static const struct file_operations lrng_irq_perf_fops = {
 };
 
 #endif /* CONFIG_LRNG_IRQ_PERF */
+
+/****** Raw High-Resolution Scheduler-based Timer Entropy Data Handling *******/
+
+#ifdef CONFIG_LRNG_RAW_SCHED_HIRES_ENTROPY
+
+static u32 boot_raw_sched_hires_test = 0;
+module_param(boot_raw_sched_hires_test, uint, 0644);
+MODULE_PARM_DESC(boot_raw_sched_hires_test, "Enable gathering boot time high resolution timer entropy of the first Scheduler-based entropy events");
+
+static struct lrng_testing lrng_raw_sched_hires = {
+	.rb_reader = 0,
+	.rb_writer = ATOMIC_INIT(0),
+	.lock      = __SPIN_LOCK_UNLOCKED(lrng_raw_sched_hires.lock),
+	.read_wait =
+		__WAIT_QUEUE_HEAD_INITIALIZER(lrng_raw_sched_hires.read_wait)
+};
+
+bool lrng_raw_sched_hires_entropy_store(u32 value)
+{
+	return lrng_testing_store(&lrng_raw_sched_hires, value,
+				  &boot_raw_sched_hires_test);
+}
+
+static int lrng_raw_sched_hires_entropy_reader(u8 *outbuf, u32 outbuflen)
+{
+	return lrng_testing_reader(&lrng_raw_sched_hires,
+				   &boot_raw_sched_hires_test,
+				   outbuf, outbuflen);
+}
+
+static ssize_t lrng_raw_sched_hires_read(struct file *file, char __user *to,
+					 size_t count, loff_t *ppos)
+{
+	return lrng_testing_extract_user(file, to, count, ppos,
+					 lrng_raw_sched_hires_entropy_reader);
+}
+
+static const struct file_operations lrng_raw_sched_hires_fops = {
+	.owner = THIS_MODULE,
+	.read = lrng_raw_sched_hires_read,
+};
+
+#endif /* CONFIG_LRNG_RAW_SCHED_HIRES_ENTROPY */
+
+/******************** Interrupt Performance Data Handling *********************/
+
+#ifdef CONFIG_LRNG_SCHED_PERF
+
+static u32 boot_sched_perf = 0;
+module_param(boot_sched_perf, uint, 0644);
+MODULE_PARM_DESC(boot_sched_perf, "Enable gathering scheduler-based entropy source performance data");
+
+static struct lrng_testing lrng_sched_perf = {
+	.rb_reader = 0,
+	.rb_writer = ATOMIC_INIT(0),
+	.lock      = __SPIN_LOCK_UNLOCKED(lrng_sched_perf.lock),
+	.read_wait = __WAIT_QUEUE_HEAD_INITIALIZER(lrng_sched_perf.read_wait)
+};
+
+bool lrng_sched_perf_time(u32 start)
+{
+	return lrng_testing_store(&lrng_sched_perf, random_get_entropy() - start,
+				  &boot_sched_perf);
+}
+
+static int lrng_sched_perf_reader(u8 *outbuf, u32 outbuflen)
+{
+	return lrng_testing_reader(&lrng_sched_perf, &boot_sched_perf, outbuf,
+				   outbuflen);
+}
+
+static ssize_t lrng_sched_perf_read(struct file *file, char __user *to,
+				    size_t count, loff_t *ppos)
+{
+	return lrng_testing_extract_user(file, to, count, ppos,
+					 lrng_sched_perf_reader);
+}
+
+static const struct file_operations lrng_sched_perf_fops = {
+	.owner = THIS_MODULE,
+	.read = lrng_sched_perf_read,
+};
+
+#endif /* CONFIG_LRNG_SCHED_PERF */
+
+/*************** Raw Scheduler task_struct->pid Data Handling *****************/
+
+#ifdef CONFIG_LRNG_RAW_SCHED_PID_ENTROPY
+
+static u32 boot_raw_sched_pid_test = 0;
+module_param(boot_raw_sched_pid_test, uint, 0644);
+MODULE_PARM_DESC(boot_raw_sched_pid_test, "Enable gathering boot time entropy of the first PIDs collected by the scheduler entropy source");
+
+static struct lrng_testing lrng_raw_sched_pid = {
+	.rb_reader = 0,
+	.rb_writer = ATOMIC_INIT(0),
+	.lock      = __SPIN_LOCK_UNLOCKED(lrng_raw_sched_pid.lock),
+	.read_wait = __WAIT_QUEUE_HEAD_INITIALIZER(lrng_raw_sched_pid.read_wait)
+};
+
+bool lrng_raw_sched_pid_entropy_store(u32 value)
+{
+	return lrng_testing_store(&lrng_raw_sched_pid, value,
+				  &boot_raw_sched_pid_test);
+}
+
+static int lrng_raw_sched_pid_entropy_reader(u8 *outbuf, u32 outbuflen)
+{
+	return lrng_testing_reader(&lrng_raw_sched_pid,
+				   &boot_raw_sched_pid_test, outbuf, outbuflen);
+}
+
+static ssize_t lrng_raw_sched_pid_read(struct file *file, char __user *to,
+				       size_t count, loff_t *ppos)
+{
+	return lrng_testing_extract_user(file, to, count, ppos,
+					 lrng_raw_sched_pid_entropy_reader);
+}
+
+static const struct file_operations lrng_raw_sched_pid_fops = {
+	.owner = THIS_MODULE,
+	.read = lrng_raw_sched_pid_read,
+};
+
+#endif /* CONFIG_LRNG_RAW_SCHED_PID_ENTROPY */
+
+
+/*********** Raw Scheduler task_struct->start_time Data Handling **************/
+
+#ifdef CONFIG_LRNG_RAW_SCHED_START_TIME_ENTROPY
+
+static u32 boot_raw_sched_starttime_test = 0;
+module_param(boot_raw_sched_starttime_test, uint, 0644);
+MODULE_PARM_DESC(boot_raw_sched_starttime_test, "Enable gathering boot time entropy of the first task start times collected by the scheduler entropy source");
+
+static struct lrng_testing lrng_raw_sched_starttime = {
+	.rb_reader = 0,
+	.rb_writer = ATOMIC_INIT(0),
+	.lock      = __SPIN_LOCK_UNLOCKED(lrng_raw_sched_starttime.lock),
+	.read_wait = __WAIT_QUEUE_HEAD_INITIALIZER(lrng_raw_sched_starttime.read_wait)
+};
+
+bool lrng_raw_sched_starttime_entropy_store(u32 value)
+{
+	return lrng_testing_store(&lrng_raw_sched_starttime, value,
+				  &boot_raw_sched_starttime_test);
+}
+
+static int lrng_raw_sched_starttime_entropy_reader(u8 *outbuf, u32 outbuflen)
+{
+	return lrng_testing_reader(&lrng_raw_sched_starttime,
+				   &boot_raw_sched_starttime_test, outbuf, outbuflen);
+}
+
+static ssize_t lrng_raw_sched_starttime_read(struct file *file, char __user *to,
+				       size_t count, loff_t *ppos)
+{
+	return lrng_testing_extract_user(file, to, count, ppos,
+					 lrng_raw_sched_starttime_entropy_reader);
+}
+
+static const struct file_operations lrng_raw_sched_starttime_fops = {
+	.owner = THIS_MODULE,
+	.read = lrng_raw_sched_starttime_read,
+};
+
+#endif /* CONFIG_LRNG_RAW_SCHED_START_TIME_ENTROPY */
+
+/************** Raw Scheduler task_struct->nvcsw Data Handling ****************/
+
+#ifdef CONFIG_LRNG_RAW_SCHED_NVCSW_ENTROPY
+
+static u32 boot_raw_sched_nvcsw_test = 0;
+module_param(boot_raw_sched_nvcsw_test, uint, 0644);
+MODULE_PARM_DESC(boot_raw_sched_nvcsw_test, "Enable gathering boot time entropy of the first task context switch numbers collected by the scheduler entropy source");
+
+static struct lrng_testing lrng_raw_sched_nvcsw = {
+	.rb_reader = 0,
+	.rb_writer = ATOMIC_INIT(0),
+	.lock      = __SPIN_LOCK_UNLOCKED(lrng_raw_sched_nvcsw.lock),
+	.read_wait = __WAIT_QUEUE_HEAD_INITIALIZER(lrng_raw_sched_nvcsw.read_wait)
+};
+
+bool lrng_raw_sched_nvcsw_entropy_store(u32 value)
+{
+	return lrng_testing_store(&lrng_raw_sched_nvcsw, value,
+				  &boot_raw_sched_nvcsw_test);
+}
+
+static int lrng_raw_sched_nvcsw_entropy_reader(u8 *outbuf, u32 outbuflen)
+{
+	return lrng_testing_reader(&lrng_raw_sched_nvcsw,
+				   &boot_raw_sched_nvcsw_test, outbuf, outbuflen);
+}
+
+static ssize_t lrng_raw_sched_nvcsw_read(struct file *file, char __user *to,
+				       size_t count, loff_t *ppos)
+{
+	return lrng_testing_extract_user(file, to, count, ppos,
+					 lrng_raw_sched_nvcsw_entropy_reader);
+}
+
+static const struct file_operations lrng_raw_sched_nvcsw_fops = {
+	.owner = THIS_MODULE,
+	.read = lrng_raw_sched_nvcsw_read,
+};
+
+#endif /* CONFIG_LRNG_RAW_SCHED_NVCSW_ENTROPY */
 
 /*********************************** ACVT ************************************/
 
@@ -602,16 +794,16 @@ static ssize_t lrng_acvt_hash_read(struct file *file, char __user *to,
 				   size_t count, loff_t *ppos)
 {
 	SHASH_DESC_ON_STACK(shash, NULL);
-	const struct lrng_crypto_cb *crypto_cb = &lrng_cc20_crypto_cb;
+	const struct lrng_hash_cb *hash_cb = &lrng_sha_hash_cb;
 	ssize_t ret;
 
 	if (count > LRNG_ATOMIC_DIGEST_SIZE)
 		return -EINVAL;
 
-	ret = crypto_cb->lrng_hash_init(shash, NULL) ?:
-	      crypto_cb->lrng_hash_update(shash, lrng_acvt_hash_data,
+	ret = hash_cb->hash_init(shash, NULL) ?:
+	      hash_cb->hash_update(shash, lrng_acvt_hash_data,
 				atomic_read_u32(&lrng_acvt_hash_data_size)) ?:
-	      crypto_cb->lrng_hash_final(shash, lrng_acvt_hash_digest);
+	      hash_cb->hash_final(shash, lrng_acvt_hash_digest);
 	if (ret)
 		return ret;
 
@@ -653,11 +845,6 @@ static int __init lrng_raw_init(void)
 	debugfs_create_file_unsafe("lrng_raw_irq", 0400, lrng_raw_debugfs_root,
 				   NULL, &lrng_raw_irq_fops);
 #endif
-#ifdef CONFIG_LRNG_RAW_IRQFLAGS_ENTROPY
-	debugfs_create_file_unsafe("lrng_raw_irqflags", 0400,
-				   lrng_raw_debugfs_root, NULL,
-				   &lrng_raw_irqflags_fops);
-#endif
 #ifdef CONFIG_LRNG_RAW_RETIP_ENTROPY
 	debugfs_create_file_unsafe("lrng_raw_retip", 0400,
 				   lrng_raw_debugfs_root, NULL,
@@ -676,6 +863,31 @@ static int __init lrng_raw_init(void)
 #ifdef CONFIG_LRNG_IRQ_PERF
 	debugfs_create_file_unsafe("lrng_irq_perf", 0400, lrng_raw_debugfs_root,
 				   NULL, &lrng_irq_perf_fops);
+#endif
+#ifdef CONFIG_LRNG_RAW_SCHED_HIRES_ENTROPY
+	debugfs_create_file_unsafe("lrng_raw_sched_hires", 0400,
+				   lrng_raw_debugfs_root,
+				   NULL, &lrng_raw_sched_hires_fops);
+#endif
+#ifdef CONFIG_LRNG_RAW_SCHED_PID_ENTROPY
+	debugfs_create_file_unsafe("lrng_raw_sched_pid", 0400,
+				   lrng_raw_debugfs_root, NULL,
+				   &lrng_raw_sched_pid_fops);
+#endif
+#ifdef CONFIG_LRNG_RAW_SCHED_START_TIME_ENTROPY
+	debugfs_create_file_unsafe("lrng_raw_sched_starttime", 0400,
+				   lrng_raw_debugfs_root, NULL,
+				   &lrng_raw_sched_starttime_fops);
+#endif
+#ifdef CONFIG_LRNG_RAW_SCHED_NVCSW_ENTROPY
+	debugfs_create_file_unsafe("lrng_raw_sched_nvcsw", 0400,
+				   lrng_raw_debugfs_root, NULL,
+				   &lrng_raw_sched_nvcsw_fops);
+#endif
+#ifdef CONFIG_LRNG_SCHED_PERF
+	debugfs_create_file_unsafe("lrng_sched_perf", 0400,
+				   lrng_raw_debugfs_root, NULL,
+				   &lrng_sched_perf_fops);
 #endif
 #ifdef CONFIG_LRNG_ACVT_HASH
 	debugfs_create_file_unsafe("lrng_acvt_hash", 0600,

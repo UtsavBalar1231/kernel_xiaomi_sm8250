@@ -3,7 +3,7 @@
  * Backend for the LRNG providing the cryptographic primitives using
  * ChaCha20 cipher implementations.
  *
- * Copyright (C) 2016 - 2021, Stephan Mueller <smueller@chronox.de>
+ * Copyright (C) 2022, Stephan Mueller <smueller@chronox.de>
  */
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
@@ -13,23 +13,11 @@
 #include <linux/random.h>
 #include <linux/slab.h>
 
-#include "lrng_chacha20.h"
-#include "lrng_internal.h"
+#include "lrng_drng_chacha20.h"
 
 /******************************* ChaCha20 DRNG *******************************/
 
 #define CHACHA_BLOCK_WORDS	(CHACHA_BLOCK_SIZE / sizeof(u32))
-
-struct chacha20_state {
-	struct chacha20_block block;
-};
-
-/*
- * Have a static memory blocks for the ChaCha20 DRNG instance to avoid calling
- * kmalloc too early in the boot cycle. For subsequent allocation requests,
- * such as per-NUMA-node DRNG instances, kmalloc will be used.
- */
-struct chacha20_state chacha20 __latent_entropy;
 
 /*
  * Update of the ChaCha20 state by either using an unused buffer part or by
@@ -140,11 +128,6 @@ static int lrng_cc20_drng_generate_helper(void *drng, u8 *outbuf, u32 outbuflen)
 	return ret;
 }
 
-void lrng_cc20_init_state(struct chacha20_state *state)
-{
-	lrng_cc20_init_rfc7539(&state->block);
-}
-
 /*
  * Allocation of the DRNG state
  */
@@ -166,7 +149,7 @@ static void *lrng_cc20_drng_alloc(u32 sec_strength)
 		return ERR_PTR(-ENOMEM);
 	pr_debug("memory for ChaCha20 core allocated\n");
 
-	lrng_cc20_init_state(state);
+	lrng_cc20_init_rfc7539(&state->block);
 
 	return state;
 }
@@ -175,128 +158,8 @@ static void lrng_cc20_drng_dealloc(void *drng)
 {
 	struct chacha20_state *chacha20_state = (struct chacha20_state *)drng;
 
-	if (drng == &chacha20) {
-		memzero_explicit(chacha20_state, sizeof(*chacha20_state));
-		pr_debug("static ChaCha20 core zeroized\n");
-		return;
-	}
-
 	pr_debug("ChaCha20 core zeroized and freed\n");
 	kfree_sensitive(chacha20_state);
-}
-
-/******************************* Hash Operation *******************************/
-
-#ifdef CONFIG_CRYPTO_LIB_SHA256
-
-#include <crypto/sha2.h>
-
-static u32 lrng_cc20_hash_digestsize(void *hash)
-{
-	return SHA256_DIGEST_SIZE;
-}
-
-static int lrng_cc20_hash_init(struct shash_desc *shash, void *hash)
-{
-	/*
-	 * We do not need a TFM - we only need sufficient space for
-	 * struct sha256_state on the stack.
-	 */
-	sha256_init(shash_desc_ctx(shash));
-	return 0;
-}
-
-static int lrng_cc20_hash_update(struct shash_desc *shash,
-				 const u8 *inbuf, u32 inbuflen)
-{
-	sha256_update(shash_desc_ctx(shash), inbuf, inbuflen);
-	return 0;
-}
-
-static int lrng_cc20_hash_final(struct shash_desc *shash, u8 *digest)
-{
-	sha256_final(shash_desc_ctx(shash), digest);
-	return 0;
-}
-
-static const char *lrng_cc20_hash_name(void)
-{
-	return "SHA-256";
-}
-
-static void lrng_cc20_hash_desc_zero(struct shash_desc *shash)
-{
-	memzero_explicit(shash_desc_ctx(shash), sizeof(struct sha256_state));
-}
-
-#else /* CONFIG_CRYPTO_LIB_SHA256 */
-
-#include <crypto/sha1.h>
-#include <crypto/sha1_base.h>
-
-/*
- * If the SHA-256 support is not compiled, we fall back to SHA-1 that is always
- * compiled and present in the kernel.
- */
-static u32 lrng_cc20_hash_digestsize(void *hash)
-{
-	return SHA1_DIGEST_SIZE;
-}
-
-static void lrng_sha1_block_fn(struct sha1_state *sctx, const u8 *src,
-			       int blocks)
-{
-	u32 temp[SHA1_WORKSPACE_WORDS];
-
-	while (blocks--) {
-		sha1_transform(sctx->state, src, temp);
-		src += SHA1_BLOCK_SIZE;
-	}
-	memzero_explicit(temp, sizeof(temp));
-}
-
-static int lrng_cc20_hash_init(struct shash_desc *shash, void *hash)
-{
-	/*
-	 * We do not need a TFM - we only need sufficient space for
-	 * struct sha1_state on the stack.
-	 */
-	sha1_base_init(shash);
-	return 0;
-}
-
-static int lrng_cc20_hash_update(struct shash_desc *shash,
-				 const u8 *inbuf, u32 inbuflen)
-{
-	return sha1_base_do_update(shash, inbuf, inbuflen, lrng_sha1_block_fn);
-}
-
-static int lrng_cc20_hash_final(struct shash_desc *shash, u8 *digest)
-{
-	return sha1_base_do_finalize(shash, lrng_sha1_block_fn) ?:
-	       sha1_base_finish(shash, digest);
-}
-
-static const char *lrng_cc20_hash_name(void)
-{
-	return "SHA-1";
-}
-
-static void lrng_cc20_hash_desc_zero(struct shash_desc *shash)
-{
-	memzero_explicit(shash_desc_ctx(shash), sizeof(struct sha1_state));
-}
-
-#endif /* CONFIG_CRYPTO_LIB_SHA256 */
-
-static void *lrng_cc20_hash_alloc(void)
-{
-	pr_info("Hash %s allocated\n", lrng_cc20_hash_name());
-	return NULL;
-}
-
-static void lrng_cc20_hash_dealloc(void *hash)
-{
 }
 
 static const char *lrng_cc20_drng_name(void)
@@ -304,18 +167,29 @@ static const char *lrng_cc20_drng_name(void)
 	return "ChaCha20 DRNG";
 }
 
-const struct lrng_crypto_cb lrng_cc20_crypto_cb = {
-	.lrng_drng_name			= lrng_cc20_drng_name,
-	.lrng_hash_name			= lrng_cc20_hash_name,
-	.lrng_drng_alloc		= lrng_cc20_drng_alloc,
-	.lrng_drng_dealloc		= lrng_cc20_drng_dealloc,
-	.lrng_drng_seed_helper		= lrng_cc20_drng_seed_helper,
-	.lrng_drng_generate_helper	= lrng_cc20_drng_generate_helper,
-	.lrng_hash_alloc		= lrng_cc20_hash_alloc,
-	.lrng_hash_dealloc		= lrng_cc20_hash_dealloc,
-	.lrng_hash_digestsize		= lrng_cc20_hash_digestsize,
-	.lrng_hash_init			= lrng_cc20_hash_init,
-	.lrng_hash_update		= lrng_cc20_hash_update,
-	.lrng_hash_final		= lrng_cc20_hash_final,
-	.lrng_hash_desc_zero		= lrng_cc20_hash_desc_zero,
+const struct lrng_drng_cb lrng_cc20_drng_cb = {
+	.drng_name	= lrng_cc20_drng_name,
+	.drng_alloc	= lrng_cc20_drng_alloc,
+	.drng_dealloc	= lrng_cc20_drng_dealloc,
+	.drng_seed	= lrng_cc20_drng_seed_helper,
+	.drng_generate	= lrng_cc20_drng_generate_helper,
 };
+
+#if !defined(CONFIG_LRNG_DFLT_DRNG_CHACHA20) && \
+    !defined(CONFIG_LRNG_DRNG_ATOMIC)
+static int __init lrng_cc20_drng_init(void)
+{
+	return lrng_set_drng_cb(&lrng_cc20_drng_cb);
+}
+
+static void __exit lrng_cc20_drng_exit(void)
+{
+	lrng_set_drng_cb(NULL);
+}
+
+late_initcall(lrng_cc20_drng_init);
+module_exit(lrng_cc20_drng_exit);
+MODULE_LICENSE("Dual BSD/GPL");
+MODULE_AUTHOR("Stephan Mueller <smueller@chronox.de>");
+MODULE_DESCRIPTION("Entropy Source and DRNG Manager - ChaCha20-based DRNG backend");
+#endif /* CONFIG_LRNG_DFLT_DRNG_CHACHA20 */

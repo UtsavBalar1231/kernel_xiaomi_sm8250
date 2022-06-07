@@ -3,17 +3,17 @@
  * Backend for the LRNG providing the cryptographic primitives using the
  * kernel crypto API and its DRBG.
  *
- * Copyright (C) 2016 - 2021, Stephan Mueller <smueller@chronox.de>
+ * Copyright (C) 2022, Stephan Mueller <smueller@chronox.de>
  */
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <crypto/drbg.h>
+#include <linux/lrng.h>
 #include <linux/init.h>
 #include <linux/module.h>
-#include <linux/lrng.h>
 
-#include "lrng_kcapi_hash.h"
+#include "lrng_drng_drbg.h"
 
 /*
  * Define a DRBG plus a hash / MAC used to extract data from the entropy pool.
@@ -51,13 +51,10 @@ struct lrng_drbg {
 
 static const struct lrng_drbg lrng_drbg_types[] = {
 	{	/* CTR_DRBG with AES-256 using derivation function */
-		.hash_name = "sha512",
 		.drbg_core = "drbg_nopr_ctr_aes256",
 	}, {	/* HMAC_DRBG with SHA-512 */
-		.hash_name = "sha512",
 		.drbg_core = "drbg_nopr_hmac_sha512",
 	}, {	/* Hash_DRBG with SHA-512 using derivation function */
-		.hash_name = "sha512",
 		.drbg_core = "drbg_nopr_sha512"
 	}
 };
@@ -144,37 +141,20 @@ static void lrng_drbg_drng_dealloc(void *drng)
 	pr_info("DRBG deallocated\n");
 }
 
-static void *lrng_drbg_hash_alloc(void)
-{
-	return lrng_kcapi_hash_alloc(lrng_drbg_types[lrng_drbg_type].hash_name);
-}
-
 static const char *lrng_drbg_name(void)
 {
 	return lrng_drbg_types[lrng_drbg_type].drbg_core;
 }
 
-static const char *lrng_hash_name(void)
-{
-	return lrng_drbg_types[lrng_drbg_type].hash_name;
-}
-
-static const struct lrng_crypto_cb lrng_drbg_crypto_cb = {
-	.lrng_drng_name			= lrng_drbg_name,
-	.lrng_hash_name			= lrng_hash_name,
-	.lrng_drng_alloc		= lrng_drbg_drng_alloc,
-	.lrng_drng_dealloc		= lrng_drbg_drng_dealloc,
-	.lrng_drng_seed_helper		= lrng_drbg_drng_seed_helper,
-	.lrng_drng_generate_helper	= lrng_drbg_drng_generate_helper,
-	.lrng_hash_alloc		= lrng_drbg_hash_alloc,
-	.lrng_hash_dealloc		= lrng_kcapi_hash_dealloc,
-	.lrng_hash_digestsize		= lrng_kcapi_hash_digestsize,
-	.lrng_hash_init			= lrng_kcapi_hash_init,
-	.lrng_hash_update		= lrng_kcapi_hash_update,
-	.lrng_hash_final		= lrng_kcapi_hash_final,
-	.lrng_hash_desc_zero		= lrng_kcapi_hash_zero,
+const struct lrng_drng_cb lrng_drbg_cb = {
+	.drng_name	= lrng_drbg_name,
+	.drng_alloc	= lrng_drbg_drng_alloc,
+	.drng_dealloc	= lrng_drbg_drng_dealloc,
+	.drng_seed	= lrng_drbg_drng_seed_helper,
+	.drng_generate	= lrng_drbg_drng_generate_helper,
 };
 
+#ifndef CONFIG_LRNG_DFLT_DRNG_DRBG
 static int __init lrng_drbg_init(void)
 {
 	if (lrng_drbg_type >= ARRAY_SIZE(lrng_drbg_types)) {
@@ -183,7 +163,7 @@ static int __init lrng_drbg_init(void)
 		       (unsigned long)ARRAY_SIZE(lrng_drbg_types) - 1);
 		return -EAGAIN;
 	}
-	return lrng_set_drng_cb(&lrng_drbg_crypto_cb);
+	return lrng_set_drng_cb(&lrng_drbg_cb);
 }
 
 static void __exit lrng_drbg_exit(void)
@@ -195,4 +175,5 @@ late_initcall(lrng_drbg_init);
 module_exit(lrng_drbg_exit);
 MODULE_LICENSE("Dual BSD/GPL");
 MODULE_AUTHOR("Stephan Mueller <smueller@chronox.de>");
-MODULE_DESCRIPTION("Linux Random Number Generator - SP800-90A DRBG backend");
+MODULE_DESCRIPTION("Entropy Source and DRNG Manager - SP800-90A DRBG backend");
+#endif /* CONFIG_LRNG_DFLT_DRNG_DRBG */

@@ -3,27 +3,22 @@
  * Backend for the LRNG providing the cryptographic primitives using the
  * kernel crypto API.
  *
- * Copyright (C) 2018 - 2021, Stephan Mueller <smueller@chronox.de>
+ * Copyright (C) 2022, Stephan Mueller <smueller@chronox.de>
  */
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
+#include <linux/lrng.h>
 #include <crypto/hash.h>
 #include <crypto/rng.h>
 #include <linux/init.h>
 #include <linux/module.h>
-#include <linux/lrng.h>
 
-#include "lrng_kcapi_hash.h"
+#include "lrng_drng_kcapi.h"
 
 static char *drng_name = NULL;
 module_param(drng_name, charp, 0444);
 MODULE_PARM_DESC(drng_name, "Kernel crypto API name of DRNG");
-
-static char *pool_hash = "sha512";
-module_param(pool_hash, charp, 0444);
-MODULE_PARM_DESC(pool_hash,
-		 "Kernel crypto API name of hash or keyed message digest to read the entropy pool");
 
 static char *seed_hash = NULL;
 module_param(seed_hash, charp, 0444);
@@ -32,34 +27,28 @@ MODULE_PARM_DESC(seed_hash,
 
 struct lrng_drng_info {
 	struct crypto_rng *kcapi_rng;
-	void *lrng_hash;
+	struct crypto_shash *hash_tfm;
 };
-
-static void *lrng_kcapi_drng_hash_alloc(void)
-{
-	return lrng_kcapi_hash_alloc(pool_hash);
-}
 
 static int lrng_kcapi_drng_seed_helper(void *drng, const u8 *inbuf,
 				       u32 inbuflen)
 {
-	SHASH_DESC_ON_STACK(shash, NULL);
 	struct lrng_drng_info *lrng_drng_info = (struct lrng_drng_info *)drng;
 	struct crypto_rng *kcapi_rng = lrng_drng_info->kcapi_rng;
-	void *hash = lrng_drng_info->lrng_hash;
-	u32 digestsize = lrng_kcapi_hash_digestsize(hash);
-	u8 digest[64] __aligned(8);
+	struct crypto_shash *hash_tfm = lrng_drng_info->hash_tfm;
+	SHASH_DESC_ON_STACK(shash, hash_tfm);
+	u32 digestsize;
+	u8 digest[HASH_MAX_DIGESTSIZE] __aligned(8);
 	int ret;
 
-	if (!hash)
+	if (!hash_tfm)
 		return crypto_rng_reset(kcapi_rng, inbuf, inbuflen);
 
-	BUG_ON(digestsize > sizeof(digest));
+	shash->tfm = hash_tfm;
+	digestsize = crypto_shash_digestsize(hash_tfm);
 
-	ret = lrng_kcapi_hash_init(shash, hash) ?:
-	      lrng_kcapi_hash_update(shash, inbuf, inbuflen) ?:
-	      lrng_kcapi_hash_final(shash, digest);
-	lrng_kcapi_hash_zero(shash);
+	ret = crypto_shash_digest(shash, inbuf, inbuflen, digest);
+	shash_desc_zero(shash);
 	if (ret)
 		return ret;
 
@@ -88,7 +77,8 @@ static void *lrng_kcapi_drng_alloc(u32 sec_strength)
 {
 	struct lrng_drng_info *lrng_drng_info;
 	struct crypto_rng *kcapi_rng;
-	int seedsize;
+	u32 time = random_get_entropy();
+	int seedsize, rv;
 	void *ret =  ERR_PTR(-ENOMEM);
 
 	if (!drng_name) {
@@ -96,14 +86,15 @@ static void *lrng_kcapi_drng_alloc(u32 sec_strength)
 		return ERR_PTR(-EINVAL);
 	}
 
-	if (!memcmp(drng_name, "drbg", 4) ||
-	    !memcmp(drng_name, "stdrng", 6) ||
+	if (!memcmp(drng_name, "stdrng", 6) ||
+	    !memcmp(drng_name, "lrng", 4) ||
+	    !memcmp(drng_name, "drbg", 4) ||
 	    !memcmp(drng_name, "jitterentropy_rng", 17)) {
 		pr_err("Refusing to load the requested random number generator\n");
 		return ERR_PTR(-EINVAL);
 	}
 
-	lrng_drng_info = kmalloc(sizeof(*lrng_drng_info), GFP_KERNEL);
+	lrng_drng_info = kzalloc(sizeof(*lrng_drng_info), GFP_KERNEL);
 	if (!lrng_drng_info)
 		return ERR_PTR(-ENOMEM);
 
@@ -113,16 +104,12 @@ static void *lrng_kcapi_drng_alloc(u32 sec_strength)
 		ret = ERR_CAST(kcapi_rng);
 		goto free;
 	}
+
 	lrng_drng_info->kcapi_rng = kcapi_rng;
 
-	seedsize =  crypto_rng_seedsize(kcapi_rng);
-
-	if (sec_strength > seedsize)
-		pr_info("Seedsize DRNG (%u bits) lower than security strength of LRNG noise source (%u bits)\n",
-			crypto_rng_seedsize(kcapi_rng) * 8, sec_strength * 8);
-
+	seedsize = crypto_rng_seedsize(kcapi_rng);
 	if (seedsize) {
-		void *lrng_hash;
+		struct crypto_shash *hash_tfm;
 
 		if (!seed_hash) {
 			switch (seedsize) {
@@ -142,24 +129,29 @@ static void *lrng_kcapi_drng_alloc(u32 sec_strength)
 			}
 		}
 
-		lrng_hash = lrng_kcapi_hash_alloc(seed_hash);
-		if (IS_ERR(lrng_hash)) {
-			ret = ERR_CAST(lrng_hash);
+		hash_tfm = crypto_alloc_shash(seed_hash, 0, 0);
+		if (IS_ERR(hash_tfm)) {
+			ret = ERR_CAST(hash_tfm);
 			goto dealloc;
 		}
 
-		if (seedsize != lrng_kcapi_hash_digestsize(lrng_hash)) {
+		if (seedsize != crypto_shash_digestsize(hash_tfm)) {
 			pr_err("Seed hash output size not equal to DRNG seed size\n");
-			lrng_kcapi_hash_dealloc(lrng_hash);
+			crypto_free_shash(hash_tfm);
 			ret = ERR_PTR(-EINVAL);
 			goto dealloc;
 		}
 
-		lrng_drng_info->lrng_hash = lrng_hash;
+		lrng_drng_info->hash_tfm = hash_tfm;
 
 		pr_info("Seed hash %s allocated\n", seed_hash);
-	} else {
-		lrng_drng_info->lrng_hash = NULL;
+	}
+
+	rv = lrng_kcapi_drng_seed_helper(lrng_drng_info, (u8 *)(&time),
+					 sizeof(time));
+	if (rv) {
+		ret = ERR_PTR(rv);
+		goto dealloc;
 	}
 
 	pr_info("Kernel crypto API DRNG %s allocated\n", drng_name);
@@ -179,8 +171,8 @@ static void lrng_kcapi_drng_dealloc(void *drng)
 	struct crypto_rng *kcapi_rng = lrng_drng_info->kcapi_rng;
 
 	crypto_free_rng(kcapi_rng);
-	if (lrng_drng_info->lrng_hash)
-		lrng_kcapi_hash_dealloc(lrng_drng_info->lrng_hash);
+	if (lrng_drng_info->hash_tfm)
+		crypto_free_shash(lrng_drng_info->hash_tfm);
 	kfree(lrng_drng_info);
 	pr_info("DRNG %s deallocated\n", drng_name);
 }
@@ -190,30 +182,18 @@ static const char *lrng_kcapi_drng_name(void)
 	return drng_name;
 }
 
-static const char *lrng_kcapi_pool_hash(void)
-{
-	return pool_hash;
-}
-
-static const struct lrng_crypto_cb lrng_kcapi_crypto_cb = {
-	.lrng_drng_name			= lrng_kcapi_drng_name,
-	.lrng_hash_name			= lrng_kcapi_pool_hash,
-	.lrng_drng_alloc		= lrng_kcapi_drng_alloc,
-	.lrng_drng_dealloc		= lrng_kcapi_drng_dealloc,
-	.lrng_drng_seed_helper		= lrng_kcapi_drng_seed_helper,
-	.lrng_drng_generate_helper	= lrng_kcapi_drng_generate_helper,
-	.lrng_hash_alloc		= lrng_kcapi_drng_hash_alloc,
-	.lrng_hash_dealloc		= lrng_kcapi_hash_dealloc,
-	.lrng_hash_digestsize		= lrng_kcapi_hash_digestsize,
-	.lrng_hash_init			= lrng_kcapi_hash_init,
-	.lrng_hash_update		= lrng_kcapi_hash_update,
-	.lrng_hash_final		= lrng_kcapi_hash_final,
-	.lrng_hash_desc_zero		= lrng_kcapi_hash_zero,
+const struct lrng_drng_cb lrng_kcapi_drng_cb = {
+	.drng_name	= lrng_kcapi_drng_name,
+	.drng_alloc	= lrng_kcapi_drng_alloc,
+	.drng_dealloc	= lrng_kcapi_drng_dealloc,
+	.drng_seed	= lrng_kcapi_drng_seed_helper,
+	.drng_generate	= lrng_kcapi_drng_generate_helper,
 };
 
+#ifndef CONFIG_LRNG_DFLT_DRNG_KCAPI
 static int __init lrng_kcapi_init(void)
 {
-	return lrng_set_drng_cb(&lrng_kcapi_crypto_cb);
+	return lrng_set_drng_cb(&lrng_kcapi_drng_cb);
 }
 static void __exit lrng_kcapi_exit(void)
 {
@@ -224,4 +204,5 @@ late_initcall(lrng_kcapi_init);
 module_exit(lrng_kcapi_exit);
 MODULE_LICENSE("Dual BSD/GPL");
 MODULE_AUTHOR("Stephan Mueller <smueller@chronox.de>");
-MODULE_DESCRIPTION("Linux Random Number Generator - kernel crypto API DRNG backend");
+MODULE_DESCRIPTION("Entropy Source and DRNG Manager - kernel crypto API DRNG backend");
+#endif /* CONFIG_LRNG_DFLT_DRNG_KCAPI */

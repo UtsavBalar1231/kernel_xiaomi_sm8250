@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0 OR BSD-2-Clause
 /*
- * Linux Random Number Generator (LRNG) Health Testing
+ * Entropy Source and DRNG Manager (LRNG) Health Testing
  *
- * Copyright (C) 2019 - 2021, Stephan Mueller <smueller@chronox.de>
+ * Copyright (C) 2022, Stephan Mueller <smueller@chronox.de>
  */
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
@@ -10,7 +10,8 @@
 #include <linux/fips.h>
 #include <linux/module.h>
 
-#include "lrng_internal.h"
+#include "lrng_es_mgr.h"
+#include "lrng_health.h"
 
 /* Stuck Test */
 struct lrng_stuck_test {
@@ -38,12 +39,10 @@ struct lrng_apt {
 	bool apt_base_set;	/* Is APT base set? */
 };
 
-/* The health test code must operate lock-less */
-struct lrng_health {
+/* Health data collected for one entropy source */
+struct lrng_health_es_state {
 	struct lrng_rct rct;
 	struct lrng_apt apt;
-
-	bool health_test_enabled;
 
 	/* SP800-90B startup health tests */
 #define LRNG_SP80090B_STARTUP_SAMPLES  1024
@@ -54,29 +53,42 @@ struct lrng_health {
 	atomic_t sp80090b_startup_blocks;
 };
 
-static struct lrng_health lrng_health = {
-	.rct.rct_count = ATOMIC_INIT(0),
+#define LRNG_HEALTH_ES_INIT(x) \
+	x.rct.rct_count = ATOMIC_INIT(0), \
+	x.apt.apt_count = ATOMIC_INIT(0), \
+	x.apt.apt_base = ATOMIC_INIT(-1), \
+	x.apt.apt_trigger = ATOMIC_INIT(LRNG_APT_WINDOW_SIZE), \
+	x.apt.apt_base_set = false, \
+	x.sp80090b_startup_blocks = ATOMIC_INIT(LRNG_SP80090B_STARTUP_BLOCKS), \
+	x.sp80090b_startup_done = false,
 
-	.apt.apt_count = ATOMIC_INIT(0),
-	.apt.apt_base = ATOMIC_INIT(-1),
-	.apt.apt_trigger = ATOMIC_INIT(LRNG_APT_WINDOW_SIZE),
-	.apt.apt_base_set = false,
-
-	.health_test_enabled = true,
-
-	.sp80090b_startup_blocks = ATOMIC_INIT(LRNG_SP80090B_STARTUP_BLOCKS),
-	.sp80090b_startup_done = false,
+/* The health test code must operate lock-less */
+struct lrng_health {
+	bool health_test_enabled;
+	struct lrng_health_es_state es_state[lrng_int_es_last];
 };
 
-static DEFINE_PER_CPU(struct lrng_stuck_test, lrng_stuck_test);
+static struct lrng_health lrng_health = {
+	.health_test_enabled = true,
 
-static inline bool lrng_sp80090b_health_requested(void)
+#ifdef CONFIG_LRNG_IRQ
+	LRNG_HEALTH_ES_INIT(.es_state[lrng_int_es_irq])
+#endif
+#ifdef CONFIG_LRNG_SCHED
+	LRNG_HEALTH_ES_INIT(.es_state[lrng_int_es_sched])
+#endif
+};
+
+static DEFINE_PER_CPU(struct lrng_stuck_test[lrng_int_es_last],
+		      lrng_stuck_test_array);
+
+static bool lrng_sp80090b_health_requested(void)
 {
 	/* Health tests are only requested in FIPS mode */
 	return fips_enabled;
 }
 
-static inline bool lrng_sp80090b_health_enabled(void)
+static bool lrng_sp80090b_health_enabled(void)
 {
 	struct lrng_health *health = &lrng_health;
 
@@ -91,8 +103,7 @@ static inline bool lrng_sp80090b_health_enabled(void)
  *
  * * /dev/random
  * * getrandom(2)
- * * get_random_bytes when using it in conjunction with
- *   add_random_ready_callback
+ * * get_random_bytes_full
  *
  * All other interfaces, including /dev/urandom or get_random_bytes without
  * the add_random_ready_callback cannot claim to use an SP800-90B compliant
@@ -102,32 +113,34 @@ static inline bool lrng_sp80090b_health_enabled(void)
 /*
  * Perform SP800-90B startup testing
  */
-static inline void lrng_sp80090b_startup(struct lrng_health *health)
+static void lrng_sp80090b_startup(struct lrng_health *health,
+				  enum lrng_internal_es es)
 {
-	if (!health->sp80090b_startup_done &&
-	    atomic_dec_and_test(&health->sp80090b_startup_blocks)) {
-		struct entropy_buf eb;
+	struct lrng_health_es_state *es_state = &health->es_state[es];
 
-		health->sp80090b_startup_done = true;
-		pr_info("SP800-90B startup health tests completed\n");
-		memset(&eb, 0, sizeof(eb));
-		lrng_init_ops(&eb);
+	if (!es_state->sp80090b_startup_done &&
+	    atomic_dec_and_test(&es_state->sp80090b_startup_blocks)) {
+		es_state->sp80090b_startup_done = true;
+		pr_info("SP800-90B startup health tests for internal entropy source %u completed\n",
+			es);
+		lrng_drng_force_reseed();
 
 		/*
-		 * Force a reseed of DRNGs to ensure they are seeded with
-		 * entropy that passed the SP800-90B health tests.
-		 * As the DRNG always will reseed before generating
-		 * random numbers, it does not need a reseed trigger.
+		 * We cannot call lrng_es_add_entropy() as this may cause a
+		 * schedule operation while in scheduler context for the
+		 * scheduler ES.
 		 */
-		lrng_drng_force_reseed();
 	}
 }
 
 /*
  * Handle failure of SP800-90B startup testing
  */
-static inline void lrng_sp80090b_startup_failure(struct lrng_health *health)
+static void lrng_sp80090b_startup_failure(struct lrng_health *health,
+					  enum lrng_internal_es es)
 {
+	struct lrng_health_es_state *es_state = &health->es_state[es];
+
 	/* Reset of LRNG and its entropy - NOTE: we are in atomic context */
 	lrng_reset();
 
@@ -139,50 +152,54 @@ static inline void lrng_sp80090b_startup_failure(struct lrng_health *health)
 	 * makes sense, i.e. restarting the health test and thus gating
 	 * the output function of /dev/random and getrandom(2).
 	 */
-	atomic_set(&health->sp80090b_startup_blocks,
+	atomic_set(&es_state->sp80090b_startup_blocks,
 		   LRNG_SP80090B_STARTUP_BLOCKS);
 }
 
 /*
  * Handle failure of SP800-90B runtime testing
  */
-static inline void lrng_sp80090b_runtime_failure(struct lrng_health *health)
+static void lrng_sp80090b_runtime_failure(struct lrng_health *health,
+					  enum lrng_internal_es es)
 {
-	lrng_sp80090b_startup_failure(health);
-	health->sp80090b_startup_done = false;
+	struct lrng_health_es_state *es_state = &health->es_state[es];
+
+	lrng_sp80090b_startup_failure(health, es);
+	es_state->sp80090b_startup_done = false;
 }
 
-static inline void lrng_sp80090b_failure(struct lrng_health *health)
+static void lrng_sp80090b_failure(struct lrng_health *health,
+				  enum lrng_internal_es es)
 {
-	if (health->sp80090b_startup_done) {
-		pr_err("SP800-90B runtime health test failure - invalidating all existing entropy and initiate SP800-90B startup\n");
-		lrng_sp80090b_runtime_failure(health);
+	struct lrng_health_es_state *es_state = &health->es_state[es];
+
+	if (es_state->sp80090b_startup_done) {
+		pr_err("SP800-90B runtime health test failure for internal entropy source %u - invalidating all existing entropy and initiate SP800-90B startup\n", es);
+		lrng_sp80090b_runtime_failure(health, es);
 	} else {
-		pr_err("SP800-90B startup test failure - resetting\n");
-		lrng_sp80090b_startup_failure(health);
+		pr_err("SP800-90B startup test failure for internal entropy source %u - resetting\n", es);
+		lrng_sp80090b_startup_failure(health, es);
 	}
 }
 
-/*
- * Is the SP800-90B startup testing complete?
- *
- * This function is called by the LRNG to determine whether to unblock
- * a certain user interface. Therefore, only the potentially blocking
- * user interfaces are considered SP800-90B compliant.
- */
-bool lrng_sp80090b_startup_complete(void)
+bool lrng_sp80090b_startup_complete_es(enum lrng_internal_es es)
 {
 	struct lrng_health *health = &lrng_health;
+	struct lrng_health_es_state *es_state = &health->es_state[es];
 
-	return (lrng_sp80090b_health_enabled()) ? health->sp80090b_startup_done:
-						  true;
+	if (!lrng_sp80090b_health_enabled())
+		return true;
+
+	return es_state->sp80090b_startup_done;
 }
 
-bool lrng_sp80090b_compliant(void)
+bool lrng_sp80090b_compliant(enum lrng_internal_es es)
 {
 	struct lrng_health *health = &lrng_health;
+	struct lrng_health_es_state *es_state = &health->es_state[es];
 
-	return lrng_sp80090b_health_enabled() && health->sp80090b_startup_done;
+	return lrng_sp80090b_health_enabled() &&
+	       es_state->sp80090b_startup_done;
 }
 
 /***************************************************************************
@@ -196,23 +213,15 @@ bool lrng_sp80090b_compliant(void)
  *
  * @health [in] Reference to health state
  */
-static inline void lrng_apt_reset(struct lrng_health *health,
-				  unsigned int time_masked)
+static void lrng_apt_reset(struct lrng_apt *apt, unsigned int time_masked)
 {
-	struct lrng_apt *apt = &health->apt;
-
-	pr_debug("APT value %d for base %d\n",
-		 atomic_read(&apt->apt_count), atomic_read(&apt->apt_base));
-
 	/* Reset APT */
 	atomic_set(&apt->apt_count, 0);
 	atomic_set(&apt->apt_base, time_masked);
 }
 
-static inline void lrng_apt_restart(struct lrng_health *health)
+static void lrng_apt_restart(struct lrng_apt *apt)
 {
-	struct lrng_apt *apt = &health->apt;
-
 	atomic_set(&apt->apt_trigger, LRNG_APT_WINDOW_SIZE);
 }
 
@@ -227,10 +236,11 @@ static inline void lrng_apt_restart(struct lrng_health *health)
  * @health [in] Reference to health state
  * @now_time [in] Time stamp to process
  */
-static inline void lrng_apt_insert(struct lrng_health *health,
-				   unsigned int now_time)
+static void lrng_apt_insert(struct lrng_health *health,
+			    unsigned int now_time, enum lrng_internal_es es)
 {
-	struct lrng_apt *apt = &health->apt;
+	struct lrng_health_es_state *es_state = &health->es_state[es];
+	struct lrng_apt *apt = &es_state->apt;
 
 	if (!lrng_sp80090b_health_requested())
 		return;
@@ -248,13 +258,13 @@ static inline void lrng_apt_insert(struct lrng_health *health,
 		u32 apt_val = (u32)atomic_inc_return_relaxed(&apt->apt_count);
 
 		if (apt_val >= CONFIG_LRNG_APT_CUTOFF)
-			lrng_sp80090b_failure(health);
+			lrng_sp80090b_failure(health, es);
 	}
 
 	if (atomic_dec_and_test(&apt->apt_trigger)) {
-		lrng_apt_restart(health);
-		lrng_apt_reset(health, now_time);
-		lrng_sp80090b_startup(health);
+		lrng_apt_restart(apt);
+		lrng_apt_reset(apt, now_time);
+		lrng_sp80090b_startup(health, es);
 	}
 }
 
@@ -281,17 +291,17 @@ static inline void lrng_apt_insert(struct lrng_health *health,
  * @health: Reference to health information
  * @stuck: Decision of stuck test
  */
-static inline void lrng_rct(struct lrng_health *health, int stuck)
+static void lrng_rct(struct lrng_health *health, enum lrng_internal_es es,
+		     int stuck)
 {
-	struct lrng_rct *rct = &health->rct;
+	struct lrng_health_es_state *es_state = &health->es_state[es];
+	struct lrng_rct *rct = &es_state->rct;
 
 	if (!lrng_sp80090b_health_requested())
 		return;
 
 	if (stuck) {
 		u32 rct_count = atomic_add_return_relaxed(1, &rct->rct_count);
-
-		pr_debug("RCT count: %u\n", rct_count);
 
 		/*
 		 * The cutoff value is based on the following consideration:
@@ -311,9 +321,9 @@ static inline void lrng_rct(struct lrng_health *health, int stuck)
 			 * APT must start anew as we consider all previously
 			 * recorded data to contain no entropy.
 			 */
-			lrng_apt_restart(health);
+			lrng_apt_restart(&es_state->apt);
 
-			lrng_sp80090b_failure(health);
+			lrng_sp80090b_failure(health, es);
 		}
 	} else {
 		atomic_set(&rct->rct_count, 0);
@@ -332,7 +342,7 @@ static inline void lrng_rct(struct lrng_health *health, int stuck)
  * high-resolution time stamps are identified after initialization.
  ***************************************************************************/
 
-static inline u32 lrng_delta(u32 prev, u32 next)
+static u32 lrng_delta(u32 prev, u32 next)
 {
 	/*
 	 * Note that this (unsigned) subtraction does yield the correct value
@@ -349,15 +359,16 @@ static inline u32 lrng_delta(u32 prev, u32 next)
  * @return: 0 event occurrence not stuck (good time stamp)
  *	    != 0 event occurrence stuck (reject time stamp)
  */
-static inline int lrng_irq_stuck(struct lrng_stuck_test *stuck, u32 now_time)
+static int lrng_irq_stuck(enum lrng_internal_es es, u32 now_time)
 {
-	u32 delta = lrng_delta(stuck->last_time, now_time);
-	u32 delta2 = lrng_delta(stuck->last_delta, delta);
-	u32 delta3 = lrng_delta(stuck->last_delta2, delta2);
+	struct lrng_stuck_test *stuck = this_cpu_ptr(lrng_stuck_test_array);
+	u32 delta = lrng_delta(stuck[es].last_time, now_time);
+	u32 delta2 = lrng_delta(stuck[es].last_delta, delta);
+	u32 delta3 = lrng_delta(stuck[es].last_delta2, delta2);
 
-	stuck->last_time = now_time;
-	stuck->last_delta = delta;
-	stuck->last_delta2 = delta2;
+	stuck[es].last_time = now_time;
+	stuck[es].last_delta = delta;
+	stuck[es].last_delta2 = delta2;
 
 	if (!delta || !delta2 || !delta3)
 		return 1;
@@ -387,19 +398,18 @@ void lrng_health_disable(void)
  *
  * @now_time Time stamp
  */
-enum lrng_health_res lrng_health_test(u32 now_time)
+enum lrng_health_res lrng_health_test(u32 now_time, enum lrng_internal_es es)
 {
 	struct lrng_health *health = &lrng_health;
-	struct lrng_stuck_test *stuck_test = this_cpu_ptr(&lrng_stuck_test);
 	int stuck;
 
 	if (!health->health_test_enabled)
 		return lrng_health_pass;
 
-	lrng_apt_insert(health, now_time);
+	lrng_apt_insert(health, now_time, es);
 
-	stuck = lrng_irq_stuck(stuck_test, now_time);
-	lrng_rct(health, stuck);
+	stuck = lrng_irq_stuck(es, now_time);
+	lrng_rct(health, es, stuck);
 	if (stuck) {
 		/* SP800-90B disallows using a failing health test time stamp */
 		return lrng_sp80090b_health_requested() ?
