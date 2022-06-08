@@ -230,9 +230,12 @@
  * 3.103 Add HTT_T2H_SAWF_MSDUQ_INFO_IND defs.
  * 3.104 Add mgmt/ctrl/data specs in rx ring cfg.
  * 3.105 Add HTT_H2T STREAMING_STATS_REQ + HTT_T2H STREAMING_STATS_IND defs.
+ * 3.106 Add HTT_T2H_PPDU_ID_FMT_IND def.
+ * 3.107 Add traffic_end_indication bitfield in htt_tx_msdu_desc_ext2_t.
+ * 3.108 Add HTT_H2T_MSG_TYPE_UMAC_HANG_RECOVERY_PREREQUISITE_SETUP def.
  */
 #define HTT_CURRENT_VERSION_MAJOR 3
-#define HTT_CURRENT_VERSION_MINOR 105
+#define HTT_CURRENT_VERSION_MINOR 108
 
 #define HTT_NUM_TX_FRAG_DESC  1024
 
@@ -741,6 +744,8 @@ typedef enum {
     HTT_STATS_TXBF_OFDMA_BE_BRP_STATS_TAG          = 153, /* htt_txbf_ofdma_be_brp_stats_tlv */
     HTT_STATS_TXBF_OFDMA_BE_STEER_STATS_TAG        = 154, /* htt_txbf_ofdma_be_steer_stats_tlv */
     HTT_STATS_DMAC_RESET_STATS_TAG                 = 155, /* htt_dmac_reset_stats_tlv */
+    HTT_STATS_RX_PDEV_BE_UL_OFDMA_USER_STATS_TAG   = 156, /* htt_rx_pdev_be_ul_ofdma_user_stats_tlv */
+    HTT_STATS_PHY_TPC_STATS_TAG                    = 157, /* htt_phy_tpc_stats_tlv */
 
 
     HTT_STATS_MAX_TAG,
@@ -809,6 +814,7 @@ enum htt_h2t_msg_type {
     HTT_H2T_SAWF_DEF_QUEUES_MAP_REPORT_REQ = 0x1e,
     HTT_H2T_MSG_TYPE_MSI_SETUP             = 0x1f,
     HTT_H2T_MSG_TYPE_STREAMING_STATS_REQ   = 0x20,
+    HTT_H2T_MSG_TYPE_UMAC_HANG_RECOVERY_PREREQUISITE_SETUP = 0x21,
 
     /* keep this last */
     HTT_H2T_NUM_MSGS
@@ -1971,7 +1977,8 @@ PREPACK struct htt_tx_msdu_desc_ext2_t {
          * with valid information.
          */
         is_host_opaque_valid :  1,
-        rsvd0                : 29;
+        traffic_end_indication: 1,
+        rsvd0                : 28;
 
     /* DWORD 6 : Host opaque cookie for special frames */
     A_UINT32 host_opaque_cookie  : 16, /* see is_host_opaque_valid */
@@ -9186,7 +9193,10 @@ PREPACK struct htt_h2t_host_paddr_size_entry_t {
     A_UINT32 physical_address_hi;
 } POSTPACK;
 
-#define HTT_H2T_HOST_PADDR_SIZE_ENTRY_SIZE  (sizeof(struct htt_h2t_host_paddr_size_entry_t))
+#define HTT_H2T_HOST_PADDR_SIZE_ENTRY_SIZE \
+    (sizeof(struct htt_h2t_host_paddr_size_entry_t))
+#define HTT_H2T_HOST_PADDR_SIZE_ENTRY_DWORDS \
+    (HTT_H2T_HOST_PADDR_SIZE_ENTRY_SIZE >> 2)
 
 #define HTT_H2T_HOST_PADDR_SIZE_NUM_ENTRIES_M 0x0000FF00
 #define HTT_H2T_HOST_PADDR_SIZE_NUM_ENTRIES_S 8
@@ -9600,6 +9610,237 @@ PREPACK struct htt_h2t_sawf_def_queues_map_report_req {
         ((word1) |= ((_val) << HTT_H2T_SAWF_DEF_QUEUES_MAP_REPORT_REQ_EXISTING_TIDS_ONLY_S)); \
     } while (0)
 
+/**
+ * @brief Format of shared memory between Host and Target
+ *        for UMAC hang recovery feature messaging.
+ * @details
+ *  This is shared memory between Host and Target allocated
+ *  and used in chips where UMAC hang recovery feature is supported.
+ *  If target sets a bit in t2h_msg (provided it's valid bit offset)
+ *  then host interprets it as a new message from target.
+ *  Host clears that particular read bit in t2h_msg after each read
+ *  operation. It is vice versa for h2t_msg. At any given point
+ *  of time there is expected to be only one bit set
+ *  either in t2h_msg or h2t_msg (referring to valid bit offset).
+ *
+ * The message is interpreted as follows:
+ * dword0 - b'0:31  - magic_num: Magic number for the shared memory region
+ *                    added for debuggability purpose.
+ * dword1 - b'0     - do_pre_reset
+ *          b'1     - do_post_reset_start
+ *          b'2     - do_post_reset_complete
+ *          b'3:31  - rsvd_t2h
+ * dword2 - b'0     - pre_reset_done
+ *          b'1     - post_reset_start_done
+ *          b'2     - post_reset_complete_done
+ *          b'3:31  - rsvd_h2t
+ */
+PREPACK typedef struct {
+    /** Magic number added for debuggability. */
+    A_UINT32 magic_num;
+    union {
+        /*
+         * BIT [0]        :- T2H msg to do pre-reset
+         * BIT [1]        :- T2H msg to do post-reset start
+         * BIT [2]        :- T2H msg to do post-reset complete
+         * BIT [31 : 3]   :- reserved
+         */
+        A_UINT32 t2h_msg;
+        struct {
+            A_UINT32 do_pre_reset             :      1, /* BIT [0]      */
+                     do_post_reset_start      :      1, /* BIT [1]      */
+                     do_post_reset_complete   :      1, /* BIT [2]      */
+                     rsvd_t2h                 :     29; /* BIT [31 : 3] */
+        };
+    };
+
+    union {
+        /*
+         * BIT [0]        :- H2T msg to send pre-reset done
+         * BIT [1]        :- H2T msg to send post-reset start done
+         * BIT [2]        :- H2T msg to send post-reset complete done
+         * BIT [31 : 3]   :- reserved
+         */
+        A_UINT32 h2t_msg;
+        struct {
+            A_UINT32 pre_reset_done           :      1, /* BIT [0]      */
+                     post_reset_start_done    :      1, /* BIT [1]      */
+                     post_reset_complete_done :      1, /* BIT [2]      */
+                     rsvd_h2t                 :     29; /* BIT [31 : 3] */
+        };
+    };
+} POSTPACK htt_umac_hang_recovery_msg_shmem_t;
+
+#define HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_BYTES \
+    (sizeof(htt_umac_hang_recovery_msg_shmem_t))
+#define HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_DWORDS \
+    (HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_BYTES >> 2)
+
+/* dword1 - b'0 - do_pre_reset */
+#define HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_DO_PRE_RESET_M 0x00000001
+#define HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_DO_PRE_RESET_S 0
+#define HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_DO_PRE_RESET_GET(word1) \
+    (((word1) & HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_DO_PRE_RESET_M) >> \
+     HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_DO_PRE_RESET_S)
+#define HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_DO_PRE_RESET_SET(word1, _val) \
+    do { \
+        HTT_CHECK_SET_VAL(HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_DO_PRE_RESET, _val); \
+        ((word1) |= ((_val) << HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_DO_PRE_RESET_S));\
+    } while (0)
+
+/* dword1 - b'1 - do_post_reset_start */
+#define HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_DO_POST_RESET_START_M 0x00000002
+#define HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_DO_POST_RESET_START_S 1
+#define HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_DO_POST_RESET_START_GET(word1) \
+    (((word1) & HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_DO_POST_RESET_START_M) >> \
+     HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_DO_POST_RESET_START_S)
+#define HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_DO_POST_RESET_START_SET(word1, _val) \
+    do { \
+        HTT_CHECK_SET_VAL(HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_DO_POST_RESET_START, _val); \
+        ((word1) |= ((_val) << HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_DO_POST_RESET_START_S));\
+    } while (0)
+
+/* dword1 - b'2 - do_post_reset_complete */
+#define HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_DO_POST_RESET_COMPLETE_M 0x00000004
+#define HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_DO_POST_RESET_COMPLETE_S 2
+#define HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_DO_POST_RESET_COMPLETE_GET(word1) \
+    (((word1) & HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_DO_POST_RESET_COMPLETE_M) >> \
+     HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_DO_POST_RESET_COMPLETE_S)
+#define HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_DO_POST_RESET_COMPLETE_SET(word1, _val) \
+    do { \
+        HTT_CHECK_SET_VAL(HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_DO_POST_RESET_COMPLETE, _val); \
+        ((word1) |= ((_val) << HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_DO_POST_RESET_COMPLETE_S));\
+    } while (0)
+
+/* dword2 - b'0 - pre_reset_done */
+#define HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_PRE_RESET_DONE_M 0x00000001
+#define HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_PRE_RESET_DONE_S 0
+#define HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_PRE_RESET_DONE_GET(word2) \
+    (((word2) & HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_PRE_RESET_DONE_M) >> \
+     HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_PRE_RESET_DONE_S)
+#define HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_PRE_RESET_DONE_SET(word2, _val) \
+    do { \
+        HTT_CHECK_SET_VAL(HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_PRE_RESET_DONE, _val); \
+        ((word2) |= ((_val) << HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_PRE_RESET_DONE_S));\
+    } while (0)
+
+/* dword2 - b'1 - post_reset_start_done */
+#define HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_POST_RESET_START_DONE_M 0x00000002
+#define HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_POST_RESET_START_DONE_S 1
+#define HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_POST_RESET_START_DONE_GET(word2) \
+    (((word2) & HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_POST_RESET_START_DONE_M) >> \
+     HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_POST_RESET_START_DONE_S)
+#define HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_POST_RESET_START_DONE_SET(word2, _val) \
+    do { \
+        HTT_CHECK_SET_VAL(HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_POST_RESET_START_DONE, _val); \
+        ((word2) |= ((_val) << HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_POST_RESET_START_DONE_S));\
+    } while (0)
+
+/* dword2 - b'2 - post_reset_complete_done */
+#define HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_POST_RESET_COMPLETE_DONE_M 0x00000004
+#define HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_POST_RESET_COMPLETE_DONE_S 2
+#define HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_POST_RESET_COMPLETE_DONE_GET(word2) \
+    (((word2) & HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_POST_RESET_COMPLETE_DONE_M) >> \
+     HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_POST_RESET_COMPLETE_DONE_S)
+#define HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_POST_RESET_COMPLETE_DONE_SET(word2, _val) \
+    do { \
+        HTT_CHECK_SET_VAL(HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_POST_RESET_COMPLETE_DONE, _val); \
+        ((word2) |= ((_val) << HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_POST_RESET_COMPLETE_DONE_S));\
+    } while (0)
+
+/**
+ * @brief HTT_H2T_MSG_TYPE_UMAC_HANG_RECOVERY_PREREQUISITE_SETUP message
+ *
+ * @details
+ *  The HTT_H2T_MSG_TYPE_UMAC_HANG_RECOVERY_PREREQUISITE_SETUP message is sent
+ *  by the host to provide prerequisite info to target for the UMAC hang
+ *  recovery feature.
+ *  The info sent in this H2T message are T2H message method, H2T message
+ *  method, T2H MSI interrupt number and physical start address, size of
+ *  the shared memory (refers to the shared memory dedicated for messaging
+ *  between host and target when the DUT is in UMAC hang recovery mode).
+ *  This H2T message is expected to be only sent if the WMI service bit
+ *  WMI_SERVICE_UMAC_HANG_RECOVERY_SUPPORT was firstly indicated by the target.
+ *
+ * |31                           16|15          12|11           8|7          0|
+ * |-------------------------------+--------------+--------------+------------|
+ * |            reserved           |h2t msg method|t2h msg method|  msg_type  |
+ * |--------------------------------------------------------------------------|
+ * |                           t2h msi interrupt number                       |
+ * |--------------------------------------------------------------------------|
+ * |                           shared memory area size                        |
+ * |--------------------------------------------------------------------------|
+ * |                     shared memory area physical address low              |
+ * |--------------------------------------------------------------------------|
+ * |                     shared memory area physical address high             |
+ * |--------------------------------------------------------------------------|
+ *
+ * The message is interpreted as follows:
+ * dword0 - b'0:7   - msg_type (= HTT_H2T_MSG_TYPE_UMAC_HANG_RECOVERY_SETUP)
+ *          b'8:11  - t2h_msg_method: indicates method to be used for
+ *                    T2H communication in UMAC hang recovery mode.
+ *                    Value zero indicates MSI interrupt (default method).
+ *                    Refer to htt_umac_hang_recovery_msg_method enum.
+ *          b'12:15 - h2t_msg_method: indicates method to be used for
+ *                    H2T communication in UMAC hang recovery mode.
+ *                    Value zero indicates polling by target for this h2t msg
+ *                    during UMAC hang recovery mode.
+ *                    Refer to htt_umac_hang_recovery_msg_method enum.
+ *          b'16:31 - reserved.
+ * dword1 - b'0:31  - t2h_msi_data: MSI data to be used for
+ *                    T2H communication in UMAC hang recovery mode.
+ * dword2 - b'0:31  - size: size of shared memory dedicated for messaging
+ *                    only when in UMAC hang recovery mode.
+ *                    This refers to size in bytes.
+ * dword3 - b'0:31  - physical_address_lo: lower 32 bit physical address
+ *                    of the shared memory dedicated for messaging only when
+ *                    in UMAC hang recovery mode.
+ * dword4 - b'0:31  - physical_address_hi: higher 32 bit physical address
+ *                    of the shared memory dedicated for messaging only when
+ *                    in UMAC hang recovery mode.
+ */
+
+/* t2h_msg_method and h2t_msg_method */
+enum htt_umac_hang_recovery_msg_method {
+    htt_umac_hang_recovery_msg_t2h_msi_and_h2t_polling = 0,
+};
+
+PREPACK typedef struct {
+    A_UINT32 msg_type       : 8,
+             t2h_msg_method : 4,
+             h2t_msg_method : 4,
+             reserved       : 16;
+    A_UINT32 t2h_msi_data;
+    /* size bytes and physical address of shared memory. */
+    struct htt_h2t_host_paddr_size_entry_t msg_shared_mem;
+} POSTPACK htt_h2t_umac_hang_recovery_prerequisite_setup_t;
+
+#define HTT_H2T_UMAC_HANG_RECOVERY_PREREQUISITE_SETUP_BYTES \
+    (sizeof(htt_h2t_umac_hang_recovery_prerequisite_setup_t))
+#define HTT_H2T_UMAC_HANG_RECOVERY_PREREQUISITE_SETUP_DWORDS \
+    (HTT_H2T_UMAC_HANG_RECOVERY_PREREQUISITE_SETUP_BYTES >> 2)
+
+#define HTT_H2T_UMAC_HANG_RECOVERY_PREREQUISITE_SETUP_T2H_MSG_METHOD_M 0x00000F00
+#define HTT_H2T_UMAC_HANG_RECOVERY_PREREQUISITE_SETUP_T2H_MSG_METHOD_S 8
+#define HTT_H2T_UMAC_HANG_RECOVERY_PREREQUISITE_SETUP_T2H_MSG_METHOD_GET(word0) \
+    (((word0) & HTT_H2T_UMAC_HANG_RECOVERY_PREREQUISITE_SETUP_T2H_MSG_METHOD_M) >> \
+     HTT_H2T_UMAC_HANG_RECOVERY_PREREQUISITE_SETUP_T2H_MSG_METHOD_S)
+#define HTT_H2T_UMAC_HANG_RECOVERY_PREREQUISITE_SETUP_T2H_MSG_METHOD_SET(word0, _val) \
+    do { \
+        HTT_CHECK_SET_VAL(HTT_H2T_UMAC_HANG_RECOVERY_PREREQUISITE_SETUP_T2H_MSG_METHOD, _val); \
+        ((word0) |= ((_val) << HTT_H2T_UMAC_HANG_RECOVERY_PREREQUISITE_SETUP_T2H_MSG_METHOD_S));\
+    } while (0)
+
+#define HTT_H2T_UMAC_HANG_RECOVERY_PREREQUISITE_SETUP_H2T_MSG_METHOD_M 0x0000F000
+#define HTT_H2T_UMAC_HANG_RECOVERY_PREREQUISITE_SETUP_H2T_MSG_METHOD_S 12
+#define HTT_H2T_UMAC_HANG_RECOVERY_PREREQUISITE_SETUP_H2T_MSG_METHOD_GET(word0) \
+    (((word0) & HTT_H2T_UMAC_HANG_RECOVERY_PREREQUISITE_SETUP_H2T_MSG_METHOD_M) >> \
+     HTT_H2T_UMAC_HANG_RECOVERY_PREREQUISITE_SETUP_H2T_MSG_METHOD_S)
+#define HTT_H2T_UMAC_HANG_RECOVERY_PREREQUISITE_SETUP_H2T_MSG_METHOD_SET(word0, _val) \
+    do { \
+        HTT_CHECK_SET_VAL(HTT_H2T_UMAC_HANG_RECOVERY_PREREQUISITE_SETUP_H2T_MSG_METHOD, _val); \
+        ((word0) |= ((_val) << HTT_H2T_UMAC_HANG_RECOVERY_PREREQUISITE_SETUP_H2T_MSG_METHOD_S));\
+    } while (0)
 
 
 /*=== target -> host messages ===============================================*/
@@ -9661,6 +9902,7 @@ enum htt_t2h_msg_type {
     HTT_T2H_MSG_TYPE_SAWF_MSDUQ_INFO_IND           = 0x2e,
         HTT_T2H_SAWF_MSDUQ_INFO_IND                = 0x2e, /* alias */
     HTT_T2H_MSG_TYPE_STREAMING_STATS_IND           = 0x2f,
+    HTT_T2H_PPDU_ID_FMT_IND                        = 0x30,
 
 
     HTT_T2H_MSG_TYPE_TEST,
@@ -18410,6 +18652,284 @@ PREPACK struct htt_t2h_sawf_msduq_event {
         HTT_CHECK_SET_VAL(HTT_T2H_SAWF_MSDUQ_INFO_HTT_TGT_OPAQUE_ID, _val); \
         ((_var) |= ((_val) << HTT_T2H_SAWF_MSDUQ_INFO_HTT_TGT_OPAQUE_ID_S)); \
     } while (0)
+
+
+/**
+ * @brief target -> PPDU id format indication
+ *
+ * MSG_TYPE => HTT_T2H_PPDU_ID_FMT_IND
+ *
+ * @details
+ * The following field definitions describe the format of the HTT target
+ * to host PPDU ID format indication message.
+ * hwsch_cmd_id :- A number per ring, increases by one with each HWSCH command.
+ * ring_id :- HWSCH ring id in which this PPDU was enqueued.
+ * seq_idx :- Sequence control index of this PPDU.
+ * link_id :- HW link ID of the link in which the PPDU was enqueued.
+ * seq_cmd_type:- WHAL_TXSEND_FTYPE (SU Data, MU Data, SGEN frames etc.)
+ * tqm_cmd:-
+ *
+ * |31 27|26      22|21      17|    16   |15 11|10   8|7 6|5        1|    0    |
+ * |--------------------------------------------------+------------------------|
+ * |               rsvd0                              |          msg type      |
+ * |-----+----------+----------+---------+-----+----------+----------+---------|
+ * |rsvd2|ring_id OF|ring_id NB|ring_id V|rsvd1|cmd_id OF |cmd_id NB |cmd_id V |
+ * |-----+----------+----------+---------+-----+----------+----------+---------|
+ * |rsvd4|link_id OF|link_id NB|link_id V|rsvd3|seq_idx OF|seq_idx NB|seq_idx V|
+ * |-----+----------+----------+---------+-----+----------+----------+---------|
+ * |rsvd6|tqm_cmd OF|tqm_cmd NB|tqm_cmd V|rsvd5|seq_cmd OF|seq_cmd NB|seq_cmd V|
+ * |-----+----------+----------+---------+-----+----------+----------+---------|
+ * |rsvd8|  crc OF  |  crc NB  |  crc V  |rsvd7|mac_id OF |mac_id NB |mac_id V |
+ * |-----+----------+----------+---------+-----+----------+----------+---------|
+ * Where: OF = bit offset, NB = number of bits, V = valid
+ *  The message is interpreted as follows:
+ *
+ *  dword0 - b'7:0   - msg_type: This will be set to
+ *                     HTT_T2H_PPDU_ID_FMT_IND
+ *                     value: 0x30
+ *
+ *  dword0 - b'31:8  - reserved
+ *
+ *  dword1 - b'0:0   - field to indicate whether hwsch_cmd_id is valid or not
+ *
+ *  dword1 - b'5:1   - number of bits in hwsch_cmd_id
+ *
+ *  dword1 - b'10:6  - offset of hwsch_cmd_id (in number of bits)
+ *
+ *  dword1 - b'15:11 - reserved for future use
+ *
+ *  dword1 - b'16:16 - field to indicate whether ring_id is valid or not
+ *
+ *  dword1 - b'21:17 - number of bits in ring_id
+ *
+ *  dword1 - b'26:22 - offset of ring_id (in number of bits)
+ *
+ *  dword1 - b'31:27 - reserved for future use
+ *
+ *  dword2 - b'0:0   - field to indicate whether sequence index is valid or not
+ *
+ *  dword2 - b'5:1   - number of bits in sequence index
+ *
+ *  dword2 - b'10:6  - offset of sequence index (in number of bits)
+ *
+ *  dword2 - b'15:11 - reserved for future use
+ *
+ *  dword2 - b'16:16 - field to indicate whether link_id is valid or not
+ *
+ *  dword2 - b'21:17 - number of bits in link_id
+ *
+ *  dword2 - b'26:22 - offset of link_id (in number of bits)
+ *
+ *  dword2 - b'31:27 - reserved for future use
+ *
+ *  dword3 - b'0:0   - field to indicate whether seq_cmd_type is valid or not
+ *
+ *  dword3 - b'5:1   - number of bits in seq_cmd_type
+ *
+ *  dword3 - b'10:6  - offset of seq_cmd_type (in number of bits)
+ *
+ *  dword3 - b'15:11 - reserved for future use
+ *
+ *  dword3 - b'16:16 - field to indicate whether tqm_cmd is valid or not
+ *
+ *  dword3 - b'21:17 - number of bits in tqm_cmd
+ *
+ *  dword3 - b'26:22 - offset of tqm_cmd (in number of bits)
+ *
+ *  dword3 - b'31:27 - reserved for future use
+ *
+ *  dword4 - b'0:0   - field to indicate whether mac_id is valid or not
+ *
+ *  dword4 - b'5:1   - number of bits in mac_id
+ *
+ *  dword4 - b'10:6  - offset of mac_id (in number of bits)
+ *
+ *  dword4 - b'15:11 - reserved for future use
+ *
+ *  dword4 - b'16:16 - field to indicate whether crc is valid or not
+ *
+ *  dword4 - b'21:17 - number of bits in crc
+ *
+ *  dword4 - b'26:22 - offset of crc (in number of bits)
+ *
+ *  dword4 - b'31:27 - reserved for future use
+ *
+ */
+
+#define HTT_PPDU_ID_FMT_IND_VALID_BITS15_0_M   0x00000001
+#define HTT_PPDU_ID_FMT_IND_VALID_BITS15_0_S   0
+
+#define HTT_PPDU_ID_FMT_IND_BITS_BITS15_0_M    0x0000003E
+#define HTT_PPDU_ID_FMT_IND_BITS_BITS15_0_S    1
+
+#define HTT_PPDU_ID_FMT_IND_OFFSET_BITS15_0_M  0x000007C0
+#define HTT_PPDU_ID_FMT_IND_OFFSET_BITS15_0_S  6
+
+#define HTT_PPDU_ID_FMT_IND_VALID_BITS31_16_M  0x00010000
+#define HTT_PPDU_ID_FMT_IND_VALID_BITS31_16_S  16
+
+#define HTT_PPDU_ID_FMT_IND_BITS_BITS31_16_M   0x003E0000
+#define HTT_PPDU_ID_FMT_IND_BITS_BITS31_16_S   17
+
+#define HTT_PPDU_ID_FMT_IND_OFFSET_BITS31_16_M 0x07C00000
+#define HTT_PPDU_ID_FMT_IND_OFFSET_BITS31_16_S 22
+
+
+/* macros for accessing lower 16 bits in dword */
+#define HTT_PPDU_ID_FMT_IND_VALID_SET_BITS15_0(word, value)           \
+    do {                                                                   \
+        HTT_CHECK_SET_VAL(HTT_PPDU_ID_FMT_IND_VALID_BITS15_0, value); \
+        (word) |= (value)  << HTT_PPDU_ID_FMT_IND_VALID_BITS15_0_S;   \
+    } while (0)
+#define HTT_PPDU_ID_FMT_IND_VALID_GET_BITS15_0(word) \
+    (((word) & HTT_PPDU_ID_FMT_IND_VALID_BITS15_0_M) >> HTT_PPDU_ID_FMT_IND_VALID_BITS15_0_S)
+
+#define HTT_PPDU_ID_FMT_IND_BITS_SET_BITS15_0(word, value)           \
+    do {                                                                   \
+        HTT_CHECK_SET_VAL(HTT_PPDU_ID_FMT_IND_BITS_BITS15_0, value); \
+        (word) |= (value)  << HTT_PPDU_ID_FMT_IND_BITS_BITS15_0_S;   \
+    } while (0)
+#define HTT_PPDU_ID_FMT_IND_BITS_GET_BITS15_0(word) \
+    (((word) & HTT_PPDU_ID_FMT_IND_BITS_BITS15_0_M) >> HTT_PPDU_ID_FMT_IND_BITS_BITS15_0_S)
+
+#define HTT_PPDU_ID_FMT_IND_OFFSET_SET_BITS15_0(word, value)           \
+    do {                                                                   \
+        HTT_CHECK_SET_VAL(HTT_PPDU_ID_FMT_IND_OFFSET_BITS15_0, value); \
+        (word) |= (value)  << HTT_PPDU_ID_FMT_IND_OFFSET_BITS15_0_S;   \
+    } while (0)
+#define HTT_PPDU_ID_FMT_IND_OFFSET_GET_BITS15_0(word) \
+    (((word) & HTT_PPDU_ID_FMT_IND_OFFSET_BITS15_0_M) >> HTT_PPDU_ID_FMT_IND_OFFSET_BITS15_0_S)
+
+/* macros for accessing upper 16 bits in dword */
+#define HTT_PPDU_ID_FMT_IND_VALID_SET_BITS31_16(word, value)           \
+    do {                                                                   \
+        HTT_CHECK_SET_VAL(HTT_PPDU_ID_FMT_IND_VALID_BITS31_16, value); \
+        (word) |= (value)  << HTT_PPDU_ID_FMT_IND_VALID_BITS31_16_S;   \
+    } while (0)
+#define HTT_PPDU_ID_FMT_IND_VALID_GET_BITS31_16(word) \
+    (((word) & HTT_PPDU_ID_FMT_IND_VALID_BITS31_16_M) >> HTT_PPDU_ID_FMT_IND_VALID_BITS31_16_S)
+
+#define HTT_PPDU_ID_FMT_IND_BITS_SET_BITS31_16(word, value)           \
+    do {                                                                   \
+        HTT_CHECK_SET_VAL(HTT_PPDU_ID_FMT_IND_BITS_BITS31_16, value); \
+        (word) |= (value)  << HTT_PPDU_ID_FMT_IND_BITS_BITS31_16_S;   \
+    } while (0)
+#define HTT_PPDU_ID_FMT_IND_BITS_GET_BITS31_16(word) \
+    (((word) & HTT_PPDU_ID_FMT_IND_BITS_BITS31_16_M) >> HTT_PPDU_ID_FMT_IND_BITS_BITS31_16_S)
+
+#define HTT_PPDU_ID_FMT_IND_OFFSET_SET_BITS31_16(word, value)           \
+    do {                                                                   \
+        HTT_CHECK_SET_VAL(HTT_PPDU_ID_FMT_IND_OFFSET_BITS31_16, value); \
+        (word) |= (value)  << HTT_PPDU_ID_FMT_IND_OFFSET_BITS31_16_S;   \
+    } while (0)
+#define HTT_PPDU_ID_FMT_IND_OFFSET_GET_BITS31_16(word) \
+    (((word) & HTT_PPDU_ID_FMT_IND_OFFSET_BITS31_16_M) >> HTT_PPDU_ID_FMT_IND_OFFSET_BITS31_16_S)
+
+
+#define HTT_PPDU_ID_FMT_IND_HWSCH_CMD_ID_VALID_SET \
+    HTT_PPDU_ID_FMT_IND_VALID_SET_BITS15_0
+#define HTT_PPDU_ID_FMT_IND_HWSCH_CMD_ID_BITS_SET \
+    HTT_PPDU_ID_FMT_IND_BITS_SET_BITS15_0
+#define HTT_PPDU_ID_FMT_IND_HWSCH_CMD_ID_OFFSET_SET \
+    HTT_PPDU_ID_FMT_IND_OFFSET_SET_BITS15_0
+
+#define HTT_PPDU_ID_FMT_IND_RING_ID_VALID_SET \
+    HTT_PPDU_ID_FMT_IND_VALID_SET_BITS31_16
+#define HTT_PPDU_ID_FMT_IND_RING_ID_BITS_SET \
+    HTT_PPDU_ID_FMT_IND_BITS_SET_BITS31_16
+#define HTT_PPDU_ID_FMT_IND_RING_ID_OFFSET_SET \
+    HTT_PPDU_ID_FMT_IND_OFFSET_SET_BITS31_16
+
+#define HTT_PPDU_ID_FMT_IND_SEQ_IDX_VALID_SET \
+    HTT_PPDU_ID_FMT_IND_VALID_SET_BITS15_0
+#define HTT_PPDU_ID_FMT_IND_SEQ_IDX_BITS_SET \
+    HTT_PPDU_ID_FMT_IND_BITS_SET_BITS15_0
+#define HTT_PPDU_ID_FMT_IND_SEQ_IDX_OFFSET_SET \
+    HTT_PPDU_ID_FMT_IND_OFFSET_SET_BITS15_0
+
+#define HTT_PPDU_ID_FMT_IND_LINK_ID_VALID_SET \
+    HTT_PPDU_ID_FMT_IND_VALID_SET_BITS31_16
+#define HTT_PPDU_ID_FMT_IND_LINK_ID_BITS_SET \
+    HTT_PPDU_ID_FMT_IND_BITS_SET_BITS31_16
+#define HTT_PPDU_ID_FMT_IND_LINK_ID_OFFSET_SET \
+    HTT_PPDU_ID_FMT_IND_OFFSET_SET_BITS31_16
+
+#define HTT_PPDU_ID_FMT_IND_SEQ_CMD_TYPE_VALID_SET \
+    HTT_PPDU_ID_FMT_IND_VALID_SET_BITS15_0
+#define HTT_PPDU_ID_FMT_IND_SEQ_CMD_TYPE_BITS_SET \
+    HTT_PPDU_ID_FMT_IND_BITS_SET_BITS15_0
+#define HTT_PPDU_ID_FMT_IND_SEQ_CMD_TYPE_OFFSET_SET \
+    HTT_PPDU_ID_FMT_IND_OFFSET_SET_BITS15_0
+
+#define HTT_PPDU_ID_FMT_IND_TQM_CMD_VALID_SET \
+    HTT_PPDU_ID_FMT_IND_VALID_SET_BITS31_16
+#define HTT_PPDU_ID_FMT_IND_TQM_CMD_BITS_SET \
+    HTT_PPDU_ID_FMT_IND_BITS_SET_BITS31_16
+#define HTT_PPDU_ID_FMT_IND_TQM_CMD_OFFSET_SET \
+    HTT_PPDU_ID_FMT_IND_OFFSET_SET_BITS31_16
+
+#define HTT_PPDU_ID_FMT_IND_MAC_ID_TYPE_VALID_SET \
+    HTT_PPDU_ID_FMT_IND_VALID_SET_BITS15_0
+#define HTT_PPDU_ID_FMT_IND_MAC_ID_TYPE_BITS_SET \
+    HTT_PPDU_ID_FMT_IND_BITS_SET_BITS15_0
+#define HTT_PPDU_ID_FMT_IND_MAC_ID_TYPE_OFFSET_SET \
+    HTT_PPDU_ID_FMT_IND_OFFSET_SET_BITS15_0
+
+#define HTT_PPDU_ID_FMT_IND_CRC_VALID_SET \
+    HTT_PPDU_ID_FMT_IND_VALID_SET_BITS31_16
+#define HTT_PPDU_ID_FMT_IND_CRC_BITS_SET \
+    HTT_PPDU_ID_FMT_IND_BITS_SET_BITS31_16
+#define HTT_PPDU_ID_FMT_IND_CRC_OFFSET_SET \
+    HTT_PPDU_ID_FMT_IND_OFFSET_SET_BITS31_16
+
+
+/* offsets in number dwords */
+#define HTT_PPDU_ID_FMT_IND_HWSCH_CMD_ID_OFFSET   1
+#define HTT_PPDU_ID_FMT_IND_RING_ID_OFFSET        1
+#define HTT_PPDU_ID_FMT_IND_SEQ_IDX_OFFSET        2
+#define HTT_PPDU_ID_FMT_IND_LINK_ID_OFFSET        2
+#define HTT_PPDU_ID_FMT_IND_SEQ_CMD_TYPE_OFFSET   3
+#define HTT_PPDU_ID_FMT_IND_TQM_CMD_OFFSET        3
+#define HTT_PPDU_ID_FMT_IND_MAC_ID_OFFSET         4
+#define HTT_PPDU_ID_FMT_IND_CRC_OFFSET            4
+
+
+typedef struct {
+    A_UINT32 msg_type:            8, /* bits 7:0   */
+             rsvd0:               24;/* bits 31:8  */
+    A_UINT32 hwsch_cmd_id_valid:  1, /* bits 0:0   */
+             hwsch_cmd_id_bits:   5, /* bits 5:1   */
+             hwsch_cmd_id_offset: 5, /* bits 10:6  */
+             rsvd1:               5, /* bits 15:11 */
+             ring_id_valid:       1, /* bits 16:16 */
+             ring_id_bits:        5, /* bits 21:17 */
+             ring_id_offset:      5, /* bits 26:22 */
+             rsvd2:               5; /* bits 31:27 */
+    A_UINT32 seq_idx_valid:       1, /* bits 0:0   */
+             seq_idx_bits:        5, /* bits 5:1   */
+             seq_idx_offset:      5, /* bits 10:6  */
+             rsvd3:               5, /* bits 15:11 */
+             link_id_valid:       1, /* bits 16:16 */
+             link_id_bits:        5, /* bits 21:17 */
+             link_id_offset:      5, /* bits 26:22 */
+             rsvd4:               5; /* bits 31:27 */
+    A_UINT32 seq_cmd_type_valid:  1, /* bits 0:0   */
+             seq_cmd_type_bits:   5, /* bits 5:1   */
+             seq_cmd_type_offset: 5, /* bits 10:6  */
+             rsvd5:               5, /* bits 15:11 */
+             tqm_cmd_valid:       1, /* bits 16:16 */
+             tqm_cmd_bits:        5, /* bits 21:17 */
+             tqm_cmd_offset:      5, /* bits 26:12 */
+             rsvd6:               5; /* bits 31:27 */
+    A_UINT32 mac_id_valid:        1, /* bits 0:0   */
+             mac_id_bits:         5, /* bits 5:1   */
+             mac_id_offset:       5, /* bits 10:6  */
+             rsvd8:               5, /* bits 15:11 */
+             crc_valid:           1, /* bits 16:16 */
+             crc_bits:            5, /* bits 21:17 */
+             crc_offset:          5, /* bits 26:12 */
+             rsvd9:               5; /* bits 31:27 */
+} htt_t2h_ppdu_id_fmt_ind_t;
 
 
 #endif
