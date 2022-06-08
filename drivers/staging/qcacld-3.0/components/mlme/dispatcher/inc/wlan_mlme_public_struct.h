@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -1123,6 +1124,42 @@ struct wlan_mlme_chainmask {
 	bool enable_bt_chain_separation;
 };
 
+/**
+ * enum wlan_mlme_ratemask_type: Type of PHY for ratemask
+ * @WLAN_MLME_RATEMASK_TYPE_NO_MASK: no ratemask set
+ * @WLAN_MLME_RATEMASK_TYPE_CCK: CCK/OFDM rate
+ * @WLAN_MLEM_RATEMASK_TYPE_HT: HT rate
+ * @WLAN_MLME_RATEMASK_TYPE_VHT: VHT rate
+ * @WLAN_MLME_RATEMASK_TYPE_HE: HE rate
+ *
+ * This is used for 'type' values in wlan_mlme_ratemask
+ */
+enum wlan_mlme_ratemask_type {
+	WLAN_MLME_RATEMASK_TYPE_NO_MASK  =  0,
+	WLAN_MLME_RATEMASK_TYPE_CCK      =  1,
+	WLAN_MLME_RATEMASK_TYPE_HT       =  2,
+	WLAN_MLME_RATEMASK_TYPE_VHT      =  3,
+	WLAN_MLME_RATEMASK_TYPE_HE       =  4,
+	/* keep this last */
+	WLAN_MLME_RATEMASK_TYPE_MAX,
+};
+
+/**
+ * struct wlan_mlme_ratemask - ratemask config parameters
+ * @type:       Type of PHY the mask to be applied
+ * @lower32:    Lower 32 bits in the 1st 64-bit value
+ * @higher32:   Higher 32 bits in the 1st 64-bit value
+ * @lower32_2:  Lower 32 bits in the 2nd 64-bit value
+ * @higher32_2: Higher 32 bits in the 2nd 64-bit value
+ */
+struct wlan_mlme_ratemask {
+	enum wlan_mlme_ratemask_type type;
+	uint32_t lower32;
+	uint32_t higher32;
+	uint32_t lower32_2;
+	uint32_t higher32_2;
+};
+
 /* struct wlan_mlme_generic - Generic CFG config items
  *
  * @band_capability: HW Band Capability - Both or 2.4G only or 5G only
@@ -1299,6 +1336,7 @@ struct wlan_mlme_cfg_twt {
  * @is_override_ht20_40_24g: use channel bonding in 2.4 GHz
  * @obss_detection_offload_enabled:       Enable OBSS detection offload
  * @obss_color_collision_offload_enabled: Enable obss color collision
+ * @bss_color_collision_det_sta: STA BSS color collision detection offload
  */
 struct wlan_mlme_obss_ht40 {
 	uint32_t active_dwelltime;
@@ -1311,6 +1349,7 @@ struct wlan_mlme_obss_ht40 {
 	bool is_override_ht20_40_24g;
 	bool obss_detection_offload_enabled;
 	bool obss_color_collision_offload_enabled;
+	bool bss_color_collision_det_sta;
 };
 
 /**
@@ -2401,6 +2440,7 @@ struct wlan_mlme_cfg {
 	struct wlan_mlme_reg reg;
 	struct roam_trigger_score_delta trig_score_delta[NUM_OF_ROAM_TRIGGERS];
 	struct roam_trigger_min_rssi trig_min_rssi[NUM_OF_ROAM_MIN_RSSI];
+	struct wlan_mlme_ratemask ratemask_cfg;
 };
 
 enum pkt_origin {

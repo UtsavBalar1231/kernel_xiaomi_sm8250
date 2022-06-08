@@ -5887,6 +5887,9 @@ static uint32_t ol_txrx_get_cfg(struct cdp_soc_t *soc_hdl, enum cdp_dp_cfg cfg)
 	case cfg_dp_lro_enable:
 		value = cfg_ctx->lro_enable;
 		break;
+	case cfg_dp_sg_enable:
+		value = cfg_ctx->sg_enable;
+		break;
 	case cfg_dp_gro_enable:
 		value = cfg_ctx->gro_enable;
 		break;
