@@ -16,11 +16,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-KBUILD_COMPILER_STRING=$(${HOME}/clang/bin/clang --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
-KBUILD_LINKER_STRING=$(${HOME}/clang/bin/ld.lld --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//' | sed 's/(compatible with [^)]*)//')
-export KBUILD_COMPILER_STRING
-export KBUILD_LINKER_STRING
-
 #
 # Enviromental Variables
 #
@@ -51,10 +46,8 @@ echo "Jobs: ${KEBABS}"
 
 ARGS="ARCH=arm64 \
 O=${OUT_DIR} \
-LLVM=1 \
-CLANG_TRIPLE=aarch64-linux-gnu- \
-CROSS_COMPILE=aarch64-linux-gnu- \
-CROSS_COMPILE_COMPAT=arm-linux-gnueabi- \
+CROSS_COMPILE=aarch64-elf- \
+CROSS_COMPILE_COMPAT=arm-eabi- \
 -j${KEBABS}"
 
 dts_source=arch/arm64/boot/dts/vendor/qcom
@@ -145,8 +138,7 @@ function disable_lto() {
 START=$(date +"%s")
 
 # Set compiler Path
-PATH=${HOME}/gas:${HOME}/clang/bin/:$PATH
-export LD_LIBRARY_PATH=${HOME}/clang/lib64:$LD_LIBRARY_PATH
+PATH=${HOME}/gcc-arm64/bin:${HOME}/gcc-arm/bin:$PATH
 
 # Make defconfig
 make -j${KEBABS} ${ARGS} "${DEVICE}"_defconfig
@@ -210,7 +202,7 @@ fi
 
 # Make olddefconfig
 cd ${OUT_DIR} || exit
-make -j${KEBABS} ${ARGS} CC="ccache clang" HOSTCC="ccache gcc" HOSTCXX="cache g++" olddefconfig
+make -j${KEBABS} ${ARGS} HOSTCC="ccache gcc" HOSTCXX="cache g++" olddefconfig
 cd ../ || exit
 
 miui_fix_dimens
@@ -218,7 +210,7 @@ miui_fix_fps
 miui_fix_dfps
 miui_fix_fod
 
-make -j${KEBABS} ${ARGS} CC="ccache clang" HOSTCC="ccache gcc" HOSTCXX="ccache g++" 2>&1 | tee build.log
+make -j${KEBABS} ${ARGS} HOSTCC="ccache gcc" HOSTCXX="ccache g++" 2>&1 | tee build.log
 
 find ${OUT_DIR}/$dts_source -name '*.dtb' -exec cat {} + >${OUT_DIR}/arch/arm64/boot/dtb
 
