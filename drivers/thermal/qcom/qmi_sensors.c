@@ -139,7 +139,7 @@ static int32_t encode_qmi(int32_t val)
 	temp_val &= ~(1 << shift);
 
 	local_val |= temp_val << (QMI_MANTISSA_MSB - shift);
-	pr_debug("inp:%d shift:%d out:%x temp_val:%x\n",
+	pr_debug("inp:%d shift:%d out:%x temp_val:%lx\n",
 			val, shift, local_val, temp_val);
 
 	return local_val;
