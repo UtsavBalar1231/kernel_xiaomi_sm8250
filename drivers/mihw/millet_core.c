@@ -45,8 +45,8 @@ static void dump_send_msg(struct millet_data *msg)
 
 	pr_info("up msg: %d\n", msg->msg_type);
 	pr_info("up type: %d\n", msg->owner);
-	pr_info("up src_port: 0x%x\n", msg->src_port);
-	pr_info("up dest_port: 0x%x\n", msg->dst_port);
+	pr_info("up src_port: 0x%lx\n", msg->src_port);
+	pr_info("up dest_port: 0x%lx\n", msg->dst_port);
 	pr_info("up uid: %d\n", msg->uid);
 }
 
@@ -63,8 +63,8 @@ static void dump_recv_msg(struct millet_userconf *msg)
 
 	pr_info("msg: %d\n", msg->msg_type);
 	pr_info("type: %d\n", msg->owner);
-	pr_info("src_port: 0x%x\n", msg->src_port);
-	pr_info("dest_port: 0x%x\n", msg->dst_port);
+	pr_info("src_port: 0x%lx\n", msg->src_port);
+	pr_info("dest_port: 0x%lx\n", msg->dst_port);
 }
 
 
@@ -223,7 +223,7 @@ static void recv_handler(struct sk_buff *skb)
 	from = nlh->nlmsg_pid;
 	payload = (struct millet_userconf *) NLMSG_DATA(nlh);
 	if (payload->src_port != MILLET_USER_ID) {
-		pr_err("src_port %x invalid! from %d need len %d len %d\n",
+		pr_err("src_port %lx invalid! from %d need len %d len %d\n",
 		       payload->src_port,
 		       from,
 		       nlh->nlmsg_len,
@@ -235,7 +235,7 @@ static void recv_handler(struct sk_buff *skb)
 	}
 
 	if (payload->dst_port != MILLET_KERNEL_ID) {
-		pr_err("dst_port is %x not kernel!\n",
+		pr_err("dst_port is %lx not kernel!\n",
 		       payload->dst_port);
 		return;
 	}
