@@ -796,7 +796,7 @@ static int cp_flash2_charge(unsigned int port)
 				sys_config.ibat_minus_deviation_val = HVDCP3P5_IBAT_MINUS_DEV_VAL + 100;
 				sys_config.ibat_plus_deviation_val = HVDCP3P5_IBAT_PLUS_DEV_VAL - 50;
 				pm_state.batt_cell_volt_triggered = true;
-				pr_info("for qc3.5, cell_vbat > 4250mv or soc > 40%, modify bq adjust params\n");
+				pr_info("for qc3.5, cell_vbat > 4250mv or soc > 40%%, modify bq adjust params\n");
 			}
 		} else if (pm_state.usb_type == POWER_SUPPLY_TYPE_USB_HVDCP_3) {
 			if (pm_state.bq2597x.vbat_volt >= 4200 || pm_state.capacity > 29) {
@@ -805,7 +805,7 @@ static int cp_flash2_charge(unsigned int port)
 				sys_config.ibat_minus_deviation_val = HVDCP3_IBAT_MINUS_DEV_VAL + 450;
 				sys_config.ibat_plus_deviation_val = HVDCP3_IBAT_PLUS_DEV_VAL - 450;
 				pm_state.batt_cell_volt_triggered = true;
-				pr_info("for qc3.0, cell_vbat > 4200mv or soc > 29%, modify bq adjust params\n");
+				pr_info("for qc3.0, cell_vbat > 4200mv or soc > 29%%, modify bq adjust params\n");
 			}
 		 }
 	}
