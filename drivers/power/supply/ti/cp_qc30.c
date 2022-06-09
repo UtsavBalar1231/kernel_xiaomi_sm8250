@@ -354,7 +354,6 @@ static void cp_get_batt_capacity(void)
 			POWER_SUPPLY_PROP_CAPACITY, &val);
 	if (!ret)
 		pm_state.capacity = val.intval;
-	pr_info("capacity %d\n", pm_state.capacity);
 }
 
 static void cp_update_fc_status(void)
