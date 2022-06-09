@@ -58,7 +58,7 @@ show_one(input_boost_ms);
 store_one(input_boost_ms);
 cpu_boost_attr_rw(input_boost_ms);
 
-static unsigned int powerkey_input_boost_ms = 400;
+static unsigned int powerkey_input_boost_ms = 40;
 show_one(powerkey_input_boost_ms);
 store_one(powerkey_input_boost_ms);
 cpu_boost_attr_rw(powerkey_input_boost_ms);
@@ -69,10 +69,12 @@ store_one(sched_boost_on_input);
 cpu_boost_attr_rw(sched_boost_on_input);
 
 
-static bool sched_boost_on_powerkey_input = true;
+static unsigned int sched_boost_on_powerkey_input;
 show_one(sched_boost_on_powerkey_input);
 store_one(sched_boost_on_powerkey_input);
 cpu_boost_attr_rw(sched_boost_on_powerkey_input);
+
+static bool powerkey_sched_boost_on_input = true;
 
 static bool sched_boost_active;
 
@@ -340,7 +342,7 @@ static void do_powerkey_input_boost(struct work_struct *work)
 	update_policy_online();
 
 	/* Enable scheduler boost to migrate tasks to big cluster */
-	if (sched_boost_on_powerkey_input) {
+	if (powerkey_sched_boost_on_input) {
 		ret = sched_set_boost(1);
 		if (ret)
 			pr_err("cpu-boost: HMP boost enable failed\n");
@@ -521,7 +523,7 @@ static int cpu_boost_init(void)
 	ret = sysfs_create_file(cpu_boost_kobj,
 				&sched_boost_on_powerkey_input_attr.attr);
 	if (ret)
-		pr_err("Failed to create sched_boost_on_powerkey_input node: %d\n", ret);
+		pr_err("Failed to create powerkey_sched_boost_on_input node: %d\n", ret);
 
 	ret = input_register_handler(&cpuboost_input_handler);
 	return 0;
