@@ -191,7 +191,7 @@ TRACE_EVENT(io_pgtable_free,
 		__entry->block = block;
 	),
 
-	TP_printk("IOMMU: Freeing %s io-pgtable at 0x%lx pud=0x%lx *pud=0x%lx iova=0x%lx blk=%d",
+	TP_printk("IOMMU: Freeing %s io-pgtable at 0x%lln pud=0x%lln *pud=0x%llx iova=0x%llx blk=%d",
 			__entry->block ? "block" : "", __entry->table_base, __entry->pudp,
 			__entry->pud, __entry->iova, __entry->block
 	)
@@ -217,7 +217,7 @@ TRACE_EVENT(io_pgtable_install,
 		__entry->block = block;
 	),
 
-	TP_printk("IOMMU: Installed %s io-pgtable at 0x%lx pud=0x%lx *pud=0x%lx blk=%d",
+	TP_printk("IOMMU: Installed %s io-pgtable at 0x%lln pud=0x%lln *pud=0x%llx blk=%d",
 			__entry->block ? "block" : "", __entry->table_base, __entry->pudp,
 			__entry->pud, __entry->block
 	)
