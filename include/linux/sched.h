@@ -2262,15 +2262,43 @@ static inline void set_wake_up_idle(bool enabled)
 }
 
 #if IS_ENABLED(CONFIG_MIHW)
-extern inline bool is_critical_task(struct task_struct *p);
+static inline bool is_top_app(struct task_struct *p)
+{
+	return p && p->top_app > 0;
+}
 
-extern inline bool is_top_app(struct task_struct *p);
+static inline bool is_inherit_top_app(struct task_struct *p)
+{
+	return p && p->inherit_top_app > 0;
+}
 
-extern inline bool is_inherit_top_app(struct task_struct *p);
+static inline bool is_critical_task(struct task_struct *p)
+{
+	return is_top_app(p) || is_inherit_top_app(p);
+}
 
 #define INHERIT_DEPTH 2
-extern inline void set_inherit_top_app(struct task_struct *p,
-					struct task_struct *from);
-extern inline void restore_inherit_top_app(struct task_struct *p);
+static inline void set_inherit_top_app(struct task_struct *p,
+				struct task_struct *from)
+{
+	if (!p || !from)
+		return;
+	if (is_critical_task(p) || from->inherit_top_app >= INHERIT_DEPTH)
+		return;
+	p->inherit_top_app = from->inherit_top_app + 1;
+#if IS_ENABLED(CONFIG_PERF_HUMANTASK)
+	p->human_task = 1;
+#endif
+}
+
+static inline void restore_inherit_top_app(struct task_struct *p)
+{
+	if (p && is_inherit_top_app(p)) {
+		p->inherit_top_app = 0;
+#if IS_ENABLED(CONFIG_PERF_HUMANTASK)
+		p->human_task  = 0 ;
+#endif
+	}
+}
 #endif /* CONFIG_MIHW */
 #endif
