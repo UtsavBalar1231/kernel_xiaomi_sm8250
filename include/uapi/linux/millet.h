@@ -55,7 +55,7 @@ enum MILLET_TYPE {
 };
 
 #define TYPE_VALID(x) ((x > O_TYPE) && (x < MILLET_TYPES_NUM))
-static const char *NAME_ARRAY[NAME_MAXLEN] = {
+static const __maybe_unused char *NAME_ARRAY[NAME_MAXLEN] = {
 	"NULL",
 	"SIG",
 	"BINDER",
