@@ -13,15 +13,15 @@ steps:
         from_secret: bot_api_key
       PD_API_KEY:
         from_secret: pd_api_key
-      TYPE: TEST-5.0.0
+      TYPE: TEST-5.1.0
       DEVICE: alioth
       KBUILD_BUILD_USER: UtsavTheCunt
       KBUILD_BUILD_HOST: CuntsSpace
     commands:
       - apt-get update && apt-get install -y bison build-essential bc bison curl libssl-dev git zip python python3 flex cpio libncurses5-dev wget
       - git clone https://github.com/UtsavBalar1231/Drone-scripts.git --depth=1 -b test script && cd script
-      - ./setup-drone --aosp-clang
-      - ./build-kernel --aosp-clang
+      - ./setup-drone --gcc
+      - ./build-kernel --gcc --lto
 
 ---
 clone:
@@ -38,15 +38,15 @@ steps:
         from_secret: bot_api_key
       PD_API_KEY:
         from_secret: pd_api_key
-      TYPE: TEST-5.0.0
+      TYPE: TEST-5.1.0
       DEVICE: apollo
       KBUILD_BUILD_USER: UtsavTheCunt
       KBUILD_BUILD_HOST: CuntsSpace
     commands:
       - apt-get update && apt-get install -y bison build-essential bc bison curl libssl-dev git zip python python3 flex cpio libncurses5-dev wget
       - git clone https://github.com/UtsavBalar1231/Drone-scripts.git --depth=1 -b test script && cd script
-      - ./setup-drone --aosp-clang
-      - ./build-kernel --aosp-clang
+      - ./setup-drone --gcc
+      - ./build-kernel --gcc --lto
 
 ---
 clone:
@@ -63,15 +63,15 @@ steps:
         from_secret: bot_api_key
       PD_API_KEY:
         from_secret: pd_api_key
-      TYPE: TEST-5.0.0
+      TYPE: TEST-5.1.0
       DEVICE: cmi
       KBUILD_BUILD_USER: UtsavTheCunt
       KBUILD_BUILD_HOST: CuntsSpace
     commands:
       - apt-get update && apt-get install -y bison build-essential bc bison curl libssl-dev git zip python python3 flex cpio libncurses5-dev wget
       - git clone https://github.com/UtsavBalar1231/Drone-scripts.git --depth=1 -b test script && cd script
-      - ./setup-drone --aosp-clang
-      - ./build-kernel --aosp-clang
+      - ./setup-drone --gcc
+      - ./build-kernel --gcc --lto
 
 ---
 clone:
@@ -88,15 +88,15 @@ steps:
         from_secret: bot_api_key
       PD_API_KEY:
         from_secret: pd_api_key
-      TYPE: TEST-5.0.0
+      TYPE: TEST-5.1.0
       DEVICE: lmi
       KBUILD_BUILD_USER: UtsavTheCunt
       KBUILD_BUILD_HOST: CuntsSpace
     commands:
       - apt-get update && apt-get install -y bison build-essential bc bison curl libssl-dev git zip python python3 flex cpio libncurses5-dev wget
       - git clone https://github.com/UtsavBalar1231/Drone-scripts.git --depth=1 -b test script && cd script
-      - ./setup-drone --aosp-clang
-      - ./build-kernel --aosp-clang
+      - ./setup-drone --gcc
+      - ./build-kernel --gcc --lto
 
 ---
 clone:
@@ -113,12 +113,12 @@ steps:
         from_secret: bot_api_key
       PD_API_KEY:
         from_secret: pd_api_key
-      TYPE: TEST-5.0.0
+      TYPE: TEST-5.1.0
       DEVICE: umi
       KBUILD_BUILD_USER: UtsavTheCunt
       KBUILD_BUILD_HOST: CuntsSpace
     commands:
       - apt-get update && apt-get install -y bison build-essential bc bison curl libssl-dev git zip python python3 flex cpio libncurses5-dev wget
       - git clone https://github.com/UtsavBalar1231/Drone-scripts.git --depth=1 -b test script && cd script
-      - ./setup-drone --aosp-clang
-      - ./build-kernel --aosp-clang
+      - ./setup-drone --gcc
+      - ./build-kernel --gcc --lto
