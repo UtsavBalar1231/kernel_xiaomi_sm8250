@@ -207,6 +207,7 @@ SECTIONS
 
 	_data = .;
 	_sdata = .;
+	EXPORT_SYMBOL_GPL(_sdata);
 	RW_DATA_SECTION(L1_CACHE_BYTES, PAGE_SIZE, THREAD_ALIGN)
 
 	/*

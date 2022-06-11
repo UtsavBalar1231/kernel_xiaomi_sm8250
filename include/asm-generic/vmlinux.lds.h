@@ -885,6 +885,7 @@
  */
 #define PERCPU_INPUT(cacheline)						\
 	__per_cpu_start = .;						\
+	EXPORT_SYMBOL_GPL(__per_cpu_start);					\
 	*(.data..percpu..first)						\
 	. = ALIGN(PAGE_SIZE);						\
 	*(.data..percpu..page_aligned)					\
@@ -894,8 +895,8 @@
 	*(.data..percpu)						\
 	*(.data..percpu..shared_aligned)				\
 	PERCPU_DECRYPTED_SECTION					\
-	__per_cpu_end = .;
-
+	__per_cpu_end = .;						\
+	EXPORT_SYMBOL_GPL(__per_cpu_end);
 /**
  * PERCPU_VADDR - define output section for percpu area
  * @cacheline: cacheline size
