@@ -111,6 +111,7 @@ ENTRY(cpu_do_idle)
 	wfi
 	ret
 ENDPROC(cpu_do_idle)
+EXPORT_SYMBOL(cpu_do_idle)
 
 #ifdef CONFIG_CPU_PM
 /**
