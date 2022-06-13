@@ -1323,9 +1323,10 @@ static int cam_vfe_bus_start_wm(
 			return -EINVAL;
 		}
 	}
-	/* enabling Wm configuratons are taken care in update_wm().
-	 * i.e enable wm only if io buffers are allocated
-	 */
+
+	/* Enable WM */
+	cam_io_w_mb(rsrc_data->en_cfg, common_data->mem_base +
+		rsrc_data->hw_regs->cfg);
 
 	CAM_DBG(CAM_ISP, "WM res %d width = %d, height = %d", rsrc_data->index,
 		rsrc_data->width, rsrc_data->height);
