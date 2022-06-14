@@ -222,7 +222,7 @@ SYM_FUNC_END(__clean_dcache_area_pou)
  *	- kaddr   - kernel address
  *	- size    - size in question
  */
-SYM_FUNC_START_LOCAL(__dma_inv_area)
+ENTRY(__dma_inv_area)
 SYM_FUNC_START_PI(__inval_dcache_area)
 	/* FALLTHROUGH */
 
@@ -261,7 +261,7 @@ SYM_FUNC_END(__dma_inv_area)
  *	- kaddr   - kernel address
  *	- size    - size in question
  */
-SYM_FUNC_START_LOCAL(__dma_clean_area)
+ENTRY(__dma_clean_area)
 SYM_FUNC_START_PI(__clean_dcache_area_poc)
 	/* FALLTHROUGH */
 
