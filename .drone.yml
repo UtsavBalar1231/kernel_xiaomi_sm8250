@@ -13,7 +13,7 @@ steps:
         from_secret: bot_api_key
       PD_API_KEY:
         from_secret: pd_api_key
-      TYPE: REL-4.0.0
+      TYPE: REL-5.0.0
       DEVICE: alioth
       KBUILD_BUILD_USER: UtsavTheCunt
       KBUILD_BUILD_HOST: CuntsSpace
@@ -38,7 +38,7 @@ steps:
         from_secret: bot_api_key
       PD_API_KEY:
         from_secret: pd_api_key
-      TYPE: REL-4.0.0
+      TYPE: REL-5.0.0
       DEVICE: apollo
       KBUILD_BUILD_USER: UtsavTheCunt
       KBUILD_BUILD_HOST: CuntsSpace
@@ -63,7 +63,7 @@ steps:
         from_secret: bot_api_key
       PD_API_KEY:
         from_secret: pd_api_key
-      TYPE: REL-4.0.0
+      TYPE: REL-5.0.0
       DEVICE: cmi
       KBUILD_BUILD_USER: UtsavTheCunt
       KBUILD_BUILD_HOST: CuntsSpace
@@ -88,7 +88,7 @@ steps:
         from_secret: bot_api_key
       PD_API_KEY:
         from_secret: pd_api_key
-      TYPE: REL-4.0.0
+      TYPE: REL-5.0.0
       DEVICE: lmi
       KBUILD_BUILD_USER: UtsavTheCunt
       KBUILD_BUILD_HOST: CuntsSpace
@@ -113,7 +113,7 @@ steps:
         from_secret: bot_api_key
       PD_API_KEY:
         from_secret: pd_api_key
-      TYPE: REL-4.0.0
+      TYPE: REL-5.0.0
       DEVICE: umi
       KBUILD_BUILD_USER: UtsavTheCunt
       KBUILD_BUILD_HOST: CuntsSpace
