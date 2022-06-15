@@ -73,8 +73,10 @@ struct msm_gem_vma;
 
 #define TEARDOWN_DEADLOCK_RETRY_MAX 5
 
+#if IS_ENABLED(CONFIG_MI_DRM_OPT)
 extern atomic_t resume_pending;
 extern wait_queue_head_t resume_wait_q;
+#endif
 
 struct msm_file_private {
 	rwlock_t queuelock;

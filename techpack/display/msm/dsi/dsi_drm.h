@@ -23,7 +23,9 @@ struct dsi_bridge {
 
 	struct dsi_display *display;
 	struct dsi_display_mode dsi_mode;
+#if IS_ENABLED(CONFIG_MI_DRM_OPT)
 	struct mutex lock;
+#endif
 };
 
 /**

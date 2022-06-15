@@ -422,3 +422,7 @@ config DRM_PANEL_ORIENTATION_QUIRKS
 config DRM_LIB_RANDOM
 	bool
 	default n
+
+config MI_DRM_OPT
+	bool "Enable xiaomi early wakeup optimization"
+	default n

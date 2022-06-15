@@ -12,8 +12,10 @@
 #include "sde_connector.h"
 #include "dsi_drm.h"
 #include "sde_trace.h"
+#if IS_ENABLED(CONFIG_MI_DRM_OPT)
 #include <drm/drm_bridge.h>
 #include <linux/pm_wakeup.h>
+#endif
 #include "msm_drv.h"
 #include "sde_dbg.h"
 #include "dsi_defs.h"
@@ -35,12 +37,14 @@ static struct dsi_display_mode_priv_info default_priv_info = {
 	.dsc_enabled = false,
 };
 
+#if IS_ENABLED(CONFIG_MI_DRM_OPT)
 #define WAIT_RESUME_TIMEOUT 200
 
 struct dsi_bridge *gbridge;
 static struct delayed_work prim_panel_work;
 static atomic_t prim_panel_is_on;
 static struct wakeup_source *prim_panel_wakelock;
+#endif
 
 static void convert_to_dsi_mode(const struct drm_display_mode *drm_mode,
 				struct dsi_display_mode *dsi_mode)
@@ -204,6 +208,7 @@ static void dsi_bridge_pre_enable(struct drm_bridge *bridge)
 		return;
 	}
 
+#if IS_ENABLED(CONFIG_MI_DRM_OPT)
 	if (c_bridge->display->is_prim_display && atomic_read(&prim_panel_is_on) && !mi_cfg->fod_dimlayer_enabled) {
 		cancel_delayed_work_sync(&prim_panel_work);
 		__pm_relax(prim_panel_wakelock);
@@ -216,6 +221,7 @@ static void dsi_bridge_pre_enable(struct drm_bridge *bridge)
 			return;
 		}
 	}
+#endif
 
 	if (mi_cfg->fod_dimlayer_enabled) {
 		power_mode = sde_connector_get_lp(c_bridge->display->drm_conn);
@@ -261,11 +267,14 @@ static void dsi_bridge_pre_enable(struct drm_bridge *bridge)
 		DSI_ERR("Continuous splash pipeline cleanup failed, rc=%d\n",
 									rc);
 
+#if IS_ENABLED(CONFIG_MI_DRM_OPT)
 	if (c_bridge->display->is_prim_display)
 		atomic_set(&prim_panel_is_on, true);
+#endif
 
 }
 
+#if IS_ENABLED(CONFIG_MI_DRM_OPT)
 /**
  *  dsi_bridge_interface_enable - Panel light on interface for fingerprint
  *  In order to improve panel light on performance when unlock device by
@@ -309,6 +318,7 @@ int dsi_bridge_interface_enable(int timeout)
 	return ret;
 }
 EXPORT_SYMBOL(dsi_bridge_interface_enable);
+#endif
 
 static void dsi_bridge_enable(struct drm_bridge *bridge)
 {
@@ -443,11 +453,13 @@ static void dsi_bridge_post_disable(struct drm_bridge *bridge)
 	mi_drm_notifier_call_chain(MI_DRM_EVENT_BLANK, &notify_data);
 	SDE_ATRACE_END("dsi_bridge_post_disable");
 
+#if IS_ENABLED(CONFIG_MI_DRM_OPT)
 	if (c_bridge->display->is_prim_display)
 		atomic_set(&prim_panel_is_on, false);
-
+#endif
 }
 
+#if IS_ENABLED(CONFIG_MI_DRM_OPT)
 static void prim_panel_off_delayed_work(struct work_struct *work)
 {
 	mutex_lock(&gbridge->base.lock);
@@ -459,6 +471,7 @@ static void prim_panel_off_delayed_work(struct work_struct *work)
 	}
 	mutex_unlock(&gbridge->base.lock);
 }
+#endif
 
 static void dsi_bridge_mode_set(struct drm_bridge *bridge,
 				struct drm_display_mode *mode,
@@ -1210,6 +1223,7 @@ struct dsi_bridge *dsi_drm_bridge_init(struct dsi_display *display,
 	encoder->bridge->is_dsi_drm_bridge = true;
 	mutex_init(&encoder->bridge->lock);
 
+#if IS_ENABLED(CONFIG_MI_DRM_OPT)
 	if (display->is_prim_display) {
 		gbridge = bridge;
 		atomic_set(&resume_pending, 0);
@@ -1219,6 +1233,7 @@ struct dsi_bridge *dsi_drm_bridge_init(struct dsi_display *display,
 		init_waitqueue_head(&resume_wait_q);
 		INIT_DELAYED_WORK(&prim_panel_work, prim_panel_off_delayed_work);
 	}
+#endif
 
 	return bridge;
 error_free_bridge:
@@ -1232,12 +1247,14 @@ void dsi_drm_bridge_cleanup(struct dsi_bridge *bridge)
 	if (bridge && bridge->base.encoder)
 		bridge->base.encoder->bridge = NULL;
 
+#if IS_ENABLED(CONFIG_MI_DRM_OPT)
 	if (bridge == gbridge) {
 		atomic_set(&prim_panel_is_on, false);
 		cancel_delayed_work_sync(&prim_panel_work);
 		wakeup_source_remove(prim_panel_wakelock);
 		wakeup_source_destroy(prim_panel_wakelock);
 	}
+#endif
 
 	kfree(bridge);
 }
