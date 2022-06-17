@@ -149,7 +149,6 @@ struct devfreq {
 	struct list_head node;
 
 	struct mutex lock;
-	struct mutex sysfs_lock;
 	struct device dev;
 	struct devfreq_dev_profile *profile;
 	const struct devfreq_governor *governor;
