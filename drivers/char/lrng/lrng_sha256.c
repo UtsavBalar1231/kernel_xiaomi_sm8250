@@ -10,7 +10,7 @@
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <linux/lrng.h>
-#include <crypto/sha.h>
+#include <linux/sha256.h>
 
 #include "lrng_sha.h"
 

@@ -634,3 +634,6 @@ config GENERIC_LIB_CMPDI2
 
 config GENERIC_LIB_UCMPDI2
 	bool
+
+config CRYPTO_LIB_SHA256
+	tristate

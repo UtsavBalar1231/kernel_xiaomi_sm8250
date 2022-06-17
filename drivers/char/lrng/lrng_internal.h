@@ -6,14 +6,18 @@
 #ifndef _LRNG_INTERNAL_H
 #define _LRNG_INTERNAL_H
 
-#include <crypto/sha1.h>
-#include <crypto/sha2.h>
+#include <crypto/sha.h>
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/mutex.h>
 #include <linux/rwlock.h>
 #include <linux/slab.h>
 #include <linux/spinlock.h>
+
+#define arch_get_random_seed_long_early arch_get_random_seed_long
+#define arch_get_random_long_early arch_get_random_long
+
+#define kfree_sensitive kzfree
 
 /*************************** General LRNG parameter ***************************/
 

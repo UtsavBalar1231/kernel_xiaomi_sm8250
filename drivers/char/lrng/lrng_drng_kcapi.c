@@ -38,7 +38,7 @@ static int lrng_kcapi_drng_seed_helper(void *drng, const u8 *inbuf,
 	struct crypto_shash *hash_tfm = lrng_drng_info->hash_tfm;
 	SHASH_DESC_ON_STACK(shash, hash_tfm);
 	u32 digestsize;
-	u8 digest[HASH_MAX_DIGESTSIZE] __aligned(8);
+	u8 digest[64] __aligned(8);
 	int ret;
 
 	if (!hash_tfm)
