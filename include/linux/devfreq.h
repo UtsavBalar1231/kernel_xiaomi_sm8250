@@ -175,7 +175,6 @@ struct devfreq {
 	unsigned long last_stat_updated;
 
 	struct srcu_notifier_head transition_notifier_list;
-	bool dev_suspended;
 };
 
 struct devfreq_freqs {
