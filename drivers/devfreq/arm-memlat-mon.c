@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2014-2022, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
  */
 
 #define pr_fmt(fmt) "arm-memlat-mon: " fmt
@@ -46,16 +46,16 @@ enum mon_type {
 };
 
 struct event_data {
-	struct perf_event *pevent;
-	unsigned long prev_count;
-	unsigned long last_delta;
-	u64 cached_total_count;
+	struct perf_event	*pevent;
+	unsigned long		prev_count;
+	unsigned long		last_delta;
+	u64			cached_total_count;
 };
 
 struct cpu_data {
-	struct event_data common_evs[NUM_COMMON_EVS];
-	unsigned long freq;
-	unsigned long stall_pct;
+	struct event_data	common_evs[NUM_COMMON_EVS];
+	unsigned long		freq;
+	unsigned long		stall_pct;
 };
 
 /**
@@ -231,12 +231,10 @@ static void update_counts(struct memlat_cpu_grp *cpu_grp)
 				cpu - cpumask_first(&mon->cpus);
 			cpu_grp->read_event_cpu = cpu;
 			read_event(&mon->miss_ev[mon_idx]);
-
 			if (mon->wb_ev_id && mon->access_ev_id) {
 				read_event(&mon->wb_ev[mon_idx]);
 				read_event(&mon->access_ev[mon_idx]);
 			}
-
 			cpu_grp->read_event_cpu = -1;
 		}
 	}
@@ -301,7 +299,6 @@ static struct perf_event_attr *alloc_attr(void)
 	attr->type = PERF_TYPE_RAW;
 	attr->size = sizeof(struct perf_event_attr);
 	attr->pinned = 1;
-	attr->exclude_idle = 1;
 
 	return attr;
 }
@@ -339,7 +336,7 @@ static int init_common_evs(struct memlat_cpu_grp *cpu_grp,
 		for (i = 0; i < NUM_COMMON_EVS; i++) {
 			ret = set_event(&common_evs[i], cpu,
 					cpu_grp->common_ev_ids[i], attr);
-			if (ret)
+			if (ret < 0)
 				break;
 		}
 	}
@@ -367,9 +364,6 @@ static void memlat_monitor_work(struct work_struct *work)
 	struct memlat_mon *mon;
 	unsigned int i;
 
-	if (oops_in_progress)
-		return;
-
 	mutex_lock(&cpu_grp->mons_lock);
 	if (!cpu_grp->num_active_mons)
 		goto unlock_out;
@@ -385,7 +379,7 @@ static void memlat_monitor_work(struct work_struct *work)
 		df = mon->hw.df;
 		mutex_lock(&df->lock);
 		err = update_devfreq(df);
-		if (err)
+		if (err < 0)
 			dev_err(mon->hw.dev, "Memlat update failed: %d\n", err);
 		mutex_unlock(&df->lock);
 	}
@@ -609,7 +603,7 @@ static int start_hwmon(struct memlat_hwmon *hw)
 		hp_idle_register_cnt++;
 		mutex_unlock(&notify_lock);
 		ret = init_common_evs(cpu_grp, attr);
-		if (ret)
+		if (ret < 0)
 			goto unlock_out;
 
 		INIT_DEFERRABLE_WORK(&cpu_grp->work, &memlat_monitor_work);
@@ -623,7 +617,7 @@ static int start_hwmon(struct memlat_hwmon *hw)
 				continue;
 			ret = set_event(&mon->miss_ev[idx], cpu,
 					mon->miss_ev_id, attr);
-			if (ret)
+			if (ret < 0)
 				goto unlock_out;
 
 			if (mon->access_ev_id && mon->wb_ev_id) {
@@ -837,7 +831,7 @@ static int memlat_cpu_grp_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	ret = of_property_read_u32(dev->of_node, "qcom,inst-ev", &event_id);
-	if (ret) {
+	if (ret < 0) {
 		dev_dbg(dev, "Inst event not specified. Using def:0x%x\n",
 			INST_EV);
 		event_id = INST_EV;
@@ -845,7 +839,7 @@ static int memlat_cpu_grp_probe(struct platform_device *pdev)
 	cpu_grp->common_ev_ids[INST_IDX] = event_id;
 
 	ret = of_property_read_u32(dev->of_node, "qcom,cyc-ev", &event_id);
-	if (ret) {
+	if (ret < 0) {
 		dev_dbg(dev, "Cyc event not specified. Using def:0x%x\n",
 			CYC_EV);
 		event_id = CYC_EV;
@@ -853,7 +847,7 @@ static int memlat_cpu_grp_probe(struct platform_device *pdev)
 	cpu_grp->common_ev_ids[CYC_IDX] = event_id;
 
 	ret = of_property_read_u32(dev->of_node, "qcom,stall-ev", &event_id);
-	if (ret)
+	if (ret < 0)
 		dev_dbg(dev, "Stall event not specified. Skipping.\n");
 	else
 		cpu_grp->common_ev_ids[STALL_IDX] = event_id;
@@ -971,7 +965,7 @@ static int memlat_mon_probe(struct platform_device *pdev, bool is_compute)
 
 		ret = of_property_read_u32(dev->of_node, "qcom,cachemiss-ev",
 						&event_id);
-		if (ret) {
+		if (ret < 0) {
 			dev_err(dev, "Cache miss event missing for mon: %d\n",
 					ret);
 			ret = -EINVAL;
@@ -1053,7 +1047,7 @@ static int arm_memlat_mon_driver_probe(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
-	if (ret) {
+	if (ret < 0) {
 		dev_err(dev, "Failure to probe memlat device: %d\n", ret);
 		return ret;
 	}
