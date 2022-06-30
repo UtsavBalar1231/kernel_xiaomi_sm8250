@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2011-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -710,6 +711,9 @@ struct pe_session *pe_create_session(struct mac_context *mac,
 		if (status != QDF_STATUS_SUCCESS)
 			pe_err("cannot create ap_ecsa_timer");
 	}
+	if (session_ptr->opmode == QDF_STA_MODE)
+		session_ptr->is_session_obss_color_collision_det_enabled =
+			mac->mlme_cfg->obss_ht40.bss_color_collision_det_sta;
 	pe_init_fils_info(session_ptr);
 	pe_init_pmf_comeback_timer(mac, session_ptr);
 	session_ptr->ht_client_cnt = 0;

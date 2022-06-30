@@ -628,6 +628,9 @@ config XLOGCHAR
 	tristate "xlogchar driver"
 	help
 	  Implements a high performance log driver
+
+source "drivers/char/lrng/Kconfig"
+
 endmenu
 
 config RANDOM_TRUST_CPU

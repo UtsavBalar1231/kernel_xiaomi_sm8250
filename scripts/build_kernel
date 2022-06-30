@@ -16,10 +16,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Start cleanup of previous build
+if [[ -d anykernel ]]; then
+	rm -fr $(pwd)/anykernel/
+fi
+
+if [[ -f ${OUT_DIR}/arch/arm64/boot/dtb ]]; then
+	rm -fr ${OUT_DIR}/arch/arm64/boot/dtb
+fi
+
+if [[ -f ${OUT_DIR}/arch/arm64/boot/Image.gz ]]; then
+	rm -fr ${OUT_DIR}/arch/arm64/boot/Image.gz
+elif [[ -f ${OUT_DIR}/arch/arm64/boot/Image ]]; then
+	rm -fr ${OUT_DIR}/arch/arm64/boot/Image
+fi
+
+if [[ -f ${OUT_DIR}/arch/arm64/boot/dtbo.img ]]; then
+	rm -fr ${OUT_DIR}/arch/arm64/boot/dtbo.img
+fi
+
 KBUILD_COMPILER_STRING=$(${HOME}/clang/bin/clang --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
 KBUILD_LINKER_STRING=$(${HOME}/clang/bin/ld.lld --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//' | sed 's/(compatible with [^)]*)//')
 export KBUILD_COMPILER_STRING
 export KBUILD_LINKER_STRING
+
+cp -r $HOME/anykernel ./
 
 #
 # Enviromental Variables
@@ -197,9 +218,10 @@ scripts/config --file ${OUT_DIR}/.config \
     -e MIGT \
     -e MIHW \
     -e MILLET \
-    -e MIUI_DRM_WAKE_OPT \
+    -e MI_DRM_OPT \
     -e MIUI_ZRAM_MEMORY_TRACKING \
     -e MI_RECLAIM \
+    -d OSSFOD \
     -e PERF_HUMANTASK \
     -e TASK_DELAY_ACCT
 
@@ -285,22 +307,21 @@ DIFF=$((END - START))
 cd anykernel || exit
 zip -r9 "${ZIPNAME}" ./* -x .git .gitignore ./*.zip
 
-#RESPONSE=$(curl -# -F "name=${ZIPNAME}" -F "file=@${ZIPNAME}" -u :"${PD_API_KEY}" https://pixeldrain.com/api/file)
-#FILEID=$(echo $RESPONSE | grep -Po '(?<="id":")[^"]*')
+FILEID=$(pd upload $ZIPNAME)
+
+echo $FILEID
 
 CHECKER=$(find ./ -maxdepth 1 -type f -name ${ZIPNAME} -printf "%s\n")
 if (($((CHECKER / 1048576)) > 5)); then
     curl -s -X POST https://api.telegram.org/bot"${BOT_API_KEY}"/sendMessage -d text="✅ Kernel compiled successfully in $((DIFF / 60)) minute(s) and $((DIFF % 60)) seconds for ${DEVICE}" -d chat_id="${CI_CHANNEL_ID}" -d parse_mode=HTML
-#    curl -s -X POST https://api.telegram.org/bot"${BOT_API_KEY}"/sendMessage -d text="Kernel build link: https://pixeldrain.com/u/$FILEID" -d chat_id="${CI_CHANNEL_ID}" -d parse_mode=HTML
+    curl -s -X POST https://api.telegram.org/bot"${BOT_API_KEY}"/sendMessage -d text="Kernel build link: $FILEID" -d chat_id="${CI_CHANNEL_ID}" -d parse_mode=HTML
     curl -F chat_id="${CI_CHANNEL_ID}" -F document=@"$(pwd)/${ZIPNAME}" https://api.telegram.org/bot"${BOT_API_KEY}"/sendDocument
 else
     tg_post_error
 fi
-cd "$(pwd)" || exit
+cd $(pwd) || exit
 
-# Cleanup
-rm -fr anykernel/
-rm -fr ${OUT_DIR}/arch/arm64/boot/dtb
-rm -fr ${OUT_DIR}/arch/arm64/boot/dtbo.img
-rm -fr ${OUT_DIR}/arch/arm64/boot/Image.gz
-rm -fr ${OUT_DIR}/arch/arm64/boot/Image
+echo ""
+echo -e $ZIPNAME " is ready!"
+echo ""
+

@@ -13,7 +13,7 @@ steps:
         from_secret: bot_api_key
       PD_API_KEY:
         from_secret: pd_api_key
-      TYPE: REL-4.0.0
+      TYPE: REL-5.0.0
       DEVICE: alioth
       KBUILD_BUILD_USER: UtsavTheCunt
       KBUILD_BUILD_HOST: CuntsSpace
@@ -38,8 +38,33 @@ steps:
         from_secret: bot_api_key
       PD_API_KEY:
         from_secret: pd_api_key
-      TYPE: REL-4.0.0
+      TYPE: REL-5.0.0
       DEVICE: apollo
+      KBUILD_BUILD_USER: UtsavTheCunt
+      KBUILD_BUILD_HOST: CuntsSpace
+    commands:
+      - apt-get update && apt-get install -y bison build-essential bc bison curl libssl-dev git zip python python3 flex cpio libncurses5-dev wget
+      - git clone https://github.com/UtsavBalar1231/Drone-scripts.git --depth=1 -b test script && cd script
+      - ./setup-drone --aosp-clang
+      - ./build-kernel --aosp-clang
+
+---
+clone:
+  depth: 1
+kind: pipeline
+name: IMMENSITY - X | CMI
+steps:
+  - name: building-cmi
+    image: debian:stable-slim
+    environment:
+      CI_CHANNEL_ID:
+        from_secret: ci_channel_id
+      BOT_API_KEY:
+        from_secret: bot_api_key
+      PD_API_KEY:
+        from_secret: pd_api_key
+      TYPE: REL-5.0.0
+      DEVICE: cmi
       KBUILD_BUILD_USER: UtsavTheCunt
       KBUILD_BUILD_HOST: CuntsSpace
     commands:
@@ -63,8 +88,33 @@ steps:
         from_secret: bot_api_key
       PD_API_KEY:
         from_secret: pd_api_key
-      TYPE: REL-4.0.0
+      TYPE: REL-5.0.0
       DEVICE: lmi
+      KBUILD_BUILD_USER: UtsavTheCunt
+      KBUILD_BUILD_HOST: CuntsSpace
+    commands:
+      - apt-get update && apt-get install -y bison build-essential bc bison curl libssl-dev git zip python python3 flex cpio libncurses5-dev wget
+      - git clone https://github.com/UtsavBalar1231/Drone-scripts.git --depth=1 -b test script && cd script
+      - ./setup-drone --aosp-clang
+      - ./build-kernel --aosp-clang
+
+---
+clone:
+  depth: 1
+kind: pipeline
+name: IMMENSITY - X | UMI
+steps:
+  - name: building-umi
+    image: debian:stable-slim
+    environment:
+      CI_CHANNEL_ID:
+        from_secret: ci_channel_id
+      BOT_API_KEY:
+        from_secret: bot_api_key
+      PD_API_KEY:
+        from_secret: pd_api_key
+      TYPE: REL-5.0.0
+      DEVICE: umi
       KBUILD_BUILD_USER: UtsavTheCunt
       KBUILD_BUILD_HOST: CuntsSpace
     commands:

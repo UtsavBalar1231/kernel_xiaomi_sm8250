@@ -5783,7 +5783,9 @@ int dsi_display_dev_probe(struct platform_device *pdev)
 	display->panel_node = panel_node;
 	display->pdev = pdev;
 	display->boot_disp = boot_disp;
+#if IS_ENABLED(CONFIG_MI_DRM_OPT)
 	display->is_prim_display = true;
+#endif
 
 	dsi_display_parse_cmdline_topology(display, index);
 

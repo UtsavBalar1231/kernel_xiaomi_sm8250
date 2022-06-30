@@ -325,7 +325,11 @@ static int dsi_phy_settings_init(struct platform_device *pdev,
 	/* Actual timing values are dependent on panel */
 	timing->count_per_lane = phy->ver_info->timing_cfg_count;
 
+#ifndef CONFIG_BOARD_UMI
 	phy->allow_phy_power_off = true;
+#else
+	phy->allow_phy_power_off = false;
+#endif
 
 	of_property_read_u32(pdev->dev.of_node,
 			"qcom,dsi-phy-regulator-min-datarate-bps",

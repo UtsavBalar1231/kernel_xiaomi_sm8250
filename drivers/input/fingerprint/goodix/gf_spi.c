@@ -16,7 +16,9 @@
 #define DEBUG
 #define pr_fmt(fmt)     KBUILD_MODNAME ": " fmt
 
-#define GOODIX_DRM_INTERFACE_WA
+#if IS_ENABLED(CONFIG_MI_DRM_OPT)
+#define GOODIX_DRM_INTERFACE
+#endif
 
 #include <linux/init.h>
 #include <linux/module.h>
@@ -45,8 +47,8 @@
 #include <linux/pm_qos.h>
 #include <linux/cpufreq.h>
 #include <linux/pm_wakeup.h>
+#if IS_ENABLED(CONFIG_MI_DRM_OPT)
 #include <drm/drm_bridge.h>
-#ifndef GOODIX_DRM_INTERFACE_WA
 #include <drm/drm_notifier_mi.h>
 #endif
 
@@ -550,7 +552,7 @@ static long gf_compat_ioctl(struct file *filp, unsigned int cmd,
 }
 #endif /*CONFIG_COMPAT*/
 
-#ifndef GOODIX_DRM_INTERFACE_WA
+#ifdef GOODIX_DRM_INTERFACE
 static void notification_work(struct work_struct *work)
 {
 	pr_debug("%s unblank\n", __func__);
@@ -568,11 +570,13 @@ static irqreturn_t gf_irq(int irq, void *handle)
 	__pm_wakeup_event(fp_wakelock, WAKELOCK_HOLD_TIME);
 	sendnlmsg(temp);
 
+#if IS_ENABLED(CONFIG_MI_DRM_OPT)
 	if ((gf_dev->wait_finger_down == true) && (gf_dev->device_available == 1) &&
 		(gf_dev->fb_black == 1)) {
 		gf_dev->wait_finger_down = false;
 		schedule_work(&gf_dev->work);
 	}
+#endif
 
 #elif defined (GF_FASYNC)
 	struct gf_dev *gf_dev = &gf;
@@ -758,8 +762,7 @@ static const struct file_operations gf_fops = {
 #endif
 };
 
-
-#ifndef GOODIX_DRM_INTERFACE_WA
+#ifdef GOODIX_DRM_INTERFACE
 static int goodix_fb_state_chg_callback(struct notifier_block *nb,
 					unsigned long val, void *data)
 {
@@ -850,9 +853,9 @@ static int gf_probe(struct platform_device *pdev)
 	gf_dev->reset_gpio = -EINVAL;
 	gf_dev->pwr_gpio = -EINVAL;
 	gf_dev->device_available = 0;
+#if IS_ENABLED(CONFIG_MI_DRM_OPT)
 	gf_dev->fb_black = 0;
 	gf_dev->wait_finger_down = false;
-#ifndef GOODIX_DRM_INTERFACE_WA
 	INIT_WORK(&gf_dev->work, notification_work);
 #endif
 
@@ -925,7 +928,7 @@ static int gf_probe(struct platform_device *pdev)
 
 	spi_clock_set(gf_dev, 1000000);
 #endif
-#ifndef GOODIX_DRM_INTERFACE_WA
+#ifdef GOODIX_DRM_INTERFACE
 	gf_dev->notifier = goodix_noti_block;
 	mi_drm_register_client(&gf_dev->notifier);
 #endif
@@ -991,7 +994,7 @@ static int gf_remove(struct platform_device *pdev)
 		gf_cleanup(gf_dev);
 	}
 
-#ifndef GOODIX_DRM_INTERFACE_WA
+#ifdef GOODIX_DRM_INTERFACE
 	mi_drm_unregister_client(&gf_dev->notifier);
 #endif
 	mutex_unlock(&device_list_lock);

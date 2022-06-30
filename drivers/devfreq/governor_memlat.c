@@ -215,10 +215,12 @@ err_start:
 static int gov_suspend(struct devfreq *df)
 {
 	struct memlat_node *node = df->data;
+	struct memlat_hwmon *hw = node->hw;
 	unsigned long prev_freq = df->previous_freq;
 
 	node->mon_started = false;
-	devfreq_monitor_suspend(df);
+	if (!hw->should_ignore_df_monitor)
+		devfreq_monitor_suspend(df);
 
 	mutex_lock(&df->lock);
 	update_devfreq(df);
@@ -232,6 +234,7 @@ static int gov_suspend(struct devfreq *df)
 static int gov_resume(struct devfreq *df)
 {
 	struct memlat_node *node = df->data;
+	struct memlat_hwmon *hw = node->hw;
 
 	mutex_lock(&df->lock);
 	update_devfreq(df);
@@ -239,7 +242,8 @@ static int gov_resume(struct devfreq *df)
 
 	node->resume_freq = 0;
 
-	devfreq_monitor_resume(df);
+	if (!hw->should_ignore_df_monitor)
+		devfreq_monitor_resume(df);
 	node->mon_started = true;
 
 	return 0;
@@ -325,7 +329,7 @@ static int devfreq_memlat_get_freq(struct devfreq *df,
 	return 0;
 }
 
-gov_attr(ratio_ceil, 1U, 20000U);
+gov_attr(ratio_ceil, 1U, 50000U);
 gov_attr(stall_floor, 0U, 100U);
 gov_attr(wb_pct_thres, 0U, 100U);
 gov_attr(wb_filter_ratio, 0U, 50000U);

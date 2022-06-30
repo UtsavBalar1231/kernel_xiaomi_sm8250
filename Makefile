@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0
 VERSION = 4
 PATCHLEVEL = 19
-SUBLEVEL = 245
+SUBLEVEL = 247
 EXTRAVERSION =
 NAME = "People's Front"
 
@@ -696,7 +696,6 @@ KBUILD_LDFLAGS  += -Os
 else ifeq ($(cc-name),clang)
 KBUILD_CFLAGS   += -O3
 KBUILD_AFLAGS   += -O3
-KBUILD_LDFLAGS  += -O3
 else
 KBUILD_CFLAGS   += -O2
 KBUILD_AFLAGS   += -O2
