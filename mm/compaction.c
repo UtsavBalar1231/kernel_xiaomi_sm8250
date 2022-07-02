@@ -2652,7 +2652,7 @@ int sysctl_compact_memory;
  * background. It takes values in the range [0, 100].
  */
 unsigned int __read_mostly sysctl_compaction_proactiveness = 20;
-unsigned int __read_mostly sysctl_compaction_proactiveness_screen_off = 20;
+unsigned int __read_mostly sysctl_compaction_proactiveness_screen_off = 40;
 
 void trigger_proactive_compaction(bool sysctl)
 {
