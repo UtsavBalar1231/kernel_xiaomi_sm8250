@@ -1,28 +1,16 @@
 // SPDX-License-Identifier: GPL-2.0 OR BSD-2-Clause
 /*
- * LRNG DRNG management
+ * LRNG DRNG processing
  *
- * Copyright (C) 2022, Stephan Mueller <smueller@chronox.de>
+ * Copyright (C) 2016 - 2021, Stephan Mueller <smueller@chronox.de>
  */
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
-#include <linux/lrng.h>
 #include <linux/fips.h>
-#include <linux/module.h>
-#include <linux/sched.h>
-#include <linux/wait.h>
+#include <linux/lrng.h>
 
-#include "lrng_drng_atomic.h"
-#include "lrng_drng_chacha20.h"
-#include "lrng_drng_drbg.h"
-#include "lrng_drng_kcapi.h"
-#include "lrng_drng_mgr.h"
-#include "lrng_es_aux.h"
-#include "lrng_es_mgr.h"
-#include "lrng_interface_random_kernel.h"
-#include "lrng_numa.h"
-#include "lrng_sha.h"
+#include "lrng_internal.h"
 
 /*
  * Maximum number of seconds between DRNG reseed intervals of the DRNG. Note,
@@ -32,43 +20,33 @@
  */
 int lrng_drng_reseed_max_time = 600;
 
-/*
- * Is LRNG for general-purpose use (i.e. is at least the lrng_drng_init
- * fully allocated)?
- */
 static atomic_t lrng_avail = ATOMIC_INIT(0);
 
-/* Guard protecting all crypto callback update operation of all DRNGs. */
 DEFINE_MUTEX(lrng_crypto_cb_update);
 
-/*
- * Default hash callback that provides the crypto primitive right from the
- * kernel start. It must not perform any memory allocation operation, but
- * simply perform the hash calculation.
- */
-const struct lrng_hash_cb *lrng_default_hash_cb = &lrng_sha_hash_cb;
-
-/*
- * Default DRNG callback that provides the crypto primitive which is
- * allocated either during late kernel boot stage. So, it is permissible for
- * the callback to perform memory allocation operations.
- */
-const struct lrng_drng_cb *lrng_default_drng_cb =
-#if defined(CONFIG_LRNG_DFLT_DRNG_CHACHA20)
-	&lrng_cc20_drng_cb;
-#elif defined(CONFIG_LRNG_DFLT_DRNG_DRBG)
-	&lrng_drbg_cb;
-#elif defined(CONFIG_LRNG_DFLT_DRNG_KCAPI)
-	&lrng_kcapi_drng_cb;
-#else
-#error "Unknown default DRNG selected"
-#endif
-
-/* DRNG for non-atomic use cases */
+/* DRNG for /dev/urandom, getrandom(2), get_random_bytes */
 static struct lrng_drng lrng_drng_init = {
-	LRNG_DRNG_STATE_INIT(lrng_drng_init, NULL, NULL, NULL,
-			     &lrng_sha_hash_cb),
-	.lock = __MUTEX_INITIALIZER(lrng_drng_init.lock),
+	.drng		= &chacha20,
+	.crypto_cb	= &lrng_cc20_crypto_cb,
+	.lock		= __MUTEX_INITIALIZER(lrng_drng_init.lock),
+	.spin_lock	= __SPIN_LOCK_UNLOCKED(lrng_drng_init.spin_lock),
+	.hash_lock	= __RW_LOCK_UNLOCKED(lrng_drng_init.hash_lock)
+};
+
+/*
+ * DRNG for get_random_bytes when called in atomic context. This
+ * DRNG will always use the ChaCha20 DRNG. It will never benefit from a
+ * DRNG switch like the "regular" DRNG. If there was no DRNG switch, the atomic
+ * DRNG is identical to the "regular" DRNG.
+ *
+ * The reason for having this is due to the fact that DRNGs other than
+ * the ChaCha20 DRNG may sleep.
+ */
+static struct lrng_drng lrng_drng_atomic = {
+	.drng		= &chacha20,
+	.crypto_cb	= &lrng_cc20_crypto_cb,
+	.spin_lock	= __SPIN_LOCK_UNLOCKED(lrng_drng_atomic.spin_lock),
+	.hash_lock	= __RW_LOCK_UNLOCKED(lrng_drng_atomic.hash_lock)
 };
 
 static u32 max_wo_reseed = LRNG_DRNG_MAX_WITHOUT_RESEED;
@@ -78,9 +56,6 @@ MODULE_PARM_DESC(max_wo_reseed,
 		 "Maximum number of DRNG generate operation without full reseed\n");
 #endif
 
-/* Wait queue to wait until the LRNG is initialized - can freely be used */
-DECLARE_WAIT_QUEUE_HEAD(lrng_init_wait);
-
 /********************************** Helper ************************************/
 
 bool lrng_get_available(void)
@@ -88,20 +63,19 @@ bool lrng_get_available(void)
 	return likely(atomic_read(&lrng_avail));
 }
 
+void lrng_set_available(void)
+{
+	atomic_set(&lrng_avail, 1);
+}
+
 struct lrng_drng *lrng_drng_init_instance(void)
 {
 	return &lrng_drng_init;
 }
 
-struct lrng_drng *lrng_drng_node_instance(void)
+struct lrng_drng *lrng_drng_atomic_instance(void)
 {
-	struct lrng_drng **lrng_drng = lrng_drng_instances();
-	int node = numa_node_id();
-
-	if (lrng_drng && lrng_drng[node])
-		return lrng_drng[node];
-
-	return lrng_drng_init_instance();
+	return &lrng_drng_atomic;
 }
 
 void lrng_drng_reset(struct lrng_drng *drng)
@@ -114,79 +88,77 @@ void lrng_drng_reset(struct lrng_drng *drng)
 	pr_debug("reset DRNG\n");
 }
 
-/* Initialize the DRNG, except the mutex lock */
-int lrng_drng_alloc_common(struct lrng_drng *drng,
-			   const struct lrng_drng_cb *drng_cb)
+/* Initialize the default DRNG during boot */
+static void lrng_drng_seed(struct lrng_drng *drng);
+void lrng_drngs_init_cc20(bool force_seed)
 {
-	if (!drng || !drng_cb)
-		return -EINVAL;
-
-	drng->drng_cb = drng_cb;
-	drng->drng = drng_cb->drng_alloc(LRNG_DRNG_SECURITY_STRENGTH_BYTES);
-	if (IS_ERR(drng->drng))
-		return PTR_ERR(drng->drng);
-
-	lrng_drng_reset(drng);
-	return 0;
-}
-
-/* Initialize the default DRNG during boot and perform its seeding */
-int lrng_drng_initalize(void)
-{
-	int ret;
+	unsigned long flags = 0;
 
 	if (lrng_get_available())
-		return 0;
+		return;
 
-	/* Catch programming error */
-	WARN_ON(lrng_drng_init.hash_cb != lrng_default_hash_cb);
-
-	mutex_lock(&lrng_drng_init.lock);
+	lrng_drng_lock(&lrng_drng_init, &flags);
 	if (lrng_get_available()) {
-		mutex_unlock(&lrng_drng_init.lock);
-		return 0;
+		lrng_drng_unlock(&lrng_drng_init, &flags);
+		if (force_seed)
+			goto seed;
+		return;
 	}
 
-	ret = lrng_drng_alloc_common(&lrng_drng_init, lrng_default_drng_cb);
-	mutex_unlock(&lrng_drng_init.lock);
-	if (ret)
-		return ret;
+	lrng_drng_reset(&lrng_drng_init);
+	lrng_cc20_init_state(&chacha20);
+	lrng_drng_unlock(&lrng_drng_init, &flags);
 
-	pr_debug("LRNG for general use is available\n");
-	atomic_set(&lrng_avail, 1);
+	lrng_drng_lock(&lrng_drng_atomic, &flags);
+	lrng_drng_reset(&lrng_drng_atomic);
+	/*
+	 * We do not initialize the state of the atomic DRNG as it is identical
+	 * to the DRNG at this point.
+	 */
+	lrng_drng_unlock(&lrng_drng_atomic, &flags);
 
+	lrng_set_available();
+
+seed:
 	/* Seed the DRNG with any entropy available */
 	if (!lrng_pool_trylock()) {
-		pr_info("Initial DRNG initialized triggering first seeding\n");
-		lrng_drng_seed_work(NULL);
+		lrng_drng_seed(&lrng_drng_init);
+		pr_info("ChaCha20 core initialized with first seeding\n");
+		lrng_pool_unlock();
 	} else {
-		pr_info("Initial DRNG initialized without seeding\n");
+		pr_info("ChaCha20 core initialized without seeding\n");
 	}
-
-	return 0;
 }
-
-static int __init lrng_drng_make_available(void)
-{
-	return lrng_drng_initalize();
-}
-late_initcall(lrng_drng_make_available);
 
 bool lrng_sp80090c_compliant(void)
 {
-	/* SP800-90C compliant oversampling is only requested in FIPS mode */
+	if (!IS_ENABLED(CONFIG_LRNG_OVERSAMPLE_ENTROPY_SOURCES))
+		return false;
+
+	/* Entropy source hash must be capable of transporting enough entropy */
+	if (lrng_get_digestsize() <
+	    (lrng_security_strength() + CONFIG_LRNG_SEED_BUFFER_INIT_ADD_BITS))
+		return false;
+
+	/* SP800-90C only requested in FIPS mode */
 	return fips_enabled;
 }
 
 /************************* Random Number Generation ***************************/
 
-/* Inject a data buffer into the DRNG - caller must hold its lock */
-void lrng_drng_inject(struct lrng_drng *drng, const u8 *inbuf, u32 inbuflen,
-		      bool fully_seeded, const char *drng_type)
+/* Inject a data buffer into the DRNG */
+static void lrng_drng_inject(struct lrng_drng *drng,
+			     const u8 *inbuf, u32 inbuflen, bool fully_seeded)
 {
+	const char *drng_type = unlikely(drng == &lrng_drng_atomic) ?
+				"atomic" : "regular";
+	unsigned long flags = 0;
+
 	BUILD_BUG_ON(LRNG_DRNG_RESEED_THRESH > INT_MAX);
 	pr_debug("seeding %s DRNG with %u bytes\n", drng_type, inbuflen);
-	if (drng->drng_cb->drng_seed(drng->drng, inbuf, inbuflen) < 0) {
+	lrng_drng_lock(drng, &flags);
+	if (drng->crypto_cb->lrng_drng_seed_helper(drng->drng,
+						   inbuf, inbuflen) < 0) {
 		pr_warn("seeding of %s DRNG failed\n", drng_type);
 		drng->force_reseed = true;
 	} else {
@@ -210,62 +182,77 @@ void lrng_drng_inject(struct lrng_drng *drng, const u8 *inbuf, u32 inbuflen,
 		if (!drng->fully_seeded) {
 			drng->fully_seeded = fully_seeded;
 			if (drng->fully_seeded)
-				pr_debug("%s DRNG fully seeded\n", drng_type);
+				pr_debug("DRNG fully seeded\n");
+		}
+
+		if (drng->drng == lrng_drng_atomic.drng) {
+			lrng_drng_atomic.last_seeded = jiffies;
+			atomic_set(&lrng_drng_atomic.requests,
+				   LRNG_DRNG_RESEED_THRESH);
+			lrng_drng_atomic.force_reseed = false;
 		}
 	}
+	lrng_drng_unlock(drng, &flags);
 }
 
-/* Perform the seeding of the DRNG with data from entropy source */
-static void lrng_drng_seed_es(struct lrng_drng *drng)
+/*
+ * Perform the seeding of the DRNG with data from noise source
+ */
+static inline void _lrng_drng_seed(struct lrng_drng *drng)
 {
 	struct entropy_buf seedbuf __aligned(LRNG_KCAPI_ALIGN);
 
 	lrng_fill_seed_buffer(&seedbuf,
 			      lrng_get_seed_entropy_osr(drng->fully_seeded));
-
-	mutex_lock(&drng->lock);
-	lrng_drng_inject(drng, (u8 *)&seedbuf, sizeof(seedbuf),
-			 lrng_fully_seeded_eb(drng->fully_seeded, &seedbuf),
-			 "regular");
-	mutex_unlock(&drng->lock);
-
-	/* Set the seeding state of the LRNG */
 	lrng_init_ops(&seedbuf);
-
+	lrng_drng_inject(drng, (u8 *)&seedbuf, sizeof(seedbuf),
+			 lrng_fully_seeded(drng->fully_seeded, &seedbuf));
 	memzero_explicit(&seedbuf, sizeof(seedbuf));
 }
 
+static int lrng_drng_get(struct lrng_drng *drng, u8 *outbuf, u32 outbuflen);
 static void lrng_drng_seed(struct lrng_drng *drng)
 {
+	_lrng_drng_seed(drng);
+
 	BUILD_BUG_ON(LRNG_MIN_SEED_ENTROPY_BITS >
 		     LRNG_DRNG_SECURITY_STRENGTH_BITS);
 
-	if (lrng_get_available()) {
-		/* (Re-)Seed DRNG */
-		lrng_drng_seed_es(drng);
-		/* (Re-)Seed atomic DRNG from regular DRNG */
-		lrng_drng_atomic_seed_drng(drng);
-	} else {
-		/*
-		 * If no-one is waiting for the DRNG, seed the atomic DRNG
-		 * directly from the entropy sources.
-		 */
-		if (!wq_has_sleeper(&lrng_init_wait) &&
-		    !lrng_ready_chain_has_sleeper())
-			lrng_drng_atomic_seed_es();
-		else
-			lrng_init_ops(NULL);
+	/*
+	 * Reseed atomic DRNG from current DRNG,
+	 *
+	 * We can obtain random numbers from DRNG as the lock type
+	 * chosen by lrng_drng_get is usable with the current caller.
+	 */
+	if ((drng->drng != lrng_drng_atomic.drng) &&
+	    (lrng_drng_atomic.force_reseed ||
+	     atomic_read(&lrng_drng_atomic.requests) <= 0 ||
+	     time_after(jiffies, lrng_drng_atomic.last_seeded +
+			lrng_drng_reseed_max_time * HZ))) {
+		u8 seedbuf[LRNG_DRNG_SECURITY_STRENGTH_BYTES]
+						__aligned(LRNG_KCAPI_ALIGN);
+		int ret = lrng_drng_get(drng, seedbuf, sizeof(seedbuf));
+
+		if (ret < 0) {
+			pr_warn("Error generating random numbers for atomic DRNG: %d\n",
+				ret);
+		} else {
+			lrng_drng_inject(&lrng_drng_atomic, seedbuf, ret, true);
+		}
+		memzero_explicit(&seedbuf, sizeof(seedbuf));
 	}
 }
 
-static void _lrng_drng_seed_work(struct lrng_drng *drng, u32 node)
+static inline void _lrng_drng_seed_work(struct lrng_drng *drng, u32 node)
 {
-	pr_debug("reseed triggered by system events for DRNG on NUMA node %d\n",
+	pr_debug("reseed triggered by interrupt noise source for DRNG on NUMA node %d\n",
 		 node);
 	lrng_drng_seed(drng);
 	if (drng->fully_seeded) {
 		/* Prevent reseed storm */
 		drng->last_seeded += node * 100 * HZ;
+		/* Prevent draining of pool on idle systems */
+		lrng_drng_reseed_max_time += 100;
 	}
 }
 
@@ -327,23 +314,13 @@ void lrng_drng_force_reseed(void)
 		drng->force_reseed = drng->fully_seeded;
 		pr_debug("force reseed of DRNG on node %u\n", node);
 	}
-	lrng_drng_atomic_force_reseed();
-}
-EXPORT_SYMBOL(lrng_drng_force_reseed);
-
-static bool lrng_drng_must_reseed(struct lrng_drng *drng)
-{
-	return (atomic_dec_and_test(&drng->requests) ||
-		drng->force_reseed ||
-		time_after(jiffies,
-			   drng->last_seeded + lrng_drng_reseed_max_time * HZ));
+	lrng_drng_atomic.force_reseed = lrng_drng_atomic.fully_seeded;
 }
 
 /*
  * lrng_drng_get() - Get random data out of the DRNG which is reseeded
  * frequently.
  *
- * @drng: DRNG instance
  * @outbuf: buffer for storing random data
  * @outbuflen: length of outbuf
  *
@@ -351,17 +328,17 @@ static bool lrng_drng_must_reseed(struct lrng_drng *drng)
  * * < 0 in error case (DRNG generation or update failed)
  * * >=0 returning the returned number of bytes
  */
-int lrng_drng_get(struct lrng_drng *drng, u8 *outbuf, u32 outbuflen)
+static int lrng_drng_get(struct lrng_drng *drng, u8 *outbuf, u32 outbuflen)
 {
+	unsigned long flags = 0;
 	u32 processed = 0;
 
 	if (!outbuf || !outbuflen)
 		return 0;
 
-	if (!lrng_get_available())
-		return -EOPNOTSUPP;
-
 	outbuflen = min_t(size_t, outbuflen, INT_MAX);
+
+	lrng_drngs_init_cc20(false);
 
 	/* If DRNG operated without proper reseed for too long, block LRNG */
 	BUILD_BUG_ON(LRNG_DRNG_MAX_WITHOUT_RESEED < LRNG_DRNG_RESEED_THRESH);
@@ -372,19 +349,25 @@ int lrng_drng_get(struct lrng_drng *drng, u8 *outbuf, u32 outbuflen)
 		u32 todo = min_t(u32, outbuflen, LRNG_DRNG_MAX_REQSIZE);
 		int ret;
 
-		if (lrng_drng_must_reseed(drng)) {
-			if (lrng_pool_trylock()) {
-				drng->force_reseed = true;
-			} else {
-				lrng_drng_seed(drng);
-				lrng_pool_unlock();
+		/* All but the atomic DRNG are seeded during generation */
+		if (atomic_dec_and_test(&drng->requests) ||
+		    drng->force_reseed ||
+		    time_after(jiffies, drng->last_seeded +
+			       lrng_drng_reseed_max_time * HZ)) {
+			if (likely(drng != &lrng_drng_atomic)) {
+				if (lrng_pool_trylock()) {
+					drng->force_reseed = true;
+				} else {
+					lrng_drng_seed(drng);
+					lrng_pool_unlock();
+				}
 			}
 		}
 
-		mutex_lock(&drng->lock);
-		ret = drng->drng_cb->drng_generate(drng->drng,
-						   outbuf + processed, todo);
-		mutex_unlock(&drng->lock);
+		lrng_drng_lock(drng, &flags);
+		ret = drng->crypto_cb->lrng_drng_generate_helper(
+					drng->drng, outbuf + processed, todo);
+		lrng_drng_unlock(drng, &flags);
 		if (ret <= 0) {
 			pr_warn("getting random data from DRNG failed (%d)\n",
 				ret);
@@ -397,20 +380,21 @@ int lrng_drng_get(struct lrng_drng *drng, u8 *outbuf, u32 outbuflen)
 	return processed;
 }
 
+int lrng_drng_get_atomic(u8 *outbuf, u32 outbuflen)
+{
+	return lrng_drng_get(&lrng_drng_atomic, outbuf, outbuflen);
+}
+
 int lrng_drng_get_sleep(u8 *outbuf, u32 outbuflen)
 {
 	struct lrng_drng **lrng_drng = lrng_drng_instances();
 	struct lrng_drng *drng = &lrng_drng_init;
-	int ret, node = numa_node_id();
+	int node = numa_node_id();
 
 	might_sleep();
 
 	if (lrng_drng && lrng_drng[node] && lrng_drng[node]->fully_seeded)
 		drng = lrng_drng[node];
-
-	ret = lrng_drng_initalize();
-	if (ret)
-		return ret;
 
 	return lrng_drng_get(drng, outbuf, outbuflen);
 }
@@ -419,11 +403,12 @@ int lrng_drng_get_sleep(u8 *outbuf, u32 outbuflen)
 static void _lrng_reset(struct work_struct *work)
 {
 	struct lrng_drng **lrng_drng = lrng_drng_instances();
+	unsigned long flags = 0;
 
 	if (!lrng_drng) {
-		mutex_lock(&lrng_drng_init.lock);
+		lrng_drng_lock(&lrng_drng_init, &flags);
 		lrng_drng_reset(&lrng_drng_init);
-		mutex_unlock(&lrng_drng_init.lock);
+		lrng_drng_unlock(&lrng_drng_init, &flags);
 	} else {
 		u32 node;
 
@@ -432,12 +417,11 @@ static void _lrng_reset(struct work_struct *work)
 
 			if (!drng)
 				continue;
-			mutex_lock(&drng->lock);
+			lrng_drng_lock(drng, &flags);
 			lrng_drng_reset(drng);
-			mutex_unlock(&drng->lock);
+			lrng_drng_unlock(drng, &flags);
 		}
 	}
-	lrng_drng_atomic_reset();
 	lrng_set_entropy_thresh(LRNG_INIT_ENTROPY_BITS);
 
 	lrng_reset_state();
@@ -450,36 +434,18 @@ void lrng_reset(void)
 	schedule_work(&lrng_reset_work);
 }
 
-/******************* Generic LRNG kernel output interfaces ********************/
+/***************************** Initialize LRNG *******************************/
 
-int lrng_drng_sleep_while_nonoperational(int nonblock)
+static int __init lrng_init(void)
 {
-	if (likely(lrng_state_operational()))
-		return 0;
-	if (nonblock)
-		return -EAGAIN;
-	return wait_event_interruptible(lrng_init_wait,
-					lrng_state_operational());
+	lrng_drngs_init_cc20(false);
+
+	lrng_drngs_numa_alloc();
+	return 0;
 }
 
-int lrng_drng_sleep_while_non_min_seeded(void)
-{
-	if (likely(lrng_state_min_seeded()))
-		return 0;
-	return wait_event_interruptible(lrng_init_wait,
-					lrng_state_min_seeded());
-}
+late_initcall(lrng_init);
 
-void lrng_get_random_bytes_full(void *buf, int nbytes)
-{
-	lrng_drng_sleep_while_nonoperational(0);
-	lrng_drng_get_sleep((u8 *)buf, (u32)nbytes);
-}
-EXPORT_SYMBOL(lrng_get_random_bytes_full);
-
-void lrng_get_random_bytes_min(void *buf, int nbytes)
-{
-	lrng_drng_sleep_while_non_min_seeded();
-	lrng_drng_get_sleep((u8 *)buf, (u32)nbytes);
-}
-EXPORT_SYMBOL(lrng_get_random_bytes_min);
+MODULE_LICENSE("Dual BSD/GPL");
+MODULE_AUTHOR("Stephan Mueller <smueller@chronox.de>");
+MODULE_DESCRIPTION("Linux Random Number Generator");
