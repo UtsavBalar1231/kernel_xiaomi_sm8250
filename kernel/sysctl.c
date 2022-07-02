@@ -1850,6 +1850,15 @@ static struct ctl_table vm_table[] = {
 		.extra2		= &one_hundred,
 	},
 	{
+		.procname	= "compaction_proactiveness_screen_off",
+		.data		= &sysctl_compaction_proactiveness_screen_off,
+		.maxlen		= sizeof(sysctl_compaction_proactiveness_screen_off),
+		.mode		= 0644,
+		.proc_handler	= proc_douintvec_minmax,
+		.extra1		= &zero,
+		.extra2		= &one_hundred,
+	},
+	{
 		.procname	= "extfrag_threshold",
 		.data		= &sysctl_extfrag_threshold,
 		.maxlen		= sizeof(int),

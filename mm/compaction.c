@@ -1940,16 +1940,22 @@ static unsigned int fragmentation_score_node(pg_data_t *pgdat)
 	return score;
 }
 
+extern bool dsi_screen_on;
+
 static unsigned int fragmentation_score_wmark(pg_data_t *pgdat, bool low)
 {
 	unsigned int wmark_low;
+	unsigned int compaction_proactiveness;
+
+	compaction_proactiveness = dsi_screen_on ?
+		sysctl_compaction_proactiveness : sysctl_compaction_proactiveness_screen_off;
 
 	/*
 	 * Cap the low watermak to avoid excessive compaction
 	 * activity in case a user sets the proactivess tunable
 	 * close to 100 (maximum).
 	 */
-	wmark_low = max(100U - sysctl_compaction_proactiveness, 5U);
+	wmark_low = max(100U - compaction_proactiveness, 5U);
 	return low ? wmark_low : min(wmark_low + 10, 100U);
 }
 
@@ -2646,27 +2652,36 @@ int sysctl_compact_memory;
  * background. It takes values in the range [0, 100].
  */
 unsigned int __read_mostly sysctl_compaction_proactiveness = 20;
+unsigned int __read_mostly sysctl_compaction_proactiveness_screen_off = 20;
+
+void trigger_proactive_compaction(bool sysctl)
+{
+	int nid;
+
+	for_each_online_node(nid) {
+		pg_data_t *pgdat = NODE_DATA(nid);
+
+		if (sysctl) {
+			if (pgdat->proactive_compact_trigger)
+				continue;
+
+			pgdat->proactive_compact_trigger = true;
+		}
+		wake_up_interruptible(&pgdat->kcompactd_wait);
+	}
+}
 
 int compaction_proactiveness_sysctl_handler(struct ctl_table *table, int write,
 		void *buffer, size_t *length, loff_t *ppos)
 {
-	int rc, nid;
+	int rc;
 
 	rc = proc_dointvec_minmax(table, write, buffer, length, ppos);
 	if (rc)
 		return rc;
 
-	if (write && sysctl_compaction_proactiveness) {
-		for_each_online_node(nid) {
-			pg_data_t *pgdat = NODE_DATA(nid);
-
-			if (pgdat->proactive_compact_trigger)
-				continue;
-
-			pgdat->proactive_compact_trigger = true;
-			wake_up_interruptible(&pgdat->kcompactd_wait);
-		}
-	}
+	if (write && sysctl_compaction_proactiveness)
+		trigger_proactive_compaction(true);
 
 	return 0;
 }
