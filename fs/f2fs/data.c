@@ -575,12 +575,12 @@ static void __f2fs_submit_read_bio(struct f2fs_sb_info *sbi,
 			char *path, pathbuf[MAX_TRACE_PATHBUF_LEN];
 
 			path = android_fstrace_get_pathname(pathbuf,
-						MAX_TRACE_PATHBUF_LEN,
-						first_page->mapping->host);
+					MAX_TRACE_PATHBUF_LEN,
+					page_file_mapping(first_page)->host);
 
 			trace_android_fs_dataread_start(
-				first_page->mapping->host,
-				page_offset(first_page),
+				page_file_mapping(first_page)->host,
+				page_file_offset(first_page),
 				bio->bi_iter.bi_size,
 				current->pid,
 				path,
