@@ -23,6 +23,7 @@
 #include <net/genetlink.h>
 #include <linux/suspend.h>
 #include <linux/cpu_cooling.h>
+#include <soc/qcom/socinfo.h>
 
 #ifdef CONFIG_DRM
 #include <drm/drm_notifier_mi.h>
@@ -69,7 +70,9 @@ struct screen_monitor sm;
 #endif
 
 static struct device thermal_message_dev;
-static atomic_t switch_mode = ATOMIC_INIT(10);
+
+static atomic_t switch_mode = ATOMIC_INIT(0);
+
 static atomic_t temp_state = ATOMIC_INIT(0);
 static atomic_t balance_mode = ATOMIC_INIT(0);
 static atomic_t board_sensor_temp_comp_default = ATOMIC_INIT(0);
@@ -1970,6 +1973,31 @@ thermal_ambient_sensor_temp_store(struct device *dev,
 static DEVICE_ATTR(ambient_sensor_temp, 0664,
 		thermal_ambient_sensor_temp_show, thermal_ambient_sensor_temp_store);
 
+/**
+ * Atomic function to set initial thermal config
+ * For CountryIndia => Set thermal config to Game 2 [16]
+ * For other countries => Set thermal config to Dynamic (emulation) [10]
+ */
+inline int set_thermal_sconfig_init(void)
+{
+	int ret;
+	ret = atomic_read(&switch_mode);
+
+	if (ret < 0) {
+		return -EINVAL;
+	} else {
+		if (get_hw_country_version() == (uint32_t)CountryIndia) {
+			pr_info("%s: set sconfig to Game 2 for India\n", __func__);
+			atomic_set(&switch_mode, 16);
+		} else {
+			pr_info("%s: set sconfig to Dynamic (emulation)\n", __func__);
+			atomic_set(&switch_mode, 10);
+		}
+	}
+
+	return ret;
+}
+
 static int create_thermal_message_node(void)
 {
 	int ret = 0;
@@ -2031,6 +2059,10 @@ static int create_thermal_message_node(void)
 		ret = sysfs_create_file(&thermal_message_dev.kobj, &dev_attr_ambient_sensor_temp.attr);
 		if (ret < 0)
 			pr_warn("Thermal: create ambient sensor temp node failed\n");
+
+		ret = set_thermal_sconfig_init();
+		if (ret < 0)
+			pr_warn("Thermal: Initial thermal config set failed\n");
 	}
 	return ret;
 }
