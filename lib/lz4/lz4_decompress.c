@@ -330,7 +330,7 @@ static FORCE_INLINE int LZ4_decompress_generic(
 			}
 
 			/* Fastpath check: Avoids a branch in LZ4_wildCopy32 if true */
-			if (!(dict == usingExtDict) || (match >= lowPrefix)) {
+			if ((match >= lowPrefix)) {
 				if (offset >= 8) {
 					memcpy(op, match, 8);
 					memcpy(op + 8, match + 8, 8);
@@ -339,45 +339,6 @@ static FORCE_INLINE int LZ4_decompress_generic(
 					continue;
 				}
 			}
-		}
-
-		/* match starting within external dictionary */
-		if ((dict == usingExtDict) && (match < lowPrefix)) {
-			if (unlikely(op + length > oend - LASTLITERALS)) {
-				if (partialDecoding) {
-					/* reach end of buffer */
-					length =
-					    min(length, (size_t) (oend - op));
-				} else {
-					/* end-of-block condition violated */
-					goto _output_error;
-				}
-			}
-
-			if (length <= (size_t) (lowPrefix - match)) {
-				/* match fits entirely within external dictionary : just copy */
-				memmove(op, dictEnd - (lowPrefix - match),
-					length);
-				op += length;
-			} else {
-				/* match stretches into both external dict and current block */
-				size_t const copySize =
-				    (size_t) (lowPrefix - match);
-				size_t const restSize = length - copySize;
-				memcpy(op, dictEnd - copySize, copySize);
-				op += copySize;
-				if (restSize > (size_t) (op - lowPrefix)) {	/* overlap copy */
-					BYTE *const endOfMatch = op + restSize;
-					const BYTE *copyFrom = lowPrefix;
-					while (op < endOfMatch) {
-						*op++ = *copyFrom++;
-					}
-				} else {
-					memcpy(op, lowPrefix, restSize);
-					op += restSize;
-				}
-			}
-			continue;
 		}
 
 		/* copy match within block */
