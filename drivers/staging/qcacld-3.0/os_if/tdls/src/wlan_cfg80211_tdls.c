@@ -711,6 +711,11 @@ int wlan_cfg80211_tdls_get_all_peers(struct wlan_objmgr_vdev *vdev,
 
 	tdls_priv = osif_priv->osif_tdls;
 
+	if (!completion_done(&tdls_priv->tdls_user_cmd_comp)) {
+		osif_err("TDLS user cmd still in progress, reject this one");
+		return -EBUSY;
+	}
+
 	wlan_cfg80211_update_tdls_peers_rssi(vdev);
 
 	reinit_completion(&tdls_priv->tdls_user_cmd_comp);
