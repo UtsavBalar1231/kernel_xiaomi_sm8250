@@ -337,10 +337,17 @@ unlock_ret:
 	return err;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
+static int exfat_read_folio(struct file *file, struct folio *folio)
+{
+	return mpage_read_folio(folio, exfat_get_block);
+}
+#else
 static int exfat_readpage(struct file *file, struct page *page)
 {
 	return mpage_readpage(page, exfat_get_block);
 }
+#endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
 static void exfat_readahead(struct readahead_control *rac)
@@ -516,7 +523,11 @@ static const struct address_space_operations exfat_aops = {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
 	.invalidate_folio = block_invalidate_folio,
 #endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
+	.read_folio	= exfat_read_folio,
+#else
 	.readpage	= exfat_readpage,
+#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
 	.readahead	= exfat_readahead,
 #else
