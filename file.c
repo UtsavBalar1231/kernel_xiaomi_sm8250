@@ -372,7 +372,9 @@ out:
 
 static int exfat_ioctl_fitrim(struct inode *inode, unsigned long arg)
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 19, 0)
 	struct request_queue *q = bdev_get_queue(inode->i_sb->s_bdev);
+#endif
 	struct fstrim_range range;
 	int ret = 0;
 
@@ -389,8 +391,13 @@ static int exfat_ioctl_fitrim(struct inode *inode, unsigned long arg)
 	if (copy_from_user(&range, (struct fstrim_range __user *)arg, sizeof(range)))
 		return -EFAULT;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
+	range.minlen = max_t(unsigned int, range.minlen,
+				bdev_discard_granularity(inode->i_sb->s_bdev));
+#else
 	range.minlen = max_t(unsigned int, range.minlen,
 				q->limits.discard_granularity);
+#endif
 
 	ret = exfat_trim_fs(inode, &range);
 	if (ret < 0)
