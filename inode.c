@@ -388,10 +388,15 @@ static int exfat_write_begin(struct file *file, struct address_space *mapping,
 	int ret;
 
 	*pagep = NULL;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
+	ret = cont_write_begin(file, mapping, pos, len, pagep, fsdata,
+			       exfat_get_block,
+			       &EXFAT_I(mapping->host)->i_size_ondisk);
+#else
 	ret = cont_write_begin(file, mapping, pos, len, flags, pagep, fsdata,
 			       exfat_get_block,
 			       &EXFAT_I(mapping->host)->i_size_ondisk);
-
+#endif
 	if (ret < 0)
 		exfat_write_failed(mapping, pos+len);
 
