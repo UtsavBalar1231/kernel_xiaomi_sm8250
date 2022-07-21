@@ -559,14 +559,21 @@ out:
 	if (opts->allow_utime == -1)
 		opts->allow_utime = ~opts->fs_dmask & (0022);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
+	if (opts->discard && !bdev_max_discard_sectors(sb->s_bdev)) {
+		exfat_warn(sb, "mounting with \"discard\" option, but the device does not support discard");
+		opts->discard = 0;
+	}
+#else
 	if (opts->discard) {
 		struct request_queue *q = bdev_get_queue(sb->s_bdev);
 
-		if (!blk_queue_discard(q))
-			exfat_msg(sb, KERN_WARNING,
-					"mounting with \"discard\" option, but the device does not support discard");
-		opts->discard = 0;
+		if (!blk_queue_discard(q)) {
+			exfat_warn(sb, "mounting with \"discard\" option, but the device does not support discard");
+			opts->discard = 0;
+		}
 	}
+#endif
 
 	return 0;
 }
@@ -896,6 +903,12 @@ static int exfat_fill_super(struct super_block *sb, void *data, int silent)
 	if (opts->allow_utime == (unsigned short)-1)
 		opts->allow_utime = ~opts->fs_dmask & 0022;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
+	if (opts->discard && !bdev_max_discard_sectors(sb->s_bdev)) {
+		exfat_warn(sb, "mounting with \"discard\" option, but the device does not support discard");
+		opts->discard = 0;
+	}
+#else
 	if (opts->discard) {
 		struct request_queue *q = bdev_get_queue(sb->s_bdev);
 
@@ -904,6 +917,7 @@ static int exfat_fill_super(struct super_block *sb, void *data, int silent)
 			opts->discard = 0;
 		}
 	}
+#endif
 #else
 	struct exfat_sb_info *sbi;
 
