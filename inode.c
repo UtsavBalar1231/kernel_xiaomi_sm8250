@@ -381,9 +381,15 @@ static void exfat_write_failed(struct address_space *mapping, loff_t to)
 	}
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
+static int exfat_write_begin(struct file *file, struct address_space *mapping,
+		loff_t pos, unsigned int len,
+		struct page **pagep, void **fsdata)
+#else
 static int exfat_write_begin(struct file *file, struct address_space *mapping,
 		loff_t pos, unsigned int len, unsigned int flags,
 		struct page **pagep, void **fsdata)
+#endif
 {
 	int ret;
 
