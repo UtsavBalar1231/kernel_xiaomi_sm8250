@@ -379,6 +379,11 @@ static void exfat_write_failed(struct address_space *mapping, loff_t to)
 
 	if (to > i_size_read(inode)) {
 		truncate_pagecache(inode, i_size_read(inode));
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
+		inode->i_mtime = inode->i_ctime = current_time(inode);
+#else
+		inode->i_mtime = inode->i_ctime = CURRENT_TIME_SEC;
+#endif
 		exfat_truncate(inode, EXFAT_I(inode)->i_size_aligned);
 	}
 }
