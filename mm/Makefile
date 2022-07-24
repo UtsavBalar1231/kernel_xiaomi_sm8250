@@ -23,9 +23,9 @@ KCOV_INSTRUMENT_vmstat.o := n
 
 mmu-y			:= nommu.o
 mmu-$(CONFIG_MMU)	:= gup.o highmem.o memory.o mincore.o \
-			   mlock.o mmap.o mprotect.o mremap.o msync.o \
-			   page_vma_mapped.o pagewalk.o pgtable-generic.o \
-			   rmap.o vmalloc.o
+			   mlock.o mmap.o mmu_gather.o mprotect.o mremap.o \
+			   msync.o page_vma_mapped.o pagewalk.o \
+			   pgtable-generic.o rmap.o vmalloc.o
 
 
 ifdef CONFIG_MM_EVENT_STAT
@@ -104,6 +104,7 @@ obj-$(CONFIG_USERFAULTFD) += userfaultfd.o
 obj-$(CONFIG_IDLE_PAGE_TRACKING) += page_idle.o
 obj-$(CONFIG_FRAME_VECTOR) += frame_vector.o
 obj-$(CONFIG_DEBUG_PAGE_REF) += debug_page_ref.o
+obj-$(CONFIG_DAMON) += damon/
 obj-$(CONFIG_HARDENED_USERCOPY) += usercopy.o
 obj-$(CONFIG_PERCPU_STATS) += percpu-stats.o
 obj-$(CONFIG_HMM) += hmm.o

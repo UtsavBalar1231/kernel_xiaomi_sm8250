@@ -912,17 +912,12 @@ out:
 static int ufs_qcom_full_reset(struct ufs_hba *hba)
 {
 	int ret = -ENOTSUPP;
-	bool reenable_intr = false;
 
 	if (!hba->core_reset) {
 		dev_err(hba->dev, "%s: failed, err = %d\n", __func__,
 				ret);
 		goto out;
 	}
-
-        reenable_intr = hba->is_irq_enabled;
-        disable_irq(hba->irq);
-        hba->is_irq_enabled = false;
 
 	ret = reset_control_assert(hba->core_reset);
 	if (ret) {
@@ -942,13 +937,6 @@ static int ufs_qcom_full_reset(struct ufs_hba *hba)
 	if (ret)
 		dev_err(hba->dev, "%s: core_reset deassert failed, err = %d\n",
 				__func__, ret);
-
-	usleep_range(1000, 1100);
-
-	if (reenable_intr) {
-                enable_irq(hba->irq);
-                hba->is_irq_enabled = true;
-        }
 
 out:
 	return ret;
@@ -1549,7 +1537,6 @@ static void ufs_qcom_set_caps(struct ufs_hba *hba)
 	if (!host->disable_lpm) {
 		hba->caps |= UFSHCD_CAP_CLK_GATING;
 		hba->caps |= UFSHCD_CAP_HIBERN8_WITH_CLK_GATING;
-		hba->caps |= UFSHCD_CAP_CLK_SCALING;
 	}
 	hba->caps |= UFSHCD_CAP_AUTO_BKOPS_SUSPEND;
 
@@ -3057,6 +3044,7 @@ static struct platform_driver ufs_qcom_pltform = {
 		.name	= "ufshcd-qcom",
 		.pm	= &ufs_qcom_pm_ops,
 		.of_match_table = of_match_ptr(ufs_qcom_of_match),
+		.probe_type = PROBE_PREFER_ASYNCHRONOUS,
 	},
 };
 module_platform_driver(ufs_qcom_pltform);

@@ -393,3 +393,4 @@
 383  common	rseq			sys_rseq			compat_sys_rseq
 424  common	pidfd_send_signal	sys_pidfd_send_signal		sys_pidfd_send_signal
 434  common	pidfd_open		sys_pidfd_open			sys_pidfd_open
+440  common	process_madvise		sys_process_madvise		sys_process_madvise

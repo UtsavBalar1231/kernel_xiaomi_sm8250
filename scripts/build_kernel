@@ -163,6 +163,26 @@ function disable_lto() {
     cd ../ || exit
 }
 
+function pack_image_build() {
+    mkdir -p anykernel/kernels/$1
+
+    # Check if the kernel is built
+    if [[ -f ${OUT_DIR}/System.map ]]; then
+        if [[ -f ${OUT_DIR}/arch/arm64/boot/Image.gz ]]; then
+            cp ${OUT_DIR}/arch/arm64/boot/Image.gz anykernel/kernels/$1
+        elif [[ -f ${OUT_DIR}/arch/arm64/boot/Image ]]; then
+            cp ${OUT_DIR}/arch/arm64/boot/Image anykernel/kernels/$1
+        else
+            tg_post_error $1
+        fi
+    else
+        tg_post_error $1
+    fi
+
+    cp ${OUT_DIR}/arch/arm64/boot/dtb anykernel/kernels/$1
+    cp ${OUT_DIR}/arch/arm64/boot/dtbo.img anykernel/kernels/$1
+}
+
 START=$(date +"%s")
 
 # Set compiler Path
@@ -183,19 +203,7 @@ fi
 # make -j${KEBABS} ${ARGS} 2>&1 | tee build.log
 # find ${OUT_DIR}/$dts_source -name '*.dtb' -exec cat {} + > ${OUT_DIR}/arch/arm64/boot/dtb
 
-# mkdir -p anykernel/kernels/$os
-# # Import Anykernel3 folder
-# if [[ -f ${OUT_DIR}/arch/arm64/boot/Image.gz ]]; then
-#     cp ${OUT_DIR}/arch/arm64/boot/Image.gz anykernel/kernels/$os
-# else
-#   if [[ -f ${OUT_DIR}/arch/arm64/boot/Image ]]; then
-#       cp ${OUT_DIR}/arch/arm64/boot/Image anykernel/kernels/$os
-#   else
-#       tg_post_error aosp
-#   fi
-# fi
-# cp ${OUT_DIR}/arch/arm64/boot/dtb anykernel/kernels/$os
-# cp ${OUT_DIR}/arch/arm64/boot/dtbo.img anykernel/kernels/$os
+# pack_image_build ${os}
 # echo "------ Finishing AOSP Build ------"
 
 # MIUI Build
@@ -211,7 +219,6 @@ scripts/config --file ${OUT_DIR}/.config \
     --set-str STATIC_USERMODEHELPER_PATH /system/bin/micd \
     -e BOOT_INFO \
     -e BINDER_OPT \
-    -e DEBUG_KERNEL \
     -e IPC_LOGGING \
     -e KPERFEVENTS \
     -e LAST_TOUCH_EVENTS \
@@ -244,19 +251,7 @@ make -j${KEBABS} ${ARGS} CC="ccache clang" HOSTCC="ccache gcc" HOSTCXX="ccache g
 
 find ${OUT_DIR}/$dts_source -name '*.dtb' -exec cat {} + >${OUT_DIR}/arch/arm64/boot/dtb
 
-mkdir -p anykernel/kernels/$os
-# Import Anykernel3 folder
-if [[ -f ${OUT_DIR}/arch/arm64/boot/Image.gz ]]; then
-    cp ${OUT_DIR}/arch/arm64/boot/Image.gz anykernel/kernels/$os
-else
-    if [[ -f ${OUT_DIR}/arch/arm64/boot/Image ]]; then
-        cp ${OUT_DIR}/arch/arm64/boot/Image anykernel/kernels/$os
-    else
-        tg_post_error miui
-    fi
-fi
-cp ${OUT_DIR}/arch/arm64/boot/dtb anykernel/kernels/$os
-cp ${OUT_DIR}/arch/arm64/boot/dtbo.img anykernel/kernels/$os
+pack_image_build ${os}
 
 git checkout arch/arm64/boot/dts/vendor &>/dev/null
 echo "------ Finishing MIUI Build ------"
@@ -286,19 +281,7 @@ echo "------ Finishing MIUI Build ------"
 
 # find ${OUT_DIR}/$dts_source -name '*.dtb' -exec cat {} + > ${OUT_DIR}/arch/arm64/boot/dtb
 
-# mkdir -p anykernel/kernels/$os
-# # Import Anykernel3 folder
-# if [[ -f ${OUT_DIR}/arch/arm64/boot/Image.gz ]]; then
-#     cp ${OUT_DIR}/arch/arm64/boot/Image.gz anykernel/kernels/$os
-# else
-#   if [[ -f ${OUT_DIR}/arch/arm64/boot/Image ]]; then
-#       cp ${OUT_DIR}/arch/arm64/boot/Image anykernel/kernels/$os
-#   else
-#       tg_post_error aospa
-#   fi
-# fi
-# cp ${OUT_DIR}/arch/arm64/boot/dtb anykernel/kernels/$os
-# cp ${OUT_DIR}/arch/arm64/boot/dtbo.img anykernel/kernels/$os
+pack_image_build ${os}
 # echo "------ Finishing AOSPA Build ------"
 
 END=$(date +"%s")
@@ -307,8 +290,10 @@ DIFF=$((END - START))
 cd anykernel || exit
 zip -r9 "${ZIPNAME}" ./* -x .git .gitignore ./*.zip
 
-FILEID=$(pd upload $ZIPNAME)
+FILE=$(gdrive upload --share $ZIPNAME)
+FILEID=$(echo $FILE | awk {'print $7'})
 
+echo "File upload to gdrive"
 echo $FILEID
 
 CHECKER=$(find ./ -maxdepth 1 -type f -name ${ZIPNAME} -printf "%s\n")

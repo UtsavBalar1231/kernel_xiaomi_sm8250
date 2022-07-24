@@ -20,6 +20,7 @@
  */
 
 #include <linux/dma-noncoherent.h>
+#include <linux/pagewalk.h>
 
 #include <asm/cpuinfo.h>
 #include <asm/spr_defs.h>
@@ -47,6 +48,10 @@ page_set_nocache(pte_t *pte, unsigned long addr,
 	return 0;
 }
 
+static const struct mm_walk_ops set_nocache_walk_ops = {
+	.pte_entry		= page_set_nocache,
+};
+
 static int
 page_clear_nocache(pte_t *pte, unsigned long addr,
 		   unsigned long next, struct mm_walk *walk)
@@ -61,6 +66,10 @@ page_clear_nocache(pte_t *pte, unsigned long addr,
 
 	return 0;
 }
+
+static const struct mm_walk_ops clear_nocache_walk_ops = {
+	.pte_entry		= page_clear_nocache,
+};
 
 /*
  * Alloc "coherent" memory, which for OpenRISC means simply uncached.
@@ -84,10 +93,6 @@ arch_dma_alloc(struct device *dev, size_t size, dma_addr_t *dma_handle,
 {
 	unsigned long va;
 	void *page;
-	struct mm_walk walk = {
-		.pte_entry = page_set_nocache,
-		.mm = &init_mm
-	};
 
 	page = alloc_pages_exact(size, gfp);
 	if (!page)
@@ -103,10 +108,10 @@ arch_dma_alloc(struct device *dev, size_t size, dma_addr_t *dma_handle,
 		 * We need to iterate through the pages, clearing the dcache for
 		 * them and setting the cache-inhibit bit.
 		 */
-		if (walk_page_range(va, va + size, &walk)) {
+		if (walk_page_range(&init_mm, va, va + size, &set_nocache_walk_ops,
+				NULL)) {
 			free_pages_exact(page, size);
 			return NULL;
-		}
 	}
 
 	return (void *)va;
@@ -117,14 +122,11 @@ arch_dma_free(struct device *dev, size_t size, void *vaddr,
 		dma_addr_t dma_handle, unsigned long attrs)
 {
 	unsigned long va = (unsigned long)vaddr;
-	struct mm_walk walk = {
-		.pte_entry = page_clear_nocache,
-		.mm = &init_mm
-	};
 
 	if ((attrs & DMA_ATTR_NON_CONSISTENT) == 0) {
 		/* walk_page_range shouldn't be able to fail here */
-		WARN_ON(walk_page_range(va, va + size, &walk));
+		WARN_ON(walk_page_range(&init_mm, va, va + size,
+				&clear_nocache_walk_ops, NULL));
 	}
 
 	free_pages_exact(vaddr, size);
