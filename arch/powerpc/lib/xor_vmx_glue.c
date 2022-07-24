@@ -16,51 +16,47 @@
 #include <asm/xor_altivec.h>
 #include "xor_vmx.h"
 
-void xor_altivec_2(unsigned long bytes, unsigned long * __restrict p1,
-		   const unsigned long * __restrict p2)
+void xor_altivec_2(unsigned long bytes, unsigned long *v1_in,
+		   unsigned long *v2_in)
 {
 	preempt_disable();
 	enable_kernel_altivec();
-	__xor_altivec_2(bytes, p1, p2);
+	__xor_altivec_2(bytes, v1_in, v2_in);
 	disable_kernel_altivec();
 	preempt_enable();
 }
 EXPORT_SYMBOL(xor_altivec_2);
 
-void xor_altivec_3(unsigned long bytes, unsigned long * __restrict p1,
-		   const unsigned long * __restrict p2,
-		   const unsigned long * __restrict p3)
+void xor_altivec_3(unsigned long bytes,  unsigned long *v1_in,
+		   unsigned long *v2_in, unsigned long *v3_in)
 {
 	preempt_disable();
 	enable_kernel_altivec();
-	__xor_altivec_3(bytes, p1, p2, p3);
+	__xor_altivec_3(bytes, v1_in, v2_in, v3_in);
 	disable_kernel_altivec();
 	preempt_enable();
 }
 EXPORT_SYMBOL(xor_altivec_3);
 
-void xor_altivec_4(unsigned long bytes, unsigned long * __restrict p1,
-		   const unsigned long * __restrict p2,
-		   const unsigned long * __restrict p3,
-		   const unsigned long * __restrict p4)
+void xor_altivec_4(unsigned long bytes,  unsigned long *v1_in,
+		   unsigned long *v2_in, unsigned long *v3_in,
+		   unsigned long *v4_in)
 {
 	preempt_disable();
 	enable_kernel_altivec();
-	__xor_altivec_4(bytes, p1, p2, p3, p4);
+	__xor_altivec_4(bytes, v1_in, v2_in, v3_in, v4_in);
 	disable_kernel_altivec();
 	preempt_enable();
 }
 EXPORT_SYMBOL(xor_altivec_4);
 
-void xor_altivec_5(unsigned long bytes, unsigned long * __restrict p1,
-		   const unsigned long * __restrict p2,
-		   const unsigned long * __restrict p3,
-		   const unsigned long * __restrict p4,
-		   const unsigned long * __restrict p5)
+void xor_altivec_5(unsigned long bytes,  unsigned long *v1_in,
+		   unsigned long *v2_in, unsigned long *v3_in,
+		   unsigned long *v4_in, unsigned long *v5_in)
 {
 	preempt_disable();
 	enable_kernel_altivec();
-	__xor_altivec_5(bytes, p1, p2, p3, p4, p5);
+	__xor_altivec_5(bytes, v1_in, v2_in, v3_in, v4_in, v5_in);
 	disable_kernel_altivec();
 	preempt_enable();
 }

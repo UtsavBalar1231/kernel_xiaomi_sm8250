@@ -21,8 +21,7 @@
  */
 
 static void
-sparc_2(unsigned long bytes, unsigned long * __restrict p1,
-	const unsigned long * __restrict p2)
+sparc_2(unsigned long bytes, unsigned long *p1, unsigned long *p2)
 {
 	int lines = bytes / (sizeof (long)) / 8;
 
@@ -59,9 +58,8 @@ sparc_2(unsigned long bytes, unsigned long * __restrict p1,
 }
 
 static void
-sparc_3(unsigned long bytes, unsigned long * __restrict p1,
-	const unsigned long * __restrict p2,
-	const unsigned long * __restrict p3)
+sparc_3(unsigned long bytes, unsigned long *p1, unsigned long *p2,
+	unsigned long *p3)
 {
 	int lines = bytes / (sizeof (long)) / 8;
 
@@ -111,10 +109,8 @@ sparc_3(unsigned long bytes, unsigned long * __restrict p1,
 }
 
 static void
-sparc_4(unsigned long bytes, unsigned long * __restrict p1,
-	const unsigned long * __restrict p2,
-	const unsigned long * __restrict p3,
-	const unsigned long * __restrict p4)
+sparc_4(unsigned long bytes, unsigned long *p1, unsigned long *p2,
+	unsigned long *p3, unsigned long *p4)
 {
 	int lines = bytes / (sizeof (long)) / 8;
 
@@ -177,11 +173,8 @@ sparc_4(unsigned long bytes, unsigned long * __restrict p1,
 }
 
 static void
-sparc_5(unsigned long bytes, unsigned long * __restrict p1,
-	const unsigned long * __restrict p2,
-	const unsigned long * __restrict p3,
-	const unsigned long * __restrict p4,
-	const unsigned long * __restrict p5)
+sparc_5(unsigned long bytes, unsigned long *p1, unsigned long *p2,
+	unsigned long *p3, unsigned long *p4, unsigned long *p5)
 {
 	int lines = bytes / (sizeof (long)) / 8;
 
