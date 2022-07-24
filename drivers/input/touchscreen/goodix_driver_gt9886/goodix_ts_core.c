@@ -3056,7 +3056,7 @@ int goodix_palm_sensor_write(int value)
 	return ret;
 }
 
-static u8 goodix_panel_color_read()
+static u8 goodix_panel_color_read(void)
 {
 	if (!goodix_core_data)
 		return 0;
@@ -3064,7 +3064,7 @@ static u8 goodix_panel_color_read()
 	return goodix_core_data->lockdown_info[2];
 }
 
-static u8 goodix_panel_vendor_read()
+static u8 goodix_panel_vendor_read(void)
 {
 	if (!goodix_core_data)
 		return 0;
@@ -3072,7 +3072,7 @@ static u8 goodix_panel_vendor_read()
 	return goodix_core_data->lockdown_info[0];
 }
 
-static u8 goodix_panel_display_read()
+static u8 goodix_panel_display_read(void)
 {
 	if (!goodix_core_data)
 		return 0;

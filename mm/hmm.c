@@ -17,7 +17,7 @@
  * Refer to include/linux/hmm.h for information about heterogeneous memory
  * management or HMM for short.
  */
-#include <linux/mm.h>
+#include <linux/pagewalk.h>
 #include <linux/hmm.h>
 #include <linux/init.h>
 #include <linux/rmap.h>
@@ -787,6 +787,13 @@ bool hmm_vma_range_done(struct hmm_range *range)
 }
 EXPORT_SYMBOL(hmm_vma_range_done);
 
+static const struct mm_walk_ops hmm_walk_ops = {
+	.pud_entry	= hmm_vma_walk_pud,
+	.pmd_entry	= hmm_vma_walk_pmd,
+	.pte_hole	= hmm_vma_walk_hole,
+	.hugetlb_entry	= hmm_vma_walk_hugetlb_entry,
+};
+
 /*
  * hmm_vma_fault() - try to fault some address in a virtual address range
  * @range: range being faulted
@@ -837,9 +844,8 @@ EXPORT_SYMBOL(hmm_vma_range_done);
 int hmm_vma_fault(struct hmm_range *range, bool block)
 {
 	struct vm_area_struct *vma = range->vma;
-	unsigned long start = range->start;
+	unsigned long start = range->start, end;
 	struct hmm_vma_walk hmm_vma_walk;
-	struct mm_walk mm_walk;
 	struct hmm *hmm;
 	int ret;
 
@@ -885,19 +891,14 @@ int hmm_vma_fault(struct hmm_range *range, bool block)
 	hmm_vma_walk.fault = true;
 	hmm_vma_walk.block = block;
 	hmm_vma_walk.range = range;
-	mm_walk.private = &hmm_vma_walk;
-	hmm_vma_walk.last = range->start;
+	hmm_vma_walk.last = start;
+	end = min(range->end, vma->vm_end);
 
-	mm_walk.vma = vma;
-	mm_walk.mm = vma->vm_mm;
-	mm_walk.pte_entry = NULL;
-	mm_walk.test_walk = NULL;
-	mm_walk.hugetlb_entry = NULL;
-	mm_walk.pmd_entry = hmm_vma_walk_pmd;
-	mm_walk.pte_hole = hmm_vma_walk_hole;
-
+	walk_page_range(vma->vm_mm, start, end, &hmm_walk_ops,
+			&hmm_vma_walk);
 	do {
-		ret = walk_page_range(start, range->end, &mm_walk);
+		ret = walk_page_range(vma->vm_mm, start, end,
+				&hmm_walk_ops, &hmm_vma_walk);
 		start = hmm_vma_walk.last;
 	} while (ret == -EAGAIN);
 

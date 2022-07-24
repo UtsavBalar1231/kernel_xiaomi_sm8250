@@ -400,3 +400,4 @@
 386	i386	rseq			sys_rseq			__ia32_sys_rseq
 424	i386	pidfd_send_signal	sys_pidfd_send_signal		__ia32_sys_pidfd_send_signal
 434	i386	pidfd_open		sys_pidfd_open			__ia32_sys_pidfd_open
+440	i386	process_madvise		sys_process_madvise

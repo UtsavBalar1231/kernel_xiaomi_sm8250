@@ -26,6 +26,7 @@ the Linux memory management.
    :maxdepth: 1
 
    concepts
+   damon/index
    hugetlbpage
    idle_page_tracking
    ksm

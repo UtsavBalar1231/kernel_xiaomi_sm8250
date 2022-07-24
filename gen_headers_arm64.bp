@@ -227,6 +227,7 @@ gen_headers_out_arm64 = [
     "linux/flat.h",
     "linux/fou.h",
     "linux/fpga-dfl.h",
+    "linux/f2fs.h",
     "linux/fs.h",
     "linux/fscrypt.h",
     "linux/fsi.h",
