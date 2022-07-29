@@ -1140,6 +1140,20 @@ struct rcpi_info {
 
 struct hdd_context;
 
+#ifdef WLAN_FEATURE_DYNAMIC_RX_AGGREGATION
+/**
+ * enum qdisc_filter_status - QDISC filter status
+ * @QDISC_FILTER_RTNL_LOCK_FAIL: rtnl lock acquire failed
+ * @QDISC_FILTER_PRIO_MATCH: qdisc filter with priority match
+ * @QDISC_FILTER_PRIO_MISMATCH: no filter match with configured priority
+ */
+enum qdisc_filter_status {
+	QDISC_FILTER_RTNL_LOCK_FAIL,
+	QDISC_FILTER_PRIO_MATCH,
+	QDISC_FILTER_PRIO_MISMATCH,
+};
+#endif
+
 /**
  * struct hdd_adapter - hdd vdev/net_device context
  * @vdev: object manager vdev context
@@ -1466,7 +1480,7 @@ struct hdd_adapter {
 	bool handle_feature_update;
 
 	qdf_work_t netdev_features_update_work;
-	uint8_t gro_disallowed[DP_MAX_RX_THREADS];
+	qdf_atomic_t gro_disallowed;
 	uint8_t gro_flushed[DP_MAX_RX_THREADS];
 	bool delete_in_progress;
 	qdf_atomic_t net_dev_hold_ref_count[NET_DEV_HOLD_ID_MAX];
@@ -1782,10 +1796,10 @@ struct hdd_adapter_ops_history {
  * @sar_cmd_params: SAR command params to be configured to the FW
  * @rx_aggregation: rx aggregation enable or disable state
  * @gro_force_flush: gro force flushed indication flag
- * @force_gro_enable: force GRO enable or disable flag
+ * @tc_based_dyn_gro: TC based dynamic GRO enable/disable flag
+ * @tc_ingress_prio: TC ingress priority
  * @adapter_ops_wq: High priority workqueue for handling adapter operations
  * @is_dual_mac_cfg_updated: indicate whether dual mac cfg has been updated
- * @rx_skip_qdisc_chk_conc: flag to skip ingress qdisc check in concurrency
  */
 struct hdd_context {
 	struct wlan_objmgr_psoc *psoc;
@@ -2113,7 +2127,8 @@ struct hdd_context {
 	struct {
 		qdf_atomic_t rx_aggregation;
 		uint8_t gro_force_flush[DP_MAX_RX_THREADS];
-		bool force_gro_enable;
+		bool tc_based_dyn_gro;
+		uint32_t tc_ingress_prio;
 	} dp_agg_param;
 #ifdef FW_THERMAL_THROTTLE_SUPPORT
 	uint8_t dutycycle_off_percent;
@@ -2122,7 +2137,6 @@ struct hdd_context {
 	qdf_workqueue_t *adapter_ops_wq;
 	struct hdd_adapter_ops_history adapter_ops_history;
 	bool is_dual_mac_cfg_updated;
-	qdf_atomic_t rx_skip_qdisc_chk_conc;
 };
 
 /**
