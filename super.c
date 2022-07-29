@@ -547,9 +547,9 @@ static int parse_options(struct super_block *sb, char *options, int silent,
 				break;
 			default:
 				if (!silent) {
-					exfat_msg(sb, KERN_ERR,
-							"unrecognized mount option \"%s\" or missing value",
-							p);
+					exfat_err(sb,
+						  "unrecognized mount option \"%s\" or missing value",
+						  p);
 				}
 				return -EINVAL;
 		}
@@ -938,7 +938,7 @@ static int exfat_fill_super(struct super_block *sb, void *data, int silent)
 			DEFAULT_RATELIMIT_BURST);
 	err = parse_options(sb, data, silent, &sbi->options);
 	if (err) {
-		exfat_msg(sb, KERN_ERR, "failed to parse options");
+		exfat_err(sb, "failed to parse options");
 		goto check_nls_io;
 	}
 #endif
