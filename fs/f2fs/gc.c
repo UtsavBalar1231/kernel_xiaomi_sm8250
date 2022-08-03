@@ -185,7 +185,9 @@ do_gc:
 
 			/* if return value is not zero, no victim was selected */
 			if (f2fs_gc(sbi, &gc_control)) {
-				wait_ms = gc_th->no_gc_sleep_time;
+				/* don't bother wait_ms by foreground gc */
+				if (!foreground)
+					wait_ms = gc_th->no_gc_sleep_time;
 				break;
 			}
 

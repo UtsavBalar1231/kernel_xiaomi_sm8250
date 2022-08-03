@@ -232,7 +232,6 @@ enum {
 #define CP_PAUSE	0x00000040
 #define CP_RESIZE 	0x00000080
 
-#define MAX_DISCARD_BLOCKS(sbi)		BLKS_PER_SEC(sbi)
 #define DEF_MAX_DISCARD_REQUEST		8	/* issue 8 discards per round */
 #define DEF_MIN_DISCARD_ISSUE_TIME	50	/* 50 ms, if exists */
 #define DEF_MID_DISCARD_ISSUE_TIME	500	/* 500 ms, if device busy */
@@ -760,6 +759,7 @@ enum {
 	FI_ENABLE_COMPRESS,	/* enable compression in "user" compression mode */
 	FI_COMPRESS_RELEASED,	/* compressed blocks were released */
 	FI_ALIGNED_WRITE,	/* enable aligned write */
+	FI_COW_FILE,		/* indicate COW file */
 	FI_MAX,			/* max flag, never be used */
 };
 
@@ -818,6 +818,8 @@ struct f2fs_inode_info {
 	unsigned char i_compress_level;		/* compress level (lz4hc,zstd) */
 	unsigned short i_compress_flag;		/* compress flag */
 	unsigned int i_cluster_size;		/* cluster size */
+
+	unsigned int atomic_write_cnt;
 };
 
 static inline void get_extent_info(struct extent_info *ext,
@@ -1206,6 +1208,7 @@ struct f2fs_io_info {
 	bool retry;		/* need to reallocate block address */
 	int compr_blocks;	/* # of compressed block addresses */
 	bool encrypted;		/* indicate file is encrypted */
+	bool post_read;		/* require post read */
 	enum iostat_type io_type;	/* io type */
 	struct writeback_control *io_wbc; /* writeback control */
 	struct bio **bio;		/* bio for ipu */
@@ -1829,6 +1832,12 @@ struct f2fs_sb_info {
 	int max_fragment_chunk;			/* max chunk size for block fragmentation mode */
 	int max_fragment_hole;			/* max hole size for block fragmentation mode */
 
+	/* For atomic write statistics */
+	atomic64_t current_atomic_write;
+	s64 peak_atomic_write;
+	u64 committed_atomic_block;
+	u64 revoked_atomic_block;
+
 #ifdef CONFIG_F2FS_FS_COMPRESSION
 	struct kmem_cache *page_array_slab;	/* page array entry */
 	unsigned int page_array_slab_size;	/* default page array slab size */
@@ -2449,6 +2458,28 @@ static inline void inode_dec_dirty_pages(struct inode *inode)
 				F2FS_DIRTY_DENTS : F2FS_DIRTY_DATA);
 	if (IS_NOQUOTA(inode))
 		dec_page_count(F2FS_I_SB(inode), F2FS_DIRTY_QDATA);
+}
+
+static inline void inc_atomic_write_cnt(struct inode *inode)
+{
+	struct f2fs_sb_info *sbi = F2FS_I_SB(inode);
+	struct f2fs_inode_info *fi = F2FS_I(inode);
+	u64 current_write;
+
+	fi->atomic_write_cnt++;
+	atomic64_inc(&sbi->current_atomic_write);
+	current_write = atomic64_read(&sbi->current_atomic_write);
+	if (current_write > sbi->peak_atomic_write)
+		sbi->peak_atomic_write = current_write;
+}
+
+static inline void release_atomic_write_cnt(struct inode *inode)
+{
+	struct f2fs_sb_info *sbi = F2FS_I_SB(inode);
+	struct f2fs_inode_info *fi = F2FS_I(inode);
+
+	atomic64_sub(fi->atomic_write_cnt, &sbi->current_atomic_write);
+	fi->atomic_write_cnt = 0;
 }
 
 static inline s64 get_pages(struct f2fs_sb_info *sbi, int count_type)
@@ -3233,6 +3264,11 @@ static inline bool f2fs_is_pinned_file(struct inode *inode)
 static inline bool f2fs_is_atomic_file(struct inode *inode)
 {
 	return is_inode_flag_set(inode, FI_ATOMIC_FILE);
+}
+
+static inline bool f2fs_is_cow_file(struct inode *inode)
+{
+	return is_inode_flag_set(inode, FI_COW_FILE);
 }
 
 static inline bool f2fs_is_first_block_written(struct inode *inode)
@@ -4497,7 +4533,7 @@ static inline bool f2fs_low_mem_mode(struct f2fs_sb_info *sbi)
 static inline bool f2fs_may_compress(struct inode *inode)
 {
 	if (IS_SWAPFILE(inode) || f2fs_is_pinned_file(inode) ||
-				f2fs_is_atomic_file(inode))
+		f2fs_is_atomic_file(inode) || f2fs_has_inline_data(inode))
 		return false;
 	return S_ISREG(inode->i_mode) || S_ISDIR(inode->i_mode);
 }
@@ -4559,12 +4595,7 @@ static inline bool f2fs_force_buffered_io(struct inode *inode,
 	/* disallow direct IO if any of devices has unaligned blksize */
 	if (f2fs_is_multi_device(sbi) && !sbi->aligned_blksize)
 		return true;
-	/*
-	 * for blkzoned device, fallback direct IO to buffered IO, so
-	 * all IOs can be serialized by log-structured write.
-	 */
-	if (f2fs_sb_has_blkzoned(sbi))
-		return true;
+
 	if (f2fs_lfs_mode(sbi) && (rw == WRITE)) {
 		if (block_unaligned_IO(inode, iocb, iter))
 			return true;
