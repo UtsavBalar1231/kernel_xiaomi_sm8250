@@ -466,8 +466,12 @@ static void cds_cdp_cfg_attach(struct wlan_objmgr_psoc *psoc)
 	cdp_cfg.enable_data_stall_detection =
 		cfg_get(psoc, CFG_DP_ENABLE_DATA_STALL_DETECTION);
 	gro_bit_set = cfg_get(psoc, CFG_DP_GRO);
-	if (gro_bit_set & DP_GRO_ENABLE_BIT_SET)
+	if (gro_bit_set & DP_GRO_ENABLE_BIT_SET) {
 		cdp_cfg.gro_enable = true;
+		if (gro_bit_set & DP_TC_BASED_DYNAMIC_GRO)
+			cdp_cfg.tc_based_dyn_gro = true;
+	}
+	cdp_cfg.tc_ingress_prio = cfg_get(psoc, CFG_DP_TC_INGRESS_PRIO);
 	cdp_cfg.enable_flow_steering =
 		cfg_get(psoc, CFG_DP_FLOW_STEERING_ENABLED);
 	cdp_cfg.disable_intra_bss_fwd =

@@ -9969,7 +9969,8 @@ static void __hdd_bus_bw_work_handler(struct hdd_context *hdd_ctx)
 			continue;
 		}
 
-		if (hdd_ctx->dp_agg_param.tc_based_dyn_gro)
+		if (hdd_ctx->dp_agg_param.tc_based_dyn_gro ||
+		    hdd_ctx->ol_enable == CFG_DYNAMIC_GRO_ENABLED)
 			hdd_rx_check_qdisc_for_adapter(adapter);
 
 		tx_packets += HDD_BW_GET_DIFF(adapter->stats.tx_packets,

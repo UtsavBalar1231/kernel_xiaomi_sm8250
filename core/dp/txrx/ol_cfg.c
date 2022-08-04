@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2011-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -206,6 +207,8 @@ struct cdp_cfg *ol_pdev_cfg_attach(qdf_device_t osdev, void *pcfg_param)
 		cfg_param->nan_ip_tcp_udp_checksum_offload;
 	cfg_ctx->ce_classify_enabled = cfg_param->ce_classify_enabled;
 	cfg_ctx->gro_enable = cfg_param->gro_enable;
+	cfg_ctx->tc_based_dyn_gro = cfg_param->tc_based_dyn_gro;
+	cfg_ctx->tc_ingress_prio = cfg_param->tc_ingress_prio;
 	cfg_ctx->tso_enable = cfg_param->tso_enable;
 	cfg_ctx->lro_enable = cfg_param->lro_enable;
 	cfg_ctx->sg_enable = cfg_param->sg_enable;

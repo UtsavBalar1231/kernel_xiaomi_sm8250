@@ -1573,6 +1573,9 @@ static void hdd_resolve_rx_ol_mode(struct hdd_context *hdd_ctx)
 	} else if (cdp_cfg_get(soc, cfg_dp_lro_enable)) {
 		hdd_debug("Rx offload LRO is enabled");
 		hdd_ctx->ol_enable = CFG_LRO_ENABLED;
+	} else if (cdp_cfg_get(soc, cfg_dp_tc_based_dyn_gro_enable)) {
+		hdd_debug("Dynamic Rx offload GRO is enabled");
+		hdd_ctx->ol_enable = CFG_DYNAMIC_GRO_ENABLED;
 	} else {
 		hdd_debug("Rx offload: GRO is enabled");
 		hdd_ctx->ol_enable = CFG_GRO_ENABLED;
@@ -1834,7 +1837,8 @@ static void hdd_register_rx_ol_cb(struct hdd_context *hdd_ctx,
 		cdp_register_rx_offld_flush_cb(soc, hdd_qdf_lro_flush);
 		hdd_ctx->receive_offload_cb = hdd_lro_rx;
 		hdd_debug("LRO is enabled");
-	} else if (hdd_ctx->ol_enable == CFG_GRO_ENABLED) {
+	} else if (hdd_ctx->ol_enable == CFG_GRO_ENABLED ||
+		   hdd_ctx->ol_enable == CFG_DYNAMIC_GRO_ENABLED) {
 		qdf_atomic_set(&hdd_ctx->dp_agg_param.rx_aggregation, 1);
 		if (lithium_based_target) {
 		/* no flush registration needed, it happens in DP thread */
@@ -2103,12 +2107,18 @@ QDF_STATUS hdd_rx_deliver_to_stack(struct hdd_adapter *adapter,
 	int status = QDF_STATUS_E_FAILURE;
 	int netif_status;
 	bool skb_receive_offload_ok = false;
-	uint8_t rx_ctx_id = QDF_NBUF_CB_RX_CTX_ID(skb);
+	uint8_t rx_ctx_id;
 	ol_txrx_soc_handle soc = cds_get_context(QDF_MODULE_ID_SOC);
 
 	if (QDF_NBUF_CB_RX_TCP_PROTO(skb) &&
 	    !QDF_NBUF_CB_RX_PEER_CACHED_FRM(skb))
 		skb_receive_offload_ok = true;
+
+	if (hdd_ctx->ol_enable == CFG_DYNAMIC_GRO_ENABLED ||
+	    hdd_ctx->ol_enable == CFG_GRO_ENABLED)
+		rx_ctx_id = 0;
+	else
+		rx_ctx_id = QDF_NBUF_CB_RX_CTX_ID(skb);
 
 	if (qdf_atomic_read(&adapter->gro_disallowed) == 0 &&
 	    adapter->gro_flushed[rx_ctx_id] != 0) {

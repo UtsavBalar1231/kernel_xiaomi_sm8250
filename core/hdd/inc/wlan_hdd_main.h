@@ -1665,10 +1665,12 @@ enum hdd_sta_smps_param {
  * enum RX_OFFLOAD - Receive offload modes
  * @CFG_LRO_ENABLED: Large Rx offload
  * @CFG_GRO_ENABLED: Generic Rx Offload
+ * @CFG_DYNAMIC_GRO_ENABLED: Dynamic GRO enabled
  */
 enum RX_OFFLOAD {
 	CFG_LRO_ENABLED = 1,
 	CFG_GRO_ENABLED,
+	CFG_DYNAMIC_GRO_ENABLED,
 };
 
 /* One per STA: 1 for BCMC_STA_ID, 1 for each SAP_SELF_STA_ID,
