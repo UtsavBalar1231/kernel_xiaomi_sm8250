@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -312,6 +313,8 @@ struct txrx_pdev_cfg_param_t {
 
 	struct ol_tx_sched_wrr_ac_specs_t ac_specs[TX_WMM_AC_NUM];
 	bool gro_enable;
+	bool tc_based_dyn_gro;
+	uint32_t tc_ingress_prio;
 	bool tso_enable;
 	bool lro_enable;
 	bool sg_enable;
