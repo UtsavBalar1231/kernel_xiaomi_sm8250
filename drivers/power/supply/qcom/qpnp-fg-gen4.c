@@ -7046,24 +7046,19 @@ static void fg_battery_soc_smooth_tracking(struct fg_gen4_chip *chip)
 				&& fg->param.batt_raw_soc >= 95
 				&& fg->charge_status == POWER_SUPPLY_STATUS_FULL)
 			// Unlikely status
-			last_batt_soc = fg->param.update_now ?
-				100 : last_batt_soc + soc_changed;
+			last_batt_soc = last_batt_soc + soc_changed;
 		else if (last_batt_soc < fg->param.batt_raw_soc &&
 			fg->param.batt_ma < 0)
 			/* Battery in charging status
 			* update the soc when resuming device
 			*/
-			last_batt_soc = fg->param.update_now ?
-				fg->param.batt_raw_soc : last_batt_soc + soc_changed;
+			last_batt_soc = last_batt_soc + soc_changed;
 		else if (last_batt_soc > fg->param.batt_raw_soc
 					&& fg->param.batt_ma > 0)
 			/* Battery in discharging status
 			* update the soc when resuming device
 			*/
-			last_batt_soc = fg->param.update_now ?
-				fg->param.batt_raw_soc : last_batt_soc - soc_changed;
-
-		fg->param.update_now = false;
+			last_batt_soc = last_batt_soc - soc_changed;
 	} else {
 		last_batt_soc = fg->param.batt_raw_soc;
 	}
@@ -7703,7 +7698,6 @@ static int fg_gen4_resume(struct device *dev)
 		schedule_delayed_work(&fg->sram_dump_work,
 				msecs_to_jiffies(fg_sram_dump_period_ms));
 
-	fg->param.update_now = true;
 	schedule_delayed_work(&fg->soc_monitor_work,
 				msecs_to_jiffies(MONITOR_SOC_WAIT_MS));
 	return 0;

@@ -68,6 +68,8 @@ enum pm_state {
 /* voters for usbpd */
 #define STEP_BMS_CHG_VOTER	"STEP_BMS_CHG_VOTER"
 #define BQ_TAPER_FCC_VOTER	"BQ_TAPER_FCC_VOTER"
+#define BYPASS_SWITCH_VOTER	"BYPASS_SWITCH_VOTER"
+#define CHARGEPUMP_SWITCH_VOTER "CHARGEPUMP_SWITCH_VOTER"
 #define BQ_TAPER_CELL_HGIH_FCC_VOTER	"BQ_TAPER_CELL_HGIH_FCC_VOTER"
 #define NON_PPS_PD_FCC_VOTER "NON_PPS_PD_FCC_VOTER"
 
@@ -83,11 +85,12 @@ enum pm_state {
 #define PPS_VOL_HYS			1000
 
 #define STEP_MV			20
+#define STEP_MV_INIT_VBUS		40
 #define TAPER_VOL_HYS			80
 #define TAPER_VOL_HYS_30			30
 #define TAPER_WITH_IBUS_HYS			60
 #define TAPER_IBUS_THR			450
-#define MAX_THERMAL_LEVEL			13
+#define MAX_THERMAL_LEVEL			14
 #define MAX_THERMAL_LEVEL_FOR_DUAL_BQ			9
 
 #define FCC_MAX_MA_FOR_MASTER_BQ			6000
@@ -121,16 +124,16 @@ enum pm_state {
 #define HIGH_VOL_THR_MV			4380
 #define CRITICAL_HIGH_VOL_THR_MV			4480
 
-#define IBUS_TARGET_COMP_MA			100
+#define IBUS_TARGET_COMP_MA			300
 #define IBUS_TARGET_COMP_30MA			30
 #define HIGH_IBUS_LIMI_THR_MA			4000
 
 #define TAPER_DONE_FFC_MA			2400
-#define TAPER_DONE_FFC_MA_LN8000		2500
+#define TAPER_DONE_FFC_MA_LN8000		1300
 #define TAPER_DONE_NORMAL_MA			2200
 
-#define VBAT_HIGH_FOR_FC_HYS_MV		100
-#define CAPACITY_TOO_HIGH_THR			95
+#define VBAT_HIGH_FOR_FC_HYS_MV		5
+#define CAPACITY_TOO_HIGH_THR			99
 
 #define	APDO_MAX_VOLT				11000
 
@@ -204,6 +207,8 @@ struct cp_device {
 	int  bms_batt_temp;
 	int  bus_temp;
 	int  die_temp;
+	int  vbus_error_status;
+	int  sc8551_charge_mode;
 };
 
 #define PM_STATE_LOG_MAX    32
@@ -218,17 +223,20 @@ struct usbpd_pm {
 	struct sw_device sw;
 
 	int	pd_active;
+	int enable_bypass;
 	bool	pps_supported;
 	bool	fc2_exit_flag;
 
 	int	request_voltage;
 	int	request_current;
+	int cp_model;
 
 	struct usbpd *pd;
 	struct usbpd_pdo pdo[7];
 
 	int	apdo_max_volt;
 	int	apdo_max_curr;
+	int	apdo_min_volt;
 	int	apdo_selected_pdo;
 
 	int	adapter_voltage;
@@ -247,6 +255,8 @@ struct usbpd_pm {
 	spinlock_t psy_change_lock;
 
 	struct votable		*fcc_votable;
+	struct votable		*usb_icl_votable;
+	struct votable		*dc_suspend_votable;
 	struct power_supply *cp_psy;
 	struct power_supply *cp_sec_psy;
 	struct power_supply *sw_psy;
@@ -262,7 +272,7 @@ struct usbpd_pm {
 	int			non_ffc_bat_volt_max;
 	int			bus_curr_compensate;
 	int			therm_level_threshold;
-	int			pd_power_max;
+	int			bms_i2c_error_count;
 	bool		cp_sec_enable;
 	bool			use_qcom_gauge;
 	bool			chg_enable_k11a;

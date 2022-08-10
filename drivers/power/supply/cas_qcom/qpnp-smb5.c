@@ -5136,6 +5136,12 @@ static int smb5_probe(struct platform_device *pdev)
 		goto cleanup;
 	}
 
+	rc = smblib_masked_write(chg, 0x4046, BIT(7), 0x00);
+	if (rc < 0) {
+		pr_err("Couldn't disable ESR rc=%d\n", rc);
+		goto cleanup;
+	}
+
 	/*
 	 * VBUS regulator enablement/disablement for host mode is handled
 	 * by USB-PD driver only. For micro-USB and non-PD typeC designs,

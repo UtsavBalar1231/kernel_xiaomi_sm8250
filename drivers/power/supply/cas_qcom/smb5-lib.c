@@ -3567,11 +3567,13 @@ int smblib_set_prop_dc_temp_level(struct smb_charger *chg,
 		return -EINVAL;
 	chg->dc_temp_level = val->intval;
 
+#if 0
 	if (chg->dc_temp_level >= (chg->dc_thermal_levels - 1))
 		return vote(chg->chg_disable_votable,
 			THERMAL_DAEMON_VOTER, true, 0);
 
 	vote(chg->chg_disable_votable, THERMAL_DAEMON_VOTER, false, 0);
+#endif
 
 	if (chg->power_good_en)
 		smblib_dc_therm_charging(chg, val->intval);
@@ -3783,11 +3785,13 @@ int smblib_set_prop_system_temp_level(struct smb_charger *chg,
 		return 0;
 	}
 
+#if 0
 	if (chg->system_temp_level >= chg->thermal_levels)
 		return vote(chg->chg_disable_votable,
 			THERMAL_DAEMON_VOTER, true, 0);
 
 	vote(chg->chg_disable_votable, THERMAL_DAEMON_VOTER, false, 0);
+#endif
 
 	if (chg->thermal_taper && chg->pd_active == POWER_SUPPLY_PD_PPS_ACTIVE) {
 		schedule_delayed_work(&chg->thermal_setting_work,
@@ -8477,7 +8481,7 @@ int smblib_get_quick_charge_type(struct smb_charger *chg)
 		wls_online = pval.intval;
 
 		if (wls_online) {
-			if (tx_adapter >= ADAPTER_XIAOMI_PD_PWR_50W)
+			if (tx_adapter >= ADAPTER_XIAOMI_PD_PWR_30W)
 				return QUICK_CHARGE_SUPER;
 			else if (tx_adapter >= ADAPTER_XIAOMI_QC3_PWR_20W)
 				return QUICK_CHARGE_TURBE;
@@ -8554,7 +8558,21 @@ int smblib_get_adapter_power_max(struct smb_charger *chg)
 						POWER_SUPPLY_PROP_APDO_MAX, &pval);
 			apdo_max = pval.intval;
 			pr_info("apdo_max:%d\n", apdo_max);
-			return apdo_max;
+
+			if (apdo_max == 100)
+				return APDO_MAX_100W;
+			else if (apdo_max > 96)
+				return APDO_MAX_120W;
+			else if (apdo_max == 65)
+				return APDO_MAX_65W; /* only for J1 65W adapter */
+			else if (apdo_max >= 60)
+				return APDO_MAX_67W;
+			else if (apdo_max >= 55 && apdo_max < 60)
+				return APDO_MAX_55W;
+			else if (apdo_max >= 50 && apdo_max < 55)
+				return APDO_MAX_50W;
+			else
+				return apdo_max;
 		}
 	}
 

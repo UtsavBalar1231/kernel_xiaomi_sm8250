@@ -1001,10 +1001,6 @@ static int fg_read_system_soc(struct bq_fg_chip *bq)
 				soc = bq->last_soc;
 		} else
 			soc = 100;
-	} else if (raw_soc > 1770) {
-		soc += 3;
-		if (soc <= 102 && soc > 99)
-			soc = 99;
 	} else {
 		if (raw_soc == 0 && bq->last_soc > 1) {
 			bq->ffc_smooth = false;
@@ -1022,7 +1018,9 @@ static int fg_read_system_soc(struct bq_fg_chip *bq)
 			} else
 				soc = bq->last_soc;
 		} else {
-			soc = (raw_soc + 84) / 85;
+			soc = (raw_soc + 95) / 96;
+			if (soc <= 102 && soc > 99)
+				soc = 99;
 		}
 	}
 
@@ -1351,6 +1349,8 @@ static enum power_supply_property fg_props[] = {
 	POWER_SUPPLY_PROP_STATUS,
 	POWER_SUPPLY_PROP_PRESENT,
 	POWER_SUPPLY_PROP_VOLTAGE_NOW,
+	POWER_SUPPLY_PROP_VOLTAGE_CELL1,
+	POWER_SUPPLY_PROP_VOLTAGE_CELL2,
 	POWER_SUPPLY_PROP_CURRENT_NOW,
 	POWER_SUPPLY_PROP_CAPACITY,
 	POWER_SUPPLY_PROP_CAPACITY_LEVEL,
@@ -1409,6 +1409,20 @@ static int fg_get_property(struct power_supply *psy, enum power_supply_property 
 		}
 		bq->batt_volt = fg_read_volt(bq);
 		val->intval = bq->batt_volt * 1000;
+		break;
+	case POWER_SUPPLY_PROP_VOLTAGE_CELL1:
+		if (bq->fake_volt != -EINVAL) {
+			val->intval = bq->fake_volt;
+			break;
+		}
+		val->intval = bq->cell1;
+		break;
+	case POWER_SUPPLY_PROP_VOLTAGE_CELL2:
+		if (bq->fake_volt != -EINVAL) {
+			val->intval = bq->fake_volt;
+			break;
+		}
+		val->intval = bq->cell2;
 		break;
 	case POWER_SUPPLY_PROP_PRESENT:
 		val->intval = 1;

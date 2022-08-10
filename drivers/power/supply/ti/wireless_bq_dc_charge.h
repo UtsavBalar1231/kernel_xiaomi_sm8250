@@ -79,6 +79,7 @@ enum pm_state {
 #define ADAPTER_XIAOMI_PD_50W     0x0e
 #define ADAPTER_XIAOMI_PD_60W     0x0f
 #define ADAPTER_VOICE_BOX     0x0d
+#define ADAPTER_XIAOMI_PD_100W     0x10
 
 #define NORMAL_ERR			1
 #define VBAT_TOO_HIGH_ERR		2

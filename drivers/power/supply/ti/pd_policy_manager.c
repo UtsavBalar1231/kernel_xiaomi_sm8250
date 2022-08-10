@@ -863,7 +863,9 @@ static void usbpd_pm_evaluate_src_caps(struct usbpd_pm *pdpm)
 				pdpm->apdo_max_curr);
 		if (pdpm->apdo_max_curr <= LOW_POWER_PPS_CURR_THR)
 			pdpm->apdo_max_curr = XIAOMI_LOW_POWER_PPS_CURR_MAX;
-		pval.intval = (pdpm->apdo_max_volt / 1000) * (pdpm->apdo_max_curr / 1000);
+		/* avoid pdpm->apdo_max_curr / 1000 drop remainder */
+		pval.intval = ((pdpm->apdo_max_volt / 1000) * (pdpm->apdo_max_curr / 100)) / 10;
+		pval.intval = min(pdpm->pd_power_max, pval.intval);
 		power_supply_set_property(pdpm->usb_psy,
 				POWER_SUPPLY_PROP_APDO_MAX, &pval);
 	} else {
@@ -1840,6 +1842,10 @@ static int pd_policy_parse_dt(struct usbpd_pm *pdpm)
 
 	pdpm->chg_enable_k81 = of_property_read_bool(node,
 				"mi,chg-enable-k81");
+
+	rc = of_property_read_u32(node, "mi,pd-power-max", &pdpm->pd_power_max);
+	pr_info("pd-power-max:%d\n", pdpm->pd_power_max);
+
 	return rc;
 }
 
