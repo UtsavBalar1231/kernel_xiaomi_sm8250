@@ -3945,13 +3945,13 @@ static void fts_enter_pointer_event_handler(struct fts_ts_info *info,
 				info->fod_x = x;
 				info->fod_y = y;
 				info->fod_coordinate_update = true;
-				__set_bit(touchId, &info->fod_id);
 				input_report_abs(info->input_dev, ABS_MT_WIDTH_MINOR, info->fod_overlap);
 				if (!info->board->support_fod) {
 					input_report_key(info->input_dev, BTN_INFO, 1);
 					mi_disp_set_fod_queue_work(1, true);
 				}
-				logError(1,	"%s  %s :  FOD Press :%d, fod_id:%08x\n", tag, __func__, touchId, info->fod_id);
+				if (!__test_and_set_bit(touchId, &info->fod_id))
+					logError(1,	"%s  %s :  FOD Press :%d, fod_id:%08x\n", tag, __func__, touchId, info->fod_id);
 			}
 		} else if (__test_and_clear_bit(touchId, &info->fod_id)) {
 			input_report_abs(info->input_dev, ABS_MT_WIDTH_MINOR, 0);
@@ -6154,13 +6154,6 @@ static void fts_update_touchmode_data(void)
 	const struct fts_hw_platform_data *bdata = fts_info->board;
 	static expert_mode = false;
 
-	ret = wait_event_interruptible_timeout(fts_info->wait_queue, !(fts_info->irq_status ||
-	fts_info->touch_id), msecs_to_jiffies(500));
-
-	if (ret <= 0) {
-		logError(1, "%s %s: wait touch finger up timeout\n", tag, __func__);
-		return;
-	}
 	if (fts_info->tp_pm_suspend) {
 		logError(1, "%s %s tp is in suspend mode,do't set gamemode\n", tag, __func__);
 		return;
