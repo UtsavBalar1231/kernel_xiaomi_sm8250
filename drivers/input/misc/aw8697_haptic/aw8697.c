@@ -3552,6 +3552,7 @@ static ssize_t aw8697_file_write(struct file *filp, const char *buff,
 	ret = copy_from_user(pbuff, buff, len);
 	if (ret) {
 		dev_err(aw8697->dev, "%s: copy from user fail\n", __func__);
+		kfree(pbuff);
 		return len;
 	}
 
