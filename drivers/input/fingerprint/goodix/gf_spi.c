@@ -616,6 +616,10 @@ static int gf_open(struct inode *inode, struct file *filp)
 	if (regulator_is_enabled(gf_dev->vreg)) {
 		pr_info("fp_vdd_vreg is already enabled!\n");
 	} else {
+		rc = regulator_set_load(gf_dev->vreg, 100000);
+		if (rc < 0) {
+			dev_err(&gf_dev->spi->dev, "Regulator set load failed rc = %d\n", rc);
+		}
 		rc = regulator_enable(gf_dev->vreg);
 
 		if (rc) {
