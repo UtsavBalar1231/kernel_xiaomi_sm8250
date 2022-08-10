@@ -2,7 +2,6 @@
  * BQ25790 battery charging driver
  *
  * Copyright (C) 2017 Texas Instruments * * This package is free software; you can redistribute it and/or modify
- * Copyright (C) 2021 XiaoMi, Inc.
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
 

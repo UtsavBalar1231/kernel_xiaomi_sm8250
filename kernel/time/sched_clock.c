@@ -74,14 +74,6 @@ static int irqtime = -1;
 static u64 suspend_ns;
 static u64 suspend_cycles;
 static u64 resume_cycles;
-//POWER ADD
-static u64 resume_ns;
-static u64 first_cycle = 1;
-u64 sum_wakeup_time;
-u64 sum_wakeup_times;
-u64 last_wake_time;
-static u64 off_resume_ns;
-static bool off_flag;
 
 core_param(irqtime, irqtime, int, 0400);
 
@@ -286,22 +278,6 @@ static u64 notrace suspended_sched_clock_read(void)
 	return cd.read_data[seq & 1].epoch_cyc;
 }
 
-void exclude_screen_on_time(void)
-{
-	struct clock_read_data *rd = &cd.read_data[0];
-
-	update_sched_clock();
-	off_flag = true;
-	off_resume_ns = rd->epoch_ns;
-}
-
-void reset_all_statistics(void)
-{
-	sum_wakeup_time = 0;
-	sum_wakeup_times = 0;
-	last_wake_time = 0;
-}
-
 int sched_clock_suspend(void)
 {
 	struct clock_read_data *rd = &cd.read_data[0];
@@ -312,22 +288,6 @@ int sched_clock_suspend(void)
 	suspend_cycles = rd->epoch_cyc;
 	pr_info("suspend ns:%17llu	suspend cycles:%17llu\n",
 				rd->epoch_ns, rd->epoch_cyc);
-//POWER ADD
-	if (first_cycle) {
-		last_wake_time = 0;
-		sum_wakeup_time = 0;
-		sum_wakeup_times = 0;
-		first_cycle = 0;
-	} else if (off_flag) {
-		off_flag = false;
-		last_wake_time = abs(suspend_ns-off_resume_ns)/1000000;
-		sum_wakeup_time += last_wake_time;
-	} else {
-		sum_wakeup_times += 1;
-		last_wake_time = abs(suspend_ns-resume_ns)/1000000;
-		sum_wakeup_time += last_wake_time;
-	}
-	printk("wake time is %llu, total wake time is %llu count is %llu\n", last_wake_time, sum_wakeup_time, sum_wakeup_times);
 	hrtimer_cancel(&sched_clock_timer);
 	rd->read_sched_clock = suspended_sched_clock_read;
 
@@ -338,14 +298,14 @@ void sched_clock_resume(void)
 {
 	struct clock_read_data *rd = &cd.read_data[0];
 
-	update_sched_clock();
-
-	resume_ns = rd->epoch_ns;
-	//rd->epoch_cyc = cd.actual_read_sched_clock();
+	rd->epoch_cyc = cd.actual_read_sched_clock();
 	resume_cycles = rd->epoch_cyc;
 	pr_info("resume cycles:%17llu\n", rd->epoch_cyc);
+
 	hrtimer_start(&sched_clock_timer, cd.wrap_kt, HRTIMER_MODE_REL);
 	rd->read_sched_clock = cd.actual_read_sched_clock;
+
+	update_sched_clock();
 }
 
 static struct syscore_ops sched_clock_ops = {

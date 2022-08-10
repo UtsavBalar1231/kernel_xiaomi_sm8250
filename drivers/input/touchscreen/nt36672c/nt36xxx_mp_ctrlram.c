@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2010 - 2018 Novatek, Inc.
- * Copyright (C) 2021 XiaoMi, Inc.
  *
  * $Revision: 32206 $
  * $Date: 2018-08-10 19:23:04 +0800 (週五, 10 八月 2018) $
@@ -2459,7 +2458,7 @@ static void test_buff_free(struct test_buf *buf)
 static int32_t test_buff_init(struct test_buf **tbuf)
 {
 	struct test_buf *buf;
-	int32_t ret;
+	int32_t ret = 0;
 
 	buf = (struct test_buf *)kzalloc(sizeof(*buf), GFP_KERNEL);
 	if (!buf) {

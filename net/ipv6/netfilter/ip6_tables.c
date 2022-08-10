@@ -2,7 +2,6 @@
  * Packet matching code.
  *
  * Copyright (C) 1999 Paul `Rusty' Russell & Michael J. Neuling
- * Copyright (C) 2021 XiaoMi, Inc.
  * Copyright (C) 2000-2005 Netfilter Core Team <coreteam@netfilter.org>
  * Copyright (c) 2006-2010 Patrick McHardy <kaber@trash.net>
  *

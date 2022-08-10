@@ -1,6 +1,5 @@
  /*
  * Copyright (c) 2016 Samsung Electronics Co., Ltd.
- * Copyright (C) 2021 XiaoMi, Inc.
  * Author: Andi Shyti <andi.shyti@samsung.it>
  *
  * This program is free software; you can redistribute it and/or modify

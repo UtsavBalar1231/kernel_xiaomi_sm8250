@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2019, The Linux Foundation. All rights reserved.
- * Copyright (C) 2021 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -22,6 +21,8 @@
 #define MI_DRM_EVENT_BLANK              0x01
 /* A hardware display blank early change occurred */
 #define MI_DRM_EARLY_EVENT_BLANK        0x02
+/* A hardware display blank more early change occured */
+#define MI_DRM_PRE_EVENT_BLANK          0x03
 
 enum msm_drm_display_id {
 	/* primary display */

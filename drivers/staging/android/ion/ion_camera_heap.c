@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2019. Xiaomi Technology Co.
- * Copyright (C) 2021 XiaoMi, Inc.
  *
  * All Rights Reserved.
  *

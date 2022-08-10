@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
- * Copyright (C) 2021 XiaoMi, Inc.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/completion.h>
@@ -349,10 +348,6 @@ static void *usbpd_ipc_log;
 #define ID_HDR_PRODUCT_AMA	5
 #define ID_HDR_PRODUCT_VPD	6
 
-/* params for usb_blocking_sync */
-#define STOP_USB_HOST		0
-#define START_USB_HOST		1
-
 #define PD_MIN_SINK_CURRENT	900
 
 #define PD_VBUS_MAX_VOLTAGE_LIMIT		9000000
@@ -394,7 +389,6 @@ struct usbpd {
 	struct workqueue_struct	*wq;
 	struct work_struct	sm_work;
 	struct work_struct	start_periph_work;
-	struct work_struct	restart_host_work;
 	struct work_struct	disable_active_work;
 	struct delayed_work	src_check_work;
 	struct work_struct	pdo_work;
@@ -425,8 +419,6 @@ struct usbpd {
 	bool			peer_usb_comm;
 	bool			peer_pr_swap;
 	bool			peer_dr_swap;
-	bool			no_usb3dp_concurrency;
-	bool			pd20_source_only;
 
 	u32			sink_caps[7];
 	int			num_sink_caps;
@@ -439,6 +431,7 @@ struct usbpd {
 	struct notifier_block	psy_nb;
 
 	bool			batt_2s;
+	bool			fix_pdo_5v;
 
 	int			bms_charge_full;
 	int			bat_voltage_max;
@@ -508,6 +501,8 @@ struct usbpd {
 	int                     last_pdo;
 	int                     last_uv;
 	int                     last_ua;
+	int			apdo_max;
+	int			power_max;
 	u64			monitor_entry_time;
 
 	/* non-qcom pps control */
@@ -522,7 +517,6 @@ struct usbpd {
 	u8			src_cap_ext_db[PD_SRC_CAP_EXT_DB_LEN];
 	bool			send_get_pps_status;
 	u32			pps_status_db;
-	bool			pps_disabled;
 	bool			send_get_status;
 	u8			status_db[PD_STATUS_DB_LEN];
 	bool			send_get_battery_cap;
@@ -531,7 +525,7 @@ struct usbpd {
 	u8			get_battery_status_db;
 	bool			send_get_battery_status;
 	u32			battery_sts_dobj;
-	bool			typec_analog_audio_connected;
+	bool			request_reject;
 };
 
 static LIST_HEAD(_usbpd);	/* useful for debugging */
@@ -608,7 +602,7 @@ static inline void start_usb_host(struct usbpd *pd, bool ss)
 	extcon_set_state_sync(pd->extcon, EXTCON_USB_HOST, 1);
 
 	/* blocks until USB host is completely started */
-	ret = extcon_blocking_sync(pd->extcon, EXTCON_USB_HOST, START_USB_HOST);
+	ret = extcon_blocking_sync(pd->extcon, EXTCON_USB_HOST, 1);
 	if (ret) {
 		usbpd_err(&pd->dev, "err(%d) starting host", ret);
 		return;
@@ -658,26 +652,6 @@ static void start_usb_peripheral_work(struct work_struct *w)
 		pd->partner = typec_register_partner(pd->typec_port,
 				&pd->partner_desc);
 	}
-}
-
-static void restart_usb_host_work(struct work_struct *w)
-{
-	struct usbpd *pd = container_of(w, struct usbpd, restart_host_work);
-	int ret;
-
-	if (!pd->no_usb3dp_concurrency)
-		return;
-
-	stop_usb_host(pd);
-
-	/* blocks until USB host is completely stopped */
-	ret = extcon_blocking_sync(pd->extcon, EXTCON_USB_HOST, STOP_USB_HOST);
-	if (ret) {
-		usbpd_err(&pd->dev, "err(%d) stopping host", ret);
-		return;
-	}
-
-	start_usb_host(pd, false);
 }
 
 static void usbpd_disable_cp(struct usbpd *pd)
@@ -730,7 +704,7 @@ static int usbpd_release_ss_lane(struct usbpd *pd,
 	stop_usb_host(pd);
 
 	/* blocks until USB host is completely stopped */
-	ret = extcon_blocking_sync(pd->extcon, EXTCON_USB_HOST, STOP_USB_HOST);
+	ret = extcon_blocking_sync(pd->extcon, EXTCON_USB_HOST, 0);
 	if (ret) {
 		usbpd_err(&pd->dev, "err(%d) stopping host", ret);
 		goto err_exit;
@@ -804,7 +778,6 @@ static inline void pd_reset_protocol(struct usbpd *pd)
 	memset(pd->rx_msgid, -1, sizeof(pd->rx_msgid));
 	memset(pd->tx_msgid, 0, sizeof(pd->tx_msgid));
 	pd->send_request = false;
-	pd->send_get_status = false;
 	pd->send_pr_swap = false;
 	pd->send_dr_swap = false;
 }
@@ -1039,7 +1012,7 @@ static int pd_select_pdo_for_bq(struct usbpd *pd, int pdo_pos, int uv, int ua)
 			ua = MAX_NON_COMPLIANT_PPS_UA;
 			curr = ua / 1000;
 		}
-		usbpd_err(&pd->dev, " select uv (%d) and ua (%d) of APDO\n", uv, ua);
+		/*usbpd_err(&pd->dev, " select uv (%d) and ua (%d) of APDO\n", uv, ua);*/
 
 		pd->requested_voltage = uv;
 		pd->rdo = PD_RDO_AUGMENTED(pdo_pos, mismatch, 1, 1,
@@ -1048,7 +1021,7 @@ static int pd_select_pdo_for_bq(struct usbpd *pd, int pdo_pos, int uv, int ua)
 		usbpd_err(&pd->dev, "Only Fixed or Programmable PDOs supported\n");
 		return -ENOTSUPP;
 	}
-	usbpd_info(&pd->dev, "pdo:%d, uv:%d, ua:%d\n", pdo_pos, uv, ua);
+	usbpd_info(&pd->dev, "pdo_set:%d, uv:%d, ua:%d\n", pdo_pos, uv, ua);
 
 	pd->requested_current = curr;
 	pd->requested_pdo = pdo_pos;
@@ -1083,6 +1056,8 @@ static int pd_eval_src_caps(struct usbpd *pd)
 	/* Select thr first PDO for zimi adapter*/
 	if (pd->batt_2s && pd->adapter_id == 0xA819)
 		pd_select_pdo(pd, 2, 0, 0);
+	else if (pd->request_reject == 1)
+		;
 	else
 		pd_select_pdo(pd, 1, 0, 0);
 
@@ -1750,7 +1725,6 @@ static void handle_vdm_rx(struct usbpd *pd, struct rx_msg *rx_msg)
 
 		/* Set to USB and DP cocurrency mode */
 		extcon_blocking_sync(pd->extcon, EXTCON_DISP_DP, 2);
-		queue_work(pd->wq, &pd->restart_host_work);
 	}
 
 	/* if it's a supported SVID, pass the message to the handler */
@@ -1893,12 +1867,8 @@ static void handle_vdm_tx(struct usbpd *pd, enum pd_sop_type sop_type)
 
 		mutex_unlock(&pd->svid_handler_lock);
 		/* retry when hitting PE_SRC/SNK_Ready again */
-		if (ret != -EBUSY && sop_type == SOP_MSG) {
+		if (ret != -EBUSY && sop_type == SOP_MSG)
 			usbpd_set_state(pd, PE_SEND_SOFT_RESET);
-		} else if (sop_type != SOP_MSG) {
-			kfree(pd->vdm_tx);
-			pd->vdm_tx = NULL;
-		}
 
 		return;
 	}
@@ -2112,8 +2082,7 @@ static void dr_swap(struct usbpd *pd)
 		typec_set_data_role(pd->typec_port, TYPEC_HOST);
 
 		/* ensure host is started before allowing DP */
-		extcon_blocking_sync(pd->extcon, EXTCON_USB_HOST,
-					START_USB_HOST);
+		extcon_blocking_sync(pd->extcon, EXTCON_USB_HOST, 0);
 
 		usbpd_send_svdm(pd, USBPD_SID, USBPD_SVDM_DISCOVER_IDENTITY,
 				SVDM_CMD_TYPE_INITIATOR, 0, NULL, 0);
@@ -2315,11 +2284,7 @@ static int usbpd_startup_common(struct usbpd *pd,
 		 * support up to PD 3.0; if peer is 2.0
 		 * phy_msg_received() will handle the downgrade.
 		 */
-		if ((pd->pd20_source_only) &&
-			pd->current_state == PE_SRC_STARTUP)
-			pd->spec_rev = USBPD_REV_20;
-		else
-			pd->spec_rev = USBPD_REV_30;
+		pd->spec_rev = USBPD_REV_30;
 
 		if (pd->pd_phy_opened) {
 			pd_phy_close();
@@ -2447,10 +2412,7 @@ static void handle_state_src_startup_wait_for_vdm_resp(struct usbpd *pd,
 	 * Emarker may have negotiated down to rev 2.0.
 	 * Reset to 3.0 to begin SOP communication with sink
 	 */
-	if (pd->pd20_source_only)
-		pd->spec_rev = USBPD_REV_20;
-	else
-		pd->spec_rev = USBPD_REV_30;
+	pd->spec_rev = USBPD_REV_30;
 
 	pd->current_state = PE_SRC_SEND_CAPABILITIES;
 	kick_sm(pd, ms);
@@ -2759,6 +2721,8 @@ static void handle_state_soft_reset(struct usbpd *pd,
 	usbpd_set_state(pd, pd->current_pr == PR_SRC ?
 			PE_SRC_SEND_CAPABILITIES :
 			PE_SNK_WAIT_FOR_CAPABILITIES);
+	pd->request_reject = 1;
+	usbpd_err(&pd->dev, "set request_reject as 1\n");
 }
 
 static void handle_state_src_transition_to_default(struct usbpd *pd,
@@ -2884,7 +2848,6 @@ static void handle_state_snk_wait_for_capabilities(struct usbpd *pd,
 	struct rx_msg *rx_msg)
 {
 	union power_supply_propval val = {0};
-	int i;
 
 	pd->in_pr_swap = false;
 	val.intval = 0;
@@ -2903,14 +2866,6 @@ static void handle_state_snk_wait_for_capabilities(struct usbpd *pd,
 		memcpy(&pd->received_pdos, rx_msg->payload,
 				min_t(size_t, rx_msg->data_len,
 					sizeof(pd->received_pdos)));
-		/* if pps is disabled clear all the received pdos */
-		if (pd->pps_disabled) {
-			for (i = 0; i < ARRAY_SIZE(pd->received_pdos); i++)
-				if ((PD_SRC_PDO_TYPE(pd->received_pdos[i]) ==
-						PD_SRC_PDO_TYPE_AUGMENTED))
-					pd->received_pdos[i] = 0x00;
-		}
-
 		pd->src_cap_id++;
 
 		usbpd_set_state(pd, PE_SNK_EVALUATE_CAPABILITY);
@@ -3145,7 +3100,6 @@ static bool handle_ctrl_snk_ready(struct usbpd *pd, struct rx_msg *rx_msg)
 static bool handle_data_snk_ready(struct usbpd *pd, struct rx_msg *rx_msg)
 {
 	u32 ado;
-	int i;
 
 	switch (PD_MSG_HDR_TYPE(rx_msg->hdr)) {
 	case MSG_SOURCE_CAPABILITIES:
@@ -3155,14 +3109,6 @@ static bool handle_data_snk_ready(struct usbpd *pd, struct rx_msg *rx_msg)
 		memcpy(&pd->received_pdos, rx_msg->payload,
 				min_t(size_t, rx_msg->data_len,
 					sizeof(pd->received_pdos)));
-		/* if pps is disabled clear all the received pdos */
-		if (pd->pps_disabled) {
-			for (i = 0; i < ARRAY_SIZE(pd->received_pdos); i++)
-				if ((PD_SRC_PDO_TYPE(pd->received_pdos[i]) ==
-						PD_SRC_PDO_TYPE_AUGMENTED))
-					pd->received_pdos[i] = 0x00;
-		}
-
 		pd->src_cap_id++;
 
 		usbpd_set_state(pd, PE_SNK_EVALUATE_CAPABILITY);
@@ -3848,23 +3794,11 @@ static void usbpd_sm(struct work_struct *w)
 	int ret;
 	struct rx_msg *rx_msg = NULL;
 	unsigned long flags;
-
+	/*
 	usbpd_err(&pd->dev, "typec mode:%d, pr:%d, handle state %s\n",
 			pd->typec_mode, pd->current_pr,
 			usbpd_state_strings[pd->current_state]);
-
-	/* Register typec partner in case AAA is connected */
-	if (pd->typec_mode == POWER_SUPPLY_TYPEC_SINK_AUDIO_ADAPTER) {
-		if (!pd->partner) {
-			memset(&pd->partner_identity, 0,
-					sizeof(pd->partner_identity));
-			pd->partner_desc.usb_pd = false;
-			pd->partner_desc.accessory = TYPEC_ACCESSORY_AUDIO;
-			pd->partner = typec_register_partner(pd->typec_port,
-							&pd->partner_desc);
-			pd->typec_analog_audio_connected = true;
-		}
-	}
+	*/
 	hrtimer_cancel(&pd->timer);
 	pd->sm_queued = false;
 
@@ -3878,18 +3812,9 @@ static void usbpd_sm(struct work_struct *w)
 	/* Disconnect? */
 	if (pd->current_pr == PR_NONE) {
 		if (pd->current_state == PE_UNKNOWN &&
-				pd->current_dr == DR_NONE) {
-			/*
-			 * Since PD stack will not be loaded in case AAA is
-			 * connected, call disconnect to unregister typec
-			 * partner
-			 */
-			if (!pd->typec_analog_audio_connected &&
-					pd->partner)
-				handle_disconnect(pd);
-
+				pd->current_dr == DR_NONE)
 			goto sm_done;
-		}
+
 		handle_disconnect(pd);
 		goto sm_done;
 	}
@@ -3959,7 +3884,6 @@ static int usbpd_process_typec_mode(struct usbpd *pd,
 		}
 
 		pd->current_pr = PR_NONE;
-		pd->typec_analog_audio_connected = false;
 		break;
 
 	/* Sink states */
@@ -3978,8 +3902,14 @@ static int usbpd_process_typec_mode(struct usbpd *pd,
 		/* if waiting for SinkTxOk to start an AMS */
 		if (pd->spec_rev == USBPD_REV_30 &&
 			typec_mode == POWER_SUPPLY_TYPEC_SOURCE_HIGH &&
-			(pd->send_pr_swap || pd->send_dr_swap || pd->vdm_tx))
+			(pd->send_pr_swap || pd->send_dr_swap || pd->vdm_tx)) {
+
+			if (pd->vdm_tx) {
+				kfree(pd->vdm_tx);
+				pd->vdm_tx = NULL;
+			}
 			break;
+		}
 
 		if (pd->current_pr == PR_SINK)
 			return 0;
@@ -4887,7 +4817,7 @@ static ssize_t usbpd_verifed_store(struct device *dev,
 		}
 	}
 
-	if (!pd->verifed && !pd->pps_found)
+	if (!pd->verifed && !pd->pps_found && !pd->fix_pdo_5v)
 		schedule_delayed_work(&pd->fixed_pdo_work, 5 * HZ);
 
 	return size;
@@ -5328,6 +5258,9 @@ int usbpd_fetch_pdo(struct usbpd *pd, struct usbpd_pdo *pdos)
 
 	mutex_lock(&pd->swap_lock);
 
+	pd->request_reject = 0;
+	usbpd_err(&pd->dev, "set request_reject as 0\n");
+
 	if (pd->current_pr == PR_SRC) {
 		usbpd_err(&pd->dev, "not support in SRC mode\n");
 		ret = -ENOTSUPP;
@@ -5429,6 +5362,12 @@ int usbpd_select_pdo(struct usbpd *pd, int pdo, int uv, int ua)
 		ret = -EINVAL;
 	}
 
+	//if (pd->request_reject == 1) {
+	//	usbpd_err(&pd->dev, "set request rejected as 0\n");
+	//	pd->request_reject = 0;
+	//	ret = -EINVAL;
+	//}
+
 out:
 	pd->send_request = false;
 	pd->last_pdo = pdo;
@@ -5438,6 +5377,14 @@ out:
 	return ret;
 }
 EXPORT_SYMBOL(usbpd_select_pdo);
+
+int usbpd_get_current_state(struct usbpd *pd){
+	int ret = 0;
+
+	ret = pd->request_reject;
+	return ret;
+}
+EXPORT_SYMBOL(usbpd_get_current_state);
 
 static void source_check_workfunc(struct work_struct *w)
 {
@@ -5590,10 +5537,15 @@ static void usbpd_pdo_workfunc(struct work_struct *w)
 	int passthrough_curr_max = 0;
 	union power_supply_propval val = {0};
 	int pps_max_watts = 0;
+	int pps_max_mwatt = 0;
 
 	for (i = 0; i < ARRAY_SIZE(pd->received_pdos); i++) {
 		u32 pdo = pd->received_pdos[i];
 
+		if (pd->received_pdos[1] == 0) {
+			pd->fix_pdo_5v = true;
+			usbpd_info(&pd->dev,"fixed pdo [2]= %d",pd->fix_pdo_5v);
+			}
 		if (pdo == 0)
 			break;
 
@@ -5613,6 +5565,8 @@ static void usbpd_pdo_workfunc(struct work_struct *w)
 			}
 			if (pps_max_watts < max_volt * max_curr) {
 				pps_max_watts = max_volt * max_curr;
+				if(pps_max_watts >120000000 && pps_max_watts < 130000000)
+					pps_max_watts = 120000000;
 				if (pps_max_watts < USBPD_WEAK_PPS_POWER) {
 					pd->pps_weak_limit = true;
 					usbpd_info(&pd->dev, "weak pps detect\n");
@@ -5624,6 +5578,18 @@ static void usbpd_pdo_workfunc(struct work_struct *w)
 		usbpd_info(&pd->dev, "%s max_volt:%d,min_volt:%d,max_curr:%d\n",
 				(PD_SRC_PDO_TYPE(pdo) == PD_SRC_PDO_TYPE_AUGMENTED) ? "PPS" : "PD2.0",
 				max_volt, min_volt, max_curr);
+	}
+
+	if (pd->verifed) {
+		pps_max_mwatt = pps_max_watts / 1000  / 1000;
+		if (pps_max_mwatt != pd->apdo_max) {
+			pd->apdo_max = pps_max_mwatt;
+			//val.intval = pps_max_mwatt;
+			val.intval = min(pps_max_mwatt, pd->power_max);
+			power_supply_set_property(pd->usb_psy,
+					POWER_SUPPLY_PROP_APDO_MAX, &val);
+			usbpd_err(&pd->dev, "pps_max_watts[%d]\n", pps_max_mwatt);
+		}
 	}
 
 	if (pd->batt_2s) {
@@ -5748,7 +5714,6 @@ struct usbpd *usbpd_create(struct device *parent)
 	}
 	INIT_WORK(&pd->sm_work, usbpd_sm);
 	INIT_WORK(&pd->start_periph_work, start_usb_peripheral_work);
-	INIT_WORK(&pd->restart_host_work, restart_usb_host_work);
 	INIT_WORK(&pd->pdo_work, usbpd_pdo_workfunc);
 	INIT_DELAYED_WORK(&pd->src_check_work, source_check_workfunc);
 	INIT_DELAYED_WORK(&pd->fixed_pdo_work, usbpd_fixed_pdo_workfunc);
@@ -5830,14 +5795,15 @@ struct usbpd *usbpd_create(struct device *parent)
 	extcon_set_property_capability(pd->extcon, EXTCON_USB_HOST,
 			EXTCON_PROP_USB_SS);
 
-	if (device_property_read_bool(parent, "qcom,no-usb3-dp-concurrency"))
-		pd->no_usb3dp_concurrency = true;
-
 	pd->num_sink_caps = device_property_read_u32_array(parent,
 			"qcom,default-sink-caps", NULL, 0);
 
 	pd->non_qcom_pps_ctr = of_property_read_bool(parent->of_node,
 				"mi,non-qcom-pps-ctrl");
+
+	of_property_read_u32(parent->of_node, "mi,pd-power-max", &pd->power_max);
+	usbpd_info(&pd->dev, "pd-power-max:%d\n", pd->power_max);
+
 	if (pd->num_sink_caps > 0) {
 		int i;
 		u32 sink_caps[14];
@@ -5874,9 +5840,6 @@ struct usbpd *usbpd_create(struct device *parent)
 		pd->num_sink_caps = ARRAY_SIZE(default_snk_caps);
 	}
 
-	if (device_property_read_bool(parent, "qcom,pd-20-source-only"))
-		pd->pd20_source_only = true;
-
 	/*
 	 * Register a Type-C class instance (/sys/class/typec/portX).
 	 * Note this is different than the /sys/class/usbpd/ created above.
@@ -5903,8 +5866,6 @@ struct usbpd *usbpd_create(struct device *parent)
 		}
 	}
 
-	pd->pps_disabled = device_property_read_bool(parent,
-				"qcom,pps-disabled");
 	pd->current_pr = PR_NONE;
 	pd->current_dr = DR_NONE;
 	list_add_tail(&pd->instance, &_usbpd);

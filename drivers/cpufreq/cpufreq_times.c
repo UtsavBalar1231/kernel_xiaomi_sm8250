@@ -1,7 +1,6 @@
 /* drivers/cpufreq/cpufreq_times.c
  *
  * Copyright (C) 2018 Google, Inc.
- * Copyright (C) 2021 XiaoMi, Inc.
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -233,6 +232,7 @@ static struct pid_entry *find_or_register_pid_locked(u64 hash_code,
 	pid_entry->package = kzalloc(MAX_TASK_COMM_LEN, GFP_ATOMIC);
         if (!pid_entry->package) {
 		kfree(pid_entry);
+		kfree(times);
 		return NULL;
         }
 

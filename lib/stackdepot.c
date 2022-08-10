@@ -14,7 +14,6 @@
  *
  * Author: Alexander Potapenko <glider@google.com>
  * Copyright (C) 2016 Google, Inc.
- * Copyright (C) 2021 XiaoMi, Inc.
  *
  * Based on code by Dmitry Chernenkov.
  *

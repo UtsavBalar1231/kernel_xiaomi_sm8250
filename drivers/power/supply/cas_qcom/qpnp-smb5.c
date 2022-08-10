@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2018-2019 The Linux Foundation. All rights reserved.
- * Copyright (C) 2021 XiaoMi, Inc.
  */
 
 #include <linux/debugfs.h>
@@ -1532,6 +1531,8 @@ static enum power_supply_property smb5_usb_props[] = {
 	POWER_SUPPLY_PROP_PD_AUTHENTICATION,
 	POWER_SUPPLY_PROP_PASSTHROUGH_CURR_MAX,
 	POWER_SUPPLY_PROP_SKIN_HEALTH,
+	POWER_SUPPLY_PROP_APDO_MAX,
+	POWER_SUPPLY_PROP_POWER_MAX,
 };
 
 static int smb5_usb_get_prop(struct power_supply *psy,
@@ -1710,6 +1711,12 @@ static int smb5_usb_get_prop(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_SKIN_HEALTH:
 		val->intval = smblib_get_skin_temp_status(chg);
 		break;
+	case POWER_SUPPLY_PROP_APDO_MAX:
+		val->intval = chg->apdo_max;
+		break;
+	case POWER_SUPPLY_PROP_POWER_MAX:
+		val->intval = smblib_get_adapter_power_max(chg);
+		break;
 	default:
 		pr_debug("get prop %d is not supported in usb\n", psp);
 		rc = -EINVAL;
@@ -1838,6 +1845,9 @@ static int smb5_usb_set_prop(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_NON_COMPATIBLE:
 		break;
+	case POWER_SUPPLY_PROP_APDO_MAX:
+		chg->apdo_max = val->intval;
+		break;
 	default:
 		pr_debug("set prop %d is not supported\n", psp);
 		rc = -EINVAL;
@@ -1863,6 +1873,7 @@ static int smb5_usb_prop_is_writeable(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_QUICK_CHARGE_POWER:
 	case POWER_SUPPLY_PROP_NON_COMPATIBLE:
 	case POWER_SUPPLY_PROP_PASSTHROUGH_CURR_MAX:
+	case POWER_SUPPLY_PROP_APDO_MAX:
 		return 1;
 	default:
 		break;
@@ -2802,6 +2813,10 @@ static enum power_supply_property smb5_wireless_props[] = {
 	POWER_SUPPLY_PROP_WIRELESS_POWER_GOOD_EN,
 	POWER_SUPPLY_PROP_SW_DISABLE_DC_EN,
 	POWER_SUPPLY_PROP_TX_ADAPTER,
+	POWER_SUPPLY_PROP_TX_MAC,
+	POWER_SUPPLY_PROP_BT_STATE,
+	POWER_SUPPLY_PROP_RX_CR,
+	POWER_SUPPLY_PROP_RX_CEP,
 	POWER_SUPPLY_PROP_DC_RESET,
 	POWER_SUPPLY_PROP_DIV_2_MODE,
 	POWER_SUPPLY_PROP_REVERSE_CHG_MODE,
@@ -2813,6 +2828,7 @@ static enum power_supply_property smb5_wireless_props[] = {
 	POWER_SUPPLY_PROP_CHIP_OK,
 	POWER_SUPPLY_PROP_CURRENT_MAX,
 	POWER_SUPPLY_PROP_QUICK_CHARGE_TYPE,
+	POWER_SUPPLY_PROP_WLS_CAR_ADAPTER,
 };
 
 static int smb5_wireless_set_prop(struct power_supply *psy,
@@ -2849,6 +2865,18 @@ static int smb5_wireless_set_prop(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_DIV_2_MODE:
 		rc = smb5_set_prop_div2_mode(chg, val);
 		break;
+	case POWER_SUPPLY_PROP_TX_MAC:
+		smblib_set_prop_tx_mac(chg, val);
+		break;
+	case POWER_SUPPLY_PROP_RX_CR:
+		smblib_set_prop_rx_cr(chg, val);
+		break;
+	case POWER_SUPPLY_PROP_RX_CEP:
+		smblib_set_prop_rx_cep(chg, val);
+		break;
+	case POWER_SUPPLY_PROP_BT_STATE:
+		smblib_set_prop_bt_state(chg, val);
+		break;
 	case POWER_SUPPLY_PROP_REVERSE_CHG_MODE:
 		rc = smb5_set_prop_reverse_chg_mode(chg, val);
 		break;
@@ -2871,9 +2899,14 @@ static int smb5_wireless_set_prop(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_QUICK_CHARGE_TYPE:
 		chg->wireless_charge_type = val->intval;
 		if (chg->wireless_charge_type == ADAPTER_XIAOMI_PD_40W
-			|| chg->wireless_charge_type == ADAPTER_XIAOMI_PD_45W)
+			|| chg->wireless_charge_type == ADAPTER_XIAOMI_PD_45W
+			|| chg->wireless_charge_type == ADAPTER_XIAOMI_PD_60W
+			|| chg->wireless_charge_type == ADAPTER_XIAOMI_PD_100W)
 			schedule_delayed_work(&chg->report_soc_decimal_work,
 				msecs_to_jiffies(REPORT_SOC_DECIMAL_MS));
+		break;
+	case POWER_SUPPLY_PROP_WLS_CAR_ADAPTER:
+		chg->wls_car_adapter = val->intval;
 		break;
 	default:
 		return -EINVAL;
@@ -2936,6 +2969,18 @@ static int smb5_wireless_get_prop(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_DIV_2_MODE:
 		smb5_get_prop_div2_mode(chg, val);
 		break;
+	case POWER_SUPPLY_PROP_TX_MAC:
+		val->int64val = chg->tx_bt_mac;
+		break;
+	case POWER_SUPPLY_PROP_RX_CR:
+		val->int64val = chg->rpp;
+		break;
+	case POWER_SUPPLY_PROP_RX_CEP:
+		val->int64val = chg->cep;
+		break;
+	case POWER_SUPPLY_PROP_BT_STATE:
+		val->intval = chg->bt_state;
+		break;
 	case POWER_SUPPLY_PROP_SW_DISABLE_DC_EN:
 		val->intval = 0;
 		break;
@@ -2963,6 +3008,9 @@ static int smb5_wireless_get_prop(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_QUICK_CHARGE_TYPE:
 		val->intval = chg->wireless_charge_type;
 		break;
+	case POWER_SUPPLY_PROP_WLS_CAR_ADAPTER:
+		val->intval = chg->wls_car_adapter;
+		break;
 	default:
 		return -EINVAL;
 	}
@@ -2983,10 +3031,15 @@ static int smb5_wireless_prop_is_writeable(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_WIRELESS_CP_EN:
 	case POWER_SUPPLY_PROP_WIRELESS_POWER_GOOD_EN:
 	case POWER_SUPPLY_PROP_SW_DISABLE_DC_EN:
+	case POWER_SUPPLY_PROP_RX_CR:
+	case POWER_SUPPLY_PROP_RX_CEP:
+	case POWER_SUPPLY_PROP_TX_MAC:
+	case POWER_SUPPLY_PROP_BT_STATE:
 	case POWER_SUPPLY_PROP_DIV_2_MODE:
 	case POWER_SUPPLY_PROP_REVERSE_CHG_MODE:
 	case POWER_SUPPLY_PROP_REVERSE_CHG_STATE:
 	case POWER_SUPPLY_PROP_CURRENT_MAX:
+	case POWER_SUPPLY_PROP_WLS_CAR_ADAPTER:
 		return 1;
 	default:
 		break;
@@ -5079,6 +5132,12 @@ static int smb5_probe(struct platform_device *pdev)
 	rc = smb5_init_hw(chip);
 	if (rc < 0) {
 		pr_err("Couldn't initialize hardware rc=%d\n", rc);
+		goto cleanup;
+	}
+
+	rc = smblib_masked_write(chg, 0x4046, BIT(7), 0x00);
+	if (rc < 0) {
+		pr_err("Couldn't disable ESR rc=%d\n", rc);
 		goto cleanup;
 	}
 

@@ -69,11 +69,18 @@
 #include <linux/nmi.h>
 #include <linux/khugepaged.h>
 #include <linux/psi.h>
+#include <linux/delayacct.h>
 
 #include <asm/sections.h>
 #include <asm/tlbflush.h>
 #include <asm/div64.h>
 #include "internal.h"
+
+#include <linux/kperfevents.h>
+#undef CREATE_TRACE_POINTS
+#include <trace/events/kperfevents_mm.h>
+#define CREATE_TRACE_POINTS
+DEFINE_TRACE(kperfevents_mm_slowpath);
 
 /* prevent >1 _updater_ of zone percpu pageset ->high and ->batch fields */
 static DEFINE_MUTEX(pcp_batch_high_lock);
@@ -297,6 +304,9 @@ char * const migratetype_names[MIGRATE_TYPES] = {
 	"CMA",
 #endif
 	"HighAtomic",
+#ifdef CONFIG_EMERGENCY_MEMORY
+	"Emergency",
+#endif
 #ifdef CONFIG_MEMORY_ISOLATION
 	"Isolate",
 #endif
@@ -318,7 +328,7 @@ compound_page_dtor * const compound_page_dtors[] = {
  * allocations below this point, only high priority ones. Automatically
  * tuned according to the amount of memory in the system.
  */
-int min_free_kbytes = 1024;
+int min_free_kbytes = 32768;
 int user_min_free_kbytes = -1;
 #ifdef CONFIG_DISCONTIGMEM
 /*
@@ -2596,6 +2606,41 @@ static bool unreserve_highatomic_pageblock(const struct alloc_context *ac,
 	return false;
 }
 
+#ifdef CONFIG_EMERGENCY_MEMORY
+/* Initialization of the migration type MIGRATE_EMERGENCY */
+void __init emergency_mm_init(void)
+{
+	/*
+	 * If  pageblock_order < MAX_ORDER - 1 ,then allocating a few pageblocks may
+	 * cause the buddy system to merge two pageblocks of different migration types,
+	 * for example, MIGRATE_EMERGENCY and MIGRATE_MOVABLE.
+	 */
+	if (pageblock_order == MAX_ORDER - 1) {
+		int nid = 0;
+		pr_info("start to setup MIGRATE_EMERGENCY reserved memory.");
+		for_each_online_node(nid) {
+			pg_data_t *pgdat = NODE_DATA(nid);
+			struct zone *zone = &pgdat->node_zones[ZONE_NORMAL];
+			while (zone->nr_reserved_emergency < MAX_MANAGED_EMERGENCY) {
+				struct page *page = alloc_pages(___GFP_MOVABLE, pageblock_order);
+				if (page == NULL) {
+				 	pr_warn("node id %d MIGRATE_EMERGENCY reserved "
+						"pages failed, reserved %d pages.",
+						nid, zone->nr_reserved_emergency);
+					break;
+				}
+				set_pageblock_migratetype(page, MIGRATE_EMERGENCY);
+				__free_pages(page, pageblock_order);
+				zone->nr_reserved_emergency += pageblock_nr_pages;
+			}
+			pr_info("node id %d MIGRATE_EMERGENCY reserved %d pages.",
+				nid, zone->nr_reserved_emergency);
+
+		}
+	}
+}
+#endif
+
 /*
  * Try finding a free buddy page on the fallback list and put it on the free
  * list of requested migratetype, possibly along with other pages from the same
@@ -3448,6 +3493,13 @@ bool __zone_watermark_ok(struct zone *z, unsigned int order, unsigned long mark,
 
 	if (alloc_flags & ALLOC_HIGH)
 		min -= min / 2;
+#ifdef CONFIG_EMERGENCY_MEMORY
+	/*
+	 * If the migration type MIGRATE_EMERGENCY enable,then subtract
+	 * reserved pages.
+	 */
+	free_pages -= z->nr_reserved_emergency;
+#endif
 
 	/*
 	 * If the caller does not have rights to ALLOC_HARDER then subtract
@@ -3617,6 +3669,50 @@ alloc_flags_nofragment(struct zone *zone, gfp_t gfp_mask)
 #endif /* CONFIG_ZONE_DMA32 */
 	return alloc_flags;
 }
+
+#ifdef CONFIG_EMERGENCY_MEMORY
+/*
+ * get_emergency_page_from_freelist allocates pages in reserved memory
+ * in the migration type MIGRATE_EMERGENCY.
+ */
+static struct page *get_emergency_page_from_freelist(gfp_t gfp_mask, unsigned int order,
+			int alloc_flags, const struct alloc_context *ac, int migratetype)
+{
+	struct page *page = NULL;
+
+	if (ac->high_zoneidx >= ZONE_NORMAL) {
+		struct zoneref *z = ac->preferred_zoneref;
+		struct pglist_data *pgdat = NODE_DATA(zonelist_node_idx(z));
+		struct zone *zone = &pgdat->node_zones[ZONE_NORMAL];
+		unsigned long flags;
+
+		if (cpusets_enabled() &&
+			(alloc_flags & ALLOC_CPUSET) &&
+			!__cpuset_zone_allowed(zone, gfp_mask))
+			return NULL;
+
+		spin_lock_irqsave(&zone->lock, flags);
+		do {
+			page = __rmqueue_smallest(zone, order, migratetype);
+		} while (page && check_new_pages(page, order));
+
+		spin_unlock(&zone->lock);
+
+		if (page) {
+			__mod_zone_freepage_state(zone, -(1 << order),
+						  get_pcppage_migratetype(page));
+
+			__count_zid_vm_events(PGALLOC, page_zonenum(page), 1 << order);
+			zone_statistics(z->zone, zone);
+			prep_new_page(page, order, gfp_mask, alloc_flags);
+		}
+		local_irq_restore(flags);
+	}
+
+	return page;
+
+}
+#endif
 
 /*
  * get_page_from_freelist goes through the zonelist trying to allocate
@@ -4769,6 +4865,18 @@ nopage:
 		goto retry;
 	}
 fail:
+#ifdef CONFIG_EMERGENCY_MEMORY
+	if (!(gfp_mask & __GFP_NOWARN) && !costly_order) {
+		/*
+		 * If this allocation belongs to non-costly non-NOWARN page allocation,
+		 * then uses the reserved memory in the migration type MIGRATE_EMERGENCY.
+		 */
+		page = get_emergency_page_from_freelist(gfp_mask, order, alloc_flags, ac,
+			 MIGRATE_EMERGENCY);
+		if (page)
+			goto got_pg;
+	}
+#endif
 	warn_alloc(gfp_mask, ac->nodemask,
 			"page allocation failure: order:%u", order);
 got_pg:
@@ -4833,6 +4941,8 @@ __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order, int preferred_nid,
 	struct page *page;
 	unsigned int alloc_flags = ALLOC_WMARK_LOW;
 	gfp_t alloc_mask; /* The gfp_t that was actually used for allocation */
+	u64 start_time, duration;
+	u64 start_uptime, spent_duration;
 	struct alloc_context ac = { };
 
 	/*
@@ -4878,7 +4988,24 @@ __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order, int preferred_nid,
 	if (unlikely(ac.nodemask != nodemask))
 		ac.nodemask = nodemask;
 
+	start_uptime = ktime_get_ns();
+	start_time = current->stime;
+	delayacct_slowpath_start();
 	page = __alloc_pages_slowpath(alloc_mask, order, &ac);
+	delayacct_slowpath_end();
+	duration = current->stime - start_time;
+	spent_duration = ktime_get_ns() - start_uptime;
+
+	if (unlikely(is_above_kperfevents_threshold_nanos(spent_duration))) {
+#ifdef CONFIG_VIRT_CPU_ACCOUNTING_GEN
+		trace_kperfevents_mm_slowpath(order, duration, spent_duration);
+#else
+		/* The difference between start_time and end_time are jiffies. For e.g.
+		 * duration * (NSEC_PER_SEC / HZ)
+		 */
+		trace_kperfevents_mm_slowpath(order, ((duration << 30) / HZ), spent_duration);
+#endif
+	}
 
 out:
 	if (memcg_kmem_enabled() && (gfp_mask & __GFP_ACCOUNT) && page &&
@@ -5306,6 +5433,9 @@ static void show_migration_types(unsigned char type)
 		[MIGRATE_HIGHATOMIC]	= 'H',
 #ifdef CONFIG_CMA
 		[MIGRATE_CMA]		= 'C',
+#endif
+#ifdef CONFIG_EMERGENCY_MEMORY
+		[MIGRATE_EMERGENCY]  = 'G',
 #endif
 #ifdef CONFIG_MEMORY_ISOLATION
 		[MIGRATE_ISOLATE]	= 'I',
@@ -7858,8 +7988,8 @@ int __meminit init_per_zone_wmark_min(void)
 
 	if (new_min_free_kbytes > user_min_free_kbytes) {
 		min_free_kbytes = new_min_free_kbytes;
-		if (min_free_kbytes < 128)
-			min_free_kbytes = 128;
+		if (min_free_kbytes < 32768)
+			min_free_kbytes = 32768;
 		if (min_free_kbytes > 65536)
 			min_free_kbytes = 65536;
 	} else {

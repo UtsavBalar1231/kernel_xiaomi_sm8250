@@ -3,7 +3,6 @@
  * dma-buf trace points
  *
  * Copyright (C) 2020 panlinlin <panlinlin3@xiaomi.com>
- * Copyright (C) 2021 XiaoMi, Inc.
  *
  */
 #undef TRACE_SYSTEM

@@ -3,7 +3,6 @@
  * Functions for working with the Flattened Device Tree data format
  *
  * Copyright 2009 Benjamin Herrenschmidt, IBM Corp
- * Copyright (C) 2021 XiaoMi, Inc.
  * benh@kernel.crashing.org
  */
 

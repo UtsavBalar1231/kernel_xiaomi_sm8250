@@ -2,7 +2,6 @@
  * gtx8_ts_test.c - TP test
  *
  * Copyright (C) 2015 - 2016 gtx8 Technology Incorporated
- * Copyright (C) 2021 XiaoMi, Inc.
  * Copyright (C) 2015 - 2016 Yulong Cai <caiyulong@gtx8.com>
  *
  * This program is free software; you can redistribute it and/or modify

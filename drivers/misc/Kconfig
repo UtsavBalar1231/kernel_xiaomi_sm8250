@@ -639,6 +639,17 @@ config QTI_MAXIM_FAN_CONTROLLER
 	  Also, this driver initializes the power for the fan controller
 	  and exposes sysfs node to control different speeds of fan.
 
+config PERF_HELPER
+	default y
+	help
+	  this module support record perf lock history and other perf messages.
+
+config GPIO_TESTING_MODE
+	tristate "A simple GPIO testing mode driver for sar controler"
+	default n
+	help
+	  Enable driver for a simple testing mode detection
+
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
 source "drivers/misc/cb710/Kconfig"

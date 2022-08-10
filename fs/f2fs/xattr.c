@@ -3,7 +3,6 @@
  * fs/f2fs/xattr.c
  *
  * Copyright (c) 2012 Samsung Electronics Co., Ltd.
- * Copyright (C) 2021 XiaoMi, Inc.
  *             http://www.samsung.com/
  *
  * Portions of this code from linux/fs/ext2/xattr.c
@@ -355,7 +354,7 @@ static int lookup_all_xattrs(struct inode *inode, struct page *ipage,
 	if (!xnid && !inline_size)
 		return -ENODATA;
 
-	*base_size = XATTR_SIZE(xnid, inode) + XATTR_PADDING_SIZE;
+	*base_size = XATTR_SIZE(inode) + XATTR_PADDING_SIZE;
 	txattr_addr = xattr_alloc(F2FS_I_SB(inode), *base_size, is_inline);
 	if (!txattr_addr)
 		return -ENOMEM;
@@ -809,6 +808,29 @@ int f2fs_setxattr(struct inode *inode, int index, const char *name,
 	return err;
 }
 
+int f2fs_init_xattr_caches(struct f2fs_sb_info *sbi)
+{
+	dev_t dev = sbi->sb->s_bdev->bd_dev;
+	char slab_name[32];
+
+	sprintf(slab_name, "f2fs_xattr_entry-%u:%u", MAJOR(dev), MINOR(dev));
+
+	sbi->inline_xattr_slab_size = F2FS_OPTION(sbi).inline_xattr_size *
+					sizeof(__le32) + XATTR_PADDING_SIZE;
+
+	sbi->inline_xattr_slab = f2fs_kmem_cache_create(slab_name,
+					sbi->inline_xattr_slab_size);
+	if (!sbi->inline_xattr_slab)
+		return -ENOMEM;
+
+	return 0;
+}
+
+void f2fs_destroy_xattr_caches(struct f2fs_sb_info *sbi)
+{
+	kmem_cache_destroy(sbi->inline_xattr_slab);
+}
+
 void f2fs_inode_xattr_set(struct inode *inode)
 {
 	struct f2fs_sb_info *sbi = F2FS_I_SB(inode);
@@ -855,27 +877,4 @@ int f2fs_parent_inode_xattr_set(struct inode *inode)
 	}
 
 	return ret;
-}
-
-int f2fs_init_xattr_caches(struct f2fs_sb_info *sbi)
-{
-	dev_t dev = sbi->sb->s_bdev->bd_dev;
-	char slab_name[32];
-
-	sprintf(slab_name, "f2fs_xattr_entry-%u:%u", MAJOR(dev), MINOR(dev));
-
-	sbi->inline_xattr_slab_size = F2FS_OPTION(sbi).inline_xattr_size *
-					sizeof(__le32) + XATTR_PADDING_SIZE;
-
-	sbi->inline_xattr_slab = f2fs_kmem_cache_create(slab_name,
-					sbi->inline_xattr_slab_size);
-	if (!sbi->inline_xattr_slab)
-		return -ENOMEM;
-
-	return 0;
-}
-
-void f2fs_destroy_xattr_caches(struct f2fs_sb_info *sbi)
-{
-	kmem_cache_destroy(sbi->inline_xattr_slab);
 }

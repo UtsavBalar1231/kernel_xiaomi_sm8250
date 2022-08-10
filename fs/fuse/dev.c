@@ -327,16 +327,12 @@ static u64 fuse_get_unique(struct fuse_iqueue *fiq)
 	return ++fiq->reqctr;
 }
 
-static void queue_request(struct fuse_iqueue *fiq, struct fuse_req *req,
-				bool sync)
+static void queue_request(struct fuse_iqueue *fiq, struct fuse_req *req)
 {
 	req->in.h.len = sizeof(struct fuse_in_header) +
 		len_args(req->in.numargs, (struct fuse_arg *) req->in.args);
 	list_add_tail(&req->list, &fiq->pending);
-	if (sync)
-		wake_up_sync(&fiq->waitq);
-	else
-		wake_up(&fiq->waitq);
+	wake_up(&fiq->waitq);
 	kill_fasync(&fiq->fasync, SIGIO, POLL_IN);
 }
 
@@ -372,7 +368,7 @@ static void flush_bg_queue(struct fuse_conn *fc)
 		fc->active_background++;
 		spin_lock(&fiq->lock);
 		req->in.h.unique = fuse_get_unique(fiq);
-		queue_request(fiq, req, 0);
+		queue_request(fiq, req);
 		spin_unlock(&fiq->lock);
 	}
 }
@@ -501,7 +497,7 @@ static void __fuse_request_send(struct fuse_conn *fc, struct fuse_req *req)
 		req->out.h.error = -ENOTCONN;
 	} else {
 		req->in.h.unique = fuse_get_unique(fiq);
-		queue_request(fiq, req, 1);
+		queue_request(fiq, req);
 		/* acquire extra reference, since request is still needed
 		   after request_end() */
 		__fuse_get_request(req);
@@ -641,7 +637,7 @@ static int fuse_request_send_notify_reply(struct fuse_conn *fc,
 	req->in.h.unique = unique;
 	spin_lock(&fiq->lock);
 	if (fiq->connected) {
-		queue_request(fiq, req, 0);
+		queue_request(fiq, req);
 		err = 0;
 	}
 	spin_unlock(&fiq->lock);
@@ -1108,7 +1104,6 @@ __releases(fiq->lock)
 	unsigned reqsize = sizeof(ih) + sizeof(arg);
 	int err;
 
-	list_del_init(&req->intr_entry);
 	req->intr_unique = fuse_get_unique(fiq);
 	memset(&ih, 0, sizeof(ih));
 	memset(&arg, 0, sizeof(arg));
@@ -1116,6 +1111,7 @@ __releases(fiq->lock)
 	ih.opcode = FUSE_INTERRUPT;
 	ih.unique = req->intr_unique;
 	arg.unique = req->in.h.unique;
+	list_del_init(&req->intr_entry);
 
 	spin_unlock(&fiq->lock);
 	if (nbytes < reqsize)

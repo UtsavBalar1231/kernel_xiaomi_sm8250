@@ -2,7 +2,6 @@
  * Register map access API - debugfs
  *
  * Copyright 2011 Wolfson Microelectronics plc
- * Copyright (C) 2021 XiaoMi, Inc.
  *
  * Author: Mark Brown <broonie@opensource.wolfsonmicro.com>
  *
@@ -585,10 +584,10 @@ static ssize_t regmap_cache_bypass_write_file(struct file *file,
 	map->lock(map->lock_arg);
 
 	if (new_val && !map->cache_bypass) {
-		dev_warn(map->dev, "debugfs cache_bypass=Y forced\n");
+		dev_err(map->dev, "debugfs cache_bypass=Y forced\n");
 		add_taint(TAINT_USER, LOCKDEP_STILL_OK);
 	} else if (!new_val && map->cache_bypass) {
-		dev_warn(map->dev, "debugfs cache_bypass=N forced\n");
+		dev_err(map->dev, "debugfs cache_bypass=N forced\n");
 	}
 	map->cache_bypass = new_val;
 

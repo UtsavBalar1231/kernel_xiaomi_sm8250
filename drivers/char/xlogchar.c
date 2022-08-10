@@ -1,5 +1,4 @@
 /* Copyright (C) 2018 XiaoMi, Inc.
- * Copyright (C) 2021 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -60,11 +59,10 @@ static ssize_t xlogchar_read(struct file *file, char __user *buf,
 		mutex_unlock(&xlogdriver->xlog_mutex);
 		pr_info("%s  goint to sleep\n", __func__);
 		err = wait_event_interruptible(xlogdriver->wait_q, (XLOGBUF_SIZE - xlogdriver->free_size) >= count);
-		pr_info("%s  wakeup \n", __func__);
 		if (err == -ERESTARTSYS) {
-			pr_err("%s wake up by signal return erro\n", __func__);
 			return -ERESTARTSYS;
 		}
+		pr_info("%s  wakeup \n", __func__);
 		mutex_lock(&xlogdriver->xlog_mutex);
 	}
 	if (XLOGBUF_SIZE < xlogdriver->readindex + count) {

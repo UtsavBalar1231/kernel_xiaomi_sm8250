@@ -7,7 +7,6 @@
  * lifting
  *
  * Copyright IBM Corp. 2007-2010 Mel Gorman <mel@csn.ul.ie>
- * Copyright (C) 2021 XiaoMi, Inc.
  */
 #include <linux/cpu.h>
 #include <linux/swap.h>

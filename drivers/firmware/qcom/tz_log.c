@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
- * Copyright (C) 2021 XiaoMi, Inc.
  */
 #include <linux/debugfs.h>
 #include <linux/errno.h>
@@ -987,7 +986,7 @@ static int  tzdbgfs_init(struct platform_device *pdev)
 		goto err;
 	}
 
-	p_qsee_log_dump_handler = proc_create("qsee_log_dump", 0, g_proc_dir, &qsee_log_dump_proc_fops);
+	p_qsee_log_dump_handler = proc_create("qsee_log", 0, g_proc_dir, &qsee_log_dump_proc_fops);
 	if (p_qsee_log_dump_handler == NULL) {
 		pr_err("%s: qsee log dump dirs in proc  create failed ! \n", __func__);
 	}

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
- * Copyright (C) 2021 XiaoMi, Inc.
  */
 
 #include <linux/syscore_ops.h>
@@ -1440,6 +1439,24 @@ static inline u64 scale_exec_time(u64 delta, struct rq *rq)
 	return (delta * rq->task_exec_scale) >> 10;
 }
 
+u64 get_scale_exec_time(u64 delta, int cpu)
+{
+	return scale_exec_time(delta, cpu_rq(cpu));
+}
+
+void glk_update_util(struct rq *rq, unsigned int flags)
+{
+	struct update_util_data *data;
+
+	if (!(flags & SCHED_CPUFREQ_GLK))
+		return;
+
+	data = rcu_dereference_sched(*per_cpu_ptr(&cpufreq_update_util_data,
+					cpu_of(rq)));
+	if (data)
+		data->func(data, sched_ktime_clock(), flags);
+}
+
 /* Convert busy time to frequency equivalent
  * Assumes load is scaled to 1024
  */
@@ -1752,7 +1769,8 @@ static inline u32 predict_and_update_buckets(
 }
 
 static int
-account_busy_for_task_demand(struct rq *rq, struct task_struct *p, int event)
+__account_busy_for_task_demand(struct rq *rq, struct task_struct *p, int event,
+		bool account_wait_time)
 {
 	/*
 	 * No need to bother updating task demand for exiting tasks
@@ -1767,7 +1785,7 @@ account_busy_for_task_demand(struct rq *rq, struct task_struct *p, int event)
 	 * when a task begins to run or is migrated, it is not running and
 	 * is completing a segment of non-busy time.
 	 */
-	if (event == TASK_WAKE || (!SCHED_ACCOUNT_WAIT_TIME &&
+	if (event == TASK_WAKE || (!account_wait_time &&
 			 (event == PICK_NEXT_TASK || event == TASK_MIGRATE)))
 		return 0;
 
@@ -1786,11 +1804,31 @@ account_busy_for_task_demand(struct rq *rq, struct task_struct *p, int event)
 		if (rq->curr == p)
 			return 1;
 
-		return p->on_rq ? SCHED_ACCOUNT_WAIT_TIME : 0;
+		return p->on_rq ? account_wait_time : 0;
 	}
 
 	return 1;
 }
+
+static int
+account_busy_for_task_demand(struct rq *rq, struct task_struct *p, int event)
+{
+	return __account_busy_for_task_demand(rq, p, event, SCHED_ACCOUNT_WAIT_TIME);
+}
+
+static int
+account_pkg_busy_time(struct rq *rq, struct task_struct *p, int event)
+{
+	if (is_idle_task(p)) {
+		if (event == PICK_NEXT_TASK)
+			return 0;
+
+		return 1;
+	}
+
+	return __account_busy_for_task_demand(rq, p, event, false);
+}
+
 
 unsigned int sysctl_sched_task_unfilter_period = 200000000;
 
@@ -2107,6 +2145,21 @@ void update_task_ravg(struct task_struct *p, struct rq *rq, int event,
 	update_task_demand(p, rq, event, wallclock);
 	update_cpu_busy_time(p, rq, event, wallclock, irqtime);
 	update_task_pred_demand(rq, p, event);
+
+	if (pkg_enable()) {
+		int fstat = 0;
+		u64 delta = 0;
+		int pkg_task_busy = account_pkg_busy_time(rq, p, event);
+		if (pkg_task_busy) {
+			fstat |= PKG_TASK_BUSY;
+			if (is_idle_task(p))
+				delta = irqtime;
+			else
+				delta = wallclock - p->ravg.mark_start;
+			delta = scale_exec_time(delta, rq);
+			update_pkg_load(p, rq->cpu, fstat, wallclock, delta);
+		}
+	}
 
 	if (exiting_task(p))
 		goto done;
@@ -3444,6 +3497,14 @@ void walt_irq_work(struct irq_work *irq_work)
 							&asym_cap_sibling_cpus))
 				flag |= SCHED_CPUFREQ_INTERCLUSTER_MIG;
 
+			if ((!is_migration && !is_asym_migration)
+				&& glk_enable()) {
+				cpufreq_update_util(cpu_rq(cpu), flag |
+						SCHED_CPUFREQ_CONTINUE);
+				i++;
+				continue;
+			}
+
 			if (i == num_cpus)
 				cpufreq_update_util(cpu_rq(cpu), flag);
 			else
@@ -3466,7 +3527,6 @@ void walt_irq_work(struct irq_work *irq_work)
 	 */
 	if (!is_migration) {
 		spin_lock_irqsave(&sched_ravg_window_lock, flags);
-
 		if ((sched_ravg_window != new_sched_ravg_window) &&
 		    (wc < this_rq()->window_start + new_sched_ravg_window)) {
 			sched_ravg_window_change_time = sched_ktime_clock();

@@ -28,6 +28,11 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/sched.h>
 
+#undef CREATE_TRACE_POINTS
+#include <trace/events/kperfevents_sched.h>
+#define CREATE_TRACE_POINTS
+DEFINE_TRACE(kperfevents_sched_wait);
+
 DEFINE_PER_CPU_SHARED_ALIGNED(struct rq, runqueues);
 
 #ifdef CONFIG_SCHED_DEBUG
@@ -732,6 +737,12 @@ static void set_load_weight(struct task_struct *p, bool update_load)
 	}
 }
 
+void __weak migt_monitor_hook(int enqueue, int cpu,
+		struct task_struct *p, u64 walltime)
+{
+	/*do nothing*/
+}
+
 #ifdef CONFIG_UCLAMP_TASK
 /*
  * Serializes updates of utilization clamp values
@@ -1328,6 +1339,7 @@ static inline void enqueue_task(struct rq *rq, struct task_struct *p, int flags)
 	uclamp_rq_inc(rq, p);
 	p->sched_class->enqueue_task(rq, p, flags);
 	walt_update_last_enqueue(p);
+	migt_monitor_hook(1, rq->cpu, p, sched_ktime_clock());
 	trace_sched_enq_deq_task(p, 1, cpumask_bits(&p->cpus_allowed)[0]);
 }
 
@@ -1347,6 +1359,7 @@ static inline void dequeue_task(struct rq *rq, struct task_struct *p, int flags)
 	if (p == rq->ed_task)
 		early_detection_notify(rq, sched_ktime_clock());
 #endif
+	migt_monitor_hook(0, rq->cpu, p, sched_ktime_clock());
 	trace_sched_enq_deq_task(p, 0, cpumask_bits(&p->cpus_allowed)[0]);
 }
 
@@ -1623,6 +1636,10 @@ void set_cpus_allowed_common(struct task_struct *p, const struct cpumask *new_ma
 {
 	cpumask_copy(&p->cpus_allowed, new_mask);
 	p->nr_cpus_allowed = cpumask_weight(new_mask);
+#ifdef CONFIG_PACKAGE_RUNTIME_INFO
+	p->pkg.migt.flag &= ~MINOR_TASK;
+	cpumask_copy(&p->pkg.migt.cpus_allowed, new_mask);
+#endif
 }
 
 void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
@@ -2181,9 +2198,27 @@ int select_task_rq(struct task_struct *p, int cpu, int sd_flags, int wake_flags,
 		   int sibling_count_hint)
 {
 	bool allow_isolated = (p->flags & PF_KTHREAD);
+#ifdef CONFIG_MIGT
+	bool minor_wtask = minor_window_task(p);
+	cpumask_t minor_window_cpumask;
 
+	if (minor_wtask && !(p->pkg.migt.flag & MINOR_TASK)) {
+		p->pkg.migt.flag |= MINOR_TASK;
+		cpumask_copy(&p->pkg.migt.cpus_allowed, &p->cpus_allowed);
+
+		if (get_minor_window_cpumask(p, &minor_window_cpumask)) {
+			cpumask_copy(&p->cpus_allowed, &minor_window_cpumask);
+			p->nr_cpus_allowed = cpumask_weight(&minor_window_cpumask);
+		}
+	}
+
+	if (!minor_wtask && (p->pkg.migt.flag & MINOR_TASK)) {
+		p->pkg.migt.flag &= ~MINOR_TASK;
+		cpumask_copy(&p->cpus_allowed, &p->pkg.migt.cpus_allowed);
+		p->nr_cpus_allowed = cpumask_weight(&p->cpus_allowed);
+	}
+#endif
 	lockdep_assert_held(&p->pi_lock);
-
 	if (p->nr_cpus_allowed > 1)
 		cpu = p->sched_class->select_task_rq(p, cpu, sd_flags, wake_flags,
 						     sibling_count_hint);
@@ -2865,7 +2900,9 @@ static void __sched_fork(unsigned long clone_flags, struct task_struct *p)
 	p->low_latency			= 0;
 #endif
 	INIT_LIST_HEAD(&p->se.group_node);
-
+#ifdef CONFIG_PACKAGE_RUNTIME_INFO
+	init_task_runtime_info(p);
+#endif
 #ifdef CONFIG_FAIR_GROUP_SCHED
 	p->se.cfs_rq			= NULL;
 #endif
@@ -5623,11 +5660,27 @@ long sched_setaffinity(pid_t pid, const struct cpumask *in_mask)
 	if (retval)
 		goto out_free_new_mask;
 
-
+#ifdef CONFIG_PACKAGE_RUNTIME_INFO
+	if (minor_window_task(p)) {
+		retval = -EPERM;
+		cpuset_cpus_allowed(p, cpus_allowed);
+		cpumask_and(new_mask, in_mask, cpus_allowed);
+		cpumask_andnot(&allowed_mask, new_mask, cpu_isolated_mask);
+		dest_cpu = cpumask_any_and(cpu_active_mask, &allowed_mask);
+		if (dest_cpu < nr_cpu_ids) {
+			 cpuset_cpus_allowed(p, cpus_allowed);
+			  if (!cpumask_subset(new_mask, cpus_allowed))
+				  cpumask_copy(new_mask, cpus_allowed);
+			  cpumask_copy(&p->pkg.migt.cpus_allowed, new_mask);
+		}
+		p->pkg.migt.flag |= MINOR_TASK;
+		cpumask_copy(&p->pkg.migt.cpus_allowed, new_mask);
+		goto out_free_new_mask;
+	}
+#endif
 	cpuset_cpus_allowed(p, cpus_allowed);
 	cpumask_and(new_mask, in_mask, cpus_allowed);
 	trace_sched_setaffinity(pid, in_mask);
-
 	/*
 	 * Since bandwidth control happens on root_domain basis,
 	 * if admission test is enabled, we only admit -deadline
@@ -8659,3 +8712,41 @@ void sched_exit(struct task_struct *p)
 #endif /* CONFIG_SCHED_WALT */
 
 __read_mostly bool sched_predl = 1;
+
+inline bool is_critical_task(struct task_struct *p)
+{
+	return is_top_app(p) || is_inherit_top_app(p);
+}
+
+inline bool is_top_app(struct task_struct *p)
+{
+	return p && p->top_app > 0;
+}
+
+inline bool is_inherit_top_app(struct task_struct *p)
+{
+	return p && p->inherit_top_app > 0;
+}
+
+inline void set_inherit_top_app(struct task_struct *p,
+				struct task_struct *from)
+{
+	if (!p || !from)
+		return;
+	if (is_critical_task(p) || from->inherit_top_app >= INHERIT_DEPTH)
+		return;
+	p->inherit_top_app = from->inherit_top_app + 1;
+#ifdef CONFIG_PERF_HUMANTASK
+	p->human_task = 1;
+#endif
+}
+
+inline void restore_inherit_top_app(struct task_struct *p)
+{
+	if (p && is_inherit_top_app(p)) {
+		p->inherit_top_app = 0;
+#ifdef CONFIG_PERF_HUMANTASK
+		p->human_task  = 0 ;
+#endif
+	}
+}

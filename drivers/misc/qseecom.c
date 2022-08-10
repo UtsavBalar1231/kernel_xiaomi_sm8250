@@ -3,7 +3,6 @@
  * QTI Secure Execution Environment Communicator (QSEECOM) driver
  *
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (C) 2021 XiaoMi, Inc.
  */
 
 #define pr_fmt(fmt) "QSEECOM: %s: " fmt, __func__
@@ -3047,8 +3046,7 @@ static int __qseecom_unload_app(struct qseecom_dev_handle *data,
 			sizeof(struct qseecom_unload_app_ireq),
 			&resp, sizeof(resp));
 	if (ret) {
-		pr_err("scm_call to unload app (id = %d) failed ret: %d\n",
-			app_id, ret);
+		pr_err("scm_call to unload app (id = %d) failed ret: %d\n", app_id, ret);
 		return ret;
 	}
 	switch (resp.result) {

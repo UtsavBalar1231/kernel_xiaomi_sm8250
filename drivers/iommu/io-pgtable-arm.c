@@ -14,7 +14,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * Copyright (C) 2014 ARM Limited
- * Copyright (C) 2021 XiaoMi, Inc.
  *
  * Author: Will Deacon <will.deacon@arm.com>
  */

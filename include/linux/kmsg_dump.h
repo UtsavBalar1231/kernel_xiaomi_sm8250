@@ -2,7 +2,6 @@
  * linux/include/kmsg_dump.h
  *
  * Copyright (C) 2009 Net Insight AB
- * Copyright (C) 2021 XiaoMi, Inc.
  *
  * Author: Simon Kagstrom <simon.kagstrom@netinsight.net>
  *

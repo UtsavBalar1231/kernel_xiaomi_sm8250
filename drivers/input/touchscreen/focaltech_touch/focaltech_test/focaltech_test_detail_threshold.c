@@ -1,6 +1,5 @@
 /************************************************************************
 * Copyright (C) 2012-2018, Focaltech Systems (R)£¬All Rights Reserved.
-* Copyright (C) 2021 XiaoMi, Inc.
 *
 * File Name: focaltech_test_detail_threshold.c
 *

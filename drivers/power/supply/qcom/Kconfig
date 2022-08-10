@@ -27,6 +27,49 @@ config QPNP_SMB5
 	  VBUS and VCONN regulators are registered for supporting OTG,
 	  and powered Type-C cables respectively.
 
+config QPNP_SMB5_PSYCHE
+	tristate "SMB5 Battery Charger"
+	depends on MFD_SPMI_PMIC
+	help
+	  Say Y to enables support for the SMB5 charging peripheral.
+	  The QPNP SMB5 charger driver supports the charger peripheral
+	  present in the chip.
+	  The power supply framework is used to communicate battery and
+	  usb properties to userspace and other driver consumers such
+	  as fuel gauge, USB, and USB-PD.
+	  VBUS and VCONN regulators are registered for supporting OTG,
+	  and powered Type-C cables respectively.
+	  This is to distinguish diff project.
+
+
+config QPNP_SMB5_POUSSIN
+	tristate "SMB5 Battery Charger"
+	depends on MFD_SPMI_PMIC
+	help
+	  Say Y to enables support for the SMB5 charging peripheral.
+	  The QPNP SMB5 charger driver supports the charger peripheral
+	  present in the chip.
+	  The power supply framework is used to communicate battery and
+	  usb properties to userspace and other driver consumers such
+	  as fuel gauge, USB, and USB-PD.
+	  VBUS and VCONN regulators are registered for supporting OTG,
+	  and powered Type-C cables respectively.
+	  This is to distinguish diff project.
+
+config QPNP_SMB5_MUNCH
+	tristate "SMB5 Battery Charger"
+	depends on MFD_SPMI_PMIC
+	help
+	  Say Y to enables support for the SMB5 charging peripheral.
+	  The QPNP SMB5 charger driver supports the charger peripheral
+	  present in the chip.
+	  The power supply framework is used to communicate battery and
+	  usb properties to userspace and other driver consumers such
+	  as fuel gauge, USB, and USB-PD.
+	  VBUS and VCONN regulators are registered for supporting OTG,
+	  and powered Type-C cables respectively.
+	  This is to distinguish diff project.
+
 config QPNP_SMBLITE
 	tristate "SMBLITE Battery Charger"
 	depends on MFD_SPMI_PMIC
@@ -138,6 +181,26 @@ config FUEL_GAUGE_BQ27Z561
 	help
 	  Say Y to enable support for TI bq27z561 fuel gauge driver
 
+config FUEL_GAUGE_BQ27Z561_PSYCHE
+        tristate "TI bq27z561 battery gauge driver"
+        help
+          Say Y to enable support for TI bq27z561 fuel gauge driver
+
+config FUEL_GAUGE_BQ27Z561_POUSSIN
+        tristate "TI bq27z561 battery gauge driver"
+        help
+          Say Y to enable support for TI bq27z561 fuel gauge driver
+
+config FUEL_GAUGE_BQ27Z561_MUNCH
+        tristate "TI bq27z561 battery gauge driver"
+        help
+          Say Y to enable support for TI bq27z561 fuel gauge driver
+
+config DUAL_FUEL_GAUGE_BQ27Z561
+	tristate "TI bq27z561 battery gauge driver"
+	help
+	  Say Y to enable support for TI bq27z561 fuel gauge driver
+
 config HL6111R
 	bool "HL6111R driver"
 	depends on I2C && OF
@@ -180,6 +243,17 @@ config IDT_P9415
 	  The driver supports charger enable/disable.
 	  The driver reports the charger status via the power supply framework.
 	  The driver controls idtp9415 via I2C and
+	  supports device-tree interface.
+
+config IDT_P9418
+	tristate "idtp9418 wireless Charger"
+	depends on I2C
+	help
+	  Say Y to include support for idtp9418 wireless Charger.
+	  idtp9418 is a wireless battery charger.
+	  The driver supports charger enable/disable.
+	  The driver reports the charger status via the power supply framework.
+	  The driver controls idtp9418 via I2C and
 	  supports device-tree interface.
 
 config RX1619_TRIM

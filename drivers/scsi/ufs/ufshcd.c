@@ -4,7 +4,6 @@
  * This code is based on drivers/scsi/ufs/ufshcd.c
  * Copyright (C) 2011-2013 Samsung India Software Operations
  * Copyright (c) 2013-2021, The Linux Foundation. All rights reserved.
- * Copyright (C) 2021 XiaoMi, Inc.
  *
  * Authors:
  *	Santosh Yaraganavi <santosh.sy@samsung.com>
@@ -466,12 +465,6 @@ static struct ufs_dev_fix ufs_fixups[] = {
 		UFS_DEVICE_QUIRK_HS_G1_TO_HS_G3_SWITCH),
 	UFS_FIX(UFS_VENDOR_SKHYNIX, "hC8HL1",
 		UFS_DEVICE_QUIRK_HS_G1_TO_HS_G3_SWITCH),
-	UFS_FIX(UFS_VENDOR_SAMSUNG, "KLUEG8UHDB-C2D1",
-		UFS_DEVICE_QUIRK_PA_HIBER8TIME),
-	UFS_FIX(UFS_VENDOR_SAMSUNG, "KLUDG4UHDB-B2D1",
-		UFS_DEVICE_QUIRK_PA_HIBER8TIME),
-	UFS_FIX(UFS_VENDOR_SAMSUNG, "KLUFG8RHDA-B2D1",
-		UFS_DEVICE_QUIRK_PA_HIBER8TIME),
 	END_FIX
 };
 
@@ -1754,7 +1747,7 @@ out:
 
 static int ufshcd_clock_scaling_prepare(struct ufs_hba *hba)
 {
-	#define DOORBELL_CLR_TOUT_US		(1000 * 1000) /* 1 sec */
+	#define DOORBELL_CLR_TOUT_US		(40 * 1000 * 1000) /* 40 sec */
 	int ret = 0;
 	/*
 	 * make sure that there are no outstanding requests when
@@ -2267,15 +2260,14 @@ start:
 			}
 
 			ufs_spin_unlock_irqrestore(hba->host->host_lock, flags);
-			if (!oops_in_progress) {
-				flush_result = flush_work(&hba->clk_gating.ungate_work);
+			if (!oops_in_progress)
+                  		flush_result = flush_work(&hba->clk_gating.ungate_work);
 				if (hba->clk_gating.is_suspended && !flush_result)
 					goto out;
-			} else
+			else
 				ufshcd_panic_ungate_work(hba);
 
 			ufs_spin_lock_irqsave(hba->host->host_lock, flags);
-
 			if (hba->ufshcd_state == UFSHCD_STATE_OPERATIONAL)
 				goto start;
 		}
@@ -2349,6 +2341,7 @@ static void ufshcd_gate_work(struct work_struct *work)
 
 	hba->clk_gating.gate_wk_in_process = true;
 	ufs_spin_lock_irqsave(hba->host->host_lock, flags);
+
 	if (hba->clk_gating.state == CLKS_OFF)
 		goto rel_lock;
 	/*
@@ -4075,7 +4068,7 @@ static int ufshcd_wait_for_dev_cmd(struct ufs_hba *hba,
 		ufshcd_outstanding_req_clear(hba, lrbp->task_tag);
 	}
 
-	if (err && err != -EAGAIN)
+	if (err)
 		ufsdbg_set_err_state(hba);
 
 	return err;
@@ -4708,6 +4701,20 @@ static inline int ufshcd_read_power_desc(struct ufs_hba *hba,
 int ufshcd_read_device_desc(struct ufs_hba *hba, u8 *buf, u32 size)
 {
 	return ufshcd_read_desc(hba, QUERY_DESC_IDN_DEVICE, 0, buf, size);
+}
+
+int ufshcd_read_health_desc(struct ufs_hba *hba, u8 *buf, u32 size)
+{
+	return ufshcd_read_desc(hba, QUERY_DESC_IDN_HEALTH, 0, buf, size);
+}
+
+int ufshcd_get_hynix_hr(struct scsi_device *sdev, u8 *buf, u32 size)
+{
+	struct ufs_hba *hba;
+
+	hba = shost_priv(sdev->host);
+	size = QUERY_DESC_HEALTH_DEF_SIZE;
+	return ufshcd_read_desc(hba, QUERY_DESC_IDN_HEALTH, 0, buf, size);
 }
 
 /**
@@ -5803,24 +5810,24 @@ static int ufshcd_complete_dev_init(struct ufs_hba *hba)
 	}
 
 	/*
-	 * Some vendor devices are taking longer time to complete its internal
-	 * initialization, so set fDeviceInit flag poll time to 5 secs
-	 */
+	* Some vendor devices are taking longer time to complete its internal
+	* initialization, so set fDeviceInit flag poll time to 5 secs
+	*/
 	timeout = ktime_add_ms(ktime_get(), 5000);
 
 	/* poll for max. 5sec for fDeviceInit flag to clear */
 	while (1) {
 		bool timedout = ktime_after(ktime_get(), timeout);
 		err = ufshcd_query_flag_retry(hba, UPIU_QUERY_OPCODE_READ_FLAG,
-					QUERY_FLAG_IDN_FDEVICEINIT, &flag_res);
+			QUERY_FLAG_IDN_FDEVICEINIT, &flag_res);
 		if (err || !flag_res || timedout)
 			break;
 
 		/*
-		 * Poll for this flag in a tight loop for first 1000 iterations.
-		 * This is same as old logic which is working for most of the
-		 * devices, so continue using the same.
-		 */
+		* Poll for this flag in a tight loop for first 1000 iterations.
+		* This is same as old logic which is working for most of the
+		* devices, so continue using the same.
+		*/
 		if (i == 1000)
 			msleep(20);
 		else
@@ -8604,9 +8611,8 @@ static int ufs_get_device_desc(struct ufs_hba *hba,
 {
 	int err;
 	size_t buff_len;
-	u8 model_index, lun;
+	u8 model_index;
 	u8 *desc_buf;
-	u32 d_lu_wb_buf_alloc;
 
 	buff_len = max_t(size_t, hba->desc_size.dev_desc,
 			 QUERY_DESC_MAX_SIZE + 1);
@@ -8634,10 +8640,7 @@ static int ufs_get_device_desc(struct ufs_hba *hba,
 	model_index = desc_buf[DEVICE_DESC_PARAM_PRDCT_NAME];
 
 
-	/* Enable WB only for UFS-3.1 or UFS-2.2 OR if desc len >= 0x59 */
-/*	if ((dev_desc->wspecversion >= 0x310) ||
-	    (dev_desc->wspecversion == 0x220) ||
-	    (dev_desc->wmanufacturerid == UFS_VENDOR_TOSHIBA &&
+	/*if ((dev_desc->wmanufacturerid == UFS_VENDOR_TOSHIBA &&
 	     dev_desc->wspecversion >= 0x300 &&
 	     hba->desc_size.dev_desc >= 0x59)) {
 		hba->dev_info.d_ext_ufs_feature_sup =
@@ -8648,7 +8651,6 @@ static int ufs_get_device_desc(struct ufs_hba *hba,
 			desc_buf[DEVICE_DESC_PARAM_EXT_UFS_FEATURE_SUP + 2]
 								<< 8 |
 			desc_buf[DEVICE_DESC_PARAM_EXT_UFS_FEATURE_SUP + 3];
-
 		hba->dev_info.b_wb_buffer_type =
 			desc_buf[DEVICE_DESC_PARAM_WB_TYPE];
 
@@ -8767,13 +8769,6 @@ static int ufshcd_tune_pa_hibern8time(struct ufs_hba *hba)
 	int ret = 0;
 	u32 local_tx_hibern8_time_cap = 0, peer_rx_hibern8_time_cap = 0;
 	u32 max_hibern8_time, tuned_pa_hibern8time;
-	u32 pa_hibern8time_quirk_enabled = hba->dev_info.quirks &
-		UFS_DEVICE_QUIRK_PA_HIBER8TIME;
-
-	if (!ufshcd_is_unipro_pa_params_tuning_req(hba) &&
-	    !pa_hibern8time_quirk_enabled) {
-		return 0;
-	}
 
 	ret = ufshcd_dme_get(hba,
 			     UIC_ARG_MIB_SEL(TX_HIBERN8TIME_CAPABILITY,
@@ -8794,13 +8789,7 @@ static int ufshcd_tune_pa_hibern8time(struct ufs_hba *hba)
 	/* make sure proper unit conversion is applied */
 	tuned_pa_hibern8time = ((max_hibern8_time * HIBERN8TIME_UNIT_US)
 				/ PA_HIBERN8_TIME_UNIT_US);
-	/* PA_HIBERN8TIME is product of tuned_pa_hibern8time * granularity,
-	 * setting tuned_pa_hibern8time as 3 and since granularity is 100us
-	 * for both host and device side, 3 *100us = 300us is set as
-	 * PA_HIBERN8TIME if UFS_DEVICE_QUIRK_PA_HIBER8TIME quirk is enabled
-	 */
-	if (pa_hibern8time_quirk_enabled)
-		tuned_pa_hibern8time = 3; /* 3 *100us =300us */
+
 	ret = ufshcd_dme_set(hba, UIC_ARG_MIB(PA_HIBERN8TIME),
 			     tuned_pa_hibern8time);
 out:
@@ -8825,6 +8814,7 @@ static int ufshcd_quirk_tune_host_pa_tactivate(struct ufs_hba *hba)
 	u32 pa_tactivate, peer_pa_tactivate;
 	u32 pa_tactivate_us, peer_pa_tactivate_us;
 	u8 gran_to_us_table[] = {1, 4, 8, 16, 32, 100};
+	u32 pa_hibern8time_quirk_enabled = hba->dev_quirks & UFS_DEVICE_QUIRK_PA_SYNCLENGTH;
 
 	ret = ufshcd_dme_get(hba, UIC_ARG_MIB(PA_GRANULARITY),
 				  &granularity);
@@ -8872,16 +8862,21 @@ static int ufshcd_quirk_tune_host_pa_tactivate(struct ufs_hba *hba)
 		ret = ufshcd_dme_peer_set(hba, UIC_ARG_MIB(PA_TACTIVATE),
 					  new_peer_pa_tactivate);
 	}
-
+	if(pa_hibern8time_quirk_enabled){
+		ret=ufshcd_dme_peer_set(hba, UIC_ARG_MIB(0x15D0), 0x4F);  // Synclength G4
+		ret=ufshcd_dme_peer_set(hba, UIC_ARG_MIB(0x1552), 0x4F);  // Synclength G1
+	}
 out:
 	return ret;
 }
 
 static void ufshcd_tune_unipro_params(struct ufs_hba *hba)
 {
-	if (ufshcd_is_unipro_pa_params_tuning_req(hba))
+	if (ufshcd_is_unipro_pa_params_tuning_req(hba)){
 		ufshcd_tune_pa_tactivate(hba);
-	ufshcd_tune_pa_hibern8time(hba);
+		ufshcd_tune_pa_hibern8time(hba);
+	}
+
 	if (hba->dev_info.quirks & UFS_DEVICE_QUIRK_PA_TACTIVATE)
 		/* set 1ms timeout for PA_TACTIVATE */
 		ufshcd_dme_set(hba, UIC_ARG_MIB(PA_TACTIVATE), 10);
@@ -8979,6 +8974,44 @@ void ufshcd_apply_pm_quirks(struct ufs_hba *hba)
 	}
 }
 EXPORT_SYMBOL(ufshcd_apply_pm_quirks);
+
+static char serial[QUERY_DESC_MAX_SIZE] = {0};
+
+char *ufs_get_serial(void)
+{
+	return serial;
+}
+
+static int ufs_init_serial(struct ufs_hba *hba)
+{
+	int err, i;
+	u8 model_index;
+	u8 str_desc_buf[QUERY_DESC_MAX_SIZE + 1];
+	u8 desc_buf[QUERY_DESC_DEVICE_DEF_SIZE];
+
+	err = ufshcd_read_device_desc(hba, desc_buf,
+			QUERY_DESC_DEVICE_DEF_SIZE);
+	if (err) {
+		pr_err("read device_desc failed\n");
+		goto out;
+	}
+
+	/*SerialNumber*/
+	model_index = desc_buf[DEVICE_DESC_PARAM_SN];
+	memset(str_desc_buf, 0, QUERY_DESC_MAX_SIZE);
+	err = ufshcd_read_string_desc(hba, model_index, str_desc_buf,
+			QUERY_DESC_MAX_SIZE, FALSE);
+	if (err)
+		goto out;
+
+	for (i = 2; ((i <  str_desc_buf[QUERY_DESC_LENGTH_OFFSET]) && (i < QUERY_DESC_MAX_SIZE / 2)); i += 2) {
+		snprintf(serial+i*2 - 4, 5, "%02x%02x", str_desc_buf[i], str_desc_buf[i+1]);
+	}
+	pr_info("SerialNumber:%s\n", serial);
+
+out:
+	return err;
+}
 
 /**
  * ufshcd_set_dev_ref_clk - set the device bRefClkFreq
@@ -9195,7 +9228,7 @@ reinit:
 
 	ufs_fixup_device_setup(hba, &card);
 	ufshcd_tune_unipro_params(hba);
-
+	ufs_init_serial(hba);
 	ufshcd_apply_pm_quirks(hba);
 	if (card.wspecversion < 0x300) {
 		ret = ufshcd_set_vccq_rail_unused(hba,
@@ -9316,6 +9349,7 @@ reinit:
 	ufshcd_set_auto_hibern8_timer(hba);
 
 out:
+
 	if (ret) {
 		ufshcd_set_ufs_dev_poweroff(hba);
 		ufshcd_set_link_off(hba);

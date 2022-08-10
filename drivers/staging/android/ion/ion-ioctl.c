@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (C) 2011 Google, Inc.
- * Copyright (C) 2021 XiaoMi, Inc.
  */
 
 #include <linux/kernel.h>

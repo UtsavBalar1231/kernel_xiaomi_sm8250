@@ -3,7 +3,6 @@
  * drivers/staging/android/ion/ion.c
  *
  * Copyright (C) 2011 Google, Inc.
- * Copyright (C) 2021 XiaoMi, Inc.
  * Copyright (c) 2011-2020, The Linux Foundation. All rights reserved.
  *
  */
@@ -1058,6 +1057,8 @@ struct dma_buf *ion_alloc_dmabuf(size_t len, unsigned int heap_id_mask,
 	char caller_task_comm[TASK_COMM_LEN];
 	bool camera_heap_found = false;
 	struct task_struct *p = current->group_leader;
+	unsigned int system_heap_id = ION_HEAP(ION_SYSTEM_HEAP_ID);
+	unsigned int system_heap_id1 = ION_HEAP(ION_SYSTEM_HEAP_ID) | ION_HEAP(ION_CAMERA_HEAP_ID);
 
 	pr_debug("%s: len %zu heap_id_mask %u flags %x\n", __func__,
 		 len, heap_id_mask, flags);
@@ -1081,8 +1082,8 @@ struct dma_buf *ion_alloc_dmabuf(size_t len, unsigned int heap_id_mask,
 
 	if (pid_info <= 0) {
 		get_task_comm(task_comm, p);
-		if (strstr(task_comm, "provider@") || strstr(task_comm, "camera")) {
-			if ((heap_id_mask & (1 << ION_SYSTEM_HEAP_ID)) && camera_heap_found == true)
+		if (strstr(task_comm, "provider@") || strstr(task_comm, ".android.camera")) {
+			if ((heap_id_mask == system_heap_id || heap_id_mask == system_heap_id1) && camera_heap_found == true)
 				heap_id_mask = 1 << ION_CAMERA_HEAP_ID;
 		}
         } else {
@@ -1095,8 +1096,8 @@ struct dma_buf *ion_alloc_dmabuf(size_t len, unsigned int heap_id_mask,
 			p = current->group_leader;
 			get_task_comm(caller_task_comm, p);
 		}
-		if (strstr(caller_task_comm, "provider@") || strstr(caller_task_comm, "camera")) {
-			if ((heap_id_mask & (1 << ION_SYSTEM_HEAP_ID)) && camera_heap_found == true)
+		if (strstr(caller_task_comm, "provider@") || strstr(caller_task_comm, ".android.camera")) {
+			if ((heap_id_mask == system_heap_id || heap_id_mask == system_heap_id1) && camera_heap_found == true)
                                 heap_id_mask = 1 << ION_CAMERA_HEAP_ID;
 		}
 	}

@@ -2,7 +2,6 @@
  * BQ2570x battery charging driver
  *
  * Copyright (C) 2017 Texas Instruments *
- * Copyright (C) 2021 XiaoMi, Inc.
  * This package is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
@@ -35,7 +34,7 @@
 #include <linux/debugfs.h>
 #include <linux/bitops.h>
 #include <linux/math64.h>
-
+#include <asm/neon.h>
 #include "bq25970_reg.h"
 /*#include "bq2597x.h"*/
 
@@ -58,6 +57,18 @@ enum {
 	ADC_MAX_NUM,
 };
 
+static float sc8551_adc_lsb[] = {
+	[ADC_IBUS]	= SC8551_IBUS_ADC_LSB,
+	[ADC_VBUS]	= SC8551_VBUS_ADC_LSB,
+	[ADC_VAC]	= SC8551_VAC_ADC_LSB,
+	[ADC_VOUT]	= SC8551_VOUT_ADC_LSB,
+	[ADC_VBAT]	= SC8551_VBAT_ADC_LSB,
+	[ADC_IBAT]	= SC8551_IBAT_ADC_LSB,
+	[ADC_TBUS]	= SC8551_TSBUS_ADC_LSB,
+	[ADC_TBAT]	= SC8551_TSBAT_ADC_LSB,
+	[ADC_TDIE]	= SC8551_TDIE_ADC_LSB,
+};
+
 #define BQ25970_ROLE_STDALONE   0
 #define BQ25970_ROLE_SLAVE	1
 #define BQ25970_ROLE_MASTER	2
@@ -66,6 +77,13 @@ enum {
 	BQ25970_STDALONE,
 	BQ25970_SLAVE,
 	BQ25970_MASTER,
+};
+
+enum {
+	BQ25968,
+	BQ25970,
+	SC8551,
+	NU2105,
 };
 
 static int bq2597x_mode_data[] = {
@@ -228,6 +246,7 @@ struct bq2597x {
 	int part_no;
 	int revision;
 
+	int chip_vendor;
 	int mode;
 
 	struct mutex data_lock;
@@ -308,6 +327,9 @@ struct bq2597x {
 	struct power_supply_config psy_cfg;
 	struct power_supply *fc2_psy;
 };
+
+static int bq2597x_set_acovp_th(struct bq2597x *bq, int threshold);
+static int bq2597x_set_busovp_th(struct bq2597x *bq, int threshold);
 
 /************************************************************************/
 static int __bq2597x_read_byte(struct bq2597x *bq, u8 reg, u8 *data)
@@ -426,6 +448,39 @@ out:
 	mutex_unlock(&bq->i2c_rw_lock);
 	return ret;
 }
+
+/*********************************************************************/
+//don't use 1:1 mode of sc8551A
+//static int sc8551_set_charge_mode(struct bq2597x *bq, int mode)
+//{
+//	int ret;
+//	u8 val;
+//	if (bq->chip_vendor != SC8551)
+//		return ret;
+//	if (mode != SC8551_CHARGE_MODE_BYPASS && mode != SC8551_CHARGE_MODE_DIV2)
+//		return ret;
+//	val = mode << SC8551_CHARGE_MODE_SHIFT;
+//	ret = bq2597x_update_bits(bq, SC8551_REG_31,
+//				SC8551_CHARGE_MODE_MASK, val);
+//	/* in bypass mode, ovp will be set to half value automatically */
+//	/* in charge_pump mode, should set it manually */
+//	if (mode == SC8551_CHARGE_MODE_DIV2) {
+//		ret = bq2597x_set_acovp_th(bq, bq->cfg->ac_ovp_th);
+//		ret = bq2597x_set_busovp_th(bq, bq->cfg->bus_ovp_th);
+//	}
+//	return ret;
+//}
+//EXPORT_SYMBOL_GPL(sc8551_set_charge_mode);
+//static int sc8551_get_charge_mode(struct bq2597x *bq)
+//{
+//	int ret;
+//	u8 val;
+//	if (bq->chip_vendor != SC8551)
+//		return -1;
+//	ret = bq2597x_read_byte(bq, SC8551_REG_31, &val);
+//	return (int)(val & SC8551_CHARGE_MODE_MASK);
+//}
+//EXPORT_SYMBOL_GPL(sc8551_get_charge_mode);
 
 /*********************************************************************/
 
@@ -1044,18 +1099,41 @@ static int bq2597x_get_adc_data(struct bq2597x *bq, int channel,  int *result)
 {
 	int ret;
 	u16 val;
+	u8 val_l, val_h;
 	s16 t;
 
-	if (channel > ADC_MAX_NUM)
+	if (channel < 0 || channel >= ADC_MAX_NUM)
 		return -EINVAL;
 
-	ret = bq2597x_read_word(bq, ADC_REG_BASE + (channel << 1), &val);
-	if (ret < 0)
-		return ret;
-	t = val & 0xFF;
-	t <<= 8;
-	t |= (val >> 8) & 0xFF;
-	*result = t;
+	if (bq->chip_vendor == NU2105) {
+		ret = bq2597x_read_byte(bq, ADC_REG_BASE + (channel << 1), &val_h);
+		ret |= bq2597x_read_byte(bq, ADC_REG_BASE + (channel << 1) + 1, &val_l);
+		if (ret < 0)
+			return ret;
+		t = val_l + (val_h << 8);
+		*result = t;
+		/* vbat need calibration read by NU2105 */
+		if (channel == ADC_VBAT) {
+			kernel_neon_begin();
+			t = t * (1 + 1.803 * 0.001);
+			*result = t;
+			kernel_neon_end();
+		}
+	} else {
+		ret = bq2597x_read_word(bq, ADC_REG_BASE + (channel << 1), &val);
+		if (ret < 0)
+			return ret;
+		t = val & 0xFF;
+		t <<= 8;
+		t |= (val >> 8) & 0xFF;
+		*result = t;
+
+		if (bq->chip_vendor == SC8551) {
+			kernel_neon_begin();
+			*result = (int)(t * sc8551_adc_lsb[channel]);
+			kernel_neon_end();
+		}
+	}
 
 	return 0;
 }
@@ -1089,6 +1167,14 @@ static int bq2597x_set_adc_scan(struct bq2597x *bq, int channel, bool enable)
 
 	ret = bq2597x_update_bits(bq, reg, mask, val);
 
+	return ret;
+}
+
+static int sc8551_init_adc(struct bq2597x *bq)
+{
+	int ret;
+	/* improve adc accuracy */
+	ret = bq2597x_write_byte(bq, SC8551_REG_34, 0x01);
 	return ret;
 }
 
@@ -1382,6 +1468,16 @@ static int bq2597x_detect_device(struct bq2597x *bq)
 	if (ret == 0) {
 		bq->part_no = (data & BQ2597X_DEV_ID_MASK);
 		bq->part_no >>= BQ2597X_DEV_ID_SHIFT;
+
+		pr_err("detect device:%d\n", data);
+		if (data == SC8551_DEVICE_ID || data == SC8551A_DEVICE_ID)
+			bq->chip_vendor = SC8551;
+		else if (data == NU2105_DEVICE_ID)
+			bq->chip_vendor = NU2105;
+		else if (data == BQ25968_DEV_ID)
+			bq->chip_vendor = BQ25968;
+		else
+			bq->chip_vendor = BQ25970;
 	}
 
 	return ret;
@@ -1499,6 +1595,15 @@ static int bq2597x_parse_dt(struct bq2597x *bq, struct device *dev)
 	if (ret) {
 		bq_err("failed to read ac-ovp-threshold\n");
 		return ret;
+	}
+
+	if (bq->chip_vendor == SC8551) {
+		ret = of_property_read_u32(np, "sc8551,ac-ovp-threshold",
+				&bq->cfg->ac_ovp_th);
+		if (ret) {
+			bq_err("failed to read sc8551 ac-ovp-threshold\n");
+			return ret;
+		}
 	}
 
 	/*ret = of_property_read_u32(np, "ti,bq2597x,sense-resistor-mohm",
@@ -1674,6 +1779,9 @@ static int bq2597x_init_adc(struct bq2597x *bq)
 	bq2597x_set_adc_scan(bq, ADC_TDIE, false);
 	bq2597x_set_adc_scan(bq, ADC_VAC, true);
 
+	if (bq->chip_vendor == SC8551)
+		sc8551_init_adc(bq);
+
 	bq2597x_enable_adc(bq, true);
 
 	return 0;
@@ -1712,7 +1820,10 @@ static int bq2597x_init_regulation(struct bq2597x *bq)
 	bq2597x_set_vdrop_deglitch(bq, 5000);
 	bq2597x_set_vdrop_th(bq, 400);
 
-	bq2597x_enable_regulation(bq, true);
+	if (bq->chip_vendor == NU2105)
+		bq2597x_enable_regulation(bq, false);
+	else
+		bq2597x_enable_regulation(bq, true);
 
 	return 0;
 }
@@ -1721,8 +1832,40 @@ static int bq2597x_init_device(struct bq2597x *bq)
 {
 	int ret;
 	u8 val;
-	bq2597x_enable_wdt(bq, false);
 
+	if (bq->chip_vendor == NU2105) {
+		//Set AC_OVP [0:2] = 0
+		bq2597x_set_acovp_th(bq, 12);
+
+		/*nu2105 init*/
+		ret = bq2597x_write_byte(bq, 0x00, 0x3d);
+		ret = bq2597x_write_byte(bq, 0x01, 0x34);
+		ret = bq2597x_write_byte(bq, 0x02, 0x3c);
+		ret = bq2597x_write_byte(bq, 0x03, 0x37);
+		ret = bq2597x_write_byte(bq, 0x04, 0x28);
+		ret = bq2597x_write_byte(bq, 0x05, 0x1d);
+		ret = bq2597x_write_byte(bq, 0x06, 0x51);
+		ret = bq2597x_write_byte(bq, 0x07, 0x46);
+		ret = bq2597x_write_byte(bq, 0x08, 0x0c);
+		ret = bq2597x_write_byte(bq, 0x09, 0x4c);
+		ret = bq2597x_write_byte(bq, 0x0B, 0x44);
+		ret = bq2597x_write_byte(bq, 0x0C, 0x17);
+		ret = bq2597x_write_byte(bq, 0x0F, 0x01);
+		ret = bq2597x_write_byte(bq, 0x12, 0x0e);
+		ret = bq2597x_write_byte(bq, 0x14, 0xa8);
+		ret = bq2597x_write_byte(bq, 0x15, 0x06);
+		ret = bq2597x_write_byte(bq, 0x28, 0x28);
+		ret = bq2597x_write_byte(bq, 0x29, 0x28);
+		ret = bq2597x_write_byte(bq, 0x2A, 0xc8);
+		ret = bq2597x_write_byte(bq, 0x2B, 0xe4);
+		ret = bq2597x_write_byte(bq, 0x2C, 0x00);
+		ret = bq2597x_write_byte(bq, 0x2D, 0x00);
+		ret = bq2597x_write_byte(bq, 0x2E, 0x18);
+		ret = bq2597x_write_byte(bq, 0x2F, 0x20);
+		/*nu2105 init*/
+	}
+
+	bq2597x_enable_wdt(bq, false);
 	bq2597x_set_ss_timeout(bq, 1500);
 	bq2597x_set_ibus_ucp_thr(bq, 300);
 	bq2597x_enable_ucp(bq,1);
@@ -1750,6 +1893,7 @@ static int bq2597x_set_present(struct bq2597x *bq, bool present)
 
 	if (present)
 		bq2597x_init_device(bq);
+
 	return 0;
 }
 
@@ -1765,7 +1909,7 @@ static ssize_t bq2597x_show_registers(struct device *dev,
 	int ret;
 
 	idx = snprintf(buf, PAGE_SIZE, "%s:\n", "bq25970");
-	for (addr = 0x0; addr <= 0x2A; addr++) {
+	for (addr = 0x0; addr <= 0x36; addr++) {
 		ret = bq2597x_read_byte(bq, addr, &val);
 		if (ret == 0) {
 			len = snprintf(tmpbuf, PAGE_SIZE - idx,
@@ -1787,17 +1931,68 @@ static ssize_t bq2597x_store_register(struct device *dev,
 	unsigned int val;
 
 	ret = sscanf(buf, "%x %x", &reg, &val);
-	if (ret == 2 && reg <= 0x2A)
+	if (ret == 2 && reg <= 0x36)
 		bq2597x_write_byte(bq, (unsigned char)reg, (unsigned char)val);
 
 	return count;
 }
 
-
 static DEVICE_ATTR(registers, 0660, bq2597x_show_registers, bq2597x_store_register);
 
+#ifdef CONFIG_DUAL_BQ2597X
+static ssize_t bq2597x_show_diff_ti_bus_current(struct device *dev,struct device_attribute *attr,char *buf)
+{
+	struct bq2597x *bq = dev_get_drvdata(dev);
+	static struct power_supply *bq2597x_slave = NULL;
+	int diff_ti_bus_current = -1;
+	int ti_bus_current_master = 0;
+	int ti_bus_current_slave = 0;
+	int result = 0;
+	int rc;
+	int len;
+	union power_supply_propval pval = {
+		0,
+	};
+	if(bq->mode == BQ25970_ROLE_MASTER){
+		/*get bq2597x_slave ti_bus_current*/
+		if(!bq2597x_slave){
+			bq2597x_slave = power_supply_get_by_name("bq2597x-slave");
+			if(!bq2597x_slave){
+				bq_dbg("failed get bq2597x-slave \n");
+				return 0;
+			}
+			bq_dbg("success get bq2597x-slave \n");
+		}
+		rc = power_supply_get_property(bq2597x_slave,POWER_SUPPLY_PROP_TI_BUS_CURRENT,&pval);
+		if (rc < 0) {
+			bq_dbg("failed get bq2597x-slave ti_bus_current \n");
+			return -EINVAL;
+		}
+		ti_bus_current_slave = pval.intval;
+		/*get bq2597x_master ti_bus_current*/
+		rc = bq2597x_get_adc_data(bq, ADC_IBUS, &result);
+		if (!rc)
+			ti_bus_current_master = result;
+		else
+			ti_bus_current_master = bq->ibus_curr;
+		/* get diff_ti_bus_current = ti_bus_current_master - ti_bus_current_slave */
+		if(ti_bus_current_master > ti_bus_current_slave)
+			diff_ti_bus_current = ti_bus_current_master - ti_bus_current_slave;
+		else
+			diff_ti_bus_current = ti_bus_current_slave - ti_bus_current_master;
+	} else if (bq->mode == BQ25970_ROLE_SLAVE) {
+		diff_ti_bus_current = -1;
+	}
+	len = snprintf(buf, 1024, "%d\n", diff_ti_bus_current);
+	return len;
+}
+static DEVICE_ATTR(diff_ti_bus_current,0660,bq2597x_show_diff_ti_bus_current,NULL);
+#endif
 static struct attribute *bq2597x_attributes[] = {
 	&dev_attr_registers.attr,
+#ifdef CONFIG_DUAL_BQ2597X
+	&dev_attr_diff_ti_bus_current.attr,
+#endif
 	NULL,
 };
 
@@ -2249,7 +2444,7 @@ static int show_registers(struct seq_file *m, void *data)
 	int ret;
 	u8 val;
 
-	for (addr = 0x0; addr <= 0x2B; addr++) {
+	for (addr = 0x0; addr <= 0x36; addr++) {
 		ret = bq2597x_read_byte(bq, addr, &val);
 		if (!ret)
 			seq_printf(m, "Reg[%02X] = 0x%02X\n", addr, val);
@@ -2348,8 +2543,18 @@ static int bq2597x_charger_probe(struct i2c_client *client,
 
 	ret = bq2597x_detect_device(bq);
 	if (ret) {
-		bq_err("No bq2597x device found!\n");
-		return -ENODEV;
+		mdelay(10);
+		bq_err("bq2597x first detect fail!\n");
+		ret = bq2597x_detect_device(bq);
+		if (ret) {
+			mdelay(10);
+			bq_err("bq2597x first detect fail!\n");
+			ret = bq2597x_detect_device(bq);
+			if (ret) {
+				bq_err("No bq2597x device found!\n");
+				return -ENODEV;
+			}
+		}
 	}
 
 	match = of_match_node(bq2597x_charger_match_table, node);
@@ -2370,6 +2575,7 @@ static int bq2597x_charger_probe(struct i2c_client *client,
 		return -EIO;
 
 	ret = bq2597x_init_device(bq);
+
 	if (ret) {
 		bq_err("Failed to init device\n");
 		return ret;

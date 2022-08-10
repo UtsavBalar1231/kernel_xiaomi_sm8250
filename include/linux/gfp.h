@@ -633,5 +633,7 @@ extern void free_contig_range(unsigned long pfn, unsigned nr_pages);
 /* CMA stuff */
 extern void init_cma_reserved_pageblock(struct page *page);
 #endif
-
+#ifdef CONFIG_EMERGENCY_MEMORY
+extern void emergency_mm_init(void);
+#endif
 #endif /* __LINUX_GFP_H */

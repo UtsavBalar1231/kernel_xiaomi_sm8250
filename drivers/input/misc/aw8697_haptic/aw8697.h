@@ -397,6 +397,7 @@ struct aw8697 {
 	unsigned int rtp_len;
 	unsigned int lra_calib_data;
 	unsigned int f0_calib_data;
+	char *ram_name;
 
 	int reset_gpio;
 	int irq_gpio;
@@ -429,12 +430,16 @@ struct aw8697 {
 
 	unsigned char rtp_init;
 	unsigned char ram_init;
+#ifdef SUPPORT_RELOAD_FW
+	unsigned char vov;
+#endif
 
 	unsigned int f0;
 	unsigned int cont_f0;
 	unsigned char max_pos_beme;
 	unsigned char max_neg_beme;
 	unsigned char f0_cali_flag;
+	bool f0_cali_status;
 	unsigned int osc_cali_run;
 
 	unsigned char ram_vbat_comp;

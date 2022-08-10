@@ -3,7 +3,6 @@
  * drivers/staging/android/ion/ion_mem_pool.c
  *
  * Copyright (C) 2011 Google, Inc.
- * Copyright (C) 2021 XiaoMi, Inc.
  */
 
 #include <linux/list.h>

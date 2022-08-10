@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
- * Copyright (C) 2021 XiaoMi, Inc.
  */
 
 #ifndef _USBPD_H
@@ -11,7 +10,7 @@
 
 struct usbpd;
 
-#if IS_ENABLED(CONFIG_USB_PD_POLICY)
+#if IS_ENABLED(CONFIG_USB_PD_POLICY) || IS_ENABLED(CONFIG_USB_PD_POLICY_MUNCH)
 struct usbpd *usbpd_create(struct device *parent);
 void usbpd_destroy(struct usbpd *pd);
 #else
@@ -77,6 +76,7 @@ struct usbpd_pdo {
 
 int usbpd_get_pps_status(struct usbpd *pd, u32 *status);
 int usbpd_fetch_pdo(struct usbpd *pd, struct usbpd_pdo *pdos);
+int usbpd_get_current_state(struct usbpd *pd);
 
 #if IS_ENABLED(CONFIG_QPNP_USB_PDPHY)
 int pd_phy_open(struct pd_phy_params *params);
@@ -168,7 +168,8 @@ enum quick_charge_type {
 #define USBPD_INIT_VOTER		"USBPD_INIT_VOTER"
 #define USBPD_WEAK_PPS_POWER            22000000
 #define USBPD_LOW_PPS_POWER		45000000
-#define USBPD_SUPER_PPS_POWER		120000000
+#define USBPD_SUPER_PPS_POWER		50000000
+#define USBPD_SUPER_PPS_POWER_MAX	120000000
 #define USBPD_WAKK_PPS_CURR_LIMIT       1800000
 #define PD_UNVERIFY_PASSTHROUGH_CURR	3000
 

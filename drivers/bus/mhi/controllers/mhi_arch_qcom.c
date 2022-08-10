@@ -422,23 +422,6 @@ static void mhi_bl_remove(struct mhi_device *mhi_device)
 		       HLOG "Received Remove notif.\n");
 }
 
-void mhi_arch_mission_mode_enter(struct mhi_controller *mhi_cntrl)
-{
-	struct mhi_dev *mhi_dev = mhi_controller_get_devdata(mhi_cntrl);
-	struct arch_info *arch_info = mhi_dev->arch_info;
-	struct mhi_device *boot_dev = arch_info->boot_dev;
-
-	ipc_log_string(arch_info->boot_ipc_log,
-		       HLOG "Device entered mission mode\n");
-
-	/* disable boot logger channel */
-	if (boot_dev)
-		mhi_unprepare_from_transfer(boot_dev);
-
-	if (!mhi_dev->drv_supported || arch_info->drv_connected)
-		pm_runtime_allow(&mhi_dev->pci_dev->dev);
-}
-
 static  int mhi_arch_pcie_scale_bw(struct mhi_controller *mhi_cntrl,
 				   struct pci_dev *pci_dev,
 				   struct mhi_link_info *link_info)
@@ -834,7 +817,6 @@ int mhi_arch_link_resume(struct mhi_controller *mhi_cntrl)
 
 	if (!ret)
 		msm_pcie_l1ss_timeout_enable(pci_dev);
-	mhi_cntrl->force_m3_done = true;
 
 	MHI_LOG("Exited with ret:%d\n", ret);
 

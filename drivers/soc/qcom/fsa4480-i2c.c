@@ -356,7 +356,9 @@ static int fsa4480_probe(struct i2c_client *i2c,
 {
 	struct fsa4480_priv *fsa_priv;
 	int rc = 0;
-
+#ifdef CONFIG_TARGET_PRODUCT_MUNCH
+	union power_supply_propval mode;
+#endif
 	fsa_priv = devm_kzalloc(&i2c->dev, sizeof(*fsa_priv),
 				GFP_KERNEL);
 	if (!fsa_priv)
@@ -407,6 +409,18 @@ static int fsa4480_probe(struct i2c_client *i2c,
 		((fsa_priv->fsa4480_notifier).rwsem);
 	fsa_priv->fsa4480_notifier.head = NULL;
 
+#ifdef CONFIG_TARGET_PRODUCT_MUNCH
+	/* set usbc_mode initial value */
+	rc = power_supply_get_property(fsa_priv->usb_psy,
+			POWER_SUPPLY_PROP_TYPEC_MODE, &mode);
+	if (rc) {
+		dev_err(fsa_priv->dev, "%s: Uable to read USB TYPEC_MODE during probe: %d\n",
+				__func__, rc);
+	} else {
+		atomic_set(&(fsa_priv->usbc_mode), mode.intval);
+		dev_info(fsa_priv->dev, "%s: set usbc_mode to %d\n", __func__, fsa_priv->usbc_mode.counter);
+	}
+#endif
 	return 0;
 
 err_supply:

@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2010 - 2018 Novatek, Inc.
- * Copyright (C) 2021 XiaoMi, Inc.
  *
  * $Revision: 32206 $
  * $Date: 2018-08-10 19:23:04 +0800 (週五, 10 八月 2018) $
@@ -1925,7 +1924,7 @@ static int nvt_set_cur_value(int nvt_mode, int nvt_value)
 	uint8_t temp_value = 0;
 	uint8_t ret = 0;
 
-	if (nvt_mode >= Touch_Mode_NUM && nvt_mode < 0) {
+	if (nvt_mode >= Touch_Mode_NUM || nvt_mode < 0) {
 		NVT_ERR("%s, nvt mode is error:%d", __func__, nvt_mode);
 		return -EINVAL;
 	}

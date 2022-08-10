@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 /*
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
- * Copyright (C) 2021 XiaoMi, Inc.
  */
 
 #ifndef __FG_CORE_H__
@@ -529,7 +528,6 @@ struct fg_dev {
 	bool			empty_restart_fg;
 	bool			report_full;
 	bool			profile_already_find;
-	bool			input_present;
 	bool			shutdown_delay;
 	enum fg_version		version;
 	struct batt_params	param;

@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 /*
  * Copyright (c) 2018-2019 The Linux Foundation. All rights reserved.
- * Copyright (C) 2021 XiaoMi, Inc.
  */
 
 #ifndef __SMB5_CHARGER_H
@@ -234,6 +233,8 @@ enum esr_work_status {
 #define ADAPTER_XIAOMI_PD_40W 0x0c
 #define ADAPTER_VOICE_BOX 0x0d
 #define ADAPTER_XIAOMI_PD_45W	0xe
+#define ADAPTER_XIAOMI_PD_60W   0xf
+#define ADAPTER_XIAOMI_PD_100W   0x10
 
 /* defined for charger type recheck */
 #define CHARGER_RECHECK_DELAY_MS	30000
@@ -260,6 +261,19 @@ enum quick_charge_type {
 	QUICK_CHARGE_TURBE,
 	QUICK_CHARGE_SUPER,
 	QUICK_CHARGE_MAX,
+};
+
+enum apdo_max_power {
+	APDO_MAX_30W = 30, // J2 G7A F4 and some old projects use 30W pps charger
+	APDO_MAX_33W = 33,   // most 33W project use 33w pps charger
+	APDO_MAX_40W = 40,   // only F1X use 40w pps charger
+	APDO_MAX_50W = 50,   // only j1(cmi project) use 50W pps(device support maxium 50w)
+	APDO_MAX_55W =55, // K2 K9B use 55w pps charger
+	APDO_MAX_65W = 65, //we have 65w pps which for j1(cmi), and also used for 120w(67w works in 65w)
+	APDO_MAX_67W = 67, //most useage now for dual charge pumps projects such as L3 L1 L1A L18
+	APDO_MAX_100W = 100, // Zimi car quick charger have 100w pps
+	APDO_MAX_120W = 120, // L2 L10 and K8 L11 use 120W
+	APDO_MAX_INVALID = 67,
 };
 
 struct quick_charge {
@@ -803,6 +817,7 @@ struct smb_charger {
 	int			pd_verifed;
 	int			quick_charge_type;
 	int			quick_charge_power;
+	int			apdo_max;
 	int			passthrough_curr_max;
 	bool			thermal_mode_limit;
 	u32			comp_clamp_level;
@@ -862,6 +877,7 @@ struct smb_charger {
 	int64_t oob_cep_msg_cnt;
 	int			reverse_chg_state;
 	int			reverse_gpio_state;
+	int			wls_car_adapter;
 
 	/* product related */
 	bool			support_wireless;
@@ -1214,6 +1230,7 @@ int smblib_set_prop_type_recheck(struct smb_charger *chg,
 int smblib_get_prop_type_recheck(struct smb_charger *chg,
 				 union power_supply_propval *val);
 int smblib_get_quick_charge_type(struct smb_charger *chg);
+int smblib_get_adapter_power_max(struct smb_charger *chg);
 int smblib_get_qc3_main_icl_offset(struct smb_charger *chg, int *offset_ua);
 int smblib_dp_dm_bq(struct smb_charger *chg, int val);
 int smblib_get_prop_battery_charging_enabled(struct smb_charger *chg,

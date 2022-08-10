@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 1991, 1992 Linus Torvalds
- * Copyright (C) 2021 XiaoMi, Inc.
  * Copyright (C) 1994,      Karl Keyte: Added support for disk statistics
  * Elevator latency, (C) 2000  Andrea Arcangeli <andrea@suse.de> SuSE
  * Queue request tables / lock, selectable elevator, Jens Axboe <axboe@suse.de>
@@ -2002,6 +2001,11 @@ void blk_init_request_from_bio(struct request *req, struct bio *bio)
 		req->ioprio = IOPRIO_PRIO_VALUE(IOPRIO_CLASS_NONE, 0);
 	req->write_hint = bio->bi_write_hint;
 
+#ifdef CONFIG_PERF_HUMANTASK
+	if(bio->human_task)
+		req->ioprio = 0 ;
+#endif
+
 	blk_rq_bio_prep(req->q, req, bio);
 }
 EXPORT_SYMBOL_GPL(blk_init_request_from_bio);
@@ -2097,7 +2101,10 @@ get_rq:
 	 * often, and the elevators are able to handle it.
 	 */
 	blk_init_request_from_bio(req, bio);
-
+#ifdef CONFIG_PERF_HUMANTASK
+	if(bio->human_task)
+		where = ELEVATOR_INSERT_FRONT;
+#endif
 	if (test_bit(QUEUE_FLAG_SAME_COMP, &q->queue_flags))
 		req->cpu = raw_smp_processor_id();
 

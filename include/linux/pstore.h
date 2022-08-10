@@ -2,7 +2,6 @@
  * Persistent Storage - pstore.h
  *
  * Copyright (C) 2010 Intel Corporation <tony.luck@intel.com>
- * Copyright (C) 2021 XiaoMi, Inc.
  *
  * This code is the generic layer to export data records from platform
  * level persistent storage via a file system.

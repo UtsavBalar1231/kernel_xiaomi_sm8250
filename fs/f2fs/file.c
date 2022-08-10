@@ -3,7 +3,6 @@
  * fs/f2fs/file.c
  *
  * Copyright (c) 2012 Samsung Electronics Co., Ltd.
- * Copyright (C) 2021 XiaoMi, Inc.
  *             http://www.samsung.com/
  */
 #include <linux/fs.h>
@@ -260,6 +259,8 @@ static int f2fs_do_sync_file(struct file *file, loff_t start, loff_t end,
 		.for_reclaim = 0,
 	};
 	unsigned int seq_id = 0;
+	ktime_t start_time, delta;
+	unsigned long long duration;
 
 	if (unlikely(f2fs_readonly(inode->i_sb) ||
 				is_sbi_flag_set(sbi, SBI_CP_DISABLED)))
@@ -275,6 +276,7 @@ static int f2fs_do_sync_file(struct file *file, loff_t start, loff_t end,
 		trace_android_fs_fsync_start(inode,
 				current->pid, path, current->comm);
 	}
+	start_time = ktime_get();
 
 	if (S_ISDIR(inode->i_mode))
 		goto go_write;
@@ -321,6 +323,7 @@ go_write:
 	up_read(&F2FS_I(inode)->i_sem);
 
 	if (cp_reason) {
+		stat_inc_cp_reason(sbi, cp_reason);
 		/* all the dirty node pages should be flushed for POR */
 		ret = f2fs_sync_fs(inode->i_sb, 1);
 
@@ -379,8 +382,17 @@ flush_out:
 	}
 	f2fs_update_time(sbi, REQ_TIME);
 out:
+	delta = ktime_sub(ktime_get(), start_time);
+	duration = (unsigned long long) ktime_to_ns(delta) / (1000 * 1000);
+
+	/* print slow fsync spend more than 1s */
+	if (duration > 1000)
+		pr_info("[f2fs] slow fsync: %llu ms, cp_reason: %s, "
+			"datasync = %d, ret = %d", duration,
+			f2fs_cp_reasons[cp_reason], datasync, ret);
 	trace_f2fs_sync_file_exit(inode, cp_reason, datasync, ret);
 	f2fs_trace_ios(NULL, 1);
+	stat_inc_sync_file_count(sbi);
 	trace_android_fs_fsync_end(inode, start, end - start);
 
 	return ret;
@@ -1227,7 +1239,7 @@ static int __clone_blkaddrs(struct inode *src_inode, struct inode *dst_inode,
 			if (ret)
 				return ret;
 
-			ret = f2fs_get_node_info(sbi, dn.nid, &ni);
+			ret = f2fs_get_node_info(sbi, dn.nid, &ni, false);
 			if (ret) {
 				f2fs_put_dnode(&dn);
 				return ret;

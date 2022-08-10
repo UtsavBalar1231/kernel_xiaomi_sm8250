@@ -3,7 +3,6 @@
  * iommu trace points
  *
  * Copyright (C) 2013 Shuah Khan <shuah.kh@samsung.com>
- * Copyright (C) 2021 XiaoMi, Inc.
  *
  */
 #undef TRACE_SYSTEM

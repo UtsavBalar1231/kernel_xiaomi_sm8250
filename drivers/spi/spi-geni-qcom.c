@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
- * Copyright (C) 2021 XiaoMi, Inc.
  */
 
 
@@ -1321,6 +1320,7 @@ static int spi_geni_transfer_one(struct spi_master *spi,
 				geni_se_rx_dma_unprep(mas->wrapper_dev,
 					xfer->rx_dma, xfer->len);
 		}
+		mas->cur_xfer = NULL;
 	} else {
 		mas->num_tx_eot = 0;
 		mas->num_rx_eot = 0;
