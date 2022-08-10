@@ -233,6 +233,7 @@ static struct pid_entry *find_or_register_pid_locked(u64 hash_code,
 	pid_entry->package = kzalloc(MAX_TASK_COMM_LEN, GFP_ATOMIC);
         if (!pid_entry->package) {
 		kfree(pid_entry);
+		kfree(times);
 		return NULL;
         }
 
