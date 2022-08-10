@@ -733,6 +733,7 @@ static int gf_release(struct inode *inode, struct file *filp)
 
 	if (!gf_dev->users) {
 		pr_debug("disble_irq. irq = %d\n", gf_dev->irq);
+		gpio_direction_output(gf_dev->reset_gpio, 0);
 		gf_disable_irq(gf_dev);
 		/*power off the sensor*/
 		gf_dev->device_available = 0;
