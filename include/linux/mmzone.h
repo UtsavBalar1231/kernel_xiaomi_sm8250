@@ -59,6 +59,13 @@ enum migratetype {
 #endif
 	MIGRATE_PCPTYPES, /* the number of types on the pcp lists */
 	MIGRATE_HIGHATOMIC = MIGRATE_PCPTYPES,
+#if IS_ENABLED(CONFIG_EMERGENCY_MEMORY)
+	/*
+	 * MIGRATE_EMERGENCY migration type is designed to save
+	 * non-costly non-NOWARN page allocation failure.
+	 */
+	MIGRATE_EMERGENCY,
+#endif
 #ifdef CONFIG_MEMORY_ISOLATION
 	MIGRATE_ISOLATE,	/* can't allocate from here */
 #endif
@@ -592,6 +599,11 @@ enum zone_type {
 
 #define ASYNC_AND_SYNC 2
 
+#if IS_ENABLED(CONFIG_EMERGENCY_MEMORY)
+/* The maximum number of pages in MIGRATE_EMERGENCY migration type */
+#define MAX_MANAGED_EMERGENCY 2048
+#endif
+
 struct zone {
 	/* Read-mostly fields */
 
@@ -599,6 +611,11 @@ struct zone {
 	unsigned long _watermark[NR_WMARK];
 
 	unsigned long nr_reserved_highatomic;
+
+#if IS_ENABLED(CONFIG_EMERGENCY_MEMORY)
+	/* The actual number of pages in MIGRATE_EMERGENCY migration type */
+	unsigned long nr_reserved_emergency;
+#endif
 
 	/*
 	 * We don't know if the memory that we're going to allocate will be
