@@ -221,15 +221,18 @@ scripts/config --file ${OUT_DIR}/.config \
     -e BINDER_OPT \
     -e IPC_LOGGING \
     -e KPERFEVENTS \
-    -e LAST_TOUCH_EVENTS \
     -e MIGT \
+    -e MIGT_ENERGY_MODEL \
     -e MIHW \
     -e MILLET \
     -e MI_DRM_OPT \
     -e MIUI_ZRAM_MEMORY_TRACKING \
     -e MI_RECLAIM \
     -d OSSFOD \
+    -e PACKAGE_RUNTIME_INFO \
     -e PERF_HUMANTASK \
+    -e PERF_CRITICAL_RT_TASK \
+    -e SF_BINDER \
     -e TASK_DELAY_ACCT
 
 # FIXME: disable LTO on MIUI
