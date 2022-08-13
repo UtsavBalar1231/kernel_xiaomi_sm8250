@@ -1652,7 +1652,7 @@ static int ln8000_get_dev_role(struct i2c_client *client)
 
 	dev_info(&client->dev, "%s: matched to %s\n", __func__, of_id->compatible);
 
-	return (int)of_id->data;
+	return (uintptr_t)of_id->data;
 }
 
 static int ln8000_parse_dt(struct ln8000_info *info)
