@@ -673,6 +673,7 @@ this file is for attribution only of alioth
 		//mi,cp-sec-enable;
 		mi,therm-level-threshold = <12>;
 		mi,chg-enable-k11a;
+		mi,pd-power-max = <33>; /*charge power max : 33W */
 	};
 
 	alioth_batterydata: qcom,battery-data {
@@ -715,6 +716,7 @@ this file is for attribution only of alioth
 
 &pm8150b_pdphy {
 	mi,non-qcom-pps-ctrl;
+	mi,pd-power-max = <33>; /*charge power max : 33W */
 };
 
 &smb1390 {
