@@ -29,7 +29,11 @@
 #include "adsp_err.h"
 #include "q6afecal-hwdep.h"
 #ifdef TFA_ADSP_SUPPORTED
+#ifdef CONFIG_TARGET_PRODUCT_MUNCH
+#include "../asoc/codecs/tfa9874/inc/tfa_platform_interface_definition.h"
+#else
 #include "../asoc/codecs/tfa98xx/inc/tfa_platform_interface_definition.h"
+#endif
 #endif
 
 #ifdef CONFIG_MSM_CSPL

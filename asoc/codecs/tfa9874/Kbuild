@@ -16,34 +16,32 @@ ifeq ($(KERNEL_BUILD), 1)
 endif
 
 ifeq ($(KERNEL_BUILD), 0)
+	ifeq ($(CONFIG_ARCH_SM8150), y)
+		include $(AUDIO_ROOT)/config/sm8150auto.conf
+		export
+		INCS    +=  -include $(AUDIO_ROOT)/config/sm8150autoconf.h
+	endif
 	ifeq ($(CONFIG_ARCH_SM6150), y)
-		include $(AUDIO_ROOT)/config/sm6150auto.conf
+		include $(AUDIO_ROOT)/config/sm8150auto.conf
 		export
-		INCS    +=  -include $(AUDIO_ROOT)/config/sm6150autoconf.h
+		INCS    +=  -include $(AUDIO_ROOT)/config/sm8150autoconf.h
 	endif
-	ifeq ($(CONFIG_ARCH_TRINKET), y)
-		include $(AUDIO_ROOT)/config/sm6150auto.conf
-		export
-		INCS    +=  -include $(AUDIO_ROOT)/config/sm6150autoconf.h
-	endif
+
 	ifeq ($(CONFIG_ARCH_KONA), y)
 		include $(AUDIO_ROOT)/config/konaauto.conf
 		INCS    +=  -include $(AUDIO_ROOT)/config/konaautoconf.h
 	endif
+
 	ifeq ($(CONFIG_ARCH_LITO), y)
 		include $(AUDIO_ROOT)/config/litoauto.conf
 		export
 		INCS    +=  -include $(AUDIO_ROOT)/config/litoautoconf.h
 	endif
-	ifeq ($(CONFIG_ARCH_BENGAL), y)
-		include $(AUDIO_ROOT)/config/bengalauto.conf
+
+	ifeq ($(CONFIG_ARCH_SDMSHRIKE), y)
+		include $(AUDIO_ROOT)/config/sm8150auto.conf
 		export
-		INCS    +=  -include $(AUDIO_ROOT)/config/bengalautoconf.h
-	endif
-	ifeq ($(CONFIG_ARCH_QCS405), y)
-		include $(AUDIO_ROOT)/config/qcs405auto.conf
-		export
-		INCS    +=  -include $(AUDIO_ROOT)/config/qcs405autoconf.h
+		INCS    +=  -include $(AUDIO_ROOT)/config/sm8150autoconf.h
 	endif
 endif
 
@@ -70,49 +68,24 @@ UAPI_INC :=	-I$(AUDIO_ROOT)/include/$(UAPI_DIR)
 ############ COMMON ############
 COMMON_DIR :=	include
 COMMON_INC :=	-I$(AUDIO_ROOT)/$(COMMON_DIR)
+TFA_INC    :=   -I$(AUDIO_ROOT)/asoc/codecs/tfa9874/inc
 
-############ BOLERO ############
-
-# for BOLERO Codec
-ifdef CONFIG_SND_SOC_BOLERO
-	BOLERO_OBJS += bolero-cdc.o
-	BOLERO_OBJS += bolero-cdc-utils.o
-	BOLERO_OBJS += bolero-cdc-regmap.o
-	BOLERO_OBJS += bolero-cdc-tables.o
-	BOLERO_OBJS += bolero-clk-rsc.o
+# for TFA9874 Amplifer
+ifdef CONFIG_SND_SOC_TFA9874
+	TFA9874_OBJS += src/tfa98xx.o
+	TFA9874_OBJS += src/tfa_container.o
+	TFA9874_OBJS += src/tfa_dsp.o
+	TFA9874_OBJS += src/tfa_init.o
+	#TFA9874_OBJS += src/tfa_debug.o
 endif
 
-ifdef CONFIG_WSA_MACRO
-	WSA_OBJS += wsa-macro.o
-endif
+LINUX_INC += -Iinclude/linux
 
-ifdef CONFIG_VA_MACRO
-	VA_OBJS += va-macro.o
-endif
+INCS +=	$(COMMON_INC) \
+	$(UAPI_INC) \
+	$(TFA_INC)
 
-ifdef CONFIG_TX_MACRO
-	TX_OBJS += tx-macro.o
-endif
-
-ifdef CONFIG_RX_MACRO
-	RX_OBJS += rx-macro.o
-endif
-
-LINUX_INC +=	-Iinclude/linux
-
-INCS +=		$(COMMON_INC) \
-		$(UAPI_INC)
-
-EXTRA_CFLAGS += $(INCS)
-
-ifdef CONFIG_BOARD_PSYCHE
-CDEFINES += -DCONFIG_TARGET_PRODUCT_PSYCHE
-endif
-
-ifdef CONFIG_BOARD_MUNCH
-CDEFINES += -DCONFIG_TARGET_PRODUCT_MUNCH
-endif
-
+EXTRA_CFLAGS += -I$(src)/inc
 
 CDEFINES +=	-DANI_LITTLE_BYTE_ENDIAN \
 		-DANI_LITTLE_BIT_ENDIAN \
@@ -122,7 +95,14 @@ CDEFINES +=	-DANI_LITTLE_BYTE_ENDIAN \
 		-DPTT_SOCK_SVC_ENABLE \
 		-Wall\
 		-Werror\
-		-D__linux__
+		-D__linux__\
+		-DDEBUG
+
+ifdef CONFIG_BOARD_MUNCH
+	CDEFINES += -DTFA_NON_DSP_SOLUTION
+	CDEFINES += -DAUDIO_SM8250_FLAG
+	CDEFINES += -DCONFIG_TARGET_PRODUCT_MUNCH
+endif
 
 KBUILD_CPPFLAGS += $(CDEFINES)
 
@@ -148,20 +128,8 @@ KBUILD_EXTRA_SYMBOLS +=$(OUT)/obj/vendor/qcom/opensource/audio-kernel/soc/Module
 endif
 
 # Module information used by KBuild framework
-obj-$(CONFIG_SND_SOC_BOLERO) += bolero_cdc_dlkm.o
-bolero_cdc_dlkm-y := $(BOLERO_OBJS)
-
-obj-$(CONFIG_WSA_MACRO) += wsa_macro_dlkm.o
-wsa_macro_dlkm-y := $(WSA_OBJS)
-
-obj-$(CONFIG_VA_MACRO) += va_macro_dlkm.o
-va_macro_dlkm-y := $(VA_OBJS)
-
-obj-$(CONFIG_TX_MACRO) += tx_macro_dlkm.o
-tx_macro_dlkm-y := $(TX_OBJS)
-
-obj-$(CONFIG_RX_MACRO) += rx_macro_dlkm.o
-rx_macro_dlkm-y := $(RX_OBJS)
+obj-$(CONFIG_SND_SOC_TFA9874)    += tfa98xx_dlkm.o
+tfa98xx_dlkm-y := $(TFA9874_OBJS)
 
 # inject some build related information
 DEFINES += -DBUILD_TIMESTAMP=\"$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')\"

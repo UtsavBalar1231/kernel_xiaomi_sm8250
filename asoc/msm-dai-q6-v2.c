@@ -21,7 +21,11 @@
 #include "msm-dai-q6-v2.h"
 #include <asoc/core.h>
 #ifdef TFA_ADSP_SUPPORTED
+#ifdef CONFIG_TARGET_PRODUCT_MUNCH
+#include "codecs/tfa9874/inc/tfa_platform_interface_definition.h"
+#else
 #include "codecs/tfa98xx/inc/tfa_platform_interface_definition.h"
+#endif
 #endif
 
 #define MSM_DAI_PRI_AUXPCM_DT_DEV_ID 1
