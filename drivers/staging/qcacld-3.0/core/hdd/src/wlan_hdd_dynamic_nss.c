@@ -26,7 +26,7 @@ int wlan_hdd_set_nss_and_antenna_mode(struct hdd_adapter *adapter, int nss, int 
 	}
 
 	//iwpriv wlan0 nss 1/2
-	status = hdd_update_nss(adapter, nss);
+	status = hdd_update_nss(adapter, nss, nss);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		hdd_err("cfg set nss failed, value %d status %d", nss, status);
 		return qdf_status_to_os_return(status);

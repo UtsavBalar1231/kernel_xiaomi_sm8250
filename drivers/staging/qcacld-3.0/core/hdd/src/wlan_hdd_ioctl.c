@@ -6541,6 +6541,41 @@ static int drv_cmd_set_app2_params(struct hdd_adapter *adapter,
 }
 #endif /* WLAN_FEATURE_EXTWOW_SUPPORT */
 
+#ifdef CFG_SUPPORT_SCAN_EXT_FLAG
+/*
+ * argv: 1 means that force scan on gaming mode
+ */
+static int driver_cmd_set_scan_ext_flag(struct hdd_adapter *adapter,
+				   struct hdd_context *hdd_ctx,
+				   uint8_t *command,
+				   uint8_t command_len,
+				   struct hdd_priv_data *priv_data)
+{
+	int ret = 0;
+	uint8_t *value = command;
+	uint8_t external_flag = 0;
+
+	/* Move pointer to ahead of SetScanExtFlag */
+	value = value + command_len + 1;
+
+	/* Convert the value from ascii to integer */
+	ret = kstrtou8(value, 10, &external_flag);
+	if (ret < 0) {
+		/*
+		 * If the input value is greater than max value of datatype,
+		 * then also kstrtou8 fails
+		 */
+		hdd_err("kstrtou8 failed Input value may be out of range");
+		ret = -EINVAL;
+		return ret;
+	}
+
+	adapter->scan_ext_flag = external_flag;
+	hdd_debug("driver_cmd_set_scan_ext_flag: %d ", adapter->scan_ext_flag);
+	return ret;
+}
+#endif /* CFG_SUPPORT_SCAN_EXT_FLAG */
+
 #ifdef FEATURE_WLAN_TDLS
 /**
  * drv_cmd_tdls_secondary_channel_offset() - secondary tdls off channel offset
@@ -8312,6 +8347,9 @@ static const struct hdd_drv_cmd hdd_drv_cmds[] = {
 	{"RXFILTER-STOP",             drv_cmd_dummy, false},
 	{"BTCOEXSCAN-START",          drv_cmd_dummy, false},
 	{"BTCOEXSCAN-STOP",           drv_cmd_dummy, false},
+#ifdef CFG_SUPPORT_SCAN_EXT_FLAG
+	{"SetScanExtFlag",            driver_cmd_set_scan_ext_flag, true},
+#endif
 };
 
 /**
