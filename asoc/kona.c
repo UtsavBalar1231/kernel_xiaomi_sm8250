@@ -226,7 +226,11 @@ enum {
 	TDM_PORT_MAX,
 };
 
+#if defined(CONFIG_TARGET_PRODUCT_PSYCHE)
+#define TDM_MAX_SLOTS 4
+#else
 #define TDM_MAX_SLOTS 8
+#endif
 #if defined(CONFIG_TARGET_PRODUCT_ENUMA) || defined(CONFIG_TARGET_PRODUCT_ELISH)
 #define TDM_SLOT_WIDTH_BITS 32
 #else
@@ -632,7 +636,11 @@ static struct tdm_dev_config pri_tdm_dev_config[MAX_PATH][TDM_PORT_MAX] = {
 		{ {0xFFFF} }, /* RX_7 */
 	},
 	{
+#if defined(CONFIG_TARGET_PRODUCT_PSYCHE)
+		{ {0,   4, 0xFFFF} }, /* TX_0 */
+#else
 		{ {0,   4,      8, 12, 0xFFFF} }, /* TX_0 */
+#endif
 		{ {8,  12, 0xFFFF} }, /* TX_1 */
 		{ {16, 20, 0xFFFF} }, /* TX_2 */
 		{ {24, 28, 0xFFFF} }, /* TX_3 */
