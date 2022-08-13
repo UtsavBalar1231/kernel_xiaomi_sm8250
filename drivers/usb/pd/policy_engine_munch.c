@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
- * Copyright (C) 2021 XiaoMi, Inc.
  */
 
 #include <linux/completion.h>
@@ -169,6 +168,13 @@ static const char * const usbpd_ext_msg_strings[] = {
 	"Firmware_Update_Response", "PPS_Status", "Country_Info",
 	"Country_Codes",
 };
+
+#undef dev_dbg
+#define dev_dbg dev_err
+#undef pr_debug
+#define pr_debug pr_err
+#undef pr_info
+#define pr_info pr_err
 
 static inline const char *msg_to_string(u8 id, bool is_data, bool is_ext)
 {
@@ -503,7 +509,6 @@ struct usbpd {
 	int                     last_uv;
 	int                     last_ua;
 	int			apdo_max;
-	int			power_max;
 	u64			monitor_entry_time;
 
 	/* non-qcom pps control */
@@ -527,7 +532,6 @@ struct usbpd {
 	bool			send_get_battery_status;
 	u32			battery_sts_dobj;
 	bool			request_reject;
-	bool			typec_analog_audio_connected;
 };
 
 static LIST_HEAD(_usbpd);	/* useful for debugging */
@@ -780,7 +784,6 @@ static inline void pd_reset_protocol(struct usbpd *pd)
 	memset(pd->rx_msgid, -1, sizeof(pd->rx_msgid));
 	memset(pd->tx_msgid, 0, sizeof(pd->tx_msgid));
 	pd->send_request = false;
-	pd->send_get_status = false;
 	pd->send_pr_swap = false;
 	pd->send_dr_swap = false;
 }
@@ -813,8 +816,6 @@ static int pd_send_msg(struct usbpd *pd, u8 msg_type, const u32 *data,
 	}
 	spin_unlock_irqrestore(&pd->rx_lock, flags);
 
-	usbpd_dbg(&pd->dev, "send msg %s\n",
-			msg_to_string(msg_type, num_data, false));
 	ret = pd_phy_write(hdr, (u8 *)data, num_data * sizeof(u32), sop);
 	if (ret) {
 		if (pd->pd_connected)
@@ -1059,11 +1060,11 @@ static int pd_eval_src_caps(struct usbpd *pd)
 
 	/* Select the first PDO (vSafe5V) immediately. */
 	/* Select thr first PDO for zimi adapter*/
-	if (pd->batt_2s && pd->adapter_id == 0xA819)
-		pd_select_pdo(pd, 2, 0, 0);
-	else if (pd->request_reject == 1)
-		;
-	else
+	//if (pd->batt_2s && pd->adapter_id == 0xA819)
+		//pd_select_pdo(pd, 2, 0, 0);
+//	else if (pd->request_reject == 1)
+	//	;
+	//else
 		pd_select_pdo(pd, 1, 0, 0);
 
 	return 0;
@@ -1093,7 +1094,6 @@ static void kick_sm(struct usbpd *pd, int ms)
 		usbpd_dbg(&pd->dev, "delay %d ms", ms);
 		hrtimer_start(&pd->timer, ms_to_ktime(ms), HRTIMER_MODE_REL);
 	} else {
-		usbpd_dbg(&pd->dev, "queue state work\n");
 		queue_work(pd->wq, &pd->sm_work);
 	}
 }
@@ -1293,6 +1293,13 @@ static void phy_msg_received(struct usbpd *pd, enum pd_sop_type sop,
 		return;
 	}
 
+	msg_type = PD_MSG_HDR_TYPE(header);
+	num_objs = PD_MSG_HDR_COUNT(header);
+	usbpd_dbg(&pd->dev, "%s type(%d) num_objs(%d)\n",
+				msg_to_string(msg_type, num_objs,
+				PD_MSG_HDR_IS_EXTENDED(header)),
+				msg_type, num_objs);
+
 	/* if MSGID already seen, discard */
 	if (PD_MSG_HDR_ID(header) == pd->rx_msgid[sop] &&
 			PD_MSG_HDR_TYPE(header) != MSG_SOFT_RESET) {
@@ -1317,12 +1324,12 @@ static void phy_msg_received(struct usbpd *pd, enum pd_sop_type sop,
 	if (PD_MSG_HDR_REV(header) < pd->spec_rev)
 		pd->spec_rev = PD_MSG_HDR_REV(header);
 
-	msg_type = PD_MSG_HDR_TYPE(header);
+	/*msg_type = PD_MSG_HDR_TYPE(header);
 	num_objs = PD_MSG_HDR_COUNT(header);
 	usbpd_dbg(&pd->dev, "%s type(%d) num_objs(%d)\n",
 			msg_to_string(msg_type, num_objs,
 				PD_MSG_HDR_IS_EXTENDED(header)),
-			msg_type, num_objs);
+			msg_type, num_objs);*/
 
 	if (!PD_MSG_HDR_IS_EXTENDED(header)) {
 		rx_msg = kzalloc(sizeof(*rx_msg) + len, GFP_ATOMIC);
@@ -1873,12 +1880,8 @@ static void handle_vdm_tx(struct usbpd *pd, enum pd_sop_type sop_type)
 
 		mutex_unlock(&pd->svid_handler_lock);
 		/* retry when hitting PE_SRC/SNK_Ready again */
-		if (ret != -EBUSY && sop_type == SOP_MSG) {
+		if (ret != -EBUSY && sop_type == SOP_MSG)
 			usbpd_set_state(pd, PE_SEND_SOFT_RESET);
-		} else if (sop_type != SOP_MSG) {
-			kfree(pd->vdm_tx);
-			pd->vdm_tx = NULL;
-		}
 
 		return;
 	}
@@ -3809,19 +3812,6 @@ static void usbpd_sm(struct work_struct *w)
 			pd->typec_mode, pd->current_pr,
 			usbpd_state_strings[pd->current_state]);
 	*/
-
-	/* Register typec partner in case AAA is connected */
-	if (pd->typec_mode == POWER_SUPPLY_TYPEC_SINK_AUDIO_ADAPTER) {
-		if (!pd->partner) {
-			memset(&pd->partner_identity, 0,
-					sizeof(pd->partner_identity));
-			pd->partner_desc.usb_pd = false;
-			pd->partner_desc.accessory = TYPEC_ACCESSORY_AUDIO;
-			pd->partner = typec_register_partner(pd->typec_port,
-							&pd->partner_desc);
-			pd->typec_analog_audio_connected = true;
-		}
-	}
 	hrtimer_cancel(&pd->timer);
 	pd->sm_queued = false;
 
@@ -3835,18 +3825,9 @@ static void usbpd_sm(struct work_struct *w)
 	/* Disconnect? */
 	if (pd->current_pr == PR_NONE) {
 		if (pd->current_state == PE_UNKNOWN &&
-				pd->current_dr == DR_NONE) {
-			/*
-			 * Since PD stack will not be loaded in case AAA is
-			 * connected, call disconnect to unregister typec
-			 * partner
-			 */
-			if (!pd->typec_analog_audio_connected &&
-					pd->partner)
-				handle_disconnect(pd);
-
+				pd->current_dr == DR_NONE)
 			goto sm_done;
-		}
+
 		handle_disconnect(pd);
 		goto sm_done;
 	}
@@ -3881,10 +3862,8 @@ sm_done:
 	spin_unlock_irqrestore(&pd->rx_lock, flags);
 
 	/* requeue if there are any new/pending RX messages */
-	if (!ret) {
-		usbpd_dbg(&pd->dev, "Requeuing new/pending RX messages\n");
+	if (!ret && !pd->sm_queued)
 		kick_sm(pd, 0);
-	}
 
 	if (!pd->sm_queued)
 		pm_relax(&pd->dev);
@@ -3918,7 +3897,6 @@ static int usbpd_process_typec_mode(struct usbpd *pd,
 		}
 
 		pd->current_pr = PR_NONE;
-		pd->typec_analog_audio_connected = false;
 		break;
 
 	/* Sink states */
@@ -4843,7 +4821,6 @@ static ssize_t usbpd_verifed_store(struct device *dev,
 
 	pd->verifed = val;
 	pd->verify_done = true;
-
 	if (pd->pps_insert || pd->verifed) {
 		ret = pd_send_msg(pd, MSG_GET_SOURCE_CAP, NULL, 0, SOP_MSG);
 		if (ret) {
@@ -5397,6 +5374,12 @@ int usbpd_select_pdo(struct usbpd *pd, int pdo, int uv, int ua)
 		ret = -EINVAL;
 	}
 
+	//if (pd->request_reject == 1) {
+	//	usbpd_err(&pd->dev, "set request rejected as 0\n");
+	//	pd->request_reject = 0;
+	//	ret = -EINVAL;
+	//}
+
 out:
 	pd->send_request = false;
 	pd->last_pdo = pdo;
@@ -5573,8 +5556,8 @@ static void usbpd_pdo_workfunc(struct work_struct *w)
 
 		if (pd->received_pdos[1] == 0) {
 			pd->fix_pdo_5v = true;
-			usbpd_info(&pd->dev,"fixed pdo [2]= %d", pd->fix_pdo_5v);
-		}
+			usbpd_info(&pd->dev,"fixed pdo [2]= %d",pd->fix_pdo_5v);
+			}
 		if (pdo == 0)
 			break;
 
@@ -5592,7 +5575,7 @@ static void usbpd_pdo_workfunc(struct work_struct *w)
 				if (max_volt >= 20000)
 					pd->is_support_2s = true;
 			}
-			if (pps_max_watts < max_volt * max_curr) {
+			if ((PD_APDO_MAX_VOLT(pdo) * 100 <= 11000) && pps_max_watts < max_volt * max_curr) {
 				pps_max_watts = max_volt * max_curr;
 				if(pps_max_watts >120000000 && pps_max_watts < 130000000)
 					pps_max_watts = 120000000;
@@ -5608,17 +5591,16 @@ static void usbpd_pdo_workfunc(struct work_struct *w)
 				(PD_SRC_PDO_TYPE(pdo) == PD_SRC_PDO_TYPE_AUGMENTED) ? "PPS" : "PD2.0",
 				max_volt, min_volt, max_curr);
 	}
-
+	//usbpd_err(&pd->dev, "huangrui add pps_max_watts[%d],pd->apdo_max:%d\n", pps_max_watts / 1000  / 1000,pd->apdo_max);
 	if (pd->verifed) {
 		pps_max_mwatt = pps_max_watts / 1000  / 1000;
-		if (pps_max_mwatt != pd->apdo_max) {
-			pd->apdo_max = pps_max_mwatt;
-			//val.intval = pps_max_mwatt;
-			val.intval = min(pps_max_mwatt, pd->power_max);
-			power_supply_set_property(pd->usb_psy,
-					POWER_SUPPLY_PROP_APDO_MAX, &val);
-			usbpd_err(&pd->dev, "pps_max_watts[%d]\n", pps_max_mwatt);
-		}
+		//if (pps_max_mwatt != pd->apdo_max) {
+		pd->apdo_max = pps_max_mwatt;
+		val.intval = pps_max_mwatt;
+		power_supply_set_property(pd->usb_psy,
+				POWER_SUPPLY_PROP_APDO_MAX, &val);
+		usbpd_err(&pd->dev, "pps_max_watts[%d]\n", pps_max_mwatt);
+		//}
 	}
 
 	if (pd->batt_2s) {
@@ -5829,10 +5811,6 @@ struct usbpd *usbpd_create(struct device *parent)
 
 	pd->non_qcom_pps_ctr = of_property_read_bool(parent->of_node,
 				"mi,non-qcom-pps-ctrl");
-
-	of_property_read_u32(parent->of_node, "mi,pd-power-max", &pd->power_max);
-	usbpd_info(&pd->dev, "pd-power-max:%d\n", pd->power_max);
-
 	if (pd->num_sink_caps > 0) {
 		int i;
 		u32 sink_caps[14];
@@ -5974,3 +5952,4 @@ module_exit(usbpd_exit);
 
 MODULE_DESCRIPTION("USB Power Delivery Policy Engine");
 MODULE_LICENSE("GPL v2");
+
