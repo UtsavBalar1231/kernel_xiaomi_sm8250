@@ -1896,8 +1896,7 @@ static int f2fs_release_file(struct inode *inode, struct file *filp)
 			atomic_read(&inode->i_writecount) != 1)
 		return 0;
 
-	if (f2fs_is_atomic_file(inode))
-		f2fs_abort_atomic_write(inode, true);
+	f2fs_abort_atomic_write(inode, true);
 	return 0;
 }
 
@@ -1911,8 +1910,7 @@ static int f2fs_file_flush(struct file *file, fl_owner_t id)
 	 * until all the writers close its file. Since this should be done
 	 * before dropping file lock, it needs to do in ->flush.
 	 */
-	if (f2fs_is_atomic_file(inode) &&
-			F2FS_I(inode)->atomic_write_task == current)
+	if (F2FS_I(inode)->atomic_write_task == current)
 		f2fs_abort_atomic_write(inode, true);
 	return 0;
 }
@@ -1952,8 +1950,8 @@ static int f2fs_setflags_common(struct inode *inode, u32 iflags, u32 mask)
 				return -EINVAL;
 			if (S_ISREG(inode->i_mode) && F2FS_HAS_BLOCKS(inode))
 				return -EINVAL;
-
-			set_compress_context(inode);
+			if (set_compress_context(inode))
+				return -EOPNOTSUPP;
 		}
 	}
 
@@ -2253,8 +2251,7 @@ static int f2fs_ioc_abort_atomic_write(struct file *filp)
 
 	inode_lock(inode);
 
-	if (f2fs_is_atomic_file(inode))
-		f2fs_abort_atomic_write(inode, true);
+	f2fs_abort_atomic_write(inode, true);
 
 	inode_unlock(inode);
 
@@ -4164,6 +4161,11 @@ static int f2fs_ioc_decompress_file(struct file *filp, unsigned long arg)
 		goto out;
 	}
 
+	if (is_inode_flag_set(inode, FI_COMPRESS_RELEASED)) {
+		ret = -EINVAL;
+		goto out;
+	}
+
 	ret = filemap_write_and_wait_range(inode->i_mapping, 0, LLONG_MAX);
 	if (ret)
 		goto out;
@@ -4228,6 +4230,11 @@ static int f2fs_ioc_compress_file(struct file *filp, unsigned long arg)
 
 	if (!f2fs_is_compress_backend_ready(inode)) {
 		ret = -EOPNOTSUPP;
+		goto out;
+	}
+
+	if (is_inode_flag_set(inode, FI_COMPRESS_RELEASED)) {
+		ret = -EINVAL;
 		goto out;
 	}
 
