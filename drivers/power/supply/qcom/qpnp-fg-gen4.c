@@ -5083,7 +5083,6 @@ static int fg_psy_get_property(struct power_supply *psy,
 	int64_t temp;
 	int vbatt_uv;
 	int shutdown_voltage;
-	int capacity_major, capacity_minor;
 	static bool shutdown_delay_cancel;
 	static bool last_shutdown_delay;
 
@@ -5155,13 +5154,15 @@ static int fg_psy_get_property(struct power_supply *psy,
 		break;
 #endif
 	case POWER_SUPPLY_PROP_CAPACITY:
-		rc = fg_gen4_get_prop_capacity_raw(chip, &pval->intval);
-		capacity_major = pval->intval / 100;
-		capacity_minor = pval->intval % 100;
-		if (capacity_minor >= 50)
-			capacity_major++;
+		rc = fg_gen4_get_prop_capacity(fg, &pval->intval);
+		//Using smooth battery capacity.
+		if (fg->param.batt_soc >= 0 && !chip->rapid_soc_dec_en && !chip->soc_scale_mode)
+			pval->intval = fg->param.batt_soc;
 
-		pval->intval = capacity_major;
+		if (chip->dt.fg_increase_100soc_time) {
+			if (fg->param.smooth_batt_soc >= 0 && !chip->rapid_soc_dec_en && !chip->soc_scale_mode)
+				pval->intval = fg->param.smooth_batt_soc;
+		}
 
 		//shutdown delay feature
 		if (chip->dt.shutdown_delay_enable) {
