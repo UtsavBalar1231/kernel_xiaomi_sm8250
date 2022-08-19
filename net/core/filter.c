@@ -3587,6 +3587,16 @@ err_clear:
 	return err;
 }
 
+static const struct bpf_func_proto bpf_skb_get_tunnel_opt_proto = {
+	.func		= bpf_skb_get_tunnel_opt,
+	.gpl_only	= false,
+	.ret_type	= RET_INTEGER,
+	.arg1_type	= ARG_PTR_TO_CTX,
+	.arg2_type	= ARG_PTR_TO_UNINIT_MEM,
+	.arg3_type	= ARG_CONST_SIZE,
+};
+
+#if IS_ENABLED(CONFIG_MIHW)
 /*
  * simple hash function for a string,
  * http://www.cse.yorku.ca/~oz/hash.html
@@ -3618,21 +3628,18 @@ BPF_CALL_1(bpf_get_comm_hash_from_sk, struct sk_buff *, skb)
 	rcu_read_unlock();
 	return hash;
 }
+#else
+BPF_CALL_1(bpf_get_comm_hash_from_sk, struct sk_buff *, skb)
+{
+	return 0;
+}
+#endif
 
 static const struct bpf_func_proto bpf_get_comm_hash_from_sk_proto = {
 	.func           = bpf_get_comm_hash_from_sk,
 	.gpl_only       = false,
 	.ret_type       = RET_INTEGER,
 	.arg1_type      = ARG_PTR_TO_CTX,
-};
-
-static const struct bpf_func_proto bpf_skb_get_tunnel_opt_proto = {
-	.func		= bpf_skb_get_tunnel_opt,
-	.gpl_only	= false,
-	.ret_type	= RET_INTEGER,
-	.arg1_type	= ARG_PTR_TO_CTX,
-	.arg2_type	= ARG_PTR_TO_UNINIT_MEM,
-	.arg3_type	= ARG_CONST_SIZE,
 };
 
 static struct metadata_dst __percpu *md_dst;
@@ -4946,8 +4953,10 @@ sk_filter_func_proto(enum bpf_func_id func_id, const struct bpf_prog *prog)
 		return &bpf_get_socket_cookie_proto;
 	case BPF_FUNC_get_socket_uid:
 		return &bpf_get_socket_uid_proto;
+#if IS_ENABLED(CONFIG_MIHW)
 	case BPF_FUNC_get_comm_hash_from_sk:
 		return &bpf_get_comm_hash_from_sk_proto;
+#endif
 	default:
 		return bpf_base_func_proto(func_id);
 	}

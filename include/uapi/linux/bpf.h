@@ -92,7 +92,9 @@ enum bpf_cmd {
 	BPF_OBJ_GET,
 	BPF_PROG_ATTACH,
 	BPF_PROG_DETACH,
+#if IS_ENABLED(CONFIG_MIHW)
 	BPF_GET_COMM_HASH,
+#endif
 	BPF_PROG_TEST_RUN,
 	BPF_PROG_GET_NEXT_ID,
 	BPF_MAP_GET_NEXT_ID,
@@ -427,10 +429,12 @@ union bpf_attr {
 		__u64		probe_addr;	/* output: probe_addr */
 	} task_fd_query;
 
+#if IS_ENABLED(CONFIG_MIHW)
 	struct { /* anonymous struct used by BPF_GET_COMM_HASH/DETACH commands */
 		__aligned_u64	hash;	/* the hash of process comm */
 		__u32		pid;	/* the pid of the process */;
 	};
+#endif
 } __attribute__((aligned(8)));
 
 /* The description below is an attempt at providing documentation to eBPF
