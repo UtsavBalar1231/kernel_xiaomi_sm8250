@@ -1,0 +1,10 @@
+KINETICS-NORDIC provides a way to configure kinetics-nordic driver.
+
+Required properties:
+- compatible : should be "kinetics,nordic"
+
+Optional properties:
+Example:
+	nordic {
+		compatible = "kinetics,nordic";
+	};

@@ -1,0 +1,8 @@
+#include "kona-iot-v2.1.dtsi"
+#include "kona-7230-iot-cpu.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Kona-7230-iot v2.1";
+	compatible = "qcom,kona-iot";
+	qcom,msm-id = <548 0x20001>;
+};

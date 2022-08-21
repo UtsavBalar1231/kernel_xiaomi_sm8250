@@ -1,0 +1,11 @@
+/dts-v1/;
+
+#include "khajeq.dtsi"
+#include "khajeq-qrd.dtsi"
+#include "khaje-qrd-pm7250b.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Khajeq QRD";
+	compatible = "qcom,khajeq-qrd", "qcom,khajeq", "qcom,qrd";
+	qcom,board-id = <0x1000B 0>;
+};

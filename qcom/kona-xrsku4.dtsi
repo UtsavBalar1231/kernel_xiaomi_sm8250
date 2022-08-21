@@ -206,6 +206,168 @@
 			drive-strength = <2>; /* 2 MA */
 		};
 	};
+
+	nordic_gpio6_active: nordic_gpio6_active {
+		mux {
+			pins = "gpio71";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio71";
+			drive-strength = <8>;
+			bias-disable = <0>;
+			output-high;
+		};
+	};
+
+	nordic_gpio6_suspend: nordic_gpio6_suspend {
+		mux {
+			pins = "gpio71";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio71";
+			bias-pull-down; /* PULL DOWN */
+			drive-strength = <2>; /* 2 MA */
+		};
+	};
+
+	nordic_gpio10_active: nordic_gpio10_active {
+		mux {
+			pins = "gpio14";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio14";
+			drive-strength = <8>;
+			bias-disable = <0>;
+			output-high;
+		};
+	};
+
+	nordic_gpio10_suspend: nordic_gpio10_suspend {
+		mux {
+			pins = "gpio14";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio14";
+			bias-pull-down; /* PULL DOWN */
+			drive-strength = <2>; /* 2 MA */
+		};
+	};
+
+	nordic_gpio11_active: nordic_gpio11_active {
+		mux {
+			pins = "gpio72";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio72";
+			drive-strength = <8>;
+			bias-disable = <0>;
+			output-high;
+		};
+	};
+
+	nordic_gpio11_suspend: nordic_gpio11_suspend {
+		mux {
+			pins = "gpio72";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio72";
+			bias-pull-down; /* PULL DOWN */
+			drive-strength = <2>; /* 2 MA */
+		};
+	};
+
+	nordic_ctrl_active: nordic_ctrl_active {
+		mux {
+			pins = "gpio137";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio137";
+			drive-strength = <8>;
+			bias-disable = <0>;
+			output-high;
+		};
+	};
+
+	nordic_ctrl_suspend: nordic_ctrl_suspend {
+		mux {
+			pins = "gpio137";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio137";
+			bias-pull-down; /* PULL DOWN */
+			drive-strength = <2>; /* 2 MA */
+		};
+	};
+
+	nordic_1p8_en_active: nordic_1p8_en_active {
+		mux {
+			pins = "gpio50";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio50";
+			drive-strength = <8>;
+			bias-disable = <0>;
+			output-high;
+		};
+	};
+
+	nordic_1p8_en_suspend: nordic_1p8_en_suspend {
+		mux {
+			pins = "gpio50";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio50";
+			bias-pull-down; /* PULL DOWN */
+			drive-strength = <2>; /* 2 MA */
+		};
+	};
+
+	nordic_int_active: nordic_int_active {
+		mux {
+			pins = "gpio64";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio64";
+			drive-strength = <8>;
+			bias-disable = <0>;
+			output-high;
+		};
+	};
+
+	nordic_int_suspend: nordic_int_suspend {
+		mux {
+			pins = "gpio64";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio64";
+			bias-pull-down; /* PULL DOWN */
+			drive-strength = <2>; /* 2 MA */
+		};
+	};
 };
 
 &vendor {
@@ -225,6 +387,37 @@
 
 &qupv3_se6_4uart {
 	status = "ok";
+};
+
+/* Nordic spi */
+&qupv3_se19_spi {
+	status = "ok";
+	nordic@0 {
+		compatible = "nordic,spicontroller";
+		reg = <0>;
+		spi-max-frequency = <8000000>;
+		pinctrl-names = "nordic_default", "nordic_sleep";
+		pinctrl-0 = <&nordic_gpio6_active &nordic_gpio10_active
+			&nordic_gpio11_active &nordic_int_active
+			&nordic_ctrl_active &nordic_1p8_en_active>;
+		pinctrl-1 = <&nordic_gpio6_suspend &nordic_gpio10_suspend
+			&nordic_gpio11_suspend &nordic_int_suspend
+			&nordic_ctrl_suspend &nordic_1p8_en_suspend>;
+
+		/*nordic,lfen-gpio = <&tlmm 37 0>;*/
+		nordic,v1p8en-gpio = <&tlmm 50 0>;
+
+		interrupt-parent = <&tlmm>;
+		interrupt-names = "nordicspi_irq";
+		nordic,irq-gpio = <&tlmm 64 0>;
+		nordic,irq_pin = <&tlmm 64 0x00>;
+		interrupts = <64 1>;
+
+		nordic,tst1 = <&tlmm 137 0>;
+		/*nordic,tst2 = <&tlmm 59 0>;*/
+		nordic,tst3 = <&tlmm 72 0>;
+		nordic,tst4 = <&tlmm 71 0>;
+	};
 };
 
 &dai_mi2s2 {
@@ -806,6 +999,14 @@
 };
 
 &dsi_panel_pwr_supply_lab_ibb {
+	qcom,panel-supply-entry@1 {
+		qcom,supply-min-voltage = <5700000>;
+	};
+
+	qcom,panel-supply-entry@2 {
+		qcom,supply-min-voltage = <5700000>;
+	};
+
 	qcom,panel-supply-entry@3 {
 		reg = <1>;
 		qcom,supply-name = "avdd";

@@ -1,0 +1,11 @@
+/dts-v1/;
+
+#include "sdm660.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. SDM 660 PM660 + PM660A QRD";
+	compatible = "qcom,sdm660-qrd", "qcom,sdm660", "qcom,qrd";
+	qcom,pmic-id = <0x0001001b 0x0001011a 0x0 0x0>,
+			<0x0001001b 0x0002001a 0x0 0x0>,
+			<0x0001001b 0x0202001a 0x0 0x0>;
+};

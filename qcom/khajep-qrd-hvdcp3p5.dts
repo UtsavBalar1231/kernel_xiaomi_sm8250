@@ -1,0 +1,13 @@
+/dts-v1/;
+
+#include "khajep.dtsi"
+#include "khajep-qrd.dtsi"
+#include "khaje-qrd-pm7250b.dtsi"
+#include "khajep-qrd-hvdcp3p5.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. KHAJEP QRD HVDCP3P5";
+	compatible = "qcom,khajep-qrd", "qcom,khajep", "qcom,qrd";
+	qcom,board-id = <0x1010B 0>;
+	qcom,pmic-id = <0x2D 0x2E 0x0 0x0>;
+};

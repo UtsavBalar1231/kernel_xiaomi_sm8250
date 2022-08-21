@@ -1,0 +1,11 @@
+/dts-v1/;
+
+#include "khajeq.dtsi"
+#include "khajeq-qrd-nopmi.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. KHAJEQ QRD nopmi";
+	compatible = "qcom,khajeq-qrd", "qcom,khajeq", "qcom,qrd";
+	qcom,board-id = <0x1000B 0>;
+	qcom,pmic-id = <0x2D 0x0 0x0 0x0>;
+};

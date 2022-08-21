@@ -1,0 +1,15 @@
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include "khajep-qrd.dtsi"
+#include "khaje-qrd-pm7250b.dtsi"
+#include "khaje-qrd-hvdcp3p5.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Khajep QRD HVDCP3P5";
+	compatible = "qcom,khajep-qrd", "qcom,khajep", "qcom,qrd";
+	qcom,msm-id = <561 0x10000>;
+	qcom,board-id = <0x1010B 0>;
+	qcom,pmic-id = <0x2D 0x2E 0x0 0x0>;
+};

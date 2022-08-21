@@ -1,0 +1,64 @@
+/dts-v1/;
+
+#include "khaje.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Khajeq SoC";
+	compatible = "qcom,khajeq";
+	qcom,msm-id = <562 0x10000>;
+
+	cpumap {
+		cluster1 {
+			status = "disabled";
+		};
+	};
+
+	/delete-node/ chosen;
+	chosen {
+		bootargs = "rcupdate.rcu_expedited=1 rcu_nocbs=0-3 kpti=off nr_cpus=4";
+	};
+};
+
+&CPU4 {
+	status = "disabled";
+};
+
+&CPU5 {
+	status = "disabled";
+};
+
+&CPU6 {
+	status = "disabled";
+};
+
+&CPU7 {
+	status = "disabled";
+};
+
+&soc {
+	/delete-node/ l2cache_pmu;
+	l2cache_pmu {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "qcom,l2cache-pmu";
+		ranges;
+
+		cluster0@f111000 {
+			cluster-id = <0>;
+			interrupts = <GIC_SPI 57 IRQ_TYPE_LEVEL_HIGH>;
+			reg = <0xf111000 0x1000>;
+		};
+
+	};
+
+	/delete-node/ qcom,chd_gold;
+
+	qcom,rmnet-ipa {
+		status = "disabled";
+	};
+
+};
+
+&ipa_hw {
+	status = "disabled";
+};

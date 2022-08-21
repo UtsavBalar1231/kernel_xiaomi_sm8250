@@ -1,0 +1,14 @@
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include "khajeq-atp.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Khajeq ATP";
+	compatible = "qcom,khajeq-atp", "qcom,khajeq", "qcom,atp";
+	qcom,msm-id = <562 0x10000>;
+	qcom,board-id = <33 0>;
+	qcom,pmic-id = <0x2D 0x2E 0x0 0x0>;
+};
+

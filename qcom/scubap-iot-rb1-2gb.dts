@@ -1,0 +1,12 @@
+/dts-v1/;
+
+#include "scuba-iot-low-ram.dtsi"
+#include "scuba-iot-qcs.dtsi"
+#include "scuba-iot-rb1.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Scubap IOT RB1";
+	compatible = "qcom,scuba-qrd", "qcom,scuba-iot", "qcom,qrd";
+	qcom,msm-id = <474 0x10000>;
+	qcom,board-id = <0x1000B 1>;
+};

@@ -1,0 +1,211 @@
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/iio/qcom,spmi-vadc.h>
+#include "scuba-thermal-overlay.dtsi"
+
+&soc {
+	scuba_batterydata: qcom,battery-data {
+		qcom,batt-id-range-pct = <15>;
+		#include "qg-batterydata-alium-3600mah.dtsi"
+		#include "qg-batterydata-atl466271_3300mAh.dtsi"
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		gpio52 {
+			label = "user4-green";
+			gpios = <&tlmm 52 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		vol_up {
+			label = "volume_up";
+			gpios = <&tlmm 96 GPIO_ACTIVE_LOW>;
+			linux,input-type = <1>;
+			linux,can-disable;
+			debounce-interval = <15>;
+			gpio-key,wakeup;
+		};
+	};
+};
+
+&qupv3_se0_4uart {
+	status = "ok";
+};
+
+&pm2250_qg {
+	qcom,battery-data = <&scuba_batterydata>;
+	qcom,qg-iterm-ma = <150>;
+	qcom,hold-soc-while-full;
+	qcom,linearize-soc;
+	qcom,cl-feedback-on;
+	qcom,tcss-enable;
+	qcom,fvss-enable;
+	qcom,fvss-vbatt-mv = <3500>;
+	qcom,bass-enable;
+};
+
+&sdhc_1 {
+	vdd-supply = <&L20A>;
+	qcom,vdd-voltage-level = <2856000 2856000>;
+	qcom,vdd-current-level = <0 570000>;
+
+	vdd-io-supply = <&L14A>;
+	qcom,vdd-io-always-on;
+	qcom,vdd-io-lpm-sup;
+	qcom,vdd-io-voltage-level = <1800000 1800000>;
+	qcom,vdd-io-current-level = <0 325000>;
+
+	pinctrl-names = "active", "sleep";
+	pinctrl-0 = <&sdc1_clk_on &sdc1_cmd_on &sdc1_data_on
+					&sdc1_rclk_on>;
+	pinctrl-1 = <&sdc1_clk_off &sdc1_cmd_off &sdc1_data_off
+					&sdc1_rclk_off>;
+
+	status = "ok";
+};
+
+&sdhc_2 {
+	vdd-supply = <&L21A>;
+	qcom,vdd-voltage-level = <2960000 3300000>;
+	qcom,vdd-current-level = <0 800000>;
+
+	vdd-io-supply = <&L4A>;
+	qcom,vdd-io-voltage-level = <1800000 2960000>;
+	qcom,vdd-io-current-level = <0 22000>;
+
+	pinctrl-names = "active", "sleep";
+	pinctrl-0 = <&sdc2_clk_on  &sdc2_cmd_on &sdc2_data_on &sdc2_cd_on>;
+	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off &sdc2_cd_off>;
+
+	cd-gpios = <&tlmm 88 GPIO_ACTIVE_LOW>;
+
+	status = "ok";
+};
+
+&pm2250_charger {
+	qcom,auto-recharge-soc = <98>;
+	qcom,suspend-input-on-debug-batt;
+	qcom,battery-data = <&scuba_batterydata>;
+	io-channels = <&pm2250_vadc ADC_USB_IN_V_16>,
+			<&pm2250_vadc ADC_CHG_TEMP>;
+	io-channel-names = "usb_in_voltage",
+			"chg_temp";
+	qcom,thermal-mitigation = <2000000 1500000 1000000 500000>;
+};
+
+&pm2250_pwm3 {
+	status = "ok";
+};
+
+&thermal_zones {
+	quiet-therm-usr {
+		polling-delay = <5000>;
+	};
+
+	quiet-therm-step {
+		polling-delay-passive = <2000>;
+		polling-delay = <5000>;
+		thermal-governor = "step_wise";
+		thermal-sensors = <&pm2250_adc_tm_iio ADC_AMUX_THM2_PU2>;
+		wake-capable-sensor;
+		trips {
+			quiet_cpu0_trip: quiet-cpu0-trip {
+				temperature = <40000>;
+				hysteresis = <0>;
+				type = "passive";
+			};
+
+			quiet_modem_trip0: quiet-modem-trip0 {
+				temperature = <40000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+
+			quiet_modem_trip1: quiet-modem-trip1 {
+				temperature = <42000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+
+			quiet_gpu_trip: quiet-gpu-trip {
+				temperature = <43000>;
+				hysteresis = <0>;
+				type = "passive";
+			};
+
+			quiet_modem_trip2: quiet-modem-trip2 {
+				temperature = <43000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+
+			quiet_modem_trip3: quiet-modem-trip3 {
+				temperature = <50000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			gpu-cdev {
+				trip = <&quiet_gpu_trip>;
+				cooling-device = <&msm_gpu THERMAL_NO_LIMIT
+							(THERMAL_MAX_LIMIT - 3)>;
+			};
+
+			cpu0-cdev {
+				trip = <&quiet_cpu0_trip>;
+				cooling-device = <&CPU0 THERMAL_NO_LIMIT
+							(THERMAL_MAX_LIMIT - 3)>;
+			};
+
+			modem-proc-cdev0 {
+				trip = <&quiet_modem_trip0>;
+				cooling-device = <&modem_proc 1 1>;
+			};
+
+			modem-proc-cdev1 {
+				trip = <&quiet_modem_trip3>;
+				cooling-device = <&modem_proc 3 3>;
+			};
+
+			modem-pa-cdev0 {
+				trip = <&quiet_modem_trip1>;
+				cooling-device = <&modem_pa 1 1>;
+			};
+
+			modem-pa-cdev1 {
+				trip = <&quiet_modem_trip2>;
+				cooling-device = <&modem_pa 2 2>;
+			};
+
+			modem-pa-cdev3 {
+				trip = <&quiet_modem_trip3>;
+				cooling-device = <&modem_pa 3 3>;
+			};
+		};
+	};
+};
+
+&qusb_phy0 {
+	extcon = <&pm2250_charger>;
+
+	qcom,qusb-phy-init-seq = <0xf8 0x80
+				0xb3 0x84
+				0x83 0x88
+				0xc5 0x8c
+				0x30 0x08
+				0x79 0x0c
+				0x21 0x10
+				0x14 0x9c
+				0x80 0x04
+				0x9f 0x1c
+				0x00 0x18>;
+};
+
+&usb0 {
+	extcon = <&qusb_phy0>, <&eud>;
+};

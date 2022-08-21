@@ -1,0 +1,394 @@
+/ {
+	/delete-node/ cpus;
+
+	cpus {
+		#address-cells = <2>;
+		#size-cells = <0>;
+
+		CPU0: cpu@0 {
+			device_type = "cpu";
+			compatible = "qcom,kryo";
+			reg = <0x0 0x0>;
+			enable-method = "psci";
+			cpu-release-addr = <0x0 0x90000000>;
+			next-level-cache = <&L2_0>;
+			qcom,freq-domain = <&cpufreq_hw 0 4>;
+			capacity-dmips-mhz = <1024>;
+			dynamic-power-coefficient = <100>;
+			#cooling-cells = <2>;
+			L2_0: l2-cache {
+			      compatible = "arm,arch-cache";
+			      cache-level = <2>;
+			      next-level-cache = <&L3_0>;
+
+				L3_0: l3-cache {
+				      compatible = "arm,arch-cache";
+				      cache-level = <3>;
+				};
+			};
+
+			L1_I_0: l1-icache {
+				compatible = "arm,arch-cache";
+			};
+
+			L1_D_0: l1-dcache {
+				compatible = "arm,arch-cache";
+			};
+		};
+
+		CPU1: cpu@100 {
+			device_type = "cpu";
+			compatible = "qcom,kryo";
+			reg = <0x0 0x100>;
+			enable-method = "psci";
+			cpu-release-addr = <0x0 0x90000000>;
+			next-level-cache = <&L2_1>;
+			qcom,freq-domain = <&cpufreq_hw 0 4>;
+			capacity-dmips-mhz = <1024>;
+			dynamic-power-coefficient = <100>;
+			L2_1: l2-cache {
+			      compatible = "arm,arch-cache";
+			      cache-level = <2>;
+			      next-level-cache = <&L3_0>;
+			};
+
+			L1_I_100: l1-icache {
+				compatible = "arm,arch-cache";
+			};
+
+			L1_D_100: l1-dcache {
+				compatible = "arm,arch-cache";
+			};
+		};
+
+		CPU2: cpu@400 {
+			device_type = "cpu";
+			compatible = "qcom,kryo";
+			reg = <0x0 0x400>;
+			enable-method = "psci";
+			cpu-release-addr = <0x0 0x90000000>;
+			next-level-cache = <&L2_4>;
+			qcom,freq-domain = <&cpufreq_hw 1 4>;
+			capacity-dmips-mhz = <1894>;
+			dynamic-power-coefficient = <514>;
+			#cooling-cells = <2>;
+			L2_4: l2-cache {
+			      compatible = "arm,arch-cache";
+			      cache-level = <2>;
+			      next-level-cache = <&L3_0>;
+			};
+
+			L1_I_400: l1-icache {
+				compatible = "arm,arch-cache";
+			};
+
+			L1_D_400: l1-dcache {
+				compatible = "arm,arch-cache";
+			};
+		};
+
+		CPU3: cpu@500 {
+			device_type = "cpu";
+			compatible = "qcom,kryo";
+			reg = <0x0 0x500>;
+			enable-method = "psci";
+			cpu-release-addr = <0x0 0x90000000>;
+			next-level-cache = <&L2_5>;
+			qcom,freq-domain = <&cpufreq_hw 1 4>;
+			capacity-dmips-mhz = <1894>;
+			dynamic-power-coefficient = <514>;
+			L2_5: l2-cache {
+			      compatible = "arm,arch-cache";
+			      cache-level = <2>;
+			      next-level-cache = <&L3_0>;
+			};
+
+			L1_I_500: l1-icache {
+				compatible = "arm,arch-cache";
+			};
+
+			L1_D_500: l1-dcache {
+				compatible = "arm,arch-cache";
+			};
+		};
+
+		CPU4: cpu@600 {
+			device_type = "cpu";
+			compatible = "qcom,kryo";
+			reg = <0x0 0x600>;
+			enable-method = "psci";
+			cpu-release-addr = <0x0 0x90000000>;
+			next-level-cache = <&L2_6>;
+			qcom,freq-domain = <&cpufreq_hw 1 4>;
+			capacity-dmips-mhz = <1894>;
+			dynamic-power-coefficient = <514>;
+			L2_6: l2-cache {
+			      compatible = "arm,arch-cache";
+			      cache-level = <2>;
+			      next-level-cache = <&L3_0>;
+			};
+
+			L1_I_600: l1-icache {
+				compatible = "arm,arch-cache";
+			};
+
+			L1_D_600: l1-dcache {
+				compatible = "arm,arch-cache";
+			};
+		};
+
+		CPU5: cpu@700 {
+			device_type = "cpu";
+			compatible = "qcom,kryo";
+			reg = <0x0 0x700>;
+			enable-method = "psci";
+			cpu-release-addr = <0x0 0x90000000>;
+			next-level-cache = <&L2_7>;
+			qcom,freq-domain = <&cpufreq_hw 2 4>;
+			capacity-dmips-mhz = <1894>;
+			dynamic-power-coefficient = <598>;
+			#cooling-cells = <2>;
+			L2_7: l2-cache {
+			      compatible = "arm,arch-cache";
+			      cache-level = <2>;
+			      next-level-cache = <&L3_0>;
+			};
+
+			L1_I_700: l1-icache {
+				compatible = "arm,arch-cache";
+			};
+
+			L1_D_700: l1-dcache {
+				compatible = "arm,arch-cache";
+			};
+		};
+
+		cpu-map {
+			cluster0 {
+				core0 {
+					cpu = <&CPU0>;
+				};
+
+				core1 {
+					cpu = <&CPU1>;
+				};
+			};
+
+			cluster1 {
+				core0 {
+					cpu = <&CPU2>;
+				};
+
+				core1 {
+					cpu = <&CPU3>;
+				};
+
+				core2 {
+					cpu = <&CPU4>;
+				};
+			};
+
+			cluster2 {
+				core0 {
+					cpu = <&CPU5>;
+				};
+			};
+		};
+	};
+
+};
+
+&soc {
+	/delete-node/ dsu_pmu@0;
+	/delete-node/ jtagmm@7240000;
+	/delete-node/ jtagmm@7340000;
+	/delete-node/ cti@7220000;
+	/delete-node/ cti@7320000;
+	/delete-node/ etm@7240000;
+	/delete-node/ etm@7340000;
+
+	dsu_pmu@0 {
+		compatible = "arm,dsu-pmu";
+		interrupts = <GIC_SPI 50 IRQ_TYPE_LEVEL_HIGH>;
+		cpus = <&CPU0>, <&CPU1>,
+			<&CPU2>, <&CPU3>, <&CPU4>, <&CPU5>;
+	};
+
+	qcom,lpm-levels {
+		qcom,pm-cluster@0 {
+			qcom,pm-cpu@0 {
+				/delete-property/  qcom,cpu;
+				qcom,cpu = <&CPU0 &CPU1>;
+			};
+
+			qcom,pm-cpu@1 {
+				/delete-property/  qcom,cpu;
+				qcom,cpu = <&CPU2 &CPU3 &CPU4 &CPU5>;
+
+			};
+		};
+	};
+
+};
+
+&funnel_apss {
+	ports {
+		/delete-node/ port@3;
+		/delete-node/ port@4;
+	};
+};
+
+&cti_cpu4 {
+	/delete-property/ cpu;
+	cpu = <&CPU2>;
+};
+
+&cti_cpu5 {
+	/delete-property/ cpu;
+	cpu = <&CPU3>;
+};
+
+&cti_cpu6 {
+	/delete-property/ cpu;
+	cpu = <&CPU4>;
+};
+
+&cti_cpu7 {
+	/delete-property/ cpu;
+	cpu = <&CPU5>;
+};
+
+&etm4 {
+	/delete-property/ cpu;
+	cpu = <&CPU2>;
+};
+
+&etm5 {
+	/delete-property/ cpu;
+	cpu = <&CPU3>;
+};
+
+&etm6 {
+	/delete-property/ cpu;
+	cpu = <&CPU4>;
+};
+
+&etm7 {
+	/delete-property/ cpu;
+	cpu = <&CPU5>;
+};
+
+&jtag_mm4 {
+	/delete-property/ qcom,coresight-jtagmm-cpu;
+	qcom,coresight-jtagmm-cpu = <&CPU2>;
+};
+
+&jtag_mm5 {
+	/delete-property/ qcom,coresight-jtagmm-cpu;
+	qcom,coresight-jtagmm-cpu = <&CPU3>;
+};
+
+&jtag_mm6 {
+	/delete-property/ qcom,coresight-jtagmm-cpu;
+	qcom,coresight-jtagmm-cpu = <&CPU4>;
+};
+
+&jtag_mm7 {
+	/delete-property/ qcom,coresight-jtagmm-cpu;
+	qcom,coresight-jtagmm-cpu = <&CPU5>;
+};
+
+&cpu0_memlat_cpugrp {
+	/delete-property/ qcom,cpulist;
+	qcom,cpulist = <&CPU0 &CPU1>;
+
+	qcom,cpu0-llcc-ddr-latmon {
+		/delete-property/ qcom,cpulist;
+		qcom,cpulist = <&CPU0 &CPU1>;
+	};
+};
+
+&cpu4_memlat_cpugrp {
+	/delete-property/ qcom,cpulist;
+	qcom,cpulist = <&CPU2 &CPU3 &CPU4 &CPU5>;
+	qcom,cpu4-cpu-l3-latmon {
+		/delete-property/ qcom,cpulist;
+		qcom,cpulist = <&CPU2 &CPU3 &CPU4>;
+	};
+
+	qcom,cpu7-cpu-l3-latmon {
+		/delete-property/ qcom,cpulist;
+		qcom,cpulist = <&CPU5>;
+	};
+
+	qcom,cpu4-llcc-ddr-latmon {
+		/delete-property/ qcom,cpulist;
+		qcom,cpulist = <&CPU2 &CPU3 &CPU4 &CPU5>;
+	};
+};
+
+&cpufreq_hw {
+	/delete-node/ qcom,cpu-isolation;
+	qcom,cpu-isolation {
+		compatible = "qcom,cpu-isolate";
+		cpu0_isolate: cpu0-isolate {
+			qcom,cpu = <&CPU0>;
+			#cooling-cells = <2>;
+		};
+
+		cpu1_isolate: cpu1-isolate {
+			qcom,cpu = <&CPU1>;
+			#cooling-cells = <2>;
+		};
+
+		cpu4_isolate: cpu4-isolate {
+			qcom,cpu = <&CPU2>;
+			#cooling-cells = <2>;
+		};
+
+		cpu5_isolate: cpu5-isolate {
+			qcom,cpu = <&CPU3>;
+			#cooling-cells = <2>;
+		};
+
+		cpu6_isolate: cpu6-isolate {
+			qcom,cpu = <&CPU4>;
+			#cooling-cells = <2>;
+		};
+
+		cpu7_isolate: cpu7-isolate {
+			qcom,cpu = <&CPU5>;
+			#cooling-cells = <2>;
+		};
+	};
+
+	/delete-node/ cpu7-notify;
+	cpu7_notify: cpu7-notify {
+		qcom,cooling-cpu = <&CPU5>;
+		#cooling-cells = <2>;
+	};
+};
+
+&thermal_zones {
+	/delete-node/ cpu-0-2-step;
+	/delete-node/ cpu-0-3-step;
+
+	pop-mem-step {
+		cooling-maps {
+			pop_cdev4 {
+				/delete-property/ cooling-device;
+				cooling-device =
+					<&CPU2 THERMAL_NO_LIMIT
+						THERMAL_NO_LIMIT>;
+			};
+
+			pop_cdev7 {
+				/delete-property/ cooling-device;
+				cooling-device =
+					<&CPU5 THERMAL_NO_LIMIT
+						THERMAL_NO_LIMIT>;
+			};
+		};
+	};
+};
+

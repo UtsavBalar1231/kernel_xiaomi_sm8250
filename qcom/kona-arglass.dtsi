@@ -577,6 +577,19 @@
 	status = "ok";
 };
 
+&dsi_dual_arglass_seeya_90hz_video {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
+	qcom,mdss-dsi-bl-ctrl-dcs-subtype = <0xc2>;
+	qcom,mdss-dsi-bl-min-level = <1>;
+	qcom,mdss-dsi-bl-max-level = <1023>;
+	qcom,mdss-brightness-max-level = <1023>;
+	qcom,platform-reset-gpio = <&tlmm 75 0>;
+	qcom,platform-bklight-en-gpio = <&tlmm 46 0>;
+	qcom,5v-boost-gpio = <&tlmm 61 0>;
+	/delete-property/ qcom,platform-en-gpio;
+};
+
 &dsi_dual_arglass_seeya_video {
 	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
