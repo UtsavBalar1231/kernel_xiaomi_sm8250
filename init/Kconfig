@@ -1126,13 +1126,6 @@ config MIHW
 
 	  If unsure, say N here.
 
-config PACKAGE_RUNTIME_INFO
-	bool "stat:package runtime info on cluster"
-	default n
-	depends on MIHW
-	help
-	  This option can show package runtime info in sup/big/little core.
-
 config PERF_HUMANTASK
 	bool "enable feature humantask"
 	depends on MIHW && MILLET
@@ -1146,13 +1139,6 @@ config KPERFEVENTS
 	default n
 	help
 	  support switch on/off of kperfevents.
-
-config PERF_CRITICAL_RT_TASK
-	bool "enable set rt binder thread" if EXPERT
-	depends on MIHW
-	default n
-	help
-	  speedui feature set BlastBufferQueue binder thread FIFO.
 
 menuconfig NAMESPACES
 	bool "Namespaces support" if EXPERT
@@ -1544,12 +1530,6 @@ config ELF_CORE
 	help
 	  Enable support for generating core dumps. Disabling saves about 4k.
 
-config SF_BINDER
-	default n
-	depends on MIHW
-	bool "surfaceflinger binder thread" if EXPERT
-	help
-	  Xiaomi restore surfaceflinger binder prio FIFO
 
 config PCSPKR_PLATFORM
 	bool "Enable PC-Speaker support" if EXPERT

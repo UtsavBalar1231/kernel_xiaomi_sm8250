@@ -49,7 +49,6 @@ int millet_sendto_user(struct task_struct *tsk,
 int register_millet_hook(int type, recv_hook recv_from, send_hook send_to,
 		init_hook init);
 int unregister_millet_hook(int type);
-bool judge_millet_freeze_switch(void);
 extern int frozen_uid_min;
 extern unsigned long binder_warn_ahead_space;
 #else
@@ -62,7 +61,6 @@ static inline int millet_sendto_user(struct task_struct *tsk,
 static inline int register_millet_hook(int type, recv_hook recv_from,
 		send_hook send_to, init_hook init) { return 0; }
 static inline int unregister_millet_hook(int type) { return 0; }
-static inline bool judge_millet_freeze_switch(void) { return false; }
 #endif
 static inline int frozen_task_group(struct task_struct *task)
 {

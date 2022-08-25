@@ -15,23 +15,21 @@
 #include <linux/module.h>
 #include <linux/netlink.h>
 #include <linux/skbuff.h>
-#include <linux/millet.h>
 #include <linux/freezer.h>
 #include <net/sock.h>
 #include <linux/ktime.h>
 #include <linux/hrtimer.h>
 #include <linux/proc_fs.h>
+#include <linux/millet.h>
 
 int frozen_uid_min = 10000;
 unsigned long binder_warn_ahead_space = WARN_AHEAD_SPACE;
 static struct millet_sock millet_sk;
 struct proc_dir_entry *millet_rootdir;
 static unsigned int millet_debug;
-static int millet_freeze_switch;
 module_param(millet_debug, uint, 0644);
 module_param(frozen_uid_min, uint, 0644);
 module_param(binder_warn_ahead_space, ulong, 0644);
-module_param(millet_freeze_switch, int, 0660);
 enum MILLET_VERSION millet_v= VERSION_1_0;
 
 static void dump_send_msg(struct millet_data *msg)
@@ -45,11 +43,11 @@ static void dump_send_msg(struct millet_data *msg)
 		return;
 	}
 
-	pr_info("msg: %d\n", msg->msg_type);
-	pr_info("type: %d\n", msg->owner);
-	pr_info("src_port: 0x%x\n", msg->src_port);
-	pr_info("dest_port: 0x%x\n", msg->dst_port);
-	pr_info("uid: %d\n", msg->uid);
+	pr_info("up msg: %d\n", msg->msg_type);
+	pr_info("up type: %d\n", msg->owner);
+	pr_info("up src_port: 0x%x\n", msg->src_port);
+	pr_info("up dest_port: 0x%x\n", msg->dst_port);
+	pr_info("up uid: %d\n", msg->uid);
 }
 
 static void dump_recv_msg(struct millet_userconf *msg)
@@ -69,10 +67,6 @@ static void dump_recv_msg(struct millet_userconf *msg)
 	pr_info("dest_port: 0x%x\n", msg->dst_port);
 }
 
-bool judge_millet_freeze_switch(void)
-{
-	return 1 == millet_freeze_switch;
-}
 
 int millet_can_attach(struct cgroup_taskset *tset)
 {
@@ -152,7 +146,8 @@ int millet_sendto_user(struct task_struct *tsk,
 		return RET_ERR;
 	} else {
 		if (millet_debug)
-			pr_info("nlmsg_unicast snd msg success\n");
+			pr_info("nlmsg_unicast snd msg success to %d\n",
+					monitor_port);
 	}
 
 	return RET_OK;
@@ -171,7 +166,7 @@ int millet_sendmsg(enum MILLET_TYPE type, struct task_struct *tsk,
 	}
 
 	if (!millet_sk.mod[type].send_to) {
-		pr_err("mod %d send_to interface is NULL");
+		pr_err("mod %d send_to interface is NULL\n", type);
 		return RET_ERR;
 	}
 
@@ -228,8 +223,14 @@ static void recv_handler(struct sk_buff *skb)
 	from = nlh->nlmsg_pid;
 	payload = (struct millet_userconf *) NLMSG_DATA(nlh);
 	if (payload->src_port != MILLET_USER_ID) {
-		pr_err("src_port %x is not valid!\n",
-		       payload->src_port);
+		pr_err("src_port %x invalid! from %d need len %d len %d\n",
+		       payload->src_port,
+		       from,
+		       nlh->nlmsg_len,
+		       NLMSG_SPACE(msglen));
+		pr_err("-------invalid msg dump------");
+		dump_recv_msg(payload);
+		pr_err("**current pid %d****\n", current->pid);
 		return;
 	}
 
@@ -261,10 +262,8 @@ static void recv_handler(struct sk_buff *skb)
 			millet_sk.mod[payload->owner].recv_from(
 				payload, sizeof(struct millet_userconf));
 
-		if (millet_debug) {
-			pr_err("recv mesg form %d\n", from);
+		if (millet_debug)
 			dump_recv_msg(payload);
-		}
 		break;
 	}
 

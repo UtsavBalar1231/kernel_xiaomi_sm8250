@@ -1339,9 +1339,6 @@ static int cpufreq_online(unsigned int cpu)
 
 		cpufreq_stats_create_table(policy);
 		cpufreq_times_create_policy(policy);
-#if IS_ENABLED(CONFIG_MIGT)
-		create_cpu_pcost_entry(policy);
-#endif
 
 		write_lock_irqsave(&cpufreq_driver_lock, flags);
 		list_add(&policy->policy_list, &cpufreq_policy_list);

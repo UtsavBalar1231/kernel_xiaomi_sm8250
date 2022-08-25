@@ -96,10 +96,6 @@ unsigned int sysctl_sched_sync_hint_enable = 1;
  */
 unsigned int sysctl_sched_cstate_aware = 1;
 
-#if IS_ENABLED(CONFIG_PACKAGE_RUNTIME_INFO)
-unsigned int sysctl_boost_stask_to_big = 1;
-#endif
-
 /*
  * The initial- and re-scaling of tunables is configurable
  *
@@ -7045,20 +7041,6 @@ static int get_start_cpu(struct task_struct *p, bool sync_boost)
 	if (sync_boost && rd->mid_cap_orig_cpu != -1)
 		return rd->mid_cap_orig_cpu;
 
-#if IS_ENABLED(CONFIG_PACKAGE_RUNTIME_INFO)
-	if (game_super_task(p)) {
-		if (sysctl_boost_stask_to_big)
-			return rd->max_cap_orig_cpu;
-		return rd->mid_cap_orig_cpu;
-	}
-
-	if (game_vip_task(p))
-		return rd->mid_cap_orig_cpu;
-
-	if (fas_power_bias(p))
-		return rd->min_cap_orig_cpu;
-#endif
-
 	if (start_cpu == -1 || start_cpu == rd->max_cap_orig_cpu)
 		return start_cpu;
 
@@ -7115,10 +7097,6 @@ static void find_best_target(struct sched_domain *sd, cpumask_t *cpus,
 	bool rtg_high_prio_task = task_rtg_high_prio(p);
 #if IS_ENABLED(CONFIG_MIHW)
 	struct root_domain *rd;
-#endif
-#if IS_ENABLED(CONFIG_PACKAGE_RUNTIME_INFO)
-	if (!prefer_idle)
-		prefer_idle = !!game_vip_task(p);
 #endif
 
 	/*
@@ -7499,22 +7477,6 @@ static void find_best_target(struct sched_domain *sd, cpumask_t *cpus,
 		 * iterate lower capacity CPUs unless the task can't be
 		 * accommodated in the higher capacity CPUs.
 		 */
-#if IS_ENABLED(CONFIG_PACKAGE_RUNTIME_INFO)
-		if (!sysctl_boost_stask_to_big) {
-			if (best_idle_cpu != -1) {
-				if (game_vip_task(p))
-					break;
-			} else if (target_cpu != -1 || best_active_cpu != -1) {
-				if (game_vip_task(p))
-					break;
-			}
-		} else {
-			if (game_vip_task(p) &&
-				(best_idle_cpu != -1 || target_cpu != -1 || best_active_cpu != -1))
-				break;
-		}
-#endif
-
 		if ((prefer_idle && best_idle_cpu != -1) ||
 		    (boosted && (best_idle_cpu != -1 || target_cpu != -1 ||
 		     (fbt_env->strict_max && most_spare_cap_cpu != -1)))) {
@@ -8062,9 +8024,6 @@ static int find_energy_efficient_cpu(struct task_struct *p, int prev_cpu,
 		delta = task_util(p);
 #endif
 	if (task_placement_boost_enabled(p) || fbt_env.need_idle || boosted ||
-#if IS_ENABLED(CONFIG_PACKAGE_RUNTIME_INFO)
-	    game_vip_task(p) ||
-#endif
 	    is_rtg || __cpu_overutilized(prev_cpu, delta) ||
 	    !task_fits_max(p, prev_cpu) || cpu_isolated(prev_cpu)) {
 		best_energy_cpu = cpu;
@@ -8125,14 +8084,6 @@ eas_not_ready:
 	return -1;
 }
 
-#if IS_ENABLED(CONFIG_PACKAGE_RUNTIME_INFO)
-static __inline__ void wake_render(struct task_struct *p)
-{
-	if (is_render_thread(p))
-		current->pkg.migt.wake_render++;
-}
-#endif
-
 /*
  * select_task_rq_fair: Select target runqueue for the waking task in domains
  * that have the 'sd_flag' flag set. In practice, this is SD_BALANCE_WAKE,
@@ -8164,10 +8115,6 @@ select_task_rq_fair(struct task_struct *p, int prev_cpu, int sd_flag, int wake_f
 			     cpu_rq(cpu)->rd->mid_cap_orig_cpu :
 			     cpu_rq(cpu)->rd->max_cap_orig_cpu;
 			bool sync_boost = sync && cpu >= high_cap_cpu;
-
-#if IS_ENABLED(CONFIG_PACKAGE_RUNTIME_INFO)
-			wake_render(p);
-#endif
 
 			if (uclamp_latency_sensitive(p) && !sched_feat(EAS_PREFER_IDLE) && !sync)
 				goto sd_loop;

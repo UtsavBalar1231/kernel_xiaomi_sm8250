@@ -18,7 +18,6 @@
 #include <net/inet6_hashtables.h>
 #include <linux/millet.h>
 
-
 #define MAX_REC_UID 64
 static atomic_t uid_rec[MAX_REC_UID];
 
@@ -149,10 +148,8 @@ static uid_t __sock_i_uid(struct sock *sk)
 {
 	uid_t uid;
 
-	if (sk) {
-		read_lock_bh(&sk->sk_callback_lock);
-		uid = sk->sk_socket ? SOCK_INODE(sk->sk_socket)->i_uid.val : 0;
-		read_unlock_bh(&sk->sk_callback_lock);
+	if (sk && sk->sk_socket) {
+		uid = SOCK_INODE(sk->sk_socket)->i_uid.val;
 		return uid;
 	}
 
@@ -239,32 +236,30 @@ static inline unsigned int pkg_ip6_out(void *priv, struct sk_buff *skb,
 }
 
 static struct nf_hook_ops pkg_nf_ops[] = {
-
-		{
-				.hook        =    pkg_ip4_in,
-				.pf        =    NFPROTO_IPV4,
-				.hooknum    =    NF_INET_LOCAL_IN,
-				.priority    =    NF_IP_PRI_SELINUX_LAST + 1,
-		},
-		{
-				.hook   =    pkg_ip6_in,
-				.pf        =    NFPROTO_IPV6,
-				.hooknum    =    NF_INET_LOCAL_IN,
-				.priority    =    NF_IP6_PRI_SELINUX_LAST + 1,
-		},
-
-		{
-				.hook        =    pkg_ip4_out,
-				.pf        =    NFPROTO_IPV4,
-				.hooknum    =    NF_INET_LOCAL_OUT,
-				.priority    =    NF_IP_PRI_SELINUX_LAST + 1,
-		},
-		{
-				.hook        =    pkg_ip6_out,
-				.pf        =    NFPROTO_IPV6,
-				.hooknum    =    NF_INET_LOCAL_OUT,
-				.priority    =    NF_IP6_PRI_SELINUX_LAST + 1,
-		},
+	{
+		.hook        =    pkg_ip4_in,
+		.pf        =    NFPROTO_IPV4,
+		.hooknum    =    NF_INET_LOCAL_IN,
+		.priority    =    NF_IP_PRI_SELINUX_LAST + 1,
+	},
+	{
+		.hook   =    pkg_ip6_in,
+		.pf        =    NFPROTO_IPV6,
+		.hooknum    =    NF_INET_LOCAL_IN,
+		.priority    =    NF_IP6_PRI_SELINUX_LAST + 1,
+	},
+	{
+		.hook        =    pkg_ip4_out,
+		.pf        =    NFPROTO_IPV4,
+		.hooknum    =    NF_INET_LOCAL_OUT,
+		.priority    =    NF_IP_PRI_SELINUX_LAST + 1,
+	},
+	{
+		.hook        =    pkg_ip6_out,
+		.pf        =    NFPROTO_IPV6,
+		.hooknum    =    NF_INET_LOCAL_OUT,
+		.priority    =    NF_IP6_PRI_SELINUX_LAST + 1,
+	},
 
 };
 
@@ -295,7 +290,6 @@ static void __exit millet_pkg_exit(void)
 	unregister_millet_hook(PKG_TYPE);
 	nf_unregister_net_hooks(net, pkg_nf_ops, ARRAY_SIZE(pkg_nf_ops));
 }
-
 
 module_init(millet_pkg_init);
 module_exit(millet_pkg_exit);

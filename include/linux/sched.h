@@ -29,9 +29,6 @@
 #include <linux/mm_event.h>
 #include <linux/task_io_accounting.h>
 #include <linux/rseq.h>
-#if IS_ENABLED(CONFIG_PACKAGE_RUNTIME_INFO)
-#include <linux/pkg_stat.h>
-#endif
 
 /* task_struct member predeclarations (sorted alphabetically): */
 struct audit_context;
@@ -635,9 +632,6 @@ struct ravg {
 	u32 coloc_demand;
 	u32 sum_history[RAVG_HIST_SIZE_MAX];
 	u32 *curr_window_cpu, *prev_window_cpu;
-#if IS_ENABLED(CONFIG_MIHW)
-	u64 proc_load;
-#endif
 	u32 curr_window, prev_window;
 	u32 pred_demand;
 	u8 busy_buckets[NUM_BUSY_BUCKETS];
@@ -1394,13 +1388,6 @@ struct task_struct {
 #if IS_ENABLED(CONFIG_MIHW)
 	unsigned int			top_app;
 	unsigned int			inherit_top_app;
-	unsigned int    		critical_task;
-#endif
-#ifdef CONFIG_PERF_CRITICAL_RT_TASK
-	unsigned int    		critical_rt_task;
-#endif
-#ifdef CONFIG_SF_BINDER
-	unsigned int			sf_binder_task;
 #endif
 #if IS_ENABLED(CONFIG_PERF_HUMANTASK)
 	unsigned int                    human_task;
@@ -1538,9 +1525,6 @@ struct task_struct {
 	ANDROID_KABI_RESERVE(7);
 	ANDROID_KABI_RESERVE(8);
 
-#if IS_ENABLED(CONFIG_PACKAGE_RUNTIME_INFO)
-struct package_runtime_info pkg;
-#endif
 	/*
 	 * New fields for task_struct should be added above here, so that
 	 * they are included in the randomized portion of task_struct.
