@@ -15,7 +15,7 @@ export KERNEL_CFG
 export OUT_DIR
 
 # Set compiler PATH
-PATH=${HOME}/aospa/prebuilts/clang/host/linux-x86/clang-r416183b1/bin:$PATH
+PATH=${HOME}/prebuilts/clang/host/linux-x86/clang-r416183b1/bin:$PATH
 
 BUILD="make O=$OUT_DIR \
 ARCH=arm64 \
