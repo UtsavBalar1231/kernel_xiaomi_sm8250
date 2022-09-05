@@ -58,8 +58,13 @@
 #define MI_DRM_NOTIFIER
 
 #define NVT_DEBUG 0
+#ifdef CONFIG_MIHW
+#define TOUCH_DISABLE_LPM 1
+#define TOUCH_IRQ_BOOST 2
+#else
 #define TOUCH_DISABLE_LPM 0
 #define TOUCH_IRQ_BOOST 0
+#endif
 
 /*---GPIO number---*/
 #define NVTTOUCH_RST_PIN 980

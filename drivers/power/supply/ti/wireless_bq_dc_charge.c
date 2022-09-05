@@ -1002,7 +1002,8 @@ static int wldc_pm_fc2_charge_algo(struct wireless_dc_device_info *pm)
 	} else if ((tx_adapter_type == ADAPTER_XIAOMI_PD_40W)
 			|| (tx_adapter_type == ADAPTER_VOICE_BOX)
 			|| (tx_adapter_type == ADAPTER_XIAOMI_PD_50W)
-			|| (tx_adapter_type == ADAPTER_XIAOMI_PD_60W)) {
+			|| (tx_adapter_type == ADAPTER_XIAOMI_PD_60W)
+			|| (tx_adapter_type == ADAPTER_XIAOMI_PD_100W)) {
 		effective_iout_current_max = pm->rx_iout_curr_max;
 	} else {
 		pr_err("not our defined quick chargers, switch to main\n");
@@ -1313,7 +1314,7 @@ static int wldc_pm_sm(struct wireless_dc_device_info *pm)
 
 		if (pm->cp.vbat_volt < pm_config.min_vbat_for_cp) {
 			pr_info("batt_volt %d, waiting...\n", pm->cp.vbat_volt);
-		} else if (tx_adapter_type > ADAPTER_XIAOMI_PD_60W ||
+		} else if (tx_adapter_type > ADAPTER_XIAOMI_PD_100W ||
 			tx_adapter_type < ADAPTER_XIAOMI_QC3) {
 			pr_info("not our defined quick chargers, waiting...\n");
 		} else if (pm->cp.vbat_volt > pm_config.bat_volt_lp_lmt - VBAT_HIGH_FOR_FC_HYS_MV

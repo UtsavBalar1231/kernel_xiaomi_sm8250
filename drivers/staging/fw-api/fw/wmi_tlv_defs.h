@@ -1282,6 +1282,12 @@ typedef enum {
     WMITLV_TAG_STRUC_WMI_WOW_COAP_GET_BUF_INFO_CMD_fixed_param,
     WMITLV_TAG_STRUC_WMI_WOW_COAP_BUF_INFO_EVENT_fixed_param,
     WMITLV_TAG_STRUC_wmi_coap_tuple,
+    WMITLV_TAG_STRUC_wmi_iface_powersave_stats,
+    WMITLV_TAG_STRUC_wmi_roam_bss_info_param,
+    WMITLV_TAG_STRUC_wmi_vendor_control_param,
+    WMITLV_TAG_STRUC_wmi_coex_dbam_cmd_fixed_param,
+    WMITLV_TAG_STRUC_wmi_coex_dbam_complete_event_fixed_param,
+    WMITLV_TAG_STRUC_wmi_is_my_mgmt_frame,
 } WMITLV_TAG_ID;
 
 /*
@@ -1785,6 +1791,7 @@ typedef enum {
     OP(WMI_WOW_COAP_ADD_KEEPALIVE_PATTERN_CMDID) \
     OP(WMI_WOW_COAP_DEL_KEEPALIVE_PATTERN_CMDID) \
     OP(WMI_WOW_COAP_GET_BUF_INFO_CMDID) \
+    OP(WMI_COEX_DBAM_CMDID) \
     /* add new CMD_LIST elements above this line */
 
 
@@ -2074,6 +2081,7 @@ typedef enum {
     OP(WMI_ROAM_GET_VENDOR_CONTROL_PARAM_EVENTID) \
     OP(WMI_HALPHY_CTRL_PATH_STATS_EVENTID) \
     OP(WMI_WOW_COAP_BUF_INFO_EVENTID) \
+    OP(WMI_COEX_DBAM_COMPLETE_EVENTID) \
     /* add new EVT_LIST elements above this line */
 
 
@@ -5106,6 +5114,11 @@ WMITLV_CREATE_PARAM_STRUC(WMI_WOW_COAP_DEL_KEEPALIVE_PATTERN_CMDID);
     WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_STRUC_WMI_WOW_COAP_GET_BUF_INFO_CMD_fixed_param, WMI_WOW_COAP_GET_BUF_INFO_CMD_fixed_param, fixed_param, WMITLV_SIZE_FIX)
 WMITLV_CREATE_PARAM_STRUC(WMI_WOW_COAP_GET_BUF_INFO_CMDID);
 
+/* coex dbam cmd */
+#define WMITLV_TABLE_WMI_COEX_DBAM_CMDID(id,op,buf,len) \
+    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_STRUC_wmi_coex_dbam_cmd_fixed_param, wmi_coex_dbam_cmd_fixed_param, fixed_param, WMITLV_SIZE_FIX)
+WMITLV_CREATE_PARAM_STRUC(WMI_COEX_DBAM_CMDID);
+
 
 
 /************************** TLV definitions of WMI events *******************************/
@@ -5372,7 +5385,8 @@ WMITLV_CREATE_PARAM_STRUC(WMI_PEER_STA_KICKOUT_EVENTID);
     WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_mgmt_rx_params_ext, mgmt_rx_params_ext, WMITLV_SIZE_VAR) \
     WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_frame_pn_params, pn_params, WMITLV_SIZE_VAR) \
     WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_mgmt_ml_info, ml_info, WMITLV_SIZE_VAR) \
-    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_BYTE, A_UINT8, bpcc_bufp, WMITLV_SIZE_VAR)
+    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_BYTE, A_UINT8, bpcc_bufp, WMITLV_SIZE_VAR) \
+    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_is_my_mgmt_frame, my_frame, WMITLV_SIZE_VAR)
 WMITLV_CREATE_PARAM_STRUC(WMI_MGMT_RX_EVENTID);
 
 /* Management Rx FW Consumed Event */
@@ -5421,7 +5435,8 @@ WMITLV_CREATE_PARAM_STRUC(WMI_AGGR_STATE_TRIG_EVENTID);
     WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_STRUC_wmi_roam_event_fixed_param, wmi_roam_event_fixed_param, fixed_param, WMITLV_SIZE_FIX) \
     WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_BYTE, A_UINT8, deauth_disassoc_frame, WMITLV_SIZE_VAR) \
     WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_pdev_hw_mode_transition_event_fixed_param, hw_mode_transition_fixed_param, WMITLV_SIZE_VAR) \
-    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_pdev_set_hw_mode_response_vdev_mac_entry, wmi_pdev_set_hw_mode_response_vdev_mac_mapping, WMITLV_SIZE_VAR)
+    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_pdev_set_hw_mode_response_vdev_mac_entry, wmi_pdev_set_hw_mode_response_vdev_mac_mapping, WMITLV_SIZE_VAR) \
+    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_roam_bss_info_param, bss_info_param, WMITLV_SIZE_VAR)
 WMITLV_CREATE_PARAM_STRUC(WMI_ROAM_EVENTID);
 
 /* Roam Synch Event */
@@ -5459,7 +5474,8 @@ WMITLV_CREATE_PARAM_STRUC(WMI_ROAM_FRAME_EVENTID);
 
 /* Get Roam Vendor Control Param Event */
 #define WMITLV_TABLE_WMI_ROAM_GET_VENDOR_CONTROL_PARAM_EVENTID(id,op,buf,len) \
-    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_STRUC_wmi_roam_get_vendor_control_param_event_fixed_param, wmi_roam_get_vendor_control_param_event_fixed_param, fixed_param, WMITLV_SIZE_FIX)
+    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_STRUC_wmi_roam_get_vendor_control_param_event_fixed_param, wmi_roam_get_vendor_control_param_event_fixed_param, fixed_param, WMITLV_SIZE_FIX) \
+    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_vendor_control_param, vendor_control_param, WMITLV_SIZE_VAR)
 WMITLV_CREATE_PARAM_STRUC(WMI_ROAM_GET_VENDOR_CONTROL_PARAM_EVENTID);
 
 /* WOW Wakeup Host Event */
@@ -5712,7 +5728,8 @@ WMITLV_CREATE_PARAM_STRUC(WMI_DIAG_EVENT_LOG_SUPPORTED_EVENTID);
     WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_STRUC_wmi_iface_link_stats_event_fixed_param, wmi_iface_link_stats_event_fixed_param, fixed_param, WMITLV_SIZE_FIX) \
     WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_iface_link_stats, iface_link_stats, WMITLV_SIZE_VAR) \
     WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_wmm_ac_stats, ac, WMITLV_SIZE_VAR) \
-    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_iface_offload_stats, iface_offload_stats, WMITLV_SIZE_VAR)
+    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_iface_offload_stats, iface_offload_stats, WMITLV_SIZE_VAR) \
+    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_iface_powersave_stats, iface_powersave_stats, WMITLV_SIZE_VAR)
 
 WMITLV_CREATE_PARAM_STRUC(WMI_IFACE_LINK_STATS_EVENTID);
 
@@ -6911,6 +6928,11 @@ WMITLV_CREATE_PARAM_STRUC(WMI_PMM_SCRATCH_REG_ALLOCATION_COMPLETE_EVENTID);
     WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_STRUC, wmi_coap_tuple, coap_tuple, WMITLV_SIZE_VAR) \
     WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_ARRAY_BYTE, A_UINT8, payloads, WMITLV_SIZE_VAR)
 WMITLV_CREATE_PARAM_STRUC(WMI_WOW_COAP_BUF_INFO_EVENTID);
+
+/* coex dbam cmd complete event */
+#define WMITLV_TABLE_WMI_COEX_DBAM_COMPLETE_EVENTID(id,op,buf,len) \
+    WMITLV_ELEM(id,op,buf,len, WMITLV_TAG_STRUC_wmi_coex_dbam_complete_event_fixed_param, wmi_coex_dbam_complete_event_fixed_param, fixed_param, WMITLV_SIZE_FIX)
+WMITLV_CREATE_PARAM_STRUC(WMI_COEX_DBAM_COMPLETE_EVENTID);
 
 
 

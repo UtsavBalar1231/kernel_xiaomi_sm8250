@@ -42,6 +42,34 @@ config QPNP_SMB5_PSYCHE
 	  This is to distinguish diff project.
 
 
+config QPNP_SMB5_POUSSIN
+	tristate "SMB5 Battery Charger"
+	depends on MFD_SPMI_PMIC
+	help
+	  Say Y to enables support for the SMB5 charging peripheral.
+	  The QPNP SMB5 charger driver supports the charger peripheral
+	  present in the chip.
+	  The power supply framework is used to communicate battery and
+	  usb properties to userspace and other driver consumers such
+	  as fuel gauge, USB, and USB-PD.
+	  VBUS and VCONN regulators are registered for supporting OTG,
+	  and powered Type-C cables respectively.
+	  This is to distinguish diff project.
+
+config QPNP_SMB5_MUNCH
+	tristate "SMB5 Battery Charger"
+	depends on MFD_SPMI_PMIC
+	help
+	  Say Y to enables support for the SMB5 charging peripheral.
+	  The QPNP SMB5 charger driver supports the charger peripheral
+	  present in the chip.
+	  The power supply framework is used to communicate battery and
+	  usb properties to userspace and other driver consumers such
+	  as fuel gauge, USB, and USB-PD.
+	  VBUS and VCONN regulators are registered for supporting OTG,
+	  and powered Type-C cables respectively.
+	  This is to distinguish diff project.
+
 config QPNP_SMBLITE
 	tristate "SMBLITE Battery Charger"
 	depends on MFD_SPMI_PMIC
@@ -188,6 +216,16 @@ config FUEL_GAUGE_BQ27Z561_PSYCHE
         help
           Say Y to enable support for TI bq27z561 fuel gauge driver
 
+config FUEL_GAUGE_BQ27Z561_POUSSIN
+        tristate "TI bq27z561 battery gauge driver"
+        help
+          Say Y to enable support for TI bq27z561 fuel gauge driver
+
+config FUEL_GAUGE_BQ27Z561_MUNCH
+        tristate "TI bq27z561 battery gauge driver"
+        help
+          Say Y to enable support for TI bq27z561 fuel gauge driver
+
 config DUAL_FUEL_GAUGE_BQ27Z561
 	tristate "TI bq27z561 battery gauge driver"
 	help
@@ -257,6 +295,13 @@ config RX1619_TRIM
 	  The driver supports charger enable/disable.
 	  The driver reports the charger status via the power supply framework.
 	  The driver controls rx1619 via I2C and
+	  supports device-tree interface.
+
+config RX_ON_URD
+	tristate "RX chip on urd device"
+	depends on I2C
+	help
+	  Say Y to include support for rx wireless Charger on URD.
 	  supports device-tree interface.
 
 config RX1619

@@ -24,6 +24,7 @@ fw-shipped-$(CONFIG_TOUCHSCREEN_ST_FTS_V521) += st_fts_j1.ftb st_fts_j2.ftb st_f
 fw-shipped-$(CONFIG_INPUT_PRESS_NDT) += ndt_fw.bin
 fw-shipped-$(CONFIG_TOUCHSCREEN_GOODIX_GTX8) += goodix_gt9886_cfg_J2.bin goodix_gt9886_fw_J2.bin
 fw-shipped-$(CONFIG_TOUCHSCREEN_ST_FTS_V521_SPI) += st_fts_l3a.ftb
+fw-shipped-$(CONFIG_TOUCHSCREEN_ST_FTS_V521_SPI) += st_fts_l10a.ftb
 
 fw-shipped-$(CONFIG_TOUCHSCREEN_NT36xxx_HOSTDL_SPI) += novatek_nt36675_j3s_fw01.bin novatek_nt36675_j3s_mp01.bin novatek_ts_fw.bin novatek_ts_mp.bin
 

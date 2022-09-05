@@ -4669,9 +4669,6 @@ static void idtp9220_irq_work(struct work_struct *work)
 				recive_data[1] == 0x1) {
 				di->is_train_tx = 1;
 			}
-#ifdef CONFIG_FACTORY_BUILD
-			di->is_ble_tx = 0;
-#endif
 			idtp922x_request_adapter(di);
 			break;
 		case BC_TX_COMPATIBLE_HWID:

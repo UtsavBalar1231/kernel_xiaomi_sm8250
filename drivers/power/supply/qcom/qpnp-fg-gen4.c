@@ -1072,6 +1072,13 @@ static int fg_gen4_get_prop_capacity_raw(struct fg_gen4_chip *chip, int *val)
 		return rc;
 	}
 
+	if (!is_input_present(fg)) {
+		rc = fg_gen4_get_prop_capacity(fg, val);
+		if (!rc)
+			*val = *val * 100;
+		return rc;
+	}
+
 	rc = fg_get_sram_prop(&chip->fg, FG_SRAM_MONOTONIC_SOC, val);
 	if (rc < 0) {
 		pr_err("Error in getting MONOTONIC_SOC, rc=%d\n", rc);
@@ -4410,6 +4417,8 @@ static void soc_scale_work(struct work_struct *work)
 
 	mutex_unlock(&chip->soc_scale_lock);
 	if (chip->prev_soc_scale_msoc != chip->soc_scale_msoc) {
+		/* update MSOC */
+		fg_gen4_write_scale_msoc(chip);
 		if (batt_psy_initialized(fg))
 			power_supply_changed(fg->batt_psy);
 	}
@@ -5074,7 +5083,6 @@ static int fg_psy_get_property(struct power_supply *psy,
 	int64_t temp;
 	int vbatt_uv;
 	int shutdown_voltage;
-	int capacity_major, capacity_minor;
 	static bool shutdown_delay_cancel;
 	static bool last_shutdown_delay;
 
@@ -5146,13 +5154,15 @@ static int fg_psy_get_property(struct power_supply *psy,
 		break;
 #endif
 	case POWER_SUPPLY_PROP_CAPACITY:
-		rc = fg_gen4_get_prop_capacity_raw(chip, &pval->intval);
-		capacity_major = pval->intval / 100;
-		capacity_minor = pval->intval % 100;
-		if (capacity_minor >= 50)
-			capacity_major++;
+		rc = fg_gen4_get_prop_capacity(fg, &pval->intval);
+		//Using smooth battery capacity.
+		if (fg->param.batt_soc >= 0 && !chip->rapid_soc_dec_en && !chip->soc_scale_mode)
+			pval->intval = fg->param.batt_soc;
 
-		pval->intval = capacity_major;
+		if (chip->dt.fg_increase_100soc_time) {
+			if (fg->param.smooth_batt_soc >= 0 && !chip->rapid_soc_dec_en && !chip->soc_scale_mode)
+				pval->intval = fg->param.smooth_batt_soc;
+		}
 
 		//shutdown delay feature
 		if (chip->dt.shutdown_delay_enable) {
@@ -7044,24 +7054,19 @@ static void fg_battery_soc_smooth_tracking(struct fg_gen4_chip *chip)
 				&& fg->param.batt_raw_soc >= 95
 				&& fg->charge_status == POWER_SUPPLY_STATUS_FULL)
 			// Unlikely status
-			last_batt_soc = fg->param.update_now ?
-				100 : last_batt_soc + soc_changed;
+			last_batt_soc = last_batt_soc + soc_changed;
 		else if (last_batt_soc < fg->param.batt_raw_soc &&
 			fg->param.batt_ma < 0)
 			/* Battery in charging status
 			* update the soc when resuming device
 			*/
-			last_batt_soc = fg->param.update_now ?
-				fg->param.batt_raw_soc : last_batt_soc + soc_changed;
+			last_batt_soc = last_batt_soc + soc_changed;
 		else if (last_batt_soc > fg->param.batt_raw_soc
 					&& fg->param.batt_ma > 0)
 			/* Battery in discharging status
 			* update the soc when resuming device
 			*/
-			last_batt_soc = fg->param.update_now ?
-				fg->param.batt_raw_soc : last_batt_soc - soc_changed;
-
-		fg->param.update_now = false;
+			last_batt_soc = last_batt_soc - soc_changed;
 	} else {
 		last_batt_soc = fg->param.batt_raw_soc;
 	}
@@ -7701,7 +7706,6 @@ static int fg_gen4_resume(struct device *dev)
 		schedule_delayed_work(&fg->sram_dump_work,
 				msecs_to_jiffies(fg_sram_dump_period_ms));
 
-	fg->param.update_now = true;
 	schedule_delayed_work(&fg->soc_monitor_work,
 				msecs_to_jiffies(MONITOR_SOC_WAIT_MS));
 	return 0;

@@ -30,6 +30,7 @@
 #include <linux/leds-aw22xxx.h>
 #include <linux/leds-aw22xxx-reg.h>
 #include <linux/regulator/consumer.h>
+#include <linux/string.h>
 /******************************************************
  *
  * Marco
@@ -70,6 +71,8 @@ static char aw22xxx_cfg_name[][AW22XXX_CFG_NAME_MAX] = {
 	{"aw22xxx_cfg_led_red_on.bin"},
 	{"aw22xxx_cfg_led_green_on.bin"},
 	{"aw22xxx_cfg_led_blue_on.bin"},
+	{"aw22xxx_cfg_led_yellow_on.bin"},
+	{"aw22xxx_cfg_led_game.bin"},
 };
 
 #define AW22XXX_IMAX_NAME_MAX       32
@@ -195,6 +198,17 @@ static int aw22xxx_i2c_writes (struct aw22xxx *aw22xxx, unsigned char reg_addr, 
 static int aw22xxx_reg_page_cfg (struct aw22xxx *aw22xxx, unsigned char page)
 {
 	aw22xxx_i2c_write (aw22xxx, REG_PAGE, page);
+	return 0;
+}
+
+static int aw22xxx_sys_init(struct aw22xxx *aw22xxx)
+{
+	unsigned char i;
+	pr_info ("%s: enter\n", __func__);
+	for(i = 0; i < sizeof(aw22xxx_init_code); i+=2)
+	{
+		aw22xxx_i2c_write(aw22xxx, aw22xxx_init_code[i], aw22xxx_init_code[i+1]);
+	}
 	return 0;
 }
 
@@ -359,6 +373,7 @@ static int aw22xxx_led_init (struct aw22xxx *aw22xxx)
 	aw22xxx_chip_enable (aw22xxx, true);
 	aw22xxx_imax_cfg (aw22xxx, aw22xxx_imax_code[aw22xxx->imax]);
 	aw22xxx_chip_enable (aw22xxx, false);
+	aw22xxx_sys_init(aw22xxx);
 
 	pr_info ("%s: exit\n", __func__);
 
@@ -377,6 +392,8 @@ static void aw22xxx_cfg_loaded (const struct firmware *cont, void *context)
 	unsigned char page = 0;
 	unsigned char reg_addr = 0;
 	unsigned char reg_val = 0;
+	unsigned int time_val = 0;
+	unsigned int cnt = 0;
 
 	pr_info ("%s: enter\n", __func__);
 
@@ -403,7 +420,24 @@ static void aw22xxx_cfg_loaded (const struct firmware *cont, void *context)
 					reg_val = (unsigned char) (((aw22xxx->rgb[reg_addr / 3]) >> (8 * (2 - reg_addr % 3))) & 0xff);
 					aw22xxx_i2c_write (aw22xxx, *(cont->data + i), reg_val);
 					pr_debug ("%s: addr:0x%02x, data:0x%02x\n", __func__, *(cont->data + i), reg_val);
-				} else {
+				}
+				else if(reg_addr > 0x2b && reg_addr < 0xaa){
+					if((reg_addr == 0x2f+cnt*7) || (reg_addr == 0x30+cnt*7) || (reg_addr == 0x2e +cnt*7) ||  (reg_addr == 0x31+cnt*7)){
+						reg_val = (aw22xxx->frq<64)?aw22xxx->frq:64;
+						pr_debug ("%s: addr:0x%02x, data:0x%02x\n", __func__, reg_addr, reg_val);
+						aw22xxx_i2c_write(aw22xxx, reg_addr,reg_val);
+						time_val++;
+						if(time_val>=4){
+							cnt++;
+							time_val=0;
+						}
+					}
+					else {
+						aw22xxx_i2c_write (aw22xxx, *(cont->data + i), *(cont->data + i + 1));
+						pr_debug ("%s: addr:0x%02x, data:0x%02x\n", __func__, *(cont->data + i), *(cont->data + i + 1));
+					}
+				}
+				else {
 					aw22xxx_i2c_write (aw22xxx, *(cont->data + i), *(cont->data + i + 1));
 					pr_debug ("%s: addr:0x%02x, data:0x%02x\n", __func__, *(cont->data + i), *(cont->data + i + 1));
 				}
@@ -885,6 +919,38 @@ static int aw22xxx_read_chipid (struct aw22xxx *aw22xxx)
 
 /******************************************************
  *
+ * frq match time , rase_time_ms = hold_time_ms = fall_tme_ms = off_time_ms = time /2
+ *
+ ******************************************************/
+unsigned char find_closest_value(uint16_t time)
+{
+	unsigned char led;
+	uint16_t ref[] = {	0,64,128,192,256,320,384,448,512,576,640,704,768,832,896,960,
+						1024,1088,1152,1216,1280,1344,1408,1472,1536,1600,1664,1728,1792,1856,1920,1984,
+						2048,2112,2176,2240,2304,2368,2432,2496,2560,2624,2688,2752,2816,2880,2944,3008,3072,
+						3136,3200,3264,3328,3392,3456,3520,3584,3648,3712,3776,3840,3904,3968,4032};
+
+	for(led=0; led<sizeof(ref)/sizeof(uint16_t); led++)
+	{
+		if(time <= ref[0]){
+			return 0;
+		}
+		else if(time > ref[63]){
+			return 63;
+		}
+		else if((time > ref[led]) && (time<=ref[led+1])){
+			if((time - ref[led]) <= (ref[led+1]-time)){
+			return led;
+		}
+		else
+			return led+1;
+		}
+	}
+	return 0;
+}
+
+/******************************************************
+ *
  * sys group attribute: reg
  *
  ******************************************************/
@@ -933,6 +999,7 @@ static ssize_t aw22xxx_hwen_store (struct device *dev, struct device_attribute *
 	if (1 == sscanf (buf, "%x", &databuf[0])) {
 		if (1 == databuf[0]) {
 			aw22xxx_hw_reset (aw22xxx);
+			aw22xxx_sys_init (aw22xxx);
 		} else {
 			aw22xxx_hw_off (aw22xxx);
 		}
@@ -985,6 +1052,7 @@ static ssize_t aw22xxx_cfg_store (struct device *dev, struct device_attribute *a
 	unsigned int databuf[1] = { 0 };
 
 	if (1 == sscanf (buf, "%d", &databuf[0])) {
+		pr_info ("%s: enter, cfg value is %d \n", __func__, databuf[0]);
 		aw22xxx->cfg = databuf[0];
 		if (aw22xxx->cfg) {
 			schedule_work (&aw22xxx->cfg_work);
@@ -1016,6 +1084,8 @@ static ssize_t aw22xxx_effect_store (struct device *dev, struct device_attribute
 	struct aw22xxx *aw22xxx = container_of (led_cdev, struct aw22xxx, cdev);
 
 	sscanf (buf, "%d", &databuf[0]);
+	pr_info ("%s: enter, effect value is %d \n", __func__, databuf[0]);
+
 	aw22xxx->effect = databuf[0];
 
 	return len;
@@ -1038,8 +1108,16 @@ static ssize_t aw22xxx_imax_store (struct device *dev, struct device_attribute *
 	struct led_classdev *led_cdev = dev_get_drvdata (dev);
 	struct aw22xxx *aw22xxx = container_of (led_cdev, struct aw22xxx, cdev);
 
-	sscanf (buf, "%x", &databuf[0]);
+	sscanf (buf, "%d", &databuf[0]);
+	pr_info ("%s: enter, imax index value is %d, imax value is %s\n", __func__, databuf[0], aw22xxx_imax_name[databuf[0]]);
+
+	if (databuf[0] > AW22XXX_IMAX_LIMIT) {
+		pr_err ("aw22xxx imax set: More than AW22XXX_IMAX_LIMIT, Reset IMAX to 20mA \n");
+		databuf[0] = AW22XXX_IMAX_LIMIT; //LIMIT IMAX 20MA
+	}
+
 	aw22xxx->imax = databuf[0];
+
 	aw22xxx_imax_cfg (aw22xxx, aw22xxx_imax_code[aw22xxx->imax]);
 
 	return len;
@@ -1067,6 +1145,7 @@ static ssize_t aw22xxx_rgb_store (struct device *dev, struct device_attribute *a
 	struct aw22xxx *aw22xxx = container_of (led_cdev, struct aw22xxx, cdev);
 
 	sscanf (buf, "%x %x", &databuf[0], &databuf[1]);
+	pr_info ("%s: enter, rgb index value is %d , rgb value is %x\n", __func__, databuf[0], databuf[1]);
 	aw22xxx->rgb[databuf[0]] = databuf[1];
 
 	return len;
@@ -1132,6 +1211,102 @@ static ssize_t aw22xxx_task1_show(struct device *dev, struct device_attribute *a
 	return len;
 }
 
+
+static ssize_t aw22xxx_frq_store(struct device* dev, struct device_attribute *attr, const char* buf, size_t len)
+{
+	uint16_t databuf[1];
+	unsigned char frq_value = 0;
+	struct led_classdev *led_cdev = dev_get_drvdata(dev);
+	struct aw22xxx *aw22xxx = container_of(led_cdev, struct aw22xxx, cdev);
+
+	sscanf(buf,"%d",&databuf[0]);
+	frq_value = find_closest_value(databuf[0]);
+	pr_info ("%s: enter, frq value is %d , frq_index is %d\n", __func__, databuf[0], frq_value);
+
+	aw22xxx->frq = frq_value;
+
+	return len;
+}
+
+static ssize_t aw22xxx_frq_show(struct device* dev,struct device_attribute *attr, char* buf)
+{
+	ssize_t len = 0;
+	struct led_classdev *led_cdev = dev_get_drvdata(dev);
+	struct aw22xxx *aw22xxx = container_of(led_cdev, struct aw22xxx, cdev);
+
+	len += snprintf(buf+len, PAGE_SIZE-len, "frq = 0x%02x,effect = 0x%02x\n", aw22xxx->frq, aw22xxx->effect);
+
+	return len;
+}
+
+static int  aw22xxx_brightness_store (struct led_classdev * cdv,enum led_brightness  value)
+{
+
+	unsigned char i;
+	struct aw22xxx *aw22xxx = NULL;
+
+	pr_info ("%s: enter, led_brightness value is %d \n", __func__, value);
+
+	if(!strcmp(cdv->name,"red")){
+		pr_info ("aw22xxx set brightness of red \n");
+		aw22xxx = container_of (cdv, struct aw22xxx, red_cdev);
+
+		aw22xxx_led_rgb_code[AW22XXX_RGB_INDEX] = AW22XXX_RED;
+		aw22xxx_led_rgb_code[AW22XXX_BRIGHTNESS_INDEX] = (unsigned char)value;
+		aw22xxx->red_cdev.brightness = (unsigned char)value;
+		for(i = 0; i < sizeof(aw22xxx_led_rgb_code); i+=2)
+		{
+			aw22xxx_i2c_write(aw22xxx, aw22xxx_led_rgb_code[i], aw22xxx_led_rgb_code[i+1]);
+		}
+	}
+
+	else if(!strcmp(cdv->name,"green")){
+		pr_info ("aw22xxx set brightness of green \n");
+		aw22xxx = container_of (cdv, struct aw22xxx, green_cdev);
+
+		aw22xxx_led_rgb_code[AW22XXX_RGB_INDEX] = AW22XXX_GREEN;
+		aw22xxx_led_rgb_code[AW22XXX_BRIGHTNESS_INDEX] = (unsigned char)value;
+		aw22xxx->green_cdev.brightness = (unsigned char)value;
+		for(i = 0; i < sizeof(aw22xxx_led_rgb_code); i+=2)
+		{
+			aw22xxx_i2c_write(aw22xxx, aw22xxx_led_rgb_code[i], aw22xxx_led_rgb_code[i+1]);
+		}
+	}
+	else if(!strcmp(cdv->name,"blue")){
+		pr_info ("aw22xxx set brightness of blue \n");
+		aw22xxx = container_of (cdv, struct aw22xxx, blue_cdev);
+
+		aw22xxx_led_rgb_code[AW22XXX_RGB_INDEX] = AW22XXX_BLUE;
+		aw22xxx_led_rgb_code[AW22XXX_BRIGHTNESS_INDEX] = (unsigned char)value;
+		aw22xxx->blue_cdev.brightness = (unsigned char)value;
+		for(i = 0; i < sizeof(aw22xxx_led_rgb_code); i+=2)
+		{
+			aw22xxx_i2c_write(aw22xxx, aw22xxx_led_rgb_code[i], aw22xxx_led_rgb_code[i+1]);
+		}
+	}
+	return 0;
+}
+
+enum led_brightness aw22xxx_brightness_show(struct led_classdev *cdv)
+{
+	struct aw22xxx *aw22xxx = NULL;
+
+	if(!strcmp(cdv->name,"red")){
+		aw22xxx = container_of (cdv, struct aw22xxx, red_cdev);
+		return aw22xxx->red_cdev.brightness;
+	}
+
+	else if(!strcmp(cdv->name,"green")){
+		aw22xxx = container_of (cdv, struct aw22xxx, green_cdev);
+		return aw22xxx->green_cdev.brightness;
+	}
+	else if(!strcmp(cdv->name,"blue")){
+		aw22xxx = container_of (cdv, struct aw22xxx, blue_cdev);
+		return aw22xxx->blue_cdev.brightness;
+	}
+	return 0;
+}
+
 static DEVICE_ATTR (reg, S_IWUSR | S_IRUGO, aw22xxx_reg_show, aw22xxx_reg_store);
 static DEVICE_ATTR (hwen, S_IWUSR | S_IRUGO, aw22xxx_hwen_show, aw22xxx_hwen_store);
 static DEVICE_ATTR (fw, S_IWUSR | S_IRUGO, aw22xxx_fw_show, aw22xxx_fw_store);
@@ -1141,6 +1316,7 @@ static DEVICE_ATTR (imax, S_IWUSR | S_IRUGO, aw22xxx_imax_show, aw22xxx_imax_sto
 static DEVICE_ATTR (rgb, S_IWUSR | S_IRUGO, aw22xxx_rgb_show, aw22xxx_rgb_store);
 static DEVICE_ATTR (task0, S_IWUSR | S_IRUGO, aw22xxx_task0_show, aw22xxx_task0_store);
 static DEVICE_ATTR (task1, S_IWUSR | S_IRUGO, aw22xxx_task1_show, aw22xxx_task1_store);
+static DEVICE_ATTR(frq, S_IWUSR | S_IRUGO, aw22xxx_frq_show, aw22xxx_frq_store);
 
 static struct attribute *aw22xxx_attributes[] = {
 	&dev_attr_reg.attr,
@@ -1152,6 +1328,7 @@ static struct attribute *aw22xxx_attributes[] = {
 	&dev_attr_rgb.attr,
 	&dev_attr_task0.attr,
 	&dev_attr_task1.attr,
+	&dev_attr_frq.attr,
 	NULL
 };
 
@@ -1218,6 +1395,46 @@ free_class:
 free_pdata:
 	return ret;
 }
+
+static int aw22xxx_blink_set(struct led_classdev *cdv, unsigned long *delay_on, unsigned long *delay_off)
+{
+	unsigned char i;
+	struct aw22xxx *aw22xxx = NULL;
+
+	pr_info ("%s: enter, delay_on value is %d, delay_off value is %d \n", __func__, *delay_on, *delay_off);
+
+	aw22xxx_led_blink_code[AW22XXX_DELAY_ON_LOW]   = (unsigned char) *delay_on&0xff;
+	aw22xxx_led_blink_code[AW22XXX_DELAY_ON_HIGH]  = (unsigned char) (*delay_on>>8)&0xff;
+	aw22xxx_led_blink_code[AW22XXX_DELAY_OFF_LOW]  = (unsigned char)*delay_off&0xff;
+	aw22xxx_led_blink_code[AW22XXX_DELAY_OFF_HIGH] = (unsigned char) (*delay_off>>8)&0xff;
+
+	if(!strcmp(cdv->name,"red")){
+		pr_info ("aw22xxx set blink of red \n");
+		aw22xxx = container_of (cdv, struct aw22xxx, red_cdev);
+		for(i = 0; i < sizeof(aw22xxx_led_blink_code); i+=2)
+		{
+			aw22xxx_i2c_write(aw22xxx, aw22xxx_led_blink_code[i], aw22xxx_led_blink_code[i+1]);
+		}
+	}
+	else if(!strcmp(cdv->name,"green")){
+		pr_info ("aw22xxx set blink of green \n");
+		aw22xxx = container_of (cdv, struct aw22xxx, green_cdev);
+		for(i = 0; i < sizeof(aw22xxx_led_blink_code); i+=2)
+		{
+			aw22xxx_i2c_write(aw22xxx, aw22xxx_led_blink_code[i], aw22xxx_led_blink_code[i+1]);
+		}
+	}
+	else if(!strcmp(cdv->name,"blue")){
+		pr_info ("aw22xxx set blink of blue \n");
+		aw22xxx = container_of (cdv, struct aw22xxx, blue_cdev);
+		for(i = 0; i < sizeof(aw22xxx_led_blink_code); i+=2)
+		{
+			aw22xxx_i2c_write(aw22xxx, aw22xxx_led_blink_code[i], aw22xxx_led_blink_code[i+1]);
+		}
+	}
+	return 0;
+}
+
 
 /******************************************************
  *
@@ -1292,8 +1509,43 @@ static int aw22xxx_i2c_probe (struct i2c_client *i2c, const struct i2c_device_id
 		goto err_sysfs;
 	}
 
-	aw22xxx_fw_init (aw22xxx);
+	//red register
+	aw22xxx->red_cdev.name = "red";
+	aw22xxx->red_cdev.brightness_set_blocking = aw22xxx_brightness_store;
+	aw22xxx->red_cdev.brightness_get = aw22xxx_brightness_show;
+	aw22xxx->red_cdev.blink_set = aw22xxx_blink_set;
 
+	ret = led_classdev_register (aw22xxx->dev, &aw22xxx->red_cdev);
+	if (ret) {
+		dev_err (aw22xxx->dev, "unable to register led ret=%d\n", ret);
+		goto err_register_led;
+	}
+
+	//blue register
+	aw22xxx->blue_cdev.name = "blue";
+	aw22xxx->blue_cdev.brightness_set_blocking = aw22xxx_brightness_store;
+	aw22xxx->blue_cdev.brightness_get = aw22xxx_brightness_show;
+	aw22xxx->blue_cdev.blink_set = aw22xxx_blink_set;
+
+	ret = led_classdev_register (aw22xxx->dev, &aw22xxx->blue_cdev);
+	if (ret) {
+		dev_err (aw22xxx->dev, "unable to register led ret=%d\n", ret);
+		goto err_register_led;
+	}
+
+	//green register
+	aw22xxx->green_cdev.name = "green";
+	aw22xxx->green_cdev.brightness_set_blocking = aw22xxx_brightness_store;
+	aw22xxx->green_cdev.brightness_get = aw22xxx_brightness_show;
+	aw22xxx->green_cdev.blink_set = aw22xxx_blink_set;
+
+	ret = led_classdev_register (aw22xxx->dev, &aw22xxx->green_cdev);
+	if (ret) {
+		dev_err (aw22xxx->dev, "unable to register led ret=%d\n", ret);
+		goto err_register_led;
+	}
+
+	aw22xxx_fw_init (aw22xxx);
 
 	pr_info ("%s probe completed successfully!\n", __func__);
 
@@ -1304,6 +1556,7 @@ err_id:
 	devm_gpio_free (&i2c->dev, aw22xxx->reset_gpio);
 err_gpio_request:
 err_parse_dt:
+err_register_led:
 	devm_kfree (&i2c->dev, aw22xxx);
 	aw22xxx = NULL;
 	return ret;

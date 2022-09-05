@@ -95,6 +95,9 @@
 #include <linux/thread_info.h>
 #include <linux/cpufreq_times.h>
 #include <linux/scs.h>
+#if IS_ENABLED(CONFIG_MIHW)
+#include <linux/cpuset.h>
+#endif
 
 #include <asm/pgtable.h>
 #include <asm/pgalloc.h>
@@ -1882,6 +1885,10 @@ static __latent_entropy struct task_struct *copy_process(
 
 	cpufreq_task_times_init(p);
 
+#if IS_ENABLED(CONFIG_PACKAGE_RUNTIME_INFO)
+	INIT_LIST_HEAD(&p->pkg.list);
+#endif
+
 	/*
 	 * This _must_ happen before we call free_task(), i.e. before we jump
 	 * to any of the bad_fork_* labels. This is to avoid freeing
@@ -2300,6 +2307,13 @@ bad_fork_cleanup_threadgroup_lock:
 #endif
 	delayacct_tsk_free(p);
 bad_fork_cleanup_count:
+#if IS_ENABLED(CONFIG_PACKAGE_RUNTIME_INFO)
+	if (user_pkg(p->cred->user->uid.val)) {
+		write_lock_irq(&p->cred->user->pkg.lock);
+		list_del(&p->pkg.list);
+		write_unlock_irq(&p->cred->user->pkg.lock);
+	}
+#endif
 	atomic_dec(&p->cred->user->processes);
 	exit_creds(p);
 bad_fork_free:
@@ -2403,6 +2417,16 @@ long _do_fork(unsigned long clone_flags,
 #if IS_ENABLED(CONFIG_MIHW)
 	p->top_app = 0;
 	p->inherit_top_app = 0;
+	p->critical_task = 0;
+
+	if (current->critical_task)
+		cpuset_cpus_allowed_mi(p);
+#endif
+#ifdef CONFIG_PERF_CRITICAL_RT_TASK
+	p->critical_rt_task = 0;
+#endif
+#ifdef CONFIG_SF_BINDER
+	p->sf_binder_task = 0;
 #endif
 #if IS_ENABLED(CONFIG_PERF_HUMANTASK)
         p->human_task = 0;

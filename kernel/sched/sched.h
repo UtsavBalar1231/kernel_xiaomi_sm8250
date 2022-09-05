@@ -3288,3 +3288,10 @@ struct sched_avg_stats {
 	int nr_scaled;
 };
 extern void sched_get_nr_running_avg(struct sched_avg_stats *stats);
+
+#if IS_ENABLED(CONFIG_PACKAGE_RUNTIME_INFO)
+void __weak init_task_runtime_info(struct task_struct *tsk)
+{
+	return;
+}
+#endif

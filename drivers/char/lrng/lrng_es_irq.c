@@ -14,7 +14,6 @@
 #include <linux/gcd.h>
 #include <linux/module.h>
 #include <linux/random.h>
-#include <linux/ratelimit.h>
 
 #include "lrng_es_aux.h"
 #include "lrng_es_irq.h"
@@ -659,7 +658,7 @@ static void lrng_time_process(void)
 }
 
 /* Hot code path - Callback for interrupt handler */
-void add_interrupt_randomness(int irq, int irq_flg)
+void add_interrupt_randomness(int irq)
 {
 	if (lrng_highres_timer()) {
 		lrng_time_process();
@@ -693,7 +692,6 @@ void add_interrupt_randomness(int irq, int irq_flg)
 		tmp = lrng_raw_jiffies_entropy_store(jiffies) ? 0 : jiffies;
 		tmp ^= lrng_raw_irq_entropy_store(irq) ? 0 : irq;
 		tmp ^= lrng_raw_retip_entropy_store(ip) ? 0 : ip;
-		tmp ^= irq_flg;
 		tmp ^= ip >> 32;
 		_lrng_irq_array_add_u32(tmp);
 	}

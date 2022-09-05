@@ -75,6 +75,7 @@ struct pl_data {
 	struct delayed_work	fcc_stepper_work;
 	bool			taper_work_running;
 	struct power_supply	*main_psy;
+	struct power_supply	*bms_psy;
 	struct power_supply	*pl_psy;
 	struct power_supply	*batt_psy;
 	struct power_supply	*usb_psy;
@@ -93,6 +94,8 @@ struct pl_data {
 	int			parallel_step_fcc_count;
 	int			parallel_step_fcc_residual;
 	int			step_fcc;
+	int			cell1_volt_value;
+	int			cell2_volt_value;
 	int			override_main_fcc_ua;
 	int			total_fcc_ua;
 	u32			wa_flags;
@@ -139,6 +142,8 @@ enum {
 	RESTRICT_CHG_ENABLE,
 	RESTRICT_CHG_CURRENT,
 	FCC_STEPPING_IN_PROGRESS,
+	CELL1_VOLT,
+	CELL2_VOLT,
 	PASSTHROUGH_LIMIT,
 	PASSTHROUGH_DIS,
 };
@@ -166,6 +171,56 @@ static bool is_cp_available(struct pl_data *chip)
 			power_supply_get_by_name("charge_pump_master");
 
 	return !!chip->cp_master_psy;
+}
+
+static bool is_bms_available(struct pl_data *chip)
+{
+	if (chip->bms_psy)
+		return true;
+
+	chip->bms_psy = power_supply_get_by_name("bms");
+
+	return !!chip->bms_psy;
+}
+
+static int get_cell1_volt_from_bms(struct pl_data *chip)
+{
+	int rc;
+	int cell1_value;
+	union power_supply_propval pval = {0, };
+
+	if (!is_bms_available(chip))
+		return 0;
+
+	rc = power_supply_get_property(chip->bms_psy,
+			POWER_SUPPLY_PROP_VOLTAGE_CELL1, &pval);
+	if (rc < 0) {
+		pr_err("Couldn't get cell1 volt rc=%d\n", rc);
+		return rc;
+	}
+
+	cell1_value = pval.intval;
+	return cell1_value;
+}
+
+static int get_cell2_volt_from_bms(struct pl_data *chip)
+{
+	int rc;
+	int cell2_value;
+	union power_supply_propval pval = {0, };
+
+	if (!is_bms_available(chip))
+		return 0;
+
+	rc = power_supply_get_property(chip->bms_psy,
+			POWER_SUPPLY_PROP_VOLTAGE_CELL2, &pval);
+	if (rc < 0) {
+		pr_err("Couldn't get cell2 volt rc=%d\n", rc);
+		return rc;
+	}
+
+	cell2_value = pval.intval;
+	return cell2_value;
 }
 
 static int cp_get_parallel_mode(struct pl_data *chip, int mode)
@@ -610,6 +665,31 @@ static ssize_t fcc_stepping_in_progress_show(struct class *c,
 }
 static CLASS_ATTR_RO(fcc_stepping_in_progress);
 
+/****************************
+ * CELL BATT VOLT *
+ ****************************/
+static ssize_t cell1_volt_show(struct class *c,
+				struct class_attribute *attr, char *ubuf)
+{
+	struct pl_data *chip = container_of(c, struct pl_data,
+			qcom_batt_class);
+	chip->cell1_volt_value = get_cell1_volt_from_bms(chip);
+
+	return snprintf(ubuf, PAGE_SIZE, "%d\n",chip->cell1_volt_value);
+}
+static CLASS_ATTR_RO(cell1_volt);
+
+static ssize_t cell2_volt_show(struct class *c,
+				struct class_attribute *attr, char *ubuf)
+{
+	struct pl_data *chip = container_of(c, struct pl_data,
+			qcom_batt_class);
+	chip->cell2_volt_value = get_cell2_volt_from_bms(chip);
+
+	return snprintf(ubuf, PAGE_SIZE, "%d\n",chip->cell2_volt_value);
+}
+
+static CLASS_ATTR_RO(cell2_volt);
 static struct attribute *batt_class_attrs[] = {
 	[VER]			= &class_attr_version.attr,
 	[SLAVE_PCT]		= &class_attr_slave_pct.attr,
@@ -617,6 +697,8 @@ static struct attribute *batt_class_attrs[] = {
 	[RESTRICT_CHG_CURRENT]	= &class_attr_restrict_cur.attr,
 	[FCC_STEPPING_IN_PROGRESS]
 				= &class_attr_fcc_stepping_in_progress.attr,
+	[CELL1_VOLT]		= &class_attr_cell1_volt.attr,
+	[CELL2_VOLT]		= &class_attr_cell2_volt.attr,
 	[PASSTHROUGH_LIMIT]
 				= &class_attr_passthrough_limit.attr,
 	[PASSTHROUGH_DIS]

@@ -198,7 +198,7 @@ enum print_reason {
 
 #define QC3P5_CHARGER_ICL	2000000
 
-#ifndef CONFIG_FUEL_GAUGE_BQ27Z561
+#ifndef CONFIG_FUEL_GAUGE_BQ27Z561_MUNCH
 #define ESR_WORK_VOTER			"ESR_WORK_VOTER"
 #define ESR_WORK_TIME_2S	2000
 #define ESR_WORK_TIME_97S	97000
@@ -265,7 +265,21 @@ enum quick_charge_type {
 	QUICK_CHARGE_FAST,
 	QUICK_CHARGE_FLASH,
 	QUICK_CHARGE_TURBE,
+	QUICK_CHARGE_SUPER,
 	QUICK_CHARGE_MAX,
+};
+
+enum apdo_max_power {
+	APDO_MAX_30W = 30, // J2 G7A F4 and some old projects use 30W pps charger
+	APDO_MAX_33W = 33,   // most 33W project use 33w pps charger
+	APDO_MAX_40W = 40,   // only F1X use 40w pps charger
+	APDO_MAX_50W = 50,   // only j1(cmi project) use 50W pps(device support maxium 50w)
+	APDO_MAX_55W =55, // K2 K9B use 55w pps charger
+	APDO_MAX_65W = 65, //we have 65w pps which for j1(cmi), and also used for 120w(67w works in 65w)
+	APDO_MAX_67W = 67, //most useage now for dual charge pumps projects such as L3 L1 L1A L18
+	APDO_MAX_100W = 100, // Zimi car quick charger have 100w pps
+	APDO_MAX_120W = 120, // L2 L10 and K8 L11 use 120W
+	APDO_MAX_INVALID = 67,
 };
 
 struct quick_charge {
@@ -600,7 +614,8 @@ struct smb_charger {
 	struct power_supply		*batt_verify_psy;
 #endif
 	enum power_supply_type		real_charger_type;
-	enum power_supply_type          wireless_charger_type;
+	enum power_supply_type		wireless_charger_type;
+	enum power_supply_type		quick_charge_type_info;
 
 	/* notifiers */
 	struct notifier_block	nb;
@@ -673,7 +688,7 @@ struct smb_charger {
 	struct delayed_work	pr_swap_detach_work;
 	struct delayed_work	reg_work;
 	struct delayed_work	thermal_setting_work;
-#ifndef CONFIG_FUEL_GAUGE_BQ27Z561
+#ifndef CONFIG_FUEL_GAUGE_BQ27Z561_MUNCH
 	struct delayed_work	reduce_fcc_work;
 #endif
 	struct delayed_work	charger_type_recheck;
@@ -915,7 +930,7 @@ struct smb_charger {
 	int			fake_conn_temp;
 	u64			entry_time;
 	int			entry_connector_therm;
-#ifndef CONFIG_FUEL_GAUGE_BQ27Z561
+#ifndef CONFIG_FUEL_GAUGE_BQ27Z561_MUNCH
 	/* reduce fcc for esr cal*/
 	int                     esr_work_status;
 	bool                    cp_charge_enabled;
@@ -938,6 +953,7 @@ struct smb_charger {
 	bool			qc3_raise_done;
 	/* workarounds */
 	bool			support_conn_therm;
+	bool			support_ext_5v_boost;
 	int			conn_detect_count;
 	int			vbus_disable_gpio;
 	int			vbus_disable;

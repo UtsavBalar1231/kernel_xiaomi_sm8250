@@ -48,7 +48,11 @@
 #include "msm-ds2-dap-config.h"
 
 #ifdef TFA_ADSP_SUPPORTED
+#ifdef CONFIG_TARGET_PRODUCT_MUNCH
+#include "codecs/tfa9874/inc/tfa_platform_interface_definition.h"
+#else
 #include "codecs/tfa98xx/inc/tfa_platform_interface_definition.h"
+#endif
 #endif
 
 #define DRV_NAME "msm-pcm-routing-v2"
@@ -30462,6 +30466,9 @@ static const struct snd_soc_dapm_route intercon_mi2s[] = {
 	{"SEC_MI2S_UL_HL", NULL, "SEC_MI2S_TX"},
 	{"SEC_MI2S_RX", NULL, "SEC_MI2S_DL_HL"},
 	{"PRI_MI2S_RX", NULL, "PRI_MI2S_DL_HL"},
+#if !defined(CONFIG_TARGET_PRODUCT_MUNCH)
+	{"TERT_MI2S_RX", NULL, "TERT_MI2S_DL_HL"},
+#endif
 	{"QUAT_MI2S_UL_HL", NULL, "QUAT_MI2S_TX"},
 
 	{"INT0_MI2S_RX Port Mixer", "PRI_MI2S_TX", "PRI_MI2S_TX"},

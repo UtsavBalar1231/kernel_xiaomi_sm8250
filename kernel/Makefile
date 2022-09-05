@@ -142,6 +142,8 @@ else ifeq ($(CONFIG_BOARD_ENUMA),y)
 $(obj)/config_data.gz: arch/arm64/configs/enuma_stock-defconfig FORCE
 else ifeq ($(CONFIG_BOARD_LMI),y)
 $(obj)/config_data.gz: arch/arm64/configs/lmi_stock-defconfig FORCE
+else ifeq ($(CONFIG_BOARD_MUNCH),y)
+$(obj)/config_data.gz: arch/arm64/configs/munch_stock-defconfig FORCE
 else ifeq ($(CONFIG_BOARD_PSYCHE),y)
 $(obj)/config_data.gz: arch/arm64/configs/psyche_stock-defconfig FORCE
 else ifeq ($(CONFIG_BOARD_THYME),y)

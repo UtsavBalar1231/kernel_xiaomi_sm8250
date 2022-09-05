@@ -7,15 +7,11 @@
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
-#include <linux/genhd.h>
 #include <linux/blkdev.h>
 #include <linux/hw_random.h>
 #include <linux/kthread.h>
 #include <linux/lrng.h>
 #include <linux/random.h>
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/random.h>
 
 #include "lrng_es_aux.h"
 #include "lrng_es_irq.h"
@@ -23,20 +19,24 @@
 #include "lrng_interface_dev_common.h"
 #include "lrng_interface_random_kernel.h"
 
-static LIST_HEAD(lrng_ready_list);
-static DEFINE_SPINLOCK(lrng_ready_list_lock);
+static RAW_NOTIFIER_HEAD(lrng_ready_chain);
+static DEFINE_SPINLOCK(lrng_ready_chain_lock);
+static unsigned int lrng_ready_chain_used = 0;
 
 /********************************** Helper ***********************************/
 
-int __init rand_initialize(void)
+int __init random_init(const char *command_line)
 {
-	return lrng_rand_initialize();
+	int ret = lrng_rand_initialize();
+
+	lrng_pool_insert_aux(command_line, strlen(command_line), 0);
+	return ret;
 }
 early_initcall(rand_initialize);
 
-bool lrng_ready_list_has_sleeper(void)
+bool lrng_ready_chain_has_sleeper(void)
 {
-	return list_empty(&lrng_ready_list);
+	return !!lrng_ready_chain_used;
 }
 
 /*
@@ -52,20 +52,13 @@ bool lrng_ready_list_has_sleeper(void)
 void lrng_process_ready_list(void)
 {
 	unsigned long flags;
-	struct random_ready_callback *rdy, *tmp;
 
 	if (!lrng_state_operational())
 		return;
 
-	spin_lock_irqsave(&lrng_ready_list_lock, flags);
-	list_for_each_entry_safe(rdy, tmp, &lrng_ready_list, list) {
-		struct module *owner = rdy->owner;
-
-		list_del_init(&rdy->list);
-		rdy->func(rdy);
-		module_put(owner);
-	}
-	spin_unlock_irqrestore(&lrng_ready_list_lock, flags);
+	spin_lock_irqsave(&lrng_ready_chain_lock, flags);
+	raw_notifier_call_chain(&lrng_ready_chain, 0, NULL);
+	spin_unlock_irqrestore(&lrng_ready_chain_lock, flags);
 }
 
 /************************ LRNG kernel input interfaces ************************/
@@ -82,7 +75,7 @@ void lrng_process_ready_list(void)
  * @count: length of buffer
  * @entropy_bits: amount of entropy in buffer (value is in bits)
  */
-void add_hwgenerator_randomness(const char *buffer, size_t count,
+void add_hwgenerator_randomness(const void *buffer, size_t count,
 				size_t entropy_bits)
 {
 	/*
@@ -110,7 +103,7 @@ EXPORT_SYMBOL_GPL(add_hwgenerator_randomness);
  *	 insert into entropy pool.
  * @size: length of buffer
  */
-void add_bootloader_randomness(const void *buf, unsigned int size)
+void add_bootloader_randomness(const void *buf, size_t size)
 {
 	lrng_pool_insert_aux(buf, size,
 			     IS_ENABLED(CONFIG_RANDOM_TRUST_BOOTLOADER) ?
@@ -148,7 +141,7 @@ EXPORT_SYMBOL_GPL(add_input_randomness);
  *	 insert into entropy pool.
  * @size: length of buffer
  */
-void add_device_randomness(const void *buf, unsigned int size)
+void add_device_randomness(const void *buf, size_t size)
 {
 	lrng_pool_insert_aux((u8 *)buf, size, 0);
 }
@@ -161,7 +154,7 @@ EXPORT_SYMBOL(add_disk_randomness);
 #endif
 
 #ifndef CONFIG_LRNG_IRQ
-void add_interrupt_randomness(int irq, int irq_flg) { }
+void add_interrupt_randomness(int irq) { }
 EXPORT_SYMBOL(add_interrupt_randomness);
 #endif
 
@@ -169,65 +162,85 @@ EXPORT_SYMBOL(add_interrupt_randomness);
  * unregister_random_ready_notifier() - Delete a previously registered readiness
  * callback function.
  *
- * @rdy: callback definition that was registered initially
+ * @nb: callback definition that was registered initially
  */
-void del_random_ready_callback(struct random_ready_callback *rdy)
+int unregister_random_ready_notifier(struct notifier_block *nb)
 {
 	unsigned long flags;
-	struct module *owner = NULL;
+	int ret;
 
-	spin_lock_irqsave(&lrng_ready_list_lock, flags);
-	if (!list_empty(&rdy->list)) {
-		list_del_init(&rdy->list);
-		owner = rdy->owner;
-	}
-	spin_unlock_irqrestore(&lrng_ready_list_lock, flags);
+	spin_lock_irqsave(&lrng_ready_chain_lock, flags);
+	ret = raw_notifier_chain_unregister(&lrng_ready_chain, nb);
+	spin_unlock_irqrestore(&lrng_ready_chain_lock, flags);
 
-	module_put(owner);
+	if (!ret && lrng_ready_chain_used)
+		lrng_ready_chain_used--;
+
+	return ret;
 }
-EXPORT_SYMBOL(del_random_ready_callback);
+EXPORT_SYMBOL(unregister_random_ready_notifier);
 
 /*
- * add_random_ready_callback() - Add a callback function that will be
+ * register_random_ready_notifier() - Add a callback function that will be
  * invoked when the DRNG is fully initialized and seeded.
  *
- * @rdy: callback definition to be invoked when the LRNG is seeded
+ * @nb: callback definition to be invoked when the LRNG is seeded
  *
  * Return:
  * * 0 if callback is successfully added
  * * -EALREADY if pool is already initialised (callback not called)
- * * -ENOENT if module for callback is not alive
  */
-int add_random_ready_callback(struct random_ready_callback *rdy)
+int register_random_ready_notifier(struct notifier_block *nb)
 {
-	struct module *owner;
 	unsigned long flags;
 	int err = -EALREADY;
 
 	if (likely(lrng_state_operational()))
 		return err;
 
-	owner = rdy->owner;
-	if (!try_module_get(owner))
-		return -ENOENT;
+	spin_lock_irqsave(&lrng_ready_chain_lock, flags);
+	if (!lrng_state_operational())
+		err = raw_notifier_chain_register(&lrng_ready_chain, nb);
+	spin_unlock_irqrestore(&lrng_ready_chain_lock, flags);
 
-	spin_lock_irqsave(&lrng_ready_list_lock, flags);
-	if (lrng_state_operational())
-		goto out;
-
-	owner = NULL;
-
-	list_add(&rdy->list, &lrng_ready_list);
-	err = 0;
-
-out:
-	spin_unlock_irqrestore(&lrng_ready_list_lock, flags);
-
-	module_put(owner);
+	if (!err)
+		lrng_ready_chain_used++;
 
 	return err;
 }
-EXPORT_SYMBOL(add_random_ready_callback);
+EXPORT_SYMBOL(register_random_ready_notifier);
+
+#if IS_ENABLED(CONFIG_VMGENID)
+static BLOCKING_NOTIFIER_HEAD(lrng_vmfork_chain);
+
+/*
+ * Handle a new unique VM ID, which is unique, not secret, so we
+ * don't credit it, but we do immediately force a reseed after so
+ * that it's used by the crng posthaste.
+ */
+void add_vmfork_randomness(const void *unique_vm_id, size_t size)
+{
+	add_device_randomness(unique_vm_id, size);
+	if (lrng_state_operational())
+		lrng_drng_force_reseed();
+	blocking_notifier_call_chain(&lrng_vmfork_chain, 0, NULL);
+}
+#if IS_MODULE(CONFIG_VMGENID)
+EXPORT_SYMBOL_GPL(add_vmfork_randomness);
+#endif
+
+int register_random_vmfork_notifier(struct notifier_block *nb)
+{
+	return blocking_notifier_chain_register(&lrng_vmfork_chain, nb);
+}
+EXPORT_SYMBOL_GPL(register_random_vmfork_notifier);
+
+int unregister_random_vmfork_notifier(struct notifier_block *nb)
+{
+	return blocking_notifier_chain_unregister(&lrng_vmfork_chain, nb);
+}
+EXPORT_SYMBOL_GPL(unregister_random_vmfork_notifier);
+#endif
 
 /*********************** LRNG kernel output interfaces ************************/
 
@@ -241,7 +254,7 @@ EXPORT_SYMBOL(add_random_ready_callback);
  * @buf: buffer to store the random bytes
  * @nbytes: size of the buffer
  */
-void get_random_bytes(void *buf, int nbytes)
+void get_random_bytes(void *buf, size_t nbytes)
 {
 	lrng_get_random_bytes(buf, nbytes);
 }
@@ -282,26 +295,24 @@ EXPORT_SYMBOL(wait_for_random_bytes);
  *
  * Return: number of bytes filled in.
  */
-int __must_check get_random_bytes_arch(void *buf, int nbytes)
+size_t __must_check get_random_bytes_arch(void *buf, size_t nbytes)
 {
+	size_t left = nbytes;
 	u8 *p = buf;
 
-	while (nbytes) {
+	while (left) {
 		unsigned long v;
-		int chunk = min_t(int, nbytes, sizeof(unsigned long));
+		size_t chunk = min_t(size_t, left, sizeof(unsigned long));
 
 		if (!arch_get_random_long(&v))
 			break;
 
 		memcpy(p, &v, chunk);
 		p += chunk;
-		nbytes -= chunk;
+		left -= chunk;
 	}
 
-	if (nbytes)
-		lrng_get_random_bytes(p, nbytes);
-
-	return nbytes;
+	return nbytes - left;
 }
 EXPORT_SYMBOL(get_random_bytes_arch);
 

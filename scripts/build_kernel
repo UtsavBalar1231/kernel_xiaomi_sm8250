@@ -18,21 +18,23 @@
 
 # Start cleanup of previous build
 if [[ -d anykernel ]]; then
-	rm -fr $(pwd)/anykernel/
+    rm -fr anykernel/
 fi
 
-if [[ -f ${OUT_DIR}/arch/arm64/boot/dtb ]]; then
-	rm -fr ${OUT_DIR}/arch/arm64/boot/dtb
+if [[ -f ${out_dir}/arch/arm64/boot/dtb ]]; then
+    rm -fr ${out_dir}/arch/arm64/boot/dtb
 fi
 
-if [[ -f ${OUT_DIR}/arch/arm64/boot/Image.gz ]]; then
-	rm -fr ${OUT_DIR}/arch/arm64/boot/Image.gz
-elif [[ -f ${OUT_DIR}/arch/arm64/boot/Image ]]; then
-	rm -fr ${OUT_DIR}/arch/arm64/boot/Image
+if [[ -f ${out_dir}/arch/arm64/boot/Image.gz ]]; then
+    rm -fr ${out_dir}/arch/arm64/boot/Image.gz
 fi
 
-if [[ -f ${OUT_DIR}/arch/arm64/boot/dtbo.img ]]; then
-	rm -fr ${OUT_DIR}/arch/arm64/boot/dtbo.img
+if [[ -f ${out_dir}/arch/arm64/boot/Image ]]; then
+    rm -fr ${out_dir}/arch/arm64/boot/Image
+fi
+
+if [[ -f ${out_dir}/arch/arm64/boot/dtbo.img ]]; then
+    rm -fr ${out_dir}/arch/arm64/boot/dtbo.img
 fi
 
 KBUILD_COMPILER_STRING=$(${HOME}/clang/bin/clang --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
@@ -46,120 +48,120 @@ cp -r $HOME/anykernel ./
 # Enviromental Variables
 #
 
-DATE=$(date +"%Y-%m-%d-%H%M")
-DEVICE="alioth"
+date=$(date +"%Y-%m-%d-%H%M")
+device="alioth"
 
 # Set our directory
-OUT_DIR=out/
+out_dir=out/
 
 # Select LTO or non LTO builds
 if [[ "$@" =~ "lto"* ]]; then
-    VERSION="IMMENSITY-X-${DEVICE^^}-LTO-${DATE}"
+    VERSION="IMMENSITY-X-${device^^}-LTO-${date}"
 else
-    VERSION="IMMENSITY-X-${DEVICE^^}-${DATE}"
+    VERSION="IMMENSITY-X-${device^^}-${date}"
 fi
 
 # Export Zip name
-export ZIPNAME="${VERSION}.zip"
+export zipname="${VERSION}.zip"
 
 # How much kebabs we need? Kanged from @raphielscape :)
-if [[ -z "${KEBABS}" ]]; then
-    COUNT="$(grep -c '^processor' /proc/cpuinfo)"
-    export KEBABS="$((COUNT + 2))"
+if [[ -z "${jobs}" ]]; then
+    count="$(grep -c '^processor' /proc/cpuinfo)"
+    export jobs="$((count + 2))"
 fi
 
-echo "Jobs: ${KEBABS}"
-
-ARGS="ARCH=arm64 \
-O=${OUT_DIR} \
+args="ARCH=arm64 \
+O=${out_dir} \
 LLVM=1 \
 CLANG_TRIPLE=aarch64-linux-gnu- \
 CROSS_COMPILE=aarch64-linux-gnu- \
 CROSS_COMPILE_COMPAT=arm-linux-gnueabi- \
--j${KEBABS}"
+-j${jobs}"
 
 dts_source=arch/arm64/boot/dts/vendor/qcom
 # Correct panel dimensions on MIUI builds
 function miui_fix_dimens() {
-    sed -i 's/<70>/<695>/g' $dts_source/dsi-panel-j3s-37-02-0a-dsc-video.dtsi
-    sed -i 's/<70>/<695>/g' $dts_source/dsi-panel-j11-38-08-0a-fhd-cmd.dtsi
-    sed -i 's/<70>/<695>/g' $dts_source/dsi-panel-k11a-38-08-0a-dsc-cmd.dtsi
-    sed -i 's/<71>/<710>/g' $dts_source/dsi-panel-j1s*
-    sed -i 's/<71>/<710>/g' $dts_source/dsi-panel-j2*
-    sed -i 's/<155>/<1544>/g' $dts_source/dsi-panel-j3s-37-02-0a-dsc-video.dtsi
-    sed -i 's/<155>/<1545>/g' $dts_source/dsi-panel-j11-38-08-0a-fhd-cmd.dtsi
-    sed -i 's/<155>/<1546>/g' $dts_source/dsi-panel-k11a-38-08-0a-dsc-cmd.dtsi
-    sed -i 's/<154>/<1537>/g' $dts_source/dsi-panel-j1s*
-    sed -i 's/<154>/<1537>/g' $dts_source/dsi-panel-j2*
+    sed -i 's/<154>/<1537>/g' ${dts_source}/dsi-panel-j1s*
+    sed -i 's/<154>/<1537>/g' ${dts_source}/dsi-panel-j2*
+    sed -i 's/<155>/<1544>/g' ${dts_source}/dsi-panel-j3s-37-02-0a-dsc-video.dtsi
+    sed -i 's/<155>/<1545>/g' ${dts_source}/dsi-panel-j11-38-08-0a-fhd-cmd.dtsi
+    sed -i 's/<155>/<1546>/g' ${dts_source}/dsi-panel-k11a-38-08-0a-dsc-cmd.dtsi
+    sed -i 's/<155>/<1546>/g' ${dts_source}/dsi-panel-l11r-38-08-0a-dsc-cmd.dtsi
+    sed -i 's/<70>/<695>/g' ${dts_source}/dsi-panel-j11-38-08-0a-fhd-cmd.dtsi
+    sed -i 's/<70>/<695>/g' ${dts_source}/dsi-panel-j3s-37-02-0a-dsc-video.dtsi
+    sed -i 's/<70>/<695>/g' ${dts_source}/dsi-panel-k11a-38-08-0a-dsc-cmd.dtsi
+    sed -i 's/<70>/<695>/g' ${dts_source}/dsi-panel-l11r-38-08-0a-dsc-cmd.dtsi
+    sed -i 's/<71>/<710>/g' ${dts_source}/dsi-panel-j1s*
+    sed -i 's/<71>/<710>/g' ${dts_source}/dsi-panel-j2*
 }
 
 # Enable back mi smartfps while disabling qsync min refresh-rate
 function miui_fix_fps() {
-    sed -i 's/qcom,mdss-dsi-qsync-min-refresh-rate/\/\/qcom,mdss-dsi-qsync-min-refresh-rate/g' $dts_source/dsi-panel*
-    sed -i 's/\/\/ mi,mdss-dsi-smart-fps-max_framerate/mi,mdss-dsi-smart-fps-max_framerate/g' $dts_source/dsi-panel*
-    sed -i 's/\/\/ mi,mdss-dsi-pan-enable-smart-fps/mi,mdss-dsi-pan-enable-smart-fps/g' $dts_source/dsi-panel*
-    sed -i 's/\/\/ qcom,mdss-dsi-pan-enable-smart-fps/qcom,mdss-dsi-pan-enable-smart-fps/g' $dts_source/dsi-panel*
+    sed -i 's/\/\/ mi,mdss-dsi-pan-enable-smart-fps/mi,mdss-dsi-pan-enable-smart-fps/g' ${dts_source}/dsi-panel*
+    sed -i 's/\/\/ mi,mdss-dsi-smart-fps-max_framerate/mi,mdss-dsi-smart-fps-max_framerate/g' ${dts_source}/dsi-panel*
+    sed -i 's/\/\/ qcom,mdss-dsi-pan-enable-smart-fps/qcom,mdss-dsi-pan-enable-smart-fps/g' ${dts_source}/dsi-panel*
+    sed -i 's/qcom,mdss-dsi-qsync-min-refresh-rate/\/\/qcom,mdss-dsi-qsync-min-refresh-rate/g' ${dts_source}/dsi-panel*
 }
 
 # Enable back refresh rates supported on MIUI
 function miui_fix_dfps() {
-    sed -i 's/120 90 60/120 90 60 50 30/g' $dts_source/dsi-panel-g7a-37-02-0a-dsc-video.dtsi
-    sed -i 's/120 90 60/120 90 60 50 30/g' $dts_source/dsi-panel-g7a-37-02-0b-dsc-video.dtsi
-    sed -i 's/120 90 60/120 90 60 50 30/g' $dts_source/dsi-panel-g7a-36-02-0c-dsc-video.dtsi
-    sed -i 's/144 120 90 60/144 120 90 60 50 48 30/g' $dts_source/dsi-panel-j3s-37-02-0a-dsc-video.dtsi
+    sed -i 's/120 90 60/120 90 60 50 30/g' ${dts_source}/dsi-panel-g7a-36-02-0c-dsc-video.dtsi
+    sed -i 's/120 90 60/120 90 60 50 30/g' ${dts_source}/dsi-panel-g7a-37-02-0a-dsc-video.dtsi
+    sed -i 's/120 90 60/120 90 60 50 30/g' ${dts_source}/dsi-panel-g7a-37-02-0b-dsc-video.dtsi
+    sed -i 's/144 120 90 60/144 120 90 60 50 48 30/g' ${dts_source}/dsi-panel-j3s-37-02-0a-dsc-video.dtsi
 }
 
 # Enable back brightness control from dtsi
 function miui_fix_fod() {
-    sed -i 's/\/\/39 01 00 00 01 00 03 51 03 FF/39 01 00 00 01 00 03 51 03 FF/g' $dts_source/dsi-panel-j11-38-08-0a-fhd-cmd.dtsi
-    sed -i 's/\/\/39 01 00 00 00 00 03 51 03 FF/39 01 00 00 00 00 03 51 03 FF/g' $dts_source/dsi-panel-j11-38-08-0a-fhd-cmd.dtsi
-    sed -i 's/\/\/39 00 00 00 00 00 05 51 0F 8F 00 00/39 00 00 00 00 00 05 51 0F 8F 00 00/g' $dts_source/dsi-panel-j1s-42-02-0a-dsc-cmd.dtsi
-    sed -i 's/\/\/39 01 00 00 00 00 05 51 07 FF 00 00/39 01 00 00 00 00 05 51 07 FF 00 00/g' $dts_source/dsi-panel-j1s-42-02-0a-dsc-cmd.dtsi
-    sed -i 's/\/\/39 00 00 00 00 00 05 51 0F 8F 00 00/39 00 00 00 00 00 05 51 0F 8F 00 00/g' $dts_source/dsi-panel-j1s-42-02-0a-mp-dsc-cmd.dtsi
-    sed -i 's/\/\/39 01 00 00 00 00 05 51 07 FF 00 00/39 01 00 00 00 00 05 51 07 FF 00 00/g' $dts_source/dsi-panel-j1s-42-02-0a-mp-dsc-cmd.dtsi
-    sed -i 's/\/\/39 01 00 00 00 00 03 51 0F FF/39 01 00 00 00 00 03 51 0F FF/g' $dts_source/dsi-panel-j1u-42-02-0b-dsc-cmd.dtsi
-    sed -i 's/\/\/39 01 00 00 00 00 03 51 07 FF/39 01 00 00 00 00 03 51 07 FF/g' $dts_source/dsi-panel-j1u-42-02-0b-dsc-cmd.dtsi
-    sed -i 's/\/\/39 01 00 00 00 00 03 51 00 00/39 01 00 00 00 00 03 51 00 00/g' $dts_source/dsi-panel-j2-38-0c-0a-dsc-cmd.dtsi
-    sed -i 's/\/\/39 01 00 00 00 00 03 51 00 00/39 01 00 00 00 00 03 51 00 00/g' $dts_source/dsi-panel-j2-38-0c-0a-dsc-cmd.dtsi
-    sed -i 's/\/\/39 01 00 00 00 00 03 51 0F FF/39 01 00 00 00 00 03 51 0F FF/g' $dts_source/dsi-panel-j2-42-02-0b-dsc-cmd.dtsi
-    sed -i 's/\/\/39 01 00 00 00 00 03 51 07 FF/39 01 00 00 00 00 03 51 07 FF/g' $dts_source/dsi-panel-j2-42-02-0b-dsc-cmd.dtsi
-    sed -i 's/\/\/39 00 00 00 00 00 05 51 0F 8F 00 00/39 00 00 00 00 00 05 51 0F 8F 00 00/g' $dts_source/dsi-panel-j2-mp-42-02-0b-dsc-cmd.dtsi
-    sed -i 's/\/\/39 01 00 00 00 00 05 51 07 FF 00 00/39 01 00 00 00 00 05 51 07 FF 00 00/g' $dts_source/dsi-panel-j2-mp-42-02-0b-dsc-cmd.dtsi
-    sed -i 's/\/\/39 01 00 00 00 00 03 51 0F FF/39 01 00 00 00 00 03 51 0F FF/g' $dts_source/dsi-panel-j2-p1-42-02-0b-dsc-cmd.dtsi
-    sed -i 's/\/\/39 01 00 00 00 00 03 51 07 FF/39 01 00 00 00 00 03 51 07 FF/g' $dts_source/dsi-panel-j2-p1-42-02-0b-dsc-cmd.dtsi
-    sed -i 's/\/\/39 00 00 00 00 00 03 51 0D FF/39 00 00 00 00 00 03 51 0D FF/g' $dts_source/dsi-panel-j2-p2-1-38-0c-0a-dsc-cmd.dtsi
-    sed -i 's/\/\/39 01 00 00 11 00 03 51 03 FF/39 01 00 00 11 00 03 51 03 FF/g' $dts_source/dsi-panel-j2-p2-1-38-0c-0a-dsc-cmd.dtsi
-    sed -i 's/\/\/39 00 00 00 00 00 05 51 0F 8F 00 00/39 00 00 00 00 00 05 51 0F 8F 00 00/g' $dts_source/dsi-panel-j2-p2-1-42-02-0b-dsc-cmd.dtsi
-    sed -i 's/\/\/39 01 00 00 00 00 05 51 07 FF 00 00/39 01 00 00 00 00 05 51 07 FF 00 00/g' $dts_source/dsi-panel-j2-p2-1-42-02-0b-dsc-cmd.dtsi
-    sed -i 's/\/\/39 00 00 00 00 00 05 51 0F 8F 00 00/39 00 00 00 00 00 05 51 0F 8F 00 00/g' $dts_source/dsi-panel-j2s-mp-42-02-0a-dsc-cmd.dtsi
-    sed -i 's/\/\/39 01 00 00 00 00 05 51 07 FF 00 00/39 01 00 00 00 00 05 51 07 FF 00 00/g' $dts_source/dsi-panel-j2s-mp-42-02-0a-dsc-cmd.dtsi
-    sed -i 's/\/\/39 00 00 00 00 00 03 51 03 FF/39 00 00 00 00 00 03 51 03 FF/g' $dts_source/dsi-panel-j9-38-0a-0a-fhd-video.dtsi
-    sed -i 's/\/\/39 01 00 00 00 00 03 51 03 FF/39 01 00 00 00 00 03 51 03 FF/g' $dts_source/dsi-panel-j9-38-0a-0a-fhd-video.dtsi
+    sed -i 's/\/\/39 00 00 00 00 00 03 51 03 FF/39 00 00 00 00 00 03 51 03 FF/g' ${dts_source}/dsi-panel-j9-38-0a-0a-fhd-video.dtsi
+    sed -i 's/\/\/39 00 00 00 00 00 03 51 0D FF/39 00 00 00 00 00 03 51 0D FF/g' ${dts_source}/dsi-panel-j2-p2-1-38-0c-0a-dsc-cmd.dtsi
+    sed -i 's/\/\/39 00 00 00 00 00 05 51 0F 8F 00 00/39 00 00 00 00 00 05 51 0F 8F 00 00/g' ${dts_source}/dsi-panel-j1s-42-02-0a-dsc-cmd.dtsi
+    sed -i 's/\/\/39 00 00 00 00 00 05 51 0F 8F 00 00/39 00 00 00 00 00 05 51 0F 8F 00 00/g' ${dts_source}/dsi-panel-j1s-42-02-0a-mp-dsc-cmd.dtsi
+    sed -i 's/\/\/39 00 00 00 00 00 05 51 0F 8F 00 00/39 00 00 00 00 00 05 51 0F 8F 00 00/g' ${dts_source}/dsi-panel-j2-mp-42-02-0b-dsc-cmd.dtsi
+    sed -i 's/\/\/39 00 00 00 00 00 05 51 0F 8F 00 00/39 00 00 00 00 00 05 51 0F 8F 00 00/g' ${dts_source}/dsi-panel-j2-p2-1-42-02-0b-dsc-cmd.dtsi
+    sed -i 's/\/\/39 00 00 00 00 00 05 51 0F 8F 00 00/39 00 00 00 00 00 05 51 0F 8F 00 00/g' ${dts_source}/dsi-panel-j2s-mp-42-02-0a-dsc-cmd.dtsi
+    sed -i 's/\/\/39 01 00 00 00 00 03 51 00 00/39 01 00 00 00 00 03 51 00 00/g' ${dts_source}/dsi-panel-j2-38-0c-0a-dsc-cmd.dtsi
+    sed -i 's/\/\/39 01 00 00 00 00 03 51 00 00/39 01 00 00 00 00 03 51 00 00/g' ${dts_source}/dsi-panel-j2-38-0c-0a-dsc-cmd.dtsi
+    sed -i 's/\/\/39 01 00 00 00 00 03 51 03 FF/39 01 00 00 00 00 03 51 03 FF/g' ${dts_source}/dsi-panel-j11-38-08-0a-fhd-cmd.dtsi
+    sed -i 's/\/\/39 01 00 00 00 00 03 51 03 FF/39 01 00 00 00 00 03 51 03 FF/g' ${dts_source}/dsi-panel-j9-38-0a-0a-fhd-video.dtsi
+    sed -i 's/\/\/39 01 00 00 00 00 03 51 07 FF/39 01 00 00 00 00 03 51 07 FF/g' ${dts_source}/dsi-panel-j1u-42-02-0b-dsc-cmd.dtsi
+    sed -i 's/\/\/39 01 00 00 00 00 03 51 07 FF/39 01 00 00 00 00 03 51 07 FF/g' ${dts_source}/dsi-panel-j2-42-02-0b-dsc-cmd.dtsi
+    sed -i 's/\/\/39 01 00 00 00 00 03 51 07 FF/39 01 00 00 00 00 03 51 07 FF/g' ${dts_source}/dsi-panel-j2-p1-42-02-0b-dsc-cmd.dtsi
+    sed -i 's/\/\/39 01 00 00 00 00 03 51 0F FF/39 01 00 00 00 00 03 51 0F FF/g' ${dts_source}/dsi-panel-j1u-42-02-0b-dsc-cmd.dtsi
+    sed -i 's/\/\/39 01 00 00 00 00 03 51 0F FF/39 01 00 00 00 00 03 51 0F FF/g' ${dts_source}/dsi-panel-j2-42-02-0b-dsc-cmd.dtsi
+    sed -i 's/\/\/39 01 00 00 00 00 03 51 0F FF/39 01 00 00 00 00 03 51 0F FF/g' ${dts_source}/dsi-panel-j2-p1-42-02-0b-dsc-cmd.dtsi
+    sed -i 's/\/\/39 01 00 00 00 00 05 51 07 FF 00 00/39 01 00 00 00 00 05 51 07 FF 00 00/g' ${dts_source}/dsi-panel-j1s-42-02-0a-dsc-cmd.dtsi
+    sed -i 's/\/\/39 01 00 00 00 00 05 51 07 FF 00 00/39 01 00 00 00 00 05 51 07 FF 00 00/g' ${dts_source}/dsi-panel-j1s-42-02-0a-mp-dsc-cmd.dtsi
+    sed -i 's/\/\/39 01 00 00 00 00 05 51 07 FF 00 00/39 01 00 00 00 00 05 51 07 FF 00 00/g' ${dts_source}/dsi-panel-j2-mp-42-02-0b-dsc-cmd.dtsi
+    sed -i 's/\/\/39 01 00 00 00 00 05 51 07 FF 00 00/39 01 00 00 00 00 05 51 07 FF 00 00/g' ${dts_source}/dsi-panel-j2-p2-1-42-02-0b-dsc-cmd.dtsi
+    sed -i 's/\/\/39 01 00 00 00 00 05 51 07 FF 00 00/39 01 00 00 00 00 05 51 07 FF 00 00/g' ${dts_source}/dsi-panel-j2s-mp-42-02-0a-dsc-cmd.dtsi
+    sed -i 's/\/\/39 01 00 00 01 00 03 51 03 FF/39 01 00 00 01 00 03 51 03 FF/g' ${dts_source}/dsi-panel-j11-38-08-0a-fhd-cmd.dtsi
+    sed -i 's/\/\/39 01 00 00 11 00 03 51 03 FF/39 01 00 00 11 00 03 51 03 FF/g' ${dts_source}/dsi-panel-j2-p2-1-38-0c-0a-dsc-cmd.dtsi
 }
 
 function tg_post_error() {
-    curl -s -X POST https://api.telegram.org/bot"${BOT_API_KEY}"/sendMessage -d text="Error in $1 build!!" -d chat_id="${CI_CHANNEL_ID}"
-    curl -F chat_id="${CI_CHANNEL_ID}" -F document=@"$(pwd)/build.log" https://api.telegram.org/bot"${BOT_API_KEY}"/sendDocument
+    curl -s -X POST https://api.telegram.org/bot"${bot_api_key}"/sendMessage -d text="Error in ${device}: $1 build!!" -d chat_id="${ci_channel_id}"
+    curl -F chat_id="${ci_channel_id}" -F document=@"$(pwd)/build.log" https://api.telegram.org/bot"${bot_api_key}"/sendDocument
     exit 1
 }
 
 function enable_lto() {
-    scripts/config --file ${OUT_DIR}/.config \
+    scripts/config --file ${out_dir}/.config \
         -e LTO_CLANG
 
     # Make olddefconfig
-    cd ${OUT_DIR} || exit
-    make -j${KEBABS} ${ARGS} olddefconfig
+    cd ${out_dir} || exit
+    make -j${jobs} ${args} olddefconfig
     cd ../ || exit
 }
 
 function disable_lto() {
-    scripts/config --file ${OUT_DIR}/.config \
+    scripts/config --file ${out_dir}/.config \
         -d LTO_CLANG
 
     # Make olddefconfig
-    cd ${OUT_DIR} || exit
-    make -j${KEBABS} ${ARGS} olddefconfig
+    cd ${out_dir} || exit
+    make -j${jobs} ${args} olddefconfig
     cd ../ || exit
 }
 
@@ -167,11 +169,11 @@ function pack_image_build() {
     mkdir -p anykernel/kernels/$1
 
     # Check if the kernel is built
-    if [[ -f ${OUT_DIR}/System.map ]]; then
-        if [[ -f ${OUT_DIR}/arch/arm64/boot/Image.gz ]]; then
-            cp ${OUT_DIR}/arch/arm64/boot/Image.gz anykernel/kernels/$1
-        elif [[ -f ${OUT_DIR}/arch/arm64/boot/Image ]]; then
-            cp ${OUT_DIR}/arch/arm64/boot/Image anykernel/kernels/$1
+    if [[ -f ${out_dir}/System.map ]]; then
+        if [[ -f ${out_dir}/arch/arm64/boot/Image.gz ]]; then
+            cp ${out_dir}/arch/arm64/boot/Image.gz anykernel/kernels/$1
+        elif [[ -f ${out_dir}/arch/arm64/boot/Image ]]; then
+            cp ${out_dir}/arch/arm64/boot/Image anykernel/kernels/$1
         else
             tg_post_error $1
         fi
@@ -179,29 +181,30 @@ function pack_image_build() {
         tg_post_error $1
     fi
 
-    cp ${OUT_DIR}/arch/arm64/boot/dtb anykernel/kernels/$1
-    cp ${OUT_DIR}/arch/arm64/boot/dtbo.img anykernel/kernels/$1
+    cp ${out_dir}/arch/arm64/boot/dtb anykernel/kernels/$1
+    cp ${out_dir}/arch/arm64/boot/dtbo.img anykernel/kernels/$1
 }
 
-START=$(date +"%s")
+start=$(date +"%s")
 
 # Set compiler Path
 PATH=${HOME}/gas:${HOME}/clang/bin/:$PATH
 export LD_LIBRARY_PATH=${HOME}/clang/lib64:$LD_LIBRARY_PATH
 
-# Make defconfig
-make -j${KEBABS} ${ARGS} "${DEVICE}"_defconfig
-
-# Enable LTO
-if [[ "$@" =~ "lto"* ]]; then
-    enable_lto
-fi
-
 # # AOSP Build
 # echo "------ Stating AOSP Build ------"
+
+# Make defconfig
+# make -j${jobs} ${args} "${device}"_defconfig
+
+# # Enable LTO
+# if [[ "$@" =~ "lto"* ]]; then
+#     enable_lto
+# fi
+
 # os=aosp
-# make -j${KEBABS} ${ARGS} 2>&1 | tee build.log
-# find ${OUT_DIR}/$dts_source -name '*.dtb' -exec cat {} + > ${OUT_DIR}/arch/arm64/boot/dtb
+# make -j${jobs} ${args} 2>&1 | tee build.log
+# find ${out_dir}/${dts_source} -name '*.dtb' -exec cat {} + > ${out_dir}/arch/arm64/boot/dtb
 
 # pack_image_build ${os}
 # echo "------ Finishing AOSP Build ------"
@@ -211,9 +214,9 @@ echo "------ Starting MIUI Build ------"
 os=miui
 
 # Make defconfig
-make -j${KEBABS} ${ARGS} "${DEVICE}"_defconfig
+make -j${jobs} ${args} "${device}"_defconfig
 
-scripts/config --file ${OUT_DIR}/.config \
+scripts/config --file ${out_dir}/.config \
     -d LOCALVERSION_AUTO \
     -d TOUCHSCREEN_COMMON \
     --set-str STATIC_USERMODEHELPER_PATH /system/bin/micd \
@@ -221,15 +224,18 @@ scripts/config --file ${OUT_DIR}/.config \
     -e BINDER_OPT \
     -e IPC_LOGGING \
     -e KPERFEVENTS \
-    -e LAST_TOUCH_EVENTS \
     -e MIGT \
+    -e MIGT_ENERGY_MODEL \
     -e MIHW \
     -e MILLET \
     -e MI_DRM_OPT \
     -e MIUI_ZRAM_MEMORY_TRACKING \
     -e MI_RECLAIM \
     -d OSSFOD \
+    -e PACKAGE_RUNTIME_INFO \
     -e PERF_HUMANTASK \
+    -e PERF_CRITICAL_RT_TASK \
+    -e SF_BINDER \
     -e TASK_DELAY_ACCT
 
 # FIXME: disable LTO on MIUI
@@ -238,8 +244,8 @@ if [[ "$@" =~ "lto"* ]]; then
 fi
 
 # Make olddefconfig
-cd ${OUT_DIR} || exit
-make -j${KEBABS} ${ARGS} CC="ccache clang" HOSTCC="ccache gcc" HOSTCXX="cache g++" olddefconfig
+cd ${out_dir} || exit
+make -j${jobs} ${args} CC="ccache clang" HOSTCC="ccache gcc" HOSTCXX="ccache g++" olddefconfig
 cd ../ || exit
 
 miui_fix_dimens
@@ -247,9 +253,9 @@ miui_fix_fps
 miui_fix_dfps
 miui_fix_fod
 
-make -j${KEBABS} ${ARGS} CC="ccache clang" HOSTCC="ccache gcc" HOSTCXX="ccache g++" 2>&1 | tee build.log
+make -j${jobs} ${args} CC="ccache clang" HOSTCC="ccache gcc" HOSTCXX="ccache g++" 2>&1 | tee build.log
 
-find ${OUT_DIR}/$dts_source -name '*.dtb' -exec cat {} + >${OUT_DIR}/arch/arm64/boot/dtb
+find ${out_dir}/${dts_source} -name '*.dtb' -exec cat {} + >${out_dir}/arch/arm64/boot/dtb
 
 pack_image_build ${os}
 
@@ -261,9 +267,9 @@ echo "------ Finishing MIUI Build ------"
 # os=aospa
 
 # # Make defconfig
-# make -j${KEBABS} ${ARGS} "${DEVICE}"_defconfig
+# make -j${jobs} ${args} "${device}"_defconfig
 
-# scripts/config --file ${OUT_DIR}/.config \
+# scripts/config --file ${out_dir}/.config \
 #     -d SDCARD_FS \
 #     -e UNICODE
 
@@ -273,40 +279,39 @@ echo "------ Finishing MIUI Build ------"
 # fi
 
 # # Make olddefconfig
-# cd ${OUT_DIR} || exit
-# make -j${KEBABS} ${ARGS} olddefconfig
+# cd ${out_dir} || exit
+# make -j${jobs} ${args} olddefconfig
 # cd ../ || exit
 
-# make -j${KEBABS} ${ARGS} 2>&1 | tee build.log
+# make -j${jobs} ${args} 2>&1 | tee build.log
 
-# find ${OUT_DIR}/$dts_source -name '*.dtb' -exec cat {} + > ${OUT_DIR}/arch/arm64/boot/dtb
+# find ${out_dir}/${dts_source} -name '*.dtb' -exec cat {} + > ${out_dir}/arch/arm64/boot/dtb
 
-pack_image_build ${os}
+# pack_image_build ${os}
 # echo "------ Finishing AOSPA Build ------"
 
-END=$(date +"%s")
-DIFF=$((END - START))
+end=$(date +"%s")
+diff=$((end - start))
 
 cd anykernel || exit
-zip -r9 "${ZIPNAME}" ./* -x .git .gitignore ./*.zip
+zip -r9 "${zipname}" ./* -x .git .gitignore ./*.zip
 
-FILE=$(gdrive upload --share $ZIPNAME)
-FILEID=$(echo $FILE | awk {'print $7'})
+# FILE=$(gdrive upload --share $zipname)
+# file_id=$(echo $FILE | awk '{print $7}')
 
-echo "File upload to gdrive"
-echo $FILEID
+# echo "File upload to gdrive"
+# echo ${file_id}
 
-CHECKER=$(find ./ -maxdepth 1 -type f -name ${ZIPNAME} -printf "%s\n")
-if (($((CHECKER / 1048576)) > 5)); then
-    curl -s -X POST https://api.telegram.org/bot"${BOT_API_KEY}"/sendMessage -d text="✅ Kernel compiled successfully in $((DIFF / 60)) minute(s) and $((DIFF % 60)) seconds for ${DEVICE}" -d chat_id="${CI_CHANNEL_ID}" -d parse_mode=HTML
-    curl -s -X POST https://api.telegram.org/bot"${BOT_API_KEY}"/sendMessage -d text="Kernel build link: $FILEID" -d chat_id="${CI_CHANNEL_ID}" -d parse_mode=HTML
-    curl -F chat_id="${CI_CHANNEL_ID}" -F document=@"$(pwd)/${ZIPNAME}" https://api.telegram.org/bot"${BOT_API_KEY}"/sendDocument
+checker=$(find ./ -maxdepth 1 -type f -name ${zipname} -printf "%s\n")
+if (($((checker / 1048576)) > 5)); then
+    curl -s -X POST https://api.telegram.org/bot"${bot_api_key}"/sendMessage -d text="✅ Kernel compiled successfully in $((diff / 60)) minute(s) and $((diff % 60)) seconds for ${device}" -d chat_id="${ci_channel_id}" -d parse_mode=HTML
+    # curl -s -X POST https://api.telegram.org/bot"${bot_api_key}"/sendMessage -d text="Kernel build link: ${file_id}" -d chat_id="${ci_channel_id}" -d parse_mode=HTML
+    curl -F chat_id="${ci_channel_id}" -F document=@"$(pwd)/${zipname}" https://api.telegram.org/bot"${bot_api_key}"/sendDocument
 else
     tg_post_error
 fi
 cd $(pwd) || exit
 
 echo ""
-echo -e $ZIPNAME " is ready!"
+echo -e ${zipname} " is ready!"
 echo ""
-

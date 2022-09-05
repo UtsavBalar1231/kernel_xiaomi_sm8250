@@ -1207,11 +1207,7 @@ static int fg_get_batt_capacity_level(struct bq_fg_chip *bq)
 	else if (bq->batt_rca)
 		return POWER_SUPPLY_CAPACITY_LEVEL_LOW;
 	else if (bq->batt_fd) {
-#ifdef CONFIG_FACTORY_BUILD
-		return POWER_SUPPLY_CAPACITY_LEVEL_CRITICAL;
-#else
 		return POWER_SUPPLY_CAPACITY_LEVEL_LOW;
-#endif
 	} else
 		return POWER_SUPPLY_CAPACITY_LEVEL_NORMAL;
 

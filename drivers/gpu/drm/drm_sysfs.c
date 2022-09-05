@@ -24,6 +24,7 @@
 #include "drm_internal.h"
 #include "drm_internal_mi.h"
 
+#include <drm/msm_drm_pp.h>
 
 #define to_drm_minor(d) dev_get_drvdata(d)
 #define to_drm_connector(d) dev_get_drvdata(d)
@@ -388,6 +389,93 @@ static ssize_t complete_commit_time_show(struct device *dev,
 	return complete_commit_time_get(connector, buf);
 }
 
+struct drm_msm_pcc color_transform_pcc_cfg = {
+	.r.c = 0, .r.r = 32768, .r.g = 0, .r.b = 0,
+	.g.c = 0, .g.r = 0, .g.g = 32768, .g.b = 0,
+	.b.c = 0, .b.r = 0, .b.g = 0, .b.b = 32768,};
+
+static ssize_t disp_pcc_store(struct device *device,
+			   struct device_attribute *attr,
+			   const char *buf, size_t count)
+{
+	int ret;
+	ssize_t result;
+
+	pr_info("[LCD] %s: begin\n", __func__);
+
+	result = sscanf(buf,
+		"pcc_cfg_r_c=%d\n"
+		"pcc_cfg_r_r=%d\n"
+		"pcc_cfg_r_g=%d\n"
+		"pcc_cfg_r_b=%d\n"
+		"pcc_cfg_g_c=%d\n"
+		"pcc_cfg_g_r=%d\n"
+		"pcc_cfg_g_g=%d\n"
+		"pcc_cfg_g_b=%d\n"
+		"pcc_cfg_b_c=%d\n"
+		"pcc_cfg_b_r=%d\n"
+		"pcc_cfg_b_g=%d\n"
+		"pcc_cfg_b_b=%d\n",
+		&color_transform_pcc_cfg.r.c,
+		&color_transform_pcc_cfg.r.r,
+		&color_transform_pcc_cfg.r.g,
+		&color_transform_pcc_cfg.r.b,
+		&color_transform_pcc_cfg.g.c,
+		&color_transform_pcc_cfg.g.r,
+		&color_transform_pcc_cfg.g.g,
+		&color_transform_pcc_cfg.g.b,
+		&color_transform_pcc_cfg.b.c,
+		&color_transform_pcc_cfg.b.r,
+		&color_transform_pcc_cfg.b.g,
+		&color_transform_pcc_cfg.b.b);
+
+	ret = 0;
+	pr_info("set pcc r_c=%d r_r=%d r_g=%d r_b=%d g_c=%d g_r=%d g_g=%d g_b=%d b_c=%d b_r=%d b_g=%d b_b=%d",
+		color_transform_pcc_cfg.r.c, color_transform_pcc_cfg.r.r, color_transform_pcc_cfg.r.g, color_transform_pcc_cfg.r.b,
+		color_transform_pcc_cfg.g.c, color_transform_pcc_cfg.g.r, color_transform_pcc_cfg.g.g, color_transform_pcc_cfg.g.b,
+		color_transform_pcc_cfg.b.c, color_transform_pcc_cfg.b.r, color_transform_pcc_cfg.b.g, color_transform_pcc_cfg.b.b);
+
+	return ret ? ret : count;
+}
+
+static ssize_t disp_pcc_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	int ret = -1;
+
+	if (buf == NULL) {
+		pr_err("disp_pcc_show is NULL!\n");
+		return -EINVAL;
+	}
+
+	ret = scnprintf(buf, PAGE_SIZE,
+		"pcc_cfg_r_c=%d\n"
+		"pcc_cfg_r_r=%d\n"
+		"pcc_cfg_r_g=%d\n"
+		"pcc_cfg_r_b=%d\n"
+		"pcc_cfg_g_c=%d\n"
+		"pcc_cfg_g_r=%d\n"
+		"pcc_cfg_g_g=%d\n"
+		"pcc_cfg_g_b=%d\n"
+		"pcc_cfg_b_c=%d\n"
+		"pcc_cfg_b_r=%d\n"
+		"pcc_cfg_b_g=%d\n"
+		"pcc_cfg_b_b=%d\n",
+		color_transform_pcc_cfg.r.c,
+		color_transform_pcc_cfg.r.r,
+		color_transform_pcc_cfg.r.g,
+		color_transform_pcc_cfg.r.b,
+		color_transform_pcc_cfg.g.c,
+		color_transform_pcc_cfg.g.r,
+		color_transform_pcc_cfg.g.g,
+		color_transform_pcc_cfg.g.b,
+		color_transform_pcc_cfg.b.c,
+		color_transform_pcc_cfg.b.r,
+		color_transform_pcc_cfg.b.g,
+		color_transform_pcc_cfg.b.b);
+
+	return ret;
+}
 
 static ssize_t thermal_hbm_disabled_store(struct device *device,
 			   struct device_attribute *attr,
@@ -460,6 +548,7 @@ static DEVICE_ATTR_RO(smart_fps_value);
 static DEVICE_ATTR_RO(complete_commit_time);
 static DEVICE_ATTR_RW(thermal_hbm_disabled);
 static DEVICE_ATTR_RO(hw_vsync_info);
+static DEVICE_ATTR_RW(disp_pcc);
 
 static struct attribute *connector_dev_attrs[] = {
 	&dev_attr_status.attr,
@@ -479,6 +568,7 @@ static struct attribute *connector_dev_attrs[] = {
 	&dev_attr_complete_commit_time.attr,
 	&dev_attr_thermal_hbm_disabled.attr,
 	&dev_attr_hw_vsync_info.attr,
+	&dev_attr_disp_pcc.attr,
 	NULL
 };
 

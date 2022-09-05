@@ -251,7 +251,7 @@ static void lrng_drng_seed(struct lrng_drng *drng)
 		 * directly from the entropy sources.
 		 */
 		if (!wq_has_sleeper(&lrng_init_wait) &&
-		    !lrng_ready_list_has_sleeper())
+		    !lrng_ready_chain_has_sleeper())
 			lrng_drng_atomic_seed_es();
 		else
 			lrng_init_ops(NULL);

@@ -145,7 +145,6 @@ struct fts_ts_info *fts_info;
 static struct drm_panel *active_panel;
 #endif
 static int fts_init_sensing(struct fts_ts_info *info);
-static int fts_mode_handler(struct fts_ts_info *info, int force);
 static int fts_chip_initialization(struct fts_ts_info *info, int init_type);
 static irqreturn_t fts_event_handler(int irq, void *ts_info);
 static int fts_enable_reg(struct fts_ts_info *info, bool enable);
@@ -3854,6 +3853,9 @@ static u8 fts_need_enter_lp_mode(void)
  */
 	u8 tmp_value = 0;
 
+	if (fts_info->nonui_status == 2)
+		return tmp_value;
+
 	if (fts_info->aod_status && !fts_info->nonui_status)
 		tmp_value |= FOD_SINGLETAP_EVENT;
 	if ((fts_info->fod_status != -1 && fts_info->fod_status != 100)) {
@@ -3980,13 +3982,13 @@ static void fts_enter_pointer_event_handler(struct fts_ts_info *info,
 				info->fod_x = x;
 				info->fod_y = y;
 				info->fod_coordinate_update = true;
-				__set_bit(touchId, &info->fod_id);
 				input_report_abs(info->input_dev, ABS_MT_WIDTH_MINOR, info->fod_overlap);
 				if (!info->board->support_fod) {
 					input_report_key(info->input_dev, BTN_INFO, 1);
 					mi_disp_set_fod_queue_work(1, true);
 				}
-				logError(1,	"%s  %s :  FOD Press :%d, fod_id:%08x\n", tag, __func__, touchId, info->fod_id);
+				if (!__test_and_set_bit(touchId, &info->fod_id))
+					logError(1,	"%s  %s :  FOD Press :%d, fod_id:%08x\n", tag, __func__, touchId, info->fod_id);
 			}
 		} else if (__test_and_clear_bit(touchId, &info->fod_id)) {
 			input_report_abs(info->input_dev, ABS_MT_WIDTH_MINOR, 0);
@@ -6189,13 +6191,6 @@ static void fts_update_touchmode_data(void)
 	const struct fts_hw_platform_data *bdata = fts_info->board;
 	static expert_mode = false;
 
-	ret = wait_event_interruptible_timeout(fts_info->wait_queue, !(fts_info->irq_status ||
-	fts_info->touch_id), msecs_to_jiffies(500));
-
-	if (ret <= 0) {
-		logError(1, "%s %s: wait touch finger up timeout\n", tag, __func__);
-		return;
-	}
 	if (fts_info->tp_pm_suspend) {
 		logError(1, "%s %s tp is in suspend mode,do't set gamemode\n", tag, __func__);
 		return;
@@ -7774,12 +7769,29 @@ static void fts_switch_mode_work(struct work_struct *work)
 		logError(1, "%s %s touch in resume mode, don't need to set gesture cmds\n", tag, __func__);
 		return;
 	}
+
+	pm_stay_awake(info->dev);
+	if ((!gesture_type && !info->gesture_enabled) || info->nonui_status == 2) {
+		logError(0, "%s %s: Sense OFF! \n", tag, __func__);
+		setScanMode(SCAN_MODE_ACTIVE, 0x00);
+		fts_disableInterrupt();
+		mdelay(WAIT_AFTER_SENSEOFF);
+		pm_relax(info->dev);
+		return;
+	} else {
+		logError(0, "%s %s: enter low power mode! gesture_type: %d, gesture_enable: %d\n",
+				tag, __func__, gesture_type, info->gesture_enabled);
+		setScanMode(SCAN_MODE_LOW_POWER, 0);
+		mdelay(WAIT_AFTER_LOW_POWER);
+		fts_enableInterrupt();
+	}
 	if (info->gesture_enabled)
 		gesture_cmd[2] = 0x20;
 	res = fts_write_dma_safe(gesture_cmd, ARRAY_SIZE(gesture_cmd));
 	if (res < OK)
 		logError(1, "%s %s: send gesture cmd error! ERROR %08X recovery in senseOff...\n",
 			 tag, __func__, res);
+	pm_relax(info->dev);
 }
 #endif
 

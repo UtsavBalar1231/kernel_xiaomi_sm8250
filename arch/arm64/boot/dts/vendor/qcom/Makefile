@@ -44,6 +44,12 @@ dtbo-$(CONFIG_BOARD_LMI) += \
 lmi-sm8250-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
 endif
 
+ifeq ($(CONFIG_BOARD_MUNCH),y)
+dtbo-$(CONFIG_BOARD_MUNCH) += \
+		munch-sm8250-overlay.dtbo
+munch-sm8250-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
+endif
+
 ifeq ($(CONFIG_BOARD_PSYCHE),y)
 dtbo-$(CONFIG_BOARD_PSYCHE) += \
 		psyche-sm8250-overlay.dtbo
@@ -110,6 +116,7 @@ ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
                 kona-xrfusion-overlay.dtbo \
                 kona-xrfusion-ult-overlay.dtbo \
                 kona-arglass-overlay.dtbo \
+                kona-xrsku4-overlay.dtbo \
                 kona-hdk-overlay.dtbo
 
 kona-cdp-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
@@ -124,6 +131,7 @@ kona-qrd-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
 kona-xrfusion-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
 kona-xrfusion-ult-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
 kona-arglass-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
+kona-xrsku4-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
 kona-hdk-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
 else
 dtb-$(CONFIG_ARCH_KONA) += kona-rumi.dtb \
@@ -134,6 +142,7 @@ dtb-$(CONFIG_ARCH_KONA) += kona-rumi.dtb \
         kona-xrfusion.dtb \
         kona-xrfusion-ult.dtb \
         kona-arglass.dtb \
+        kona-xrsku4.dtb \
         kona-cdp.dtb \
         kona-cdp-lcd.dtb \
         kona-cdp-lcd-tron.dtb \
@@ -147,6 +156,7 @@ dtb-$(CONFIG_ARCH_KONA) += kona-rumi.dtb \
         kona-v2-xrfusion.dtb \
         kona-v2-xrfusion-ult.dtb \
         kona-v2-arglass.dtb \
+        kona-v2-xrsku4.dtb \
         kona-hdk.dtb \
         kona-v2.1-mtp.dtb \
         kona-v2.1-mtp-ws.dtb \
@@ -157,6 +167,7 @@ dtb-$(CONFIG_ARCH_KONA) += kona-rumi.dtb \
         kona-v2.1-xrfusion.dtb \
         kona-v2.1-xrfusion-ult.dtb \
         kona-v2.1-arglass.dtb \
+        kona-v2.1-xrsku4.dtb \
         qrb5165-iot-rb5.dtb \
         qrb5165n-iot-rb5.dtb \
         kona-v2.1-iot-rb5.dtb \

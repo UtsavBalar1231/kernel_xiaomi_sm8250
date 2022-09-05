@@ -846,7 +846,9 @@ static void usbpd_pm_evaluate_src_caps(struct usbpd_pm *pdpm)
 				pdpm->apdo_max_curr);
 		if (pdpm->apdo_max_curr <= LOW_POWER_PPS_CURR_THR)
 			pdpm->apdo_max_curr = XIAOMI_LOW_POWER_PPS_CURR_MAX;
-		pval.intval = (pdpm->apdo_max_volt / 1000) * (pdpm->apdo_max_curr / 1000);
+		/* avoid pdpm->apdo_max_curr / 1000 drop remainder */
+		pval.intval = ((pdpm->apdo_max_volt / 1000) * (pdpm->apdo_max_curr / 100)) / 10;
+		pval.intval = min(pdpm->pd_power_max, pval.intval);
 		power_supply_set_property(pdpm->usb_psy,
 				POWER_SUPPLY_PROP_APDO_MAX, &pval);
 	} else {
@@ -1115,7 +1117,10 @@ static int usbpd_pm_fc2_charge_algo(struct usbpd_pm *pdpm)
 				step_ibus, step_ibat, step_vbat, pdpm->cp.vbat_reg, pdpm->cp.ibat_reg, sw_ctrl_steps, hw_ctrl_steps);
 	}
 
-	if (pdpm->cp.bat_therm_fault) { /* battery overheat, stop charge*/
+	if (pdpm->sw.night_charging) {
+		pr_info("night charging enabled[%d]\n", pdpm->sw.night_charging);
+		return PM_ALGO_RET_NIGHT_CHARGING;
+	} else if (pdpm->cp.bat_therm_fault) { /* battery overheat, stop charge*/
 		pr_info("bat_therm_fault:%d\n", pdpm->cp.bat_therm_fault);
 		return PM_ALGO_RET_THERM_FAULT;
 	} else if (!pdpm->cp.charge_enabled ||
@@ -1144,10 +1149,8 @@ static int usbpd_pm_fc2_charge_algo(struct usbpd_pm *pdpm)
 		return PM_ALGO_RET_UNSUPPORT_PPSTA;
 	} else if (pm_config.cp_sec_enable) {
 		pdpm->master_ibus_below_critical_low_count = 0;
-	} else if (pdpm->sw.night_charging) {
-		pr_info("night charging enabled[%d]\n", pdpm->sw.night_charging);
-		return PM_ALGO_RET_NIGHT_CHARGING;
 	}
+
 
 	if (pdpm->cp.bms_vbat_mv > pm_config.bat_volt_lp_lmt - TAPER_VOL_HYS
 			&& pdpm->cp.ibat_curr < pm_config.fc2_taper_current) {
@@ -1168,13 +1171,14 @@ static int usbpd_pm_fc2_charge_algo(struct usbpd_pm *pdpm)
 	pdpm->request_voltage += steps * STEP_MV;
 
 	pdpm->request_current = min(pdpm->apdo_max_curr, curr_ibus_limit);
-	pr_info("steps: %d, pdpm->request_voltage: %d\n", steps, pdpm->request_voltage);
 
 	/*if (pdpm->apdo_max_volt == PPS_VOL_MAX)
 		pdpm->apdo_max_volt = pdpm->apdo_max_volt - PPS_VOL_HYS;*/
 
-	if (pdpm->request_voltage > pdpm->apdo_max_volt)
-		pdpm->request_voltage = pdpm->apdo_max_volt;
+	if (pdpm->request_voltage >= pdpm->apdo_max_volt)
+		pdpm->request_voltage = pdpm->apdo_max_volt - STEP_MV;
+
+	pr_info("steps: %d, pdpm->request_voltage: %d\n", steps, pdpm->request_voltage);
 
 	/*if (pdpm->adapter_voltage > 0
 			&& pdpm->request_voltage > pdpm->adapter_voltage + 500)
@@ -1281,7 +1285,7 @@ static int usbpd_pm_sm(struct usbpd_pm *pdpm)
 
 		usbpd_select_pdo(pdpm->pd, pdpm->apdo_selected_pdo,
 				pdpm->request_voltage * 1000, pdpm->request_current * 1000);
-		pr_debug("request_voltage:%d, request_current:%d\n",
+		pr_info("request_voltage:%d, request_current:%d\n",
 				pdpm->request_voltage, pdpm->request_current);
 
 		usbpd_pm_move_state(pdpm, PD_PM_STATE_FC2_ENTRY_2);
@@ -1816,6 +1820,10 @@ static int pd_policy_parse_dt(struct usbpd_pm *pdpm)
 
 	pdpm->chg_enable_k81 = of_property_read_bool(node,
 				"mi,chg-enable-k81");
+
+	rc = of_property_read_u32(node, "mi,pd-power-max", &pdpm->pd_power_max);
+	pr_info("pd-power-max:%d\n", pdpm->pd_power_max);
+
 	return rc;
 }
 

@@ -547,9 +547,9 @@ static int parse_options(struct super_block *sb, char *options, int silent,
 				break;
 			default:
 				if (!silent) {
-					exfat_msg(sb, KERN_ERR,
-							"unrecognized mount option \"%s\" or missing value",
-							p);
+					exfat_err(sb,
+						  "unrecognized mount option \"%s\" or missing value",
+						  p);
 				}
 				return -EINVAL;
 		}
@@ -559,14 +559,21 @@ out:
 	if (opts->allow_utime == -1)
 		opts->allow_utime = ~opts->fs_dmask & (0022);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
+	if (opts->discard && !bdev_max_discard_sectors(sb->s_bdev)) {
+		exfat_warn(sb, "mounting with \"discard\" option, but the device does not support discard");
+		opts->discard = 0;
+	}
+#else
 	if (opts->discard) {
 		struct request_queue *q = bdev_get_queue(sb->s_bdev);
 
-		if (!blk_queue_discard(q))
-			exfat_msg(sb, KERN_WARNING,
-					"mounting with \"discard\" option, but the device does not support discard");
-		opts->discard = 0;
+		if (!blk_queue_discard(q)) {
+			exfat_warn(sb, "mounting with \"discard\" option, but the device does not support discard");
+			opts->discard = 0;
+		}
 	}
+#endif
 
 	return 0;
 }
@@ -625,8 +632,8 @@ static int exfat_read_root(struct inode *inode)
 	inode->i_op = &exfat_dir_inode_operations;
 	inode->i_fop = &exfat_dir_operations;
 
-	inode->i_blocks = ((i_size_read(inode) + (sbi->cluster_size - 1)) &
-		~((loff_t)sbi->cluster_size - 1)) >> inode->i_blkbits;
+	inode->i_blocks = round_up(i_size_read(inode), sbi->cluster_size) >>
+				inode->i_blkbits;
 	ei->i_pos = ((loff_t)sbi->root_dir << 32) | 0xffffffff;
 	ei->i_size_aligned = i_size_read(inode);
 	ei->i_size_ondisk = i_size_read(inode);
@@ -721,7 +728,7 @@ static int exfat_read_boot_sector(struct super_block *sb)
 	 */
 	if (p_boot->sect_size_bits < EXFAT_MIN_SECT_SIZE_BITS ||
 	    p_boot->sect_size_bits > EXFAT_MAX_SECT_SIZE_BITS) {
-		exfat_err(sb, "bogus sector size bits : %u\n",
+		exfat_err(sb, "bogus sector size bits : %u",
 				p_boot->sect_size_bits);
 		return -EINVAL;
 	}
@@ -730,7 +737,7 @@ static int exfat_read_boot_sector(struct super_block *sb)
 	 * sect_per_clus_bits could be at least 0 and at most 25 - sect_size_bits.
 	 */
 	if (p_boot->sect_per_clus_bits > EXFAT_MAX_SECT_PER_CLUS_BITS(p_boot)) {
-		exfat_err(sb, "bogus sectors bits per cluster : %u\n",
+		exfat_err(sb, "bogus sectors bits per cluster : %u",
 				p_boot->sect_per_clus_bits);
 		return -EINVAL;
 	}
@@ -896,6 +903,12 @@ static int exfat_fill_super(struct super_block *sb, void *data, int silent)
 	if (opts->allow_utime == (unsigned short)-1)
 		opts->allow_utime = ~opts->fs_dmask & 0022;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
+	if (opts->discard && !bdev_max_discard_sectors(sb->s_bdev)) {
+		exfat_warn(sb, "mounting with \"discard\" option, but the device does not support discard");
+		opts->discard = 0;
+	}
+#else
 	if (opts->discard) {
 		struct request_queue *q = bdev_get_queue(sb->s_bdev);
 
@@ -904,6 +917,7 @@ static int exfat_fill_super(struct super_block *sb, void *data, int silent)
 			opts->discard = 0;
 		}
 	}
+#endif
 #else
 	struct exfat_sb_info *sbi;
 
@@ -924,7 +938,7 @@ static int exfat_fill_super(struct super_block *sb, void *data, int silent)
 			DEFAULT_RATELIMIT_BURST);
 	err = parse_options(sb, data, silent, &sbi->options);
 	if (err) {
-		exfat_msg(sb, KERN_ERR, "failed to parse options");
+		exfat_err(sb, "failed to parse options");
 		goto check_nls_io;
 	}
 #endif
