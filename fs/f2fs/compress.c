@@ -1538,12 +1538,8 @@ static int f2fs_prepare_decomp_mem(struct decompress_io_ctx *dic,
 	if (!dic->cbuf)
 		return -ENOMEM;
 
-	if (cops->init_decompress_ctx) {
-		int ret = cops->init_decompress_ctx(dic);
-
-		if (ret)
-			return ret;
-	}
+	if (cops->init_decompress_ctx)
+		return cops->init_decompress_ctx(dic);
 
 	return 0;
 }
@@ -1875,7 +1871,7 @@ bool f2fs_load_compressed_page(struct f2fs_sb_info *sbi, struct page *page,
 
 void f2fs_invalidate_compress_pages(struct f2fs_sb_info *sbi, nid_t ino)
 {
-	struct address_space *mapping = sbi->compress_inode->i_mapping;
+	struct address_space *mapping = COMPRESS_MAPPING(sbi);
 	struct pagevec pvec;
 	pgoff_t index = 0;
 	pgoff_t end = MAX_BLKADDR(sbi);
