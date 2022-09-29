@@ -13,7 +13,7 @@ steps:
         from_secret: bot_api_key
       PD_API_KEY:
         from_secret: pd_api_key
-      TYPE: REL-7.1.0
+      TYPE: NEXT-8.0.0
       DEVICE: alioth
       KBUILD_BUILD_USER: UtsavTheCunt
       KBUILD_BUILD_HOST: CuntsSpace
@@ -21,7 +21,7 @@ steps:
       - apt-get update && apt-get install -y bison build-essential bc bison curl libssl-dev git zip python python3 flex cpio libncurses5-dev wget
       - git clone https://github.com/UtsavBalar1231/Drone-scripts.git --depth=1 -b kona script && cd script
       - ./setup-drone --aosp-clang
-      - ./build-kernel --aosp-clang --lto
+      - ./build-kernel --aosp-clang
 
 ---
 clone:
@@ -38,7 +38,7 @@ steps:
         from_secret: bot_api_key
       PD_API_KEY:
         from_secret: pd_api_key
-      TYPE: REL-7.1.0
+      TYPE: NEXT-8.0.0
       DEVICE: apollo
       KBUILD_BUILD_USER: UtsavTheCunt
       KBUILD_BUILD_HOST: CuntsSpace
@@ -46,7 +46,7 @@ steps:
       - apt-get update && apt-get install -y bison build-essential bc bison curl libssl-dev git zip python python3 flex cpio libncurses5-dev wget
       - git clone https://github.com/UtsavBalar1231/Drone-scripts.git --depth=1 -b kona script && cd script
       - ./setup-drone --aosp-clang
-      - ./build-kernel --aosp-clang --lto
+      - ./build-kernel --aosp-clang
 
 ---
 clone:
@@ -63,7 +63,7 @@ steps:
         from_secret: bot_api_key
       PD_API_KEY:
         from_secret: pd_api_key
-      TYPE: REL-7.1.0
+      TYPE: NEXT-8.0.0
       DEVICE: cmi
       KBUILD_BUILD_USER: UtsavTheCunt
       KBUILD_BUILD_HOST: CuntsSpace
@@ -71,7 +71,7 @@ steps:
       - apt-get update && apt-get install -y bison build-essential bc bison curl libssl-dev git zip python python3 flex cpio libncurses5-dev wget
       - git clone https://github.com/UtsavBalar1231/Drone-scripts.git --depth=1 -b kona script && cd script
       - ./setup-drone --aosp-clang
-      - ./build-kernel --aosp-clang --lto
+      - ./build-kernel --aosp-clang
 
 ---
 clone:
@@ -88,7 +88,7 @@ steps:
         from_secret: bot_api_key
       PD_API_KEY:
         from_secret: pd_api_key
-      TYPE: REL-7.1.0
+      TYPE: NEXT-8.0.0
       DEVICE: lmi
       KBUILD_BUILD_USER: UtsavTheCunt
       KBUILD_BUILD_HOST: CuntsSpace
@@ -96,7 +96,7 @@ steps:
       - apt-get update && apt-get install -y bison build-essential bc bison curl libssl-dev git zip python python3 flex cpio libncurses5-dev wget
       - git clone https://github.com/UtsavBalar1231/Drone-scripts.git --depth=1 -b kona script && cd script
       - ./setup-drone --aosp-clang
-      - ./build-kernel --aosp-clang --lto
+      - ./build-kernel --aosp-clang
 
 ---
 clone:
@@ -113,7 +113,7 @@ steps:
         from_secret: bot_api_key
       PD_API_KEY:
         from_secret: pd_api_key
-      TYPE: REL-7.1.0
+      TYPE: NEXT-8.0.0
       DEVICE: munch
       KBUILD_BUILD_USER: UtsavTheCunt
       KBUILD_BUILD_HOST: CuntsSpace
@@ -121,7 +121,7 @@ steps:
       - apt-get update && apt-get install -y bison build-essential bc bison curl libssl-dev git zip python python3 flex cpio libncurses5-dev wget
       - git clone https://github.com/UtsavBalar1231/Drone-scripts.git --depth=1 -b kona script && cd script
       - ./setup-drone --aosp-clang
-      - ./build-kernel --aosp-clang --lto
+      - ./build-kernel --aosp-clang
 
 ---
 clone:
@@ -138,7 +138,7 @@ steps:
         from_secret: bot_api_key
       PD_API_KEY:
         from_secret: pd_api_key
-      TYPE: REL-7.1.0
+      TYPE: NEXT-8.0.0
       DEVICE: umi
       KBUILD_BUILD_USER: UtsavTheCunt
       KBUILD_BUILD_HOST: CuntsSpace
@@ -146,4 +146,4 @@ steps:
       - apt-get update && apt-get install -y bison build-essential bc bison curl libssl-dev git zip python python3 flex cpio libncurses5-dev wget
       - git clone https://github.com/UtsavBalar1231/Drone-scripts.git --depth=1 -b kona script && cd script
       - ./setup-drone --aosp-clang
-      - ./build-kernel --aosp-clang --lto
+      - ./build-kernel --aosp-clang
