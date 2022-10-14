@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -1139,6 +1140,20 @@ struct rcpi_info {
 
 struct hdd_context;
 
+#ifdef WLAN_FEATURE_DYNAMIC_RX_AGGREGATION
+/**
+ * enum qdisc_filter_status - QDISC filter status
+ * @QDISC_FILTER_RTNL_LOCK_FAIL: rtnl lock acquire failed
+ * @QDISC_FILTER_PRIO_MATCH: qdisc filter with priority match
+ * @QDISC_FILTER_PRIO_MISMATCH: no filter match with configured priority
+ */
+enum qdisc_filter_status {
+	QDISC_FILTER_RTNL_LOCK_FAIL,
+	QDISC_FILTER_PRIO_MATCH,
+	QDISC_FILTER_PRIO_MISMATCH,
+};
+#endif
+
 /**
  * struct hdd_adapter - hdd vdev/net_device context
  * @vdev: object manager vdev context
@@ -1466,7 +1481,7 @@ struct hdd_adapter {
 	bool handle_feature_update;
 
 	qdf_work_t netdev_features_update_work;
-	uint8_t gro_disallowed[DP_MAX_RX_THREADS];
+	qdf_atomic_t gro_disallowed;
 	uint8_t gro_flushed[DP_MAX_RX_THREADS];
 #if IS_ENABLED(CONFIG_BOARD_ELISH) || IS_ENABLED(CONFIG_BOARD_ENUMA)
 	qdf_event_t install_key_complete;
@@ -1657,10 +1672,12 @@ enum hdd_sta_smps_param {
  * enum RX_OFFLOAD - Receive offload modes
  * @CFG_LRO_ENABLED: Large Rx offload
  * @CFG_GRO_ENABLED: Generic Rx Offload
+ * @CFG_DYNAMIC_GRO_ENABLED: Dynamic GRO enabled
  */
 enum RX_OFFLOAD {
 	CFG_LRO_ENABLED = 1,
 	CFG_GRO_ENABLED,
+	CFG_DYNAMIC_GRO_ENABLED,
 };
 
 /* One per STA: 1 for BCMC_STA_ID, 1 for each SAP_SELF_STA_ID,
@@ -1788,6 +1805,8 @@ struct hdd_adapter_ops_history {
  * @sar_cmd_params: SAR command params to be configured to the FW
  * @rx_aggregation: rx aggregation enable or disable state
  * @gro_force_flush: gro force flushed indication flag
+ * @tc_based_dyn_gro: TC based dynamic GRO enable/disable flag
+ * @tc_ingress_prio: TC ingress priority
  * @adapter_ops_wq: High priority workqueue for handling adapter operations
  * @is_dual_mac_cfg_updated: indicate whether dual mac cfg has been updated
  */
@@ -2116,6 +2135,8 @@ struct hdd_context {
 	struct {
 		qdf_atomic_t rx_aggregation;
 		uint8_t gro_force_flush[DP_MAX_RX_THREADS];
+		bool tc_based_dyn_gro;
+		uint32_t tc_ingress_prio;
 	} dp_agg_param;
 #ifdef FW_THERMAL_THROTTLE_SUPPORT
 	uint8_t dutycycle_off_percent;

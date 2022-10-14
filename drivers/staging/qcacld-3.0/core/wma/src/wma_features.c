@@ -4191,6 +4191,9 @@ QDF_STATUS wma_send_apf_enable_cmd(WMA_HANDLE handle, uint8_t vdev_id,
 		return QDF_STATUS_E_INVAL;
 	}
 
+	if (!wma_is_vdev_valid(vdev_id))
+		return QDF_STATUS_E_INVAL;
+
 	if (!WMI_SERVICE_IS_ENABLED(wma->wmi_service_bitmap,
 		WMI_SERVICE_BPF_OFFLOAD)) {
 		WMA_LOGE(FL("APF cababilities feature bit not enabled"));
