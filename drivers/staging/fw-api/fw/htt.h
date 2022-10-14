@@ -751,6 +751,15 @@ typedef enum {
     HTT_STATS_ML_PEER_DETAILS_TAG                  = 159, /* htt_ml_peer_details_tlv */
     HTT_STATS_ML_PEER_EXT_DETAILS_TAG              = 160, /* htt_ml_peer_ext_details_tlv */
     HTT_STATS_ML_LINK_INFO_DETAILS_TAG             = 161, /* htt_ml_link_info_tlv */
+    HTT_STATS_TX_PDEV_PPDU_DUR_TAG                 = 162, /* htt_tx_pdev_ppdu_dur_stats_tlv */
+    HTT_STATS_RX_PDEV_PPDU_DUR_TAG                 = 163, /* htt_rx_pdev_ppdu_dur_stats_tlv */
+    HTT_STATS_ODD_PDEV_MANDATORY_TAG               = 164, /* htt_odd_mandatory_pdev_stats_tlv */
+    HTT_STATS_PDEV_SCHED_ALGO_OFDMA_STATS_TAG      = 165, /* htt_pdev_sched_algo_ofdma_stats_tlv */
+    HTT_DBG_ODD_MANDATORY_MUMIMO_TAG               = 166, /* htt_odd_mandatory_mumimo_pdev_stats_tlv */
+    HTT_DBG_ODD_MANDATORY_MUOFDMA_TAG              = 167, /* htt_odd_mandatory_muofdma_pdev_stats_tlv */
+    HTT_STATS_LATENCY_PROF_CAL_STATS_TAG           = 168, /* htt_latency_prof_cal_stats_tlv */
+    HTT_STATS_TX_PDEV_MUEDCA_PARAMS_STATS_TAG      = 169, /* htt_tx_pdev_muedca_params_stats_tlv_v */
+    HTT_STATS_PDEV_BW_MGR_STATS_TAG                = 170, /* htt_pdev_bw_mgr_stats_tlv */
 
 
     HTT_STATS_MAX_TAG,
