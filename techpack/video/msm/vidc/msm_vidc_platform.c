@@ -820,9 +820,9 @@ static struct msm_vidc_codec_capability kona_capabilities[] = {
 	{CAP_I_FRAME_QP, ENC, VP8|VP9, 0, 127, 1, 20},
 	{CAP_P_FRAME_QP, ENC, VP8|VP9, 0, 127, 1, 40},
 	{CAP_B_FRAME_QP, ENC, VP8|VP9, 0, 127, 1, 40},
-	/* 10 slices */
-	{CAP_SLICE_BYTE, ENC, H264|HEVC, 1, 10, 1, 10},
-	{CAP_SLICE_MB, ENC, H264|HEVC, 1, 10, 1, 10},
+	/* 128 slices */
+	{CAP_SLICE_BYTE, ENC, H264|HEVC, 1, 128, 1, 10},
+	{CAP_SLICE_MB, ENC, H264|HEVC, 1, 128, 1, 10},
 	{CAP_MAX_VIDEOCORES, DOMAINS_ALL, CODECS_ALL, 0, 1, 1, 1},
 
 	/* VP8 specific */
