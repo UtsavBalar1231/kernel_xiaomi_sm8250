@@ -1130,9 +1130,11 @@ static int clk_core_prepare_lock(struct clk_core *core)
 {
 	int ret;
 
-	clk_prepare_lock();
+	if (!oops_in_progress)
+		clk_prepare_lock();
 	ret = clk_core_prepare(core);
-	clk_prepare_unlock();
+	if (!oops_in_progress)
+		clk_prepare_unlock();
 
 	return ret;
 }
