@@ -102,6 +102,7 @@ config MIHW
 	bool "XiaoMi kernel optimization"
 	default n
 	select BINDER_OPT
+	select MI_FRAGMENTION
 	select MIGT
 	select MILLET
 	select MIGT_ENERGY_MODEL
