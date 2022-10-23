@@ -112,6 +112,7 @@ config MIHW
 	select PERF_CRITICAL_RT_TASK
 	select PERF_HELPER
 	select PERF_HUMANTASK
+	select RTMM
 	select SF_BINDER
 	select TASK_DELAY_ACCT
 	help
