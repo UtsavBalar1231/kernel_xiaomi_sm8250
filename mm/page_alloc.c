@@ -69,6 +69,7 @@
 #include <linux/nmi.h>
 #include <linux/khugepaged.h>
 #include <linux/psi.h>
+#include <linux/delayacct.h>
 
 #include <asm/sections.h>
 #include <asm/tlbflush.h>
@@ -4864,6 +4865,8 @@ __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order, int preferred_nid,
 	struct page *page;
 	unsigned int alloc_flags = ALLOC_WMARK_LOW;
 	gfp_t alloc_mask; /* The gfp_t that was actually used for allocation */
+	u64 start_time, duration;
+	u64 start_uptime, spent_duration;
 	struct alloc_context ac = { };
 
 	/*
@@ -4909,7 +4912,13 @@ __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order, int preferred_nid,
 	if (unlikely(ac.nodemask != nodemask))
 		ac.nodemask = nodemask;
 
+	start_uptime = ktime_get_ns();
+	start_time = current->stime;
+	delayacct_slowpath_start();
 	page = __alloc_pages_slowpath(alloc_mask, order, &ac);
+	delayacct_slowpath_end();
+	duration = current->stime - start_time;
+	spent_duration = ktime_get_ns() - start_uptime;
 
 out:
 	if (memcg_kmem_enabled() && (gfp_mask & __GFP_ACCOUNT) && page &&
