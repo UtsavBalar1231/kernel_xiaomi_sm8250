@@ -348,7 +348,11 @@ void panic(const char *fmt, ...)
 		 */
 		if (panic_reboot_mode != REBOOT_UNDEFINED)
 			reboot_mode = panic_reboot_mode;
+#ifdef CONFIG_BOARD_XIAOMI
+		machine_emergency_restart();
+#else
 		emergency_restart();
+#endif
 	}
 #ifdef __sparc__
 	{
@@ -380,6 +384,39 @@ void panic(const char *fmt, ...)
 }
 
 EXPORT_SYMBOL(panic);
+
+//Add fuct to save log after long press on kpdpwr.
+void long_press(void)
+{
+	int old_cpu, this_cpu;
+
+	local_irq_disable();
+
+	this_cpu = raw_smp_processor_id();
+	old_cpu  = atomic_cmpxchg(&panic_cpu, PANIC_CPU_INVALID, this_cpu);
+
+	if (old_cpu != PANIC_CPU_INVALID && old_cpu != this_cpu)
+		panic_smp_self_stop();
+
+	console_verbose();
+	bust_spinlocks(1);
+
+	printk_safe_flush_on_panic();
+	/*
+	* Note smp_send_stop is the usual smp shutdown function, which
+	* unfortunately means it may not be hardened to work in a
+	* panic situation.
+	*/
+	smp_send_stop();
+
+	/*
+	 * Run any panic handlers, including those that might need to
+	 * add information to the kmsg dump output.
+	 */
+	printk_safe_flush_on_panic();
+	kmsg_dump(KMSG_DUMP_LONG_PRESS);
+}
+EXPORT_SYMBOL(long_press);
 
 /*
  * TAINT_FORCED_RMMOD could be a per-module flag but the module
