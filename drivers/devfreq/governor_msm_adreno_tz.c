@@ -12,6 +12,9 @@
 #include <linux/ftrace.h>
 #include <linux/mm.h>
 #include <linux/msm_adreno_devfreq.h>
+#ifdef CONFIG_MIGT_ENERGY_MODEL
+#include <linux/migt_energy.h>
+#endif
 #include <asm/cacheflush.h>
 #include <soc/qcom/scm.h>
 #include <soc/qcom/qtee_shmbridge.h>
@@ -421,8 +424,6 @@ static int tz_get_target_freq(struct devfreq *devfreq, unsigned long *freq)
 		__secure_tz_update_entry3(scm_data, sizeof(scm_data),
 					&val, sizeof(val), priv);
 	}
-	priv->bin.total_time = 0;
-	priv->bin.busy_time = 0;
 
 	/*
 	 * If the decision is to move to a different level, make sure the GPU
@@ -435,6 +436,14 @@ static int tz_get_target_freq(struct devfreq *devfreq, unsigned long *freq)
 	}
 
 	*freq = devfreq->profile->freq_table[level];
+#ifdef CONFIG_MIGT_ENERGY_MODEL
+	gpu_ea_update_stats(devfreq, priv->bin.busy_time,
+		priv->bin.total_time);
+#endif
+
+	priv->bin.total_time = 0;
+	priv->bin.busy_time = 0;
+
 	return 0;
 }
 
@@ -521,6 +530,9 @@ static int tz_start(struct devfreq *devfreq)
 
 	for (i = 0; adreno_tz_attr_list[i] != NULL; i++)
 		device_create_file(&devfreq->dev, adreno_tz_attr_list[i]);
+#ifdef CONFIG_MIGT_ENERGY_MODEL
+	gpu_ea_start(devfreq);
+#endif
 
 	return kgsl_devfreq_add_notifier(devfreq->dev.parent, &priv->nb);
 }
@@ -539,6 +551,9 @@ static int tz_stop(struct devfreq *devfreq)
 
 	/* leaving the governor and cleaning the pointer to private data */
 	devfreq->data = NULL;
+#ifdef CONFIG_MIGT_ENERGY_MODEL
+	gpu_ea_stop(devfreq);
+#endif
 	partner_gpu_profile = NULL;
 	return 0;
 }
