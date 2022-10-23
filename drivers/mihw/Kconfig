@@ -1,0 +1,20 @@
+config MIGT
+	bool "boost cpufreq when load high"
+	depends on MIHW
+	help
+	  Boost cpufreq when current frame drawing time too long
+
+config MILLET
+	bool "frozen framework"
+	depends on MIHW
+	help
+	  Mi frozen function
+
+config MIGT_ENERGY_MODEL
+	bool "DT-based Energy Model for CPU and gpu"
+	depends on MIHW
+	help
+	  This mod rely on Energy Models (EMs) statically defined in
+	  the Device Tree. Since EAS now uses only the active costs of CPUs,
+	  the cluster-related costs and idle-costs are ignored.
+
