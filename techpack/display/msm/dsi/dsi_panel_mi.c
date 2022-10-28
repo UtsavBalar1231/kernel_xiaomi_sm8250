@@ -27,6 +27,7 @@
 #include "dsi_parser.h"
 #include "dsi_mi_feature.h"
 #include "../../../../kernel/irq/internals.h"
+
 #include "xiaomi_frame_stat.h"
 #include "mi_disp_nvt_alpha_data.h"
 #include "mi_disp_lhbm.h"
@@ -151,11 +152,13 @@ static void enter_aod_delayed_work(struct work_struct *work)
 				if (!mi_cfg->unset_doze_brightness)
 					mi_cfg->unset_doze_brightness = mi_cfg->doze_brightness_state;
 
-				pr_info("delayed_work runing --- set doze brightness\n");
-				if (mi_cfg->layer_aod_flag)
+				pr_info("delayed_work runing --- set doze brightness, unset_doze_brightness:%d\n", mi_cfg->unset_doze_brightness);
+				if (mi_cfg->layer_aod_flag) {
 					dsi_panel_set_doze_brightness(panel, mi_cfg->unset_doze_brightness, false);
-				else
+					mi_cfg->fod_to_nolp = true;
+				} else {
 					pr_info("delayed_work runing --- skip into doze\n");
+				}
 			}
 		}
 	}
@@ -502,6 +505,12 @@ int dsi_panel_parse_mi_config(struct dsi_panel *panel,
 			"mi,mdss-panel-delay-after-fod-hbm-off");
 		if (mi_cfg->delay_after_fod_hbm_off)
 			pr_info("delay after fod hbm off.\n");
+
+		mi_cfg->fod_skip_nolp = utils->read_bool(of_node,
+			"mi,mdss-panel-fod-skip-nolp");
+		if (mi_cfg->fod_skip_nolp) {
+			pr_info("j1 fod skip nolp\n");
+		}
 
 		rc = utils->read_u32(of_node,
 			"mi,mdss-dsi-dimlayer-brightness-alpha-lut-item-count",
@@ -850,6 +859,7 @@ skip_dimlayer_parse:
 	mi_cfg->fod_hbm_off_time = ktime_get();
 	mi_cfg->fod_backlight_off_time = ktime_get();
 	mi_cfg->dc_enable = false;
+	mi_cfg->bl_enable = true;
 	mi_cfg->panel_dead_flag = false;
 	mi_cfg->tddi_doubleclick_flag = false;
 
@@ -888,6 +898,23 @@ void display_utc_time_marker(const char *format, ...)
 int dsi_panel_esd_irq_ctrl(struct dsi_panel *panel,
 				bool enable)
 {
+	int ret  = 0;
+
+	if (!panel) {
+		pr_err("invalid params\n");
+		return -EINVAL;
+	}
+
+	mutex_lock(&panel->panel_lock);
+	ret = dsi_panel_esd_irq_ctrl_locked(panel, enable);
+	mutex_unlock(&panel->panel_lock);
+
+	return ret;
+}
+
+int dsi_panel_esd_irq_ctrl_locked(struct dsi_panel *panel,
+				bool enable)
+{
 	struct dsi_panel_mi_cfg *mi_cfg;
 	struct irq_desc *desc;
 
@@ -895,8 +922,6 @@ int dsi_panel_esd_irq_ctrl(struct dsi_panel *panel,
 		pr_err("Panel not ready!\n");
 		return -EINVAL;
 	}
-
-	mutex_lock(&panel->panel_lock);
 
 	mi_cfg = &panel->mi_cfg;
 	if (gpio_is_valid(mi_cfg->esd_err_irq_gpio)) {
@@ -906,25 +931,24 @@ int dsi_panel_esd_irq_ctrl(struct dsi_panel *panel,
 					desc = irq_to_desc(mi_cfg->esd_err_irq);
 					if (!irq_settings_is_level(desc))
 						desc->istate &= ~IRQS_PENDING;
-					//enable_irq_wake(mi_cfg->esd_err_irq);
+					enable_irq_wake(mi_cfg->esd_err_irq);
 					enable_irq(mi_cfg->esd_err_irq);
 					mi_cfg->esd_err_enabled = true;
-					pr_info("panel esd irq is enable\n");
+					pr_info("%s panel esd irq is enable\n", panel->type);
 				}
 			} else {
 				if (mi_cfg->esd_err_enabled) {
-					//disable_irq_wake(mi_cfg->esd_err_irq);
+					disable_irq_wake(mi_cfg->esd_err_irq);
 					disable_irq_nosync(mi_cfg->esd_err_irq);
 					mi_cfg->esd_err_enabled = false;
-					pr_info("panel esd irq is disable\n");
+					pr_info("%s panel esd irq is disable\n", panel->type);
 				}
 			}
 		}
 	} else {
-		pr_info("panel esd irq gpio invalid\n");
+		pr_info("%s panel esd irq gpio invalid\n", panel->type);
 	}
 
-	mutex_unlock(&panel->panel_lock);
 	return 0;
 }
 
@@ -3272,11 +3296,6 @@ int dsi_panel_set_doze_brightness(struct dsi_panel *panel,
 	struct dsi_panel_mi_cfg *mi_cfg;
 	struct dsi_display *display;
 	int cmd_type = DSI_CMD_SET_MAX;
-	static const char * const doze_brightness_str[] = {
-		[DOZE_TO_NORMAL] = "DOZE_TO_NORMAL",
-		[DOZE_BRIGHTNESS_HBM] = "DOZE_BRIGHTNESS_HBM",
-		[DOZE_BRIGHTNESS_LBM] = "DOZE_BRIGHTNESS_LBM",
-	};
 
 	if (!panel || !panel->host) {
 		pr_err("invalid params\n");
@@ -3294,21 +3313,29 @@ int dsi_panel_set_doze_brightness(struct dsi_panel *panel,
 
 	mi_cfg = &panel->mi_cfg;
 
+	if (!mi_cfg || (doze_brightness >= DOZE_BRIGHTNESS_MAX)) {
+		pr_err("mi_cfg is null or doze_brightness %s\n", get_doze_brightness_name(doze_brightness));
+		goto exit;
+	}
+
 	if (!panel->panel_initialized) {
 		mi_cfg->unset_doze_brightness = doze_brightness;
 		pr_info("Panel not initialized! save unset_doze_brightness = %s\n",
-				doze_brightness_str[mi_cfg->unset_doze_brightness]);
+				get_doze_brightness_name(mi_cfg->unset_doze_brightness));
 		goto exit;
 	}
 
 	if (mi_cfg->fod_hbm_enabled || mi_cfg->local_hbm_cur_status) {
 		mi_cfg->unset_doze_brightness = doze_brightness;
+		pr_info("fod_hbm_enabled/local_hbm_cur_status set, save unset_doze_brightness = %s\n",
+			get_doze_brightness_name(mi_cfg->unset_doze_brightness));
 		if (mi_cfg->unset_doze_brightness == DOZE_TO_NORMAL) {
 			mi_cfg->doze_brightness_state = DOZE_TO_NORMAL;
 			mi_cfg->dimming_state = STATE_DIM_BLOCK;
+			if (display->drm_conn && display->drm_conn->kdev)
+				sysfs_notify(&display->drm_conn->kdev->kobj, NULL, "doze_brightness");
 		}
-		pr_info("fod_hbm_enabled/local_hbm_cur_status set, save unset_doze_brightness = %s\n",
-				doze_brightness_str[mi_cfg->unset_doze_brightness]);
+
 		goto exit;
 	}
 
@@ -3326,7 +3353,7 @@ int dsi_panel_set_doze_brightness(struct dsi_panel *panel,
 				pr_info("aod layer is not ready, skip to set doze brightness\n");
 				rc = -EAGAIN;
 			} else {
-				if (panel->mi_cfg.panel_id == 0x4C334100420200) {
+				if (panel->mi_cfg.panel_id == 0x4C334100420200 || mi_cfg->fod_skip_nolp) {
 					if (doze_brightness == DOZE_BRIGHTNESS_HBM) {
 						cmd_type = DSI_CMD_SET_MI_DOZE_HBM;
 						mi_cfg->aod_backlight = 170;
@@ -3366,15 +3393,15 @@ int dsi_panel_set_doze_brightness(struct dsi_panel *panel,
 			mi_cfg->doze_brightness_state = doze_brightness;
 			if (display->drm_conn && display->drm_conn->kdev)
 				sysfs_notify(&display->drm_conn->kdev->kobj, NULL, "doze_brightness");
-			pr_info("set doze brightness to %s\n", doze_brightness_str[doze_brightness]);
+			pr_info("set doze brightness to %s\n", get_doze_brightness_name(doze_brightness));
 		} else {
-			pr_info("%s has been set, skip\n", doze_brightness_str[doze_brightness]);
+			pr_info("%s has been set, skip\n", get_doze_brightness_name(doze_brightness));
 		}
 	} else {
 		mi_cfg->unset_doze_brightness = doze_brightness;
 		if (mi_cfg->unset_doze_brightness != DOZE_TO_NORMAL)
 			pr_info("Not in Doze mode! save unset_doze_brightness = %s\n",
-					doze_brightness_str[mi_cfg->unset_doze_brightness]);
+					get_doze_brightness_name(doze_brightness));
 	}
 
 exit:
@@ -3520,6 +3547,23 @@ ssize_t dsi_panel_lockdown_info_read(unsigned char *plockdowninfo)
 	return rc;
 }
 EXPORT_SYMBOL(dsi_panel_lockdown_info_read);
+
+int mi_mipi_dsi_dcs_set_pwm_value(u16 dbv_value)
+{
+	int rc = 0;
+
+	if(!g_panel) {
+		pr_err("invalid params\n");
+		return -EINVAL;
+	}
+
+	rc = mipi_dsi_dcs_set_display_brightness_big_endian(&g_panel->mipi_device, dbv_value);
+	if (rc < 0)
+		pr_err("failed to update pwm value:%d\n", dbv_value);
+
+	return 0;
+}
+EXPORT_SYMBOL(mi_mipi_dsi_dcs_set_pwm_value);
 
 ssize_t dsi_panel_vendor_info_read(unsigned char *plockdowninfo)
 {
@@ -3803,6 +3847,20 @@ static int mi_dsi_update_lhbm_cmd_87reg(struct dsi_panel *panel,
 	return rc;
 }
 
+bool dsi_panel_is_need_tx_cmd(u32 param)
+{
+	if ((param & 0x0F000000) != DISPPARAM_FOD_BACKLIGHT_ON
+		|| (param & 0x0F000000) != DISPPARAM_FOD_BACKLIGHT_OFF
+		|| param != DISPPARAM_FOD_UNLOCK_SUCCESS
+		|| param != DISPPARAM_SET_THERMAL_HBM_DISABLE
+		|| param != DISPPARAM_CLEAR_THERMAL_HBM_DISABLE
+		|| (param & 0x0000F000) != DISPPARAM_LOW_BRIGHTNESS_FOD
+		|| (param & 0x0000F000) != DISPPARAM_FP_STATUS) {
+		return false;
+	}else
+		return true;
+}
+
 int dsi_panel_set_disp_param(struct dsi_panel *panel, u32 param)
 {
 	int rc = 0;
@@ -3840,7 +3898,6 @@ int dsi_panel_set_disp_param(struct dsi_panel *panel, u32 param)
 		&& (param & 0x0F000000) != DISPPARAM_FOD_BACKLIGHT_ON
 		&& (param & 0x0F000000) != DISPPARAM_FOD_BACKLIGHT_OFF
 		&& param != DISPPARAM_FOD_UNLOCK_SUCCESS
-		&& param != DISPPARAM_FOD_UNLOCK_FAIL
 		&& param != DISPPARAM_SET_THERMAL_HBM_DISABLE
 		&& param != DISPPARAM_CLEAR_THERMAL_HBM_DISABLE
 		&& (param & 0x0000F000) != DISPPARAM_LOW_BRIGHTNESS_FOD
@@ -4035,21 +4092,22 @@ int dsi_panel_set_disp_param(struct dsi_panel *panel, u32 param)
 		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_LCD_HBM_OFF);
 		break;
 	case DISPPARAM_HBM_ON:
-		pr_info("hbm on, thermal_hbm_disabled = %d\n", mi_cfg->thermal_hbm_disabled);
+		pr_info("hbm on needed, thermal_hbm_disabled = %d, fod_hbm_enabled = %d\n", mi_cfg->thermal_hbm_disabled, mi_cfg->fod_hbm_enabled);
+		mi_cfg->hbm_enabled = true;
 		if (!mi_cfg->fod_hbm_enabled && !mi_cfg->thermal_hbm_disabled) {
 			rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_MI_HBM_ON);
 
 			if (is_thermal_call)
 				pr_info("thermal clear hbm limit, restore previous hbm on\n");
-			else
-				mi_cfg->hbm_enabled = true;
+
 			mi_cfg->dimming_state = STATE_DIM_BLOCK;
+
 		}
 		break;
 	case DISPPARAM_HBM_OFF:
 		if (param & DISPPARAM_THERMAL_SET)
 			is_thermal_call = true;
-		pr_info("hbm off\n");
+		pr_info("hbm off needed, thermal_hbm_disabled = %d, fod_hbm_enabled = %d\n", mi_cfg->thermal_hbm_disabled, mi_cfg->fod_hbm_enabled);
 		if (!mi_cfg->fod_hbm_enabled) {
 			if (mi_cfg->hbm_51_ctrl_flag && priv_info) {
 				/* restore last backlight value when hbm off */
@@ -4078,6 +4136,7 @@ int dsi_panel_set_disp_param(struct dsi_panel *panel, u32 param)
 					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_MI_VI_SETTING_LOW);
 			}
 			rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_MI_HBM_OFF);
+			pr_info("hbm off\n");
 			mi_cfg->dimming_state = STATE_DIM_RESTORE;
 			if (is_thermal_call)
 				pr_info("thermal set hbm limit, hbm off\n");
@@ -4233,6 +4292,7 @@ int dsi_panel_set_disp_param(struct dsi_panel *panel, u32 param)
 			if (mi_cfg->dc_type == 1)
 				rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_MI_CRC_OFF);
 			mi_cfg->fod_hbm_enabled = true;
+			mi_cfg->fod_to_nolp = false;
 			mi_cfg->dimming_state = STATE_DIM_BLOCK;
 		}
 		break;
@@ -4265,10 +4325,16 @@ int dsi_panel_set_disp_param(struct dsi_panel *panel, u32 param)
 					if (cmds && count >= mi_cfg->fod_off_51_index) {
 						tx_buf = (u8 *)cmds[mi_cfg->fod_off_51_index].msg.tx_buf;
 						if (tx_buf && tx_buf[0] == 0x51) {
-							tx_buf[1] = (mi_cfg->last_bl_level >> 8) & 0x07;
-							tx_buf[2] = mi_cfg->last_bl_level & 0xff;
+							if (mi_cfg->layer_fod_unlock_success && !mi_cfg->last_bl_level) {
+								pr_err("fod hbm off, restore last bl: %d\n", mi_cfg->last_nonzero_bl_level);
+								tx_buf[1] = (mi_cfg->last_nonzero_bl_level >> 8) & 0x07;
+								tx_buf[2] = mi_cfg->last_nonzero_bl_level & 0xff;
+							} else {
+								tx_buf[1] = (mi_cfg->last_bl_level >> 8) & 0x07;
+								tx_buf[2] = mi_cfg->last_bl_level & 0xff;
+							}
 							pr_info("DSI_CMD_SET_MI_HBM_FOD_OFF 0x%02X = 0x%02X 0x%02X\n",
-								tx_buf[0], tx_buf[1], tx_buf[2]);
+									tx_buf[0], tx_buf[1], tx_buf[2]);
 						} else {
 							if (tx_buf)
 								pr_err("tx_buf[0] = 0x%02X, check 0x51 index\n", tx_buf[0]);
@@ -4353,9 +4419,13 @@ int dsi_panel_set_disp_param(struct dsi_panel *panel, u32 param)
 		pr_info("Fod fingerprint unlock fail\n");
 		mi_cfg->sysfs_fod_unlock_success = false;
 		mi_cfg->into_aod_pending = false;
+		if(mi_cfg->local_hbm_enabled){
+			rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_MI_FOD_LHBM_OFF);
+			mi_cfg->local_hbm_cur_status = false;
+		}
 		if (panel->power_mode == SDE_MODE_DPMS_LP1 ||
 				panel->power_mode == SDE_MODE_DPMS_LP2) {
-			cancel_delayed_work_sync(&mi_cfg->enter_aod_delayed_work);
+			cancel_delayed_work(&mi_cfg->enter_aod_delayed_work);
 			if (mi_cfg->layer_fod_unlock_success) {
 				pr_info("layer_fod_unlock_success is true, skip into aod mode\n");
 			} else {
@@ -4574,8 +4644,12 @@ int dsi_panel_set_disp_param(struct dsi_panel *panel, u32 param)
 		panel->mi_cfg.smart_fps_restore = true;
 		break;
 	case DISPPARAM_GIR_ON:
-		pr_info("request gir on\n");
-		mi_cfg->request_gir_status = true;
+		if (panel->mi_cfg.panel_id == 0x4C334100420200 && panel->mi_cfg.in_aod) {
+			DSI_INFO("In AOD, skip gir on \n");
+		} else {
+			pr_info("request gir on\n");
+			mi_cfg->request_gir_status = true;
+		}
 		break;
 	case DISPPARAM_GIR_OFF:
 		pr_info("request gir off\n");
