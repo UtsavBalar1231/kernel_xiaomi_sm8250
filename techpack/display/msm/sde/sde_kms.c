@@ -3970,3 +3970,14 @@ int sde_kms_handle_recovery(struct drm_encoder *encoder)
 	SDE_EVT32(DRMID(encoder), MSM_ENC_ACTIVE_REGION);
 	return sde_encoder_wait_for_event(encoder, MSM_ENC_ACTIVE_REGION);
 }
+
+void sde_kms_kickoff_count(struct sde_kms *sde_kms)
+{
+	int i;
+	struct dsi_display *display = NULL;
+
+	if (sde_kms != NULL) {
+		for (i = 0; i < sde_kms->dsi_display_count; ++i)
+			display = sde_kms->dsi_displays[i];
+	}
+}
