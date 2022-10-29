@@ -2487,7 +2487,7 @@ static void smblib_check_input_status(struct smb_charger *chg)
 	if ((input_present & INPUT_PRESENT_DC
 			|| input_present & INPUT_PRESENT_USB)
 				&& !off_charge_flag
-				&& (vbat_uv <= CUTOFF_VOL_THR)) {
+				&& (vbat_uv <= (CUTOFF_VOL_THR - 200))) {
 		chg->report_input_absent = true;
 		power_supply_changed(chg->batt_psy);
 	}
@@ -8975,6 +8975,7 @@ int smblib_get_adapter_power_max(struct smb_charger *chg)
 			rc = power_supply_get_property(chg->usb_psy,
 						POWER_SUPPLY_PROP_APDO_MAX, &pval);
 			apdo_max = pval.intval;
+			pr_info("apdo_max:%d\n", apdo_max);
 
 			if (apdo_max == 65)
 				return APDO_MAX_65W; /* only for J1 65W adapter */
@@ -11505,18 +11506,19 @@ static int smblib_dynamic_recharge_vbat(struct smb_charger *chg)
 	} else
 		return 0;
 
-	rc = power_supply_set_property(chg->batt_psy,
-			POWER_SUPPLY_PROP_RECHARGE_VBAT,
-			&val);
-	if (rc < 0) {
-		dev_err(chg->dev, "Couldn't set POWER_SUPPLY_PROP_CHARGER_TEMP_MAX rc=%d\n",
-				rc);
-		return -EINVAL;
+	if (chg->batt_psy) {
+		rc = power_supply_set_property(chg->batt_psy,
+				POWER_SUPPLY_PROP_RECHARGE_VBAT,
+				&val);
+		if (rc < 0) {
+			dev_err(chg->dev, "Couldn't set POWER_SUPPLY_PROP_CHARGER_TEMP_MAX rc=%d\n",
+					rc);
+			return -EINVAL;
+		}
 	}
 
 	return 0;
 }
-
 
 static void batt_update_work(struct work_struct *work)
 {

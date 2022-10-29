@@ -28,6 +28,19 @@ config QPNP_SMB5
 	  VBUS and VCONN regulators are registered for supporting OTG,
 	  and powered Type-C cables respectively.
 
+config QPNP_SMB5_DAGU
+	tristate "SMB5 Battery Charger"
+	depends on MFD_SPMI_PMIC
+	help
+	  Say Y to enables support for the SMB5 charging peripheral.
+	  The QPNP SMB5 charger driver supports the charger peripheral
+	  present in the chip.
+	  The power supply framework is used to communicate battery and
+	  usb properties to userspace and other driver consumers such
+	  as fuel gauge, USB, and USB-PD.
+	  VBUS and VCONN regulators are registered for supporting OTG,
+	  and powered Type-C cables respectively.
+
 config QPNP_SMB5_PSYCHE
 	tristate "SMB5 Battery Charger"
 	depends on MFD_SPMI_PMIC
@@ -228,6 +241,11 @@ config FUEL_GAUGE_BQ27Z561_MUNCH
           Say Y to enable support for TI bq27z561 fuel gauge driver
 
 config DUAL_FUEL_GAUGE_BQ27Z561
+	tristate "TI bq27z561 battery gauge driver"
+	help
+	  Say Y to enable support for TI bq27z561 fuel gauge driver
+
+config DUAL_FUEL_GAUGE_BQ27Z561_DAGU
 	tristate "TI bq27z561 battery gauge driver"
 	help
 	  Say Y to enable support for TI bq27z561 fuel gauge driver

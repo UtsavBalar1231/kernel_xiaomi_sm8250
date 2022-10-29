@@ -17,6 +17,8 @@
 #define STEP_CHG_VOTER		"STEP_CHG_VOTER"
 #define STEP_BMS_CHG_VOTER	"STEP_BMS_CHG_VOTER"
 #define JEITA_VOTER		"JEITA_VOTER"
+int cv_count = 0;
+int cv_fv_state = 0;
 #define is_between(left, right, value) \
 		(((left) >= (right) && (left) >= (value) \
 			&& (value) >= (right)) \
@@ -584,7 +586,7 @@ static int get_val(struct range_data *range, int hysteresis, int current_index,
 #define TAPERED_STEP_SOC_FCC_80_33W		4000000 /* 4000ma */
 #define TAPERED_STEP_SOC_FCC_70_33W		5500000 /* 5500ma */
 
-#define TAPERED_STEP_CHG_FCC_REDUCTION_STEP_MA		300000 /* 100 mA */
+#define TAPERED_STEP_CHG_FCC_REDUCTION_STEP_MA		50000 /* 100 mA */
 static void taper_fcc_step_chg(struct step_chg_info *chip, int index,
 					int current_voltage)
 {
@@ -602,7 +604,7 @@ static void taper_fcc_step_chg(struct step_chg_info *chip, int index,
 	current_fcc = get_effective_result(chip->fcc_votable);
 	target_fcc = chip->step_chg_config->fcc_cfg[index].value;
 
-	/*if (pps_max_watts >= 40) {// for 67w pd
+	if (pps_max_watts >= 40) {// for 67w pd
 		if (pval.intval>= TAPERED_STEP_SOC_90 && target_fcc >= TAPERED_STEP_SOC_FCC_90_67W)
 			target_fcc = TAPERED_STEP_SOC_FCC_90_67W;
 		else if (pval.intval>= TAPERED_STEP_SOC_80 && target_fcc >= TAPERED_STEP_SOC_FCC_80_67W)
@@ -618,7 +620,7 @@ static void taper_fcc_step_chg(struct step_chg_info *chip, int index,
 			target_fcc = TAPERED_STEP_SOC_FCC_80_33W;
 		else if (pval.intval>= TAPERED_STEP_SOC_70 && target_fcc >= TAPERED_STEP_SOC_FCC_70_33W)
 			target_fcc = TAPERED_STEP_SOC_FCC_70_33W;
-	}*/
+	}
 	if (index == 0) {
 		vote(chip->fcc_votable, STEP_CHG_VOTER, true, target_fcc);
 	} else if (current_voltage >
@@ -651,12 +653,15 @@ static void taper_fcc_step_chg(struct step_chg_info *chip, int index,
 		pr_err("fcc_votable_CV1 %d-%d-%d\n",current_fcc, chip->step_chg_config->fcc_cfg[index - 1].value,current_debug);
 	}
 }
-
+#define FFC_STEP_CV		4490000 /* 4490mv */
+#define FFC_MAX_VOLT	4475000 /* 4475mv */
+#define CV_RISE_VOLT_DELAY	3 /* delay 10s */
 static int handle_step_chg_config(struct step_chg_info *chip)
 {
 	union power_supply_propval pval = {0, };
 	int rc = 0, fcc_ua = 0, current_index, fv_uv = 0, update_now = 0;
 	u64 elapsed_us;
+	int bms_uv = 0;
 	static int usb_present;
 
 	if (!is_usb_available(chip))
@@ -740,9 +745,31 @@ static int handle_step_chg_config(struct step_chg_info *chip)
 		chip->step_chg_config->param.prop_name, pval.intval,
 		get_client_vote(chip->fcc_votable, STEP_CHG_VOTER),
 		chip->taper_fcc);
-
+	rc = power_supply_get_property(chip->bms_psy,
+		POWER_SUPPLY_PROP_VOLTAGE_NOW, &pval);
+	bms_uv = pval.intval;
 	/*bq27z561 get voltage max and current max*/
+	rc = get_effective_result(chip->fv_votable);
 	if (chip->use_bq_gauge) {
+		rc = power_supply_get_property(chip->bms_psy,
+				POWER_SUPPLY_PROP_VOLTAGE_MAX, &pval);
+		if (cv_fv_state && cv_count < CV_RISE_VOLT_DELAY) {
+			cv_count++;//delay 10s
+			pr_err("cv_fv_state = %d-%d,bms_uv=%d\n", cv_fv_state, cv_count, bms_uv);
+		}
+		if (cv_count >= CV_RISE_VOLT_DELAY && bms_uv < FFC_MAX_VOLT) {
+			pval.intval = FFC_STEP_CV;
+			pr_err("cv_fv_state = %d-%d,bms_uv=%d\n", cv_fv_state, cv_count, bms_uv);
+		} else if (cv_count >= CV_RISE_VOLT_DELAY && bms_uv >= FFC_MAX_VOLT) {
+			cv_fv_state = 0;
+			cv_count = 0;
+		}
+		if (!cv_fv_state)
+			cv_count = 0;
+		if (rc >= 0 && chip->fv_votable && pval.intval > 0)
+			vote(chip->fv_votable, STEP_BMS_CHG_VOTER, true, pval.intval);
+		fv_uv = pval.intval;
+
 		rc = power_supply_get_property(chip->bms_psy,
 				POWER_SUPPLY_PROP_CURRENT_MAX, &pval);
 		if (rc >= 0 && chip->fcc_votable && pval.intval > 0)
@@ -1054,6 +1081,10 @@ static int handle_jeita(struct step_chg_info *chip)
 	}
 
 set_jeita_fv:
+	if (cv_fv_state && cv_count >= CV_RISE_VOLT_DELAY) {
+		fv_uv = FFC_STEP_CV;
+		pr_err("cv_fv_state = %d-%d-%d\n", cv_fv_state, cv_count, fv_uv);
+	}
 	vote(chip->fv_votable, JEITA_VOTER, fv_uv ? true : false, fv_uv);
 
 update_time:
@@ -1095,41 +1126,6 @@ static int handle_battery_insertion(struct step_chg_info *chip)
 	return rc;
 }
 
-static int handle_ffc_termination(struct step_chg_info *chip)
-{
-	int rc;
-	union power_supply_propval pval = {0, };
-
-	rc = power_supply_get_property(chip->bms_psy,
-				POWER_SUPPLY_PROP_FASTCHARGE_MODE, &pval);
-	if (rc < 0) {
-		pr_err("Couldn't write fastcharge mode:%d\n", rc);
-		goto set_term;
-	}
-
-	if (pval.intval) {
-		rc = power_supply_get_property(chip->bms_psy,
-				POWER_SUPPLY_PROP_FFC_TERMINATION_CURRENT, &pval);
-		if (rc < 0) {
-			pr_err("Couldn't ffc termination current:%d\n", rc);
-			goto set_term;
-		}
-
-	} else {
-		 pval.intval = -200;
-	}
-
-set_term:
-		rc = power_supply_set_property(chip->usb_psy,
-				POWER_SUPPLY_PROP_FFC_TERMINATION_BBC, &pval);
-		if (rc < 0) {
-			pr_err("Couldn't ffc termination current:%d\n", rc);
-		}
-
-		return rc;
-
-}
-
 static void status_change_work(struct work_struct *work)
 {
 	struct step_chg_info *chip = container_of(work,
@@ -1150,10 +1146,6 @@ static void status_change_work(struct work_struct *work)
 	rc = handle_step_chg_config(chip);
 	if (rc < 0)
 		pr_err("Couldn't handle step rc = %d\n", rc);
-
-	rc = handle_ffc_termination(chip);
-	if (rc < 0)
-		pr_err("Couldn't handle ffc termination rc = %d\n", rc);
 
 	/* Remove stale votes on USB removal */
 	if (is_usb_available(chip)) {
