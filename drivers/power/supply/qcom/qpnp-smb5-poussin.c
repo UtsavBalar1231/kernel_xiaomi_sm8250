@@ -21,7 +21,7 @@
 #include <linux/pmic-voter.h>
 #include <linux/usb/typec.h>
 #include "smb5-reg.h"
-#include "smb5-lib-munch.h"
+#include "smb5-lib.h"
 #include "step-chg-jeita.h"
 #include "schgm-flash.h"
 
@@ -1458,8 +1458,6 @@ static enum power_supply_property smb5_usb_props[] = {
 	POWER_SUPPLY_PROP_POWER_MAX,
 	POWER_SUPPLY_PROP_CHARGER_STATUS,
 	POWER_SUPPLY_PROP_INPUT_VOLTAGE_SETTLED,
-	POWER_SUPPLY_PROP_FFC_TERMINATION_BBC,
-	POWER_SUPPLY_PROP_MTBF_CURRENT,
 };
 
 static int smb5_usb_get_prop(struct power_supply *psy,
@@ -1675,9 +1673,6 @@ static int smb5_usb_get_prop(struct power_supply *psy,
 				val->intval = (buff[1] << 8 | buff[0]) * 1038;
 		}
 		break;
-	case POWER_SUPPLY_PROP_MTBF_CURRENT:
-		val->intval = chg->mtbf_current;
-		break;
 	default:
 		pr_debug("get prop %d is not supported in usb\n", psp);
 		rc = -EINVAL;
@@ -1692,7 +1687,6 @@ static int smb5_usb_get_prop(struct power_supply *psy,
 	return 0;
 }
 
-extern int smb5_config_iterm(struct smb_charger *chg, int hi_thresh, int low_thresh);
 #define MIN_THERMAL_VOTE_UA	500000
 static int smb5_usb_set_prop(struct power_supply *psy,
 		enum power_supply_property psp,
@@ -1808,12 +1802,6 @@ static int smb5_usb_set_prop(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_APDO_MAX:
 		chg->apdo_max = val->intval;
 		break;
-	case POWER_SUPPLY_PROP_FFC_TERMINATION_BBC:
-		smb5_config_iterm(chg, val->intval, 50);
-		break;
-	case POWER_SUPPLY_PROP_MTBF_CURRENT:
-		chg->mtbf_current = val->intval;
-		break;
 	default:
 		pr_debug("set prop %d is not supported\n", psp);
 		rc = -EINVAL;
@@ -1838,8 +1826,6 @@ static int smb5_usb_prop_is_writeable(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_ADAPTER_CC_MODE:
 	case POWER_SUPPLY_PROP_APSD_RERUN:
 	case POWER_SUPPLY_PROP_APDO_MAX:
-	case POWER_SUPPLY_PROP_FFC_TERMINATION_BBC:
-	case POWER_SUPPLY_PROP_MTBF_CURRENT:
 		return 1;
 	default:
 		break;
@@ -3384,9 +3370,9 @@ static int smb5_batt_prop_is_writeable(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_WARM_FAKE_CHARGING:
 	case POWER_SUPPLY_PROP_RECHARGE_VBAT:
 	case POWER_SUPPLY_PROP_NIGHT_CHARGING:
-//#ifdef CONFIG_FACTORY_BUILD
+#ifdef CONFIG_FACTORY_BUILD
 	case POWER_SUPPLY_PROP_CHARGE_CONTROL_LIMIT:
-//#endif
+#endif
 		return 1;
 	default:
 		break;
@@ -4412,8 +4398,6 @@ static int smb5_determine_initial_status(struct smb5 *chip)
 	struct smb_charger *chg = &chip->chg;
 	union power_supply_propval val;
 	int rc;
-	u8 stat;
-	int retries = 0;
 
 	rc = smblib_get_prop_usb_present(chg, &val);
 	if (rc < 0) {
@@ -4421,27 +4405,6 @@ static int smb5_determine_initial_status(struct smb5 *chip)
 		return rc;
 	}
 	chg->early_usb_attach = val.intval;
-
-	if (!val.intval) {
-		while (1) {
-			rc = smblib_read(chg, TYPE_C_SRC_STATUS_REG, &stat);
-			if (rc < 0) {
-				pr_err("Couldn't read TYPE_C_MISC_STATUS_REG rc=%d\n",
-					rc);
-				return 0;
-			}
-
-			pr_err("TYPE_C_SRC_STATUS_REG = 0x%02x\n", stat);
-
-			if (stat & AUDIO_ACCESS_RA_RA_BIT)
-				break;
-
-			msleep(20);
-
-			if (retries++ >= 15)
-				break;
-		}
-	}
 
 	rc = smblib_get_prop_dc_present(chg, &val);
 	if (rc < 0) {

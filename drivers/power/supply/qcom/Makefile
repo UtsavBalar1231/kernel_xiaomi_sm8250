@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-only
 obj-$(CONFIG_SMB1360_CHARGER_FG)	+= smb1360-charger-fg.o
 obj-$(CONFIG_QPNP_SMB5)			+= step-chg-jeita.o battery.o qpnp-smb5.o smb5-lib.o pmic-voter.o storm-watch.o schgm-flash.o
+obj-$(CONFIG_QPNP_SMB5_DAGU)		+= step-chg-jeita-dagu.o battery.o qpnp-smb5-dagu.o smb5-lib-dagu.o pmic-voter.o storm-watch.o schgm-flash.o
 obj-$(CONFIG_QPNP_SMB5_PSYCHE)		+= step-chg-jeita-psyche.o battery.o qpnp-smb5-psyche.o smb5-lib-psyche.o pmic-voter.o storm-watch.o schgm-flash.o
 obj-$(CONFIG_QPNP_SMB5_POUSSIN)		+= step-chg-jeita-poussin.o battery.o qpnp-smb5-poussin.o smb5-lib-poussin.o pmic-voter.o storm-watch.o schgm-flash.o
 obj-$(CONFIG_QPNP_SMB5_MUNCH)		+= step-chg-jeita-munch.o battery.o qpnp-smb5-munch.o smb5-lib-munch.o pmic-voter.o storm-watch.o schgm-flash.o
@@ -21,6 +22,7 @@ obj-$(CONFIG_FUEL_GAUGE_BQ27Z561_PSYCHE)	+= bq27z561_fg_psyche.o
 obj-$(CONFIG_FUEL_GAUGE_BQ27Z561_POUSSIN)	+= bq27z561_fg_poussin.o
 obj-$(CONFIG_FUEL_GAUGE_BQ27Z561_MUNCH)	+= bq27z561_fg_munch.o
 obj-$(CONFIG_DUAL_FUEL_GAUGE_BQ27Z561)	+= bq27z561_fg.o dual_fuel_gauge_class.o
+obj-$(CONFIG_DUAL_FUEL_GAUGE_BQ27Z561_DAGU)	+= bq27z561_fg_dagu.o dual_fuel_gauge_class_dagu.o
 obj-$(CONFIG_IDT_P9415)			+= idtp9415.o
 obj-$(CONFIG_IDT_P9418)			+= idtp9418.o
 obj-$(CONFIG_RX1619_TRIM)		+= rx1619_trim.o
