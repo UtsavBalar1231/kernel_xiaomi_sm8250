@@ -46,6 +46,9 @@
 #include "dbm.h"
 #include "debug.h"
 #include "xhci.h"
+#ifdef CONFIG_BOARD_DAGU
+#include "../pd/ps5169.h"
+#endif
 
 #define SDP_CONNETION_CHECK_TIME 10000 /* in ms */
 
@@ -4324,6 +4327,10 @@ static void msm_dwc3_perf_vote_work(struct work_struct *w)
 			msecs_to_jiffies(1000 * PM_QOS_SAMPLE_SEC));
 }
 
+#ifdef CONFIG_BOARD_DAGU
+extern bool has_dp_flag;
+#endif
+
 #define VBUS_REG_CHECK_DELAY	(msecs_to_jiffies(1000))
 
 /**
@@ -4441,6 +4448,12 @@ static int dwc3_otg_start_host(struct dwc3_msm *mdwc, int on)
 		msm_dwc3_perf_vote_update(mdwc, true);
 		schedule_delayed_work(&mdwc->perf_vote_work,
 				msecs_to_jiffies(1000 * PM_QOS_SAMPLE_SEC));
+
+#ifdef CONFIG_BOARD_DAGU
+		if (!has_dp_flag)
+			ps5169_cfg_usb();
+#endif
+
 	} else {
 		dev_dbg(mdwc->dev, "%s: turn off host\n", __func__);
 
@@ -4560,6 +4573,12 @@ static int dwc3_otg_start_peripheral(struct dwc3_msm *mdwc, int on)
 		msm_dwc3_perf_vote_update(mdwc, true);
 		schedule_delayed_work(&mdwc->perf_vote_work,
 				msecs_to_jiffies(1000 * PM_QOS_SAMPLE_SEC));
+
+#ifdef CONFIG_BOARD_DAGU
+		if (!has_dp_flag)
+			ps5169_cfg_usb();
+#endif
+
 	} else {
 		dev_dbg(mdwc->dev, "%s: turn off gadget %s\n",
 					__func__, dwc->gadget.name);
