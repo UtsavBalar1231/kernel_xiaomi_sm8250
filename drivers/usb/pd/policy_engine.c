@@ -354,6 +354,13 @@ static void *usbpd_ipc_log;
 #define MAX_FIXED_PDO_MA		2000
 #define MAX_NON_COMPLIANT_PPS_UA		2000000
 
+#undef dev_dbg
+#define dev_dbg dev_err
+#undef pr_debug
+#define pr_debug pr_err
+#undef pr_info
+#define pr_info pr_err
+
 static int min_sink_current = 900;
 module_param(min_sink_current, int, 0600);
 
@@ -778,6 +785,7 @@ static inline void pd_reset_protocol(struct usbpd *pd)
 	memset(pd->rx_msgid, -1, sizeof(pd->rx_msgid));
 	memset(pd->tx_msgid, 0, sizeof(pd->tx_msgid));
 	pd->send_request = false;
+	pd->send_get_status = false;
 	pd->send_pr_swap = false;
 	pd->send_dr_swap = false;
 }
@@ -1058,9 +1066,14 @@ static int pd_eval_src_caps(struct usbpd *pd)
 	/* Select thr first PDO for zimi adapter*/
 	if (pd->batt_2s && pd->adapter_id == 0xA819)
 		pd_select_pdo(pd, 2, 0, 0);
-	else if (pd->request_reject == 1)
-		;
-	else
+	else if (pd->request_reject == 1) {
+		if (pd->rdo == 0) {
+			usbpd_err(&pd->dev, "Invalid rdo, first pdo %08x\n", first_pdo);
+			pd_select_pdo(pd, 1, 0, 0);
+		}
+		usbpd_err(&pd->dev, "request reject setted!\n");
+		pd_select_pdo(pd, 1, 0, 0);
+	} else
 		pd_select_pdo(pd, 1, 0, 0);
 
 	return 0;
@@ -1077,6 +1090,7 @@ static void pd_send_hard_reset(struct usbpd *pd)
 	pd_phy_signal(HARD_RESET_SIG);
 	pd->in_pr_swap = false;
 	pd->pd_connected = false;
+	pd->request_reject = false;
 	reset_vdm_state(pd);
 	power_supply_set_property(pd->usb_psy, POWER_SUPPLY_PROP_PR_SWAP, &val);
 }
@@ -2671,7 +2685,10 @@ static void enter_state_hard_reset(struct usbpd *pd)
 
 	/* are we still connected? */
 	if (pd->typec_mode == POWER_SUPPLY_TYPEC_NONE) {
+		usbpd_err(&pd->dev, "typec mode is none when hard reset trigger!\n");
 		pd->current_pr = PR_NONE;
+		/* Reset hard reset count */
+		pd->hard_reset_count = 0;
 		kick_sm(pd, 0);
 		return;
 	}
@@ -2875,7 +2892,7 @@ static void handle_state_snk_wait_for_capabilities(struct usbpd *pd,
 	} else if (pd->hard_reset_count < 3) {
 		usbpd_set_state(pd, PE_SNK_HARD_RESET);
 	} else {
-		usbpd_dbg(&pd->dev, "Sink hard reset count exceeded, disabling PD\n");
+		usbpd_info(&pd->dev, "Sink hard reset count exceeded, disabling PD\n");
 
 		val.intval = 0;
 		power_supply_set_property(pd->usb_psy,
@@ -3671,6 +3688,7 @@ static void handle_disconnect(struct usbpd *pd)
 	pd->last_uv = 0;
 	pd->last_ua = 0;
 	pd->force_update = false;
+	pd->request_reject = false;
 	pd->peer_usb_comm = pd->peer_pr_swap = pd->peer_dr_swap = false;
 	memset(&pd->received_pdos, 0, sizeof(pd->received_pdos));
 	rx_msg_cleanup(pd);
@@ -5543,6 +5561,7 @@ static void usbpd_pdo_workfunc(struct work_struct *w)
 	union power_supply_propval val = {0};
 	int pps_max_watts = 0;
 	int pps_max_mwatt = 0;
+	int pps_max_update = 0;
 
 	for (i = 0; i < ARRAY_SIZE(pd->received_pdos); i++) {
 		u32 pdo = pd->received_pdos[i];
@@ -5569,7 +5588,11 @@ static void usbpd_pdo_workfunc(struct work_struct *w)
 					pd->is_support_2s = true;
 			}
 			if (pps_max_watts < max_volt * max_curr) {
-				pps_max_watts = max_volt * max_curr;
+				pps_max_update = 1;
+				if(max_volt >= 20000 && !pd->batt_2s)
+					pps_max_update = 0;
+				if(pps_max_update)
+					pps_max_watts = max_volt * max_curr;
 				if(pps_max_watts >120000000 && pps_max_watts < 130000000)
 					pps_max_watts = 120000000;
 				if (pps_max_watts < USBPD_WEAK_PPS_POWER) {
