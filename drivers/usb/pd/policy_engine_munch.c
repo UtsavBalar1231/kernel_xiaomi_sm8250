@@ -1293,13 +1293,6 @@ static void phy_msg_received(struct usbpd *pd, enum pd_sop_type sop,
 		return;
 	}
 
-	msg_type = PD_MSG_HDR_TYPE(header);
-	num_objs = PD_MSG_HDR_COUNT(header);
-	usbpd_dbg(&pd->dev, "%s type(%d) num_objs(%d)\n",
-				msg_to_string(msg_type, num_objs,
-				PD_MSG_HDR_IS_EXTENDED(header)),
-				msg_type, num_objs);
-
 	/* if MSGID already seen, discard */
 	if (PD_MSG_HDR_ID(header) == pd->rx_msgid[sop] &&
 			PD_MSG_HDR_TYPE(header) != MSG_SOFT_RESET) {
@@ -1324,12 +1317,12 @@ static void phy_msg_received(struct usbpd *pd, enum pd_sop_type sop,
 	if (PD_MSG_HDR_REV(header) < pd->spec_rev)
 		pd->spec_rev = PD_MSG_HDR_REV(header);
 
-	/*msg_type = PD_MSG_HDR_TYPE(header);
+	msg_type = PD_MSG_HDR_TYPE(header);
 	num_objs = PD_MSG_HDR_COUNT(header);
 	usbpd_dbg(&pd->dev, "%s type(%d) num_objs(%d)\n",
 			msg_to_string(msg_type, num_objs,
 				PD_MSG_HDR_IS_EXTENDED(header)),
-			msg_type, num_objs);*/
+			msg_type, num_objs);
 
 	if (!PD_MSG_HDR_IS_EXTENDED(header)) {
 		rx_msg = kzalloc(sizeof(*rx_msg) + len, GFP_ATOMIC);
@@ -5575,7 +5568,7 @@ static void usbpd_pdo_workfunc(struct work_struct *w)
 				if (max_volt >= 20000)
 					pd->is_support_2s = true;
 			}
-			if ((PD_APDO_MAX_VOLT(pdo) * 100 <= 11000) && pps_max_watts < max_volt * max_curr) {
+			if (pps_max_watts < max_volt * max_curr) {
 				pps_max_watts = max_volt * max_curr;
 				if(pps_max_watts >120000000 && pps_max_watts < 130000000)
 					pps_max_watts = 120000000;
@@ -5591,16 +5584,16 @@ static void usbpd_pdo_workfunc(struct work_struct *w)
 				(PD_SRC_PDO_TYPE(pdo) == PD_SRC_PDO_TYPE_AUGMENTED) ? "PPS" : "PD2.0",
 				max_volt, min_volt, max_curr);
 	}
-	//usbpd_err(&pd->dev, "huangrui add pps_max_watts[%d],pd->apdo_max:%d\n", pps_max_watts / 1000  / 1000,pd->apdo_max);
+
 	if (pd->verifed) {
 		pps_max_mwatt = pps_max_watts / 1000  / 1000;
-		//if (pps_max_mwatt != pd->apdo_max) {
-		pd->apdo_max = pps_max_mwatt;
-		val.intval = pps_max_mwatt;
-		power_supply_set_property(pd->usb_psy,
-				POWER_SUPPLY_PROP_APDO_MAX, &val);
-		usbpd_err(&pd->dev, "pps_max_watts[%d]\n", pps_max_mwatt);
-		//}
+		if (pps_max_mwatt != pd->apdo_max) {
+			pd->apdo_max = pps_max_mwatt;
+			val.intval = pps_max_mwatt;
+			power_supply_set_property(pd->usb_psy,
+					POWER_SUPPLY_PROP_APDO_MAX, &val);
+			usbpd_err(&pd->dev, "pps_max_watts[%d]\n", pps_max_mwatt);
+		}
 	}
 
 	if (pd->batt_2s) {
@@ -5952,4 +5945,3 @@ module_exit(usbpd_exit);
 
 MODULE_DESCRIPTION("USB Power Delivery Policy Engine");
 MODULE_LICENSE("GPL v2");
-
