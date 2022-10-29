@@ -464,6 +464,12 @@ config BOARD_CMI
 	help
 	  This enables support for Xiaomi MI 10 Pro.
 
+config BOARD_DAGU
+	bool "Dagu platform"
+	select BOARD_XIAOMI_SM8250
+	help
+	  This enables support for Xiaomi Pad 5 Pro 12.4.
+
 config BOARD_ELISH
 	bool "Elish platform"
 	select BOARD_XIAOMI_SM8250
