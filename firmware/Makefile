@@ -20,7 +20,10 @@ fw-external-y := $(subst $(quote),,$(CONFIG_EXTRA_FIRMWARE))
 # For the former two cases we want $(fw-shipped-y) and $(fw-shipped-m) to be
 # accurate. In the latter case it doesn't matter -- it'll use $(fw-shipped-all).
 # But be aware that the config file might not be included at all.
-fw-shipped-$(CONFIG_TOUCHSCREEN_ST_FTS_V521) += st_fts_j1.ftb st_fts_j2.ftb st_fts_j2_1.ftb st_fts_j2_2.ftb st_fts_j1s.ftb st_fts_j2s.ftb st_fts_j2s_default.ftb
+fw-shipped-$(CONFIG_TOUCHSCREEN_ST_FTS_V521) += st_fts_j1.ftb
+fw-shipped-$(CONFIG_TOUCHSCREEN_ST_FTS_V521) += st_fts_j2.ftb st_fts_j2_1.ftb st_fts_j2_2.ftb st_fts_j2_3.ftb
+fw-shipped-$(CONFIG_TOUCHSCREEN_ST_FTS_V521) += st_fts_j1s.ftb
+fw-shipped-$(CONFIG_TOUCHSCREEN_ST_FTS_V521) += st_fts_j2s.ftb st_fts_j2s_default.ftb
 fw-shipped-$(CONFIG_INPUT_PRESS_NDT) += ndt_fw.bin
 fw-shipped-$(CONFIG_TOUCHSCREEN_GOODIX_GTX8) += goodix_gt9886_cfg_J2.bin goodix_gt9886_fw_J2.bin
 fw-shipped-$(CONFIG_TOUCHSCREEN_ST_FTS_V521_SPI) += st_fts_l3a.ftb
