@@ -503,10 +503,20 @@ static inline bool dwc3_msm_is_dev_superspeed(struct dwc3_msm *mdwc)
 
 static inline bool dwc3_msm_is_superspeed(struct dwc3_msm *mdwc)
 {
-	if (mdwc->in_host_mode)
-		return dwc3_msm_is_host_superspeed(mdwc);
+	int ret = 0;
+	if(!mdwc) {
+		pr_err("the data is null \n");
+		return 0;
+	}
+	if (mdwc->in_host_mode) {
+		ret = dwc3_msm_is_host_superspeed(mdwc);
+		dev_info(mdwc->dev, "%s: host SS:%d.\n", __func__,ret);
+	} else {
+		ret =  dwc3_msm_is_dev_superspeed(mdwc);
+		dev_info(mdwc->dev, "%s: device SS:%d.\n", __func__, ret);
+	}
 
-	return dwc3_msm_is_dev_superspeed(mdwc);
+	return ret;
 }
 
 static int dwc3_msm_dbm_disable_updxfer(struct dwc3 *dwc, u8 usb_ep)
@@ -3580,6 +3590,26 @@ static ssize_t speed_store(struct device *dev, struct device_attribute *attr,
 }
 static DEVICE_ATTR_RW(speed);
 
+static ssize_t super_speed_show(struct device *dev,
+				struct device_attribute *attr,
+				char *buf)
+{
+	int ret = 0;
+	struct dwc3_msm *mdwc = dev_get_drvdata(dev);
+
+	ret = dwc3_msm_is_superspeed(mdwc);
+	pr_err("super speed value: %d \n", ret);
+	return snprintf(buf, PAGE_SIZE, "%s\n", ret ? "true" : "false");
+}
+
+static ssize_t super_speed_store(struct device *dev,
+				 struct device_attribute *attr,
+				 const char *buf, size_t count)
+{
+	return 0;
+}
+static DEVICE_ATTR_RW(super_speed);
+
 static ssize_t usb_compliance_mode_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
@@ -4108,6 +4138,7 @@ static int dwc3_msm_probe(struct platform_device *pdev)
 	device_create_file(&pdev->dev, &dev_attr_orientation);
 	device_create_file(&pdev->dev, &dev_attr_mode);
 	device_create_file(&pdev->dev, &dev_attr_speed);
+	device_create_file(&pdev->dev, &dev_attr_super_speed);
 	device_create_file(&pdev->dev, &dev_attr_usb_compliance_mode);
 	device_create_file(&pdev->dev, &dev_attr_bus_vote);
 
