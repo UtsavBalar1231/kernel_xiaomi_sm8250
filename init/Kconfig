@@ -103,6 +103,7 @@ config MIHW
 	default n
 	select BINDER_OPT
 	select CAM_RECLAIM
+	select LAST_TOUCH_EVENTS
 	select MI_FRAGMENTION
 	select MIGT
 	select MILLET
