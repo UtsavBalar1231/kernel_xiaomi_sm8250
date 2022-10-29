@@ -1682,3 +1682,10 @@ endif
 if ARCH_QCOM
 source "techpack/Kconfig"
 endif
+
+config HWCONF_MANAGER
+	bool "Hardware configuration and monitor information"
+	default y if BOARD_XIAOMI
+	help
+	  It provides all kinds of components configuration information and
+	  monitor values.
