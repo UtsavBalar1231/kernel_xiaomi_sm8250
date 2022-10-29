@@ -29,7 +29,7 @@
 #include <asoc/wcd-mbhc-v2-api.h>
 #define CONFIG_AUDIO_UART_DEBUG
 
-#if defined(CONFIG_TARGET_PRODUCT_PSYCHE) || defined(CONFIG_TARGET_PRODUCT_MUNCH) && defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_TARGET_PRODUCT_PSYCHE) || defined(CONFIG_TARGET_PRODUCT_MUNCH) || defined(CONFIG_TARGET_PRODUCT_DAGU) && defined(CONFIG_DEBUG_FS)
 #include <linux/debugfs.h>
 
 #define HEADSET_STATUS_RECORD_INDEX_PLUGIN_HEADSET (3)
@@ -82,13 +82,13 @@ void wcd_mbhc_jack_report(struct wcd_mbhc *mbhc,
 			  struct snd_soc_jack *jack, int status, int mask)
 {
 	snd_soc_jack_report(jack, status, mask);
-#if defined(CONFIG_TARGET_PRODUCT_PSYCHE) || defined(CONFIG_TARGET_PRODUCT_MUNCH) && defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_TARGET_PRODUCT_PSYCHE) || defined(CONFIG_TARGET_PRODUCT_MUNCH) || defined(CONFIG_TARGET_PRODUCT_DAGU) && defined(CONFIG_DEBUG_FS)
 	add_headset_event(mbhc->hph_status, mask, jack->status);
 #endif
 }
 EXPORT_SYMBOL(wcd_mbhc_jack_report);
 
-#if defined(CONFIG_TARGET_PRODUCT_PSYCHE) || defined(CONFIG_TARGET_PRODUCT_MUNCH) && defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_TARGET_PRODUCT_PSYCHE) || defined(CONFIG_TARGET_PRODUCT_MUNCH) || defined(CONFIG_TARGET_PRODUCT_DAGU) && defined(CONFIG_DEBUG_FS)
 static void add_headset_event(int status, int mask, int jackstatus) {
 	if (status == HEADSET_STATUS_RECORD_INDEX_PLUGOUT) {
 		headset_status[4] = maxF(headset_status[4], HEADSET_EVENT_PLUGOUT_HEADPHONE);
@@ -1808,6 +1808,7 @@ static int wcd_mbhc_usbc_ana_event_handler(struct notifier_block *nb,
 {
 	struct wcd_mbhc *mbhc = container_of(nb, struct wcd_mbhc, fsa_nb);
 	struct wcd_mbhc_config *config = mbhc->mbhc_cfg;
+	u8 det_status = 0;
 
 	if (!mbhc)
 		return -EINVAL;
@@ -1826,6 +1827,27 @@ static int wcd_mbhc_usbc_ana_event_handler(struct notifier_block *nb,
 		/* insertion detected, enable L_DET_EN */
 		WCD_MBHC_REG_UPDATE_BITS(WCD_MBHC_L_DET_EN, 0);
 		WCD_MBHC_REG_UPDATE_BITS(WCD_MBHC_L_DET_EN, 1);
+
+		WCD_MBHC_REG_READ(WCD_MBHC_L_DET_EN, det_status);
+		pr_debug("%s: det_status = %x\n", __func__, det_status);
+	} else if (mode == POWER_SUPPLY_TYPEC_NONE && mbhc->current_plug == MBHC_PLUG_TYPE_NONE) {
+		mbhc->hs_detect_work_stop = true;
+		/* Disable HW FSM */
+		WCD_MBHC_REG_UPDATE_BITS(WCD_MBHC_FSM_EN, 0);
+		WCD_MBHC_REG_UPDATE_BITS(WCD_MBHC_BTN_ISRC_CTL, 0);
+		mbhc->extn_cable_hph_rem = false;
+
+		WCD_MBHC_REG_UPDATE_BITS(WCD_MBHC_L_DET_EN, 0);
+		if (mbhc->mbhc_cb->clk_setup)
+		    mbhc->mbhc_cb->clk_setup(mbhc->component, false);
+		WCD_MBHC_REG_UPDATE_BITS(WCD_MBHC_MECH_DETECTION_TYPE, 1);
+
+		WCD_MBHC_REG_READ(WCD_MBHC_L_DET_EN, det_status);
+		pr_debug("%s: det_status = %x\n", __func__, det_status);
+#ifdef CONFIG_AUDIO_UART_DEBUG
+		msm_cdc_pinctrl_select_sleep_state(config->uart_audio_switch_gpio_p);
+		dev_dbg(mbhc->component->dev, "enable uart\n");
+#endif
 	} else {
 #ifdef CONFIG_AUDIO_UART_DEBUG
 		msm_cdc_pinctrl_select_sleep_state(config->uart_audio_switch_gpio_p);
@@ -1998,7 +2020,7 @@ int wcd_mbhc_init(struct wcd_mbhc *mbhc, struct snd_soc_component *component,
 	const char *hph_thre = "qcom,msm-mbhc-hs-mic-min-threshold-mv";
 
 	pr_debug("%s: enter\n", __func__);
-#if defined(CONFIG_TARGET_PRODUCT_PSYCHE) || defined(CONFIG_TARGET_PRODUCT_MUNCH) && defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_TARGET_PRODUCT_PSYCHE) || defined(CONFIG_TARGET_PRODUCT_MUNCH) || defined(CONFIG_TARGET_PRODUCT_DAGU) && defined(CONFIG_DEBUG_FS)
 	mbhc_debugfs_dir = debugfs_create_dir(DEBUGFS_DIR_NAME, NULL);
 	if (!IS_ERR(mbhc_debugfs_dir)) {
 		debugfs_create_file(DEBUGFS_HEADSET_STATUS_FILE_NAME, 0666,
