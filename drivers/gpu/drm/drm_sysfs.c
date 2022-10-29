@@ -455,19 +455,6 @@ static ssize_t disp_pcc_store(struct device *device,
 		&color_transform_pcc_cfg.b.b);
 
 	ret = 0;
-	pr_info("set pcc r_c=%d r_r=%d r_g=%d r_b=%d g_c=%d g_r=%d g_g=%d g_b=%d b_c=%d b_r=%d b_g=%d b_b=%d",
-		color_transform_pcc_cfg.r.c,
-		color_transform_pcc_cfg.r.r,
-		color_transform_pcc_cfg.r.g,
-		color_transform_pcc_cfg.r.b,
-		color_transform_pcc_cfg.g.c,
-		color_transform_pcc_cfg.g.r,
-		color_transform_pcc_cfg.g.g,
-		color_transform_pcc_cfg.g.b,
-		color_transform_pcc_cfg.b.c,
-		color_transform_pcc_cfg.b.r,
-		color_transform_pcc_cfg.b.g,
-		color_transform_pcc_cfg.b.b);
 
 	return ret ? ret : count;
 }
