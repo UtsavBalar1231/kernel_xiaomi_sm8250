@@ -48,6 +48,8 @@ int dsi_display_read_gamma_param(struct drm_connector *connector);
 ssize_t dsi_display_print_gamma_param(struct drm_connector *connector,
 				char *buf);
 
+int dsi_display_count_set(struct drm_connector *connector, const char *buf);
+ssize_t dsi_display_count_get(struct drm_connector *connector,	char *buf);
 ssize_t dsi_display_fod_get(struct drm_connector *connector, char *buf);
 
 ssize_t complete_commit_time_get(struct drm_connector *connector, char *buf);
