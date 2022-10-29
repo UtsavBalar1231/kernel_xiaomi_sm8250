@@ -155,11 +155,11 @@ do {											\
 #define bq_info(fmt, ...)								\
 do {											\
 	if (bq->mode == BQ25970_ROLE_MASTER)						\
-		printk(KERN_ERR "[bq2597x-MASTER]:%s:" fmt, __func__, ##__VA_ARGS__);	\
+		printk(KERN_INFO "[bq2597x-MASTER]:%s:" fmt, __func__, ##__VA_ARGS__);	\
 	else if (bq->mode == BQ25970_ROLE_SLAVE)					\
-		printk(KERN_ERR "[bq2597x-SLAVE]:%s:" fmt, __func__, ##__VA_ARGS__);	\
+		printk(KERN_INFO "[bq2597x-SLAVE]:%s:" fmt, __func__, ##__VA_ARGS__);	\
 	else										\
-		printk(KERN_ERR "[bq2597x-STANDALONE]:%s:" fmt, __func__, ##__VA_ARGS__);\
+		printk(KERN_INFO "[bq2597x-STANDALONE]:%s:" fmt, __func__, ##__VA_ARGS__);\
 } while (0);
 
 #define bq_dbg(fmt, ...)								\
@@ -1965,6 +1965,7 @@ static enum power_supply_property bq2597x_charger_props[] = {
 	POWER_SUPPLY_PROP_PRESENT,
 	POWER_SUPPLY_PROP_CHARGING_ENABLED,
 	POWER_SUPPLY_PROP_STATUS,
+
 	POWER_SUPPLY_PROP_TI_BATTERY_PRESENT,
 	POWER_SUPPLY_PROP_TI_VBUS_PRESENT,
 	POWER_SUPPLY_PROP_TI_BATTERY_VOLTAGE,
@@ -1978,7 +1979,6 @@ static enum power_supply_property bq2597x_charger_props[] = {
 	POWER_SUPPLY_PROP_TI_FAULT_STATUS,
 	POWER_SUPPLY_PROP_TI_REG_STATUS,
 	POWER_SUPPLY_PROP_TI_SET_BUS_PROTECTION_FOR_QC3,
-	POWER_SUPPLY_PROP_TI_SET_BUS_PROTECTION_FOR_PD,
 	POWER_SUPPLY_PROP_MODEL_NAME,
 };
 static void bq2597x_check_alarm_status(struct bq2597x *bq);
@@ -1998,8 +1998,8 @@ static int bq2597x_charger_get_property(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_CHARGING_ENABLED:
 		bq2597x_check_charge_enabled(bq, &bq->charge_enabled);
 		val->intval = bq->charge_enabled;
-		//bq_err("POWER_SUPPLY_PROP_CHARGING_ENABLED: %s\n",
-				//val->intval ? "enable" : "disable");
+		/*bq_info("POWER_SUPPLY_PROP_CHARGING_ENABLED: %s\n",
+				val->intval ? "enable" : "disable");*/
 		break;
 	case POWER_SUPPLY_PROP_STATUS:
 		val->intval = 0;
@@ -2131,17 +2131,14 @@ static int bq2597x_charger_set_property(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_CHARGING_ENABLED:
 		bq2597x_enable_charge(bq, val->intval);
 		bq2597x_check_charge_enabled(bq, &bq->charge_enabled);
+		bq_info("POWER_SUPPLY_PROP_CHARGING_ENABLED: %s\n",
+				val->intval ? "enable" : "disable");
 		break;
 	case POWER_SUPPLY_PROP_PRESENT:
 		bq2597x_set_present(bq, !!val->intval);
 		break;
 	case POWER_SUPPLY_PROP_TI_SET_BUS_PROTECTION_FOR_QC3:
 		bq2597x_set_bus_protection(bq, val->intval);
-		break;
-	case POWER_SUPPLY_PROP_TI_SET_BUS_PROTECTION_FOR_PD:
-		bq_info("set bus ovp: %d,ac ovp:%d\n",bq->cfg->bus_ovp_th,bq->cfg->ac_ovp_th);
-		bq2597x_set_busovp_th(bq, bq->cfg->bus_ovp_th);
-		bq2597x_set_acovp_th(bq, bq->cfg->ac_ovp_th);
 		break;
 	default:
 		return -EINVAL;
@@ -2158,7 +2155,6 @@ static int bq2597x_charger_is_writeable(struct power_supply *psy,
 	switch (prop) {
 	case POWER_SUPPLY_PROP_CHARGING_ENABLED:
 	case POWER_SUPPLY_PROP_TI_SET_BUS_PROTECTION_FOR_QC3:
-	case POWER_SUPPLY_PROP_TI_SET_BUS_PROTECTION_FOR_PD:
 		ret = 1;
 		break;
 	default:

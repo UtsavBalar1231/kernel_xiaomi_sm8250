@@ -22,6 +22,7 @@
 #include <linux/init.h>
 #include <linux/interrupt.h>
 #include <linux/mutex.h>
+#include <linux/spinlock.h>
 #include <linux/delay.h>
 #include <linux/of_irq.h>
 #include <linux/of_gpio.h>
@@ -189,18 +190,20 @@ static int ln8000_set_sw_freq(struct ln8000_info *info, unsigned int cfg)
 }
 #endif
 
-//static int ln8000_set_disovl(struct ln8000_info *info, u8 cfg)
-//{
-//	int ret;
-//
-//	ln8000_write_reg(info, LN8000_REG_LION_CTRL, 0xAA);
-//
-//	ret = ln8000_update_reg(info, 0x3A, 0x7, cfg);    // TRIM_ADC[2:0] DISOVL_CFG
-//
-//	ln8000_write_reg(info, LN8000_REG_LION_CTRL, 0x00);
-//
-//	return ret;
-//}
+/*
+static int ln8000_set_disovl(struct ln8000_info *info, u8 cfg)
+{
+	int ret;
+
+	ln8000_write_reg(info, LN8000_REG_LION_CTRL, 0xAA);
+
+	ret = ln8000_update_reg(info, 0x3A, 0x7, cfg);    // TRIM_ADC[2:0] DISOVL_CFG
+
+	ln8000_write_reg(info, LN8000_REG_LION_CTRL, 0x00);
+
+	return ret;
+}
+*/
 
 static int ln8000_set_vac_ovp(struct ln8000_info *info, unsigned int ovp_th)
 {
@@ -429,7 +432,7 @@ static int ln8000_set_adc_hib_delay(struct ln8000_info *info, unsigned int cfg)
 static int ln8000_get_vbat_float(struct ln8000_info *info)
 {
 	int ret;
-	u8 val;
+	u32 val;
 
 	ret = ln8000_read_reg(info, LN8000_REG_V_FLOAT_CTRL, &val);
 	if (ret < 0)
@@ -442,7 +445,7 @@ static int ln8000_get_vbat_float(struct ln8000_info *info)
 static int ln8000_get_iin_limit(struct ln8000_info *info)
 {
 	int ret, iin;
-	u8 val;
+	u32 val;
 
 	ret = ln8000_read_reg(info, LN8000_REG_IIN_CTRL, &val);
 	if (ret < 0)
@@ -548,12 +551,13 @@ static void ln8000_print_regmap(struct ln8000_info *info)
 static int ln8000_check_status(struct ln8000_info *info)
 {
 	u8 val[4];
+	unsigned long flags;
 
 	if (ln8000_bulk_read_reg(info, LN8000_REG_SYS_STS, val, 4) < 0) {
 		return -EINVAL;
 	}
 
-	mutex_lock(&info->data_lock);
+	spin_lock_irqsave(&info->slock, flags);
 
 	info->vbat_regulated  = LN8000_STATUS(val[0], LN8000_MASK_VFLOAT_LOOP_STS);
 	info->iin_regulated   = LN8000_STATUS(val[0], LN8000_MASK_IIN_LOOP_STS);
@@ -580,11 +584,10 @@ static int ln8000_check_status(struct ln8000_info *info)
 		}
 	}
 	info->iin_oc     = LN8000_STATUS(val[3], LN8000_MASK_IIN_OC_DETECTED);
+	spin_unlock_irqrestore(&info->slock, flags);
 
 	ln_info("LN8000_STATUS : SYS_STS[0x%2x], SAFETY_STS[0x%2x], FAULT1_STS[0x%2x], FAULT2_STS[0x%2x]\n",
 			val[0], val[1], val[2], val[3]);
-
-	mutex_unlock(&info->data_lock);
 
 	return 0;
 }
@@ -724,7 +727,6 @@ static int ln8000_init_device(struct ln8000_info *info)
 	ln8000_update_reg(info, LN8000_REG_CHARGE_CTRL, 0x1 << 7, 0x1 << 7);
 	ln8000_write_reg(info, LN8000_REG_THRESHOLD_CTRL, 0x0E);
 
-
 	/* dual mode initialized */
 	if (info->dev_role == LN_ROLE_MASTER && !info->standalone_mode_master) {
 		ln8000_write_reg(info, LN8000_REG_LION_CTRL, 0xAA);
@@ -826,13 +828,12 @@ static int psy_chg_get_charging_enabled(struct ln8000_info *info)
 	return enabled;
 }
 
-
 static int ln8000_check_regmap_data(struct ln8000_info *info)
 {
-        u8 regulation_ctrl;
-        u8 adc_ctrl;
-        u8 v_float_ctrl;
-        u8 charge_ctrl;
+        u32 regulation_ctrl;
+        u32 adc_ctrl;
+        u32 v_float_ctrl;
+        u32 charge_ctrl;
 
         ln8000_read_reg(info, LN8000_REG_REGULATION_CTRL, &regulation_ctrl);
         ln8000_read_reg(info, LN8000_REG_ADC_CTRL, &adc_ctrl);
@@ -890,10 +891,9 @@ static int psy_chg_get_ti_alarm_status(struct ln8000_info *info)
 	}
 	/* If an unplug event occurs when vbus voltage lower then vin_start_up_th, switch to standby mode. */
 	if (info->chg_en && !(info->rcp_en)) {
-		if (info->iin_uA < 70000 && v_offset < 100000) {
+		if (v_offset < 100000) {
 			ln8000_change_opmode(info, LN8000_OPMODE_STANDBY);
 			ln_info("forced change standby_mode for prevent reverse current\n");
-			info->chg_en = 0;
 		}
 	}
 
@@ -1246,7 +1246,7 @@ static int read_reg(void *data, u64 *val)
 {
 	struct ln8000_info *info = data;
 	int ret;
-	u8 temp;
+	u32 temp;
 
 	ret = ln8000_read_reg(info, info->debug_address, &temp);
 	if (ret) {
@@ -1713,6 +1713,7 @@ static int ln8000_probe(struct i2c_client *client, const struct i2c_device_id *i
 	mutex_init(&info->data_lock);
 	mutex_init(&info->i2c_lock);
 	mutex_init(&info->irq_lock);
+	spin_lock_init(&info->slock);
 	i2c_set_clientdata(client, info);
 
 	ln8000_soft_reset(info);
