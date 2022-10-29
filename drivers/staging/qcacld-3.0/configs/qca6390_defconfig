@@ -697,6 +697,11 @@ ifeq ($(CONFIG_LITHIUM), y)
 	CONFIG_FEATURE_UNIT_TEST_SUSPEND := y
 endif
 
+# Enable SHADOW_WRITE_DELAY
+ifeq ($(CONFIG_CNSS_QCA6390), y)
+	CONFIG_SHADOW_WRITE_DELAY := y
+endif
+
 #Flag to enable/disable WLAN D0-WOW
 ifeq ($(CONFIG_PCI_MSM), y)
 ifeq ($(CONFIG_HIF_PCI), y)
