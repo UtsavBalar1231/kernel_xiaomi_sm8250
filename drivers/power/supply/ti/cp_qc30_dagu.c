@@ -52,7 +52,7 @@
 #include <linux/poll.h>
 #include <linux/pmic-voter.h>
 
-#include "cp_qc30_munch.h"
+#include "cp_qc30.h"
 
 #ifdef pr_debug
 #undef pr_debug
@@ -157,6 +157,22 @@ static struct power_supply *cp_get_wireless_psy(void)
 	return pm_state.wireless_psy;
 }
 
+static int cp_get_effective_fv_val(pm_t pm_state)
+{
+	int effective_fv_val = 0;
+
+	if (!pm_state.fv_votable)
+		pm_state.fv_votable = find_votable("FV");
+
+	if (!pm_state.fv_votable)
+		return -EINVAL;
+
+	effective_fv_val = get_effective_result(pm_state.fv_votable);
+	effective_fv_val = effective_fv_val / 1000;
+	pr_info("cp effective_fv_val: %d\n", effective_fv_val);
+	return effective_fv_val;
+}
+
 static int cp_get_effective_fcc_val(pm_t pm_state)
 {
 	int effective_fcc_val = 0;
@@ -169,7 +185,7 @@ static int cp_get_effective_fcc_val(pm_t pm_state)
 
 	effective_fcc_val = get_effective_result(pm_state.fcc_votable);
 	effective_fcc_val = effective_fcc_val / 1000;
-	pr_info("effective_fcc_val: %d\n", effective_fcc_val);
+	pr_info("cp effective_fcc_val: %d\n", effective_fcc_val);
 	return effective_fcc_val;
 }
 
@@ -199,12 +215,6 @@ static void cp_update_bms_ibat(void)
 			POWER_SUPPLY_PROP_CURRENT_NOW, &val);
 	if (!ret)
 		pm_state.ibat_now = -(val.intval / 1000);
-    
-    ret = power_supply_get_property(psy,
-		    POWER_SUPPLY_PROP_I2C_ERROR_COUNT, &val);
-	if (!ret) {
-		pm_state.bms_i2c_error_count = val.intval;	
-	}
 
 }
 
@@ -252,8 +262,8 @@ static int qc3_get_batt_current_thermal_level(int *level)
 		return rc;
 	}
 
-	pr_info("val.intval: %d\n", val.intval);
-    pm_state.thermal_l = val.intval;
+	pr_err("val.intval: %d\n", val.intval);
+
 	*level = val.intval;
 	return rc;
 }
@@ -288,8 +298,7 @@ static bool qc3_disable_cp_by_jeita_status(void)
 	}
 
 	batt_temp = val.intval;
-	pm_state.bms_temp = val.intval;
-	pr_info("batt_temp: %d\n", batt_temp);
+	pr_err("batt_temp: %d\n", batt_temp);
 
 	if (bq_input_suspend) {
 		return true;
@@ -301,7 +310,7 @@ static bool qc3_disable_cp_by_jeita_status(void)
 				&& !pm_state.jeita_triggered) {
 			pm_state.jeita_triggered = true;
 			return true;
-		} else if ((batt_temp <= (pm_state.warm_threshold_temp - JEITA_HYSTERESIS))
+		} else if ((batt_temp <= (pm_state.warm_threshold_temp - JEITA_HYSTERESIS_DAGU))
 					&& (batt_temp >= (JEITA_COOL_NOT_ALLOW_CP_THR + JEITA_HYSTERESIS))
 				&& pm_state.jeita_triggered) {
 			pm_state.jeita_triggered = false;
@@ -562,7 +571,7 @@ static int cp_tune_vbus_volt(bool up)
 	ret = power_supply_set_property(psy,
 			POWER_SUPPLY_PROP_DP_DM_BQ, &val);
 
-	pr_info("tune adapter voltage %s %s\n", up ? "up" : "down",
+	pr_err("tune adapter voltage %s %s\n", up ? "up" : "down",
 			ret ? "fail" : "successfully");
 
 	return ret;
@@ -767,19 +776,21 @@ static int cp_flash2_charge(unsigned int port)
 	int thermal_level = 0;
 	uint16_t effective_fcc_val = cp_get_effective_fcc_val(pm_state);
 	uint16_t effective_ibus_val = cp_get_effective_fcc_val(pm_state)/2;
+	int effective_fv_val = cp_get_effective_fv_val(pm_state);
 
 	qc3_get_batt_current_thermal_level(&thermal_level);
 	qc3_check_night_charging_enabled();
+
+	sys_config.bat_volt_lp_lmt = (sys_config.bat_volt_lp_lmt > effective_fv_val) ? effective_fv_val : sys_config.bat_volt_lp_lmt;
 
 	if (ibus_limit == 0)
 		ibus_limit = pm_state.ibus_lmt_curr;
 
 	ibus_limit = min(effective_ibus_val, pm_state.ibus_lmt_curr);
-	pm_state.ibus_limits = ibus_limit;
-	pm_state.effective_ibus = effective_ibus_val;
+
 	pr_info("ibus_limit: %d\n", ibus_limit);
 
-	pr_info("vbus=%d, ibus=%d, vbat=%d, ibat=%d, ibus_target_val=%d\n",
+	pr_err("vbus=%d, ibus=%d, vbat=%d, ibat=%d, ibus_target_val=%d\n",
 				pm_state.bq2597x.vbus_volt,
 				pm_state.bq2597x.ibus_curr,
 				pm_state.bq2597x.vbat_volt,
@@ -866,8 +877,8 @@ static int cp_flash2_charge(unsigned int port)
 		pr_info("night charging feature is enabled!\n");
 		return CP_ENABLE_FAIL; 
 	} else if (thermal_level >= MAX_THERMAL_LEVEL
-			|| pm_state.is_temp_out_fc2_range ||pm_state.bms_i2c_error_count) {
-		pr_info("thermal level too high or batt temp is out of fc2 range or bms i2c error!\n");
+			|| pm_state.is_temp_out_fc2_range) {
+		pr_info("thermal level too high or batt temp is out of fc2 range\n");
 		return CP_ENABLE_FAIL;
 	}
 
@@ -875,6 +886,8 @@ static int cp_flash2_charge(unsigned int port)
 			pm_state.bq2597x.ibat_curr < sys_config.fc2_taper_current) {
 		if (fc2_taper_timer++ > TAPER_TIMEOUT) {
 			fc2_taper_timer = 0;
+			pr_info("charge pump taper charging done, vbat[%d], ibat_curr[%d], soc[%d]\n",
+					pm_state.bq2597x.vbat_volt, pm_state.bq2597x.ibat_curr, pm_state.capacity);
 			return TAPER_DONE;
 		}
 	} else {
@@ -904,7 +917,7 @@ const unsigned char *pm_state_str[] = {
 static void cp_move_state(pm_sm_state_t state)
 {
 #if 1
-	pr_info("pm_state change:%s -> %s\n",
+	pr_debug("pm_state change:%s -> %s\n",
 		pm_state_str[pm_state.state], pm_state_str[state]);
 	pm_state.state_log[pm_state.log_idx] = pm_state.state;
 	pm_state.log_idx++;
@@ -917,9 +930,12 @@ void cp_statemachine(unsigned int port)
 {
 	int ret;
 	static int tune_vbus_retry, tune_vbus_count, retry_enable_bq_count;
-	int thermal_level = 0;
+	int thermal_level = 0, effective_fv = 0;
 	static bool recovery;
 	static int cp_enable_fail_count;
+
+	effective_fv = cp_get_effective_fv_val(pm_state);
+	sys_config.bat_volt_lp_lmt = (sys_config.bat_volt_lp_lmt > effective_fv) ? effective_fv : sys_config.bat_volt_lp_lmt;
 
 	if (!pm_state.bq2597x.vbus_pres) {
 		pm_state.state = CP_STATE_DISCONNECT;
@@ -1281,19 +1297,7 @@ void cp_statemachine(unsigned int port)
 		break;
 	}
 }
-int log_count = 0;
-static void pm_state_print_log(void)
-{
-	pr_err("michglog:batt[%d-%d-%d-%d-%d-%d],bus[%d-%d-%d-%d-%d]usb[%d-%d-%d-%d-%d]ilimit[%d-%d-%d]therm[%d-%d-%d-%d-%d-%d]sys_config[%d-%d-%d-%d][%d-%d-%d-%d][%d-%d-%d-%d]\n",
-	pm_state.bq2597x.batt_pres, pm_state.bms_temp, pm_state.capacity, pm_state.bq2597x.vbat_volt, pm_state.bq2597x.ibat_curr, pm_state.ibat_now, \
-	pm_state.bq2597x.vbus_pres, pm_state.bq2597x.vbus_volt, pm_state.bq2597x.ibus_curr, pm_state.bq2597x.charge_enabled, pm_state.sw_chager.charge_enabled, \
-	pm_state.usb_present, pm_state.usb_type, pm_state.hvdcp3_type, pm_state.bms_fastcharge_mode, pm_state.night_charging, \
-	pm_state.ibus_limits, pm_state.effective_ibus, pm_state.ibus_lmt_curr, \
-	pm_state.thermal_l, pm_state.warm_threshold_temp, pm_state.jeita_triggered, pm_state.batt_cell_volt_triggered, pm_state.is_temp_out_fc2_range, pm_state.reverse_mode, \
-	sys_config.qc3p5_supported, sys_config.cp_sec_enable, sys_config.min_vbat_start_flash2, sys_config.fc2_taper_current, \
-	sys_config.bat_volt_lp_lmt, sys_config.bat_curr_lp_lmt, sys_config.bus_volt_lp_lmt, sys_config.bus_curr_lp_lmt, \
-	sys_config.ibus_plus_deviation_val, sys_config.ibus_minus_deviation_val, sys_config.ibat_plus_deviation_val, sys_config.ibat_minus_deviation_val);
-}
+
 static void cp_workfunc(struct work_struct *work)
 {
 	static int last_usb_type = 0;
@@ -1324,11 +1328,7 @@ static void cp_workfunc(struct work_struct *work)
 		cp_move_state(CP_STATE_DISCONNECT);
 	}
 	cp_statemachine(0);
-	log_count++;
-	if (log_count >= 20) {
-		log_count = 0;
-		pm_state_print_log();
-	}
+
 	if (pm_state.usb_type == POWER_SUPPLY_TYPE_USB_HVDCP_3 || (last_usb_type == POWER_SUPPLY_TYPE_USB_HVDCP_3 
 	&& pm_state.usb_type == POWER_SUPPLY_TYPE_USB_HVDCP)) {
 		schedule_delayed_work(&pm_state.qc3_pm_work, msecs_to_jiffies(PM_WORK_TIME_500MS));
@@ -1480,7 +1480,7 @@ static int cp_qc30_probe(struct platform_device *pdev)
 	struct device *dev = &pdev->dev;
 	struct cp_qc30_data *chip;
 
-	pr_info("%s enter\n", __func__);
+	pr_info("%s enter dagu\n", __func__);
 
 	chip = devm_kzalloc(dev, sizeof(struct cp_qc30_data), GFP_KERNEL);
 	if (!chip)
@@ -1505,7 +1505,7 @@ static int cp_qc30_probe(struct platform_device *pdev)
 
 	cp_qc30_register_notifier(chip);
 
-	pr_info("charge pump qc3 probe\n");
+	pr_info("dagu charge pump qc3 probe\n");
 
 	return ret;
 }

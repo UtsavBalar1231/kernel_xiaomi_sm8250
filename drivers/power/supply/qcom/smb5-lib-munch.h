@@ -32,7 +32,6 @@ enum print_reason {
 	PR_OEM		= BIT(6),
 };
 
-#define TEST_VOTER			"TEST_VOTER"
 #define DEFAULT_VOTER			"DEFAULT_VOTER"
 #define USER_VOTER			"USER_VOTER"
 #define PD_VOTER			"PD_VOTER"
@@ -111,7 +110,6 @@ enum print_reason {
 /* defined for distinguish qc class_a and class_b */
 #define VOL_THR_FOR_QC_CLASS_AB		12400000
 #define VOL_THR_FOR_QC_CLASS_AB_PSYCHE	12300000
-#define VOL_THR_FOR_QC_CLASS_AB_MUNCH	12300000
 #define COMP_FOR_LOW_RESISTANCE_CABLE	100000
 #define QC_CLASS_A_CURRENT_UA		3600000
 #define HVDCP_CLASS_A_MAX_UA		2500000
@@ -130,7 +128,7 @@ enum print_reason {
 /* defined for qc2_unsupported */
 #define QC2_UNSUPPORTED_UA		1800000
 /* defined for HVDCP2 */
-#define HVDCP2_CURRENT_UA		1300000
+#define HVDCP2_CURRENT_UA		1400000
 /* defined for un_compliant Type-C cable */
 #define CC_UN_COMPLIANT_START_DELAY_MS	700
 
@@ -269,7 +267,6 @@ enum quick_charge_type {
 	QUICK_CHARGE_FAST,
 	QUICK_CHARGE_FLASH,
 	QUICK_CHARGE_TURBE,
-	QUICK_CHARGE_SUPER,
 	QUICK_CHARGE_MAX,
 };
 
@@ -316,19 +313,6 @@ enum jeita_cfg_stat {
 enum {
 	RERUN_AICL = 0,
 	RESTART_AICL,
-};
-
-enum apdo_max_power {
-	APDO_MAX_30W = 30, // J2 G7A F4 and some old projects use 30W pps charger
-	APDO_MAX_33W = 33,   // most 33W project use 33w pps charger
-	APDO_MAX_40W = 40,   // only F1X use 40w pps charger
-	APDO_MAX_50W = 50,   // only j1(cmi project) use 50W pps(device support maxium 50w)
-	APDO_MAX_55W =55, // K2 K9B use 55w pps charger
-	APDO_MAX_65W = 65, //we have 65w pps which for j1(cmi), and also used for 120w(67w works in 65w)
-	APDO_MAX_67W = 67, //most useage now for dual charge pumps projects such as L3 L1 L1A L18
-	APDO_MAX_100W = 100, // Zimi car quick charger have 100w pps
-	APDO_MAX_120W = 120, // L2 L10 and K8 L11 use 120W
-	APDO_MAX_INVALID = 67,
 };
 
 enum smb_irq_index {
@@ -582,8 +566,6 @@ struct smb_charger {
 	int			weak_chg_icl_ua;
 	int			thermal_fcc_override;
     int			mtbf_current;
-    int			enable_bypass;
-	int			diff_fv_val;
 	u32			sdam_base;
 	bool			pd_not_supported;
 	bool			batt_verified;
@@ -693,10 +675,6 @@ struct smb_charger {
 	struct delayed_work	pr_swap_detach_work;
 	struct delayed_work	reg_work;
 	struct delayed_work	thermal_setting_work;
-	struct delayed_work slow_pd_wa_work;
-	struct wakeup_source slow_pd_wa_wakelock;
-	bool			hvdcp_det_lock;
-
 #ifndef CONFIG_FUEL_GAUGE_BQ27Z561_MUNCH
 	struct delayed_work	reduce_fcc_work;
 #endif
@@ -726,7 +704,6 @@ struct smb_charger {
 	/* secondary charger config */
 	bool			sec_pl_present;
 	bool			sec_cp_present;
-	bool			thermal_remove;
 	int			sec_chg_selected;
 	int			cp_reason;
 	int			cp_topo;

@@ -21,7 +21,7 @@
 #include <linux/pmic-voter.h>
 #include <linux/usb/typec.h>
 #include "smb5-reg.h"
-#include "smb5-lib-munch.h"
+#include "smb5-lib.h"
 #include "step-chg-jeita.h"
 #include "schgm-flash.h"
 
@@ -1133,6 +1133,9 @@ static int smb5_parse_dt_misc(struct smb5 *chip, struct device_node *node)
 		}
 	}
 
+	chg->support_ext_5v_boost = of_property_read_bool(node,
+				"qcom,support-ext-5v-boost");
+
 	of_property_read_u32(node, "qcom,fcc-step-delay-ms",
 					&chg->chg_param.fcc_step_delay_ms);
 	if (chg->chg_param.fcc_step_delay_ms <= 0)
@@ -1450,6 +1453,7 @@ static enum power_supply_property smb5_usb_props[] = {
 	POWER_SUPPLY_PROP_VOLTAGE_VPH,
 	POWER_SUPPLY_PROP_THERM_ICL_LIMIT,
 	POWER_SUPPLY_PROP_FASTCHARGE_MODE,
+	POWER_SUPPLY_PROP_FFC_ITERM,
 	POWER_SUPPLY_PROP_PD_AUTHENTICATION,
 	POWER_SUPPLY_PROP_SKIN_HEALTH,
 	POWER_SUPPLY_PROP_APSD_RERUN,
@@ -1458,8 +1462,8 @@ static enum power_supply_property smb5_usb_props[] = {
 	POWER_SUPPLY_PROP_POWER_MAX,
 	POWER_SUPPLY_PROP_CHARGER_STATUS,
 	POWER_SUPPLY_PROP_INPUT_VOLTAGE_SETTLED,
-	POWER_SUPPLY_PROP_FFC_TERMINATION_BBC,
 	POWER_SUPPLY_PROP_MTBF_CURRENT,
+	POWER_SUPPLY_PROP_HAS_DP,
 };
 
 static int smb5_usb_get_prop(struct power_supply *psy,
@@ -1530,7 +1534,6 @@ static int smb5_usb_get_prop(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_QUICK_CHARGE_TYPE:
 		val->intval = smblib_get_quick_charge_type(chg);
-		pr_err("quick charge type is %d\n", val->intval);
 		break;
 	case POWER_SUPPLY_PROP_TYPEC_MODE:
 		rc = smblib_get_usb_prop_typec_mode(chg, val);
@@ -1678,6 +1681,9 @@ static int smb5_usb_get_prop(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_MTBF_CURRENT:
 		val->intval = chg->mtbf_current;
 		break;
+	case POWER_SUPPLY_PROP_HAS_DP:
+		val->intval = chg->has_dp;
+		break;
 	default:
 		pr_debug("get prop %d is not supported in usb\n", psp);
 		rc = -EINVAL;
@@ -1692,7 +1698,6 @@ static int smb5_usb_get_prop(struct power_supply *psy,
 	return 0;
 }
 
-extern int smb5_config_iterm(struct smb_charger *chg, int hi_thresh, int low_thresh);
 #define MIN_THERMAL_VOTE_UA	500000
 static int smb5_usb_set_prop(struct power_supply *psy,
 		enum power_supply_property psp,
@@ -1732,7 +1737,7 @@ static int smb5_usb_set_prop(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_CTM_CURRENT_MAX:
 		rc = vote(chg->usb_icl_votable, CTM_VOTER,
-				val->intval >= 0, val->intval);
+				false, val->intval);
 		break;
 	case POWER_SUPPLY_PROP_PR_SWAP:
 		rc = smblib_set_prop_pr_swap_in_progress(chg, val);
@@ -1794,6 +1799,9 @@ static int smb5_usb_set_prop(struct power_supply *psy,
 			schedule_delayed_work(&chg->step_charge_notify_work,
 					msecs_to_jiffies(2000));
 		break;
+	case POWER_SUPPLY_PROP_FFC_ITERM:
+		smblib_set_fastcharge_iterm(chg, val->intval);
+		break;
 	case POWER_SUPPLY_PROP_CURRENT_MAX:
 		smblib_set_prop_input_current_max(chg, val);
 		break;
@@ -1808,11 +1816,11 @@ static int smb5_usb_set_prop(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_APDO_MAX:
 		chg->apdo_max = val->intval;
 		break;
-	case POWER_SUPPLY_PROP_FFC_TERMINATION_BBC:
-		smb5_config_iterm(chg, val->intval, 50);
-		break;
 	case POWER_SUPPLY_PROP_MTBF_CURRENT:
 		chg->mtbf_current = val->intval;
+		break;
+	case POWER_SUPPLY_PROP_HAS_DP:
+		chg->has_dp = val->intval;
 		break;
 	default:
 		pr_debug("set prop %d is not supported\n", psp);
@@ -1834,12 +1842,13 @@ static int smb5_usb_prop_is_writeable(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_THERM_ICL_LIMIT:
 	case POWER_SUPPLY_PROP_VOLTAGE_MAX_LIMIT:
 	case POWER_SUPPLY_PROP_FASTCHARGE_MODE:
+	case POWER_SUPPLY_PROP_FFC_ITERM:
 	case POWER_SUPPLY_PROP_PD_AUTHENTICATION:
 	case POWER_SUPPLY_PROP_ADAPTER_CC_MODE:
 	case POWER_SUPPLY_PROP_APSD_RERUN:
 	case POWER_SUPPLY_PROP_APDO_MAX:
-	case POWER_SUPPLY_PROP_FFC_TERMINATION_BBC:
 	case POWER_SUPPLY_PROP_MTBF_CURRENT:
+	case POWER_SUPPLY_PROP_HAS_DP:
 		return 1;
 	default:
 		break;
@@ -3032,6 +3041,7 @@ static enum power_supply_property smb5_batt_props[] = {
 	POWER_SUPPLY_PROP_WARM_FAKE_CHARGING,
 	POWER_SUPPLY_PROP_STEP_VFLOAT_INDEX,
 	POWER_SUPPLY_PROP_CAPACITY_LEVEL,
+	POWER_SUPPLY_PROP_SMART_BATTERY,
 };
 
 #define DEBUG_ACCESSORY_TEMP_DECIDEGC	250
@@ -3062,11 +3072,7 @@ static int smb5_batt_get_prop(struct power_supply *psy,
 		rc = smblib_get_prop_batt_charge_type(chg, val);
 		break;
 	case POWER_SUPPLY_PROP_CAPACITY_LEVEL:
-		if (chg->ext_fg)
-			rc = smblib_get_prop_from_bms(chg,
-				 POWER_SUPPLY_PROP_CAPACITY_LEVEL, val);
-		else
-			rc = smblib_get_prop_batt_capacity_level(chg, val);
+		rc = smblib_get_prop_batt_capacity_level(chg, val);
 		break;
 	case POWER_SUPPLY_PROP_CAPACITY:
 		rc = smblib_get_prop_batt_capacity(chg, val);
@@ -3101,10 +3107,7 @@ static int smb5_batt_get_prop(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_VOLTAGE_MAX:
 		val->intval = get_client_vote(chg->fv_votable,
-					      QNOVO_VOTER);
-		if (val->intval < 0)
-			val->intval = get_client_vote(chg->fv_votable,
-						      BATT_PROFILE_VOTER);
+						 BATT_PROFILE_VOTER);
 		break;
 	case POWER_SUPPLY_PROP_VOLTAGE_QNOVO:
 		val->intval = get_client_vote_locked(chg->fv_votable,
@@ -3217,6 +3220,9 @@ static int smb5_batt_get_prop(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_NIGHT_CHARGING:
 		rc = smblib_night_charging_func(chg, val);
+		break;
+	case POWER_SUPPLY_PROP_SMART_BATTERY:
+		val->intval = chg->smartBatVal;
 		break;
 	default:
 		pr_err("batt power supply prop %d not supported\n", psp);
@@ -3354,6 +3360,9 @@ static int smb5_batt_set_prop(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_NIGHT_CHARGING:
 		chg->night_chg_flag = val->intval;
 		break;
+	case POWER_SUPPLY_PROP_SMART_BATTERY:
+		rc = smblib_set_prop_smart_battery_enabled(chg, val);
+		break;
 	default:
 		rc = -EINVAL;
 	}
@@ -3384,9 +3393,7 @@ static int smb5_batt_prop_is_writeable(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_WARM_FAKE_CHARGING:
 	case POWER_SUPPLY_PROP_RECHARGE_VBAT:
 	case POWER_SUPPLY_PROP_NIGHT_CHARGING:
-//#ifdef CONFIG_FACTORY_BUILD
-	case POWER_SUPPLY_PROP_CHARGE_CONTROL_LIMIT:
-//#endif
+	case POWER_SUPPLY_PROP_SMART_BATTERY:
 		return 1;
 	default:
 		break;
@@ -4412,8 +4419,6 @@ static int smb5_determine_initial_status(struct smb5 *chip)
 	struct smb_charger *chg = &chip->chg;
 	union power_supply_propval val;
 	int rc;
-	u8 stat;
-	int retries = 0;
 
 	rc = smblib_get_prop_usb_present(chg, &val);
 	if (rc < 0) {
@@ -4421,27 +4426,6 @@ static int smb5_determine_initial_status(struct smb5 *chip)
 		return rc;
 	}
 	chg->early_usb_attach = val.intval;
-
-	if (!val.intval) {
-		while (1) {
-			rc = smblib_read(chg, TYPE_C_SRC_STATUS_REG, &stat);
-			if (rc < 0) {
-				pr_err("Couldn't read TYPE_C_MISC_STATUS_REG rc=%d\n",
-					rc);
-				return 0;
-			}
-
-			pr_err("TYPE_C_SRC_STATUS_REG = 0x%02x\n", stat);
-
-			if (stat & AUDIO_ACCESS_RA_RA_BIT)
-				break;
-
-			msleep(20);
-
-			if (retries++ >= 15)
-				break;
-		}
-	}
 
 	rc = smblib_get_prop_dc_present(chg, &val);
 	if (rc < 0) {
@@ -5018,6 +5002,7 @@ static int smb5_probe(struct platform_device *pdev)
 	chg->thermal_fcc_override = 0;
 	chg->pd_disabled = 0;
 	chg->apdo_max = 0;
+	chg->quick_charge_type_info = 0;
 	chg->weak_chg_icl_ua = 500000;
 	chg->mode = PARALLEL_MASTER;
 	chg->irq_info = smb5_irqs;
@@ -5027,7 +5012,10 @@ static int smb5_probe(struct platform_device *pdev)
 	chg->main_fcc_max = -EINVAL;
 	chg->warm_fake_charging = false;
 	chg->fake_dc_on = false;
+	chg->has_dp = false;
 	mutex_init(&chg->adc_lock);
+
+    pr_info("end qpnp-smb5 !\n");
 
 	chg->regmap = dev_get_regmap(chg->dev->parent, NULL);
 	if (!chg->regmap) {
@@ -5216,7 +5204,7 @@ static int smb5_probe(struct platform_device *pdev)
 	}
 
 	schedule_delayed_work(&chg->reg_work, 30 * HZ);
-	pr_info("QPNP SMB5 probed successfully\n");
+	pr_info(" QPNP SMB5 probed successfully\n");
 
 	return rc;
 
