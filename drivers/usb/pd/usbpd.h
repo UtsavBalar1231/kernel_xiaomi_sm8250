@@ -10,7 +10,7 @@
 
 struct usbpd;
 
-#if IS_ENABLED(CONFIG_USB_PD_POLICY) || IS_ENABLED(CONFIG_USB_PD_POLICY_MUNCH)
+#if IS_ENABLED(CONFIG_USB_PD_POLICY) || IS_ENABLED(CONFIG_USB_PD_POLICY_MUNCH) || IS_ENABLED(CONFIG_USB_PD_POLICY_DAGU)
 struct usbpd *usbpd_create(struct device *parent);
 void usbpd_destroy(struct usbpd *pd);
 #else
