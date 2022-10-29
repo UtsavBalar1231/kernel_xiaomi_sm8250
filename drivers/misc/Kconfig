@@ -664,6 +664,12 @@ config PERF_HELPER
 	help
 	  this module support record perf lock history and other perf messages.
 
+config MI_GAMEKEY
+	tristate "xiaomi physical game key"
+	default n
+	help
+	  xiaomi physical game key, can detect press on the key and key whether pop.
+
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
 source "drivers/misc/cb710/Kconfig"
