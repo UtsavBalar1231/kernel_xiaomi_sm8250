@@ -26,6 +26,7 @@
 #include <linux/regulator/driver.h>
 #include <linux/regulator/machine.h>
 #include <linux/regulator/of_regulator.h>
+#include <soc/qcom/socinfo.h>
 
 #define PMIC_VER_8941				0x01
 #define PMIC_VERSION_REG			0x0105
@@ -1159,23 +1160,28 @@ static int qpnp_pon_input_dispatch(struct qpnp_pon *pon, u32 pon_type)
 static int longpress_kthread(void *_pon)
 {
 #ifdef CONFIG_MTD_BLOCK2MTD
-	struct qpnp_pon *pon = _pon;
-	ktime_t time_to_S2, time_S2;
-	struct sched_param param = {.sched_priority = MAX_RT_PRIO-1};
+	if (get_hw_version_platform() != HARDWARE_PLATFORM_PSYCHE &&
+	    get_hw_version_platform() != HARDWARE_PLATFORM_DAGU) {
+		struct qpnp_pon *pon = _pon;
+		ktime_t time_to_S2, time_S2;
+		struct sched_param param = {.sched_priority = MAX_RT_PRIO-1};
 
-	sched_setscheduler(current, SCHED_FIFO, &param);
-	dev_err(pon->dev, "Long press: Start to run %s", __func__);
+		sched_setscheduler(current, SCHED_FIFO, &param);
+		dev_err(pon->dev, "Long press: Start to run %s", __func__);
 
-	ufs_enter_h8_disable(g_shost);
-	long_press();
+		ufs_enter_h8_disable(g_shost);
 
-	time_S2 = pon->pon_cfg->s2_timer;
-	time_to_S2 = time_S2 - ktime_ms_delta(ktime_get(), pon->time_kpdpwr_bark);
+		long_press();
 
-	if (time_to_S2 > 0)
-		msleep(time_to_S2);
+		time_S2 = pon->pon_cfg->s2_timer;
+		time_to_S2 = time_S2 - ktime_ms_delta(ktime_get(), pon->time_kpdpwr_bark);
 
-	machine_restart(NULL);
+		if (time_to_S2 > 0)
+			msleep(time_to_S2);
+
+		machine_restart(NULL);
+	}
+
 #endif
 
 	return 0;
