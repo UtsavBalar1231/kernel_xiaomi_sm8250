@@ -35,6 +35,8 @@ fw-shipped-$(CONFIG_TOUCHSCREEN_NT36523_HOSTDL_SPI) += novatek_ts_fw_k81.bin nov
 
 fw-shipped-$(CONFIG_TOUCHSCREEN_FOCALTECH) += focaltech_ts_fw.bin
 
+fw-shipped-$(CONFIG_TOUCHSCREEN_HIMAX_CHIPSET) += Himax_firmware.bin
+
 fw-shipped-all := $(fw-shipped-y) $(fw-shipped-m) $(fw-shipped-)
 
 quiet_cmd_ihex  = IHEX    $@
