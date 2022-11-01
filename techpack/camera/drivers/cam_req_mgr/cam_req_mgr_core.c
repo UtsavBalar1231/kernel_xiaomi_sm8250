@@ -1356,6 +1356,84 @@ static int __cam_req_mgr_check_sync_req_is_ready(
 }
 
 /**
+ * __cam_req_mgr_check_peer_req_is_applied()
+ *
+ * @brief    : Check whether peer req is applied
+ * @link     : pointer to link whose input queue and req tbl are
+ *             traversed through
+ * @idx      : slot idx
+ * @return   : true means the req is applied, others not applied
+ *
+ */
+static bool __cam_req_mgr_check_peer_req_is_applied(
+	struct cam_req_mgr_core_link *link,
+	int32_t idx)
+{
+	bool applied = true;
+	int64_t req_id;
+	int sync_slot_idx = 0;
+	struct cam_req_mgr_core_link *sync_link;
+	struct cam_req_mgr_slot *slot, *sync_slot;
+	struct cam_req_mgr_req_queue *in_q;
+
+	if (idx < 0)
+		return true;
+
+	slot = &link->req.in_q->slot[idx];
+	req_id = slot->req_id;
+	in_q = link->req.in_q;
+
+	CAM_DBG(CAM_REQ,
+		"Check Req[%lld] idx %d req_status %d link_hdl %x is applied in peer link",
+		req_id, idx, slot->status, link->link_hdl);
+
+	if (slot->sync_mode == CAM_REQ_MGR_SYNC_MODE_NO_SYNC) {
+		applied = true;
+		goto end;
+	}
+
+	sync_link = link->sync_link;
+
+	if (!sync_link)
+		applied &= true;
+
+	in_q = sync_link->req.in_q;
+	if (!in_q) {
+		CAM_DBG(CAM_CRM, "Link hdl %x in_q is NULL",
+			sync_link->link_hdl);
+		applied &= true;
+	}
+
+	sync_slot_idx = __cam_req_mgr_find_slot_for_req(
+		sync_link->req.in_q, req_id);
+
+	if ((sync_slot_idx < 0) ||
+		(sync_slot_idx >= MAX_REQ_SLOTS)) {
+		CAM_DBG(CAM_CRM,
+			"Can't find req:%lld from peer link, idx:%d",
+			req_id, sync_slot_idx);
+		applied &= true;
+	}
+
+	sync_slot = &in_q->slot[sync_slot_idx];
+
+	if (sync_slot->status == CRM_SLOT_STATUS_REQ_APPLIED)
+		applied &= true;
+	else
+		applied &= false;
+	CAM_DBG(CAM_CRM,
+		"link:%x idx:%d status:%d applied:%d",
+		sync_link->link_hdl, sync_slot_idx, sync_slot->status, applied);
+
+end:
+	CAM_DBG(CAM_REQ,
+		"Check Req[%lld] idx %d applied:%d",
+		req_id, idx, link->link_hdl, applied);
+
+	return applied;
+}
+
+/**
  * __cam_req_mgr_process_req()
  *
  * @brief    : processes read index in request queue and traverse through table
@@ -1458,9 +1536,21 @@ static int __cam_req_mgr_process_req(struct cam_req_mgr_core_link *link,
 
 			rc = __cam_req_mgr_inject_delay(link->req.l_tbl,
 				slot->idx);
-			if (!rc)
-				rc = __cam_req_mgr_check_link_is_ready(link,
-					slot->idx, false);
+			if (!rc) {
+				if (in_q->slot[in_q->rd_idx].req_id != -1) {
+					rc = __cam_req_mgr_check_peer_req_is_applied(
+						link, in_q->last_applied_idx);
+
+					if (rc)
+						rc = __cam_req_mgr_check_link_is_ready(
+							link, slot->idx, false);
+					else
+						rc = -EINVAL;
+				} else {
+					rc = __cam_req_mgr_check_link_is_ready(link,
+						slot->idx, false);
+				}
+			}
 		}
 
 		if (rc < 0) {
