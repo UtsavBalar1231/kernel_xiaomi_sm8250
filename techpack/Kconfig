@@ -1,5 +1,6 @@
 menu "Tech Packages"
 
 source techpack/data/Kconfig
+source techpack/wlan/Kconfig
 
 endmenu
