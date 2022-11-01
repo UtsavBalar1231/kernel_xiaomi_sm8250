@@ -1,0 +1,19 @@
+QCOM VBUS GENOA EXTCON driver
+
+Required properties:
+
+ - compatible		: must be "qcom,genoa-extcon"
+ - genoa_vbus_det	: Should specify GPIO for vbus detection.
+ - genoa_usb_id		: Should specify GPIO for USB ID.
+ - genoa_usb_oe_n	: Should specify GPIO for switch enable/disable.
+
+Example:
+
+	genoa: qcom,genoa-extcon {
+		compatible = "qcom,genoa-extcon";
+		genoa_vbus_det = <&tlmm 19 0x00>;
+		genoa_usb_id = <&tlmm 111 0x00>;
+		genoa_usb_oe_n = <&tlmm 24 GPIO_ACTIVE_LOW>;
+		status = "ok";
+	};
+

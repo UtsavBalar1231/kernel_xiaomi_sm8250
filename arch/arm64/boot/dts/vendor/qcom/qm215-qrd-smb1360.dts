@@ -1,0 +1,11 @@
+/dts-v1/;
+
+#include "qm215.dtsi"
+#include "qm215-pm8916.dtsi"
+#include "qm215-qrd-smb1360.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. qm215 SMB1360 QRD";
+	compatible = "qcom,qm215-qrd", "qcom,qm215", "qcom,qrd";
+	qcom,board-id = <0x0b 5>;
+};

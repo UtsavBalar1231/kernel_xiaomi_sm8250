@@ -1,0 +1,48 @@
+#include "kona-v2.1-iot-rb5.dtsi"
+
+&pcie0 {
+	/delete-property/ qcom,config-recovery;
+	iommu-map = <0x0 &apps_smmu 0x1c00 0x1>,
+		<0x100 &apps_smmu 0x1c01 0x1>,
+		<0x200 &apps_smmu 0x1c02 0x1>,
+		<0x210 &apps_smmu 0x1c03 0x1>,
+		<0x230 &apps_smmu 0x1c04 0x1>,
+		<0x270 &apps_smmu 0x1c05 0x1>,
+		<0x500 &apps_smmu 0x1c06 0x1>;
+};
+
+&pcie0_rp {
+	#address-cells = <5>;
+	#size-cells = <0>;
+
+	/delete-node/ cnss_pci;
+	asm2806_switch: asm2806_switch {
+		reg = <0x00010000 0x0 0x0 0x0 0x0>;
+		#address-cells = <5>;
+		#size-cells = <0>;
+
+		lane6: lane6 {
+			reg = <0x00023000 0x0 0x0 0x0 0x0>;
+			#address-cells = <5>;
+			#size-cells = <0>;
+
+			cnss_pci: cnss_pci {
+				reg = <0x00050000 0x0 0x0 0x0 0x0>;
+				qcom,iommu-group = <&cnss_pci_iommu_group>;
+				memory-region = <&cnss_wlan_mem>;
+
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				cnss_pci_iommu_group: cnss_pci_iommu_group {
+					qcom,iommu-dma-addr-pool = <0xa0000000 0x10000000>;
+					qcom,iommu-dma = "fastmap";
+					qcom,iommu-pagetable = "coherent";
+					qcom,iommu-faults = "stall-disable", "HUPCF", "no-CFRE",
+							    "non-fatal";
+				};
+			};
+		};
+	};
+};
+

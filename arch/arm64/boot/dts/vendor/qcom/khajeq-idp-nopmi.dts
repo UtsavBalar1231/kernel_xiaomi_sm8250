@@ -1,0 +1,11 @@
+/dts-v1/;
+
+#include "khajeq.dtsi"
+#include "khajeq-idp-nopmi.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. KHAJEQ IDP nopmi";
+	compatible = "qcom,khajeq-idp", "qcom,khajeq", "qcom,idp";
+	qcom,board-id = <0x10022 0>;
+	qcom,pmic-id = <0x2D 0x0 0x0 0x0>;
+};

@@ -1,0 +1,9 @@
+/dts-v1/;
+
+#include "khajep.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Khajep SoC";
+	compatible = "qcom,khajep";
+	qcom,board-id = <0 0>;
+};

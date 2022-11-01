@@ -1,0 +1,53 @@
+#include "bengal-idp.dtsi"
+
+&led_flash_rear {
+	/delete-property/ flash-source;
+	/delete-property/ torch-source;
+	/delete-property/ switch-source;
+};
+
+&led_flash_rear_aux {
+	/delete-property/ flash-source;
+	/delete-property/ torch-source;
+	/delete-property/ switch-source;
+};
+
+&led_flash_rear_aux2 {
+	/delete-property/ flash-source;
+	/delete-property/ torch-source;
+	/delete-property/ switch-source;
+};
+
+&sde_dsi {
+	/delete-property/ lab-supply;
+	/delete-property/ ibb-supply;
+};
+
+&dsi_td4330_truly_v2_video {
+	/delete-property/ qcom,esd-check-enabled;
+};
+
+&dsi_td4330_truly_v2_cmd {
+	/delete-property/ qcom,esd-check-enabled;
+};
+
+&qupv3_se2_i2c {
+	synaptics_tcm@20 {
+		status = "disabled";
+	};
+
+	novatek@62 {
+		status = "disabled";
+	};
+
+	focaltech@38 {
+		status = "disabled";
+	};
+};
+
+&usb0 {
+	/delete-property/ extcon;
+	dwc3@4e00000 {
+		dr_mode = "peripheral";
+	};
+};

@@ -1,0 +1,40 @@
+This NOTICE file contains certain notices of software components included
+with the software that Qualcomm Technologies, Inc. ("Qualcomm Technologies") is required to
+provide you. Notwithstanding anything in the notices in this file, your use
+of these software components together with the Qualcomm Technologies software (Qualcomm Technologies
+software hereinafter referred to as "Software") is subject to the terms of
+your license from Qualcomm Technologies. Compliance with all copyright laws and software
+license agreements included in the notice section of this file are the
+responsibility of the user. Except as may be granted by separate express
+written agreement, this file provides no license to any patents,
+trademarks, copyrights, or other intellectual property.
+
+Copyright (c) 2021 Qualcomm Technologies, Inc. All rights reserved.
+Qualcomm is a registered trademark and registered service mark of
+QUALCOMM Incorporated. All other trademarks and service marks are the
+property of their respective owners.
+________________________________________
+NOTICES
+________________________________________
+/*
+ * Copyright (C) 2008 Shanghai awinic technology co.,ltd. All rights reserved.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS
+ * IN THE SOFTWARE.
+ */

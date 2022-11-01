@@ -1,0 +1,13 @@
+/dts-v1/;
+
+#include "khajep.dtsi"
+#include "khajep-idp.dtsi"
+#include "khaje-idp-pm7250b.dtsi"
+#include "khajep-idps-display-90hz.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. KHAJEP IDPS + 90Hz";
+	compatible = "qcom,khajep-idp", "qcom,khajep", "qcom,idp";
+	qcom,board-id = <0x10122 0>;
+	qcom,pmic-id = <0x2D 0x2E 0x0 0x0>;
+};

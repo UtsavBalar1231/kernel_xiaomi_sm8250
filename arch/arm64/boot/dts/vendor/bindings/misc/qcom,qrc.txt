@@ -1,0 +1,13 @@
+Qualcomm Technologies, Inc. qrc driver
+
+Driver for QTI robotic controller.
+
+Required properties:
+
+compatible = "qcom,qrc-uart";
+
+Example:
+
+qrc: qcom,qrc_uart {
+       compatible = "qcom,qrc-uart";
+};

@@ -1,0 +1,7 @@
+#include "kona-v2.1.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. QRB5165N";
+	compatible = "qcom,kona";
+	qcom,msm-id = <496 0x20001>;
+};
