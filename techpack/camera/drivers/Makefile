@@ -12,3 +12,6 @@ obj-$(CONFIG_SPECTRA_CAMERA) += cam_jpeg/
 obj-$(CONFIG_SPECTRA_CAMERA) += cam_fd/
 obj-$(CONFIG_SPECTRA_CAMERA) += cam_lrme/
 obj-$(CONFIG_SPECTRA_CAMERA) += cam_cust/
+
+cameralog-y := cam_log/cam_log.o
+obj-$(CONFIG_SPECTRA_CAMERA) += cameralog.o
