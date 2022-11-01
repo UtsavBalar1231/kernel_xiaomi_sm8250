@@ -1,0 +1,1 @@
+source "techpack/wlan/qcacld-3.0/Kconfig"
