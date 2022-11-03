@@ -243,7 +243,6 @@ struct cam_req_mgr_link_control {
 	int32_t session_hdl;
 	int32_t num_links;
 	int32_t reserved;
-	int32_t init_timeout[MAX_LINKS_PER_SESSION];
 	int32_t link_hdls[MAX_LINKS_PER_SESSION];
 };
 
