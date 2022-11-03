@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
  */
 #ifndef __Q6AFE_V2_H__
 #define __Q6AFE_V2_H__
@@ -45,8 +45,13 @@
 #define AFE_API_VERSION_V4		4
 /* for VAD enable */
 #define AFE_API_VERSION_V6		6
+/* for external mclk dynamic switch */
+#define AFE_API_VERSION_V8		8
 /* for Speaker Protection V4 */
 #define AFE_API_VERSION_V9		9
+#define AFE_API_VERSION_V10		10
+
+#define AFE_SAMPLING_RATE_8KHZ 8000
 
 typedef int (*routing_cb)(int port);
 
@@ -285,6 +290,7 @@ enum {
 	/* IDX 208-> 209 */
 	IDX_AFE_PORT_ID_PRIMARY_META_MI2S_RX,
 	IDX_AFE_PORT_ID_SECONDARY_META_MI2S_RX,
+    IDX_AFE_PORT_ID_PSEUDOPORT_01,
 	/* IDX 210-> 211 */
 	IDX_RT_PROXY_PORT_002_RX,
 	IDX_RT_PROXY_PORT_002_TX,
@@ -315,6 +321,24 @@ struct vad_config {
 	u32 is_enable;
 	u32 pre_roll;
 };
+
+enum afe_mclk_src_id {
+	MCLK_SRC_INT = 0x00,
+	MCLK_SRC_EXT_0 = 0x01,
+	MCLK_SRC_MAX,
+};
+
+enum afe_mclk_freq {
+	MCLK_FREQ_MIN = 0,
+	MCLK_FREQ_11P2896_MHZ = MCLK_FREQ_MIN,
+	MCLK_FREQ_12P288_MHZ,
+	MCLK_FREQ_16P384_MHZ,
+	MCLK_FREQ_22P5792_MHZ,
+	MCLK_FREQ_24P576_MHZ,
+	MCLK_FREQ_MAX,
+};
+
+#define Q6AFE_EXT_MCLK_FREQ_DEFAULT 0
 
 struct afe_audio_buffer {
 	dma_addr_t phys;
@@ -491,6 +515,11 @@ int afe_get_sp_rx_tmax_xmax_logging_data(
 int afe_cal_init_hwdep(void *card);
 int afe_send_port_island_mode(u16 port_id);
 int afe_send_port_vad_cfg_params(u16 port_id);
+#ifdef CONFIG_MSM_CSPL
+int afe_apr_send_pkt_crus(void *data, int index, int set);
+int crus_afe_port_close(u16 port_id);
+int crus_afe_port_start(u16 port_id);
+#endif
 int afe_send_cmd_wakeup_register(void *handle, bool enable);
 void afe_register_wakeup_irq_callback(
 	void (*afe_cb_wakeup_irq)(void *handle));
@@ -509,6 +538,22 @@ enum {
 	AFE_LPASS_CORE_HW_DCODEC_BLOCK,
 	AFE_LPASS_CORE_HW_VOTE_MAX
 };
+
+int afe_set_source_clk(u16 port_id, const char *clk_src);
+void afe_set_clk_src_array(const char *clk_src[CLK_SRC_MAX]);
+int afe_set_mclk_src_cfg(u16 port_id, uint32_t mclk_src_id, uint32_t mclk_freq);
+
+typedef int (*afe_enable_mclk_and_get_info_cb_func) (void *private_data,
+			uint32_t enable, uint32_t mclk_freq,
+			struct afe_param_id_clock_set_v2_t *dyn_mclk_cfg);
+
+int afe_register_ext_mclk_cb(afe_enable_mclk_and_get_info_cb_func fn1,
+				void *private_data);
+void afe_unregister_ext_mclk_cb(void);
+
+#define AFE_LPASS_CORE_HW_BLOCK_ID_NONE                        0
+#define AFE_LPASS_CORE_HW_BLOCK_ID_AVTIMER                     2
+#define AFE_LPASS_CORE_HW_MACRO_BLOCK                          3
 
 /* Handles audio-video timer (avtimer) and BTSC vote requests from clients.
  */

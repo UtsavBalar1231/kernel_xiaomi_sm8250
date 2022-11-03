@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/* Copyright (c) 2011-2019, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2011-2021, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/kernel.h>
@@ -1197,9 +1197,12 @@ static int wcd9xxx_i2c_probe(struct i2c_client *client,
 		wcd9xxx_set_intf_type(WCD9XXX_INTERFACE_TYPE_I2C);
 
 		return ret;
+	} else {
+		ret = -EINVAL;
+		pr_err("%s: I2C probe in wrong state, ret %d\n", __func__, ret);
+		goto fail;
 	}
 
-	pr_err("%s: I2C probe in wrong state\n", __func__);
 
 
 err_device_init:
