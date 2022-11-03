@@ -50,7 +50,6 @@ void cam_req_mgr_core_link_reset(struct cam_req_mgr_core_link *link)
 	link->initial_skip = true;
 	link->sof_timestamp = 0;
 	link->prev_sof_timestamp = 0;
-	link->skip_wd_validation = false;
 	link->last_applied_jiffies = 0;
 }
 
@@ -529,13 +528,6 @@ static void __cam_req_mgr_validate_crm_wd_timer(
 	int idx = 0;
 	int next_frame_timeout = 0, current_frame_timeout = 0;
 	struct cam_req_mgr_req_queue *in_q = link->req.in_q;
-
-	if (link->skip_wd_validation) {
-		CAM_DBG(CAM_CRM,
-			"skipping modifying wd timer for first frame after streamon");
-		link->skip_wd_validation = false;
-		return;
-	}
 
 	idx = in_q->rd_idx;
 	__cam_req_mgr_dec_idx(
@@ -3988,7 +3980,6 @@ int cam_req_mgr_link_control(struct cam_req_mgr_link_control *control)
 
 	struct cam_req_mgr_connected_device *dev = NULL;
 	struct cam_req_mgr_link_evt_data     evt_data;
-	int                                init_timeout = 0;
 
 	if (!control) {
 		CAM_ERR(CAM_CRM, "Control command is NULL");
@@ -4023,13 +4014,10 @@ int cam_req_mgr_link_control(struct cam_req_mgr_link_control *control)
 			spin_lock_bh(&link->link_state_spin_lock);
 			link->state = CAM_CRM_LINK_STATE_READY;
 			spin_unlock_bh(&link->link_state_spin_lock);
-			if (control->init_timeout[i])
-				link->skip_wd_validation = true;
-			init_timeout = (2 * control->init_timeout[i]);
 			/* Start SOF watchdog timer */
 			rc = crm_timer_init(&link->watchdog,
-				(init_timeout + CAM_REQ_MGR_WATCHDOG_TIMEOUT),
-				link, &__cam_req_mgr_sof_freeze);
+				CAM_REQ_MGR_WATCHDOG_TIMEOUT, link,
+				&__cam_req_mgr_sof_freeze);
 			if (rc < 0) {
 				CAM_ERR(CAM_CRM,
 					"SOF timer start fails: link=0x%x",
@@ -4060,7 +4048,6 @@ int cam_req_mgr_link_control(struct cam_req_mgr_link_control *control)
 			/* Destroy SOF watchdog timer */
 			spin_lock_bh(&link->link_state_spin_lock);
 			link->state = CAM_CRM_LINK_STATE_IDLE;
-			link->skip_wd_validation = false;
 			crm_timer_exit(&link->watchdog);
 			spin_unlock_bh(&link->link_state_spin_lock);
 		} else {
