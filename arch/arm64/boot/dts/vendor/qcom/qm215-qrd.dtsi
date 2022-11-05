@@ -1,0 +1,250 @@
+#include <dt-bindings/clock/qcom,rpmcc.h>
+#include <dt-bindings/iio/qcom,spmi-vadc.h>
+
+&blsp1_uart2 {
+	status = "ok";
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart_console_active>;
+};
+
+#include <dt-bindings/clock/qcom,gcc-sdm429w.h>
+#include "qm215-camera-sensor-qrd.dtsi"
+
+&pm8916_chg {
+	status = "ok";
+	qcom,chgr-led-support;
+	qcom,vddmax-mv = <4400>;
+	qcom,vddsafe-mv = <4400>;
+	qcom,batt-hot-percentage = <35>;
+};
+
+&pm8916_bms {
+	status = "ok";
+	qcom,battery-data = <&qrd_batterydata>;
+	qcom,batt-aging-comp;
+	qcom,resume-soc = <99>;
+};
+
+&pm8916_vib {
+	status = "ok";
+};
+
+&pm8916_vadc {
+	batt_therm {
+		qcom,scale-fn-type = <ADC_SCALE_BATT_THERM_QRD_215>;
+	};
+};
+
+&soc {
+	gpio_keys {
+		compatible = "gpio-keys";
+		input-name = "gpio-keys";
+		pinctrl-names = "default";
+		pinctrl-0 = <&gpio_key_active>;
+
+		vol_up {
+			label = "volume_up";
+			gpios = <&tlmm 91 0x1>;
+			linux,input-type = <1>;
+			linux,code = <115>;
+			debounce-interval = <15>;
+			linux,can-disable;
+			gpio-key,wakeup;
+		};
+	};
+
+	fpc1020 {
+		compatible = "fpc,fpc1020";
+		interrupt-parent = <&tlmm>;
+		interrupts = <48 0>;
+		fpc,gpio_rst = <&tlmm 124 0x0>;
+		fpc,gpio_irq = <&tlmm 48 0>;
+		vcc_spi-supply = <&pm8916_l5>;
+		vdd_io-supply  = <&pm8916_l5>;
+		vdd_ana-supply = <&pm8916_l5>;
+		fpc,enable-on-boot;
+		pinctrl-names = "fpc1020_reset_reset",
+				"fpc1020_reset_active",
+				"fpc1020_irq_active";
+		pinctrl-0 = <&fpc_reset_low>;
+		pinctrl-1 = <&fpc_reset_high>;
+		pinctrl-2 = <&fpc_int_low>;
+	};
+};
+
+&sdhc_1 {
+	/* device core power supply */
+	vdd-supply = <&pm8916_l8>;
+	qcom,vdd-voltage-level = <2900000 2900000>;
+	qcom,vdd-current-level = <200 400000>;
+
+	/*
+	 * device communication power is an external
+	 * regulator eLDO3, which is enabled via L5A
+	 */
+	vdd-io-supply = <&pm8916_l5>;
+	qcom,vdd-io-always-on;
+	qcom,vdd-io-lpm-sup;
+	qcom,vdd-io-voltage-level = <1800000 1800000>;
+	qcom,vdd-io-current-level = <200 325000>;
+
+	pinctrl-names = "active", "sleep";
+	pinctrl-0 = <&sdc1_clk_on &sdc1_cmd_on &sdc1_data_on &sdc1_rclk_on>;
+	pinctrl-1 = <&sdc1_clk_off &sdc1_cmd_off &sdc1_data_off &sdc1_rclk_off>;
+
+	qcom,clk-rates = <400000 20000000 25000000 50000000 100000000 192000000
+								384000000>;
+	qcom,nonremovable;
+	qcom,bus-speed-mode = "HS400_1p8v", "HS200_1p8v", "DDR_1p8v";
+
+	status = "ok";
+};
+
+&sdhc_2 {
+	/* device core power supply */
+	vdd-supply = <&pm8916_l11>;
+	qcom,vdd-voltage-level = <2950000 2950000>;
+	qcom,vdd-current-level = <15000 800000>;
+
+	/* device communication power supply */
+	vdd-io-supply = <&pm8916_l12>;
+	qcom,vdd-io-voltage-level = <1800000 2950000>;
+	qcom,vdd-io-current-level = <200 22000>;
+
+	pinctrl-names = "active", "sleep";
+	pinctrl-0 = <&sdc2_clk_on &sdc2_cmd_on &sdc2_data_on &sdc2_cd_on>;
+	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off>;
+
+	cd-gpios = <&tlmm 67 0x0>;
+
+	qcom,clk-rates = <400000 20000000 25000000 50000000 100000000
+								200000000>;
+	qcom,bus-speed-mode = "SDR12", "SDR25", "SDR50", "DDR50", "SDR104";
+	status = "ok";
+};
+
+&mdss_dsi_active {
+	mux {
+		pins = "gpio60", "gpio93", "gpio94";
+		function = "gpio";
+	};
+
+	config {
+		pins = "gpio60", "gpio93", "gpio94";
+		drive-strength = <8>; /* 8 mA */
+		bias-disable = <0>; /* no pull */
+		output-high;
+	};
+};
+
+&mdss_dsi_suspend {
+	mux {
+		pins = "gpio60", "gpio93", "gpio94";
+		function = "gpio";
+	};
+
+	config {
+		pins = "gpio60", "gpio93", "gpio94";
+		drive-strength = <2>; /* 2 mA */
+		bias-pull-down; /* pull down */
+	};
+};
+
+#include "msm8937-mdss-panels.dtsi"
+
+&mdss_mdp {
+	qcom,mdss-pref-prim-intf = "dsi";
+};
+
+&dsi_panel_pwr_supply {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	qcom,panel-supply-entry@0 {
+		reg = <1>;
+		qcom,supply-name = "vddio";
+		qcom,supply-min-voltage = <1744000>;
+		qcom,supply-max-voltage = <1904000>;
+		qcom,supply-enable-load = <100000>;
+		qcom,supply-disable-load = <100>;
+	};
+
+	/delete-node/ qcom,panel-supply-entry@1;
+	/delete-node/ qcom,panel-supply-entry@2;
+	/delete-node/ qcom,panel-supply-entry@3;
+};
+
+&pm8916_gpios {
+	nfc_clk {
+		nfc_clk_default: nfc_clk_default {
+			pins = "gpio2";
+			function = "normal";
+			input-enable;
+			power-source = <1>;
+		};
+	};
+};
+
+&i2c_5 { /* BLSP2 QUP1 (NFC) */
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	status = "ok";
+	nq@28 {
+		compatible = "qcom,nq-nci";
+		reg = <0x28>;
+		qcom,nq-irq = <&tlmm 17 0x00>;
+		qcom,nq-ven = <&tlmm 16 0x00>;
+		qcom,nq-firm = <&tlmm 130 0x00>;
+		qcom,nq-clkreq = <&pm8916_gpios 2 0x00>;
+		interrupt-parent = <&tlmm>;
+		qcom,clk-src = "BBCLK2";
+		interrupts = <17 0>;
+		interrupt-names = "nfc_irq";
+		pinctrl-names = "nfc_active", "nfc_suspend";
+		pinctrl-0 = <&nfc_int_active &nfc_disable_active
+						&nfc_clk_default>;
+		pinctrl-1 = <&nfc_int_suspend &nfc_disable_suspend>;
+		clocks = <&rpmcc RPM_SMD_BB_CLK2_PIN>;
+		clock-names = "ref_clk";
+	};
+};
+
+&mdss_dsi {
+	hw-config = "single_dsi";
+};
+
+&mdss_dsi0 {
+	qcom,dsi-pref-prim-pan = <&dsi_hx8399c_hd_vid>;
+	pinctrl-names = "mdss_default", "mdss_sleep";
+	pinctrl-0 = <&mdss_dsi_active &mdss_te_active>;
+	pinctrl-1 = <&mdss_dsi_suspend &mdss_te_suspend>;
+
+	qcom,platform-te-gpio = <&tlmm 24 0>;
+	qcom,platform-reset-gpio = <&tlmm 60 0>;
+	qcom,platform-bklight-en-gpio = <&tlmm 93 0>;
+	qcom,platform-enable-gpio = <&tlmm 94 0>;
+};
+
+&dsi_hx8399c_hd_vid {
+	qcom,mdss-dsi-panel-timings =
+		[e7 1c 12 00 42 42 18 20 17 03 04 00];
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_pwm";
+	qcom,mdss-dsi-bl-pmic-pwm-frequency = <100>;
+	qcom,mdss-dsi-bl-pmic-bank-select = <0>;
+	qcom,mdss-dsi-pwm-gpio = <&pm8916_mpps 4 0>;
+	qcom,esd-check-enabled;
+	qcom,mdss-dsi-panel-status-check-mode = "reg_read";
+	qcom,mdss-dsi-panel-status-command = [06 01 00 01 00 00 01 0a];
+	qcom,mdss-dsi-panel-status-command-state = "dsi_lp_mode";
+	qcom,mdss-dsi-panel-status-value = <0x9d 0x9d 0x9d 0x9d>;
+	qcom,mdss-dsi-panel-on-check-value = <0x9d 0x9d 0x9d 0x9d>;
+	qcom,mdss-dsi-panel-status-read-length = <4>;
+	qcom,mdss-dsi-panel-max-error-count = <3>;
+	qcom,mdss-dsi-min-refresh-rate = <48>;
+	qcom,mdss-dsi-max-refresh-rate = <60>;
+	qcom,mdss-dsi-pan-enable-dynamic-fps;
+	qcom,mdss-dsi-pan-fps-update =
+		"dfps_immediate_porch_mode_vfp";
+};

@@ -1,0 +1,12 @@
+/dts-v1/;
+
+#include "khajeq.dtsi"
+#include "khajeq-atp.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Khajeq ATP";
+	compatible = "qcom,khajeq-atp", "qcom,khajeq", "qcom,atp";
+	qcom,board-id = <33 0>;
+	qcom,pmic-id = <0x2D 0x2E 0x0 0x0>;
+};
+

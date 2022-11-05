@@ -1,0 +1,10 @@
+/dts-v1/;
+
+#include "kona-v2.1.dtsi"
+#include "kona-xrsku4.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. kona v2.1 XR APQ SKU4";
+	compatible = "qcom,kona-mtp", "qcom,kona", "qcom,mtp";
+	qcom,board-id = <0x1050008 0>;
+};

@@ -1,0 +1,18 @@
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include "khaje-qrd.dtsi"
+#include "khaje-qrd-pm7250b.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Khaje QRD";
+	compatible = "qcom,khaje-qrd", "qcom,khaje", "qcom,qrd";
+	qcom,msm-id = <518 0x10000>;
+	qcom,board-id = <0x1000B 0>;
+	qcom,pmic-id = <0x2D 0x2E 0x0 0x0>;
+};
+
+&bengal_snd {
+	qcom,wcd-datalane-mismatch = <1>;
+};

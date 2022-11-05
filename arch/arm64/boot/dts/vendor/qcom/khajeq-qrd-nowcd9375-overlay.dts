@@ -1,0 +1,15 @@
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include "khajeq-qrd.dtsi"
+#include "khaje-qrd-pm7250b.dtsi"
+#include "khajeq-qrd-nowcd9375.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Khajeq QRD NOWCD9375";
+	compatible = "qcom,khajeq-qrd", "qcom,khajeq", "qcom,qrd";
+	qcom,msm-id = <562 0x10000>;
+	qcom,board-id = <0x2010B 0>;
+	qcom,pmic-id = <0x2D 0x2E 0x0 0x0>;
+};

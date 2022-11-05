@@ -1,0 +1,9 @@
+/dts-v1/;
+/plugin/;
+
+#include "sdm439-rcm.dtsi"
+
+/ {
+	model = "RCM";
+	qcom,board-id = <21 1>;
+};
