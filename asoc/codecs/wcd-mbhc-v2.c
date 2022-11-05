@@ -29,7 +29,7 @@
 #include <asoc/wcd-mbhc-v2-api.h>
 #define CONFIG_AUDIO_UART_DEBUG
 
-#if defined(CONFIG_TARGET_PRODUCT_PSYCHE) || defined(CONFIG_TARGET_PRODUCT_MUNCH) || defined(CONFIG_TARGET_PRODUCT_DAGU) && defined(CONFIG_DEBUG_FS)
+#if (defined(CONFIG_TARGET_PRODUCT_PSYCHE) || defined(CONFIG_TARGET_PRODUCT_MUNCH) || defined(CONFIG_TARGET_PRODUCT_DAGU)) && defined(CONFIG_DEBUG_FS)
 #include <linux/debugfs.h>
 
 #define HEADSET_STATUS_RECORD_INDEX_PLUGIN_HEADSET (3)
@@ -82,13 +82,13 @@ void wcd_mbhc_jack_report(struct wcd_mbhc *mbhc,
 			  struct snd_soc_jack *jack, int status, int mask)
 {
 	snd_soc_jack_report(jack, status, mask);
-#if defined(CONFIG_TARGET_PRODUCT_PSYCHE) || defined(CONFIG_TARGET_PRODUCT_MUNCH) || defined(CONFIG_TARGET_PRODUCT_DAGU) && defined(CONFIG_DEBUG_FS)
+#if (defined(CONFIG_TARGET_PRODUCT_PSYCHE) || defined(CONFIG_TARGET_PRODUCT_MUNCH) || defined(CONFIG_TARGET_PRODUCT_DAGU)) && defined(CONFIG_DEBUG_FS)
 	add_headset_event(mbhc->hph_status, mask, jack->status);
 #endif
 }
 EXPORT_SYMBOL(wcd_mbhc_jack_report);
 
-#if defined(CONFIG_TARGET_PRODUCT_PSYCHE) || defined(CONFIG_TARGET_PRODUCT_MUNCH) || defined(CONFIG_TARGET_PRODUCT_DAGU) && defined(CONFIG_DEBUG_FS)
+#if (defined(CONFIG_TARGET_PRODUCT_PSYCHE) || defined(CONFIG_TARGET_PRODUCT_MUNCH) || defined(CONFIG_TARGET_PRODUCT_DAGU)) && defined(CONFIG_DEBUG_FS)
 static void add_headset_event(int status, int mask, int jackstatus) {
 	if (status == HEADSET_STATUS_RECORD_INDEX_PLUGOUT) {
 		headset_status[4] = maxF(headset_status[4], HEADSET_EVENT_PLUGOUT_HEADPHONE);
@@ -2020,7 +2020,7 @@ int wcd_mbhc_init(struct wcd_mbhc *mbhc, struct snd_soc_component *component,
 	const char *hph_thre = "qcom,msm-mbhc-hs-mic-min-threshold-mv";
 
 	pr_debug("%s: enter\n", __func__);
-#if defined(CONFIG_TARGET_PRODUCT_PSYCHE) || defined(CONFIG_TARGET_PRODUCT_MUNCH) || defined(CONFIG_TARGET_PRODUCT_DAGU) && defined(CONFIG_DEBUG_FS)
+#if (defined(CONFIG_TARGET_PRODUCT_PSYCHE) || defined(CONFIG_TARGET_PRODUCT_MUNCH) || defined(CONFIG_TARGET_PRODUCT_DAGU)) && defined(CONFIG_DEBUG_FS)
 	mbhc_debugfs_dir = debugfs_create_dir(DEBUGFS_DIR_NAME, NULL);
 	if (!IS_ERR(mbhc_debugfs_dir)) {
 		debugfs_create_file(DEBUGFS_HEADSET_STATUS_FILE_NAME, 0666,
