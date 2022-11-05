@@ -229,7 +229,7 @@ static int q6lsm_callback(struct apr_client_data *data, void *priv)
 		}
 
 		if (client->param_size != param_size) {
-			pr_err("%s: response payload size %d mismatched with user requested %d\n",
+			pr_err("%s: response payload size %d mismatched with user requested %zu\n",
 			    __func__, param_size, client->param_size);
 			ret = -EINVAL;
 			goto done;
@@ -1218,6 +1218,10 @@ int q6lsm_set_afe_data_format(uint64_t fe_id, uint16_t afe_data_format)
 {
 	int n = 0;
 
+#if defined(CONFIG_TARGET_PRODUCT_PSYCHE) || defined(CONFIG_TARGET_PRODUCT_DAGU)
+	int free_session = LSM_INVALID_SESSION_ID;
+#endif
+
 	if (0 != afe_data_format && 1 != afe_data_format)
 		goto done;
 
@@ -1225,8 +1229,18 @@ int q6lsm_set_afe_data_format(uint64_t fe_id, uint16_t afe_data_format)
 		 afe_data_format ? "unprocessed" : "processed");
 
 	for (n = LSM_MIN_SESSION_ID; n <= LSM_MAX_SESSION_ID; n++) {
+#if !defined(CONFIG_TARGET_PRODUCT_PSYCHE) && !defined(CONFIG_TARGET_PRODUCT_DAGU)
 		if (0 == lsm_client_afe_data[n].fe_id) {
 			lsm_client_afe_data[n].fe_id = fe_id;
+#else
+		/* Save ID of the first available free session */
+		if (LSM_INVALID_SESSION_ID == free_session &&
+		    0 == lsm_client_afe_data[n].fe_id)
+			free_session = n;
+
+		/* Find the matching session with fe_id */
+		if (fe_id == lsm_client_afe_data[n].fe_id) {
+#endif
 			lsm_client_afe_data[n].unprocessed_data =
 							afe_data_format;
 			pr_debug("%s: session ID is %d, fe_id is %llu\n",
@@ -1234,6 +1248,22 @@ int q6lsm_set_afe_data_format(uint64_t fe_id, uint16_t afe_data_format)
 			return 0;
 		}
 	}
+
+#if defined(CONFIG_TARGET_PRODUCT_PSYCHE) || defined(CONFIG_TARGET_PRODUCT_DAGU)
+	/*
+	 * When no matching session is found, allocate
+	 * a new one if a free session is available.
+	 */
+	if (free_session != LSM_INVALID_SESSION_ID) {
+		lsm_client_afe_data[free_session].fe_id = fe_id;
+		lsm_client_afe_data[free_session].unprocessed_data =
+							afe_data_format;
+		pr_debug("%s: session ID is %d, fe_id is %d\n",
+			 __func__, free_session, fe_id);
+		return 0;
+	}
+
+#endif
 
 	pr_err("%s: all lsm sessions are taken\n", __func__);
 done:
