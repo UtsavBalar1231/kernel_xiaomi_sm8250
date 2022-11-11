@@ -1294,6 +1294,7 @@ repeat:
 	lock_page(page);
 	if (unlikely(page->mapping != mapping)) {
 		f2fs_put_page(page, 1);
+		f2fs_io_schedule_timeout(DEFAULT_IO_TIMEOUT);
 		goto repeat;
 	}
 	if (unlikely(!PageUptodate(page))) {
