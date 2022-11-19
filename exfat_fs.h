@@ -11,6 +11,10 @@
 #include <linux/ratelimit.h>
 #include <linux/nls.h>
 
+#ifndef SECTOR_SIZE
+#define SECTOR_SIZE	512
+#endif
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 17, 0)
 #include <linux/magic.h>
 #else
