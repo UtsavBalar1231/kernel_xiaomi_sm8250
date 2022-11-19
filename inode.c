@@ -615,7 +615,11 @@ static int exfat_fill_inode(struct inode *inode, struct exfat_dir_entry *info)
 #else
 	inode->i_version++;
 #endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
+	inode->i_generation = get_random_u32();
+#else
 	inode->i_generation = prandom_u32();
+#endif
 
 	if (info->attr & ATTR_SUBDIR) { /* directory */
 		inode->i_generation &= ~1;
