@@ -96,6 +96,12 @@ Description:	Controls the issue rate of discard commands that consist of small
 		checkpoint is triggered, and issued during the checkpoint.
 		By default, it is disabled with 0.
 
+What:		/sys/fs/f2fs/<disk>/max_ordered_discard
+Date:		October 2022
+Contact:	"Yangtao Li" <frank.li@vivo.com>
+Description:	Controls the maximum ordered discard, the unit size is one block(4KB).
+		Set it to 16 by default.
+
 What:		/sys/fs/f2fs/<disk>/max_discard_request
 Date:		December 2021
 Contact:	"Konstantin Vyshetsky" <vkon@google.com>
@@ -232,7 +238,7 @@ Description:	Shows total written kbytes issued to disk.
 What:		/sys/fs/f2fs/<disk>/features
 Date:		July 2017
 Contact:	"Jaegeuk Kim" <jaegeuk@kernel.org>
-Description:	<deprecated: should use /sys/fs/f2fs/<disk>/feature_list/
+Description:	<deprecated: should use /sys/fs/f2fs/<disk>/feature_list/>
 		Shows all enabled features in current device.
 		Supported features:
 		encryption, blkzoned, extra_attr, projquota, inode_checksum,
@@ -573,10 +579,10 @@ Description:	With "mode=fragment:block" mount options, we can scatter block allo
 		in the length of 1..<max_fragment_hole> by turns. This value can be set
 		between 1..512 and the default value is 4.
 
-What:		/sys/fs/f2fs/<disk>/gc_urgent_high_remaining
-Date:		December 2021
-Contact:	"Daeho Jeong" <daehojeong@google.com>
-Description:	You can set the trial count limit for GC urgent high mode with this value.
+What:		/sys/fs/f2fs/<disk>/gc_remaining_trials
+Date:		October 2022
+Contact:	"Yangtao Li" <frank.li@vivo.com>
+Description:	You can set the trial count limit for GC urgent and idle mode with this value.
 		If GC thread gets to the limit, the mode will turn back to GC normal mode.
 		By default, the value is zero, which means there is no limit like before.
 
@@ -609,3 +615,9 @@ Date:		July 2022
 Contact:	"Daeho Jeong" <daehojeong@google.com>
 Description:	Show the accumulated total revoked atomic write block count after boot.
 		If you write "0" here, you can initialize to "0".
+
+What:		/sys/fs/f2fs/<disk>/gc_mode
+Date:		October 2022
+Contact:	"Yangtao Li" <frank.li@vivo.com>
+Description:	Show the current gc_mode as a string.
+		This is a read-only entry.
