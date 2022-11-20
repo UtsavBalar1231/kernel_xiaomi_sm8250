@@ -1,0 +1,9 @@
+/dts-v1/;
+/plugin/;
+
+#include "sdm429-cdp.dtsi"
+
+/ {
+	model = "CDP";
+	qcom,board-id = <1 3>;
+};

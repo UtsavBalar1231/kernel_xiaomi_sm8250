@@ -1,0 +1,109 @@
+#include <dt-bindings/sound/qcom,gpr.h>
+
+&glink_adsp {
+	audio_gpr: qcom,gpr {
+		compatible = "qcom,gpr";
+		qcom,glink-channels = "adsp_apps";
+		qcom,intents = <0x200 20>;
+		reg = <GPR_DOMAIN_ADSP>;
+		spf_core {
+			compatible = "qcom,spf_core";
+			reg = <GPR_SVC_ADSP_CORE>;
+		};
+
+		audio-pkt {
+			compatible = "qcom,audio-pkt";
+			qcom,audiopkt-ch-name = "apr_audio_svc";
+			reg = <GPR_SVC_MAX>;
+		};
+
+		audio_prm: q6prm {
+			compatible = "qcom,audio_prm";
+			reg = <GPR_SVC_ASM>;
+		};
+
+		voice-mhi {
+			compatible = "qcom,voice_mhi_gpr";
+			reg = <GPR_SVC_VPM>;
+		};
+	};
+};
+
+&soc {
+	spf_core_platform: spf_core_platform {
+		compatible = "qcom,spf-core-platform";
+	};
+
+	audio_pkt_core_platform: qcom,audio-pkt-core-platform {
+		compatible = "qcom,audio-pkt-core-platform";
+	};
+};
+
+&spf_core_platform {
+	msm_audio_ion_ar: qcom,msm-audio-ion-ar {
+		compatible = "qcom,msm-audio-ion";
+		qcom,smmu-version = <2>;
+		qcom,smmu-enabled;
+		iommus = <&apps_smmu 0x1801 0x0>;
+		qcom,iommu-dma-addr-pool = <0x10000000 0x10000000>;
+		qcom,smmu-sid-mask = /bits/ 64 <0xf>;
+	};
+
+	lpass_core_hw_vote_ar: vote_lpass_core_hw_ar {
+		compatible = "qcom,audio-ref-clk";
+		qcom,codec-ext-clk-src = <AUDIO_LPASS_CORE_HW_VOTE>;
+		#clock-cells = <1>;
+	};
+
+	lpass_audio_hw_vote_ar: vote_lpass_audio_hw_ar {
+		compatible = "qcom,audio-ref-clk";
+		qcom,codec-ext-clk-src = <AUDIO_LPASS_AUDIO_HW_VOTE>;
+		#clock-cells = <1>;
+	};
+
+	bolero_ar: bolero-cdc-ar {
+		compatible = "qcom,bolero-codec";
+		clock-names = "lpass_core_hw_vote",
+				"lpass_audio_hw_vote";
+		clocks = <&lpass_core_hw_vote_ar 0>,
+				<&lpass_audio_hw_vote_ar 0>;
+		bolero-clk-rsc-mngr-ar {
+			compatible = "qcom,bolero-clk-rsc-mngr";
+		};
+
+		tx_macro_ar: tx-macro-ar@3220000 {
+			swr_ar2: tx_swr_master_ar {
+			};
+		};
+
+		rx_macro_ar: rx-macro-ar@3200000 {
+			swr_ar1: rx_swr_master_ar {
+			};
+		};
+
+		wsa_macro_ar: wsa-macro-ar@3240000 {
+			swr_ar0: wsa_swr_master_ar {
+			};
+		};
+	};
+
+	voice_mhi_audio_ar: qcom,voice-mhi-audio-ar {
+		compatible = "qcom,voice-mhi-audio";
+		memory-region = <&mailbox_mem>;
+		voice_mhi_voting;
+	};
+
+	kona_snd_ar: sound_ar {
+		compatible = "qcom,kona-asoc-snd";
+		qcom,mi2s-audio-intf = <1>;
+		qcom,auxpcm-audio-intf = <1>;
+		qcom,tdm-audio-intf = <1>;
+		qcom,wcn-bt = <0>;
+		qcom,ext-disp-audio-rx = <0>;
+		qcom,afe-rxtx-lb = <0>;
+
+		clock-names = "lpass_audio_hw_vote";
+		clocks = <&lpass_audio_hw_vote_ar 0>;
+		fsa4480-i2c-handle = <&fsa4480>;
+	};
+};

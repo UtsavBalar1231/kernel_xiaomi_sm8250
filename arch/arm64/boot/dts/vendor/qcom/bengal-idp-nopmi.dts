@@ -1,0 +1,11 @@
+/dts-v1/;
+
+#include "bengal.dtsi"
+#include "bengal-idp-nopmi.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. BENGAL IDP nopmi";
+	compatible = "qcom,bengal-idp", "qcom,bengal", "qcom,idp";
+	qcom,board-id = <34 0>;
+	qcom,pmic-id = <0x2D 0x0 0x0 0x0>;
+};
