@@ -5,8 +5,10 @@ FILES=                                          \
          test-bionic.bin                        \
          test-dwarf.bin                         \
          test-dwarf_getlocations.bin            \
+         test-eventfd.bin                       \
          test-fortify-source.bin                \
          test-sync-compare-and-swap.bin         \
+         test-get_current_dir_name.bin          \
          test-glibc.bin                         \
          test-gtk2.bin                          \
          test-gtk2-infobar.bin                  \
@@ -27,7 +29,6 @@ FILES=                                          \
          test-numa_num_possible_cpus.bin        \
          test-libperl.bin                       \
          test-libpython.bin                     \
-         test-libpython-version.bin             \
          test-libslang.bin                      \
          test-libcrypto.bin                     \
          test-libunwind.bin                     \
@@ -52,6 +53,7 @@ FILES=                                          \
          test-get_cpuid.bin                     \
          test-sdt.bin                           \
          test-cxx.bin                           \
+         test-gettid.bin			\
          test-jvmti.bin				\
          test-sched_getcpu.bin			\
          test-setns.bin				\
@@ -98,6 +100,12 @@ $(OUTPUT)test-bionic.bin:
 
 $(OUTPUT)test-libelf.bin:
 	$(BUILD) -lelf
+
+$(OUTPUT)test-eventfd.bin:
+	$(BUILD)
+
+$(OUTPUT)test-get_current_dir_name.bin:
+	$(BUILD)
 
 $(OUTPUT)test-glibc.bin:
 	$(BUILD)
@@ -185,17 +193,21 @@ strip-libs = $(filter-out -l%,$(1))
 PERL_EMBED_LDOPTS = $(shell perl -MExtUtils::Embed -e ldopts 2>/dev/null)
 PERL_EMBED_LDFLAGS = $(call strip-libs,$(PERL_EMBED_LDOPTS))
 PERL_EMBED_LIBADD = $(call grep-libs,$(PERL_EMBED_LDOPTS))
-PERL_EMBED_CCOPTS = `perl -MExtUtils::Embed -e ccopts 2>/dev/null`
+PERL_EMBED_CCOPTS = $(shell perl -MExtUtils::Embed -e ccopts 2>/dev/null)
 FLAGS_PERL_EMBED=$(PERL_EMBED_CCOPTS) $(PERL_EMBED_LDOPTS)
+
+ifeq ($(CC_NO_CLANG), 0)
+  PERL_EMBED_LDOPTS := $(filter-out -specs=%,$(PERL_EMBED_LDOPTS))
+  PERL_EMBED_CCOPTS := $(filter-out -flto=auto -ffat-lto-objects, $(PERL_EMBED_CCOPTS))
+  PERL_EMBED_CCOPTS := $(filter-out -specs=%,$(PERL_EMBED_CCOPTS))
+  FLAGS_PERL_EMBED += -Wno-compound-token-split-by-macro
+endif
 
 $(OUTPUT)test-libperl.bin:
 	$(BUILD) $(FLAGS_PERL_EMBED)
 
 $(OUTPUT)test-libpython.bin:
 	$(BUILD) $(FLAGS_PYTHON_EMBED)
-
-$(OUTPUT)test-libpython-version.bin:
-	$(BUILD)
 
 $(OUTPUT)test-libbfd.bin:
 	$(BUILD) -DPACKAGE='"perf"' -lbfd -ldl
@@ -253,6 +265,9 @@ $(OUTPUT)test-sdt.bin:
 
 $(OUTPUT)test-cxx.bin:
 	$(BUILDXX) -std=gnu++11
+
+$(OUTPUT)test-gettid.bin:
+	$(BUILD)
 
 $(OUTPUT)test-jvmti.bin:
 	$(BUILD)

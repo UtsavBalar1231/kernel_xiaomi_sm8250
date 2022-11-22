@@ -524,11 +524,11 @@ static int vxlan_fdb_append(struct vxlan_fdb *f,
 
 	rd = kmalloc(sizeof(*rd), GFP_ATOMIC);
 	if (rd == NULL)
-		return -ENOBUFS;
+		return -ENOMEM;
 
 	if (dst_cache_init(&rd->dst_cache, GFP_ATOMIC)) {
 		kfree(rd);
-		return -ENOBUFS;
+		return -ENOMEM;
 	}
 
 	rd->remote_ip = *ip;
@@ -1682,6 +1682,7 @@ static int neigh_reduce(struct net_device *dev, struct sk_buff *skb, __be32 vni)
 	struct neighbour *n;
 	struct nd_msg *msg;
 
+	rcu_read_lock();
 	in6_dev = __in6_dev_get(dev);
 	if (!in6_dev)
 		goto out;
@@ -1733,6 +1734,7 @@ static int neigh_reduce(struct net_device *dev, struct sk_buff *skb, __be32 vni)
 	}
 
 out:
+	rcu_read_unlock();
 	consume_skb(skb);
 	return NETDEV_TX_OK;
 }
@@ -3180,6 +3182,9 @@ static void vxlan_config_apply(struct net_device *dev,
 		dev->gso_max_segs = lowerdev->gso_max_segs;
 
 		needed_headroom = lowerdev->hard_header_len;
+		needed_headroom += lowerdev->needed_headroom;
+
+		dev->needed_tailroom = lowerdev->needed_tailroom;
 
 		max_mtu = lowerdev->mtu - (use_ipv6 ? VXLAN6_HEADROOM :
 					   VXLAN_HEADROOM);
@@ -3809,7 +3814,6 @@ static void vxlan_destroy_tunnels(struct net *net, struct list_head *head)
 	struct vxlan_net *vn = net_generic(net, vxlan_net_id);
 	struct vxlan_dev *vxlan, *next;
 	struct net_device *dev, *aux;
-	unsigned int h;
 
 	for_each_netdev_safe(net, dev, aux)
 		if (dev->rtnl_link_ops == &vxlan_link_ops)
@@ -3823,14 +3827,13 @@ static void vxlan_destroy_tunnels(struct net *net, struct list_head *head)
 			unregister_netdevice_queue(vxlan->dev, head);
 	}
 
-	for (h = 0; h < PORT_HASH_SIZE; ++h)
-		WARN_ON_ONCE(!hlist_empty(&vn->sock_list[h]));
 }
 
 static void __net_exit vxlan_exit_batch_net(struct list_head *net_list)
 {
 	struct net *net;
 	LIST_HEAD(list);
+	unsigned int h;
 
 	rtnl_lock();
 	list_for_each_entry(net, net_list, exit_list)
@@ -3838,6 +3841,13 @@ static void __net_exit vxlan_exit_batch_net(struct list_head *net_list)
 
 	unregister_netdevice_many(&list);
 	rtnl_unlock();
+
+	list_for_each_entry(net, net_list, exit_list) {
+		struct vxlan_net *vn = net_generic(net, vxlan_net_id);
+
+		for (h = 0; h < PORT_HASH_SIZE; ++h)
+			WARN_ON_ONCE(!hlist_empty(&vn->sock_list[h]));
+	}
 }
 
 static struct pernet_operations vxlan_net_ops = {

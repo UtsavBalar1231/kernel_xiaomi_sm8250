@@ -991,6 +991,9 @@ config PANIC_ON_REFCOUNT_ERROR
 	  or potential memory-leaks) with an object associated with that
 	  reference counter.
 
+config ARCH_USE_MEMREMAP_PROT
+	bool
+
 # Select if the architecture has support for applying RELR relocations.
 config ARCH_HAS_RELR
 	bool

@@ -14,10 +14,6 @@
 # include "test-libpython.c"
 #undef main
 
-#define main main_test_libpython_version
-# include "test-libpython-version.c"
-#undef main
-
 #define main main_test_libperl
 # include "test-libperl.c"
 #undef main
@@ -34,6 +30,14 @@
 # include "test-libelf-mmap.c"
 #undef main
 
+#define main main_test_get_current_dir_name
+# include "test-get_current_dir_name.c"
+#undef main
+
+#define main main_test_gettid
+# include "test-gettid.c"
+#undef main
+
 #define main main_test_glibc
 # include "test-glibc.c"
 #undef main
@@ -44,6 +48,10 @@
 
 #define main main_test_dwarf_getlocations
 # include "test-dwarf_getlocations.c"
+#undef main
+
+#define main main_test_eventfd
+# include "test-eventfd.c"
 #undef main
 
 #define main main_test_libelf_getphdrnum
@@ -169,14 +177,16 @@
 int main(int argc, char *argv[])
 {
 	main_test_libpython();
-	main_test_libpython_version();
 	main_test_libperl();
 	main_test_hello();
 	main_test_libelf();
 	main_test_libelf_mmap();
+	main_test_get_current_dir_name();
+	main_test_gettid();
 	main_test_glibc();
 	main_test_dwarf();
 	main_test_dwarf_getlocations();
+	main_test_eventfd();
 	main_test_libelf_getphdrnum();
 	main_test_libelf_gelf_getnote();
 	main_test_libelf_getshdrstrndx();

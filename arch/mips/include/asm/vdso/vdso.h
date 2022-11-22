@@ -13,6 +13,7 @@
 #if _MIPS_SIM != _MIPS_SIM_ABI64 && defined(CONFIG_64BIT)
 
 /* Building 32-bit VDSO for the 64-bit kernel. Fake a 32-bit Kconfig. */
+#define BUILD_VDSO32_64
 #undef CONFIG_64BIT
 #define CONFIG_32BIT 1
 #ifndef __ASSEMBLY__
@@ -81,7 +82,7 @@ static inline const struct vdso_data *get_vdso_data(void)
 
 static inline void __iomem *get_gic(const struct vdso_data *data)
 {
-	return (void __iomem *)data - PAGE_SIZE;
+	return (void __iomem *)((unsigned long)data & PAGE_MASK) - PAGE_SIZE;
 }
 
 #endif /* CONFIG_CLKSRC_MIPS_GIC */

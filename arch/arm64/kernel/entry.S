@@ -367,7 +367,7 @@ alternative_else_nop_endif
 	.if	\el == 0
 alternative_if_not ARM64_UNMAP_KERNEL_AT_EL0
 	ldr	lr, [sp, #S_LR]
-	add	sp, sp, #S_FRAME_SIZE 		//restore sp
+	add	sp, sp, #S_FRAME_SIZE		// restore sp
 	eret
 alternative_else_nop_endif
 #ifdef CONFIG_UNMAP_KERNEL_AT_EL0
@@ -1084,11 +1084,11 @@ alternative_endif
 	.if	\regsize == 64
 	mrs	x29, far_el1
 	.endif
-	add	sp, sp, #S_FRAME_SIZE   //restore sp
+	add	sp, sp, #S_FRAME_SIZE		// restore sp
 	eret
 	.endm
 
-	.macro	generate_tramp_vector, kpti, bhb
+	.macro	generate_tramp_vector,	kpti, bhb
 .Lvector_start\@:
 	.space	0x400
 
@@ -1101,11 +1101,11 @@ alternative_endif
 	.endm
 
 #ifdef CONFIG_UNMAP_KERNEL_AT_EL0
-	/*
-	 * Exception vectors trampoline.
-	 * The order must match __bp_harden_el1_vectors and the
-	 * arm64_bp_harden_el1_vectors enum.
-	 */
+/*
+ * Exception vectors trampoline.
+ * The order must match __bp_harden_el1_vectors and the
+ * arm64_bp_harden_el1_vectors enum.
+ */
 	.pushsection ".entry.tramp.text", "ax"
 	.align	11
 ENTRY(tramp_vectors)
@@ -1138,7 +1138,7 @@ __entry_tramp_data_vectors:
 __entry_tramp_data___sdei_asm_handler:
 	.quad	__sdei_asm_handler
 #endif /* CONFIG_ARM_SDE_INTERFACE */
-	__entry_tramp_data_this_cpu_vector:
+__entry_tramp_data_this_cpu_vector:
 	.quad	this_cpu_vector
 	.popsection				// .rodata
 #endif /* CONFIG_RANDOMIZE_BASE */
@@ -1148,26 +1148,26 @@ __entry_tramp_data___sdei_asm_handler:
  * Exception vectors for spectre mitigations on entry from EL1 when
  * kpti is not in use.
  */
-
 	.macro generate_el1_vector, bhb
 .Lvector_start\@:
-	kernel_ventry	1, sync_invalid		// Synchronous EL1t
-	kernel_ventry	1, irq_invalid		// IRQ EL1t
-	kernel_ventry	1, fiq_invalid		// FIQ EL1t
-	kernel_ventry	1, error_invalid	// Error EL1t
+	kernel_ventry	1, sync_invalid			// Synchronous EL1t
+	kernel_ventry	1, irq_invalid			// IRQ EL1t
+	kernel_ventry	1, fiq_invalid			// FIQ EL1t
+	kernel_ventry	1, error_invalid		// Error EL1t
 
-	kernel_ventry	1, sync			// Synchronous EL1h
-	kernel_ventry	1, irq			// IRQ EL1h
-	kernel_ventry	1, fiq_invalid		// FIQ EL1h
-	kernel_ventry	1, error		// Error EL1h
+	kernel_ventry	1, sync				// Synchronous EL1h
+	kernel_ventry	1, irq				// IRQ EL1h
+	kernel_ventry	1, fiq_invalid			// FIQ EL1h
+	kernel_ventry	1, error			// Error EL1h
 
 	.rept	4
 	tramp_ventry	.Lvector_start\@, 64, 0, \bhb
 	.endr
-	.rept	4
+	.rept 4
 	tramp_ventry	.Lvector_start\@, 32, 0, \bhb
 	.endr
 	.endm
+
 /* The order must match tramp_vecs and the arm64_bp_harden_el1_vectors enum. */
 	.pushsection ".entry.text", "ax"
 	.align	11
@@ -1272,7 +1272,7 @@ ENTRY(__sdei_asm_entry_trampoline)
 	 */
 1:	str	x4, [x1, #(SDEI_EVENT_INTREGS + S_ORIG_ADDR_LIMIT)]
 
-	tramp_data_read_var	x4, __sdei_asm_handler
+	tramp_data_read_var     x4, __sdei_asm_handler
 	br	x4
 ENDPROC(__sdei_asm_entry_trampoline)
 NOKPROBE(__sdei_asm_entry_trampoline)
