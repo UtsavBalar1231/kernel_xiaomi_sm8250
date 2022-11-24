@@ -781,6 +781,7 @@ void sde_connector_update_fod_hbm(struct drm_connector *connector)
 	struct sde_connector *c_conn;
 	struct dsi_display *display;
 	bool status;
+	struct dsi_panel_mi_cfg *mi_cfg;
 
 	if (!connector) {
 		SDE_ERROR("invalid connector\n");
@@ -802,7 +803,18 @@ void sde_connector_update_fod_hbm(struct drm_connector *connector)
 	if (atomic_xchg(&effective_status, status) == status)
 		return;
 
+	mi_cfg = &display->panel->mi_cfg;
+
+	if ((status && mi_cfg && mi_cfg->delay_before_fod_hbm_on) ||
+			(!status && mi_cfg && mi_cfg->delay_before_fod_hbm_off))
+		sde_encoder_wait_for_event(c_conn->encoder, MSM_ENC_VBLANK);
+
 	dsi_panel_set_fod_hbm(display->panel, status);
+
+	if ((status && mi_cfg && mi_cfg->delay_after_fod_hbm_on) ||
+			(!status && mi_cfg && mi_cfg->delay_after_fod_hbm_off))
+		sde_encoder_wait_for_event(c_conn->encoder, MSM_ENC_VBLANK);
+
 	dsi_display_set_fod_ui(display, status);
 }
 
