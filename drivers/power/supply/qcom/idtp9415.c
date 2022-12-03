@@ -5056,12 +5056,7 @@ static struct i2c_driver idtp9220_driver = {
 static int __init idt_init(void)
 {
 	int ret;
-	uint32_t hw_version = 0;
 
-	hw_version = get_hw_version_platform();
-	printk("idtp9415: hw version: %d\n", hw_version);
-	if (hw_version == HARDWARE_PLATFORM_SKULD)
-		return 0;
 #ifndef CONFIG_RX1619_REMOVE
 	printk("is_idt_rx flag is:%d\n", is_idt_rx);
 #endif
