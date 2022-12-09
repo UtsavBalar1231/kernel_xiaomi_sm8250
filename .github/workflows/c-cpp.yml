@@ -16,7 +16,7 @@ jobs:
     - name: Download the kernel
       run: |
         sudo apt-get update
-        sudo apt-get install libelf-dev wget tar gzip python
+        sudo apt-get install libelf-dev wget tar gzip python2.7
         wget https://mirrors.edge.kernel.org/pub/linux/kernel/v4.x/linux-4.1.36.tar.gz
         tar xf linux-4.1.36.tar.gz
         mv linux-4.1.36 linux-stable
