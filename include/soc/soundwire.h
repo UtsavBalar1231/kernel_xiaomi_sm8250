@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _LINUX_SOUNDWIRE_H
@@ -83,6 +84,7 @@ struct swr_port_info {
 	u8 req_ch;
 	u8 num_ch;
 	u32 ch_rate;
+	u64 dev_addr;
 };
 
 /*
@@ -107,6 +109,7 @@ struct swr_params {
 	u32 ch_rate[SWR_MAX_DEV_PORT_NUM];
 	u8 ch_en[SWR_MAX_DEV_PORT_NUM];
 	u8 port_type[SWR_MAX_DEV_PORT_NUM];
+	u64 dev_addr;
 };
 
 /*
