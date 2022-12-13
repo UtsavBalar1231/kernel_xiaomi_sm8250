@@ -133,8 +133,7 @@ static void set_compress_new_inode(struct f2fs_sb_info *sbi, struct inode *dir,
 	unsigned char noext_cnt = F2FS_OPTION(sbi).nocompress_ext_cnt;
 	int i, cold_count, hot_count;
 
-	/* Caller should give the name of regular file or directory. */
-	if (!f2fs_sb_has_compression(sbi) || !name)
+	if (!f2fs_sb_has_compression(sbi))
 		return;
 
 	if (S_ISDIR(inode->i_mode))
@@ -165,10 +164,12 @@ static void set_compress_new_inode(struct f2fs_sb_info *sbi, struct inode *dir,
 	}
 inherit_comp:
 	/* Inherit the {no-}compression flag in directory */
-	if (F2FS_I(dir)->i_flags & F2FS_NOCOMP_FL)
+	if (F2FS_I(dir)->i_flags & F2FS_NOCOMP_FL) {
 		F2FS_I(inode)->i_flags |= F2FS_NOCOMP_FL;
-	else if (F2FS_I(dir)->i_flags & F2FS_COMPR_FL)
+		f2fs_mark_inode_dirty_sync(inode, true);
+	} else if (F2FS_I(dir)->i_flags & F2FS_COMPR_FL) {
 		set_compress_context(inode);
+	}
 }
 
 /*
@@ -273,8 +274,6 @@ static struct inode *f2fs_new_inode(struct inode *dir, umode_t mode,
 	}
 	F2FS_I(inode)->i_inline_xattr_size = xattr_size;
 
-	f2fs_init_extent_tree(inode, NULL);
-
 	F2FS_I(inode)->i_flags =
 		f2fs_mask_flags(mode, F2FS_I(dir)->i_flags & F2FS_FL_INHERITED);
 
@@ -299,6 +298,8 @@ static struct inode *f2fs_new_inode(struct inode *dir, umode_t mode,
 	stat_inc_inline_dir(inode);
 
 	f2fs_set_inode_flags(inode);
+
+	f2fs_init_extent_tree(inode);
 
 	trace_f2fs_new_inode(inode, 0);
 	return inode;
@@ -742,7 +743,7 @@ static int f2fs_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
 	if (err)
 		return err;
 
-	inode = f2fs_new_inode(dir, S_IFDIR | mode, dentry->d_name.name);
+	inode = f2fs_new_inode(dir, S_IFDIR | mode, NULL);
 	if (IS_ERR(inode))
 		return PTR_ERR(inode);
 
