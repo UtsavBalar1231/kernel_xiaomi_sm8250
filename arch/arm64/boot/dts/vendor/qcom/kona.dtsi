@@ -2437,7 +2437,7 @@
 		qcom,mdm2ap-status-gpio   = <&tlmm 3 0x00>;
 		qcom,ap2mdm-status-gpio   = <&tlmm 56 0x00>;
 		qcom,mdm-link-info = "0306_02.01.00";
-		status = "ok";
+		status = "disabled";
 	};
 
 	pdc: interrupt-controller@b220000 {
@@ -2605,6 +2605,7 @@
 		reg = <0x177004 0x4>;
 		regulator-name = "ufs_phy_gdsc";
 		qcom,retain-regs;
+		qcom,gds-timeout = <500>;
 	};
 
 	usb30_prim_gdsc: qcom,gdsc@10f004 {

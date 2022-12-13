@@ -2505,6 +2505,12 @@
 		qcom,use-sw-hmac-algo;
 	};
 
+	qcom_smcinvoke: smcinvoke@87900000 {
+		compatible = "qcom,smcinvoke";
+		reg = <0x87900000 0x2200000>;
+		reg-names = "secapp-region";
+	};
+
 	qcom_tzlog: tz-log@146bf720 {
 		compatible = "qcom,tz-log";
 		reg = <0x146bf720 0x3000>;

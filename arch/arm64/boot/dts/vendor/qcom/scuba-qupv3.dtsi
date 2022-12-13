@@ -108,6 +108,25 @@
 		status = "disabled";
 	};
 
+	/* 4-wire UART Instance for DIAG */
+	qupv3_se0_4uart: qcom,qup_uart@4a80000 {
+		compatible = "qcom,msm-geni-serial-hs";
+		reg = <0x4a80000 0x4000>;
+		reg-names = "se_phys";
+		interrupts = <GIC_SPI 327 IRQ_TYPE_LEVEL_HIGH>;
+		clock-names = "se-clk", "m-ahb", "s-ahb";
+		clocks = <&gcc GCC_QUPV3_WRAP0_S0_CLK>,
+			<&gcc GCC_QUPV3_WRAP_0_M_AHB_CLK>,
+			<&gcc GCC_QUPV3_WRAP_0_S_AHB_CLK>;
+		pinctrl-names = "default", "sleep";
+		pinctrl-0 = <&qupv3_se0_ctsrx>, <&qupv3_se0_rts>,
+				<&qupv3_se0_tx>;
+		pinctrl-1 = <&qupv3_se0_default_ctsrtsrx>,
+				<&qupv3_se0_default_tx>;
+		qcom,wrapper-core = <&qupv3_0>;
+		status = "disabled";
+	};
+
 	qupv3_se1_i2c: i2c@4a84000 {
 		compatible = "qcom,i2c-geni";
 		reg = <0x4a84000 0x4000>;

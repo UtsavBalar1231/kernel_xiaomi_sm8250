@@ -1,0 +1,13 @@
+/dts-v1/;
+
+#include "khajep.dtsi"
+#include "khajep-idp.dtsi"
+#include "khajep-idp-pm8010.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. KHAJEP IDP with PM8010";
+	compatible = "qcom,khajep-idp", "qcom,khajep", "qcom,idp";
+	qcom,board-id = <0x10222 0>;
+	qcom,pmic-id = <0x02D 0x2E 0x0 0x0>;
+};
+

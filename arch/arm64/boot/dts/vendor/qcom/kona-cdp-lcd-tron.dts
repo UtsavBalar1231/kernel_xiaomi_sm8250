@@ -9,6 +9,10 @@
 	qcom,board-id = <0x01020001 0>;
 };
 
+&qupv3_se1_i2c {
+	status = "disabled";
+};
+
 &mdm0 {
 	status = "disabled";
 };

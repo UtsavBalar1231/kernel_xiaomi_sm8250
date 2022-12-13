@@ -1,7 +1,7 @@
 /dts-v1/;
 
 #include "qrb5165.dtsi"
-#include "kona-v2.1-iot-rb5.dtsi"
+#include "qrb5165-iot-rb5.dtsi"
 
 / {
 	model = "Qualcomm Technologies, Inc. qrb5165 IOT RB5";

@@ -22,7 +22,8 @@
 		qcom,mdss-dsi-lane-3-state;
 		qcom,mdss-dsi-dma-trigger = "trigger_sw";
 		qcom,mdss-dsi-mdp-trigger = "none";
-		qcom,mdss-dsi-reset-sequence = <0 10>, <1 10>;
+		qcom,mdss-dsi-reset-sequence = <0 12>, <1 10>;
+		qcom,mdss-dsi-reset-powerdown-delay = <10>;
 		qcom,mdss-pan-physical-width-dimension = <70>;
 		qcom,mdss-pan-physical-height-dimension = <155>;
 		qcom,mdss-dsi-te-pin-select = <1>;
@@ -139,7 +140,7 @@
 					/* Dimming Setting*/
 					39 01 00 00 00 00 03 F0 5A 5A
 					39 00 00 00 00 00 02 B0 06
-					39 00 00 00 00 00 02 B7 20                /* Dimming Speed Setting : 0x20 : 32Frames*/
+					39 00 00 00 00 00 02 B7 10                /* Dimming Speed Setting : 0x10 : 16Frames*/
 					39 00 00 00 00 00 02 B0 05
 					39 01 00 00 00 00 02 B7 93                /* 0x93 : ELVSS DIM ON */
 					39 01 00 00 00 00 03 F0 A5 A5
@@ -288,7 +289,7 @@
 					/* Dimming Setting*/
 					39 01 00 00 00 00 03 F0 5A 5A
 					39 00 00 00 00 00 02 B0 06
-					39 00 00 00 00 00 02 B7 20              /* Dimming Speed Setting : 0x20 : 32Frames*/
+					39 00 00 00 00 00 02 B7 10              /* Dimming Speed Setting : 0x10 : 16Frames*/
 					39 00 00 00 00 00 02 B0 05
 					39 01 00 00 00 00 02 B7 93              /* 0x93 : ELVSS DIM ON */
 					39 01 00 00 00 00 03 F0 A5 A5

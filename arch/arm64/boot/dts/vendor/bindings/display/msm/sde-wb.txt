@@ -1,4 +1,4 @@
-Qualcomm Technologies, Inc. Snapdragon Display Engine (SDE) writeback display
+QTI Snapdragon Display Engine (SDE) writeback display
 
 Required properties:
 - compatible:		"qcom,wb-display"

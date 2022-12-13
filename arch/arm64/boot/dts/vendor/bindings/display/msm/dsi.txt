@@ -134,6 +134,14 @@ Optional properties:
 					than two times the dsi link rate time.
 					If the property is not specified, then the default value is 14000 us.
 
+- frame-threshold-time-us:		For command mode panels, this specifies the idle
+					time for dsi controller where no active data is
+					send to the panel, as controller is done sending
+					active pixels. If there is no desired DSI clocks
+				        specified, then clocks will be derived from this
+					threshold time, which has a default value in chipset
+					based on the CPU processing power.
+
 [1] Documentation/devicetree/bindings/clock/clock-bindings.txt
 [2] Documentation/devicetree/bindings/graph.txt
 [3] Documentation/devicetree/bindings/media/video-interfaces.txt
@@ -184,6 +192,7 @@ Example:
 		qcom,sync-dual-dsi;
 
 		qcom,mdss-mdp-transfer-time-us = <12000>;
+		frame-threshold-time-us = <800>;
 
 		pinctrl-names = "default", "sleep";
 		pinctrl-0 = <&dsi_active>;

@@ -79,6 +79,10 @@ then 3 options can be tried.
 
 Optional properties:
 - qcom,mdss-dsi-panel-name:		A string used as a descriptive name of the panel
+- qcom,mdss-dsi-physical-type:		A string used as a decriptive type of the panel.
+						"oled" : That indicate it's an OLED panel.
+						"lcd" : That indicate it's an LCD panel.
+						If it is not set, consider it is a LCD panel as default.
 - qcom,mdss-dsi-panel-phy-timings:	An array of length 'n' char that specifies the DSI PHY lane
 					timing settings for the panel. This is specific to SDE DRM driver.
 					The value of 'n' depends on the DSI PHY h/w revision and parsing this
@@ -165,10 +169,31 @@ Optional properties:
 					"dfps_immediate_porch_mode_vfp" = FPS change request is
 					implemented immediately by changing panel vertical
 					front porch values.
+- qcom,dsi-supported-dfps-list:	List containing all the supported refresh rates.
+- qcom,dsi-supported-qsync-min-fps-list:	The fps value in this list indicates the qsync min
+					fps corresponding to the mode in the qcom,dsi-supported-dfps-list
+					with same index. qcom,dsi-supported-qsync-min-fps-list cannot be
+					defined along with qcom,mdss-dsi-qsync-min-refresh-rate.
 - qcom,min-refresh-rate:		Minimum refresh rate supported by the panel.
 - qcom,max-refresh-rate:		Maximum refresh rate supported by the panel. If max refresh
 					rate is not specified, then the frame rate of the panel in
 					qcom,mdss-dsi-panel-framerate is used.
+- qcom,dsi-dyn-clk-enable:		Boolean to indicate dsi dynamic clock switch feature
+					is supported.
+- qcom,dsi-dyn-clk-list:		An u32 array which lists all the supported dsi bit clock
+					frequencies in Hz for the given panel.
+- qcom,dsi-dyn-clk-type:		A string that specifies the sub-type for the dynamic
+					clk feature. If dyn clk type is not specified, default
+					value "legacy" is used.
+					"legacy" = FPS is not maintained after dynamic clock switch.
+					"constant-fps-adjust-hfp" = FPS is maintained even after
+					dynamic clock switch by changing panel horizontal front
+					porch values.
+					"constant-fps-adjust-vfp" = FPS is maintained even after
+					dynamic clock switch by changing panel vertical front
+					porch values.
+					This dyn-clk-type entry is an optional binding which is
+                                        contingent on the enabling of dynamic clock switch.
 - qcom,mdss-dsi-bl-pmic-control-type:	A string that specifies the implementation of backlight
 					control for this panel.
 					"bl_ctrl_pwm" = Backlight controlled by PWM gpio.
@@ -194,6 +219,8 @@ Optional properties:
 					0 = default value.
 - qcom,mdss-dsi-bl-max-level:		Specifies the max backlight level supported by the panel.
 					255 = default value.
+- qcom,mdss-dsi-bl-inverted-dbv:	A boolean to specify whether to invert the display brightness value.
+					When this boolean is set, will inverted display brightness value.
 - qcom,mdss-brightness-max-level:	Specifies the max brightness level supported.
 					255 = default value.
 - qcom,bl-update-flag:			A string that specifies controls for backlight update of the panel.
@@ -265,6 +292,8 @@ Optional properties:
 					0x00 = default value.
 - qcom,mdss-dsi-t-clk-pre:		Specifies the byte clock cycles before mode switch.
 					0x00 = default value.
+- qcom,mdss-dsi-t-clk-pre-extend:	Boolean that specifies whether to enable t_clk_pre counter
+					increment by 2 byteclk.
 - qcom,mdss-dsi-stream:			Specifies the packet stream to be used.
 					0 = stream 0 (default)
 					1 = stream 1
@@ -310,6 +339,7 @@ Optional properties:
 					to the physical width in the framebuffer information.
 - qcom,mdss-pan-physical-height-dimension:	Specifies panel physical height in mm which corresponds
 					to the physical height in the framebuffer information.
+- qcom,mdss-dsi-panel-test-pin:	Specifies the panel test gpio.
 - qcom,mdss-dsi-mode-sel-gpio-state:	String that specifies the lcd mode for panel
 					(such as single-port/dual-port), if qcom,panel-mode-gpio
 					binding is defined in dsi controller.
@@ -404,6 +434,7 @@ Optional properties:
 - qcom,mdss-dsi-tx-eot-append:		Boolean used to enable appending end of transmission packets.
 - qcom,ulps-enabled:			Boolean to enable support for Ultra Low Power State (ULPS) mode.
 - qcom,suspend-ulps-enabled:		Boolean to enable support for ULPS mode for panels during suspend state.
+- qcom,platform-reset-gpio-always-on:	Boolean to keep display reset gpio on during suspend.
 - qcom,panel-roi-alignment:		Specifies the panel ROI alignment restrictions on its
 					left, top, width, height alignments and minimum width and
 					height values. This property is specified per timing node to support
@@ -495,7 +526,7 @@ Optional properties:
 - qcom,panel-ack-disabled: A boolean property to indicate, whether we need to wait for any ACK from the panel
 			   for any commands that we send.
 - qcom,mdss-dsi-force-clock-lane-hs:	Boolean to force dsi clock lanes to HS mode always.
-
+- qcom,panel-cphy-mode:			Boolean to specify whether panel is using cphy.
 - qcom,compression-mode:		Select compression mode for panel.
 					"fbc" - frame buffer compression
 					"dsc" - display stream compression.
@@ -528,6 +559,8 @@ Optional properties:
 - qcom,mdss-dsc-block-prediction-enable: A boolean value to enable/disable the block prediction at decoder.
 - qcom,mdss-dsc-config-by-manufacture-cmd: A boolean to indicates panel use manufacture command to setup pps
 					instead of standard dcs type 0x0A.
+- qcom,mdss-pps-delay-ms:		An u32 value that indicates post PPS command
+								delay in milliseconds. If no value is specified, it chooses zero by default.
 - qcom,display-topology:  		Array of u32 values which specifies the	list of topologies available
 					for the display. A display topology is defined by a
 					set of 3 values in the order:
@@ -648,6 +681,7 @@ Example:
 		qcom,mdss-dsi-lane-3-state;
 		qcom,mdss-dsi-t-clk-post = <0x20>;
 		qcom,mdss-dsi-t-clk-pre = <0x2c>;
+		qcom,mdss-dsi-t-clk-pre-extend;
 		qcom,mdss-dsi-stream = <0>;
 		qcom,mdss-dsi-mdp-trigger = <0>;
 		qcom,mdss-dsi-dma-trigger = <0>;
@@ -667,8 +701,14 @@ Example:
 		qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_wled";
 		qcom,mdss-dsi-pan-enable-dynamic-fps;
 		qcom,mdss-dsi-pan-fps-update = "dfps_suspend_resume_mode";
+		qcom,dsi-supported-dfps-list = <30 45 60>;
+		qcom,dsi-supported-qsync-min-fps-list = <30 40 55>;
 		qcom,min-refresh-rate = <30>;
 		qcom,max-refresh-rate = <60>;
+		qcom,dsi-dyn-clk-enable;
+		qcom,dsi-dyn-clk-list =
+			<534712320 532484352 530256384>;
+		qcom,dsi-dyn-clk-type = "constant-fps-adjust-vfp";
 		qcom,mdss-dsi-bl-pmic-bank-select = <0>;
 		qcom,mdss-dsi-bl-pmic-pwm-frequency = <0>;
 		qcom,mdss-dsi-pwm-gpio = <&pm8941_mpps 5 0>;

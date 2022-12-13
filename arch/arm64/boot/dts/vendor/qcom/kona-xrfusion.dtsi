@@ -1069,6 +1069,10 @@
 	qcom,default-mode-none;
 };
 
+&wlan {
+	status = "disabled";
+};
+
 &wil6210 {
 	status = "ok";
 };

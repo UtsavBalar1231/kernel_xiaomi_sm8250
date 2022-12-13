@@ -73,6 +73,7 @@
 		qcom,sde-wb-xin-id = <6>;
 		qcom,sde-wb-id = <2>;
 		qcom,sde-wb-clk-ctrl = <0x2bc 16>;
+		qcom,sde-wb-clk-status = <0x3bc 20>;
 
 		qcom,sde-intf-off = <0x6b000 0x6b800
 					0x6c000 0x6c800>;
@@ -405,6 +406,8 @@
 		qcom,widebus-enable;
 		qcom,dsc-feature-enable;
 		qcom,fec-feature-enable;
+		qcom,max-dp-dsc-blks = <2>;
+		qcom,max-dp-dsc-input-width-pixs = <2048>;
 
 		qcom,ctrl-supply-entries {
 			#address-cells = <1>;
