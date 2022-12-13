@@ -15,7 +15,8 @@ jobs:
     - uses: actions/checkout@v3
     - name: Download the kernel
       run: |
-        sudo apt-get install libelf-dev wget tar gzip python
+        sudo apt-get update
+        sudo apt-get install libelf-dev wget tar gzip python2.7
         wget https://mirrors.edge.kernel.org/pub/linux/kernel/v4.x/linux-4.1.36.tar.gz
         tar xf linux-4.1.36.tar.gz
         mv linux-4.1.36 linux-stable
@@ -148,7 +149,6 @@ jobs:
         sudo ./check generic/260
         sudo ./check generic/263
         sudo ./check generic/285
-        sudo ./check generic/286
         sudo ./check generic/288
         sudo ./check generic/308
         sudo ./check generic/309
