@@ -2197,8 +2197,10 @@ void sdhci_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
 	    turning_on_clk &&
 	    host->timing == ios->timing &&
 	    host->version >= SDHCI_SPEC_300 &&
-	    !sdhci_presetable_values_change(host, ios))
+	    !sdhci_presetable_values_change(host, ios)) {
+		spin_unlock_irqrestore(&host->lock, flags);
 		return;
+	}
 
 	ctrl = sdhci_readb(host, SDHCI_HOST_CONTROL);
 
