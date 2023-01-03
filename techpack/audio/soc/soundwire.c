@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/kernel.h>
@@ -363,6 +364,8 @@ int swr_connect_port(struct swr_device *dev, u8 *port_id, u8 num_port,
 	txn->tid = i;
 
 	txn->dev_num = dev->dev_num;
+	//assign device addr also, as dev_num can dynamically change during device enumeration
+	txn->dev_addr = dev->addr;
 	txn->num_port = num_port;
 	for (i = 0; i < num_port; i++) {
 		txn->port_id[i] = port_id[i];
@@ -442,6 +445,8 @@ int swr_disconnect_port(struct swr_device *dev, u8 *port_id, u8 num_port,
 	txn->tid = i;
 
 	txn->dev_num = dev->dev_num;
+	//assign device address as dev_num can change dynamically during device enumeration
+	txn->dev_addr = dev->addr;
 	txn->num_port = num_port;
 	for (i = 0; i < num_port; i++) {
 		txn->port_id[i] = port_id[i];
