@@ -61,8 +61,20 @@ QDF_STATUS dp_reo_send_cmd(struct dp_soc *soc, enum hal_reo_cmd_type type,
 		     struct hal_reo_cmd_params *params,
 		     void (*callback_fn), void *data)
 {
-	struct dp_reo_cmd_info *reo_cmd;
+	struct dp_reo_cmd_info *reo_cmd = NULL;
 	int num;
+	QDF_STATUS ret;
+
+	if (callback_fn) {
+		reo_cmd = qdf_mem_malloc(sizeof(*reo_cmd));
+		if (!reo_cmd) {
+			dp_err_log("alloc failed for REO cmd:%d!!",
+				   type);
+			ret = QDF_STATUS_E_NOMEM;
+			goto fail;
+		}
+		qdf_spin_lock_bh(&soc->rx.reo_cmd_lock);
+	}
 
 	switch (type) {
 	case CMD_GET_QUEUE_STATS:
@@ -91,34 +103,36 @@ QDF_STATUS dp_reo_send_cmd(struct dp_soc *soc, enum hal_reo_cmd_type type,
 		break;
 	default:
 		dp_err_log("Invalid REO command type: %d", type);
-		return QDF_STATUS_E_INVAL;
+		ret = QDF_STATUS_E_INVAL;
+		goto fail_unlock;
 	};
 
 	dp_reo_cmd_srng_event_record(soc, type, num);
 
 	if (num < 0) {
-		return QDF_STATUS_E_FAILURE;
+		ret = QDF_STATUS_E_FAILURE;
+		goto fail_unlock;
 	}
 
 	if (callback_fn) {
-		reo_cmd = qdf_mem_malloc(sizeof(*reo_cmd));
-		if (!reo_cmd) {
-			dp_err_log("alloc failed for REO cmd:%d!!",
-				   type);
-			return QDF_STATUS_E_NOMEM;
-		}
-
 		reo_cmd->cmd = num;
 		reo_cmd->cmd_type = type;
 		reo_cmd->handler = callback_fn;
 		reo_cmd->data = data;
-		qdf_spin_lock_bh(&soc->rx.reo_cmd_lock);
 		TAILQ_INSERT_TAIL(&soc->rx.reo_cmd_list, reo_cmd,
 				  reo_cmd_list_elem);
-		qdf_spin_unlock_bh(&soc->rx.reo_cmd_lock);
+		reo_cmd = NULL;
 	}
 
-	return QDF_STATUS_SUCCESS;
+	ret = QDF_STATUS_SUCCESS;
+
+fail_unlock:
+	if (callback_fn)
+		qdf_spin_unlock_bh(&soc->rx.reo_cmd_lock);
+fail:
+	if (reo_cmd)
+		qdf_mem_free(reo_cmd);
+	return ret;
 }
 
 uint32_t dp_reo_status_ring_handler(struct dp_intr *int_ctx, struct dp_soc *soc)
