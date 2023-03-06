@@ -1,0 +1,116 @@
+#include <dt-bindings/thermal/thermal.h>
+
+&thermal_zones {
+	pm7250b-tz {
+		cooling-maps {
+			trip0_bat {
+				trip = <&pm7250b_trip0>;
+				cooling-device =
+					<&pm7250b_charger (THERMAL_MAX_LIMIT-1)
+						(THERMAL_MAX_LIMIT-1)>;
+			};
+
+			trip1_bat {
+				trip = <&pm7250b_trip1>;
+				cooling-device =
+					<&pm7250b_charger THERMAL_MAX_LIMIT
+						THERMAL_MAX_LIMIT>;
+			};
+		};
+	};
+
+	soc {
+		cooling-maps {
+			soc_cpu4 {
+				trip = <&soc_trip>;
+				cooling-device = <&cpu4_isolate 1 1>;
+			};
+
+			soc_cpu5 {
+				trip = <&soc_trip>;
+				cooling-device = <&cpu5_isolate 1 1>;
+			};
+
+			soc_cpu6 {
+				trip = <&soc_trip>;
+				cooling-device = <&cpu6_isolate 1 1>;
+			};
+
+			soc_cpu7 {
+				trip = <&soc_trip>;
+				cooling-device = <&cpu7_isolate 1 1>;
+			};
+		};
+	};
+
+	pm7250b-bcl-lvl0 {
+		cooling-maps {
+			lbat0_cpufreq4 {
+				trip = <&b_bcl_lvl0>;
+				cooling-device =
+					<&CPU4 (THERMAL_MAX_LIMIT-4)
+						(THERMAL_MAX_LIMIT-4)>;
+			};
+
+			lbat0_cpu6 {
+				trip = <&b_bcl_lvl0>;
+				cooling-device = <&cpu6_isolate 1 1>;
+			};
+
+			lbat0_cpu7 {
+				trip = <&b_bcl_lvl0>;
+				cooling-device = <&cpu7_isolate 1 1>;
+			};
+
+			lbat0_gpu {
+				trip = <&b_bcl_lvl0>;
+				cooling-device = <&msm_gpu 2 2>;
+			};
+
+			lbat0_cdsp {
+				trip = <&b_bcl_lvl0>;
+				cooling-device = <&cdsp_sw 2 2>;
+			};
+		};
+	};
+
+	pm7250b-bcl-lvl1 {
+		cooling-maps {
+			lbat1_cpu4 {
+				trip = <&b_bcl_lvl1>;
+				cooling-device = <&cpu4_isolate 1 1>;
+			};
+
+			lbat1_cpu5 {
+				trip = <&b_bcl_lvl1>;
+				cooling-device = <&cpu5_isolate 1 1>;
+			};
+
+			lbat1_gpu {
+				trip = <&b_bcl_lvl1>;
+				cooling-device = <&msm_gpu 4 4>;
+			};
+
+			lbat1_cdsp {
+				trip = <&b_bcl_lvl1>;
+				cooling-device = <&cdsp_sw 4 4>;
+			};
+		};
+	};
+
+	pm7250b-bcl-lvl2 {
+		cooling-maps {
+			lbat2_gpu {
+				trip = <&b_bcl_lvl2>;
+				cooling-device = <&msm_gpu THERMAL_MAX_LIMIT
+							THERMAL_MAX_LIMIT>;
+			};
+
+			lbat2_cdsp {
+				trip = <&b_bcl_lvl2>;
+				cooling-device = <&cdsp_sw THERMAL_MAX_LIMIT
+							THERMAL_MAX_LIMIT>;
+			};
+		};
+	};
+};

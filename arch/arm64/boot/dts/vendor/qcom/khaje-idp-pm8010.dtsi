@@ -1,0 +1,34 @@
+&soc {
+};
+
+&pm8008_regulators {
+	compatible = "qcom,pm8010-regulator";
+};
+
+&L1P {
+	qcom,min-dropout-voltage = <40000>;
+};
+
+&L2P {
+	qcom,min-dropout-voltage = <64000>;
+};
+
+&L3P {
+	qcom,min-dropout-voltage = <96000>;
+};
+
+&L4P {
+	qcom,min-dropout-voltage = <136000>;
+};
+
+&L5P {
+	qcom,min-dropout-voltage = <176000>;
+};
+
+&L6P {
+	qcom,min-dropout-voltage = <168000>;
+};
+
+&L7P {
+	qcom,min-dropout-voltage = <80000>;
+};

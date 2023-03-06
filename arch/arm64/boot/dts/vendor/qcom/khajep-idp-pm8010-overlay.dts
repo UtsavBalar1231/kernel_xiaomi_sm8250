@@ -1,0 +1,15 @@
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include "khajep-idp.dtsi"
+#include "khajep-idp-pm8010.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Khajep IDP with PM8010";
+	compatible = "qcom,khajep-idp", "qcom,khajep", "qcom,idp";
+	qcom,msm-id = <561 0x10000>;
+	qcom,board-id = <0x10222 0>;
+	qcom,pmic-id = <0x2D 0x2E 0x0 0x0>;
+};
+

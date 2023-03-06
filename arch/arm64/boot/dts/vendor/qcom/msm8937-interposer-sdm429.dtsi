@@ -1,0 +1,68 @@
+#include "msm8937-interposer-sdm439.dtsi"
+#include "sdm429-cpu.dtsi"
+
+&apsscc {
+	qcom,cpu-isolation {
+		/delete-node/ cpu4-isolate;
+		/delete-node/ cpu5-isolate;
+		/delete-node/ cpu6-isolate;
+		/delete-node/ cpu7-isolate;
+	};
+};
+
+&soc {
+	/delete-node/ etm@619c000;
+	/delete-node/ etm@619d000;
+	/delete-node/ etm@619e000;
+	/delete-node/ etm@619f000;
+	/delete-node/ cti@6198000;
+	/delete-node/ cti@6199000;
+	/delete-node/ cti@619a000;
+	/delete-node/ cti@619b000;
+	/delete-node/ jtagmm@619c000;
+	/delete-node/ jtagmm@619d000;
+	/delete-node/ jtagmm@619e000;
+	/delete-node/ jtagmm@619f000;
+	/delete-node/ qcom,cpu4-cpugrp;
+
+	qcom,spm@b1d2000 {
+		qcom,cpu-vctl-list = <&CPU0 &CPU1 &CPU2 &CPU3>;
+	};
+
+	qcom,lpm-levels {
+		qcom,pm-cluster@0 {
+			/delete-node/qcom,pm-cluster@1;
+		};
+	};
+};
+
+&funnel_apss {
+	ports {
+		/delete-node/ port@1;
+		/delete-node/ port@2;
+		/delete-node/ port@3;
+		/delete-node/ port@4;
+	};
+};
+
+&thermal_zones {
+	hexa-cpu-max-step {
+		cooling-maps {
+			/delete-node/ cpu4_cdev;
+			/delete-node/ cpu5_cdev;
+			/delete-node/ cpu6_cdev;
+			/delete-node/ cpu7_cdev;
+		};
+	};
+
+	/delete-node/ cpuss0-step;
+
+	quiet-therm-step {
+		cooling-maps {
+			/delete-node/ skin_cpu4;
+			/delete-node/ skin_cpu5;
+			/delete-node/ skin_cpu6;
+			/delete-node/ skin_cpu7;
+		};
+	};
+};

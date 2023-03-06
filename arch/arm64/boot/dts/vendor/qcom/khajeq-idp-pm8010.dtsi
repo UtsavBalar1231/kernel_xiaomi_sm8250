@@ -1,0 +1,5 @@
+#include "khaje-idp-pm8010.dtsi"
+
+&soc {
+};
+

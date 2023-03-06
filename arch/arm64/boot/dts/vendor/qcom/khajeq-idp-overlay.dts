@@ -1,0 +1,14 @@
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include "khajeq-idp.dtsi"
+#include "khaje-idp-pm7250b.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Khaje IDP";
+	compatible = "qcom,khaje-idp", "qcom,khaje", "qcom,idp";
+	qcom,msm-id = <562 0x10000>;
+	qcom,board-id = <0x10022 0>;
+	qcom,pmic-id = <0x2D 0x2E 0x0 0x0>;
+};
