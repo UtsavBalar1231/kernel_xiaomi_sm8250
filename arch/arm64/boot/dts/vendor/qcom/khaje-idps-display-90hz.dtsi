@@ -1,6 +1,0 @@
-&soc {
-};
-
-&sde_dsi {
-	qcom,dsi-default-panel = <&dsi_nt36672e_fhd_plus_90hz_video>;
-};

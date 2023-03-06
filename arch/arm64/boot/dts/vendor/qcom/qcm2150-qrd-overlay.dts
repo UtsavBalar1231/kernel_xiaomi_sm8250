@@ -1,9 +1,0 @@
-/dts-v1/;
-/plugin/;
-
-#include "qcm2150-qrd.dtsi"
-
-/ {
-	model = "QRD";
-	qcom,board-id = <0x01000b 4>;
-};

@@ -1,9 +1,0 @@
-/dts-v1/;
-
-#include "litomagnus.dtsi"
-
-/ {
-	model = "Qualcomm Technologies, Inc. Litomagnus SoC";
-	compatible = "qcom,lito";
-	qcom,board-id = <0 1>;
-};
